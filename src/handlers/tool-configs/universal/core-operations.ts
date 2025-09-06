@@ -15,9 +15,6 @@ import {
   UniversalAttributesParams,
   UniversalDetailedInfoParams,
   UniversalResourceType,
-  DetailedInfoType,
-  UniversalCreateNoteParams,
-  UniversalGetNotesParams,
 } from './types.js';
 
 // Helper function to get plural form of resource type
@@ -67,7 +64,6 @@ import {
   handleUniversalGetDetailedInfo,
   handleUniversalCreateNote,
   handleUniversalGetNotes,
-  formatResourceType,
   getSingularResourceType,
 } from './shared-handlers.js';
 
@@ -77,16 +73,11 @@ import { ErrorService } from '../../../services/ErrorService.js';
 import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
 // Note: Using simplified mock responses for E2E compatibility
 
-import { CallToolRequest, Tool } from '@modelcontextprotocol/sdk/types.js';
-import { ToolConfig } from '../../tool-types.js';
 import {
-  toMcpResult,
   isHttpResponseLike,
 } from '../../../lib/http/toMcpResult.js';
 
 import { AttioRecord } from '../../../types/attio.js';
-// Utilities for Attio response handling (notes)
-import { unwrapAttio, normalizeNote } from '../../../utils/attio-response.js';
 
 /**
  * Universal search records tool
@@ -174,7 +165,7 @@ export const searchRecordsConfig: UniversalToolConfig = {
           id = String(record.id?.task_id || record.id?.record_id || 'unknown');
         } else if (resourceType === UniversalResourceType.PEOPLE) {
           // For people, use comprehensive name extraction logic (with proper type handling)
-          const valuesAny = values as any;
+          const valuesAny = values as Record<string, unknown>;
           const name = 
             valuesAny?.name?.[0]?.full_name ||
             valuesAny?.name?.[0]?.value ||
@@ -392,7 +383,9 @@ export const createRecordConfig: UniversalToolConfig = {
             shape: inspectTaskRecordShape(result),
           });
         }
-      } catch {}
+      } catch {
+        // Ignore formatting errors
+      }
 
       return result;
     } catch (error: unknown) {
@@ -415,7 +408,7 @@ export const createRecordConfig: UniversalToolConfig = {
       ? getSingularResourceType(resourceType)
       : 'record';
     // Extract name from values (may be empty on create) or fall back to a generic name
-    const coerce = (v: any): string | undefined => {
+    const coerce = (v: unknown): string | undefined => {
       if (v == null) return undefined;
       if (typeof v === 'string') return v;
       if (Array.isArray(v)) {
@@ -428,9 +421,9 @@ export const createRecordConfig: UniversalToolConfig = {
       return undefined;
     };
     const displayName =
-      coerce((record.values as any)?.name) ||
-      coerce((record.values as any)?.title) ||
-      coerce((record.values as any)?.content) ||
+      coerce((record.values as Record<string, unknown>)?.name) ||
+      coerce((record.values as Record<string, unknown>)?.title) ||
+      coerce((record.values as Record<string, unknown>)?.content) ||
       `New ${resourceTypeName}`;
     const id = String(record.id?.record_id || record.record_id || 'unknown');
 
@@ -468,7 +461,9 @@ export const updateRecordConfig: UniversalToolConfig = {
             shape: inspectTaskRecordShape(result),
           });
         }
-      } catch {}
+      } catch {
+        // Ignore formatting errors
+      }
       return result;
     } catch (error: unknown) {
       // Check if this is a structured HTTP response from our services
@@ -578,7 +573,7 @@ export const getAttributesConfig: UniversalToolConfig = {
     }
   },
   formatResult: (
-    attributes: any,
+    attributes: Record<string, unknown>,
     resourceType?: UniversalResourceType
   ): string => {
     if (!attributes) {
@@ -650,7 +645,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
   handler: async (params: {
     resource_type: UniversalResourceType;
     categories?: string[]; // NEW: Category filtering support
-  }): Promise<any | { error: string; success: boolean }> => {
+  }): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'discover-attributes',
@@ -669,7 +664,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       return { error: errorMessage, success: false };
     }
   },
-  formatResult: (schema: any, resourceType?: UniversalResourceType): string => {
+  formatResult: (schema: Record<string, unknown>, resourceType?: UniversalResourceType): string => {
     if (!schema) {
       return 'No attribute schema found';
     }
@@ -756,17 +751,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
 export const getDetailedInfoConfig: UniversalToolConfig = {
   name: 'get-detailed-info',
   handler: async (params: UniversalDetailedInfoParams) => {
-    try {
-      validateUniversalToolParams('get-detailed-info', params);
-      return await handleUniversalGetDetailedInfo(params);
-    } catch (error: unknown) {
-      throw error;
-    }
+    validateUniversalToolParams('get-detailed-info', params);
+    return await handleUniversalGetDetailedInfo(params);
   },
   formatResult: (
     info: Record<string, unknown>,
-    resourceType?: UniversalResourceType,
-    infoType?: DetailedInfoType
+    resourceType?: UniversalResourceType
   ): string => {
     if (!info) {
       return 'No detailed information found';
@@ -775,14 +765,13 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
-    const infoTypeName = infoType || 'detailed';
 
-    let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} ${infoTypeName} information:\n\n`;
+    let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} detailed information:\n\n`;
 
-    if (typeof info === 'object' && (info as any).values) {
+    if (typeof info === 'object' && (info as Record<string, unknown>).values) {
       // Format as Attio record values
-      Object.entries((info as any).values).forEach(
-        ([field, values]: [string, any]) => {
+      Object.entries((info as Record<string, unknown>).values).forEach(
+        ([field, values]: [string, unknown]) => {
           if (Array.isArray(values) && values.length > 0) {
             const value = values[0].value;
             if (value) {
@@ -875,7 +864,7 @@ export const coreOperationsToolConfigs = {
   // ✨ Add notes tools (no feature flags in tests)
   'create-note': {
     name: 'create-note',
-    handler: async (params: any): Promise<any> => {
+    handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>> => {
       try {
         const sanitizedParams = validateUniversalToolParams(
           'create-note',
@@ -885,7 +874,7 @@ export const coreOperationsToolConfigs = {
 
         // The handleUniversalCreateNote already returns normalized data
         return res;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Map error body/status into the regex your tests expect
         const status = err?.response?.status;
         const body = err?.response?.data;
@@ -906,7 +895,7 @@ export const coreOperationsToolConfigs = {
         return { isError: true, error: mapped };
       }
     },
-    formatResult: (note: any): string => {
+    formatResult: (note: Record<string, unknown>): string => {
       if (!note) {
         return 'No note created';
       }
@@ -920,7 +909,7 @@ export const coreOperationsToolConfigs = {
   },
   'list-notes': {
     name: 'list-notes',
-    handler: async (params: any): Promise<any[]> => {
+    handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
       try {
         const sanitizedParams = validateUniversalToolParams(
           'list-notes',
@@ -931,7 +920,7 @@ export const coreOperationsToolConfigs = {
         throw ErrorService.createUniversalError('list-notes', 'notes', error);
       }
     },
-    formatResult: (notes: any[]): string => {
+    formatResult: (notes: Record<string, unknown>[]): string => {
       const notesArray = notes || [];
 
       if (notesArray.length === 0) {

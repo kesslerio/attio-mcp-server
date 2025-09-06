@@ -102,7 +102,7 @@ export async function createNote(
   try {
     const response = await api.post('/notes', { data: body });
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     debug('notes', 'Create note failed', { error: error.message });
 
     // Map HTTP errors to universal validation errors
@@ -137,9 +137,19 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
   const api = getAttioClient();
 
   try {
-    const response = await api.get('/notes', { params: query });
-    return response.data;
-  } catch (error: any) {
+    const { parent_object, parent_record_id, ...params } = query;
+
+    // If parent_object and parent_record_id are provided, use the record-specific endpoint
+    if (parent_object && parent_record_id) {
+      const endpoint = `/objects/${parent_object}/records/${parent_record_id}/notes`;
+      const response = await api.get(endpoint, { params });
+      return response.data;
+    } else {
+      // Fallback to generic notes endpoint
+      const response = await api.get('/notes', { params: query });
+      return response.data;
+    }
+  } catch (error: unknown) {
     debug('notes', 'List notes failed', { error: error.message });
     throw error;
   }
@@ -164,7 +174,7 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
   try {
     const response = await api.get(`/notes/${noteId}`);
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     debug('notes', 'Get note failed', { error: error.message });
 
     if (error.response?.status === 404) {
@@ -196,7 +206,7 @@ export async function deleteNote(
   try {
     await api.delete(`/notes/${noteId}`);
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     debug('notes', 'Delete note failed', { error: error.message });
 
     if (error.response?.status === 404) {

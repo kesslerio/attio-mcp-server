@@ -11,7 +11,6 @@ import {
   RelationshipSearchParams,
   ContentSearchParams,
   TimeframeSearchParams,
-  BatchOperationsParams,
   UniversalResourceType,
   RelationshipType,
   ContentSearchType,
@@ -51,13 +50,11 @@ import { ErrorService } from '../../../services/ErrorService.js';
 
 // Import specialized handlers
 import {
-  searchCompaniesByNotes,
   searchCompaniesByPeople,
 } from '../../../objects/companies/index.js';
 
 import {
   searchPeopleByCompany,
-  searchPeopleByNotes,
 } from '../../../objects/people/index.js';
 
 import {
@@ -68,8 +65,6 @@ import {
 import {
   AttioRecord,
 } from '../../../types/attio.js';
-import { ListEntryFilters } from '../../../api/operations/types.js';
-import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
 import {
   validateBatchOperation,
   validateSearchQuery,
@@ -79,22 +74,6 @@ import {
 import { normalizeOperator, apiSemaphore } from '../../../utils/AttioFilterOperators.js';
 import { mapFieldName } from '../../../utils/AttioFieldMapper.js';
 
-// Import for client-side note filtering implementation
-import { getAttioClient } from '../../../api/attio-client.js';
-import { listNotes } from '../../../objects/notes.js';
-import { RATE_LIMITS } from '../../../config/security-limits.js';
-
-// Performance and safety constants from security configuration
-const BATCH_DELAY_MS = RATE_LIMITS.BATCH_DELAY_MS;
-const MAX_CONCURRENT_REQUESTS = RATE_LIMITS.MAX_CONCURRENT_REQUESTS;
-
-/**
- * Adds a small delay between API calls to respect rate limits
- */
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
  * Processes items in parallel with controlled concurrency and error isolation
  * Each item's success/failure is tracked independently for batch operations
@@ -102,8 +81,7 @@ function delay(ms: number): Promise<void> {
  */
 async function processInParallelWithErrorIsolation<T, R = unknown>(
   items: T[],
-  processor: (item: T, index: number) => Promise<R>,
-  maxConcurrency: number = MAX_CONCURRENT_REQUESTS
+  processor: (item: T, index: number) => Promise<R>
 ): Promise<Array<{ success: boolean; result?: R; error?: string; data?: T }>> {
   const results: Array<{
     success: boolean;
@@ -166,7 +144,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
       // Advanced search uses Attio's non-$ operator dialect (equals, contains, gte/lte, is_not_empty, ...).
       // Perform a light de-normalization: translate any $-prefixed operators to the expected strings
       // and coerce is_not_empty value to true when omitted.
-      let filters = sanitizedParams.filters as any;
+      let filters = sanitizedParams.filters as Record<string, unknown>;
       try {
         const deDollar = (cond: string): string => {
           if (!cond) return cond;
@@ -192,12 +170,12 @@ export const advancedSearchConfig: UniversalToolConfig = {
           return cond;
         };
 
-        if (filters && typeof filters === 'object' && Array.isArray((filters as any).filters)) {
+        if (filters && typeof filters === 'object' && Array.isArray((filters as Record<string, unknown>).filters)) {
           filters = {
             ...filters,
-            filters: ((filters as any).filters as any[]).map((f) => {
+            filters: ((filters as Record<string, unknown>).filters as Record<string, unknown>[]).map((f) => {
               if (!f || typeof f !== 'object') return f;
-              const next = { ...f } as Record<string, any>;
+              const next = { ...f } as Record<string, unknown>;
               if (typeof next.condition === 'string') {
                 next.condition = deDollar(next.condition);
               }
@@ -210,7 +188,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
         }
       } catch {
         // If transformation fails, proceed with original filters; downstream validation will report details
-        filters = sanitizedParams.filters as any;
+        filters = sanitizedParams.filters as Record<string, unknown>;
       }
 
       // Validate list_membership filter if present
@@ -263,7 +241,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
     resourceType?: UniversalResourceType
   ) => {
     if (!Array.isArray(results)) {
-      return 'No results found';
+      return 'Found 0 records (advanced search)\nTip: Verify your filters and ensure matching data exists in your workspace.';
     }
 
     const resourceTypeName = resourceType
@@ -282,17 +260,17 @@ export const advancedSearchConfig: UniversalToolConfig = {
     }
 
     // Helper that extracts either primitive, {value}, or [..] shapes
-    const coerce = (v: any): string | undefined => {
+    const coerce = (v: unknown): string | undefined => {
       if (v == null) return undefined;
       if (typeof v === 'string') return v;
       if (Array.isArray(v)) {
         const first = v[0];
         if (typeof first === 'string') return first;
         if (first && typeof first === 'object' && 'value' in first)
-          return String((first as any).value);
+          return String((first as Record<string, unknown>).value);
       }
       if (typeof v === 'object' && 'value' in v)
-        return String((v as any).value);
+        return String((v as Record<string, unknown>).value);
       return undefined;
     };
 
@@ -306,17 +284,17 @@ export const advancedSearchConfig: UniversalToolConfig = {
         
         // For people: Try person-specific name fields first
         if (resourceType === UniversalResourceType.PEOPLE) {
-          const nameArray = values?.name as any[];
+          const nameArray = values?.name as Record<string, unknown>[];
           if (Array.isArray(nameArray) && nameArray.length > 0) {
-            name = nameArray[0]?.full_name || 
-                   nameArray[0]?.value || 
-                   nameArray[0]?.formatted || 
+            name = (nameArray[0]?.full_name as string) || 
+                   (nameArray[0]?.value as string) || 
+                   (nameArray[0]?.formatted as string) || 
                    'Unnamed';
           } else {
             // Fallback to other person name fields
-            const fullNameArray = values?.full_name as any[];
+            const fullNameArray = values?.full_name as Record<string, unknown>[];
             if (Array.isArray(fullNameArray) && fullNameArray.length > 0) {
-              name = fullNameArray[0]?.value || 'Unnamed';
+              name = (fullNameArray[0]?.value as string) || 'Unnamed';
             }
           }
         } else {
@@ -390,7 +368,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
               `then filter the results programmatically.`
           );
 
-        case 'list_entries':
+        case 'list_entries': {
           // Special handling for list_entries relationship type
           const list_id = params.source_id;
           if (
@@ -403,6 +381,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
             // Operation requiring valid list id → throw validation error
             throw new Error('invalid list id');
           }
+        }
 
         default:
           throw new Error(
@@ -459,89 +438,6 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
  * Universal search by content tool
  * Searches within notes, activity, and interactions
  */
-/**
- * Search records by notes content using client-side filtering
- * Lists notes by parent, then filters on content_plaintext/markdown
- */
-async function searchRecordsByNotesContent(
-  resource_type: UniversalResourceType,
-  search_query: string
-): Promise<AttioRecord[]> {
-  const client = getAttioClient();
-
-  // Step 1: List all notes for the resource type
-  const resourceTypeMap: Record<string, string> = {
-    [UniversalResourceType.COMPANIES]: 'companies',
-    [UniversalResourceType.PEOPLE]: 'people',
-    [UniversalResourceType.DEALS]: 'deals',
-  };
-
-  const parentObject = resourceTypeMap[resource_type];
-  if (!parentObject) {
-    throw new Error(
-      `Notes search not supported for resource type: ${resource_type}`
-    );
-  }
-
-  try {
-    // Get all notes for the resource type
-    const response = await client.get(
-      `/notes?parent_object=${parentObject}&limit=100`
-    );
-    const notes = response?.data?.data || [];
-
-    // Step 2: Client-side filter on content_plaintext and markdown
-    const searchQueryLower = search_query.toLowerCase();
-    const matchingNotes = notes.filter((note: any) => {
-      const contentPlain = (note.content_plaintext || '').toLowerCase();
-      const contentMarkdown = (
-        note.content ||
-        note.markdown ||
-        ''
-      ).toLowerCase();
-      const title = (note.title || '').toLowerCase();
-
-      return (
-        contentPlain.includes(searchQueryLower) ||
-        contentMarkdown.includes(searchQueryLower) ||
-        title.includes(searchQueryLower)
-      );
-    });
-
-    // Step 3: Extract unique parent record IDs from matching notes
-    const parentRecordIds = new Set<string>();
-    matchingNotes.forEach((note: any) => {
-      if (note.parent_record_id) {
-        parentRecordIds.add(note.parent_record_id);
-      }
-    });
-
-    // Step 4: Fetch the actual records for these IDs
-    const records: AttioRecord[] = [];
-    for (const recordId of Array.from(parentRecordIds)) {
-      try {
-        const recordResponse = await client.get(
-          `/objects/${parentObject}/records/${recordId}`
-        );
-        if (recordResponse?.data?.data) {
-          records.push(recordResponse.data.data);
-        }
-      } catch (error) {
-        // Skip records that can't be fetched (may be deleted)
-        console.warn(
-          `Could not fetch ${parentObject} record ${recordId}:`,
-          error
-        );
-      }
-    }
-
-    return records;
-  } catch (error) {
-    throw new Error(
-      `Failed to search ${resource_type} by notes content: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
 
 export const searchByContentConfig: UniversalToolConfig = {
   name: 'search-by-content',
@@ -594,9 +490,13 @@ export const searchByContentConfig: UniversalToolConfig = {
             },
             raw: note,
           }));
-        } catch (error: any) {
+        } catch (error: unknown) {
           // If no notes are found (404), return empty array instead of throwing error
-          if (error?.response?.status === 404) {
+          if (error && typeof error === 'object' && 'response' in error && 
+              (error as Record<string, unknown>).response && 
+              typeof (error as Record<string, unknown>).response === 'object' &&
+              'status' in ((error as Record<string, unknown>).response as Record<string, unknown>) &&
+              ((error as Record<string, unknown>).response as Record<string, unknown>).status === 404) {
             return [];
           }
           // Re-throw other errors
@@ -648,7 +548,7 @@ export const searchByContentConfig: UniversalToolConfig = {
     resourceType?: UniversalResourceType
   ) => {
     if (!Array.isArray(results)) {
-      return 'No content matches found';
+      return 'Found 0 records (content search)\nTip: Ensure your workspace has notes/content for this query.';
     }
 
     const contentTypeName = contentType ? contentType : 'content';
@@ -709,10 +609,10 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         const { getRelativeTimeframeRange } = await import('../../../utils/filters/timeframe-utils.js');
         
         try {
-          const range = getRelativeTimeframeRange(relative_range as any);
+          const range = getRelativeTimeframeRange(relative_range as string);
           processedStartDate = range.startDate;
           processedEndDate = range.endDate;
-        } catch (error) {
+        } catch {
           throw new Error(
             `Invalid relative_range '${relative_range}'. Supported options: today, yesterday, this_week, last_week, this_month, last_month, last_7_days, last_14_days, last_30_days, last_90_days`
           );
@@ -764,7 +664,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
 
       // Build the date filter using proper Attio API v2 filter syntax
       // Use normalized operators with $ prefix
-      const dateFilters: any[] = [];
+      const dateFilters: Record<string, unknown>[] = [];
       
       const coerceIso = (d?: string, endBoundary = false): string | undefined => {
         if (!d) return undefined;
@@ -825,7 +725,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
       }
 
       // Create the filter object with the expected structure (legacy compatibility)
-      const filters = { filters: dateFilters } as any;
+      const filters = { filters: dateFilters } as Record<string, unknown>;
 
       // Use the universal search handler; pass timeframe params explicitly so the
       // UniversalSearchService can FORCE Query API routing for date comparisons
@@ -856,7 +756,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
     resourceType?: UniversalResourceType
   ) => {
     if (!Array.isArray(results)) {
-      return 'No records found in timeframe';
+      return 'Found 0 records (timeframe search)\nTip: Ensure your workspace has data in the requested date range.';
     }
 
     const timeframeName = timeframeType
@@ -909,7 +809,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
  */
 export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
-  handler: async (params: any): Promise<any> => {
+  handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'batch-operations',
@@ -922,7 +822,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
       if (operations && Array.isArray(operations)) {
         // New flexible format: operations array with individual operation objects
         const results = await Promise.all(
-          operations.map(async (op: any, index: number) => {
+          operations.map(async (op: Record<string, unknown>, index: number) => {
             try {
               const { operation, record_data } = op;
               
@@ -949,7 +849,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
                       resource_type,
                       record_id: typeof record_data.id === 'string' 
                         ? record_data.id 
-                        : (record_data.id as any)?.record_id || String(record_data.id),
+                        : (record_data.id as Record<string, unknown>)?.record_id as string || String(record_data.id),
                       record_data,
                       return_details: true,
                     }),
@@ -966,19 +866,19 @@ export const batchOperationsConfig: UniversalToolConfig = {
                       resource_type,
                       record_id: typeof record_data.id === 'string' 
                         ? record_data.id 
-                        : (record_data.id as any)?.record_id || String(record_data.id),
+                        : (record_data.id as Record<string, unknown>)?.record_id as string || String(record_data.id),
                     }),
                   };
                   
                 default:
                   throw new Error(`Unsupported operation: ${operation}`);
               }
-            } catch (error: any) {
+            } catch (error: unknown) {
               // Return error result rather than throwing to allow other operations to succeed
               return {
                 index,
                 success: false,
-                error: error.message || String(error),
+                error: error instanceof Error ? error.message : String(error),
               };
             }
           })
@@ -1021,8 +921,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
                   return_details: true,
                 });
                 return { index, success: true, result };
-              } catch (error: any) {
-                return { index, success: false, error: error.message };
+              } catch (error: unknown) {
+                return { index, success: false, error: error instanceof Error ? error.message : String(error) };
               }
             })
           );
@@ -1190,7 +1090,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
     }
   },
   formatResult: (
-    results: any,
+    results: Record<string, unknown> | Record<string, unknown>[],
     operationType?: BatchOperationType,
     resourceType?: UniversalResourceType
   ) => {
@@ -1210,10 +1110,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
         fallback?: string
       ): string => {
         if (!values) return fallback ?? 'Unknown';
-        const nameVal = (values as any).name;
-        const titleVal = (values as any).title;
+        const nameVal = (values as Record<string, unknown>).name;
+        const titleVal = (values as Record<string, unknown>).title;
 
-        const coerce = (v: any): string | undefined => {
+        const coerce = (v: unknown): string | undefined => {
           if (v == null) return undefined;
           if (typeof v === 'string') return v;
           if (Array.isArray(v)) {
@@ -1221,10 +1121,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
             const first = v[0];
             if (typeof first === 'string') return first;
             if (first && typeof first === 'object' && 'value' in first)
-              return String((first as any).value);
+              return String((first as Record<string, unknown>).value);
           }
           if (typeof v === 'object' && 'value' in v)
-            return String((v as any).value);
+            return String((v as Record<string, unknown>).value);
           return undefined;
         };
 
