@@ -102,7 +102,7 @@ export async function createNote(
   try {
     const response = await api.post('/notes', { data: body });
     return response.data;
-  } catch (error: unknown) {
+  } catch (error: any) {
     debug('notes', 'Create note failed', { error: error.message });
 
     // Map HTTP errors to universal validation errors
@@ -149,7 +149,7 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
       const response = await api.get('/notes', { params: query });
       return response.data;
     }
-  } catch (error: unknown) {
+  } catch (error: any) {
     debug('notes', 'List notes failed', { error: error.message });
     throw error;
   }
@@ -174,7 +174,7 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
   try {
     const response = await api.get(`/notes/${noteId}`);
     return response.data;
-  } catch (error: unknown) {
+  } catch (error: any) {
     debug('notes', 'Get note failed', { error: error.message });
 
     if (error.response?.status === 404) {
@@ -206,7 +206,7 @@ export async function deleteNote(
   try {
     await api.delete(`/notes/${noteId}`);
     return { success: true };
-  } catch (error: unknown) {
+  } catch (error: any) {
     debug('notes', 'Delete note failed', { error: error.message });
 
     if (error.response?.status === 404) {

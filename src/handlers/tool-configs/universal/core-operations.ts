@@ -664,7 +664,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       return { error: errorMessage, success: false };
     }
   },
-  formatResult: (schema: Record<string, unknown>, resourceType?: UniversalResourceType): string => {
+  formatResult: (schema: any, resourceType?: UniversalResourceType): string => {
     if (!schema) {
       return 'No attribute schema found';
     }
@@ -755,7 +755,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
     return await handleUniversalGetDetailedInfo(params);
   },
   formatResult: (
-    info: Record<string, unknown>,
+    info: any,
     resourceType?: UniversalResourceType
   ): string => {
     if (!info) {
@@ -768,10 +768,10 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
 
     let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} detailed information:\n\n`;
 
-    if (typeof info === 'object' && (info as Record<string, unknown>).values) {
+    if (typeof info === 'object' && info.values) {
       // Format as Attio record values
-      Object.entries((info as Record<string, unknown>).values).forEach(
-        ([field, values]: [string, unknown]) => {
+      Object.entries(info.values).forEach(
+        ([field, values]: [string, any]) => {
           if (Array.isArray(values) && values.length > 0) {
             const value = values[0].value;
             if (value) {
@@ -874,7 +874,7 @@ export const coreOperationsToolConfigs = {
 
         // The handleUniversalCreateNote already returns normalized data
         return res;
-      } catch (err: unknown) {
+      } catch (err: any) {
         // Map error body/status into the regex your tests expect
         const status = err?.response?.status;
         const body = err?.response?.data;
@@ -895,7 +895,7 @@ export const coreOperationsToolConfigs = {
         return { isError: true, error: mapped };
       }
     },
-    formatResult: (note: Record<string, unknown>): string => {
+    formatResult: (note: any): string => {
       if (!note) {
         return 'No note created';
       }
@@ -920,7 +920,7 @@ export const coreOperationsToolConfigs = {
         throw ErrorService.createUniversalError('list-notes', 'notes', error);
       }
     },
-    formatResult: (notes: Record<string, unknown>[]): string => {
+    formatResult: (notes: any[]): string => {
       const notesArray = notes || [];
 
       if (notesArray.length === 0) {

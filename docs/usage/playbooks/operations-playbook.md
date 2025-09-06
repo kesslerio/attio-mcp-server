@@ -2,6 +2,13 @@
 
 *Master your CRM data quality and automate operational workflows through systematic record management and maintenance.*
 
+> Important: Data Requirements
+> - Ops prompts assume your workspace has a breadth of records: companies, people, tasks, lists, and notes with recent updates.
+> - Data quality prompts depend on specific fields (industry, website, phone, job title) being present to check for completeness/consistency.
+> - List and task prompts require active list memberships and assigned tasks to produce meaningful results.
+>
+> Tip: To validate quickly, create one “Demo Ops Co” with website/industry fields, one contact with email/title, two tasks (one overdue), and add the company to a test list.
+
 ## 🎯 Quick Start: Your First Data Review
 
 **Copy this exact prompt to test your setup:**
@@ -38,6 +45,8 @@ Find records missing essential business information:
 - Companies with websites but no contact information
 
 Create a prioritized list for manual data entry and research.
+
+Note: This check relies on fields like industry, email, and due_date being used consistently across records.
 ```
 
 **🔄 Data Consistency Verification**
@@ -49,6 +58,8 @@ Check for data consistency issues in recent records:
 - Tasks referencing records that may have been merged or deleted
 
 Flag potential duplicates and inconsistencies for review.
+
+Note: Consistency checks work best when naming conventions are partially established (e.g., industry, location, title formatting).
 ```
 
 ### Data Enhancement & Maintenance
@@ -62,6 +73,8 @@ Identify records ready for manual data enrichment:
 - Contacts without phone numbers where publicly searchable
 
 Create research task list with publicly available information sources.
+
+Note: Enrichment prompts expect domains, social URLs, or partial profiles to exist to suggest next best data.
 ```
 
 **🔍 Relationship Mapping**
@@ -125,6 +138,8 @@ Create and maintain organized prospect and customer lists:
 - Contact types (decision makers, influencers, users)
 
 Set up clear list criteria and membership rules for ongoing maintenance.
+
+Note: If you don’t use lists, these prompts will return empty; create a test list and add a few records to explore.
 ```
 
 **🎯 List Optimization**
@@ -153,6 +168,8 @@ Systematic review of data relationships and quality:
 - Lists with outdated or irrelevant memberships
 
 Create data integrity improvement plan with specific cleanup tasks.
+
+Note: Integrity checks rely on relationships between companies/people/tasks and list memberships; ensure links exist.
 ```
 
 **🗂️ Record Organization**
@@ -177,6 +194,8 @@ Review and update data entry procedures:
 - Quality assurance checklists
 
 Ensure procedures reflect current business needs and system capabilities.
+
+Note: This section is a planning checklist; pair it with small pilot cleanups to generate measurable impact.
 ```
 
 ---
