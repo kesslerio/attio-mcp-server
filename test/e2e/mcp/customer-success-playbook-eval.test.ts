@@ -1,0 +1,594 @@
+/**
+ * Customer Success Playbook Evaluation Test Suite
+ *
+ * This test validates that all the concrete examples in our customer-success-playbook.md
+ * actually work with the MCP server. Any failures automatically create GitHub
+ * issues for tracking and fixing.
+ *
+ * Purpose: Ensure our customer success playbooks are practical and deliver promised value.
+ */
+
+import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { MCPTestClient } from 'mcp-test-client';
+import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { execSync } from 'child_process';
+import { writeFileSync } from 'fs';
+
+interface PlaybookTestResult {
+  success: boolean;
+  prompt: string;
+  expectedOutcome: string;
+  actualResult?: ToolResult;
+  error?: string;
+  duration: number;
+}
+
+describe('Customer Success Playbook Validation Suite', () => {
+  let client: MCPTestClient;
+  const testResults: PlaybookTestResult[] = [];
+
+  beforeAll(async () => {
+    client = new MCPTestClient({
+      serverCommand: 'node',
+      serverArgs: ['./dist/index.js'],
+    });
+    await client.init();
+  });
+
+  afterAll(async () => {
+    await client.cleanup();
+
+    // Analyze failures and create reports
+    const failures = testResults.filter((result) => !result.success);
+    if (failures.length > 0) {
+      console.log(
+        `\n📋 Analyzing ${failures.length} failed playbook examples...`
+      );
+      await createFailureAnalysisReport(failures);
+      await createSingleGitHubIssue(failures);
+    } else {
+      console.log('\n✅ All customer success playbook examples validated successfully!');
+    }
+
+    // Print test summary
+    const successCount = testResults.filter((r) => r.success).length;
+    console.log(
+      `\n📊 Test Summary: ${successCount}/${testResults.length} playbook examples passed`
+    );
+  });
+
+  describe('🎯 Quick Start Examples', () => {
+    it('should execute the main customer review prompt from playbook Quick Start', async () => {
+      const prompt =
+        'Show me all customers (companies with closed deals) and their basic information. Include company name, total deal value, last contact date, and any open tasks or notes from the last 30 days. Help me identify which accounts haven\'t been contacted recently and might need attention.';
+      const expectedOutcome =
+        'A customer portfolio overview with recent activity and attention priorities';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-records',
+        {
+          resource_type: 'companies',
+          query: '',
+          limit: 25,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+  });
+
+  describe('🌅 Daily Customer Management Routines', () => {
+    it('should find active customer accounts for morning portfolio review', async () => {
+      const prompt = 'List all active customer accounts for daily review';
+      const expectedOutcome = 'Complete list of active customer accounts';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-records',
+        {
+          resource_type: 'companies',
+          query: '',
+          limit: 50,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should find accounts with no recent contact (attention-needed alerts)', async () => {
+      const prompt = 'Find accounts with no contact in the last 30 days';
+      const expectedOutcome = 'List of accounts needing immediate attention';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-by-timeframe',
+        {
+          resource_type: 'companies',
+          date_field: 'updated_at',
+          relative_range: 'last_30_days',
+          invert_range: true,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should create follow-up tasks for customer outreach planning', async () => {
+      const prompt = 'Create tasks for customer health checks and satisfaction surveys';
+      const expectedOutcome = 'Successfully created customer outreach tasks';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'create-record',
+        {
+          resource_type: 'tasks',
+          record_data: {
+            title: 'Customer Health Check - Weekly Review',
+            content: 'Conduct customer satisfaction survey and account health assessment',
+            due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+  });
+
+  describe('📊 Weekly Customer Success Operations', () => {
+    it('should organize customer accounts by strategic importance (account segmentation)', async () => {
+      const prompt = 'Organize customer accounts by strategic importance and value';
+      const expectedOutcome = 'Segmented customer accounts by importance tiers';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'advanced-search',
+        {
+          resource_type: 'companies',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'name' },
+                condition: 'is_not_empty',
+                value: null,
+              },
+            ],
+          },
+          sort_by: 'name',
+          sort_order: 'desc',
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should identify expansion opportunities through account review', async () => {
+      const prompt = 'Identify customers with expansion potential based on account activity';
+      const expectedOutcome = 'List of accounts with growth opportunities';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-by-relationship',
+        {
+          relationship_type: 'company_to_deals',
+          source_id: 'sample-company-id-123',
+          target_resource_type: 'deals',
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should map and maintain customer relationships (stakeholder mapping)', async () => {
+      const prompt = 'Map decision makers, influencers, and end users across customer accounts';
+      const expectedOutcome = 'Comprehensive stakeholder mapping for customer accounts';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-by-relationship',
+        {
+          relationship_type: 'company_to_people',
+          source_id: 'sample-company-id-123',
+          target_resource_type: 'people',
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should establish communication strategies with regular check-in schedules', async () => {
+      const prompt = 'Create systematic customer communication schedule based on account tier';
+      const expectedOutcome = 'Structured communication calendar for customer touchpoints';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'batch-operations',
+        {
+          resource_type: 'tasks',
+          operations: [
+            {
+              operation: 'create',
+              record_data: {
+                title: 'High-Value Customer Check-in',
+                content: 'Weekly check-in call with strategic customer',
+                recurring: true,
+              },
+            },
+          ],
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+  });
+
+  describe('🔄 Monthly Strategic Customer Management', () => {
+    it('should review customer success performance metrics', async () => {
+      const prompt = 'Review customer success performance through available data';
+      const expectedOutcome = 'Customer success metrics and performance analysis';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'get-detailed-info',
+        {
+          resource_type: 'companies',
+          record_id: 'sample-company-id-123',
+          info_type: 'business',
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should develop strategic account plans for key customers', async () => {
+      const prompt = 'Develop strategic account plans for key customers with business review preparation';
+      const expectedOutcome = 'Strategic account plans with business review schedules';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'create-record',
+        {
+          resource_type: 'notes',
+          record_data: {
+            title: 'Strategic Account Plan - Q4 Business Review',
+            content: 'Annual business review preparation and strategic planning for key customer account',
+            linked_records: [],
+          },
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should collect and analyze customer feedback systematically', async () => {
+      const prompt = 'Schedule regular satisfaction surveys and collect customer feedback';
+      const expectedOutcome = 'Systematic customer feedback collection and analysis';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-by-content',
+        {
+          resource_type: 'notes',
+          content_type: 'notes',
+          search_query: 'feedback satisfaction survey',
+          limit: 20,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should optimize customer success processes for continuous improvement', async () => {
+      const prompt = 'Review customer success workflow efficiency and identify process improvements';
+      const expectedOutcome = 'Process improvement recommendations for customer success workflows';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'list-notes',
+        {
+          resource_type: 'companies',
+          record_id: 'sample-company-id-123',
+          limit: 10,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+  });
+
+  describe('🎯 Customer Journey Optimization', () => {
+    it('should track and optimize customer onboarding milestones', async () => {
+      const prompt = 'Track key implementation milestones and onboarding completion rates';
+      const expectedOutcome = 'Customer onboarding milestone tracking and optimization';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-by-timeframe',
+        {
+          resource_type: 'companies',
+          date_field: 'created_at',
+          relative_range: 'last_90_days',
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should validate early customer success with 30-day check-ins', async () => {
+      const prompt = 'Schedule 30-day success check-ins with new customers';
+      const expectedOutcome = 'Early success validation system for new customers';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'create-record',
+        {
+          resource_type: 'tasks',
+          record_data: {
+            title: '30-Day Customer Success Check-in',
+            content: 'Initial value realization and satisfaction assessment for new customer',
+            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should identify and mitigate customer retention risks', async () => {
+      const prompt = 'Monitor customer engagement patterns and identify retention risks';
+      const expectedOutcome = 'Retention risk identification and mitigation strategies';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'advanced-search',
+        {
+          resource_type: 'companies',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'name' },
+                condition: 'is_not_empty',
+                value: null,
+              },
+            ],
+          },
+          sort_by: 'name',
+          sort_order: 'asc',
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should systematically develop customer growth opportunities', async () => {
+      const prompt = 'Identify successful customer use cases suitable for expansion';
+      const expectedOutcome = 'Customer growth opportunity development and tracking';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-by-content',
+        {
+          resource_type: 'notes',
+          content_type: 'notes',
+          search_query: 'success story expansion opportunity growth',
+          limit: 15,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+  });
+
+  // Helper Functions
+  async function executePlaybookTest(
+    prompt: string,
+    expectedOutcome: string,
+    toolName: string,
+    toolParams: Record<string, unknown>
+  ): Promise<PlaybookTestResult> {
+    const startTime = performance.now();
+
+    try {
+      console.log(
+        `\n🧪 Testing customer success prompt: "${prompt.substring(0, 80)}..."`
+      );
+      console.log(`🎯 Expected outcome: ${expectedOutcome}`);
+      console.log(`🔧 Using tool: ${toolName}`);
+
+      let result: ToolResult | null = null;
+
+      await client.assertToolCall(
+        toolName,
+        toolParams,
+        (toolResult: ToolResult) => {
+          result = toolResult;
+          const endTime = performance.now();
+          const duration = endTime - startTime;
+
+          console.log(`⏱️ Execution time: ${duration.toFixed(2)}ms`);
+
+          if (toolResult.isError) {
+            console.error('❌ Tool execution failed:', toolResult.content);
+            return false;
+          }
+
+          // Check if the result contains error messages within successful responses
+          let hasError = false;
+          if (toolResult.content && toolResult.content.length > 0) {
+            const content = toolResult.content[0];
+            if ('text' in content) {
+              const text = content.text;
+              if (text.includes('Error executing tool') || 
+                  text.includes('failed with status code') ||
+                  text.includes('Missing required parameter') ||
+                  text.includes('Invalid relationship type') ||
+                  text.includes('Unsupported')) {
+                console.error('❌ Tool returned error in response:', text.substring(0, 200));
+                hasError = true;
+                return false;
+              }
+              console.log('✅ Tool executed successfully');
+              console.log(`📄 Result preview: ${text.substring(0, 200)}...`);
+            }
+          }
+
+          return !hasError;
+        }
+      );
+
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      return {
+        success: !result?.isError,
+        prompt,
+        expectedOutcome,
+        actualResult: result || undefined,
+        duration,
+      };
+    } catch (error) {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      console.error('❌ Test execution failed:', error);
+
+      return {
+        success: false,
+        prompt,
+        expectedOutcome,
+        error: error instanceof Error ? error.message : String(error),
+        duration,
+      };
+    }
+  }
+
+  async function createFailureAnalysisReport(failures: PlaybookTestResult[]) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const reportPath = `/tmp/customer-success-playbook-failures-${timestamp}.md`;
+
+    let report = `# Customer Success Playbook Validation Failure Analysis
+
+**Generated:** ${new Date().toISOString()}  
+**Test Suite:** test/e2e/mcp/customer-success-playbook-eval.test.ts  
+**Playbook:** docs/usage/playbooks/customer-success-playbook.md
+
+## Summary
+
+- **Total Tests:** ${failures.length + (testResults.length - failures.length)}
+- **Failed Tests:** ${failures.length}
+- **Success Rate:** ${(((testResults.length - failures.length) / testResults.length) * 100).toFixed(1)}%
+
+## Failed Test Details
+
+`;
+
+    failures.forEach((failure, index) => {
+      report += `### ${index + 1}. ${failure.prompt.substring(0, 60)}...
+
+**Expected Outcome:** ${failure.expectedOutcome}
+**Error:** ${failure.error || 'Tool execution returned error result'}
+**Duration:** ${failure.duration.toFixed(2)}ms
+
+`;
+    });
+
+    report += `## Recommendations
+
+1. **Review Tool Configuration**: Ensure all tools are properly registered and configured
+2. **Check API Connectivity**: Verify Attio API credentials and connection
+3. **Validate Test Data**: Ensure test environment has sufficient data for customer success operations
+4. **Performance Optimization**: Address any slow-performing operations (>2000ms)
+
+## Next Steps
+
+- [ ] Review and fix failing test cases
+- [ ] Validate playbook examples against current tool capabilities
+- [ ] Update documentation if tool behavior has changed
+- [ ] Re-run tests to achieve 100% pass rate
+
+`;
+
+    writeFileSync(reportPath, report);
+    console.log(`📄 Failure analysis report created: ${reportPath}`);
+  }
+
+  async function createSingleGitHubIssue(failures: PlaybookTestResult[]) {
+    const issueBody = `# Customer Success Playbook Validation Failures
+
+**Generated:** ${new Date().toISOString()}
+**Test Suite:** \`test/e2e/mcp/customer-success-playbook-eval.test.ts\`
+**Failed Tests:** ${failures.length}/${testResults.length}
+
+## Summary
+${failures.length} customer success playbook examples are failing validation. This indicates that our documented workflows may not work as expected for customer success teams.
+
+## Failed Examples
+${failures
+  .map(
+    (f, i) => `${i + 1}. **${f.prompt.substring(0, 80)}...**
+   - Expected: ${f.expectedOutcome}
+   - Error: ${f.error || 'Tool execution failed'}
+   - Duration: ${f.duration.toFixed(2)}ms`
+  )
+  .join('\n\n')}
+
+## Impact
+- Customer success teams may encounter failures when following documented workflows
+- Playbook examples may be misleading or outdated
+- Tool configurations may need adjustment for customer success use cases
+
+## Action Items
+- [ ] Review and fix failing tool calls
+- [ ] Update playbook documentation if needed
+- [ ] Ensure test environment has adequate customer data
+- [ ] Achieve 100% pass rate for customer success validation
+
+**Priority:** P1 - Critical for customer success team productivity
+**Labels:** test, customer-success, playbook-validation, P1
+`;
+
+    try {
+      console.log('🐙 Creating GitHub issue for customer success playbook failures...');
+      execSync(
+        `gh issue create --title "Customer Success Playbook Validation: ${failures.length} Failed Examples" --body "${issueBody.replace(/"/g, '\\"')}" --label "P1,test,customer-success,area:testing"`,
+        { stdio: 'inherit' }
+      );
+      console.log('✅ GitHub issue created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create GitHub issue:', error);
+      console.log('📄 Issue content saved for manual creation');
+    }
+  }
+});
