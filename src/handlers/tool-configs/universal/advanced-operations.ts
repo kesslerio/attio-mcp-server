@@ -16,6 +16,7 @@ import {
   ContentSearchType,
   TimeframeType,
   BatchOperationType,
+  RelativeTimeframe,
 } from './types.js';
 
 import {
@@ -192,7 +193,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
       }
 
       // Validate list_membership filter if present
-      if (filters?.list_membership && !isValidUUID(filters.list_membership)) {
+      if (filters?.list_membership && !isValidUUID(String(filters.list_membership))) {
         throw ErrorService.createUniversalError(
           `Invalid list_id: must be a UUID. Got: ${filters.list_membership}`,
           'advanced-search',
@@ -201,7 +202,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
       }
 
       // Validate list_id filter if present (for list filtering)
-      if (filters?.list_id && !isValidUUID(filters.list_id)) {
+      if (filters?.list_id && !isValidUUID(String(filters.list_id))) {
         throw ErrorService.createUniversalError(
           `Invalid list_id: must be a UUID. Got: ${filters.list_id}`,
           'advanced-search',
@@ -609,7 +610,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         const { getRelativeTimeframeRange } = await import('../../../utils/filters/timeframe-utils.js');
         
         try {
-          const range = getRelativeTimeframeRange(relative_range as string);
+          const range = getRelativeTimeframeRange(relative_range as RelativeTimeframe);
           processedStartDate = range.startDate;
           processedEndDate = range.endDate;
         } catch {
@@ -833,13 +834,14 @@ export const batchOperationsConfig: UniversalToolConfig = {
                     success: true,
                     result: await handleUniversalCreate({
                       resource_type,
-                      record_data,
+                      record_data: record_data as Record<string, unknown>,
                       return_details: true,
                     }),
                   };
                   
                 case 'update':
-                  if (!record_data?.id) {
+                  const typedRecordData = record_data as Record<string, unknown>;
+                  if (!typedRecordData?.id) {
                     throw new Error('Record ID is required for update operation');
                   }
                   return {
@@ -847,16 +849,17 @@ export const batchOperationsConfig: UniversalToolConfig = {
                     success: true,
                     result: await handleUniversalUpdate({
                       resource_type,
-                      record_id: typeof record_data.id === 'string' 
-                        ? record_data.id 
-                        : (record_data.id as Record<string, unknown>)?.record_id as string || String(record_data.id),
-                      record_data,
+                      record_id: typeof typedRecordData.id === 'string' 
+                        ? typedRecordData.id 
+                        : (typedRecordData.id as Record<string, unknown>)?.record_id as string || String(typedRecordData.id),
+                      record_data: typedRecordData,
                       return_details: true,
                     }),
                   };
                   
                 case 'delete':
-                  if (!record_data?.id) {
+                  const deleteRecordData = record_data as Record<string, unknown>;
+                  if (!deleteRecordData?.id) {
                     throw new Error('Record ID is required for delete operation');
                   }
                   return {
@@ -864,9 +867,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
                     success: true,
                     result: await handleUniversalDelete({
                       resource_type,
-                      record_id: typeof record_data.id === 'string' 
-                        ? record_data.id 
-                        : (record_data.id as Record<string, unknown>)?.record_id as string || String(record_data.id),
+                      record_id: typeof deleteRecordData.id === 'string' 
+                        ? deleteRecordData.id 
+                        : (deleteRecordData.id as Record<string, unknown>)?.record_id as string || String(deleteRecordData.id),
                     }),
                   };
                   
@@ -956,7 +959,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Use parallel processing with controlled concurrency
-          return await processInParallelWithErrorIsolation(
+          const results = await processInParallelWithErrorIsolation(
             records,
             async (recordData: Record<string, unknown>) => {
               if (!recordData.id) {
@@ -974,6 +977,15 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          
+          return {
+            operations: results,
+            summary: {
+              total: results.length,
+              successful: results.filter(r => r.success).length,
+              failed: results.filter(r => !r.success).length,
+            },
+          };
         }
 
         case BatchOperationType.DELETE: {
@@ -995,7 +1007,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Use parallel processing with controlled concurrency
-          return await processInParallelWithErrorIsolation(
+          const results = await processInParallelWithErrorIsolation(
             record_ids,
             async (recordId: string) => {
               return await handleUniversalDelete({
@@ -1004,6 +1016,15 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          
+          return {
+            operations: results,
+            summary: {
+              total: results.length,
+              successful: results.filter(r => r.success).length,
+              failed: results.filter(r => !r.success).length,
+            },
+          };
         }
 
         case BatchOperationType.GET: {
@@ -1025,7 +1046,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Use parallel processing with controlled concurrency
-          return await processInParallelWithErrorIsolation(
+          const results = await processInParallelWithErrorIsolation(
             record_ids,
             async (recordId: string) => {
               return await handleUniversalGetDetails({
@@ -1034,6 +1055,15 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          
+          return {
+            operations: results,
+            summary: {
+              total: results.length,
+              successful: results.filter(r => r.success).length,
+              failed: results.filter(r => !r.success).length,
+            },
+          };
         }
 
         case BatchOperationType.SEARCH: {
@@ -1053,10 +1083,18 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
 
             // Use optimized universal batch search API
-            return await universalBatchSearch(resource_type, queries, {
+            const batchResults = await universalBatchSearch(resource_type, queries, {
               limit: sanitizedParams.limit,
               offset: sanitizedParams.offset,
             });
+            return {
+              operations: batchResults,
+              summary: {
+                total: batchResults.length,
+                successful: batchResults.filter(r => r.success !== false).length,
+                failed: batchResults.filter(r => r.success === false).length,
+              },
+            };
           } else {
             // Fallback to single search with pagination (legacy behavior)
             const searchValidation = validateSearchQuery(undefined, {
@@ -1068,11 +1106,19 @@ export const batchOperationsConfig: UniversalToolConfig = {
               throw new Error(searchValidation.error);
             }
 
-            return await handleUniversalSearch({
+            const searchResults = await handleUniversalSearch({
               resource_type,
               limit,
               offset,
             });
+            return {
+              operations: [{ success: true, results: searchResults }],
+              summary: {
+                total: searchResults.length,
+                successful: 1,
+                failed: 0,
+              },
+            };
           }
         }
 
@@ -1140,7 +1186,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
         // Handle batch search results with queries array (Issue #471)
         if (results.length > 0 && 'query' in results[0]) {
           // New format: UniversalBatchSearchResult[]
-          const batchResults = results as UniversalBatchSearchResult[];
+          const batchResults = results as unknown as UniversalBatchSearchResult[];
           const successCount = batchResults.filter((r) => r.success).length;
           const failureCount = batchResults.length - successCount;
 

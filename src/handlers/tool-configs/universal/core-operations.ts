@@ -165,7 +165,7 @@ export const searchRecordsConfig: UniversalToolConfig = {
           id = String(record.id?.task_id || record.id?.record_id || 'unknown');
         } else if (resourceType === UniversalResourceType.PEOPLE) {
           // For people, use comprehensive name extraction logic (with proper type handling)
-          const valuesAny = values as Record<string, unknown>;
+          const valuesAny = values as Record<string, any>;
           const name = 
             valuesAny?.name?.[0]?.full_name ||
             valuesAny?.name?.[0]?.value ||
