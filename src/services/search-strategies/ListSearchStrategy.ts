@@ -3,7 +3,7 @@
  * Issue #574: Extract list search logic from UniversalSearchService
  */
 
-import { AttioRecord } from '../../types/attio.js';
+import { AttioRecord, AttioList } from '../../types/attio.js';
 import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
@@ -95,7 +95,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
   /**
    * Convert Attio lists to AttioRecord format
    */
-  private convertListsToRecords(lists: any[]): AttioRecord[] {
+  private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
     return lists.map(
       (list) =>
         ({

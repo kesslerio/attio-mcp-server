@@ -4,7 +4,7 @@
  */
 
 import { AttioRecord } from '../../types/attio.js';
-import { SearchType, MatchType, SortType } from '../../handlers/tool-configs/universal/types.js';
+import { MatchType, SortType } from '../../handlers/tool-configs/universal/types.js';
 import { ISearchStrategy, SearchStrategyParams, StrategyDependencies, TimeframeParams } from './interfaces.js';
 
 /**
@@ -119,7 +119,7 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
    * Handle empty filters for pagination
    */
   protected async handleEmptyFilters(
-    searchFunction: Function,
+    searchFunction: (filters: Record<string, unknown>, limit?: number, offset?: number) => Promise<AttioRecord[]>,
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {

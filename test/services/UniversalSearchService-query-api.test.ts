@@ -336,8 +336,10 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
 
       // The search should work without throwing errors - we test the implementation
       // indirectly by ensuring the API contract is maintained
-      await expect(UniversalSearchService.searchRecords(params)).resolves.toBeDefined();
-      
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).resolves.toBeDefined();
+
       // Verify that the method exists and is callable
       expect(typeof UniversalSearchService.searchRecords).toBe('function');
     });

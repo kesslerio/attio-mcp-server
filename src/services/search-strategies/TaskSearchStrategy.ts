@@ -92,11 +92,11 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     // Use CachingService for tasks data management
     const loadTasksData = async (): Promise<AttioRecord[]> => {
       try {
-        if (!this.dependencies.listFunction) {
+        if (!this.dependencies.taskFunction) {
           throw new Error('Tasks list function not available');
         }
 
-        const tasksList = await this.dependencies.listFunction();
+        const tasksList = await this.dependencies.taskFunction();
 
         // Convert tasks to records and ensure it's always an array
         if (!Array.isArray(tasksList)) {

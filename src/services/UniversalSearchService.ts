@@ -161,15 +161,15 @@ export class UniversalSearchService {
     };
 
     const listDependencies: StrategyDependencies = {
-      listFunction: (query?: string, limit?: number, offset?: number) => 
+      listFunction: (query?: string, limit?: number, offset?: number) =>
         searchLists(query || '', limit, offset),
       rankByRelevance: SearchUtilities.rankByRelevance,
       getFieldValue: SearchUtilities.getFieldValue,
     };
 
     const taskDependencies: StrategyDependencies = {
-      listFunction: (query?: string, limit?: number, offset?: number) => 
-        listTasks(), // listTasks doesn't take parameters
+      taskFunction: (status?: string, assigneeId?: string, page?: number, pageSize?: number) =>
+        listTasks(status, assigneeId, page, pageSize),
       rankByRelevance: SearchUtilities.rankByRelevance,
       getFieldValue: SearchUtilities.getFieldValue,
     };

@@ -3,7 +3,7 @@
  * Issue #574: Extract resource-specific search strategies
  */
 
-import { AttioRecord } from '../../types/attio.js';
+import { AttioRecord, AttioList, AttioTask } from '../../types/attio.js';
 import { SearchType, MatchType, SortType } from '../../handlers/tool-configs/universal/types.js';
 
 /**
@@ -63,7 +63,8 @@ export interface StrategyDependencies {
   // Search functions from API layer
   advancedSearchFunction?: ((filters: Record<string, unknown>, limit?: number, offset?: number) => Promise<AttioRecord[]>) | null;
   paginatedSearchFunction?: ((filters: Record<string, unknown>, pagination: { limit?: number; offset?: number }) => Promise<{ results: AttioRecord[] }>) | null;
-  listFunction?: (query?: string, limit?: number, offset?: number) => Promise<any[]>;
+  listFunction?: (query?: string, limit?: number, offset?: number) => Promise<AttioList[]>;
+  taskFunction?: (status?: string, assigneeId?: string, page?: number, pageSize?: number) => Promise<AttioTask[]>;
   
   // Utility functions
   createDateFilter?: (params: TimeframeParams) => Record<string, unknown> | null;
