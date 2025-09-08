@@ -20,19 +20,21 @@ export class ListUpdateStrategy implements UpdateStrategy {
     try {
       const list = await updateList(recordId, values);
       // Convert AttioList to AttioRecord format for consistency with callers
+      const l = list as unknown as Record<string, unknown>;
+      const lid = (l.id as Record<string, unknown>) || {};
       return {
         id: {
-          record_id: list.id.list_id,
-          list_id: list.id.list_id,
+          record_id: lid.list_id as string,
+          list_id: lid.list_id as string,
         },
         values: {
-          name: (list as any).name || (list as any).title,
-          description: (list as any).description,
-          parent_object: (list as any).object_slug || (list as any).parent_object,
-          api_slug: (list as any).api_slug,
-          workspace_id: (list as any).workspace_id,
-          workspace_member_access: (list as any).workspace_member_access,
-          created_at: (list as any).created_at,
+          name: (l.name as string) || (l.title as string),
+          description: l.description as string,
+          parent_object: (l.object_slug as string) || (l.parent_object as string),
+          api_slug: l.api_slug as string,
+          workspace_id: l.workspace_id as string,
+          workspace_member_access: l.workspace_member_access as string,
+          created_at: l.created_at as string,
         },
       } as unknown as AttioRecord;
     } catch (err: unknown) {

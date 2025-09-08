@@ -13,7 +13,7 @@ export interface UpdateStrategy {
   update(
     recordId: string,
     values: Record<string, unknown>,
-    resourceType: UniversalResourceType
+    resourceType: UniversalResourceType,
+    context?: Record<string, unknown>
   ): Promise<AttioRecord>;
 }
-

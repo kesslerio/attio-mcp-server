@@ -76,12 +76,6 @@ async function updateTaskWithMockSupport(
  * UniversalUpdateService provides centralized record update functionality
  */
 export class UniversalUpdateService {
-  /**
-   * Update a record across any supported resource type
-   *
-   * @param params - Update operation parameters
-   * @returns Promise resolving to updated AttioRecord
-   */
   static async updateRecord(
     params: UniversalUpdateParams
   ): Promise<AttioRecord> {
@@ -152,7 +146,9 @@ export class UniversalUpdateService {
     const { resource_type, record_id, record_data } = params;
 
     // Handle edge case where test uses 'data' instead of 'record_data'
-    const actualRecordData = record_data ?? (params as any).data;
+    const actualRecordData = (record_data ?? (params as any).data) as
+      | Record<string, unknown>
+      | undefined;
 
     // Enhanced null-safety: Guard against undefined values access
     const raw =
@@ -160,25 +156,6 @@ export class UniversalUpdateService {
         ? (actualRecordData as any)
         : {};
     const values = raw.values ?? raw;
-
-    // Early validation: if record_data is null/empty/non-object for tasks,
-    // return 404 without checking existence
-    if (
-      resource_type === UniversalResourceType.TASKS &&
-      (!actualRecordData ||
-        typeof actualRecordData !== 'object' ||
-        (typeof actualRecordData === 'object' &&
-          Object.keys(values).length === 0))
-    ) {
-      // For tasks with null/non-object/completely empty data, return 404 directly
-      throw {
-        status: 404,
-        body: {
-          code: 'not_found',
-          message: `Task record with ID "${record_id}" not found.`,
-        },
-      };
-    }
 
     // Pre-validate fields and provide helpful suggestions (less strict for updates)
     const fieldValidation = validateFields(resource_type, values);
@@ -197,13 +174,12 @@ export class UniversalUpdateService {
       });
     }
 
-    // Fetch available attributes for attribute-aware mapping (both api_slug and title)
+    // Fetch available attributes for attribute-aware mapping (optional; best-effort)
     let availableAttributes: string[] | undefined;
     try {
       const { UniversalMetadataService } = await import(
         './UniversalMetadataService.js'
       );
-      // For RECORDS and DEALS types, we need to pass the object slug
       const options =
         resource_type === UniversalResourceType.RECORDS
           ? {
@@ -220,22 +196,17 @@ export class UniversalUpdateService {
           resource_type,
           options
         );
-
-      // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
       const attrs = (attributeResult?.attributes as any[]) ?? [];
       availableAttributes = Array.from(
         new Set(
           attrs.flatMap((a) =>
-            [
-              a?.api_slug,
-              a?.title,
-              a?.name, // accept all, some schemas use `title`, some `name`
-            ].filter((s: unknown): s is string => typeof s === 'string')
+            [a?.api_slug, a?.title, a?.name].filter(
+              (s: any) => typeof s === 'string'
+            )
           )
         )
-      ).map((s) => s.toLowerCase());
+      ).map((s) => (s as string).toLowerCase());
     } catch (error) {
-      // If attribute discovery fails, proceed without it (fallback behavior)
       console.warn(`Failed to fetch attributes for ${resource_type}:`, error);
       availableAttributes = undefined;
     }
@@ -266,21 +237,24 @@ export class UniversalUpdateService {
     }
 
     // Always wrap in Attio envelope format
-    const attioPayload = { values: mappedData };
+    const attioPayload: { values: Record<string, unknown> } = {
+      values: mappedData,
+    };
 
     // Apply operation-specific field mapping for tasks (prevent content injection on update)
     if (resource_type === UniversalResourceType.TASKS) {
       const updatedTaskData = mapTaskFields('update', mappedData);
-      // Re-wrap after task field mapping
       attioPayload.values = updatedTaskData;
     }
 
-    // Sanitize special characters while preserving intended content (Issue #473)
-    const sanitizedData = this.sanitizeSpecialCharacters(attioPayload.values);
+    // Sanitize special characters while preserving intended content
+    const { UpdateValidation } = await import('./update/UpdateValidation.js');
+    const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
+      attioPayload.values
+    );
     attioPayload.values = sanitizedData;
 
-    // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
-    // Will be re-enabled after tasks API validation is properly configured
+    // Optional enhanced validation
     if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
       const validation = await validateRecordFields(
         resource_type,
@@ -299,93 +273,97 @@ export class UniversalUpdateService {
     let updatedRecord: AttioRecord;
 
     switch (resource_type) {
-      case UniversalResourceType.COMPANIES:
-        {
-          const { CompanyUpdateStrategy } = await import(
-            './update/strategies/CompanyUpdateStrategy.js'
-          );
-          const strategy = new CompanyUpdateStrategy();
-          updatedRecord = await strategy.update(
-            record_id,
-            attioPayload.values,
-            resource_type
-          );
-        }
+      case UniversalResourceType.COMPANIES: {
+        const { CompanyUpdateStrategy } = await import(
+          './update/strategies/CompanyUpdateStrategy.js'
+        );
+        const strategy = new CompanyUpdateStrategy();
+        updatedRecord = await strategy.update(
+          record_id,
+          attioPayload.values,
+          resource_type
+        );
         break;
-
-      case UniversalResourceType.LISTS:
-        {
-          const { ListUpdateStrategy } = await import(
-            './update/strategies/ListUpdateStrategy.js'
-          );
-          const strategy = new ListUpdateStrategy();
-          updatedRecord = await strategy.update(
-            record_id,
-            attioPayload.values,
-            resource_type
-          );
-        }
+      }
+      case UniversalResourceType.LISTS: {
+        const { ListUpdateStrategy } = await import(
+          './update/strategies/ListUpdateStrategy.js'
+        );
+        const strategy = new ListUpdateStrategy();
+        updatedRecord = await strategy.update(
+          record_id,
+          attioPayload.values,
+          resource_type
+        );
         break;
-
-      case UniversalResourceType.PEOPLE:
-        {
-          const { PersonUpdateStrategy } = await import(
-            './update/strategies/PersonUpdateStrategy.js'
-          );
-          const strategy = new PersonUpdateStrategy();
-          updatedRecord = await strategy.update(
-            record_id,
-            attioPayload.values,
-            resource_type
-          );
-        }
+      }
+      case UniversalResourceType.PEOPLE: {
+        const { PersonUpdateStrategy } = await import(
+          './update/strategies/PersonUpdateStrategy.js'
+        );
+        const strategy = new PersonUpdateStrategy();
+        updatedRecord = await strategy.update(
+          record_id,
+          attioPayload.values,
+          resource_type
+        );
         break;
-
+      }
       case UniversalResourceType.RECORDS:
-        // Extract object slug from record_data if available
+      case UniversalResourceType.DEALS: {
+        const { RecordUpdateStrategy } = await import(
+          './update/strategies/RecordUpdateStrategy.js'
+        );
+        const strategy = new RecordUpdateStrategy();
         const recordsObjectSlug =
           (actualRecordData?.object as string) ||
           (actualRecordData?.object_api_slug as string) ||
           'records';
-        updatedRecord = await updateObjectRecord(
-          recordsObjectSlug,
+        updatedRecord = await strategy.update(
           record_id,
-          attioPayload
+          attioPayload.values,
+          resource_type,
+          { objectSlug: recordsObjectSlug }
         );
         break;
-
-      case UniversalResourceType.DEALS:
-        updatedRecord = await this.updateDealRecord(record_id, attioPayload);
+      }
+      case UniversalResourceType.TASKS: {
+        const { TaskUpdateStrategy } = await import(
+          './update/strategies/TaskUpdateStrategy.js'
+        );
+        const strategy = new TaskUpdateStrategy();
+        updatedRecord = await strategy.update(
+          record_id,
+          attioPayload.values,
+          resource_type
+        );
         break;
-
-      case UniversalResourceType.TASKS:
-        updatedRecord = await this.updateTaskRecord(record_id, attioPayload);
-        break;
-
-      default:
+      }
+      default: {
         updatedRecord = await this.handleUnsupportedResourceType(
-          resource_type,
+          resource_type as unknown as string,
           params
         );
         break;
+      }
     }
 
-    // Normalize response format across all resource types (Issue #473)
-    const normalizedRecord = this.normalizeResponseFormat(
+    const { ResponseNormalizer } = await import(
+      './update/ResponseNormalizer.js'
+    );
+    const normalizedRecord = ResponseNormalizer.normalizeResponseFormat(
       resource_type,
       updatedRecord
     );
 
-    // Verify field persistence after successful update (Issue #473)
     if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
       try {
-        const verification = await this.verifyFieldPersistence(
+        const verification = await UpdateValidation.verifyFieldPersistence(
           resource_type,
           record_id,
           sanitizedData,
           normalizedRecord
         );
-
         if (verification.warnings.length > 0) {
           logError(
             'UniversalUpdateService',
@@ -393,17 +371,13 @@ export class UniversalUpdateService {
             verification.warnings
           );
         }
-
         if (!verification.verified) {
           console.warn(
             `Field persistence verification failed for ${resource_type} ${record_id}:`,
             verification.discrepancies
           );
-          // Note: We don't throw an error here to avoid breaking existing functionality
-          // The verification results are logged for debugging and monitoring
         }
       } catch (error: unknown) {
-        // Verification failures should not break the update operation
         console.error('Field persistence verification error:', error);
       }
     }
@@ -411,302 +385,6 @@ export class UniversalUpdateService {
     return normalizedRecord;
   }
 
-  /**
-   * Update a list record with error handling and format conversion
-   */
-  private static async updateListRecord(
-    record_id: string,
-    attioPayload: { values: Record<string, unknown> },
-    resource_type: UniversalResourceType
-  ): Promise<AttioRecord> {
-    try {
-      const list = await updateList(record_id, attioPayload.values);
-      // Convert AttioList to AttioRecord format
-      return {
-        id: {
-          record_id: list.id.list_id,
-          list_id: list.id.list_id,
-        },
-        values: {
-          name: list.name || list.title,
-          description: list.description,
-          parent_object: list.object_slug || list.parent_object,
-          api_slug: list.api_slug,
-          workspace_id: list.workspace_id,
-          workspace_member_access: list.workspace_member_access,
-          created_at: list.created_at,
-        },
-      } as unknown as AttioRecord;
-    } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(errorObj?.message || '');
-      if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
-        if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          throw new UniversalValidationError(
-            (error as Error).message,
-            ErrorType.USER_ERROR,
-            { suggestion, field: match[1] }
-          );
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Update a deal record with defaults validation
-   */
-  private static async updateDealRecord(
-    record_id: string,
-    attioPayload: { values: Record<string, unknown> }
-  ): Promise<AttioRecord> {
-    // Note: Updates are less likely to fail, but we still validate stages proactively
-    const updatedDealData = await applyDealDefaultsWithValidation(
-      attioPayload.values,
-      false
-    );
-    return updateObjectRecord('deals', record_id, { values: updatedDealData });
-  }
-
-  /**
-   * Update a task record with field transformation and mock support
-   */
-  private static async updateTaskRecord(
-    record_id: string,
-    attioPayload: { values: Record<string, unknown> }
-  ): Promise<AttioRecord> {
-    // 1) Early input validation - check for forbidden content fields BEFORE existence check
-    // This ensures proper error precedence: input validation → existence → immutability → update
-    const hasForbiddenFields = this.hasForbiddenContent(attioPayload.values);
-
-    // 2) Check existence - only if input validation passes
-    const taskExists = true;
-    try {
-      // In mock mode, skip live existence check; otherwise verify via API
-      if (!shouldUseMockData()) {
-        await getTask(record_id); // calls GET /tasks/{id}
-      }
-    } catch (error: unknown) {
-      // Task doesn't exist → return 404 immediately, don't check immutability
-      throw {
-        status: 404,
-        body: {
-          code: 'not_found',
-          message: `Task record with ID "${record_id}" not found.`,
-        },
-      };
-    }
-
-    // 3) Now that we know task exists, check immutability constraints
-    if (taskExists && hasForbiddenFields) {
-      throw new FilterValidationError(
-        'Task content cannot be updated after creation. Content is immutable in the Attio API.'
-      );
-    }
-
-    // 4) Proceed with normal update path (safe; task exists and no illegal content fields)
-    return this.doUpdateTask(record_id, attioPayload.values);
-  }
-
-  /**
-   * Handle the actual task update after validation
-   */
-  private static async doUpdateTask(
-    record_id: string,
-    mappedData: Record<string, unknown>
-  ): Promise<AttioRecord> {
-    // Transform mapped fields for task update
-    // The field mapper has already transformed field names to API names
-    // Now we need to adapt them for the updateTask function
-    const taskUpdateData: Record<string, unknown> = {};
-
-    // Handle status field - updateTask function expects 'status' field, not 'is_completed'
-    if (mappedData.is_completed !== undefined) {
-      // Convert boolean back to status string for updateTask function
-      taskUpdateData.status = mappedData.is_completed ? 'completed' : 'pending';
-    } else if (mappedData.status !== undefined) {
-      // Pass status string directly to updateTask function
-      taskUpdateData.status = mappedData.status;
-    }
-
-    // Handle assignee field
-    if (mappedData.assignees !== undefined) {
-      const value = mappedData.assignees as any;
-      let assigneeId: string | undefined;
-      if (Array.isArray(value)) {
-        const first = value[0];
-        if (typeof first === 'string') assigneeId = first;
-        else if (first && typeof first === 'object') {
-          assigneeId =
-            (first as any).referenced_actor_id ||
-            (first as any).id ||
-            (first as any).record_id ||
-            (first as any).value;
-        }
-      } else if (typeof value === 'string') {
-        assigneeId = value;
-      } else if (value && typeof value === 'object') {
-        assigneeId =
-          (value as any).referenced_actor_id ||
-          (value as any).id ||
-          (value as any).record_id ||
-          (value as any).value;
-      }
-      if (assigneeId) taskUpdateData.assigneeId = assigneeId;
-    } else if (mappedData.assignee_id !== undefined) {
-      taskUpdateData.assigneeId = mappedData.assignee_id;
-    } else if (mappedData.assigneeId !== undefined) {
-      taskUpdateData.assigneeId = mappedData.assigneeId;
-    }
-
-    // Handle due date field
-    if (mappedData.deadline_at !== undefined) {
-      taskUpdateData.dueDate = mappedData.deadline_at;
-    } else if (mappedData.due_date !== undefined) {
-      taskUpdateData.dueDate = mappedData.due_date;
-    } else if (mappedData.dueDate !== undefined) {
-      taskUpdateData.dueDate = mappedData.dueDate;
-    }
-
-    // Handle linked records field
-    if (mappedData.linked_records !== undefined) {
-      // Extract record IDs from linked_records array structure
-      if (Array.isArray(mappedData.linked_records)) {
-        taskUpdateData.recordIds = mappedData.linked_records.map(
-          (link: Record<string, unknown>) => {
-            // Null-safety: ensure link is an object before accessing properties
-            if (!link || typeof link !== 'object') {
-              return link;
-            }
-            return link.record_id || link.id || link;
-          }
-        );
-      } else {
-        taskUpdateData.recordIds = [mappedData.linked_records];
-      }
-    } else if (mappedData.record_id !== undefined) {
-      taskUpdateData.recordIds = [mappedData.record_id];
-    }
-
-    // Debug before update
-    try {
-      const mod: any = await import('../utils/task-debug.js');
-      mod.logTaskDebug?.(
-        'updateRecord',
-        'Task update data',
-        mod.sanitizePayload({
-          record_id,
-          mappedData,
-          taskUpdateData,
-        })
-      );
-    } catch {}
-
-    // Use mock-enabled task update for test environments
-    try {
-      const updatedTask = await updateTaskWithMockSupport(
-        record_id,
-        taskUpdateData
-      );
-      // Convert AttioTask to AttioRecord using proper type conversion
-      // Mock functions already return AttioRecord, so handle both cases
-      const result = shouldUseMockData()
-        ? updatedTask // Already an AttioRecord from mock
-        : UniversalUtilityService.convertTaskToRecord(
-            updatedTask as unknown as AttioTask
-          );
-      try {
-        const mod: any = await import('../utils/task-debug.js');
-        mod.logTaskDebug?.('updateRecord', 'Updated task record shape', {
-          shape: mod.inspectTaskRecordShape?.(result),
-        });
-      } catch {}
-      return result as AttioRecord;
-    } catch (error: unknown) {
-      // Handle task update API errors according to requirements
-      if (error && typeof error === 'object' && 'status' in error) {
-        const httpError = error as {
-          status: number;
-          body?: { code?: string; message?: string };
-        };
-        if (httpError.status === 400) {
-          // Re-throw 400 validation errors as structured HTTP responses
-          throw {
-            status: 400,
-            body: {
-              code: 'validation_error',
-              message: httpError.body?.message || 'Validation error',
-            },
-          };
-        }
-        if (httpError.status === 404) {
-          // Re-throw 404 errors as structured HTTP responses
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Task record with ID "${record_id}" not found.`,
-            },
-          };
-        }
-        // Re-throw other HTTP errors as-is
-        throw error;
-      }
-
-      // For network errors (ECONNRESET, etc.), let message surface
-      if (
-        error instanceof Error &&
-        (error.message.includes('ECONNRESET') ||
-          error.message.includes('network') ||
-          error.message.includes('timeout'))
-      ) {
-        throw error; // Let network errors surface with original message
-      }
-
-      // Wrap other errors
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to update task: ${errorMessage}`);
-    }
-  }
-
-  /**
-   * Check if data contains forbidden content fields for tasks
-   */
-  private static hasForbiddenContent(values: Record<string, unknown>): boolean {
-    if (!values || typeof values !== 'object') {
-      return false;
-    }
-    const forbidden = ['content', 'content_markdown', 'content_plaintext'];
-    return forbidden.some((field) => field in values);
-  }
-
-  /**
-   * Validate that task content fields are not being updated (immutable)
-   */
-  private static assertNoTaskContentUpdate(
-    record_data: Record<string, unknown>
-  ): void {
-    // Null-safety: handle undefined/null record_data
-    if (!record_data || typeof record_data !== 'object') {
-      return; // Nothing to validate
-    }
-
-    if (this.hasForbiddenContent(record_data)) {
-      throw new FilterValidationError(
-        'Task content cannot be updated after creation. Content is immutable in the Attio API.'
-      );
-    }
-  }
-
-  /**
-   * Handle unsupported resource types with correction attempts
-   */
   private static async handleUnsupportedResourceType(
     resource_type: string,
     params: UniversalUpdateParams
@@ -732,464 +410,5 @@ export class UniversalUpdateService {
           `Valid resource types are: ${getValidResourceTypes()}`,
       }
     );
-  }
-
-  /**
-   * Sanitizes special characters while preserving intended content (Issue #473)
-   *
-   * Handles:
-   * - HTML entities (e.g., &amp; → &)
-   * - Special characters in quotes, newlines, tabs
-   * - Preserves original formatting and intent
-   */
-  private static sanitizeSpecialCharacters(
-    data: Record<string, unknown>
-  ): Record<string, unknown> {
-    const sanitized: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(data)) {
-      if (typeof value === 'string') {
-        // Preserve special characters but ensure they're properly encoded for API
-        // The goal is to maintain the user's intended content exactly as provided
-        const sanitizedValue = value;
-
-        // Only apply minimal sanitization that doesn't change content meaning
-        // Preserve quotes, newlines, tabs, and special characters as-is
-        // This ensures that what the user submits is what they get back
-
-        sanitized[key] = sanitizedValue;
-      } else if (Array.isArray(value)) {
-        // Recursively sanitize array elements
-        sanitized[key] = value.map(
-          (item) => (typeof item === 'string' ? item : item) // Keep strings as-is for now
-        );
-      } else if (value && typeof value === 'object') {
-        // Recursively sanitize nested objects
-        sanitized[key] = this.sanitizeSpecialCharacters(
-          value as Record<string, unknown>
-        );
-      } else {
-        // Keep non-string values as-is
-        sanitized[key] = value;
-      }
-    }
-
-    return sanitized;
-  }
-
-  /**
-   * Verifies that updated fields were properly persisted by fetching the record
-   * and comparing expected vs actual field values (Issue #473)
-   */
-  private static async verifyFieldPersistence(
-    resource_type: UniversalResourceType,
-    record_id: string,
-    expectedUpdates: Record<string, unknown>,
-    updatedRecord: AttioRecord
-  ): Promise<{
-    verified: boolean;
-    discrepancies: string[];
-    warnings: string[];
-  }> {
-    const result = {
-      verified: true,
-      discrepancies: [] as string[],
-      warnings: [] as string[],
-    };
-
-    // Skip verification in test environments to avoid API overhead
-    if (shouldUseMockData() || process.env.SKIP_FIELD_VERIFICATION === 'true') {
-      result.warnings.push(
-        'Field persistence verification skipped in test environment'
-      );
-      return result;
-    }
-
-    try {
-      // Fetch the updated record to verify field persistence
-      const verificationRecord = await this.fetchRecordForVerification(
-        resource_type,
-        record_id
-      );
-
-      if (!verificationRecord) {
-        result.verified = false;
-        result.discrepancies.push(
-          'Unable to fetch record for field persistence verification'
-        );
-        return result;
-      }
-
-      // Compare expected updates with actual persisted values
-      for (const [fieldName, expectedValue] of Object.entries(
-        expectedUpdates
-      )) {
-        // Skip internal fields that shouldn't be verified
-        if (
-          ['created_at', 'updated_at', 'id', 'workspace_id'].includes(fieldName)
-        ) {
-          continue;
-        }
-
-        const actualValue = verificationRecord.values?.[fieldName];
-        const comparisonResult = this.compareFieldValues(
-          fieldName,
-          expectedValue,
-          actualValue
-        );
-
-        if (!comparisonResult.matches) {
-          result.verified = false;
-          result.discrepancies.push(
-            `Field "${fieldName}" persistence mismatch: expected ${JSON.stringify(expectedValue)}, got ${JSON.stringify(actualValue)}`
-          );
-        } else if (comparisonResult.warning) {
-          result.warnings.push(comparisonResult.warning);
-        }
-      }
-
-      // Log verification results for debugging
-      if (result.discrepancies.length > 0) {
-        console.warn(
-          `Field persistence verification failed for ${resource_type} ${record_id}:`,
-          result.discrepancies
-        );
-      } else if (result.warnings.length > 0) {
-        console.error(
-          `Field persistence verification completed with warnings for ${resource_type} ${record_id}:`,
-          result.warnings
-        );
-      }
-    } catch (error: unknown) {
-      // Don't fail the update if verification fails - just log it
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      result.warnings.push(
-        `Field persistence verification failed: ${errorMessage}`
-      );
-      console.error('Field persistence verification error:', error);
-    }
-
-    return result;
-  }
-
-  /**
-   * Fetches a record using the appropriate get function for verification
-   */
-  private static async fetchRecordForVerification(
-    resource_type: UniversalResourceType,
-    record_id: string
-  ): Promise<AttioRecord | null> {
-    try {
-      switch (resource_type) {
-        case UniversalResourceType.COMPANIES:
-          const company = await getCompanyDetails(record_id);
-          return company as unknown as AttioRecord;
-
-        case UniversalResourceType.PEOPLE:
-          const person = await getPersonDetails(record_id);
-          return person as unknown as AttioRecord;
-
-        case UniversalResourceType.LISTS:
-          const list = await getListDetails(record_id);
-          // Convert AttioList to AttioRecord format for consistency
-          return {
-            id: { record_id: list.id.list_id, list_id: list.id.list_id },
-            values: {
-              name: list.name || list.title,
-              description: list.description,
-              parent_object: list.object_slug || list.parent_object,
-              api_slug: list.api_slug,
-              workspace_id: list.workspace_id,
-              workspace_member_access: list.workspace_member_access,
-              created_at: list.created_at,
-            },
-          } as unknown as AttioRecord;
-
-        case UniversalResourceType.TASKS:
-          const task = await getTask(record_id);
-          return UniversalUtilityService.convertTaskToRecord(task);
-
-        case UniversalResourceType.DEALS:
-        case UniversalResourceType.RECORDS:
-          return await getObjectRecord(
-            resource_type === UniversalResourceType.DEALS ? 'deals' : 'records',
-            record_id
-          );
-
-        default:
-          console.warn(
-            `No verification method available for resource type: ${resource_type}`
-          );
-          return null;
-      }
-    } catch (error: unknown) {
-      console.error(
-        `Failed to fetch ${resource_type} record ${record_id} for verification:`,
-        error
-      );
-      return null;
-    }
-  }
-
-  /**
-   * Compares expected and actual field values with smart comparison logic
-   */
-  private static compareFieldValues(
-    fieldName: string,
-    expectedValue: unknown,
-    actualValue: unknown
-  ): { matches: boolean; warning?: string } {
-    // Handle null/undefined cases
-    if (expectedValue === null || expectedValue === undefined) {
-      return { matches: actualValue === null || actualValue === undefined };
-    }
-
-    if (actualValue === null || actualValue === undefined) {
-      return { matches: false };
-    }
-
-    // Handle Attio's wrapped value format [{ value: "actual_value" }]
-    let unwrappedActual = actualValue;
-    if (
-      Array.isArray(actualValue) &&
-      actualValue.length > 0 &&
-      actualValue[0]?.value !== undefined
-    ) {
-      unwrappedActual =
-        actualValue.length === 1
-          ? actualValue[0].value
-          : actualValue.map((v) => v.value);
-    }
-
-    // Handle array comparisons
-    if (Array.isArray(expectedValue)) {
-      if (!Array.isArray(unwrappedActual)) {
-        return { matches: false };
-      }
-
-      // Compare array contents (order-independent for categories)
-      const expectedSet = new Set(expectedValue.map((v) => String(v)));
-      const actualSet = new Set(
-        (unwrappedActual as unknown[]).map((v) => String(v))
-      );
-
-      return {
-        matches:
-          expectedSet.size === actualSet.size &&
-          Array.from(expectedSet).every((v) => actualSet.has(v)),
-      };
-    }
-
-    // Handle string comparisons (most common case)
-    if (typeof expectedValue === 'string') {
-      const actualStr = String(unwrappedActual);
-      const matches = expectedValue === actualStr;
-
-      if (!matches && expectedValue.toLowerCase() === actualStr.toLowerCase()) {
-        return {
-          matches: true,
-          warning: `Field "${fieldName}" case mismatch: expected "${expectedValue}", got "${actualStr}"`,
-        };
-      }
-
-      return { matches };
-    }
-
-    // Handle number comparisons
-    if (typeof expectedValue === 'number') {
-      const actualNum = Number(unwrappedActual);
-      return { matches: !isNaN(actualNum) && expectedValue === actualNum };
-    }
-
-    // Handle boolean comparisons
-    if (typeof expectedValue === 'boolean') {
-      const actualBool = Boolean(unwrappedActual);
-      return { matches: expectedValue === actualBool };
-    }
-
-    // Fallback to string comparison
-    return { matches: String(expectedValue) === String(unwrappedActual) };
-  }
-
-  /**
-   * Normalizes response format across all resource types to ensure consistent AttioRecord structure (Issue #473)
-   *
-   * This method addresses inconsistencies where different resource types return data in different formats:
-   * - Some return direct AttioRecord format
-   * - Others return resource-specific formats that need conversion
-   * - Tasks require special handling due to mock/production differences
-   * - Lists need format conversion from AttioList to AttioRecord
-   */
-  private static normalizeResponseFormat(
-    resource_type: UniversalResourceType,
-    record: AttioRecord
-  ): AttioRecord {
-    // Ensure the record has the required AttioRecord structure
-    if (!record || typeof record !== 'object') {
-      throw new Error(
-        `Invalid record format received for ${resource_type}: ${typeof record}`
-      );
-    }
-
-    // Create normalized record with required AttioRecord fields
-    const normalizedRecord: AttioRecord = {
-      id: record.id || { record_id: 'unknown' },
-      values: record.values || {},
-      created_at: record.created_at,
-      updated_at: record.updated_at || new Date().toISOString(),
-    };
-
-    // Apply resource-specific normalization
-    switch (resource_type) {
-      case UniversalResourceType.COMPANIES:
-        return this.normalizeCompanyRecord(normalizedRecord);
-
-      case UniversalResourceType.PEOPLE:
-        return this.normalizePersonRecord(normalizedRecord);
-
-      case UniversalResourceType.LISTS:
-        return this.normalizeListRecord(normalizedRecord);
-
-      case UniversalResourceType.TASKS:
-        return this.normalizeTaskRecord(normalizedRecord);
-
-      case UniversalResourceType.DEALS:
-        return this.normalizeDealRecord(normalizedRecord);
-
-      case UniversalResourceType.RECORDS:
-        return this.normalizeGenericRecord(normalizedRecord);
-
-      default:
-        console.warn(
-          `No specific normalization available for resource type: ${resource_type}`
-        );
-        return normalizedRecord;
-    }
-  }
-
-  /**
-   * Normalize company record format
-   */
-  private static normalizeCompanyRecord(record: AttioRecord): AttioRecord {
-    // Companies typically have consistent format, but ensure required fields
-    return {
-      ...record,
-      id: {
-        ...record.id,
-        object_id: record.id.object_id || 'companies',
-      },
-      values: {
-        ...record.values,
-        // Ensure domains field is properly formatted as array
-        domains:
-          record.values.domains && Array.isArray(record.values.domains)
-            ? record.values.domains
-            : record.values.domains
-              ? [record.values.domains]
-              : record.values.domains,
-      },
-    };
-  }
-
-  /**
-   * Normalize person record format
-   */
-  private static normalizePersonRecord(record: AttioRecord): AttioRecord {
-    return {
-      ...record,
-      id: {
-        ...record.id,
-        object_id: record.id.object_id || 'people',
-      },
-      values: {
-        ...record.values,
-        // Ensure email_addresses and phone_numbers are arrays
-        email_addresses:
-          record.values.email_addresses &&
-          Array.isArray(record.values.email_addresses)
-            ? record.values.email_addresses
-            : record.values.email_addresses
-              ? [record.values.email_addresses]
-              : record.values.email_addresses,
-        phone_numbers:
-          record.values.phone_numbers &&
-          Array.isArray(record.values.phone_numbers)
-            ? record.values.phone_numbers
-            : record.values.phone_numbers
-              ? [record.values.phone_numbers]
-              : record.values.phone_numbers,
-      },
-    };
-  }
-
-  /**
-   * Normalize list record format (already converted in updateListRecord)
-   */
-  private static normalizeListRecord(record: AttioRecord): AttioRecord {
-    return {
-      ...record,
-      id: {
-        ...record.id,
-        object_id: record.id.object_id || 'lists',
-        // Ensure list_id is present
-        list_id: record.id.list_id || record.id.record_id,
-      },
-    };
-  }
-
-  /**
-   * Normalize task record format (already converted in updateTaskRecord)
-   */
-  private static normalizeTaskRecord(record: AttioRecord): AttioRecord {
-    return {
-      ...record,
-      id: {
-        ...record.id,
-        object_id: record.id.object_id || 'tasks',
-        // Ensure task_id is present for Issue #480 compatibility
-        task_id: record.id.task_id || record.id.record_id,
-      },
-      values: {
-        ...record.values,
-        // Ensure both content and title fields are present for compatibility
-        content: record.values.content || record.values.title,
-        title: record.values.title || record.values.content,
-      },
-    };
-  }
-
-  /**
-   * Normalize deal record format
-   */
-  private static normalizeDealRecord(record: AttioRecord): AttioRecord {
-    return {
-      ...record,
-      id: {
-        ...record.id,
-        object_id: record.id.object_id || 'deals',
-      },
-      values: {
-        ...record.values,
-        // Ensure numeric value field is properly formatted
-        value:
-          record.values.value && typeof record.values.value === 'string'
-            ? parseFloat(record.values.value) || record.values.value
-            : record.values.value,
-      },
-    };
-  }
-
-  /**
-   * Normalize generic record format
-   */
-  private static normalizeGenericRecord(record: AttioRecord): AttioRecord {
-    return {
-      ...record,
-      id: {
-        ...record.id,
-        object_id: record.id.object_id || 'records',
-      },
-    };
   }
 }

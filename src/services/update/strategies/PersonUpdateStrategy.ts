@@ -1,4 +1,5 @@
 import type { AttioRecord } from '../../../types/attio.js';
+import type { PersonAttributes } from '../../../objects/people/types.js';
 import { updatePerson } from '../../../objects/people-write.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
 import { UniversalValidationError, ErrorType } from '../../../handlers/tool-configs/universal/schemas.js';
@@ -18,7 +19,11 @@ export class PersonUpdateStrategy implements UpdateStrategy {
     try {
       // Validate emails same as create operations
       ValidationService.validateEmailAddresses(values);
-      return (await updatePerson(recordId, values as any)) as unknown as AttioRecord;
+      // Coerce mapped/validated values to PersonAttributes for update
+      return (await updatePerson(
+        recordId,
+        values as unknown as PersonAttributes
+      )) as unknown as AttioRecord;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes('Cannot find attribute')) {
@@ -35,4 +40,3 @@ export class PersonUpdateStrategy implements UpdateStrategy {
     }
   }
 }
-
