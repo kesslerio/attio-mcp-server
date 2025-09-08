@@ -146,7 +146,11 @@ export class UniversalUpdateService {
     const { resource_type, record_id, record_data } = params;
 
     // Handle edge case where test uses 'data' instead of 'record_data'
-    const actualRecordData = (record_data ?? (params as any).data) as
+    type ParamsWithLegacy = { data?: unknown };
+    const legacyData = (params as ParamsWithLegacy).data as
+      | Record<string, unknown>
+      | undefined;
+    const actualRecordData = (record_data ?? legacyData) as
       | Record<string, unknown>
       | undefined;
 
