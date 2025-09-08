@@ -2,8 +2,8 @@
  * Error handling utility for creating consistent error responses
  */
 import { AttioErrorResponse } from '../types/attio.js';
-import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
 import { enhanceErrorMessage } from './error-examples.js';
+import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
 
 /**
  * Enum for categorizing different types of errors
@@ -48,7 +48,7 @@ export class AttioApiError extends Error {
   detail: string;
   path: string;
   method: string;
-  responseData: any;
+  responseData: unknown;
   type: ErrorType;
 
   constructor(
@@ -58,7 +58,7 @@ export class AttioApiError extends Error {
     path: string,
     method: string,
     type: ErrorType = ErrorType.API_ERROR,
-    responseData: any = {}
+    responseData: unknown = {}
   ) {
     super(message);
     this.name = 'AttioApiError';
@@ -80,7 +80,7 @@ export class AttioApiError extends Error {
  * @param responseData - Response data from API
  * @returns Appropriate error instance
  */
-export function createAttioError(error: any): Error {
+export function createAttioError(error: unknown): Error {
   // If it's already an AttioApiError, return it
   if (error instanceof AttioApiError) {
     return error;
@@ -89,8 +89,6 @@ export function createAttioError(error: any): Error {
   // Handle Axios errors
   if (error.isAxiosError && error.response) {
     const { status, data, config } = error.response;
-    const path = config?.url || 'unknown';
-    const method = config?.method?.toUpperCase() || 'UNKNOWN';
     return createApiError(status, path, method, data);
   }
 
@@ -111,13 +109,11 @@ export function createApiError(
   status: number,
   path: string,
   method: string,
-  responseData: any = {}
+  responseData: unknown = {}
 ): Error {
-  const defaultMessage =
     responseData?.error?.message ||
     responseData?.message ||
     'Unknown API error';
-  const detail =
     responseData?.error?.detail ||
     responseData?.detail ||
     'No additional details';
@@ -129,7 +125,6 @@ export function createApiError(
   switch (status) {
     case 400:
       // Detect common parameter and format errors in the 400 response
-      const detailsString =
         typeof responseData?.error?.details === 'string'
           ? responseData.error.details
           : JSON.stringify(responseData?.error?.details || '');
@@ -176,7 +171,6 @@ export function createApiError(
       } else if (path.includes('/objects/companies/')) {
         message = `Company not found: ${path.split('/').pop()}`;
       } else if (path.includes('/lists/')) {
-        const listId = path.split('/').pop();
         if (path.includes('/entries')) {
           message = `List entry not found in list ${path.split('/')[2]}`;
         } else {
@@ -242,7 +236,6 @@ export function formatErrorResponse(
   details?: any
 ) {
   // Ensure we have a valid error object
-  const normalizedError =
     error instanceof Error
       ? error
       : new Error(typeof error === 'string' ? error : 'Unknown error');
@@ -262,7 +255,6 @@ export function formatErrorResponse(
   }
 
   // Determine appropriate status code based on error type
-  const errorCode =
     type === ErrorType.VALIDATION_ERROR
       ? 400
       : type === ErrorType.AUTHENTICATION_ERROR
@@ -328,7 +320,6 @@ export function formatErrorResponse(
   }
 
   // Return properly formatted MCP error response
-  const errorResponse = {
     content: [
       {
         type: 'text',
@@ -371,7 +362,6 @@ export function createErrorResult(
   } = {}
 ) {
   // Ensure we have a valid error object to work with
-  const normalizedError =
     error instanceof Error
       ? error
       : new Error(typeof error === 'string' ? error : 'Unknown error');
@@ -385,7 +375,6 @@ export function createErrorResult(
 
   // If it's already an AttioApiError, use it directly
   if (error instanceof AttioApiError) {
-    const errorDetails = {
       status: error.status,
       method: error.method,
       path: error.path,
@@ -400,14 +389,12 @@ export function createErrorResult(
   if (responseData && responseData.status) {
     try {
       // Create a specific API error
-      const apiError = createApiError(
         responseData.status,
         url,
         method,
         responseData
       ) as AttioApiError;
 
-      const errorDetails = {
         status: apiError.status,
         method: apiError.method,
         path: apiError.path,
@@ -422,7 +409,6 @@ export function createErrorResult(
     } catch (formattingError) {
       // If error formatting fails, preserve the original error
       console.error('Error while formatting API error:', formattingError);
-      const originalErrorDetails = {
         url,
         method,
         status: responseData.status,
@@ -454,7 +440,6 @@ export function createErrorResult(
     errorType = ErrorType.NETWORK_ERROR;
   }
 
-  const errorDetails = {
     method,
     url,
     status: responseData.status || 'Unknown',

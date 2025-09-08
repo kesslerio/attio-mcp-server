@@ -4,14 +4,6 @@
 import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
 
 /**
- * Interface for a simple text content item
- */
-export interface TextContent {
-  type: 'text';
-  text: string;
-}
-
-/**
  * Interface for a markdown content item
  */
 export interface MarkdownContent {
@@ -91,10 +83,8 @@ export function formatListResponse<T>(
   pagination?: { total?: number; hasMore?: boolean; nextCursor?: string },
   metadata?: Record<string, unknown>
 ): ToolResponse {
-  const itemsText =
     items.length > 0 ? items.map(formatter).join('\n') : 'No items found';
 
-  const countText =
     pagination?.total !== undefined
       ? `${items.length} of ${pagination.total} total`
       : `${items.length}`;
@@ -160,7 +150,6 @@ export function formatJsonResponse(
   data: unknown,
   metadata?: Record<string, unknown>
 ): ToolResponse {
-  const response = {
     content: [
       {
         type: 'text',
@@ -259,7 +248,6 @@ export function formatErrorResponse(
   type: string = 'unknown_error',
   details?: unknown
 ): ToolResponse {
-  const response = {
     content: [
       {
         type: 'text',

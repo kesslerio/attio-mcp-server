@@ -2,64 +2,12 @@
  * Split: UniversalCreateService validation and error handling
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
-  ValidationService: {
-    truncateSuggestions: vi.fn((s: string[]) => s),
-    validateEmailAddresses: vi.fn(),
-  },
-}));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
-  mapRecordFields: vi.fn(),
-  validateResourceType: vi.fn(),
-  getFieldSuggestions: vi.fn(),
-  validateFields: vi.fn(),
-  getValidResourceTypes: vi.fn(() => ''),
-  FIELD_MAPPINGS: {},
-}));
-vi.mock('../../src/utils/validation-utils.js', () => ({
-  validateRecordFields: vi.fn(),
-}));
-vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
-  convertAttributeFormats: vi.fn((t: string, d: any) => d),
-  getFormatErrorHelp: vi.fn(
-    (t: string, f: string, m: string) => `Enhanced: ${m}`
-  ),
-}));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
-  EnhancedApiError: vi
-    .fn()
-    .mockImplementation(
-      (
-        message: string,
-        statusCode: number,
-        endpoint: string,
-        method: string
-      ) => {
-        const e: any = new Error(message);
-        e.statusCode = statusCode;
-        e.endpoint = endpoint;
-        e.method = method;
-        e.name = 'EnhancedApiError';
-        return e;
-      }
-    ),
-  ErrorEnhancer: { autoEnhance: vi.fn((e: any) => e) },
-  ErrorTemplates: {
-    TASK_FIELD_MAPPING: vi.fn(
-      (a: string, b: string) => new Error(`Use ${b} instead of ${a}`)
-    ),
-  },
-}));
-// Mock the create service factory to return a mock service
-const mockCreateService = {
-  createCompany: vi.fn(),
-  createPerson: vi.fn(),
-  createTask: vi.fn(),
-  createList: vi.fn(),
-  createNote: vi.fn(),
-  createDeal: vi.fn(),
-  updateTask: vi.fn(),
-};
+
+import { getCreateService } from '../../src/services/create/index.js';
+import { getFormatErrorHelp } from '../../src/utils/attribute-format-helpers.js';
+import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { validateRecordFields } from '../../src/utils/validation-utils.js';
 
 vi.mock('../../src/services/create/index.js', () => ({
   getCreateService: vi.fn(() => mockCreateService),
@@ -96,7 +44,7 @@ describe('UniversalCreateService', () => {
     } as any);
 
     vi.mocked(mapRecordFields).mockImplementation(
-      (resourceType: string, data: any) =>
+      (resourceType: string, data: unknown) =>
         ({
           mapped: data,
           warnings: [],
@@ -174,7 +122,6 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle attribute not found errors with suggestions', async () => {
-      const error = new Error(
         'Cannot find attribute with slug/ID "invalid_field"'
       );
       mockCreateService.createCompany.mockRejectedValue(error);
@@ -189,7 +136,6 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle uniqueness constraint errors', async () => {
-      const error = new Error(
         'uniqueness constraint violation for field "name"'
       );
       mockCreateService.createCompany.mockRejectedValue(error);
@@ -211,7 +157,6 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'comp_123' },
         values: { name: 'Test Company' },
       } as any);
-      const result = await UniversalCreateService.createRecord({
         resource_type: 'company' as any,
         record_data: { values: { name: 'Test Company' } },
       });
@@ -233,7 +178,6 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle task creation errors with enhanced error handling', async () => {
-      const originalError = new Error('Task creation failed');
       mockCreateService.createTask.mockRejectedValue(originalError);
       vi.mocked(ErrorEnhancer.autoEnhance).mockReturnValue(
         new EnhancedApiError(
@@ -268,7 +212,6 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'comp_123' },
         values: { name: 'Test Company' },
       } as any);
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_data: { values: { name: 'Test Company' } },
       });

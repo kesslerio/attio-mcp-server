@@ -3,12 +3,12 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
-import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
 import { detectFieldCollisions } from '../validators/collision-detector.js';
-import { processCategories } from '../validators/category-validator.js';
 import { mapFieldName } from './field-mapper.js';
+import { processCategories } from '../validators/category-validator.js';
+import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
 import { transformFieldValue } from './value-transformer.js';
+import { UniversalResourceType } from '../types.js';
 
 /**
  * Maps and transforms all fields in a record for a specific resource type
@@ -24,13 +24,11 @@ export async function mapRecordFields(
   warnings: string[];
   errors?: string[];
 }> {
-  const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { mapped: recordData, warnings: [] };
   }
 
   // First pass: detect field collisions
-  const collisionResult = await detectFieldCollisions(
     resourceType,
     recordData,
     availableAttributes
@@ -47,7 +45,6 @@ export async function mapRecordFields(
   const warnings: string[] = [];
 
   for (const [key, value] of Object.entries(recordData)) {
-    const mappedKey = await mapFieldName(
       resourceType,
       key,
       availableAttributes
@@ -69,7 +66,6 @@ export async function mapRecordFields(
 
     // Check if this field was mapped
     if (mappedKey !== key) {
-      const mistake = mapping.commonMistakes[key.toLowerCase()];
       if (mistake) {
         warnings.push(`Field "${key}" mapped to "${mappedKey}": ${mistake}`);
       } else {
@@ -86,8 +82,6 @@ export async function mapRecordFields(
     ) {
       // Combine first and last name into full name
       if (!mapped.name) {
-        const firstName = recordData.first_name || '';
-        const lastName = recordData.last_name || '';
         mapped.name = `${firstName} ${lastName}`.trim();
         warnings.push(`Combined first_name and last_name into "name" field`);
       }
@@ -97,7 +91,6 @@ export async function mapRecordFields(
         key.toLowerCase() === 'categories' ||
         mappedKey.toLowerCase() === 'categories'
       ) {
-        const categoryResult = processCategories(resourceType, key, value);
 
         if (categoryResult.errors.length > 0) {
           warnings.push(...categoryResult.errors);
@@ -112,7 +105,6 @@ export async function mapRecordFields(
         mapped[mappedKey] = categoryResult.processedValue;
       } else {
         // Apply field value transformation before assignment
-        const transformedValue = await transformFieldValue(
           resourceType,
           mappedKey,
           value

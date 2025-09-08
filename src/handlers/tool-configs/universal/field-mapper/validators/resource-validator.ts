@@ -3,9 +3,9 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
-import { RESOURCE_TYPE_MAPPINGS, getValidResourceTypes } from './helpers.js';
 import { findSimilarStrings } from './similarity-utils.js';
+import { RESOURCE_TYPE_MAPPINGS, getValidResourceTypes } from './helpers.js';
+import { UniversalResourceType } from '../types.js';
 
 /**
  * Validates a resource type and provides corrections if invalid
@@ -26,7 +26,6 @@ export function validateResourceType(resourceType: string): {
   }
 
   // Try to map it
-  const mapped = RESOURCE_TYPE_MAPPINGS[resourceType.toLowerCase()];
   if (mapped) {
     return {
       valid: false,
@@ -36,8 +35,6 @@ export function validateResourceType(resourceType: string): {
   }
 
   // Generate suggestions using fuzzy matching
-  const validTypes = Object.values(UniversalResourceType) as string[];
-  const suggestions = findSimilarStrings(resourceType, validTypes);
 
   return {
     valid: false,

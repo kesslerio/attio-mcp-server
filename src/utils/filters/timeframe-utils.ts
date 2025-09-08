@@ -65,7 +65,6 @@ export function getRelativeTimeframeRange(
   timeframe: RelativeTimeframe,
   _timezone: string = 'UTC'
 ): DateRange {
-  const now = new Date();
   let startDate: Date;
   let endDate: Date;
 
@@ -76,7 +75,6 @@ export function getRelativeTimeframeRange(
       break;
 
     case 'yesterday': {
-      const yesterday = new Date(now);
       yesterday.setUTCDate(yesterday.getUTCDate() - 1);
       startDate = getStartOfDay(yesterday);
       endDate = getEndOfDay(yesterday);
@@ -89,11 +87,9 @@ export function getRelativeTimeframeRange(
       break;
 
     case 'last_week': {
-      const lastWeekStart = new Date(now);
       lastWeekStart.setUTCDate(now.getUTCDate() - 7);
       startDate = getStartOfWeek(lastWeekStart);
       
-      const lastWeekEnd = new Date(startDate);
       lastWeekEnd.setUTCDate(startDate.getUTCDate() + 6);
       endDate = getEndOfDay(lastWeekEnd);
       break;
@@ -105,7 +101,6 @@ export function getRelativeTimeframeRange(
       break;
 
     case 'last_month': {
-      const lastMonth = new Date(now);
       lastMonth.setUTCMonth(lastMonth.getUTCMonth() - 1);
       startDate = getStartOfMonth(lastMonth);
       endDate = getEndOfMonth(lastMonth);
@@ -113,7 +108,6 @@ export function getRelativeTimeframeRange(
     }
 
     case 'last_7_days': {
-      const weekAgo = new Date(now);
       weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
       startDate = getStartOfDay(weekAgo);
       endDate = getEndOfDay(now);
@@ -121,7 +115,6 @@ export function getRelativeTimeframeRange(
     }
 
     case 'last_14_days': {
-      const twoWeeksAgo = new Date(now);
       twoWeeksAgo.setUTCDate(twoWeeksAgo.getUTCDate() - 14);
       startDate = getStartOfDay(twoWeeksAgo);
       endDate = getEndOfDay(now);
@@ -129,7 +122,6 @@ export function getRelativeTimeframeRange(
     }
 
     case 'last_30_days': {
-      const monthAgo = new Date(now);
       monthAgo.setUTCDate(monthAgo.getUTCDate() - 30);
       startDate = getStartOfDay(monthAgo);
       endDate = getEndOfDay(now);
@@ -137,7 +129,6 @@ export function getRelativeTimeframeRange(
     }
 
     case 'last_90_days': {
-      const quarterAgo = new Date(now);
       quarterAgo.setUTCDate(quarterAgo.getUTCDate() - 90);
       startDate = getStartOfDay(quarterAgo);
       endDate = getEndOfDay(now);
@@ -165,7 +156,6 @@ export function isValidISODate(dateString: string): boolean {
     return false;
   }
 
-  const date = new Date(dateString);
   return !isNaN(date.getTime()) && dateString.includes('T');
 }
 
@@ -181,8 +171,6 @@ export function isValidDateRange(startDate: string, endDate: string): boolean {
     return false;
   }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
   
   return start <= end;
 }
@@ -221,7 +209,6 @@ export function convertDateParamsToTimeframeQuery(params: {
 
   // If relative timeframe is specified, use it (overrides absolute dates)
   if (timeframe) {
-    const range = getRelativeTimeframeRange(timeframe);
     return {
       timeframe_attribute: date_field,
       start_date: range.startDate,
@@ -338,33 +325,26 @@ export function convertDateParamsToTimeframeQuery(params: {
 // Helper functions for date calculations (all in UTC)
 
 function getStartOfDay(date: Date): Date {
-  const result = new Date(date);
   result.setUTCHours(0, 0, 0, 0);
   return result;
 }
 
 function getEndOfDay(date: Date): Date {
-  const result = new Date(date);
   result.setUTCHours(23, 59, 59, 999);
   return result;
 }
 
 function getStartOfWeek(date: Date): Date {
-  const result = new Date(date);
-  const day = result.getUTCDay();
-  const diff = result.getUTCDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
   result.setUTCDate(diff);
   return getStartOfDay(result);
 }
 
 function getStartOfMonth(date: Date): Date {
-  const result = new Date(date);
   result.setUTCDate(1);
   return getStartOfDay(result);
 }
 
 function getEndOfMonth(date: Date): Date {
-  const result = new Date(date);
   result.setUTCMonth(result.getUTCMonth() + 1, 0); // Last day of current month
   return getEndOfDay(result);
 }
@@ -398,7 +378,6 @@ export function validateTimeframe(timeframe: string): TimeframeValidation {
     };
   }
 
-  const normalizedString = timeframe.toLowerCase().trim();
   
   // Check for empty string after trimming
   if (normalizedString === '') {
@@ -408,7 +387,6 @@ export function validateTimeframe(timeframe: string): TimeframeValidation {
     };
   }
   
-  const normalizedTimeframe = normalizedString as RelativeTimeframe;
   
   if (!supportedTimeframes.includes(normalizedTimeframe)) {
     return {
@@ -438,8 +416,6 @@ export function validateTimeframe(timeframe: string): TimeframeValidation {
  */
 export function validateDateRange(startDate: string, endDate: string): boolean {
   try {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
     
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return false;
@@ -470,17 +446,13 @@ export function convertTimeframeParamsWithValidation(
   end_date?: string;
   date_operator?: 'greater_than' | 'less_than' | 'between' | 'equals';
 } {
-  const timeframe = params.timeframe as string;
-  const dateField = (params.date_field as string) || 'created_at';
 
   // Validate relative timeframe if provided
   if (timeframe) {
-    const validation = validateTimeframe(timeframe);
     if (!validation.isValid) {
       throw new Error(`Timeframe validation failed: ${validation.error}`);
     }
 
-    const range = getRelativeTimeframeRange(validation.normalizedTimeframe!);
     return {
       timeframe_attribute: dateField,
       start_date: range.startDate,
@@ -490,8 +462,6 @@ export function convertTimeframeParamsWithValidation(
   }
 
   // Validate absolute date ranges
-  const dateFrom = params.date_from as string;
-  const dateTo = params.date_to as string;
 
   if (dateFrom && dateTo) {
     if (!validateDateRange(dateFrom, dateTo)) {

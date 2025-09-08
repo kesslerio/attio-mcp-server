@@ -2,10 +2,11 @@
 /**
  * CLI tool for discovering Attio attributes and generating mapping files
  */
-import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { discoverAttributes } from './commands/attributes.js';
 import * as dotenv from 'dotenv';
+import yargs from 'yargs';
+
+import { discoverAttributes } from './commands/attributes.js';
 
 // Load environment variables from .env file
 dotenv.config({ debug: false });

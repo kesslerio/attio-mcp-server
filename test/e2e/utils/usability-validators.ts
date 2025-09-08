@@ -7,9 +7,10 @@
  * - Workflow discoverability (reasonable defaults and mappings)
  * - Error message clarity (actionable, consistent wording)
  */
-import { callUniversalTool, callTasksTool } from './enhanced-tool-caller.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+
+import { callUniversalTool, callTasksTool } from './enhanced-tool-caller.js';
 import type { McpToolResponse } from './assertions.js';
 
 export interface UsabilityTestResult {
@@ -49,14 +50,11 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 1) Invalid resource_type should suggest valid types (documentation clarity, parameter intuitiveness)
   {
-    const resp = (await callUniversalTool('search-records', {
       resource_type: 'invalid_resource_type_12345',
       query: 'test',
       limit: 1,
     })) as McpToolResponse;
 
-    const msg = resp?.error || resp?.content?.[0]?.text || '';
-    const mentionsValidTypes =
       /Must be one of: .*records, .*lists, .*people, .*companies, .*tasks, .*deals, .*notes/i.test(
         String(msg)
       );
@@ -75,13 +73,10 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 2) Missing required parameter (e.g., people.create without email)
   {
-    const resp = (await callUniversalTool('create-record', {
       resource_type: 'people',
       record_data: { name: 'Only Name' },
     })) as McpToolResponse;
 
-    const msg = String(resp?.error || resp?.content?.[0]?.text || '');
-    const mentionsMissing = includesAny(msg, [
       /missing required parameter/i,
       /email_addresses/i,
       /required/i,
@@ -99,12 +94,10 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 3) Task title maps to content on create (discoverability)
   {
-    const resp = (await callTasksTool('create-record', {
       resource_type: 'tasks',
       record_data: { title: 'Quick Task' },
     })) as McpToolResponse;
 
-    const ok = !resp?.isError;
     results.push({
       scenario: 'Task title accepted (maps to content)',
       freshAgentPerspective: true,
@@ -117,12 +110,9 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 4) Invalid record id clarity
   {
-    const resp = (await callUniversalTool('get-record-details', {
       resource_type: 'companies',
       record_id: 'definitely-not-a-uuid',
     })) as McpToolResponse;
-    const msg = String(resp?.error || resp?.content?.[0]?.text || '');
-    const clear = includesAny(msg, [
       /invalid record identifier format/i,
       /record not found|not found/i,
     ]);
@@ -139,12 +129,9 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 5) Unknown field name provides suggestions (companies.create with 'nam')
   {
-    const resp = (await callUniversalTool('create-record', {
       resource_type: 'companies',
       record_data: { nam: 'Acme Inc.' } as any,
     })) as McpToolResponse;
-    const msg = String(resp?.error || resp?.content?.[0]?.text || '');
-    const suggests = includesAny(msg, [
       /did you mean/i,
       /name/i,
       /unknown field/i,
@@ -162,13 +149,9 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 6) Partial field 'domain' is accepted or mapped (companies.create)
   {
-    const resp = (await callUniversalTool('create-record', {
       resource_type: 'companies',
       record_data: { name: 'Acme', domain: 'acme.com' } as any,
     })) as McpToolResponse;
-    const ok = !resp?.isError;
-    const msg = String(resp?.error || resp?.content?.[0]?.text || '');
-    const informative = includesAny(msg, [
       /domain/i,
       /domains/i,
       /mapped/i,
@@ -186,7 +169,6 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
   }
 
   // Aggregate
-  const avg = (k: keyof UsabilityTestResult) =>
     results.reduce((s, r) => s + (r[k] as number), 0) / results.length;
 
   return {
@@ -204,18 +186,12 @@ export function writeUsabilityReports(
   suiteName: string,
   summary: UsabilitySummary
 ): { jsonPath: string; csvPath: string } {
-  const outDir = path.resolve('test/e2e/outputs');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-  const ts = new Date().toISOString().replace(/[:.]/g, '-');
-  const base = `${suiteName}-usability-${ts}`;
-  const jsonPath = path.join(outDir, `${base}.json`);
-  const csvPath = path.join(outDir, `${base}.csv`);
 
   // JSON
   fs.writeFileSync(jsonPath, JSON.stringify(summary, null, 2), 'utf8');
 
   // CSV
-  const headers = [
     'scenario',
     'freshAgentPerspective',
     'documentationClarity',
@@ -223,7 +199,6 @@ export function writeUsabilityReports(
     'workflowDiscoverability',
     'errorMessageClarity',
   ];
-  const lines = [headers.join(',')];
   for (const r of summary.results) {
     lines.push(
       [

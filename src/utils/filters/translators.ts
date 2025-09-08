@@ -13,10 +13,8 @@
  */
 
 // External dependencies
-import {
-  FilterValidationError,
-  FilterErrorCategory,
-} from '../../errors/api-errors.js';
+import { isListSpecificAttribute } from './utils.js';
+import { validateFilterStructure } from './validators.js';
 
 // Internal module dependencies
 import {
@@ -124,7 +122,6 @@ export function transformFiltersToApiFormat(
 
   try {
     // Use the central validation utility for consistent error messages
-    const validatedFilters = validateFilters(filters, validateConditions);
 
     // Check if filters array exists and handle undefined case
     if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
@@ -162,11 +159,9 @@ export function transformFiltersToApiFormat(
   }
 
   // Re-validate for the actual processing (this should not throw since we already validated)
-  const validatedFilters = validateFilters(filters, validateConditions);
 
   // Determine if we need to use the $or operator based on matchAny
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
-  const useOrLogic = validatedFilters.matchAny === true;
 
   if (process.env.NODE_ENV === 'development') {
     console.error(
@@ -228,7 +223,6 @@ export function transformFiltersToQueryApiFormat(
 
   try {
     // Use the central validation utility for consistent error messages
-    const validatedFilters = validateFilters(filters, validateConditions);
 
     // Check if filters array exists and handle undefined case
     if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
@@ -237,7 +231,6 @@ export function transformFiltersToQueryApiFormat(
 
     // Single filter case
     if (validatedFilters.filters.length === 1) {
-      const filter = validatedFilters.filters[0];
       return {
         filter: {
           path: [filter.attribute.slug],
@@ -252,11 +245,9 @@ export function transformFiltersToQueryApiFormat(
     }
 
     // Multiple filters case
-    const useOrLogic = validatedFilters.matchAny === true;
     
     if (useOrLogic) {
       // OR logic: create array of individual filter objects
-      const orConditions = validatedFilters.filters.map(filter => ({
         path: [filter.attribute.slug],
         constraints: [
           {
@@ -274,7 +265,6 @@ export function transformFiltersToQueryApiFormat(
     } else {
       // AND logic: create single filter with multiple constraints
       // For now, we'll use $and structure for multiple different attributes
-      const andConditions = validatedFilters.filters.map(filter => ({
         filter: {
           path: [filter.attribute.slug],
           constraints: [
@@ -326,10 +316,9 @@ function createOrFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
-  const orConditions: any[] = [];
+  const orConditions: unknown[] = [];
 
   // Use centralized validation utility to collect invalid filters with consistent messages
-  const invalidFilters = collectInvalidFilters(filters, validateConditions);
 
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
@@ -341,7 +330,6 @@ function createOrFilterStructure(
 
   // If all filters are invalid, throw a descriptive error with example
   if (invalidFilters.length === filters.length) {
-    const errorDetails = formatInvalidFiltersError(invalidFilters);
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
 
     // Add example of valid OR filter structure
@@ -373,7 +361,7 @@ function createOrFilterStructure(
     const { slug } = filter.attribute;
 
     // Create a condition object for this individual filter
-    const condition: any = {};
+    const condition: unknown = {};
 
     // Check if we're in list entry context and this is a list-specific attribute
     if (isListEntryContext && isListSpecificAttribute(slug)) {
@@ -386,7 +374,6 @@ function createOrFilterStructure(
       }
 
       // List-specific attributes use direct field access
-      const operator =
         filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
       condition[slug] = {
         [operator]: filter.value,
@@ -406,7 +393,6 @@ function createOrFilterStructure(
       condition[slug] = filter.value;
     } else {
       // Standard operator handling for normal fields
-      const operator =
         filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
 
       // For parent record attributes in list context, we need to use the record path
@@ -451,10 +437,9 @@ function createAndFilterStructure(
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
   // Use simple merged object for AND logic instead of $and wrapper
-  const mergedConditions: any = {};
+  const mergedConditions: unknown = {};
 
   // Use centralized validation utility to collect invalid filters with consistent messages
-  const invalidFilters = collectInvalidFilters(filters, validateConditions);
 
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
@@ -466,7 +451,6 @@ function createAndFilterStructure(
 
   // If all filters are invalid, throw a descriptive error with example
   if (invalidFilters.length === filters.length) {
-    const errorDetails = formatInvalidFiltersError(invalidFilters);
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
 
     // Add example of valid filter structure for AND logic (multiple conditions)
@@ -497,7 +481,6 @@ function createAndFilterStructure(
     }
 
     const { slug } = filter.attribute;
-    const operator =
       filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
 
     // Build condition object in Attio's expected format
@@ -570,9 +553,9 @@ export function transformAttributeName(attributeSlug: string): string {
  * @returns The processed value
  */
 export function processFilterValue(
-  value: any,
+  value: unknown,
   condition: FilterConditionType
-): any {
+): unknown {
   // Empty conditions should not have a value
   if (
     condition === FilterConditionType.IS_EMPTY ||
@@ -604,8 +587,6 @@ export function transformSingleFilterToApi(
   }
 
   const { slug } = filter.attribute;
-  const apiOperator = convertOperatorToApiFormat(filter.condition);
-  const value = processFilterValue(
     filter.value,
     filter.condition as FilterConditionType
   );

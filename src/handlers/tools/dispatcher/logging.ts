@@ -2,23 +2,14 @@
  * Enhanced logging utilities for tool execution using structured logging
  */
 
-import { ToolErrorContext } from '../../../types/tool-types.js';
-import {
-  error,
-  warn,
-  createScopedLogger,
-  OperationType,
-  setLogContext,
-  generateCorrelationId,
-  PerformanceTimer,
-} from '../../../utils/logger.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
+import { ToolErrorContext } from '../../../types/tool-types.js';
 
 /**
  * Initialize tool execution context with correlation ID
  */
 export function initializeToolContext(toolName: string): string {
-  const correlationId = generateCorrelationId();
   setLogContext({
     correlationId,
     operation: toolName,
@@ -51,12 +42,9 @@ export function logToolRequest(
   toolName: string,
   request: CallToolRequest
 ): PerformanceTimer {
-  const logger = createToolLogger(toolName, toolType);
 
   // Enhanced logging to debug MCP protocol issues
-  const debugMode = process.env.MCP_DEBUG_REQUESTS === 'true';
 
-  const requestData = {
     toolType,
     toolName,
     argumentsCount: request.params.arguments
@@ -112,13 +100,10 @@ export function logToolRequest(
 export function logToolSuccess(
   toolName: string,
   toolType: string,
-  result: any,
+  result: unknown,
   timer: PerformanceTimer
 ): void {
-  const logger = createToolLogger(toolName, toolType);
-  const duration = timer.end();
 
-  const resultSummary = {
     success: true,
     hasContent: !!result?.content,
     contentLength: result?.content?.length || 0,
@@ -151,10 +136,7 @@ export function logToolError(
   timer: PerformanceTimer,
   additionalInfo: ToolErrorContext = {}
 ): void {
-  const logger = createToolLogger(toolName, toolType);
-  const duration = timer.end();
 
-  const errorContext = {
     toolType,
     toolName,
     errorType: error instanceof Error ? error.constructor.name : typeof error,

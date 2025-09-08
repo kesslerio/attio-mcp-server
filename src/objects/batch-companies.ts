@@ -1,26 +1,7 @@
 /**
  * Batch operations for company records
  */
-import {
-  ResourceType,
-  Company,
-  BatchResponse,
-  BatchConfig,
-  RecordAttributes,
-} from '../types/attio.js';
 import { CompanyFieldValue } from '../types/tool-types.js';
-import {
-  executeBatchOperations,
-  batchCreateRecords,
-  batchUpdateRecords,
-} from '../api/operations/index.js';
-import {
-  createCompany,
-  updateCompany,
-  deleteCompany,
-  searchCompanies,
-  getCompanyDetails,
-} from './companies/index.js';
 import { CompanyValidator } from '../validators/company-validator.js';
 import { validateBatchOperation } from '../utils/batch-validation.js';
 
@@ -44,7 +25,7 @@ import { validateBatchOperation } from '../utils/batch-validation.js';
 async function executeBatchCompanyOperation<T, R>(
   operationType: 'create' | 'update' | 'delete' | 'search' | 'get',
   records: T[],
-  batchFunction: (params: any) => Promise<R[]>,
+  batchFunction: (params: unknown) => Promise<R[]>,
   singleFunction: (params: T) => Promise<R>,
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<R>> {
@@ -56,7 +37,6 @@ async function executeBatchCompanyOperation<T, R>(
   }
 
   // Validate batch operation for DoS protection
-  const validation = validateBatchOperation({
     items: records,
     operationType,
     resourceType: ResourceType.COMPANIES,
@@ -69,11 +49,10 @@ async function executeBatchCompanyOperation<T, R>(
 
   try {
     // Attempt to use the batch API
-    const results = await batchFunction({
       objectSlug: ResourceType.COMPANIES, // Always explicitly set the resource type
       records:
         operationType === 'create'
-          ? records.map((r: any) => ({ attributes: r }))
+          ? records.map((r: unknown) => ({ attributes: r }))
           : records,
     });
 
@@ -182,7 +161,6 @@ export async function batchCreateCompanies(params: {
   try {
     // Use the generic batch create with graceful validation
     // Attempt validation for each company, but allow individual failures
-    const validatedCompanies = await Promise.all(
       companies.map(async (company, index) => {
         try {
           return await CompanyValidator.validateCreate(
@@ -394,7 +372,7 @@ export async function batchGetCompanyDetails(
 export async function batchCompanyOperations(
   operations: Array<{
     type: 'create' | 'update' | 'delete';
-    data: any;
+    data: unknown;
   }>,
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<Company | boolean>> {
@@ -402,28 +380,24 @@ export async function batchCompanyOperations(
     id: string;
     success: boolean;
     data?: Company | boolean;
-    error?: any;
+    error?: unknown;
   }> = [];
 
   let succeeded = 0;
   let failed = 0;
 
   // Process operations with chunking
-  const config = {
     maxBatchSize: 10,
     continueOnError: true,
     ...batchConfig,
   };
 
-  const chunks = [];
   for (let i = 0; i < operations.length; i += config.maxBatchSize) {
     chunks.push(operations.slice(i, i + config.maxBatchSize));
   }
 
   for (const chunk of chunks) {
-    const chunkResults = await Promise.allSettled(
       chunk.map(async (operation, index) => {
-        const opId = `${operation.type}_company_${index}`;
 
         try {
           let result: Company | boolean;

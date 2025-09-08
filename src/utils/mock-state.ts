@@ -10,9 +10,6 @@
 
 import { Company } from '../types/attio.js';
 
-// In-memory storage for mock company data (test environments only)
-const mockCompanyStorage = new Map<string, Company>();
-
 /**
  * Checks if mock state should be used (test environments only)
  */
@@ -59,7 +56,6 @@ export function getMockCompany(companyId: string): Company | null {
     return null;
   }
 
-  const company = mockCompanyStorage.get(companyId);
 
   if (
     process.env.NODE_ENV === 'development' ||
@@ -86,7 +82,6 @@ export function updateMockCompany(
     return null;
   }
 
-  const existingCompany = mockCompanyStorage.get(companyId);
   if (!existingCompany) {
     if (
       process.env.NODE_ENV === 'development' ||
@@ -100,7 +95,6 @@ export function updateMockCompany(
   }
 
   // Merge the new attributes with existing values
-  const updatedValues = {
     ...existingCompany.values,
     ...attributes,
   };
@@ -144,7 +138,6 @@ export function clearMockCompanies(): void {
     return;
   }
 
-  const count = mockCompanyStorage.size;
   mockCompanyStorage.clear();
 
   if (
@@ -170,9 +163,9 @@ export function getAllMockCompanyIds(): string[] {
  * Attio API stores values as arrays of objects with metadata
  */
 export function createAttioApiValue(
-  value: any,
+  value: unknown,
   attributeType: string = 'text'
-): any[] {
+): unknown[] {
   if (value === null || value === undefined) {
     return [];
   }

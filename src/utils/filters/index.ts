@@ -28,14 +28,9 @@ export * from './cache.js';
 export * from './relationship.js';
 
 // Re-export namespaced Basic utilities for backward compatibility
+import { combineFiltersWithAnd, combineFiltersWithOr } from './builders.js';
 import { transformFiltersToApiFormat, transformFiltersToQueryApiFormat } from './translators.js';
 import { validateFilterStructure } from './validators.js';
-import {
-  createEqualsFilter,
-  createContainsFilter,
-  combineWithAnd,
-  combineWithOr,
-} from './builders.js';
 
 export const Basic = {
   validateFilterStructure,

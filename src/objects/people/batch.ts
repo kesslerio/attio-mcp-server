@@ -1,17 +1,11 @@
 /**
  * Batch operations for People
  */
-import {
-  batchSearchObjects,
-  batchGetObjectDetails,
-  BatchConfig,
-  BatchResponse,
-} from '../../api/operations/index.js';
-import { ResourceType, Person } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
-import { isValidId } from '../../utils/validation.js';
-import { searchPeople } from './search.js';
 import { getPersonDetails } from './basic.js';
+import { isValidId } from '../../utils/validation.js';
+import { ResourceType, Person } from '../../types/attio.js';
+import { searchPeople } from './search.js';
 
 /**
  * Performs batch search operations on people
@@ -48,13 +42,11 @@ export async function batchSearchPeople(
       );
     } catch (batchError) {
       // Fallback to individual searches
-      const results = [];
       let succeeded = 0;
       let failed = 0;
 
       for (const query of queries) {
         try {
-          const searchResults = await searchPeople(query);
           results.push({
             query,
             data: searchResults,
@@ -84,7 +76,6 @@ export async function batchSearchPeople(
       };
     }
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Batch search validation failed: ${errorMessage}`
@@ -126,13 +117,11 @@ export async function batchGetPeopleDetails(
       );
     } catch (batchError) {
       // Fallback to individual detail retrieval
-      const results = [];
       let succeeded = 0;
       let failed = 0;
 
       for (const personId of personIds) {
         try {
-          const personDetails = await getPersonDetails(personId);
           results.push({
             id: personId,
             data: personDetails,
@@ -162,7 +151,6 @@ export async function batchGetPeopleDetails(
       };
     }
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Batch get details validation failed: ${errorMessage}`

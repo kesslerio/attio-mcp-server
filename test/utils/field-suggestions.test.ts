@@ -3,17 +3,6 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  levenshteinDistance,
-  findSimilarOptions,
-  generateFieldSuggestionMessage,
-  generateEnumSuggestionMessage,
-  generateReadOnlyFieldMessage,
-  generateResourceTypeSuggestionMessage,
-  getMappedFieldName,
-  validateFieldWithSuggestions,
-  VALID_RESOURCE_TYPES,
-} from '../../src/utils/field-suggestions.js';
 
 describe('Field Suggestions Utilities', () => {
   describe('levenshteinDistance', () => {
@@ -33,7 +22,6 @@ describe('Field Suggestions Utilities', () => {
   });
 
   describe('findSimilarOptions', () => {
-    const validFields = [
       'first_name',
       'last_name',
       'email',
@@ -42,43 +30,35 @@ describe('Field Suggestions Utilities', () => {
     ];
 
     it('should find similar field names', () => {
-      const suggestions = findSimilarOptions('firstname', validFields);
       expect(suggestions).toContain('first_name');
     });
 
     it('should find multiple suggestions sorted by similarity', () => {
-      const suggestions = findSimilarOptions('name', validFields);
       expect(suggestions).toContain('first_name');
       expect(suggestions).toContain('last_name');
     });
 
     it('should respect max suggestions limit', () => {
-      const suggestions = findSimilarOptions('name', validFields, 1);
       expect(suggestions).toHaveLength(1);
     });
 
     it('should handle substring matching when no close matches', () => {
-      const suggestions = findSimilarOptions('phone', validFields);
       expect(suggestions).toContain('phone_numbers');
     });
 
     it('should return empty array for no matches', () => {
-      const suggestions = findSimilarOptions('xyz123', validFields);
       expect(suggestions).toEqual([]);
     });
   });
 
   describe('generateFieldSuggestionMessage', () => {
-    const validFields = ['first_name', 'last_name', 'email'];
 
     it('should generate message with suggestions for similar field', () => {
-      const message = generateFieldSuggestionMessage('firstname', validFields);
       expect(message).toContain('Invalid field name: "firstname"');
       expect(message).toContain('Did you mean: "first_name"');
     });
 
     it('should include context when provided', () => {
-      const message = generateFieldSuggestionMessage(
         'firstname',
         validFields,
         'people'
@@ -87,23 +67,18 @@ describe('Field Suggestions Utilities', () => {
     });
 
     it('should show valid fields when no close matches', () => {
-      const message = generateFieldSuggestionMessage('xyz', validFields);
       expect(message).toContain('Valid fields include:');
       expect(message).toContain('"first_name"');
     });
 
     it('should handle large field lists', () => {
-      const manyFields = Array.from({ length: 20 }, (_, i) => `field_${i}`);
-      const message = generateFieldSuggestionMessage('xyz', manyFields);
       expect(message).toContain('(and 15 more)');
     });
   });
 
   describe('generateEnumSuggestionMessage', () => {
-    const validValues = ['active', 'inactive', 'pending'];
 
     it('should generate message with all valid options for small sets', () => {
-      const message = generateEnumSuggestionMessage(
         'activ',
         validValues,
         'status'
@@ -115,8 +90,6 @@ describe('Field Suggestions Utilities', () => {
     });
 
     it('should truncate large option lists', () => {
-      const manyValues = Array.from({ length: 20 }, (_, i) => `option_${i}`);
-      const message = generateEnumSuggestionMessage('opt', manyValues, 'field');
       expect(message).toContain('Valid options include:');
       expect(message).toContain('(and 15 more)');
     });
@@ -124,13 +97,11 @@ describe('Field Suggestions Utilities', () => {
 
   describe('generateReadOnlyFieldMessage', () => {
     it('should generate message for update operation', () => {
-      const message = generateReadOnlyFieldMessage('created_at', 'update');
       expect(message).toContain('Field "created_at" is read-only');
       expect(message).toContain('cannot be modified');
     });
 
     it('should generate message for create operation', () => {
-      const message = generateReadOnlyFieldMessage('id', 'create');
       expect(message).toContain('Field "id" is read-only');
       expect(message).toContain('cannot be set during creation');
     });
@@ -138,7 +109,6 @@ describe('Field Suggestions Utilities', () => {
 
   describe('generateResourceTypeSuggestionMessage', () => {
     it('should suggest similar resource types', () => {
-      const message = generateResourceTypeSuggestionMessage(
         'person',
         VALID_RESOURCE_TYPES
       );
@@ -147,7 +117,6 @@ describe('Field Suggestions Utilities', () => {
     });
 
     it('should list all valid resource types', () => {
-      const message = generateResourceTypeSuggestionMessage(
         'xyz',
         VALID_RESOURCE_TYPES
       );
@@ -178,35 +147,29 @@ describe('Field Suggestions Utilities', () => {
   });
 
   describe('validateFieldWithSuggestions', () => {
-    const validFields = [
       'first_name',
       'last_name',
       'email',
       'created_at',
       'updated_at',
     ];
-    const readOnlyFields = ['created_at', 'updated_at'];
 
     it('should validate valid fields', () => {
-      const result = validateFieldWithSuggestions('first_name', validFields);
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
     it('should suggest mapped field names', () => {
-      const result = validateFieldWithSuggestions('firstname', validFields);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Did you mean "first_name"');
     });
 
     it('should generate suggestions for unknown fields', () => {
-      const result = validateFieldWithSuggestions('name', validFields);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Did you mean:');
     });
 
     it('should detect read-only fields for update', () => {
-      const result = validateFieldWithSuggestions(
         'created_at',
         validFields,
         readOnlyFields,
@@ -218,7 +181,6 @@ describe('Field Suggestions Utilities', () => {
     });
 
     it('should detect read-only fields for create', () => {
-      const result = validateFieldWithSuggestions(
         'created_at',
         validFields,
         readOnlyFields,

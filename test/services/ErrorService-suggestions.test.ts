@@ -2,6 +2,7 @@
  * Split: ErrorService.getOperationSuggestion tests
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { ErrorService } from '../../src/services/ErrorService.js';
 
 vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
@@ -27,7 +28,6 @@ describe('ErrorService.getOperationSuggestion', () => {
       valid: false,
       suggestion: 'Use "companies" instead of "company"',
     } as any);
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'company',
       new Error('Invalid resource')
@@ -36,7 +36,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('provides date format suggestions', () => {
-    const result = ErrorService.getOperationSuggestion(
       'search',
       'companies',
       new Error('Unable to parse date format')
@@ -46,7 +45,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('provides date range suggestions', () => {
-    const result = ErrorService.getOperationSuggestion(
       'search',
       'people',
       new Error('Invalid daterange specified')
@@ -56,7 +54,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('suggests simpler filters for unsupported combinations', () => {
-    const result = ErrorService.getOperationSuggestion(
       'search',
       'tasks',
       new Error('Filter combination not supported')
@@ -65,7 +62,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('suggests batch size limits', () => {
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'companies',
       new Error('Batch operation exceeds limit')
@@ -74,7 +70,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('suggests rate limit handling', () => {
-    const result = ErrorService.getOperationSuggestion(
       'search',
       'people',
       new Error('Rate limit exceeded')
@@ -86,7 +81,6 @@ describe('ErrorService.getOperationSuggestion', () => {
     vi.mocked(getFieldSuggestions).mockReturnValue(
       'Try using "name" or "email"'
     );
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'companies',
       new Error('Cannot find attribute with slug/id "unknown_field"')
@@ -99,7 +93,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('provides generic not found suggestions', () => {
-    const result = ErrorService.getOperationSuggestion(
       'get',
       'people',
       new Error('Record not found')
@@ -108,7 +101,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('provides authentication suggestions for unauthorized errors', () => {
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'tasks',
       new Error('Unauthorized access')
@@ -117,7 +109,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('provides duplicate record suggestions for create', () => {
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'companies',
       new Error('Duplicate record found')
@@ -126,7 +117,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('provides uniqueness suggestions', () => {
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'people',
       new Error('Uniqueness constraint violation')
@@ -135,7 +125,6 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('handles string errors', () => {
-    const result = ErrorService.getOperationSuggestion(
       'search',
       'companies',
       'Rate limit exceeded'
@@ -144,14 +133,12 @@ describe('ErrorService.getOperationSuggestion', () => {
   });
 
   it('handles object errors with message property', () => {
-    const result = ErrorService.getOperationSuggestion('search', 'people', {
       message: 'Invalid date format',
     } as any);
     expect(result).toContain('relative dates');
   });
 
   it('returns undefined for unknown patterns', () => {
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'companies',
       new Error('Some completely unknown error')

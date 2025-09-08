@@ -9,17 +9,7 @@
  */
 
 import { config } from 'dotenv';
-import {
-  UniversalResourceType,
-  BatchOperationType,
-} from '../../../../../src/handlers/tool-configs/universal/types.js';
-import {
-  TEST_ENVIRONMENT,
-  TEST_TIMEOUTS,
-  PERFORMANCE_BUDGETS,
-  BATCH_LIMITS,
-  CLEANUP_DELAYS,
-} from './test-constants.js';
+
 import { IntegrationDataFactory } from './mock-data.js';
 
 // Load environment variables
@@ -31,7 +21,7 @@ config();
 
 export class IntegrationTestSetup {
   private static instance: IntegrationTestSetup;
-  private apiClient: any = null;
+  private apiClient: unknown = null;
 
   static getInstance(): IntegrationTestSetup {
     if (!IntegrationTestSetup.instance) {
@@ -79,8 +69,6 @@ export class IntegrationTestSetup {
           '../../../../../src/handlers/tool-configs/universal/index.js'
         );
 
-      const coreTools = Object.keys(coreOperationsToolConfigs || {});
-      const advancedTools = Object.keys(advancedOperationsToolConfigs || {});
 
       console.log('Core operations tools:', coreTools);
       console.log('Advanced operations tools:', advancedTools);
@@ -115,7 +103,6 @@ export class IntegrationTestDataManager {
    * Track a created record for cleanup
    */
   trackCreatedRecord(resourceType: string, recordId: string): void {
-    const existing = this.createdRecords.get(resourceType) || [];
     existing.push(recordId);
     this.createdRecords.set(resourceType, existing);
   }
@@ -124,7 +111,6 @@ export class IntegrationTestDataManager {
    * Track multiple created records
    */
   trackCreatedRecords(resourceType: string, recordIds: string[]): void {
-    const existing = this.createdRecords.get(resourceType) || [];
     existing.push(...recordIds);
     this.createdRecords.set(resourceType, existing);
   }
@@ -160,8 +146,7 @@ export class IntegrationTestDataManager {
   /**
    * Cleanup tracked records using batch operations
    */
-  async cleanupTrackedRecords(toolConfigs: any): Promise<void> {
-    const allRecords = this.getAllTrackedRecords();
+  async cleanupTrackedRecords(toolConfigs: unknown): Promise<void> {
 
     for (const [resourceType, recordIds] of Array.from(allRecords.entries())) {
       if (recordIds.length === 0) continue;
@@ -181,7 +166,6 @@ export class IntegrationTestDataManager {
   ): Promise<void> {
     try {
       // Split into batches to respect API limits
-      const batches = [];
       for (
         let i = 0;
         i < recordIds.length;
@@ -195,7 +179,6 @@ export class IntegrationTestDataManager {
       );
 
       // Process batches in parallel with staggered delays
-      const cleanupPromises = batches.map(async (batch, index) => {
         // Add staggered delay to avoid overwhelming the API
         if (index > 0) {
           await new Promise((resolve) =>
@@ -212,7 +195,6 @@ export class IntegrationTestDataManager {
           });
         } else if (toolConfigs['delete-record']) {
           // Fallback to individual delete operations
-          const deletePromises = batch.map((recordId) =>
             toolConfigs['delete-record'].handler({
               resource_type: resourceType,
               record_id: recordId,
@@ -248,19 +230,14 @@ export class PerformanceTestRunner {
     testFn: () => Promise<T>,
     budgetKey?: keyof typeof PERFORMANCE_BUDGETS
   ): Promise<{ result: T; duration: number }> {
-    const startTime = Date.now();
 
     try {
-      const result = await testFn();
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       // Track results for analysis
       this.trackResult(testName, duration);
 
       // Check against budget if provided
       if (budgetKey) {
-        const budget = PERFORMANCE_BUDGETS[budgetKey];
         this.assertPerformanceBudget(testName, duration, budget);
       }
 
@@ -269,8 +246,6 @@ export class PerformanceTestRunner {
 
       return { result, duration };
     } catch (error) {
-      const endTime = Date.now();
-      const duration = endTime - startTime;
       console.error(`${testName} failed after ${duration}ms:`, error);
       throw error;
     }
@@ -280,7 +255,6 @@ export class PerformanceTestRunner {
    * Track performance results for analysis
    */
   private trackResult(testName: string, duration: number): void {
-    const existing = this.results.get(testName) || [];
     existing.push(duration);
     this.results.set(testName, existing);
   }
@@ -294,7 +268,6 @@ export class PerformanceTestRunner {
     budget: number
   ): void {
     if (duration > budget) {
-      const percentage = ((duration / budget) * 100).toFixed(1);
       throw new Error(
         `Performance budget exceeded for ${testName}: ${duration}ms > ${budget}ms (${percentage}% of budget)`
       );
@@ -302,7 +275,6 @@ export class PerformanceTestRunner {
 
     // Warn if close to budget
     if (duration > budget * 0.8) {
-      const percentage = ((duration / budget) * 100).toFixed(1);
       console.warn(
         `⚠️  ${testName} approaching budget limit: ${duration}ms (${percentage}% of ${budget}ms budget)`
       );
@@ -319,17 +291,10 @@ export class PerformanceTestRunner {
     average: number;
     median: number;
   } | null {
-    const results = this.results.get(testName);
     if (!results || results.length === 0) {
       return null;
     }
 
-    const sorted = [...results].sort((a, b) => a - b);
-    const count = results.length;
-    const min = sorted[0];
-    const max = sorted[sorted.length - 1];
-    const average = results.reduce((sum, val) => sum + val, 0) / count;
-    const median =
       count % 2 === 0
         ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
         : sorted[Math.floor(count / 2)];
@@ -341,10 +306,8 @@ export class PerformanceTestRunner {
    * Generate performance report
    */
   generatePerformanceReport(): string {
-    const lines = ['Performance Test Results:', '========================'];
 
     for (const [testName, results] of Array.from(this.results.entries())) {
-      const stats = this.getPerformanceStats(testName);
       if (stats) {
         lines.push(
           `${testName}: avg=${stats.average.toFixed(0)}ms, min=${stats.min}ms, max=${stats.max}ms, median=${stats.median.toFixed(0)}ms (${stats.count} runs)`
@@ -426,7 +389,7 @@ export const integrationUtils = {
     baseDelayMs: number = 1000,
     operationName?: string
   ): Promise<T> => {
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -444,7 +407,6 @@ export const integrationUtils = {
           throw error;
         }
 
-        const delay = baseDelayMs * Math.pow(2, attempt - 1);
         await new Promise((resolve) => setTimeout(resolve, delay));
 
         if (operationName) {
@@ -462,8 +424,8 @@ export const integrationUtils = {
    * Extract successful batch operation results
    */
   extractSuccessfulResults: (
-    batchResults: Array<{ success: boolean; result?: any; error?: string }>
-  ): any[] => {
+    batchResults: Array<{ success: boolean; result?: unknown; error?: string }>
+  ): unknown[] => {
     return batchResults
       .filter((result) => result.success && result.result)
       .map((result) => result.result);
@@ -473,7 +435,7 @@ export const integrationUtils = {
    * Extract record IDs from batch results
    */
   extractRecordIds: (
-    batchResults: Array<{ success: boolean; result?: any }>
+    batchResults: Array<{ success: boolean; result?: unknown }>
   ): string[] => {
     return integrationUtils
       .extractSuccessfulResults(batchResults)
@@ -489,16 +451,12 @@ export const integrationUtils = {
     results: Array<{ success: boolean; error?: string }>,
     duration?: number
   ): void => {
-    const total = results.length;
-    const successful = results.filter((r) => r.success).length;
-    const failed = total - successful;
 
     console.log(
       `${operation}: ${successful}/${total} successful${duration ? ` (${duration}ms)` : ''}`
     );
 
     if (failed > 0) {
-      const errors = results
         .filter((r) => !r.success)
         .map((r) => r.error)
         .slice(0, 3); // Show first 3 errors

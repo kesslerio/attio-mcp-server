@@ -4,6 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { MappingConfig } from './config-loader.js';
 import logger from './logger.js';
 
@@ -28,7 +29,6 @@ export interface MigrationDetection {
 /**
  * Known problematic mappings that need to be fixed
  */
-const MAPPINGS_TO_FIX = {
   ZIP: {
     from: 'zip',
     to: 'postal_code',
@@ -44,7 +44,6 @@ const MAPPINGS_TO_FIX = {
 /**
  * Paths for configuration files
  */
-const CONFIG_PATHS = {
   user: path.resolve(process.cwd(), 'config/mappings/user.json'),
   backup: path.resolve(process.cwd(), 'config/mappings/backup'),
 };
@@ -90,10 +89,8 @@ export function detectMigrationNeeds(): MigrationDetection {
     );
 
     // Check common mappings for problematic postal code mappings
-    const commonMappings = userConfig.mappings?.attributes?.common || {};
 
     for (const [displayName, expectedFix] of Object.entries(MAPPINGS_TO_FIX)) {
-      const currentMapping = commonMappings[displayName];
       if (currentMapping === expectedFix.from) {
         result.needsMigration = true;
         result.outdatedMappings.push(
@@ -149,9 +146,6 @@ export function createBackup(): {
     }
 
     // Create timestamped backup filename
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFileName = `user.json.backup.${timestamp}`;
-    const backupPath = path.join(CONFIG_PATHS.backup, backupFileName);
 
     // Copy the current user.json to backup
     fs.copyFileSync(CONFIG_PATHS.user, backupPath);
@@ -193,7 +187,6 @@ export function createBackup(): {
  * ```
  */
 export function applyMigration(): MigrationResult {
-  const detection = detectMigrationNeeds();
 
   if (!detection.exists) {
     return {
@@ -211,7 +204,6 @@ export function applyMigration(): MigrationResult {
 
   try {
     // Create backup first
-    const backup = createBackup();
     if (!backup.success) {
       return {
         success: false,
@@ -229,7 +221,6 @@ export function applyMigration(): MigrationResult {
     // Apply postal code mapping fixes
     if (userConfig.mappings?.attributes?.common) {
       for (const [displayName, fix] of Object.entries(MAPPINGS_TO_FIX)) {
-        const currentMapping =
           userConfig.mappings.attributes.common[displayName];
         if (currentMapping === fix.from) {
           userConfig.mappings.attributes.common[displayName] = fix.to;
@@ -290,7 +281,6 @@ export function applyMigration(): MigrationResult {
  * ```
  */
 export function validateMigration(): { valid: boolean; issues: string[] } {
-  const detection = detectMigrationNeeds();
 
   if (!detection.exists) {
     return { valid: true, issues: [] };
@@ -337,7 +327,6 @@ export function validateMigration(): { valid: boolean; issues: string[] } {
 export function migrateUserConfig(
   options: { dryRun?: boolean } = {}
 ): MigrationResult {
-  const detection = detectMigrationNeeds();
 
   // Early return if no migration needed
   if (!detection.exists) {
@@ -366,14 +355,12 @@ export function migrateUserConfig(
   }
 
   // Apply the migration
-  const migrationResult = applyMigration();
 
   if (!migrationResult.success) {
     return migrationResult;
   }
 
   // Validate the migration worked
-  const validation = validateMigration();
   if (!validation.valid) {
     return {
       success: false,

@@ -6,10 +6,11 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { ToolConfig } from '../../../tool-types.js';
 
 /**
  * Handle list-records operations
@@ -33,7 +34,6 @@ export async function handleListOperation(
     }
 
     // Extract the list options, excluding objectSlug and objectId
-    const listOptions = {
       page: options.page,
       pageSize: options.pageSize,
       query: options.query,
@@ -49,14 +49,11 @@ export async function handleListOperation(
       }
     });
 
-    const result = await toolConfig.handler(objectSlug, listOptions, objectId);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `Found ${Array.isArray(result) ? result.length : 0} records`;
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
-    const objectSlug = request.params.arguments?.objectSlug || 'unknown';
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/objects/${objectSlug}/records`,
@@ -97,20 +94,16 @@ export async function handleGetOperation(
       );
     }
 
-    const result = await toolConfig.handler(
       objectSlug,
       recordId,
       attributes,
       objectId
     );
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `Record retrieved successfully`;
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
-    const objectSlug = request.params.arguments?.objectSlug || 'unknown';
-    const recordId = request.params.arguments?.recordId || 'unknown';
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/objects/${objectSlug}/records/${recordId}`,

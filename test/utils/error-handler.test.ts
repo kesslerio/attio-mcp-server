@@ -1,17 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  createErrorResult,
-  AttioApiError,
-  createApiError,
-  createAttioError,
-  ErrorType,
-  formatErrorResponse,
-} from '../../src/utils/error-handler';
 
 describe('error-handler', () => {
   describe('createAttioError', () => {
     it('should return an AttioApiError instance when given an Axios error', () => {
-      const mockAxiosError = {
         isAxiosError: true,
         response: {
           status: 404,
@@ -23,7 +14,6 @@ describe('error-handler', () => {
         },
       };
 
-      const result = createAttioError(mockAxiosError);
 
       expect(result).toBeInstanceOf(Error);
       if (result instanceof AttioApiError) {
@@ -33,8 +23,6 @@ describe('error-handler', () => {
     });
 
     it('should return the original error when not an Axios error', () => {
-      const originalError = new Error('Original error');
-      const result = createAttioError(originalError);
 
       expect(result).toBe(originalError);
     });
@@ -42,7 +30,6 @@ describe('error-handler', () => {
 
   describe('createApiError', () => {
     it('should create a 404 error with appropriate message for resources', () => {
-      const error = createApiError(404, '/objects/companies/123', 'GET', {});
 
       expect(error).toBeInstanceOf(AttioApiError);
       if (error instanceof AttioApiError) {
@@ -53,7 +40,6 @@ describe('error-handler', () => {
     });
 
     it('should create a 401 error with authentication message', () => {
-      const error = createApiError(401, '/api/endpoint', 'GET', {});
 
       expect(error).toBeInstanceOf(AttioApiError);
       if (error instanceof AttioApiError) {
@@ -64,7 +50,6 @@ describe('error-handler', () => {
     });
 
     it('should create a 429 error with rate limit message', () => {
-      const error = createApiError(429, '/api/endpoint', 'GET', {});
 
       expect(error).toBeInstanceOf(AttioApiError);
       if (error instanceof AttioApiError) {
@@ -77,7 +62,6 @@ describe('error-handler', () => {
 
   describe('createErrorResult', () => {
     it('should format an AttioApiError correctly', () => {
-      const error = new AttioApiError(
         'Test error',
         500,
         'test details',
@@ -86,7 +70,6 @@ describe('error-handler', () => {
         ErrorType.SERVER_ERROR,
         { error: 'Test error' }
       );
-      const result = createErrorResult(error, '/unused', 'UNUSED');
 
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
@@ -99,16 +82,11 @@ describe('error-handler', () => {
     });
 
     it('should create a properly formatted error result from status and response data', () => {
-      const error = new Error('Test error');
-      const url = '/test/url';
-      const method = 'GET';
-      const responseData = {
         status: 400,
         headers: { 'content-type': 'application/json' },
         data: { error: 'Bad request' },
       };
 
-      const result = createErrorResult(error, url, method, responseData);
 
       expect(result).toMatchObject({
         content: [
@@ -130,12 +108,7 @@ describe('error-handler', () => {
     });
 
     it('should handle missing response data', () => {
-      const error = new Error('Test error');
-      const url = '/test/url';
-      const method = 'GET';
-      const responseData = {};
 
-      const result = createErrorResult(error, url, method, responseData);
 
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
@@ -150,8 +123,6 @@ describe('error-handler', () => {
 
   describe('formatErrorResponse', () => {
     it('should create a properly formatted error response based on error type', () => {
-      const error = new Error('Validation error');
-      const result = formatErrorResponse(error, ErrorType.VALIDATION_ERROR, {
         field: 'username',
         message: 'Required',
       });
@@ -171,7 +142,6 @@ describe('error-handler', () => {
     });
 
     it('should set the appropriate error code based on error type', () => {
-      const testCases = [
         { type: ErrorType.VALIDATION_ERROR, expectedCode: 400 },
         { type: ErrorType.AUTHENTICATION_ERROR, expectedCode: 401 },
         { type: ErrorType.RATE_LIMIT_ERROR, expectedCode: 429 },
@@ -181,7 +151,6 @@ describe('error-handler', () => {
       ];
 
       testCases.forEach((testCase) => {
-        const result = formatErrorResponse(
           new Error('Test error'),
           testCase.type
         );

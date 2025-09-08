@@ -25,9 +25,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
 
   describe('Tool Discovery', () => {
     it('should list search-records tool', async () => {
-      const tools = await client.listTools();
 
-      const searchTool = tools.find((tool) => tool.name === 'search-records');
       expect(searchTool).toBeDefined();
       expect(searchTool?.description).toContain('search');
     });
@@ -54,7 +52,6 @@ describe('Timeframe Search MCP Tool Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               // Should not contain error messages about invalid operators
               expect(content.text).not.toContain('Invalid condition');
@@ -87,7 +84,6 @@ describe('Timeframe Search MCP Tool Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               // Should not contain Advanced Search API errors
               expect(content.text).not.toContain('Invalid condition');
@@ -120,7 +116,6 @@ describe('Timeframe Search MCP Tool Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               // Should not contain timestamp operator errors
               expect(content.text).not.toContain("Invalid field 'gte'");
@@ -152,7 +147,6 @@ describe('Timeframe Search MCP Tool Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).not.toContain("Invalid field 'gt'");
               expect(content.text).not.toContain('Unknown object slug');
@@ -183,7 +177,6 @@ describe('Timeframe Search MCP Tool Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).not.toContain("Invalid field 'lt'");
               expect(content.text).not.toContain('Unknown attribute slug');
@@ -246,7 +239,6 @@ describe('Timeframe Search MCP Tool Validation', () => {
 
           // Should provide clear validation error
           if (result.isError && result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).toContain('timeframe_attribute');
             }

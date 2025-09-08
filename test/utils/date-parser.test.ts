@@ -1,11 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  parseRelativeDate,
-  isRelativeDate,
-  normalizeDate,
-  describeDateRange,
-  type DateRange,
-} from '../../src/utils/date-parser';
 
 describe('Date Parser Utilities', () => {
   // Mock the current date for consistent testing
@@ -21,7 +14,6 @@ describe('Date Parser Utilities', () => {
 
   describe('parseRelativeDate', () => {
     it('should parse "today"', () => {
-      const result = parseRelativeDate('today');
       expect(result).toEqual({
         start: '2024-03-15',
         end: '2024-03-15',
@@ -29,7 +21,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "yesterday"', () => {
-      const result = parseRelativeDate('yesterday');
       expect(result).toEqual({
         start: '2024-03-14',
         end: '2024-03-14',
@@ -37,7 +28,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "this week" (Monday to Sunday)', () => {
-      const result = parseRelativeDate('this week');
       expect(result).toEqual({
         start: '2024-03-11', // Monday
         end: '2024-03-17', // Sunday
@@ -45,7 +35,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "last week"', () => {
-      const result = parseRelativeDate('last week');
       expect(result).toEqual({
         start: '2024-03-04', // Previous Monday
         end: '2024-03-10', // Previous Sunday
@@ -53,7 +42,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "this month"', () => {
-      const result = parseRelativeDate('this month');
       expect(result).toEqual({
         start: '2024-03-01',
         end: '2024-03-31',
@@ -61,7 +49,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "last month"', () => {
-      const result = parseRelativeDate('last month');
       expect(result).toEqual({
         start: '2024-02-01',
         end: '2024-02-29', // 2024 is a leap year
@@ -69,7 +56,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "this year"', () => {
-      const result = parseRelativeDate('this year');
       expect(result).toEqual({
         start: '2024-01-01',
         end: '2024-12-31',
@@ -77,7 +63,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "last year"', () => {
-      const result = parseRelativeDate('last year');
       expect(result).toEqual({
         start: '2023-01-01',
         end: '2023-12-31',
@@ -85,7 +70,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "last 7 days"', () => {
-      const result = parseRelativeDate('last 7 days');
       expect(result).toEqual({
         start: '2024-03-08',
         end: '2024-03-15',
@@ -93,7 +77,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "last 1 day"', () => {
-      const result = parseRelativeDate('last 1 day');
       expect(result).toEqual({
         start: '2024-03-14',
         end: '2024-03-15',
@@ -101,7 +84,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "last 2 weeks"', () => {
-      const result = parseRelativeDate('last 2 weeks');
       expect(result).toEqual({
         start: '2024-03-01',
         end: '2024-03-15',
@@ -109,7 +91,6 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should parse "last 3 months"', () => {
-      const result = parseRelativeDate('last 3 months');
       expect(result).toEqual({
         start: '2023-12-15',
         end: '2024-03-15',
@@ -117,16 +98,11 @@ describe('Date Parser Utilities', () => {
     });
 
     it('should be case-insensitive', () => {
-      const result1 = parseRelativeDate('TODAY');
-      const result2 = parseRelativeDate('Today');
-      const result3 = parseRelativeDate('today');
-
       expect(result1).toEqual(result2);
       expect(result2).toEqual(result3);
     });
 
     it('should handle extra whitespace', () => {
-      const result = parseRelativeDate('  last   7   days  ');
       expect(result).toEqual({
         start: '2024-03-08',
         end: '2024-03-15',
@@ -230,7 +206,6 @@ describe('Date Parser Utilities', () => {
       // Set date to February 2024 (leap year)
       vi.setSystemTime(new Date('2024-02-15T12:00:00Z'));
 
-      const result = parseRelativeDate('this month');
       expect(result).toEqual({
         start: '2024-02-01',
         end: '2024-02-29', // Leap year has 29 days
@@ -241,7 +216,6 @@ describe('Date Parser Utilities', () => {
       // Set date to February 2023 (non-leap year)
       vi.setSystemTime(new Date('2023-02-15T12:00:00Z'));
 
-      const result = parseRelativeDate('this month');
       expect(result).toEqual({
         start: '2023-02-01',
         end: '2023-02-28', // Non-leap year has 28 days
@@ -252,7 +226,6 @@ describe('Date Parser Utilities', () => {
       // Set date to January 2024
       vi.setSystemTime(new Date('2024-01-15T12:00:00Z'));
 
-      const lastMonth = parseRelativeDate('last month');
       expect(lastMonth).toEqual({
         start: '2023-12-01',
         end: '2023-12-31',
@@ -263,7 +236,6 @@ describe('Date Parser Utilities', () => {
       // Set date to Sunday
       vi.setSystemTime(new Date('2024-03-17T12:00:00Z'));
 
-      const thisWeek = parseRelativeDate('this week');
       expect(thisWeek).toEqual({
         start: '2024-03-11', // Monday
         end: '2024-03-17', // Sunday (today)

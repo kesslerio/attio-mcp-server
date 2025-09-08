@@ -2,30 +2,11 @@
  * Split: UniversalUpdateService validation & error handling
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/objects/tasks.js', () => ({
-  getTask: vi.fn(),
-  updateTask: vi.fn(),
-}));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
-  mapRecordFields: vi.fn(),
-  mapTaskFields: vi.fn((_: string, i: any) => i),
-  validateResourceType: vi.fn(),
-  getFieldSuggestions: vi.fn(),
-  validateFields: vi.fn(),
-}));
-vi.mock('../../src/utils/validation-utils.js', () => ({
-  validateRecordFields: vi.fn(),
-}));
-// Mock the create service factory to return a mock service
-const mockCreateService = {
-  createCompany: vi.fn(),
-  createPerson: vi.fn(),
-  createTask: vi.fn(),
-  createList: vi.fn(),
-  createNote: vi.fn(),
-  createDeal: vi.fn(),
-  updateTask: vi.fn(),
-};
+
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
+import { validateRecordFields } from '../../src/utils/validation-utils.js';
+import * as tasks from '../../src/objects/tasks.js';
 
 vi.mock('../../src/services/create/index.js', () => ({
   getCreateService: vi.fn(() => mockCreateService),
@@ -88,8 +69,6 @@ describe('UniversalUpdateService', () => {
         warnings: ['Field warning 1', 'Field warning 2'],
         suggestions: ['Suggestion 1', 'Suggestion 2'],
       } as any);
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -150,7 +129,6 @@ describe('UniversalUpdateService', () => {
       vi.mocked(updateCompany as any).mockRejectedValue(
         new Error('Cannot find attribute with slug/ID "invalid_field"')
       );
-      const error = new Error(
         'Cannot find attribute with slug/ID "invalid_field"'
       );
       vi.mocked(getFieldSuggestions).mockReturnValue('Did you mean "name"?');
@@ -280,7 +258,6 @@ describe('UniversalUpdateService', () => {
         values: { title: 'Mock Task', status: 'completed' },
       } as any);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_123',
         record_data: { values: { status: 'completed' } },
@@ -300,7 +277,6 @@ describe('UniversalUpdateService', () => {
         values: {},
       } as any);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_123',
         record_data: { values: { status: 'completed' } },
@@ -405,7 +381,6 @@ describe('UniversalUpdateService', () => {
         warnings: [],
         errors: [],
       });
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'test-company',
         record_data: {},

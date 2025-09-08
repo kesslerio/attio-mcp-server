@@ -20,4 +20,4 @@ export function placeholderInterceptorLogic(error: unknown): unknown {
 
 // If this file was intended to export an Axios interceptor function,
 // it would look different, e.g.:
-// export const attioErrorResponseInterceptor = (error: any) => { ... return Promise.reject(error) };
+// export const attioErrorResponseInterceptor = (error: unknown) => { ... return Promise.reject(error) };

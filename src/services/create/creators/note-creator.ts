@@ -5,11 +5,11 @@
  * object and normalizing the response format.
  */
 
-import type { ResourceCreatorContext } from './types.js';
 import { BaseCreator } from './base-creator.js';
-import { resolveMockId } from '../../../test-support/test-data-registry.js';
 import { isValidUUID } from '../../../utils/validation/uuid-validation.js';
 import { normalizeRecordForOutput } from '../extractor.js';
+import { resolveMockId } from '../../../test-support/test-data-registry.js';
+import type { ResourceCreatorContext } from './types.js';
 
 /**
  * Note input interface matching the expected format
@@ -31,8 +31,8 @@ export class NoteCreator extends BaseCreator {
   readonly endpoint = '/objects/notes/records';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private noteModule: any = null;
-  private responseUtilsModule: any = null;
+  private noteModule: unknown = null;
+  private responseUtilsModule: unknown = null;
 
   /**
    * Lazy-loads note dependencies to prevent repeated dynamic imports
@@ -61,11 +61,8 @@ export class NoteCreator extends BaseCreator {
   ): Promise<any> {
     this.assertClientHasAuth(context);
     // Validate note input format
-    const noteInput = this.validateNoteInput(input);
 
     // Resolve parent record ID (handles mock aliases in E2E)
-    const rawParentId = noteInput.record_id;
-    const parent_record_id = resolveMockId(rawParentId);
 
     if (!parent_record_id || !isValidUUID(parent_record_id)) {
       throw this.createEnhancedError(
@@ -91,11 +88,9 @@ export class NoteCreator extends BaseCreator {
       await this.ensureDependencies();
 
       // Coerce format to Attio-accepted values (converts 'html' to 'plaintext')
-      const coercedFormat = noteInput.format === 'markdown' 
         ? 'markdown' 
         : 'plaintext'; // Any non-markdown format becomes plaintext
 
-      const noteData = {
         parent_object: noteInput.resource_type,
         parent_record_id,
         title: noteInput.title,
@@ -105,11 +100,8 @@ export class NoteCreator extends BaseCreator {
 
       context.debug(this.constructor.name, 'Creating note with data', noteData);
 
-      const response = await this.noteModule.createNote(noteData);
 
       // Unwrap varying API envelopes and normalize to stable shape
-      const attioNote = this.responseUtilsModule.unwrapAttio(response);
-      const normalizedNote = this.responseUtilsModule.normalizeNote(attioNote);
 
       context.debug(this.constructor.name, 'Note creation response', {
         hasResponse: !!response,
@@ -119,7 +111,7 @@ export class NoteCreator extends BaseCreator {
       });
 
       return normalizeRecordForOutput(normalizedNote);
-    } catch (err: any) {
+    } catch (err: unknown) {
       context.logError(this.constructor.name, 'Note creation error', {
         error: err?.message,
         input: noteInput,
@@ -133,7 +125,6 @@ export class NoteCreator extends BaseCreator {
    * Validates and structures note input
    */
   private validateNoteInput(input: Record<string, unknown>): NoteInput {
-    const requiredFields = ['resource_type', 'record_id', 'title', 'content'];
 
     for (const field of requiredFields) {
       if (!input[field]) {

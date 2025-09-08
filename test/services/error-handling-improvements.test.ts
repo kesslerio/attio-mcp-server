@@ -4,20 +4,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
-import {
-  UniversalResourceType,
-  SearchType,
-} from '../../src/handlers/tool-configs/universal/types.js';
-import {
-  AuthenticationError,
-  NetworkError,
-  ServerError,
-  ResourceNotFoundError,
-} from '../../src/errors/api-errors.js';
 
 // Mock the Attio client
-const mockPost = vi.fn();
 vi.mock('../../src/api/attio-client.js', () => ({
   getAttioClient: () => ({
     post: mockPost,
@@ -63,7 +53,6 @@ describe('Error Handling Improvements - Issue #523', () => {
         message: 'Request failed with status code 401',
       });
 
-      const params = {
         resource_type: UniversalResourceType.COMPANIES,
         search_type: SearchType.RELATIONSHIP,
         relationship_target_type: UniversalResourceType.PEOPLE,
@@ -83,7 +72,6 @@ describe('Error Handling Improvements - Issue #523', () => {
         message: 'connect ECONNREFUSED 127.0.0.1:443',
       });
 
-      const params = {
         resource_type: UniversalResourceType.COMPANIES,
         search_type: SearchType.CONTENT,
         query: 'test',
@@ -106,7 +94,6 @@ describe('Error Handling Improvements - Issue #523', () => {
         message: 'Request failed with status code 500',
       });
 
-      const params = {
         resource_type: UniversalResourceType.COMPANIES,
         search_type: SearchType.TIMEFRAME,
         timeframe_attribute: 'created_at',
@@ -132,7 +119,6 @@ describe('Error Handling Improvements - Issue #523', () => {
         message: 'Request failed with status code 404',
       });
 
-      const params = {
         resource_type: UniversalResourceType.COMPANIES,
         search_type: SearchType.RELATIONSHIP,
         relationship_target_type: UniversalResourceType.PEOPLE,
@@ -140,7 +126,6 @@ describe('Error Handling Improvements - Issue #523', () => {
       };
 
       // Should return empty array gracefully, not throw
-      const result = await UniversalSearchService.searchRecords(params);
       expect(result).toEqual([]);
     });
 
@@ -154,7 +139,6 @@ describe('Error Handling Improvements - Issue #523', () => {
         message: 'Request failed with status code 404',
       });
 
-      const params = {
         resource_type: UniversalResourceType.PEOPLE,
         search_type: SearchType.CONTENT,
         query: 'nonexistent',
@@ -162,7 +146,6 @@ describe('Error Handling Improvements - Issue #523', () => {
       };
 
       // Should return empty array gracefully
-      const result = await UniversalSearchService.searchRecords(params);
       expect(result).toEqual([]);
     });
 
@@ -176,7 +159,6 @@ describe('Error Handling Improvements - Issue #523', () => {
         message: 'Request failed with status code 404',
       });
 
-      const params = {
         resource_type: UniversalResourceType.TASKS,
         search_type: SearchType.TIMEFRAME,
         timeframe_attribute: 'created_at',
@@ -186,14 +168,12 @@ describe('Error Handling Improvements - Issue #523', () => {
       };
 
       // Should return empty array gracefully
-      const result = await UniversalSearchService.searchRecords(params);
       expect(result).toEqual([]);
     });
   });
 
   describe('Error Type Detection', () => {
     it('should correctly identify different error types', async () => {
-      const testCases = [
         {
           mockError: {
             response: { status: 401, data: { message: 'Unauthorized' } },
@@ -218,7 +198,6 @@ describe('Error Handling Improvements - Issue #523', () => {
       for (const testCase of testCases) {
         mockPost.mockRejectedValueOnce(testCase.mockError);
 
-        const params = {
           resource_type: UniversalResourceType.COMPANIES,
           search_type: SearchType.RELATIONSHIP,
           relationship_target_type: UniversalResourceType.PEOPLE,

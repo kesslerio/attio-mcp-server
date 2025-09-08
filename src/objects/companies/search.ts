@@ -5,20 +5,6 @@
  * Uses standard Attio API patterns instead of custom workarounds.
  */
 import { getAttioClient } from '../../api/attio-client.js';
-import {
-  searchObject,
-  advancedSearchObject,
-  ListEntryFilters,
-} from '../../api/operations/index.js';
-import {
-  ResourceType,
-  Company,
-  FilterConditionType,
-} from '../../types/attio.js';
-import {
-  FilterValidationError,
-  FilterErrorCategory,
-} from '../../errors/api-errors.js';
 import { normalizeDomain } from '../../utils/domain-utils.js';
 
 /**
@@ -53,7 +39,6 @@ export async function searchCompanies(
     throw new Error('maxResults must be a non-negative integer');
   }
 
-  const results = await searchObject<Company>(ResourceType.COMPANIES, query);
 
   // Apply maxResults limit if specified
   return options.maxResults ? results.slice(0, options.maxResults) : results;
@@ -72,11 +57,8 @@ export async function searchCompaniesByDomain(
     return [];
   }
 
-  const normalizedDomain = normalizeDomain(domain);
-  const api = getAttioClient();
 
   try {
-    const response = await api.post('/objects/companies/records/query', {
       filter: {
         domains: { $contains: normalizedDomain },
       },
@@ -232,7 +214,6 @@ export function createDomainFilter(
     );
   }
 
-  const normalizedDomain = normalizeDomain(domain);
   return {
     filters: [
       {

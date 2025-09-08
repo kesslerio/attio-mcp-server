@@ -3,12 +3,9 @@
  * Specifically tests special case handling and fuzzy matching
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import {
-  getAttributeSlug,
-  invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/index';
-import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
+
 import * as configLoader from '../../src/utils/config-loader';
+import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
 
 // Mock the config-loader
 vi.mock('../../src/utils/config-loader', () => ({
@@ -25,7 +22,6 @@ describe('Enhanced Attribute Mapping', () => {
   describe('Special Case Handling', () => {
     it('should correctly map B2B Segment special cases', () => {
       // We'll use different variations of the B2B Segment attribute
-      const variations = [
         'B2B Segment',
         'b2b_segment',
         'b2bsegment',
@@ -78,7 +74,6 @@ describe('Enhanced Attribute Mapping', () => {
       expect(getAttributeSlug('B2B Segment')).toBe('type_persona');
 
       // Spy on handleSpecialCases to ensure it was called
-      const handleSpecialCasesSpy = vi.spyOn(
         mappingUtils,
         'handleSpecialCases'
       );
@@ -133,12 +128,10 @@ describe('Enhanced Attribute Mapping', () => {
     it('should use aggressive normalization as a last resort', () => {
       // For this test, we'll spy on lookupAggressiveNormalized instead of trying
       // to set up the full chain, which is difficult to mock completely
-      const lookupAggressiveNormalizedSpy = vi
         .spyOn(mappingUtils, 'lookupAggressiveNormalized')
         .mockReturnValue('custom_slug');
 
       // Call the function to test the aggressive normalization path
-      const result = getAttributeSlug('Custom.Field');
 
       // Verify the aggressive normalization function was called
       expect(lookupAggressiveNormalizedSpy).toHaveBeenCalled();

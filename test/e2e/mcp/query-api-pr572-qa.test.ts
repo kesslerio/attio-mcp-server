@@ -30,7 +30,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
   describe('TC-010: Search by Relationship', () => {
     it('should successfully search records by relationship using Query API', async () => {
-      const start = performance.now();
 
       await client.assertToolCall(
         'search-records',
@@ -43,7 +42,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['name', 'email'], // This triggers Query API path
         },
         (result: ToolResult) => {
-          const duration = performance.now() - start;
 
           // Should complete within reasonable time (increased for real API calls)
           expect(duration).toBeLessThan(5000);
@@ -53,7 +51,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toHaveLength(1);
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
 
           // Validate it's not using old $relationship structure in error messages
           expect(responseText).not.toContain('$relationship');
@@ -81,7 +78,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
 
           // Should not contain legacy error patterns
           expect(responseText).not.toContain('$relationship attribute');
@@ -96,7 +92,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
   describe('TC-011: Search by Content', () => {
     it('should successfully search records by content using Query API', async () => {
-      const start = performance.now();
 
       await client.assertToolCall(
         'search-records',
@@ -108,7 +103,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           limit: 5,
         },
         (result: ToolResult) => {
-          const duration = performance.now() - start;
 
           // Should complete within reasonable time
           expect(duration).toBeLessThan(5000);
@@ -117,7 +111,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
 
           // Should not contain legacy error patterns
           expect(responseText).not.toContain('$relationship');
@@ -144,7 +137,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
 
           // Validate proper Query API structure used - no legacy errors
           expect(responseText).not.toContain('constraints error');
@@ -159,7 +151,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
   describe('TC-012: Search by Timeframe', () => {
     it('should successfully search records by timeframe using Query API', async () => {
-      const start = performance.now();
 
       await client.assertToolCall(
         'search-records',
@@ -173,7 +164,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           limit: 5,
         },
         (result: ToolResult) => {
-          const duration = performance.now() - start;
 
           // Should complete within reasonable time (increased for real API calls)
           expect(duration).toBeLessThan(8000);
@@ -182,7 +172,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
 
           // Should not contain legacy date filtering errors
           expect(responseText).not.toContain('date constraint error');
@@ -211,7 +200,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
 
           // Validate tasks can be searched by timeframe (was previously failing)
           expect(responseText).not.toContain('tasks timeframe not supported');
@@ -241,7 +229,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
           expect(responseText.length).toBeGreaterThan(0);
         }
       );
@@ -263,7 +250,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
           expect(responseText.length).toBeGreaterThan(0);
         }
       );
@@ -285,7 +271,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
 
-          const responseText = result.content[0].text;
           expect(responseText.length).toBeGreaterThan(0);
 
           // Error messages should be descriptive, not generic
@@ -298,7 +283,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
   describe('Performance Validation', () => {
     it('should complete Query API searches within reasonable time', async () => {
-      const start = performance.now();
 
       await client.assertToolCall(
         'search-records',
@@ -310,7 +294,6 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           limit: 5,
         },
         (result: ToolResult) => {
-          const duration = performance.now() - start;
 
           // Should complete within reasonable time for real API calls
           expect(duration).toBeLessThan(8000);

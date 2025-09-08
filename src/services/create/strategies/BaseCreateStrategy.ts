@@ -5,8 +5,8 @@
  * Based on the pattern from search-strategies refactoring.
  */
 
-import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../../types/attio.js';
+import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import { UniversalValidationError } from '../../../handlers/tool-configs/universal/schemas.js';
 
 export interface CreateStrategyParams {
@@ -52,7 +52,6 @@ export abstract class BaseCreateStrategy {
     data: Record<string, unknown>,
     requiredFields: string[]
   ): void {
-    const missingFields = requiredFields.filter(field => !data[field]);
     if (missingFields.length > 0) {
       throw new UniversalValidationError(
         `Missing required fields: ${missingFields.join(', ')}`,

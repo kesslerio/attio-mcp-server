@@ -3,8 +3,10 @@
  */
 
 // External imports
+import { createDateRangeFilter } from './date.js';
 import { FilterValidationError } from '../../../errors/api-errors.js';
 import { resolveDateRange } from '../../date-utils.js';
+import { validateActivityFilter } from '../validators.js';
 
 // Internal imports
 import {
@@ -25,10 +27,8 @@ import { createDateRangeFilter } from './date.js';
 export function createActivityFilter(
   activityFilter: ActivityFilter
 ): ListEntryFilters {
-  const validated = validateActivityFilter(activityFilter);
   const filters: ListEntryFilter[] = [];
 
-  const dateFilter = createDateRangeFilter(
     ATTRIBUTES.LAST_INTERACTION,
     validated.dateRange
   );
@@ -56,7 +56,6 @@ export function createLastInteractionFilter(
 ): ListEntryFilters {
   try {
     const filters: ListEntryFilter[] = [];
-    const resolvedRange = resolveDateRange(dateRange);
 
     if (resolvedRange.start) {
       filters.push({
@@ -84,7 +83,6 @@ export function createLastInteractionFilter(
 
     return { filters, matchAny: false };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create interaction filter: ${message}`
     );

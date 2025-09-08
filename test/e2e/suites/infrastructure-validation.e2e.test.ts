@@ -18,17 +18,9 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { loadE2EConfig, configLoader } from '../utils/config-loader.js';
-import {
-  E2ECompanyFactory,
-  E2EPersonFactory,
-  TestDataValidator,
-} from '../utils/test-data.js';
+
 import { E2EAssertions } from '../utils/assertions.js';
-import {
-  callUniversalTool,
-  validateTestEnvironment,
-} from '../utils/enhanced-tool-caller.js';
+import { loadE2EConfig, configLoader } from '../utils/config-loader.js';
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
@@ -40,7 +32,6 @@ describe.skipIf(
 
   describe('System Health Checks', () => {
     it('should validate test environment setup', async () => {
-      const validation = await validateTestEnvironment();
 
       expect(validation).toBeDefined();
       expect(typeof validation.valid).toBe('boolean');
@@ -57,7 +48,6 @@ describe.skipIf(
 
     it('should validate basic API connectivity', async () => {
       // Minimal API connectivity test
-      const response = await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'smoke-test',
         limit: 1,
@@ -70,7 +60,6 @@ describe.skipIf(
 
   describe('Configuration Smoke Tests', () => {
     it('should load E2E configuration successfully', async () => {
-      const config = await loadE2EConfig();
 
       expect(config).toBeDefined();
       expect(config.testData).toBeDefined();
@@ -81,7 +70,6 @@ describe.skipIf(
     });
 
     it('should validate critical configuration fields', async () => {
-      const config = await loadE2EConfig();
 
       expect(config.testData.testDataPrefix).toBeDefined();
       expect(config.testData.testEmailDomain).toBeDefined();
@@ -91,8 +79,6 @@ describe.skipIf(
     });
 
     it('should generate unique test identifiers', () => {
-      const id1 = configLoader.getTestIdentifier('smoke-test');
-      const id2 = configLoader.getTestIdentifier('smoke-test');
 
       expect(id1).not.toBe(id2);
       expect(id1).toContain('E2E_TEST_');
@@ -104,7 +90,6 @@ describe.skipIf(
 
   describe('Test Data Factory Validation', () => {
     it('should create valid test company data', () => {
-      const company = E2ECompanyFactory.create();
 
       expect(company.name).toBeDefined();
       expect(company.name).toContain('E2E_TEST_');
@@ -116,8 +101,6 @@ describe.skipIf(
     });
 
     it('should create valid test person data', () => {
-      const person = E2EPersonFactory.create();
-      const config = configLoader.getConfig();
 
       expect(person.name).toBeDefined();
       expect(person.name).toContain('E2E_TEST_');
@@ -131,12 +114,8 @@ describe.skipIf(
     });
 
     it('should validate test data integrity', () => {
-      const company = E2ECompanyFactory.create();
-      const person = E2EPersonFactory.create();
 
       // Test data should meet basic validation requirements
-      const companyValidation = TestDataValidator.validateCompany(company);
-      const personValidation = TestDataValidator.validatePerson(person);
 
       expect(companyValidation.isValid).toBe(true);
       expect(personValidation.isValid).toBe(true);
@@ -147,7 +126,6 @@ describe.skipIf(
 
   describe('E2E Assertions Smoke Tests', () => {
     it('should validate assertion utilities', () => {
-      const mockSuccessResponse = {
         isError: false,
         content: [
           {
@@ -157,7 +135,6 @@ describe.skipIf(
         ],
       } as any;
 
-      const mockErrorResponse = {
         isError: true,
         error: 'Test error message',
       };
@@ -173,7 +150,6 @@ describe.skipIf(
       }).not.toThrow();
 
       // Test data extraction
-      const data = E2EAssertions.expectMcpData(mockSuccessResponse as any);
       expect(data).toBeDefined();
       if (!data) {
         throw new Error('Expected data to be defined');
@@ -187,9 +163,6 @@ describe.skipIf(
   describe('Infrastructure Integration', () => {
     it('should validate end-to-end test pipeline readiness', async () => {
       // Comprehensive readiness check combining all smoke tests
-      const config = await loadE2EConfig();
-      const envValidation = await validateTestEnvironment();
-      const testCompany = E2ECompanyFactory.create();
 
       // All components should be ready
       expect(config).toBeDefined();
@@ -202,11 +175,9 @@ describe.skipIf(
 
     it('should validate minimal tool integration', async () => {
       // Quick validation that tools can be called without errors
-      const tools = ['search-records', 'get-record-details'];
 
       for (const tool of tools) {
         try {
-          const response = await callUniversalTool(tool as any, {
             resource_type: 'companies',
             ...(tool === 'search-records'
               ? { query: 'minimal-test', limit: 1 }

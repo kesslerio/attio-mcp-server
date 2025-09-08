@@ -5,11 +5,11 @@
  * and ensure deterministic test execution across suites.
  */
 import { afterEach, beforeEach } from 'vitest';
-import { TestDataSeeder } from '../utils/test-data-seeder.js';
+
 import { E2EAssertions } from '../utils/assertions.js';
+import { TestDataSeeder } from '../utils/test-data-seeder.js';
 
 // Track suite-specific seeders for proper cleanup
-const suiteSeederMap = new Map<string, TestDataSeeder>();
 
 /**
  * Register a suite-specific seeder for lifecycle management
@@ -24,7 +24,6 @@ export function registerSuiteSeeder(suiteName: string, seeder: TestDataSeeder): 
  */
 export function getSuiteSeeder(suiteName: string): TestDataSeeder {
   if (!suiteSeederMap.has(suiteName)) {
-    const seeder = TestDataSeeder.createForSuite(suiteName);
     registerSuiteSeeder(suiteName, seeder);
   }
   return suiteSeederMap.get(suiteName)!;
@@ -44,7 +43,6 @@ afterEach(() => {
   
   // Clean up individual suite caches when tests complete
   // This happens after each suite completes all its tests
-  const currentTest = expect.getState().currentTestName;
   if (currentTest) {
     console.log(`[CACHE_CLEANUP] Test completed: ${currentTest}`);
   }

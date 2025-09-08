@@ -2,37 +2,19 @@
  * Tests for enhanced structured logging system
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import * as loggerMod from '../../src/utils/logger.js';
-const {
-  debug,
-  info,
-  warn,
-  error,
-  setLogContext,
-  getLogContext,
-  clearLogContext,
-  generateCorrelationId,
-  createScopedLogger,
-  withLogging,
-  PerformanceTimer,
-  LogLevel,
-  OperationType,
-  operationStart,
-  operationSuccess,
-  operationFailure,
-} = loggerMod as any;
 
 // Store original console methods
-const originalConsole = {
   log: console.log,
   warn: console.warn,
   error: console.error,
 };
 
 describe('Structured Logging System', () => {
-  let mockConsoleLog: any;
-  let mockConsoleWarn: any;
-  let mockConsoleError: any;
+  let mockConsoleLog: unknown;
+  let mockConsoleWarn: unknown;
+  let mockConsoleError: unknown;
 
   beforeEach(() => {
     // Create fresh mocks for each test
@@ -61,8 +43,6 @@ describe('Structured Logging System', () => {
       debug('test-module', 'Test debug message', { key: 'value' });
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -81,8 +61,6 @@ describe('Structured Logging System', () => {
       info('test-module', 'Test info message');
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -99,8 +77,6 @@ describe('Structured Logging System', () => {
       warn('test-module', 'Test warning message', { warning: true });
 
       expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleWarn.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -115,14 +91,11 @@ describe('Structured Logging System', () => {
     });
 
     test('error logs with structured format and error object', () => {
-      const testError = new Error('Test error');
       error('test-module', 'Test error message', testError, {
         context: 'test',
       });
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -144,7 +117,6 @@ describe('Structured Logging System', () => {
 
   describe('Log Context Management', () => {
     test('setLogContext and getLogContext work correctly', () => {
-      const context = {
         correlationId: 'test-correlation-id',
         sessionId: 'test-session-id',
         operation: 'test-operation',
@@ -152,7 +124,6 @@ describe('Structured Logging System', () => {
       };
 
       setLogContext(context);
-      const retrievedContext = getLogContext();
 
       expect(retrievedContext).toEqual(context);
     });
@@ -161,13 +132,10 @@ describe('Structured Logging System', () => {
       setLogContext({ correlationId: 'test-id' });
       clearLogContext();
 
-      const context = getLogContext();
       expect(context).toEqual({});
     });
 
     test('generateCorrelationId generates unique IDs', () => {
-      const id1 = generateCorrelationId();
-      const id2 = generateCorrelationId();
 
       expect(id1).toBeTruthy();
       expect(id2).toBeTruthy();
@@ -186,8 +154,6 @@ describe('Structured Logging System', () => {
       debug('test-module', 'Test message with context');
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -206,7 +172,6 @@ describe('Structured Logging System', () => {
 
   describe('PerformanceTimer', () => {
     test('tracks timing correctly', async () => {
-      const timer = new PerformanceTimer(
         'test-module',
         'test-operation',
         OperationType.API_CALL
@@ -215,12 +180,9 @@ describe('Structured Logging System', () => {
       // Wait a bit to ensure some time passes
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const duration = timer.end('Operation completed');
 
       expect(duration).toBeGreaterThan(0);
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -241,7 +203,6 @@ describe('Structured Logging System', () => {
 
   describe('Operation Logging Functions', () => {
     test('operationStart returns PerformanceTimer and logs start', () => {
-      const timer = operationStart(
         'test-module',
         'test-operation',
         OperationType.API_CALL,
@@ -250,8 +211,6 @@ describe('Structured Logging System', () => {
 
       expect(timer).toBeInstanceOf(PerformanceTimer);
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -277,8 +236,6 @@ describe('Structured Logging System', () => {
       );
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -298,7 +255,6 @@ describe('Structured Logging System', () => {
     });
 
     test('operationFailure logs failure with error and duration', () => {
-      const testError = new Error('Operation failed');
 
       operationFailure(
         'test-module',
@@ -310,8 +266,6 @@ describe('Structured Logging System', () => {
       );
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -338,7 +292,6 @@ describe('Structured Logging System', () => {
 
   describe('Scoped Logger', () => {
     test('createScopedLogger returns logger with pre-configured context', () => {
-      const scopedLogger = createScopedLogger(
         'scoped-module',
         'scoped-operation',
         OperationType.VALIDATION
@@ -347,8 +300,6 @@ describe('Structured Logging System', () => {
       scopedLogger.debug('Scoped debug message', { test: true });
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -365,19 +316,15 @@ describe('Structured Logging System', () => {
     });
 
     test('scoped logger operationStart works correctly', () => {
-      const scopedLogger = createScopedLogger(
         'scoped-module',
         'base-operation'
       );
-      const timer = scopedLogger.operationStart(
         'specific-operation',
         OperationType.API_CALL
       );
 
       expect(timer).toBeInstanceOf(PerformanceTimer);
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({
@@ -395,9 +342,7 @@ describe('Structured Logging System', () => {
 
   describe('withLogging Utility', () => {
     test('withLogging wraps successful operations', async () => {
-      const mockOperation = vi.fn().mockResolvedValue('success');
 
-      const result = await withLogging(
         'test-module',
         'test-operation',
         OperationType.DATA_PROCESSING,
@@ -412,23 +357,17 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(3);
 
       // Check operation start log
-      const startLogCall = mockConsoleError.mock.calls[0][0];
-      const startLogEntry = JSON.parse(startLogCall);
       expect(startLogEntry.message).toContain(
         'Starting operation: test-operation'
       );
 
       // Check operation success log (last call)
-      const successLogCall = mockConsoleError.mock.calls[2][0];
-      const successLogEntry = JSON.parse(successLogCall);
       expect(successLogEntry.message).toContain(
         'Operation successful: test-operation'
       );
     });
 
     test('withLogging wraps failed operations', async () => {
-      const mockError = new Error('Operation failed');
-      const mockOperation = vi.fn().mockRejectedValue(mockError);
 
       await expect(
         withLogging(
@@ -446,15 +385,11 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(3);
 
       // Check operation start log
-      const startLogCall = mockConsoleError.mock.calls[0][0];
-      const startLogEntry = JSON.parse(startLogCall);
       expect(startLogEntry.message).toContain(
         'Starting operation: test-operation'
       );
 
       // Check operation failure log (last call)
-      const failureLogCall = mockConsoleError.mock.calls[2][0];
-      const failureLogEntry = JSON.parse(failureLogCall);
       expect(failureLogEntry.message).toContain(
         'Operation failed: test-operation'
       );
@@ -462,7 +397,6 @@ describe('Structured Logging System', () => {
   });
 
   describe('JSON Log Format', () => {
-    const originalLogFormat = process.env.LOG_FORMAT;
 
     beforeEach(() => {
       process.env.LOG_FORMAT = 'json';
@@ -480,11 +414,9 @@ describe('Structured Logging System', () => {
       debug('test-module', 'Test JSON message', { key: 'value' });
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
 
       expect(logCall).toMatch(/^\{.*\}$/); // Should be a JSON string
 
-      const logEntry = JSON.parse(logCall);
       expect(logEntry).toMatchObject({
         message: 'Test JSON message',
         metadata: expect.objectContaining({
@@ -517,8 +449,6 @@ describe('Structured Logging System', () => {
       );
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
-      const logCall = mockConsoleError.mock.calls[0][0];
-      const logEntry = JSON.parse(logCall);
 
       expect(logEntry).toEqual(
         expect.objectContaining({

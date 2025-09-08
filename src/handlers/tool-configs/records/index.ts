@@ -2,15 +2,6 @@
  * Records-related tool configurations
  */
 import { AttioRecord } from '../../../types/attio.js';
-import {
-  createObjectRecord,
-  getObjectRecord,
-  updateObjectRecord,
-  deleteObjectRecord,
-  listObjectRecords,
-  batchCreateObjectRecords,
-  batchUpdateObjectRecords,
-} from '../../../objects/records/index.js';
 import { BatchConfig, BatchResponse } from '../../../api/operations/index.js';
 import { ToolConfig } from '../../tool-types.js';
 

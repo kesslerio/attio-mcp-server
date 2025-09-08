@@ -4,10 +4,10 @@
  */
 
 import { AttioRecord } from '../../types/attio.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
-import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
+import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 
 /**
  * Search strategy for companies with advanced filtering and content search
@@ -43,7 +43,6 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     } = params;
 
     // Apply timeframe filtering
-    const enhancedFilters = this.applyTimeframeFiltering(filters, timeframeParams);
 
     // If we have filters, use advanced search
     if (enhancedFilters) {
@@ -139,7 +138,6 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const domainFilters = {
       filters: [
         {
           attribute: { slug: 'domains' },
@@ -168,17 +166,14 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     offset?: number
   ): Promise<AttioRecord[]> {
     // Default content fields for companies
-    const searchFields = fields && fields.length > 0
       ? fields
       : ['name', 'description', 'notes', 'domains'];
 
-    const contentFilters = this.createContentFilters(query, searchFields, matchType);
 
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Companies search function not available');
     }
 
-    const results = await this.dependencies.advancedSearchFunction(contentFilters, limit, offset);
 
     // Apply relevance ranking if requested
     return this.applyRelevanceRanking(results, query, searchFields, sort);
@@ -193,7 +188,6 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const nameFilters = this.createNameFilters(query, matchType);
 
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Companies search function not available');

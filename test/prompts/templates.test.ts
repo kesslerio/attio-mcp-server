@@ -2,20 +2,13 @@
  * Tests for prompt templates
  */
 import { describe, it, expect } from 'vitest';
-import {
-  getAllPrompts,
-  getPromptById,
-  getPromptsByCategory,
-  getAllCategories,
-} from '../../src/prompts/templates/index';
+
 import { PromptTemplate } from '../../src/prompts/types';
 
 describe('Prompt Templates', () => {
   // Test getAllPrompts
   describe('getAllPrompts', () => {
     it('should return all prompts from the registry', () => {
-      const prompts = getAllPrompts();
-
       // Basic validation
       expect(prompts).toBeDefined();
       expect(Array.isArray(prompts)).toBe(true);
@@ -37,11 +30,8 @@ describe('Prompt Templates', () => {
   describe('getPromptById', () => {
     it('should return a specific prompt by ID', () => {
       // Get the first prompt from all prompts
-      const allPrompts = getAllPrompts();
-      const firstPrompt = allPrompts[0];
 
       // Get the same prompt by ID
-      const prompt = getPromptById(firstPrompt.id);
 
       // Validate the prompt
       expect(prompt).toBeDefined();
@@ -51,8 +41,6 @@ describe('Prompt Templates', () => {
     });
 
     it('should return undefined for non-existent prompt ID', () => {
-      const prompt = getPromptById('non-existent-prompt');
-
       expect(prompt).toBeUndefined();
     });
   });
@@ -61,11 +49,9 @@ describe('Prompt Templates', () => {
   describe('getPromptsByCategory', () => {
     it('should return prompts filtered by category', () => {
       // Get all available categories
-      const categories = getAllCategories();
 
       // Test each category has prompts
       categories.forEach((category) => {
-        const prompts = getPromptsByCategory(category);
         expect(prompts.length).toBeGreaterThan(0);
 
         // Validate all prompts in the category have the correct category
@@ -74,8 +60,6 @@ describe('Prompt Templates', () => {
     });
 
     it('should return an empty array for non-existent category', () => {
-      const prompts = getPromptsByCategory('non-existent-category');
-
       expect(prompts).toBeDefined();
       expect(Array.isArray(prompts)).toBe(true);
       expect(prompts.length).toBe(0);
@@ -85,8 +69,6 @@ describe('Prompt Templates', () => {
   // Test getAllCategories
   describe('getAllCategories', () => {
     it('should return all unique categories', () => {
-      const categories = getAllCategories();
-
       // Basic validation
       expect(categories).toBeDefined();
       expect(Array.isArray(categories)).toBe(true);
@@ -98,7 +80,6 @@ describe('Prompt Templates', () => {
       expect(categories).toContain('lists');
 
       // Check for duplicates
-      const uniqueCategories = Array.from(new Set(categories));
       expect(uniqueCategories.length).toBe(categories.length);
     });
   });

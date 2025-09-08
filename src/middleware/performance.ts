@@ -8,19 +8,6 @@
 import { performance } from 'perf_hooks';
 
 /**
- * Performance metrics for a single operation
- */
-export interface PerformanceMetrics {
-  toolName: string;
-  startTime: number;
-  endTime: number;
-  duration: number;
-  success: boolean;
-  error?: string;
-  metadata?: Record<string, unknown>;
-}
-
-/**
  * Performance thresholds for alerting
  */
 export interface PerformanceThresholds {
@@ -87,16 +74,13 @@ export class PerformanceTracker {
   ): number {
     if (!this.enabled) return 0;
 
-    const startTime = performance.now();
 
     // Log slow operations in development
     if (process.env.NODE_ENV === 'development') {
-      const thresholds =
         this.thresholds.get(toolName) || this.getDefaultThresholds();
 
       // Set a timeout to warn about slow operations
       setTimeout(() => {
-        const duration = performance.now() - startTime;
         if (duration > thresholds.critical) {
           console.warn(
             `⚠️ Critical: ${toolName} is taking too long (${duration.toFixed(2)}ms)`
@@ -132,8 +116,6 @@ export class PerformanceTracker {
       };
     }
 
-    const endTime = performance.now();
-    const duration = endTime - startTime;
 
     const metrics: PerformanceMetrics = {
       toolName,
@@ -162,10 +144,7 @@ export class PerformanceTracker {
 
     // Log performance in development
     if (process.env.NODE_ENV === 'development') {
-      const thresholds =
         this.thresholds.get(toolName) || this.getDefaultThresholds();
-      const statusIcon = success ? '✅' : '❌';
-      const timeColor =
         duration > thresholds.critical
           ? '🔴'
           : duration > thresholds.warning
@@ -185,7 +164,6 @@ export class PerformanceTracker {
    * Get performance summary for a tool
    */
   static getSummary(toolName?: string): PerformanceSummary {
-    const relevantMetrics = toolName
       ? this.metrics.filter((m) => m.toolName === toolName)
       : this.metrics;
 
@@ -203,11 +181,8 @@ export class PerformanceTracker {
       };
     }
 
-    const durations = relevantMetrics
       .map((m) => m.duration)
       .sort((a, b) => a - b);
-    const successCount = relevantMetrics.filter((m) => m.success).length;
-    const failureCount = relevantMetrics.length - successCount;
 
     return {
       totalOperations: relevantMetrics.length,
@@ -233,7 +208,6 @@ export class PerformanceTracker {
     percentile: number
   ): number {
     if (sortedArray.length === 0) return 0;
-    const index = Math.ceil((percentile / 100) * sortedArray.length) - 1;
     return sortedArray[Math.max(0, index)];
   }
 
@@ -291,10 +265,8 @@ export class PerformanceTracker {
     fn: () => Promise<T>,
     metadata?: Record<string, unknown>
   ): Promise<T> {
-    const startTime = this.startOperation(toolName, metadata);
 
     try {
-      const result = await fn();
       this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
     } catch (error: unknown) {
@@ -317,10 +289,8 @@ export class PerformanceTracker {
     fn: () => T,
     metadata?: Record<string, unknown>
   ): T {
-    const startTime = this.startOperation(toolName, metadata);
 
     try {
-      const result = fn();
       this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
     } catch (error: unknown) {
@@ -339,7 +309,6 @@ export class PerformanceTracker {
    * Get slow operations above threshold
    */
   static getSlowOperations(threshold?: number): PerformanceMetrics[] {
-    const limit = threshold || 1000; // Default 1 second
     return this.metrics.filter((m) => m.duration > limit);
   }
 
@@ -354,9 +323,6 @@ export class PerformanceTracker {
    * Generate performance report
    */
   static generateReport(): string {
-    const summary = this.getSummary();
-    const slowOps = this.getSlowOperations();
-    const failedOps = this.getFailedOperations();
 
     return `
 Performance Report
@@ -389,15 +355,11 @@ export function trackPerformance(toolName?: string) {
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
-    const originalMethod = descriptor.value;
-    const name =
       toolName || `${(target as any).constructor.name}.${propertyKey}`;
 
     descriptor.value = async function (...args: unknown[]) {
-      const startTime = PerformanceTracker.startOperation(name);
 
       try {
-        const result = await originalMethod.apply(this, args);
         PerformanceTracker.endOperation(name, startTime, true);
         return result;
       } catch (error: unknown) {

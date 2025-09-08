@@ -5,16 +5,12 @@
  */
 
 import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
-import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import { getCreateService, shouldUseMockData } from '../index.js';
 import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
-import { 
-  UniversalValidationError,
-  ErrorType,
-} from '../../../handlers/tool-configs/universal/schemas.js';
+import { debug } from '../../../utils/logger.js';
+import { getCreateService, shouldUseMockData } from '../index.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
 import { getFormatErrorHelp } from '../../../utils/attribute-format-helpers.js';
-import { logger } from '../../../utils/logger.js';
+import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 
 export class CompanyCreateStrategy extends BaseCreateStrategy {
   constructor() {
@@ -28,14 +24,11 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
     this.validateResourceData(mapped_data);
     
     // Format for API
-    const formattedData = this.formatForAPI(mapped_data);
     
     // Apply attribute format conversions
-    const convertedData = convertAttributeFormats('companies', formattedData);
     
     try {
       // Create via API with mock support
-      const result = await this.createCompanyWithMockSupport(convertedData);
       
       // Defensive validation: Ensure createCompany returned a valid record
       if (!result) {
@@ -60,7 +53,7 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
         );
       }
 
-      logger.debug('Company created successfully', {
+      debug('CompanyCreateStrategy', 'Company created successfully', {
         company_id: result.id.record_id,
         name: convertedData.name
       });
@@ -72,18 +65,13 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
         }
       };
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
       // Enhance error messages with format help
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
           
       if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(this.resource_type, match[1]);
-          const enhancedError = getFormatErrorHelp(
             'companies',
             match[1],
             (error as Error).message
@@ -98,7 +86,6 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
       
       // Check for uniqueness constraint violations
       if (errorMessage.includes('uniqueness constraint')) {
-        const enhancedMessage = await this.enhanceUniquenessError(
           errorMessage,
           mapped_data
         );
@@ -124,7 +111,6 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
   }
 
   protected formatForAPI(data: Record<string, unknown>): Record<string, unknown> {
-    const formatted = { ...data };
     
     // Handle domain normalization
     if (formatted.domains && typeof formatted.domains === 'string') {
@@ -147,7 +133,6 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
   private async createCompanyWithMockSupport(
     companyData: Record<string, unknown>
   ): Promise<any> {
-    const service = getCreateService();
     return await service.createCompany(companyData);
   }
 
@@ -159,7 +144,6 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
     mappedData: Record<string, unknown>
   ): Promise<string> {
     // Extract field name from error message if possible
-    const fieldMatch =
       errorMessage.match(/field\s+["']([^"']+)["']/i) ||
       errorMessage.match(/attribute\s+["']([^"']+)["']/i) ||
       errorMessage.match(/column\s+["']([^"']+)["']/i);
@@ -167,8 +151,6 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
     let enhancedMessage = `Uniqueness constraint violation for ${this.resource_type}`;
 
     if (fieldMatch && fieldMatch[1]) {
-      const fieldName = fieldMatch[1];
-      const fieldValue = mappedData[fieldName];
       enhancedMessage += `: The value "${fieldValue}" for field "${fieldName}" already exists.`;
     } else {
       enhancedMessage += `: A record with these values already exists.`;
@@ -188,8 +170,6 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
     expectedType: string,
     receivedValue: unknown
   ): UniversalValidationError {
-    const receivedType = typeof receivedValue;
-    const message = `Invalid type for field "${field}": expected ${expectedType}, received ${receivedType}`;
 
     return new UniversalValidationError(message, ErrorType.USER_ERROR, {
       field,

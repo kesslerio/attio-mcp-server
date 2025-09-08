@@ -4,14 +4,6 @@
 import { ErrorType } from './error-handler.js';
 
 /**
- * Result of a validation operation
- */
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
-
-/**
  * Schema definition for validation
  */
 export interface ValidationSchema {
@@ -138,7 +130,6 @@ function validateConstraints(
     }
 
     if (schema.pattern) {
-      const regex = new RegExp(schema.pattern);
       if (!regex.test(value)) {
         errors.push(
           formatError(path, `String must match pattern: ${schema.pattern}`)
@@ -171,17 +162,13 @@ function validateConstraints(
   // Array constraints
   if (Array.isArray(value) && schema.items) {
     (value as unknown[]).forEach((item, index) => {
-      const itemPath = path ? `${path}[${index}]` : `[${index}]`;
 
       // Validate type
-      const itemSchema = schema.items as ValidationSchema;
-      const typeError = validateType(item, itemSchema.type, itemPath);
       if (typeError) {
         errors.push(typeError);
       }
 
       // Validate constraints recursively
-      const constraintErrors = validateConstraints(item, itemSchema, itemPath);
       errors.push(...constraintErrors);
 
       // Validate nested object or array
@@ -190,7 +177,6 @@ function validateConstraints(
         item !== null &&
         item !== undefined
       ) {
-        const nestedErrors = validateValue(item, itemSchema, itemPath);
         errors.push(...nestedErrors);
       }
     });
@@ -215,14 +201,12 @@ function validateValue(
   const errors: string[] = [];
 
   // Type validation
-  const typeError = validateType(value, schema.type, path);
   if (typeError) {
     errors.push(typeError);
     return errors; // Don't continue validation if type is wrong
   }
 
   // Validate constraints
-  const constraintErrors = validateConstraints(value, schema, path);
   errors.push(...constraintErrors);
 
   // Object validation
@@ -235,7 +219,6 @@ function validateValue(
   ) {
     // Required properties validation
     if (schema.required) {
-      const objValue = value as Record<string, unknown>;
       for (const requiredProp of schema.required) {
         if (!(requiredProp in objValue)) {
           errors.push(
@@ -251,10 +234,7 @@ function validateValue(
     // Property validation
     if (schema.properties) {
       for (const [propName, propSchema] of Object.entries(schema.properties)) {
-        const objValue = value as Record<string, unknown>;
         if (propName in objValue) {
-          const propPath = path ? `${path}.${propName}` : propName;
-          const propValue = objValue[propName];
 
           // Skip undefined/null for non-required fields
           if (
@@ -264,7 +244,6 @@ function validateValue(
             continue;
           }
 
-          const propErrors = validateValue(
             propValue,
             propSchema as ValidationSchema,
             propPath
@@ -289,7 +268,6 @@ export function validateInput(
   input: unknown,
   schema: ValidationSchema
 ): ValidationResult {
-  const errors = validateValue(input, schema);
 
   return {
     isValid: errors.length === 0,
@@ -314,10 +292,8 @@ export function validateRequest(
     details: Record<string, unknown>
   ) => unknown
 ): unknown | null {
-  const result = validateInput(input, schema);
 
   if (!result.isValid) {
-    const error = new Error('Validation error: Invalid request parameters');
     return errorFormatter(error, ErrorType.VALIDATION_ERROR, {
       errors: result.errors,
       input,
@@ -371,7 +347,6 @@ export function isValidId(id: string): boolean {
   }
 
   // Check for dangerous patterns that could be used for injection
-  const dangerousPatterns = [
     /--/, // SQL comment marker
     /\/\*/, // SQL block comment start
     /\*\//, // SQL block comment end

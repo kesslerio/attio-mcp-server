@@ -2,82 +2,21 @@
  * Split: UniversalRetrievalService core operations
  */
 // Local mocks (must match specifiers used below)
-import { vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
-  ValidationService: { validateUUID: vi.fn() },
-}));
-vi.mock('../../src/services/CachingService.js', () => ({
-  CachingService: { isCached404: vi.fn(), cache404Response: vi.fn() },
-}));
-vi.mock('../../src/services/UniversalUtilityService.js', () => ({
-  UniversalUtilityService: { convertTaskToRecord: vi.fn() },
-}));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
-  enhancedPerformanceTracker: {
-    startOperation: vi.fn(() => 'perf-123'),
-    markTiming: vi.fn(),
-    markApiStart: vi.fn(() => 100),
-    markApiEnd: vi.fn(),
-    endOperation: vi.fn(),
-  },
-}));
-vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
-  createRecordNotFoundError: vi.fn(() => new Error('Record not found')),
-}));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
-  ErrorEnhancer: {
-    autoEnhance: vi.fn((e) => e),
-    getErrorMessage: vi.fn((e) => (e as any).message),
-  },
-  EnhancedApiError: class EnhancedApiError extends Error {
-    public readonly statusCode: number;
-    public readonly endpoint: string;
-    public readonly method: string;
-    public readonly context?: any;
-    constructor(
-      message: string,
-      statusCode = 500,
-      endpoint = '',
-      method = 'GET',
-      context: any = {}
-    ) {
-      super(message);
-      this.name = 'EnhancedApiError';
-      this.statusCode = statusCode;
-      this.endpoint = endpoint;
-      this.method = method;
-      this.context = context;
-    }
-  },
-}));
-vi.mock('../../src/objects/companies/index.js', () => ({
-  getCompanyDetails: vi.fn(),
-}));
-vi.mock('../../src/objects/people/index.js', () => ({
-  getPersonDetails: vi.fn(),
-}));
-vi.mock('../../src/objects/lists.js', () => ({ getListDetails: vi.fn() }));
-vi.mock('../../src/objects/records/index.js', () => ({
-  getObjectRecord: vi.fn(),
-}));
-vi.mock('../../src/objects/tasks.js', () => ({ getTask: vi.fn() }));
-vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
-vi.mock('../../src/services/create/index.js', () => ({
-  shouldUseMockData: vi.fn(),
-}));
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { vi } from 'vitest';
+
 import { AttioRecord, AttioTask } from '../../src/types/attio.js';
-import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 import { CachingService } from '../../src/services/CachingService.js';
-import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
+import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 import { getCompanyDetails } from '../../src/objects/companies/index.js';
-import { getPersonDetails } from '../../src/objects/people/index.js';
-import * as lists from '../../src/objects/lists.js';
 import { getObjectRecord } from '../../src/objects/records/index.js';
-import * as tasks from '../../src/objects/tasks.js';
+import { getPersonDetails } from '../../src/objects/people/index.js';
 import { shouldUseMockData } from '../../src/services/create/index.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
+import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
+import * as lists from '../../src/objects/lists.js';
+import * as tasks from '../../src/objects/tasks.js';
 
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
@@ -101,7 +40,6 @@ describe('UniversalRetrievalService', () => {
     it('should retrieve a company record', async () => {
       vi.mocked(getCompanyDetails).mockResolvedValue(mockRecord);
 
-      const result = await UniversalRetrievalService.getRecordDetails({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'comp_123',
       });
@@ -113,7 +51,6 @@ describe('UniversalRetrievalService', () => {
     it('should retrieve a person record', async () => {
       vi.mocked(getPersonDetails).mockResolvedValue(mockRecord);
 
-      const result = await UniversalRetrievalService.getRecordDetails({
         resource_type: UniversalResourceType.PEOPLE,
         record_id: 'person_456',
       });
@@ -123,7 +60,6 @@ describe('UniversalRetrievalService', () => {
     });
 
     it('should retrieve a list record and convert format', async () => {
-      const mockList = {
         id: { list_id: 'list_789' },
         name: 'Test List',
         title: 'Test List',
@@ -137,7 +73,6 @@ describe('UniversalRetrievalService', () => {
       } as any;
       vi.mocked(lists.getListDetails).mockResolvedValue(mockList);
 
-      const result = await UniversalRetrievalService.getRecordDetails({
         resource_type: UniversalResourceType.LISTS,
         record_id: 'list_789',
       });
@@ -163,7 +98,6 @@ describe('UniversalRetrievalService', () => {
     it('should retrieve a records object record', async () => {
       vi.mocked(getObjectRecord).mockResolvedValue(mockRecord);
 
-      const result = await UniversalRetrievalService.getRecordDetails({
         resource_type: UniversalResourceType.RECORDS,
         record_id: 'record_abc',
       });
@@ -175,7 +109,6 @@ describe('UniversalRetrievalService', () => {
     it('should retrieve a deals object record', async () => {
       vi.mocked(getObjectRecord).mockResolvedValue(mockRecord);
 
-      const result = await UniversalRetrievalService.getRecordDetails({
         resource_type: UniversalResourceType.DEALS,
         record_id: 'deal_def',
       });
@@ -200,7 +133,6 @@ describe('UniversalRetrievalService', () => {
         mockRecord
       );
 
-      const result = await UniversalRetrievalService.getRecordDetails({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_ghi',
       });
@@ -250,7 +182,6 @@ describe('UniversalRetrievalService', () => {
         values: { name: [{ value: 'Test Company' }] },
       } as any);
 
-      const exists = await UniversalRetrievalService.recordExists(
         UniversalResourceType.COMPANIES,
         'comp_123'
       );
@@ -261,7 +192,6 @@ describe('UniversalRetrievalService', () => {
     it('should return false when record is cached as 404', async () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(true);
 
-      const exists = await UniversalRetrievalService.recordExists(
         UniversalResourceType.COMPANIES,
         'comp_123'
       );
@@ -275,7 +205,6 @@ describe('UniversalRetrievalService', () => {
         new Error('Record not found')
       );
 
-      const exists = await UniversalRetrievalService.recordExists(
         UniversalResourceType.COMPANIES,
         'comp_123'
       );
@@ -300,7 +229,6 @@ describe('UniversalRetrievalService', () => {
         .mockResolvedValueOnce(record1)
         .mockResolvedValueOnce(record2);
 
-      const results = await UniversalRetrievalService.getMultipleRecords(
         UniversalResourceType.COMPANIES,
         ['comp_123', 'comp_456']
       );
@@ -319,7 +247,6 @@ describe('UniversalRetrievalService', () => {
         .mockResolvedValueOnce(record1)
         .mockRejectedValueOnce(new Error('Not found'));
 
-      const results = await UniversalRetrievalService.getMultipleRecords(
         UniversalResourceType.COMPANIES,
         ['comp_123', 'comp_456']
       );
@@ -342,7 +269,6 @@ describe('UniversalRetrievalService', () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
       vi.mocked(getCompanyDetails).mockResolvedValue(record1);
 
-      const results = await UniversalRetrievalService.getMultipleRecords(
         UniversalResourceType.COMPANIES,
         ['comp_123'],
         ['name']
@@ -363,7 +289,6 @@ describe('UniversalRetrievalService', () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
       vi.mocked(getCompanyDetails).mockResolvedValue(mockRecord);
 
-      const result = await UniversalRetrievalService.getRecordWithMetrics({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'comp_123',
       });

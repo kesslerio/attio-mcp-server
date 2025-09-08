@@ -3,9 +3,9 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
-import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
 import { getAttioClient } from '../../../../../api/attio-client.js';
+import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
+import { UniversalResourceType } from '../types.js';
 
 /**
  * Enhanced uniqueness constraint error message
@@ -16,33 +16,24 @@ export async function enhanceUniquenessError(
   errorMessage: string,
   recordData: Record<string, unknown>
 ): Promise<string> {
-  const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping || !mapping.uniqueFields) {
     return errorMessage;
   }
 
   // Try to extract the attribute ID from the error message
-  const attributeMatch = errorMessage.match(/attribute with ID "([^"]+)"/);
   if (!attributeMatch) {
     return errorMessage;
   }
 
-  const attributeId = attributeMatch[1];
 
   // Try to map the attribute ID to a human-readable field name
   try {
-    const client = getAttioClient();
-    const response = await client.get(`/objects/${resourceType}/attributes`);
-    const attributes = response.data.data || [];
 
-    const attribute = attributes.find(
       (attr: Record<string, unknown>) =>
         attr.id === attributeId || attr.api_slug === attributeId
     );
 
     if (attribute) {
-      const fieldName = attribute.title || attribute.api_slug;
-      const fieldValue =
         recordData[attribute.api_slug] ||
         recordData[fieldName] ||
         'unknown value';

@@ -6,16 +6,15 @@
  * NOTE: This test file requires a valid ATTIO_API_KEY to be set
  * in the environment. If the key is not set, tests will be skipped.
  */
-import { describe, it, test, expect } from 'vitest';
-import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { FilterValidationError } from '../../src/errors/api-errors';
+import { describe, it, test, expect } from 'vitest';
+
+import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
 import { FilterConditionType } from '../../src/types/attio';
+import { FilterValidationError } from '../../src/errors/api-errors';
 
 // Skip tests if no API key is provided
-const shouldRunTests =
-  process.env.ATTIO_API_KEY && !process.env.SKIP_INTEGRATION_TESTS;
-const testMethod = shouldRunTests ? test : test.skip;
+process.env.ATTIO_API_KEY && !process.env.SKIP_INTEGRATION_TESTS;
 
 describe('Companies Advanced Search Integration (Universal Tools)', () => {
   // Test valid search to verify the tool works properly using universal tools
@@ -41,8 +40,6 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
         },
       };
 
-      const result = await executeToolRequest(mockRequest);
-
       // We don't care about the actual results, just that it doesn't throw
       expect(result).toBeDefined();
       expect(result.isError).toBeFalsy();
@@ -66,13 +63,10 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
         },
       };
 
-      const result = await executeToolRequest(mockRequest);
-
       expect(result).toBeDefined();
       expect(result.isError).toBeTruthy();
 
       // Should contain error information about invalid filter structure
-      const errorText = result.content?.[0]?.text || '';
       expect(errorText).toMatch(
         /filter.*invalid|missing.*filters|required.*filters/i
       );
@@ -102,13 +96,10 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
         },
       };
 
-      const result = await executeToolRequest(mockRequest);
-
       expect(result).toBeDefined();
       expect(result.isError).toBeTruthy();
 
       // Should contain error information about invalid condition
-      const errorText = result.content?.[0]?.text || '';
       expect(errorText).toMatch(/invalid.*condition|condition.*invalid/i);
     }
   );
@@ -135,13 +126,10 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
         },
       };
 
-      const result = await executeToolRequest(mockRequest);
-
       expect(result).toBeDefined();
       expect(result.isError).toBeTruthy();
 
       // Should contain error information about missing attribute
-      const errorText = result.content?.[0]?.text || '';
       expect(errorText).toMatch(
         /missing.*attribute|attribute.*missing|attribute.*required/i
       );
@@ -177,8 +165,6 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
         },
       };
 
-      const result = await executeToolRequest(mockRequest);
-
       expect(result).toBeDefined();
       expect(result.isError).toBeFalsy();
       expect(result.content).toBeDefined();
@@ -202,8 +188,6 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
           },
         },
       };
-
-      const result = await executeToolRequest(mockRequest);
 
       expect(result).toBeDefined();
       expect(result.isError).toBeFalsy();

@@ -3,6 +3,7 @@
  * These tests specifically bypass mocks to test actual validation logic
  */
 import { describe, beforeAll, it, expect, vi } from 'vitest';
+
 import { initializeAttioClient } from '../../../src/api/attio-client.js';
 
 // Clear any existing mocks before importing
@@ -13,20 +14,17 @@ vi.resetAllMocks();
 vi.doUnmock('../../../src/objects/companies/search.js');
 
 // Import after clearing mocks - use async function to handle top-level await
-let advancedSearchCompanies: any;
+let advancedSearchCompanies: unknown;
 (async () => {
-  const module = await import('../../../src/objects/companies/search.js');
   advancedSearchCompanies = module.advancedSearchCompanies;
 })();
 
 // Skip tests if no API key or if explicitly disabled
-const SKIP_TESTS =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
   beforeAll(async () => {
     if (!SKIP_TESTS) {
-      const apiKey = process.env.ATTIO_API_KEY as string;
       initializeAttioClient(apiKey);
       console.log('Running validation tests with API client');
     }
@@ -45,14 +43,12 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
     });
 
     it('should throw appropriate error for missing filters array', async () => {
-      const filters = {} as any;
       await expect(advancedSearchCompanies(filters)).rejects.toThrow(
         'must include a "filters" array'
       );
     });
 
     it('should throw appropriate error for non-array filters', async () => {
-      const filters = {
         filters: 'not an array',
       } as any;
       await expect(advancedSearchCompanies(filters)).rejects.toThrow(
@@ -61,7 +57,6 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
     });
 
     it('should throw appropriate error for invalid filter structure', async () => {
-      const filters = {
         filters: [
           {
             // Missing attribute
@@ -77,7 +72,6 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
     });
 
     it('should throw appropriate error for missing attribute.slug', async () => {
-      const filters = {
         filters: [
           {
             attribute: {}, // Missing slug
@@ -93,7 +87,6 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
     });
 
     it('should throw appropriate error for missing condition', async () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },

@@ -1,40 +1,9 @@
 /**
  * Lists-related functionality
  */
-import { getAttioClient } from '../api/attio-client.js';
-import {
-  getAllLists as getGenericLists,
-  getListDetails as getGenericListDetails,
-  getListEntries as getGenericListEntries,
-  addRecordToList as addGenericRecordToList,
-  removeRecordFromList as removeGenericRecordFromList,
-  updateListEntry as updateGenericListEntry,
-  BatchConfig,
-  BatchResponse,
-  executeBatchOperations,
-  BatchRequestItem,
-  ListEntryFilters,
-} from '../api/operations/index.js';
 import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { FilterValue } from '../types/api-operations.js';
-import {
-  AttioList,
-  AttioListEntry,
-  ResourceType,
-  AttioRecord,
-} from '../types/attio.js';
-import {
-  processListEntries,
-  transformFiltersToApiFormat,
-  createPathBasedFilter,
-} from '../utils/record-utils.js';
-import {
-  ListMembership,
-  ListEntryValues,
-  ListEndpointConfig,
-  extractListEntryValues,
-  hasErrorResponse,
-} from '../types/list-types.js';
+import { getAttioClient } from '../api/attio-client.js';
 import { isValidUUID } from '../utils/validation/uuid-validation.js';
 
 // Re-export for backward compatibility
@@ -43,7 +12,7 @@ export type { ListMembership } from '../types/list-types.js';
 /**
  * Extract data from response, handling axios, fetch, and mock response shapes
  */
-function extract<T>(response: any): T {
+function extract<T>(response: unknown): T {
   // Support axios-like, fetch-like, and mocks
   return (response?.data?.data ?? response?.data ?? response) as T;
 }
@@ -51,10 +20,8 @@ function extract<T>(response: any): T {
 /**
  * Ensure list shape with proper ID structure and fallback values
  */
-function ensureListShape(raw: any) {
+function ensureListShape(raw: unknown) {
   if (!raw || typeof raw !== 'object') raw = {};
-  const id = raw.id ?? raw.list_id ?? raw?.id?.list_id;
-  const list_id =
     typeof id === 'string'
       ? id
       : (crypto.randomUUID?.() ?? `tmp_${Date.now()}`);
@@ -69,7 +36,7 @@ function ensureListShape(raw: any) {
 /**
  * Helper to convert raw data to proper list array format
  */
-function asListArray(raw: any): any[] {
+function asListArray(raw: unknown): unknown[] {
   return Array.isArray(raw) ? raw.map(ensureListShape) : [];
 }
 
@@ -88,20 +55,17 @@ export async function getLists(
   try {
     return await getGenericLists(objectSlug, limit);
   } catch (error) {
-    const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
       console.error(`Generic getLists failed: ${errorMessage}`);
     }
     // Fallback implementation
-    const api = getAttioClient();
     let path = `/lists?limit=${limit}`;
 
     if (objectSlug) {
       path += `&objectSlug=${objectSlug}`;
     }
 
-    const response = await api.get(path);
     return asListArray(extract<any[]>(response));
   }
 }
@@ -117,25 +81,19 @@ export async function getListDetails(listId: string): Promise<AttioList> {
   try {
     return await getGenericListDetails(listId);
   } catch (error) {
-    const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
       console.error(`Generic getListDetails failed: ${errorMessage}`);
     }
     // Fallback implementation with proper error handling
-    const api = getAttioClient();
-    const path = `/lists/${listId}`;
 
     try {
-      const response = await api.get(path);
 
       // Extract and normalize response, handling undefined case
-      const extracted = extract<AttioList>(response);
 
       // Use ensureListShape to normalize the response (handles undefined/null)
       return ensureListShape(extracted);
-    } catch (apiError: any) {
-      const status = apiError?.response?.status ?? apiError?.statusCode;
+    } catch (apiError: unknown) {
       if (status === 404) {
         throw new EnhancedApiError('Record not found', 404, path, 'GET', {
           resourceType: 'lists',
@@ -153,7 +111,6 @@ export async function getListDetails(listId: string): Promise<AttioList> {
         );
       }
       // Surface other statuses as enhanced errors instead of generic 500s
-      const code = Number.isFinite(status) ? status : 500;
       throw new EnhancedApiError(
         apiError?.message ?? 'List retrieval failed',
         code,
@@ -233,7 +190,6 @@ export async function addRecordToList(
   }
 
   if (!Object.values(ResourceType).includes(objectType as ResourceType)) {
-    const validTypes = Object.values(ResourceType).join(', ');
     throw new Error(
       `Invalid object type: "${objectType}". Must be one of: ${validTypes}`
     );
@@ -258,12 +214,10 @@ export async function addRecordToList(
     }
 
     // Fallback implementation
-    const api = getAttioClient();
-    const path = `/lists/${listId}/entries`;
 
     // Construct the proper API payload according to Attio API requirements
     // The API expects parent_record_id, parent_object, and optionally entry_values
-    const payload: any = {
+    const payload: unknown = {
       data: {
         parent_record_id: recordId,
         parent_object: objectType,
@@ -287,7 +241,6 @@ export async function addRecordToList(
     }
 
     try {
-      const response = await api.post(path, payload);
 
       if (process.env.NODE_ENV === 'development') {
         console.error(
@@ -324,8 +277,6 @@ export async function addRecordToList(
 
       // Add more context to the error message
       if (hasErrorResponse(error) && error.response?.status === 400) {
-        const validationErrors = error.response?.data?.validation_errors || [];
-        const errorDetails = validationErrors
           .map((e) => {
             return `${e.path?.join('.') || 'unknown'}: ${e.message || 'unknown'}`;
           })
@@ -389,8 +340,6 @@ export async function updateListEntry(
     }
 
     // Fallback implementation
-    const api = getAttioClient();
-    const path = `/lists/${listId}/entries/${entryId}`;
 
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -401,7 +350,6 @@ export async function updateListEntry(
 
     // Attio API expects updates to list entries in the 'data.entry_values' structure
     // This is specific to list entries, different from record updates in crud.ts
-    const response = await api.patch(path, {
       data: {
         entry_values: attributes,
       },
@@ -441,8 +389,6 @@ export async function removeRecordFromList(
       );
     }
     // Fallback implementation
-    const api = getAttioClient();
-    const path = `/lists/${listId}/entries/${entryId}`;
 
     await api.delete(path);
     return true;
@@ -546,28 +492,23 @@ export async function getRecordListMemberships(
     objectType &&
     !Object.values(ResourceType).includes(objectType as ResourceType)
   ) {
-    const validTypes = Object.values(ResourceType).join(', ');
     throw new Error(
       `Invalid object type: "${objectType}". Must be one of: ${validTypes}`
     );
   }
 
   try {
-    const api = getAttioClient();
     const memberships: ListMembership[] = [];
 
     // Determine object type - if not provided, try common types
-    const objectTypes = objectType
       ? [objectType]
       : ['companies', 'people', 'deals'];
 
     for (const objType of objectTypes) {
       try {
         // Use the correct API endpoint: GET /v2/objects/{object}/records/{record_id}/entries
-        const response = await api.get(
           `/objects/${objType}/records/${recordId}/entries`
         );
-        const entries = response?.data?.data || [];
 
         // Convert entries to ListMembership format
         for (const entry of entries) {
@@ -784,7 +725,6 @@ export async function filterListEntriesByParent(
   // Use direct API interaction to perform path-based filtering
   try {
     // Get API client
-    const api = getAttioClient();
 
     // Create path-based filter using our utility function
     const { path, constraints } = createPathBasedFilter(
@@ -796,7 +736,6 @@ export async function filterListEntriesByParent(
     );
 
     // Construct the request payload
-    const payload = {
       limit: limit,
       offset: offset,
       expand: ['record'],
@@ -816,13 +755,10 @@ export async function filterListEntriesByParent(
     }
 
     // Create API URL endpoint
-    const endpoint = `/lists/${listId}/entries/query`;
 
     // Make the API request
-    const response = await api.post(endpoint, payload);
 
     // Process the entries to ensure record_id is properly set
-    const entries = processListEntries(response.data.data || []);
 
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -915,8 +851,6 @@ export async function createList(
     );
   }
 
-  const api = getAttioClient();
-  const path = '/lists';
 
   try {
     if (process.env.NODE_ENV === 'development') {
@@ -926,7 +860,6 @@ export async function createList(
       );
     }
 
-    const response = await api.post(path, {
       data: attributes,
     });
 
@@ -935,7 +868,6 @@ export async function createList(
     }
 
     // Extract and normalize response, handling undefined case
-    const extracted = extract<AttioList>(response);
 
     // Use ensureListShape to normalize the response (handles undefined/null)
     return ensureListShape(extracted);
@@ -987,8 +919,6 @@ export async function updateList(
     throw new Error('Invalid attributes: Must be a non-empty object');
   }
 
-  const api = getAttioClient();
-  const path = `/lists/${listId}`;
 
   try {
     if (process.env.NODE_ENV === 'development') {
@@ -998,7 +928,6 @@ export async function updateList(
       );
     }
 
-    const response = await api.patch(path, {
       data: attributes,
     });
 
@@ -1049,8 +978,6 @@ export async function deleteList(listId: string): Promise<boolean> {
     throw new Error('Invalid list ID: Must be a non-empty string');
   }
 
-  const api = getAttioClient();
-  const path = `/lists/${listId}`;
 
   try {
     if (process.env.NODE_ENV === 'development') {
@@ -1064,7 +991,7 @@ export async function deleteList(listId: string): Promise<boolean> {
     }
 
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
         `[deleteList] Error:`,
@@ -1079,7 +1006,6 @@ export async function deleteList(listId: string): Promise<boolean> {
       }
     }
 
-    const status = error?.response?.status ?? error?.statusCode;
     if (status === 404) {
       throw new EnhancedApiError('Record not found', 404, path, 'DELETE', {
         resourceType: 'lists',
@@ -1087,7 +1013,6 @@ export async function deleteList(listId: string): Promise<boolean> {
         httpStatus: 404,
       });
     }
-    const code = Number.isFinite(status) ? status : 500;
     throw new EnhancedApiError(
       error?.message ?? 'List deletion failed',
       code,
@@ -1116,18 +1041,12 @@ export async function searchLists(
 ): Promise<AttioList[]> {
   // For now, we'll get all lists and filter client-side
   // since Attio API may not support direct list search
-  const allLists = await getLists(undefined, 100);
 
   // Defensive programming: ensure we have an array to work with
-  const listsArray = Array.isArray(allLists) ? allLists : [];
 
-  const lowerQuery = query.toLowerCase();
-  const filtered = listsArray.filter((list) => {
     // Ensure list is an object and has the expected properties
     if (!list || typeof list !== 'object') return false;
 
-    const name = (list.name || '').toLowerCase();
-    const description = (list.description || '').toLowerCase();
     return name.includes(lowerQuery) || description.includes(lowerQuery);
   });
 
@@ -1140,11 +1059,8 @@ export async function searchLists(
  * @returns List attributes schema
  */
 export async function getListAttributes(): Promise<Record<string, unknown>> {
-  const api = getAttioClient();
-  const path = '/lists/attributes';
 
   try {
-    const response = await api.get(path);
     return extract<Record<string, unknown>>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {

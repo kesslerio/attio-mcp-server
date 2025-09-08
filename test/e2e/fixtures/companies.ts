@@ -5,22 +5,6 @@
  */
 import { E2ECompanyFactory, type E2ETestCompany } from '../utils/test-data.js';
 
-/**
- * Standard company fixtures for E2E testing
- */
-export const companyFixtures = {
-  /**
-   * Technology companies
-   */
-  technology: {
-    startup: (): E2ETestCompany =>
-      E2ECompanyFactory.createTechnology({
-        annual_revenue: '2000000',
-        employee_count: 25,
-        categories: ['Software', 'SaaS', 'Startup'],
-        description: 'E2E test technology startup company',
-      }),
-
     enterprise: (): E2ETestCompany =>
       E2ECompanyFactory.createTechnology({
         annual_revenue: '50000000',

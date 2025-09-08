@@ -20,15 +20,11 @@ export class SearchUtilities {
     searchFields: string[]
   ): AttioRecord[] {
     // Calculate relevance score for each result
-    const scoredResults = results.map((record) => {
       let score = 0;
-      const queryLower = query.toLowerCase();
 
       // Check each search field for matches
       searchFields.forEach((field) => {
-        const fieldValue = this.getFieldValue(record, field);
         if (fieldValue) {
-          const valueLower = fieldValue.toLowerCase();
 
           // Exact match gets highest score
           if (valueLower === queryLower) {
@@ -42,12 +38,10 @@ export class SearchUtilities {
           else if (valueLower.includes(queryLower)) {
             score += 25;
             // Additional score for more occurrences
-            const matches = valueLower.split(queryLower).length - 1;
             score += matches * 10;
           }
           // Partial word match gets lower score
           else {
-            const queryWords = queryLower.split(/\s+/);
             queryWords.forEach((word) => {
               if (valueLower.includes(word)) {
                 score += 5;
@@ -66,8 +60,6 @@ export class SearchUtilities {
         return b.score - a.score;
       }
       // Secondary sort by name if scores are equal
-      const nameA = this.getFieldValue(a.record, 'name') || '';
-      const nameB = this.getFieldValue(b.record, 'name') || '';
       return nameA.localeCompare(nameB);
     });
 
@@ -78,17 +70,14 @@ export class SearchUtilities {
    * Helper method to extract field value from a record
    */
   static getFieldValue(record: AttioRecord, field: string): string {
-    const values = record.values as Record<string, unknown>;
     if (!values) return '';
 
-    const fieldValue = values[field];
 
     // Handle different field value structures
     if (typeof fieldValue === 'string') {
       return fieldValue;
     } else if (Array.isArray(fieldValue) && fieldValue.length > 0) {
       // For array fields like email_addresses, get the first value
-      const firstItem = fieldValue[0];
       if (typeof firstItem === 'string') {
         return firstItem;
       } else if (
@@ -113,10 +102,8 @@ export class SearchUtilities {
    * Helper method to extract field value from a list record for content search
    */
   static getListFieldValue(list: AttioRecord, field: string): string {
-    const values = list.values as Record<string, unknown>;
     if (!values) return '';
 
-    const fieldValue = values[field];
 
     // Handle different field value structures for lists
     if (typeof fieldValue === 'string') {
@@ -136,10 +123,8 @@ export class SearchUtilities {
    * Helper method to extract field value from a task record for content search
    */
   static getTaskFieldValue(task: AttioRecord, field: string): string {
-    const values = task.values as Record<string, unknown>;
     if (!values) return '';
 
-    const fieldValue = values[field];
 
     // Handle different field value structures for tasks
     if (typeof fieldValue === 'string') {
@@ -235,10 +220,8 @@ export class SearchUtilities {
     }
 
     // Otherwise, create a new structure with both sets of filters
-    const existingFilterArray = Array.isArray(existingFilters.filters)
       ? existingFilters.filters
       : [];
-    const dateFilterArray = Array.isArray(dateFilter.filters)
       ? dateFilter.filters
       : [];
 

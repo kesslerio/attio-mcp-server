@@ -4,15 +4,11 @@
  * Extracted from UniversalCreateService.createListRecord (lines 866-907)
  */
 
-import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
-import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import { createList } from '../../../objects/lists.js';
 import { AttioRecord } from '../../../types/attio.js';
-import { 
-  UniversalValidationError,
-  ErrorType,
-} from '../../../handlers/tool-configs/universal/schemas.js';
+import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
+import { createList } from '../../../objects/lists.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
+import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 
 export class ListCreateStrategy extends BaseCreateStrategy {
   constructor() {
@@ -23,10 +19,8 @@ export class ListCreateStrategy extends BaseCreateStrategy {
     const { mapped_data } = params;
     
     try {
-      const list = await createList(mapped_data);
       
       // Convert AttioList to AttioRecord format
-      const record = {
         id: {
           record_id: list.id.list_id,
           list_id: list.id.list_id,
@@ -49,16 +43,12 @@ export class ListCreateStrategy extends BaseCreateStrategy {
         }
       };
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
           
       if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(this.resource_type, match[1]);
           throw new UniversalValidationError(
             (error as Error).message,
             ErrorType.USER_ERROR,

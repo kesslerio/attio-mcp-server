@@ -1,17 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createTask } from '../../../src/api/operations/tasks.js';
 
-// Mock the Attio client
-const mockPost = vi.fn();
-vi.mock('../../../src/api/attio-client.js', () => ({
-  getAttioClient: () => ({
-    post: mockPost,
-    defaults: {
-      baseURL: 'https://api.attio.com',
-      headers: { Authorization: 'Bearer test-token' }
-    }
-  })
-}));
+import { createTask } from '../../../src/api/operations/tasks.js';
 
 // Mock retry utility to avoid delays in tests
 vi.mock('../../../src/api/operations/retry.js', () => ({
@@ -48,7 +37,6 @@ describe('tasks.createTask validation', () => {
         }
       });
 
-      const result = await createTask('test content');
       expect(result.id).toBe('task-123');
       expect(result.content).toBe('test content');
       expect(mockPost).toHaveBeenCalledWith('/tasks', expect.objectContaining({
@@ -72,7 +60,6 @@ describe('tasks.createTask validation', () => {
         }
       });
 
-      const result = await createTask('linked task', {
         recordId: '11111111-1111-1111-1111-111111111111',
         targetObject: 'companies'
       });
@@ -103,7 +90,6 @@ describe('tasks.createTask validation', () => {
         }
       });
 
-      const result = await createTask('test');
       expect(result.id).toBe('task-nested');
       expect(result.content).toBe('nested response');
     });
@@ -117,7 +103,6 @@ describe('tasks.createTask validation', () => {
         }
       });
 
-      const result = await createTask('test');
       expect(result.id).toBe('task-direct');
       expect(result.content).toBe('direct response');
     });
@@ -133,7 +118,6 @@ describe('tasks.createTask validation', () => {
         }
       });
 
-      const result = await createTask('test');
       expect(result.status).toBe('completed');
     });
 
@@ -164,7 +148,6 @@ describe('tasks.createTask validation', () => {
         }
       });
 
-      const result = await createTask('');
       expect(result.id).toBe('task-empty');
       expect(result.content).toBe('');
     });
@@ -180,7 +163,6 @@ describe('tasks.createTask validation', () => {
         }
       });
 
-      const deadline = '2024-12-31T23:59:59Z';
       await createTask('test', { dueDate: deadline });
       
       expect(mockPost).toHaveBeenCalledWith('/tasks', expect.objectContaining({

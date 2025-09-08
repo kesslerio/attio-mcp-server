@@ -5,9 +5,9 @@
  * people and companies in Attio, abstracting away the complexity of
  * which direction the relationship needs to be updated.
  */
-import { ToolConfig } from '../../tool-types.js';
 import { getCompanyDetails } from '../../../objects/companies/index.js';
 import { getPersonDetails } from '../../../objects/people/index.js';
+import { ToolConfig } from '../../tool-types.js';
 import { updateCompany } from '../../../objects/companies/index.js';
 
 // Relationship result interfaces
@@ -67,11 +67,8 @@ async function linkPersonToCompany(
 ): Promise<RelationshipOperationResult> {
   try {
     // Get current company details to preserve existing team members
-    const company = await getCompanyDetails(companyId);
 
     // Extract current team members
-    const currentTeam = company.values?.team || [];
-    const currentTeamIds = Array.isArray(currentTeam)
       ? currentTeam
           .map((member: TeamMember | string) =>
             typeof member === 'string'
@@ -92,7 +89,6 @@ async function linkPersonToCompany(
     }
 
     // Add new person to team
-    const updatedTeamIds = [...currentTeamIds, personId];
 
     // Update company with new team
     await updateCompany(companyId, {
@@ -122,11 +118,8 @@ async function unlinkPersonFromCompany(
 ): Promise<RelationshipOperationResult> {
   try {
     // Get current company details
-    const company = await getCompanyDetails(companyId);
 
     // Extract current team members
-    const currentTeam = company.values?.team || [];
-    const currentTeamIds = Array.isArray(currentTeam)
       ? currentTeam
           .map((member: TeamMember | string) =>
             typeof member === 'string'
@@ -147,7 +140,6 @@ async function unlinkPersonFromCompany(
     }
 
     // Remove person from team
-    const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
 
     // Update company with new team
     await updateCompany(companyId, {
@@ -173,8 +165,6 @@ async function unlinkPersonFromCompany(
  */
 async function getPersonCompanies(personId: string): Promise<CompanyInfo[]> {
   try {
-    const person = await getPersonDetails(personId);
-    const companies = person.values?.companies || [];
 
     return Array.isArray(companies)
       ? companies.map((company: TeamMember | string) => ({
@@ -202,8 +192,6 @@ async function getPersonCompanies(personId: string): Promise<CompanyInfo[]> {
  */
 async function getCompanyTeam(companyId: string): Promise<PersonInfo[]> {
   try {
-    const company = await getCompanyDetails(companyId);
-    const team = company.values?.team || [];
 
     return Array.isArray(team)
       ? team.map((member: TeamMember | string) => ({

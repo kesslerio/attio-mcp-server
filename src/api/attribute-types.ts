@@ -1,9 +1,9 @@
 /**
  * Attribute type detection and management for Attio attributes
  */
+import { debug } from '../utils/logger.js';
 import { getAttioClient } from './attio-client.js';
 import { parsePersonalName } from '../utils/personal-name-parser.js';
-import { debug } from '../utils/logger.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -54,7 +54,6 @@ export interface AttioAttributeMetadata {
 /**
  * Cache for attribute metadata to avoid repeated API calls
  */
-const attributeCache = new Map<string, Map<string, AttioAttributeMetadata>>();
 
 /**
  * Fetches and caches attribute metadata for a specific object type
@@ -74,15 +73,11 @@ export async function getObjectAttributeMetadata(
     // Tasks use a different API structure and don't have attributes endpoint
     if (objectSlug === 'tasks') {
       // Tasks have predefined fields, not dynamic attributes
-      const taskMetadata = createTaskAttributeMetadata();
       attributeCache.set(objectSlug, taskMetadata);
       return taskMetadata;
     }
 
-    const api = getAttioClient();
-    const response = await api.get(`/objects/${objectSlug}/attributes`);
     // Handle multiple API response structures for attributes
-    const rawAttributes = response?.data?.data || response?.data || [];
 
     // Ensure attributes is always an array - handle multiple shape variants
     const attributes: AttioAttributeMetadata[] = Array.isArray(rawAttributes)
@@ -96,12 +91,10 @@ export async function getObjectAttributeMetadata(
             : [];
 
     // Build metadata map with normalization to support variant fields used in tests/mocks
-    const metadataMap = new Map<string, AttioAttributeMetadata>();
     attributes.forEach((attr) => {
       if (!attr?.api_slug) return;
 
       // Normalize legacy/variant flags commonly seen in mocks
-      const allowMultiple = (attr as { allow_multiple_values?: boolean })
         .allow_multiple_values;
 
       const normalized: AttioAttributeMetadata = {
@@ -144,10 +137,8 @@ export async function getObjectAttributeMetadata(
  * Tasks don't use the dynamic attributes API like other objects
  */
 function createTaskAttributeMetadata(): Map<string, AttioAttributeMetadata> {
-  const taskFields = new Map<string, AttioAttributeMetadata>();
 
   // Standard task fields based on Attio Tasks API
-  const createTaskField = (
     slug: string,
     type: string,
     title: string,
@@ -204,8 +195,6 @@ export async function detectFieldType(
   objectSlug: string,
   attributeSlug: string
 ): Promise<string> {
-  const metadata = await getObjectAttributeMetadata(objectSlug);
-  const attrMetadata = metadata.get(attributeSlug);
 
   if (!attrMetadata) {
     // Default to 'string' if metadata not found
@@ -213,7 +202,6 @@ export async function detectFieldType(
   }
 
   // Map Attio types to our internal types
-  const isMultiple =
     attrMetadata.is_multiselect ||
     ('allow_multiple_values' in attrMetadata &&
       (
@@ -288,8 +276,6 @@ export async function getAttributeTypeInfo(
   attioType: string;
   metadata: AttioAttributeMetadata | null;
 }> {
-  const metadata = await getObjectAttributeMetadata(objectSlug);
-  const attrMetadata = metadata.get(attributeSlug);
 
   debug(
     'attribute-types',
@@ -321,7 +307,6 @@ export async function getAttributeTypeInfo(
     };
   }
 
-  const fieldType = await detectFieldType(objectSlug, attributeSlug);
 
   return {
     fieldType,
@@ -357,7 +342,6 @@ export async function getAttributeSlugById(
   objectSlug: string,
   attributeId: string
 ): Promise<string | null> {
-  const metadata = await getObjectAttributeMetadata(objectSlug);
   for (const [slug, attr] of Array.from(metadata.entries())) {
     if (attr.id.attribute_id === attributeId) {
       return slug;
@@ -386,7 +370,6 @@ export async function getFieldValidationRules(
   maxLength?: number;
   enum?: (string | number | boolean)[];
 }> {
-  const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
   const rules: Record<string, unknown> = {
     type: typeInfo.fieldType,
@@ -404,13 +387,11 @@ export async function getFieldValidationRules(
       phone_number: '^\\+?[0-9-()\\s]+$',
     };
 
-    const pattern = validationPatterns[typeInfo.attioType];
     if (pattern) {
       rules.pattern = pattern;
     }
 
     // Add enum values for select fields
-    const config = typeInfo.metadata.config as
       | {
           options?: Array<{ value: string | number | boolean }>;
           select?: {
@@ -420,7 +401,6 @@ export async function getFieldValidationRules(
       | undefined;
     if (typeInfo.attioType === 'select') {
       // Handle both direct options and nested select.options
-      const options = config?.options || config?.select?.options;
       if (options) {
         rules.enum = options.map(
           (opt: { value: string | number | boolean }) => opt.value
@@ -461,13 +441,11 @@ export async function formatAttributeValue(
     | Array<string | number | boolean>
     | Record<string, unknown>
 ): Promise<unknown> {
-  const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
   // Handle null/undefined values
   if (value === null || value === undefined) {
     // If the attribute is an array type, clearing it means sending an empty array.
     // Otherwise, send null.
-    const returnValue = typeInfo.isArray ? [] : null;
     return returnValue;
   }
 
@@ -477,7 +455,6 @@ export async function formatAttributeValue(
       // Select fields expect direct string values (title or ID)
       if (typeInfo.isArray) {
         // Multiselect: array of strings
-        const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue;
       } else {
         // Single select: direct string
@@ -508,8 +485,6 @@ export async function formatAttributeValue(
       }
       // Other text fields need wrapped values if not array, or array of wrapped if array
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
-        const result = arrayValue.map((v) => ({ value: v }));
         debug(
           'attribute-types',
           `[formatAttributeValue] Text field array wrapped:`,
@@ -522,7 +497,6 @@ export async function formatAttributeValue(
         );
         return result;
       } else {
-        const result = { value };
         debug('attribute-types', `[formatAttributeValue] Text field wrapped:`, {
           input: value,
           output: result,
@@ -535,7 +509,6 @@ export async function formatAttributeValue(
     case 'personal-name': {
       // Personal name fields need special handling
       // Use the dedicated parser utility
-      const parsedName = parsePersonalName(value);
       debug(
         'attribute-types',
         `[formatAttributeValue] Personal name parsing:`,
@@ -552,7 +525,6 @@ export async function formatAttributeValue(
     case 'url':
       // URL fields need wrapped values
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
       } else {
         return { value };
@@ -561,7 +533,6 @@ export async function formatAttributeValue(
     case 'phone-number':
       // Phone fields are like email - array but no value wrapping
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue;
       } else {
         return value;
@@ -569,7 +540,6 @@ export async function formatAttributeValue(
 
     case 'email-address': {
       // Email is an array field but doesn't need value wrapping
-      const emails = Array.isArray(value) ? value : [value];
       debug('attribute-types', `[formatAttributeValue] Email formatting:`, {
         input: value,
         output: emails,
@@ -582,7 +552,6 @@ export async function formatAttributeValue(
     case 'domain':
       // Domain fields are like email - array but no value wrapping
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue;
       } else {
         return value;
@@ -592,7 +561,6 @@ export async function formatAttributeValue(
     case 'currency':
       // Numeric fields
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
       } else {
         return { value };
@@ -608,7 +576,6 @@ export async function formatAttributeValue(
     case 'timestamp':
       // Date fields - wrapped values
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
       } else {
         return { value };
@@ -617,7 +584,6 @@ export async function formatAttributeValue(
     default:
       // Default: wrap the value for safety
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
       } else {
         return { value };

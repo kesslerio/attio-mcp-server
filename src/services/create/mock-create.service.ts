@@ -5,17 +5,12 @@
  * Generates synthetic data for testing environments.
  */
 
-import type { CreateService } from './types.js';
-import type { AttioRecord } from '../../types/attio.js';
-import type {
-  E2EMeta,
-  UnknownRecord,
-  isRecord,
-} from '../../types/service-types.js';
-import { extractRecordId } from '../../utils/validation/uuid-validation.js';
-import { isValidId } from '../../utils/validation.js';
-import { generateMockId } from './extractor.js';
 import { debug } from '../../utils/logger.js';
+import { extractRecordId } from '../../utils/validation/uuid-validation.js';
+import { generateMockId } from './extractor.js';
+import { isValidId } from '../../utils/validation.js';
+import type { AttioRecord } from '../../types/attio.js';
+import type { CreateService } from './types.js';
 
 /**
  * Pure mock implementation of CreateService
@@ -23,7 +18,6 @@ import { debug } from '../../utils/logger.js';
 export class MockCreateService implements CreateService {
   async createCompany(input: Record<string, unknown>): Promise<AttioRecord> {
     // Generate valid UUID format for mock IDs (exactly 36 chars)
-    const mockId = generateMockId('12345678-1234-4000-8000');
 
     return {
       id: {
@@ -48,7 +42,6 @@ export class MockCreateService implements CreateService {
 
   async createPerson(input: Record<string, unknown>): Promise<AttioRecord> {
     // Generate valid UUID format for mock IDs (exactly 36 chars)
-    const mockId = generateMockId('12345678-1234-4000-9000');
 
     return {
       id: {
@@ -71,11 +64,9 @@ export class MockCreateService implements CreateService {
 
   async createTask(input: Record<string, unknown>): Promise<AttioRecord> {
     // Use deterministic ID if record_id is provided (for test compatibility)
-    const mockId = input.record_id
       ? (input.record_id as string)
       : generateMockId('12345678-1234-4000-a000');
 
-    const taskContent =
       (input.content as string) || (input.title as string) || 'Mock Test Task';
 
     // Issue #480 compatible mock task
@@ -140,7 +131,6 @@ export class MockCreateService implements CreateService {
       ];
     }
 
-    const result = { ...attioRecord, ...flatFields } as AttioRecord &
       Record<string, unknown>;
 
     // Emit top-level assignees for E2E expectation
@@ -188,7 +178,6 @@ export class MockCreateService implements CreateService {
       }
     }
 
-    const taskContent =
       (updateData.content as string) ||
       (updateData.title as string) ||
       `Updated Mock Test Task ${taskId.slice(-4)}`;
@@ -244,7 +233,6 @@ export class MockCreateService implements CreateService {
       ];
     }
 
-    const result = { ...attioRecord, ...flatFields } as AttioRecord &
       Record<string, unknown>;
 
     // Emit top-level assignees for E2E expectation
@@ -289,19 +277,16 @@ export class MockCreateService implements CreateService {
     }
 
     // Extract UUID from record_id (handles URIs and raw UUIDs)
-    const extractedRecordId = extractRecordId(noteData.record_id);
     if (!extractedRecordId) {
       throw new Error('record not found');
     }
 
     // Check for invalid IDs following test patterns
-    const invalidPatterns = [
       '00000000-0000-0000-0000-000000000000',
       /invalid/i,
       /^invalid-.*-id-\d+$/,
     ];
 
-    const isInvalidId = invalidPatterns.some((pattern) =>
       pattern instanceof RegExp
         ? pattern.test(extractedRecordId)
         : pattern === extractedRecordId
@@ -312,8 +297,6 @@ export class MockCreateService implements CreateService {
     }
 
     // Generate mock note response following Attio API format
-    const timestamp = Date.now();
-    const baseNote = {
       id: {
         workspace_id: 'ws_mock',
         note_id: `note_${timestamp}`,
@@ -335,7 +318,6 @@ export class MockCreateService implements CreateService {
     };
 
     // Apply E2E markers for test data cleanup
-    const markedNote = this.applyE2EMarkers(baseNote);
 
     return markedNote;
   }
@@ -354,7 +336,6 @@ export class MockCreateService implements CreateService {
    * Apply consistent E2E test markers to mock data
    */
   private applyE2EMarkers(data: UnknownRecord, meta?: E2EMeta): UnknownRecord {
-    const baseTags = new Set([
       ...(Array.isArray(data.tags) ? data.tags : []),
       'e2e-test',
       'e2e-suite:notes',

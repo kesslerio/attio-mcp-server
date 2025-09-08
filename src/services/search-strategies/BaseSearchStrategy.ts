@@ -4,8 +4,8 @@
  */
 
 import { AttioRecord } from '../../types/attio.js';
-import { MatchType, SortType } from '../../handlers/tool-configs/universal/types.js';
 import { ISearchStrategy, SearchStrategyParams, StrategyDependencies, TimeframeParams } from './interfaces.js';
+import { MatchType, SortType } from '../../handlers/tool-configs/universal/types.js';
 
 /**
  * Abstract base class for search strategies
@@ -39,7 +39,6 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
       return filters;
     }
 
-    const dateFilter = this.dependencies.createDateFilter(timeframeParams);
     if (dateFilter) {
       return this.dependencies.mergeFilters(filters, dateFilter);
     }
@@ -127,7 +126,6 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
       return await searchFunction({ filters: [] }, limit, offset);
     } catch (error: unknown) {
       // If empty filters aren't supported, return empty array rather than failing
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.warn(
         `Search with empty filters failed, returning empty results: ${errorMessage}`
       );

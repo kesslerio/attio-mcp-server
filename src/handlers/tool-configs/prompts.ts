@@ -1,12 +1,6 @@
 /**
  * Prompts-related tool configurations
  */
-import {
-  listPrompts,
-  listPromptCategories,
-  getPromptDetails,
-  executePrompt,
-} from '../../prompts/index.js';
 import { PromptsToolConfig } from '../tool-types.js';
 
 // Prompts tool configurations
@@ -14,16 +8,16 @@ export const promptsToolConfigs = {
   listPrompts: {
     name: 'list-prompts',
     handler: listPrompts,
-    formatResult: (results: any) => {
+    formatResult: (results: unknown) => {
       return `Available prompts:\n${results.data
-        .map((prompt: any) => `- ${prompt.title} (ID: ${prompt.id})`)
+        .map((prompt: unknown) => `- ${prompt.title} (ID: ${prompt.id})`)
         .join('\n')}`;
     },
   } as PromptsToolConfig,
   listPromptCategories: {
     name: 'list-prompt-categories',
     handler: listPromptCategories,
-    formatResult: (results: any) => {
+    formatResult: (results: unknown) => {
       return `Available prompt categories:\n${results.data
         .map((category: string) => `- ${category}`)
         .join('\n')}`;

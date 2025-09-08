@@ -16,10 +16,10 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { execSync } from 'child_process';
+import { MCPTestClient } from 'mcp-test-client';
 import { writeFileSync } from 'fs';
+import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 interface PlaybookTestResult {
   success: boolean;
@@ -46,7 +46,6 @@ describe('Operations Playbook Validation Suite', () => {
     await client.cleanup();
 
     // Analyze failures and create reports
-    const failures = testResults.filter((result) => !result.success);
     if (failures.length > 0) {
       console.log(
         `\n📋 Analyzing ${failures.length} failed operations playbook examples...`
@@ -60,7 +59,6 @@ describe('Operations Playbook Validation Suite', () => {
     }
 
     // Print test summary
-    const successCount = testResults.filter((r) => r.success).length;
     console.log(
       `\n📊 Test Summary: ${successCount}/${testResults.length} operations playbook examples passed`
     );
@@ -68,12 +66,9 @@ describe('Operations Playbook Validation Suite', () => {
 
   describe('🎯 Quick Start Examples', () => {
     it('should execute the main data quality review prompt from playbook Quick Start', async () => {
-      const prompt =
         'Show me all companies in my CRM that are missing website URLs. For each company, provide the company name, industry (if available), and any contact information we have. Help me prioritize which ones to research and update first.';
-      const expectedOutcome =
         'A list of companies with incomplete data that can be systematically updated';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -99,11 +94,8 @@ describe('Operations Playbook Validation Suite', () => {
   describe('🧹 Daily Data Maintenance Routines', () => {
 
     it('should find companies without industry classification (Critical Missing Info)', async () => {
-      const prompt = 'Find companies without industry classification';
-      const expectedOutcome =
         'Companies missing essential business information';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -126,12 +118,9 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find people without email addresses who have phone numbers', async () => {
-      const prompt =
         'Find people without email addresses who have phone numbers';
-      const expectedOutcome =
         'People records with incomplete contact information';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -154,10 +143,7 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should check for records created yesterday (Record Status Review)', async () => {
-      const prompt = 'Show me all records created yesterday';
-      const expectedOutcome = 'New records for data quality review';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -175,11 +161,8 @@ describe('Operations Playbook Validation Suite', () => {
 
   describe('📋 Weekly Bulk Operations', () => {
     it('should find company name variations for standardization', async () => {
-      const prompt =
         'Find variations of company names (e.g., "Tech Inc", "Tech Incorporated")';
-      const expectedOutcome = 'Company names needing standardization';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -195,10 +178,7 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find people with similar names who might be duplicates', async () => {
-      const prompt = 'Find people with similar names who might be duplicates';
-      const expectedOutcome = 'Potential duplicate person records';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -214,11 +194,8 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find overdue tasks for reassignment', async () => {
-      const prompt =
         'Review overdue tasks and reassign or close as appropriate';
-      const expectedOutcome = 'Overdue tasks needing attention';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -234,11 +211,8 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should create high-priority accounts list based on company size', async () => {
-      const prompt =
         'Create high-priority accounts list based on company size and industry';
-      const expectedOutcome = 'Organized prospect lists for targeted outreach';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -256,10 +230,7 @@ describe('Operations Playbook Validation Suite', () => {
 
   describe('🔄 Monthly System Maintenance', () => {
     it('should find companies with contacts but no recent activity', async () => {
-      const prompt = 'Find companies with contacts but no recent activity';
-      const expectedOutcome = 'Companies needing re-engagement';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -275,10 +246,7 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find people records missing company associations', async () => {
-      const prompt = 'Find people records missing company associations';
-      const expectedOutcome = 'People records needing company linkage';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -305,10 +273,7 @@ describe('Operations Playbook Validation Suite', () => {
     // These tests cover advanced data management workflows from the operations playbook
     // including data standardization, enrichment opportunities, and task management
     it('should find companies with inconsistent naming for standardization', async () => {
-      const prompt = 'Find companies with similar names that might need standardization (variations like Inc, Incorporated, Corporation)';
-      const expectedOutcome = 'Companies with naming inconsistencies for standardization';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -324,10 +289,7 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find people with LinkedIn URLs but incomplete job titles (Data Enrichment)', async () => {
-      const prompt = 'Find people with LinkedIn URLs but missing or incomplete job titles';
-      const expectedOutcome = 'People records ready for job title enrichment';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -350,10 +312,7 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find companies missing employee count or industry data (Enrichment Opportunities)', async () => {
-      const prompt = 'Find companies with domains but missing employee count or industry classification';
-      const expectedOutcome = 'Companies ready for data enrichment research';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -380,10 +339,7 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find tasks without due dates or assignees (Task Management)', async () => {
-      const prompt = 'Find active tasks without due dates or assignees that need attention';
-      const expectedOutcome = 'Incomplete tasks requiring assignment and scheduling';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -413,7 +369,6 @@ describe('Operations Playbook Validation Suite', () => {
     toolName: string,
     toolParams: Record<string, unknown>
   ): Promise<PlaybookTestResult> {
-    const startTime = performance.now();
 
     try {
       console.log(
@@ -429,8 +384,6 @@ describe('Operations Playbook Validation Suite', () => {
         toolParams,
         (toolResult: ToolResult) => {
           result = toolResult;
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(`⏱️ Execution time: ${duration.toFixed(2)}ms`);
 
@@ -441,7 +394,6 @@ describe('Operations Playbook Validation Suite', () => {
 
           console.log('✅ Tool executed successfully');
           if (toolResult.content && toolResult.content.length > 0) {
-            const content = toolResult.content[0];
             if ('text' in content) {
               console.log(
                 `📄 Result preview: ${content.text.substring(0, 200)}...`
@@ -453,8 +405,6 @@ describe('Operations Playbook Validation Suite', () => {
         }
       );
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
 
       return {
         success: !result?.isError,
@@ -464,8 +414,6 @@ describe('Operations Playbook Validation Suite', () => {
         duration,
       };
     } catch (error) {
-      const endTime = performance.now();
-      const duration = endTime - startTime;
 
       console.error('❌ Test execution failed:', error);
 
@@ -480,8 +428,6 @@ describe('Operations Playbook Validation Suite', () => {
   }
 
   async function createFailureAnalysisReport(failures: PlaybookTestResult[]) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportPath = `/tmp/operations-playbook-failures-${timestamp}.md`;
 
     let report = `# Operations Playbook Validation Failure Analysis
 
@@ -568,10 +514,7 @@ describe('Operations Playbook Validation Suite', () => {
   }
 
   async function createSingleGitHubIssue(failures: PlaybookTestResult[]) {
-    const title = `Operations Playbook Validation: ${failures.length} Examples Failed`;
-    const timestamp = new Date().toISOString();
 
-    const body = `## Operations Playbook Validation Results
 
 **Test Date:** ${timestamp}  
 **Failed Examples:** ${failures.length}/${testResults.length}  

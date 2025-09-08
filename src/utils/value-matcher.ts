@@ -4,11 +4,6 @@
  */
 import * as stringSimilarity from 'string-similarity';
 
-export interface ValueMatch {
-  value: string;
-  similarity: number;
-}
-
 export interface ValueMatchResult {
   exactMatch?: string;
   suggestions: ValueMatch[];
@@ -46,16 +41,12 @@ export function findBestValueMatch(
   validValues: string[],
   config?: ValueMatchConfig
 ): ValueMatchResult {
-  const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
   // Normalize for comparison if not case sensitive
-  const normalizedSearch = mergedConfig.caseSensitive
     ? searchValue
     : searchValue.toLowerCase();
 
   // Check for exact match first
-  const exactMatch = validValues.find((value) => {
-    const normalizedValue = mergedConfig.caseSensitive
       ? value
       : value.toLowerCase();
     return normalizedValue === normalizedSearch;
@@ -70,10 +61,8 @@ export function findBestValueMatch(
   }
 
   // No exact match, find similar values
-  const matches = stringSimilarity.findBestMatch(searchValue, validValues);
 
   // Filter and sort suggestions by similarity
-  const suggestions = matches.ratings
     .filter((rating) => rating.rating >= mergedConfig.minSimilarity!)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, mergedConfig.maxSuggestions)
@@ -131,12 +120,10 @@ export function findPartialMatches(
   validValues: string[],
   caseSensitive: boolean = false
 ): string[] {
-  const normalizedSearch = caseSensitive
     ? searchValue
     : searchValue.toLowerCase();
 
   return validValues.filter((value) => {
-    const normalizedValue = caseSensitive ? value : value.toLowerCase();
     return normalizedValue.includes(normalizedSearch);
   });
 }
@@ -176,11 +163,9 @@ export async function getValueSuggestions(
     ],
   };
 
-  const validValues = knownValues[fieldSlug];
   if (!validValues) {
     return null;
   }
 
-  const matchResult = findBestValueMatch(searchValue, validValues);
   return matchResult.suggestions;
 }

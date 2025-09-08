@@ -2,11 +2,6 @@
  * Tests for the attribute validator
  */
 import { describe, it, expect } from 'vitest';
-import {
-  validateAttributeValue,
-  ValidationResult,
-  AttributeType,
-} from '../../src/validators/attribute-validator.js';
 
 describe('Attribute Validator', () => {
   describe('validateAttributeValue', () => {
@@ -58,7 +53,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject invalid boolean values', () => {
-        const result = validateAttributeValue('test', 'invalid', 'boolean');
         expect(result.valid).toBe(false);
         expect(result.error).toBeDefined();
       });
@@ -112,7 +106,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject invalid number values', () => {
-        const result = validateAttributeValue('test', 'not a number', 'number');
         expect(result.valid).toBe(false);
         expect(result.error).toBeDefined();
       });
@@ -156,7 +149,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert Date objects to ISO strings', () => {
-        const testDate = new Date('2023-01-01T12:00:00Z');
         expect(validateAttributeValue('test', testDate, 'string')).toEqual({
           valid: true,
           convertedValue: testDate.toISOString(),
@@ -166,7 +158,6 @@ describe('Attribute Validator', () => {
 
     describe('Date validation', () => {
       it('should accept Date objects', () => {
-        const testDate = new Date('2023-01-01T12:00:00Z');
         expect(validateAttributeValue('test', testDate, 'date')).toEqual({
           valid: true,
           convertedValue: testDate.toISOString(),
@@ -174,21 +165,16 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert ISO string dates', () => {
-        const dateString = '2023-01-01T12:00:00Z';
-        const result = validateAttributeValue('test', dateString, 'date');
         expect(result.valid).toBe(true);
         expect(result.convertedValue).toBeDefined();
       });
 
       it('should convert timestamp numbers', () => {
-        const timestamp = 1672574400000; // 2023-01-01T12:00:00Z
-        const result = validateAttributeValue('test', timestamp, 'date');
         expect(result.valid).toBe(true);
         expect(result.convertedValue).toBeDefined();
       });
 
       it('should reject invalid date values', () => {
-        const result = validateAttributeValue('test', 'not a date', 'date');
         expect(result.valid).toBe(false);
         expect(result.error).toBeDefined();
       });
@@ -222,7 +208,6 @@ describe('Attribute Validator', () => {
 
     describe('Object validation', () => {
       it('should accept object values', () => {
-        const testObj = { key: 'value' };
         expect(validateAttributeValue('test', testObj, 'object')).toEqual({
           valid: true,
           convertedValue: testObj,
@@ -230,7 +215,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject non-object values', () => {
-        const result = validateAttributeValue(
           'test',
           'not an object',
           'object'
@@ -298,7 +282,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should process arrays of records', () => {
-        const input = ['rec_123', { record_id: 'rec_456' }, { id: 'rec_789' }];
 
         expect(
           validateAttributeValue('test', input, 'record-reference')
@@ -309,7 +292,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject invalid record references', () => {
-        const result = validateAttributeValue(
           'test',
           { foo: 'bar' },
           'record-reference'

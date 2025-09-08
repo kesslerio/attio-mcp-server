@@ -1,15 +1,5 @@
-import {
-  ErrorType,
-  HttpStatusCode,
-  UniversalValidationError,
-} from '../errors/validation-errors.js';
-import { UniversalResourceType } from '../types.js';
 import { SanitizedObject, SanitizedValue } from '../schemas/common/types.js';
-import {
-  suggestResourceType,
-  validateIdFields,
-  validatePaginationParams,
-} from './field-validator.js';
+import { UniversalResourceType } from '../types.js';
 
 export class InputSanitizer {
   static sanitizeString(input: unknown): string {
@@ -47,7 +37,6 @@ export class InputSanitizer {
       for (const [key, value] of Object.entries(
         obj as Record<string, unknown>
       )) {
-        const lowerKey = key.toLowerCase();
         if (lowerKey === 'email' && typeof value === 'string') {
           result[key] = this.normalizeEmail(value);
           continue;
@@ -158,7 +147,6 @@ const toolValidators: Record<string, ToolValidator> = {
       );
     }
     if (p.resource_type === 'tasks') {
-      const forbidden = ['content', 'content_markdown', 'content_plaintext'];
       if (p.record_data && typeof p.record_data === 'object') {
         for (const k of forbidden) {
           if (k in (p.record_data as any)) {
@@ -275,8 +263,6 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     
     // Support both new flexible format (operations array) and legacy format (operation_type)
-    const hasOperations = p.operations && Array.isArray(p.operations) && p.operations.length > 0;
-    const hasLegacyFormat = p.operation_type;
     
     if (!hasOperations && !hasLegacyFormat) {
       throw new UniversalValidationError(
@@ -292,7 +278,6 @@ const toolValidators: Record<string, ToolValidator> = {
     
     // Validate new format
     if (hasOperations) {
-      const operations = p.operations as Array<any>;
       for (const [index, op] of operations.entries()) {
         if (!op.operation) {
           throw new UniversalValidationError(
@@ -319,7 +304,6 @@ const toolValidators: Record<string, ToolValidator> = {
     
     // Validate legacy format
     if (hasLegacyFormat) {
-      const operationType = String(p.operation_type);
       if (['create', 'update'].includes(operationType) && !p.records) {
         throw new UniversalValidationError(
           `Missing required parameter for ${operationType} operations: records`,
@@ -374,8 +358,7 @@ const toolValidators: Record<string, ToolValidator> = {
 export function validateUniversalToolParams(
   toolName: string,
   params: any
-): any {
-  const sanitizedValue = InputSanitizer.sanitizeObject(params);
+): unknown {
   if (
     !sanitizedValue ||
     typeof sanitizedValue !== 'object' ||
@@ -391,18 +374,14 @@ export function validateUniversalToolParams(
       }
     );
   }
-  const sanitizedParams = sanitizedValue as SanitizedObject;
   validatePaginationParams(sanitizedParams);
   validateIdFields(sanitizedParams);
   if (sanitizedParams.resource_type) {
-    const resourceType = String(sanitizedParams.resource_type);
     if (
       !Object.values(UniversalResourceType).includes(
         resourceType as UniversalResourceType
       )
     ) {
-      const suggestion = suggestResourceType(resourceType);
-      const validTypes = Object.values(UniversalResourceType).join(', ');
       throw new UniversalValidationError(
         `Invalid resource_type: '${resourceType}'`,
         ErrorType.USER_ERROR,
@@ -415,7 +394,6 @@ export function validateUniversalToolParams(
       );
     }
   }
-  const validator = toolValidators[toolName];
   if (validator) return validator(sanitizedParams);
   return sanitizedParams;
 }

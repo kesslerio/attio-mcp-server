@@ -1,21 +1,4 @@
-import {
-  parseResourceUri,
-  formatResourceUri,
-} from '../../src/utils/uri-parser';
 import { ResourceType } from '../../src/types/attio';
-
-describe('uri-parser', () => {
-  describe('parseResourceUri', () => {
-    it('should correctly parse valid URIs', () => {
-      expect(parseResourceUri('attio://people/person123')).toEqual([
-        ResourceType.PEOPLE,
-        'person123',
-      ]);
-      expect(parseResourceUri('attio://companies/company456')).toEqual([
-        ResourceType.COMPANIES,
-        'company456',
-      ]);
-    });
 
     it('should throw for invalid URI formats', () => {
       expect(() => parseResourceUri('invalid')).toThrow(
@@ -83,21 +66,17 @@ describe('uri-parser', () => {
 
   describe('integration between parse and format', () => {
     it('should be symmetric for valid URIs', () => {
-      const originalUri = 'attio://people/person123';
       const [resourceType, id] = parseResourceUri(originalUri);
-      const reformattedUri = formatResourceUri(resourceType, id);
       expect(reformattedUri).toBe(originalUri);
     });
 
     it('should round-trip multiple resource types', () => {
-      const testCases = [
         { type: ResourceType.PEOPLE, id: 'person123' },
         { type: ResourceType.COMPANIES, id: 'company456' },
         { type: ResourceType.PEOPLE, id: 'user-with_special.chars' },
       ];
 
       testCases.forEach(({ type, id }) => {
-        const uri = formatResourceUri(type, id);
         const [parsedType, parsedId] = parseResourceUri(uri);
         expect(parsedType).toBe(type);
         expect(parsedId).toBe(id);

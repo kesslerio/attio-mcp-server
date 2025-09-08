@@ -5,20 +5,13 @@
  * across all resource types.
  */
 
-import {
-  UniversalToolConfig,
-  AdvancedSearchParams,
-  RelationshipSearchParams,
-  ContentSearchParams,
-  TimeframeSearchParams,
-  UniversalResourceType,
-  RelationshipType,
-  ContentSearchType,
-  TimeframeType,
-  BatchOperationType,
-  RelativeTimeframe,
-} from './types.js';
+import { ErrorService } from '../../../services/ErrorService.js';
 import { InteractionType } from '../../../types/attio.js';
+import { isValidUUID } from '../../../utils/validation/uuid-validation.js';
+import { mapFieldName } from '../../../utils/AttioFieldMapper.js';
+import { normalizeOperator, apiSemaphore } from '../../../utils/AttioFilterOperators.js';
+import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
+import { ValidationService } from '../../../services/ValidationService.js';
 
 import {
   advancedSearchSchema,
@@ -95,10 +88,8 @@ async function processInParallelWithErrorIsolation<T, R = unknown>(
 
   // Use apiSemaphore for rate limiting with 429 backoff
   // Process all items through the semaphore (it handles concurrency internally)
-  const promises = items.map((item, index) => 
     apiSemaphore.acquire(async () => {
       try {
-        const result = await processor(item, index);
         return { success: true, result };
       } catch (error: unknown) {
         return {
@@ -111,7 +102,6 @@ async function processInParallelWithErrorIsolation<T, R = unknown>(
   );
 
   // Wait for all operations to complete
-  const allResults = await Promise.allSettled(promises);
   
   // Extract results (allSettled results are always fulfilled due to our error handling)
   for (const settledResult of allResults) {
@@ -142,7 +132,6 @@ export const advancedSearchConfig: UniversalToolConfig = {
   name: 'advanced-search',
   handler: async (params: AdvancedSearchParams): Promise<AttioRecord[]> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'advanced-search',
         params
       );
@@ -154,10 +143,8 @@ export const advancedSearchConfig: UniversalToolConfig = {
       // and coerce is_not_empty value to true when omitted.
       let filters = sanitizedParams.filters as Record<string, unknown>;
       try {
-        const deDollar = (cond: string): string => {
           if (!cond) return cond;
           if (cond.startsWith('$')) {
-            const raw = cond.slice(1);
             switch (raw) {
               case 'eq': return 'equals';
               case 'contains': return 'contains';
@@ -183,7 +170,6 @@ export const advancedSearchConfig: UniversalToolConfig = {
             ...filters,
             filters: ((filters as Record<string, unknown>).filters as Record<string, unknown>[]).map((f) => {
               if (!f || typeof f !== 'object') return f;
-              const next = { ...f } as Record<string, unknown>;
               if (typeof next.condition === 'string') {
                 next.condition = deDollar(next.condition);
               }
@@ -228,7 +214,6 @@ export const advancedSearchConfig: UniversalToolConfig = {
     } catch (error: unknown) {
       // Add context-specific error information for advanced search
       if (error instanceof Error && error.message.includes('date')) {
-        const enhancedError = new Error(
           `${error.message}. Supported date formats: "last 7 days", "this month", "yesterday", or ISO format (YYYY-MM-DD)`
         );
         throw ErrorService.createUniversalError(
@@ -252,7 +237,6 @@ export const advancedSearchConfig: UniversalToolConfig = {
       return 'Found 0 records (advanced search)\nTip: Verify your filters and ensure matching data exists in your workspace.';
     }
 
-    const resourceTypeName = resourceType
       ? formatResourceType(resourceType)
       : 'record';
     // Handle proper pluralization
@@ -268,11 +252,9 @@ export const advancedSearchConfig: UniversalToolConfig = {
     }
 
     // Helper that extracts either primitive, {value}, or [..] shapes
-    const coerce = (v: unknown): string | undefined => {
       if (v == null) return undefined;
       if (typeof v === 'string') return v;
       if (Array.isArray(v)) {
-        const first = v[0];
         if (typeof first === 'string') return first;
         if (first && typeof first === 'object' && 'value' in first)
           return String((first as Record<string, unknown>).value);
@@ -284,15 +266,12 @@ export const advancedSearchConfig: UniversalToolConfig = {
 
     return `Advanced search found ${results.length} ${plural}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown> | undefined;
-        const recordId = record.id as Record<string, unknown> | undefined;
         
         // Enhanced name extraction that handles person name structure
         let name = 'Unnamed';
         
         // For people: Try person-specific name fields first
         if (resourceType === UniversalResourceType.PEOPLE) {
-          const nameArray = values?.name as Record<string, unknown>[];
           if (Array.isArray(nameArray) && nameArray.length > 0) {
             name = (nameArray[0]?.full_name as string) || 
                    (nameArray[0]?.value as string) || 
@@ -300,7 +279,6 @@ export const advancedSearchConfig: UniversalToolConfig = {
                    'Unnamed';
           } else {
             // Fallback to other person name fields
-            const fullNameArray = values?.full_name as Record<string, unknown>[];
             if (Array.isArray(fullNameArray) && fullNameArray.length > 0) {
               name = (fullNameArray[0]?.value as string) || 'Unnamed';
             }
@@ -313,13 +291,8 @@ export const advancedSearchConfig: UniversalToolConfig = {
                  'Unnamed';
         }
         
-        const id = (recordId?.record_id as string) || 'unknown';
 
         // Include additional context for advanced search results
-        const website = coerce(values?.website);
-        const email = coerce(values?.email);
-        const industry = coerce(values?.industry);
-        const location = coerce(values?.location);
 
         let context = '';
         if (industry) context += ` [${industry}]`;
@@ -341,7 +314,6 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
   name: 'search-by-relationship',
   handler: async (params: RelationshipSearchParams): Promise<AttioRecord[]> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'search-by-relationship',
         params
       );
@@ -378,7 +350,6 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
 
         case 'list_entries': {
           // Special handling for list_entries relationship type
-          const list_id = params.source_id;
           if (
             !list_id ||
             !ValidationService.validateUUIDForSearch(String(list_id))
@@ -412,23 +383,16 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
       return 'No related records found';
     }
 
-    const relationshipName = relationshipType
       ? relationshipType.replace(/_/g, ' ')
       : 'relationship';
 
     return `Found ${results.length} records for ${relationshipName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown>;
-        const recordId = record.id as Record<string, unknown>;
-        const name =
           (values?.name as Record<string, unknown>[])?.[0]?.value ||
           (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
           (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
           (values?.title as Record<string, unknown>[])?.[0]?.value ||
           'Unnamed';
-        const id = recordId?.record_id || 'unknown';
-        const email = (values?.email as Record<string, unknown>[])?.[0]?.value;
-        const role =
           (values?.role as Record<string, unknown>[])?.[0]?.value ||
           (values?.position as Record<string, unknown>[])?.[0]?.value;
 
@@ -451,7 +415,6 @@ export const searchByContentConfig: UniversalToolConfig = {
   name: 'search-by-content',
   handler: async (params: ContentSearchParams): Promise<AttioRecord[]> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'search-by-content',
         params
       );
@@ -526,22 +489,16 @@ export const searchByContentConfig: UniversalToolConfig = {
       return 'Found 0 records (content search)\nTip: Ensure your workspace has notes/content for this query.';
     }
 
-    const contentTypeName = contentType ? contentType : 'content';
-    const resourceTypeName = resourceType
       ? formatResourceType(resourceType)
       : 'record';
 
     return `Found ${results.length} ${resourceTypeName}s with matching ${contentTypeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown>;
-        const recordId = record.id as Record<string, unknown>;
-        const name =
           (values?.name as Record<string, unknown>[])?.[0]?.value ||
           (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
           (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
           (values?.title as Record<string, unknown>[])?.[0]?.value ||
           'Unnamed';
-        const id = recordId?.record_id || 'unknown';
 
         return `${index + 1}. ${name} (ID: ${id})`;
       })
@@ -558,7 +515,6 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
   name: 'search-by-timeframe',
   handler: async (params: TimeframeSearchParams): Promise<AttioRecord[]> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'search-by-timeframe',
         params
       );
@@ -584,7 +540,6 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         const { getRelativeTimeframeRange } = await import('../../../utils/filters/timeframe-utils.js');
         
         try {
-          const range = getRelativeTimeframeRange(relative_range as RelativeTimeframe);
           processedStartDate = range.startDate;
           processedEndDate = range.endDate;
         } catch {
@@ -621,7 +576,6 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         }
       } else {
         // Fallback to original timeframe_type logic
-        const effectiveTimeframeType = timeframe_type || TimeframeType.MODIFIED;
         switch (effectiveTimeframeType) {
           case TimeframeType.CREATED:
             timestampField = mapFieldName('created_at');
@@ -641,7 +595,6 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
       // Use normalized operators with $ prefix
       const dateFilters: Record<string, unknown>[] = [];
       
-      const coerceIso = (d?: string, endBoundary = false): string | undefined => {
         if (!d) return undefined;
         // If date-only (YYYY-MM-DD), expand to full UTC boundary
         if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
@@ -650,8 +603,6 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         return d;
       };
 
-      const startIso = coerceIso(processedStartDate, false);
-      const endIso = coerceIso(processedEndDate, true);
 
       // Handle invert_range logic (Issue #475)
       if (invert_range) {
@@ -700,7 +651,6 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
       }
 
       // Create the filter object with the expected structure (legacy compatibility)
-      const filters = { filters: dateFilters } as Record<string, unknown>;
 
       // Use the universal search handler; pass timeframe params explicitly so the
       // UniversalSearchService can FORCE Query API routing for date comparisons
@@ -734,28 +684,20 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
       return 'Found 0 records (timeframe search)\nTip: Ensure your workspace has data in the requested date range.';
     }
 
-    const timeframeName = timeframeType
       ? timeframeType.replace(/_/g, ' ')
       : 'timeframe';
-    const resourceTypeName = resourceType
       ? formatResourceType(resourceType)
       : 'record';
 
     return `Found ${results.length} ${resourceTypeName}s by ${timeframeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown>;
-        const name =
           (values?.name as Record<string, unknown>[])?.[0]?.value ||
           (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
           (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
           (values?.title as Record<string, unknown>[])?.[0]?.value ||
           'Unnamed';
-        const recordId = record.id as Record<string, unknown>;
-        const id = recordId?.record_id || 'unknown';
 
         // Try to show relevant date information
-        const created = record.created_at;
-        const modified = record.updated_at;
         let dateInfo = '';
 
         if (
@@ -786,7 +728,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
   handler: async (params: Record<string, unknown>): Promise<any> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'batch-operations',
         params
       );
@@ -796,7 +737,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
       // Support both old format (operation_type + records) and new format (operations array)
       if (operations && Array.isArray(operations)) {
         // New flexible format: operations array with individual operation objects
-        const results = await Promise.all(
           operations.map(async (op: Record<string, unknown>, index: number) => {
             try {
               const { operation, record_data } = op;
@@ -814,7 +754,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
                   };
                   
                 case 'update':
-                  const typedRecordData = record_data as Record<string, unknown>;
                   if (!typedRecordData?.id) {
                     throw new Error('Record ID is required for update operation');
                   }
@@ -832,7 +771,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
                   };
                   
                 case 'delete':
-                  const deleteRecordData = record_data as Record<string, unknown>;
                   if (!deleteRecordData?.id) {
                     throw new Error('Record ID is required for delete operation');
                   }
@@ -888,7 +826,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
             );
           }
           // Explicit max batch size for tests
-          const MAX_BATCH = 100;
           if (records.length > MAX_BATCH) {
             throw new Error(
               `Batch size (${records.length}) exceeds maximum allowed (${MAX_BATCH})`
@@ -896,17 +833,11 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Process in chunks with optional delay between chunks (test timing)
-          const CHUNK_SIZE = 5;
-          const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
           const results: Array<{ index: number; success: boolean; result?: unknown; error?: string }> = [];
 
           for (let i = 0; i < records.length; i += CHUNK_SIZE) {
-            const chunk = records.slice(i, i + CHUNK_SIZE);
-            const chunkResults = await Promise.all(
               chunk.map(async (recordData: Record<string, unknown>, offsetIdx: number) => {
-                const index = i + offsetIdx;
                 try {
-                  const result = await handleUniversalCreate({
                     resource_type,
                     record_data: recordData,
                     return_details: true,
@@ -944,7 +875,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
             );
           }
 
-          const MAX_BATCH = 100;
           if (records.length > MAX_BATCH) {
             throw new Error(
               `Batch size (${records.length}) exceeds maximum allowed (${MAX_BATCH})`
@@ -952,7 +882,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Validate batch operation with comprehensive checks
-          const updateValidation = validateBatchOperation({
             items: records,
             operationType: 'update',
             resourceType: resource_type,
@@ -962,17 +891,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
             throw new Error(updateValidation.error);
           }
 
-          const CHUNK_SIZE = 5;
-          const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
-          const results = [] as Array<{ index: number; success: boolean; result?: unknown; error?: string }>;
           for (let i = 0; i < records.length; i += CHUNK_SIZE) {
-            const chunk = records.slice(i, i + CHUNK_SIZE);
-            const chunkResults = await Promise.all(
               chunk.map(async (recordData: Record<string, unknown>, offsetIdx: number) => {
-                const index = i + offsetIdx;
                 try {
                   if (!recordData.id) throw new Error('Record ID is required for update operation');
-                  const result = await handleUniversalUpdate({
                     resource_type,
                     record_id:
                       typeof recordData.id === 'string'
@@ -1014,7 +936,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
             );
           }
 
-          const MAX_BATCH = 100;
           if (record_ids.length > MAX_BATCH) {
             throw new Error(
               `Batch size (${record_ids.length}) exceeds maximum allowed (${MAX_BATCH})`
@@ -1022,7 +943,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Validate batch operation with stricter limits for delete
-          const deleteValidation = validateBatchOperation({
             items: record_ids,
             operationType: 'delete',
             resourceType: resource_type,
@@ -1032,16 +952,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
             throw new Error(deleteValidation.error);
           }
 
-          const CHUNK_SIZE = 5;
-          const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
-          const results = [] as Array<{ index: number; success: boolean; result?: unknown; error?: string; record_id?: string }>;
           for (let i = 0; i < record_ids.length; i += CHUNK_SIZE) {
-            const chunk = record_ids.slice(i, i + CHUNK_SIZE);
-            const chunkResults = await Promise.all(
               chunk.map(async (recordId: string, offsetIdx: number) => {
-                const index = i + offsetIdx;
                 try {
-                  const result = await handleUniversalDelete({
                     resource_type,
                     record_id: recordId,
                   });
@@ -1079,7 +992,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
             );
           }
 
-          const MAX_BATCH = 100;
           if (record_ids.length > MAX_BATCH) {
             throw new Error(
               `Batch size (${record_ids.length}) exceeds maximum allowed (${MAX_BATCH})`
@@ -1087,7 +999,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Validate batch operation
-          const getValidation = validateBatchOperation({
             items: record_ids,
             operationType: 'get',
             resourceType: resource_type,
@@ -1097,16 +1008,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
             throw new Error(getValidation.error);
           }
 
-          const CHUNK_SIZE = 5;
-          const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
-          const results = [] as Array<{ index: number; success: boolean; result?: unknown; error?: string; record_id?: string }>;
           for (let i = 0; i < record_ids.length; i += CHUNK_SIZE) {
-            const chunk = record_ids.slice(i, i + CHUNK_SIZE);
-            const chunkResults = await Promise.all(
               chunk.map(async (recordId: string, offsetIdx: number) => {
-                const index = i + offsetIdx;
                 try {
-                  const result = await handleUniversalGetDetails({
                     resource_type,
                     record_id: recordId,
                   });
@@ -1139,11 +1043,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
         case BatchOperationType.SEARCH: {
           // Check if we have multiple queries for true batch search
-          const queries = sanitizedParams.queries as string[] | undefined;
 
           if (queries && Array.isArray(queries) && queries.length > 0) {
             // Explicit max batch size validation for tests
-            const MAX_BATCH = 100;
             if (queries.length > MAX_BATCH) {
               throw new Error(
                 `Batch size (${queries.length}) exceeds maximum allowed (${MAX_BATCH})`
@@ -1151,7 +1053,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
 
             // True batch search with multiple queries using optimized API (Issue #471)
-            const searchValidation = validateBatchOperation({
               items: queries,
               operationType: 'search',
               resourceType: resource_type,
@@ -1162,13 +1063,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
 
             // Process in chunks with optional delay to simulate throttling and satisfy unit timing checks
-            const CHUNK_SIZE = 25;
-            const DELAY_MS = process.env.NODE_ENV === 'test' ? 25 : 0;
             const aggregatedResults: UniversalBatchSearchResult[] = [];
 
             for (let i = 0; i < queries.length; i += CHUNK_SIZE) {
-              const chunk = queries.slice(i, i + CHUNK_SIZE);
-              const chunkResults = await universalBatchSearch(resource_type, chunk, {
                 limit: sanitizedParams.limit,
                 offset: sanitizedParams.offset,
               });
@@ -1179,11 +1076,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
 
             // Return a flattened list of records
-            const flattened = aggregatedResults.flatMap((r) => (r as any)?.result || []);
             return flattened;
           } else {
             // Fallback to single search with pagination (legacy behavior)
-            const searchValidation = validateSearchQuery(undefined, {
               resource_type,
               limit,
               offset,
@@ -1192,7 +1087,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
               throw new Error(searchValidation.error);
             }
 
-            const searchResults = await handleUniversalSearch({
               resource_type,
               limit,
               offset,
@@ -1224,27 +1118,20 @@ export const batchOperationsConfig: UniversalToolConfig = {
       return 'Batch operation failed';
     }
 
-    const operationName = operationType ? operationType : 'operation';
-    const resourceTypeName = resourceType
       ? formatResourceType(resourceType)
       : 'record';
 
     if (Array.isArray(results)) {
       // Helper to extract a human-friendly name from various value shapes
-      const extractName = (
         values: Record<string, unknown> | undefined,
         fallback?: string
       ): string => {
         if (!values) return fallback ?? 'Unknown';
-        const nameVal = (values as Record<string, unknown>).name;
-        const titleVal = (values as Record<string, unknown>).title;
 
-        const coerce = (v: unknown): string | undefined => {
           if (v == null) return undefined;
           if (typeof v === 'string') return v;
           if (Array.isArray(v)) {
             // accept either array of primitives or array of { value }
-            const first = v[0];
             if (typeof first === 'string') return first;
             if (first && typeof first === 'object' && 'value' in first)
               return String((first as Record<string, unknown>).value);
@@ -1257,8 +1144,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
         return coerce(nameVal) ?? coerce(titleVal) ?? fallback ?? 'Unknown';
       };
 
-      const successCount = results.filter((r) => r.success).length;
-      const failureCount = results.length - successCount;
 
       let summary = `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed\n\n`;
 
@@ -1266,29 +1151,20 @@ export const batchOperationsConfig: UniversalToolConfig = {
         // Handle batch search results with queries array (Issue #471)
         if (results.length > 0 && 'query' in results[0]) {
           // New format: UniversalBatchSearchResult[]
-          const batchResults = results as unknown as UniversalBatchSearchResult[];
-          const successCount = batchResults.filter((r) => r.success).length;
-          const failureCount = batchResults.length - successCount;
 
           let summary = `Batch search completed: ${successCount} successful, ${failureCount} failed\n\n`;
 
           // Show successful searches
-          const successful = batchResults.filter((r) => r.success);
           if (successful.length > 0) {
             summary += `Successful searches:\n`;
             successful.forEach((searchResult, index) => {
-              const records = searchResult.result || [];
               summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${records.length} ${resourceTypeName}s\n`;
 
               if (records.length > 0) {
                 records.slice(0, 3).forEach((record, recordIndex) => {
-                  const values = record.values as Record<string, unknown>;
-                  const recordId = record.id as Record<string, unknown>;
-                  const name =
                     (values?.name as Record<string, unknown>[])?.[0]?.value ||
                     (values?.title as Record<string, unknown>[])?.[0]?.value ||
                     'Unnamed';
-                  const id = recordId?.record_id || 'unknown';
                   summary += `   ${recordIndex + 1}. ${name} (ID: ${id})\n`;
                 });
                 if (records.length > 3) {
@@ -1299,7 +1175,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
           }
 
           // Show failed searches
-          const failed = batchResults.filter((r) => !r.success);
           if (failed.length > 0) {
             summary += `\nFailed searches:\n`;
             failed.forEach((searchResult, index) => {
@@ -1312,12 +1187,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Legacy format: AttioRecord[] (single search)
           return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
             .map((record: Record<string, unknown>, index: number) => {
-              const values = record.values as
                 | Record<string, unknown>
                 | undefined;
-              const recordId = record.id as Record<string, unknown> | undefined;
-              const name = extractName(values, 'Unnamed');
-              const id = (recordId?.record_id as string) || 'unknown';
               return `${index + 1}. ${name} (ID: ${id})`;
             })
             .join('\n')}`;
@@ -1325,15 +1196,11 @@ export const batchOperationsConfig: UniversalToolConfig = {
       }
 
       // Show details for successful operations
-      const successful = results.filter((r) => r.success);
       if (successful.length > 0) {
         summary += `Successful operations:\n${successful
           .map((op: Record<string, unknown>, index: number) => {
-            const opResult = op.result as Record<string, unknown>;
-            const values = opResult?.values as
               | Record<string, unknown>
               | undefined;
-            const name = extractName(
               values,
               (opResult?.record_id as string) || 'Unknown'
             );
@@ -1343,12 +1210,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
       }
 
       // Show errors for failed operations
-      const failed = results.filter((r) => !r.success);
       if (failed.length > 0) {
         summary += `\n\nFailed operations:\n${failed
           .map((op: Record<string, unknown>, index: number) => {
-            const opData = op.data as Record<string, unknown>;
-            const identifier = op.record_id || opData?.name || 'Unknown';
             return `${index + 1}. ${identifier}: ${op.error}`;
           })
           .join('\n')}`;

@@ -1,13 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { formatAllAttributes } from '../../src/api/attribute-types';
 
-// Mock dependencies
-const mockGet = vi.fn() as any;
-vi.mock('../../src/api/attio-client', () => ({
-  getAttioClient: vi.fn(() => ({
-    get: mockGet,
-  })),
-}));
+import { formatAllAttributes } from '../../src/api/attribute-types';
 
 // Setup mock response
 beforeEach(() => {
@@ -36,13 +29,11 @@ beforeEach(() => {
 
 describe('formatAllAttributes - null value handling', () => {
   it('should preserve null values in formatted output', async () => {
-    const attributes = {
       body_contouring: null,
       name: 'Test Company',
       services: 'Test services',
     };
 
-    const formatted = await formatAllAttributes('companies', attributes);
 
     // The key assertion: null values should be preserved
     expect(formatted).toHaveProperty('body_contouring');
@@ -54,14 +45,12 @@ describe('formatAllAttributes - null value handling', () => {
   });
 
   it('should handle mixed null, undefined, and regular values', async () => {
-    const attributes = {
       body_contouring: null,
       name: 'Test Company',
       services: undefined,
       website: 'https://example.com',
     };
 
-    const formatted = await formatAllAttributes('companies', attributes);
 
     // null values should be preserved
     expect(formatted).toHaveProperty('body_contouring');
@@ -76,12 +65,10 @@ describe('formatAllAttributes - null value handling', () => {
   });
 
   it('should handle objects with only null values', async () => {
-    const attributes = {
       body_contouring: null,
       services: null,
     };
 
-    const formatted = await formatAllAttributes('companies', attributes);
 
     // All null values should be preserved
     expect(formatted).toHaveProperty('body_contouring');

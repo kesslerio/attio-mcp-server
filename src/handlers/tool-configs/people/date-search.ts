@@ -2,10 +2,6 @@
  * Date based search tool configurations for people
  */
 import { AttioRecord } from '../../../types/attio.js';
-import {
-  searchPeopleByCreationDate,
-  searchPeopleByModificationDate,
-} from '../../../objects/people/index.js';
 import { DateBasedSearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
 

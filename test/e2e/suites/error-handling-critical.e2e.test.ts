@@ -24,33 +24,14 @@
  */
 
 import { describe, beforeAll, afterAll, it, expect } from 'vitest';
-import { loadE2EConfig } from '../utils/config-loader.js';
-import {
-  callUniversalTool,
-  callTasksTool,
-  callNotesTool,
-  validateTestEnvironment,
-} from '../utils/enhanced-tool-caller.js';
+
 import { E2EAssertions, type McpToolResponse } from '../utils/assertions.js';
-import {
-  testDataGenerator,
-  errorScenarios,
-  errorDataGenerators,
-} from '../fixtures/index.js';
-import {
-  extractRecordId,
-  hasValidContent,
-  cleanupTestRecords,
-  createTestRecord,
-  validateErrorResponse,
-  analyzeBatchResults,
-  executeConcurrentOperations,
-} from '../utils/error-handling-utils.js';
+import { loadE2EConfig } from '../utils/config-loader.js';
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('Critical Error Handling E2E Tests', () => {
-  let config: any;
+  let config: unknown;
   let testCompanyId: string | undefined;
   let testPersonId: string | undefined;
   let testListId: string | undefined;
@@ -63,7 +44,6 @@ describe.skipIf(
     );
 
     // Validate test environment is ready
-    const validation = await validateTestEnvironment();
     if (!validation.valid) {
       console.warn('⚠️  Test environment warnings:', validation.warnings);
     }
@@ -73,7 +53,6 @@ describe.skipIf(
       console.error('📝 Creating test data for error scenarios...');
 
       // Create test company for error scenarios
-      const companyData = testDataGenerator.companies.basicCompany();
       testCompanyId = await createTestRecord(
         (resourceType, data) =>
           callUniversalTool('create-record', {
@@ -91,7 +70,6 @@ describe.skipIf(
       }
 
       // Create test person for error scenarios
-      const personData = testDataGenerator.people.basicPerson();
       testPersonId = await createTestRecord(
         (resourceType, data) =>
           callUniversalTool('create-record', {
@@ -131,7 +109,6 @@ describe.skipIf(
     it('should handle authentication failures gracefully', async () => {
       // This test would require invalid API key setup which might not be feasible
       // Instead, test with invalid parameters that trigger auth-like errors
-      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: '', // Empty query might trigger validation errors
         limit: 1,
@@ -156,7 +133,6 @@ describe.skipIf(
   describe('Parameter Validation and Data Format Errors', () => {
     it('should handle missing required parameters gracefully', async () => {
       // Test search without required resource_type
-      const response = (await callUniversalTool('search-records', {
         // Missing resource_type
         query: 'test',
       })) as McpToolResponse;
@@ -167,7 +143,6 @@ describe.skipIf(
     });
 
     it('should validate resource_type parameter values', async () => {
-      const response = (await callUniversalTool('search-records', {
         resource_type: 'invalid_resource_type_12345',
         query: 'test',
       })) as McpToolResponse;
@@ -179,7 +154,6 @@ describe.skipIf(
 
     it('should handle invalid record IDs gracefully', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.generic,
       })) as McpToolResponse;
@@ -192,7 +166,6 @@ describe.skipIf(
     });
 
     it('should validate limit parameters', async () => {
-      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'test',
         limit: -5, // Invalid negative limit
@@ -205,7 +178,6 @@ describe.skipIf(
     });
 
     it('should handle malformed filter objects', async () => {
-      const response = (await callUniversalTool('advanced-search', {
         resource_type: 'companies',
         filters: 'this_should_be_an_object_not_string' as unknown as any, // Invalid filter format
       })) as McpToolResponse;
@@ -216,13 +188,11 @@ describe.skipIf(
     });
 
     it('should validate email format in person creation', async () => {
-      const personData = {
         first_name: 'Test',
         last_name: 'Person',
         email_address: errorScenarios.invalidFormats.email.malformed,
       };
 
-      const response = (await callUniversalTool('create-record', {
         resource_type: 'people',
         record_data: personData,
       })) as McpToolResponse;
@@ -234,9 +204,7 @@ describe.skipIf(
     });
 
     it('should handle extremely long text values', async () => {
-      const longText = 'A'.repeat(10000); // Very long string
 
-      const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: {
           name: 'Test Company',
@@ -253,7 +221,6 @@ describe.skipIf(
   describe('Resource Not Found Scenarios', () => {
     it('should handle company not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.company,
       })) as McpToolResponse;
@@ -267,7 +234,6 @@ describe.skipIf(
 
     it('should handle person not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'people',
         record_id: errorScenarios.invalidIds.person,
       })) as McpToolResponse;
@@ -280,7 +246,6 @@ describe.skipIf(
     });
 
     it('should handle task not found errors', async () => {
-      const response = (await callUniversalTool('update-record', {
         resource_type: 'tasks',
         record_id: errorScenarios.invalidIds.task,
         record_data: {
@@ -298,7 +263,6 @@ describe.skipIf(
     });
 
     it('should handle list not found errors', async () => {
-      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'lists',
         record_id: errorScenarios.invalidIds.list,
       })) as McpToolResponse;
@@ -311,7 +275,6 @@ describe.skipIf(
     });
 
     it('should handle note not found errors', async () => {
-      const response = (await callNotesTool('list-notes', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.note,
         limit: 50,
@@ -327,18 +290,14 @@ describe.skipIf(
   describe('Cross-Tool Error Propagation', () => {
     it('should handle errors when linking non-existent records', async () => {
       // First create a task
-      const taskData = testDataGenerator.tasks.basicTask();
-      const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData as any,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {
-        const taskId = extractRecordId(taskResponse);
 
         if (taskId) {
           // Try to link to non-existent company
-          const linkResponse = (await callTasksTool('update-record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
@@ -362,7 +321,6 @@ describe.skipIf(
 
     it('should handle cascading tool failures', async () => {
       // Test scenario where one tool failure could affect another
-      const companyResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: {
           // Missing required field to trigger error
@@ -375,7 +333,6 @@ describe.skipIf(
 
       if (companyResponse.isError) {
         // Try to create a note for the failed company creation
-        const noteResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: 'non-existent-company-id',
           title: 'Test Note',
@@ -398,7 +355,6 @@ describe.skipIf(
       }
 
       // Attempt concurrent updates to the same record
-      const operations = [
         () =>
           callUniversalTool('update-record', {
             resource_type: 'companies',
@@ -418,7 +374,6 @@ describe.skipIf(
           }),
       ];
 
-      const results = await executeConcurrentOperations(operations);
 
       // All operations should complete (some may fail due to conflicts, which is acceptable)
       results.forEach((result, index) => {
@@ -431,7 +386,6 @@ describe.skipIf(
 
     it('should handle batch operation partial failures', async () => {
       // Create a mix of valid and invalid operations
-      const batchOperations = [
         // Valid operation
         () =>
           callUniversalTool('search-records', {
@@ -454,11 +408,9 @@ describe.skipIf(
           }),
       ];
 
-      const results = await Promise.allSettled(
         batchOperations.map((op) => op())
       );
 
-      const analysis = analyzeBatchResults(results);
 
       expect(analysis.total).toBe(3);
       expect(analysis.successful + analysis.failed).toBe(3);
@@ -473,18 +425,14 @@ describe.skipIf(
   describe('Data Consistency and Recovery', () => {
     it('should handle incomplete transaction scenarios', async () => {
       // Test creating a record and then immediately trying to reference it
-      const companyData = testDataGenerator.companies.basicCompany();
-      const createResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
       })) as McpToolResponse;
 
       if (hasValidContent(createResponse)) {
-        const companyId = extractRecordId(createResponse);
 
         if (companyId) {
           // Immediately try to create a note for the company
-          const noteResponse = (await callNotesTool('create-note', {
             resource_type: 'companies',
             record_id: companyId,
             title: 'Immediate Note',
@@ -508,7 +456,6 @@ describe.skipIf(
 
     it('should handle error recovery gracefully', async () => {
       // Test error recovery by retrying a failed operation
-      const invalidResponse = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: 'intentionally-invalid-id',
       })) as McpToolResponse;
@@ -518,7 +465,6 @@ describe.skipIf(
 
       // Now try a valid operation to test recovery
       if (testCompanyId) {
-        const validResponse = (await callUniversalTool('get-record-details', {
           resource_type: 'companies',
           record_id: testCompanyId,
         })) as McpToolResponse;
@@ -533,7 +479,6 @@ describe.skipIf(
   /* moved: Error Message Consistency
   describe('Error Message Consistency', () => {
     it('should provide consistent error formats across tools', async () => {
-      const errorResponses = await Promise.all([
         callUniversalTool('get-record-details', {
           resource_type: 'companies',
           record_id: errorScenarios.invalidIds.generic,
@@ -561,7 +506,6 @@ describe.skipIf(
     });
 
     it('should provide helpful error messages', async () => {
-      const response = (await callUniversalTool('create-record', {
         resource_type: 'people',
         record_data: {
           // Missing required fields

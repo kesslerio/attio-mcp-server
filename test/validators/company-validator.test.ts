@@ -2,6 +2,7 @@
  * Tests for the company validator with attribute type validation
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+
 import { CompanyValidator } from '../../src/validators/company-validator.js';
 import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';
@@ -67,14 +68,12 @@ describe('Company Validator', () => {
       );
 
       // Test attributes with mixed types
-      const attributes = {
         name: 'Test Company',
         employees: '250', // String that should be converted to number
         active: 'yes', // String that should be converted to boolean
         description: 'A test company',
       };
 
-      const result = await CompanyValidator.validateAttributeTypes(attributes);
 
       // Verify the result contains converted values
       expect(result).toEqual({
@@ -99,12 +98,10 @@ describe('Company Validator', () => {
         metadata: {},
       });
 
-      const attributes = {
         name: null,
         description: null,
       };
 
-      const result = await CompanyValidator.validateAttributeTypes(attributes);
 
       // Null values should remain null
       expect(result).toEqual({
@@ -127,7 +124,6 @@ describe('Company Validator', () => {
         metadata: {},
       });
 
-      const attributes = {
         employees: 'not-a-number', // Invalid for number type
       };
 
@@ -143,11 +139,9 @@ describe('Company Validator', () => {
         new Error('API error')
       );
 
-      const attributes = {
         custom_field: 'test value',
       };
 
-      const result = await CompanyValidator.validateAttributeTypes(attributes);
 
       // Should keep original value
       expect(result).toEqual({
@@ -178,7 +172,6 @@ describe('Company Validator', () => {
       ).mockResolvedValue(undefined);
 
       // Test with a string value that should be converted to number
-      const result = await CompanyValidator.validateAttributeUpdate(
         'comp_123',
         'revenue',
         '5000000'

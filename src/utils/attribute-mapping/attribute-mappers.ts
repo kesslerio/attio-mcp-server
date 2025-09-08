@@ -1,17 +1,8 @@
 /**
  * Core attribute mapping functions for translating human-readable attribute names to API slugs
  */
-import { loadMappingConfig, MappingConfig } from '../config-loader.js';
 import { LEGACY_ATTRIBUTE_MAP } from './legacy-maps.js';
-import {
-  createCaseInsensitiveMap,
-  lookupCaseInsensitive,
-  lookupNormalized,
-  createNormalizedMap,
-  createAggressiveNormalizedMap,
-  lookupAggressiveNormalized,
-  handleSpecialCases,
-} from './mapping-utils.js';
+import { loadMappingConfig, MappingConfig } from '../config-loader.js';
 
 /**
  * Converts a value to a boolean based on common string representations
@@ -19,10 +10,9 @@ import {
  * @param value - The value to convert to boolean
  * @returns Boolean representation of the value
  */
-export function convertToBoolean(value: any): boolean {
+export function convertToBoolean(value: unknown): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') {
-    const lowerValue = value.toLowerCase();
     if (['true', 'yes', 'y', '1'].includes(lowerValue)) return true;
     if (['false', 'no', 'n', '0'].includes(lowerValue)) return false;
   }
@@ -164,7 +154,6 @@ function trySnakeCaseConversion(attributeName: string): string | undefined {
 
   try {
     // Convert snake_case to Display Case (e.g., "b2b_segment" -> "B2b Segment")
-    const potentialDisplayName = attributeName
       .replace(/_/g, ' ')
       .replace(/(\w)(\w*)/g, (_, first, rest) => first.toUpperCase() + rest);
 
@@ -230,7 +219,6 @@ export function getAttributeSlug(
 
   try {
     // First check for special cases that commonly need to be handled
-    const specialCaseResult = handleSpecialCases(attributeName);
     if (specialCaseResult) {
       if (process.env.NODE_ENV === 'development') {
         console.error(
@@ -241,7 +229,6 @@ export function getAttributeSlug(
     }
 
     // Make sure config is loaded (in case we haven't initialized caches yet)
-    const config = getConfig();
 
     // Ensure at least the basic lookup caches exist (this can happen if called before initialization)
     if (
@@ -263,7 +250,6 @@ export function getAttributeSlug(
 
     // TIER 1: Check object-specific mappings if objectType is provided (exact matches)
     if (objectType) {
-      const cacheKey = `objects.${objectType}`;
       // Make sure this object-specific cache exists
       if (
         !caseInsensitiveCaches[cacheKey] &&
@@ -274,7 +260,6 @@ export function getAttributeSlug(
         );
       }
 
-      const objectSpecificCache = caseInsensitiveCaches[cacheKey];
       if (objectSpecificCache) {
         result = lookupCaseInsensitive(objectSpecificCache, attributeName);
         if (result) {
@@ -323,7 +308,6 @@ export function getAttributeSlug(
     // TIER 4: Try normalized lookup (removes spaces, case-insensitive)
     // Create normalized caches for object-specific mappings if they don't exist
     if (objectType) {
-      const normalizedCacheKey = `normalized.objects.${objectType}`;
       if (
         !normalizedCaches[normalizedCacheKey] &&
         config.mappings.attributes.objects[objectType]
@@ -333,7 +317,6 @@ export function getAttributeSlug(
         );
       }
 
-      const normalizedObjectSpecificCache =
         normalizedCaches[normalizedCacheKey];
       if (normalizedObjectSpecificCache) {
         result = lookupNormalized(normalizedObjectSpecificCache, attributeName);
@@ -422,7 +405,6 @@ export function getAttributeSlug(
     }
   } catch (error: unknown) {
     // If there's an error with the config, log detailed error and suggestions
-    const errorMsg =
       error instanceof AttributeMappingError
         ? `${error.message} - ${JSON.stringify(error.details)}`
         : `Error using config for attribute mapping: ${error}`;
@@ -433,7 +415,6 @@ export function getAttributeSlug(
     );
 
     // Try special cases as a last resort, even if there was an error earlier
-    const specialCaseResult = handleSpecialCases(attributeName);
     if (specialCaseResult) {
       console.error(
         `[attribute-mappers] Special case match after error: "${attributeName}" -> "${specialCaseResult}"`
@@ -464,7 +445,6 @@ export function getObjectSlug(objectName: string): string {
 
   try {
     // Make sure config is loaded (in case we haven't initialized caches yet)
-    const config = getConfig();
 
     // Ensure the lookup caches exist (this can happen if called before initialization)
     if (!caseInsensitiveCaches.objects) {
@@ -473,7 +453,6 @@ export function getObjectSlug(objectName: string): string {
     }
 
     // Use case-insensitive lookup
-    const result = lookupCaseInsensitive(
       caseInsensitiveCaches.objects,
       objectName
     );
@@ -501,7 +480,6 @@ export function getListSlug(listName: string): string {
 
   try {
     // Make sure config is loaded (in case we haven't initialized caches yet)
-    const config = getConfig();
 
     // Ensure the lookup caches exist (this can happen if called before initialization)
     if (!caseInsensitiveCaches.lists) {
@@ -510,7 +488,6 @@ export function getListSlug(listName: string): string {
     }
 
     // Use case-insensitive lookup
-    const result = lookupCaseInsensitive(caseInsensitiveCaches.lists, listName);
     if (result) return result;
   } catch (error: unknown) {
     // If there's an error with the config, fall back to simple normalization

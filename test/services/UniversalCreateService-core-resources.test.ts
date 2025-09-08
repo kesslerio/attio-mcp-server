@@ -2,105 +2,15 @@
  * Split: UniversalCreateService core resources (companies, people, lists)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
-  ValidationService: {
-    truncateSuggestions: vi.fn((s: string[]) => s),
-    validateEmailAddresses: vi.fn(),
-  },
-}));
-vi.mock('../../src/services/UniversalUtilityService.js', () => ({
-  UniversalUtilityService: { convertTaskToRecord: vi.fn() },
-}));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
-  mapRecordFields: vi.fn(),
-  validateResourceType: vi.fn(),
-  getFieldSuggestions: vi.fn(),
-  validateFields: vi.fn(),
-  getValidResourceTypes: vi.fn(
-    () => 'companies, people, lists, records, deals, tasks'
-  ),
-  FIELD_MAPPINGS: {
-    companies: { validFields: ['name', 'domain', 'employees'] },
-    people: { validFields: ['name', 'email_addresses'] },
-    lists: { validFields: ['name', 'description'] },
-  },
-}));
-vi.mock('../../src/utils/validation-utils.js', () => ({
-  validateRecordFields: vi.fn(),
-}));
-vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
-  convertAttributeFormats: vi.fn((type: string, data: any) => data),
-  getFormatErrorHelp: vi.fn(
-    (type: string, field: string, message: string) => `Enhanced: ${message}`
-  ),
-  validatePeopleAttributesPrePost: vi.fn(),
-}));
-vi.mock('../../src/config/deal-defaults.js', () => ({
-  applyDealDefaultsWithValidation: vi.fn(),
-  getDealDefaults: vi.fn(() => ({ stage: 'default-stage' })),
-  validateDealInput: vi.fn(() => ({
-    isValid: true,
-    suggestions: [],
-    warnings: [],
-  })),
-}));
-vi.mock('../../src/utils/normalization/people-normalization.js', () => ({
-  PeopleDataNormalizer: { normalizePeopleData: vi.fn((d: any) => d) },
-}));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
-  EnhancedApiError: vi
-    .fn()
-    .mockImplementation(
-      (
-        message: string,
-        statusCode: number,
-        endpoint: string,
-        method: string
-      ) => {
-        const error: any = new Error(message);
-        error.statusCode = statusCode;
-        error.endpoint = endpoint;
-        error.method = method;
-        error.name = 'EnhancedApiError';
-        return error;
-      }
-    ),
-  ErrorTemplates: {
-    TASK_FIELD_MAPPING: vi.fn(
-      (tried: string, correct: string) =>
-        new Error(`Use ${correct} instead of ${tried}`)
-    ),
-  },
-  ErrorEnhancer: { autoEnhance: vi.fn((e: any) => e) },
-}));
-vi.mock('../../src/utils/logger.js', () => ({
-  debug: vi.fn(),
-  createScopedLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  })),
-  OperationType: { API_CALL: 'api_call' },
-}));
-vi.mock('../../src/objects/companies/index.js', () => ({
-  createCompany: vi.fn(),
-}));
-vi.mock('../../src/objects/lists.js', () => ({ createList: vi.fn() }));
-vi.mock('../../src/objects/people/index.js', () => ({ createPerson: vi.fn() }));
-vi.mock('../../src/objects/records/index.js', () => ({
-  createObjectRecord: vi.fn(),
-}));
-// Mock the create service factory to return a mock service
-const mockCreateService = {
-  createCompany: vi.fn(),
-  createPerson: vi.fn(),
-  createTask: vi.fn(),
-  createList: vi.fn(),
-  createNote: vi.fn(),
-  createDeal: vi.fn(),
-  updateTask: vi.fn(),
-};
+
+import { AttioRecord } from '../../src/types/attio.js';
+import { convertAttributeFormats } from '../../src/utils/attribute-format-helpers.js';
+import { createList } from '../../src/objects/lists.js';
+import { getCreateService } from '../../src/services/create/index.js';
+import { PeopleDataNormalizer } from '../../src/utils/normalization/people-normalization.js';
+import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { ValidationService } from '../../src/services/ValidationService.js';
 
 vi.mock('../../src/services/create/index.js', () => ({
   getCreateService: vi.fn(() => mockCreateService),
@@ -138,7 +48,7 @@ describe('UniversalCreateService', () => {
     } as any);
 
     vi.mocked(mapRecordFields).mockImplementation(
-      (resourceType: string, data: any) =>
+      (resourceType: string, data: unknown) =>
         ({
           mapped: data,
           warnings: [],
@@ -155,7 +65,6 @@ describe('UniversalCreateService', () => {
       } as any;
       mockCreateService.createCompany.mockResolvedValue(mockCompany);
 
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_data: { values: { name: 'Test Company' } },
       });
@@ -174,7 +83,6 @@ describe('UniversalCreateService', () => {
       } as any;
       mockCreateService.createPerson.mockResolvedValue(mockPerson);
 
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.PEOPLE,
         record_data: { values: { name: 'John Doe' } },
       });
@@ -191,7 +99,6 @@ describe('UniversalCreateService', () => {
     });
 
     it('should create a list record and convert format', async () => {
-      const mockList = {
         id: { list_id: 'list_789' },
         title: 'Test List',
         name: 'Test List',
@@ -205,7 +112,6 @@ describe('UniversalCreateService', () => {
       } as any;
       vi.mocked(createList).mockResolvedValue(mockList);
 
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.LISTS,
         record_data: { values: { name: 'Test List' } },
       });

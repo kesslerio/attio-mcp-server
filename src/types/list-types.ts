@@ -6,16 +6,6 @@
 import { AttioList, AttioListEntry } from './attio.js';
 
 /**
- * List membership information for a record
- */
-export interface ListMembership {
-  listId: string;
-  listName: string;
-  entryId: string;
-  entryValues?: ListEntryValues;
-}
-
-/**
  * Type-safe list entry values
  */
 export type ListEntryValues = Record<string, unknown>;
@@ -124,8 +114,6 @@ export function extractListEntryValues(entry: unknown): ListEntryValues {
   if (typeof entry !== 'object' || entry === null) {
     return {};
   }
-
-  const obj = entry as Record<string, unknown>;
 
   // Check for common value field names
   if (obj.values && typeof obj.values === 'object') {

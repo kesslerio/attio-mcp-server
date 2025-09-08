@@ -6,22 +6,6 @@
 import { ApiError } from '../../types/api-operations.js';
 
 /**
- * Configuration options for API call retry
- */
-export interface RetryConfig {
-  /** Maximum number of retry attempts */
-  maxRetries: number;
-  /** Initial delay in milliseconds before the first retry */
-  initialDelay: number;
-  /** Maximum delay in milliseconds between retries */
-  maxDelay: number;
-  /** Whether to use exponential backoff for retry delays */
-  useExponentialBackoff: boolean;
-  /** HTTP status codes that should trigger a retry */
-  retryableStatusCodes: number[];
-}
-
-/**
  * Default retry configuration
  */
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
@@ -48,9 +32,6 @@ export function calculateRetryDelay(
   }
 
   // Exponential backoff with jitter
-  const exponentialDelay = config.initialDelay * Math.pow(2, attempt);
-  const jitter = Math.random() * 0.5 + 0.75; // Random value between 0.75 and 1.25
-  const delay = exponentialDelay * jitter;
 
   // Cap at maximum delay
   return Math.min(delay, config.maxDelay);
@@ -83,7 +64,6 @@ export function isRetryableError(
   }
 
   // Check if status code is in the retryable list
-  const statusCode = error.response.status;
   
   // Never retry 4xx client errors (400, 401, 403, 404, etc.) as they won't succeed on retry
   if (statusCode >= 400 && statusCode < 500) {
@@ -128,7 +108,6 @@ export async function callWithRetry<T>(
       }
 
       // Calculate delay and wait before retrying
-      const delay = calculateRetryDelay(attempt, retryConfig);
       await sleep(delay);
 
       attempt++;

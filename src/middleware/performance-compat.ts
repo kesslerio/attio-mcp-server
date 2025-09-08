@@ -27,7 +27,6 @@ class PerformanceMonitorInstance {
 
   // Instance methods that delegate to static PerformanceTracker methods
   startOperation(toolName: string, metadata?: Record<string, unknown>): number {
-    const startTime = PerformanceTracker.startOperation(toolName, metadata);
     this.activeOperations.set(toolName, startTime);
     return startTime;
   }
@@ -56,7 +55,6 @@ class PerformanceMonitorInstance {
       actualMetadata = metadata;
     } else {
       // Pattern 2: use stored startTime
-      const storedStartTime = this.activeOperations.get(toolName);
       if (storedStartTime === undefined) {
         throw new Error(
           `No active operation found for tool: ${toolName}. Call startOperation() first.`
@@ -102,9 +100,6 @@ class PerformanceMonitorInstance {
     averageTime: number;
     slowOperations: number;
   } {
-    const summary = PerformanceTracker.getSummary();
-    const slowOps = PerformanceTracker.getSlowOperations(100);
-
     return {
       totalOperations: summary.totalOperations,
       averageTime: summary.averageDuration,

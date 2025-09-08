@@ -1,12 +1,8 @@
 /**
  * Notes-related tool configurations for companies
  */
-import {
-  getCompanyNotes,
-  createCompanyNote,
-} from '../../../objects/companies/index.js';
-import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 import { NoteDisplay } from '../../../types/tool-types.js';
+import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 
 // Company notes tool configurations
 export const notesToolConfigs = {
@@ -29,16 +25,13 @@ export const notesToolConfigs = {
           // 4. note.text - Alternative content field name (legacy support)
           // 5. note.body - Another alternative content field (third-party integrations)
           // This order ensures backward compatibility while supporting API variations
-          const title =
             note.title || note.data?.title || note.values?.title || 'Untitled';
-          const content =
             note.content ||
             note.data?.content ||
             note.values?.content ||
             note.text ||
             note.body ||
             '';
-          const timestamp =
             note.created_at ||
             note.data?.created_at ||
             note.values?.created_at ||

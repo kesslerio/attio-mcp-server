@@ -4,14 +4,14 @@
  * Extracted from UniversalCreateService.createTaskRecord (lines 1238-1421)
  */
 
-import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
-import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import { getCreateService } from '../index.js';
-import { UniversalUtilityService } from '../../UniversalUtilityService.js';
 import { AttioTask, AttioRecord } from '../../../types/attio.js';
-import { logger } from '../../../utils/logger.js';
+import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
 import { debug, OperationType } from '../../../utils/logger.js';
+import { error as logError } from '../../../utils/logger.js';
 import { ErrorEnhancer } from '../../../errors/enhanced-api-errors.js';
+import { getCreateService } from '../index.js';
+import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
+import { UniversalUtilityService } from '../../UniversalUtilityService.js';
 
 export class TaskCreateStrategy extends BaseCreateStrategy {
   constructor() {
@@ -24,7 +24,6 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
     try {
       // Issue #417: Enhanced task creation with field mapping guidance
       // Check for content field first, then validate (handle empty strings)
-      const content =
         (mapped_data.content &&
           typeof mapped_data.content === 'string' &&
           mapped_data.content.trim()) ||
@@ -49,14 +48,12 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
 
       // Only add fields that have actual values (not undefined)
       // Normalize assignee inputs: accept string, array of strings, or array of objects
-      const assigneesInput =
         mapped_data.assignees || mapped_data.assignee_id || mapped_data.assigneeId;
       if (assigneesInput !== undefined) {
         let assigneeId: string | undefined;
         if (typeof assigneesInput === 'string') {
           assigneeId = assigneesInput;
         } else if (Array.isArray(assigneesInput)) {
-          const first = assigneesInput[0] as any;
           if (typeof first === 'string') assigneeId = first;
           else if (first && typeof first === 'object') {
             assigneeId =
@@ -77,25 +74,21 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
         if (assigneeId) options.assigneeId = assigneeId;
       }
 
-      const dueDate =
         mapped_data.deadline_at || mapped_data.due_date || mapped_data.dueDate;
       if (dueDate) options.dueDate = dueDate;
 
-      const recordId =
         mapped_data.linked_records ||
         mapped_data.record_id ||
         mapped_data.recordId;
       if (recordId) options.recordId = recordId;
 
       // Target object for linking (Issue #545): ensure we pass along when provided
-      const targetObject =
         (mapped_data as any).target_object || (mapped_data as any).targetObject;
       if (typeof targetObject === 'string' && targetObject.trim()) {
         (options as any).targetObject = targetObject.trim();
       }
 
       // Use mock-enabled task creation for test environments
-      const createdTask = await this.createTaskWithMockSupport({
         content,
         ...options,
       });
@@ -157,9 +150,8 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
 
       // Ensure assignees are preserved for E2E expectations
       try {
-        const top: any = convertedRecord as any;
-        const values: any = convertedRecord.values || {};
-        const assigneeId = (options as any).assigneeId as string | undefined;
+        const top: unknown = convertedRecord as any;
+        const values: unknown = convertedRecord.values || {};
         if (assigneeId) {
           // Top-level assignees for E2E assertion
           top.assignees = [
@@ -178,7 +170,7 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
 
       // Debugging shape insight
       try {
-        const mod: any = await import('../../../utils/task-debug.js');
+        const mod: unknown = await import('../../../utils/task-debug.js');
         mod.logTaskDebug?.('createRecord', 'Created task record shape', {
           mappedKeys: Object.keys(mapped_data || {}),
           optionsKeys: Object.keys(options || {}),
@@ -194,12 +186,11 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
       };
     } catch (error: unknown) {
       // Log original error for debugging
-      logger.error('Task creation failed', error, { resource_type: 'tasks' });
+      logError('TaskCreateStrategy', 'Task creation failed', error, { resource_type: 'tasks' });
 
       // Issue #417: Enhanced task error handling with field mapping guidance
       const errorObj: Error =
         error instanceof Error ? error : new Error(String(error));
-      const enhancedError = ErrorEnhancer.autoEnhance(
         errorObj,
         'tasks',
         'create-record'
@@ -224,7 +215,6 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
   private async createTaskWithMockSupport(
     taskData: Record<string, unknown>
   ): Promise<any> {
-    const service = getCreateService();
     return await service.createTask(taskData);
   }
 

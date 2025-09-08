@@ -3,8 +3,15 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
+import { COMPANIES_FIELD_MAPPING } from './companies.js';
+import { DEALS_FIELD_MAPPING } from './deals.js';
 import { FieldMapping } from '../types.js';
+import { LISTS_FIELD_MAPPING } from './lists.js';
+import { NOTES_FIELD_MAPPING } from './notes.js';
+import { PEOPLE_FIELD_MAPPING } from './people.js';
+import { RECORDS_FIELD_MAPPING } from './records.js';
+import { TASKS_FIELD_MAPPING } from './tasks.js';
+import { UniversalResourceType } from '../types.js';
 
 // Import all resource-specific mappings
 import { COMPANIES_FIELD_MAPPING } from './companies.js';

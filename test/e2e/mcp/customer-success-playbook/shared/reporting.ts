@@ -3,11 +3,10 @@
  */
 import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
+
 import { PlaybookTestResult, ValidationLevel } from './types.js';
 
 export async function createFailureAnalysisReport(failures: PlaybookTestResult[], allResults: PlaybookTestResult[]) {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const reportPath = `/tmp/customer-success-playbook-failures-${timestamp}.md`;
 
   let report = `# Customer Success Playbook Validation Failure Analysis
 
@@ -56,7 +55,6 @@ export async function createFailureAnalysisReport(failures: PlaybookTestResult[]
 }
 
 export async function createSingleGitHubIssue(failures: PlaybookTestResult[], allResults: PlaybookTestResult[]) {
-  const issueBody = `# Customer Success Playbook Validation Failures
 
 **Generated:** ${new Date().toISOString()}
 **Test Suite:** \`test/e2e/mcp/customer-success-playbook-eval.test.ts\`
@@ -104,10 +102,7 @@ ${failures
 }
 
 export async function createEnhancedValidationReport(results: PlaybookTestResult[]) {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const reportPath = `/tmp/customer-success-enhanced-validation-${timestamp}.md`;
   
-  const report = `# Customer Success Playbook Enhanced Validation Report
 
 **Generated:** ${new Date().toISOString()}
 **Test Suite:** test/e2e/mcp/customer-success-playbook-eval.test.ts
@@ -125,8 +120,6 @@ export async function createEnhancedValidationReport(results: PlaybookTestResult
 ## Detailed Test Results
 
 ${results.map((result, index) => {
-  const emoji = getValidationLevelEmoji(result.validationLevel || ValidationLevel.FRAMEWORK_ERROR);
-  const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
   
   let details = '';
   if (result.validationDetails) {

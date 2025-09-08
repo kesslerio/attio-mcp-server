@@ -8,19 +8,6 @@
 import type { AttioRecord } from '../../../types/attio.js';
 
 /**
- * Context shared among all resource creators
- * Contains common dependencies and utilities
- */
-export interface ResourceCreatorContext {
-  /** Attio API client instance */
-  client: any;
-  /** Debug logging function */
-  debug: (component: string, message: string, data?: any) => void;
-  /** Error logging function */
-  logError: (component: string, message: string, data?: any) => void;
-}
-
-/**
  * Base interface for all resource creators
  * Implements Strategy Pattern for handling different resource types
  */

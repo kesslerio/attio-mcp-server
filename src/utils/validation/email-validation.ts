@@ -34,7 +34,6 @@ export function isValidEmail(email: string): boolean {
 
   // More comprehensive email validation regex based on RFC 5322
   // This handles international domains, plus addressing, multiple subdomains, etc.
-  const emailRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
   if (!emailRegex.test(email)) {
@@ -42,7 +41,6 @@ export function isValidEmail(email: string): boolean {
   }
 
   // Additional validation for edge cases
-  const parts = email.split('@');
   if (parts.length !== 2) {
     return false;
   }
@@ -70,7 +68,6 @@ export function isValidEmail(email: string): boolean {
   }
 
   // Check domain parts
-  const domainParts = domain.split('.');
   for (const part of domainParts) {
     // Each domain part should not be empty and should not exceed 63 characters
     if (part.length === 0 || part.length > 63) {
@@ -139,6 +136,5 @@ export function extractEmailDomain(email: string): string | null {
     return null;
   }
 
-  const parts = email.split('@');
   return parts[1].toLowerCase();
 }

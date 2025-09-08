@@ -5,17 +5,10 @@
  */
 
 import { ErrorType } from './error-handler.js';
-import {
-  generateFieldSuggestionMessage,
-  generateEnumSuggestionMessage,
-  generateReadOnlyFieldMessage,
-  generateResourceTypeSuggestionMessage,
-  VALID_RESOURCE_TYPES,
-} from './field-suggestions.js';
 
 interface ErrorExample {
   description: string;
-  example: any;
+  example: unknown;
   tip?: string;
 }
 
@@ -28,7 +21,7 @@ export function getErrorExamples(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: any;
+    actualValue?: unknown;
     path?: string;
   }
 ): ErrorExample[] {
@@ -146,7 +139,7 @@ export function enhanceErrorMessage(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: any;
+    actualValue?: unknown;
     path?: string;
     fieldName?: string;
     validFields?: string[];
@@ -190,7 +183,6 @@ export function enhanceErrorMessage(
       context.validValues.length > 0
     ) {
       if (context.actualValue !== undefined) {
-        const valueStr = String(context.actualValue);
         if (!context.validValues.includes(valueStr)) {
           enhancedMessage = generateEnumSuggestionMessage(
             context.actualValue,
@@ -214,7 +206,6 @@ export function enhanceErrorMessage(
   }
 
   // Add examples to the enhanced message
-  const examples = getErrorExamples(errorType, context);
 
   if (examples.length > 0) {
     examples.forEach((example) => {

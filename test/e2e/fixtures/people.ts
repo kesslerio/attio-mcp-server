@@ -5,20 +5,6 @@
  */
 import { E2EPersonFactory, type E2ETestPerson } from '../utils/test-data.js';
 
-/**
- * Standard person fixtures for E2E testing
- */
-export const personFixtures = {
-  /**
-   * Executive roles
-   */
-  executives: {
-    ceo: (): E2ETestPerson =>
-      E2EPersonFactory.createExecutive({
-        job_title: 'Chief Executive Officer',
-        seniority: 'C-Level',
-      }),
-
     cto: (): E2ETestPerson =>
       E2EPersonFactory.createExecutive({
         job_title: 'Chief Technology Officer',

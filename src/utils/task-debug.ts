@@ -3,11 +3,6 @@
  */
 import { debug, OperationType } from './logger.js';
 
-export function taskDebugEnabled(): boolean {
-  const v = (process.env.TASKS_DEBUG || '').toLowerCase();
-  return v === '1' || v === 'true' || process.env.E2E_MODE === 'true';
-}
-
 export function logTaskDebug(
   scope: string,
   message: string,
@@ -26,12 +21,9 @@ export function logTaskDebug(
 }
 
 export function sanitizePayload<T = unknown>(value: T): T {
-  const seen = new WeakSet();
-  const redact = (v: any): any => {
     if (v === null || v === undefined) return v;
     if (typeof v === 'string') {
       // Redact email-like strings
-      const emailRegex = /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
       let s = v.replace(emailRegex, '***@***');
       // Truncate very long strings (e.g. content)
       if (s.length > 250) s = s.slice(0, 250) + '…';
@@ -58,7 +50,7 @@ export function sanitizePayload<T = unknown>(value: T): T {
   return redact(value);
 }
 
-export function inspectTaskRecordShape(record: any): Record<string, unknown> {
+export function inspectTaskRecordShape(record: unknown): Record<string, unknown> {
   const shape: Record<string, unknown> = {
     hasId: !!record?.id,
     idKeys: record?.id ? Object.keys(record.id) : [],

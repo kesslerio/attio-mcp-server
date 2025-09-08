@@ -8,8 +8,7 @@
  * Safely unwrap Attio API response envelope
  * Handles both Axios responses and direct API responses
  */
-export function unwrapAttio<T>(res: any): T {
-  const envelope = res?.data ?? res;
+export function unwrapAttio<T>(res: unknown): T {
   // If the envelope clearly looks like an error, just return it as-is and let the caller detect it
   if (envelope?.error && !envelope?.data) return envelope as T;
   return (envelope?.data ?? envelope) as T;
@@ -19,13 +18,10 @@ export function unwrapAttio<T>(res: any): T {
  * Normalize Attio note to consistent structure
  * Provides compatibility with record-style tests via record_id alias
  */
-export function normalizeNote(note: any) {
+export function normalizeNote(note: unknown) {
   // Ensure we always have a base object to work with
-  const source = note || {};
-  const idObj = source.id || {};
 
   // Simplify ID extraction
-  const rawId =
     source.note_id ||
     source.record_id ||
     idObj.note_id ||
@@ -33,7 +29,6 @@ export function normalizeNote(note: any) {
     idObj.id ||
     (typeof source.id === 'string' ? source.id : null);
 
-  const normalized = {
     id: {
       note_id: rawId,
       workspace_id: source.workspace_id || idObj.workspace_id || null,
@@ -58,7 +53,7 @@ export function normalizeNote(note: any) {
 /**
  * Normalize array of notes
  */
-export function normalizeNotes(notes: any[]): any[] {
+export function normalizeNotes(notes: unknown[]): unknown[] {
   if (!Array.isArray(notes)) return [];
   return notes.map(normalizeNote).filter(Boolean);
 }
@@ -71,11 +66,9 @@ export function coerceNoteFormat(
   content?: string
 ): { format: 'markdown' | 'plaintext'; content: string } {
   // Convert html to markdown to preserve HTML tags, otherwise default to markdown or plaintext
-  const attioFormat =
     format === 'html' || format === 'markdown' ? 'markdown' : 'plaintext';
 
   // Preserve content as-is - tests expect HTML content to be unchanged
-  const processedContent = content || '';
 
   return {
     format: attioFormat,

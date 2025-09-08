@@ -1,35 +1,8 @@
 /**
  * Search functionality for People
  */
-import { getAttioClient } from '../../api/attio-client.js';
-import {
-  searchObject,
-  advancedSearchObject,
-  ListEntryFilters,
-} from '../../api/operations/index.js';
-import {
-  ResourceType,
-  Person,
-  DateRange,
-  InteractionType,
-  ActivityFilter,
-} from '../../types/attio.js';
-import {
-  createCreatedDateFilter,
-  createModifiedDateFilter,
-  createLastInteractionFilter,
-  createActivityFilter,
-} from '../../utils/filters/index.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
-import {
-  validateDateRange,
-  validateActivityFilter,
-  validateNumericParam,
-} from '../../utils/filters/index.js';
-import {
-  PaginatedResponse,
-  createPaginatedResponse,
-} from '../../utils/pagination.js';
+import { getAttioClient } from '../../api/attio-client.js';
 import { isValidEmail } from '../../utils/validation/email-validation.js';
 
 /**
@@ -48,25 +21,20 @@ export async function searchPeople(query: string): Promise<Person[]> {
     }
 
     // Use the API directly to avoid the phone field issue
-    const api = getAttioClient();
-    const path = `/objects/people/records/query`;
 
     // Search only by name and email, not phone
-    const filter = {
       $or: [
         { name: { $contains: query } },
         { email_addresses: { $contains: query } },
       ],
     };
 
-    const response = await api.post(path, {
       filter,
       limit: 50,
     });
 
     return response.data.data || [];
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Search validation failed: ${errorMessage}`
@@ -91,11 +59,9 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
       throw new FilterValidationError('Search query too long');
     }
 
-    const response = await searchObject<Person>(ResourceType.PEOPLE, query);
 
     return response;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Search validation failed: ${errorMessage}`
@@ -120,11 +86,9 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
       throw new FilterValidationError(`Invalid email format: ${email}`);
     }
 
-    const response = await searchObject<Person>(ResourceType.PEOPLE, email);
 
     return response;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Email search validation failed: ${errorMessage}`
@@ -142,11 +106,9 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
  */
 export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
   try {
-    const response = await searchObject<Person>(ResourceType.PEOPLE, phone);
 
     return response;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to search people by phone: ${errorMessage}`);
   }
 }
@@ -180,7 +142,6 @@ export async function advancedSearchPeople(
     // Validate pagination parameters
     if (options?.limit) {
       try {
-        const validatedLimit = validateNumericParam(options.limit, 'limit');
         if (validatedLimit < 0 || validatedLimit > 500) {
           throw new FilterValidationError('limit must be between 0 and 500');
         }
@@ -194,7 +155,6 @@ export async function advancedSearchPeople(
 
     if (options?.offset) {
       try {
-        const validatedOffset = validateNumericParam(options.offset, 'offset');
         if (validatedOffset < 0) {
           throw new FilterValidationError('offset cannot be negative');
         }
@@ -206,25 +166,19 @@ export async function advancedSearchPeople(
       }
     }
 
-    const searchParams = {
       ...filters,
       sorts: options?.sorts,
     };
 
-    const response = await advancedSearchObject<Person>(
       ResourceType.PEOPLE,
       searchParams,
       options?.limit || 100,
       options?.offset || 0
     );
 
-    const offset = options?.offset || 0;
-    const limit = options?.limit || 100;
-    const page = Math.floor(offset / limit) + 1;
 
     return createPaginatedResponse(response, response.length, page, limit);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Advanced search validation failed: ${errorMessage}`
@@ -254,8 +208,6 @@ export async function searchPeopleByCreationDate(
     throw new FilterValidationError(`Invalid date range: ${error}`);
   }
 
-  const filters = createCreatedDateFilter(dateRange);
-  const response = await advancedSearchPeople(filters);
 
   return response.results;
 }
@@ -278,8 +230,6 @@ export async function searchPeopleByModificationDate(
     throw new FilterValidationError(`Invalid date range: ${error}`);
   }
 
-  const filters = createModifiedDateFilter(dateRange);
-  const response = await advancedSearchPeople(filters);
 
   return response.results;
 }
@@ -305,12 +255,9 @@ export async function searchPeopleByLastInteraction(
       throw new FilterValidationError(`Invalid date range: ${error}`);
     }
 
-    const filters = createLastInteractionFilter(dateRange, interactionType);
-    const response = await advancedSearchPeople(filters);
 
     return response.results;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Last interaction search validation failed: ${errorMessage}`
@@ -341,12 +288,9 @@ export async function searchPeopleByActivity(
       throw new FilterValidationError(`Invalid activity filter: ${error}`);
     }
 
-    const filters = createActivityFilter(activityFilter);
-    const response = await advancedSearchPeople(filters);
 
     return response.results;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Activity search validation failed: ${errorMessage}`

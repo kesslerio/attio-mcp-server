@@ -6,18 +6,6 @@
  */
 import { configLoader } from './config-loader.js';
 
-export interface E2ETestCompany {
-  name: string;
-  domain?: string;
-  website?: string; // Test-only field - stripped before API calls to avoid collision with domain
-  industry?: string;
-  description?: string;
-  annual_revenue?: string; // Changed to string to match API requirements
-  employee_count?: number;
-  categories?: string[];
-  [key: string]: unknown;
-}
-
 export interface E2ETestPerson {
   name: string;
   email_addresses: string[];
@@ -64,30 +52,22 @@ export abstract class E2ETestDataFactory {
       return configLoader.getTestIdentifier(prefix);
     } catch (error) {
       // Configuration not loaded - provide fallback
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substr(2, 6);
       return `TEST_${prefix}_${timestamp}_${random}`;
     }
   }
 
   protected static getTestEmail(prefix: string = 'person'): string {
-    const uniq = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
-    const testId = this.getTestId(prefix);
-    const defaultDomain = (
       process.env.E2E_TEST_EMAIL_DOMAIN || 'example.com'
     ).toLowerCase();
 
-    const sanitizeLocal = (s: string) =>
       s
         .toLowerCase()
         .replace(/[^a-z0-9._-]+/g, '.')
         .replace(/\.+/g, '.');
 
-    const build = (local: string, domain: string) =>
       `${sanitizeLocal(local)}.${uniq}@${domain}`.toLowerCase();
 
     try {
-      const baseEmail = (configLoader.getTestEmail(prefix) || '').trim();
       if (baseEmail.includes('@')) {
         const [local, rawDomain] = baseEmail.split('@', 2);
         let domain = (rawDomain || defaultDomain).toLowerCase();
@@ -95,7 +75,6 @@ export abstract class E2ETestDataFactory {
         if (/\.test$/.test(domain) || domain === 'e2e.test') {
           domain = defaultDomain;
         }
-        const out = build(local || testId, domain);
         return out.includes('@') ? out : build(testId, defaultDomain);
       }
       // Misconfigured (no "@"): treat entire string as local part
@@ -111,7 +90,6 @@ export abstract class E2ETestDataFactory {
       return configLoader.getTestCompanyDomain();
     } catch (error) {
       // Configuration not loaded - provide fallback
-      const testId = this.getTestId('domain');
       return `${testId}.test-company.com`;
     }
   }
@@ -147,8 +125,6 @@ export abstract class E2ETestDataFactory {
  */
 export class E2ECompanyFactory extends E2ETestDataFactory {
   static create(overrides: Partial<E2ETestCompany> = {}): E2ETestCompany {
-    const testId = this.getTestId('company');
-    const domain = this.getTestDomain();
 
     const defaults: E2ETestCompany = {
       name: `Test Company ${testId}`,
@@ -165,8 +141,6 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     overrides: Partial<E2ETestCompany> = {}
   ): E2ETestCompany[] {
     return Array.from({ length: count }, (_, i) => {
-      const testId = this.getTestId(`company_${i}`);
-      const domain = this.getTestDomain();
 
       return this.create({
         ...overrides,
@@ -208,8 +182,6 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
  */
 export class E2EPersonFactory extends E2ETestDataFactory {
   static create(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
-    const testId = this.getTestId('person');
-    const email = this.getTestEmail('person');
 
     const defaults: E2ETestPerson = {
       name: `Test Person ${testId}`,
@@ -230,8 +202,6 @@ export class E2EPersonFactory extends E2ETestDataFactory {
     overrides: Partial<E2ETestPerson> = {}
   ): E2ETestPerson[] {
     return Array.from({ length: count }, (_, i) => {
-      const testId = this.getTestId(`person_${i}`);
-      const email = this.getTestEmail(`person_${i}`);
 
       return this.create({
         ...overrides,
@@ -279,7 +249,6 @@ export class E2EPersonFactory extends E2ETestDataFactory {
  */
 export class E2EListFactory extends E2ETestDataFactory {
   static create(overrides: Partial<E2ETestList> = {}): E2ETestList {
-    const testId = this.getTestId('list');
 
     const defaults: E2ETestList = {
       name: `Test List ${testId}`,
@@ -295,7 +264,6 @@ export class E2EListFactory extends E2ETestDataFactory {
     overrides: Partial<E2ETestList> = {}
   ): E2ETestList[] {
     return Array.from({ length: count }, (_, i) => {
-      const testId = this.getTestId(`list_${i}`);
 
       return this.create({
         ...overrides,
@@ -325,8 +293,6 @@ export class E2EListFactory extends E2ETestDataFactory {
  */
 export class E2ETaskFactory extends E2ETestDataFactory {
   static create(overrides: Partial<E2ETestTask> = {}): E2ETestTask {
-    const testId = this.getTestId('task');
-    const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 7); // Due in 7 days
 
     const defaults: E2ETestTask = {
@@ -345,8 +311,6 @@ export class E2ETaskFactory extends E2ETestDataFactory {
     overrides: Partial<E2ETestTask> = {}
   ): E2ETestTask[] {
     return Array.from({ length: count }, (_, i) => {
-      const testId = this.getTestId(`task_${i}`);
-      const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + (i + 1)); // Stagger due dates
 
       return this.create({
@@ -376,7 +340,6 @@ export class E2ENoteFactory extends E2ETestDataFactory {
     parentRecordId: string,
     overrides: Partial<E2ETestNote> = {}
   ): E2ETestNote {
-    const testId = this.getTestId('note');
 
     const defaults: E2ETestNote = {
       title: `Test Note ${testId}`,
@@ -396,7 +359,6 @@ export class E2ENoteFactory extends E2ETestDataFactory {
     overrides: Partial<E2ETestNote> = {}
   ): E2ETestNote[] {
     return Array.from({ length: count }, (_, i) => {
-      const testId = this.getTestId(`note_${i}`);
 
       return this.create(parentObject, parentRecordId, {
         ...overrides,
@@ -411,7 +373,6 @@ export class E2ENoteFactory extends E2ETestDataFactory {
     parentRecordId: string,
     overrides: Partial<E2ETestNote> = {}
   ): E2ETestNote {
-    const testId = this.getTestId('note_md');
 
     return this.create(parentObject, parentRecordId, {
       format: 'markdown' as const,
@@ -433,8 +394,6 @@ export class E2ETestScenarios {
     company: E2ETestCompany;
     people: E2ETestPerson[];
   } {
-    const company = E2ECompanyFactory.createTechnology();
-    const people = E2EPersonFactory.createMany(personCount, {
       // People will be associated with company after creation
     });
 
@@ -449,9 +408,6 @@ export class E2ETestScenarios {
     people: E2ETestPerson[];
     tasks: E2ETestTask[];
   } {
-    const companies = E2ECompanyFactory.createMany(5);
-    const people = E2EPersonFactory.createMany(10);
-    const tasks = E2ETaskFactory.createMany(8);
 
     return { companies, people, tasks };
   }
@@ -510,10 +466,9 @@ export class E2ETestDataValidator {
   /**
    * Validate that test data has proper prefixing
    */
-  static validateTestDataPrefix(data: any, expectedPrefix?: string): boolean {
+  static validateTestDataPrefix(data: unknown, expectedPrefix?: string): boolean {
     let prefix: string;
     try {
-      const config = configLoader.getConfig();
       prefix = expectedPrefix || config.testData.testDataPrefix;
     } catch (error) {
       // Configuration not loaded - use fallback or provided prefix
@@ -525,7 +480,6 @@ export class E2ETestDataValidator {
     }
 
     if (data && typeof data === 'object') {
-      const stringValues = this.extractStringValues(data);
       return stringValues.some((value) => value.includes(prefix));
     }
 
@@ -533,10 +487,10 @@ export class E2ETestDataValidator {
   }
 
   // Extract all string values from an object recursively
-  private static extractStringValues(obj: any): string[] {
+  private static extractStringValues(obj: unknown): string[] {
     const strings: string[] = [];
 
-    function extract(value: any) {
+    function extract(value: unknown) {
       if (typeof value === 'string') {
         strings.push(value);
       } else if (Array.isArray(value)) {
@@ -553,7 +507,6 @@ export class E2ETestDataValidator {
   // Check if email follows test domain pattern
   static isTestEmail(email: string): boolean {
     try {
-      const config = configLoader.getConfig();
       return email.includes(config.testData.testEmailDomain);
     } catch (error) {
       // Configuration not loaded - use fallback domain pattern
@@ -564,7 +517,6 @@ export class E2ETestDataValidator {
   // Check if domain follows test domain pattern
   static isTestDomain(domain: string): boolean {
     try {
-      const config = configLoader.getConfig();
       return domain.includes(config.testData.testCompanyDomain);
     } catch (error) {
       // Configuration not loaded - use fallback domain pattern

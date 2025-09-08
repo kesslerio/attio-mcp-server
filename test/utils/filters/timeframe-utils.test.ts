@@ -4,17 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  getRelativeTimeframeRange,
-  isValidISODate,
-  isValidDateRange,
-  convertDateParamsToTimeframeQuery,
-  type RelativeTimeframe,
-} from '../../../src/utils/filters/timeframe-utils.js';
 
 describe('TimeframeUtils', () => {
   // Mock current date for consistent testing
-  const mockDate = new Date('2023-08-15T12:00:00.000Z'); // Tuesday
   
   beforeEach(() => {
     vi.useFakeTimers();
@@ -27,55 +19,46 @@ describe('TimeframeUtils', () => {
 
   describe('getRelativeTimeframeRange', () => {
     it('should return correct range for "today"', () => {
-      const result = getRelativeTimeframeRange('today');
       expect(result.startDate).toBe('2023-08-15T00:00:00.000Z');
       expect(result.endDate).toBe('2023-08-15T23:59:59.999Z');
     });
 
     it('should return correct range for "yesterday"', () => {
-      const result = getRelativeTimeframeRange('yesterday');
       expect(result.startDate).toBe('2023-08-14T00:00:00.000Z');
       expect(result.endDate).toBe('2023-08-14T23:59:59.999Z');
     });
 
     it('should return correct range for "this_week"', () => {
-      const result = getRelativeTimeframeRange('this_week');
       expect(result.startDate).toBe('2023-08-14T00:00:00.000Z'); // Monday
       expect(result.endDate).toBe('2023-08-15T23:59:59.999Z'); // Current day
     });
 
     it('should return correct range for "last_week"', () => {
-      const result = getRelativeTimeframeRange('last_week');
       expect(result.startDate).toBe('2023-08-07T00:00:00.000Z'); // Previous Monday
       expect(result.endDate).toBe('2023-08-13T23:59:59.999Z'); // Previous Sunday
     });
 
     it('should return correct range for "this_month"', () => {
-      const result = getRelativeTimeframeRange('this_month');
       expect(result.startDate).toBe('2023-08-01T00:00:00.000Z');
       expect(result.endDate).toBe('2023-08-15T23:59:59.999Z');
     });
 
     it('should return correct range for "last_month"', () => {
-      const result = getRelativeTimeframeRange('last_month');
       expect(result.startDate).toBe('2023-07-01T00:00:00.000Z');
       expect(result.endDate).toBe('2023-07-31T23:59:59.999Z');
     });
 
     it('should return correct range for "last_7_days"', () => {
-      const result = getRelativeTimeframeRange('last_7_days');
       expect(result.startDate).toBe('2023-08-08T00:00:00.000Z');
       expect(result.endDate).toBe('2023-08-15T23:59:59.999Z');
     });
 
     it('should return correct range for "last_30_days"', () => {
-      const result = getRelativeTimeframeRange('last_30_days');
       expect(result.startDate).toBe('2023-07-16T00:00:00.000Z');
       expect(result.endDate).toBe('2023-08-15T23:59:59.999Z');
     });
 
     it('should return correct range for "last_90_days"', () => {
-      const result = getRelativeTimeframeRange('last_90_days');
       expect(result.startDate).toBe('2023-05-17T00:00:00.000Z');
       expect(result.endDate).toBe('2023-08-15T23:59:59.999Z');
     });
@@ -135,7 +118,6 @@ describe('TimeframeUtils', () => {
 
   describe('convertDateParamsToTimeframeQuery', () => {
     it('should convert relative timeframe to API format', () => {
-      const result = convertDateParamsToTimeframeQuery({
         timeframe: 'last_7_days',
         date_field: 'created_at',
       });
@@ -149,7 +131,6 @@ describe('TimeframeUtils', () => {
     });
 
     it('should convert date range to API format', () => {
-      const result = convertDateParamsToTimeframeQuery({
         date_from: '2023-08-01T00:00:00Z',
         date_to: '2023-08-15T23:59:59Z',
         date_field: 'updated_at',
@@ -164,7 +145,6 @@ describe('TimeframeUtils', () => {
     });
 
     it('should handle single date bounds', () => {
-      const startOnly = convertDateParamsToTimeframeQuery({
         date_from: '2023-08-01T00:00:00Z',
         date_field: 'created_at',
       });
@@ -175,7 +155,6 @@ describe('TimeframeUtils', () => {
         date_operator: 'greater_than',
       });
 
-      const endOnly = convertDateParamsToTimeframeQuery({
         date_to: '2023-08-15T23:59:59Z',
         date_field: 'created_at',
       });
@@ -188,7 +167,6 @@ describe('TimeframeUtils', () => {
     });
 
     it('should handle created_at specific filters', () => {
-      const result = convertDateParamsToTimeframeQuery({
         created_after: '2023-08-01T00:00:00Z',
         created_before: '2023-08-15T23:59:59Z',
       });
@@ -202,7 +180,6 @@ describe('TimeframeUtils', () => {
     });
 
     it('should handle updated_at specific filters', () => {
-      const result = convertDateParamsToTimeframeQuery({
         updated_after: '2023-08-01T00:00:00Z',
       });
       
@@ -214,7 +191,6 @@ describe('TimeframeUtils', () => {
     });
 
     it('should prioritize timeframe over absolute dates', () => {
-      const result = convertDateParamsToTimeframeQuery({
         timeframe: 'today',
         date_from: '2023-08-01T00:00:00Z', // Should be ignored
         date_to: '2023-08-10T00:00:00Z', // Should be ignored
@@ -230,7 +206,6 @@ describe('TimeframeUtils', () => {
     });
 
     it('should return null when no date parameters provided', () => {
-      const result = convertDateParamsToTimeframeQuery({});
       expect(result).toBeNull();
     });
 
@@ -257,7 +232,6 @@ describe('TimeframeUtils', () => {
     });
 
     it('should default to created_at when date_field not specified', () => {
-      const result = convertDateParamsToTimeframeQuery({
         date_from: '2023-08-01T00:00:00Z',
         date_to: '2023-08-15T23:59:59Z',
         // date_field not specified

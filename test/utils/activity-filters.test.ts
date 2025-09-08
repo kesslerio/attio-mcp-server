@@ -2,25 +2,11 @@
  * Tests for activity and historical filtering functionality
  */
 import { describe, it, expect } from 'vitest';
-import {
-  createDateRangeFilter,
-  createCreatedDateFilter,
-  createModifiedDateFilter,
-  createLastInteractionFilter,
-  createActivityFilter,
-} from '../../src/utils/record-utils';
-import {
-  DateRange,
-  InteractionType,
-  ActivityFilter,
-} from '../../src/types/attio';
 
 describe('Activity and Historical filtering', () => {
   describe('createDateRangeFilter', () => {
     it('should create a filter with start date only', () => {
-      const startDate = '2023-01-01T00:00:00.000Z';
       const dateRange: DateRange = { start: startDate };
-      const filter = createDateRangeFilter('created_at', dateRange);
 
       expect(filter.filters).toHaveLength(1);
       expect(filter.filters![0].attribute.slug).toBe('created_at');
@@ -29,9 +15,7 @@ describe('Activity and Historical filtering', () => {
     });
 
     it('should create a filter with end date only', () => {
-      const endDate = '2023-12-31T23:59:59.999Z';
       const dateRange: DateRange = { end: endDate };
-      const filter = createDateRangeFilter('created_at', dateRange);
 
       expect(filter.filters).toHaveLength(1);
       expect(filter.filters![0].attribute.slug).toBe('created_at');
@@ -40,10 +24,7 @@ describe('Activity and Historical filtering', () => {
     });
 
     it('should create a filter with both start and end dates', () => {
-      const startDate = '2023-01-01T00:00:00.000Z';
-      const endDate = '2023-12-31T23:59:59.999Z';
       const dateRange: DateRange = { start: startDate, end: endDate };
-      const filter = createDateRangeFilter('created_at', dateRange);
 
       expect(filter.filters).toHaveLength(2);
       expect(filter.filters![0].attribute.slug).toBe('created_at');
@@ -62,7 +43,6 @@ describe('Activity and Historical filtering', () => {
         start: '2023-01-01T00:00:00.000Z',
         end: '2023-12-31T23:59:59.999Z',
       };
-      const filter = createCreatedDateFilter(dateRange);
 
       expect(filter.filters).toHaveLength(2);
       expect(filter.filters![0].attribute.slug).toBe('created_at');
@@ -76,7 +56,6 @@ describe('Activity and Historical filtering', () => {
         start: '2023-01-01T00:00:00.000Z',
         end: '2023-12-31T23:59:59.999Z',
       };
-      const filter = createModifiedDateFilter(dateRange);
 
       expect(filter.filters).toHaveLength(2);
       expect(filter.filters![0].attribute.slug).toBe('updated_at');
@@ -90,7 +69,6 @@ describe('Activity and Historical filtering', () => {
         start: '2023-01-01T00:00:00.000Z',
         end: '2023-12-31T23:59:59.999Z',
       };
-      const filter = createLastInteractionFilter(dateRange);
 
       expect(filter.filters).toHaveLength(2);
       expect(filter.filters![0].attribute.slug).toBe('last_interaction');
@@ -102,8 +80,6 @@ describe('Activity and Historical filtering', () => {
         start: '2023-01-01T00:00:00.000Z',
         end: '2023-12-31T23:59:59.999Z',
       };
-      const interactionType = InteractionType.EMAIL;
-      const filter = createLastInteractionFilter(dateRange, interactionType);
 
       expect(filter.filters).toHaveLength(3);
       expect(filter.filters![0].attribute.slug).toBe('last_interaction');
@@ -118,8 +94,6 @@ describe('Activity and Historical filtering', () => {
         start: '2023-01-01T00:00:00.000Z',
         end: '2023-12-31T23:59:59.999Z',
       };
-      const interactionType = InteractionType.ANY;
-      const filter = createLastInteractionFilter(dateRange, interactionType);
 
       expect(filter.filters).toHaveLength(2);
       expect(filter.filters![0].attribute.slug).toBe('last_interaction');
@@ -136,7 +110,6 @@ describe('Activity and Historical filtering', () => {
         },
         interactionType: InteractionType.EMAIL,
       };
-      const filter = createActivityFilter(activityFilter);
 
       expect(filter.filters).toHaveLength(3);
       expect(filter.filters![0].attribute.slug).toBe('last_interaction');

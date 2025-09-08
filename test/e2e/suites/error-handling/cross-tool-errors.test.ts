@@ -5,20 +5,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  callUniversalTool,
-  callTasksTool,
-  callNotesTool,
-} from '../../utils/enhanced-tool-caller.js';
-import { type McpToolResponse } from '../../utils/assertions.js';
-import { testDataGenerator } from '../../fixtures/index.js';
+
 import { errorScenarios } from '../../fixtures/error-scenarios.js';
-import {
-  extractRecordId,
-  hasValidContent,
-  analyzeBatchResults,
-  executeConcurrentOperations,
-} from '../../utils/error-handling-utils.js';
+import { testDataGenerator } from '../../fixtures/index.js';
+import { type McpToolResponse } from '../../utils/assertions.js';
 
 export function crossToolErrorsTests(
   testCompanyId: string | undefined,
@@ -27,18 +17,14 @@ export function crossToolErrorsTests(
   describe('Cross-Tool Error Propagation', () => {
     it('should handle errors when linking non-existent records', async () => {
       // First create a task
-      const taskData = testDataGenerator.tasks.basicTask();
-      const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData as any,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {
-        const taskId = extractRecordId(taskResponse);
 
         if (taskId) {
           // Try to link to non-existent company
-          const linkResponse = (await callTasksTool('update-record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
@@ -60,18 +46,14 @@ export function crossToolErrorsTests(
 
     it('should handle cascading delete scenarios', async () => {
       // Create company then try to delete it while it might be linked
-      const companyData = testDataGenerator.companies.basicCompany();
-      const companyResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData as any,
       })) as McpToolResponse;
 
       if (hasValidContent(companyResponse)) {
-        const companyId = extractRecordId(companyResponse);
 
         if (companyId) {
           // Create a note linked to the company
-          const noteResponse = (await callNotesTool('create-note', {
             resource_type: 'companies',
             record_id: companyId,
             title: 'Test Note for Delete Test',
@@ -80,7 +62,6 @@ export function crossToolErrorsTests(
           })) as McpToolResponse;
 
           // Try to delete the company - should handle linked data appropriately
-          const deleteResponse = (await callUniversalTool('delete-record', {
             resource_type: 'companies',
             record_id: companyId,
           })) as McpToolResponse;
@@ -93,7 +74,6 @@ export function crossToolErrorsTests(
 
     it('should handle batch operation partial failures', async () => {
       // Test updating multiple records where some might fail
-      const operations = [
         () =>
           callUniversalTool('get-record-details', {
             resource_type: 'companies',
@@ -111,8 +91,6 @@ export function crossToolErrorsTests(
           }),
       ];
 
-      const responses = await executeConcurrentOperations(operations);
-      const analysis = analyzeBatchResults(responses);
 
       // Should handle mixed success/failure scenarios
       expect(responses).toHaveLength(3);
@@ -129,7 +107,6 @@ export function crossToolErrorsTests(
       }
 
       // Attempt concurrent updates to the same record
-      const updateOperations = [
         () =>
           callUniversalTool('update-record', {
             resource_type: 'companies',
@@ -144,8 +121,6 @@ export function crossToolErrorsTests(
           }),
       ];
 
-      const results = await executeConcurrentOperations(updateOperations, 2);
-      const analysis = analyzeBatchResults(results);
 
       // Should handle concurrent modifications gracefully
       expect(results).toHaveLength(2);
@@ -162,15 +137,12 @@ export function crossToolErrorsTests(
       }
 
       // Create a task linking company and person
-      const taskData = errorScenarios.relationships.circularReference.task;
 
-      const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {
-        const taskId = extractRecordId(taskResponse);
 
         if (taskId) {
           // Link task to company and person

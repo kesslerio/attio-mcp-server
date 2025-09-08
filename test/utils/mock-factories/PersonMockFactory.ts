@@ -7,10 +7,10 @@
  * response format with proper email, phone, and company associations.
  */
 
-import type { AttioValue } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
-import type { MockFactory } from './TaskMockFactory.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
+import type { AttioValue } from '../../../src/types/attio.js';
+import type { MockFactory } from './TaskMockFactory.js';
 
 /**
  * Interface for mock person factory options
@@ -79,21 +79,13 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * @returns Mock AttioRecord for person matching API response format
    */
   static create(overrides: MockPersonOptions = {}): TestAttioRecord {
-    const personId = this.generateMockId();
-    const now = new Date().toISOString();
-    const personNumber = this.extractNumberFromId(personId);
 
     // Generate realistic person data
-    const firstName = this.getRandomFirstName();
-    const lastName = this.getRandomLastName();
-    const fullName = overrides.name
       ? typeof overrides.name === 'string'
         ? overrides.name
         : `${overrides.name.first_name} ${overrides.name.last_name}`
       : `${firstName} ${lastName}`;
 
-    const email = this.generateEmail(fullName, personNumber);
-    const phone = this.generatePhone();
 
     const basePerson: TestAttioRecord = {
       id: {
@@ -179,7 +171,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
     overrides: MockPersonOptions = {}
   ): TestAttioRecord[] {
     return Array.from({ length: count }, (_, index) => {
-      const personNumber = index + 1;
       return this.create({
         ...overrides,
         // Don't override name if explicitly provided
@@ -194,7 +185,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * Creates an executive person mock
    */
   static createExecutive(overrides: MockPersonOptions = {}): TestAttioRecord {
-    const executiveTitles = [
       'CEO',
       'CTO',
       'CFO',
@@ -216,7 +206,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * Creates a sales person mock
    */
   static createSalesPerson(overrides: MockPersonOptions = {}): TestAttioRecord {
-    const salesTitles = [
       'Account Executive',
       'Sales Representative',
       'Business Development Manager',
@@ -236,7 +225,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * Creates an engineer mock
    */
   static createEngineer(overrides: MockPersonOptions = {}): TestAttioRecord {
-    const engineeringTitles = [
       'Software Engineer',
       'Senior Software Engineer',
       'Principal Engineer',
@@ -259,7 +247,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
   static createMarketingPerson(
     overrides: MockPersonOptions = {}
   ): TestAttioRecord {
-    const marketingTitles = [
       'Marketing Manager',
       'Content Marketing Manager',
       'Digital Marketing Specialist',
@@ -322,7 +309,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * Private helper to extract number from generated ID
    */
   private static extractNumberFromId(id: string): string {
-    const match = id.match(/(\d+)/);
     return match
       ? match[1].slice(-4)
       : Math.floor(Math.random() * 9999).toString();
@@ -332,7 +318,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * Private helper to generate email from name
    */
   private static generateEmail(name: string, suffix: string): string {
-    const cleanName = name
       .toLowerCase()
       .replace(/[^a-z\s]/g, '')
       .replace(/\s+/g, '.');
@@ -343,9 +328,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * Private helper to generate phone number
    */
   private static generatePhone(): string {
-    const areaCode = Math.floor(Math.random() * 900) + 100;
-    const exchange = Math.floor(Math.random() * 900) + 100;
-    const number = Math.floor(Math.random() * 9000) + 1000;
     return `+1-${areaCode}-${exchange}-${number}`;
   }
 
@@ -353,7 +335,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
    * Private helpers for generating random data
    */
   private static getRandomFirstName(): string {
-    const names = [
       'Alex',
       'Jordan',
       'Taylor',
@@ -383,7 +364,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
   }
 
   private static getRandomLastName(): string {
-    const names = [
       'Smith',
       'Johnson',
       'Williams',
@@ -412,7 +392,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
   }
 
   private static getRandomJobTitle(): string {
-    const titles = [
       'Software Engineer',
       'Product Manager',
       'Sales Representative',
@@ -430,7 +409,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
   }
 
   private static getRandomSeniority(): string {
-    const levels = [
       'Junior',
       'Mid-level',
       'Senior',
@@ -438,8 +416,6 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
       'Principal',
       'Executive',
     ];
-    const weights = [15, 35, 30, 12, 6, 2]; // Realistic distribution
-    const random = Math.random() * 100;
     let cumulative = 0;
 
     for (let i = 0; i < levels.length; i++) {

@@ -25,9 +25,9 @@ export interface TestAttioRecord {
   [key: string]: unknown;
 }
 import { CompanyMockFactory } from './CompanyMockFactory.js';
+import { ListMockFactory } from './ListMockFactory.js';
 import { PersonMockFactory } from './PersonMockFactory.js';
 import { TaskMockFactory } from './TaskMockFactory.js';
-import { ListMockFactory } from './ListMockFactory.js';
 import { TestEnvironment } from './test-environment.js';
 
 /**
@@ -71,7 +71,6 @@ export class UniversalMockService {
     });
 
     // Use the existing CompanyMockFactory but convert to AttioRecord format
-    const mockCompany = CompanyMockFactory.create({
       name: companyData.name as string,
       domains: companyData.domains as string[],
       industry: companyData.industry as string,
@@ -158,7 +157,6 @@ export class UniversalMockService {
     });
 
     // Use the existing PersonMockFactory but convert to AttioRecord format
-    const mockPerson = PersonMockFactory.create({
       name: personData.name as string,
       email_addresses: personData.email_addresses as string[],
       ...personData,
@@ -227,7 +225,6 @@ export class UniversalMockService {
       }
     }
 
-    const taskContent =
       (taskData.content as string) ||
       (taskData.title as string) ||
       `Mock Test Task`;
@@ -239,7 +236,6 @@ export class UniversalMockService {
     });
 
     // Use the existing TaskMockFactory
-    const mockTask = TaskMockFactory.create({
       content: taskContent,
       title: taskContent, // Issue #480: Dual field support
       status: taskData.status as string,
@@ -290,7 +286,6 @@ export class UniversalMockService {
     };
 
     // Add flat field compatibility for E2E tests (Issue #480)
-    const flatFields = {
       content: taskContent,
       title: taskContent,
       status: mockTask.status,
@@ -357,7 +352,6 @@ export class UniversalMockService {
       }
     }
 
-    const taskContent =
       (updateData.content as string) ||
       (updateData.title as string) ||
       `Updated Mock Test Task ${taskId.slice(-4)}`;
@@ -369,7 +363,6 @@ export class UniversalMockService {
     });
 
     // Create an updated task using the TaskMockFactory
-    const mockTask = TaskMockFactory.create({
       content: taskContent,
       title: taskContent, // Issue #480: Dual field support
       status: (updateData.status as string) || 'updated',
@@ -423,7 +416,6 @@ export class UniversalMockService {
     };
 
     // Add flat field compatibility for E2E tests (Issue #480)
-    const flatFields = {
       content: taskContent,
       title: taskContent,
       status: mockTask.status,

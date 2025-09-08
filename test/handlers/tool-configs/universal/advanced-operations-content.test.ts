@@ -1,26 +1,13 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import {
-  UniversalResourceType,
-  ContentSearchType,
-  TimeframeType,
-  ContentSearchParams,
-  TimeframeSearchParams,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
-import {
-  setupUnitTestMocks,
-  cleanupMocks,
-  getMockInstances,
-} from './helpers/index.js';
 
 describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
-  let searchByContentConfig: any;
-  let searchByTimeframeConfig: any;
+  let searchByContentConfig: unknown;
+  let searchByTimeframeConfig: unknown;
 
   beforeEach(async () => {
     await setupUnitTestMocks();
 
     // Import after mocks are set up
-    const advancedOps = await import(
       '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
     );
     searchByContentConfig = advancedOps.searchByContentConfig;
@@ -33,7 +20,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
   describe('search-by-content tool', () => {
     it('should search companies by notes content', async () => {
-      const mockResults = [
         {
           id: { record_id: 'comp-1' },
           values: {
@@ -52,13 +38,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         limit: 10,
       };
 
-      const result = await searchByContentConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSearchService.searchRecords).toHaveBeenCalled();
     });
 
     it('should search people by notes content', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -77,13 +61,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         limit: 5,
       };
 
-      const result = await searchByContentConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSearchService.searchRecords).toHaveBeenCalled();
     });
 
     it('should search people by activity content', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -101,7 +83,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         search_query: 'activity search',
       };
 
-      const result = await searchByContentConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSpecialized.searchPeopleByActivity).toHaveBeenCalledWith({
         dateRange: {
@@ -124,7 +105,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
     });
 
     it('should format content search results correctly', async () => {
-      const mockResults = [
         {
           id: { record_id: 'comp-1' },
           values: {
@@ -136,7 +116,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.formatResourceType.mockReturnValue('company');
 
-      const formatted = (searchByContentConfig.formatResult as any)(
         mockResults,
         ContentSearchType.NOTES,
         UniversalResourceType.COMPANIES
@@ -147,7 +126,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
     });
 
     it('should handle invalid resource types in content search', async () => {
-      const invalidParams = {
         resource_type: 'invalid-type' as any,
         content_type: ContentSearchType.NOTES,
         search_query: 'test',
@@ -163,7 +141,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
   describe('search-by-timeframe tool', () => {
     it('should search people by creation date', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -184,7 +161,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         limit: 10,
       };
 
-      const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSpecialized.searchPeopleByCreationDate).toHaveBeenCalledWith({
         start: '2023-12-01T00:00:00Z',
@@ -193,7 +169,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
     });
 
     it('should search people by modification date', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -213,13 +188,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         end_date: '2023-12-31T23:59:59Z',
       };
 
-      const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSearchService.searchRecords).toHaveBeenCalled();
     });
 
     it('should search people by last interaction with date validation', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -238,7 +211,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         end_date: '2023-12-31T23:59:59Z',
       };
 
-      const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSearchService.searchRecords).toHaveBeenCalled();
     });
@@ -257,7 +229,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
     it('should support timeframe search for companies', async () => {
       // Companies timeframe search is now enabled
       // This test validates that the old restriction is removed
-      const mockResults = [
         {
           id: { record_id: 'comp-1' },
           values: { name: [{ value: 'Test Company' }] },
@@ -274,13 +245,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       };
 
       // Should successfully execute without throwing errors
-      const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSearchService.searchRecords).toHaveBeenCalled();
     });
 
     it('should format timeframe results with date info', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -293,7 +262,6 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.formatResourceType.mockReturnValue('person');
 
-      const formatted = (searchByTimeframeConfig.formatResult as any)(
         mockResults,
         TimeframeType.CREATED,
         UniversalResourceType.PEOPLE
@@ -311,13 +279,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       const { mockSchemas } = getMockInstances();
 
       // Store the original mock implementation to restore it later
-      const originalMock = mockSchemas.validateUniversalToolParams;
 
       mockSchemas.validateUniversalToolParams.mockImplementation(() => {
         throw new Error('Validation failed');
       });
 
-      const tools = [
         {
           tool: searchByContentConfig,
           params: {
@@ -341,14 +307,14 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       // Restore the original mock behavior to not affect other tests
       mockSchemas.validateUniversalToolParams.mockImplementation(
-        (operation: string, params: any) => {
+        (operation: string, params: unknown) => {
           return params || {};
         }
       );
     });
 
     it('should handle empty results gracefully', async () => {
-      const emptyResults: any[] = [];
+      const emptyResults: unknown[] = [];
 
       // For empty arrays, formatters should show "found 0" not "No results found" based on current implementation
       expect(

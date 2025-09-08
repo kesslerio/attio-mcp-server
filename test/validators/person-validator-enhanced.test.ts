@@ -1,8 +1,5 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import {
-  PersonValidator,
-  searchPeopleByEmails,
-} from '../../src/objects/people-write.js';
+
 import { searchCompanies } from '../../src/objects/companies/search.js';
 
 // Mock the API client to avoid initialization issues
@@ -10,7 +7,6 @@ vi.mock('../../src/api/attio-client.js');
 
 // Mock people search functions
 vi.mock('../../src/objects/people-write.js', async () => {
-  const actual = await vi.importActual('../../src/objects/people-write.js');
   return {
     ...actual,
     searchPeopleByEmails: vi.fn(),
@@ -31,7 +27,6 @@ describe('PersonValidator.validateCreate', () => {
     (searchPeopleByEmails as vi.Mock).mockResolvedValue([
       { email: 'dup@example.com', exists: true, personId: 'p1' },
     ]);
-    const attrs = { name: 'Test', email_addresses: ['dup@example.com'] } as any;
     await expect(PersonValidator.validateCreate(attrs)).rejects.toThrow(
       'Person(s) with email(s) dup@example.com already exist'
     );
@@ -44,12 +39,10 @@ describe('PersonValidator.validateCreate', () => {
     (searchCompanies as vi.Mock).mockResolvedValue([
       { id: { record_id: 'comp_1' } },
     ]);
-    const attrs = {
       name: 'Test',
       company: 'Acme',
       email_addresses: ['a@b.com'],
     } as any;
-    const result = await PersonValidator.validateCreate(attrs);
     expect(result.company).toEqual({ record_id: 'comp_1' });
   });
 
@@ -58,7 +51,6 @@ describe('PersonValidator.validateCreate', () => {
       { email: 'a@b.com', exists: false },
     ]);
     (searchCompanies as vi.Mock).mockResolvedValue([]);
-    const attrs = {
       name: 'Test',
       company: 'None',
       email_addresses: ['a@b.com'],

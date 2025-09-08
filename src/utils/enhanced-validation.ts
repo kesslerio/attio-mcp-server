@@ -4,10 +4,6 @@
  */
 
 import { ValidationResult } from './validation.js';
-import {
-  getObjectAttributeMetadata,
-  getFieldValidationRules,
-} from '../api/attribute-types.js';
 
 /**
  * Enhanced validation result with detailed error information
@@ -70,7 +66,6 @@ export function validateFieldExistence(
   const missing: string[] = [];
 
   for (const field of requiredFields) {
-    const value = data[field];
     if (value === undefined || value === null || value === '') {
       errors.push(`Required field '${field}' is missing or empty`);
       missing.push(field);
@@ -95,7 +90,6 @@ export function validateSelectField(
 ): EnhancedValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const fieldLabel = fieldName || 'field';
 
   if (value === undefined || value === null) {
     return { isValid: true, errors, warnings };
@@ -174,7 +168,6 @@ async function validateFieldType(
 
   // Pattern validation (email, URL, phone)
   if (rules.pattern && typeof value === 'string') {
-    const regex = new RegExp(rules.pattern);
     if (!regex.test(value)) {
       switch (rules.pattern) {
         case '^[^@]+@[^@]+\\.[^@]+$':
@@ -196,7 +189,6 @@ async function validateFieldType(
 
   // Enum validation for select fields
   if (rules.enum && rules.enum.length > 0) {
-    const selectValidation = validateSelectField(
       value,
       rules.enum.map(String),
       fieldName
@@ -228,7 +220,6 @@ export async function validateRecordFields(
 
   try {
     // Get attribute metadata for the resource type
-    const attributeMetadata = await getObjectAttributeMetadata(resourceType);
 
     if (attributeMetadata.size === 0) {
       warnings.push(
@@ -238,7 +229,6 @@ export async function validateRecordFields(
 
     // Validate each field in the data
     for (const [fieldName, value] of Object.entries(data)) {
-      const metadata = attributeMetadata.get(fieldName);
 
       if (!metadata) {
         // For tasks, provide specific guidance about invalid fields (Issue #417)
@@ -265,13 +255,11 @@ export async function validateRecordFields(
 
       // Get validation rules for this field
       try {
-        const validationRules = await getFieldValidationRules(
           resourceType,
           fieldName
         );
 
         // Validate field type and format
-        const typeValidation = await validateFieldType(
           fieldName,
           value,
           validationRules
@@ -299,7 +287,6 @@ export async function validateRecordFields(
         }
       }
 
-      const requiredFieldValidation = validateFieldExistence(
         data,
         requiredFields
       );
@@ -308,7 +295,6 @@ export async function validateRecordFields(
       missingFields.push(...(requiredFieldValidation.missingFields || []));
     }
   } catch (metadataError) {
-    const errorMessage =
       metadataError instanceof Error ? metadataError.message : 'Unknown error';
     errors.push(`Failed to validate fields: ${errorMessage}`);
   }

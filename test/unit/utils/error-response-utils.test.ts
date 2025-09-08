@@ -3,23 +3,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  createFieldValidationError,
-  createSelectOptionError,
-  createMultiSelectOptionError,
-  createReadOnlyFieldError,
-  createUnknownFieldError,
-  createFieldTypeMismatchError,
-  createRequiredFieldError,
-  formatEnhancedErrorResponse,
-  createErrorResponse,
-  ValidationErrorCode,
-} from '../../../src/utils/error-response-utils.js';
 
 describe('error-response-utils', () => {
   describe('createFieldValidationError', () => {
     it('should create a field validation error with suggestions', () => {
-      const error = createFieldValidationError(
         'name',
         'companies',
         'Field is required',
@@ -45,7 +32,6 @@ describe('error-response-utils', () => {
     });
 
     it('should create a field validation error without suggestions', () => {
-      const error = createFieldValidationError(
         'email',
         'people',
         'Invalid email format'
@@ -59,7 +45,6 @@ describe('error-response-utils', () => {
 
   describe('createSelectOptionError', () => {
     it('should create a select option error with valid options', () => {
-      const error = createSelectOptionError('company_type', 'invalid_option', [
         'startup',
         'enterprise',
         'small_business',
@@ -90,7 +75,6 @@ describe('error-response-utils', () => {
     });
 
     it('should handle few options without truncation', () => {
-      const error = createSelectOptionError('status', 'invalid', [
         'active',
         'inactive',
       ]);
@@ -101,7 +85,6 @@ describe('error-response-utils', () => {
 
   describe('createMultiSelectOptionError', () => {
     it('should create a multi-select option error', () => {
-      const error = createMultiSelectOptionError(
         'tags',
         ['invalid_tag1', 'invalid_tag2'],
         ['important', 'urgent', 'follow_up', 'completed', 'archived']
@@ -133,7 +116,6 @@ describe('error-response-utils', () => {
 
   describe('createReadOnlyFieldError', () => {
     it('should create a read-only field error for single field', () => {
-      const error = createReadOnlyFieldError(['created_at'], 'companies');
 
       expect(error.error).toContain(
         "Cannot update read-only field 'created_at'"
@@ -153,7 +135,6 @@ describe('error-response-utils', () => {
     });
 
     it('should create a read-only field error for multiple fields', () => {
-      const error = createReadOnlyFieldError(
         ['created_at', 'updated_at'],
         'people'
       );
@@ -173,7 +154,6 @@ describe('error-response-utils', () => {
 
   describe('createUnknownFieldError', () => {
     it('should create an unknown field error with suggestions', () => {
-      const error = createUnknownFieldError(
         'company_description',
         'companies',
         ['description', 'notes']
@@ -194,7 +174,6 @@ describe('error-response-utils', () => {
     });
 
     it('should create an unknown field error without suggestions', () => {
-      const error = createUnknownFieldError('invalid_field', 'people');
 
       expect(error.error).not.toContain('Did you mean');
       expect(error.suggestions).toEqual([
@@ -205,7 +184,6 @@ describe('error-response-utils', () => {
 
   describe('createFieldTypeMismatchError', () => {
     it('should create a field type mismatch error', () => {
-      const error = createFieldTypeMismatchError(
         'age',
         'number',
         'string',
@@ -229,7 +207,6 @@ describe('error-response-utils', () => {
 
   describe('createRequiredFieldError', () => {
     it('should create a required field error for single field', () => {
-      const error = createRequiredFieldError(['name'], 'companies');
 
       expect(error.error).toContain("Required field 'name' is missing");
       expect(error.error_code).toBe(ValidationErrorCode.REQUIRED_FIELD_MISSING);
@@ -240,7 +217,6 @@ describe('error-response-utils', () => {
     });
 
     it('should create a required field error for multiple fields', () => {
-      const error = createRequiredFieldError(['name', 'email'], 'people');
 
       expect(error.error).toContain(
         "Required fields 'name', 'email' are missing"
@@ -254,12 +230,10 @@ describe('error-response-utils', () => {
 
   describe('formatEnhancedErrorResponse', () => {
     it('should format an enhanced error response with all components', () => {
-      const errorResponse = createSelectOptionError('status', 'invalid', [
         'active',
         'inactive',
       ]);
 
-      const formatted = formatEnhancedErrorResponse(errorResponse);
 
       expect(formatted.content[0].type).toBe('text');
       expect(formatted.content[0].text).toContain(
@@ -286,21 +260,17 @@ describe('error-response-utils', () => {
     });
 
     it('should format an error response without suggestions', () => {
-      const errorResponse = {
         error: 'Simple error message',
         error_code: 'SIMPLE_ERROR',
       };
 
-      const formatted = formatEnhancedErrorResponse(errorResponse);
 
       expect(formatted.content[0].text).toBe('Simple error message');
       expect(formatted.content[0].text).not.toContain('💡 Suggestions:');
     });
 
     it('should include help URL when provided', () => {
-      const errorResponse = createUnknownFieldError('test_field', 'companies');
 
-      const formatted = formatEnhancedErrorResponse(errorResponse);
 
       expect(formatted.content[0].text).toContain(
         '📖 Documentation: https://docs.attio.com/api-reference/companies'
@@ -310,7 +280,6 @@ describe('error-response-utils', () => {
 
   describe('createErrorResponse', () => {
     it('should create a simple error response', () => {
-      const error = createErrorResponse('Something went wrong');
 
       expect(error.content[0].type).toBe('text');
       expect(error.content[0].text).toBe('Something went wrong');

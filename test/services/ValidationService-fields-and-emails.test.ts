@@ -2,28 +2,11 @@
  * Split: ValidationService fields and email validations
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-vi.mock('../../src/utils/validation/email-validation.js', () => ({
-  isValidEmail: vi.fn(),
-}));
-vi.mock('../../src/utils/validation.js', () => ({ isValidId: vi.fn() }));
-vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
-  isValidUUID: vi.fn(),
-  createInvalidUUIDError: vi.fn(),
-}));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
-  enhancedPerformanceTracker: { markTiming: vi.fn(), endOperation: vi.fn() },
-}));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
-  validateFields: vi.fn(),
-  FIELD_MAPPINGS: {
-    companies: { validFields: ['name', 'domain', 'industry'] },
-    people: { validFields: ['first_name', 'last_name', 'email_addresses'] },
-  },
-}));
-import { ValidationService } from '../../src/services/ValidationService.js';
+
+import { isValidEmail } from '../../src/utils/validation/email-validation.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { validateFields } from '../../src/handlers/tool-configs/universal/field-mapper.js';
-import { isValidEmail } from '../../src/utils/validation/email-validation.js';
+import { ValidationService } from '../../src/services/ValidationService.js';
 
 describe('ValidationService', () => {
   beforeEach(() => {
@@ -39,7 +22,6 @@ describe('ValidationService', () => {
         warnings: [],
         suggestions: [],
       } as any);
-      const result = ValidationService.validateFieldsWithErrorHandling(
         UniversalResourceType.COMPANIES,
         { name: 'Test Company' },
         false
@@ -55,7 +37,6 @@ describe('ValidationService', () => {
         warnings: ['Domain should be provided'],
         suggestions: ['Try using a valid company name'],
       } as any);
-      const result = ValidationService.validateFieldsWithErrorHandling(
         UniversalResourceType.COMPANIES,
         {},
         false
@@ -86,7 +67,6 @@ describe('ValidationService', () => {
     });
 
     it('should truncate suggestions in error message', () => {
-      const manySuggestions = Array.from(
         { length: 10 },
         (_, i) => `Suggestion ${i + 1}`
       );
@@ -96,7 +76,6 @@ describe('ValidationService', () => {
         warnings: [],
         suggestions: manySuggestions,
       } as any);
-      const result = ValidationService.validateFieldsWithErrorHandling(
         UniversalResourceType.COMPANIES,
         {},
         false
@@ -107,7 +86,6 @@ describe('ValidationService', () => {
 
   describe('validateEmailAddresses', () => {
     it('should validate complex email structures and throw on invalid formats', () => {
-      const recordData = {
         email_addresses: [
           { value: 'valid@email.com' },
           { value: 'invalid-email' },

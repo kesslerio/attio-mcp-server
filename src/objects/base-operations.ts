@@ -2,13 +2,8 @@
  * Base operations for all Attio objects with dynamic field detection
  */
 import { formatAllAttributes } from '../api/attribute-types.js';
-import {
-  createObjectRecord,
-  updateObjectRecord,
-  deleteObjectRecord,
-} from './records/index.js';
-import { ResourceType, AttioRecord } from '../types/attio.js';
 import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
+import { ResourceType, AttioRecord } from '../types/attio.js';
 
 /**
  * Translates all attribute names in a record using the attribute mapping system
@@ -25,7 +20,6 @@ function translateAttributeNames(
 
   for (const [userKey, value] of Object.entries(attributes)) {
     // Translate the attribute name using the mapping system
-    const apiKey = getAttributeSlug(userKey, objectType);
 
     // Log the translation in development mode
     if (process.env.NODE_ENV === 'development' && userKey !== apiKey) {
@@ -50,22 +44,19 @@ function translateAttributeNames(
  */
 export async function createObjectWithDynamicFields<T extends AttioRecord>(
   objectType: ResourceType,
-  attributes: any,
-  validator?: (attrs: any) => Promise<unknown>
+  attributes: unknown,
+  validator?: (attrs: unknown) => Promise<unknown>
 ): Promise<T> {
   // Validate if validator provided
-  const validatedAttributes = validator
     ? await validator(attributes)
     : attributes;
 
   // Translate attribute names using the mapping system (e.g., "b2b_segment" -> "type_persona")
-  const mappedAttributes = translateAttributeNames(
     objectType,
     validatedAttributes
   );
 
   // Use dynamic field type detection to format attributes correctly
-  const transformedAttributes = await formatAllAttributes(
     objectType,
     mappedAttributes
   );
@@ -91,7 +82,6 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
 
   try {
     // Create the object
-    const result = await createObjectRecord<T>(
       objectType,
       transformedAttributes
     );
@@ -113,7 +103,6 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
     }
 
     // Additional check for empty objects that might slip through, but allow legitimate create responses
-    const looksLikeCreatedRecord =
       result &&
       typeof result === 'object' &&
       (('id' in result && (result as any).id?.record_id) ||
@@ -167,22 +156,19 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
 export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   objectType: ResourceType,
   recordId: string,
-  attributes: any,
-  validator?: (id: string, attrs: any) => Promise<unknown>
+  attributes: unknown,
+  validator?: (id: string, attrs: unknown) => Promise<unknown>
 ): Promise<T> {
   // Validate if validator provided
-  const validatedAttributes = validator
     ? await validator(recordId, attributes)
     : attributes;
 
   // Translate attribute names using the mapping system (e.g., "b2b_segment" -> "type_persona")
-  const mappedAttributes = translateAttributeNames(
     objectType,
     validatedAttributes
   );
 
   // Use dynamic field type detection to format attributes correctly
-  const transformedAttributes = await formatAllAttributes(
     objectType,
     mappedAttributes
   );
@@ -203,7 +189,6 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   }
 
   // Update the object
-  const result = await updateObjectRecord<T>(
     objectType,
     recordId,
     transformedAttributes
@@ -259,11 +244,10 @@ export async function updateObjectAttributeWithDynamicFields<
   objectType: ResourceType,
   recordId: string,
   attributeName: string,
-  attributeValue: any,
-  updateFn: (id: string, attrs: any) => Promise<T>
+  attributeValue: unknown,
+  updateFn: (id: string, attrs: unknown) => Promise<T>
 ): Promise<T> {
   // Update the specific attribute using the provided update function
-  const attributes = { [attributeName]: attributeValue };
   return await updateFn(recordId, attributes);
 }
 

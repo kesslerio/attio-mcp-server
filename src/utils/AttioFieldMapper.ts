@@ -34,7 +34,6 @@ const DEPRECATED_FIELDS: Record<string, string> = {
  */
 export function mapFieldName(genericField: string): string {
   // Check for deprecated mappings
-  const deprecated = DEPRECATED_FIELDS[genericField];
   if (deprecated) {
     console.warn(
       `[AttioFieldMapper] Deprecated field '${genericField}' used. Use '${deprecated}' instead. Attio API uses '${deprecated}' for timestamp fields.`
@@ -65,8 +64,6 @@ export function mapFieldName(genericField: string): string {
  * Different resources may support different timestamp fields
  */
 export function getValidTimestampFields(resourceType: string): string[] {
-  const baseFields = ['created_at', 'modified_at'];
-
   switch (resourceType) {
     case 'companies':
     case 'people':
@@ -87,6 +84,5 @@ export function isValidTimestampField(
   fieldName: string,
   resourceType: string
 ): boolean {
-  const validFields = getValidTimestampFields(resourceType);
   return validFields.includes(fieldName);
 }

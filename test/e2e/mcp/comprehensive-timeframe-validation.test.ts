@@ -44,7 +44,6 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).not.toContain('Invalid field');
               expect(content.text).not.toContain('Unknown object slug');
@@ -73,7 +72,6 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).not.toContain("Invalid field 'gt'");
             }
@@ -101,7 +99,6 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).not.toContain("Invalid field 'lt'");
             }
@@ -194,7 +191,6 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
           // Should provide validation error about missing timeframe_attribute
           if (result.isError && result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).toContain('timeframe_attribute');
             }
@@ -223,7 +219,6 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).not.toContain('Invalid field');
             }
@@ -312,7 +307,6 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
           // Custom fields might not exist, so graceful handling expected
           if (result.isError && result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               // Should not be the old structure errors
               expect(content.text).not.toContain('Unknown object slug: c');
@@ -344,7 +338,6 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               expect(content.text).not.toContain('Invalid field');
             }

@@ -6,23 +6,13 @@
  */
 
 // Load environment variables from .env file BEFORE any other imports
+import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import * as dotenv from 'dotenv';
-const result = dotenv.config({ debug: false });
+import type { AxiosInstance } from 'axios';
 
-if (process.env.E2E_MODE === 'true') {
-  console.error('[E2E Setup] Loading .env file for E2E tests...');
-  if (result.error) {
-    console.error('[E2E Setup] Error loading .env:', result.error);
-  } else {
-    console.error('[E2E Setup] .env loaded successfully');
-    console.error(
-      '[E2E Setup] ATTIO_API_KEY available:',
-      !!process.env.ATTIO_API_KEY
-    );
+import type { AnyTestData } from './types/index.js';
 
     // Log API contract mode for debugging
-    const strictMode = process.env.E2E_API_CONTRACT_STRICT !== 'false';
-    const debugMode = process.env.E2E_API_CONTRACT_DEBUG === 'true';
     console.error(
       '[E2E Setup] API Contract Mode:',
       strictMode && !debugMode
@@ -131,7 +121,6 @@ export class E2ETestBase {
 
     // Initialize API client
     try {
-      const apiKey = process.env.ATTIO_API_KEY;
       if (!apiKey) {
         throw new Error('ATTIO_API_KEY environment variable is required');
       }
@@ -174,14 +163,11 @@ export class E2ETestBase {
       `🧹 Cleaning up ${this.createdObjects.length} test objects...`
     );
 
-    const cleanupResults = await Promise.allSettled(
       this.createdObjects.map((obj) => this.cleanupObject(obj))
     );
 
-    const successful = cleanupResults.filter(
       (r) => r.status === 'fulfilled'
     ).length;
-    const failed = cleanupResults.filter((r) => r.status === 'rejected').length;
 
     console.error(
       `✅ Cleanup completed: ${successful} successful, ${failed} failed`
@@ -235,7 +221,6 @@ export class E2ETestBase {
   private static async validateApiConnectivity(): Promise<void> {
     try {
       // Simple API call to validate connectivity
-      const response = await this.apiClient.get('/objects');
 
       if (!response.data || !Array.isArray(response.data.data)) {
         throw new Error('Invalid API response structure');
@@ -311,9 +296,7 @@ export class E2ETestBase {
     maxRetries?: number,
     baseDelay?: number
   ): Promise<T> {
-    const retries =
       maxRetries ?? this.setupOptions.retryConfig?.maxRetries ?? 3;
-    const delay =
       baseDelay ?? this.setupOptions.retryConfig?.retryDelay ?? 1000;
 
     let lastError: Error;
@@ -328,7 +311,6 @@ export class E2ETestBase {
           throw lastError;
         }
 
-        const backoffDelay = delay * Math.pow(2, attempt - 1);
         console.error(
           `⏳ Attempt ${attempt} failed, retrying in ${backoffDelay}ms...`
         );
@@ -347,7 +329,6 @@ export class E2ETestBase {
     timeout: number = 10000,
     interval: number = 500
   ): Promise<void> {
-    const start = Date.now();
 
     while (Date.now() - start < timeout) {
       if (await condition()) {
@@ -370,9 +351,6 @@ export class E2ETestBase {
    * Create unique test identifier
    */
   static createTestId(prefix: string = 'test'): string {
-    const config = getE2EConfig();
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
     return `${config.testData.testDataPrefix}${prefix}_${timestamp}_${random}`;
   }
 
@@ -424,9 +402,6 @@ export class E2ETestBase {
     result: T;
     executionTime: number;
   }> {
-    const start = Date.now();
-    const result = await operation();
-    const executionTime = Date.now() - start;
 
     return { result, executionTime };
   }
@@ -435,9 +410,7 @@ export class E2ETestBase {
    * Rate limit API calls
    */
   static async rateLimitedCall<T>(operation: () => Promise<T>): Promise<T> {
-    const config = this.getConfig();
     const { requestsPerSecond } = config.api.rateLimit;
-    const delay = 1000 / requestsPerSecond;
 
     // Simple rate limiting - wait before operation
     await this.sleep(delay);
@@ -473,7 +446,6 @@ export class E2ESetupUtils {
     }
 
     // Check for workspace-specific settings
-    const config = getE2EConfig();
     if (!config.workspace.customFields.companies.length) {
       warnings.push(
         'No custom company fields configured - some tests may be limited'
@@ -505,8 +477,7 @@ export class E2ESetupUtils {
   /**
    * Generate test report
    */
-  static generateTestReport(results: any[]): string {
-    const report = {
+  static generateTestReport(results: unknown[]): string {
       timestamp: new Date().toISOString(),
       totalTests: results.length,
       passed: results.filter((r) => r.status === 'passed').length,

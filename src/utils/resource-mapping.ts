@@ -8,22 +8,6 @@
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 
 /**
- * Resource path configuration
- */
-export interface ResourcePathConfig {
-  /** Base API path for the resource */
-  basePath: string;
-  /** Singular form of the resource name */
-  singular: string;
-  /** Plural form of the resource name */
-  plural: string;
-  /** Whether this resource uses a special path structure */
-  customPath?: boolean;
-  /** ID prefix used for this resource type */
-  idPrefix?: string;
-}
-
-/**
  * Mapping of resource types to their API path configurations
  */
 const RESOURCE_PATH_MAP: Record<string, ResourcePathConfig> = {
@@ -87,8 +71,6 @@ export class ResourceMapper {
    * Get the API base path for a resource type
    */
   static getBasePath(resourceType: string): string {
-    const config = RESOURCE_PATH_MAP[resourceType.toLowerCase()];
-
     if (!config) {
       // For unknown types, check if it's a custom object type
       // Custom objects typically use /objects/{type} format
@@ -110,8 +92,6 @@ export class ResourceMapper {
    * Get the full API path for a specific resource record
    */
   static getResourcePath(resourceType: string, recordId?: string): string {
-    const basePath = this.getBasePath(resourceType);
-
     if (recordId) {
       return `${basePath}/${recordId}`;
     }
@@ -123,8 +103,6 @@ export class ResourceMapper {
    * Get the search path for a resource type
    */
   static getSearchPath(resourceType: string): string {
-    const basePath = this.getBasePath(resourceType);
-
     // Lists use a different search endpoint
     if (resourceType.toLowerCase() === 'lists') {
       return '/lists';
@@ -138,7 +116,6 @@ export class ResourceMapper {
    * Get the singular form of a resource type
    */
   static getSingular(resourceType: string): string {
-    const config = RESOURCE_PATH_MAP[resourceType.toLowerCase()];
     return config?.singular || resourceType.toLowerCase();
   }
 
@@ -146,7 +123,6 @@ export class ResourceMapper {
    * Get the plural form of a resource type
    */
   static getPlural(resourceType: string): string {
-    const config = RESOURCE_PATH_MAP[resourceType.toLowerCase()];
     return config?.plural || resourceType.toLowerCase();
   }
 
@@ -170,8 +146,6 @@ export class ResourceMapper {
     // - Don't contain special characters (except underscore)
     // - Are lowercase or have consistent casing
     // - Don't match reserved keywords
-    const customObjectPattern = /^[a-z][a-z0-9_]*$/i;
-    const reservedKeywords = ['api', 'v2', 'auth', 'webhooks', 'settings'];
 
     return (
       customObjectPattern.test(resourceType) &&
@@ -183,8 +157,6 @@ export class ResourceMapper {
    * Normalize a resource type to its canonical form
    */
   static normalizeResourceType(resourceType: string): string {
-    const lowercased = resourceType.toLowerCase();
-
     // Handle common variations
     const variations: Record<string, string> = {
       company: 'companies',
@@ -230,7 +202,6 @@ export class ResourceMapper {
    * Get the ID prefix for a resource type
    */
   static getIdPrefix(resourceType: string): string | undefined {
-    const config = RESOURCE_PATH_MAP[resourceType.toLowerCase()];
     return config?.idPrefix;
   }
 
@@ -238,8 +209,6 @@ export class ResourceMapper {
    * Validate if an ID matches the expected format for a resource type
    */
   static isValidIdFormat(resourceType: string, id: string): boolean {
-    const prefix = this.getIdPrefix(resourceType);
-
     // If we have a known prefix, check if the ID starts with it
     if (prefix) {
       return id.startsWith(prefix);
@@ -247,7 +216,6 @@ export class ResourceMapper {
 
     // For unknown types, just check basic format
     // IDs should be alphanumeric with underscores and hyphens
-    const genericIdPattern = /^[a-zA-Z0-9_-]+$/;
     return genericIdPattern.test(id);
   }
 
@@ -256,7 +224,6 @@ export class ResourceMapper {
    */
   static getAttributesPath(resourceType: string): string {
     // Attributes are typically at the object level, not record level
-    const normalized = this.normalizeResourceType(resourceType);
 
     // Special handling for lists
     if (normalized === 'lists') {
@@ -285,10 +252,8 @@ export class ResourceMapper {
     offset?: number;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
-    [key: string]: any;
+    [key: string]: unknown;
   }): URLSearchParams {
-    const queryParams = new URLSearchParams();
-
     // Add pagination params
     if (params.limit !== undefined) {
       queryParams.append('limit', String(params.limit));

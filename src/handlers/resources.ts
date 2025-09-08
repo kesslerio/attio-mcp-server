@@ -2,17 +2,10 @@
  * Handlers for resource-related requests
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../utils/error-handler.js';
-import {
-  listCompanies,
-  getCompanyDetails,
-} from '../objects/companies/index.js';
-import { listPeople, getPersonDetails } from '../objects/people/index.js';
 import { getLists, getListDetails } from '../objects/lists.js';
+import { listPeople, getPersonDetails } from '../objects/people/index.js';
 import { parseResourceUri, formatResourceUri } from '../utils/uri-parser.js';
 import { ResourceType, AttioRecord, AttioList } from '../types/attio.js';
 
@@ -66,13 +59,11 @@ export function registerResourceHandlers(server: Server): void {
   server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
     try {
       // Determine resource type (default to companies if not specified)
-      const resourceType =
-        (request.params?.type as ResourceType) || ResourceType.COMPANIES;
+      (request.params?.type as ResourceType) || ResourceType.COMPANIES;
 
       switch (resourceType) {
         case ResourceType.PEOPLE:
           try {
-            const people = await listPeople();
             return {
               resources: people.map((person) =>
                 formatRecordAsResource(person, ResourceType.PEOPLE)
@@ -89,9 +80,7 @@ export function registerResourceHandlers(server: Server): void {
 
         case ResourceType.LISTS:
           try {
-            const lists = await getLists();
             // Ensure lists is always an array
-            const safeList = Array.isArray(lists) ? lists : [];
             return {
               resources: safeList.map((list) => formatListAsResource(list)),
             };
@@ -105,7 +94,6 @@ export function registerResourceHandlers(server: Server): void {
         case ResourceType.COMPANIES:
         default:
           try {
-            const companies = await listCompanies();
             return {
               resources: companies.map((company) =>
                 formatRecordAsResource(company, ResourceType.COMPANIES)
@@ -133,14 +121,11 @@ export function registerResourceHandlers(server: Server): void {
   // Handler for reading resource details (Companies, People, and Lists)
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     try {
-      const uri = request.params.uri;
       const [resourceType, id] = parseResourceUri(uri);
 
       switch (resourceType) {
         case ResourceType.PEOPLE:
           try {
-            const person = await getPersonDetails(id);
-
             return {
               contents: [
                 {
@@ -161,8 +146,6 @@ export function registerResourceHandlers(server: Server): void {
 
         case ResourceType.LISTS:
           try {
-            const list = await getListDetails(id);
-
             return {
               contents: [
                 {
@@ -183,8 +166,6 @@ export function registerResourceHandlers(server: Server): void {
 
         case ResourceType.COMPANIES:
           try {
-            const company = await getCompanyDetails(id);
-
             return {
               contents: [
                 {

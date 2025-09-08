@@ -2,22 +2,25 @@
 
 // Load environment variables from .env file manually to avoid dotenv banner output
 // This ensures MCP JSON-RPC protocol compliance by preventing stdout contamination
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { error as logError, OperationType } from './utils/logger.js';
+import { initializeAttioClient } from './api/attio-client.js';
+import { registerPromptHandlers } from './prompts/handlers.js';
+import { registerResourceHandlers } from './handlers/resources.js';
+import { registerToolHandlers } from './handlers/tools/index.js';
+
 function loadEnvFile() {
   try {
-    const envPath = path.resolve(process.cwd(), '.env');
     if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      const lines = envContent.split('\n');
 
       for (const line of lines) {
-        const trimmedLine = line.trim();
         if (trimmedLine && !trimmedLine.startsWith('#')) {
           const [key, ...valueParts] = trimmedLine.split('=');
           if (key && valueParts.length > 0) {
-            const value = valueParts.join('=').replace(/^["']|["']$/g, '');
             if (!process.env[key.trim()]) {
               process.env[key.trim()] = value;
             }
@@ -52,7 +55,6 @@ async function main() {
     initializeAttioClient(process.env.ATTIO_API_KEY);
 
     // Create MCP server with proper capabilities declaration
-    const mcpServer = new Server(
       {
         name: 'attio-mcp-server',
         version: '0.2.0',
@@ -106,7 +108,6 @@ async function main() {
     });
 
     // Connect to stdio transport - this is all we need!
-    const transport = new StdioServerTransport();
     await mcpServer.connect(transport);
 
     // Server is now running and will process requests via stdio

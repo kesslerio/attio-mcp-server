@@ -3,46 +3,6 @@
  */
 import { ValidationLevel, ValidationResult, ToolResult } from './types.js';
 
-export class TestValidator {
-  private static toolSchemas: Record<string, any> = {
-    'search-records': {
-      expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid resource type']
-    },
-    'create-record': {
-      expectedFields: ['id', 'data', 'attributes'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Missing required parameter']
-    },
-    'search-by-timeframe': {
-      expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid date range', 'Unsupported', 'Bad Request']
-    },
-    'advanced-search': {
-      expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid filter']
-    },
-    'search-by-relationship': {
-      expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid relationship type']
-    },
-    'batch-operations': {
-      expectedFields: ['results', 'operations'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Batch operation failed']
-    },
-    'get-detailed-info': {
-      expectedFields: ['data', 'attributes'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Record not found']
-    },
-    'search-by-content': {
-      expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid search query']
-    },
-    'list-notes': {
-      expectedFields: ['data', 'notes'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid record ID']
-    }
-  };
-
   static validateToolResult(toolName: string, toolResult: ToolResult): ValidationResult {
     const validation: ValidationResult = {
       frameworkSuccess: false,
@@ -66,14 +26,11 @@ export class TestValidator {
       return validation;
     }
 
-    const content = toolResult.content[0];
     if (!('text' in content)) {
       validation.errorDetails.push('Response content missing text field');
       return validation;
     }
 
-    const responseText = content.text;
-    const schema = this.toolSchemas[toolName];
     
     if (schema) {
       // Check for API error patterns
@@ -82,9 +39,7 @@ export class TestValidator {
           validation.errorDetails.push(`API error detected: ${errorPattern}`);
           
           // Extract HTTP status code if present
-          const statusMatch = responseText.match(/status code (\d+)/i);
           if (statusMatch) {
-            const statusCode = parseInt(statusMatch[1]);
             if (statusCode >= 400) {
               validation.errorDetails.push(`HTTP ${statusCode} error`);
             }
@@ -110,9 +65,7 @@ export class TestValidator {
       }
       
       // For responses that show records found
-      const recordCountMatch = responseText.match(/found (\d+)/i);
       if (recordCountMatch) {
-        const count = parseInt(recordCountMatch[1]);
         if (count >= 0) {
           hasValidData = true;
           if (count === 0) {

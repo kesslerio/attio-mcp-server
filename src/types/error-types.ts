@@ -102,7 +102,6 @@ export function safeGet<T = unknown>(
     return defaultValue;
   }
 
-  const keys = path.split('.');
   let current: unknown = obj;
 
   for (const key of keys) {
@@ -143,8 +142,6 @@ export function getProperty<T>(
   if (!isObject(obj) || !(key in obj)) {
     return undefined;
   }
-
-  const value = (obj as Record<string, unknown>)[key];
 
   if (validator) {
     return validator(value) ? value : undefined;

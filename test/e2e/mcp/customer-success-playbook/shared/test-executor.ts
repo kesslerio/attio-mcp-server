@@ -2,6 +2,7 @@
  * Test execution utilities for Customer Success Playbook tests
  */
 import { MCPTestClient } from 'mcp-test-client';
+
 import { PlaybookTestResult, ValidationLevel, ValidationResult, ToolResult } from './types.js';
 import { TestValidator } from './test-validator.js';
 
@@ -12,7 +13,6 @@ export async function executePlaybookTest(
   toolName: string,
   toolParams: Record<string, unknown>
 ): Promise<PlaybookTestResult> {
-  const startTime = performance.now();
 
   try {
     console.log(
@@ -30,8 +30,6 @@ export async function executePlaybookTest(
       toolParams,
       (toolResult: ToolResult) => {
         result = toolResult;
-        const endTime = performance.now();
-        const duration = endTime - startTime;
 
         console.log(`⏱️ Execution time: ${duration.toFixed(2)}ms`);
 
@@ -68,7 +66,6 @@ export async function executePlaybookTest(
               console.warn('   Warnings:', validationResult.warningDetails.join(', '));
             }
             if (toolResult.content && toolResult.content.length > 0) {
-              const content = toolResult.content[0];
               if ('text' in content) {
                 console.log(`📄 Result preview: ${content.text.substring(0, 200)}...`);
               }
@@ -78,7 +75,6 @@ export async function executePlaybookTest(
           case ValidationLevel.FULL_SUCCESS:
             console.log('✅ Full validation success');
             if (toolResult.content && toolResult.content.length > 0) {
-              const content = toolResult.content[0];
               if ('text' in content) {
                 console.log(`📄 Result preview: ${content.text.substring(0, 200)}...`);
               }
@@ -93,11 +89,8 @@ export async function executePlaybookTest(
       }
     );
 
-    const endTime = performance.now();
-    const duration = endTime - startTime;
 
     // Determine overall test success based on validation level
-    const testSuccess = validationLevel === ValidationLevel.FULL_SUCCESS || 
                        validationLevel === ValidationLevel.PARTIAL_SUCCESS;
 
     return {
@@ -110,8 +103,6 @@ export async function executePlaybookTest(
       validationDetails: validationResult || undefined,
     };
   } catch (error) {
-    const endTime = performance.now();
-    const duration = endTime - startTime;
 
     console.error('❌ Test execution failed:', error);
 

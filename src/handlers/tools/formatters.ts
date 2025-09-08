@@ -3,10 +3,6 @@
  */
 import { AttioRecord, AttioListEntry } from '../../types/attio.js';
 import { processListEntries } from '../../utils/record-utils.js';
-import {
-  safeJsonStringify,
-  sanitizeMcpResponse,
-} from '../../utils/json-serializer.js';
 
 /**
  * Safely extract value from record attributes
@@ -23,20 +19,18 @@ function getAttributeValue(
   record:
     | {
         values?: Record<string, unknown> | undefined;
-        [key: string]: any;
+        [key: string]: unknown;
       }
     | undefined,
   fieldName: string
 ): string {
   if (!record?.values) return 'Unknown';
 
-  const fieldValue = record.values[fieldName];
 
   if (!fieldValue) return 'Unknown';
 
   // Handle different value formats
   if (Array.isArray(fieldValue) && fieldValue.length > 0) {
-    const firstValue = fieldValue[0];
     if (
       typeof firstValue === 'object' &&
       firstValue !== null &&
@@ -74,8 +68,6 @@ export function formatSearchResults(
 
   return results
     .map((record, index) => {
-      const name = getAttributeValue(record, 'name');
-      const id = record.id?.record_id || 'Unknown ID';
       return `${index + 1}. ${name} (ID: ${id})`;
     })
     .join('\n');
@@ -92,10 +84,7 @@ export function formatRecordDetails(record: AttioRecord): string {
     return 'No record found.';
   }
 
-  const attributes = record.attributes || ({} as Record<string, unknown>);
-  const formattedAttrs = Object.entries(attributes)
     .map(([key, attr]) => {
-      const value = (attr as any).value || 'N/A';
       return `${key}: ${value}`;
     })
     .join('\n');
@@ -114,14 +103,9 @@ export function formatListEntries(entries: AttioListEntry[]): string {
     return 'No entries found.';
   }
 
-  const processedEntries = processListEntries(entries);
 
   return processedEntries
     .map((entry, index) => {
-      const record = entry.record;
-      const name = getAttributeValue(record, 'name');
-      const entryId = entry.id?.entry_id || 'Unknown Entry ID';
-      const recordId = record?.id?.record_id || 'Unknown ID';
 
       return `${index + 1}. ${name} (Entry: ${entryId}, Record: ${recordId})`;
     })
@@ -135,10 +119,8 @@ export function formatListEntries(entries: AttioListEntry[]): string {
  * @param operation - The type of batch operation
  * @returns Formatted string output
  */
-export function formatBatchResults(result: any, operation: string): string {
-  const summary = result.summary;
-  const details = result.results
-    .map((r: any) =>
+export function formatBatchResults(result: unknown, operation: string): string {
+    .map((r: unknown) =>
       r.success
         ? `✅ Record ${r.id}: ${operation} successfully`
         : `❌ Record ${r.id}: Failed - ${r.error?.message || 'Unknown error'}`
@@ -201,7 +183,6 @@ export function formatResponse(
       : 'Operation completed successfully';
   }
 
-  const response = {
     content: [
       {
         type: 'text',

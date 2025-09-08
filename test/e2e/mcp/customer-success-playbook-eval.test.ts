@@ -9,13 +9,14 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { execSync } from 'child_process';
+import { MCPTestClient } from 'mcp-test-client';
 import { writeFileSync } from 'fs';
+import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+
+import { TEST_CONSTANTS } from './customer-success-playbook/shared/constants.js';
 import { TestValidator } from './customer-success-playbook/shared/test-validator.js';
 import { ValidationLevel, ValidationResult, PlaybookTestResult } from './customer-success-playbook/shared/types.js';
-import { TEST_CONSTANTS } from './customer-success-playbook/shared/constants.js';
 
 interface ToolContent {
   text?: string;
@@ -34,7 +35,6 @@ describe('Customer Success Playbook Validation Suite', () => {
     'feedback satisfaction survey: seeded content for validation',
     'success story expansion opportunity growth – seeded',
   ];
-  const seededTaskTitle = '30-Day Customer Success Check-in';
 
   beforeAll(async () => {
     client = new MCPTestClient({
@@ -44,7 +44,6 @@ describe('Customer Success Playbook Validation Suite', () => {
     await client.init();
 
     // Resolve a real company ID to avoid 404s in later tests
-    const doSeed = process.env.CS_E2E_SEED === 'true';
     try {
       if (doSeed) {
         // Create demo company
@@ -71,9 +70,6 @@ describe('Customer Success Playbook Validation Suite', () => {
             limit: 1,
           },
           (result: ToolResult) => {
-            const content = result?.content?.[0] as ToolContent;
-            const text = content && 'text' in content ? (content.text as string) : '';
-            const m = text.match(/\(ID:\s*([0-9a-fA-F-]{10,})\)/);
             if (m) {
               seededCompanyId = m[1];
               resolvedCompanyId = seededCompanyId;
@@ -116,9 +112,6 @@ describe('Customer Success Playbook Validation Suite', () => {
             limit: 3,
           },
           (result: ToolResult) => {
-            const content = result?.content?.[0] as ToolContent;
-            const text = content && 'text' in content ? (content.text as string) : '';
-            const match = text.match(/\(ID:\s*([0-9a-fA-F-]{10,})\)/);
             if (match) {
               resolvedCompanyId = match[1];
             }
@@ -136,10 +129,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     await client.cleanup();
 
     // Enhanced analysis with validation levels
-    const failures = testResults.filter((result) => !result.success);
-    const partialSuccesses = testResults.filter((result) => 
       result.validationLevel === ValidationLevel.PARTIAL_SUCCESS);
-    const fullSuccesses = testResults.filter((result) => 
       result.validationLevel === ValidationLevel.FULL_SUCCESS);
 
     console.log('\n📊 Enhanced Test Summary:');
@@ -166,15 +156,12 @@ describe('Customer Success Playbook Validation Suite', () => {
     }
 
     // Print validation breakdown
-    const validationBreakdown = testResults.reduce((acc, result) => {
-      const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
       acc[level] = (acc[level] || 0) + 1;
       return acc;
     }, {} as Record<ValidationLevel, number>);
 
     console.log('\n🔍 Validation Level Breakdown:');
     Object.entries(validationBreakdown).forEach(([level, count]) => {
-      const emoji = getValidationLevelEmoji(level as ValidationLevel);
       console.log(`   ${emoji} ${level}: ${count}`);
     });
 
@@ -195,12 +182,9 @@ describe('Customer Success Playbook Validation Suite', () => {
 
   describe('🎯 Quick Start Examples', () => {
     it('should execute the main customer review prompt from playbook Quick Start', async () => {
-      const prompt =
         'Show me all customers (companies with closed deals) and their basic information. Include company name, total deal value, last contact date, and any open tasks or notes from the last 30 days. Help me identify which accounts haven\'t been contacted recently and might need attention.';
-      const expectedOutcome =
         'A customer portfolio overview with recent activity and attention priorities';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -218,10 +202,7 @@ describe('Customer Success Playbook Validation Suite', () => {
 
   describe('🌅 Daily Customer Management Routines', () => {
     it('should find active customer accounts for morning portfolio review', async () => {
-      const prompt = 'List all active customer accounts for daily review';
-      const expectedOutcome = 'Complete list of active customer accounts';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -237,15 +218,10 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should find accounts with no recent contact (attention-needed alerts)', async () => {
-      const prompt = 'Find accounts with no contact in the last 30 days';
-      const expectedOutcome = 'List of accounts needing immediate attention';
 
       // Calculate date 30 days ago
-      const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const startDate = thirtyDaysAgo.toISOString().split('T')[0];
       
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -261,10 +237,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should create follow-up tasks for customer outreach planning', async () => {
-      const prompt = 'Create tasks for customer health checks and satisfaction surveys';
-      const expectedOutcome = 'Successfully created customer outreach tasks';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'create-record',
@@ -285,10 +258,7 @@ describe('Customer Success Playbook Validation Suite', () => {
 
   describe('📊 Weekly Customer Success Operations', () => {
     it('should organize customer accounts by strategic importance (account segmentation)', async () => {
-      const prompt = 'Organize customer accounts by strategic importance and value';
-      const expectedOutcome = 'Segmented customer accounts by importance tiers';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -313,10 +283,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should identify expansion opportunities through account review', async () => {
-      const prompt = 'Identify customers with expansion potential based on account activity';
-      const expectedOutcome = 'List of accounts with growth opportunities';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-relationship',
@@ -332,10 +299,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should map and maintain customer relationships (stakeholder mapping)', async () => {
-      const prompt = 'Map decision makers, influencers, and end users across customer accounts';
-      const expectedOutcome = 'Comprehensive stakeholder mapping for customer accounts';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-relationship',
@@ -351,10 +315,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should establish communication strategies with regular check-in schedules', async () => {
-      const prompt = 'Create systematic customer communication schedule based on account tier';
-      const expectedOutcome = 'Structured communication calendar for customer touchpoints';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'batch-operations',
@@ -380,10 +341,7 @@ describe('Customer Success Playbook Validation Suite', () => {
 
   describe('🔄 Monthly Strategic Customer Management', () => {
     it('should review customer success performance metrics', async () => {
-      const prompt = 'Review customer success performance through available data';
-      const expectedOutcome = 'Customer success metrics and performance analysis';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'get-detailed-info',
@@ -398,10 +356,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should develop strategic account plans for key customers', async () => {
-      const prompt = 'Develop strategic account plans for key customers with business review preparation';
-      const expectedOutcome = 'Strategic account plans with business review schedules';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'create-record',
@@ -421,8 +376,6 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should collect and analyze customer feedback systematically', async () => {
-      const prompt = 'Schedule regular satisfaction surveys and collect customer feedback';
-      const expectedOutcome = 'Systematic customer feedback collection and analysis';
 
       // Seed a note with matching keywords to make content search deterministic
       if (resolvedCompanyId) {
@@ -441,7 +394,6 @@ describe('Customer Success Playbook Validation Suite', () => {
         );
       }
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-content',
@@ -458,10 +410,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should optimize customer success processes for continuous improvement', async () => {
-      const prompt = 'Review customer success workflow efficiency and identify process improvements';
-      const expectedOutcome = 'Process improvement recommendations for customer success workflows';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'list-notes',
@@ -479,15 +428,10 @@ describe('Customer Success Playbook Validation Suite', () => {
 
   describe('🎯 Customer Journey Optimization', () => {
     it('should track and optimize customer onboarding milestones', async () => {
-      const prompt = 'Track key implementation milestones and onboarding completion rates';
-      const expectedOutcome = 'Customer onboarding milestone tracking and optimization';
 
       // Relax window: use longer timeframe to accommodate sparse data
-      const daysAgo = new Date();
       daysAgo.setDate(daysAgo.getDate() - TEST_CONSTANTS.TIMEFRAME_DAYS);
-      const startDate = daysAgo.toISOString().split('T')[0];
       
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -503,10 +447,7 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should validate early customer success with 30-day check-ins', async () => {
-      const prompt = 'Schedule 30-day success check-ins with new customers';
-      const expectedOutcome = 'Early success validation system for new customers';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'create-record',
@@ -525,11 +466,8 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should identify and mitigate customer retention risks', async () => {
-      const prompt = 'Monitor customer engagement patterns and identify retention risks';
-      const expectedOutcome = 'Retention risk identification and mitigation strategies';
 
       // Prefer a guaranteed match: seeded company name if available; otherwise a broad contains filter
-      const filters = seededCompanyName
         ? {
             filters: [
               { attribute: { slug: 'name' }, condition: 'equals', value: seededCompanyName },
@@ -541,7 +479,6 @@ describe('Customer Success Playbook Validation Suite', () => {
             ],
           };
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -559,8 +496,6 @@ describe('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should systematically develop customer growth opportunities', async () => {
-      const prompt = 'Identify successful customer use cases suitable for expansion';
-      const expectedOutcome = 'Customer growth opportunity development and tracking';
 
       // Seed a note with matching keywords for deterministic content search
       if (resolvedCompanyId) {
@@ -579,7 +514,6 @@ describe('Customer Success Playbook Validation Suite', () => {
         );
       }
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-content',
@@ -603,7 +537,6 @@ describe('Customer Success Playbook Validation Suite', () => {
     toolName: string,
     toolParams: Record<string, unknown>
   ): Promise<PlaybookTestResult> {
-    const startTime = performance.now();
 
     try {
       console.log(
@@ -621,8 +554,6 @@ describe('Customer Success Playbook Validation Suite', () => {
         toolParams,
         (toolResult: ToolResult) => {
           result = toolResult;
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(`⏱️ Execution time: ${duration.toFixed(2)}ms`);
 
@@ -659,7 +590,6 @@ describe('Customer Success Playbook Validation Suite', () => {
                 console.warn('   Warnings:', validationResult.warningDetails.join(', '));
               }
               if (toolResult.content && toolResult.content.length > 0) {
-                const content = toolResult.content[0];
                 if ('text' in content) {
                   console.log(`📄 Result preview: ${content.text.substring(0, 200)}...`);
                 }
@@ -669,7 +599,6 @@ describe('Customer Success Playbook Validation Suite', () => {
             case ValidationLevel.FULL_SUCCESS:
               console.log('✅ Full validation success');
               if (toolResult.content && toolResult.content.length > 0) {
-                const content = toolResult.content[0];
                 if ('text' in content) {
                   console.log(`📄 Result preview: ${content.text.substring(0, 200)}...`);
                 }
@@ -683,11 +612,8 @@ describe('Customer Success Playbook Validation Suite', () => {
         }
       );
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
 
       // Determine overall test success based on validation level
-      const testSuccess = validationLevel === ValidationLevel.FULL_SUCCESS || 
                          validationLevel === ValidationLevel.PARTIAL_SUCCESS;
 
       return {
@@ -700,8 +626,6 @@ describe('Customer Success Playbook Validation Suite', () => {
         validationDetails: validationResult || undefined,
       };
     } catch (error) {
-      const endTime = performance.now();
-      const duration = endTime - startTime;
 
       console.error('❌ Test execution failed:', error);
 
@@ -717,8 +641,6 @@ describe('Customer Success Playbook Validation Suite', () => {
   }
 
   async function createFailureAnalysisReport(failures: PlaybookTestResult[]) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportPath = `/tmp/customer-success-playbook-failures-${timestamp}.md`;
 
     let report = `# Customer Success Playbook Validation Failure Analysis
 
@@ -767,7 +689,6 @@ describe('Customer Success Playbook Validation Suite', () => {
   }
 
   async function createSingleGitHubIssue(failures: PlaybookTestResult[]) {
-    const issueBody = `# Customer Success Playbook Validation Failures
 
 **Generated:** ${new Date().toISOString()}
 **Test Suite:** \`test/e2e/mcp/customer-success-playbook-eval.test.ts\`
@@ -815,10 +736,7 @@ ${failures
   }
 
   async function createEnhancedValidationReport(results: PlaybookTestResult[]) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportPath = `/tmp/customer-success-enhanced-validation-${timestamp}.md`;
     
-    const report = `# Customer Success Playbook Enhanced Validation Report
 
 **Generated:** ${new Date().toISOString()}
 **Test Suite:** test/e2e/mcp/customer-success-playbook-eval.test.ts
@@ -836,8 +754,6 @@ ${failures
 ## Detailed Test Results
 
 ${results.map((result, index) => {
-  const emoji = getValidationLevelEmoji(result.validationLevel || ValidationLevel.FRAMEWORK_ERROR);
-  const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
   
   let details = '';
   if (result.validationDetails) {

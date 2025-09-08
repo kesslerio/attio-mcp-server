@@ -1,8 +1,4 @@
 import { UniversalResourceType } from '../types.js';
-import {
-  paginationProperties,
-  resourceTypeProperty,
-} from './common/properties.js';
 
 export const createNoteSchema = {
   type: 'object' as const,

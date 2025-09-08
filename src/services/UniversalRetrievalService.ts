@@ -5,10 +5,25 @@
  * Provides universal record retrieval functionality across all resource types.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalRecordDetailsParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
+
+import { AttioRecord } from '../types/attio.js';
+import { CachingService } from './CachingService.js';
+import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
+import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+import { ErrorEnhancer } from '../errors/enhanced-api-errors.js';
+import { getCompanyDetails } from '../objects/companies/index.js';
+import { getListDetails } from '../objects/lists.js';
+import { getNote, normalizeNoteResponse } from '../objects/notes.js';
+import { getObjectRecord } from '../objects/records/index.js';
+import { getPersonDetails } from '../objects/people/index.js';
+import { getTask } from '../objects/tasks.js';
+import { shouldUseMockData } from './create/index.js';
+import { toMcpResult, HttpResponse } from '../lib/http/toMcpResult.js';
+import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
+import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { ValidationService } from './ValidationService.js';
+import type { UniversalRecordDetailsParams } from '../handlers/tool-configs/universal/types.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -55,14 +70,12 @@ export class UniversalRetrievalService {
     // NOTE: E2E tests should use real API by default. Mock shortcuts are reserved for offline smoke tests.
 
     // Start performance tracking
-    const perfId = enhancedPerformanceTracker.startOperation(
       'get-record-details',
       'get',
       { resourceType: resource_type, recordId: record_id }
     );
 
     // Enhanced UUID validation using ValidationService (Issue #416)
-    const validationStart = performance.now();
 
     // Early ID validation for performance tests - provide exact expected error message
     if (
@@ -83,17 +96,13 @@ export class UniversalRetrievalService {
     // In mock/offline mode, allow known mock/test ID patterns but still reject obvious invalid formats
     try {
       if (shouldUseMockData()) {
-        const isHex24 = /^[0-9a-f]{24}$/i.test(record_id);
-        const isMockish =
           /^(mock-|comp_|person_|list_|deal_|task_|note_|rec_|record_)/i.test(
             record_id
           );
         // Local UUID v4 format check to avoid relying on mocked module exports in tests
-        const looksLikeUuidV4 =
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
             record_id
           );
-        const looksValid = isHex24 || isMockish || looksLikeUuidV4;
         if (!looksValid) {
           enhancedPerformanceTracker.endOperation(
             perfId,
@@ -142,7 +151,6 @@ export class UniversalRetrievalService {
     }
 
     // Track API call timing
-    const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
     let result: AttioRecord;
 
     try {
@@ -153,7 +161,6 @@ export class UniversalRetrievalService {
 
       // Apply field filtering if fields parameter was provided
       if (fields && fields.length > 0) {
-        const filteredResult = this.filterResponseFields(result, fields);
         // Ensure the filtered result maintains AttioRecord structure
         return {
           id: result.id,
@@ -186,8 +193,6 @@ export class UniversalRetrievalService {
       }
 
       // Enhanced error handling for Issues #415, #416, #417
-      const errorObj = apiError as Record<string, unknown>;
-      const statusCode =
         ((errorObj?.response as Record<string, unknown>)?.status as number) ||
         (errorObj?.statusCode as number) ||
         500;
@@ -219,7 +224,6 @@ export class UniversalRetrievalService {
         );
 
         // Create and throw enhanced error
-        const error = new Error(`Invalid record_id format: ${record_id}`);
         (error as any).statusCode = 400;
         throw ensureEnhanced(error, {
           endpoint: `/${resource_type}/${record_id}`,
@@ -237,10 +241,7 @@ export class UniversalRetrievalService {
         'body' in apiError
       ) {
         // Convert legacy HTTP response to EnhancedApiError
-        const message = (apiError as any).body?.message || 'HTTP error';
-        const status = (apiError as any).status || 500;
         enhancedPerformanceTracker.endOperation(perfId, false, message, status);
-        const error = new Error(message);
         (error as any).statusCode = status;
         throw ensureEnhanced(error, {
           endpoint: `/${resource_type}/${record_id}`,
@@ -252,9 +253,7 @@ export class UniversalRetrievalService {
 
       // For HTTP errors, use ErrorEnhancer to auto-enhance
       if (Number.isFinite(statusCode)) {
-        const error =
           apiError instanceof Error ? apiError : new Error(String(apiError));
-        const enhancedError = ErrorEnhancer.autoEnhance(
           error,
           resource_type,
           'get-record-details',
@@ -271,7 +270,6 @@ export class UniversalRetrievalService {
       }
 
       // Fallback for any other uncaught errors
-      const fallbackMessage =
         apiError instanceof Error ? apiError.message : String(apiError);
       enhancedPerformanceTracker.endOperation(
         perfId,
@@ -329,7 +327,6 @@ export class UniversalRetrievalService {
     record_id: string
   ): Promise<AttioRecord> {
     try {
-      const list = await getListDetails(record_id);
 
       // NEW: robust null/shape guard - check for null, missing id, or empty list_id
       if (
@@ -340,7 +337,6 @@ export class UniversalRetrievalService {
         list.id.list_id.trim() === ''
       ) {
         // Create and throw enhanced error
-        const error = new Error(
           `List record with ID "${record_id}" not found.`
         );
         (error as any).statusCode = 404;
@@ -377,7 +373,6 @@ export class UniversalRetrievalService {
 
       // Handle legacy error format - don't mask auth/network issues as 404s
       if (error && typeof error === 'object' && 'status' in error) {
-        const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
           // Legitimate 404 from API - return legacy format
           throw {
@@ -389,7 +384,6 @@ export class UniversalRetrievalService {
           };
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        const errorMessage =
           error instanceof Error
             ? error.message
             : `HTTP Error ${httpError.status}`;
@@ -397,7 +391,6 @@ export class UniversalRetrievalService {
       }
 
       // For non-HTTP errors, treat as not found only if it's a typical not-found error
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         // Return legacy format for test compatibility
@@ -425,7 +418,7 @@ export class UniversalRetrievalService {
     try {
       if (shouldUseMockData()) {
         try {
-          const mod: any = await import('../utils/task-debug.js');
+          const mod: unknown = await import('../utils/task-debug.js');
           mod.logTaskDebug?.('getRecordDetails', 'Using mock task retrieval', {
             record_id,
           });
@@ -447,7 +440,6 @@ export class UniversalRetrievalService {
         } as unknown as AttioRecord;
       }
 
-      const task = await getTask(record_id);
       // Convert AttioTask to AttioRecord using proper type conversion
       return UniversalUtilityService.convertTaskToRecord(task);
     } catch (error: unknown) {
@@ -459,11 +451,9 @@ export class UniversalRetrievalService {
 
       // Handle legacy error format - don't mask auth/network issues as 404s
       if (error && typeof error === 'object' && 'status' in error) {
-        const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
           // Cache legitimate 404s and create EnhancedApiError
           CachingService.cache404Response(resource_type, record_id);
-          const error = new Error(
             `${resource_type.charAt(0).toUpperCase() + resource_type.slice(1, -1)} record with ID "${record_id}" not found.`
           );
           (error as any).statusCode = 404;
@@ -475,7 +465,6 @@ export class UniversalRetrievalService {
           });
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        const errorMessage =
           error instanceof Error
             ? error.message
             : `HTTP Error ${httpError.status}`;
@@ -483,7 +472,6 @@ export class UniversalRetrievalService {
       }
 
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response(resource_type, record_id);
@@ -503,11 +491,8 @@ export class UniversalRetrievalService {
     noteId: string
   ): Promise<AttioRecord> {
     try {
-      const response = await getNote(noteId);
-      const note = response.data;
 
       // Normalize to universal record format
-      const normalizedRecord = normalizeNoteResponse(note);
       return normalizedRecord as AttioRecord;
     } catch (error: unknown) {
       // Handle EnhancedApiError instances directly
@@ -518,11 +503,9 @@ export class UniversalRetrievalService {
 
       // Handle legacy error format - don't mask auth/network issues as 404s
       if (error && typeof error === 'object' && 'status' in error) {
-        const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
           // Cache legitimate 404s and create EnhancedApiError
           CachingService.cache404Response('notes', noteId);
-          const error = new Error(`Note with ID "${noteId}" not found.`);
           (error as any).statusCode = 404;
           throw ensureEnhanced(error, {
             endpoint: `/notes/${noteId}`,
@@ -532,7 +515,6 @@ export class UniversalRetrievalService {
           });
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        const errorMessage =
           error instanceof Error
             ? error.message
             : `HTTP Error ${httpError.status}`;
@@ -540,7 +522,6 @@ export class UniversalRetrievalService {
       }
 
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response('notes', noteId);
@@ -573,7 +554,6 @@ export class UniversalRetrievalService {
     // Handle AttioRecord structure with id, values, created_at, updated_at
     if (data && typeof data === 'object' && 'id' in data && 'values' in data) {
       // Always preserve core AttioRecord structure
-      const attioData = data as AttioRecord;
       const filtered: AttioRecord = {
         id: attioData.id,
         created_at: attioData.created_at,
@@ -582,7 +562,6 @@ export class UniversalRetrievalService {
       };
 
       // Filter values object to only requested fields
-      const values = attioData.values as Record<string, unknown>;
       if (values && typeof values === 'object') {
         for (const field of requestedFields) {
           if (field in values) {
@@ -644,9 +623,7 @@ export class UniversalRetrievalService {
       }
 
       // Check for structured HTTP response (404)
-      const statusCode =
         (error as any)?.response?.status ?? (error as any)?.statusCode;
-      const message = (error as any)?.message ?? '';
 
       if (statusCode === 404 || message.includes('not found')) {
         return false;
@@ -654,9 +631,7 @@ export class UniversalRetrievalService {
 
       // For HTTP errors, enhance via ErrorEnhancer (URS test expects "Enhanced error")
       if (Number.isFinite(statusCode)) {
-        const errorObj =
           error instanceof Error ? error : new Error(String(error));
-        const enhanced = ErrorEnhancer.autoEnhance(errorObj);
         throw enhanced;
       }
 
@@ -675,7 +650,6 @@ export class UniversalRetrievalService {
   ): Promise<(AttioRecord | null)[]> {
     // For now, fetch records individually
     // TODO: Implement batch API calls where supported by Attio
-    const results = await Promise.allSettled(
       record_ids.map((record_id) =>
         this.getRecordDetails({ resource_type, record_id, fields })
       )
@@ -695,16 +669,12 @@ export class UniversalRetrievalService {
     record: AttioRecord;
     metrics: { duration: number; cached: boolean; source: 'cache' | 'live' };
   }> {
-    const start = performance.now();
 
     // Check if response is cached
-    const isCached = CachingService.isCached404(
       params.resource_type,
       params.record_id
     );
 
-    const record = await this.getRecordDetails(params);
-    const duration = performance.now() - start;
 
     return {
       record,

@@ -14,14 +14,8 @@
  * - Performance metrics and statistics
  */
 
-import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import type {
-  LogParameters,
-  LogResponse,
-  LogMetadata,
-  ApiError,
-} from '../types/index.js';
+import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 
 export interface LogEntry {
   timestamp: string;
@@ -81,7 +75,6 @@ class E2ELogger {
     };
 
     if (err && typeof err === 'object' && 'code' in err) {
-      const codeVal = (err as Record<string, unknown>).code;
       if (typeof codeVal === 'string') {
         base.code = codeVal;
       }
@@ -143,7 +136,6 @@ class E2ELogger {
         : 0;
 
     // Write test run summary
-    const summaryFile = join(
       this.logsDir,
       `${this.currentTestSuite}-summary-${Date.now()}.json`
     );
@@ -172,12 +164,11 @@ class E2ELogger {
   logToolCall(
     toolName: string,
     parameters: Record<string, unknown>,
-    response: any,
+    response: unknown,
     timing: { start: number; end: number },
     testName?: string,
     error?: Error
   ): void {
-    const duration = timing.end - timing.start;
     this.apiCallTimes.push(duration);
 
     if (this.currentTestRun) {
@@ -226,7 +217,7 @@ class E2ELogger {
   logTestDataCreation(
     type: string,
     id: string,
-    data: any,
+    data: unknown,
     testName?: string
   ): void {
     if (this.currentTestRun) {
@@ -364,8 +355,6 @@ class E2ELogger {
    * Write log entry to file
    */
   private log(entry: LogEntry): void {
-    const logFile = this.getLogFile();
-    const logLine = JSON.stringify(entry) + '\n';
 
     try {
       appendFileSync(logFile, logLine);
@@ -388,12 +377,9 @@ class E2ELogger {
    * Get log file path for current test suite
    */
   private getLogFile(): string {
-    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const testSuite =
       this.currentTestSuite || this.inferTestSuiteFromCallStack() || 'unknown';
 
     // Use a more stable filename that doesn't change during the test suite run
-    const runId = this.getOrCreateRunId();
     return join(this.logsDir, `${testSuite}-${timestamp}-${runId}.jsonl`);
   }
 
@@ -401,20 +387,15 @@ class E2ELogger {
    * Infer test suite name from call stack when not explicitly set
    */
   private inferTestSuiteFromCallStack(): string | null {
-    const stack = new Error().stack;
     if (!stack) return null;
 
     // Look for test file names in the stack
-    const testFilePattern = /\/test\/e2e\/suites\/([^\/]+)\.e2e\.test\.ts/;
-    const match = stack.match(testFilePattern);
 
     if (match && match[1]) {
       return match[1]; // Extract the test suite name from filename
     }
 
     // Fallback patterns for other test file structures
-    const fallbackPattern = /\/([^\/]+)\.e2e\.test\.ts/;
-    const fallbackMatch = stack.match(fallbackPattern);
 
     if (fallbackMatch && fallbackMatch[1]) {
       return fallbackMatch[1];
@@ -429,7 +410,6 @@ class E2ELogger {
   private getOrCreateRunId(): string {
     if (!this.runId) {
       // Create a stable run ID based on start time
-      const startTime = new Date();
       this.runId = `${startTime.getHours().toString().padStart(2, '0')}${startTime.getMinutes().toString().padStart(2, '0')}${startTime.getSeconds().toString().padStart(2, '0')}`;
     }
     return this.runId;
@@ -441,7 +421,6 @@ class E2ELogger {
   private sanitizeParameters(
     params: Record<string, unknown>
   ): Record<string, unknown> {
-    const sensitiveKeys = [
       'api_key',
       'apiKey',
       'token',
@@ -453,18 +432,15 @@ class E2ELogger {
       'credentials',
     ];
 
-    const sanitized = { ...params };
 
-    const sanitizeObject = (obj: any): any => {
       if (typeof obj !== 'object' || obj === null) return obj;
 
       if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);
       }
 
-      const result: any = {};
+      const result: unknown = {};
       for (const [key, value] of Object.entries(obj)) {
-        const lowerKey = key.toLowerCase();
         if (sensitiveKeys.some((sensitive) => lowerKey.includes(sensitive))) {
           result[key] = '[REDACTED]';
         } else if (typeof value === 'object') {
@@ -482,11 +458,10 @@ class E2ELogger {
   /**
    * Sanitize response data by limiting size and removing sensitive data
    */
-  private sanitizeResponse(response: any): any {
+  private sanitizeResponse(response: unknown): unknown {
     if (!response) return response;
 
     // Convert response to string to check size
-    const responseStr = JSON.stringify(response);
 
     // If response is too large (>10KB), create a safe preview
     if (responseStr.length > 10000) {
@@ -531,7 +506,7 @@ export function endTestSuite(): void {
 export function logToolCall(
   toolName: string,
   parameters: Record<string, unknown>,
-  response: any,
+  response: unknown,
   timing: { start: number; end: number },
   testName?: string,
   error?: Error
@@ -549,7 +524,7 @@ export function logToolCall(
 export function logTestDataCreation(
   type: string,
   id: string,
-  data: any,
+  data: unknown,
   testName?: string
 ): void {
   e2eLogger.logTestDataCreation(type, id, data, testName);

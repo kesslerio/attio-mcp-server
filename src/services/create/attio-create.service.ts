@@ -17,20 +17,10 @@
  * See src/services/create/creators/README.md for full documentation.
  */
 
-import type { CreateService } from './types.js';
-import type { AttioRecord } from '../../types/attio.js';
-import type {
-  ResourceCreator,
-  ResourceCreatorContext,
-} from './creators/types.js';
 import { buildAttioClient } from '../../api/attio-client.js';
 import { debug, error as logError } from '../../utils/logger.js';
-import {
-  CompanyCreator,
-  PersonCreator,
-  TaskCreator,
-  NoteCreator,
-} from './creators/index.js';
+import type { AttioRecord } from '../../types/attio.js';
+import type { CreateService } from './types.js';
 
 /**
  * Refactored implementation using Strategy Pattern
@@ -52,9 +42,9 @@ export class AttioCreateService implements CreateService {
   private readonly context: ResourceCreatorContext;
 
   // Lazy-loaded dependencies for non-strategy methods
-  private taskModule: any = null;
-  private converterModule: any = null;
-  private noteModule: any = null;
+  private taskModule: unknown = null;
+  private converterModule: unknown = null;
+  private noteModule: unknown = null;
 
   // Supported resource types for validation
   static readonly SUPPORTED_RESOURCE_TYPES = {
@@ -112,7 +102,6 @@ export class AttioCreateService implements CreateService {
    * Delegates to CompanyCreator strategy
    */
   async createCompany(input: Record<string, unknown>): Promise<AttioRecord> {
-    const creator = this.getCreator('companies');
     return creator.create(input, this.context);
   }
 
@@ -121,7 +110,6 @@ export class AttioCreateService implements CreateService {
    * Delegates to PersonCreator strategy
    */
   async createPerson(input: Record<string, unknown>): Promise<AttioRecord> {
-    const creator = this.getCreator('people');
     return creator.create(input, this.context);
   }
 
@@ -130,7 +118,6 @@ export class AttioCreateService implements CreateService {
    * Delegates to TaskCreator strategy
    */
   async createTask(input: Record<string, unknown>): Promise<AttioRecord> {
-    const creator = this.getCreator('tasks');
     return creator.create(input, this.context);
   }
 
@@ -147,7 +134,6 @@ export class AttioCreateService implements CreateService {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
 
-    const updatedTask = await this.taskModule.updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
       assigneeId: input.assigneeId as string,
@@ -170,7 +156,6 @@ export class AttioCreateService implements CreateService {
     content: string;
     format?: string;
   }): Promise<any> {
-    const creator = this.getCreator('notes');
     return creator.create(input, this.context);
   }
 
@@ -187,12 +172,10 @@ export class AttioCreateService implements CreateService {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
 
-    const query = {
       parent_object: params.resource_type,
       parent_record_id: params.record_id,
     };
 
-    const response = await this.noteModule.listNotes(query);
     return response.data || [];
   }
 
@@ -208,12 +191,8 @@ export class AttioCreateService implements CreateService {
       );
     }
 
-    const normalizedType = resourceType.toLowerCase().trim();
-    const creator = this.creators.get(normalizedType);
 
     if (!creator) {
-      const supportedTypes = Array.from(this.creators.keys()).sort();
-      const suggestion = this.findClosestResourceType(
         normalizedType,
         supportedTypes
       );
@@ -237,12 +216,10 @@ export class AttioCreateService implements CreateService {
     supportedTypes: string[]
   ): string | null {
     // Simple similarity check - could be enhanced with better algorithms
-    const similarities = supportedTypes.map((type) => ({
       type,
       score: this.calculateSimilarity(input, type),
     }));
 
-    const best = similarities.reduce((prev, current) =>
       prev.score > current.score ? prev : current
     );
 
@@ -259,10 +236,6 @@ export class AttioCreateService implements CreateService {
     if (a.length === 0 || b.length === 0) return 0;
 
     // Simple character overlap calculation
-    const setA = new Set(a.toLowerCase());
-    const setB = new Set(b.toLowerCase());
-    const intersection = new Set(Array.from(setA).filter((x) => setB.has(x)));
-    const union = new Set([...Array.from(setA), ...Array.from(setB)]);
 
     return intersection.size / union.size;
   }

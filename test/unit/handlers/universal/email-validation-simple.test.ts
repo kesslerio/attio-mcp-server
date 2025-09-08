@@ -3,11 +3,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { isValidEmail } from '../../../../src/utils/validation/email-validation.js';
 
 describe('Email Validation Function', () => {
   describe('Invalid Email Rejection', () => {
-    const invalidEmails = [
       'notanemail',
       '@example.com',
       'user@',
@@ -30,7 +30,6 @@ describe('Email Validation Function', () => {
   });
 
   describe('Valid Email Acceptance', () => {
-    const validEmails = [
       'user@example.com',
       'user.name@example.com',
       'user+tag@example.com',

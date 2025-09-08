@@ -6,8 +6,8 @@
  */
 
 import { AttioRecord } from '../../../types/attio.js';
-import { ToolConfig } from '../../tool-types.js';
 import { ListEntryFilters } from '../../../api/operations/index.js';
+import { ToolConfig } from '../../tool-types.js';
 
 /**
  * Supported resource types for universal operations
@@ -337,8 +337,8 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
-  handler: (params: any) => Promise<any>;
-  formatResult: (results: any, ...args: any[]) => string;
+  handler: (params: unknown) => Promise<any>;
+  formatResult: (results: unknown, ...args: unknown[]) => string;
 }
 
 /**

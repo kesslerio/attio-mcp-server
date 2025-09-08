@@ -6,18 +6,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import {
-  detectMigrationNeeds,
-  createBackup,
-  applyMigration,
-  validateMigration,
-  migrateUserConfig,
-} from '../../src/utils/config-migration.js';
+
 import logger from '../../src/utils/logger.js';
 
 // Mock fs module
 vi.mock('fs');
-const mockFs = vi.mocked(fs);
 
 // Mock logger module
 vi.mock('../../src/utils/logger.js', () => ({
@@ -29,16 +22,12 @@ vi.mock('../../src/utils/logger.js', () => ({
   },
 }));
 
-const mockLogger = vi.mocked(logger);
 
 // Test data
-const TEST_CONFIG_PATH = path.resolve(
   process.cwd(),
   'config/mappings/user.json'
 );
-const TEST_BACKUP_PATH = path.resolve(process.cwd(), 'config/mappings/backup');
 
-const VALID_USER_CONFIG = {
   version: '1.0',
   metadata: {
     generated: '2025-05-14T00:00:00Z',
@@ -61,7 +50,6 @@ const VALID_USER_CONFIG = {
   },
 };
 
-const OUTDATED_USER_CONFIG = {
   version: '1.0',
   metadata: {
     generated: '2025-05-14T00:00:00Z',
@@ -84,7 +72,6 @@ const OUTDATED_USER_CONFIG = {
   },
 };
 
-const PARTIALLY_OUTDATED_CONFIG = {
   version: '1.0',
   metadata: {
     generated: '2025-05-14T00:00:00Z',
@@ -131,7 +118,6 @@ describe('Config Migration Utility', () => {
     it('should return false when user.json does not exist', () => {
       mockFs.existsSync.mockReturnValue(false);
 
-      const result = detectMigrationNeeds();
 
       expect(result).toEqual({
         needsMigration: false,
@@ -145,7 +131,6 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(VALID_USER_CONFIG));
 
-      const result = detectMigrationNeeds();
 
       expect(result).toEqual({
         needsMigration: false,
@@ -159,7 +144,6 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(OUTDATED_USER_CONFIG));
 
-      const result = detectMigrationNeeds();
 
       expect(result.needsMigration).toBe(true);
       expect(result.exists).toBe(true);
@@ -178,7 +162,6 @@ describe('Config Migration Utility', () => {
         JSON.stringify(PARTIALLY_OUTDATED_CONFIG)
       );
 
-      const result = detectMigrationNeeds();
 
       expect(result.needsMigration).toBe(true);
       expect(result.outdatedMappings).toContain(
@@ -192,7 +175,6 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{ invalid json }');
 
-      const result = detectMigrationNeeds();
 
       expect(result.needsMigration).toBe(false);
       expect(result.exists).toBe(true);
@@ -207,7 +189,6 @@ describe('Config Migration Utility', () => {
     });
 
     it('should handle missing attributes structure', () => {
-      const configWithoutAttributes = {
         version: '1.0',
         mappings: {
           objects: {},
@@ -220,7 +201,6 @@ describe('Config Migration Utility', () => {
         JSON.stringify(configWithoutAttributes)
       );
 
-      const result = detectMigrationNeeds();
 
       expect(result.needsMigration).toBe(false);
       expect(result.exists).toBe(true);
@@ -233,7 +213,6 @@ describe('Config Migration Utility', () => {
       mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      const result = createBackup();
 
       expect(result.success).toBe(true);
       expect(result.backupPath).toBeDefined();
@@ -251,33 +230,28 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true); // Backup dir exists
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      const result = createBackup();
 
       expect(result.success).toBe(true);
       expect(mockFs.mkdirSync).not.toHaveBeenCalled();
     });
 
     it('should handle backup creation errors', () => {
-      const error = new Error('Permission denied');
       mockFs.existsSync.mockReturnValue(false);
       mockFs.mkdirSync.mockImplementation(() => {
         throw error;
       });
 
-      const result = createBackup();
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Permission denied');
     });
 
     it('should handle file copy errors', () => {
-      const error = new Error('File not found');
       mockFs.existsSync.mockReturnValue(true);
       mockFs.copyFileSync.mockImplementation(() => {
         throw error;
       });
 
-      const result = createBackup();
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('File not found');
@@ -288,7 +262,6 @@ describe('Config Migration Utility', () => {
     it('should succeed when no user.json exists', () => {
       mockFs.existsSync.mockReturnValue(false);
 
-      const result = applyMigration();
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('No user.json file found');
@@ -298,7 +271,6 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(VALID_USER_CONFIG));
 
-      const result = applyMigration();
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('already up to date');
@@ -311,14 +283,13 @@ describe('Config Migration Utility', () => {
       mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      let writtenConfig: any;
+      let writtenConfig: unknown;
       mockFs.writeFileSync.mockImplementation((path, data) => {
         if (path === TEST_CONFIG_PATH) {
           writtenConfig = JSON.parse(data as string);
         }
       });
 
-      const result = applyMigration();
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('Migration completed successfully');
@@ -350,7 +321,6 @@ describe('Config Migration Utility', () => {
         throw new Error('Permission denied');
       });
 
-      const result = applyMigration();
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('Failed to create backup');
@@ -366,7 +336,6 @@ describe('Config Migration Utility', () => {
         throw new Error('Write failed');
       });
 
-      const result = applyMigration();
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('Migration failed');
@@ -378,7 +347,6 @@ describe('Config Migration Utility', () => {
     it('should pass validation when no user.json exists', () => {
       mockFs.existsSync.mockReturnValue(false);
 
-      const result = validateMigration();
 
       expect(result.valid).toBe(true);
       expect(result.issues).toHaveLength(0);
@@ -388,7 +356,6 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(VALID_USER_CONFIG));
 
-      const result = validateMigration();
 
       expect(result.valid).toBe(true);
       expect(result.issues).toHaveLength(0);
@@ -398,7 +365,6 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(OUTDATED_USER_CONFIG));
 
-      const result = validateMigration();
 
       expect(result.valid).toBe(false);
       expect(result.issues).toHaveLength(1);
@@ -411,7 +377,6 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(OUTDATED_USER_CONFIG));
 
-      const result = migrateUserConfig({ dryRun: true });
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('Migration needed. Would fix:');
@@ -427,7 +392,7 @@ describe('Config Migration Utility', () => {
       mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      let writtenConfig: any;
+      let writtenConfig: unknown;
       mockFs.writeFileSync.mockImplementation((path, data) => {
         if (path === TEST_CONFIG_PATH) {
           writtenConfig = JSON.parse(data as string);
@@ -436,7 +401,6 @@ describe('Config Migration Utility', () => {
         }
       });
 
-      const result = migrateUserConfig();
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('Migration completed successfully');
@@ -463,7 +427,6 @@ describe('Config Migration Utility', () => {
         // (keep returning outdated config for validation check)
       });
 
-      const result = migrateUserConfig();
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('validation failed');
@@ -472,7 +435,6 @@ describe('Config Migration Utility', () => {
 
   describe('edge cases and error handling', () => {
     it('should handle config without common mappings section', () => {
-      const configWithoutCommon = {
         version: '1.0',
         mappings: {
           attributes: {
@@ -488,10 +450,8 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(configWithoutCommon));
 
-      const detection = detectMigrationNeeds();
       expect(detection.needsMigration).toBe(false);
 
-      const migration = migrateUserConfig();
       expect(migration.success).toBe(true);
       expect(migration.message).toContain('already up to date');
     });
@@ -500,14 +460,12 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{}');
 
-      const result = detectMigrationNeeds();
 
       expect(result.needsMigration).toBe(false);
       expect(result.exists).toBe(true);
     });
 
     it('should preserve other mappings during migration', () => {
-      const configWithOtherMappings = {
         ...OUTDATED_USER_CONFIG,
         mappings: {
           ...OUTDATED_USER_CONFIG.mappings,
@@ -529,7 +487,7 @@ describe('Config Migration Utility', () => {
       mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      let writtenConfig: any;
+      let writtenConfig: unknown;
       mockFs.writeFileSync.mockImplementation((path, data) => {
         if (path === TEST_CONFIG_PATH) {
           writtenConfig = JSON.parse(data as string);
@@ -537,7 +495,6 @@ describe('Config Migration Utility', () => {
         }
       });
 
-      const result = migrateUserConfig();
 
       expect(result.success).toBe(true);
 

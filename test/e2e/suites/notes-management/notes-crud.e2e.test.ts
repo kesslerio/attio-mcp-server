@@ -10,25 +10,12 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import {
-  AttioRecord,
-  NoteRecord,
-  testCompanies,
-  testPeople,
-  createdNotes,
-  createSharedSetup,
-  createTestCompany,
-  createTestPerson,
-  callNotesTool,
-  E2EAssertions,
-  noteFixtures,
-} from './shared-setup.js';
+
 import type { McpToolResponse } from '../../types/index.js';
 
 describe
   .skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')
   .sequential('Notes CRUD Operations E2E Tests', () => {
-    const setup = createSharedSetup();
 
     beforeAll(setup.beforeAll, 30000);
     afterAll(setup.afterAll, 30000);
@@ -53,16 +40,13 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping company note test - invalid company data');
           return;
         }
-        const noteData = noteFixtures.companies.meeting(
           testCompany.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -71,7 +55,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -92,14 +75,12 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
             '⏭️ Skipping get company notes test - invalid company data'
           );
           return;
         }
-        const response = (await callNotesTool('list-notes', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           limit: 10,
@@ -107,10 +88,9 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const notes = E2EAssertions.expectMcpData(response);
 
         // Notes might be an array or a response object with data array
-        let noteArray: any[] = [];
+        let noteArray: unknown[] = [];
         if (Array.isArray(notes)) {
           noteArray = notes;
         } else if (notes && Array.isArray(notes.data)) {
@@ -137,18 +117,15 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
             '⏭️ Skipping markdown note test - invalid company data'
           );
           return;
         }
-        const noteData = noteFixtures.markdown.meetingAgenda(
           testCompany.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -157,7 +134,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -178,17 +154,13 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping URI format test - invalid company data');
           return;
         }
-        const noteData = noteFixtures.companies.followUp(
           testCompany.id.record_id
         );
-        const uri = `attio://companies/${testCompany.id.record_id}`;
 
-        const response = (await callNotesTool('create-note', {
           uri: uri,
           title: noteData.title,
           content: noteData.content,
@@ -196,7 +168,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -214,14 +185,12 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping pagination test - invalid company data');
           return;
         }
 
         // Test with small limit
-        const response = (await callNotesTool('list-notes', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           limit: 2,
@@ -229,7 +198,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const notes = E2EAssertions.expectMcpData(response);
         expect(notes).toBeDefined();
 
         console.error('📄 Pagination test completed for company notes');
@@ -245,16 +213,13 @@ describe
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error('⏭️ Skipping person note test - invalid person data');
           return;
         }
-        const noteData = noteFixtures.people.introduction(
           testPerson.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -263,7 +228,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -284,23 +248,20 @@ describe
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping get person notes test - invalid person data'
           );
           return;
         }
-        const response = (await callNotesTool('list-notes', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const notes = E2EAssertions.expectMcpData(response);
 
         // Notes might be an array or a response object
-        let noteArray: any[] = [];
+        let noteArray: unknown[] = [];
         if (Array.isArray(notes)) {
           noteArray = notes;
         } else if (notes && Array.isArray(notes.data)) {
@@ -327,16 +288,13 @@ describe
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping technical note test - invalid person data'
           );
           return;
         }
-        const noteData = noteFixtures.people.technical(testPerson.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -345,7 +303,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -365,19 +322,16 @@ describe
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping markdown person note test - invalid person data'
           );
           return;
         }
-        const noteData = noteFixtures.markdown.technicalSpecs(
           testPerson.id.record_id,
           'people'
         );
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -386,7 +340,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 

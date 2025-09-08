@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-// Import shared helpers
 import { setupUnitTestMocks, cleanupMocks } from './helpers/index.js';
-
-// Enhanced error types will be imported when needed in error handling tests
 
 // Import tool configurations
 import {
@@ -33,7 +30,7 @@ describe('Universal Core Operations Attributes Tests', () => {
 
   describe('get-attributes tool', () => {
     it('should get attributes successfully', async () => {
-      const mockAttributes: any = [
+      const mockAttributes: unknown = [
         { name: 'name', type: 'string', required: true },
         { name: 'website', type: 'url', required: false },
         { name: 'industry', type: 'select', required: false },
@@ -49,7 +46,6 @@ describe('Universal Core Operations Attributes Tests', () => {
         record_id: 'comp-1',
       };
 
-      const result = await getAttributesConfig.handler(params);
       expect(result).toEqual(mockAttributes);
       expect(vi.mocked(handleUniversalGetAttributes)).toHaveBeenCalledWith(
         params
@@ -57,7 +53,7 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
 
     it('should format array attributes correctly', async () => {
-      const mockAttributes: any = [
+      const mockAttributes: unknown = [
         { name: 'name', type: 'string' },
         { name: 'website', type: 'url' },
       ];
@@ -67,7 +63,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = (getAttributesConfig.formatResult as any)(
         mockAttributes,
         UniversalResourceType.COMPANIES
       );
@@ -77,7 +72,6 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
 
     it('should format object attributes correctly', async () => {
-      const mockAttributes = {
         name: 'Test Company',
         website: 'https://test.com',
       };
@@ -87,7 +81,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = (getAttributesConfig.formatResult as any)(
         mockAttributes,
         UniversalResourceType.COMPANIES
       );
@@ -99,7 +92,6 @@ describe('Universal Core Operations Attributes Tests', () => {
 
   describe('discover-attributes tool', () => {
     it('should discover attributes successfully', async () => {
-      const mockSchema = [
         { name: 'name', type: 'string', required: true },
         { name: 'website', type: 'url', required: false },
       ];
@@ -111,9 +103,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         mockSchema as any
       );
 
-      const params = { resource_type: UniversalResourceType.COMPANIES };
 
-      const result = await discoverAttributesConfig.handler(params);
       expect(result).toEqual(mockSchema);
       expect(vi.mocked(handleUniversalDiscoverAttributes)).toHaveBeenCalledWith(
         UniversalResourceType.COMPANIES,
@@ -122,7 +112,6 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
 
     it('should format discovered attributes correctly', async () => {
-      const mockSchema = [
         { name: 'name', type: 'string', required: true },
         { name: 'website', type: 'url', required: false },
       ];
@@ -132,7 +121,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = (discoverAttributesConfig.formatResult as any)(
         mockSchema,
         UniversalResourceType.COMPANIES
       );
@@ -144,7 +132,6 @@ describe('Universal Core Operations Attributes Tests', () => {
 
   describe('get-detailed-info tool', () => {
     it('should get detailed info successfully', async () => {
-      const mockInfo = {
         values: {
           name: [{ value: 'Test Company' }],
           website: [{ value: 'https://test.com' }],
@@ -163,7 +150,6 @@ describe('Universal Core Operations Attributes Tests', () => {
         info_type: DetailedInfoType.CONTACT,
       };
 
-      const result = await getDetailedInfoConfig.handler(params);
       expect(result).toEqual(mockInfo);
       expect(vi.mocked(handleUniversalGetDetailedInfo)).toHaveBeenCalledWith(
         params
@@ -171,7 +157,6 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
 
     it('should format detailed info with values correctly', async () => {
-      const mockInfo = {
         values: {
           name: [{ value: 'Test Company' }],
           website: [{ value: 'https://test.com' }],
@@ -184,7 +169,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = (getDetailedInfoConfig.formatResult as any)(
         mockInfo,
         UniversalResourceType.COMPANIES,
         DetailedInfoType.CONTACT
@@ -197,7 +181,6 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
 
     it('should format detailed info as object correctly', async () => {
-      const mockInfo = {
         name: 'Test Company',
         website: 'https://test.com',
         email: 'info@test.com',
@@ -208,7 +191,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = (getDetailedInfoConfig.formatResult as any)(
         mockInfo,
         UniversalResourceType.COMPANIES,
         DetailedInfoType.BUSINESS
@@ -224,7 +206,6 @@ describe('Universal Core Operations Attributes Tests', () => {
   describe('Task Display Formatting (Issue #472)', () => {
     describe('search-records formatResult for tasks', () => {
       it('should display task content when available', () => {
-        const mockResults = [
           {
             id: { record_id: 'task-1', task_id: 'task-1' },
             values: {
@@ -241,7 +222,6 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.TASKS
         );
@@ -257,7 +237,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       });
 
       it('should fallback to Unnamed for tasks without content', () => {
-        const mockResults = [
           {
             id: { record_id: 'task-1', task_id: 'task-1' },
             values: {
@@ -266,7 +245,6 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.TASKS
         );
@@ -276,7 +254,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       });
 
       it('should handle tasks with empty content values', () => {
-        const mockResults = [
           {
             id: { record_id: 'task-1', task_id: 'task-1' },
             values: {
@@ -286,7 +263,6 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.TASKS
         );
@@ -296,7 +272,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       });
 
       it('should prioritize other fields over content for non-task records', () => {
-        const mockResults = [
           {
             id: { record_id: 'comp-1' },
             values: {
@@ -306,7 +281,6 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.COMPANIES
         );
@@ -318,7 +292,6 @@ describe('Universal Core Operations Attributes Tests', () => {
 
     describe('get-record-details formatResult for tasks', () => {
       it('should display task content when available', async () => {
-        const mockRecord = {
           id: { record_id: 'task-1', task_id: 'task-1' },
           values: {
             content: [{ value: 'Review quarterly budget reports' }],
@@ -333,7 +306,6 @@ describe('Universal Core Operations Attributes Tests', () => {
         );
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
-        const formatted = (getRecordDetailsConfig.formatResult as any)(
           mockRecord,
           UniversalResourceType.TASKS
         );
@@ -344,7 +316,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       });
 
       it('should fallback to Unnamed for tasks without content', async () => {
-        const mockRecord = {
           id: { record_id: 'task-1', task_id: 'task-1' },
           values: {
             status: [{ value: 'pending' }],
@@ -356,7 +327,6 @@ describe('Universal Core Operations Attributes Tests', () => {
         );
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
-        const formatted = (getRecordDetailsConfig.formatResult as any)(
           mockRecord,
           UniversalResourceType.TASKS
         );
@@ -366,7 +336,6 @@ describe('Universal Core Operations Attributes Tests', () => {
       });
 
       it('should handle mixed field priority correctly', async () => {
-        const mockRecord = {
           id: { record_id: 'record-1' },
           values: {
             title: [{ value: 'Important Title' }],
@@ -379,7 +348,6 @@ describe('Universal Core Operations Attributes Tests', () => {
         );
         vi.mocked(getSingularResourceType).mockReturnValue('record');
 
-        const formatted = (getRecordDetailsConfig.formatResult as any)(
           mockRecord,
           UniversalResourceType.RECORDS
         );

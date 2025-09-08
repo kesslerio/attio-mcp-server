@@ -6,18 +6,18 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PerformanceMonitor } from '../src/middleware/performance.js';
-import { SchemaPreValidator } from '../src/utils/schema-pre-validation.js';
-import { PeopleDataNormalizer } from '../src/utils/normalization/people-normalization.js';
-import { ResourceMapper } from '../src/utils/resource-mapping.js';
+
 import { EmailValidationMode } from '../src/utils/normalization/email-validation-config.js';
+import { PeopleDataNormalizer } from '../src/utils/normalization/people-normalization.js';
+import { PerformanceMonitor } from '../src/middleware/performance.js';
+import { ResourceMapper } from '../src/utils/resource-mapping.js';
+import { SchemaPreValidator } from '../src/utils/schema-pre-validation.js';
 
 // Skip these tests if no API key is available
-const SKIP_INTEGRATION =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
-  let performanceMonitor: any;
+  let performanceMonitor: unknown;
 
   beforeAll(() => {
     performanceMonitor = PerformanceMonitor.getInstance();
@@ -31,18 +31,15 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
   describe('Schema Validation with Real API', () => {
     it('should validate against real company attributes', async () => {
       // Pre-populate cache with real attributes
-      const attributes = await SchemaPreValidator.getAttributes(
         'companies' as any
       );
 
       // Valid data that matches real schema
-      const validData = {
         name: 'Test Company',
         domain: 'test.com',
         team_size: 50,
       };
 
-      const validation = await SchemaPreValidator.validateRecordData(
         'companies' as any,
         validData
       );
@@ -51,13 +48,11 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
     });
 
     it('should detect invalid fields against real schema', async () => {
-      const invalidData = {
         name: 'Test Company',
         invalid_field_xyz: 'should fail',
         another_bad_field: 123,
       };
 
-      const validation = await SchemaPreValidator.validateRecordData(
         'companies' as any,
         invalidData
       );
@@ -70,7 +65,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
 
   describe('Performance Monitoring with Real Operations', () => {
     it('should track real API call performance', async () => {
-      const operation = 'test-api-call';
 
       // Start tracking
       performanceMonitor.startOperation(operation);
@@ -82,24 +76,20 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       performanceMonitor.endOperation(operation);
 
       // Check metrics
-      const metrics = performanceMonitor.getMetrics();
       expect(metrics.totalOperations).toBeGreaterThan(0);
       expect(metrics.averageTime).toBeGreaterThan(50);
       expect(metrics.averageTime).toBeLessThan(200);
     });
 
     it('should detect slow operations', async () => {
-      const operation = 'slow-operation';
 
       // Track a slow operation
       performanceMonitor.startOperation(operation);
       await new Promise((resolve) => setTimeout(resolve, 150));
-      const result = performanceMonitor.endOperation(operation);
 
       // Should be marked as warning (>100ms)
       expect(result.duration).toBeGreaterThan(100);
 
-      const metrics = performanceMonitor.getMetrics();
       expect(metrics.slowOperations).toBeGreaterThan(0);
     });
   });
@@ -107,7 +97,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
   describe('Resource Mapping with Real Resources', () => {
     it('should generate correct paths for all resource types', () => {
       // Test real resource types
-      const testCases = [
         { type: 'companies', id: '123', expected: '/objects/companies/123' },
         { type: 'people', id: '456', expected: '/objects/people/456' },
         { type: 'lists', id: '789', expected: '/lists/789' },
@@ -116,7 +105,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       ];
 
       for (const testCase of testCases) {
-        const path = ResourceMapper.getResourcePath(
           testCase.type as any,
           testCase.id
         );
@@ -125,8 +113,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
     });
 
     it('should handle custom object types correctly', () => {
-      const customType = 'custom_crm_object';
-      const path = ResourceMapper.getResourcePath(customType as any, 'xyz');
       expect(path).toBe('/objects/custom_crm_object/xyz');
       expect(path).not.toContain('/objects/objects/');
     });
@@ -134,7 +120,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
 
   describe('People Normalization with Various Formats', () => {
     it('should normalize real-world name formats', () => {
-      const testCases = [
         {
           input: 'John Doe',
           expected: { first_name: 'John', last_name: 'Doe' },
@@ -154,13 +139,11 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       ];
 
       for (const testCase of testCases) {
-        const result = PeopleDataNormalizer.normalizeName(testCase.input);
         expect(result).toEqual(testCase.expected);
       }
     });
 
     it('should normalize email formats correctly', () => {
-      const testCases = [
         {
           input: 'john@example.com',
           expected: [
@@ -184,13 +167,11 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       ];
 
       for (const testCase of testCases) {
-        const result = PeopleDataNormalizer.normalizeEmails(testCase.input);
         expect(result).toEqual(testCase.expected);
       }
     });
 
     it('should validate complex email formats', () => {
-      const validEmails = [
         'user@example.com',
         'user+tag@example.com',
         'user.name@example.co.uk',
@@ -198,7 +179,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
         'user123@test.domain.com',
       ];
 
-      const invalidEmails = [
         'invalid.email',
         '@example.com',
         'user@',
@@ -209,13 +189,11 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       ];
 
       for (const email of validEmails) {
-        const result = PeopleDataNormalizer.normalizeEmails(email);
         expect(result).toBeDefined();
         expect(result).toHaveLength(1);
       }
 
       for (const email of invalidEmails) {
-        const result = PeopleDataNormalizer.normalizeEmails(email, {
           mode: EmailValidationMode.WARN,
           logDeprecationWarnings: false,
         });
@@ -226,7 +204,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
 
   describe('End-to-End Validation Flow', () => {
     it('should validate a complete company creation request', async () => {
-      const input = {
         resource_type: 'companies',
         action: 'create',
         data: {
@@ -244,7 +221,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       expect(input.resource_type).toBe('companies');
 
       // Validate fields against real attributes
-      const fieldValidation = await SchemaPreValidator.validateRecordData(
         'companies' as any,
         input.data
       );
@@ -252,7 +228,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
     });
 
     it('should validate a complete people creation request with normalization', async () => {
-      const input = {
         resource_type: 'people',
         action: 'create',
         data: {
@@ -263,7 +238,6 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       };
 
       // Normalize the data
-      const normalized = PeopleDataNormalizer.normalizePeopleData(input.data);
       expect(normalized).toHaveProperty('first_name', 'John');
       expect(normalized).toHaveProperty('last_name', 'Doe');
       expect(normalized).toHaveProperty('email_addresses');

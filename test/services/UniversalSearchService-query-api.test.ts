@@ -4,15 +4,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
-import {
-  UniversalResourceType,
-  SearchType,
-} from '../../src/handlers/tool-configs/universal/types.js';
 import type { UniversalSearchParams } from '../../src/handlers/tool-configs/universal/types.js';
 
 // Mock the Attio client
-const mockPost = vi.fn();
 vi.mock('../../src/api/attio-client.js', () => ({
   getAttioClient: () => ({
     post: mockPost,
@@ -72,8 +68,6 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         offset: 0,
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
-
       expect(mockPost).toHaveBeenCalledWith(
         '/objects/companies/records/query',
         expect.objectContaining({
@@ -118,8 +112,6 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         use_or_logic: true,
         limit: 5,
       };
-
-      const results = await UniversalSearchService.searchRecords(params);
 
       expect(mockPost).toHaveBeenCalledWith(
         '/objects/companies/records/query',
@@ -223,8 +215,6 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         limit: 20,
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
-
       expect(mockPost).toHaveBeenCalledWith(
         '/objects/companies/records/query',
         expect.objectContaining({
@@ -293,7 +283,6 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         relationship_target_id: 'invalid_id',
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
       expect(results).toEqual([]);
     });
 
@@ -306,7 +295,6 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         query: 'test query',
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
       expect(results).toEqual([]);
     });
 
@@ -321,7 +309,6 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         date_operator: 'greater_than',
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
       expect(results).toEqual([]);
     });
   });

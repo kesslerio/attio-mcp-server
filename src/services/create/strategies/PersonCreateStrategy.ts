@@ -5,21 +5,13 @@
  */
 
 import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
-import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import { getCreateService } from '../index.js';
 import { convertAttributeFormats, getFormatErrorHelp, validatePeopleAttributesPrePost } from '../../../utils/attribute-format-helpers.js';
-import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
-import { ValidationService } from '../../ValidationService.js';
-import { 
-  UniversalValidationError,
-  ErrorType,
-} from '../../../handlers/tool-configs/universal/schemas.js';
+import { debug } from '../../../utils/logger.js';
+import { getCreateService } from '../index.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
-import { logger } from '../../../utils/logger.js';
-import type {
-  PersonFieldInput,
-  AllowedPersonFields,
-} from '../../../types/service-types.js';
+import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
+import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
+import { ValidationService } from '../../ValidationService.js';
 
 export class PersonCreateStrategy extends BaseCreateStrategy {
   constructor() {
@@ -31,21 +23,18 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
     
     try {
       // Apply field allowlist for E2E test isolation (prevent extra field rejections)
-      const allowlistedData = this.pickAllowedPersonFields(mapped_data);
 
       // Normalize people data first (handle name string/object, email singular/array)
-      const normalizedData = PeopleDataNormalizer.normalizePeopleData(allowlistedData);
 
       // Validate email addresses after normalization for consistent validation
       ValidationService.validateEmailAddresses(normalizedData);
 
       // Apply format conversions for common mistakes
-      const correctedData = convertAttributeFormats('people', normalizedData);
 
       // Validate people attributes before POST to ensure correct Attio format
       validatePeopleAttributesPrePost(correctedData);
       
-      logger.debug('People validation passed, final payload shape', {
+      debug('PersonCreateStrategy', 'People validation passed, final payload shape', {
         name: Array.isArray(correctedData.name)
           ? 'ARRAY'
           : typeof correctedData.name,
@@ -55,7 +44,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
       });
 
       // Use mock injection for test environments (Issue #480 compatibility)
-      const result = await this.createPersonWithMockSupport(correctedData);
 
       // Defensive validation: Ensure createPerson returned a valid record
       if (!result) {
@@ -87,8 +75,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
         }
       };
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
@@ -103,8 +89,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
           errorMessage.includes('email') ||
           errorMessage.includes('email_address')
         ) {
-          const emailAddresses = (mapped_data as any).email_addresses as string[];
-          const emailText =
             emailAddresses?.length > 0
               ? emailAddresses.join(', ')
               : 'the provided email';
@@ -121,7 +105,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
         }
 
         // Generic uniqueness conflict
-        const enhancedMessage = await this.enhanceUniquenessError(
           errorMessage,
           mapped_data
         );
@@ -140,10 +123,7 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
         errorMessage.includes('invalid value') ||
         errorMessage.includes('Format Error')
       ) {
-        const match = errorMessage.match(/slug "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(this.resource_type, match[1]);
-          const enhancedError = getFormatErrorHelp(
             'people',
             match[1],
             (error as Error).message
@@ -158,7 +138,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
 
       // Check for uniqueness constraint violations (fallback)
       if (errorMessage.includes('uniqueness constraint')) {
-        const enhancedMessage = await this.enhanceUniquenessError(
           errorMessage,
           mapped_data
         );
@@ -221,7 +200,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
   private async createPersonWithMockSupport(
     personData: Record<string, unknown>
   ): Promise<any> {
-    const service = getCreateService();
     return await service.createPerson(personData);
   }
 
@@ -233,7 +211,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
     mappedData: Record<string, unknown>
   ): Promise<string> {
     // Extract field name from error message if possible
-    const fieldMatch =
       errorMessage.match(/field\s+["']([^"']+)["']/i) ||
       errorMessage.match(/attribute\s+["']([^"']+)["']/i) ||
       errorMessage.match(/column\s+["']([^"']+)["']/i);
@@ -241,8 +218,6 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
     let enhancedMessage = `Uniqueness constraint violation for ${this.resource_type}`;
 
     if (fieldMatch && fieldMatch[1]) {
-      const fieldName = fieldMatch[1];
-      const fieldValue = mappedData[fieldName];
       enhancedMessage += `: The value "${fieldValue}" for field "${fieldName}" already exists.`;
     } else {
       enhancedMessage += `: A record with these values already exists.`;

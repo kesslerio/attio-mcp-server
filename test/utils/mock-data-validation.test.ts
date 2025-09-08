@@ -9,18 +9,14 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import {
-  TestDataInspector,
-  MockDataValidator,
-  TestEnvironmentDiagnostics,
-} from './test-debugging.js';
-import { TaskMockFactory } from './mock-factories/TaskMockFactory.js';
+
 import { CompanyMockFactory } from './mock-factories/CompanyMockFactory.js';
-import { PersonMockFactory } from './mock-factories/PersonMockFactory.js';
 import { ListMockFactory } from './mock-factories/ListMockFactory.js';
+import { PersonMockFactory } from './mock-factories/PersonMockFactory.js';
+import { TaskMockFactory } from './mock-factories/TaskMockFactory.js';
 
 describe('Mock Data Validation for E2E Test Compatibility', () => {
-  let diagnosticReport: any;
+  let diagnosticReport: unknown;
 
   beforeAll(async () => {
     // Run full diagnostic before tests
@@ -29,8 +25,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
   describe('Task Mock Factory Validation - Issue #480 Compatibility', () => {
     it('should create task with both content and title fields', () => {
-      const task = TaskMockFactory.create();
-      const validation = TestDataInspector.validateTaskStructure(task);
 
       expect(validation.valid).toBe(true);
       expect(task.content || task.title).toBeDefined();
@@ -46,7 +40,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should include task_id in ID structure for E2E compatibility', () => {
-      const task = TaskMockFactory.create();
 
       expect(task.id).toBeDefined();
       expect(task.id.task_id).toBeDefined();
@@ -58,8 +51,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should create high priority task without errors', () => {
-      const highPriorityTask = TaskMockFactory.createHighPriority();
-      const validation =
         TestDataInspector.validateTaskStructure(highPriorityTask);
 
       expect(validation.valid).toBe(true);
@@ -68,9 +59,7 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should create task with assignee correctly', () => {
-      const taskWithAssignee =
         TaskMockFactory.createWithAssignee('test-assignee-123');
-      const validation =
         TestDataInspector.validateTaskStructure(taskWithAssignee);
 
       expect(validation.valid).toBe(true);
@@ -80,9 +69,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should create task with linked records properly', () => {
-      const recordIds = ['record-1', 'record-2'];
-      const taskWithLinks = TaskMockFactory.createWithLinkedRecords(recordIds);
-      const validation = TestDataInspector.validateTaskStructure(taskWithLinks);
 
       expect(validation.valid).toBe(true);
       expect(taskWithLinks.linked_records).toHaveLength(2);
@@ -91,11 +77,9 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should create multiple tasks consistently', () => {
-      const tasks = TaskMockFactory.createMultiple(5);
 
       expect(tasks).toHaveLength(5);
       tasks.forEach((task, index) => {
-        const validation = TestDataInspector.validateTaskStructure(task);
         expect(validation.valid).toBe(true);
         expect(task.content).toContain(`Mock Task ${index + 1}`);
       });
@@ -103,14 +87,10 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
     it('should handle edge cases gracefully', () => {
       // Test minimal task
-      const minimalTask = TaskMockFactory.createMinimal();
-      const minimalValidation =
         TestDataInspector.validateTaskStructure(minimalTask);
       expect(minimalValidation.valid).toBe(true);
 
       // Test overdue task
-      const overdueTask = TaskMockFactory.createOverdue();
-      const overdueValidation =
         TestDataInspector.validateTaskStructure(overdueTask);
       expect(overdueValidation.valid).toBe(true);
 
@@ -122,8 +102,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
       }
 
       // Test completed task
-      const completedTask = TaskMockFactory.createCompleted();
-      const completedValidation =
         TestDataInspector.validateTaskStructure(completedTask);
       expect(completedValidation.valid).toBe(true);
       expect(completedTask.status).toBe('completed');
@@ -132,8 +110,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
   describe('Company Mock Factory Validation', () => {
     it('should create company with proper ID structure', () => {
-      const company = CompanyMockFactory.create();
-      const validation = TestDataInspector.validateCompanyStructure(company);
 
       expect(validation.valid).toBe(true);
       expect(company.id).toBeDefined();
@@ -143,7 +119,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should include values object with proper structure', () => {
-      const company = CompanyMockFactory.create();
 
       expect(company.values).toBeDefined();
       expect(typeof company.values).toBe('object');
@@ -152,11 +127,9 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should handle custom company data', () => {
-      const customCompany = CompanyMockFactory.create({
         name: 'Custom Test Company',
         domain: 'custom-test.com',
       });
-      const validation =
         TestDataInspector.validateCompanyStructure(customCompany);
 
       expect(validation.valid).toBe(true);
@@ -167,8 +140,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
   describe('Person Mock Factory Validation', () => {
     it('should create person with proper ID structure', () => {
-      const person = PersonMockFactory.create();
-      const validation = TestDataInspector.validatePersonStructure(person);
 
       expect(validation.valid).toBe(true);
       expect(person.id).toBeDefined();
@@ -177,7 +148,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should include values object for person data', () => {
-      const person = PersonMockFactory.create();
 
       expect(person.values).toBeDefined();
       expect(typeof person.values).toBe('object');
@@ -186,7 +156,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
   describe('List Mock Factory Validation', () => {
     it('should create list with basic structure', () => {
-      const list = ListMockFactory.create();
 
       expect(list).toBeDefined();
       expect(typeof list).toBe('object');
@@ -200,7 +169,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
   describe('Error Message Format Validation', () => {
     it('should validate error messages match expected patterns', () => {
-      const errorPatterns = [
         {
           message: 'Record not found',
           pattern: /not found|invalid|does not exist/i,
@@ -224,7 +192,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
       ];
 
       errorPatterns.forEach(({ message, pattern, shouldMatch }) => {
-        const validation = TestDataInspector.validateErrorMessage(
           message,
           pattern
         );
@@ -241,17 +208,14 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
     it('should provide standardized error messages for mock responses', () => {
       // Test that we can generate standard error messages
-      const standardErrors = [
         'Task not found',
         'Company does not exist',
         'Invalid person ID',
         'List not found',
       ];
 
-      const pattern = /not found|invalid|does not exist/i;
 
       standardErrors.forEach((errorMsg) => {
-        const validation = TestDataInspector.validateErrorMessage(
           errorMsg,
           pattern
         );
@@ -263,21 +227,16 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
   describe('Mock Factory Integration Tests', () => {
     it('should validate all mock factories meet minimum standards', () => {
       // Test each factory individually first
-      const taskValidation = TestDataInspector.validateTaskStructure(
         TaskMockFactory.create()
       );
-      const companyValidation = TestDataInspector.validateCompanyStructure(
         CompanyMockFactory.create()
       );
-      const personValidation = TestDataInspector.validatePersonStructure(
         PersonMockFactory.create()
       );
-      const listValidation = TestDataInspector.validateTaskStructure(
         ListMockFactory.create()
       ); // Using task validation as basic check
 
       // Manual calculation of overall score
-      const overallScore =
         (taskValidation.fieldCoverage +
           companyValidation.fieldCoverage +
           personValidation.fieldCoverage +
@@ -287,7 +246,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
       expect(overallScore).toBeGreaterThan(0.3); // Should have reasonable coverage
 
       // Check for critical errors
-      const criticalErrors = [
         ...taskValidation.errors.filter(
           (e) => e.includes('Issue #480') || e.includes('task_id')
         ),
@@ -312,10 +270,8 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     });
 
     it('should have no critical validation errors', async () => {
-      const report = await MockDataValidator.validateAllFactories();
 
       // Critical errors that would break E2E tests
-      const criticalErrors = report.criticalIssues.filter(
         (issue) =>
           issue.includes('Issue #480') ||
           issue.includes('required') ||
@@ -328,7 +284,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
     it('should ensure Issue #480 compatibility across all factories', () => {
       // Test that task creation specifically works for Issue #480 scenarios
-      const taskScenarios = [
         { description: 'basic task', factory: () => TaskMockFactory.create() },
         {
           description: 'high priority',
@@ -349,7 +304,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
       ];
 
       taskScenarios.forEach(({ description, factory }) => {
-        const task = factory();
 
         // Issue #480 specific validations
         expect(
@@ -365,7 +319,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
           `${description} should have record_id`
         ).toBeDefined();
 
-        const validation = TestDataInspector.validateTaskStructure(task);
         expect(
           validation.valid,
           `${description} should pass validation: ${validation.errors.join(', ')}`
@@ -383,10 +336,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
     it('should have functioning mock factory status', () => {
       // Skip the full diagnostic report test since it has import issues
       // Focus on core functionality
-      const taskWorks = !!TaskMockFactory.create();
-      const companyWorks = !!CompanyMockFactory.create();
-      const personWorks = !!PersonMockFactory.create();
-      const listWorks = !!ListMockFactory.create();
 
       expect(taskWorks).toBe(true);
       expect(companyWorks).toBe(true);
@@ -418,18 +367,15 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
   describe('E2E Test Compatibility Regression Prevention', () => {
     it('should prevent Task E2E test regressions', () => {
       // Test scenarios that previously failed in Issue #480
-      const regressionScenarios = [
         {
           name: 'task.content || task.title assertion',
           test: () => {
-            const task = TaskMockFactory.create();
             return !!(task.content || task.title);
           },
         },
         {
           name: 'task.id.task_id compatibility',
           test: () => {
-            const task = TaskMockFactory.create();
             return !!task.id.task_id;
           },
         },
@@ -437,7 +383,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
           name: 'high priority task creation',
           test: () => {
             try {
-              const task = TaskMockFactory.createHighPriority();
               return !!task && !!task.content;
             } catch (error) {
               return false;
@@ -453,8 +398,6 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
     it('should maintain consistent mock data structure across versions', () => {
       // Create a reference task and ensure it has all expected fields
-      const referenceTask = TaskMockFactory.create();
-      const requiredFields = [
         'id',
         'content',
         'status',

@@ -5,17 +5,9 @@
  * across all resource types (companies, people, records, tasks).
  */
 
-import {
-  UniversalToolConfig,
-  UniversalSearchParams,
-  UniversalRecordDetailsParams,
-  UniversalCreateParams,
-  UniversalUpdateParams,
-  UniversalDeleteParams,
-  UniversalAttributesParams,
-  UniversalDetailedInfoParams,
-  UniversalResourceType,
-} from './types.js';
+import { AttioRecord } from '../../../types/attio.js';
+import { ErrorService } from '../../../services/ErrorService.js';
+import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
 
 // Helper function to get plural form of resource type
 function getPluralResourceType(resourceType: UniversalResourceType): string {
@@ -87,7 +79,6 @@ export const searchRecordsConfig: UniversalToolConfig = {
   name: 'search-records',
   handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'search-records',
         params
       );
@@ -106,48 +97,39 @@ export const searchRecordsConfig: UniversalToolConfig = {
   ): string => {
     // Handle null/undefined/invalid input
     if (!results) {
-      const typeName = resourceType
         ? getPluralResourceType(resourceType)
         : 'records';
       return `Found 0 ${typeName}`;
     }
 
     // Handle wrapped results format
-    const recordsArray = Array.isArray(results)
       ? results
       : (results?.data ?? []);
 
     // Ensure recordsArray is actually an array
     if (!Array.isArray(recordsArray)) {
-      const typeName = resourceType
         ? getPluralResourceType(resourceType)
         : 'records';
       return `Found 0 ${typeName}`;
     }
 
     if (recordsArray.length === 0) {
-      const typeName = resourceType
         ? getPluralResourceType(resourceType)
         : 'records';
       return `Found 0 ${typeName}`;
     }
 
-    const typeName = resourceType
       ? getPluralResourceType(resourceType)
       : 'records';
 
-    const formattedResults = recordsArray
       .map((record, index) => {
         // Extract identifier based on resource type
         let identifier = 'Unnamed';
         let id = String(record.id?.record_id || 'unknown');
 
         // Safely extract values from arrays
-        const values = record.values || {};
-        const getFirstValue = (field: unknown): string | undefined => {
           if (!field || !Array.isArray(field) || field.length === 0)
             return undefined;
-          const firstItem = field[0];
           return firstItem &&
             typeof firstItem === 'object' &&
             firstItem !== null &&
@@ -165,8 +147,6 @@ export const searchRecordsConfig: UniversalToolConfig = {
           id = String(record.id?.task_id || record.id?.record_id || 'unknown');
         } else if (resourceType === UniversalResourceType.PEOPLE) {
           // For people, use comprehensive name extraction logic (with proper type handling)
-          const valuesAny = values as Record<string, any>;
-          const name = 
             valuesAny?.name?.[0]?.full_name ||
             valuesAny?.name?.[0]?.value ||
             valuesAny?.name?.[0]?.formatted ||
@@ -175,7 +155,6 @@ export const searchRecordsConfig: UniversalToolConfig = {
             'Unnamed';
           
           // Add email if available for better identification
-          const emailValue = 
             valuesAny?.email_addresses?.[0]?.email_address ||
             valuesAny?.email_addresses?.[0]?.value ||
             getFirstValue(values.email) ||
@@ -184,15 +163,9 @@ export const searchRecordsConfig: UniversalToolConfig = {
           identifier = emailValue ? `${name} (${emailValue})` : name;
         } else if (resourceType === UniversalResourceType.COMPANIES) {
           // For companies, prefer name with optional website or email
-          const name = getFirstValue(values.name) || 'Unnamed';
-          const website = getFirstValue(values.website);
-          const email = getFirstValue(values.email);
-          const contactInfo = website || email;
           identifier = contactInfo ? `${name} (${contactInfo})` : name;
         } else {
           // For other types, try common identifier fields
-          const nameValue = getFirstValue(values.name);
-          const titleValue = getFirstValue(values.title);
           identifier = nameValue || titleValue || 'Unnamed';
         }
 
@@ -214,7 +187,6 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
     params: UniversalRecordDetailsParams
   ): Promise<AttioRecord> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'get-record-details',
         params
       );
@@ -242,14 +214,11 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       return 'Record not found';
     }
 
-    const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
     // Use shared utility for display name extraction (eliminates code duplication)
-    const name = UniversalUtilityService.extractDisplayName(
       record.values || {}
     );
-    const id = String(record.id?.record_id || 'unknown');
 
     let details = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)}: ${name}\nID: ${id}\n\n`;
 
@@ -280,7 +249,6 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
           record.values.associated_company &&
           Array.isArray(record.values.associated_company)
         ) {
-          const companies = (
             record.values.associated_company as Record<string, unknown>[]
           )
             .map(
@@ -295,12 +263,10 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       }
 
       fieldOrder.forEach((field) => {
-        const value =
           record.values?.[field] &&
           Array.isArray(record.values[field]) &&
           record.values[field][0]?.value;
         if (value) {
-          const displayField =
             field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
           details += `${displayField}: ${value}\n`;
         }
@@ -313,7 +279,6 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
           record.values.email_addresses &&
           Array.isArray(record.values.email_addresses)
         ) {
-          const emails = (
             record.values.email_addresses as Record<string, unknown>[]
           )
             .map((e: Record<string, unknown>) => e.email_address || e.value)
@@ -328,7 +293,6 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
           record.values.phone_numbers &&
           Array.isArray(record.values.phone_numbers)
         ) {
-          const phones = (
             record.values.phone_numbers as Record<string, unknown>[]
           )
             .map((p: Record<string, unknown>) => p.phone_number || p.value)
@@ -361,7 +325,6 @@ export const createRecordConfig: UniversalToolConfig = {
   name: 'create-record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'create-record',
         params
       );
@@ -373,7 +336,6 @@ export const createRecordConfig: UniversalToolConfig = {
         sanitizedParams.record_data
       );
 
-      const result = await handleUniversalCreate(sanitizedParams);
       try {
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } = await import(
@@ -404,15 +366,12 @@ export const createRecordConfig: UniversalToolConfig = {
       return 'Record creation failed';
     }
 
-    const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
     // Extract name from values (may be empty on create) or fall back to a generic name
-    const coerce = (v: unknown): string | undefined => {
       if (v == null) return undefined;
       if (typeof v === 'string') return v;
       if (Array.isArray(v)) {
-        const first = v[0];
         if (typeof first === 'string') return first;
         if (first && typeof first === 'object' && 'value' in first)
           return String(first.value);
@@ -420,12 +379,10 @@ export const createRecordConfig: UniversalToolConfig = {
       if (typeof v === 'object' && 'value' in v) return String(v.value);
       return undefined;
     };
-    const displayName =
       coerce((record.values as Record<string, unknown>)?.name) ||
       coerce((record.values as Record<string, unknown>)?.title) ||
       coerce((record.values as Record<string, unknown>)?.content) ||
       `New ${resourceTypeName}`;
-    const id = String(record.id?.record_id || record.record_id || 'unknown');
 
     return `✅ Successfully created ${resourceTypeName}: ${displayName} (ID: ${id})`;
   },
@@ -439,7 +396,6 @@ export const updateRecordConfig: UniversalToolConfig = {
   name: 'update-record',
   handler: async (params: UniversalUpdateParams): Promise<AttioRecord> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'update-record',
         params
       );
@@ -451,7 +407,6 @@ export const updateRecordConfig: UniversalToolConfig = {
         sanitizedParams.record_data
       );
 
-      const result = await handleUniversalUpdate(sanitizedParams);
       try {
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } = await import(
@@ -488,10 +443,8 @@ export const updateRecordConfig: UniversalToolConfig = {
       return 'Record update failed';
     }
 
-    const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
-    const name =
       (record.values?.name &&
         Array.isArray(record.values.name) &&
         record.values.name[0]?.value) ||
@@ -499,7 +452,6 @@ export const updateRecordConfig: UniversalToolConfig = {
         Array.isArray(record.values.title) &&
         record.values.title[0]?.value) ||
       'Unnamed';
-    const id = String(record.id?.record_id || 'unknown');
 
     return `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
   },
@@ -515,7 +467,6 @@ export const deleteRecordConfig: UniversalToolConfig = {
     params: UniversalDeleteParams
   ): Promise<{ success: boolean; record_id: string }> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'delete-record',
         params
       );
@@ -543,7 +494,6 @@ export const deleteRecordConfig: UniversalToolConfig = {
       return `❌ Failed to delete ${resourceType ? getSingularResourceType(resourceType) : 'record'} with ID: ${result.record_id}`;
     }
 
-    const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
     return `✅ Successfully deleted ${resourceTypeName} with ID: ${result.record_id}`;
@@ -560,14 +510,12 @@ export const getAttributesConfig: UniversalToolConfig = {
     params: UniversalAttributesParams
   ): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'get-attributes',
         params
       );
       return await handleUniversalGetAttributes(sanitizedParams);
     } catch (error: unknown) {
       // Return MCP-compliant error response instead of throwing
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       return { error: errorMessage, success: false };
     }
@@ -580,7 +528,6 @@ export const getAttributesConfig: UniversalToolConfig = {
       return 'No attributes found';
     }
 
-    const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
 
@@ -588,8 +535,6 @@ export const getAttributesConfig: UniversalToolConfig = {
     if (Array.isArray(attributes)) {
       return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
         .map((attr: Record<string, unknown>, index: number) => {
-          const name = attr.name || attr.slug || 'Unnamed';
-          const type = attr.type || 'unknown';
           return `${index + 1}. ${name} (${type})`;
         })
         .join('\n')}`;
@@ -600,8 +545,6 @@ export const getAttributesConfig: UniversalToolConfig = {
       if (attributes.all && Array.isArray(attributes.all)) {
         return `Available ${resourceTypeName} attributes (${attributes.all.length}):\n${attributes.all
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.slug || 'Unnamed';
-            const type = attr.type || 'unknown';
             return `${index + 1}. ${name} (${type})`;
           })
           .join('\n')}`;
@@ -610,19 +553,15 @@ export const getAttributesConfig: UniversalToolConfig = {
       if (attributes.attributes && Array.isArray(attributes.attributes)) {
         return `Available ${resourceTypeName} attributes (${attributes.attributes.length}):\n${attributes.attributes
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
-            const type = attr.type || 'unknown';
             return `${index + 1}. ${name} (${type})`;
           })
           .join('\n')}`;
       }
 
       // Handle direct object attributes
-      const keys = Object.keys(attributes);
       if (keys.length > 0) {
         return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${keys.length}):\n${keys
           .map((key, index) => {
-            const value = attributes[key];
             if (typeof value === 'string') {
               return `${index + 1}. ${key}: "${value}"`;
             }
@@ -647,7 +586,6 @@ export const discoverAttributesConfig: UniversalToolConfig = {
     categories?: string[]; // NEW: Category filtering support
   }): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
         'discover-attributes',
         params
       );
@@ -659,17 +597,15 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       );
     } catch (error: unknown) {
       // Return MCP-compliant error response instead of throwing
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       return { error: errorMessage, success: false };
     }
   },
-  formatResult: (schema: any, resourceType?: UniversalResourceType): string => {
+  formatResult: (schema: unknown, resourceType?: UniversalResourceType): string => {
     if (!schema) {
       return 'No attribute schema found';
     }
 
-    const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
 
@@ -677,9 +613,6 @@ export const discoverAttributesConfig: UniversalToolConfig = {
     if (Array.isArray(schema)) {
       return `Available ${resourceTypeName} attributes (${schema.length}):\n${schema
         .map((attr: Record<string, unknown>, index: number) => {
-          const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
-          const type = attr.type || 'unknown';
-          const required = attr.required ? ' (required)' : '';
           return `${index + 1}. ${name} (${type})${required}`;
         })
         .join('\n')}`;
@@ -690,9 +623,6 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       if (schema.all && Array.isArray(schema.all)) {
         return `Available ${resourceTypeName} attributes (${schema.all.length}):\n${schema.all
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.slug || 'Unnamed';
-            const type = attr.type || 'unknown';
-            const required = attr.required ? ' (required)' : '';
             return `${index + 1}. ${name} (${type})${required}`;
           })
           .join('\n')}`;
@@ -701,9 +631,6 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       if (schema.attributes && Array.isArray(schema.attributes)) {
         return `Available ${resourceTypeName} attributes (${schema.attributes.length}):\n${schema.attributes
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
-            const type = attr.type || 'unknown';
-            const required = attr.required ? ' (required)' : '';
             return `${index + 1}. ${name} (${type})${required}`;
           })
           .join('\n')}`;
@@ -711,17 +638,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
 
       // Handle standard/custom attributes structure (from discoverCompanyAttributes)
       if (schema.standard || schema.custom) {
-        const standard = schema.standard || [];
-        const custom = schema.custom || [];
-        const total = standard.length + custom.length;
 
         let result = `Available ${resourceTypeName} attributes (${total} total):\n`;
 
         if (standard.length > 0) {
           result += `\nStandard attributes (${standard.length}):\n${standard
             .map((attr: Record<string, unknown>, index: number) => {
-              const name = attr.name || attr.slug || 'Unnamed';
-              const type = attr.type || 'unknown';
               return `${index + 1}. ${name} (${type})`;
             })
             .join('\n')}`;
@@ -730,8 +652,6 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         if (custom.length > 0) {
           result += `\n\nCustom attributes (${custom.length}):\n${custom
             .map((attr: Record<string, unknown>, index: number) => {
-              const name = attr.name || attr.slug || 'Unnamed';
-              const type = attr.type || 'unknown';
               return `${standard.length + index + 1}. ${name} (${type})`;
             })
             .join('\n')}`;
@@ -755,7 +675,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
     return await handleUniversalGetDetailedInfo(params);
   },
   formatResult: (
-    info: any,
+    info: unknown,
     resourceType?: UniversalResourceType,
     detailedInfoType?: any
   ): string => {
@@ -763,7 +683,6 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       return 'No detailed information found';
     }
 
-    const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
 
@@ -792,9 +711,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       Object.entries(info.values).forEach(
         ([field, values]: [string, any]) => {
           if (Array.isArray(values) && values.length > 0) {
-            const value = values[0].value;
             if (value) {
-              const displayField =
                 field.charAt(0).toUpperCase() + field.slice(1);
               result += `${displayField}: ${value}\n`;
             }
@@ -805,7 +722,6 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       // Format as regular object
       Object.entries(info).forEach(([key, value]) => {
         if (value && typeof value === 'string' && value.length < 200) {
-          const displayKey = key.charAt(0).toUpperCase() + key.slice(1);
           result += `${displayKey}: ${value}\n`;
         }
       });
@@ -885,25 +801,19 @@ export const coreOperationsToolConfigs = {
     name: 'create-note',
     handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>> => {
       try {
-        const sanitizedParams = validateUniversalToolParams(
           'create-note',
           params
         );
-        const res = await handleUniversalCreateNote(sanitizedParams);
 
         // The handleUniversalCreateNote already returns normalized data
         return res;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Map error body/status into the regex your tests expect
-        const status = err?.response?.status;
-        const body = err?.response?.data;
 
-        const upstreamMsg =
           body?.error?.message ||
           body?.message ||
           (typeof body?.error === 'string' ? body.error : undefined);
 
-        const mapped =
           status === 404
             ? 'record not found'
             : status === 400 || status === 422
@@ -914,14 +824,11 @@ export const coreOperationsToolConfigs = {
         return { isError: true, error: mapped };
       }
     },
-    formatResult: (note: any): string => {
+    formatResult: (note: unknown): string => {
       if (!note) {
         return 'No note created';
       }
 
-      const title = note.title || note.values?.title?.[0]?.value || 'Untitled';
-      const content = note.content || note.values?.content?.[0]?.value || '';
-      const id = note.id?.record_id || note.id || 'unknown';
 
       return `✅ Note created successfully: ${title} (ID: ${id})${content ? `\n${content}` : ''}`;
     },
@@ -930,7 +837,6 @@ export const coreOperationsToolConfigs = {
     name: 'list-notes',
     handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
       try {
-        const sanitizedParams = validateUniversalToolParams(
           'list-notes',
           params
         );
@@ -939,23 +845,16 @@ export const coreOperationsToolConfigs = {
         throw ErrorService.createUniversalError('list-notes', 'notes', error);
       }
     },
-    formatResult: (notes: any[]): string => {
-      const notesArray = notes || [];
+    formatResult: (notes: unknown[]): string => {
 
       if (notesArray.length === 0) {
         return 'Found 0 notes';
       }
 
-      const formattedNotes = notesArray
         .map((note, index) => {
-          const title =
             note.title || note.values?.title?.[0]?.value || 'Untitled';
-          const content =
             note.content || note.values?.content?.[0]?.value || '';
-          const id = note.id?.record_id || note.id || 'unknown';
-          const timestamp = note.created_at || note.timestamp || 'unknown date';
 
-          const preview =
             content.length > 50 ? content.substring(0, 50) + '...' : content;
           return `${index + 1}. ${title} (${timestamp}) (ID: ${id})${preview ? `\n   ${preview}` : ''}`;
         })

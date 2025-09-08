@@ -2,55 +2,49 @@
  * Split: UniversalUtilityService resource type helpers
  */
 import { describe, it, expect } from 'vitest';
-import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
+
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
 
 describe('UniversalUtilityService', () => {
   describe('formatResourceType', () => {
     it('should format companies resource type', () => {
-      const result = UniversalUtilityService.formatResourceType(
         UniversalResourceType.COMPANIES
       );
       expect(result).toBe('company');
     });
 
     it('should format people resource type', () => {
-      const result = UniversalUtilityService.formatResourceType(
         UniversalResourceType.PEOPLE
       );
       expect(result).toBe('person');
     });
 
     it('should format lists resource type', () => {
-      const result = UniversalUtilityService.formatResourceType(
         UniversalResourceType.LISTS
       );
       expect(result).toBe('list');
     });
 
     it('should format records resource type', () => {
-      const result = UniversalUtilityService.formatResourceType(
         UniversalResourceType.RECORDS
       );
       expect(result).toBe('record');
     });
 
     it('should format deals resource type', () => {
-      const result = UniversalUtilityService.formatResourceType(
         UniversalResourceType.DEALS
       );
       expect(result).toBe('deal');
     });
 
     it('should format tasks resource type', () => {
-      const result = UniversalUtilityService.formatResourceType(
         UniversalResourceType.TASKS
       );
       expect(result).toBe('task');
     });
 
     it('should return unknown resource type as-is', () => {
-      const result = UniversalUtilityService.formatResourceType(
         'unknown' as UniversalResourceType
       );
       expect(result).toBe('unknown');

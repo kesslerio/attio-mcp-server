@@ -51,8 +51,6 @@ class LRUCache<K, V> {
    * @returns Cached value or undefined if not found or expired
    */
   get(key: K): V | undefined {
-    const keyString = this.getKeyString(key);
-    const entry = this.cache.get(keyString);
 
     // Return undefined if no entry or entry is expired
     if (!entry || Date.now() - entry.timestamp > this.ttlMs) {
@@ -79,7 +77,6 @@ class LRUCache<K, V> {
     // Clean up expired entries first
     this.cleanExpired();
 
-    const keyString = this.getKeyString(key);
 
     // If we're at capacity and the key doesn't already exist,
     // remove the least recently used item
@@ -99,7 +96,6 @@ class LRUCache<K, V> {
    * Remove all expired entries from the cache
    */
   private cleanExpired(): void {
-    const now = Date.now();
     for (const [key, entry] of Array.from(this.cache.entries())) {
       if (now - entry.timestamp > this.ttlMs) {
         this.cache.delete(key);
@@ -174,7 +170,6 @@ interface RelationshipFilterCacheKey {
 /**
  * Cache for relationship filters with a 5-minute TTL
  */
-const relationshipFilterCache = new LRUCache<
   RelationshipFilterCacheKey,
   ListEntryFilters
 >(
@@ -186,7 +181,6 @@ const relationshipFilterCache = new LRUCache<
  * Cache for list membership filters with a longer 15-minute TTL
  * since list membership changes less frequently
  */
-const listMembershipCache = new LRUCache<string, ListEntryFilters>(
   50, // Store up to 50 list filters
   15 * 60 * 1000 // 15 minutes TTL
 );
@@ -227,7 +221,6 @@ export function getCachedListFilter(
   listId: string,
   resourceType: ResourceType
 ): ListEntryFilters | undefined {
-  const key = `${listId}:${resourceType}`;
   return listMembershipCache.get(key);
 }
 
@@ -243,7 +236,6 @@ export function cacheListFilter(
   resourceType: ResourceType,
   filter: ListEntryFilters
 ): void {
-  const key = `${listId}:${resourceType}`;
   listMembershipCache.set(key, filter);
 }
 

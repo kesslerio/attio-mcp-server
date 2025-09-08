@@ -2,12 +2,9 @@
  * Relationship utility functions for working with related records in Attio
  * Provides functions for creating filters based on relationships between records.
  */
+import { createEqualsFilter } from './filters/index.js';
+import { isValidListId } from './validation.js';
 import { ListEntryFilters } from '../api/operations/index.js';
-import {
-  ResourceType,
-  FilterConditionType,
-  RelationshipType,
-} from '../types/attio.js';
 
 // Re-export RelationshipType for convenience
 export { RelationshipType };
@@ -77,7 +74,6 @@ export function createPeopleByCompanyFilter(
     }
 
     // Otherwise, wrap in a FilterValidationError
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create people-by-company filter: ${errorMessage}`
     );
@@ -125,7 +121,6 @@ export function createCompaniesByPeopleFilter(
     }
 
     // Otherwise, wrap in a FilterValidationError
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create companies-by-people filter: ${errorMessage}`
     );
@@ -173,7 +168,6 @@ export function createRecordsByListFilter(
     }
 
     // Otherwise, wrap in a FilterValidationError
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create records-by-list filter: ${errorMessage}`
     );
@@ -198,7 +192,6 @@ export function createPeopleByCompanyListFilter(
     }
 
     // First, create a filter for companies in the list
-    const companiesInListFilter = createRecordsByListFilter(
       ResourceType.COMPANIES,
       listId
     );
@@ -206,7 +199,6 @@ export function createPeopleByCompanyListFilter(
     // Then, create a filter for people who work at those companies
     return createPeopleByCompanyFilter(companiesInListFilter);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create people-by-company-list filter: ${errorMessage}`
     );
@@ -231,7 +223,6 @@ export function createCompaniesByPeopleListFilter(
     }
 
     // First, create a filter for people in the list
-    const peopleInListFilter = createRecordsByListFilter(
       ResourceType.PEOPLE,
       listId
     );
@@ -239,7 +230,6 @@ export function createCompaniesByPeopleListFilter(
     // Then, create a filter for companies that have those people
     return createCompaniesByPeopleFilter(peopleInListFilter);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create companies-by-people-list filter: ${errorMessage}`
     );
@@ -282,7 +272,6 @@ export function createRecordsByNotesFilter(
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create records-by-notes filter: ${errorMessage}`
     );
@@ -311,7 +300,6 @@ function createRelationshipFilter(
   // }
 
   // Map our ResourceType to Attio API object names
-  const getObjectName = (type: ResourceType): string => {
     switch (type) {
       case ResourceType.PEOPLE:
         return 'people';

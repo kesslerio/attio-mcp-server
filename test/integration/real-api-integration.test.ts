@@ -1,29 +1,7 @@
 import { describe, test, expect, vi } from 'vitest';
-import {
-  createCompany,
-  updateCompany,
-  searchCompanies,
-  getCompanyDetails,
-  deleteCompany,
-} from '../../src/objects/companies/index.js';
-import {
-  createPerson,
-  updatePerson,
-  searchPeople,
-  getPersonDetails,
-  deletePerson,
-} from '../../src/objects/people/index.js';
-import {
-  setupIntegrationTests,
-  trackTestRecord,
-  generateTestData,
-  expectIntegrationError,
-  waitForApiIndexing,
-} from '../helpers/integration-test-setup.js';
 
 describe('Real API Integration Tests', () => {
   // Setup integration test environment with enhanced error handling
-  const testSetup = setupIntegrationTests({
     skipOnMissingApiKey: true,
     timeout: 30000,
     verbose: true,
@@ -35,19 +13,16 @@ describe('Real API Integration Tests', () => {
   }
 
   // Generate test data using the setup timestamp
-  const testData = generateTestData(testSetup.timestamp);
   let createdCompanyId: string;
   let createdPersonId: string;
 
   describe('Companies Module - Real API', () => {
     it('should create a real company', async () => {
-      const companyData = {
         name: testData.companyName,
         website: testData.websiteUrl,
         description: testData.description,
       };
 
-      const company = await createCompany(companyData);
 
       // Enhanced validation with better error reporting
       expect(
@@ -75,7 +50,6 @@ describe('Real API Integration Tests', () => {
       // Wait for API indexing with helper function
       await waitForApiIndexing();
 
-      const results = await searchCompanies(testData.companyName);
 
       expect(results, 'Search should return results array').toBeDefined();
       expect(Array.isArray(results), 'Results should be an array').toBe(true);
@@ -84,7 +58,6 @@ describe('Real API Integration Tests', () => {
         'Should find at least one company'
       ).toBeGreaterThan(0);
 
-      const foundCompany = results.find(
         (c) => c.values.name === testData.companyName
       );
       expect(
@@ -94,7 +67,6 @@ describe('Real API Integration Tests', () => {
     });
 
     it('should get company details', async () => {
-      const details = await getCompanyDetails(createdCompanyId);
 
       expect(details, 'Company details should be returned').toBeDefined();
       expect(
@@ -107,11 +79,9 @@ describe('Real API Integration Tests', () => {
     });
 
     it('should update the company', async () => {
-      const updateData = {
         description: 'Updated integration test company',
       };
 
-      const updated = await updateCompany(createdCompanyId, updateData);
 
       expect(updated).toBeDefined();
       expect(updated.values.description).toBeDefined();
@@ -121,7 +91,6 @@ describe('Real API Integration Tests', () => {
     });
 
     it('should handle search with no results', async () => {
-      const results = await searchCompanies('NonExistentCompany123456789');
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
@@ -131,12 +100,10 @@ describe('Real API Integration Tests', () => {
 
   describe('People Module - Real API', () => {
     it('should create a real person', async () => {
-      const personData = {
         email_addresses: [testData.personEmail],
         name: testData.personName,
       };
 
-      const person = await createPerson(personData);
 
       expect(
         person,
@@ -167,7 +134,6 @@ describe('Real API Integration Tests', () => {
       // Wait for API indexing
       await waitForApiIndexing();
 
-      const results = await searchPeople(testData.personName);
 
       expect(results, 'Search should return results array').toBeDefined();
       expect(Array.isArray(results), 'Results should be an array').toBe(true);
@@ -175,9 +141,8 @@ describe('Real API Integration Tests', () => {
         0
       );
 
-      const foundPerson = results.find((p) =>
         (p.values.email_addresses as any[])?.some(
-          (e: any) => e.email_address === testData.personEmail
+          (e: unknown) => e.email_address === testData.personEmail
         )
       );
       expect(
@@ -187,7 +152,6 @@ describe('Real API Integration Tests', () => {
     });
 
     it('should get person details', async () => {
-      const details = await getPersonDetails(createdPersonId);
 
       expect(details, 'Person details should be returned').toBeDefined();
       expect(
@@ -204,12 +168,10 @@ describe('Real API Integration Tests', () => {
     });
 
     it('should update the person', async () => {
-      const updateData = {
         title: 'Senior Developer',
         // Removing company link for now as the field name might be different
       };
 
-      const updated = await updatePerson(createdPersonId, updateData);
 
       expect(updated).toBeDefined();
       expect(updated.values.title).toBeDefined();
@@ -220,19 +182,16 @@ describe('Real API Integration Tests', () => {
   describe('Cross-Module Integration - Real API', () => {
     it('should create and link company and person', async () => {
       // Create a new company
-      const company = await createCompany({
         name: `Linked Company ${testSetup.timestamp}`,
         website: `https://linked${testSetup.timestamp}.com`,
       });
 
       // Create a new person
-      const person = await createPerson({
         email_addresses: [`linked${testSetup.timestamp}@example.com`],
         name: `Linked Person ${testSetup.timestamp}`,
       });
 
       // Update person with title
-      const updatedPerson = await updatePerson(person.id.record_id, {
         title: 'Test Title',
       });
 
@@ -251,7 +210,6 @@ describe('Real API Integration Tests', () => {
         throw new Error('Expected error was not thrown');
       } catch (error: unknown) {
         // Test our enhanced error handling
-        const isValidError = expectIntegrationError(error, [
           'not found',
           'invalid',
           'non-existent',
@@ -271,7 +229,6 @@ describe('Real API Integration Tests', () => {
         } as any);
         throw new Error('Expected validation error was not thrown');
       } catch (error: unknown) {
-        const isValidError = expectIntegrationError(error, [
           'required',
           'name',
           'missing',
@@ -288,7 +245,6 @@ describe('Real API Integration Tests', () => {
         await getPersonDetails('non-existent-person-id-67890');
         throw new Error('Expected error was not thrown');
       } catch (error: unknown) {
-        const isValidError = expectIntegrationError(error, [
           'not found',
           'invalid',
           'non-existent',
@@ -308,7 +264,6 @@ describe('Real API Integration Tests', () => {
         } as any);
         throw new Error('Expected validation error was not thrown');
       } catch (error: unknown) {
-        const isValidError = expectIntegrationError(error, [
           'required',
           'email',
           'name',

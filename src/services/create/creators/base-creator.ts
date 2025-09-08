@@ -6,21 +6,9 @@
  * and response processing.
  */
 
-import type { AttioRecord } from '../../../types/attio.js';
-import type {
-  ResourceCreator,
-  ResourceCreatorContext,
-  ResourceCreatorError,
-  RecoveryOptions,
-} from './types.js';
 import { EnhancedApiError } from '../../../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../../../utils/validation/uuid-validation.js';
-import {
-  extractAttioRecord,
-  assertLooksLikeCreated,
-  isTestRun,
-  debugRecordShape,
-} from '../extractor.js';
+import type { AttioRecord } from '../../../types/attio.js';
 
 /**
  * Abstract base class for resource creators
@@ -51,7 +39,7 @@ export abstract class BaseCreator implements ResourceCreator {
   /**
    * Creates the API payload for resource creation
    */
-  protected createPayload(normalizedInput: Record<string, unknown>): any {
+  protected createPayload(normalizedInput: Record<string, unknown>): unknown {
     return {
       data: {
         values: normalizedInput,
@@ -63,7 +51,7 @@ export abstract class BaseCreator implements ResourceCreator {
    * Processes API response and extracts record
    */
   protected async processResponse(
-    response: any,
+    response: unknown,
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
@@ -81,7 +69,6 @@ export abstract class BaseCreator implements ResourceCreator {
     record = this.enrichRecordId(record, response);
 
     // Handle empty response with recovery if needed
-    const mustRecover =
       !record || !(record as any).id || !(record as any).id?.record_id;
     if (mustRecover) {
       record = await this.attemptRecovery(context, normalizedInput);
@@ -103,10 +90,8 @@ export abstract class BaseCreator implements ResourceCreator {
   /**
    * Enriches record with ID extracted from web_url if missing
    */
-  protected enrichRecordId(record: any, response: any): any {
+  protected enrichRecordId(record: unknown, response: unknown): unknown {
     if (record && (!record.id || !record.id?.record_id)) {
-      const webUrl = record?.web_url || response?.data?.web_url;
-      const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
       if (rid) {
         record.id = { ...record.id, record_id: rid };
       }
@@ -122,7 +107,6 @@ export abstract class BaseCreator implements ResourceCreator {
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<any> {
-    const recoveryOptions = this.getRecoveryOptions();
     if (!recoveryOptions) {
       throw this.createEnhancedError(
         new Error(
@@ -135,8 +119,6 @@ export abstract class BaseCreator implements ResourceCreator {
 
     for (const filter of recoveryOptions.searchFilters) {
       try {
-        const searchEndpoint = `${this.endpoint}/search`;
-        const searchFilter = {
           [filter.field]:
             filter.operator === 'contains'
               ? { contains: filter.value }
@@ -152,7 +134,6 @@ export abstract class BaseCreator implements ResourceCreator {
           }
         );
 
-        const record = extractAttioRecord(searchResult);
         if (record?.id?.record_id) {
           context.debug(
             this.constructor.name,
@@ -198,10 +179,7 @@ export abstract class BaseCreator implements ResourceCreator {
    * Fails fast if auth is missing to avoid confusing "200 {}" responses
    */
   protected assertClientHasAuth(context: ResourceCreatorContext) {
-    const common = context.client?.defaults?.headers?.common ?? {};
-    const direct = context.client?.defaults?.headers ?? {};
 
-    const auth = (common['Authorization'] ??
       common['authorization'] ??
       direct['Authorization'] ??
       direct['authorization']) as string | undefined;
@@ -253,13 +231,10 @@ export abstract class BaseCreator implements ResourceCreator {
     context: ResourceCreatorContext,
     payload?: any
   ): never {
-    const error = err as {
       response?: { status?: number; data?: unknown };
       message?: string;
       name?: string;
     };
-    const status = error?.response?.status ?? 500;
-    const data = error?.response?.data;
 
     context.logError(
       this.constructor.name,

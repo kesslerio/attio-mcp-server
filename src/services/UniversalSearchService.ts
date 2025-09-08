@@ -5,16 +5,26 @@
  * Reduced from 1800+ lines to <500 lines by extracting strategies
  */
 
-import {
-  UniversalResourceType,
-  SearchType,
-  MatchType,
-  SortType,
-} from '../handlers/tool-configs/universal/types.js';
-import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
+
+import { advancedSearchCompanies } from '../objects/companies/index.js';
+import { advancedSearchPeople } from '../objects/people/index.js';
+import { assertNoMockInE2E } from './_guards.js';
+import { AttioRecord } from '../types/attio.js';
+import { CachingService } from './CachingService.js';
+import { convertDateParamsToTimeframeQuery } from '../utils/filters/timeframe-utils.js';
 import { debug, error } from '../utils/logger.js';
+import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+import { getAttioClient } from '../api/attio-client.js';
+import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
+import { listObjectRecords } from '../objects/records/index.js';
+import { listTasks } from '../objects/tasks.js';
+import { RelationshipQuery, TimeframeQuery } from '../utils/filters/types.js';
+import { searchLists } from '../objects/lists.js';
+import { SearchUtilities } from './search-utilities/SearchUtilities.js';
+import { shouldUseMockData } from './create/index.js';
+import { ValidationService } from './ValidationService.js';
+import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -77,7 +87,6 @@ import {
 import { SearchUtilities } from './search-utilities/SearchUtilities.js';
 
 // Dynamic imports for better error handling
-const ensureAdvancedSearchCompanies = async () => {
   try {
     debug(
       'UniversalSearchService',
@@ -103,7 +112,6 @@ const ensureAdvancedSearchCompanies = async () => {
   }
 };
 
-const ensureAdvancedSearchPeople = async () => {
   try {
     debug(
       'UniversalSearchService',
@@ -234,7 +242,6 @@ export class UniversalSearchService {
     } = params;
 
     // Start performance tracking
-    const perfId = enhancedPerformanceTracker.startOperation(
       'search-records',
       'search',
       {
@@ -251,7 +258,6 @@ export class UniversalSearchService {
     );
 
     // Track validation timing
-    const validationStart = performance.now();
 
     // Validate pagination parameters using ValidationService
     ValidationService.validatePaginationParameters({ limit, offset }, perfId);
@@ -274,7 +280,6 @@ export class UniversalSearchService {
     };
 
     try {
-      const dateConversion = convertDateParamsToTimeframeQuery({
         date_from,
         date_to,
         created_after,
@@ -294,7 +299,6 @@ export class UniversalSearchService {
       }
     } catch (dateError: unknown) {
       // Re-throw date validation errors with helpful context
-      const errorMessage =
         dateError instanceof Error
           ? `Date parameter validation failed: ${dateError.message}`
           : 'Invalid date parameters provided';
@@ -303,7 +307,6 @@ export class UniversalSearchService {
 
     // Auto-detect timeframe searches and FORCE them to use the Query API
     let finalSearchType = search_type;
-    const hasTimeframeParams =
       processedTimeframeParams.timeframe_attribute &&
       (processedTimeframeParams.start_date ||
         processedTimeframeParams.end_date);
@@ -324,7 +327,6 @@ export class UniversalSearchService {
     }
 
     // Track API call timing
-    const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
     let results: AttioRecord[];
 
     try {
@@ -363,12 +365,9 @@ export class UniversalSearchService {
     } catch (apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
 
-      const errorObj = apiError as Record<string, unknown>;
-      const statusCode =
         ((errorObj?.response as Record<string, unknown>)?.status as number) ||
         (errorObj?.statusCode as number) ||
         500;
-      const errorMessage =
         apiError instanceof Error ? apiError.message : 'Search failed';
       enhancedPerformanceTracker.endOperation(
         perfId,
@@ -485,7 +484,6 @@ export class UniversalSearchService {
     await this.initializeStrategies();
 
     // Use strategy pattern for resource-specific searches
-    const strategy = this.strategies.get(resource_type);
     if (strategy) {
       return await strategy.search({
         query,
@@ -542,7 +540,6 @@ export class UniversalSearchService {
   ): Promise<AttioRecord[]> {
     // Handle list_membership filters - invalid UUID should return empty array
     if (filters?.list_membership) {
-      const listId = String(filters.list_membership);
       if (!ValidationService.validateUUIDForSearch(listId)) {
         return []; // Return empty success for invalid UUID
       }
@@ -577,12 +574,10 @@ export class UniversalSearchService {
     query?: string;
   }): Promise<AttioRecord[]> {
     const { limit = 10, offset = 0, query } = params;
-    const client = getAttioClient();
     try {
       // First try exact match if query provided
       if (query && query.trim()) {
         try {
-          const exactMatchResponse = await client.post(
             '/objects/deals/records/query',
             {
               filter: {
@@ -600,7 +595,6 @@ export class UniversalSearchService {
             }
           );
 
-          const exactResults = exactMatchResponse?.data?.data || [];
           if (exactResults.length > 0) {
             return exactResults;
           }
@@ -610,7 +604,6 @@ export class UniversalSearchService {
       }
 
       // Fetch all deals for client-side filtering
-      const allDealsResponse = await client.post(
         '/objects/deals/records/query',
         {
           limit: 100,
@@ -622,10 +615,7 @@ export class UniversalSearchService {
 
       // Apply client-side filtering if query provided
       if (query && query.trim()) {
-        const queryLower = query.trim().toLowerCase();
         allDeals = allDeals.filter((deal: AttioRecord) => {
-          const nameField = deal.values?.name;
-          const name =
             Array.isArray(nameField) && nameField[0]?.value
               ? String(nameField[0].value)
               : '';
@@ -634,13 +624,10 @@ export class UniversalSearchService {
       }
 
       // Apply pagination to filtered results
-      const start = offset || 0;
-      const end = start + (limit || 10);
       return allDeals.slice(start, end);
     } catch (error: unknown) {
       console.error('Failed to query deal records:', error);
       if (error && typeof error === 'object' && 'response' in error) {
-        const httpError = error as { response: { status: number } };
         if (httpError.response.status === 404) {
           console.error(
             'Deal query endpoint not found, falling back to empty results'
@@ -687,8 +674,6 @@ export class UniversalSearchService {
       if (offset) queryParams.offset = offset;
 
       // Call Notes API
-      const response = await listNotes(queryParams);
-      const notes = response.data || [];
 
       // Log performance metrics
       enhancedPerformanceTracker.markTiming(
@@ -698,19 +683,14 @@ export class UniversalSearchService {
       );
 
       // Normalize notes to AttioRecord format
-      const normalizedNotes = notes.map((note) =>
         normalizeNoteResponse(note)
       ) as AttioRecord[];
 
       // Apply query-based filtering if query provided
       let results = normalizedNotes;
       if (query && query.trim()) {
-        const queryLower = query.toLowerCase().trim();
         results = normalizedNotes.filter((record) => {
-          const title = record.values?.title?.toString()?.toLowerCase() || '';
-          const contentMarkdown =
             record.values?.content_markdown?.toString()?.toLowerCase() || '';
-          const contentPlaintext =
             record.values?.content_plaintext?.toString()?.toLowerCase() || '';
 
           return (
@@ -747,7 +727,6 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getAttioClient();
 
     const relationshipQuery: RelationshipQuery = {
       sourceObjectType: sourceResourceType,
@@ -757,20 +736,15 @@ export class UniversalSearchService {
       value: targetRecordId,
     };
 
-    const queryApiFilter = createRelationshipQuery(relationshipQuery);
 
     try {
-      const path = `/objects/${sourceResourceType}/records/query`;
-      const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
         offset: offset || 0,
       };
 
-      const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
-      const apiError = createApiErrorFromAxiosError(
         error,
         `/objects/${sourceResourceType}/records/query`,
         'POST'
@@ -809,21 +783,15 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getAttioClient();
-    const queryApiFilter = createTimeframeQuery(timeframeConfig);
 
     try {
-      const path = `/objects/${resourceType}/records/query`;
-      const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
         offset: offset || 0,
       };
 
-      const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
-      const apiError = createApiErrorFromAxiosError(
         error,
         `/objects/${resourceType}/records/query`,
         'POST'
@@ -861,7 +829,6 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getAttioClient();
 
     let fields = searchFields;
     if (fields.length === 0) {
@@ -878,20 +845,15 @@ export class UniversalSearchService {
       }
     }
 
-    const queryApiFilter = createContentSearchQuery(fields, query, useOrLogic);
 
     try {
-      const path = `/objects/${resourceType}/records/query`;
-      const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
         offset: offset || 0,
       };
 
-      const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
-      const apiError = createApiErrorFromAxiosError(
         error,
         `/objects/${resourceType}/records/query`,
         'POST'
@@ -934,7 +896,6 @@ export class UniversalSearchService {
   ): Promise<number> {
     switch (resource_type) {
       case UniversalResourceType.TASKS: {
-        const cachedTasks = CachingService.getCachedTasks('tasks_cache');
         return cachedTasks ? cachedTasks.length : -1;
       }
       default:

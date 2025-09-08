@@ -69,8 +69,6 @@ export const TEST_DATA_PATTERNS = {
   timestamp: () => Date.now(),
   randomId: () => Math.random().toString(36).substring(7),
   generateTestName: (type: string, timestamp?: number, randomId?: string) => {
-    const ts = timestamp || Date.now();
-    const id = randomId || Math.random().toString(36).substring(7);
     return `${type} Test ${ts}-${id}`;
   },
   generateTestEmail: (
@@ -78,8 +76,6 @@ export const TEST_DATA_PATTERNS = {
     timestamp?: number,
     randomId?: string
   ) => {
-    const ts = timestamp || Date.now();
-    const id = randomId || Math.random().toString(36).substring(7);
     return `${prefix}-${ts}-${id}@example.com`;
   },
   generateTestDomain: (
@@ -87,8 +83,6 @@ export const TEST_DATA_PATTERNS = {
     timestamp?: number,
     randomId?: string
   ) => {
-    const ts = timestamp || Date.now();
-    const id = randomId || Math.random().toString(36).substring(7);
     return `${prefix}-${ts}-${id}.com`;
   },
 } as const;

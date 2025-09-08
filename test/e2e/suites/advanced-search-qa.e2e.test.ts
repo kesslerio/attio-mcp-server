@@ -32,7 +32,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
 
   describe('🔍 Issue 4: Personal Name Formatting Bug', () => {
     it('should display actual person names instead of "Unnamed" in search results', async () => {
-      const startTime = performance.now();
 
       await client.assertToolCall(
         'advanced-search',
@@ -50,8 +49,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           limit: 5,
         },
         (result: ToolResult) => {
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(
             '🔍 Personal Name Search Test Result:',
@@ -62,7 +59,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               console.log('📄 Result text:', content.text);
 
@@ -70,8 +66,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
               // Before fix: All results show as "1. Unnamed", "2. Unnamed", etc.
               // After fix: Should show actual names like "1. John Santarpi", "2. John Smith", etc.
 
-              const hasUnnamed = content.text.includes('Unnamed');
-              const hasActualNames = content.text.match(
                 /\d+\.\s+[A-Z][a-z]+\s+[A-Z][a-z]+/
               );
 
@@ -114,7 +108,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               // This test helps us understand the structure of person records
               console.log('📄 Person record structure:', content.text);
@@ -127,7 +120,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
 
   describe('⚠️ Issue 2: Poor Error Handling and Performance', () => {
     it('should NOT retry 400 validation errors and should complete quickly', async () => {
-      const startTime = performance.now();
 
       await client.assertToolCall(
         'advanced-search',
@@ -144,8 +136,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           },
         },
         (result: ToolResult) => {
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(
             '⚠️ Invalid Attribute Test Result:',
@@ -179,7 +169,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
     });
 
     it('should handle invalid operators gracefully and quickly', async () => {
-      const startTime = performance.now();
 
       await client.assertToolCall(
         'advanced-search',
@@ -196,8 +185,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           },
         },
         (result: ToolResult) => {
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(
             '⚠️ Invalid Operator Test Result:',
@@ -220,7 +207,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
 
   describe('🔒 Issue 5: Attribute-Type-Specific Operator Validation', () => {
     it('should validate operators against select field types before API call', async () => {
-      const startTime = performance.now();
 
       await client.assertToolCall(
         'advanced-search',
@@ -237,8 +223,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           },
         },
         (result: ToolResult) => {
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(
             '🔒 Operator Validation Test Result:',
@@ -266,7 +250,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
 
   describe('✅ Issue 1: Valid Requests Should Work Efficiently', () => {
     it('should handle valid personal name search with good performance', async () => {
-      const startTime = performance.now();
 
       await client.assertToolCall(
         'advanced-search',
@@ -284,8 +267,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           limit: 5,
         },
         (result: ToolResult) => {
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(
             '✅ Valid Search Test Result:',
@@ -298,7 +279,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           expect(duration).toBeLessThan(5000);
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               console.log('📄 Valid search results:', content.text);
             }
@@ -308,7 +288,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
     });
 
     it('should handle multi-filter AND logic efficiently', async () => {
-      const startTime = performance.now();
 
       await client.assertToolCall(
         'advanced-search',
@@ -331,8 +310,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           limit: 5,
         },
         (result: ToolResult) => {
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(
             '✅ Multi-Filter Test Result:',
@@ -344,7 +321,6 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           expect(duration).toBeLessThan(10000); // Allow for network latency and API response time
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               console.log('📄 Multi-filter results:', content.text);
             }

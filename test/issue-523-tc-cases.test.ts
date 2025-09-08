@@ -8,12 +8,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { UniversalSearchService } from '../src/services/UniversalSearchService.js';
+
 import { UniversalResourceType, SearchType } from '../src/handlers/tool-configs/universal/types.js';
+import { UniversalSearchService } from '../src/services/UniversalSearchService.js';
 import type { UniversalSearchParams } from '../src/handlers/tool-configs/universal/types.js';
 
 // Mock the Attio client
-const mockPost = vi.fn();
 vi.mock('../src/api/attio-client.js', () => ({
   getAttioClient: () => ({
     post: mockPost,
@@ -87,7 +87,6 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         limit: 10,
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
 
       // Verify the correct query API structure was used
       expect(mockPost).toHaveBeenCalledWith(
@@ -132,7 +131,6 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         relationship_target_id: 'person_123',
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
 
       expect(mockPost).toHaveBeenCalledWith(
         '/objects/companies/records/query',
@@ -187,10 +185,8 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         use_or_logic: true,
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
 
       // Verify NO $relationship attribute is used
-      const callArgs = mockPost.mock.calls[0][1];
       expect(JSON.stringify(callArgs)).not.toContain('$relationship');
 
       // Verify proper query API structure with path and constraints
@@ -250,7 +246,6 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         use_or_logic: true,
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
 
       // Should not throw "Unknown attribute slug: $relationship" error
       expect(mockPost).toHaveBeenCalled();
@@ -299,7 +294,6 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         limit: 10,
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
 
       // Verify proper query API structure with date constraints
       expect(mockPost).toHaveBeenCalledWith(
@@ -345,7 +339,6 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         date_operator: 'greater_than',
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
 
       expect(mockPost).toHaveBeenCalledWith(
         '/objects/companies/records/query',
@@ -399,7 +392,6 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         data: { data: [{ id: { record_id: 'test' }, values: { name: 'Test' } }] },
       });
 
-      const testCases = [
         // TC-010: Relationship search
         {
           resource_type: UniversalResourceType.COMPANIES,
@@ -425,11 +417,9 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
       ];
 
       let passedCount = 0;
-      const totalTests = testCases.length;
 
       for (const testCase of testCases) {
         try {
-          const results = await UniversalSearchService.searchRecords(testCase);
           expect(results).toBeDefined();
           passedCount++;
         } catch (error) {
@@ -437,7 +427,6 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         }
       }
 
-      const successRate = (passedCount / totalTests) * 100;
       console.log(`P2 Test Success Rate: ${successRate}% (${passedCount}/${totalTests})`);
 
       // All TC cases should now pass (100% success rate for these 3 cases)

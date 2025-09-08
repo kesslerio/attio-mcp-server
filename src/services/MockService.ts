@@ -15,8 +15,8 @@
  *      await service.createCompany(data);
  */
 
-import { getCreateService, shouldUseMockData } from './create/index.js';
 import { debug } from '../utils/logger.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
 
 /**
  * Backward compatibility shim for MockService
@@ -32,7 +32,6 @@ export const MockService = {
       'MockService.shim',
       'DEPRECATED: MockService.createCompany called - use getCreateService().createCompany() instead'
     );
-    const service = getCreateService();
     return await service.createCompany(data);
   },
 
@@ -45,7 +44,6 @@ export const MockService = {
       'MockService.shim',
       'DEPRECATED: MockService.createPerson called - use getCreateService().createPerson() instead'
     );
-    const service = getCreateService();
     return await service.createPerson(data);
   },
 
@@ -58,7 +56,6 @@ export const MockService = {
       'MockService.shim',
       'DEPRECATED: MockService.createTask called - use getCreateService().createTask() instead'
     );
-    const service = getCreateService();
     return await service.createTask(data);
   },
 
@@ -71,7 +68,6 @@ export const MockService = {
       'MockService.shim',
       'DEPRECATED: MockService.updateTask called - use getCreateService().updateTask() instead'
     );
-    const service = getCreateService();
     return await service.updateTask(taskId, data);
   },
 
@@ -90,7 +86,6 @@ export const MockService = {
       'MockService.shim',
       'DEPRECATED: MockService.createNote called - use getCreateService().createNote() instead'
     );
-    const service = getCreateService();
     return await service.createNote(data);
   },
 
@@ -103,7 +98,6 @@ export const MockService = {
       'MockService.shim',
       'DEPRECATED: MockService.listNotes called - use getCreateService().listNotes() instead'
     );
-    const service = getCreateService();
     return await service.listNotes(params);
   },
 

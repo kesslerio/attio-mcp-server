@@ -13,7 +13,6 @@ export function mapTaskFields(
   operation: 'create' | 'update',
   input: Record<string, unknown>
 ): Record<string, unknown> {
-  const output = { ...input };
 
   // For create operations, synthesize content from title if missing
   if (operation === 'create' && 'title' in output && !('content' in output)) {

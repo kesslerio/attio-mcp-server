@@ -7,14 +7,9 @@
  * response format for lists and list entries.
  */
 
-import type {
-  AttioList,
-  AttioListEntry,
-  AttioRecord,
-} from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
-import type { MockFactory } from './TaskMockFactory.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
+import type { MockFactory } from './TaskMockFactory.js';
 
 /**
  * Interface for mock list factory options
@@ -91,14 +86,9 @@ export class ListMockFactory implements MockFactory<AttioList> {
    * @returns Mock AttioList matching API response format
    */
   static create(overrides: MockListOptions = {}): AttioList {
-    const listId = this.generateMockId();
-    const now = new Date().toISOString();
-    const listNumber = this.extractNumberFromId(listId);
 
     // Generate realistic list data
-    const title =
       overrides.title || overrides.name || `Mock List ${listNumber}`;
-    const objectSlug =
       overrides.object_slug || overrides.parent_object || 'companies';
 
     const baseList: AttioList = {
@@ -169,7 +159,6 @@ export class ListMockFactory implements MockFactory<AttioList> {
     overrides: MockListOptions = {}
   ): AttioList[] {
     return Array.from({ length: count }, (_, index) => {
-      const listNumber = index + 1;
       return this.create({
         ...overrides,
         name: overrides.name || `Mock List ${listNumber}`,
@@ -233,8 +222,6 @@ export class ListMockFactory implements MockFactory<AttioList> {
     recordId: string,
     overrides: MockListEntryOptions = {}
   ): AttioListEntry {
-    const entryId = `mock-entry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const now = new Date().toISOString();
 
     const baseEntry: AttioListEntry = {
       id: {
@@ -308,7 +295,6 @@ export class ListMockFactory implements MockFactory<AttioList> {
    * Private helper to extract number from generated ID
    */
   private static extractNumberFromId(id: string): string {
-    const match = id.match(/(\d+)/);
     return match
       ? match[1].slice(-4)
       : Math.floor(Math.random() * 9999).toString();

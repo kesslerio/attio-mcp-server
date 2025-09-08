@@ -6,14 +6,6 @@
 import { AttioRecord } from './attio.js';
 
 /**
- * Generic batch response structure from Attio API
- */
-export interface BatchResponse<T = AttioRecord> {
-  results: BatchItemResult<T>[];
-  summary: BatchSummary;
-}
-
-/**
  * Individual batch operation result
  */
 export interface BatchItemResult<T = AttioRecord> {
@@ -113,7 +105,6 @@ export function extractBatchSummary(response: unknown): BatchSummary {
   }
 
   // Fallback for malformed responses
-  const obj = response as Record<string, any>;
   return {
     total: obj?.summary?.total || 0,
     succeeded: obj?.summary?.succeeded || 0,
@@ -133,7 +124,6 @@ export function extractBatchResults<T = AttioRecord>(
   }
 
   // Fallback for malformed responses
-  const obj = response as Record<string, any>;
   if (Array.isArray(obj?.results)) {
     return obj.results as BatchItemResult<T>[];
   }

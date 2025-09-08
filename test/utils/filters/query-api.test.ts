@@ -4,18 +4,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  createQueryApiFilter,
-  createRelationshipQuery,
-  createTimeframeQuery,
-  createContentSearchQuery,
-  transformFiltersToQueryApiFormat,
-} from '../../../src/utils/filters/index.js';
-import {
-  RelationshipQuery,
-  TimeframeQuery,
-  AttioQueryApiFilter,
-} from '../../../src/utils/filters/types.js';
 
 describe('Query API Implementation - Issue #523', () => {
   describe('TC-010: Relationship Search', () => {
@@ -28,7 +16,6 @@ describe('Query API Implementation - Issue #523', () => {
         value: 'person_123',
       };
 
-      const result = createRelationshipQuery(config);
 
       expect(result).toEqual({
         filter: {
@@ -52,7 +39,6 @@ describe('Query API Implementation - Issue #523', () => {
         value: 'company_456',
       };
 
-      const result = createRelationshipQuery(config);
 
       expect(result.filter?.path).toEqual(['people', 'company_id']);
       expect(result.filter?.constraints?.[0].operator).toBe('equals');
@@ -62,10 +48,7 @@ describe('Query API Implementation - Issue #523', () => {
 
   describe('TC-011: Content Search', () => {
     it('should create proper content search query with OR logic', () => {
-      const fields = ['name', 'description', 'domains'];
-      const query = 'Tech Company';
 
-      const result = createContentSearchQuery(fields, query, true);
 
       expect(result.filter?.$or).toHaveLength(3);
       expect(result.filter?.$or?.[0]).toEqual({
@@ -82,10 +65,7 @@ describe('Query API Implementation - Issue #523', () => {
     });
 
     it('should create proper content search query with AND logic', () => {
-      const fields = ['name', 'description'];
-      const query = 'Software';
 
-      const result = createContentSearchQuery(fields, query, false);
 
       expect(result.filter?.$and).toHaveLength(2);
       expect(result.filter?.$and?.[0]).toEqual({
@@ -102,10 +82,7 @@ describe('Query API Implementation - Issue #523', () => {
     });
 
     it('should handle single field content search', () => {
-      const fields = ['name'];
-      const query = 'Acme Corp';
 
-      const result = createContentSearchQuery(fields, query, true);
 
       // Single field should still use the query API format
       expect(result).toEqual({
@@ -131,7 +108,6 @@ describe('Query API Implementation - Issue #523', () => {
         operator: 'between',
       };
 
-      const result = createTimeframeQuery(config);
 
       expect(result).toEqual({
         filter: {
@@ -151,7 +127,6 @@ describe('Query API Implementation - Issue #523', () => {
         operator: 'greater_than',
       };
 
-      const result = createTimeframeQuery(config);
 
       expect(result).toEqual({
         filter: {
@@ -170,7 +145,6 @@ describe('Query API Implementation - Issue #523', () => {
         operator: 'less_than',
       };
 
-      const result = createTimeframeQuery(config);
 
       expect(result).toEqual({
         filter: {
@@ -185,7 +159,6 @@ describe('Query API Implementation - Issue #523', () => {
 
   describe('Query API Filter Builder', () => {
     it('should create basic query API filter with path and constraints', () => {
-      const result = createQueryApiFilter(['name'], 'contains', 'Test Company');
 
       expect(result).toEqual({
         filter: {
@@ -201,7 +174,6 @@ describe('Query API Implementation - Issue #523', () => {
     });
 
     it('should handle complex path arrays for relationship queries', () => {
-      const result = createQueryApiFilter(['company', 'industry'], 'equals', 'Technology');
 
       expect(result).toEqual({
         filter: {
@@ -219,7 +191,6 @@ describe('Query API Implementation - Issue #523', () => {
 
   describe('Legacy Filter Format Transformation', () => {
     it('should transform legacy filters to query API format for single filter', () => {
-      const legacyFilters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -229,7 +200,6 @@ describe('Query API Implementation - Issue #523', () => {
         ],
       };
 
-      const result = transformFiltersToQueryApiFormat(legacyFilters);
 
       expect(result).toEqual({
         filter: {
@@ -245,7 +215,6 @@ describe('Query API Implementation - Issue #523', () => {
     });
 
     it('should transform legacy filters to query API format for multiple filters with OR logic', () => {
-      const legacyFilters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -261,7 +230,6 @@ describe('Query API Implementation - Issue #523', () => {
         matchAny: true,
       };
 
-      const result = transformFiltersToQueryApiFormat(legacyFilters);
 
       expect(result.filter?.$or).toHaveLength(2);
       expect(result.filter?.$or?.[0]).toEqual({
@@ -278,11 +246,8 @@ describe('Query API Implementation - Issue #523', () => {
     });
 
     it('should handle empty filters gracefully', () => {
-      const result = transformFiltersToQueryApiFormat(undefined);
       expect(result).toEqual({});
 
-      const emptyFilters = { filters: [] };
-      const result2 = transformFiltersToQueryApiFormat(emptyFilters);
       expect(result2).toEqual({});
     });
   });
@@ -290,7 +255,6 @@ describe('Query API Implementation - Issue #523', () => {
   describe('Error Handling', () => {
     it('should throw error for invalid relationship query', () => {
       expect(() => {
-        const config = {
           sourceObjectType: '',
           targetObjectType: 'people',
           targetAttribute: 'id',
@@ -303,7 +267,6 @@ describe('Query API Implementation - Issue #523', () => {
 
     it('should throw error for invalid timeframe query', () => {
       expect(() => {
-        const config = {
           attribute: '',
           operator: 'between' as const,
         };

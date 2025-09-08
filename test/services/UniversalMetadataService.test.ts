@@ -6,6 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import { getAttioClient } from '../../src/api/attio-client.js';
+import { getListAttributes } from '../../src/objects/lists.js';
 import { UniversalMetadataService } from '../../src/services/UniversalMetadataService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
@@ -40,7 +43,6 @@ describe('UniversalMetadataService', () => {
 
   describe('discoverAttributesForResourceType', () => {
     it('should discover attributes for non-task resource types', async () => {
-      const mockAttributes = [
         {
           id: 'attr1',
           title: 'Test Attribute',
@@ -55,14 +57,12 @@ describe('UniversalMetadataService', () => {
         },
       ];
 
-      const mockClient = {
         get: vi.fn().mockResolvedValue({
           data: { data: mockAttributes },
         }),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
 
-      const result =
         await UniversalMetadataService.discoverAttributesForResourceType(
           UniversalResourceType.COMPANIES
         );
@@ -82,7 +82,6 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle task resource type with special discovery', async () => {
-      const result =
         await UniversalMetadataService.discoverAttributesForResourceType(
           UniversalResourceType.TASKS
         );
@@ -103,7 +102,6 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const mockClient = {
         get: vi.fn().mockRejectedValue(new Error('API Error')),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
@@ -118,7 +116,6 @@ describe('UniversalMetadataService', () => {
 
   describe('discoverTaskAttributes', () => {
     it('should return task-specific attributes', async () => {
-      const result = await UniversalMetadataService.discoverTaskAttributes();
 
       expect(result).toHaveProperty('attributes');
       expect(result).toHaveProperty('mappings');
@@ -129,8 +126,6 @@ describe('UniversalMetadataService', () => {
       );
 
       // Verify specific task attributes are present
-      const attributes = result.attributes as any[];
-      const attributeSlugs = attributes.map((attr) => attr.api_slug);
 
       expect(attributeSlugs).toContain('content');
       expect(attributeSlugs).toContain('status');
@@ -140,9 +135,7 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should create proper title to api_slug mappings', async () => {
-      const result = await UniversalMetadataService.discoverTaskAttributes();
 
-      const mappings = result.mappings as Record<string, string>;
       expect(mappings).toHaveProperty('Content', 'content');
       expect(mappings).toHaveProperty('Status', 'status');
       expect(mappings).toHaveProperty('Assignee', 'assignee');
@@ -152,20 +145,17 @@ describe('UniversalMetadataService', () => {
 
   describe('getAttributesForRecord', () => {
     it('should get attributes for a specific record', async () => {
-      const mockValues = {
         name: 'Test Company',
         email: 'test@example.com',
         status: 'active',
       };
 
-      const mockClient = {
         get: vi.fn().mockResolvedValue({
           data: { data: { values: mockValues } },
         }),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
 
-      const result = await UniversalMetadataService.getAttributesForRecord(
         UniversalResourceType.COMPANIES,
         'comp_123'
       );
@@ -177,14 +167,12 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle missing record data', async () => {
-      const mockClient = {
         get: vi.fn().mockResolvedValue({
           data: { data: {} },
         }),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
 
-      const result = await UniversalMetadataService.getAttributesForRecord(
         UniversalResourceType.PEOPLE,
         'person_456'
       );
@@ -193,7 +181,6 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle API errors', async () => {
-      const mockClient = {
         get: vi.fn().mockRejectedValue(new Error('Record not found')),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
@@ -209,20 +196,16 @@ describe('UniversalMetadataService', () => {
 
   describe('filterAttributesByCategory', () => {
     it('should return all attributes when no categories specified', () => {
-      const attributes = { test: 'data' };
-      const result =
         UniversalMetadataService.filterAttributesByCategory(attributes);
       expect(result).toEqual(attributes);
     });
 
     it('should filter array of attributes by category', () => {
-      const attributes = [
         { name: 'attr1', category: 'contact' },
         { name: 'attr2', category: 'business' },
         { name: 'attr3', category: 'contact' },
       ];
 
-      const result = UniversalMetadataService.filterAttributesByCategory(
         attributes,
         ['contact']
       );
@@ -234,7 +217,6 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should filter object with attributes array', () => {
-      const attributes = {
         attributes: [
           { name: 'attr1', type: 'contact' },
           { name: 'attr2', type: 'business' },
@@ -242,7 +224,6 @@ describe('UniversalMetadataService', () => {
         count: 2,
       };
 
-      const result = UniversalMetadataService.filterAttributesByCategory(
         attributes,
         ['contact']
       );
@@ -254,14 +235,12 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle multiple category field names', () => {
-      const attributes = [
         { name: 'attr1', category: 'contact' },
         { name: 'attr2', type: 'business' },
         { name: 'attr3', attribute_type: 'social' },
         { name: 'attr4', group: 'contact' },
       ];
 
-      const result = UniversalMetadataService.filterAttributesByCategory(
         attributes,
         ['contact', 'business']
       );
@@ -276,13 +255,11 @@ describe('UniversalMetadataService', () => {
 
   describe('getAttributes', () => {
     it('should get company attributes with record ID', async () => {
-      const mockResult = {
         company: 'Test Company',
         attributes: ['name', 'website'],
       };
       vi.mocked(getCompanyAttributes).mockResolvedValue(mockResult);
 
-      const result = await UniversalMetadataService.getAttributes({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'comp_123',
       });
@@ -292,10 +269,8 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should discover company attributes without record ID', async () => {
-      const mockResult = { standard: [], custom: [], all: [] };
       vi.mocked(discoverCompanyAttributes).mockResolvedValue(mockResult);
 
-      const result = await UniversalMetadataService.getAttributes({
         resource_type: UniversalResourceType.COMPANIES,
       });
 
@@ -304,10 +279,8 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should get list attributes', async () => {
-      const mockResult = { attributes: [], count: 0 };
       vi.mocked(getListAttributes).mockResolvedValue(mockResult);
 
-      const result = await UniversalMetadataService.getAttributes({
         resource_type: UniversalResourceType.LISTS,
       });
 
@@ -316,7 +289,6 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should apply category filtering', async () => {
-      const mockResult = {
         standard: ['attr1'],
         custom: ['attr2'],
         all: [
@@ -326,7 +298,6 @@ describe('UniversalMetadataService', () => {
       };
       vi.mocked(discoverCompanyAttributes).mockResolvedValue(mockResult);
 
-      const result = await UniversalMetadataService.getAttributes({
         resource_type: UniversalResourceType.COMPANIES,
         categories: ['contact'],
       });
@@ -350,10 +321,8 @@ describe('UniversalMetadataService', () => {
 
   describe('discoverAttributes', () => {
     it('should discover company attributes', async () => {
-      const mockResult = { standard: [], custom: [], all: [] };
       vi.mocked(discoverCompanyAttributes).mockResolvedValue(mockResult);
 
-      const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.COMPANIES
       );
 
@@ -362,10 +331,8 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should discover list attributes', async () => {
-      const mockResult = { attributes: [], count: 0 };
       vi.mocked(getListAttributes).mockResolvedValue(mockResult);
 
-      const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.LISTS
       );
 
@@ -374,7 +341,6 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should discover task attributes', async () => {
-      const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.TASKS
       );
 
@@ -396,14 +362,12 @@ describe('UniversalMetadataService', () => {
 
   describe('Integration with other resource types', () => {
     it('should handle people resource type for getAttributes', async () => {
-      const mockClient = {
         get: vi.fn().mockResolvedValue({
           data: { data: { values: { name: 'John Doe' } } },
         }),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
 
-      const result = await UniversalMetadataService.getAttributes({
         resource_type: UniversalResourceType.PEOPLE,
         record_id: 'person_123',
       });
@@ -412,15 +376,12 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle records resource type for discovery', async () => {
-      const mockAttributes = [{ id: 'test', api_slug: 'test', title: 'Test' }];
-      const mockClient = {
         get: vi.fn().mockResolvedValue({
           data: { data: mockAttributes },
         }),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
 
-      const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.RECORDS,
         { objectSlug: 'companies' }
       );
@@ -432,17 +393,14 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle deals resource type', async () => {
-      const mockAttributes = [
         { id: 'deal_attr', api_slug: 'deal_attr', title: 'Deal Attribute' },
       ];
-      const mockClient = {
         get: vi.fn().mockResolvedValue({
           data: { data: mockAttributes },
         }),
       };
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
 
-      const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.DEALS
       );
 

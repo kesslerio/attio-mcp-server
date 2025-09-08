@@ -5,10 +5,11 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ToolConfig, GetListsToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { ToolConfig, GetListsToolConfig } from '../../../tool-types.js';
 
 /**
  * Handle getLists operations
@@ -18,8 +19,6 @@ export async function handleGetListsOperation(
   toolConfig: GetListsToolConfig
 ) {
   try {
-    const lists = await toolConfig.handler();
-    const formattedResult = toolConfig.formatResult!(lists);
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
@@ -47,10 +46,6 @@ export async function handleAddRecordToListOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const recordId = request.params.arguments?.recordId as string;
-  const objectType = request.params.arguments?.objectType as string | undefined;
-  const initialValues = request.params.arguments?.initialValues as
     | Record<string, unknown>
     | undefined;
 
@@ -74,13 +69,11 @@ export async function handleAddRecordToListOperation(
 
   try {
     // Pass objectType and initialValues to the handler function
-    const result = await toolConfig.handler(
       listId,
       recordId,
       objectType,
       initialValues
     );
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `Successfully added record ${recordId} to list ${listId}`;
 
@@ -102,8 +95,6 @@ export async function handleRemoveRecordFromListOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const entryId = request.params.arguments?.entryId as string;
 
   if (!listId) {
     return createErrorResult(
@@ -124,8 +115,6 @@ export async function handleRemoveRecordFromListOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, entryId);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `Successfully removed entry ${entryId} from list ${listId}`;
 
@@ -147,9 +136,6 @@ export async function handleUpdateListEntryOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const entryId = request.params.arguments?.entryId as string;
-  const attributes = request.params.arguments?.attributes;
 
   if (!listId) {
     return createErrorResult(
@@ -179,8 +165,6 @@ export async function handleUpdateListEntryOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, entryId, attributes);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -205,14 +189,7 @@ export async function handleFilterListEntriesByParentOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const parentObjectType = request.params.arguments?.parentObjectType as string;
-  const parentAttributeSlug = request.params.arguments
     ?.parentAttributeSlug as string;
-  const condition = request.params.arguments?.condition as string;
-  const value = request.params.arguments?.value;
-  const limit = request.params.arguments?.limit as number;
-  const offset = request.params.arguments?.offset as number;
 
   // Validate required parameters
   if (!listId) {
@@ -265,7 +242,6 @@ export async function handleFilterListEntriesByParentOperation(
 
   try {
     // Call the handler function with all parameters
-    const result = await toolConfig.handler(
       listId,
       parentObjectType,
       parentAttributeSlug,
@@ -276,7 +252,6 @@ export async function handleFilterListEntriesByParentOperation(
     );
 
     // Format the result using the configured formatter
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -301,10 +276,6 @@ export async function handleFilterListEntriesByParentIdOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const recordId = request.params.arguments?.recordId as string;
-  const limit = request.params.arguments?.limit as number;
-  const offset = request.params.arguments?.offset as number;
 
   // Validate required parameters
   if (!listId) {
@@ -327,10 +298,8 @@ export async function handleFilterListEntriesByParentIdOperation(
 
   try {
     // Call the handler function with all parameters
-    const result = await toolConfig.handler(listId, recordId, limit, offset);
 
     // Format the result using the configured formatter
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -352,7 +321,6 @@ export async function handleGetListDetailsOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
 
   if (!listId) {
     return createErrorResult(
@@ -364,8 +332,6 @@ export async function handleGetListDetailsOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -387,10 +353,6 @@ export async function handleGetListEntriesOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const limit = request.params.arguments?.limit as number;
-  const offset = request.params.arguments?.offset as number;
-  const filters = request.params.arguments?.filters;
 
   if (!listId) {
     return createErrorResult(
@@ -402,8 +364,6 @@ export async function handleGetListEntriesOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, limit, offset, filters);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -425,12 +385,6 @@ export async function handleFilterListEntriesOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const attributeSlug = request.params.arguments?.attributeSlug as string;
-  const condition = request.params.arguments?.condition as string;
-  const value = request.params.arguments?.value;
-  const limit = request.params.arguments?.limit as number;
-  const offset = request.params.arguments?.offset as number;
 
   if (!listId) {
     return createErrorResult(
@@ -469,7 +423,6 @@ export async function handleFilterListEntriesOperation(
   }
 
   try {
-    const result = await toolConfig.handler(
       listId,
       attributeSlug,
       condition,
@@ -477,7 +430,6 @@ export async function handleFilterListEntriesOperation(
       limit,
       offset
     );
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -499,10 +451,6 @@ export async function handleAdvancedFilterListEntriesOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const listId = request.params.arguments?.listId as string;
-  const filters = request.params.arguments?.filters;
-  const limit = request.params.arguments?.limit as number;
-  const offset = request.params.arguments?.offset as number;
 
   if (!listId) {
     return createErrorResult(
@@ -523,8 +471,6 @@ export async function handleAdvancedFilterListEntriesOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, filters, limit, offset);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -549,11 +495,7 @@ export async function handleGetRecordListMembershipsOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
-  const recordId = request.params.arguments?.recordId as string;
-  const objectType = request.params.arguments?.objectType as string;
-  const includeEntryValues = request.params.arguments
     ?.includeEntryValues as boolean;
-  const batchSize = request.params.arguments?.batchSize as number;
 
   if (!recordId) {
     return createErrorResult(
@@ -565,13 +507,11 @@ export async function handleGetRecordListMembershipsOperation(
   }
 
   try {
-    const result = await toolConfig.handler(
       recordId,
       objectType,
       includeEntryValues,
       batchSize
     );
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 

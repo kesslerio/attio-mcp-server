@@ -9,6 +9,7 @@
  */
 
 import { vi } from 'vitest';
+
 import { DATE_PATTERNS, MOCK_SCHEMAS } from './test-constants.js';
 import { MockResponseFactory, MockErrorFactory } from './mock-data.js';
 
@@ -44,7 +45,7 @@ export const mockSharedHandlers = () => {
       }),
       getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
       createUniversalError: vi.fn(
-        (operation: string, resourceType: string, error: any) =>
+        (operation: string, resourceType: string, error: unknown) =>
           new Error(
             `${operation} failed for ${resourceType}: ${error.message || error}`
           )
@@ -61,7 +62,7 @@ export const mockErrorService = () => {
   vi.mock('../../../../../src/services/ErrorService.js', () => ({
     ErrorService: {
       createUniversalError: vi.fn(
-        (operation: string, resourceType: string, error: any) =>
+        (operation: string, resourceType: string, error: unknown) =>
           new Error(
             `Universal ${operation} failed for resource type ${resourceType}: ${error.message || error}`
           )
@@ -78,10 +79,9 @@ export const mockSchemasAndValidation = () => {
   vi.mock(
     '../../../../../src/handlers/tool-configs/universal/schemas.js',
     async (importOriginal) => {
-      const actual = (await importOriginal()) as any;
       return {
         ...actual,
-        validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+        validateUniversalToolParams: vi.fn((operation: string, params: unknown) => {
           // Just return the params as-is (simulating successful validation)
           // This matches the expected behavior in tests
           return params || {};
@@ -127,7 +127,7 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/companies/index.js',
     async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual: unknown = await importOriginal();
       return {
         ...actual,
         searchCompaniesByNotes: vi.fn(),
@@ -141,7 +141,7 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/people/index.js',
     async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual: unknown = await importOriginal();
       return {
         ...actual,
         searchPeopleByCompany: vi.fn(),
@@ -159,7 +159,7 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/people/search.js',
     async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual: unknown = await importOriginal();
       return {
         ...actual,
         searchPeopleByActivity: vi.fn(),
@@ -175,7 +175,6 @@ export const mockSpecializedHandlers = () => {
  * Mock notes module used by search-by-content
  * Ensures listNotes returns a proper { data: AttioNote[] } shape
  */
-const mockNotesModule = () => {
   vi.mock('../../../../../src/objects/notes.js', () => ({
     listNotes: vi.fn().mockResolvedValue({
       data: [
@@ -212,7 +211,7 @@ const mockNotesModule = () => {
  */
 export const mockDateUtils = () => {
   vi.mock('../../../../../src/utils/date-utils.js', async (importOriginal) => {
-    const actual: any = await importOriginal();
+    const actual: unknown = await importOriginal();
     return {
       ...actual,
       validateAndCreateDateRange: vi.fn((start?: string, end?: string) => {
@@ -239,7 +238,7 @@ export const setupMockHandlers = async () => {
   vi.clearAllMocks();
 
   // Reset shared handlers to default successful behaviors
-  const shared: any = await import(
+  const shared: unknown = await import(
     '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
   );
   const {
@@ -253,7 +252,7 @@ export const setupMockHandlers = async () => {
 
   // Set up default mock implementations
   // Provide a smarter default for handleUniversalSearch to support timeframe tests
-  vi.mocked(handleUniversalSearch).mockImplementation(async (args: any) => {
+  vi.mocked(handleUniversalSearch).mockImplementation(async (args: unknown) => {
     // If timeframe-specific params are present for people, route to specialized mock
     if (
       args?.resource_type === 'people' &&
@@ -261,7 +260,6 @@ export const setupMockHandlers = async () => {
     ) {
       // Creation date heuristic: created_at attribute
       if (String(args.timeframe_attribute || '').includes('created')) {
-        const res = await (mockInstances.mockSpecialized
           .searchPeopleByCreationDate as any)({
           start: args.start_date,
           end: args.end_date,
@@ -307,7 +305,7 @@ export const setupMockHandlers = async () => {
   // Set up error creation
   if (shared.createUniversalError) {
     (vi.mocked as any)(shared.createUniversalError).mockImplementation(
-      (operation: string, resourceType: string, error: any) =>
+      (operation: string, resourceType: string, error: unknown) =>
         new Error(
           `${operation} failed for ${resourceType}: ${error.message || error}`
         )
@@ -326,7 +324,7 @@ export const setupMockErrorService = async () => {
 
   // Set up default error creation behavior
   (vi.mocked as any)(ErrorService.createUniversalError).mockImplementation(
-    (operation: string, resourceType: string, error: any) =>
+    (operation: string, resourceType: string, error: unknown) =>
       new Error(
         `Universal ${operation} failed for resource type ${resourceType}: ${error.message || error}`
       )
@@ -408,34 +406,27 @@ export const setupMocksWithConfig = (config: MockSetupConfig) => {
  * Global mock instances to be accessed by tests
  * These are populated during mock setup
  */
-let mockInstances: any = {};
+let mockInstances: unknown = {};
 
 /**
  * Initialize mock instances (called by setupUnitTestMocks)
  */
 export const initializeMockInstances = async () => {
-  const sharedHandlers = await import(
     '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
   );
 
-  const schemas = await import(
     '../../../../../src/handlers/tool-configs/universal/schemas.js'
   );
 
-  const dateUtils = await import('../../../../../src/utils/date-utils.js');
-  const universalSearchService = await import(
     '../../../../../src/services/UniversalSearchService.js'
   );
 
-  const companiesHandlers = await import(
     '../../../../../src/objects/companies/index.js'
   );
 
-  const peopleHandlers = await import(
     '../../../../../src/objects/people/index.js'
   );
 
-  const peopleSearchHandlers = await import(
     '../../../../../src/objects/people/search.js'
   );
 

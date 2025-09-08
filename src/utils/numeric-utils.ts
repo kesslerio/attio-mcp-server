@@ -106,7 +106,6 @@ export function createNumericRangeFilter(
       matchAny: false,
     };
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to create numeric filter: ${errorMessage}`);
   }
 }

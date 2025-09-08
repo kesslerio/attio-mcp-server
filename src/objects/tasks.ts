@@ -1,15 +1,7 @@
-import {
-  listTasks as apiList,
-  getTask as apiGet,
-  createTask as apiCreate,
-  updateTask as apiUpdate,
-  linkRecordToTask as apiLink,
-  unlinkRecordFromTask as apiUnlink,
-} from '../api/operations/index.js';
 import { AttioTask } from '../types/attio.js';
+import { deleteTask as apiDelete } from '../api/operations/index.js';
 import { isValidId } from '../utils/validation.js';
 import { shouldUseMockData } from '../services/create/index.js';
-import { deleteTask as apiDelete } from '../api/operations/index.js';
 
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 
@@ -40,7 +32,6 @@ export async function createTask(
     }
 
     // Generate mock task ID
-    const mockId = `mock-task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Return mock task response
     return {
@@ -158,10 +149,7 @@ export async function deleteTask(taskId: string): Promise<boolean> {
   // Delegate to API operations implementation (handles retries and envelopes)
   try {
     return await apiDelete(taskId);
-  } catch (err: any) {
-    const status = err?.response?.status ?? err?.status;
-    const code = err?.response?.data?.code ?? err?.code;
-    const msg = (err?.response?.data?.message ?? err?.message ?? '')
+  } catch (err: unknown) {
       .toString()
       .toLowerCase();
     // Normalize soft "not found" to boolean false so the service maps it to a structured 404

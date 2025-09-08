@@ -5,9 +5,6 @@
 
 import { UniversalResourceType } from '../types.js';
 
-// Re-export UniversalResourceType for module-internal use
-export { UniversalResourceType };
-
 /**
  * Field mapping configuration for each resource type
  */

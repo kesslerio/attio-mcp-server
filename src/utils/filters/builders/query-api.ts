@@ -83,7 +83,6 @@ export function createRelationshipQuery(
   
   // Create path for relationship navigation
   // Example: ["company", "id"] for company relationships
-  const path = [targetObjectType, targetAttribute];
   
   return createQueryApiFilter(path, condition, value);
 }
@@ -110,7 +109,6 @@ export function createTimeframeQuery(
   
   // Build the proper path - use resourceType + attribute if resourceType is provided
   // Note: Attio API expects path as nested array format: [[objectType, attribute]]
-  const path = resourceType ? [[resourceType, attribute]] : [[attribute]];
   
   // For date range queries
   if (operator === 'between') {
@@ -129,7 +127,6 @@ export function createTimeframeQuery(
   }
   
   // For single date comparisons
-  const value = startDate || endDate;
   if (!value) {
     throw new Error('Timeframe query requires either startDate or endDate');
   }
@@ -143,7 +140,6 @@ export function createTimeframeQuery(
     'equals': 'value',
   };
   
-  const constraintKey = constraintMap[operator] || 'value';
   
   return {
     filter: {
@@ -184,7 +180,6 @@ export function createContentSearchQuery(
   
   if (useOrLogic) {
     // Multiple fields with OR logic
-    const orConditions = fields.map(field => ({
       filter: {
         path: [field],
         constraints: [
@@ -203,7 +198,6 @@ export function createContentSearchQuery(
     };
   } else {
     // Multiple fields with AND logic (all fields must contain the query)
-    const andConditions = fields.map(field => ({
       filter: {
         path: [field],
         constraints: [

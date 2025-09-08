@@ -3,14 +3,13 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
 import { findSimilarStrings } from './similarity-utils.js';
+import { UniversalResourceType } from '../types.js';
 
 /**
  * Valid category options for companies (from Issues #220/#218)
  * Comprehensive list of industry categories with proper casing
  */
-const VALID_COMPANY_CATEGORIES = [
   'Health Care',
   'Technology',
   'Software',
@@ -60,7 +59,6 @@ export function validateCategories(input: string | string[]): {
   errors: string[];
   autoConverted: boolean;
 } {
-  const result = {
     isValid: true,
     validatedCategories: [] as string[],
     suggestions: [] as string[],
@@ -84,7 +82,6 @@ export function validateCategories(input: string | string[]): {
   }
 
   // Validate each category and deduplicate
-  const processedCategories = new Set<string>();
 
   for (const category of categories) {
     if (typeof category !== 'string') {
@@ -103,7 +100,6 @@ export function validateCategories(input: string | string[]): {
     }
 
     // Check if category is valid (case-insensitive)
-    const exactMatch = VALID_COMPANY_CATEGORIES.find(
       (valid) => valid.toLowerCase() === category.toLowerCase()
     );
 
@@ -112,8 +108,6 @@ export function validateCategories(input: string | string[]): {
     } else {
       // Find similar categories using fuzzy matching (Issue #220)
       // Use lower threshold for shorter words
-      const threshold = category.length <= 4 ? 0.3 : 0.5;
-      const suggestions = findSimilarStrings(
         category,
         VALID_COMPANY_CATEGORIES,
         threshold
@@ -154,7 +148,6 @@ export function processCategories(
   warnings: string[];
   errors: string[];
 } {
-  const result = {
     processedValue: value,
     warnings: [] as string[],
     errors: [] as string[],
@@ -176,7 +169,6 @@ export function processCategories(
     return result;
   }
 
-  const validation = validateCategories(value as string | string[]);
 
   if (validation.autoConverted) {
     result.warnings.push(

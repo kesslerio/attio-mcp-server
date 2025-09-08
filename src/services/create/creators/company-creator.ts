@@ -5,18 +5,11 @@
  * error recovery, and company record processing.
  */
 
-import type { AttioRecord } from '../../../types/attio.js';
-import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import { normalizeCompanyValues } from '../data-normalizers.js';
-import {
-  extractAttioRecord,
-  assertLooksLikeCreated,
-  isTestRun,
-  debugRecordShape,
-  normalizeRecordForOutput,
-} from '../extractor.js';
 import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
+import type { AttioRecord } from '../../../types/attio.js';
+import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 
 /**
  * Company-specific resource creator
@@ -38,8 +31,6 @@ export class CompanyCreator extends BaseCreator {
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
-    const normalizedCompany = this.normalizeInput(input);
-    const payload = this.createPayload(normalizedCompany);
 
     context.debug(this.constructor.name, '🔍 EXACT API PAYLOAD', {
       url: this.endpoint,
@@ -50,9 +41,6 @@ export class CompanyCreator extends BaseCreator {
     try {
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        const h = context.client?.defaults?.headers ?? {};
-        const c = h.common ?? {};
-        const hasAuth = Boolean(
           c.Authorization ||
             c.authorization ||
             h.Authorization ||
@@ -64,7 +52,6 @@ export class CompanyCreator extends BaseCreator {
         });
       }
 
-      const response = await context.client.post(this.endpoint, payload);
 
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
@@ -80,7 +67,6 @@ export class CompanyCreator extends BaseCreator {
         });
       }
 
-      const rec = this.extractRecordFromResponse(response);
 
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
@@ -96,7 +82,6 @@ export class CompanyCreator extends BaseCreator {
       this.finalizeRecord(rec, context);
       registerMockAliasIfPresent(input, rec?.id?.record_id);
 
-      const out = normalizeRecordForOutput(rec, 'companies');
 
       // Optional debug to confirm the shape:
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
@@ -110,7 +95,7 @@ export class CompanyCreator extends BaseCreator {
       }
 
       return out;
-    } catch (err: any) {
+    } catch (err: unknown) {
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
         console.debug(`[CompanyCreator] Exception caught:`, {
@@ -172,7 +157,6 @@ export class CompanyCreator extends BaseCreator {
     }
 
     // Try recovery by domain first
-    const domain = Array.isArray(normalizedInput.domains)
       ? normalizedInput.domains[0]
       : undefined;
 
@@ -186,7 +170,6 @@ export class CompanyCreator extends BaseCreator {
             order: { created_at: 'desc' },
           }
         );
-        const record = this.extractRecordFromSearch(searchByDomain);
         if (record?.id?.record_id) {
           context.debug(
             this.constructor.name,
@@ -201,7 +184,6 @@ export class CompanyCreator extends BaseCreator {
       }
 
       // Try recovery by name
-      const name = normalizedInput.name as string;
       if (name) {
         const { data: searchByName } = await context.client.post(
           `${this.endpoint}/search`,
@@ -211,7 +193,6 @@ export class CompanyCreator extends BaseCreator {
             order: { created_at: 'desc' },
           }
         );
-        const record = this.extractRecordFromSearch(searchByName);
         if (record?.id?.record_id) {
           context.debug(
             this.constructor.name,
@@ -242,7 +223,7 @@ export class CompanyCreator extends BaseCreator {
    * Includes recovery attempt with normalized input
    */
   protected async processResponse(
-    response: any,
+    response: unknown,
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
@@ -258,7 +239,6 @@ export class CompanyCreator extends BaseCreator {
     record = this.enrichRecordId(record, response);
 
     // Handle empty response with recovery attempt
-    const mustRecover =
       !record || !(record as any).id || !(record as any).id?.record_id;
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
@@ -270,14 +250,14 @@ export class CompanyCreator extends BaseCreator {
   /**
    * Extracts record from API response
    */
-  private extractRecordFromResponse(response: any): any {
+  private extractRecordFromResponse(response: unknown): unknown {
     return extractAttioRecord(response);
   }
 
   /**
    * Extracts record from search results
    */
-  private extractRecordFromSearch(searchData: any): any {
+  private extractRecordFromSearch(searchData: unknown): unknown {
     return extractAttioRecord(searchData);
   }
 
@@ -285,7 +265,7 @@ export class CompanyCreator extends BaseCreator {
    * Finalizes record processing
    */
   private finalizeRecord(
-    record: any,
+    record: unknown,
     context: ResourceCreatorContext
   ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);

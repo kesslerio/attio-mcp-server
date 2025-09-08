@@ -35,63 +35,42 @@ export interface DateRange {
  * @throws Error if expression cannot be parsed
  */
 export function parseRelativeDate(expression: string): DateRange {
-  const normalized = expression.toLowerCase().trim();
-  const now = new Date();
 
   // Helper to format date as ISO string (YYYY-MM-DD)
-  const toISODate = (date: Date): string => {
     return date.toISOString().split('T')[0];
   };
 
   // Helper to get start of day
-  const startOfDay = (date: Date): Date => {
-    const d = new Date(date);
     d.setHours(0, 0, 0, 0);
     return d;
   };
 
   // Helper to get start of week (Monday)
-  const startOfWeek = (date: Date): Date => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
     return startOfDay(d);
   };
 
   // Helper to get end of week (Sunday)
-  const endOfWeek = (date: Date): Date => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? 0 : 7);
     d.setDate(diff);
     return startOfDay(d);
   };
 
   // Helper to get start of month
-  const startOfMonth = (date: Date): Date => {
-    const d = new Date(date);
     d.setDate(1);
     return startOfDay(d);
   };
 
   // Helper to get end of month (last day of month)
-  const endOfMonth = (date: Date): Date => {
-    const d = new Date(date);
     d.setMonth(d.getMonth() + 1, 0);
     return startOfDay(d);
   };
 
   // Helper to get start of year
-  const startOfYear = (date: Date): Date => {
-    const d = new Date(date);
     d.setMonth(0, 1);
     return startOfDay(d);
   };
 
   // Helper to get end of year
-  const endOfYear = (date: Date): Date => {
-    const d = new Date(date);
     d.setMonth(11, 31);
     return startOfDay(d);
   };
@@ -99,7 +78,6 @@ export function parseRelativeDate(expression: string): DateRange {
   // Parse specific relative dates
   switch (normalized) {
     case 'today': {
-      const today = startOfDay(now);
       return {
         start: toISODate(today),
         end: toISODate(today),
@@ -107,9 +85,7 @@ export function parseRelativeDate(expression: string): DateRange {
     }
 
     case 'yesterday': {
-      const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
-      const startYesterday = startOfDay(yesterday);
       return {
         start: toISODate(startYesterday),
         end: toISODate(startYesterday),
@@ -124,7 +100,6 @@ export function parseRelativeDate(expression: string): DateRange {
     }
 
     case 'last week': {
-      const lastWeek = new Date(now);
       lastWeek.setDate(lastWeek.getDate() - 7);
       return {
         start: toISODate(startOfWeek(lastWeek)),
@@ -140,7 +115,6 @@ export function parseRelativeDate(expression: string): DateRange {
     }
 
     case 'last month': {
-      const lastMonth = new Date(now);
       lastMonth.setMonth(lastMonth.getMonth() - 1);
       return {
         start: toISODate(startOfMonth(lastMonth)),
@@ -156,7 +130,6 @@ export function parseRelativeDate(expression: string): DateRange {
     }
 
     case 'last year': {
-      const lastYear = new Date(now);
       lastYear.setFullYear(lastYear.getFullYear() - 1);
       return {
         start: toISODate(startOfYear(lastYear)),
@@ -166,10 +139,7 @@ export function parseRelativeDate(expression: string): DateRange {
   }
 
   // Parse "last N days/weeks/months" patterns - handle spaces flexibly
-  const lastNDaysMatch = normalized.match(/^last\s+(\d+)\s+days?$/);
   if (lastNDaysMatch) {
-    const days = parseInt(lastNDaysMatch[1], 10);
-    const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - days);
     return {
       start: toISODate(startOfDay(startDate)),
@@ -177,10 +147,7 @@ export function parseRelativeDate(expression: string): DateRange {
     };
   }
 
-  const lastNWeeksMatch = normalized.match(/^last\s+(\d+)\s+weeks?$/);
   if (lastNWeeksMatch) {
-    const weeks = parseInt(lastNWeeksMatch[1], 10);
-    const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - weeks * 7);
     return {
       start: toISODate(startOfDay(startDate)),
@@ -188,10 +155,7 @@ export function parseRelativeDate(expression: string): DateRange {
     };
   }
 
-  const lastNMonthsMatch = normalized.match(/^last\s+(\d+)\s+months?$/);
   if (lastNMonthsMatch) {
-    const months = parseInt(lastNMonthsMatch[1], 10);
-    const startDate = new Date(now);
     startDate.setMonth(startDate.getMonth() - months);
     return {
       start: toISODate(startOfDay(startDate)),
@@ -228,20 +192,17 @@ export function isRelativeDate(expression: string): boolean {
  */
 export function normalizeDate(dateInput: string): string | null {
   // Check if it's already an ISO date (YYYY-MM-DD)
-  const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (isoDateRegex.test(dateInput)) {
     return dateInput;
   }
 
   // Check if it's a relative date
   if (isRelativeDate(dateInput)) {
-    const range = parseRelativeDate(dateInput);
     // For single date context, return the start date
     return range.start;
   }
 
   // Try to parse as a regular date
-  const date = new Date(dateInput);
   if (!isNaN(date.getTime())) {
     return date.toISOString().split('T')[0];
   }
@@ -257,10 +218,7 @@ export function normalizeDate(dateInput: string): string | null {
 export function describeDateRange(range: DateRange): string {
   // Parse dates as local dates to avoid timezone issues
   // Adding 'T00:00:00' ensures the date is interpreted in local time
-  const start = new Date(range.start + 'T00:00:00');
-  const end = new Date(range.end + 'T00:00:00');
 
-  const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',

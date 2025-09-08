@@ -9,17 +9,13 @@
  */
 
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
-import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { initializeAttioClient } from '../../src/api/attio-client.js';
-import {
-  createCompany,
-  deleteCompany,
-} from '../../src/objects/companies/index.js';
+
 import { CompanyMockFactory } from '../utils/mock-factories/CompanyMockFactory.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
 
 // Test configuration
-const SKIP_INTEGRATION_TESTS =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 const testCompanies: string[] = [];
 
@@ -46,22 +42,18 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('Quote and Apostrophe Handling', () => {
     it('should preserve single and double quotes in company names', async () => {
-      const testData = {
         name: `O'Reilly Media & "Tech" Solutions`,
         description: `Company with O'Brien's "special" quotes`,
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -72,18 +64,15 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should handle escaped quotes and nested quotation marks', async () => {
-      const testData = {
         name: `Company "with 'nested' quotes"`,
         description: `"He said 'hello world' to us"`,
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
@@ -94,24 +83,20 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('HTML and XML Character Handling', () => {
     it('should preserve HTML-like content without interpretation', async () => {
-      const testData = {
         name: 'Tech & Solutions <Company>',
         description: '<div>Company with &amp; HTML &lt;tags&gt;</div>',
         notes:
           'Content with &nbsp; entities and <script>alert("test")</script>',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -123,18 +108,15 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should handle XML/SGML entities correctly', async () => {
-      const testData = {
         name: 'Company &amp; Partners',
         description: 'Entities: &lt; &gt; &quot; &apos; &amp;',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
@@ -144,23 +126,19 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('Unicode and International Character Handling', () => {
     it('should preserve Unicode characters and international text', async () => {
-      const testData = {
         name: 'Företag Cañón 株式会社',
         description: 'International: Ñoño, café, naïve, résumé, 北京',
         notes: 'Unicode symbols: ₹ € ¥ £ ₿ ∑ ∆ π',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -173,23 +151,19 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should handle emoji and modern Unicode symbols', async () => {
-      const testData = {
         name: 'Tech Company 🚀 Innovation',
         description: 'We build 💻 solutions with ❤️ and 🧠',
         notes: 'Symbols: ✅ ❌ ⭐ 🎯 📊 🔥 💡',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -202,22 +176,18 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('Newline and Whitespace Handling', () => {
     it('should preserve multiline content with various newline formats', async () => {
-      const testData = {
         description: 'Line 1\nLine 2\r\nLine 3\rLine 4',
         notes: 'Paragraph 1\n\nParagraph 2\n\n\nParagraph 3',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
-      const notesValue = Array.isArray(result.values.notes)
         ? result.values.notes[0]?.value || result.values.notes[0]
         : result.values.notes;
 
@@ -228,18 +198,15 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should preserve tabs and special whitespace characters', async () => {
-      const testData = {
         description: 'Column1\tColumn2\tColumn3',
         notes: 'Indented\n\tSubitem 1\n\tSubitem 2\n\t\tNested item',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -249,19 +216,16 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should handle leading and trailing whitespace consistently', async () => {
-      const testData = {
         name: '  Padded Company Name  ',
         description: '\n\n  Description with padding  \n\n',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
       // The system should preserve the exact input as provided
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
@@ -272,19 +236,16 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('JSON and Structured Data Handling', () => {
     it('should handle JSON-like content without interpretation', async () => {
-      const testData = {
         description: '{"name": "Company", "type": "Tech", "active": true}',
         notes:
           '[{"id": 1, "status": "active"}, {"id": 2, "status": "inactive"}]',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -294,18 +255,15 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should handle CSV-like content with special characters', async () => {
-      const testData = {
         description:
           'Name,Description,Notes\n"O\'Reilly",Software & Media,"Books, Training"\nAcme Corp,Manufacturing,Heavy & Light',
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -317,10 +275,8 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('Cross-Resource Type Consistency', () => {
     it('should handle special characters consistently across all resource types', async () => {
-      const specialContent =
         'Content with "quotes" & <tags> 🚀 newlines\nand\ttabs';
 
-      const resourceTypes = [
         UniversalResourceType.COMPANIES,
         UniversalResourceType.PEOPLE,
         UniversalResourceType.TASKS,
@@ -329,7 +285,6 @@ describe('Special Character Handling Integration Tests', () => {
       ];
 
       for (const resourceType of resourceTypes) {
-        const result = await UniversalUpdateService.updateRecord({
           resource_type: resourceType,
           record_id: `mock-${resourceType}-id`,
           record_data: {
@@ -347,7 +302,6 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('Real-World Scenario Testing', () => {
     it('should handle copy-pasted content from various sources', async () => {
-      const testData = {
         name: 'Real-World Company™',
         description: `
         About Us:
@@ -367,17 +321,14 @@ describe('Special Character Handling Integration Tests', () => {
         `,
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const nameValue = Array.isArray(result.values.name)
         ? result.values.name[0]?.value || result.values.name[0]
         : result.values.name;
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -391,7 +342,6 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should handle content with mixed encoding and special patterns', async () => {
-      const testData = {
         description: `
         Special patterns and encoding:
         - URLs: https://example.com/path?param=value&other=123
@@ -406,13 +356,11 @@ describe('Special Character Handling Integration Tests', () => {
         `,
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
       });
 
-      const descValue = Array.isArray(result.values.description)
         ? result.values.description[0]?.value || result.values.description[0]
         : result.values.description;
 
@@ -429,14 +377,11 @@ describe('Special Character Handling Integration Tests', () => {
 
   describe('Edge Cases and Error Conditions', () => {
     it('should handle extremely long content with special characters', async () => {
-      const longContent =
         'Special character content: "quotes" & <tags> 🚀\n'.repeat(100);
 
-      const testData = {
         description: longContent,
       };
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
@@ -447,13 +392,11 @@ describe('Special Character Handling Integration Tests', () => {
     });
 
     it('should handle null bytes and control characters gracefully', async () => {
-      const testData = {
         name: 'Company\x00Name', // Null byte
         description: 'Content\x08with\x0Ccontrol\x1Fcharacters', // Control characters
       };
 
       // Should not crash or cause issues
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'mock-company-id',
         record_data: testData,
@@ -467,17 +410,14 @@ describe('Special Character Handling Integration Tests', () => {
   if (!SKIP_INTEGRATION_TESTS) {
     describe('Real API Integration Tests', () => {
       it('should persist special characters correctly with real API', async () => {
-        const testData = {
           name: `Real API Test "Company" & Co. 🚀 ${Date.now()}`,
           domains: ['special-chars-test.com'],
           description: 'Real API test with special chars: "quotes" & <tags>',
         };
 
-        const company = await createCompany(testData);
         testCompanies.push(company.id.record_id);
 
         // Verify special characters were preserved
-        const nameValue = Array.isArray(company.values.name)
           ? company.values.name[0]?.value
           : company.values.name;
 

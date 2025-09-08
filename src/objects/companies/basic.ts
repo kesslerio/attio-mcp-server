@@ -1,28 +1,12 @@
 /**
  * Basic CRUD operations for companies
  */
+import { CompanyAttributes } from './types.js';
+import { CompanyValidator } from '../../validators/company-validator.js';
+import { findPersonReference } from '../../utils/person-lookup.js';
 import { getAttioClient } from '../../api/attio-client.js';
 import { getObjectDetails, listObjects } from '../../api/operations/index.js';
 import { ResourceType, Company } from '../../types/attio.js';
-import { CompanyAttributes } from './types.js';
-import { CompanyValidator } from '../../validators/company-validator.js';
-import {
-  CompanyOperationError,
-  InvalidCompanyDataError,
-} from '../../errors/company-errors.js';
-import {
-  createObjectWithDynamicFields,
-  updateObjectWithDynamicFields,
-  updateObjectAttributeWithDynamicFields,
-  deleteObjectWithValidation,
-} from '../base-operations.js';
-import { findPersonReference } from '../../utils/person-lookup.js';
-import {
-  setMockCompany,
-  createMockCompanyWithApiStructure,
-  updateMockCompany,
-  getMockCompany,
-} from '../../utils/mock-state.js';
 
 /**
  * Lists companies sorted by most recent interaction
@@ -36,10 +20,7 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);
   } catch (error: unknown) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = '/objects/companies/records/query';
 
-    const response = await api.post(path, {
       limit,
       sorts: [
         {
@@ -70,7 +51,6 @@ export async function getCompanyDetails(
       companyIdOrUri.includes('mock'))
   ) {
     // First, check if we have this company in shared mock state
-    const sharedMockCompany = getMockCompany(companyIdOrUri);
     if (sharedMockCompany) {
       if (
         process.env.NODE_ENV === 'development' ||
@@ -88,7 +68,6 @@ export async function getCompanyDetails(
     }
 
     // Fallback to static mock if not found in shared state
-    const mockCompany = createMockCompanyWithApiStructure(companyIdOrUri, {
       name: `Mock Company ${companyIdOrUri}`,
       industry: 'Software & Technology',
       categories: 'Software & Technology',
@@ -114,7 +93,6 @@ export async function getCompanyDetails(
 
   try {
     // Determine if the input is a URI or a direct ID
-    const isUri = companyIdOrUri.startsWith('attio://');
 
     if (isUri) {
       try {
@@ -129,7 +107,6 @@ export async function getCompanyDetails(
 
         companyId = id;
       } catch (parseError) {
-        const parts = companyIdOrUri.split('/');
         companyId = parts[parts.length - 1];
       }
     } else {
@@ -140,7 +117,6 @@ export async function getCompanyDetails(
       throw new Error(`Invalid company ID: ${companyIdOrUri}`);
     }
 
-    const result = await getObjectDetails<Company>(
       ResourceType.COMPANIES,
       companyId
     );
@@ -154,7 +130,6 @@ export async function getCompanyDetails(
         !result.values)
     ) {
       // Check shared state first
-      const sharedMockCompany = getMockCompany(companyId);
       if (sharedMockCompany) {
         return sharedMockCompany;
       }
@@ -177,7 +152,6 @@ export async function getCompanyDetails(
         companyIdOrUri.includes('mock'))
     ) {
       // Check shared state first
-      const sharedMockCompany = getMockCompany(companyIdOrUri);
       if (sharedMockCompany) {
         return sharedMockCompany;
       }
@@ -275,7 +249,6 @@ export async function createCompany(
       // Fallback: Try to find existing company by name if create returned empty/invalid result
       if (attributes.name) {
         // Extract the actual name value - might be in Attio format { value: "name" } or direct string
-        const nameValue =
           typeof attributes.name === 'object' &&
           attributes.name !== null &&
           'value' in (attributes.name as Record<string, unknown>)
@@ -283,8 +256,6 @@ export async function createCompany(
             : (attributes.name ?? '');
 
         try {
-          const api = getAttioClient();
-          const queryResponse = await api.post(
             `/objects/companies/records/query`,
             {
               filter: { name: nameValue },
@@ -311,7 +282,6 @@ export async function createCompany(
             Array.isArray(queryResponse.data.data) &&
             queryResponse.data.data.length > 0
           ) {
-            const foundCompany = queryResponse.data.data[0];
             if (
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
@@ -328,10 +298,8 @@ export async function createCompany(
           ) {
             // For testing: Create a mock company result when API returns empty
             // This allows integration tests to proceed when Attio API is not working properly
-            const mockCompanyId = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
             // Create mock with proper Attio API structure
-            const mockAttributes = {
               name: nameValue,
               ...Object.fromEntries(
                 Object.entries(attributes)
@@ -371,9 +339,7 @@ export async function createCompany(
               process.env.NODE_ENV === 'test') &&
             nameValue
           ) {
-            const mockCompanyId = `comp_fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-            const mockAttributes = {
               name: nameValue,
               ...Object.fromEntries(
                 Object.entries(attributes)
@@ -406,9 +372,7 @@ export async function createCompany(
         process.env.NODE_ENV === 'test'
       ) {
         // If no name is provided but we're in test mode, create a mock anyway
-        const mockCompanyId = `comp_noname_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        const mockAttributes = {
           name: 'Test Company (No Name Provided)',
           ...Object.fromEntries(
             Object.entries(attributes).map(([key, value]) => [
@@ -475,7 +439,6 @@ export async function createCompany(
 
       // Last resort: Create a mock structure if we're in test mode
       if (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') {
-        const emergencyMockId = `comp_emergency_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         result = {
           ...result,
           id: {
@@ -575,7 +538,6 @@ export async function updateCompany(
         companyId.includes('mock'))
     ) {
       // Try to update existing mock company in shared state
-      const updatedMockCompany = updateMockCompany(companyId, attributes);
 
       if (updatedMockCompany) {
         if (
@@ -594,7 +556,6 @@ export async function updateCompany(
         return updatedMockCompany;
       } else {
         // If company doesn't exist in shared state, create a new mock
-        const mockUpdatedCompany = createMockCompanyWithApiStructure(
           companyId,
           {
             name: `Mock Company ${companyId}`,
@@ -708,7 +669,6 @@ export async function updateCompanyAttribute(
 
     // Validate attribute update and get processed value
     // This will handle conversion of string values to boolean for boolean fields
-    const processedValue = await CompanyValidator.validateAttributeUpdate(
       companyId,
       attributeName,
       valueToProcess as any // TODO: Replace with proper type once CompanyFieldValue is updated
@@ -786,23 +746,18 @@ export function extractCompanyId(companyIdOrUri: string): string {
   }
 
   // Determine if the input is a URI or a direct ID
-  const isUri = companyIdOrUri.startsWith('attio://');
 
   if (isUri) {
     try {
       // Extract URI parts
-      const uriParts = companyIdOrUri.split('//')[1]; // Get the part after 'attio://'
       if (!uriParts) {
         throw new Error('Invalid URI format');
       }
 
-      const parts = uriParts.split('/');
       if (parts.length < 2) {
         throw new Error('Invalid URI format: missing resource type or ID');
       }
 
-      const resourceType = parts[0];
-      const id = parts[1];
 
       // Special handling for test case with malformed URI
       if (resourceType === 'malformed') {
@@ -828,7 +783,6 @@ export function extractCompanyId(companyIdOrUri: string): string {
       }
 
       // Otherwise fallback to simple string splitting for malformed URIs
-      const parts = companyIdOrUri.split('/');
       return parts[parts.length - 1];
     }
   } else {

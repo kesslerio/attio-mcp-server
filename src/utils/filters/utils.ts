@@ -3,12 +3,6 @@
  * Consolidates utilities from filter-utils.ts and filter-utils-additions.ts
  */
 
-import {
-  DateRange,
-  NumericRange,
-  ATTRIBUTES,
-  FilterConditionType,
-} from './types.js';
 import { resolveDateRange } from '../date-utils.js';
 
 /**
@@ -82,16 +76,12 @@ export function isInNumericRange(value: number, range: NumericRange): boolean {
  * @returns True if date is within range
  */
 export function isInDateRange(dateStr: string, range: DateRange): boolean {
-  const date = new Date(dateStr);
-  const resolvedRange = resolveDateRange(range);
 
   if (resolvedRange.start) {
-    const startDate = new Date(resolvedRange.start);
     if (date < startDate) return false;
   }
 
   if (resolvedRange.end) {
-    const endDate = new Date(resolvedRange.end);
     if (date > endDate) return false;
   }
 
@@ -104,7 +94,7 @@ export function isInDateRange(dateStr: string, range: DateRange): boolean {
  * @param operation - The operation being performed
  * @param details - Additional details to log
  */
-export function debugFilterLog(operation: string, details: any): void {
+export function debugFilterLog(operation: string, details: unknown): void {
   if (process.env.NODE_ENV === 'development') {
     console.error(`[Filter ${operation}]`, details);
   }
@@ -117,7 +107,6 @@ export function debugFilterLog(operation: string, details: any): void {
  * @returns True if the attribute is a date field
  */
 export function isDateAttribute(attributeSlug: string): boolean {
-  const dateAttributes = [
     ATTRIBUTES.CREATED_AT,
     ATTRIBUTES.UPDATED_AT,
     ATTRIBUTES.LAST_INTERACTION,
@@ -133,7 +122,6 @@ export function isDateAttribute(attributeSlug: string): boolean {
  * @returns True if the attribute is a numeric field
  */
 export function isNumericAttribute(attributeSlug: string): boolean {
-  const numericAttributes = [ATTRIBUTES.REVENUE, ATTRIBUTES.EMPLOYEE_COUNT];
 
   return numericAttributes.includes(attributeSlug);
 }
@@ -145,7 +133,6 @@ export function isNumericAttribute(attributeSlug: string): boolean {
  * @returns True if the attribute is a text field
  */
 export function isTextAttribute(attributeSlug: string): boolean {
-  const textAttributes = [
     ATTRIBUTES.NAME,
     ATTRIBUTES.EMAIL,
     ATTRIBUTES.WEBSITE,
@@ -160,7 +147,6 @@ export function isTextAttribute(attributeSlug: string): boolean {
  * List-specific attributes that are stored directly on list entries
  * These attributes are not part of the parent record but are specific to the list context
  */
-const LIST_SPECIFIC_ATTRIBUTES = [
   'stage',
   'Stage',
   'status',
@@ -195,14 +181,12 @@ export function isListSpecificAttribute(attributeSlug: string): boolean {
   }
 
   // Check if it's a UUID (attribute IDs are list-specific)
-  const uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (uuidRegex.test(attributeSlug)) {
     return true;
   }
 
   // Check for common patterns in list-specific attribute names
-  const listPatterns = [
     /^list[_\s]/i,
     /[_\s]stage$/i,
     /[_\s]status$/i,

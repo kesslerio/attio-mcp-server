@@ -63,7 +63,6 @@ export function normalizeOperator(op: string): FilterOperator {
   }
 
   // Legacy mapping with warning
-  const normalized = LEGACY_OPERATOR_MAP[op];
   if (normalized) {
     console.warn(
       `[AttioFilterOperators] Deprecated operator '${op}' used. Use '${normalized}' instead.`
@@ -83,7 +82,6 @@ export function validateFilter(
   operator: string,
   value: unknown
 ): { valid: boolean; error?: string } {
-  const normalizedOp = normalizeOperator(operator);
 
   switch (normalizedOp) {
     case FilterOperator.NOT_EMPTY:
@@ -141,11 +139,9 @@ export class AttioRateLimitSemaphore {
 
   async acquire<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
-      const execute = async () => {
         this.running++;
 
         try {
-          const result = await this.withRetry(fn);
           resolve(result);
         } catch (error) {
           reject(error);
@@ -166,12 +162,9 @@ export class AttioRateLimitSemaphore {
   private async withRetry<T>(fn: () => Promise<T>, attempt = 1): Promise<T> {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 429 backoff with jitter
       if (error?.status === 429 && attempt <= 4) {
-        const baseDelay = Math.pow(2, attempt - 1) * 250; // 250ms, 500ms, 1s, 2s
-        const jitter = Math.random() * 100; // 0-100ms jitter
-        const delay = baseDelay + jitter;
 
         console.warn(
           `[AttioRateLimitSemaphore] Rate limit hit, retrying in ${Math.round(delay)}ms (attempt ${attempt})`
@@ -187,7 +180,6 @@ export class AttioRateLimitSemaphore {
 
   private processQueue() {
     if (this.queue.length > 0 && this.running < this.maxConcurrent) {
-      const next = this.queue.shift();
       if (next) next();
     }
   }

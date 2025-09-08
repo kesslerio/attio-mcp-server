@@ -15,7 +15,7 @@
 export function convertAttributeFormats(
   resourceType: string,
   attributes: any
-): any {
+): unknown {
   let corrected = { ...attributes };
 
   switch (resourceType) {
@@ -33,8 +33,7 @@ export function convertAttributeFormats(
 /**
  * Converts company attribute formats
  */
-function convertCompanyAttributes(attributes: any): any {
-  const corrected = { ...attributes };
+function convertCompanyAttributes(attributes: unknown): unknown {
 
   // Convert 'domain' to 'domains' array
   if ('domain' in corrected && !('domains' in corrected)) {
@@ -64,8 +63,7 @@ function convertCompanyAttributes(attributes: any): any {
 /**
  * Converts people attribute formats
  */
-function convertPeopleAttributes(attributes: any): any {
-  const corrected = { ...attributes };
+function convertPeopleAttributes(attributes: unknown): unknown {
 
   // Handle name conversion to personal-name array format
   if (
@@ -78,7 +76,6 @@ function convertPeopleAttributes(attributes: any): any {
 
     // Handle string name input (e.g., "Jane Smith")
     if (typeof corrected.name === 'string') {
-      const parts = corrected.name.trim().split(' ');
       if (parts.length >= 2) {
         nameObj.first_name = parts[0];
         nameObj.last_name = parts.slice(1).join(' ');
@@ -126,7 +123,6 @@ function convertPeopleAttributes(attributes: any): any {
 
   // Convert email_addresses from object format to string array
   if (corrected.email_addresses && Array.isArray(corrected.email_addresses)) {
-    const converted = corrected.email_addresses.map((item: any) => {
       if (typeof item === 'object' && item.email_address) {
         console.error(
           `[Format Helper] Converting email object format to string`
@@ -146,7 +142,6 @@ function convertPeopleAttributes(attributes: any): any {
 
   // Convert phone_numbers from object format to string array
   if (corrected.phone_numbers && Array.isArray(corrected.phone_numbers)) {
-    const converted = corrected.phone_numbers.map((item: any) => {
       if (typeof item === 'object' && (item.phone_number || item.number)) {
         console.error(
           `[Format Helper] Converting phone object format to string`
@@ -165,7 +160,7 @@ function convertPeopleAttributes(attributes: any): any {
  * Validates people attributes before POST to ensure correct Attio format
  * Throws validation errors if required formats are not met
  */
-export function validatePeopleAttributesPrePost(attributes: any): void {
+export function validatePeopleAttributesPrePost(attributes: unknown): void {
   // Validate name format if present
   if (attributes.name) {
     if (!Array.isArray(attributes.name)) {
@@ -253,7 +248,6 @@ Correct format for 'company' (record reference):
     },
   };
 
-  const helpText = examples[resourceType]?.[attributeName];
   if (helpText) {
     return `${error}\n${helpText}`;
   }

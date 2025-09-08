@@ -2,38 +2,15 @@
  * Split: UniversalSearchService companies/people/lists
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
-  ValidationService: {
-    validatePaginationParameters: vi.fn(),
-    validateFiltersSchema: vi.fn(),
-    validateUUIDForSearch: vi.fn().mockReturnValue(true),
-  },
-}));
-vi.mock('../../src/services/CachingService.js', () => ({
-  CachingService: { getOrLoadTasks: vi.fn(), getCachedTasks: vi.fn() },
-}));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
-  enhancedPerformanceTracker: {
-    startOperation: vi.fn(() => 'perf-123'),
-    markTiming: vi.fn(),
-    markApiStart: vi.fn(() => 100),
-    markApiEnd: vi.fn(),
-    endOperation: vi.fn(),
-  },
-}));
-vi.mock('../../src/objects/companies/index.js', () => ({
-  advancedSearchCompanies: vi.fn(),
-}));
-vi.mock('../../src/objects/people/index.js', () => ({
-  advancedSearchPeople: vi.fn(),
-}));
-vi.mock('../../src/objects/lists.js', () => ({ searchLists: vi.fn() }));
-vi.mock('../../src/services/create/index.js', () => ({
-  shouldUseMockData: vi.fn(() => false),
-}));
-vi.mock('../../src/services/UniversalUtilityService.js', () => ({
-  UniversalUtilityService: { convertListToRecord: vi.fn() },
-}));
+
+import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
+import { advancedSearchPeople } from '../../src/objects/people/index.js';
+import { AttioRecord } from '../../src/types/attio.js';
+import { searchLists } from '../../src/objects/lists.js';
+import { shouldUseMockData } from '../../src/services/create/index.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
+import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
 
 import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
@@ -60,7 +37,6 @@ describe('UniversalSearchService', () => {
         } as any,
       ];
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults as any);
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test',
         limit: 10,
@@ -77,7 +53,6 @@ describe('UniversalSearchService', () => {
           values: { name: 'Test Company' },
         } as any,
       ];
-      const filters = {
         filters: [
           {
             attribute: { slug: 'domain' },
@@ -87,7 +62,6 @@ describe('UniversalSearchService', () => {
         ],
       };
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults as any);
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         filters,
         limit: 5,
@@ -103,7 +77,6 @@ describe('UniversalSearchService', () => {
       vi.mocked(advancedSearchPeople).mockResolvedValue({
         results: mockResults,
       } as any);
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.PEOPLE,
         query: 'Jane',
       });
@@ -112,7 +85,6 @@ describe('UniversalSearchService', () => {
     });
 
     it('should search lists by title', async () => {
-      const mockListResults = [
         {
           id: { list_id: 'list_1' },
           title: 'Prospects',
@@ -122,7 +94,6 @@ describe('UniversalSearchService', () => {
       ];
       vi.mocked(searchLists).mockResolvedValue(mockListResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,
         query: 'Prospects',
       });

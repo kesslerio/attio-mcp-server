@@ -1,9 +1,4 @@
 import { UniversalResourceType } from '../types.js';
-import {
-  ErrorType,
-  HttpStatusCode,
-  UniversalValidationError,
-} from '../errors/validation-errors.js';
 
 export class CrossResourceValidator {
   static async validateCompanyExists(companyId: string): Promise<{
@@ -32,10 +27,9 @@ export class CrossResourceValidator {
       const { getAttioClient } = await import(
         '../../../../api/attio-client.js'
       );
-      const client = getAttioClient();
       await client.get(`/objects/companies/records/${companyId.trim()}`);
       return { exists: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.response?.status === 404) {
         return {
           exists: false,
@@ -64,14 +58,10 @@ export class CrossResourceValidator {
     if (!recordData || typeof recordData !== 'object') return;
     switch (resourceType) {
       case UniversalResourceType.PEOPLE: {
-        const companyId =
           recordData.company_id || recordData.company?.id || recordData.company;
         if (companyId) {
-          const companyIdString = String(companyId);
-          const validationResult =
             await this.validateCompanyExists(companyIdString);
           if (!validationResult.exists) {
-            const error = validationResult.error!;
             throw new UniversalValidationError(
               error.message,
               error.type === 'api_error'

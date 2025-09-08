@@ -57,7 +57,7 @@ export function validateFilterStructure(filter: ListEntryFilter): boolean {
  * @returns Validated and normalized date range
  * @throws FilterValidationError if validation fails
  */
-export function validateDateRange(dateRange: any): DateRange {
+export function validateDateRange(dateRange: unknown): DateRange {
   if (!dateRange) {
     throw new FilterValidationError('Date range is required');
   }
@@ -91,12 +91,10 @@ export function validateDateRange(dateRange: any): DateRange {
 
   // Validate preset if provided
   if (dateRange.preset) {
-    const normalizedPreset =
       typeof dateRange.preset === 'string'
         ? dateRange.preset.toLowerCase().trim()
         : String(dateRange.preset);
 
-    const validPresets = Object.values(DateRangePreset);
     if (!validPresets.includes(normalizedPreset as DateRangePreset)) {
       throw new FilterValidationError(
         `Invalid date preset: "${dateRange.preset}". ` +
@@ -214,7 +212,7 @@ export function validateDateRange(dateRange: any): DateRange {
  * @returns Validated and normalized activity filter
  * @throws FilterValidationError if validation fails
  */
-export function validateActivityFilter(activityFilter: any): ActivityFilter {
+export function validateActivityFilter(activityFilter: unknown): ActivityFilter {
   if (!activityFilter) {
     throw new FilterValidationError('Activity filter is required');
   }
@@ -259,7 +257,6 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
 
   // Validate interactionType if provided
   if (activityFilter.interactionType !== undefined) {
-    const validTypes = Object.values(InteractionType);
 
     if (
       typeof activityFilter.interactionType !== 'string' ||
@@ -282,7 +279,7 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
  * @returns Validated and normalized numeric range
  * @throws FilterValidationError if validation fails
  */
-export function validateNumericRange(range: any): NumericRange {
+export function validateNumericRange(range: unknown): NumericRange {
   if (!range) {
     throw new FilterValidationError('Numeric range is required');
   }
@@ -380,7 +377,6 @@ export function validateFilterCondition(
 
   // Use the isValidFilterCondition from types/attio.js
   if (!isValidFilterCondition(condition)) {
-    const validConditions = Object.values(FilterConditionType);
     throw new FilterValidationError(
       `Invalid filter condition: "${condition}". ` +
         `Valid conditions are: ${validConditions.join(', ')}`
@@ -400,7 +396,7 @@ export function validateFilterCondition(
  * @throws FilterValidationError if validation fails
  */
 export function validateNumericParam(
-  value: any,
+  value: unknown,
   paramName: string,
   defaultValue?: number
 ): number {
@@ -411,7 +407,6 @@ export function validateNumericParam(
     throw new FilterValidationError(`${paramName} is required`);
   }
 
-  const num = Number(value);
   if (isNaN(num)) {
     throw new FilterValidationError(`${paramName} must be a valid number`);
   }
@@ -431,7 +426,6 @@ export function validateFilterWithConditions(
   validateConditions: boolean = true
 ): void {
   if (!validateFilterStructure(filter)) {
-    const slugInfo = filter?.attribute?.slug ? ` ${filter.attribute.slug}` : '';
     throw new FilterValidationError(
       `Invalid filter: Incomplete filter structure for${slugInfo}`
     );

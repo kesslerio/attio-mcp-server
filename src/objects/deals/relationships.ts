@@ -3,8 +3,8 @@
  */
 import { AttioRecord } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
-import { validateNumericParam } from '../../utils/filters/index.js';
 import { getAttioClient } from '../../api/attio-client.js';
+import { validateNumericParam } from '../../utils/filters/index.js';
 
 /**
  * Search for deals associated with a specific company
@@ -26,13 +26,9 @@ export async function searchDealsByCompany(
     }
 
     // Validate and normalize limit and offset parameters
-    const validatedLimit = validateNumericParam(limit, 'limit', 20);
-    const validatedOffset = validateNumericParam(offset, 'offset', 0);
 
-    const client = getAttioClient();
 
     // Query deals filtered by associated_company
-    const response = await client.post('/objects/deals/records/query', {
       filter: {
         associated_company: {
           target_object: 'companies',
@@ -43,7 +39,6 @@ export async function searchDealsByCompany(
       offset: validatedOffset,
     });
 
-    const deals = response?.data?.data || [];
     return Array.isArray(deals) ? deals : [];
   } catch (error: unknown) {
     // Convert all errors to FilterValidationErrors for consistent handling

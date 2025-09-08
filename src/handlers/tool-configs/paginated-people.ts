@@ -1,22 +1,15 @@
 /**
  * Paginated people-related tool configurations
  */
-import { Person } from '../../types/attio.js';
-import {
-  paginatedSearchPeople,
-  paginatedSearchPeopleByCreationDate,
-  paginatedSearchPeopleByModificationDate,
-  paginatedSearchPeopleByLastInteraction,
-  paginatedSearchPeopleByActivity,
-} from '../../objects/paginated-people.js';
 import { PaginatedResponse } from '../../utils/pagination.js';
+import { Person } from '../../types/attio.js';
 
 /**
  * Config type for paginated search tools
  */
 interface PaginatedSearchToolConfig {
   name: string;
-  handler: (...args: any[]) => Promise<PaginatedResponse<Person>>;
+  handler: (...args: unknown[]) => Promise<PaginatedResponse<Person>>;
   formatResult: (result: PaginatedResponse<Person>) => string;
 }
 
@@ -32,10 +25,8 @@ function formatPaginatedPeopleResult(
   const { results, pagination } = result;
 
   // Format pagination information
-  const paginationInfo = `Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalCount} total results)`;
 
   // Format result list
-  const resultList = results
     .map(
       (person: Person) =>
         `- ${(person.values?.name as any)?.[0]?.value || 'Unnamed'} (ID: ${

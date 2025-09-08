@@ -2,12 +2,12 @@
  * Tests for list ID validation to prevent injection attacks
  */
 import { describe, it, expect } from 'vitest';
+
 import { isValidListId, isValidId } from '../../src/utils/validation';
 
 describe('List ID Validation', () => {
   describe('isValidListId', () => {
     it('should accept valid list IDs', () => {
-      const validListIds = [
         'list_abc123',
         'list_xyz789',
         'list_valid123',
@@ -21,7 +21,6 @@ describe('List ID Validation', () => {
     });
 
     it('should reject malformed list IDs', () => {
-      const invalidListIds = [
         '', // empty string
         'list', // missing underscore and ID part
         'list_', // missing ID part
@@ -37,7 +36,6 @@ describe('List ID Validation', () => {
     });
 
     it('should reject list IDs with potential injection characters', () => {
-      const dangerousListIds = [
         'list_123"', // double quote
         "list_123'", // single quote
         'list_123;', // semicolon
@@ -63,14 +61,12 @@ describe('List ID Validation', () => {
 
     it('should reject excessively long list IDs', () => {
       // Create a list ID that's too long (over 50 chars)
-      const tooLongId = 'list_' + 'a'.repeat(50);
       expect(isValidListId(tooLongId)).toBe(false);
     });
   });
 
   describe('isValidId', () => {
     it('should accept valid generic IDs', () => {
-      const validIds = [
         'abc123',
         'user_123',
         'company-xyz',
@@ -84,7 +80,6 @@ describe('List ID Validation', () => {
     });
 
     it('should reject malformed generic IDs', () => {
-      const invalidIds = [
         '', // empty string
         'a', // too short
         'ab', // too short
@@ -99,7 +94,6 @@ describe('List ID Validation', () => {
     });
 
     it('should reject generic IDs with potential injection characters', () => {
-      const dangerousIds = [
         'id"123', // double quote
         "id'123", // single quote
         'id;123', // semicolon
@@ -121,7 +115,6 @@ describe('List ID Validation', () => {
 
     it('should reject excessively long generic IDs', () => {
       // Create an ID that's too long (over 100 chars)
-      const tooLongId = 'a'.repeat(101);
       expect(isValidId(tooLongId)).toBe(false);
     });
   });

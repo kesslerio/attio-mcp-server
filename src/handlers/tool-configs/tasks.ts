@@ -1,11 +1,4 @@
 import { AttioTask } from '../../types/attio.js';
-import {
-  listTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-  linkRecordToTask,
-} from '../../objects/tasks.js';
 import { ToolConfig } from '../tool-types.js';
 
 export const tasksToolConfigs = {

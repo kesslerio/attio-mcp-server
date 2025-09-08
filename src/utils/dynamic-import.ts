@@ -33,7 +33,7 @@
 export async function dynamicImport(moduleName: string): Promise<any> {
   try {
     return await import(moduleName);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error importing module ${moduleName}:`, error);
     throw new Error(
       `Failed to import module "${moduleName}": ${

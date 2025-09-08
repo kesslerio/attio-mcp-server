@@ -5,12 +5,13 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { parseResourceUri } from '../../../../utils/uri-parser.js';
-import { ResourceType } from '../../../../types/attio.js';
 import { DetailsToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { parseResourceUri } from '../../../../utils/uri-parser.js';
+import { ResourceType } from '../../../../types/attio.js';
 
 /**
  * Handle details operations
@@ -24,7 +25,6 @@ export async function handleDetailsOperation(
   let uri: string;
 
   // Check which parameter is provided
-  const directId =
     resourceType === ResourceType.COMPANIES
       ? (request.params.arguments?.companyId as string)
       : (request.params.arguments?.personId as string);
@@ -63,8 +63,6 @@ export async function handleDetailsOperation(
   }
 
   try {
-    const record = await toolConfig.handler(id);
-    const formattedResult = toolConfig.formatResult!(record);
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {

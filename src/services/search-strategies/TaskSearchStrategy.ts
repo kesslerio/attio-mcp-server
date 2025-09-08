@@ -3,12 +3,16 @@
  * Issue #574: Extract task search logic from UniversalSearchService
  */
 
-import { AttioRecord } from '../../types/attio.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
-import { BaseSearchStrategy } from './BaseSearchStrategy.js';
-import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { performance } from 'perf_hooks';
+
+import { AttioRecord } from '../../types/attio.js';
+import { BaseSearchStrategy } from './BaseSearchStrategy.js';
+import { CachingService } from '../CachingService.js';
+import { enhancedPerformanceTracker } from '../../middleware/performance-enhanced.js';
+import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
+import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 import { SearchUtilities } from '../search-utilities/SearchUtilities.js';
+import { UniversalUtilityService } from '../UniversalUtilityService.js';
 
 // Import performance tracking and caching services
 import { enhancedPerformanceTracker } from '../../middleware/performance-enhanced.js';
@@ -47,8 +51,6 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     } = params;
 
     // Extract performance tracking IDs from parameters (passed via dependencies)
-    const perfId = 'tasks_search'; // Default fallback
-    const apiStart = performance.now();
 
     return this.searchTasks(
       perfId,
@@ -90,13 +92,11 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     // Use CachingService for tasks data management
-    const loadTasksData = async (): Promise<AttioRecord[]> => {
       try {
         if (!this.dependencies.taskFunction) {
           throw new Error('Tasks list function not available');
         }
 
-        const tasksList = await this.dependencies.taskFunction();
 
         // Convert tasks to records and ensure it's always an array
         if (!Array.isArray(tasksList)) {
@@ -154,8 +154,6 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     }
 
     // Smart pagination with early termination for unreasonable offsets
-    const start = offset || 0;
-    const requestedLimit = limit || 10;
 
     // Performance optimization: Don't process if offset exceeds dataset
     if (start >= filteredTasks.length) {
@@ -164,8 +162,6 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
       );
       return [];
     } else {
-      const end = Math.min(start + requestedLimit, filteredTasks.length);
-      const paginatedTasks = filteredTasks.slice(start, end);
 
       // Log pagination performance metrics
       enhancedPerformanceTracker.markTiming(
@@ -188,12 +184,9 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     matchType: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME
   ): AttioRecord[] {
-    const searchFields = fields || ['content', 'title', 'content_plaintext'];
-    const queryLower = query.toLowerCase();
 
     let filteredTasks = tasks.filter((task: AttioRecord) => {
       return searchFields.some((field) => {
-        const fieldValue = SearchUtilities.getTaskFieldValue(task, field);
         if (matchType === MatchType.EXACT) {
           return fieldValue.toLowerCase() === queryLower;
         } else {

@@ -9,15 +9,6 @@
 import { beforeAll } from 'vitest';
 
 /**
- * Environment validation result
- */
-export interface PreflightResult {
-  valid: boolean;
-  errors: PreflightError[];
-  warnings: PreflightWarning[];
-}
-
-/**
  * Preflight error details
  */
 export interface PreflightError {
@@ -39,7 +30,6 @@ export interface PreflightWarning {
 /**
  * API key validation patterns
  */
-const API_KEY_PATTERNS = {
   // Common API key formats
   BEARER_TOKEN: /^Bearer\s+[\w-]+$/,
   UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
@@ -54,7 +44,6 @@ export function validateApiKey(): PreflightResult {
   const errors: PreflightError[] = [];
   const warnings: PreflightWarning[] = [];
 
-  const apiKey = process.env.ATTIO_API_KEY;
 
   // Check if API key exists
   if (!apiKey) {
@@ -96,7 +85,6 @@ export function validateApiKey(): PreflightResult {
   }
 
   // Check for common placeholder values
-  const placeholders = [
     'your_api_key',
     'your_api_key_here',
     'YOUR_API_KEY',
@@ -180,9 +168,7 @@ export function validateTestEnvironment(): PreflightResult {
   }
 
   // Check for test configuration
-  const testConfigVars = ['TEST_COMPANY_ID', 'TEST_PERSON_ID', 'TEST_LIST_ID'];
 
-  const missingTestConfig = testConfigVars.filter((v) => !process.env[v]);
 
   if (missingTestConfig.length > 0) {
     warnings.push({
@@ -196,7 +182,6 @@ export function validateTestEnvironment(): PreflightResult {
   // Check for CI environment
   if (process.env.CI === 'true') {
     // In CI, missing API key is always fatal
-    const apiKeyResult = validateApiKey();
     if (!apiKeyResult.valid) {
       errors.push({
         code: 'CI_MISSING_API_KEY',
@@ -219,14 +204,10 @@ export function runPreflightChecks(): void {
   console.error('🚀 Running E2E test preflight checks...\n');
 
   // Validate API key
-  const apiKeyResult = validateApiKey();
 
   // Validate test environment
-  const envResult = validateTestEnvironment();
 
   // Combine results
-  const allErrors = [...apiKeyResult.errors, ...envResult.errors];
-  const allWarnings = [...apiKeyResult.warnings, ...envResult.warnings];
 
   // Display warnings
   if (allWarnings.length > 0) {
@@ -238,7 +219,6 @@ export function runPreflightChecks(): void {
   }
 
   // Check for fatal errors
-  const fatalErrors = allErrors.filter((e) => e.fatal);
 
   if (fatalErrors.length > 0) {
     console.error('❌ Preflight checks failed:\n');
@@ -282,10 +262,8 @@ export function setupPreflightChecks(): void {
  * Manual preflight check for use in test files
  */
 export function requireApiKey(): string {
-  const result = validateApiKey();
 
   if (!result.valid) {
-    const error = result.errors[0];
     throw new Error(`${error.message}\n\n${error.suggestion}`);
   }
 
@@ -308,7 +286,7 @@ export function isCI(): boolean {
 /**
  * Get environment info for debugging
  */
-export function getEnvironmentInfo(): Record<string, any> {
+export function getEnvironmentInfo(): Record<string, unknown> {
   return {
     node_version: process.version,
     platform: process.platform,

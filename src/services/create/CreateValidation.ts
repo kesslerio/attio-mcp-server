@@ -4,10 +4,10 @@
  * Extracted from UniversalCreateService to reduce duplication
  */
 
-import { validateRecordFields } from '../../utils/validation-utils.js';
 import { mapRecordFields, validateFields } from '../../handlers/tool-configs/universal/field-mapper.js';
-import { UniversalValidationError, ErrorType } from '../../handlers/tool-configs/universal/schemas.js';
 import { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import { UniversalValidationError, ErrorType } from '../../handlers/tool-configs/universal/schemas.js';
+import { validateRecordFields } from '../../utils/validation-utils.js';
 
 export class CreateValidation {
   /**
@@ -26,9 +26,8 @@ export class CreateValidation {
    */
   static validateFieldTypes(
     data: Record<string, unknown>,
-    schema: Record<string, any>
+    schema: Record<string, unknown>
   ): void {
-    const errors = validateRecordFields(data, schema);
     if (errors.length > 0) {
       throw new UniversalValidationError(
         'Field validation failed',
@@ -45,7 +44,6 @@ export class CreateValidation {
     data: Record<string, unknown>,
     knownFields: string[]
   ): string[] {
-    const unknownFields = Object.keys(data).filter(
       field => !knownFields.includes(field)
     );
     return unknownFields;
@@ -60,8 +58,6 @@ export class CreateValidation {
     receivedValue: unknown,
     resourceType?: string
   ): UniversalValidationError {
-    const receivedType = typeof receivedValue;
-    const message = `Invalid type for field "${field}": expected ${expectedType}, received ${receivedType}`;
 
     return new UniversalValidationError(message, ErrorType.USER_ERROR, {
       field,
@@ -105,7 +101,6 @@ export class CreateValidation {
     mappedData: Record<string, unknown>
   ): Promise<string> {
     // Extract field name from error message if possible
-    const fieldMatch =
       errorMessage.match(/field\s+["']([^"']+)["']/i) ||
       errorMessage.match(/attribute\s+["']([^"']+)["']/i) ||
       errorMessage.match(/column\s+["']([^"']+)["']/i);
@@ -113,8 +108,6 @@ export class CreateValidation {
     let enhancedMessage = `Uniqueness constraint violation for ${resourceType}`;
 
     if (fieldMatch && fieldMatch[1]) {
-      const fieldName = fieldMatch[1];
-      const fieldValue = mappedData[fieldName];
       enhancedMessage += `: The value "${fieldValue}" for field "${fieldName}" already exists.`;
     } else {
       enhancedMessage += `: A record with these values already exists.`;

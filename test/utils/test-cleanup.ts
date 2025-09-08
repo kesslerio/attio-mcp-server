@@ -6,20 +6,10 @@
 import { getAttioClient } from '../../src/api/attio-client.js';
 
 /**
- * Interface for Attio API client
- */
-interface AttioClient {
-  post(url: string, data: any): Promise<any>;
-  delete(url: string): Promise<any>;
-  get(url: string): Promise<any>;
-}
-
-/**
  * Validates that required environment variables are set
  * @throws Error if required environment variables are missing
  */
 export function validateTestEnvironment(): void {
-  const requiredVars = ['ATTIO_API_KEY'];
   const missing: string[] = [];
 
   for (const varName of requiredVars) {
@@ -36,7 +26,6 @@ export function validateTestEnvironment(): void {
   }
 
   // Validate API key presence (removed incorrect sk_ format check)
-  const apiKey = process.env.ATTIO_API_KEY;
   if (!apiKey) {
     console.warn('Warning: ATTIO_API_KEY environment variable not set.');
   }
@@ -70,7 +59,6 @@ export async function cleanupTestData(
   } = options;
 
   try {
-    const client = getAttioClient();
 
     if (parallel) {
       // Run cleanup operations in parallel for faster execution
@@ -130,7 +118,6 @@ async function cleanupTestPeople(
   maxRetries: number = 3
 ): Promise<void> {
   try {
-    const response = await client.post('/objects/people/records/query', {
       filter: {
         $or: [
           { name: { $starts_with: testPrefix } },
@@ -139,7 +126,6 @@ async function cleanupTestPeople(
       },
     });
 
-    const records = response.data?.data ?? [];
     for (const record of records) {
       await client.delete(`/objects/people/records/${record.id.record_id}`);
       console.log(`Deleted test person: ${record.id.record_id}`);
@@ -158,13 +144,11 @@ async function cleanupTestCompanies(
   maxRetries: number = 3
 ): Promise<void> {
   try {
-    const response = await client.post('/objects/companies/records/query', {
       filter: {
         name: { $starts_with: testPrefix },
       },
     });
 
-    const records = response.data?.data ?? [];
     for (const record of records) {
       await client.delete(`/objects/companies/records/${record.id.record_id}`);
       console.log(`Deleted test company: ${record.id.record_id}`);
@@ -184,12 +168,7 @@ async function cleanupTestTasks(
 ): Promise<void> {
   try {
     // Get all tasks and filter client-side since tasks API doesn't support POST query
-    const response = await client.get('/tasks?pageSize=500');
 
-    const tasks = response.data?.data ?? [];
-    const filteredTasks = tasks.filter((task: any) => {
-      const content = task.content || task.content_plaintext || '';
-      const title = task.title || '';
       return content.startsWith(testPrefix) || title.startsWith(testPrefix);
     });
 
@@ -231,9 +210,7 @@ export async function retryWithBackoff<T>(
 
       // Check if it's a rate limit error
       if (error && typeof error === 'object' && 'response' in error) {
-        const response = (error as any).response;
         if (response?.status === 429) {
-          const delay = initialDelay * Math.pow(2, i);
           console.log(`Rate limited. Retrying in ${delay}ms...`);
           await waitForRateLimit(delay);
           continue;
@@ -242,7 +219,6 @@ export async function retryWithBackoff<T>(
 
       // For other errors, retry with backoff
       if (i < maxRetries - 1) {
-        const delay = initialDelay * Math.pow(2, i);
         console.log(`Error occurred. Retrying in ${delay}ms...`);
         await waitForRateLimit(delay);
       }
@@ -256,11 +232,8 @@ export async function retryWithBackoff<T>(
  * Get a detailed error message from an API error
  * @param error - The error object
  */
-export function getDetailedErrorMessage(error: any): string {
+export function getDetailedErrorMessage(error: unknown): string {
   if (error?.response) {
-    const status = error.response.status;
-    const statusText = error.response.statusText;
-    const data = error.response.data;
 
     let message = `API Error ${status}: ${statusText}`;
 
@@ -287,15 +260,12 @@ async function cleanupTestLists(
   maxRetries: number = 3
 ): Promise<void> {
   try {
-    const response = await retryWithBackoff(async () => {
       return client.get('/lists?limit=500');
     }, maxRetries);
 
-    const allLists = response.data?.data ?? [];
 
     // Filter lists by name prefix
-    const testLists = allLists.filter(
-      (list: any) => list.name && list.name.startsWith(testPrefix)
+      (list: unknown) => list.name && list.name.startsWith(testPrefix)
     );
 
     for (const list of testLists) {

@@ -5,10 +5,10 @@
  * object and converting the result to AttioRecord format.
  */
 
-import type { AttioRecord } from '../../../types/attio.js';
-import type { ResourceCreatorContext } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import { convertTaskToAttioRecord } from '../data-normalizers.js';
+import type { AttioRecord } from '../../../types/attio.js';
+import type { ResourceCreatorContext } from './types.js';
 
 /**
  * Task-specific resource creator
@@ -19,8 +19,8 @@ export class TaskCreator extends BaseCreator {
   readonly endpoint = '/tasks';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private taskModule: any = null;
-  private converterModule: any = null;
+  private taskModule: unknown = null;
+  private converterModule: unknown = null;
 
   /**
    * Lazy-loads task dependencies to prevent repeated dynamic imports
@@ -58,7 +58,7 @@ export class TaskCreator extends BaseCreator {
       await this.ensureDependencies();
 
       // Build options object with only defined values to avoid passing "undefined" strings
-      const options: any = {};
+      const options: unknown = {};
       if (input.assigneeId && input.assigneeId !== 'undefined') {
         options.assigneeId = input.assigneeId as string;
       }
@@ -73,7 +73,6 @@ export class TaskCreator extends BaseCreator {
         options.targetObject = input.targetObject as string;
       }
 
-      const createdTask = await this.taskModule.createTask(
         input.content as string,
         options
       );
@@ -85,7 +84,6 @@ export class TaskCreator extends BaseCreator {
       });
 
       // Convert task to AttioRecord format
-      const record = this.converterModule.convertTaskToAttioRecord(
         createdTask,
         input
       );
@@ -96,7 +94,7 @@ export class TaskCreator extends BaseCreator {
       });
 
       return record;
-    } catch (err: any) {
+    } catch (err: unknown) {
       context.logError(this.constructor.name, 'Task creation error', {
         error: err?.message,
         input,

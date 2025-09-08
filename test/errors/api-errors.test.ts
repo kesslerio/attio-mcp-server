@@ -1,20 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  AttioApiError,
-  AuthenticationError,
-  AuthorizationError,
-  InvalidRequestError,
-  RateLimitError,
-  ResourceNotFoundError,
-  ServerError,
-  createApiErrorFromStatus,
-  createApiErrorFromAxiosError,
-} from '../../src/errors/api-errors.js';
 
 describe('api-errors', () => {
   describe('AttioApiError', () => {
     it('should create a base API error with all properties', () => {
-      const error = new AttioApiError('Test error', 500, '/test', 'GET', {
         detail: 'test detail',
       });
 
@@ -28,10 +16,8 @@ describe('api-errors', () => {
     });
 
     it('should format error message correctly', () => {
-      const error = new AttioApiError('Test error', 500, '/test', 'GET', {
         detail: 'test detail',
       });
-      const formatted = error.toFormattedString();
 
       expect(formatted).toContain('AttioApiError (500): Test error');
       expect(formatted).toContain('Endpoint: GET /test');
@@ -41,7 +27,6 @@ describe('api-errors', () => {
 
   describe('Specialized error classes', () => {
     it('should create an AuthenticationError with correct defaults', () => {
-      const error = new AuthenticationError(undefined, '/auth', 'POST');
 
       expect(error.message).toContain('Authentication failed');
       expect(error.statusCode).toBe(401);
@@ -50,7 +35,6 @@ describe('api-errors', () => {
     });
 
     it('should create an AuthorizationError with correct defaults', () => {
-      const error = new AuthorizationError(undefined, '/resource', 'GET');
 
       expect(error.message).toContain('Authorization failed');
       expect(error.statusCode).toBe(403);
@@ -59,7 +43,6 @@ describe('api-errors', () => {
     });
 
     it('should create a ResourceNotFoundError with correct formatting', () => {
-      const error = new ResourceNotFoundError(
         'Person',
         '123',
         '/people/123',
@@ -73,7 +56,6 @@ describe('api-errors', () => {
     });
 
     it('should create an InvalidRequestError', () => {
-      const error = new InvalidRequestError(
         'Invalid parameter',
         '/api',
         'POST'
@@ -86,7 +68,6 @@ describe('api-errors', () => {
     });
 
     it('should create a RateLimitError with correct defaults', () => {
-      const error = new RateLimitError(undefined, '/api', 'GET');
 
       expect(error.message).toContain('Rate limit exceeded');
       expect(error.statusCode).toBe(429);
@@ -95,7 +76,6 @@ describe('api-errors', () => {
     });
 
     it('should create a ServerError with status code in message', () => {
-      const error = new ServerError(503, 'Service unavailable', '/api', 'GET');
 
       expect(error.message).toContain('Server error (503)');
       expect(error.statusCode).toBe(503);
@@ -137,7 +117,6 @@ describe('api-errors', () => {
 
   describe('createApiErrorFromAxiosError', () => {
     it('should handle Axios error response format', () => {
-      const axiosError = {
         response: {
           status: 404,
           data: {
@@ -148,7 +127,6 @@ describe('api-errors', () => {
         message: 'Request failed with status code 404',
       };
 
-      const error = createApiErrorFromAxiosError(
         axiosError,
         '/api/resource',
         'GET'
@@ -159,14 +137,12 @@ describe('api-errors', () => {
     });
 
     it('should correctly parse resource types from endpoints', () => {
-      const axiosError = {
         response: {
           status: 404,
           data: { message: 'Not found' },
         },
       };
 
-      const error = createApiErrorFromAxiosError(
         axiosError,
         '/objects/people/records/123',
         'GET'
@@ -177,11 +153,9 @@ describe('api-errors', () => {
     });
 
     it('should handle missing response data', () => {
-      const axiosError = {
         message: 'Network Error',
       };
 
-      const error = createApiErrorFromAxiosError(axiosError, '/api', 'GET');
       expect(error).toBeInstanceOf(AttioApiError);
       expect(error.statusCode).toBe(500);
       expect(error.message).toContain('Network Error');

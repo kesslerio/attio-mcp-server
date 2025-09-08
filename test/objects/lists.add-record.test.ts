@@ -3,10 +3,11 @@
  */
 
 import { expect, describe, it, beforeEach, vi } from 'vitest';
+
 import { addRecordToList } from '../../src/objects/lists.js';
-import * as attioClient from '../../src/api/attio-client.js';
-import * as apiOperations from '../../src/api/operations/lists.js';
 import { ResourceType } from '../../src/types/attio.js';
+import * as apiOperations from '../../src/api/operations/lists.js';
+import * as attioClient from '../../src/api/attio-client.js';
 
 describe('addRecordToList Tests', () => {
   beforeEach(() => {
@@ -15,7 +16,6 @@ describe('addRecordToList Tests', () => {
 
   it('should call the API with the correct payload format', async () => {
     // Mock the API client
-    const mockPost = vi.fn().mockResolvedValue({
       data: {
         data: {
           id: { entry_id: 'new-entry-id' },
@@ -37,10 +37,6 @@ describe('addRecordToList Tests', () => {
     );
 
     // Call the function
-    const listId = 'test-list-id';
-    const recordId = 'test-record-id';
-    const objectType = 'companies';
-    const initialValues = { stage: 'Prospect' };
 
     await addRecordToList(listId, recordId, objectType, initialValues);
 
@@ -56,8 +52,6 @@ describe('addRecordToList Tests', () => {
 
   it('should throw error when objectType is not provided', async () => {
     // Call the function without objectType - should throw validation error
-    const listId = 'test-list-id';
-    const recordId = 'test-record-id';
 
     await expect(addRecordToList(listId, recordId, '')).rejects.toThrow(
       'Object type is required: Must be a non-empty string (e.g., "companies", "people")'
@@ -66,7 +60,6 @@ describe('addRecordToList Tests', () => {
 
   it('should omit entry_values if initialValues not provided', async () => {
     // Mock the API client
-    const mockPost = vi.fn().mockResolvedValue({
       data: {
         data: {
           id: { entry_id: 'new-entry-id' },
@@ -88,9 +81,6 @@ describe('addRecordToList Tests', () => {
     );
 
     // Call the function with objectType but no initialValues
-    const listId = 'test-list-id';
-    const recordId = 'test-record-id';
-    const objectType = 'people';
 
     await addRecordToList(listId, recordId, objectType);
 
@@ -148,7 +138,6 @@ describe('addRecordToList Tests', () => {
 
   it('should call the generic function first before fallback', async () => {
     // Mock the generic function
-    const mockGenericAddRecordToList = vi
       .spyOn(apiOperations, 'addRecordToList')
       .mockResolvedValue({
         id: { entry_id: 'test-entry-id' },
@@ -156,10 +145,6 @@ describe('addRecordToList Tests', () => {
       });
 
     // Call the function
-    const listId = 'test-list-id';
-    const recordId = 'test-record-id';
-    const objectType = 'companies';
-    const initialValues = { stage: 'Prospect' };
 
     await addRecordToList(listId, recordId, objectType, initialValues);
 
@@ -172,13 +157,11 @@ describe('addRecordToList Tests', () => {
     );
 
     // Verify API client was not called directly (fallback not used)
-    const mockGetAttioClient = vi.spyOn(attioClient, 'getAttioClient');
     expect(mockGetAttioClient).not.toHaveBeenCalled();
   });
 
   it('should provide detailed error messages for validation errors', async () => {
     // Mock the API client with a validation error response
-    const mockPost = vi.fn().mockRejectedValue({
       response: {
         status: 400,
         data: {
@@ -206,9 +189,6 @@ describe('addRecordToList Tests', () => {
     );
 
     // Call the function with required objectType parameter
-    const listId = 'test-list-id';
-    const recordId = 'invalid-id';
-    const objectType = 'companies';
 
     // Should throw with formatted validation errors
     await expect(addRecordToList(listId, recordId, objectType)).rejects.toThrow(

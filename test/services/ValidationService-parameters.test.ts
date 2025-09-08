@@ -2,30 +2,13 @@
  * Split: ValidationService parameter validation (limit/offset/pagination)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-vi.mock('../../src/utils/validation/email-validation.js', () => ({
-  isValidEmail: vi.fn(),
-}));
-vi.mock('../../src/utils/validation.js', () => ({ isValidId: vi.fn() }));
-vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
-  isValidUUID: vi.fn(),
-  createInvalidUUIDError: vi.fn(),
-}));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
-  enhancedPerformanceTracker: { markTiming: vi.fn(), endOperation: vi.fn() },
-}));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
-  validateFields: vi.fn(),
-  FIELD_MAPPINGS: {
-    companies: { validFields: ['name', 'domain', 'industry'] },
-    people: { validFields: ['first_name', 'last_name', 'email_addresses'] },
-  },
-}));
-import { ValidationService } from '../../src/services/ValidationService.js';
+
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
-import { isValidUUID } from '../../src/utils/validation/uuid-validation.js';
-import { validateFields } from '../../src/handlers/tool-configs/universal/field-mapper.js';
 import { isValidEmail } from '../../src/utils/validation/email-validation.js';
+import { isValidUUID } from '../../src/utils/validation/uuid-validation.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { validateFields } from '../../src/handlers/tool-configs/universal/field-mapper.js';
+import { ValidationService } from '../../src/services/ValidationService.js';
 
 describe('ValidationService', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -76,7 +59,6 @@ describe('ValidationService', () => {
     });
 
     it('should call performance tracker on error when perfId provided', () => {
-      const perfId = 'test-perf-id';
       expect(() => {
         ValidationService.validateLimitParameter(0, perfId);
       }).toThrow();
@@ -162,8 +144,6 @@ describe('ValidationService', () => {
   // Additional helper validations preserved from original suite
   describe('createValidationError', () => {
     it('should create validation error with default resource type', () => {
-      const message = 'Test validation error';
-      const error = ValidationService.createValidationError(message);
       expect(error).toEqual({
         error: true,
         message,
@@ -173,7 +153,6 @@ describe('ValidationService', () => {
     });
 
     it('should create validation error with custom resource type', () => {
-      const error = ValidationService.createValidationError(
         'Custom validation error',
         'companies'
       );
@@ -181,27 +160,20 @@ describe('ValidationService', () => {
     });
 
     it('should include valid ISO timestamp', () => {
-      const error = ValidationService.createValidationError('test');
       expect(new Date(error.timestamp).toISOString()).toBe(error.timestamp);
     });
   });
 
   describe('truncateSuggestions', () => {
     it('should return suggestions unchanged when under limit', () => {
-      const suggestions = ['suggestion 1', 'suggestion 2'];
-      const result = ValidationService.truncateSuggestions(suggestions);
       expect(result).toEqual(suggestions);
     });
 
     it('should truncate suggestions when over default limit', () => {
-      const suggestions = ['s1', 's2', 's3', 's4', 's5'];
-      const result = ValidationService.truncateSuggestions(suggestions);
       expect(result).toEqual(['s1', 's2', 's3', '... and 2 more suggestions']);
     });
 
     it('should respect custom max count', () => {
-      const suggestions = ['s1', 's2', 's3', 's4'];
-      const result = ValidationService.truncateSuggestions(suggestions, 2);
       expect(result).toEqual(['s1', 's2', '... and 2 more suggestions']);
     });
   });
@@ -217,7 +189,6 @@ describe('ValidationService', () => {
       });
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const result = ValidationService.validateUniversalOperation({
         resourceType: UniversalResourceType.COMPANIES,
         recordId: 'valid-uuid',
         recordData: { name: 'Test', email: 'test@example.com' },
@@ -238,20 +209,14 @@ describe('ValidationService', () => {
     });
 
     it('should handle very large suggestion arrays efficiently', () => {
-      const largeSuggestions = Array.from(
         { length: 1000 },
         (_, i) => `Suggestion ${i}`
       );
-      const start = performance.now();
-      const result = ValidationService.truncateSuggestions(largeSuggestions, 5);
-      const end = performance.now();
       expect(result.length).toBe(6);
       expect(end - start).toBeLessThan(50);
     });
 
     it('should preserve original arrays when truncating', () => {
-      const original = ['s1', 's2', 's3', 's4'];
-      const truncated = ValidationService.truncateSuggestions(original, 2);
       expect(original).toEqual(['s1', 's2', 's3', 's4']);
       expect(truncated).toEqual(['s1', 's2', '... and 2 more suggestions']);
     });

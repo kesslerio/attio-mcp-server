@@ -2,8 +2,8 @@
  * Note operations for deals
  */
 import { getDealNotes, createDealNote } from '../../../objects/deals/notes.js';
-import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 import { NoteDisplay } from '../../../types/tool-types.js';
+import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 
 export const notesToolConfigs = {
   notes: {
@@ -23,16 +23,13 @@ export const notesToolConfigs = {
           // 3. note.data?.* - Nested data structure (seen in some API versions)
           // 4. note.values?.* - Attio-style custom field responses
           // 5. note.text/body - Alternative content field names (legacy/third-party support)
-          const title =
             note.title || note.data?.title || note.values?.title || 'Untitled';
-          const content =
             note.content ||
             note.data?.content ||
             note.values?.content ||
             note.text ||
             note.body ||
             '';
-          const timestamp =
             note.created_at ||
             note.data?.created_at ||
             note.values?.created_at ||

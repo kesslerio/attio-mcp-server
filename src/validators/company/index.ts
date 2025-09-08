@@ -2,34 +2,12 @@
  * Validator for company data with dynamic field type detection
  * Enhanced with attribute type validation
  */
-import {
-  MissingCompanyFieldError,
-  InvalidCompanyFieldTypeError,
-  InvalidCompanyDataError,
-} from '../../errors/company-errors.js';
-import {
-  CompanyCreateInput,
-  CompanyUpdateInput,
-} from '../../types/company-types.js';
-import {
-  getAttributeTypeInfo,
-  detectFieldType,
-} from '../../api/attribute-types.js';
-import { ResourceType } from '../../types/attio.js';
-import {
-  validateAttributeValue,
-  ValidationResult,
-  AttributeType,
-} from '../attribute-validator.js';
-import { InvalidRequestError } from '../../errors/api-errors.js';
-import { extractDomain, normalizeDomain } from '../../utils/domain-utils.js';
-import {
-  CompanyFieldValue,
-  ProcessedFieldValue,
-} from '../../types/tool-types.js';
-import { processFieldValue } from './field_detector.js';
-import { TypeCache } from './type_cache.js';
 import { CachedTypeInfo } from './types.js';
+import { extractDomain, normalizeDomain } from '../../utils/domain-utils.js';
+import { InvalidRequestError } from '../../errors/api-errors.js';
+import { processFieldValue } from './field_detector.js';
+import { ResourceType } from '../../types/attio.js';
+import { TypeCache } from './type_cache.js';
 
 export class CompanyValidator {
   /**
@@ -66,10 +44,8 @@ export class CompanyValidator {
       !attributes.domains &&
       typeof attributes.website === 'string'
     ) {
-      const extractedDomain = extractDomain(attributes.website);
 
       if (extractedDomain) {
-        const normalizedDomain = normalizeDomain(extractedDomain);
 
         if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
           console.error(
@@ -92,17 +68,14 @@ export class CompanyValidator {
       throw new MissingCompanyFieldError('name');
     }
 
-    const attributesWithDomain =
       CompanyValidator.extractDomainFromWebsite(attributes);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
-    const processedAttributes =
       await CompanyValidator.processAttributeValues(cleanAttributes);
     await CompanyValidator.performSpecialValidation(processedAttributes);
 
     try {
-      const validatedAttributes =
         await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyCreateInput;
     } catch (error: unknown) {
@@ -125,17 +98,14 @@ export class CompanyValidator {
       );
     }
 
-    const attributesWithDomain =
       CompanyValidator.extractDomainFromWebsite(attributes);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
-    const processedAttributes =
       await CompanyValidator.processAttributeValues(cleanAttributes);
     await CompanyValidator.performSpecialValidation(processedAttributes);
 
     try {
-      const validatedAttributes =
         await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyUpdateInput;
     } catch (error: unknown) {
@@ -166,7 +136,6 @@ export class CompanyValidator {
     }
 
     await CompanyValidator.validateFieldType(attributeName, attributeValue);
-    const processedValue = await processFieldValue(
       attributeName,
       attributeValue
     );
@@ -198,7 +167,6 @@ export class CompanyValidator {
       typeof processedValue === 'string'
     ) {
       try {
-        const url = new URL(processedValue);
         if (!url.hostname.includes('linkedin.com')) {
           throw new InvalidCompanyDataError(
             'LinkedIn URL must be a valid LinkedIn URL'
@@ -209,10 +177,8 @@ export class CompanyValidator {
       }
     }
 
-    const attributeObj = { [attributeName]: processedValue };
 
     try {
-      const validatedObj =
         await CompanyValidator.validateAttributeTypes(attributeObj);
       return validatedObj[attributeName];
     } catch (error: unknown) {
@@ -240,7 +206,6 @@ export class CompanyValidator {
     let expectedType: string;
 
     try {
-      const cached = TypeCache.getFieldType(field);
       if (cached) {
         expectedType = cached;
       } else {
@@ -252,7 +217,6 @@ export class CompanyValidator {
       expectedType = CompanyValidator.inferFieldType(field);
     }
 
-    const actualType = Array.isArray(value) ? 'array' : typeof value;
 
     switch (expectedType) {
       case 'string':
@@ -272,7 +236,6 @@ export class CompanyValidator {
         if (typeof value !== 'number') {
           // Allow strings that can be converted to numbers
           if (typeof value === 'string') {
-            const numValue = Number(value);
             if (isNaN(numValue)) {
               throw new InvalidCompanyFieldTypeError(
                 field,
@@ -326,7 +289,6 @@ export class CompanyValidator {
       typeof attributes.linkedin_url === 'string'
     ) {
       try {
-        const url = new URL(attributes.linkedin_url);
         if (!url.hostname.includes('linkedin.com')) {
           throw new InvalidCompanyDataError(
             'LinkedIn URL must be a valid LinkedIn URL'
@@ -338,7 +300,6 @@ export class CompanyValidator {
     }
 
     if (attributes.location) {
-      const locationType = await detectFieldType(
         ResourceType.COMPANIES,
         'location'
       );
@@ -361,7 +322,6 @@ export class CompanyValidator {
       return 'string';
     }
 
-    const arrayFieldPatterns = [
       'products',
       'categories',
       'keywords',
@@ -372,7 +332,6 @@ export class CompanyValidator {
       'social_profiles',
     ];
 
-    const objectFieldPatterns = [
       'location',
       'address',
       'metadata',
@@ -380,7 +339,6 @@ export class CompanyValidator {
       'preferences',
     ];
 
-    const numberFieldPatterns = [
       'count',
       'amount',
       'size',
@@ -392,7 +350,6 @@ export class CompanyValidator {
       'rating',
     ];
 
-    const booleanFieldPatterns = [
       'is_',
       'has_',
       'enabled',
@@ -400,7 +357,6 @@ export class CompanyValidator {
       'verified',
       'published',
     ];
-    const lowerField = field.toLowerCase();
 
     if (arrayFieldPatterns.some((pattern) => lowerField.includes(pattern))) {
       return 'array';
@@ -441,15 +397,12 @@ export class CompanyValidator {
   private static async getValidatorType(
     attributeName: string
   ): Promise<AttributeType> {
-    const now = Date.now();
-    const cachedInfo = TypeCache.getAttributeType(attributeName);
 
     if (cachedInfo && TypeCache.isFresh(cachedInfo as CachedTypeInfo, now)) {
       return cachedInfo.validatorType;
     }
 
     try {
-      const typeInfo = await getAttributeTypeInfo(
         ResourceType.COMPANIES,
         attributeName
       );
@@ -487,7 +440,6 @@ export class CompanyValidator {
 
       return validatorType;
     } catch {
-      const fieldType = TypeCache.getFieldType(attributeName);
       if (fieldType) {
         return fieldType === 'number'
           ? 'number'
@@ -500,7 +452,6 @@ export class CompanyValidator {
                 : 'string';
       }
 
-      const inferredType = this.inferFieldType(attributeName);
       return inferredType === 'number'
         ? 'number'
         : inferredType === 'boolean'
@@ -539,13 +490,11 @@ export class CompanyValidator {
       return validatedAttributes;
     }
 
-    const validatorTypes = new Map<string, AttributeType>();
 
     try {
       await Promise.all(
         Object.keys(attributesToValidate).map(async (attributeName) => {
           try {
-            const validatorType = await this.getValidatorType(attributeName);
             validatorTypes.set(attributeName, validatorType);
           } catch {
             console.warn(
@@ -559,7 +508,6 @@ export class CompanyValidator {
       for (const [attributeName, value] of Object.entries(
         attributesToValidate
       )) {
-        const validatorType = validatorTypes.get(attributeName) || 'string';
 
         const result: ValidationResult = validateAttributeValue(
           attributeName,
@@ -592,7 +540,6 @@ export class CompanyValidator {
             validatorType = 'string';
           }
 
-          const result = validateAttributeValue(
             attributeName,
             value,
             validatorType

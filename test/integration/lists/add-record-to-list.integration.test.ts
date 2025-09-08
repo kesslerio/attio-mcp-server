@@ -3,18 +3,17 @@
  * Tests the migration from add-record-to-list to update-record with resource_type: "records"
  * Tests the entire flow from tool invocation to API call with proper parameters
  */
+import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
+
+import { executeToolRequest } from '../../../src/handlers/tools/dispatcher';
 import { getAttioClient } from '../../../src/api/attio-client';
 import { UniversalUpdateService } from '../../../src/services/UniversalUpdateService';
-import { executeToolRequest } from '../../../src/handlers/tools/dispatcher';
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
 // Mock axios for API client in case we're skipping real API tests
 vi.mock('axios', async () => {
-  const actual = await vi.importActual('axios');
 
   // Check if we should mock based on environment
-  const shouldMock =
     !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
   if (shouldMock) {
@@ -45,16 +44,11 @@ vi.mock('axios', async () => {
 });
 
 // These tests use real API calls - only run when API key is available
-const SKIP_INTEGRATION_TESTS =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 // Load test configuration from environment
-const TEST_LIST_ID = process.env.TEST_LIST_ID || '';
-const TEST_RECORD_ID = process.env.TEST_COMPANY_ID || '';
 
 // Check if test configuration is complete
-const TEST_CONFIG_MISSING = !TEST_LIST_ID || !TEST_RECORD_ID;
-const CONFIG_ERROR_MESSAGE = `
 ⚠️  Integration test configuration missing!
 
 To run these tests, you need to set up test data:
@@ -94,7 +88,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     try {
       // Clean up any created test data
-      const api = getAttioClient();
       await api.delete(`/lists/${TEST_LIST_ID}/entries/${createdEntryId}`);
       console.log(`Cleaned up test entry ${createdEntryId}`);
     } catch (error: unknown) {
@@ -121,7 +114,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
     };
 
     // Call the universal handler
-    const result = await executeToolRequest(mockRequest);
 
     // Verify the result
     expect(result).toBeDefined();
@@ -130,7 +122,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(
         /Entry ID: ([a-zA-Z0-9_-]+)/
       );
       if (entryIdMatch && entryIdMatch[1]) {
@@ -160,17 +151,15 @@ describe('Add Record To List Integration (Universal Tools)', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: any;
-    const originalPost = getAttioClient().post;
+    let capturedPayload: unknown;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: any) => {
+    getAttioClient().post = async (url: string, data: unknown) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
 
     // Call the universal handler
-    const result = await executeToolRequest(mockRequest);
 
     // Restore original post method
     getAttioClient().post = originalPost;
@@ -183,7 +172,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(
         /Entry ID: ([a-zA-Z0-9_-]+)/
       );
       if (entryIdMatch && entryIdMatch[1]) {
@@ -194,7 +182,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
   test('should call API with correct payload - including initial values', async () => {
     // Create a mock tool request with initial values using universal tools
-    const initialValues = {
       stage: 'Test Stage',
       priority: 'High',
       test_field: 'Test Value',
@@ -219,17 +206,15 @@ describe('Add Record To List Integration (Universal Tools)', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: any;
-    const originalPost = getAttioClient().post;
+    let capturedPayload: unknown;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: any) => {
+    getAttioClient().post = async (url: string, data: unknown) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
 
     // Call the universal handler
-    const result = await executeToolRequest(mockRequest);
 
     // Restore original post method
     getAttioClient().post = originalPost;
@@ -242,7 +227,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(
         /Entry ID: ([a-zA-Z0-9_-]+)/
       );
       if (entryIdMatch && entryIdMatch[1]) {
@@ -253,7 +237,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
   test('should call API with correct payload - all parameters', async () => {
     // Create a mock tool request with all parameters using universal tools
-    const initialValues = {
       stage: 'Complete Test',
       priority: 'Critical',
       notes: 'This is a test with all parameters',
@@ -279,17 +262,15 @@ describe('Add Record To List Integration (Universal Tools)', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: any;
-    const originalPost = getAttioClient().post;
+    let capturedPayload: unknown;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: any) => {
+    getAttioClient().post = async (url: string, data: unknown) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
 
     // Call the universal handler
-    const result = await executeToolRequest(mockRequest);
 
     // Restore original post method
     getAttioClient().post = originalPost;
@@ -302,7 +283,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(
         /Entry ID: ([a-zA-Z0-9_-]+)/
       );
       if (entryIdMatch && entryIdMatch[1]) {
@@ -330,7 +310,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
       },
     };
 
-    const resultNoRecordId = await executeToolRequest(mockRequestNoRecordId);
 
     expect(resultNoRecordId).toBeDefined();
     expect(resultNoRecordId.isError).toBeTruthy();
@@ -355,7 +334,6 @@ describe('Add Record To List Integration (Universal Tools)', () => {
       },
     };
 
-    const resultNoResourceType = await executeToolRequest(
       mockRequestNoResourceType
     );
 

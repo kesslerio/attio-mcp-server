@@ -4,15 +4,9 @@
  */
 import { vi, beforeEach } from 'vitest';
 
-// Force predictable test environment semantics for sanitization logic
-process.env.NODE_ENV = 'test';
-import { createMockApiClient } from './types/test-types';
-import {
-  validateTestEnvironment,
-  getDetailedErrorMessage,
-} from './utils/test-cleanup';
-import { clearMockCompanies } from '../src/utils/mock-state';
 import { clearAttributeCache } from '../src/api/attribute-types';
+import { clearMockCompanies } from '../src/utils/mock-state';
+import { createMockApiClient } from './types/test-types';
 
 // Validate environment for integration tests
 if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
@@ -34,7 +28,6 @@ vi.mock('../src/api/attio-client', async () => {
   // In E2E we want the *real* implementation
   if (process.env.E2E_MODE === 'true') {
     // Return the actual module (no stubbing)
-    const actual = await vi.importActual<
       typeof import('../src/api/attio-client')
     >('../src/api/attio-client');
     return actual;
@@ -42,7 +35,6 @@ vi.mock('../src/api/attio-client', async () => {
 
   // Non-E2E: light stub that won't require an API key
   // Use the rich mock API client that simulates Attio endpoints
-  const mockAxiosInstance = createMockApiClient() as any;
 
   return {
     // New API
@@ -58,7 +50,6 @@ vi.mock('../src/api/attio-client', async () => {
 // Global mock for people search functions to fix PersonValidator tests (skip for E2E)
 if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people/search', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...(actual as any),
       searchPeopleByEmail: vi.fn(async (email: string) => {
@@ -86,7 +77,6 @@ if (process.env.E2E_MODE !== 'true') {
 // Mock the entire people-write module to avoid API initialization issues (skip for E2E)
 if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people-write', async () => {
-    const actual = await vi.importActual('../src/objects/people-write');
     return {
       ...(actual as any),
       searchPeopleByEmails: vi.fn(async (emails: string[]) => {
@@ -103,7 +93,6 @@ if (process.env.E2E_MODE !== 'true') {
 
   // Global mock for companies module
   vi.mock('../src/objects/companies/index', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...(actual as any),
       searchCompanies: vi.fn(async () => []),
@@ -118,7 +107,6 @@ if (process.env.E2E_MODE !== 'true') {
       advancedSearchCompanies: vi.fn(async (...args) => {
         // In E2E mode, use the actual implementation
         if (process.env.E2E_MODE === 'true') {
-          const actual = await vi.importActual(
             '../src/objects/companies/search'
           );
           return (actual as any).advancedSearchCompanies(...args);
@@ -130,7 +118,6 @@ if (process.env.E2E_MODE !== 'true') {
       getCompanyDetails: vi.fn(async (...args) => {
         // In E2E mode, use the actual implementation
         if (process.env.E2E_MODE === 'true') {
-          const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
           return (actual as any).getCompanyDetails(...args);
@@ -141,7 +128,6 @@ if (process.env.E2E_MODE !== 'true') {
       createCompany: vi.fn(async (...args) => {
         // In E2E mode, use the actual implementation
         if (process.env.E2E_MODE === 'true') {
-          const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
           return (actual as any).createCompany(...args);
@@ -152,7 +138,6 @@ if (process.env.E2E_MODE !== 'true') {
       updateCompany: vi.fn(async (...args) => {
         // In E2E mode, use the actual implementation
         if (process.env.E2E_MODE === 'true') {
-          const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
           return (actual as any).updateCompany(...args);
@@ -167,7 +152,6 @@ if (process.env.E2E_MODE !== 'true') {
 
   // Global mock for companies search module - pass-through for validation
   vi.mock('../src/objects/companies/search', async (importOriginal) => {
-    const actual = await importOriginal<any>();
     return {
       ...(actual as any),
       searchCompaniesByName: vi.fn(async (name: string) => {
@@ -189,7 +173,6 @@ if (process.env.E2E_MODE !== 'true') {
 
   // Global mock for people module
   vi.mock('../src/objects/people/index', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...(actual as any),
       searchPeople: vi.fn(async () => []),
@@ -208,7 +191,6 @@ if (process.env.E2E_MODE !== 'true') {
 }
 
 // Mock console methods globally to prevent issues with logging tests
-const originalConsole = {
   log: console.log,
   error: console.error,
   warn: console.warn,

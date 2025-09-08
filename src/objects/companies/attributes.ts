@@ -62,11 +62,9 @@ export async function getCompanyFields(
     }
 
     // Fetch all company data first
-    const fullCompany = await getCompanyDetails(companyIdOrUri);
 
     // Filter to only requested fields
     const filteredValues: Record<string, unknown> = {};
-    const allValues = fullCompany.values || {};
 
     for (const field of fields) {
       if (field in allValues) {
@@ -107,7 +105,6 @@ export async function getCompanyFields(
 export async function getCompanyBasicInfo(
   companyIdOrUri: string
 ): Promise<Partial<Company>> {
-  const basicFields = [
     'name',
     'website',
     'industry',
@@ -132,7 +129,6 @@ export async function getCompanyBasicInfo(
 export async function getCompanyContactInfo(
   companyIdOrUri: string
 ): Promise<Partial<Company>> {
-  const contactFields = [
     'name',
     'website',
     'company_phone_5',
@@ -158,7 +154,6 @@ export async function getCompanyContactInfo(
 export async function getCompanyBusinessInfo(
   companyIdOrUri: string
 ): Promise<Partial<Company>> {
-  const businessFields = [
     'name',
     'type',
     'type_persona',
@@ -183,7 +178,6 @@ export async function getCompanyBusinessInfo(
 export async function getCompanySocialInfo(
   companyIdOrUri: string
 ): Promise<Partial<Company>> {
-  const socialFields = [
     'name',
     'website',
     'linkedin',
@@ -220,15 +214,12 @@ export async function getCompanyCustomFields(
   // If specific custom fields are requested, fetch only those
   if (customFieldNames && customFieldNames.length > 0) {
     // Always include name for context
-    const fieldsToFetch = ['name', ...customFieldNames];
     return getCompanyFields(companyIdOrUri, fieldsToFetch);
   }
 
   // Otherwise, we need to fetch all fields first to identify custom ones
-  const allData = await getCompanyDetails(companyIdOrUri);
 
   // Standard fields that are NOT custom
-  const standardFields = new Set([
     'name',
     'website',
     'industry',
@@ -277,7 +268,6 @@ export async function getCompanyCustomFields(
 
   // Extract custom fields
   const customFields: Record<string, unknown> = {};
-  const values = allData.values || {};
 
   for (const [fieldName, fieldValue] of Object.entries(values)) {
     if (!standardFields.has(fieldName)) {
@@ -320,12 +310,10 @@ export async function discoverCompanyAttributes(): Promise<{
 
   try {
     // Get a sample company to see what fields are available
-    const companies = await listCompanies(1);
 
     if (!Array.isArray(companies) || companies.length === 0) {
       // For tests, we can return some reasonable default attributes
       if (process.env.NODE_ENV === 'test') {
-        const testAttributes = [
           { slug: 'name', type: 'text' },
           { slug: 'website', type: 'text' },
           { slug: 'industry', type: 'text' },
@@ -352,9 +340,7 @@ export async function discoverCompanyAttributes(): Promise<{
     }
 
     // Check if the company has the expected structure
-    const sampleCompany = companies[0];
 
-    const sampleCompanyId = sampleCompany?.id?.record_id;
     if (!sampleCompanyId) {
       console.warn(
         '[discoverCompanyAttributes] Sample company has no record ID:',
@@ -378,8 +364,6 @@ export async function discoverCompanyAttributes(): Promise<{
       );
     }
 
-    const sampleCompanyDetails = await getCompanyDetails(sampleCompanyId);
-    const values = sampleCompanyDetails.values || {};
 
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -389,7 +373,6 @@ export async function discoverCompanyAttributes(): Promise<{
       );
     }
 
-    const standardFields = new Set([
       'name',
       'website',
       'industry',
@@ -441,8 +424,6 @@ export async function discoverCompanyAttributes(): Promise<{
     const all: Array<{ name: string; type: string; isCustom: boolean }> = [];
 
     for (const [fieldName, fieldValue] of Object.entries(values)) {
-      const isCustom = !standardFields.has(fieldName);
-      const fieldType =
         Array.isArray(fieldValue) && fieldValue.length > 0
           ? fieldValue[0].attribute_type || 'unknown'
           : 'unknown';
@@ -460,7 +441,6 @@ export async function discoverCompanyAttributes(): Promise<{
       });
     }
 
-    const result = {
       standard: standard.sort(),
       custom: custom.sort(),
       all: all.sort((a, b) => a.name.localeCompare(b.name)),
@@ -501,18 +481,13 @@ export async function getCompanyAttributes(
   attributeName?: string
 ): Promise<{
   attributes?: string[];
-  value?: any;
+  value?: unknown;
   company: string;
 }> {
-  const companyId = extractCompanyId(companyIdOrUri);
-  const fullCompany = await getCompanyDetails(companyIdOrUri);
 
   try {
     if (attributeName) {
       // Return specific attribute value
-      const values = fullCompany.values || {};
-      const value = values[attributeName];
-      const companyName = fullCompany.values?.name || companyId;
 
       if (value === undefined) {
         throw new Error(
@@ -523,7 +498,6 @@ export async function getCompanyAttributes(
       // Extract simple value from array structure if applicable
       let simplifiedValue = value;
       if (Array.isArray(value) && value.length > 0) {
-        const firstItem = value[0];
         if (firstItem && firstItem.value !== undefined) {
           simplifiedValue = firstItem.value;
         } else if (firstItem && firstItem.option?.title) {
@@ -539,8 +513,6 @@ export async function getCompanyAttributes(
       };
     } else {
       // Return list of available attributes
-      const values = fullCompany.values || {};
-      const attributes = Object.keys(values).sort();
 
       return {
         attributes,

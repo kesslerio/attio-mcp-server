@@ -4,15 +4,11 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  handleUniversalUpdate,
-  handleUniversalCreate,
-} from '../../src/handlers/tool-configs/universal/shared-handlers.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+
 import { clearAttributeCache } from '../../src/utils/validation-utils.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
 // Skip integration tests if SKIP_INTEGRATION_TESTS is set
-const skipIntegrationTests = process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe('Enhanced Error Handling Integration', () => {
   beforeAll(() => {
@@ -40,7 +36,7 @@ describe('Enhanced Error Handling Integration', () => {
 
         // If we reach here, the validation didn't work
         expect.fail('Expected validation error for invalid select option');
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error.message).toContain('Invalid value');
         expect(error.message).toContain('company_type');
         expect(error.message).toContain('Valid options are:');
@@ -65,7 +61,7 @@ describe('Enhanced Error Handling Integration', () => {
         expect.fail(
           'Expected validation error for invalid multi-select option'
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error.message).toContain('Invalid values');
         expect(error.message).toContain('tags');
         expect(error.message).toContain('Valid options are:');
@@ -87,7 +83,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error for read-only field update');
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error.message).toContain('Cannot update read-only field');
         expect(error.message).toContain('created_at');
         expect(error.message).toContain('automatically managed by the system');
@@ -111,7 +107,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error for multiple read-only fields');
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error.message).toContain('Cannot update read-only fields');
         expect(error.message).toContain('created_at');
         expect(error.message).toContain('updated_at');
@@ -133,7 +129,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error for unknown field');
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error.message).toContain('Unknown field');
         expect(error.message).toContain('company_description');
         expect(error.message).toContain('Did you mean');
@@ -155,7 +151,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error for field alias mistake');
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error.message).toContain('Unknown field');
         expect(error.message).toContain('companyname');
         expect(error.message).toContain('Did you mean');
@@ -180,7 +176,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Should get the unknown field error first
         expect(error.message).toContain('Unknown field');
         expect(error.message).toContain('non_existent_field');
@@ -202,7 +198,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Should catch the first validation error (likely the unknown field)
         expect(error.message).toMatch(/Unknown field|Invalid value/);
       }
@@ -223,7 +219,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Check that error message is actionable
         expect(error.message).toContain('Unknown field');
         expect(error.message).toContain('people'); // Resource type context
@@ -248,7 +244,7 @@ describe('Enhanced Error Handling Integration', () => {
         });
 
         expect.fail('Expected validation error');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Check for professional tone
         expect(error.message).not.toContain('stupid');
         expect(error.message).not.toContain('wrong');
@@ -278,7 +274,7 @@ describe('Enhanced Error Handling Integration', () => {
           });
 
           expect.fail('Expected validation error');
-        } catch (error: any) {
+        } catch (error: unknown) {
           expect(error.message).toContain('companies');
           expect(error.message).toContain('company_desc');
           expect(error.message).toContain('get-attributes');
@@ -297,7 +293,7 @@ describe('Enhanced Error Handling Integration', () => {
           });
 
           expect.fail('Expected validation error');
-        } catch (error: any) {
+        } catch (error: unknown) {
           expect(error.message).toContain('people');
           expect(error.message).toContain('person_name');
           // Should suggest 'name' as it's similar

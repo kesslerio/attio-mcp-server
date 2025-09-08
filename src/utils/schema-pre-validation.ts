@@ -5,12 +5,8 @@
  * Uses discover-attributes to ensure fields exist and are correctly formatted.
  */
 
+import { discoverCompanyAttributes } from '../objects/companies/index.js';
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-  HttpStatusCode,
-} from '../handlers/tool-configs/universal/schemas.js';
 
 // Import discover attribute handlers
 import { discoverCompanyAttributes } from '../objects/companies/index.js';
@@ -26,7 +22,7 @@ export interface AttributeMetadata {
   is_system?: boolean;
   is_writable?: boolean;
   is_required?: boolean;
-  allowed_values?: any[];
+  allowed_values?: unknown[];
   format?: string;
 }
 
@@ -42,7 +38,6 @@ const attributeCache: Map<
 > = new Map();
 
 // Cache TTL: 5 minutes
-const CACHE_TTL = 5 * 60 * 1000;
 
 /**
  * Schema pre-validation service
@@ -56,16 +51,13 @@ export class SchemaPreValidator {
     context?: { workspaceId?: string; tenantId?: string }
   ): string {
     // Build cache key with optional context for multi-tenant support
-    const parts = [resourceType.toLowerCase()];
 
     // Add workspace context if available (from environment or passed context)
-    const workspaceId = context?.workspaceId || process.env.ATTIO_WORKSPACE_ID;
     if (workspaceId) {
       parts.push(`ws:${workspaceId}`);
     }
 
     // Add tenant context if available (for future multi-tenant support)
-    const tenantId = context?.tenantId || process.env.ATTIO_TENANT_ID;
     if (tenantId) {
       parts.push(`tenant:${tenantId}`);
     }
@@ -80,8 +72,6 @@ export class SchemaPreValidator {
     resourceType: UniversalResourceType,
     context?: { workspaceId?: string; tenantId?: string }
   ): Promise<AttributeMetadata[]> {
-    const cacheKey = this.getCacheKey(resourceType, context);
-    const cached = attributeCache.get(cacheKey);
 
     // Check cache validity
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -94,7 +84,6 @@ export class SchemaPreValidator {
       switch (resourceType) {
         case UniversalResourceType.COMPANIES:
           try {
-            const companyAttrs = await discoverCompanyAttributes();
             attributes = this.normalizeAttributes(companyAttrs);
             // If no attributes returned, use defaults
             if (attributes.length === 0) {
@@ -147,9 +136,9 @@ export class SchemaPreValidator {
   /**
    * Normalize attributes from API response
    */
-  private static normalizeAttributes(apiResponse: any): AttributeMetadata[] {
+  private static normalizeAttributes(apiResponse: unknown): AttributeMetadata[] {
     // Handle both array format (direct attributes) and object format (discovery response)
-    let attributesList: any[] = [];
+    let attributesList: unknown[] = [];
 
     if (Array.isArray(apiResponse)) {
       attributesList = apiResponse;
@@ -157,14 +146,14 @@ export class SchemaPreValidator {
       // Handle discoverCompanyAttributes response format: { standard: [], custom: [], all: [] }
       if (Array.isArray(apiResponse.all)) {
         // Handle both string array and object array formats
-        attributesList = apiResponse.all.map((attr: any) => {
+        attributesList = apiResponse.all.map((attr: unknown) => {
           if (typeof attr === 'string') {
             return { slug: attr, name: attr };
           }
           return attr; // Already an object
         });
       } else if (Array.isArray(apiResponse.standard)) {
-        attributesList = apiResponse.standard.map((attr: any) => {
+        attributesList = apiResponse.standard.map((attr: unknown) => {
           if (typeof attr === 'string') {
             return { slug: attr, name: attr };
           }
@@ -178,7 +167,6 @@ export class SchemaPreValidator {
     }
 
     // Helper to create a safe slug from any string
-    const toSlug = (input: unknown): string | undefined => {
       if (typeof input !== 'string' || input.length === 0) return undefined;
       return input
         .trim()
@@ -189,10 +177,7 @@ export class SchemaPreValidator {
     };
 
     // Normalize and filter invalid entries defensively
-    const normalizedAttrs = attributesList
-      .map((attr: any) => {
-        const rawSlug = attr?.slug ?? attr?.id ?? attr?.name ?? attr?.title;
-        const slug = toSlug(rawSlug);
+      .map((attr: unknown) => {
         if (!slug) return undefined;
         return {
           id: attr?.id || slug,
@@ -213,7 +198,6 @@ export class SchemaPreValidator {
       );
 
     // Add employee_count if missing (for test compatibility)
-    const hasEmployeeCount = normalizedAttrs.some(
       (attr) => attr.slug === 'employee_count'
     );
     if (!hasEmployeeCount) {
@@ -517,21 +501,16 @@ export class SchemaPreValidator {
   }> {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const suggestions = new Map<string, string>();
 
     // Get available attributes with context for multi-tenant support
-    const attributes = await this.getAttributes(resourceType, context);
     // Filter out any malformed attributes (defensive)
-    const safeAttributes = (attributes || []).filter(
       (a): a is AttributeMetadata =>
         Boolean(a && typeof a.slug === 'string' && a.slug.length > 0)
     );
-    const attributeMap = new Map(
       safeAttributes.map((attr) => [attr.slug.toLowerCase(), attr])
     );
 
     // Also create a map of common variations
-    const variationMap = new Map<string, string>();
     for (const attr of safeAttributes) {
       // Add common variations
       variationMap.set(attr.slug.replace(/_/g, ''), attr.slug);
@@ -539,7 +518,6 @@ export class SchemaPreValidator {
       variationMap.set(attr.slug.replace(/-/g, '_'), attr.slug);
 
       // Add camelCase variations
-      const camelCase = attr.slug.replace(/_([a-z])/g, (_, letter) =>
         letter.toUpperCase()
       );
       variationMap.set(camelCase, attr.slug);
@@ -562,12 +540,10 @@ export class SchemaPreValidator {
 
     // Check each field in record data
     for (const [field, value] of Object.entries(recordData)) {
-      const fieldLower = field.toLowerCase();
 
       // Check if field exists
       if (!attributeMap.has(fieldLower)) {
         // Check for common variations
-        const suggestion =
           variationMap.get(fieldLower) ||
           this.findSimilarAttribute(field, attributes);
 
@@ -583,8 +559,6 @@ export class SchemaPreValidator {
         }
       } else {
         // Validate field type
-        const attr = attributeMap.get(fieldLower)!;
-        const typeError = this.validateFieldType(field, value, attr);
         if (typeError) {
           errors.push(typeError);
         }
@@ -597,7 +571,6 @@ export class SchemaPreValidator {
     }
 
     // Check for required fields
-    const requiredFields = safeAttributes.filter((attr) => attr.is_required);
     for (const attr of requiredFields) {
       if (
         !(attr.slug in recordData) &&
@@ -607,7 +580,6 @@ export class SchemaPreValidator {
       }
     }
 
-    const isValid = errors.length === 0;
     return {
       isValid,
       valid: isValid, // Keep for backward compatibility
@@ -624,12 +596,10 @@ export class SchemaPreValidator {
     field: string,
     attributes: AttributeMetadata[]
   ): string | null {
-    const fieldLower = field.toLowerCase();
     let bestMatch: string | null = null;
     let bestDistance = Infinity;
 
     for (const attr of attributes) {
-      const distance = this.levenshteinDistance(
         fieldLower,
         attr.slug.toLowerCase()
       );
@@ -680,7 +650,7 @@ export class SchemaPreValidator {
    */
   private static validateFieldType(
     field: string,
-    value: any,
+    value: unknown,
     attr: AttributeMetadata
   ): string | null {
     if (value === null || value === undefined) {
@@ -765,7 +735,6 @@ export class SchemaPreValidator {
     operation: () => Promise<T>
   ): Promise<T> {
     // Validate record data
-    const validation = await this.validateRecordData(resourceType, recordData);
 
     // Log warnings
     if (validation.warnings.length > 0) {
@@ -774,7 +743,6 @@ export class SchemaPreValidator {
 
     // Apply suggestions automatically
     if (validation.suggestions.size > 0) {
-      const correctedData = { ...recordData };
       for (const [wrong, correct] of Array.from(validation.suggestions)) {
         if (wrong in correctedData) {
           correctedData[correct] = correctedData[wrong];

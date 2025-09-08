@@ -4,16 +4,6 @@
  * and interacting with the Attio API.
  */
 import { AttioListEntry } from '../types/attio.js';
-import {
-  transformFiltersToApiFormat,
-  createDateRangeFilter,
-  createCreatedDateFilter,
-  createModifiedDateFilter,
-  createLastInteractionFilter,
-  createActivityFilter,
-  createNumericFilter,
-  FILTER_ATTRIBUTES,
-} from './filters/index.js';
 
 // Re-export filter utilities for backwards compatibility
 export {
@@ -85,7 +75,6 @@ export function processListEntries(
       typeof entry.values === 'object' &&
       'record_id' in entry.values
     ) {
-      const recordIdValue = entry.values.record_id;
       if (Array.isArray(recordIdValue) && recordIdValue.length > 0) {
         // Handle array of values with possible value property
         if (recordIdValue[0].value) {
@@ -103,7 +92,6 @@ export function processListEntries(
       typeof entry.values === 'object' &&
       'record' in entry.values
     ) {
-      const valuesWithRecord = entry.values as {
         record?: { id?: { record_id?: string } };
       };
       if (valuesWithRecord.record?.id?.record_id) {
@@ -120,7 +108,6 @@ export function processListEntries(
     }
     // Option 7: Search all properties for anything ending with _record_id
     else {
-      const possibleKeys = Object.keys(entry);
       for (const key of possibleKeys) {
         if (
           key.endsWith('_record_id') &&
@@ -141,7 +128,6 @@ export function processListEntries(
         recordId = entry.record.record_id;
       } else if (entry.record.id) {
         // Various id object patterns
-        const idObj = entry.record.id;
         if (typeof idObj === 'string') {
           recordId = idObj;
         } else if (idObj.record_id) {
@@ -174,7 +160,6 @@ export function processListEntries(
 
     // Additional fallback: Check if record has a uri property
     if (entry.record?.uri) {
-      const uriParts = entry.record.uri.split('/');
       if (uriParts.length > 0) {
         recordId = uriParts[uriParts.length - 1];
 
@@ -215,7 +200,6 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
   name: string;
   type: string;
 } {
-  const defaultResult = { name: '', type: '' };
 
   // If no record data is available, return default
   if (!entry.record || !entry.record.values) {
@@ -224,9 +208,7 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
 
   // Try to determine the record type based on available fields
   // Companies typically have industry or website fields, people typically have email or phone
-  const isPerson =
     'email' in entry.record.values || 'phone' in entry.record.values;
-  const isCompany =
     'industry' in entry.record.values || 'website' in entry.record.values;
 
   // Set the record type based on detected fields
@@ -246,7 +228,6 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
   }
 
   // Extract name from the record values
-  const nameValues = entry.record.values.name;
   let recordName = '';
   if (
     Array.isArray(nameValues) &&
@@ -293,7 +274,6 @@ export function createPathBasedFilter(
   // Create path array for drilling down through objects
   // First path element is [listSlug, "parent_record"] to navigate from list entry to its parent record
   // Second path element is [parentObjectType, parentAttributeSlug] to navigate to specific attribute
-  const path = [
     [listSlug, 'parent_record'],
     [parentObjectType, parentAttributeSlug],
   ];

@@ -5,21 +5,21 @@
  * tool operations to existing resource-specific handlers.
  */
 
-import {
-  UniversalResourceType,
-  UniversalSearchParams,
-  UniversalRecordDetailsParams,
-  UniversalCreateParams,
-  UniversalUpdateParams,
-  UniversalDeleteParams,
-  UniversalAttributesParams,
-  UniversalDetailedInfoParams,
-  UniversalCreateNoteParams,
-  UniversalGetNotesParams,
-  UniversalUpdateNoteParams,
-  UniversalSearchNotesParams,
-  UniversalDeleteNoteParams,
-} from './types.js';
+import { AttioRecord } from '../../../types/attio.js';
+import { debug, error as logError, OperationType } from '../../../utils/logger.js';
+import { getCreateService } from '../../../services/create/index.js';
+import { getListDetails } from '../../../objects/lists.js';
+import { getObjectRecord } from '../../../objects/records/index.js';
+import { getPersonDetails } from '../../../objects/people/index.js';
+import { getTask } from '../../../objects/tasks.js';
+import { listNotes } from '../../../objects/notes.js';
+import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
+import { UniversalMetadataService } from '../../../services/UniversalMetadataService.js';
+import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
+import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
+import { UniversalUpdateService } from '../../../services/UniversalUpdateService.js';
+import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
 
 // Import extracted services from Issue #489 Phase 2 & 3
 import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
@@ -89,8 +89,6 @@ export async function handleUniversalCreateNote(
 
   try {
     // Use factory service for consistent behavior
-    const service = getCreateService();
-    const rawResult = await service.createNote({
       resource_type,
       record_id,
       title,
@@ -102,7 +100,6 @@ export async function handleUniversalCreateNote(
       '../../../utils/attio-response.js'
     );
 
-    const result = normalizeNote(unwrapAttio<Record<string, unknown>>(rawResult));
     debug(
       'universal.createNote',
       'Create note result',
@@ -153,15 +150,13 @@ export async function handleUniversalGetNotes(
     }
 
     // Prefer object-layer helper which handles Attio response shape
-    const response = await listNotes({
       parent_object: resource_type,
       parent_record_id: record_id,
       limit,
       offset,
     });
-    const rawList = unwrapAttio<Record<string, unknown>>(response);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
-    const noteArray: any[] = Array.isArray(rawList)
+    const noteArray: unknown[] = Array.isArray(rawList)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
       ? (rawList as any[])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure  
@@ -170,11 +165,7 @@ export async function handleUniversalGetNotes(
     return normalizeNotes(noteArray as any[]);
   } catch (error: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error object structure varies, need flexible access
-    const anyErr = error as any;
-    const status = anyErr?.response?.status;
-    const message =
       anyErr?.response?.data?.error?.message || anyErr?.message || 'Unknown error';
-    const semanticMessage =
       status === 404
         ? 'record not found'
         : status === 400
@@ -204,14 +195,12 @@ export async function handleUniversalUpdateNote(
   params: UniversalUpdateNoteParams
 ): Promise<Record<string, unknown>> {
   const { note_id, title, content, is_archived } = params;
-  const client = getAttioClient();
 
   const updateData: Record<string, unknown> = {};
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (is_archived !== undefined) updateData.is_archived = is_archived;
 
-  const response = await client.patch(`/notes/${note_id}`, updateData);
   return response.data;
 }
 
@@ -222,7 +211,6 @@ export async function handleUniversalSearchNotes(
   params: UniversalSearchNotesParams
 ): Promise<Record<string, unknown>[]> {
   const { resource_type, record_id, query, limit = 20, offset = 0 } = params;
-  const client = getAttioClient();
 
   const searchParams: Record<string, string> = {
     limit: limit.toString(),
@@ -232,8 +220,6 @@ export async function handleUniversalSearchNotes(
   if (record_id) searchParams.record_id = record_id;
   if (query) searchParams.q = query;
 
-  const queryParams = new URLSearchParams(searchParams);
-  const response = await client.get(`/notes?${queryParams}`);
   let notes = response.data.data || [];
 
   // Filter by resource type if specified
@@ -243,7 +229,6 @@ export async function handleUniversalSearchNotes(
       [UniversalResourceType.PEOPLE]: 'people',
       [UniversalResourceType.DEALS]: 'deals',
     };
-    const parentObject = resourceTypeMap[resource_type];
     if (parentObject) {
       notes = notes.filter((note: Record<string, unknown>) => note.parent_object === parentObject);
     }
@@ -259,7 +244,6 @@ export async function handleUniversalDeleteNote(
   params: UniversalDeleteNoteParams
 ): Promise<{ success: boolean; note_id: string }> {
   const { note_id } = params;
-  const client = getAttioClient();
 
   await client.delete(`/notes/${note_id}`);
   return { success: true, note_id };
@@ -328,11 +312,8 @@ export async function handleUniversalGetDetailedInfo(
     case UniversalResourceType.PEOPLE:
       return getPersonDetails(record_id);
     case UniversalResourceType.LISTS: {
-      const list = await getListDetails(record_id);
       // Convert AttioList to AttioRecord format with robust shape handling
       // Handle all documented Attio API list response shapes
-      const raw = list;
-      const listId =
         raw?.id?.list_id ?? // nested shape from some endpoints
         raw?.list_id ?? // flat shape from "Get a list" endpoint
         raw?.id ?? // some responses use a flat id

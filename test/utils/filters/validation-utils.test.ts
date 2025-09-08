@@ -23,7 +23,6 @@ import {
 describe('Filter Validation Utilities', () => {
   describe('validateFiltersObject', () => {
     it('should validate a valid filters object', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -63,7 +62,6 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should throw error for non-array filters property', () => {
-      const filters = {
         filters: { not: 'an array' },
       } as any;
 
@@ -79,7 +77,6 @@ describe('Filter Validation Utilities', () => {
 
   describe('collectInvalidFilters', () => {
     it('should return empty array for valid filters', () => {
-      const filters = [
         {
           attribute: { slug: 'name' },
           condition: FilterConditionType.CONTAINS,
@@ -87,25 +84,21 @@ describe('Filter Validation Utilities', () => {
         },
       ];
 
-      const invalidFilters = collectInvalidFilters(filters);
       expect(invalidFilters).toEqual([]);
     });
 
     it('should detect missing attribute', () => {
-      const filters = [
         {
           condition: FilterConditionType.CONTAINS,
           value: 'test',
         } as any,
       ];
 
-      const invalidFilters = collectInvalidFilters(filters);
       expect(invalidFilters.length).toBe(1);
       expect(invalidFilters[0].reason).toBe(ERROR_MESSAGES.MISSING_ATTRIBUTE);
     });
 
     it('should detect missing attribute.slug', () => {
-      const filters = [
         {
           attribute: {},
           condition: FilterConditionType.CONTAINS,
@@ -113,7 +106,6 @@ describe('Filter Validation Utilities', () => {
         } as any,
       ];
 
-      const invalidFilters = collectInvalidFilters(filters);
       expect(invalidFilters.length).toBe(1);
       expect(invalidFilters[0].reason).toBe(
         ERROR_MESSAGES.MISSING_ATTRIBUTE_SLUG
@@ -121,20 +113,17 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should detect missing condition', () => {
-      const filters = [
         {
           attribute: { slug: 'name' },
           value: 'test',
         } as any,
       ];
 
-      const invalidFilters = collectInvalidFilters(filters);
       expect(invalidFilters.length).toBe(1);
       expect(invalidFilters[0].reason).toBe(ERROR_MESSAGES.MISSING_CONDITION);
     });
 
     it('should detect invalid condition when validation is enabled', () => {
-      const filters = [
         {
           attribute: { slug: 'name' },
           condition: 'not_a_real_condition' as FilterConditionType,
@@ -142,13 +131,11 @@ describe('Filter Validation Utilities', () => {
         },
       ];
 
-      const invalidFilters = collectInvalidFilters(filters, true);
       expect(invalidFilters.length).toBe(1);
       expect(invalidFilters[0].reason).toContain('Invalid condition');
     });
 
     it('should not validate condition when validation is disabled', () => {
-      const filters = [
         {
           attribute: { slug: 'name' },
           condition: 'not_a_real_condition' as FilterConditionType,
@@ -156,7 +143,6 @@ describe('Filter Validation Utilities', () => {
         },
       ];
 
-      const invalidFilters = collectInvalidFilters(filters, false);
       expect(invalidFilters).toEqual([]);
     });
   });
@@ -167,7 +153,6 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should format a single error correctly', () => {
-      const invalidFilters = [
         {
           index: 0,
           reason: 'missing attribute.slug',
@@ -175,12 +160,10 @@ describe('Filter Validation Utilities', () => {
         },
       ];
 
-      const formatted = formatInvalidFiltersError(invalidFilters);
       expect(formatted).toBe('Filter [0]: missing attribute.slug');
     });
 
     it('should format multiple errors correctly', () => {
-      const invalidFilters = [
         {
           index: 0,
           reason: 'missing attribute.slug',
@@ -197,7 +180,6 @@ describe('Filter Validation Utilities', () => {
         },
       ];
 
-      const formatted = formatInvalidFiltersError(invalidFilters);
       expect(formatted).toBe(
         'Filter [0]: missing attribute.slug; Filter [2]: invalid condition'
       );
@@ -206,7 +188,6 @@ describe('Filter Validation Utilities', () => {
 
   describe('validateFilters', () => {
     it('should validate a valid filters object', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -221,14 +202,12 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should accept empty filters array', () => {
-      const filters = { filters: [] };
 
       expect(() => validateFilters(filters)).not.toThrow();
       expect(validateFilters(filters)).toBe(filters);
     });
 
     it('should throw detailed error when all filters are invalid with appropriate category', () => {
-      const filters = {
         filters: [
           {
             attribute: {},
@@ -256,7 +235,6 @@ describe('Filter Validation Utilities', () => {
       }
 
       // Condition error should have CONDITION category
-      const conditionFilters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -291,7 +269,6 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should detect missing attribute', () => {
-      const filter = {
         condition: FilterConditionType.CONTAINS,
         value: 'test',
       };
@@ -302,7 +279,6 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should detect missing attribute.slug', () => {
-      const filter = {
         attribute: {},
         condition: FilterConditionType.CONTAINS,
         value: 'test',
@@ -314,7 +290,6 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should detect missing condition', () => {
-      const filter = {
         attribute: { slug: 'name' },
         value: 'test',
       };
@@ -325,7 +300,6 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should detect invalid condition', () => {
-      const filter = {
         attribute: { slug: 'name' },
         condition: 'not_a_real_condition',
         value: 'test',
@@ -337,20 +311,17 @@ describe('Filter Validation Utilities', () => {
 
   describe('getFilterExample', () => {
     it('should return simple example by default', () => {
-      const example = getFilterExample();
       expect(example).toContain('name');
       expect(example).toContain('contains');
       expect(example).toContain('Company Inc');
     });
 
     it('should return OR logic example when requested', () => {
-      const example = getFilterExample('or');
       expect(example).toContain('matchAny');
       expect(example).toContain('true');
     });
 
     it('should return multiple conditions example when requested', () => {
-      const example = getFilterExample('multiple');
       expect(example).toContain('name');
       expect(example).toContain('website');
       expect(example).not.toContain('matchAny'); // Should use AND logic by default

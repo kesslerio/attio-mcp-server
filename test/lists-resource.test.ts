@@ -5,27 +5,11 @@
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { registerResourceHandlers } from '../src/handlers/resources.js';
-import {
-  getLists,
-  getListDetails,
-  createList,
-  updateList,
-  deleteList,
-  searchLists,
-  getListAttributes,
-} from '../src/objects/lists.js';
-import {
-  createObjectRecord,
-  getObjectRecord,
-  updateObjectRecord,
-  deleteObjectRecord,
-  listObjectRecords,
-} from '../src/objects/records/index.js';
+
 import { initializeAttioClient } from '../src/api/attio-client.js';
+import { registerResourceHandlers } from '../src/handlers/resources.js';
 
 // Skip integration tests if API key not available
-const SKIP_INTEGRATION =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe('Lists Resource Type', () => {
@@ -69,7 +53,6 @@ describe('Lists Resource Type', () => {
   describe('Resource Registration', () => {
     it('should include Lists in the registered resource types', () => {
       // Check that the server has registered handlers
-      const handlers = (server as any)._requestHandlers;
       expect(handlers).toBeDefined();
       expect(handlers.size).toBeGreaterThan(0);
     });
@@ -81,10 +64,8 @@ describe('Lists Resource Type', () => {
       }
 
       // Create a mock request handler to test
-      const handler = (server as any)._requestHandlers.get('resources/list');
 
       if (handler) {
-        const result = await handler({
           method: 'resources/list',
           params: { type: 'lists' },
         });
@@ -102,14 +83,10 @@ describe('Lists Resource Type', () => {
       }
 
       // First get a list to test with
-      const lists = await getLists(undefined, 1);
 
       if (lists.length > 0) {
-        const listId = lists[0].id?.list_id || '';
-        const handler = (server as any)._requestHandlers.get('resources/read');
 
         if (handler) {
-          const result = await handler({
             method: 'resources/read',
             params: { uri: `lists:${listId}` },
           });
@@ -130,7 +107,6 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const lists = await getLists();
         expect(Array.isArray(lists)).toBe(true);
 
         if (lists.length > 0) {
@@ -145,7 +121,6 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const companiesLists = await getLists('companies', 10);
         expect(Array.isArray(companiesLists)).toBe(true);
       });
     });
@@ -157,11 +132,8 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const lists = await getLists(undefined, 1);
 
         if (lists.length > 0) {
-          const listId = lists[0].id?.list_id || '';
-          const details = await getListDetails(listId);
 
           expect(details).toBeDefined();
           expect(details.id).toBeDefined();
@@ -177,7 +149,6 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const newList = await createList({
           name: 'Test List ' + Date.now(),
           parent_object: 'companies',
           description: 'Test list created by unit tests',
@@ -210,7 +181,6 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const updated = await updateList(testListId, {
           description: 'Updated description',
         });
 
@@ -236,14 +206,11 @@ describe('Lists Resource Type', () => {
         }
 
         // Create a temporary list to delete
-        const tempList = await createList({
           name: 'Temp List ' + Date.now(),
           parent_object: 'companies',
         });
 
-        const tempListId =
           (tempList.id as any)?.list_id || (tempList.id as any);
-        const result = await deleteList(tempListId as string);
 
         expect(result).toBe(true);
 
@@ -263,7 +230,6 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const results = await searchLists('sales', 10);
         expect(Array.isArray(results)).toBe(true);
       });
     });
@@ -275,7 +241,6 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const attributes = await getListAttributes();
         expect(attributes).toBeDefined();
         expect(typeof attributes).toBe('object');
       });
@@ -290,7 +255,6 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const results = await listObjectRecords('lists', {
           query: 'test',
           pageSize: 5,
         });
@@ -306,15 +270,12 @@ describe('Lists Resource Type', () => {
           return;
         }
 
-        const lists = await getLists(undefined, 1);
 
         if (lists.length > 0) {
-          const listId = lists[0].id?.list_id || lists[0].id || '';
 
           // Note: This might not work as lists may not be accessible via the records API
           // but we're testing the interface accepts 'lists' as object type
           try {
-            const result = await getObjectRecord('lists', listId as string);
             expect(result).toBeDefined();
           } catch (error) {
             // Lists might not be accessible via records API
@@ -334,7 +295,6 @@ describe('Lists Resource Type', () => {
         // Note: Creating lists via records API might not be supported
         // but we're testing the interface accepts 'lists' as object type
         try {
-          const result = await createObjectRecord('lists', {
             name: 'Test List via Records API',
             parent_object: 'companies',
           });
@@ -362,7 +322,6 @@ describe('Lists Resource Type', () => {
         // Note: Updating lists via records API might not be supported
         // but we're testing the interface accepts 'lists' as object type
         try {
-          const result = await updateObjectRecord('lists', testListId, {
             description: 'Updated via records API',
           });
 
@@ -382,17 +341,14 @@ describe('Lists Resource Type', () => {
         }
 
         // Create a temporary list
-        const tempList = await createList({
           name: 'Temp List for Delete Test ' + Date.now(),
           parent_object: 'companies',
         });
 
-        const tempListId = tempList.id?.list_id || tempList.id;
 
         // Note: Deleting lists via records API might not be supported
         // but we're testing the interface accepts 'lists' as object type
         try {
-          const result = await deleteObjectRecord(
             'lists',
             tempListId as string
           );
@@ -418,22 +374,17 @@ describe('Lists Resource Type', () => {
       }
 
       // Test 1: Lists resource type in schemas
-      const handlers = (server as any)._requestHandlers;
       expect(handlers).toBeDefined();
 
       // Test 2: Search lists
-      const searchResults = await searchLists('test', 5);
       expect(Array.isArray(searchResults)).toBe(true);
 
       // Test 3: Get list details
-      const lists = await getLists(undefined, 1);
       if (lists.length > 0) {
-        const details = await getListDetails(lists[0].id?.list_id || '');
         expect(details).toBeDefined();
       }
 
       // Test 4: Create a new list
-      const newList = await createList({
         name: 'QA Test List ' + Date.now(),
         parent_object: 'companies',
         description: 'QA Test List',
@@ -441,16 +392,13 @@ describe('Lists Resource Type', () => {
       expect(newList).toBeDefined();
       expect(newList.id).toBeDefined();
 
-      const qaListId = newList.id?.list_id || newList.id;
 
       // Test 5: Update list
-      const updated = await updateList(qaListId as string, {
         description: 'Updated QA Test List',
       });
       expect(updated).toBeDefined();
 
       // Test 6: Delete list
-      const deleted = await deleteList(qaListId as string);
       expect(deleted).toBe(true);
 
       console.log('✅ All QA test requirements passed!');

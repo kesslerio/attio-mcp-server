@@ -3,26 +3,10 @@
  * Handles list management and list entry operations
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioList,
-  AttioListEntry,
-  AttioListResponse,
-  AttioSingleResponse,
-} from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
-import { ListEntryFilters } from './types.js';
-import {
-  processListEntries,
-  transformFiltersToApiFormat,
-} from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
-import {
-  SearchRequestBody,
-  LogDetails,
-  ValidationErrorDetails,
-  ListErrorResponse,
-} from '../../types/api-operations.js';
+import { getAttioClient } from '../attio-client.js';
+import { ListEntryFilters } from './types.js';
 
 /**
  * Gets all lists in the workspace
@@ -37,7 +21,6 @@ export async function getAllLists(
   limit: number = 20,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioList[]> {
-  const api = getAttioClient();
   let path = `/lists?limit=${limit}`;
 
   if (objectSlug) {
@@ -45,9 +28,7 @@ export async function getAllLists(
   }
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioListResponse<AttioList>>(path);
     // Ensure we always return an array, never undefined/null/objects - handle multiple shape variants
-    const items = Array.isArray(response?.data?.data)
       ? response.data.data
       : Array.isArray(response?.data?.lists)
         ? response.data.lists
@@ -71,11 +52,8 @@ export async function getListDetails(
   listId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioList> {
-  const api = getAttioClient();
-  const path = `/lists/${listId}`;
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioSingleResponse<AttioList>>(path);
     return (response?.data?.data || response?.data) as AttioList;
   }, retryConfig);
 }
@@ -97,7 +75,6 @@ export async function getListEntries(
   filters?: ListEntryFilters,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry[]> {
-  const api = getAttioClient();
 
   // Input validation - make sure we have a valid listId
   if (!listId) {
@@ -105,11 +82,8 @@ export async function getListEntries(
   }
 
   // Coerce input parameters to ensure proper types
-  const safeLimit = typeof limit === 'number' ? limit : undefined;
-  const safeOffset = typeof offset === 'number' ? offset : undefined;
 
   // Create request body with parameters and filters
-  const createRequestBody = () => {
     // Start with base parameters
     const body: SearchRequestBody = {
       expand: ['record'],
@@ -120,7 +94,6 @@ export async function getListEntries(
     try {
       // Use our shared utility to transform filters to API format
       // Pass isListEntryContext=true since we're filtering list entries
-      const filterObject = transformFiltersToApiFormat(filters, true, true);
 
       // Add filter to body if it exists
       if (filterObject.filter) {
@@ -137,7 +110,6 @@ export async function getListEntries(
         }
       }
     } catch (err: unknown) {
-      const error = err as Error;
 
       if (error instanceof FilterValidationError) {
         // Log the problematic filters for debugging
@@ -158,13 +130,11 @@ export async function getListEntries(
   };
 
   // Enhanced logging function
-  const logOperation = (
     stage: string,
     details?: LogDetails,
     isError = false
   ) => {
     if (process.env.NODE_ENV === 'development') {
-      const prefix = isError
         ? 'ERROR'
         : stage.includes('failed')
           ? 'WARNING'
@@ -183,15 +153,12 @@ export async function getListEntries(
 
   // Call primary endpoint directly (Option A simplification)
   return callWithRetry(async () => {
-    const path = `/lists/${listId}/entries/query`;
-    const requestBody = createRequestBody();
 
     logOperation('Primary endpoint attempt', {
       path,
       requestBody: JSON.stringify(requestBody),
     });
 
-    const response = await api.post<AttioListResponse<AttioListEntry>>(
       path,
       requestBody
     );
@@ -221,8 +188,6 @@ export async function addRecordToList(
   initialValues?: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
-  const api = getAttioClient();
-  const path = `/lists/${listId}/entries`;
 
   // Input validation to ensure required parameters
   if (!listId || typeof listId !== 'string') {
@@ -234,13 +199,11 @@ export async function addRecordToList(
   }
 
   // Default object type to 'companies' if not specified
-  const safeObjectType = objectType || 'companies';
 
   return callWithRetry(async () => {
     try {
       // Construct proper API payload according to Attio API requirements
       // The API expects parent_record_id, parent_object, and entry_values (required, even if empty)
-      const payload = {
         data: {
           parent_record_id: recordId,
           parent_object: safeObjectType,
@@ -262,7 +225,6 @@ export async function addRecordToList(
         console.error(`- Request payload: ${JSON.stringify(payload)}`);
       }
 
-      const response = await api.post<AttioSingleResponse<AttioListEntry>>(
         path,
         payload
       );
@@ -275,7 +237,6 @@ export async function addRecordToList(
 
       return response?.data?.data || response?.data;
     } catch (error: unknown) {
-      const listError = error as ListErrorResponse;
       // Enhanced error logging with detailed information
       if (process.env.NODE_ENV === 'development') {
         console.error(
@@ -299,9 +260,7 @@ export async function addRecordToList(
 
       // Add more context to the error message
       if (listError.response?.status === 400) {
-        const validationErrors =
           listError.response?.data?.validation_errors || [];
-        const errorDetails = validationErrors
           .map(
             (e: ValidationErrorDetails) => `${e.path.join('.')}: ${e.message}`
           )
@@ -335,8 +294,6 @@ export async function updateListEntry(
   attributes: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
-  const api = getAttioClient();
-  const path = `/lists/${listId}/entries/${entryId}`;
 
   // Input validation
   if (!listId || typeof listId !== 'string') {
@@ -366,7 +323,6 @@ export async function updateListEntry(
 
       // Attio API expects updates to list entries in the 'data.entry_values' structure
       // This is specific to list entries, different from record updates in crud.ts
-      const response = await api.patch<AttioSingleResponse<AttioListEntry>>(
         path,
         {
           data: {
@@ -383,7 +339,6 @@ export async function updateListEntry(
 
       return response?.data?.data || response?.data;
     } catch (error: unknown) {
-      const updateError = error as ListErrorResponse;
       // Enhanced error logging with specific error types
       if (process.env.NODE_ENV === 'development') {
         console.error(
@@ -431,8 +386,6 @@ export async function removeRecordFromList(
   entryId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
-  const path = `/lists/${listId}/entries/${entryId}`;
 
   return callWithRetry(async () => {
     await api.delete(path);

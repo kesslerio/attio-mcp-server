@@ -3,22 +3,12 @@
  * Handles basic and advanced search functionality
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioRecord,
-  ResourceType,
-  AttioListResponse,
-} from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
+import { ErrorEnhancer } from '../../errors/enhanced-api-errors.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
+import { getAttioClient } from '../attio-client.js';
 import { ListEntryFilters } from './types.js';
 import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { ErrorEnhancer } from '../../errors/enhanced-api-errors.js';
-import {
-  ApiError,
-  SearchRequestBody,
-  ListRequestBody,
-} from '../../types/api-operations.js';
 
 /**
  * Generic function to search any object type by name, email, or phone (when applicable)
@@ -33,8 +23,6 @@ export async function searchObject<T extends AttioRecord>(
   query: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
-  const path = `/objects/${objectType}/records/query`;
 
   // Use different search logic based on object type
   let filter = {};
@@ -57,12 +45,10 @@ export async function searchObject<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     try {
-      const response = await api.post<AttioListResponse<T>>(path, {
         filter,
       });
       return response?.data?.data || [];
     } catch (error: unknown) {
-      const apiError = error as ApiError;
       // Handle 404 errors with custom message
       if (apiError.response && apiError.response.status === 404) {
         throw new Error(`No ${objectType} found matching '${query}'`);
@@ -90,15 +76,10 @@ export async function advancedSearchObject<T extends AttioRecord>(
   offset?: number,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
-  const path = `/objects/${objectType}/records/query`;
 
   // Coerce input parameters to ensure proper types
-  const safeLimit = typeof limit === 'number' ? limit : undefined;
-  const safeOffset = typeof offset === 'number' ? offset : undefined;
 
   // Create request body with parameters and filters
-  const createRequestBody = async () => {
     // Start with base parameters
     const body: SearchRequestBody = {
       limit: safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
@@ -136,7 +117,6 @@ export async function advancedSearchObject<T extends AttioRecord>(
       }
 
       // Use our shared utility to transform filters to API format
-      const filterObject = transformFiltersToApiFormat(filters, true);
 
       // Add filter to body if it exists
       if (filterObject.filter) {
@@ -175,7 +155,6 @@ export async function advancedSearchObject<T extends AttioRecord>(
       }
 
       // For other error types
-      const errorMessage =
         err instanceof Error
           ? `Error processing search filters: ${err.message}`
           : 'Unknown error processing search filters';
@@ -188,9 +167,6 @@ export async function advancedSearchObject<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     try {
-      const requestBody = await createRequestBody();
-      const response = await api.post<AttioListResponse<T>>(path, requestBody);
-      const data = response?.data?.data;
 
       // Ensure we always return an array, never boolean or other types
       if (Array.isArray(data)) {
@@ -230,8 +206,6 @@ export async function listObjects<T extends AttioRecord>(
   limit?: number,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
-  const path = `/objects/${objectType}/records/query`;
 
   return callWithRetry(async () => {
     const body: ListRequestBody = {
@@ -245,7 +219,6 @@ export async function listObjects<T extends AttioRecord>(
       ],
     };
 
-    const response = await api.post<AttioListResponse<T>>(path, body);
     let result = response?.data?.data || [];
 
     // BUGFIX: Handle case where API returns {} instead of [] for empty results

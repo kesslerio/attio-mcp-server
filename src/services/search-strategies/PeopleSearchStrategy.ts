@@ -4,10 +4,10 @@
  */
 
 import { AttioRecord } from '../../types/attio.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
-import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
+import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 
 /**
  * Search strategy for people with advanced filtering, name/email search, and content search
@@ -43,7 +43,6 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     } = params;
 
     // Apply timeframe filtering
-    const enhancedFilters = this.applyTimeframeFiltering(filters, timeframeParams);
 
     // If we have filters, use advanced search
     if (enhancedFilters) {
@@ -81,7 +80,6 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
 
     try {
       // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
-      const paginatedResult = await this.dependencies.paginatedSearchFunction(filters, {
         limit,
         offset,
       });
@@ -133,14 +131,12 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     }
 
     try {
-      const paginatedResult = await this.dependencies.paginatedSearchFunction(
         { filters: [] },
         { limit, offset }
       );
       return paginatedResult.results;
     } catch (error: unknown) {
       // If empty filters aren't supported, return empty array rather than failing
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.warn(
         `People search with empty filters failed, returning empty results: ${errorMessage}`
       );
@@ -156,7 +152,6 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const emailFilters = {
       filters: [
         {
           attribute: { slug: 'email_addresses' },
@@ -170,7 +165,6 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
       throw new Error('People search function not available');
     }
 
-    const paginatedResult = await this.dependencies.paginatedSearchFunction(emailFilters, {
       limit,
       offset,
     });
@@ -189,23 +183,19 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     offset?: number
   ): Promise<AttioRecord[]> {
     // Default content fields for people
-    const searchFields = fields && fields.length > 0
       ? fields
       : ['name', 'notes', 'email_addresses', 'job_title'];
 
-    const contentFilters = this.createContentFilters(query, searchFields, matchType);
 
     if (!this.dependencies.paginatedSearchFunction) {
       throw new Error('People search function not available');
     }
 
-    const paginatedResult = await this.dependencies.paginatedSearchFunction(contentFilters, {
       limit,
       offset,
     });
 
     // Apply relevance ranking if requested
-    const results = this.applyRelevanceRanking(paginatedResult.results, query, searchFields, sort);
     return results;
   }
 
@@ -218,7 +208,6 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const nameEmailFilters = {
       filters: [
         {
           attribute: { slug: 'name' },
@@ -238,7 +227,6 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
       throw new Error('People search function not available');
     }
 
-    const paginatedResult = await this.dependencies.paginatedSearchFunction(nameEmailFilters, {
       limit,
       offset,
     });

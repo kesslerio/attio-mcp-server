@@ -5,13 +5,9 @@
  * Provides consistent error message formatting and reusable validation functions
  */
 
-import {
-  FilterValidationError,
-  FilterErrorCategory,
-} from '../../errors/api-errors.js';
+import { isValidFilterCondition } from '../../types/attio.js';
 import { ListEntryFilter, ListEntryFilters } from './types.js';
 import { ValidatedListEntryFilters } from '../../api/operations/types.js';
-import { isValidFilterCondition } from '../../types/attio.js';
 
 /**
  * Error message templates for consistent error formatting
@@ -230,7 +226,6 @@ export function formatInvalidFiltersError(
     return '';
   }
 
-  const errorDetails = invalidFilters
     .map((f) => `Filter [${f.index}]: ${f.reason}`)
     .join('; ');
 
@@ -273,7 +268,6 @@ export function validateFilters(
   validateConditions: boolean = true
 ): ValidatedListEntryFilters {
   // First validate basic structure
-  const validatedFilters = validateFiltersObject(filters);
 
   // Handle empty or undefined filters array (valid but returns no results)
   if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
@@ -281,18 +275,15 @@ export function validateFilters(
   }
 
   // Collect invalid filters
-  const invalidFilters = collectInvalidFilters(
     validatedFilters.filters,
     validateConditions
   );
 
   // If all filters are invalid, throw error with examples
   if (invalidFilters.length === validatedFilters.filters.length) {
-    const errorDetails = formatInvalidFiltersError(invalidFilters);
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
 
     // Add examples to help the user fix their filters - show relevant example based on context
-    const relevantExample = invalidFilters.length > 1 
       ? FILTER_EXAMPLES.MULTIPLE_CONDITIONS 
       : FILTER_EXAMPLES.SIMPLE;
     errorMessage +=
@@ -331,7 +322,6 @@ export function getInvalidFilterReason(filter: unknown): string {
     return `filter is ${filter === null ? 'null' : typeof filter}`;
   }
 
-  const filterObj = filter as Record<string, any>;
 
   if (!filterObj.attribute) {
     return ERROR_MESSAGES.MISSING_ATTRIBUTE;

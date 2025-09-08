@@ -1,25 +1,13 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import {
-  UniversalResourceType,
-  RelationshipType,
-  AdvancedSearchParams,
-  RelationshipSearchParams,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
-import {
-  setupUnitTestMocks,
-  cleanupMocks,
-  getMockInstances,
-} from './helpers/index.js';
 
 describe('Universal Advanced Operations - Search Tests', () => {
-  let advancedSearchConfig: any;
-  let searchByRelationshipConfig: any;
+  let advancedSearchConfig: unknown;
+  let searchByRelationshipConfig: unknown;
 
   beforeEach(async () => {
     await setupUnitTestMocks();
 
     // Import after mocks are set up
-    const advancedOps = await import(
       '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
     );
     advancedSearchConfig = advancedOps.advancedSearchConfig;
@@ -32,7 +20,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
   describe('advanced-search tool', () => {
     it('should perform advanced search successfully', async () => {
-      const mockResults = [
         {
           id: { record_id: 'comp-1' },
           values: {
@@ -46,7 +33,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.handleUniversalSearch.mockResolvedValue(mockResults);
 
-      const params: any = {
+      const params: unknown = {
         resource_type: UniversalResourceType.COMPANIES,
         query: 'technology',
         filters: [
@@ -61,7 +48,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
         limit: 20,
       };
 
-      const result = await advancedSearchConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith({
         resource_type: params.resource_type,
@@ -73,7 +59,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
     });
 
     it('should format advanced search results with context', async () => {
-      const mockResults = [
         {
           id: { record_id: 'comp-1' },
           values: {
@@ -88,7 +73,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.formatResourceType.mockReturnValue('company');
 
-      const formatted = (advancedSearchConfig.formatResult as any)(
         mockResults,
         UniversalResourceType.COMPANIES
       );
@@ -101,7 +85,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
     it('should handle advanced search errors', async () => {
       const { mockHandlers } = getMockInstances();
-      const mockError = new Error('Filter error');
       mockHandlers.handleUniversalSearch.mockRejectedValue(mockError);
       mockHandlers.createUniversalError.mockReturnValue(
         new Error('advanced search failed for companies: Filter error')
@@ -120,7 +103,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
   describe('search-by-relationship tool', () => {
     it('should search company to people relationships', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -141,7 +123,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
         limit: 10,
       };
 
-      const result = await searchByRelationshipConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSpecialized.searchPeopleByCompany).toHaveBeenCalledWith(
         'comp-1'
@@ -149,7 +130,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
     });
 
     it('should search people to company relationships', async () => {
-      const mockResults = [
         {
           id: { record_id: 'comp-1' },
           values: {
@@ -168,7 +148,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
         target_resource_type: UniversalResourceType.COMPANIES,
       };
 
-      const result = await searchByRelationshipConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockSpecialized.searchCompaniesByPeople).toHaveBeenCalledWith(
         'person-1'
@@ -188,7 +167,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
     });
 
     it('should format relationship results correctly', async () => {
-      const mockResults = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -199,7 +177,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
         },
       ];
 
-      const formatted = (searchByRelationshipConfig.formatResult as any)(
         mockResults,
         RelationshipType.COMPANY_TO_PEOPLE
       );
@@ -216,13 +193,11 @@ describe('Universal Advanced Operations - Search Tests', () => {
       const { mockSchemas } = getMockInstances();
 
       // Store the original mock implementation to restore it later
-      const originalMock = mockSchemas.validateUniversalToolParams;
 
       mockSchemas.validateUniversalToolParams.mockImplementation(() => {
         throw new Error('Validation failed');
       });
 
-      const tools = [
         {
           tool: advancedSearchConfig,
           params: { resource_type: UniversalResourceType.COMPANIES },
@@ -242,14 +217,14 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
       // Restore the original mock behavior to not affect other tests
       mockSchemas.validateUniversalToolParams.mockImplementation(
-        (operation: string, params: any) => {
+        (operation: string, params: unknown) => {
           return params || {};
         }
       );
     });
 
     it('should handle empty search results gracefully', async () => {
-      const emptyResults: any[] = [];
+      const emptyResults: unknown[] = [];
 
       // For empty arrays, formatters should show "found 0" not "No results found" based on current implementation
       expect(advancedSearchConfig.formatResult(emptyResults)).toContain(

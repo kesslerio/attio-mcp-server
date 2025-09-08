@@ -1,26 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { withSearchRateLimiting } from '../../src/handlers/rate-limited-handler.js';
 
-// Rate limiting test configuration
-const RATE_LIMIT_CONFIG = {
-  /** Default rate limit threshold per minute */
-  DEFAULT_RATE_LIMIT: 60,
-  /** Test request count (should exceed rate limit) */
-  TEST_REQUEST_COUNT: 65,
-  /** Test timeout in milliseconds */
-  TEST_TIMEOUT_MS: 15000,
-} as const;
+import { withSearchRateLimiting } from '../../src/handlers/rate-limited-handler.js';
 
 describe('Integration: Rate limiting (deterministic)', () => {
   it(
     'triggers rate limit after exceeding threshold with headers',
     async () => {
       // Simple handler that returns success (accepts req arg for wrapper compatibility)
-      const baseHandler = async (_req: any) => ({ ok: true });
-      const handler = withSearchRateLimiting(baseHandler, 'companies:search');
 
       // Fake req with minimal shape and stable IP
-      const makeReq = () => ({
         ip: '127.0.0.1',
         headers: {},
         res: {
@@ -32,7 +20,7 @@ describe('Integration: Rate limiting (deterministic)', () => {
       // Exhaust the limiter quickly: default is 60/min; run more than limit in a tight loop
       let limited = 0;
       for (let i = 0; i < RATE_LIMIT_CONFIG.TEST_REQUEST_COUNT; i++) {
-        const result: any = await handler(makeReq() as any);
+        const result: unknown = await handler(makeReq() as any);
         if (result && result.isError) limited++;
       }
 

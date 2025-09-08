@@ -1,14 +1,7 @@
 import { SanitizedObject } from '../schemas/common/types.js';
 import { UniversalResourceType } from '../types.js';
-import {
-  ErrorType,
-  HttpStatusCode,
-  UniversalValidationError,
-} from '../errors/validation-errors.js';
 
 export function suggestResourceType(invalid: string): string | undefined {
-  const validTypes = Object.values(UniversalResourceType);
-  const lower = invalid.toLowerCase();
   const suggestions: Record<string, string> = {
     company: 'companies',
     person: 'people',
@@ -23,7 +16,6 @@ export function suggestResourceType(invalid: string): string | undefined {
   let bestMatch = '';
   let bestScore = 0;
   for (const validType of validTypes) {
-    const score = getStringSimilarity(lower, validType);
     if (score > bestScore && score > 0.5) {
       bestScore = score;
       bestMatch = validType;
@@ -33,10 +25,7 @@ export function suggestResourceType(invalid: string): string | undefined {
 }
 
 function getStringSimilarity(str1: string, str2: string): number {
-  const longer = str1.length > str2.length ? str1 : str2;
-  const shorter = str1.length > str2.length ? str2 : str1;
   if (longer.length === 0) return 1.0;
-  const editDistance = getEditDistance(longer, shorter);
   return (longer.length - editDistance) / longer.length;
 }
 
@@ -66,7 +55,6 @@ export function validatePaginationParams(params: SanitizedObject): void {
     params.limit !== null &&
     params.limit !== undefined
   ) {
-    const limit = Number(params.limit);
     if (isNaN(limit) || !Number.isInteger(limit)) {
       throw new UniversalValidationError(
         'Parameter "limit" must be an integer',
@@ -110,7 +98,6 @@ export function validatePaginationParams(params: SanitizedObject): void {
     params.offset !== null &&
     params.offset !== undefined
   ) {
-    const offset = Number(params.offset);
     if (isNaN(offset) || !Number.isInteger(offset)) {
       throw new UniversalValidationError(
         'Parameter "offset" must be an integer',
@@ -140,7 +127,6 @@ export function validatePaginationParams(params: SanitizedObject): void {
 }
 
 export function validateIdFields(params: SanitizedObject): void {
-  const idFields = [
     'record_id',
     'source_id',
     'target_id',
@@ -154,8 +140,6 @@ export function validateIdFields(params: SanitizedObject): void {
       params[field] !== null &&
       params[field] !== undefined
     ) {
-      const id = String(params[field]);
-      const idRegex = /^[a-zA-Z0-9_-]+$/;
       if (!idRegex.test(id)) {
         throw new UniversalValidationError(
           `Invalid ${field} format: "${id}"`,

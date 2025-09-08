@@ -40,7 +40,6 @@ describe('Timeframe Search Parameter Usage Demo', () => {
 
           // This should either error or return limited results because date_field is not the right parameter
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               console.log('Result text:', content.text);
               // It might return results, but not filtered by the timeframe properly
@@ -66,7 +65,6 @@ describe('Timeframe Search Parameter Usage Demo', () => {
           );
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               console.log('Result text:', content.text);
             }
@@ -96,7 +94,6 @@ describe('Timeframe Search Parameter Usage Demo', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               console.log('✅ Result text:', content.text);
               // Should contain actual filtered results
@@ -127,7 +124,6 @@ describe('Timeframe Search Parameter Usage Demo', () => {
           expect(result.isError).toBeFalsy();
 
           if (result.content && result.content.length > 0) {
-            const content = result.content[0];
             if ('text' in content) {
               console.log('✅ Result text:', content.text);
             }

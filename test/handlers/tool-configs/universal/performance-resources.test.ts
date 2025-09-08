@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { config } from 'dotenv';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 
-// Load environment variables from .env file before any imports
-config();
+import { advancedOperationsToolConfigs } from '../../../../src/handlers/tool-configs/universal/index.js';
+import { initializeAttioClient } from '../../../../src/api/attio-client.js';
 
 import { advancedOperationsToolConfigs } from '../../../../src/handlers/tool-configs/universal/index.js';
 import {
@@ -17,7 +17,6 @@ import {
 } from './helpers/index.js';
 
 // These tests use real API calls - only run when API key is available
-const SKIP_PERFORMANCE_TESTS = TEST_ENVIRONMENT.skipPerformanceTests;
 
 // Log environment configuration
 console.log(
@@ -38,7 +37,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
 
   beforeAll(async () => {
     // Initialize the API client with real credentials first
-    const apiKey = process.env.ATTIO_API_KEY!;
     console.log('Initializing API client for performance tests...');
     await initializeAttioClient(apiKey);
 
@@ -49,7 +47,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
     );
   });
 
-  const timestamp = Date.now();
   const createdTestRecords: string[] = [];
 
   afterAll(async () => {
@@ -57,8 +54,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
     if (createdTestRecords.length > 0) {
       try {
         // Split into batches of 45 records to stay well under the 50 limit
-        const CLEANUP_BATCH_SIZE = 45;
-        const batches = [];
         for (
           let i = 0;
           i < createdTestRecords.length;
@@ -72,7 +67,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
         );
 
         // Process all batches in parallel for faster cleanup
-        const cleanupPromises = batches.map(async (batch, index) => {
           // Add a small staggered delay to avoid overwhelming the API
           if (index > 0) {
             await new Promise((resolve) => setTimeout(resolve, index * 100));
@@ -97,16 +91,13 @@ describe('Universal Tools Performance Tests - Resources', () => {
   describe('Concurrency and Rate Limiting', () => {
     it('should respect API rate limits with proper delays', async () => {
       // Test that concurrent operations include appropriate delays
-      const records = Array(8)
         .fill(0)
         .map((_, i) => ({
           name: `Rate Limit Test ${timestamp}-${i}`,
           industry: 'Technology',
         }));
 
-      const startTime = Date.now();
 
-      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -114,8 +105,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
         records,
       })) as any[];
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -124,7 +113,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
       // Should take some time due to rate limiting delays
       // With 5 concurrent operations and delays, this should take longer than instant
       // Use flexible timing that accounts for environment differences
-      const expectedMinDuration = PERFORMANCE_BUDGETS.rateLimitMin;
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (duration <= expectedMinDuration) {
         // expect(duration).toBeGreaterThan(expectedMinDuration); // Rate limiting should add some delay
@@ -134,9 +122,8 @@ describe('Universal Tools Performance Tests - Resources', () => {
       // but also not excessively slow (which could indicate other issues)
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.rateLimitMax);
 
-      const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Rate limited batch (8 records): ${duration}ms`);
@@ -144,16 +131,13 @@ describe('Universal Tools Performance Tests - Resources', () => {
 
     it('should handle maximum concurrency without overwhelming API', async () => {
       // Test that we don't exceed the MAX_CONCURRENT_REQUESTS limit
-      const records = Array(15)
         .fill(0)
         .map((_, i) => ({
           name: `Concurrency Test ${timestamp}-${i}`,
           industry: 'Technology',
         }));
 
-      const startTime = Date.now();
 
-      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -161,15 +145,11 @@ describe('Universal Tools Performance Tests - Resources', () => {
         records,
       })) as any[];
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(15);
 
-      const successCount = result.filter((r: any) => r.success).length;
-      const failureCount = result.length - successCount;
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (successCount <= 10) {
         // expect(successCount).toBeGreaterThan(10, `Expected >10 successful operations, got ${successCount}. Failures: ${failureCount}`);
@@ -177,7 +157,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
 
       // Log failed operations for debugging
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
         console.warn(
           `Batch operation failures:`,
           failures.map((f) => f.error).join(', ')
@@ -187,9 +166,8 @@ describe('Universal Tools Performance Tests - Resources', () => {
       // Should complete in reasonable time despite concurrency limits
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.concurrency);
 
-      const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(
@@ -201,9 +179,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
   describe('Memory and Resource Usage', () => {
     it('should handle large batch operations without memory issues', async () => {
       // Monitor memory usage during large operations
-      const initialMemory = process.memoryUsage();
 
-      const records = Array(30)
         .fill(0)
         .map((_, i) => ({
           name: `Memory Test Company ${timestamp}-${i}`,
@@ -211,7 +187,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
           industry: 'Technology',
         }));
 
-      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -219,19 +194,16 @@ describe('Universal Tools Performance Tests - Resources', () => {
         records,
       })) as any[];
 
-      const finalMemory = process.memoryUsage();
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(30);
 
       // Memory usage should not increase dramatically
-      const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024); // Less than 50MB increase
 
-      const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(
@@ -241,7 +213,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
 
     it('should clean up resources properly after batch operations', async () => {
       // Test that resources are cleaned up after operations
-      const records = Array(5)
         .fill(0)
         .map((_, i) => ({
           name: `Cleanup Test ${timestamp}-${i}`,
@@ -249,7 +220,6 @@ describe('Universal Tools Performance Tests - Resources', () => {
         }));
 
       // Create and immediately delete to test cleanup
-      const createResult = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -257,16 +227,14 @@ describe('Universal Tools Performance Tests - Resources', () => {
         records,
       })) as any[];
 
-      const createdIds = createResult
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
 
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (createdIds.length <= 3) {
         // expect(createdIds.length).toBeGreaterThan(3, `Expected more than 3 created IDs, got ${createdIds.length}. This may indicate API failures during record creation.`);
       }
 
-      const deleteResult = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -274,8 +242,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
         record_ids: createdIds,
       })) as any[];
 
-      const deleteSuccessCount = deleteResult.filter(
-        (r: any) => r.success
+        (r: unknown) => r.success
       ).length;
       expect(deleteSuccessCount).toBe(createdIds.length);
 

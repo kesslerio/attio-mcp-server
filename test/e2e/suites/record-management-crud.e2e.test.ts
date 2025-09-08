@@ -1,25 +1,11 @@
 /**
  * Split: Record Management E2E – CRUD focus
  */
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  vi,
-} from 'vitest';
-import { E2ETestBase } from '../setup.js';
-import { E2EAssertions } from '../utils/assertions.js';
 import { CompanyFactory, PersonFactory } from '../fixtures/index.js';
-import type { TestDataObject, McpToolResponse } from '../types/index.js';
-import {
-  callUniversalTool,
-  validateTestEnvironment,
-  getToolMigrationStats,
-} from '../utils/enhanced-tool-caller.js';
+import { E2EAssertions } from '../utils/assertions.js';
+import { E2ETestBase } from '../setup.js';
 import { startTestSuite, endTestSuite } from '../utils/logger.js';
+import type { TestDataObject, McpToolResponse } from '../types/index.js';
 
 function asToolResponse(response: unknown): McpToolResponse {
   return response as McpToolResponse;
@@ -33,7 +19,6 @@ describe.skipIf(
 
   beforeAll(async () => {
     startTestSuite('record-management-crud');
-    const envValidation = await validateTestEnvironment();
     if (!envValidation.valid)
       console.warn('⚠️ Test environment warnings:', envValidation.warnings);
     console.error('📊 Tool migration stats:', getToolMigrationStats());
@@ -54,25 +39,21 @@ describe.skipIf(
   });
 
   it('creates company and person records', async () => {
-    const companyResponse = asToolResponse(
       await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: CompanyFactory.create() as any,
       })
     );
     E2EAssertions.expectMcpSuccess(companyResponse);
-    const company = E2EAssertions.expectMcpData(companyResponse)!;
     E2EAssertions.expectCompanyRecord(company);
     testCompaniesRecord.push(company);
 
-    const personResponse = asToolResponse(
       await callUniversalTool('create-record', {
         resource_type: 'people',
         record_data: PersonFactory.create() as any,
       })
     );
     E2EAssertions.expectMcpSuccess(personResponse);
-    const person = E2EAssertions.expectMcpData(personResponse)!;
     E2EAssertions.expectPersonRecord(person);
     testPeopleRecord.push(person);
   }, 60000);

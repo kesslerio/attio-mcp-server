@@ -1,17 +1,16 @@
 /**
  * Advanced search configurations for people
  */
-import { AttioRecord } from '../../../types/attio.js';
 import { advancedSearchPeople } from '../../../objects/people/index.js';
-import { ToolConfig } from '../../tool-types.js';
+import { AttioRecord } from '../../../types/attio.js';
 import { getPersonName } from './formatters.js';
+import { ToolConfig } from '../../tool-types.js';
 
 export const advancedSearchToolConfigs = {
   advancedSearch: {
     name: 'advanced-search-people',
     handler: advancedSearchPeople,
-    formatResult: (response: any) => {
-      const results =
+    formatResult: (response: unknown) => {
         (response as { results?: AttioRecord[] }).results || response;
       return (results as AttioRecord[])
         .map(

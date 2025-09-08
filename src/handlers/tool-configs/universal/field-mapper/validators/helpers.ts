@@ -6,13 +6,6 @@
 import { UniversalResourceType } from '../types.js';
 
 /**
- * Utility function to check if an attribute exists in available attributes
- * Case-insensitive matching for attribute names
- */
-export const attrHas = (attrs?: string[], k?: string): boolean =>
-  !!attrs && !!k && (attrs.includes(k) || attrs.includes(k.toLowerCase()));
-
-/**
  * Resource type mappings - maps invalid resource types to valid ones
  * Includes common typos and variations for user-friendly error correction
  */

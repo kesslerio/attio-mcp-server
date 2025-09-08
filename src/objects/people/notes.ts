@@ -1,13 +1,9 @@
 /**
  * Note operations for People
  */
-import {
-  getObjectNotes,
-  createObjectNote,
-} from '../../api/operations/index.js';
-import { ResourceType, AttioNote } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { isValidId } from '../../utils/validation.js';
+import { ResourceType, AttioNote } from '../../types/attio.js';
 
 /**
  * Gets notes for a specific person
@@ -29,7 +25,6 @@ export async function getPersonNotes(
 
     return await getObjectNotes(ResourceType.PEOPLE, personId, limit, offset);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Note retrieval validation failed: ${errorMessage}`
@@ -72,7 +67,6 @@ export async function createPersonNote(
       content
     );
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Note creation validation failed: ${errorMessage}`

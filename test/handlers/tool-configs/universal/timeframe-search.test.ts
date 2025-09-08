@@ -4,8 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { UniversalSearchService } from '../../../../src/services/UniversalSearchService.js';
+
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
+import { UniversalSearchService } from '../../../../src/services/UniversalSearchService.js';
 import type { UniversalSearchParams } from '../../../../src/handlers/tool-configs/universal/types.js';
 
 // Mock external dependencies
@@ -18,7 +19,6 @@ vi.mock('../../../../src/objects/people/index.js', () => ({
 }));
 
 describe('Timeframe Search Integration', () => {
-  const mockDate = new Date('2023-08-15T12:00:00.000Z');
   
   beforeEach(() => {
     vi.useFakeTimers();
@@ -26,13 +26,11 @@ describe('Timeframe Search Integration', () => {
     vi.clearAllMocks();
     
     // Mock the companies search function
-    const mockCompanies = vi.fn().mockResolvedValue([]);
     vi.doMock('../../../../src/objects/companies/index.js', () => ({
       advancedSearchCompanies: mockCompanies,
     }));
     
     // Mock the people search function  
-    const mockPeople = vi.fn().mockResolvedValue({ results: [] });
     vi.doMock('../../../../src/objects/people/index.js', () => ({
       advancedSearchPeople: mockPeople,
     }));
@@ -77,7 +75,6 @@ describe('Timeframe Search Integration', () => {
       };
 
       // Should not throw error and should return results (even if empty)
-      const results = await UniversalSearchService.searchRecords(params);
       expect(Array.isArray(results)).toBe(true);
     });
 
@@ -90,7 +87,6 @@ describe('Timeframe Search Integration', () => {
       };
 
       // Should not throw error and should return results (even if empty)
-      const results = await UniversalSearchService.searchRecords(params);
       expect(Array.isArray(results)).toBe(true);
     });
 
@@ -103,7 +99,6 @@ describe('Timeframe Search Integration', () => {
       };
 
       // Should not throw error - timeframe should override absolute dates
-      const results = await UniversalSearchService.searchRecords(params);
       expect(Array.isArray(results)).toBe(true);
     });
   });
@@ -116,7 +111,6 @@ describe('Timeframe Search Integration', () => {
         // No timeframe parameters
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
 
       // Should fall back to regular company search and return results
       expect(Array.isArray(results)).toBe(true);
@@ -129,7 +123,6 @@ describe('Timeframe Search Integration', () => {
       const { createTimeframeQuery } = await import('../../../../src/utils/filters/builders/query-api.js');
       
       // Test companies path structure
-      const companiesConfig = {
         resourceType: 'companies',
         attribute: 'created_at',
         startDate: '2023-08-01T00:00:00.000Z',
@@ -137,7 +130,6 @@ describe('Timeframe Search Integration', () => {
         operator: 'between' as const,
       };
       
-      const companiesFilter = createTimeframeQuery(companiesConfig);
       expect(companiesFilter.filter.path).toEqual([['companies', 'created_at']]);
       expect(companiesFilter.filter.constraints).toEqual({
         $gte: '2023-08-01T00:00:00.000Z',
@@ -145,7 +137,6 @@ describe('Timeframe Search Integration', () => {
       });
       
       // Test people path structure
-      const peopleConfig = {
         resourceType: 'people',
         attribute: 'created_at',
         startDate: '2023-08-01T00:00:00.000Z',
@@ -153,7 +144,6 @@ describe('Timeframe Search Integration', () => {
         operator: 'between' as const,
       };
       
-      const peopleFilter = createTimeframeQuery(peopleConfig);
       expect(peopleFilter.filter.path).toEqual([['people', 'created_at']]);
       expect(peopleFilter.filter.constraints).toEqual({
         $gte: '2023-08-01T00:00:00.000Z',
@@ -161,14 +151,12 @@ describe('Timeframe Search Integration', () => {
       });
       
       // Test backwards compatibility (without resourceType)
-      const legacyConfig = {
         attribute: 'created_at',
         startDate: '2023-08-01T00:00:00.000Z',
         endDate: '2023-08-15T23:59:59.999Z',
         operator: 'between' as const,
       };
       
-      const legacyFilter = createTimeframeQuery(legacyConfig);
       expect(legacyFilter.filter.path).toEqual([['created_at']]);
       expect(legacyFilter.filter.constraints).toEqual({
         $gte: '2023-08-01T00:00:00.000Z',

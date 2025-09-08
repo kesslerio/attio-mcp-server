@@ -2,16 +2,7 @@
  * Unit tests for filter translator functions
  * Specifically testing the fix for issue #182
  */
-import {
-  transformFiltersToApiFormat,
-  transformSingleFilterToApi,
-} from '../../../src/utils/filters/translators';
 import { FilterValidationError } from '../../../src/errors/api-errors';
-import {
-  FilterConditionType,
-  ListEntryFilters,
-  ListEntryFilter,
-} from '../../../src/utils/filters/types';
 
 describe('Filter Translators', () => {
   describe('transformFiltersToApiFormat', () => {
@@ -28,7 +19,6 @@ describe('Filter Translators', () => {
           ],
         };
 
-        const result = transformFiltersToApiFormat(filters);
 
         expect(result).toHaveProperty('filter');
         expect(result.filter).toHaveProperty('name');
@@ -51,7 +41,6 @@ describe('Filter Translators', () => {
           ],
         };
 
-        const result = transformFiltersToApiFormat(filters);
 
         expect(result).toHaveProperty('filter');
         expect(result.filter).toHaveProperty('name');
@@ -77,7 +66,6 @@ describe('Filter Translators', () => {
           matchAny: true,
         };
 
-        const result = transformFiltersToApiFormat(filters);
 
         expect(result).toHaveProperty('filter');
         expect(result.filter).toHaveProperty('$or');
@@ -85,12 +73,10 @@ describe('Filter Translators', () => {
         expect(result.filter?.$or?.length).toBe(2);
 
         // Check first OR condition
-        const firstCondition = result.filter?.$or?.[0];
         expect(firstCondition).toHaveProperty('name');
         expect(firstCondition?.name).toHaveProperty('$contains', 'test');
 
         // Check second OR condition
-        const secondCondition = result.filter?.$or?.[1];
         expect(secondCondition).toHaveProperty('website');
         expect(secondCondition?.website).toHaveProperty('$contains', '.com');
       });
@@ -100,7 +86,6 @@ describe('Filter Translators', () => {
           filters: [],
         };
 
-        const result = transformFiltersToApiFormat(filters);
 
         expect(result).toEqual({});
       });
@@ -109,16 +94,13 @@ describe('Filter Translators', () => {
     // Invalid filter cases
     describe('Invalid filter structures', () => {
       it('should return empty object for undefined filters', () => {
-        const result = transformFiltersToApiFormat(undefined);
         expect(result).toEqual({});
       });
 
       it('should return empty object for non-array filters property', () => {
-        const filters = {
           filters: { notAnArray: true },
         } as any;
 
-        const result = transformFiltersToApiFormat(filters);
         expect(result).toEqual({});
       });
 
@@ -134,7 +116,6 @@ describe('Filter Translators', () => {
           matchAny: true,
         };
 
-        const result = transformFiltersToApiFormat(filters);
         expect(result).toEqual({});
       });
 
@@ -150,7 +131,6 @@ describe('Filter Translators', () => {
           ],
         };
 
-        const result = transformFiltersToApiFormat(filters);
         expect(result).toEqual({});
       });
 
@@ -184,14 +164,12 @@ describe('Filter Translators', () => {
         value: 'test',
       };
 
-      const result = transformSingleFilterToApi(filter);
 
       expect(result).toHaveProperty('name');
       expect(result.name).toHaveProperty('$contains', 'test');
     });
 
     it('should throw error for invalid filter structure', () => {
-      const filter = {
         // Missing attribute
         condition: FilterConditionType.CONTAINS,
         value: 'test',

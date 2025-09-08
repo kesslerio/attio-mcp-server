@@ -1,15 +1,5 @@
-import axios, {
-  AxiosInstance,
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from 'axios';
 import { enhanceApiError } from '../utils/error-enhancer.js';
-// If logger is used, ensure it's imported, e.g.:
-// import { logger } from '../utils/logger';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
 
 interface RetryableAxiosRequestConfig extends InternalAxiosRequestConfig {
   retryCount?: number;
@@ -19,7 +9,6 @@ export function createAttioApiClient(
   baseURL: string,
   apiKey: string
 ): AxiosInstance {
-  const instance = axios.create({
     baseURL,
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -38,7 +27,6 @@ export function createAttioApiClient(
       console.error('[Interceptor] Is Axios Error:', axios.isAxiosError(error));
 
       if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError;
         console.error('[Interceptor] Axios error config:', axiosError.config);
         // console.error('[Interceptor] Axios error request:', axiosError.request); // Often large, skip for brevity unless needed
         console.error(
@@ -64,17 +52,14 @@ export function createAttioApiClient(
           );
           // console.error('[Interceptor] Full error.response object:', JSON.stringify(axiosError.response)); // Can be very verbose
 
-          const config = axiosError.config as RetryableAxiosRequestConfig;
           const { status } = axiosError.response;
 
           // Attempt to enhance the error first
-          const enhancedError = enhanceApiError(axiosError); // Pass the original AxiosError
 
           config.retryCount = config.retryCount || 0;
 
           // Only retry network errors, 429 (throttling), and 5xx server errors
           // Never retry 4xx client errors (400, 401, 403, 404, etc.) except 429
-          const shouldRetry = !status || status === 429 || status >= 500;
 
           if (config.retryCount < MAX_RETRIES && shouldRetry) {
             config.retryCount++;
@@ -82,10 +67,7 @@ export function createAttioApiClient(
               `[Interceptor] Retrying request (${config.retryCount}/${MAX_RETRIES}) for ${config.url} due to ${status}`
             );
             // Exponential backoff with jitter to prevent thundering herd
-            const baseDelay =
               RETRY_DELAY_MS * Math.pow(2, config.retryCount - 1);
-            const jitter = Math.floor(Math.random() * 300); // 0-300ms jitter
-            const totalDelay = Math.min(baseDelay + jitter, 5000); // Cap at 5s
             await new Promise((resolve) => setTimeout(resolve, totalDelay));
             return instance.request(config);
           }

@@ -13,31 +13,6 @@
 
 import type { AttioRecord } from '../../types/attio.js';
 
-/**
- * Normalizes company input data, particularly domain handling
- *
- * Converts single domain to domains array, handles domain objects with .value property
- *
- * @param input - Raw company input data
- * @returns Normalized company data with domains as string array
- *
- * @example
- * ```typescript
- * // Input: { name: "Corp", domain: "corp.com" }
- * // Output: { name: "Corp", domains: ["corp.com"] }
- *
- * // Input: { name: "Corp", domains: [{value: "corp.com"}, {value: "corp.io"}] }
- * // Output: { name: "Corp", domains: ["corp.com", "corp.io"] }
- * ```
- */
-export function normalizeCompanyValues(
-  input: Record<string, unknown>
-): Record<string, unknown> {
-  const normalizedCompany: Record<string, unknown> = { ...input };
-  const rawDomain = input.domain as string | undefined;
-  const rawDomains = input.domains as unknown;
-  const rawWebsite = input.website as string | undefined;
-
   if (rawDomains) {
     if (Array.isArray(rawDomains)) {
       normalizedCompany.domains = rawDomains.map((d: unknown) =>
@@ -65,7 +40,6 @@ export function normalizeCompanyValues(
   // Then remove website to avoid unsupported attribute errors in Attio API.
   if (rawWebsite && typeof rawWebsite === 'string') {
     try {
-      const url = new URL(rawWebsite.includes('://') ? rawWebsite : `https://${rawWebsite}`);
       let host = url.hostname.toLowerCase();
       if (host.startsWith('www.')) host = host.slice(4);
       const domains: string[] = Array.isArray(normalizedCompany.domains)
@@ -121,13 +95,8 @@ export function normalizePersonValues(
   const filteredPersonData: Record<string, unknown> = {};
 
   // 1) Name normalization: array of personal-name objects
-  const rawName = input.name;
   if (rawName) {
     if (typeof rawName === 'string') {
-      const parts = rawName.trim().split(/\s+/);
-      const first = parts.shift() || rawName;
-      const last = parts.join(' ');
-      const full = [first, last].filter(Boolean).join(' ');
       filteredPersonData.name = [
         {
           first_name: first,
@@ -138,7 +107,6 @@ export function normalizePersonValues(
     } else if (Array.isArray(rawName)) {
       filteredPersonData.name = rawName;
     } else if (typeof rawName === 'object') {
-      const obj = rawName as Record<string, unknown>;
       if ('first_name' in obj || 'last_name' in obj || 'full_name' in obj) {
         filteredPersonData.name = [obj];
       }
@@ -146,9 +114,7 @@ export function normalizePersonValues(
   }
 
   // 2) Emails: Attio create accepts string array; prefer plain strings
-  const rawEmails = input.email_addresses;
   if (Array.isArray(rawEmails) && rawEmails.length) {
-    const normalized = rawEmails.map((e: unknown) =>
       e && typeof e === 'object' && e !== null && 'email_address' in e
         ? String((e as Record<string, unknown>).email_address)
         : String(e)
@@ -172,16 +138,10 @@ export function normalizePersonValues(
 
   if (!filteredPersonData.name) {
     // Derive a safe name from email local part
-    const emailAddresses = filteredPersonData.email_addresses as string[];
-    const firstEmail = emailAddresses[0] || '';
-    const local =
       typeof firstEmail === 'string' ? firstEmail.split('@')[0] : 'Test Person';
-    const parts = local
       .replace(/[^a-zA-Z]+/g, ' ')
       .trim()
       .split(/\s+/);
-    const first = parts[0] || 'Test';
-    const last = parts.slice(1).join(' ') || 'User';
     filteredPersonData.name = [
       {
         first_name: first,
@@ -216,12 +176,11 @@ export function normalizePersonValues(
  * @returns AttioRecord with both nested values and flat field compatibility
  */
 export function convertTaskToAttioRecord(
-  createdTask: any,
+  createdTask: unknown,
   originalInput: Record<string, unknown>
 ): AttioRecord {
   // Handle conversion from AttioTask to AttioRecord format
   if (createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
-    const task = createdTask as any;
 
     // If it's already an AttioRecord with record_id, ensure flat fields exist and return
     if (task.values && task.id?.record_id) {

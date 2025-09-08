@@ -6,13 +6,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { validateFilters } from '../../src/utils/filters/validation-utils.js';
+
 import { FilterValidationError } from '../../src/errors/api-errors.js';
+import { validateFilters } from '../../src/utils/filters/validation-utils.js';
 
 describe('Advanced Search Filter Documentation', () => {
   describe('Valid Filter Patterns (from README examples)', () => {
     it('should accept single filter format', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -26,7 +26,6 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should accept multiple filters format (AND logic)', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -45,7 +44,6 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should accept OR logic format', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -65,7 +63,6 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should accept all supported conditions', () => {
-      const supportedConditions = [
         'contains',
         'equals',
         'starts_with',
@@ -77,7 +74,6 @@ describe('Advanced Search Filter Documentation', () => {
       ];
 
       for (const condition of supportedConditions) {
-        const filters = {
           filters: [
             {
               attribute: { slug: 'name' },
@@ -94,7 +90,6 @@ describe('Advanced Search Filter Documentation', () => {
 
   describe('Error Messages (from Issue #512)', () => {
     it('should provide helpful error when filters property is missing', () => {
-      const invalidFilters = {
         // Missing "filters" array property
         name: { operator: 'contains', value: 'Test' },
       };
@@ -115,7 +110,6 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should provide helpful error when filters is not an array', () => {
-      const invalidFilters = {
         filters: {
           // Should be array, not object
           name: { operator: 'contains', value: 'Test' },
@@ -135,7 +129,6 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should provide context when all filters are invalid', () => {
-      const invalidFilters = {
         filters: [
           {
             // Missing required properties
@@ -161,7 +154,6 @@ describe('Advanced Search Filter Documentation', () => {
 
   describe('Common Field Names (from README)', () => {
     it('should accept common company field names', () => {
-      const companyFields = [
         'name',
         'website',
         'industry',
@@ -170,7 +162,6 @@ describe('Advanced Search Filter Documentation', () => {
       ];
 
       for (const field of companyFields) {
-        const filters = {
           filters: [
             {
               attribute: { slug: field },
@@ -185,10 +176,8 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should accept common people field names', () => {
-      const peopleFields = ['full_name', 'email', 'job_title', 'company'];
 
       for (const field of peopleFields) {
-        const filters = {
           filters: [
             {
               attribute: { slug: field },
@@ -203,10 +192,8 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should accept common task field names', () => {
-      const taskFields = ['content', 'status', 'due_date', 'assignee'];
 
       for (const field of taskFields) {
-        const filters = {
           filters: [
             {
               attribute: { slug: field },
@@ -223,7 +210,6 @@ describe('Advanced Search Filter Documentation', () => {
 
   describe('Filter Structure Validation', () => {
     it('should require attribute object', () => {
-      const invalidFilters = {
         filters: [
           {
             // Missing attribute object
@@ -237,7 +223,6 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should require attribute.slug property', () => {
-      const invalidFilters = {
         filters: [
           {
             attribute: {}, // Missing slug
@@ -251,7 +236,6 @@ describe('Advanced Search Filter Documentation', () => {
     });
 
     it('should require condition property', () => {
-      const invalidFilters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -268,7 +252,6 @@ describe('Advanced Search Filter Documentation', () => {
   describe('QA Test Case TC-009.1 Scenario', () => {
     it('should handle the original failing test case with clear guidance', () => {
       // This is the exact format that was failing in QA Test Case TC-009.1
-      const originalFailingFormat = {
         query: 'QA',
         filters: {
           name: {
@@ -296,7 +279,6 @@ describe('Advanced Search Filter Documentation', () => {
 
     it('should accept the corrected format from the issue description', () => {
       // This is the correct format from the issue description
-      const correctedFormat = {
         filters: [
           {
             attribute: { slug: 'name' },

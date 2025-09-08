@@ -9,10 +9,10 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { execSync } from 'child_process';
+import { MCPTestClient } from 'mcp-test-client';
 import { writeFileSync } from 'fs';
+import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 interface PlaybookTestResult {
   success: boolean;
@@ -39,7 +39,6 @@ describe('Sales Playbook Validation Suite', () => {
     await client.cleanup();
 
     // Analyze failures and create reports
-    const failures = testResults.filter((result) => !result.success);
     if (failures.length > 0) {
       console.log(
         `\n📋 Analyzing ${failures.length} failed playbook examples...`
@@ -51,7 +50,6 @@ describe('Sales Playbook Validation Suite', () => {
     }
 
     // Print test summary
-    const successCount = testResults.filter((r) => r.success).length;
     console.log(
       `\n📊 Test Summary: ${successCount}/${testResults.length} playbook examples passed`
     );
@@ -59,12 +57,9 @@ describe('Sales Playbook Validation Suite', () => {
 
   describe('🎯 Quick Start Examples', () => {
     it('should execute the main pipeline review prompt from playbook Quick Start', async () => {
-      const prompt =
         'Show me my current sales pipeline with all open opportunities. Include company name, deal value, current stage, last activity date, and next steps. Help me identify which deals need immediate attention and what actions I should prioritize today.';
-      const expectedOutcome =
         'A prioritized list of active deals with clear next actions';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -82,10 +77,7 @@ describe('Sales Playbook Validation Suite', () => {
 
   describe('🌅 Daily Sales Activities', () => {
     it('should find deals with no recent activity (Deal Status Check)', async () => {
-      const prompt = 'Show me deals with no activity in the last 7 days';
-      const expectedOutcome = 'List of stale deals needing attention';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -102,10 +94,7 @@ describe('Sales Playbook Validation Suite', () => {
     });
 
     it('should find tasks scheduled for today (Action Items)', async () => {
-      const prompt = 'Show me scheduled calls and meetings for today';
-      const expectedOutcome = "Today's scheduled activities";
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -121,11 +110,8 @@ describe('Sales Playbook Validation Suite', () => {
     });
 
     it('should find new leads to contact (Prospect Outreach)', async () => {
-      const prompt =
         'Show me new leads added in the last 7 days that need first contact';
-      const expectedOutcome = 'Recent leads for outreach prioritization';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -143,11 +129,8 @@ describe('Sales Playbook Validation Suite', () => {
 
   describe('📈 Weekly Pipeline Management', () => {
     it('should analyze high-value deals (Pipeline Forecasting)', async () => {
-      const prompt =
         'Show me deals over $10,000 for revenue projection analysis';
-      const expectedOutcome = 'High-value opportunities for forecasting';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -170,11 +153,8 @@ describe('Sales Playbook Validation Suite', () => {
     });
 
     it('should find companies with multiple contacts (Account Development)', async () => {
-      const prompt =
         'Show me companies where we have 2+ contacts for relationship mapping';
-      const expectedOutcome = 'Companies with good relationship coverage';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -192,11 +172,8 @@ describe('Sales Playbook Validation Suite', () => {
 
   describe('🕵️ Market Research & Competitive Analysis', () => {
     it('should find competitive mentions in records (Competitive Tracking)', async () => {
-      const prompt =
         'Search through our notes and deal records for mentions of competitors';
-      const expectedOutcome = 'Deals with competitive intelligence';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-records',
@@ -212,11 +189,8 @@ describe('Sales Playbook Validation Suite', () => {
     });
 
     it('should find lost deals for analysis (Lost Deal Analysis)', async () => {
-      const prompt =
         'Find deals marked as lost or closed-lost in the last 90 days';
-      const expectedOutcome = 'Recent losses for pattern analysis';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -239,10 +213,7 @@ describe('Sales Playbook Validation Suite', () => {
     });
 
     it('should analyze won deals by industry (Industry Performance)', async () => {
-      const prompt = 'Show me all won deals grouped by industry/company type';
-      const expectedOutcome = 'Industry performance analysis data';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'advanced-search',
@@ -267,11 +238,8 @@ describe('Sales Playbook Validation Suite', () => {
 
   describe('🚀 Deal-Specific Workflows', () => {
     it('should identify stalled deals needing attention (Deal Recovery)', async () => {
-      const prompt =
         'Find deals with no activity in 2+ weeks that may be stalled';
-      const expectedOutcome = 'Stalled deals for re-engagement';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -288,10 +256,7 @@ describe('Sales Playbook Validation Suite', () => {
     });
 
     it('should find prospects for re-engagement (Lead Nurturing)', async () => {
-      const prompt = "Show me prospects who haven't been contacted in 30+ days";
-      const expectedOutcome = 'Prospects needing re-engagement';
 
-      const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
         'search-by-timeframe',
@@ -315,7 +280,6 @@ describe('Sales Playbook Validation Suite', () => {
     toolName: string,
     toolParams: Record<string, unknown>
   ): Promise<PlaybookTestResult> {
-    const startTime = performance.now();
 
     try {
       console.log(
@@ -331,8 +295,6 @@ describe('Sales Playbook Validation Suite', () => {
         toolParams,
         (toolResult: ToolResult) => {
           result = toolResult;
-          const endTime = performance.now();
-          const duration = endTime - startTime;
 
           console.log(`⏱️ Execution time: ${duration.toFixed(2)}ms`);
 
@@ -343,7 +305,6 @@ describe('Sales Playbook Validation Suite', () => {
 
           console.log('✅ Tool executed successfully');
           if (toolResult.content && toolResult.content.length > 0) {
-            const content = toolResult.content[0];
             if ('text' in content) {
               console.log(
                 `📄 Result preview: ${content.text.substring(0, 200)}...`
@@ -355,8 +316,6 @@ describe('Sales Playbook Validation Suite', () => {
         }
       );
 
-      const endTime = performance.now();
-      const duration = endTime - startTime;
 
       return {
         success: !result?.isError,
@@ -366,8 +325,6 @@ describe('Sales Playbook Validation Suite', () => {
         duration,
       };
     } catch (error) {
-      const endTime = performance.now();
-      const duration = endTime - startTime;
 
       console.error('❌ Test execution failed:', error);
 
@@ -382,8 +339,6 @@ describe('Sales Playbook Validation Suite', () => {
   }
 
   async function createFailureAnalysisReport(failures: PlaybookTestResult[]) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportPath = `/tmp/sales-playbook-failures-${timestamp}.md`;
 
     let report = `# Sales Playbook Validation Failure Analysis
 
@@ -464,10 +419,7 @@ describe('Sales Playbook Validation Suite', () => {
   }
 
   async function createSingleGitHubIssue(failures: PlaybookTestResult[]) {
-    const title = `Sales Playbook Validation: ${failures.length} Examples Failed`;
-    const timestamp = new Date().toISOString();
 
-    const body = `## Sales Playbook Validation Results
 
 **Test Date:** ${timestamp}  
 **Failed Examples:** ${failures.length}/${testResults.length}  

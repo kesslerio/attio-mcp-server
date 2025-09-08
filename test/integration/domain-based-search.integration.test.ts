@@ -2,10 +2,7 @@
  * Integration tests for domain-based company search enhancement
  */
 import { describe, test, beforeAll } from 'vitest';
-import {
-  searchCompanies,
-  searchCompaniesByDomain,
-} from '../../src/objects/companies/index.js';
+
 import { extractDomain } from '../../src/utils/domain-utils.js';
 
 describe('Domain-Based Company Search Integration', () => {
@@ -22,19 +19,15 @@ describe('Domain-Based Company Search Integration', () => {
         return;
       }
 
-      const domainQuery = 'stripe.com';
-      const results = await searchCompanies(domainQuery);
 
       expect(Array.isArray(results)).toBe(true);
 
       // If results found, verify structure
       if (results.length > 0) {
-        const firstResult = results[0];
         expect(firstResult).toHaveProperty('id');
         expect(firstResult).toHaveProperty('values');
 
         // Check if domain matches appear first (if any companies with stripe.com exist)
-        const hasStripeResults = results.some((company) =>
           company.values?.website?.includes('stripe.com')
         );
 
@@ -50,14 +43,11 @@ describe('Domain-Based Company Search Integration', () => {
         return;
       }
 
-      const nameQuery = 'Technology';
-      const results = await searchCompanies(nameQuery);
 
       expect(Array.isArray(results)).toBe(true);
 
       // Should work normally for name-based queries
       if (results.length > 0) {
-        const firstResult = results[0];
         expect(firstResult).toHaveProperty('id');
         expect(firstResult).toHaveProperty('values');
       }
@@ -72,13 +62,10 @@ describe('Domain-Based Company Search Integration', () => {
       }
 
       // Test with a common domain that likely exists
-      const domain = 'github.com';
-      const results = await searchCompaniesByDomain(domain);
 
       expect(Array.isArray(results)).toBe(true);
 
       if (results.length > 0) {
-        const firstResult = results[0];
         expect(firstResult).toHaveProperty('id');
         expect(firstResult).toHaveProperty('values');
 
@@ -93,13 +80,10 @@ describe('Domain-Based Company Search Integration', () => {
         return;
       }
 
-      const unnormalizedDomain = 'WWW.GitHub.COM';
-      const results = await searchCompaniesByDomain(unnormalizedDomain);
 
       expect(Array.isArray(results)).toBe(true);
 
       // Should work the same as normalized domain
-      const normalizedResults = await searchCompaniesByDomain('github.com');
       expect(results.length).toBe(normalizedResults.length);
     }, 30000);
   });
@@ -111,13 +95,10 @@ describe('Domain-Based Company Search Integration', () => {
         return;
       }
 
-      const mixedQuery = 'stripe.com payment processing';
-      const results = await searchCompanies(mixedQuery);
 
       expect(Array.isArray(results)).toBe(true);
 
       if (results.length > 0) {
-        const firstResult = results[0];
         expect(firstResult).toHaveProperty('id');
         expect(firstResult).toHaveProperty('values');
 
@@ -133,8 +114,6 @@ describe('Domain-Based Company Search Integration', () => {
         return;
       }
 
-      const complexQuery = 'Contact support@github.com or visit stripe.com';
-      const results = await searchCompanies(complexQuery);
 
       expect(Array.isArray(results)).toBe(true);
 
@@ -149,7 +128,6 @@ describe('Domain-Based Company Search Integration', () => {
 
   describe('Domain extraction utility integration', () => {
     test('should extract domains correctly in search context', () => {
-      const testCases = [
         { input: 'stripe.com', expected: 'stripe.com' },
         { input: 'https://github.com', expected: 'github.com' },
         { input: 'support@example.com', expected: 'example.com' },
@@ -158,7 +136,6 @@ describe('Domain-Based Company Search Integration', () => {
       ];
 
       testCases.forEach(({ input, expected }) => {
-        const result = extractDomain(input);
         expect(result).toBe(expected);
       });
     });

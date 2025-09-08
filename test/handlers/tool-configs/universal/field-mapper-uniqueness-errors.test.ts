@@ -2,8 +2,9 @@
  * Split: field-mapper – uniqueness error enhancement
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
+
 import { enhanceUniquenessError } from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
+import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 
 // Matches original mocks
 vi.mock('../../../../src/api/attio-client.js', () => ({
@@ -37,7 +38,6 @@ describe('field-mapper – uniqueness error enhancement', () => {
   });
 
   it('returns original message when no attribute ID pattern found', async () => {
-    const result = await enhanceUniquenessError(
       UniversalResourceType.COMPANIES,
       'Uniqueness constraint violation on field "name"',
       { name: 'Duplicate Corp' }
@@ -46,7 +46,6 @@ describe('field-mapper – uniqueness error enhancement', () => {
   });
 
   it('returns original message when field cannot be extracted', async () => {
-    const result = await enhanceUniquenessError(
       UniversalResourceType.COMPANIES,
       'Generic uniqueness error',
       { name: 'Test Corp' }
@@ -55,7 +54,6 @@ describe('field-mapper – uniqueness error enhancement', () => {
   });
 
   it('attempts enhancement with attribute ID pattern', async () => {
-    const result = await enhanceUniquenessError(
       UniversalResourceType.COMPANIES,
       'Uniqueness constraint violation for attribute with ID "company-name"',
       { name: 'Test Corp' }

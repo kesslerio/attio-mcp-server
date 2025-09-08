@@ -3,9 +3,9 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
-import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
 import { attrHas } from '../validators/helpers.js';
+import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
+import { UniversalResourceType } from '../types.js';
 
 /**
  * Maps an incorrect field name to the correct one for a resource type
@@ -16,7 +16,6 @@ export async function mapFieldName(
   fieldName: string,
   availableAttributes?: string[]
 ): Promise<string> {
-  const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return fieldName;
   }
@@ -28,7 +27,6 @@ export async function mapFieldName(
   }
 
   // Check if there's a direct mapping
-  const mappedField = mapping.fieldMappings[fieldName.toLowerCase()] || null;
 
   // If mapped to null, it means the field doesn't exist
   if (mappedField === null) {

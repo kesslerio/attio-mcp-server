@@ -5,10 +5,10 @@
  * based on environment flags. Provides single point of service selection logic.
  */
 
-import type { CreateService, CreateServiceFactory } from './types.js';
 import { AttioCreateService } from './attio-create.service.js';
-import { MockCreateService } from './mock-create.service.js';
 import { debug } from '../../utils/logger.js';
+import { MockCreateService } from './mock-create.service.js';
+import type { CreateService, CreateServiceFactory } from './types.js';
 
 /**
  * Determines if mock data should be used based on environment flags
@@ -23,7 +23,6 @@ export function shouldUseMockData(): boolean {
   if (process.env.E2E_MODE === 'true') return false;
 
   // Offline/perf/unit tests (NODE_ENV=test) use mocks by default
-  const result =
     process.env.OFFLINE_MODE === 'true' ||
     process.env.PERFORMANCE_TEST === 'true' ||
     process.env.NODE_ENV === 'test';
@@ -48,7 +47,6 @@ export function shouldUseMockData(): boolean {
  * @throws Error if real API requested but no ATTIO_API_KEY available
  */
 export function getCreateService(): CreateService {
-  const useMocks = shouldUseMockData();
 
   if (useMocks) {
     debug('CreateServiceFactory', 'Selected MockCreateService');

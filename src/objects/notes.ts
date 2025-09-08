@@ -5,13 +5,9 @@
  * They link to records via parent_object + parent_record_id
  */
 
-import { getAttioClient } from '../api/attio-client.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
 import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
 import { debug } from '../utils/logger.js';
+import { getAttioClient } from '../api/attio-client.js';
 
 /**
  * Create note body for Attio API
@@ -97,12 +93,9 @@ export async function createNote(
     );
   }
 
-  const api = getAttioClient();
-
   try {
-    const response = await api.post('/notes', { data: body });
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     debug('notes', 'Create note failed', { error: error.message });
 
     // Map HTTP errors to universal validation errors
@@ -134,25 +127,20 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
 }> {
   debug('notes', 'Listing notes', query);
 
-  const api = getAttioClient();
-
   try {
     // Always use the official /notes endpoint with query params.
     // Some environments may not support record-scoped endpoints like
     // /objects/{object}/records/{record}/notes, which can 404.
     // The /notes endpoint accepts filters (parent_object, parent_record_id)
     // and returns an empty array when no notes exist.
-    const response = await api.get('/notes', { params: query });
-    const res = response.data ?? { data: [] };
     // Ensure shape consistency
     if (!Array.isArray(res.data)) {
       return { data: [], meta: undefined };
     }
     return res;
-  } catch (error: any) {
+  } catch (error: unknown) {
     debug('notes', 'List notes failed', { error: error.message });
     // Prefer returning an empty list on benign 404s for list operations
-    const status = error?.response?.status;
     if (status === 404) {
       return { data: [], meta: undefined };
     }
@@ -174,12 +162,9 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
     );
   }
 
-  const api = getAttioClient();
-
   try {
-    const response = await api.get(`/notes/${noteId}`);
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     debug('notes', 'Get note failed', { error: error.message });
 
     if (error.response?.status === 404) {
@@ -206,12 +191,10 @@ export async function deleteNote(
     );
   }
 
-  const api = getAttioClient();
-
   try {
     await api.delete(`/notes/${noteId}`);
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     debug('notes', 'Delete note failed', { error: error.message });
 
     if (error.response?.status === 404) {

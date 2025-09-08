@@ -11,9 +11,9 @@
  * Replaces the hardcoded mock data previously embedded in production handlers.
  */
 
-import type { AttioTask } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
+import type { AttioTask } from '../../../src/types/attio.js';
 
 /**
  * Interface for mock task factory options
@@ -90,9 +90,6 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
     identifier: string,
     overrides: MockTaskOptions = {}
   ): AttioTask {
-    const taskId = UUIDMockGenerator.generateTaskUUID(identifier);
-    const now = new Date().toISOString();
-    const content = overrides.content || overrides.title || 'Mock Task Content';
 
     // Issue #480: Generate both content and title for test compatibility
     // This ensures E2E tests that expect either field will work
@@ -143,9 +140,6 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
    * @returns Mock AttioTask matching API response format
    */
   static create(overrides: MockTaskOptions = {}): AttioTask {
-    const taskId = this.generateMockId();
-    const now = new Date().toISOString();
-    const content = overrides.content || overrides.title || 'Mock Task Content';
 
     // Issue #480: Generate both content and title for test compatibility
     // This ensures E2E tests that expect either field will work
@@ -164,7 +158,6 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
 
     // Handle optional fields
     if (overrides.deadline_at || overrides.due_date) {
-      const d = overrides.deadline_at || overrides.due_date || undefined;
       if (d !== undefined && d !== null) {
         baseTask.due_date = d as string;
       }
@@ -228,7 +221,6 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
     overrides: MockTaskOptions = {}
   ): AttioTask[] {
     return Array.from({ length: count }, (_, index) => {
-      const taskNumber = index + 1;
       return this.create({
         ...overrides,
         content: overrides.content || `Mock Task ${taskNumber}`,
@@ -289,7 +281,6 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
     recordIds: string[],
     overrides: MockTaskOptions = {}
   ): AttioTask {
-    const linkedRecords = recordIds.map((recordId, index) => ({
       id: recordId,
       object_id: 'mock-object',
       object_slug: index % 2 === 0 ? 'companies' : 'people',
@@ -306,7 +297,6 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
    * Creates a task with due date in the past (overdue)
    */
   static createOverdue(overrides: MockTaskOptions = {}): AttioTask {
-    const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - 7); // 7 days ago
 
     return this.create({
@@ -345,7 +335,6 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
    * Private helper to generate future due dates
    */
   private static generateFutureDueDate(offset: number = 0): string {
-    const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + offset + 1); // Start from tomorrow
     return futureDate.toISOString().split('T')[0];
   }

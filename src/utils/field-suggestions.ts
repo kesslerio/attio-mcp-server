@@ -56,16 +56,13 @@ export function findSimilarOptions(
     return [];
   }
 
-  const normalizedInput = input.toLowerCase().trim();
 
   // Calculate distances for all options
-  const distances = validOptions.map((option) => ({
     option,
     distance: levenshteinDistance(normalizedInput, option.toLowerCase()),
   }));
 
   // Filter by threshold and sort by distance
-  const suggestions = distances
     .filter((d) => d.distance <= threshold)
     .sort((a, b) => a.distance - b.distance)
     .slice(0, maxSuggestions)
@@ -73,7 +70,6 @@ export function findSimilarOptions(
 
   // If no suggestions found with Levenshtein, try substring matching
   if (suggestions.length === 0) {
-    const substringMatches = validOptions.filter(
       (option) =>
         option.toLowerCase().includes(normalizedInput) ||
         normalizedInput.includes(option.toLowerCase())
@@ -96,7 +92,6 @@ export function generateFieldSuggestionMessage(
   validFields: string[],
   context?: string
 ): string {
-  const suggestions = findSimilarOptions(fieldName, validFields);
 
   let message = `Invalid field name: "${fieldName}"`;
 
@@ -108,7 +103,6 @@ export function generateFieldSuggestionMessage(
     message += `. Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?`;
   } else if (validFields.length > 0) {
     // Show first few valid fields if no close matches found
-    const preview = validFields.slice(0, 5);
     message += `. Valid fields include: ${preview.map((f) => `"${f}"`).join(', ')}`;
     if (validFields.length > 5) {
       message += ` (and ${validFields.length - 5} more)`;
@@ -130,8 +124,6 @@ export function generateEnumSuggestionMessage(
   validValues: string[],
   fieldName: string
 ): string {
-  const valueStr = String(value);
-  const suggestions = findSimilarOptions(valueStr, validValues, 2, 2);
 
   let message = `Invalid value "${valueStr}" for field "${fieldName}"`;
 
@@ -144,7 +136,6 @@ export function generateEnumSuggestionMessage(
     message += ` Valid options are: ${validValues.map((v) => `"${v}"`).join(', ')}.`;
   } else {
     // For large sets, show a subset
-    const preview = validValues.slice(0, 5);
     message += ` Valid options include: ${preview.map((v) => `"${v}"`).join(', ')} (and ${validValues.length - 5} more).`;
   }
 
@@ -174,7 +165,6 @@ export function generateResourceTypeSuggestionMessage(
   resourceType: string,
   validTypes: string[]
 ): string {
-  const suggestions = findSimilarOptions(resourceType, validTypes, 3, 5); // Increase threshold for resource types
 
   let message = `Invalid resource type: "${resourceType}"`;
 
@@ -251,7 +241,6 @@ export const FIELD_NAME_MAPPINGS: Record<string, string> = {
  * @returns The suggested correct field name or null
  */
 export function getMappedFieldName(fieldName: string): string | null {
-  const normalized = fieldName.toLowerCase().replace(/[- ]/g, '_');
   return FIELD_NAME_MAPPINGS[normalized] || null;
 }
 
@@ -272,7 +261,6 @@ export function validateFieldWithSuggestions(
   // Check if field exists
   if (!validFields.includes(fieldName)) {
     // Check for common mapping
-    const mappedName = getMappedFieldName(fieldName);
     if (mappedName && validFields.includes(mappedName)) {
       return {
         valid: false,

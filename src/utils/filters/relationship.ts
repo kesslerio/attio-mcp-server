@@ -4,11 +4,7 @@
  */
 
 // External dependencies
-import {
-  FilterValidationError,
-  RelationshipFilterError,
-  ListRelationshipError,
-} from '../../errors/api-errors.js';
+import { createEqualsFilter } from './builders.js';
 
 // Internal module dependencies
 import {
@@ -40,7 +36,7 @@ import {
  * @throws RelationshipRateLimitError if rate limit exceeded
  */
 export function applyRateLimit(
-  req: any,
+  req: unknown,
   relationshipType: string,
   _isPrecheck?: boolean
 ): void {
@@ -69,7 +65,6 @@ function createRelationshipFilter(
   config: RelationshipFilterConfig
 ): ListEntryFilters {
   // Map our ResourceType to Attio API object names
-  const getObjectName = (type: ResourceType): string => {
     switch (type) {
       case ResourceType.PEOPLE:
         return 'people';
@@ -160,7 +155,6 @@ export function createPeopleByCompanyFilter(
     }
 
     // Otherwise, wrap in a FilterValidationError
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create people-by-company filter: ${errorMessage}`
     );
@@ -222,7 +216,6 @@ export function createCompaniesByPeopleFilter(
     }
 
     // Otherwise, wrap in a FilterValidationError
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create companies-by-people filter: ${errorMessage}`
     );
@@ -243,13 +236,12 @@ export function createCompaniesByPeopleFilter(
 export function createRecordsByListFilter(
   resourceType: ResourceType,
   listId: string,
-  req?: any,
+  req?: unknown,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
     // Check cache first if caching is enabled
     if (useCache) {
-      const cachedFilter = getCachedListFilter(listId, resourceType);
       if (cachedFilter) {
         return cachedFilter;
       }
@@ -281,7 +273,6 @@ export function createRecordsByListFilter(
     };
 
     // Convert to an Attio API compatible filter
-    const result = createRelationshipFilter(relationshipConfig);
 
     // Cache the result if caching is enabled
     if (useCache) {
@@ -304,7 +295,6 @@ export function createRecordsByListFilter(
     }
 
     // Otherwise, wrap in a FilterValidationError
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create records-by-list filter: ${errorMessage}`
     );
@@ -323,12 +313,11 @@ export function createRecordsByListFilter(
  */
 export function createPeopleByCompanyListFilter(
   listId: string,
-  req?: any,
+  req?: unknown,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
     // Create a cache key for this nested relationship
-    const cacheKey = {
       relationshipType: RelationshipType.WORKS_AT,
       sourceType: ResourceType.PEOPLE,
       targetType: ResourceType.COMPANIES,
@@ -339,7 +328,6 @@ export function createPeopleByCompanyListFilter(
 
     // Check cache first if caching is enabled
     if (useCache) {
-      const cachedFilter = getCachedRelationshipFilter(cacheKey);
       if (cachedFilter) {
         return cachedFilter;
       }
@@ -361,7 +349,6 @@ export function createPeopleByCompanyListFilter(
     }
 
     // First, create a filter for companies in the list
-    const companiesInListFilter = createRecordsByListFilter(
       ResourceType.COMPANIES,
       listId,
       undefined,
@@ -372,7 +359,6 @@ export function createPeopleByCompanyListFilter(
     cacheKey.targetFilterHash = hashFilters(companiesInListFilter);
 
     // Then, create a filter for people who work at those companies
-    const result = createPeopleByCompanyFilter(companiesInListFilter);
 
     // Cache the result if caching is enabled
     if (useCache) {
@@ -386,7 +372,6 @@ export function createPeopleByCompanyListFilter(
       throw error;
     }
 
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create people-by-company-list filter: ${errorMessage}`
     );
@@ -405,12 +390,11 @@ export function createPeopleByCompanyListFilter(
  */
 export function createCompaniesByPeopleListFilter(
   listId: string,
-  req?: any,
+  req?: unknown,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
     // Create a cache key for this nested relationship
-    const cacheKey = {
       relationshipType: RelationshipType.EMPLOYS,
       sourceType: ResourceType.COMPANIES,
       targetType: ResourceType.PEOPLE,
@@ -421,7 +405,6 @@ export function createCompaniesByPeopleListFilter(
 
     // Check cache first if caching is enabled
     if (useCache) {
-      const cachedFilter = getCachedRelationshipFilter(cacheKey);
       if (cachedFilter) {
         return cachedFilter;
       }
@@ -443,7 +426,6 @@ export function createCompaniesByPeopleListFilter(
     }
 
     // First, create a filter for people in the list
-    const peopleInListFilter = createRecordsByListFilter(
       ResourceType.PEOPLE,
       listId,
       undefined,
@@ -454,7 +436,6 @@ export function createCompaniesByPeopleListFilter(
     cacheKey.targetFilterHash = hashFilters(peopleInListFilter);
 
     // Then, create a filter for companies that have those people
-    const result = createCompaniesByPeopleFilter(peopleInListFilter);
 
     // Cache the result if caching is enabled
     if (useCache) {
@@ -468,7 +449,6 @@ export function createCompaniesByPeopleListFilter(
       throw error;
     }
 
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create companies-by-people-list filter: ${errorMessage}`
     );
@@ -525,7 +505,6 @@ export function createRecordsByNotesFilter(
       throw error;
     }
 
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create records-by-notes filter: ${errorMessage}`
     );

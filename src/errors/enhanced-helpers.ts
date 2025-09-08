@@ -16,7 +16,6 @@ export function isEnhancedApiError(e: unknown): e is EnhancedApiErrorLike {
     return false;
   }
 
-  const errorObj = e as Record<string, unknown>;
   return (
     errorObj.name === 'EnhancedApiError' ||
     // Check if it has the typical EnhancedApiError properties (from real class or mock)
@@ -28,7 +27,6 @@ export function isEnhancedApiError(e: unknown): e is EnhancedApiErrorLike {
 
 export function withEnumerableMessage<T extends Error>(e: T): T {
   try {
-    const desc = Object.getOwnPropertyDescriptor(e, 'message');
     if (!desc || desc.enumerable !== true) {
       Object.defineProperty(e, 'message', {
         value: e.message,
@@ -49,13 +47,10 @@ export function ensureEnhanced(
 ): EnhancedApiErrorLike {
   if (isEnhancedApiError(e)) {
     // Enrich context and return as-is
-    const enhanced = e as EnhancedApiErrorLike;
     enhanced.context = { ...enhanced.context, ...ctx };
     return enhanced;
   }
 
-  const errorObj = e as Record<string, unknown>;
-  const err = new Error(
     (errorObj?.message as string) ?? String(e)
   ) as EnhancedApiErrorLike;
   err.name = 'EnhancedApiError';

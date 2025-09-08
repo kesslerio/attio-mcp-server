@@ -8,20 +8,13 @@
  * Purpose: Ensure our customer success playbooks are practical and deliver promised value.
  */
 import { describe, it, afterAll } from 'vitest';
+
 import { PlaybookTestResult, ValidationLevel } from './shared/types.js';
-import { 
-  createFailureAnalysisReport, 
-  createSingleGitHubIssue, 
-  createEnhancedValidationReport,
-  getValidationLevelEmoji 
-} from './shared/reporting.js';
 
 // Import test suites - these will run when imported
 import './suites/quick-start.test.js';
 import './suites/customer-journey.test.js';
 
-const CS_ENABLED = process.env.CS_E2E_ENABLE === 'true';
-const suiteFn = CS_ENABLED ? describe : describe.skip;
 
 suiteFn('Customer Success Playbook Validation Suite - Orchestrator', () => {
   afterAll(async () => {
@@ -29,8 +22,6 @@ suiteFn('Customer Success Playbook Validation Suite - Orchestrator', () => {
     const allResults: PlaybookTestResult[] = [];
     
     // Get results from individual suites (stored in global)
-    const quickStartResults = (global as any).quickStartResults || [];
-    const customerJourneyResults = (global as any).customerJourneyResults || [];
     
     allResults.push(...quickStartResults, ...customerJourneyResults);
 
@@ -40,10 +31,7 @@ suiteFn('Customer Success Playbook Validation Suite - Orchestrator', () => {
     }
 
     // Enhanced analysis with validation levels
-    const failures = allResults.filter((result) => !result.success);
-    const partialSuccesses = allResults.filter((result) => 
       result.validationLevel === ValidationLevel.PARTIAL_SUCCESS);
-    const fullSuccesses = allResults.filter((result) => 
       result.validationLevel === ValidationLevel.FULL_SUCCESS);
 
     console.log('\n📊 Final Customer Success Playbook Summary:');
@@ -67,21 +55,16 @@ suiteFn('Customer Success Playbook Validation Suite - Orchestrator', () => {
     }
 
     // Print validation breakdown
-    const validationBreakdown = allResults.reduce((acc, result) => {
-      const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
       acc[level] = (acc[level] || 0) + 1;
       return acc;
     }, {} as Record<ValidationLevel, number>);
 
     console.log('\n🔍 Final Validation Level Breakdown:');
     Object.entries(validationBreakdown).forEach(([level, count]) => {
-      const emoji = getValidationLevelEmoji(level as ValidationLevel);
       console.log(`   ${emoji} ${level}: ${count}`);
     });
 
     // Performance summary
-    const avgDuration = allResults.reduce((sum, result) => sum + result.duration, 0) / allResults.length;
-    const slowTests = allResults.filter(result => result.duration > 2000);
     
     console.log('\n⏱️  Performance Summary:');
     console.log(`   📊 Average Duration: ${avgDuration.toFixed(2)}ms`);
@@ -99,8 +82,6 @@ suiteFn('Customer Success Playbook Validation Suite - Orchestrator', () => {
     console.log(`   📊 Total Tests: ${allResults.length}`);
     
     // Quality gate assessment
-    const successRate = ((allResults.length - failures.length) / allResults.length) * 100;
-    const qualityGate = successRate >= 75 ? '✅ PASSED' : '❌ FAILED';
     console.log(`\n🎯 Quality Gate (75% threshold): ${qualityGate} (${successRate.toFixed(1)}%)`);
     
     if (successRate < 75) {

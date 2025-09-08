@@ -9,26 +9,6 @@
  * in the project.
  */
 
-import {
-  UniversalResourceType,
-  DetailedInfoType,
-  RelationshipType,
-  ContentSearchType,
-  TimeframeType,
-  BatchOperationType,
-  UniversalSearchParams,
-  UniversalRecordDetailsParams,
-  UniversalCreateParams,
-  UniversalUpdateParams,
-  UniversalDeleteParams,
-  UniversalAttributesParams,
-  UniversalDetailedInfoParams,
-  AdvancedSearchParams,
-  RelationshipSearchParams,
-  ContentSearchParams,
-  TimeframeSearchParams,
-  BatchOperationsParams,
-} from '../../../../../src/handlers/tool-configs/universal/types.js';
 import { TEST_DATA_PATTERNS } from './test-constants.js';
 
 // Base mock record structure following Attio API format
@@ -36,7 +16,7 @@ export interface MockRecord {
   id: {
     record_id: string;
   };
-  values: Record<string, Array<{ value: any; [key: string]: any }>>;
+  values: Record<string, Array<{ value: unknown; [key: string]: unknown }>>;
 }
 
 // Base mock error structure
@@ -64,8 +44,6 @@ export const MockRecordFactory = {
       location: string;
     }> = {}
   ): MockRecord => {
-    const timestamp = TEST_DATA_PATTERNS.timestamp();
-    const id = overrides.id || `comp-${TEST_DATA_PATTERNS.randomId()}`;
 
     return {
       id: { record_id: id },
@@ -93,8 +71,6 @@ export const MockRecordFactory = {
       company?: string;
     }> = {}
   ): MockRecord => {
-    const timestamp = TEST_DATA_PATTERNS.timestamp();
-    const id = overrides.id || `person-${TEST_DATA_PATTERNS.randomId()}`;
 
     return {
       id: { record_id: id },
@@ -123,8 +99,6 @@ export const MockRecordFactory = {
       status?: string;
     }> = {}
   ): MockRecord => {
-    const timestamp = TEST_DATA_PATTERNS.timestamp();
-    const id = overrides.id || `task-${TEST_DATA_PATTERNS.randomId()}`;
 
     return {
       id: { record_id: id },
@@ -164,7 +138,6 @@ export const MockRecordFactory = {
       founded?: string;
     }> = {}
   ): MockRecord => {
-    const base = MockRecordFactory.createCompany(overrides);
 
     if (overrides.employees !== undefined) {
       base.values.employees = [{ value: overrides.employees }];
@@ -358,7 +331,7 @@ export const MockResponseFactory = {
    * Create a batch operation response
    */
   createBatchResponse: (
-    results: Array<{ success: boolean; result?: any; error?: string }>
+    results: Array<{ success: boolean; result?: unknown; error?: string }>
   ) => results,
 
   /**
@@ -428,8 +401,6 @@ export const IntegrationDataFactory = {
    * Generate unique test identifiers for integration tests
    */
   generateTestIdentifiers: () => {
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(7);
 
     return {
       timestamp,
@@ -448,7 +419,6 @@ export const IntegrationDataFactory = {
     count: number,
     prefix: string = 'Perf Test'
   ) => {
-    const timestamp = Date.now();
 
     return Array(count)
       .fill(0)

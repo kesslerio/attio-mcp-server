@@ -2,7 +2,16 @@
  * Core dispatcher module - main tool execution dispatcher with modular operation handlers
  */
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
+import { computeErrorWithContext } from '../../../utils/error-detection.js';
+import { findToolConfig } from '../registry.js';
+import { handleAdvancedSearch } from './operations/advanced-search.js';
+import { handleDetailsOperation } from './operations/details.js';
+import { handleGetListsOperation } from './operations/lists.js';
+import { normalizeToolMsg, canonicalizeResourceType } from './utils.js';
+import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 import { ResourceType } from '../../../types/attio.js';
+import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
 
 // Import utilities
 import {
@@ -106,7 +115,6 @@ import { normalizeToolMsg, canonicalizeResourceType } from './utils.js';
  * @returns Tool execution result
  */
 export async function executeToolRequest(request: CallToolRequest) {
-  const toolName = request.params.name;
 
   // Initialize logging context for this tool execution
   initializeToolContext(toolName);
@@ -117,7 +125,6 @@ export async function executeToolRequest(request: CallToolRequest) {
   // This dispatcher expects normalized requests with proper arguments structure
 
   try {
-    const toolInfo = findToolConfig(toolName);
 
     if (!toolInfo) {
       logToolConfigError(toolName, 'Tool configuration not found');
@@ -153,10 +160,8 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
     } else if (toolType === 'searchByCompany') {
       // Use the tool config's own handler and format the result
-      const rawResult = await (toolConfig as ToolConfig).handler(
         request.params.arguments as unknown as Record<string, unknown>
       );
-      const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
       result = {
@@ -330,7 +335,6 @@ export async function executeToolRequest(request: CallToolRequest) {
       // Handle Universal tools (Issue #352 - Universal tool consolidation)
     } else if (resourceType === ('UNIVERSAL' as any)) {
       // For universal tools, use the tool's own handler directly
-      const args = request.params.arguments as Record<string, unknown>;
 
       // Canonicalize and freeze resource_type to prevent mutation
       if (args && 'resource_type' in args) {
@@ -347,12 +351,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
 
       // If a tool already returned an MCP-shaped object, stop double-wrapping
-      const isMcpResponseLike = (v: any) => {
         return v && typeof v === 'object' && 'content' in v && 'isError' in v;
       };
 
       if (isMcpResponseLike(rawResult)) {
-        const sanitized = sanitizeMcpResponse(rawResult);
         logToolSuccess(toolName, toolType, sanitized, timer);
         return sanitized; // skip detection/formatting, it's already MCP
       }
@@ -371,7 +373,6 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // For E2E tests, return raw JSON data instead of formatted strings
       // This allows tests to parse and validate the actual data structures
-      const isTestRun =
         process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
 
       // (debug logging removed for brevity)
@@ -457,11 +458,9 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // Build a normalized value for detection (pre-stringify)
       // Prefer a tool-specific normalizer if you have it; else use rawResult
-      const detectionTarget =
         (toolConfig as any)?.normalizeForDetection?.(rawResult) ?? rawResult;
 
       // Use explicit error detection instead of string matching
-      const errorAnalysis = computeErrorWithContext(detectionTarget, {
         toolName,
       });
 
@@ -479,14 +478,10 @@ export async function executeToolRequest(request: CallToolRequest) {
           isError: false,
         };
         logToolSuccess(toolName, toolType, result, timer);
-        const sanitized = sanitizeMcpResponse(result);
         return sanitized;
       }
       if (errorAnalysis.isError && errorAnalysis.reason === 'empty_response') {
         // Provide a meaningful error message for empty responses (typically 404s)
-        const args = request.params.arguments as Record<string, unknown>;
-        const recordId = args?.record_id as string;
-        const resourceType = args?.resource_type as string;
         finalFormattedResult = `Record not found: ${recordId || 'unknown ID'} (${resourceType || 'unknown type'})`;
       }
 
@@ -498,8 +493,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === ('GENERAL' as any)) {
       // For general tools, use the tool's own handler directly
-      const args = request.params.arguments as Record<string, unknown>;
-      let handlerArgs: any[] = [];
+      let handlerArgs: unknown[] = [];
 
       // Map arguments based on tool type
       if (
@@ -516,10 +510,8 @@ export async function executeToolRequest(request: CallToolRequest) {
         handlerArgs = [args as any];
       }
 
-      const rawResult = await (toolConfig as ToolConfig).handler(
         ...handlerArgs
       );
-      const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
       result = {
@@ -537,18 +529,14 @@ export async function executeToolRequest(request: CallToolRequest) {
     logToolSuccess(toolName, toolType, result, timer);
 
     // Ensure the response is safely serializable
-    const sanitizedResult = sanitizeMcpResponse(result);
     return sanitizedResult;
   } catch (error: unknown) {
     // Check if this is a structured HTTP response from our services
     if (isHttpResponseLike(error)) {
-      const mcpResult = toMcpResult(error);
-      const sanitizedResult = sanitizeMcpResponse(mcpResult);
       return sanitizedResult;
     }
 
     // Enhanced error handling with structured logging
-    const errorMessage =
       error instanceof Error
         ? error.message
         : typeof error === 'string'
@@ -556,7 +544,6 @@ export async function executeToolRequest(request: CallToolRequest) {
           : 'Unknown error';
 
     // Get additional error details for better debugging
-    const errorDetails = {
       tool: toolName,
       errorType:
         error && typeof error === 'object'
@@ -573,7 +560,6 @@ export async function executeToolRequest(request: CallToolRequest) {
     // 'timer' (PerformanceTimer) from the try block should be used here.
     // If timer is undefined (e.g. error before timer initialization), create a new one.
     // toolType might also be undefined if error occurred before its assignment.
-    const finalTimer = timer
       ? timer
       : new PerformanceTimer(
           'dispatcher_error_fallback',
@@ -590,8 +576,6 @@ export async function executeToolRequest(request: CallToolRequest) {
     );
 
     // Create properly formatted MCP response with detailed error information
-    const normalizedMessage = normalizeToolMsg(errorMessage);
-    const errorResponse = {
       content: [
         {
           type: 'text',

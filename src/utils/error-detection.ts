@@ -37,11 +37,8 @@ export function computeErrorWithContext(
   result: unknown,
   opts?: { toolName?: string; httpStatus?: number }
 ): ErrorAnalysis {
-  const toolName = opts?.toolName;
 
-  const isPlainObject =
     result && typeof result === 'object' && !Array.isArray(result);
-  const isEmptyObject =
     isPlainObject &&
     Object.keys(result as Record<string, unknown>).length === 0;
 
@@ -56,7 +53,6 @@ export function computeErrorWithContext(
   // Handle arrays (bulk ops, list endpoints, etc.)
   if (Array.isArray(result)) {
     // explicit errors inside any element
-    const hasExplicitErr = result.some(
       (r) => r?.error || (Array.isArray(r?.errors) && r.errors.length)
     );
     if (hasExplicitErr)
@@ -90,13 +86,11 @@ export function computeErrorWithContext(
   // Detect Attio API "unknown" record responses (indicates record not found)
   // Attio sometimes returns fake records with id.record_id: 'unknown' instead of 404s
   if (result && typeof result === 'object' && !Array.isArray(result)) {
-    const record = result as Record<string, unknown>;
     if (
       record.id &&
       typeof record.id === 'object' &&
       !Array.isArray(record.id)
     ) {
-      const id = record.id as Record<string, unknown>;
       if (id.record_id === 'unknown') {
         return { isError: true, reason: 'empty_response' as any };
       }
@@ -105,7 +99,6 @@ export function computeErrorWithContext(
 
   // Check for explicit success: false
   if (typeof result === 'object' && result !== null && 'success' in result) {
-    const successField = (result as Record<string, unknown>).success;
     if (successField === false) {
       return { isError: true, reason: 'explicit_success_false' };
     }
@@ -113,7 +106,6 @@ export function computeErrorWithContext(
 
   // Check for meaningful error objects
   if (typeof result === 'object' && result !== null && 'error' in result) {
-    const errorField = (result as Record<string, unknown>).error;
 
     // Error object with message
     if (
@@ -121,7 +113,6 @@ export function computeErrorWithContext(
       typeof errorField === 'object' &&
       'message' in errorField
     ) {
-      const message = (errorField as Record<string, unknown>).message;
       if (typeof message === 'string' && message.trim()) {
         return { isError: true, reason: 'meaningful_error_object' };
       }
@@ -135,15 +126,12 @@ export function computeErrorWithContext(
 
   // Check for errors array with meaningful items
   if (typeof result === 'object' && result !== null && 'errors' in result) {
-    const errorsField = (result as Record<string, unknown>).errors;
 
     if (Array.isArray(errorsField)) {
-      const hasErrors = errorsField.some((err: unknown) => {
         if (!err) return false;
 
         // Error with message
         if (typeof err === 'object' && 'message' in err) {
-          const message = (err as Record<string, unknown>).message;
           return typeof message === 'string' && message.trim();
         }
 
@@ -187,7 +175,6 @@ export function cleanEmptyErrorFields(result: unknown): unknown {
     return result;
   }
 
-  const cleaned = { ...(result as Record<string, unknown>) };
 
   // Remove empty error field
   if ('error' in cleaned && (cleaned.error === '' || cleaned.error === null)) {

@@ -29,7 +29,7 @@ export interface ValidationResult {
   /** Whether the validation was successful */
   valid: boolean;
   /** The converted value (may differ from input if type conversion was applied) */
-  convertedValue?: any;
+  convertedValue?: unknown;
   /** Error message if validation failed */
   error?: string;
 }
@@ -68,7 +68,7 @@ export interface ValidationResult {
  */
 export function validateAttributeValue(
   attributeName: string,
-  value: any,
+  value: unknown,
   expectedType: AttributeType
 ): ValidationResult {
   // Handle null case first
@@ -137,7 +137,6 @@ function validateBooleanValue(
 
   // Auto-conversion cases
   if (typeof value === 'string') {
-    const stringValue = value.toLowerCase().trim();
 
     // Reject empty strings explicitly
     if (stringValue === '') {
@@ -219,7 +218,6 @@ function validateNumberValue(
 
   // Auto-conversion from string
   if (typeof value === 'string') {
-    const trimmed = value.trim();
 
     // Reject empty strings explicitly
     if (trimmed === '') {
@@ -229,7 +227,6 @@ function validateNumberValue(
       };
     }
 
-    const numericValue = Number(trimmed);
 
     if (!isNaN(numericValue)) {
       return { valid: true, convertedValue: numericValue };
@@ -365,7 +362,6 @@ function validateDateValue(
   // ISO date string
   if (typeof value === 'string') {
     // Try to create a date object from the string
-    const dateObj = new Date(value);
     if (!isNaN(dateObj.getTime())) {
       return { valid: true, convertedValue: dateObj.toISOString() };
     }
@@ -374,8 +370,6 @@ function validateDateValue(
   // Unix timestamp (number)
   if (typeof value === 'number') {
     // Assume milliseconds if greater than 1e10 (Jan 26 1970), otherwise seconds
-    const timestamp = value > 1e10 ? value : value * 1000;
-    const dateObj = new Date(timestamp);
     if (!isNaN(dateObj.getTime())) {
       return { valid: true, convertedValue: dateObj.toISOString() };
     }
@@ -519,13 +513,11 @@ function validateSelectValue(
 
   // Array of strings
   if (Array.isArray(value)) {
-    const allStrings = value.every((item) => typeof item === 'string');
     if (allStrings) {
       return { valid: true, convertedValue: value };
     }
 
     // Try to convert all elements to strings
-    const convertedArray = value.map((item) => String(item));
     return { valid: true, convertedValue: convertedArray };
   }
 
@@ -597,7 +589,6 @@ function validateRecordReferenceValue(
 
   // Array of IDs or objects
   if (Array.isArray(value)) {
-    const convertedIds = value
       .map((item) => {
         if (typeof item === 'string') {
           return item;

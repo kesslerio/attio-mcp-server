@@ -5,6 +5,7 @@
 // External imports
 import { FilterValidationError } from '../../../errors/api-errors.js';
 import { resolveDateRange } from '../../date-utils.js';
+import { validateDateRange } from '../validators.js';
 
 // Internal imports
 import {
@@ -24,8 +25,6 @@ export function createDateRangeFilter(
   dateRange: DateRange
 ): ListEntryFilters {
   try {
-    const validated = validateDateRange(dateRange);
-    const resolved = resolveDateRange(validated);
     const filters: ListEntryFilter[] = [];
 
     if (resolved.start) {
@@ -46,7 +45,6 @@ export function createDateRangeFilter(
 
     return { filters, matchAny: false };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create date range filter: ${message}`
     );

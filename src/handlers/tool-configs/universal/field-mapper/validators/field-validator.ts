@@ -3,10 +3,10 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
+import { findSimilarStrings } from './similarity-utils.js';
 import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
 import { strictModeFor } from '../config.js';
-import { findSimilarStrings } from './similarity-utils.js';
+import { UniversalResourceType } from '../types.js';
 
 /**
  * Gets field suggestions when a field name is not recognized
@@ -16,13 +16,11 @@ export function getFieldSuggestions(
   resourceType: UniversalResourceType,
   fieldName: string
 ): string {
-  const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return `Unable to provide suggestions for resource type ${resourceType}`;
   }
 
   // Check if there's a known mistake
-  const mistake = mapping.commonMistakes[fieldName.toLowerCase()];
   if (mistake) {
     return mistake;
   }
@@ -36,7 +34,6 @@ export function getFieldSuggestions(
   }
 
   // Find similar valid fields
-  const suggestions = findSimilarStrings(fieldName, mapping.validFields);
 
   if (suggestions.length > 0) {
     return `Unknown field "${fieldName}". Did you mean: ${suggestions.join(' or ')}?`;
@@ -58,7 +55,6 @@ export function validateFields(
   warnings: string[];
   suggestions: string[];
 } {
-  const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return {
       valid: true,
@@ -77,7 +73,6 @@ export function validateFields(
     for (const required of mapping.requiredFields) {
       if (!(required in recordData)) {
         // Check if a mapped version exists by checking mappings
-        const hasMappedVersion = Object.keys(recordData).some(
           (key) => mapping.fieldMappings[key.toLowerCase()] === required
         );
 
@@ -91,24 +86,18 @@ export function validateFields(
   // Check for unknown fields (simplified version without async mapping)
   for (const field of Object.keys(recordData)) {
     // If field maps to null, it's explicitly invalid
-    const lower = field.toLowerCase();
-    const invalidExplicit = mapping.fieldMappings[lower] === null;
     if (invalidExplicit) {
-      const msg = getFieldSuggestions(resourceType, field);
       if (strictModeFor(resourceType)) errors.push(msg);
       else warnings.push(msg);
       continue;
     }
 
     // Check if field exists in valid fields or mappings
-    const hasMapping = !!mapping.fieldMappings[lower];
-    const isValidField =
       mapping.validFields.includes(field) ||
       mapping.validFields.includes(lower);
 
     // If field doesn't map and isn't in valid fields, it might be wrong
     if (!hasMapping && !isValidField) {
-      const suggestion = getFieldSuggestions(resourceType, field);
       if (strictModeFor(resourceType))
         errors.push(`Unknown field "${field}". ${suggestion}`);
       else if (suggestion.includes('Did you mean'))

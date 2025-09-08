@@ -7,10 +7,10 @@
  * response format with proper AttioValue wrappers and nested structure.
  */
 
-import type { AttioValue } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
-import type { MockFactory } from './TaskMockFactory.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
+import type { AttioValue } from '../../../src/types/attio.js';
+import type { MockFactory } from './TaskMockFactory.js';
 
 /**
  * Interface for mock company factory options
@@ -80,13 +80,8 @@ export class CompanyMockFactory implements MockFactory<TestAttioRecord> {
    * @returns Mock AttioRecord for company matching API response format
    */
   static create(overrides: MockCompanyOptions = {}): TestAttioRecord {
-    const companyId = this.generateMockId();
-    const now = new Date().toISOString();
-    const companyNumber = this.extractNumberFromId(companyId);
 
     // Generate realistic company data
-    const companyName = overrides.name || `Mock Company ${companyNumber}`;
-    const domain =
       overrides.domain || `mock-company-${companyNumber}.example.com`;
 
     const baseCompany: TestAttioRecord = {
@@ -178,7 +173,6 @@ export class CompanyMockFactory implements MockFactory<TestAttioRecord> {
     overrides: MockCompanyOptions = {}
   ): TestAttioRecord[] {
     return Array.from({ length: count }, (_, index) => {
-      const companyNumber = index + 1;
       return this.create({
         ...overrides,
         name: overrides.name || `Mock Company ${companyNumber}`,
@@ -287,7 +281,6 @@ export class CompanyMockFactory implements MockFactory<TestAttioRecord> {
    * Private helper to extract number from generated ID
    */
   private static extractNumberFromId(id: string): string {
-    const match = id.match(/(\d+)/);
     return match
       ? match[1].slice(-4)
       : Math.floor(Math.random() * 9999).toString();
@@ -297,7 +290,6 @@ export class CompanyMockFactory implements MockFactory<TestAttioRecord> {
    * Private helper to get random industry
    */
   private static getRandomIndustry(): string {
-    const industries = [
       'Technology',
       'Financial Services',
       'Healthcare',

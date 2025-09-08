@@ -1,18 +1,10 @@
 /**
  * Relationship queries for People
  */
-import { getAttioClient } from '../../api/attio-client.js';
-import {
-  advancedSearchObject,
-  ListEntryFilters,
-} from '../../api/operations/index.js';
-import { ResourceType, Person } from '../../types/attio.js';
-import { isValidId, isValidListId } from '../../utils/validation.js';
-import {
-  createPeopleByCompanyListFilter,
-  createRecordsByNotesFilter,
-} from '../../utils/relationship-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { getAttioClient } from '../../api/attio-client.js';
+import { isValidId, isValidListId } from '../../utils/validation.js';
+import { ResourceType, Person } from '../../types/attio.js';
 
 /**
  * Searches for people associated with a specific company
@@ -30,9 +22,7 @@ export async function searchPeopleByCompany(
 
     // Use direct API call with correct Attio filter structure for record references
     // Attio expects company.target_record_id.$eq format for filtering people by company
-    const api = getAttioClient();
 
-    const filter = {
       company: {
         target_record_id: {
           $eq: companyId,
@@ -40,7 +30,6 @@ export async function searchPeopleByCompany(
       },
     };
 
-    const response = await api.post<{ data: Person[] }>(
       '/objects/people/records/query',
       {
         filter,
@@ -50,7 +39,6 @@ export async function searchPeopleByCompany(
 
     return response.data.data || [];
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Company relationship validation failed: ${errorMessage}`
@@ -87,7 +75,6 @@ export async function searchPeopleByCompanyList(
       filters = createPeopleByCompanyListFilter(listIds[0]);
     } else {
       // Create OR filter for multiple lists
-      const listFilters = listIds.map((listId) =>
         createPeopleByCompanyListFilter(listId)
       );
       filters = {
@@ -102,14 +89,12 @@ export async function searchPeopleByCompanyList(
         }
       }
     }
-    const response = await advancedSearchObject<Person>(
       ResourceType.PEOPLE,
       filters
     );
 
     return response;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `List relationship validation failed: ${errorMessage}`
@@ -133,15 +118,12 @@ export async function searchPeopleByNotes(
       throw new FilterValidationError('Search text cannot be empty');
     }
 
-    const filters = createRecordsByNotesFilter(ResourceType.PEOPLE, searchText);
-    const response = await advancedSearchObject<Person>(
       ResourceType.PEOPLE,
       filters
     );
 
     return response;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Notes search validation failed: ${errorMessage}`

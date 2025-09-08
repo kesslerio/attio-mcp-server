@@ -8,21 +8,12 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import {
-  handleUniversalGetDetails,
-  handleUniversalCreate,
-  handleUniversalGetAttributes,
-  handleUniversalDiscoverAttributes,
-} from '../../src/handlers/tool-configs/universal/shared-handlers.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+
 import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
-import {
-  isValidUUID,
-  UUIDTestPatterns,
-} from '../../src/utils/validation/uuid-validation.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
 // Helper function to get error message, checking for enhanced methods
-function getErrorMessage(error: any): string {
+function getErrorMessage(error: unknown): string {
   if (
     error.getContextualMessage &&
     typeof error.getContextualMessage === 'function'
@@ -35,7 +26,6 @@ function getErrorMessage(error: any): string {
 describe('Consolidated Fixes Integration Tests', () => {
   describe('Issue #416: UUID Validation vs Record Not Found', () => {
     test('should return "Invalid format" for malformed UUIDs', async () => {
-      const invalidUUIDs = UUIDTestPatterns.INVALID_FORMAT;
 
       for (const invalidUUID of invalidUUIDs) {
         try {
@@ -49,12 +39,10 @@ describe('Consolidated Fixes Integration Tests', () => {
         } catch (error: unknown) {
           // Should throw EnhancedApiError for invalid UUID format
           // Check the error properties instead of instanceof due to module resolution issues
-          const enhancedError = error as EnhancedApiError;
           expect(enhancedError.name).toBe('EnhancedApiError');
           expect(enhancedError.statusCode).toBe(400);
 
           // Check that the error message clearly indicates format issue
-          const message = enhancedError.message || enhancedError.toString();
           expect(message).toContain('Invalid');
           expect(message).toContain('format');
           expect(message).not.toContain('not found');
@@ -63,7 +51,6 @@ describe('Consolidated Fixes Integration Tests', () => {
     });
 
     test('should return "Record not found" for valid UUIDs that don\'t exist', async () => {
-      const validButNonExistentUUID = 'c7e54eb4-f557-5250-955a-833bea1fa984';
       expect(isValidUUID(validButNonExistentUUID)).toBe(true);
 
       try {
@@ -75,12 +62,10 @@ describe('Consolidated Fixes Integration Tests', () => {
       } catch (error: unknown) {
         // Should throw EnhancedApiError for record not found
         // Check the error properties instead of instanceof due to module resolution issues
-        const enhancedError = error as EnhancedApiError;
         expect(enhancedError.name).toBe('EnhancedApiError');
         expect(enhancedError.statusCode).toBe(404);
 
         // Check that the error message clearly indicates record not found
-        const message = enhancedError.message || enhancedError.toString();
         expect(message).toContain('not found');
         expect(message).toContain(validButNonExistentUUID);
         expect(message).not.toContain('Invalid');
@@ -97,12 +82,9 @@ describe('Consolidated Fixes Integration Tests', () => {
         expect.fail('Should have thrown error for invalid UUID');
       } catch (error: unknown) {
         // Check the error properties instead of instanceof
-        const enhancedError = error as EnhancedApiError;
         expect(enhancedError.name).toBe('EnhancedApiError');
 
         // Test both message and contextual message for guidance
-        const message = enhancedError.message || enhancedError.toString();
-        const contextualMessage = getErrorMessage(enhancedError);
 
         expect(contextualMessage).toContain('UUID');
         expect(contextualMessage).toMatch(/[a-f0-9-]{36}/i); // Contains example UUID pattern
@@ -114,7 +96,6 @@ describe('Consolidated Fixes Integration Tests', () => {
           record_id: '12345678-1234-5678-9012-123456789012', // Valid format, non-existent
         });
       } catch (error: unknown) {
-        const enhancedError = error as EnhancedApiError;
         expect(getErrorMessage(enhancedError)).toContain(
           'Use search-records to find valid people IDs'
         );
@@ -124,7 +105,6 @@ describe('Consolidated Fixes Integration Tests', () => {
 
   describe('Issue #417: Task Resource Functionality', () => {
     test('should discover task attributes successfully', async () => {
-      const result = await handleUniversalDiscoverAttributes(
         UniversalResourceType.TASKS
       );
 
@@ -134,8 +114,7 @@ describe('Consolidated Fixes Integration Tests', () => {
       expect(result.mappings).toBeDefined();
 
       // Verify core task fields are included
-      const fieldNames = (result.attributes as any[]).map(
-        (attr: any) => attr.api_slug
+        (attr: unknown) => attr.api_slug
       );
       expect(fieldNames).toContain('content');
       expect(fieldNames).toContain('status');
@@ -144,7 +123,6 @@ describe('Consolidated Fixes Integration Tests', () => {
     });
 
     test('should provide task field mappings', async () => {
-      const result = await handleUniversalDiscoverAttributes(
         UniversalResourceType.TASKS
       );
 
@@ -158,7 +136,6 @@ describe('Consolidated Fixes Integration Tests', () => {
 
     test('should create task with mapped fields', async () => {
       // Test creating task with title field (should map to content)
-      const taskData = {
         resource_type: UniversalResourceType.TASKS,
         record_data: {
           values: {
@@ -173,7 +150,6 @@ describe('Consolidated Fixes Integration Tests', () => {
       // For now, we test that the function doesn't throw validation errors
       expect(() => {
         // The field mapping should work
-        const mappedFields = {
           content: taskData.record_data.values.title,
           status: taskData.record_data.values.status,
           due_date: taskData.record_data.values.due_date,
@@ -195,11 +171,9 @@ describe('Consolidated Fixes Integration Tests', () => {
         expect.fail('Should have thrown error for invalid task field');
       } catch (error: unknown) {
         // This may throw UniversalValidationError or EnhancedApiError depending on validation layer
-        const message = (error as any).message || error.toString();
         expect(message).toContain('invalid_field');
 
         // Should provide guidance about valid task fields or general field validation
-        const hasTaskGuidance =
           message.includes('content') ||
           message.includes('status') ||
           message.includes('due_date') ||
@@ -223,8 +197,6 @@ describe('Consolidated Fixes Integration Tests', () => {
           },
         });
       } catch (error: unknown) {
-        const enhancedError = error as EnhancedApiError;
-        const message = getErrorMessage(enhancedError);
 
         // Should contain field suggestions
         expect(
@@ -245,8 +217,6 @@ describe('Consolidated Fixes Integration Tests', () => {
           },
         });
       } catch (error: unknown) {
-        const enhancedError = error as EnhancedApiError;
-        const message = getErrorMessage(enhancedError);
 
         if (
           message.includes('read-only') ||
@@ -259,7 +229,6 @@ describe('Consolidated Fixes Integration Tests', () => {
     });
 
     test('should provide actionable documentation hints', async () => {
-      const testCases = [
         {
           resourceType: UniversalResourceType.COMPANIES,
           recordId: 'invalid-uuid',
@@ -279,7 +248,6 @@ describe('Consolidated Fixes Integration Tests', () => {
             record_id: testCase.recordId,
           });
         } catch (error: unknown) {
-          const enhancedError = error as EnhancedApiError;
           expect(getErrorMessage(enhancedError)).toContain(
             testCase.expectedHint
           );
@@ -296,7 +264,6 @@ describe('Consolidated Fixes Integration Tests', () => {
           record_id: 'invalid-format',
         });
       } catch (error: unknown) {
-        const enhancedError = error as EnhancedApiError;
         // Check for error methods
         expect(typeof enhancedError.isUserError).toBe('function');
         expect(typeof enhancedError.getErrorCategory).toBe('function');
@@ -306,7 +273,6 @@ describe('Consolidated Fixes Integration Tests', () => {
     });
 
     test('should provide performance-conscious error messages', async () => {
-      const startTime = performance.now();
 
       try {
         await handleUniversalGetDetails({
@@ -314,14 +280,10 @@ describe('Consolidated Fixes Integration Tests', () => {
           record_id: 'not-a-uuid',
         });
       } catch (error: unknown) {
-        const endTime = performance.now();
-        const duration = endTime - startTime;
 
         // Error message generation should be fast
         expect(duration).toBeLessThan(100); // Less than 100ms for Issue #415 requirement
 
-        const enhancedError = error as EnhancedApiError;
-        const message = getErrorMessage(enhancedError);
         expect(message).toBeDefined();
         expect(message.length).toBeGreaterThan(0);
       }
@@ -343,8 +305,6 @@ describe('Consolidated Fixes Integration Tests', () => {
           },
         });
       } catch (error: unknown) {
-        const enhancedError = error as EnhancedApiError;
-        const message = getErrorMessage(enhancedError);
 
         // Should provide comprehensive guidance combining all issues
         expect(message.length).toBeGreaterThan(50); // Substantial helpful content

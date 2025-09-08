@@ -32,8 +32,7 @@ export const TestData = new TestDataRegistry();
 
 export const testDataRegistry = new TestDataRegistry();
 
-const UUID_RE =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 export function resolveMockId(id: string | undefined | null): string | null {
   if (!id) return null;

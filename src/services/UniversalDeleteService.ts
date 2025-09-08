@@ -5,10 +5,16 @@
  * Provides universal delete functionality across all resource types.
  */
 
+import { debug } from '../utils/logger.js';
+import { deleteList, getListDetails } from '../objects/lists.js';
+import { deleteNote } from '../objects/notes.js';
+import { deletePerson } from '../objects/people-write.js';
+import { deleteTask, getTask } from '../objects/tasks.js';
+import { getPersonDetails } from '../objects/people/basic.js';
+import { isValidId } from '../utils/validation.js';
+import { shouldUseMockData } from './create/index.js';
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/types.js';
-import { isValidId } from '../utils/validation.js';
-import { debug } from '../utils/logger.js';
 
 // Import delete functions for each resource type
 import {
@@ -34,10 +40,6 @@ export class UniversalDeleteService {
    * Helper to detect 404 errors from various API error formats
    */
   private static is404Error(err: unknown): boolean {
-    const anyErr = err as any;
-    const status = anyErr?.response?.status ?? anyErr?.status;
-    const code = anyErr?.response?.data?.code ?? anyErr?.code;
-    const msg = (anyErr?.response?.data?.message ?? anyErr?.message ?? '')
       .toString()
       .toLowerCase();
 
@@ -126,7 +128,7 @@ export class UniversalDeleteService {
         // In mock mode, pre-validate IDs and emit deterministic message expected by tests
         if (shouldUseMockData()) {
           if (!isValidId(record_id)) {
-            const err: any = new Error(`Task not found: ${record_id}`);
+            const err: unknown = new Error(`Task not found: ${record_id}`);
             err.status = 404;
             err.body = {
               code: 'not_found',
@@ -147,11 +149,10 @@ export class UniversalDeleteService {
         }
 
         try {
-          const resp = await deleteTask(record_id);
 
           // deleteTask returns boolean - if false, treat as not found
           if (resp === false) {
-            const err: any = new Error(
+            const err: unknown = new Error(
               `Task with ID "${record_id}" not found.`
             );
             err.status = 404;
@@ -168,20 +169,18 @@ export class UniversalDeleteService {
           if (this.is404Error(error)) {
             // Best-effort verification: if task still exists, wait briefly and retry once
             try {
-              const exists = await getTask(record_id).then(
                 () => true,
                 () => false
               );
               if (exists) {
                 await new Promise((r) => setTimeout(r, 500));
-                const retried = await deleteTask(record_id);
                 if (retried) return { success: true, record_id };
               }
             } catch {
               // ignore and fall through to not_found mapping
             }
 
-            const err: any = new Error(
+            const err: unknown = new Error(
               `Task with ID "${record_id}" not found.`
             );
             err.status = 404;
@@ -192,9 +191,7 @@ export class UniversalDeleteService {
             throw err; // dispatcher should mark isError=true
           }
           // Map specific 400 errors for task ID validation to clearer messages
-          const anyErr: any = error as any;
-          const status = anyErr?.response?.status ?? anyErr?.status;
-          const errorMessage = (
+          const anyErr: unknown = error as any;
             anyErr?.response?.data?.message ??
             anyErr?.message ??
             ''
@@ -222,7 +219,6 @@ export class UniversalDeleteService {
         }
 
       case UniversalResourceType.NOTES:
-        const result = await deleteNote(record_id);
         return { success: result.success, record_id };
 
       default:

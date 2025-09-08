@@ -17,22 +17,9 @@
  * Part of Issue #526 Sprint 4 - E2E Test Consolidation
  */
 
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  vi,
-} from 'vitest';
-import { E2ETestBase } from '../setup.js';
 import { E2EAssertions } from '../utils/assertions.js';
-import {
-  CompanyFactory,
-  PersonFactory,
-  TaskFactory,
-} from '../fixtures/index.js';
+import { E2ETestBase } from '../setup.js';
+import { startTestSuite, endTestSuite } from '../utils/logger.js';
 import type { TestDataObject, McpToolResponse } from '../types/index.js';
 
 // Define TaskRecord locally to avoid import issues
@@ -128,7 +115,6 @@ function asToolResponse(response: unknown): McpToolResponse {
  * Helper function to safely extract task data from MCP response
  */
 function extractTaskData(response: McpToolResponse): TaskRecord {
-  const data = E2EAssertions.expectMcpData(response);
   if (!data) {
     throw new Error('No data returned from MCP tool response');
   }
@@ -147,14 +133,12 @@ describe.skipIf(
   let createdTasks: TaskRecord[] = [];
 
   // Notes management setup
-  const notesSetup = createSharedSetup();
 
   beforeAll(async () => {
     // Start comprehensive logging for this consolidated test suite
     startTestSuite('core-workflows');
 
     // Validate test environment and tool migration setup
-    const envValidation = await validateTestEnvironment();
     if (!envValidation.valid) {
       console.warn('⚠️ Test environment warnings:', envValidation.warnings);
     }
@@ -195,8 +179,6 @@ describe.skipIf(
   describe('Shared Test Data Setup', () => {
     it('should create test companies for task and note testing', async () => {
       // Create for tasks
-      const companyData = CompanyFactory.create();
-      const response = asToolResponse(
         await callTasksTool('create-record', {
           resource_type: 'companies',
           record_data: companyData as any,
@@ -204,7 +186,6 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(response);
-      const company = E2EAssertions.expectMcpData(response)!;
 
       E2EAssertions.expectCompanyRecord(company);
       taskTestCompanies.push(company);
@@ -223,8 +204,6 @@ describe.skipIf(
 
     it('should create test people for task assignment and note management', async () => {
       // Create for tasks
-      const personData = PersonFactory.create();
-      const response = asToolResponse(
         await callTasksTool('create-record', {
           resource_type: 'people',
           record_data: personData as any,
@@ -232,7 +211,6 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(response);
-      const person = E2EAssertions.expectMcpData(response)!;
 
       E2EAssertions.expectPersonRecord(person);
       taskTestPeople.push(person);
@@ -257,9 +235,7 @@ describe.skipIf(
         await TestDataSeeder.ensureCompany('task-linking', taskTestCompanies);
       }, 30000);
       it('should create a basic task', async () => {
-        const taskData = TaskFactory.create();
 
-        const response = asToolResponse(
           await callTasksTool('create-record', {
             resource_type: 'tasks',
             record_data: {
@@ -271,13 +247,11 @@ describe.skipIf(
         );
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdTask = extractTaskData(response);
 
         E2EAssertions.expectTaskRecord(createdTask);
         E2EAssertions.expectResourceId(createdTask, 'tasks');
 
         // Access content from the correct field in the record structure
-        const taskContent =
           createdTask.values?.content?.[0]?.value ||
           createdTask.content ||
           createdTask.title;
@@ -299,15 +273,12 @@ describe.skipIf(
           return;
         }
 
-        const taskData = TaskFactory.create();
-        const assignee = taskTestPeople[0];
 
         console.log('🎯 ASSIGNEE DEBUG', {
           assigneeId: assignee?.id?.record_id,
           assigneeKeys: Object.keys(assignee || {}),
         });
 
-        const response = asToolResponse(
           await callTasksTool('create-record', {
             resource_type: 'tasks',
             record_data: {
@@ -325,7 +296,6 @@ describe.skipIf(
         );
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdTask = extractTaskData(response);
 
         console.log('📋 TASK RESPONSE DEBUG', {
           hasAssignee: !!createdTask.assignee,
@@ -337,7 +307,6 @@ describe.skipIf(
 
         E2EAssertions.expectTaskRecord(createdTask);
         // Accept multiple valid response shapes from Attio API
-        const assigneeIdCandidate =
           // Preferred: top-level assignee object with id
           (createdTask as any)?.assignee?.id ||
           // Some responses may include referenced actor id shape
@@ -361,10 +330,7 @@ describe.skipIf(
           return;
         }
 
-        const taskData = TaskFactory.create();
-        const company = taskTestCompanies[0];
 
-        const response = asToolResponse(
           await callTasksTool('create-record', {
             resource_type: 'tasks',
             record_data: {
@@ -378,7 +344,6 @@ describe.skipIf(
         );
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdTask = extractTaskData(response);
 
         E2EAssertions.expectTaskRecord(createdTask);
 
@@ -390,9 +355,7 @@ describe.skipIf(
       }, 30000);
 
       it('should create high priority task', async () => {
-        const taskData = TaskFactory.createHighPriority();
 
-        const response = asToolResponse(
           await callTasksTool('create-record', {
             resource_type: 'tasks',
             record_data: {
@@ -404,11 +367,9 @@ describe.skipIf(
         );
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdTask = extractTaskData(response);
 
         E2EAssertions.expectTaskRecord(createdTask);
         // Check for content in various possible locations
-        const taskContent =
           createdTask.content ||
           createdTask.title ||
           createdTask.values?.content?.[0]?.value ||
@@ -431,10 +392,7 @@ describe.skipIf(
           return;
         }
 
-        const task = createdTasks[0];
-        const taskId = task.id.task_id;
 
-        const response = asToolResponse(
           await callTasksTool('update-record', {
             resource_type: 'tasks',
             record_id: taskId,
@@ -445,7 +403,6 @@ describe.skipIf(
         );
 
         E2EAssertions.expectMcpSuccess(response);
-        const updatedTask = extractTaskData(response);
 
         E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
@@ -460,11 +417,7 @@ describe.skipIf(
           return;
         }
 
-        const task = createdTasks[0];
-        const taskId = task.id.task_id;
-        const newAssignee = taskTestPeople[0];
 
-        const response = asToolResponse(
           await callTasksTool('update-record', {
             resource_type: 'tasks',
             record_id: taskId,
@@ -480,7 +433,6 @@ describe.skipIf(
         );
 
         E2EAssertions.expectMcpSuccess(response);
-        const updatedTask = extractTaskData(response);
 
         E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
@@ -495,12 +447,8 @@ describe.skipIf(
           return;
         }
 
-        const task = createdTasks[0];
-        const taskId = task.id.task_id;
-        const newDueDate = new Date();
         newDueDate.setDate(newDueDate.getDate() + 7);
 
-        const response = asToolResponse(
           await callTasksTool('update-record', {
             resource_type: 'tasks',
             record_id: taskId,
@@ -512,7 +460,6 @@ describe.skipIf(
         );
 
         E2EAssertions.expectMcpSuccess(response);
-        const updatedTask = extractTaskData(response);
 
         E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
@@ -534,10 +481,7 @@ describe.skipIf(
         }
 
         // Delete the last created task to avoid affecting other tests
-        const taskToDelete = createdTasks[createdTasks.length - 1];
-        const taskId = taskToDelete.id.task_id;
 
-        const response = asToolResponse(
           await callTasksTool('delete-record', {
             resource_type: 'tasks',
             record_id: taskId,
@@ -553,7 +497,6 @@ describe.skipIf(
       }, 30000);
 
       it('should handle deletion of non-existent task gracefully', async () => {
-        const response = asToolResponse(
           await callTasksTool('delete-record', {
             resource_type: 'tasks',
             record_id: 'already-deleted-task-12345',
@@ -575,15 +518,12 @@ describe.skipIf(
       beforeAll(async () => {
         try {
           if (testCompanies.length === 0) {
-            const companyData = CompanyFactory.create();
-            const resp = asToolResponse(
               await callNotesTool('create-record', {
                 resource_type: 'companies',
                 record_data: companyData as any,
               })
             );
             if (!resp.isError) {
-              const created = E2EAssertions.expectMcpData(resp) as any;
               if (created?.id?.record_id) testCompanies.push(created);
             }
           }
@@ -597,16 +537,13 @@ describe.skipIf(
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping company note test - invalid company data');
           return;
         }
-        const noteData = noteFixtures.companies.meeting(
           testCompany.id.record_id
         );
 
-        const response = (await notesToolCaller('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -615,7 +552,6 @@ describe.skipIf(
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const createdNote = NotesAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -636,14 +572,12 @@ describe.skipIf(
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
             '⏭️ Skipping get company notes test - invalid company data'
           );
           return;
         }
-        const response = (await notesToolCaller('list-notes', {
           resource_type: 'companies',
           parent_object: 'companies',
           record_id: testCompany.id.record_id,
@@ -652,10 +586,9 @@ describe.skipIf(
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const notes = NotesAssertions.expectMcpData(response);
 
         // Notes might be an array or a response object with data array
-        let noteArray: any[] = [];
+        let noteArray: unknown[] = [];
         if (Array.isArray(notes)) {
           noteArray = notes;
         } else if (notes && Array.isArray(notes.data)) {
@@ -682,18 +615,15 @@ describe.skipIf(
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
             '⏭️ Skipping markdown note test - invalid company data'
           );
           return;
         }
-        const noteData = noteFixtures.markdown.meetingAgenda(
           testCompany.id.record_id
         );
 
-        const response = (await notesToolCaller('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -702,7 +632,6 @@ describe.skipIf(
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const createdNote = NotesAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -723,17 +652,13 @@ describe.skipIf(
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping URI format test - invalid company data');
           return;
         }
-        const noteData = noteFixtures.companies.followUp(
           testCompany.id.record_id
         );
-        const uri = `attio://companies/${testCompany.id.record_id}`;
 
-        const response = (await notesToolCaller('create-note', {
           uri: uri,
           title: noteData.title,
           content: noteData.content,
@@ -741,7 +666,6 @@ describe.skipIf(
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const createdNote = NotesAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -761,16 +685,13 @@ describe.skipIf(
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error('⏭️ Skipping person note test - invalid person data');
           return;
         }
-        const noteData = noteFixtures.people.introduction(
           testPerson.id.record_id
         );
 
-        const response = (await notesToolCaller('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -779,7 +700,6 @@ describe.skipIf(
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const createdNote = NotesAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -800,24 +720,21 @@ describe.skipIf(
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping get person notes test - invalid person data'
           );
           return;
         }
-        const response = (await notesToolCaller('list-notes', {
           resource_type: 'people',
           parent_object: 'people',
           record_id: testPerson.id.record_id,
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const notes = NotesAssertions.expectMcpData(response);
 
         // Notes might be an array or a response object
-        let noteArray: any[] = [];
+        let noteArray: unknown[] = [];
         if (Array.isArray(notes)) {
           noteArray = notes;
         } else if (notes && Array.isArray(notes.data)) {
@@ -844,16 +761,13 @@ describe.skipIf(
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping technical note test - invalid person data'
           );
           return;
         }
-        const noteData = noteFixtures.people.technical(testPerson.id.record_id);
 
-        const response = (await notesToolCaller('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -862,7 +776,6 @@ describe.skipIf(
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const createdNote = NotesAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -882,19 +795,16 @@ describe.skipIf(
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping markdown person note test - invalid person data'
           );
           return;
         }
-        const noteData = noteFixtures.markdown.technicalSpecs(
           testPerson.id.record_id,
           'people'
         );
 
-        const response = (await notesToolCaller('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -903,7 +813,6 @@ describe.skipIf(
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
-        const createdNote = NotesAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -929,12 +838,8 @@ describe.skipIf(
       }
 
       // Use the first company for both operations
-      const company = taskTestCompanies[0];
-      const companyId = company.id.record_id;
 
       // Create a task for the company
-      const taskData = TaskFactory.create();
-      const taskResponse = asToolResponse(
         await callTasksTool('create-record', {
           resource_type: 'tasks',
           record_data: {
@@ -948,12 +853,9 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(taskResponse);
-      const createdTask = extractTaskData(taskResponse);
       createdTasks.push(createdTask);
 
       // Create a note for the same company
-      const noteData = noteFixtures.companies.meeting(companyId);
-      const noteResponse = (await notesToolCaller('create-note', {
         resource_type: 'companies',
         record_id: companyId,
         title: noteData.title,
@@ -962,7 +864,6 @@ describe.skipIf(
       })) as McpToolResponse;
 
       NotesAssertions.expectMcpSuccess(noteResponse);
-      const createdNote = NotesAssertions.expectMcpData(
         noteResponse
       ) as unknown as NoteRecord;
 
@@ -980,11 +881,8 @@ describe.skipIf(
       }
 
       // Update task status and add a corresponding note
-      const task = createdTasks[0];
-      const taskId = task.id.task_id;
 
       // Update task to completed
-      const taskUpdateResponse = asToolResponse(
         await callTasksTool('update-record', {
           resource_type: 'tasks',
           record_id: taskId,

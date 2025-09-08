@@ -13,20 +13,13 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  batchCreateCompanies,
-  batchUpdateCompanies,
-  batchDeleteCompanies,
-} from '../../src/objects/batch-companies.js';
+
 import { ResourceType } from '../../src/types/attio.js';
 
 // Skip tests if no API key is available or SKIP_INTEGRATION_TESTS is set
-const shouldRunTests =
   process.env.ATTIO_API_KEY && !process.env.SKIP_INTEGRATION_TESTS;
 
 // Test configuration
-const TEST_PREFIX = `test_batch_${Date.now().toString().slice(-6)}`;
-const TEST_COMPANIES = [
   {
     name: `${TEST_PREFIX}_Company1`,
     industry: 'Initial Industry',
@@ -63,14 +56,13 @@ describe('Batch Company Operations - Integration', () => {
 
     try {
       // Create test companies
-      const createResult = await batchCreateCompanies({
         companies: TEST_COMPANIES,
       });
 
       // Store created companies for later use
       createdCompanies = createResult.results
-        .filter((r: any) => r.success)
-        .map((r: any) => ({
+        .filter((r: unknown) => r.success)
+        .map((r: unknown) => ({
           id: r.data.id?.record_id,
           name: r.data.values?.name?.[0]?.value,
         }));
@@ -88,7 +80,6 @@ describe('Batch Company Operations - Integration', () => {
 
     try {
       // Delete all test companies
-      const companyIds = createdCompanies.map((c) => c.id);
       await batchDeleteCompanies(companyIds);
       console.log(`Cleaned up ${companyIds.length} test companies`);
     } catch (error: unknown) {
@@ -103,7 +94,6 @@ describe('Batch Company Operations - Integration', () => {
     }
 
     // Prepare updates with the format that was failing in issue #154
-    const updates = createdCompanies.map((company) => ({
       id: company.id,
       attributes: {
         industry: 'Updated Batch Industry',
@@ -112,7 +102,6 @@ describe('Batch Company Operations - Integration', () => {
 
     try {
       // Execute the batch update
-      const updateResult = await batchUpdateCompanies({ updates });
 
       // Verify the results
       expect(updateResult.summary.total).toBe(updates.length);
@@ -120,7 +109,7 @@ describe('Batch Company Operations - Integration', () => {
       expect(updateResult.summary.failed).toBe(0);
 
       // Verify each company was updated successfully
-      updateResult.results.forEach((result: any) => {
+      updateResult.results.forEach((result: unknown) => {
         expect(result.success).toBe(true);
         expect(result.data.values?.industry?.[0]?.value).toBe(
           'Updated Batch Industry'

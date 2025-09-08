@@ -1,9 +1,5 @@
 import { describe, it, test, expect } from 'vitest';
-import {
-  processListEntries,
-  getRecordNameFromEntry,
-  API_PARAMS,
-} from '../../src/utils/record-utils';
+
 import { AttioListEntry } from '../../src/types/attio';
 
 describe('record-utils', () => {
@@ -56,7 +52,6 @@ describe('record-utils', () => {
   describe('processListEntries', () => {
     it('should process entries and extract record IDs', () => {
       // Act
-      const processedEntries = processListEntries(mockListEntries);
 
       // Assert
       expect(processedEntries[0].record_id).toBe('record1'); // Unchanged (direct)
@@ -68,7 +63,6 @@ describe('record-utils', () => {
 
     it('should not modify entries when record_id is already defined', () => {
       // Entry with direct record_id
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'existing-record-id',
@@ -80,7 +74,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = processListEntries([entry])[0];
 
       // Assert - should keep the existing record_id
       expect(result.record_id).toBe('existing-record-id');
@@ -90,7 +83,6 @@ describe('record-utils', () => {
   describe('getRecordNameFromEntry', () => {
     it('should extract record name when available', () => {
       // Entry with record name
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'record1',
@@ -104,7 +96,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = getRecordNameFromEntry(entry);
 
       // Assert
       expect(result.name).toBe('Test Company');
@@ -112,7 +103,6 @@ describe('record-utils', () => {
 
     it('should return empty string when record data is not available', () => {
       // Entry without record data
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'record1',
@@ -120,7 +110,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = getRecordNameFromEntry(entry);
 
       // Assert
       expect(result.name).toBe('');
@@ -128,7 +117,6 @@ describe('record-utils', () => {
 
     it('should return empty string when name array is empty', () => {
       // Entry with empty name array
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'record1',
@@ -142,7 +130,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = getRecordNameFromEntry(entry);
 
       // Assert
       expect(result.name).toBe('');

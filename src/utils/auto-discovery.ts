@@ -12,14 +12,13 @@ import {
 } from './config-loader.js';
 
 // Simple logging for auto-discovery - disabled for MCP protocol compatibility
-const log = {
-  info: (_message: string, _data?: any) => {
+  info: (_message: string, _data?: unknown) => {
     /* Silent for MCP protocol compatibility */
   },
-  warn: (_message: string, _data?: any) => {
+  warn: (_message: string, _data?: unknown) => {
     /* Silent for MCP protocol compatibility */
   },
-  error: (_message: string, _error?: any) => {
+  error: (_message: string, _error?: unknown) => {
     /* Silent for MCP protocol compatibility */
   },
 };
@@ -82,14 +81,11 @@ export async function runDiscovery(
     }
 
     // Get all available objects
-    const objects = await getAvailableObjects(apiKey);
     log.info(`Found ${objects.length} objects in Attio workspace`);
 
     // Process each object
     for (const objectSlug of objects) {
       try {
-        const attributeMappings = await getObjectAttributes(objectSlug, apiKey);
-        const attributeCount = Object.keys(attributeMappings).length;
 
         if (attributeCount > 0) {
           if (!config.mappings.attributes.objects[objectSlug]) {
@@ -133,7 +129,6 @@ export async function startAutoDiscovery(
   apiKey: string,
   config: Partial<AutoDiscoveryConfig> = {}
 ): Promise<void> {
-  const settings = { ...DEFAULT_CONFIG, ...config };
 
   if (!settings.enabled) {
     log.info('Auto-discovery is disabled');
@@ -152,7 +147,6 @@ export async function startAutoDiscovery(
 
   // Set up periodic discovery if configured
   if (settings.intervalMinutes && settings.intervalMinutes > 0) {
-    const intervalMs = settings.intervalMinutes * 60 * 1000;
 
     discoveryInterval = setInterval(async () => {
       log.info('Running scheduled attribute discovery...');

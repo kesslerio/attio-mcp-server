@@ -22,12 +22,6 @@
 
 import { warn, error } from '../utils/logger.js';
 
-export interface DealDefaults {
-  stage?: string;
-  owner?: string;
-  currency?: string;
-}
-
 /**
  * Clear all caches (useful for testing or when configuration changes)
  */
@@ -51,11 +45,9 @@ export async function prewarmStageCache(): Promise<void> {
 // Cache for available deal stages to avoid repeated API calls
 let stageCache: string[] | null = null;
 let stageCacheTimestamp: number = 0;
-const STAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Error cache to prevent repeated failed API calls during outages
 let errorCache: { timestamp: number; error: unknown } | null = null;
-const ERROR_CACHE_TTL = 30 * 1000; // 30 seconds - shorter TTL for errors
 
 /**
  * Get deal defaults from environment configuration
@@ -85,8 +77,6 @@ export function getDealDefaults(): DealDefaults {
 export function applyDealDefaults(
   recordData: Record<string, unknown>
 ): Record<string, unknown> {
-  const defaults = getDealDefaults();
-  const dealData = { ...recordData };
 
   // === FIELD NAME CONVERSIONS (Legacy Support) ===
 
@@ -165,7 +155,6 @@ export function applyDealDefaults(
     dealData.value[0]
   ) {
     // If already an array, extract the numeric value
-    const firstValue = dealData.value[0];
     if (typeof firstValue === 'object' && 'currency_value' in firstValue) {
       dealData.value = firstValue.currency_value;
     } else if (typeof firstValue === 'number') {
@@ -274,7 +263,6 @@ export function validateDealInput(recordData: Record<string, unknown>): {
  * to prevent cascading failures during high error rates.
  */
 async function getAvailableDealStages(): Promise<string[]> {
-  const now = Date.now();
 
   // Return cached stages if still valid
   if (stageCache && now - stageCacheTimestamp < STAGE_CACHE_TTL) {
@@ -289,14 +277,10 @@ async function getAvailableDealStages(): Promise<string[]> {
   try {
     // Import here to avoid circular dependencies
     const { getAttioClient } = await import('../api/attio-client.js');
-    const client = getAttioClient();
 
     // Get deal stage attribute configuration
-    const response = await client.get('/objects/deals/attributes');
-    const attributes = response.data.data || [];
 
     // Find the stage attribute
-    const stageAttribute = attributes.find(
       (attr: Record<string, unknown>) => attr.api_slug === 'stage'
     );
 
@@ -359,7 +343,6 @@ export async function validateDealStage(
     }
 
     // Check if provided stage exists (case-insensitive)
-    const validStage = availableStages.find(
       (s) => s.toLowerCase() === stage.toLowerCase()
     );
 
@@ -368,7 +351,6 @@ export async function validateDealStage(
     }
 
     // Stage not found, log warning and return default
-    const defaults = getDealDefaults();
     warn(
       'deal-defaults',
       `Deal stage "${stage}" not found. Available stages: ${availableStages.join(', ')}. Using default: "${defaults.stage}"`
@@ -391,7 +373,6 @@ export async function applyDealDefaultsWithValidation(
   recordData: Record<string, unknown>,
   skipValidation: boolean = false
 ): Promise<Record<string, unknown>> {
-  const dealData = applyDealDefaults(recordData);
 
   // Validate stage if present
   if (
@@ -400,7 +381,6 @@ export async function applyDealDefaultsWithValidation(
     dealData.stage[0]?.status
   ) {
     // Pass skipValidation flag to validateDealStage to control API calls
-    const validatedStage = await validateDealStage(
       dealData.stage[0].status,
       skipValidation // Skip API calls when in error paths
     );

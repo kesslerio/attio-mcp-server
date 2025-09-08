@@ -14,20 +14,10 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  callUniversalTool,
-  callTasksTool,
-  callNotesTool,
-  validateTestEnvironment,
-} from '../utils/enhanced-tool-caller.js';
+
 import { E2EAssertions } from '../utils/assertions.js';
-import type { McpToolResponse } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
-import {
-  extractRecordId,
-  createTestRecord,
-  cleanupTestRecords,
-} from '../utils/error-handling-utils.js';
+import type { McpToolResponse } from '../utils/assertions.js';
 
 // Helper: extract first record_id from a search response
 function firstRecordIdFromSearch(
@@ -36,10 +26,8 @@ function firstRecordIdFromSearch(
   if (response.isError || !response.content || response.content.length === 0) {
     return undefined;
   }
-  const text = response.content[0]?.text;
   if (!text) return undefined;
   try {
-    const parsed = JSON.parse(text as string);
     if (Array.isArray(parsed) && parsed[0]?.id?.record_id) {
       return parsed[0].id.record_id;
     }
@@ -65,7 +53,6 @@ describe.skipIf(
   const testRecordIds: string[] = [];
 
   beforeAll(async () => {
-    const validation = await validateTestEnvironment();
     if (!validation.valid) {
       console.warn(
         '⚠️ Integration boundary test warnings:',
@@ -82,7 +69,6 @@ describe.skipIf(
 
   describe('Cross-System API Integration', () => {
     it('should handle concurrent cross-resource operations', async () => {
-      const operations = [
         () =>
           callUniversalTool('search-records', {
             resource_type: 'companies',
@@ -103,7 +89,6 @@ describe.skipIf(
           }),
       ];
 
-      const results = await Promise.allSettled(operations.map((op) => op()));
 
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
@@ -117,7 +102,6 @@ describe.skipIf(
 
     it('should handle API rate limiting gracefully', async () => {
       // Use more realistic search queries that are more likely to succeed or get rate limited
-      const rapidRequests = Array(10)
         .fill(null)
         .map((_, i) =>
           callUniversalTool('search-records', {
@@ -127,14 +111,12 @@ describe.skipIf(
           })
         );
 
-      const results = await Promise.allSettled(rapidRequests);
       let successCount = 0;
       let rateLimitCount = 0;
       let otherErrorCount = 0;
 
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
-          const response = result.value as McpToolResponse;
           if (!response.isError) {
             successCount++;
           } else if (
@@ -168,8 +150,6 @@ describe.skipIf(
 
     it('should validate cross-resource data consistency', async () => {
       // Create a company
-      const companyData = testDataGenerator.companies.basicCompany();
-      const companyId = await createTestRecord(
         (resourceType, data) =>
           callUniversalTool('create-record', {
             resource_type: resourceType as any,
@@ -183,7 +163,6 @@ describe.skipIf(
         testRecordIds.push(companyId);
 
         // Create related records
-        const taskResponse = await callTasksTool('create-record', {
           resource_type: 'tasks',
           record_data: {
             content: 'Integration boundary test task',
@@ -192,7 +171,6 @@ describe.skipIf(
           },
         });
 
-        const noteResponse = await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: companyId,
           title: 'Integration boundary test note',
@@ -211,7 +189,6 @@ describe.skipIf(
   describe('System Integration Edge Cases', () => {
     it('should handle malformed request recovery', async () => {
       // Send malformed requests and ensure system recovery
-      const malformedRequests = [
         () => callUniversalTool('search-records', {} as any), // Missing required fields
         () =>
           callUniversalTool('get-record-details', {
@@ -224,11 +201,9 @@ describe.skipIf(
       ];
 
       for (const request of malformedRequests) {
-        const response = (await request()) as McpToolResponse;
         expect(response).toBeDefined();
 
         // After malformed request, system should still respond to valid request
-        const validResponse = (await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: 'recovery-test',
           limit: 1,
@@ -240,11 +215,9 @@ describe.skipIf(
     }, 45000);
 
     it('should handle resource type boundaries', async () => {
-      const resourceTypes = ['companies', 'people', 'tasks', 'lists'];
 
       for (const resourceType of resourceTypes) {
         // Test basic operations on each resource type
-        const searchResponse = await callUniversalTool('search-records', {
           resource_type: resourceType as any,
           query: 'boundary-test',
           limit: 1,
@@ -257,18 +230,15 @@ describe.skipIf(
 
     it('should validate tool boundary interactions', async () => {
       // Test interactions between different tool categories
-      const toolInteractions = [
         {
           name: 'Universal → Task Tool',
           operation: async () => {
-            const searchResponse = (await callUniversalTool('search-records', {
               resource_type: 'tasks',
               query: 'tool-boundary',
               limit: 1,
             })) as McpToolResponse;
 
             if (searchResponse && !searchResponse.isError) {
-              const taskId = firstRecordIdFromSearch(searchResponse);
               if (taskId) {
                 return await callTasksTool('get-record-details', {
                   resource_type: 'tasks',
@@ -282,14 +252,12 @@ describe.skipIf(
         {
           name: 'Universal → Notes Tool',
           operation: async () => {
-            const companyResponse = (await callUniversalTool('search-records', {
               resource_type: 'companies',
               query: 'tool-boundary',
               limit: 1,
             })) as McpToolResponse;
 
             if (companyResponse && !companyResponse.isError) {
-              const companyId = firstRecordIdFromSearch(companyResponse);
               if (companyId) {
                 return await callNotesTool('list-notes', {
                   resource_type: 'companies',
@@ -304,7 +272,6 @@ describe.skipIf(
       ];
 
       for (const interaction of toolInteractions) {
-        const result = await interaction.operation();
         expect(result).toBeDefined();
         console.error(
           `✅ Tool boundary interaction validated: ${interaction.name}`
@@ -316,13 +283,10 @@ describe.skipIf(
   describe('External Dependency Handling', () => {
     it('should handle network timeout scenarios', async () => {
       // Test with very small timeout to simulate network issues
-      const startTime = Date.now();
-      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'timeout-test',
         limit: 1,
       })) as McpToolResponse;
-      const endTime = Date.now();
 
       expect(response).toBeDefined();
 
@@ -334,7 +298,6 @@ describe.skipIf(
 
     it('should validate API version compatibility', async () => {
       // Test that API calls work with current version expectations
-      const versionTestResponse = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'version-test',
         limit: 1,
@@ -360,14 +323,12 @@ describe.skipIf(
 
     it('should handle service degradation gracefully', async () => {
       // Test system behavior under various load conditions
-      const loadTests = [
         { name: 'Light load', operations: 2 },
         { name: 'Medium load', operations: 5 },
         { name: 'Heavy load', operations: 8 },
       ];
 
       for (const loadTest of loadTests) {
-        const operations = Array(loadTest.operations)
           .fill(null)
           .map((_, i) =>
             callUniversalTool('search-records', {
@@ -377,8 +338,6 @@ describe.skipIf(
             })
           );
 
-        const results = await Promise.allSettled(operations);
-        const successRate =
           results.filter((r) => r.status === 'fulfilled').length /
           results.length;
 
@@ -393,7 +352,6 @@ describe.skipIf(
   describe('Integration Recovery and Resilience', () => {
     it('should demonstrate error recovery patterns', async () => {
       // Test that system can recover from various error conditions
-      const errorRecoveryTests = [
         {
           name: 'Invalid resource type recovery',
           errorOp: () =>
@@ -426,11 +384,9 @@ describe.skipIf(
 
       for (const test of errorRecoveryTests) {
         // Trigger error condition
-        const errorResponse = (await test.errorOp()) as McpToolResponse;
         expect(errorResponse.isError).toBe(true);
 
         // Test recovery
-        const recoveryResponse = (await test.recoveryOp()) as McpToolResponse;
         expect(recoveryResponse).toBeDefined();
 
         console.error(`✅ ${test.name} completed successfully`);
@@ -439,7 +395,6 @@ describe.skipIf(
 
     it('should validate system state consistency after errors', async () => {
       // Ensure system maintains consistent state even after errors
-      const consistencyTests = [
         () =>
           callUniversalTool('search-records', {
             resource_type: 'companies',
@@ -470,13 +425,10 @@ describe.skipIf(
           }),
       ];
 
-      const results = (await Promise.all(
         consistencyTests.map((test) => test())
       )) as McpToolResponse[];
 
       // Should have mix of success and error responses
-      const successCount = results.filter((r) => !r.isError).length;
-      const errorCount = results.filter((r) => r.isError).length;
 
       expect(successCount).toBeGreaterThan(0);
       expect(errorCount).toBeGreaterThan(0);

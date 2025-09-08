@@ -15,7 +15,6 @@ import {
  * UUID format validation regex
  * Matches standard UUID v4 format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
  */
-const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -92,7 +91,6 @@ export function validateUUIDWithDetails(
       issues.push('incorrect dash positions (should be at 8, 13, 18, 23)');
     }
 
-    const nonHexChars = uuid.replace(/-/g, '').match(/[^0-9a-fA-F]/g);
     if (nonHexChars) {
       issues.push(
         `invalid characters: ${Array.from(new Set(nonHexChars)).join(', ')}`
@@ -123,7 +121,6 @@ export function createInvalidUUIDError(
   resourceType: string,
   operation: string = 'GET'
 ): EnhancedApiError {
-  const validation = validateUUIDWithDetails(recordId, {
     resourceType,
     operation,
   });
@@ -184,7 +181,6 @@ export function classifyRecordError(
   recordId: string,
   resourceType: string
 ): EnhancedApiError {
-  const errorMessage = error.message.toLowerCase();
 
   // If the UUID format is invalid, it's definitely a format error
   if (!isValidUUID(recordId)) {
@@ -220,7 +216,6 @@ export function classifyRecordError(
  */
 export function generateExampleUUID(): string {
   // Generate a valid UUID v4 for examples
-  const hex = '0123456789abcdef';
   let uuid = '';
 
   for (let i = 0; i < 36; i++) {
@@ -251,15 +246,12 @@ export function extractRecordId(input: string): string | null {
   }
 
   // First try direct UUID matching
-  const directMatch = input.match(UUID_REGEX);
   if (directMatch) {
     return directMatch[0];
   }
 
   // Try URL parsing for URI-style inputs
   try {
-    const url = new URL(input);
-    const pathSegments = url.pathname.split('/').filter(Boolean);
 
     // Check each path segment for a UUID
     for (const segment of pathSegments) {
@@ -272,7 +264,6 @@ export function extractRecordId(input: string): string | null {
   }
 
   // Try extracting UUID from anywhere in the string as fallback
-  const anyMatch = input.match(
     /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
   );
   if (anyMatch) {

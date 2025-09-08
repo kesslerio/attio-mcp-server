@@ -3,22 +3,12 @@
  * Handles create, read, update, and delete operations
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioRecord,
-  ResourceType,
-  AttioSingleResponse,
-  AttioListResponse,
-  RecordCreateParams,
-  RecordUpdateParams,
-  RecordListParams,
-} from '../../types/attio.js';
-import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
+import { getAttioClient } from '../attio-client.js';
 import { OperationType, createScopedLogger } from '../../utils/logger.js';
+import { secureValidateFields } from '../../utils/validation/field-validation.js';
 
 // Create scoped logger for CRUD operations
-const logger = createScopedLogger(
   'CRUDOperations',
   undefined,
   OperationType.API_CALL
@@ -41,8 +31,6 @@ function extractAnyId(
   obj: Record<string, unknown> | unknown
 ): string | undefined {
   if (!obj || typeof obj !== 'object') return;
-  const record = obj as Record<string, unknown>;
-  const idObj = record.id as Record<string, unknown> | undefined;
   return (
     (idObj?.record_id as string) ??
     (idObj?.company_id as string) ??
@@ -97,9 +85,7 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
   }
 
   // If already has the proper structure, return as-is
-  const hasValidId =
     rawData.id && (rawData.id as Record<string, unknown>).record_id;
-  const hasValues = rawData.values;
   if (hasValidId && hasValues) {
     return rawData as T;
   }
@@ -108,19 +94,13 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
   const result: Record<string, unknown> = { ...rawData };
 
   // Ensure id.record_id structure exists
-  const resultId = result.id as Record<string, unknown> | undefined;
   if (!result.id || !resultId?.record_id) {
     // Probe across common wrappers in order using the helper
-    const resultData = result.data as Record<string, unknown> | undefined;
-    const resultDataData = resultData?.data as
       | Record<string, unknown>
       | undefined;
-    const resultDataRecord = resultData?.record as
       | Record<string, unknown>
       | undefined;
-    const resultDataItems = resultData?.items as unknown[] | undefined;
 
-    const extractedId =
       extractAnyId(result) ??
       extractAnyId(resultData) ??
       extractAnyId(resultDataData) ??
@@ -141,7 +121,6 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
 
   // Ensure values object exists
   if (!result.values) {
-    const resultData = result.data as Record<string, unknown> | undefined;
     if (resultData?.values) {
       result.values = resultData.values;
     } else {
@@ -168,26 +147,22 @@ export async function getObjectDetails<T extends AttioRecord>(
     retryConfig?: Partial<RetryConfig>;
   }
 ): Promise<T> {
-  const api = getAttioClient();
   let path = `/objects/${objectType}/records/${recordId}`;
 
   // NEW: Add field filtering to query parameters with security validation
   if (options?.fields && options.fields.length > 0) {
     // Validate and sanitize field names to prevent injection attacks
-    const validatedFields = secureValidateFields(
       options.fields,
       objectType,
       'field filtering in get-record-details'
     );
 
     if (validatedFields.length > 0) {
-      const fieldsParam = validatedFields.join(',');
       path += `?fields=${encodeURIComponent(fieldsParam)}`;
     }
   }
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioSingleResponse<T>>(path);
     return (response?.data?.data || response?.data) as T;
   }, options?.retryConfig);
 }
@@ -203,9 +178,6 @@ export async function createRecord<T extends AttioRecord>(
   params: RecordCreateParams,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T> {
-  const api = getAttioClient();
-  const objectPath = getObjectPath(params.objectSlug, params.objectId);
-  const path = `${objectPath}/records`;
 
   return callWithRetry(async () => {
     // Debug log the request being made
@@ -223,7 +195,6 @@ export async function createRecord<T extends AttioRecord>(
       });
     }
 
-    const response = await api.post<AttioSingleResponse<T>>(path, {
       data: {
         values: params.attributes,
       },
@@ -278,16 +249,13 @@ export async function createRecord<T extends AttioRecord>(
     // Transform to proper AttioRecord structure with id.record_id
     try {
       // Allow empty objects for companies to enable fallback handling at higher levels
-      const isCompaniesRequest =
         params.objectSlug === 'companies' || params.objectId === 'companies';
-      const result = ensureAttioRecordStructure<T>(
         rawResult as Record<string, unknown>,
         isCompaniesRequest
       );
       return result;
     } catch (error) {
       // Robust fallback for { data: {} } responses - query the just-created record by name
-      const name =
         (params?.attributes as any)?.name?.value ??
         (params?.attributes as any)?.name;
       if (
@@ -305,14 +273,11 @@ export async function createRecord<T extends AttioRecord>(
         }
         try {
           // Use the documented query endpoint with exact name match
-          const queryResponse = await api.post(path + '/query', {
             filter: { name },
             limit: 1,
           });
 
-          const found = queryResponse?.data?.data?.[0];
           if (found) {
-            const fallbackResult = ensureAttioRecordStructure<T>(found);
             if (
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
@@ -356,20 +321,16 @@ export async function getRecord<T extends AttioRecord>(
   objectId?: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T> {
-  const api = getAttioClient();
-  const objectPath = getObjectPath(objectSlug, objectId);
   let path = `${objectPath}/records/${recordId}`;
 
   // Add attributes parameter if provided
   if (attributes && attributes.length > 0) {
     // Use array syntax for multiple attributes
-    const params = new URLSearchParams();
     attributes.forEach((attr) => params.append('attributes[]', attr));
     path += `?${params.toString()}`;
   }
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioSingleResponse<T>>(path);
     return (response?.data?.data || response?.data) as T;
   }, retryConfig);
 }
@@ -385,9 +346,6 @@ export async function updateRecord<T extends AttioRecord>(
   params: RecordUpdateParams,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T> {
-  const api = getAttioClient();
-  const objectPath = getObjectPath(params.objectSlug, params.objectId);
-  const path = `${objectPath}/records/${params.recordId}`;
 
   return callWithRetry(async () => {
     // Debug log the request being made
@@ -407,13 +365,11 @@ export async function updateRecord<T extends AttioRecord>(
     }
 
     // The API expects 'data.values' structure
-    const payload = {
       data: {
         values: params.attributes,
       },
     };
 
-    const response = await api.patch<AttioSingleResponse<T>>(path, payload);
 
     // Debug log the full response
     if (
@@ -431,14 +387,11 @@ export async function updateRecord<T extends AttioRecord>(
     }
 
     // Extract raw data from response using consistent pattern
-    const rawResult = response?.data?.data ?? response?.data ?? response;
 
     // Transform to proper AttioRecord structure with id.record_id
     try {
       // Allow empty objects for companies to enable fallback handling at higher levels
-      const isCompaniesRequest =
         params.objectSlug === 'companies' || params.objectId === 'companies';
-      const result = ensureAttioRecordStructure<T>(
         rawResult as Record<string, unknown>,
         isCompaniesRequest
       );
@@ -462,7 +415,6 @@ export async function updateRecord<T extends AttioRecord>(
         }
         try {
           // Query the updated record directly by ID
-          const fallbackResult = await getRecord<T>(
             params.objectSlug,
             params.recordId,
             undefined,
@@ -488,7 +440,6 @@ export async function updateRecord<T extends AttioRecord>(
             params.objectSlug === 'companies'
           ) {
             // Create the basic values object
-            const basicValues = Object.fromEntries(
               Object.entries(params.attributes).map(([key, value]) => [
                 key,
                 typeof value === 'object' && value && 'value' in value
@@ -499,12 +450,10 @@ export async function updateRecord<T extends AttioRecord>(
 
             // For test environments: if we have 'categories' field, also add 'industry' for test compatibility
             // This ensures tests that expect 'industry' field will still pass after attribute mapping
-            const testCompatibleValues = { ...basicValues };
             if (basicValues.categories && !basicValues.industry) {
               testCompatibleValues.industry = basicValues.categories;
             }
 
-            const mockResult = {
               id: {
                 workspace_id: 'test-workspace',
                 object_id: 'companies',
@@ -586,9 +535,6 @@ export async function deleteRecord(
   objectId?: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
-  const objectPath = getObjectPath(objectSlug, objectId);
-  const path = `${objectPath}/records/${recordId}`;
 
   return callWithRetry(async () => {
     await api.delete(path);
@@ -607,11 +553,8 @@ export async function listRecords<T extends AttioRecord>(
   params: RecordListParams,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
-  const objectPath = getObjectPath(params.objectSlug, params.objectId);
 
   // Build query parameters
-  const queryParams = new URLSearchParams();
 
   if (params.page) {
     queryParams.append('page', String(params.page));
@@ -637,14 +580,11 @@ export async function listRecords<T extends AttioRecord>(
     queryParams.append('direction', params.direction);
   }
 
-  const path = `${objectPath}/records${
     queryParams.toString() ? '?' + queryParams.toString() : ''
   }`;
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioListResponse<T>>(path);
     // Ensure we always return an array, never undefined/null/objects
-    const items = Array.isArray(response?.data?.data)
       ? response.data.data
       : Array.isArray(response?.data?.records)
         ? response.data.records

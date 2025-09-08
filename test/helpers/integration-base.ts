@@ -3,10 +3,6 @@
  * Handles API client initialization and test data cleanup
  */
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import {
-  initializeAttioClient,
-  getAttioClient,
-} from '../../src/api/attio-client.js';
 
 export interface IntegrationTestConfig {
   skipApiKey?: boolean;
@@ -77,8 +73,6 @@ export class IntegrationTestBase {
     if (this.config.requiresRealApi && this.createdObjects.length > 0) {
       console.log(`Cleaning up ${this.createdObjects.length} test objects...`);
 
-      const client = getAttioClient();
-      const cleanupPromises = this.createdObjects.map(async (obj) => {
         try {
           await client.delete(`/objects/${obj.type}/records/${obj.id}`);
           console.log(`Cleaned up ${obj.type}:${obj.id}`);
@@ -134,7 +128,6 @@ export class IntegrationTestBase {
     timeout: number = 5000,
     interval: number = 100
   ): Promise<void> {
-    const start = Date.now();
 
     while (Date.now() - start < timeout) {
       if (await condition()) {
@@ -166,7 +159,6 @@ export class IntegrationTestBase {
           throw lastError;
         }
 
-        const delay = baseDelay * Math.pow(2, attempt - 1);
         console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
@@ -183,21 +175,16 @@ export class IntegrationTestMocks {
   /**
    * Create a mock company for testing
    */
-  static async createTestCompany(attributes: any = {}): Promise<unknown> {
-    const testId = IntegrationTestBase.createTestId('company');
-    const company = {
+  static async createTestCompany(attributes: unknown = {}): Promise<unknown> {
       name: `Test Company ${testId}`,
       website: `https://${testId}.com`,
       ...attributes,
     };
 
     try {
-      const client = getAttioClient();
-      const response = await client.post('/objects/companies/records', {
         data: { values: company },
       });
 
-      const companyId = response.data.id.record_id;
       IntegrationTestBase.trackForCleanup('companies', companyId);
 
       return response.data;
@@ -210,21 +197,16 @@ export class IntegrationTestMocks {
   /**
    * Create a mock person for testing
    */
-  static async createTestPerson(attributes: any = {}): Promise<unknown> {
-    const testId = IntegrationTestBase.createTestId('person');
-    const person = {
+  static async createTestPerson(attributes: unknown = {}): Promise<unknown> {
       name: `Test Person ${testId}`,
       email_addresses: [`test_${testId}@example.com`],
       ...attributes,
     };
 
     try {
-      const client = getAttioClient();
-      const response = await client.post('/objects/people/records', {
         data: { values: person },
       });
 
-      const personId = response.data.id.record_id;
       IntegrationTestBase.trackForCleanup('people', personId);
 
       return response.data;
@@ -240,10 +222,8 @@ export class IntegrationTestMocks {
   static async createTestNote(
     parentObject: string,
     parentRecordId: string,
-    attributes: any = {}
+    attributes: unknown = {}
   ): Promise<unknown> {
-    const testId = IntegrationTestBase.createTestId('note');
-    const note = {
       title: `Test Note ${testId}`,
       content: `Test note content ${testId}`,
       format: 'plaintext',
@@ -253,10 +233,7 @@ export class IntegrationTestMocks {
     };
 
     try {
-      const client = getAttioClient();
-      const response = await client.post('/notes', { data: note });
 
-      const noteId = response.data.id.note_id;
       IntegrationTestBase.trackForCleanup('notes', noteId);
 
       return response.data;

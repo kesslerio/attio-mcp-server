@@ -8,14 +8,14 @@
 import { extractRecordId } from '../../utils/validation/uuid-validation.js';
 import type { AttioRecord } from '../../types/attio.js';
 
-function isRecordLike(x: any): x is AttioRecord {
+function isRecordLike(x: unknown): x is AttioRecord {
   return (
     !!x && typeof x === 'object' && x.id && typeof x.id.record_id === 'string'
   );
 }
 
-function collectCandidates(src: any): any[] {
-  const out: any[] = [];
+function collectCandidates(src: unknown): unknown[] {
+  const out: unknown[] = [];
   if (src == null) return out;
 
   // Common axios/Attio envelopes
@@ -28,7 +28,6 @@ function collectCandidates(src: any): any[] {
   out.push(src);
 
   // Arrays from bulk or list-like responses
-  const arrayish = [
     Array.isArray(src) ? src : null,
     Array.isArray(src?.data) ? src.data : null,
     Array.isArray(src?.data?.records) ? src.data.records : null,
@@ -43,17 +42,15 @@ function collectCandidates(src: any): any[] {
  * Extract a single Attio record from any Attio/axios envelope.
  * Returns null if we cannot find a record-like shape.
  */
-export function extractAttioRecord(src: any): AttioRecord | null {
-  const candidates = collectCandidates(src);
+export function extractAttioRecord(src: unknown): AttioRecord | null {
 
   // First try to find a complete record-like object
-  const rec = candidates.find(isRecordLike);
   if (rec) return rec;
 
   // Fallback: try to adapt id formats for partial records
   for (const candidate of candidates) {
     if (candidate && typeof candidate === 'object') {
-      const c: any = candidate;
+      const c: unknown = candidate;
 
       // id as string → adapt
       if (typeof c.id === 'string') {
@@ -71,9 +68,7 @@ export function extractAttioRecord(src: any): AttioRecord | null {
   }
 
   // Last resort: try to salvage from headers (e.g., Location)
-  const loc = src?.headers?.location || src?.headers?.Location;
   if (typeof loc === 'string') {
-    const rid = extractRecordId(loc);
     if (rid) return { id: { record_id: rid } } as AttioRecord;
   }
 
@@ -83,7 +78,7 @@ export function extractAttioRecord(src: any): AttioRecord | null {
 /**
  * Validates if a record looks like a successfully created Attio record
  */
-export function looksLikeCreatedRecord(record: any): boolean {
+export function looksLikeCreatedRecord(record: unknown): boolean {
   return isRecordLike(record);
 }
 
@@ -91,7 +86,6 @@ export function looksLikeCreatedRecord(record: any): boolean {
  * Generates deterministic mock ID for consistency in testing
  */
 export function generateMockId(prefix = '12345678-1234-4000'): string {
-  const timestamp = Date.now().toString().slice(-12);
   return `${prefix}-${timestamp}`;
 }
 
@@ -99,9 +93,8 @@ export function generateMockId(prefix = '12345678-1234-4000'): string {
  * Throws if the object does not look like a freshly created record.
  * Keeps error messages actionable for E2E.
  */
-export function assertLooksLikeCreated(rec: any, where: string): asserts rec {
+export function assertLooksLikeCreated(rec: unknown, where: string): asserts rec {
   if (!isRecordLike(rec)) {
-    const shape =
       rec && typeof rec === 'object' ? Object.keys(rec) : typeof rec;
     // Keep as a normal Error to avoid extra wrapping here; creators add context
     throw new Error(
@@ -117,7 +110,7 @@ export function isTestRun(): boolean {
   return process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
 }
 
-export function debugRecordShape(record: any): Record<string, unknown> {
+export function debugRecordShape(record: unknown): Record<string, unknown> {
   return {
     hasIdObj: !!(record as any)?.id?.record_id,
     idType: typeof (record as any)?.id,
@@ -127,7 +120,6 @@ export function debugRecordShape(record: any): Record<string, unknown> {
 
 // --- Output normalization: flatten Attio values into test-friendly shapes ---
 
-const SINGLETON_FIELDS = new Set<string>([
   'name',
   'description',
   'record_id',
@@ -137,7 +129,6 @@ const SINGLETON_FIELDS = new Set<string>([
   'logo_url',
 ]);
 
-const MULTI_VALUE_FIELDS = new Set<string>([
   // keep these as arrays of strings
   'domains',
   'categories',
@@ -149,7 +140,6 @@ const MULTI_VALUE_FIELDS = new Set<string>([
   'notes',
 ]);
 
-const DEFAULT_PREF = [
   'value',
   'text',
   'name',
@@ -159,20 +149,17 @@ const DEFAULT_PREF = [
   'label',
 ];
 
-function extractScalarFromObject(key: string, obj: any) {
+function extractScalarFromObject(key: string, obj: unknown) {
   if (!obj || typeof obj !== 'object') return obj;
 
-  const prefer = key === 'domains' ? ['domain', ...DEFAULT_PREF] : DEFAULT_PREF;
   for (const k of prefer) {
-    const v = obj[k];
     if (typeof v === 'string' || typeof v === 'number') return v;
   }
   return obj;
 }
 
-function normalizeField(key: string, val: any): any {
+function normalizeField(key: string, val: unknown): unknown {
   if (Array.isArray(val)) {
-    const flat = val
       .map((x) => extractScalarFromObject(key, x))
       .filter((x) => x != null);
 
@@ -198,11 +185,11 @@ function normalizeField(key: string, val: any): any {
 }
 
 function normalizeValuesObject(
-  values?: Record<string, any>,
+  values?: Record<string, unknown>,
   resourceType?: string
 ) {
   if (!values || typeof values !== 'object') return values;
-  const out: Record<string, any> = {};
+  const out: Record<string, unknown> = {};
 
   for (const [k, v] of Object.entries(values)) {
     // People records: keep `name` as Attio-style array entries
@@ -219,10 +206,10 @@ function normalizeValuesObject(
 
 /** Public: normalize one Attio record to MCP/tool output (flatten values). */
 export function normalizeRecordForOutput<
-  T extends { values?: Record<string, any> },
+  T extends { values?: Record<string, unknown> },
 >(rec: T, resourceType?: string): T {
   if (!rec || typeof rec !== 'object') return rec;
-  const copy: any = { ...rec };
+  const copy: unknown = { ...rec };
   copy.values = normalizeValuesObject(rec.values, resourceType);
   return copy as T;
 }

@@ -8,7 +8,6 @@ describe('Numeric Filtering', () => {
   describe('createNumericFilter', () => {
     it('should create a filter with min value only', () => {
       const range: NumericRange = { min: 1000 };
-      const filter = createNumericFilter('revenue', range);
 
       expect(filter.filters).toBeDefined();
       expect(filter.filters?.length).toBe(1);
@@ -21,7 +20,6 @@ describe('Numeric Filtering', () => {
 
     it('should create a filter with max value only', () => {
       const range: NumericRange = { max: 5000 };
-      const filter = createNumericFilter('revenue', range);
 
       expect(filter.filters).toBeDefined();
       expect(filter.filters?.length).toBe(1);
@@ -34,7 +32,6 @@ describe('Numeric Filtering', () => {
 
     it('should create a filter with both min and max values', () => {
       const range: NumericRange = { min: 1000, max: 5000 };
-      const filter = createNumericFilter('revenue', range);
 
       expect(filter.filters).toBeDefined();
       expect(filter.filters?.length).toBe(2);
@@ -53,7 +50,6 @@ describe('Numeric Filtering', () => {
 
     it('should create a filter with equals value', () => {
       const range: NumericRange = { equals: 3000 };
-      const filter = createNumericFilter('revenue', range);
 
       expect(filter.filters).toBeDefined();
       expect(filter.filters?.length).toBe(1);
