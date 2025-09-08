@@ -9,8 +9,7 @@ import { UniversalResourceType } from '../../../handlers/tool-configs/universal/
 import { getCreateService } from '../index.js';
 import { UniversalUtilityService } from '../../UniversalUtilityService.js';
 import { AttioTask, AttioRecord } from '../../../types/attio.js';
-import { logger } from '../../../utils/logger.js';
-import { debug, OperationType } from '../../../utils/logger.js';
+import { error as logError, debug, OperationType } from '../../../utils/logger.js';
 import { ErrorEnhancer } from '../../../errors/enhanced-api-errors.js';
 
 export class TaskCreateStrategy extends BaseCreateStrategy {
@@ -194,7 +193,7 @@ export class TaskCreateStrategy extends BaseCreateStrategy {
       };
     } catch (error: unknown) {
       // Log original error for debugging
-      logger.error('Task creation failed', error, { resource_type: 'tasks' });
+      logError('TaskCreateStrategy', 'Task creation failed', error, { resource_type: 'tasks' });
 
       // Issue #417: Enhanced task error handling with field mapping guidance
       const errorObj: Error =

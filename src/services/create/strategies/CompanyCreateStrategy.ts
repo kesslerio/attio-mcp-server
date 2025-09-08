@@ -14,7 +14,7 @@ import {
 } from '../../../handlers/tool-configs/universal/schemas.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
 import { getFormatErrorHelp } from '../../../utils/attribute-format-helpers.js';
-import { logger } from '../../../utils/logger.js';
+import { debug } from '../../../utils/logger.js';
 
 export class CompanyCreateStrategy extends BaseCreateStrategy {
   constructor() {
@@ -60,7 +60,7 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
         );
       }
 
-      logger.debug('Company created successfully', {
+      debug('CompanyCreateStrategy', 'Company created successfully', {
         company_id: result.id.record_id,
         name: convertedData.name
       });
@@ -193,14 +193,8 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
 
     return new UniversalValidationError(message, ErrorType.USER_ERROR, {
       field,
-      expectedType,
-      receivedType,
-      errorCode: 'FIELD_TYPE_MISMATCH',
       suggestion: `Convert ${field} to ${expectedType}`,
-      remediation: [
-        `Convert ${field} to ${expectedType}`,
-        `Example: ${field}: ${this.getExampleValue(expectedType)}`,
-      ],
+      example: `Example: ${field}: ${this.getExampleValue(expectedType)}`,
     });
   }
 

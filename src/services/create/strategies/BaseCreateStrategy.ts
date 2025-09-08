@@ -56,8 +56,8 @@ export abstract class BaseCreateStrategy {
     if (missingFields.length > 0) {
       throw new UniversalValidationError(
         `Missing required fields: ${missingFields.join(', ')}`,
-        'USER_ERROR',
-        { fields: missingFields }
+        undefined,
+        { field: missingFields.join(', ') }
       );
     }
   }

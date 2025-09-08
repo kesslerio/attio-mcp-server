@@ -15,7 +15,7 @@ import {
   ErrorType,
 } from '../../../handlers/tool-configs/universal/schemas.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
-import { logger } from '../../../utils/logger.js';
+import { debug } from '../../../utils/logger.js';
 import type {
   PersonFieldInput,
   AllowedPersonFields,
@@ -45,7 +45,7 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
       // Validate people attributes before POST to ensure correct Attio format
       validatePeopleAttributesPrePost(correctedData);
       
-      logger.debug('People validation passed, final payload shape', {
+      debug('PersonCreateStrategy', 'People validation passed, final payload shape', {
         name: Array.isArray(correctedData.name)
           ? 'ARRAY'
           : typeof correctedData.name,

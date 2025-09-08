@@ -718,38 +718,44 @@ export class UniversalCreateService {
     switch (resource_type) {
       case UniversalResourceType.COMPANIES: {
         // Use new strategy pattern
-        const { CompanyCreateStrategy } = await import('./create/strategies/CompanyCreateStrategy.js');
+        const { CompanyCreateStrategy } = await import(
+          './create/strategies/CompanyCreateStrategy.js'
+        );
         const strategy = new CompanyCreateStrategy();
         const result = await strategy.create({
           resource_type,
           mapped_data: mappedData,
-          original_data: record_data
+          original_data: record_data,
         });
-        return result.record;
+        return result.record as AttioRecord;
       }
 
       case UniversalResourceType.LISTS: {
         // Use new strategy pattern
-        const { ListCreateStrategy } = await import('./create/strategies/ListCreateStrategy.js');
+        const { ListCreateStrategy } = await import(
+          './create/strategies/ListCreateStrategy.js'
+        );
         const strategy = new ListCreateStrategy();
         const result = await strategy.create({
           resource_type,
           mapped_data: mappedData,
-          original_data: record_data
+          original_data: record_data,
         });
-        return result.record;
+        return result.record as AttioRecord;
       }
 
       case UniversalResourceType.PEOPLE: {
         // Use new strategy pattern
-        const { PersonCreateStrategy } = await import('./create/strategies/PersonCreateStrategy.js');
+        const { PersonCreateStrategy } = await import(
+          './create/strategies/PersonCreateStrategy.js'
+        );
         const strategy = new PersonCreateStrategy();
         const result = await strategy.create({
           resource_type,
           mapped_data: mappedData,
-          original_data: record_data
+          original_data: record_data,
         });
-        return result.record;
+        return result.record as AttioRecord;
       }
 
       case UniversalResourceType.RECORDS:
@@ -767,26 +773,30 @@ export class UniversalCreateService {
 
       case UniversalResourceType.DEALS: {
         // Use new strategy pattern
-        const { DealCreateStrategy } = await import('./create/strategies/DealCreateStrategy.js');
+        const { DealCreateStrategy } = await import(
+          './create/strategies/DealCreateStrategy.js'
+        );
         const strategy = new DealCreateStrategy();
         const result = await strategy.create({
           resource_type,
           mapped_data: mappedData,
-          original_data: record_data
+          original_data: record_data,
         });
-        return result.record;
+        return result.record as AttioRecord;
       }
 
       case UniversalResourceType.TASKS: {
         // Use new strategy pattern
-        const { TaskCreateStrategy } = await import('./create/strategies/TaskCreateStrategy.js');
+        const { TaskCreateStrategy } = await import(
+          './create/strategies/TaskCreateStrategy.js'
+        );
         const strategy = new TaskCreateStrategy();
         const result = await strategy.create({
           resource_type,
           mapped_data: mappedData,
-          original_data: record_data
+          original_data: record_data,
         });
-        return result.record;
+        return result.record as AttioRecord;
       }
 
       case UniversalResourceType.NOTES:
