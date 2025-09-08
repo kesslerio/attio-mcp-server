@@ -286,17 +286,28 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
     it('should support timeframe search for companies', async () => {
       // Companies timeframe search is now enabled
-      // This test validates that the old restriction is removed
+      const mockResults = [
+        {
+          id: { record_id: 'comp-1' },
+          values: {
+            name: [{ value: 'Company A' }],
+          },
+          created_at: '2023-12-01T00:00:00Z',
+        },
+      ];
+
+      const { mockHandlers } = getMockInstances();
+      mockHandlers.handleUniversalSearch.mockResolvedValue(mockResults);
+
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         timeframe_type: TimeframeType.CREATED,
         start_date: '2023-12-01T00:00:00Z',
       };
 
-      // Should not throw the old "not optimized for companies" error
-      await expect(searchByTimeframeConfig.handler(params)).rejects.not.toThrow(
-        /Timeframe search is not currently optimized for companies/
-      );
+      const result = await searchByTimeframeConfig.handler(params);
+      expect(result).toEqual(mockResults);
+      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalled();
     });
 
     it('should format timeframe results with date info', async () => {

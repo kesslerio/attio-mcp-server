@@ -83,7 +83,7 @@ import { AttioRecord } from '../../../types/attio.js';
  * Universal search records tool
  * Consolidates: search-companies, search-people, list-records, list-tasks
  */
-export const searchRecordsConfig: UniversalToolConfig = {
+export const searchRecordsConfig = {
   name: 'search-records',
   handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -156,6 +156,20 @@ export const searchRecordsConfig: UniversalToolConfig = {
             : undefined;
         };
 
+        const getFromArrayField = (
+          arr: unknown,
+          keys: string[]
+        ): string | undefined => {
+          if (Array.isArray(arr) && arr.length > 0) {
+            const first: Record<string, unknown> = arr[0] as Record<string, unknown>;
+            for (const key of keys) {
+              const val = first?.[key];
+              if (typeof val === 'string') return val;
+            }
+          }
+          return undefined;
+        };
+
         if (resourceType === UniversalResourceType.TASKS) {
           // For tasks, prefer content field (tasks have simple string content, not array)
           identifier =
@@ -165,19 +179,20 @@ export const searchRecordsConfig: UniversalToolConfig = {
           id = String(record.id?.task_id || record.id?.record_id || 'unknown');
         } else if (resourceType === UniversalResourceType.PEOPLE) {
           // For people, use comprehensive name extraction logic (with proper type handling)
-          const valuesAny = values as Record<string, any>;
-          const name = 
-            valuesAny?.name?.[0]?.full_name ||
-            valuesAny?.name?.[0]?.value ||
-            valuesAny?.name?.[0]?.formatted ||
-            valuesAny?.full_name?.[0]?.value ||
+          const valuesAny = values as Record<string, unknown>;
+          const name =
+            getFromArrayField(valuesAny?.name, ['full_name', 'value', 'formatted']) ||
+            getFromArrayField(valuesAny?.full_name, ['value']) ||
             getFirstValue(values.name) ||
             'Unnamed';
           
           // Add email if available for better identification
-          const emailValue = 
-            valuesAny?.email_addresses?.[0]?.email_address ||
-            valuesAny?.email_addresses?.[0]?.value ||
+          const emailFromArr = getFromArrayField(valuesAny?.email_addresses, [
+            'email_address',
+            'value',
+          ]);
+          const emailValue =
+            emailFromArr ||
             getFirstValue(values.email) ||
             getFirstValue(valuesAny.email_addresses);
           
@@ -202,13 +217,13 @@ export const searchRecordsConfig: UniversalToolConfig = {
 
     return `Found ${recordsArray.length} ${typeName}:\n${formattedResults}`;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Universal get record details tool
  * Consolidates: get-company-details, get-person-details, get-record-details, get-task-details
  */
-export const getRecordDetailsConfig: UniversalToolConfig = {
+export const getRecordDetailsConfig = {
   name: 'get-record-details',
   handler: async (
     params: UniversalRecordDetailsParams
@@ -351,13 +366,13 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
 
     return details.trim();
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Universal create record tool
  * Consolidates: create-company, create-person, create-record, create-task
  */
-export const createRecordConfig: UniversalToolConfig = {
+export const createRecordConfig = {
   name: 'create-record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
@@ -429,13 +444,13 @@ export const createRecordConfig: UniversalToolConfig = {
 
     return `✅ Successfully created ${resourceTypeName}: ${displayName} (ID: ${id})`;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Universal update record tool
  * Consolidates: update-company, update-person, update-record, update-task
  */
-export const updateRecordConfig: UniversalToolConfig = {
+export const updateRecordConfig = {
   name: 'update-record',
   handler: async (params: UniversalUpdateParams): Promise<AttioRecord> => {
     try {
@@ -503,13 +518,13 @@ export const updateRecordConfig: UniversalToolConfig = {
 
     return `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Universal delete record tool
  * Consolidates: delete-company, delete-person, delete-record, delete-task
  */
-export const deleteRecordConfig: UniversalToolConfig = {
+export const deleteRecordConfig = {
   name: 'delete-record',
   handler: async (
     params: UniversalDeleteParams
@@ -548,13 +563,13 @@ export const deleteRecordConfig: UniversalToolConfig = {
       : 'record';
     return `✅ Successfully deleted ${resourceTypeName} with ID: ${result.record_id}`;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Universal get attributes tool
  * Consolidates: get-company-attributes, get-person-attributes, get-record-attributes
  */
-export const getAttributesConfig: UniversalToolConfig = {
+export const getAttributesConfig = {
   name: 'get-attributes',
   handler: async (
     params: UniversalAttributesParams
@@ -634,13 +649,13 @@ export const getAttributesConfig: UniversalToolConfig = {
 
     return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes available`;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Universal discover attributes tool
  * Consolidates: discover-company-attributes, discover-person-attributes, discover-record-attributes
  */
-export const discoverAttributesConfig: UniversalToolConfig = {
+export const discoverAttributesConfig = {
   name: 'discover-attributes',
   handler: async (params: {
     resource_type: UniversalResourceType;
@@ -664,7 +679,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       return { error: errorMessage, success: false };
     }
   },
-  formatResult: (schema: any, resourceType?: UniversalResourceType): string => {
+  formatResult: (schema: Record<string, unknown>, resourceType?: UniversalResourceType): string => {
     if (!schema) {
       return 'No attribute schema found';
     }
@@ -687,8 +702,9 @@ export const discoverAttributesConfig: UniversalToolConfig = {
 
     // Handle object with attributes property (from UniversalMetadataService)
     if (typeof schema === 'object' && schema !== null) {
-      if (schema.all && Array.isArray(schema.all)) {
-        return `Available ${resourceTypeName} attributes (${schema.all.length}):\n${schema.all
+      const s: any = schema as any;
+      if (s.all && Array.isArray(s.all)) {
+        return `Available ${resourceTypeName} attributes (${(s.all as any[]).length}):\n${(s.all as any[])
           .map((attr: Record<string, unknown>, index: number) => {
             const name = attr.name || attr.slug || 'Unnamed';
             const type = attr.type || 'unknown';
@@ -698,8 +714,8 @@ export const discoverAttributesConfig: UniversalToolConfig = {
           .join('\n')}`;
       }
 
-      if (schema.attributes && Array.isArray(schema.attributes)) {
-        return `Available ${resourceTypeName} attributes (${schema.attributes.length}):\n${schema.attributes
+      if (s.attributes && Array.isArray(s.attributes)) {
+        return `Available ${resourceTypeName} attributes (${(s.attributes as any[]).length}):\n${(s.attributes as any[])
           .map((attr: Record<string, unknown>, index: number) => {
             const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
             const type = attr.type || 'unknown';
@@ -710,9 +726,9 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       }
 
       // Handle standard/custom attributes structure (from discoverCompanyAttributes)
-      if (schema.standard || schema.custom) {
-        const standard = schema.standard || [];
-        const custom = schema.custom || [];
+      if (s.standard || s.custom) {
+        const standard = (s.standard as any[]) || [];
+        const custom = (s.custom as any[]) || [];
         const total = standard.length + custom.length;
 
         let result = `Available ${resourceTypeName} attributes (${total} total):\n`;
@@ -743,20 +759,22 @@ export const discoverAttributesConfig: UniversalToolConfig = {
 
     return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attribute schema available`;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Get detailed info tool configuration
  */
-export const getDetailedInfoConfig: UniversalToolConfig = {
+export const getDetailedInfoConfig = {
   name: 'get-detailed-info',
   handler: async (params: UniversalDetailedInfoParams) => {
     validateUniversalToolParams('get-detailed-info', params);
     return await handleUniversalGetDetailedInfo(params);
   },
   formatResult: (
-    info: any,
-    resourceType?: UniversalResourceType
+    info: Record<string, unknown>,
+    resourceType?: UniversalResourceType,
+    // Accept optional info type to customize header in formatting
+    infoType?: import('./types.js').DetailedInfoType
   ): string => {
     if (!info) {
       return 'No detailed information found';
@@ -766,12 +784,22 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       ? getSingularResourceType(resourceType)
       : 'record';
 
-    let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} detailed information:\n\n`;
+    // Determine section header based on infoType when provided
+    const headerSuffix = (() => {
+      const lower = String(infoType || '').toLowerCase();
+      if (lower === 'contact') return 'contact information';
+      if (lower === 'business') return 'business information';
+      if (lower === 'social') return 'social information';
+      // Default generic label
+      return 'detailed information';
+    })();
+
+    let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} ${headerSuffix}:\n\n`;
 
     if (typeof info === 'object' && info.values) {
       // Format as Attio record values
       Object.entries(info.values).forEach(
-        ([field, values]: [string, any]) => {
+        ([field, values]: [string, unknown]) => {
           if (Array.isArray(values) && values.length > 0) {
             const value = values[0].value;
             if (value) {
@@ -796,7 +824,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
 
     return result;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Core operations tool definitions for MCP protocol
@@ -874,10 +902,11 @@ export const coreOperationsToolConfigs = {
 
         // The handleUniversalCreateNote already returns normalized data
         return res;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Map error body/status into the regex your tests expect
-        const status = err?.response?.status;
-        const body = err?.response?.data;
+        const anyErr = err as any;
+        const status = anyErr?.response?.status;
+        const body = anyErr?.response?.data;
 
         const upstreamMsg =
           body?.error?.message ||
@@ -920,7 +949,7 @@ export const coreOperationsToolConfigs = {
         throw ErrorService.createUniversalError('list-notes', 'notes', error);
       }
     },
-    formatResult: (notes: any[]): string => {
+    formatResult: (notes: Record<string, unknown>[]): string => {
       const notesArray = notes || [];
 
       if (notesArray.length === 0) {
@@ -929,12 +958,11 @@ export const coreOperationsToolConfigs = {
 
       const formattedNotes = notesArray
         .map((note, index) => {
-          const title =
-            note.title || note.values?.title?.[0]?.value || 'Untitled';
-          const content =
-            note.content || note.values?.content?.[0]?.value || '';
-          const id = note.id?.record_id || note.id || 'unknown';
-          const timestamp = note.created_at || note.timestamp || 'unknown date';
+          const n = note as any;
+          const title = n.title || n.values?.title?.[0]?.value || 'Untitled';
+          const content = n.content || n.values?.content?.[0]?.value || '';
+          const id = n.id?.record_id || n.id || 'unknown';
+          const timestamp = n.created_at || n.timestamp || 'unknown date';
 
           const preview =
             content.length > 50 ? content.substring(0, 50) + '...' : content;

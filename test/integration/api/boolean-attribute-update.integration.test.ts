@@ -10,8 +10,8 @@ import {
   updateCompany,
   updateCompanyAttribute,
   deleteCompany,
-} from '../../src/objects/companies/basic.js';
-import { Company } from '../../src/types/attio.js';
+} from '../../../src/objects/companies/basic.js';
+import { Company } from '../../../src/types/attio.js';
 
 // Test configuration
 const SKIP_TESTS = process.env.SKIP_INTEGRATION_TESTS === 'true';
@@ -171,3 +171,4 @@ describe('Boolean Attribute API Tests', () => {
     TEST_TIMEOUT
   );
 });
+

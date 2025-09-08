@@ -48,13 +48,10 @@ import { debug, error as logError, OperationType } from '../../../utils/logger.j
 // Import Attio API client for direct note operations
 import {
   getAttioClient,
-  initializeAttioClient,
 } from '../../../api/attio-client.js';
 import {
   unwrapAttio,
-  normalizeNote,
   normalizeNotes,
-  coerceNoteFormat,
 } from '../../../utils/attio-response.js';
 
 import { AttioRecord } from '../../../types/attio.js';
@@ -86,8 +83,8 @@ export async function handleUniversalGetDetails(
  */
 export async function handleUniversalCreateNote(
   params: UniversalCreateNoteParams
-): Promise<any> {
-  const { resource_type, record_id, title, content, format, created_at } =
+): Promise<Record<string, unknown>> {
+  const { resource_type, record_id, title, content, format } =
     params;
 
   try {
@@ -105,7 +102,7 @@ export async function handleUniversalCreateNote(
       '../../../utils/attio-response.js'
     );
 
-    const result = normalizeNote(unwrapAttio<any>(rawResult));
+    const result = normalizeNote(unwrapAttio<Record<string, unknown>>(rawResult));
     debug(
       'universal.createNote',
       'Create note result',
@@ -114,17 +111,17 @@ export async function handleUniversalCreateNote(
       OperationType.TOOL_EXECUTION
     );
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     logError(
       'universal.createNote',
       'Failed to create note',
       error,
-      { errorMessage: error.message },
+      { errorMessage: (error as any)?.message },
       'handleUniversalCreateNote',
       OperationType.TOOL_EXECUTION
     );
     return {
-      error: error.message,
+      error: (error as any)?.message,
       success: false,
     };
   }
@@ -135,7 +132,7 @@ export async function handleUniversalCreateNote(
  */
 export async function handleUniversalGetNotes(
   params: UniversalGetNotesParams
-): Promise<any[]> {
+): Promise<Record<string, unknown>[]> {
   const { resource_type, record_id, limit = 20, offset = 0 } = params;
 
   // Validate key inputs early for clearer messages
@@ -151,13 +148,16 @@ export async function handleUniversalGetNotes(
       limit,
       offset,
     });
-    const rawList = unwrapAttio<any>(response);
-    const noteArray = Array.isArray(rawList) ? rawList : rawList?.data || [];
-    return normalizeNotes(noteArray);
-  } catch (error: any) {
-    const status = error?.response?.status;
+    const rawList = unwrapAttio<Record<string, unknown>>(response);
+    const noteArray: any[] = Array.isArray(rawList)
+      ? (rawList as any[])
+      : (((rawList as any)?.data as any[]) || []);
+    return normalizeNotes(noteArray as any[]);
+  } catch (error: unknown) {
+    const anyErr = error as any;
+    const status = anyErr?.response?.status;
     const message =
-      error?.response?.data?.error?.message || error?.message || 'Unknown error';
+      anyErr?.response?.data?.error?.message || anyErr?.message || 'Unknown error';
     const semanticMessage =
       status === 404
         ? 'record not found'
@@ -177,7 +177,7 @@ export async function handleUniversalGetNotes(
  */
 export async function handleUniversalListNotes(
   params: UniversalGetNotesParams
-): Promise<any[]> {
+): Promise<Record<string, unknown>[]> {
   return handleUniversalGetNotes(params);
 }
 
@@ -186,7 +186,7 @@ export async function handleUniversalListNotes(
  */
 export async function handleUniversalUpdateNote(
   params: UniversalUpdateNoteParams
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const { note_id, title, content, is_archived } = params;
   const client = getAttioClient();
 
@@ -204,7 +204,7 @@ export async function handleUniversalUpdateNote(
  */
 export async function handleUniversalSearchNotes(
   params: UniversalSearchNotesParams
-): Promise<any[]> {
+): Promise<Record<string, unknown>[]> {
   const { resource_type, record_id, query, limit = 20, offset = 0 } = params;
   const client = getAttioClient();
 
@@ -229,7 +229,7 @@ export async function handleUniversalSearchNotes(
     };
     const parentObject = resourceTypeMap[resource_type];
     if (parentObject) {
-      notes = notes.filter((note: any) => note.parent_object === parentObject);
+      notes = notes.filter((note: Record<string, unknown>) => note.parent_object === parentObject);
     }
   }
 

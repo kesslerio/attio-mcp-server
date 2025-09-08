@@ -91,9 +91,12 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       };
 
       const result: any = await batchOperationsConfig.handler(params);
-      expect(result).toHaveLength(2);
-      expect(result[0].success).toBe(true);
-      expect(result[1].success).toBe(true);
+      expect(result.operations).toHaveLength(2);
+      expect(result.operations[0].success).toBe(true);
+      expect(result.operations[1].success).toBe(true);
+      expect(result.summary.total).toBe(2);
+      expect(result.summary.successful).toBe(2);
+      expect(result.summary.failed).toBe(0);
       expect(mockHandleUniversalCreate).toHaveBeenCalledTimes(2);
     });
 
@@ -119,10 +122,13 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       };
 
       const result: any = await batchOperationsConfig.handler(params);
-      expect(result).toHaveLength(2);
-      expect(result[0].success).toBe(true);
-      expect(result[1].success).toBe(false);
-      expect(result[1].error).toBe('Record not found');
+      expect(result.operations).toHaveLength(2);
+      expect(result.operations[0].success).toBe(true);
+      expect(result.operations[1].success).toBe(false);
+      expect(result.operations[1].error).toBe('Record not found');
+      expect(result.summary.total).toBe(2);
+      expect(result.summary.successful).toBe(1);
+      expect(result.summary.failed).toBe(1);
     });
 
     it('should handle batch delete operations', async () => {
@@ -141,9 +147,12 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       };
 
       const result: any = await batchOperationsConfig.handler(params);
-      expect(result).toHaveLength(2);
-      expect(result[0].success).toBe(true);
-      expect(result[1].success).toBe(true);
+      expect(result.operations).toHaveLength(2);
+      expect(result.operations[0].success).toBe(true);
+      expect(result.operations[1].success).toBe(true);
+      expect(result.summary.total).toBe(2);
+      expect(result.summary.successful).toBe(2);
+      expect(result.summary.failed).toBe(0);
       expect(mockHandleUniversalDelete).toHaveBeenCalledTimes(2);
     });
 
@@ -169,9 +178,12 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       };
 
       const result: any = await batchOperationsConfig.handler(params);
-      expect(result).toHaveLength(2);
-      expect(result[0].success).toBe(true);
-      expect(result[1].success).toBe(true);
+      expect(result.operations).toHaveLength(2);
+      expect(result.operations[0].success).toBe(true);
+      expect(result.operations[1].success).toBe(true);
+      expect(result.summary.total).toBe(2);
+      expect(result.summary.successful).toBe(2);
+      expect(result.summary.failed).toBe(0);
     });
 
     it('should handle batch search operations', async () => {
@@ -373,13 +385,14 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       };
 
       const startTime = Date.now();
-      const result: any[] = (await batchOperationsConfig.handler(
-        params
-      )) as any[];
+      const result: any = await batchOperationsConfig.handler(params);
       const endTime = Date.now();
 
-      expect(result).toHaveLength(10);
-      expect((result as any[]).every((r: any) => r.success)).toBe(true);
+      expect(result.operations).toHaveLength(10);
+      expect(result.operations.every((r: any) => r.success)).toBe(true);
+      expect(result.summary.total).toBe(10);
+      expect(result.summary.successful).toBe(10);
+      expect(result.summary.failed).toBe(0);
       // Should complete faster than sequential processing due to controlled concurrency
       expect(endTime - startTime).toBeLessThan(200); // Much less than 10 * 10ms = 100ms
     });

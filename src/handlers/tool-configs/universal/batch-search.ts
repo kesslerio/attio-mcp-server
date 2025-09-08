@@ -39,7 +39,7 @@ export interface BatchSearchParams {
  * Handles multiple search queries in parallel with error isolation
  * Enhanced for Issue #471 with optimized batch API
  */
-export const batchSearchConfig: UniversalToolConfig = {
+export const batchSearchConfig = {
   name: 'batch-search',
   handler: async (params: BatchSearchParams): Promise<any> => {
     try {
@@ -154,7 +154,7 @@ export const batchSearchConfig: UniversalToolConfig = {
 
     return summary;
   },
-};
+} as unknown as UniversalToolConfig;
 
 /**
  * Batch search schema definition
