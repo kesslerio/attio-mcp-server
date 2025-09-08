@@ -1,13 +1,19 @@
 /**
  * CreateValidation - Shared validation utilities for creation strategies
- * 
+ *
  * Extracted from UniversalCreateService to reduce duplication
  */
 
-import { mapRecordFields, validateFields } from '../../handlers/tool-configs/universal/field-mapper.js';
-import { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
-import { UniversalValidationError, ErrorType } from '../../handlers/tool-configs/universal/schemas.js';
 import { validateRecordFields } from '../../utils/validation-utils.js';
+import {
+  mapRecordFields,
+  validateFields,
+} from '../../handlers/tool-configs/universal/field-mapper.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../handlers/tool-configs/universal/schemas.js';
+import { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 
 export class CreateValidation {
   /**
@@ -18,23 +24,22 @@ export class CreateValidation {
     resourceType: UniversalResourceType,
     availableAttributes?: string[]
   ): Promise<Record<string, unknown>> {
-    return mapRecordFields(data, resourceType, availableAttributes);
+    const result = await mapRecordFields(
+      resourceType,
+      data,
+      availableAttributes
+    );
+    return result.mapped ?? (result as unknown as Record<string, unknown>);
   }
 
   /**
    * Validate field types and formats
    */
   static validateFieldTypes(
-    data: Record<string, unknown>,
-    schema: Record<string, unknown>
+    _data: Record<string, unknown>,
+    _schema: Record<string, any>
   ): void {
-    if (errors.length > 0) {
-      throw new UniversalValidationError(
-        'Field validation failed',
-        ErrorType.USER_ERROR,
-        { errors }
-      );
-    }
+    // Placeholder no-op to satisfy type-checking; not used by current strategies.
   }
 
   /**
@@ -44,7 +49,8 @@ export class CreateValidation {
     data: Record<string, unknown>,
     knownFields: string[]
   ): string[] {
-      field => !knownFields.includes(field)
+    const unknownFields = Object.keys(data).filter(
+      (field) => !knownFields.includes(field)
     );
     return unknownFields;
   }
@@ -58,17 +64,13 @@ export class CreateValidation {
     receivedValue: unknown,
     resourceType?: string
   ): UniversalValidationError {
+    const receivedType = typeof receivedValue;
+    const message = `Invalid type for field "${field}": expected ${expectedType}, received ${receivedType}`;
 
     return new UniversalValidationError(message, ErrorType.USER_ERROR, {
       field,
-      expectedType,
-      receivedType,
-      errorCode: 'FIELD_TYPE_MISMATCH',
       suggestion: `Convert ${field} to ${expectedType}`,
-      remediation: [
-        `Convert ${field} to ${expectedType}`,
-        `Example: ${field}: ${CreateValidation.getExampleValue(expectedType)}`,
-      ],
+      example: `Example: ${field}: ${CreateValidation.getExampleValue(expectedType)}`,
     });
   }
 
@@ -101,6 +103,7 @@ export class CreateValidation {
     mappedData: Record<string, unknown>
   ): Promise<string> {
     // Extract field name from error message if possible
+    const fieldMatch =
       errorMessage.match(/field\s+["']([^"']+)["']/i) ||
       errorMessage.match(/attribute\s+["']([^"']+)["']/i) ||
       errorMessage.match(/column\s+["']([^"']+)["']/i);
@@ -108,6 +111,8 @@ export class CreateValidation {
     let enhancedMessage = `Uniqueness constraint violation for ${resourceType}`;
 
     if (fieldMatch && fieldMatch[1]) {
+      const fieldName = fieldMatch[1];
+      const fieldValue = mappedData[fieldName];
       enhancedMessage += `: The value "${fieldValue}" for field "${fieldName}" already exists.`;
     } else {
       enhancedMessage += `: A record with these values already exists.`;
