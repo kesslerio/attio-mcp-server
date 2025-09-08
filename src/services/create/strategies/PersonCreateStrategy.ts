@@ -9,7 +9,7 @@ import type { PersonCreateAttributes } from '../../../types/attio.js';
 import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
 import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
 
-export class PersonCreateStrategy implements CreateStrategy {
+export class PersonCreateStrategy implements CreateStrategy<AttioRecord> {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {
     const { values, resourceType } = params;
     // Ensure email format is valid and normalized (parity with existing behavior)
@@ -41,6 +41,16 @@ export class PersonCreateStrategy implements CreateStrategy {
             field: match[1],
           });
         }
+      }
+      if (msg.includes('uniqueness constraint')) {
+        throw new UniversalValidationError(
+          'Uniqueness constraint violation for people',
+          ErrorType.USER_ERROR,
+          {
+            suggestion:
+              'Try searching for existing records first or use different unique values',
+          }
+        );
       }
       throw err;
     }

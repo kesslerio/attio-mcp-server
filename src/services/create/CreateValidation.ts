@@ -1,5 +1,5 @@
 import type { AttioRecord } from '../../types/attio.js';
-import type { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 import { shouldUseMockData } from '../create/index.js';
 import { UniversalUtilityService } from '../UniversalUtilityService.js';
 import { getObjectRecord } from '../../objects/records/index.js';
@@ -27,11 +27,11 @@ export const CreateValidation = {
     if (shouldUseMockData()) return null;
     try {
       switch (resourceType) {
-        case 'companies' as unknown as UniversalResourceType:
+        case UniversalResourceType.COMPANIES:
           return (await getCompanyDetails(recordId)) as unknown as AttioRecord;
-        case 'people' as unknown as UniversalResourceType:
+        case UniversalResourceType.PEOPLE:
           return (await getPersonDetails(recordId)) as unknown as AttioRecord;
-        case 'lists' as unknown as UniversalResourceType: {
+        case UniversalResourceType.LISTS: {
           const list = await getListDetails(recordId);
           return {
             id: { record_id: (list as any).id.list_id, list_id: (list as any).id.list_id },
@@ -46,11 +46,11 @@ export const CreateValidation = {
             },
           } as unknown as AttioRecord;
         }
-        case 'tasks' as unknown as UniversalResourceType:
+        case UniversalResourceType.TASKS:
           return UniversalUtilityService.convertTaskToRecord(await getTask(recordId));
-        case 'deals' as unknown as UniversalResourceType:
+        case UniversalResourceType.DEALS:
           return await getObjectRecord('deals', recordId);
-        case 'records' as unknown as UniversalResourceType:
+        case UniversalResourceType.RECORDS:
           return await getObjectRecord('records', recordId);
         default:
           return null;
@@ -60,4 +60,3 @@ export const CreateValidation = {
     }
   },
 };
-

@@ -7,7 +7,7 @@ import { UniversalValidationError, ErrorType } from '../../../handlers/tool-conf
 import { getFormatErrorHelp, convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
 import { enhanceUniquenessError } from '../../../handlers/tool-configs/universal/field-mapper/validators/uniqueness-validator.js';
 
-export class CompanyCreateStrategy implements CreateStrategy {
+export class CompanyCreateStrategy implements CreateStrategy<AttioRecord> {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {
     const { values, resourceType } = params;
     try {
@@ -22,7 +22,11 @@ export class CompanyCreateStrategy implements CreateStrategy {
           { field: 'result' }
         );
       }
-      if (!result.id || !(result as any).id.record_id) {
+      // Type guard for expected structure
+      const hasRecordId =
+        typeof (result as any)?.id?.record_id === 'string' &&
+        (result as any).id.record_id.length > 0;
+      if (!hasRecordId) {
         throw new UniversalValidationError(
           'Company creation failed: Invalid record structure',
           ErrorType.API_ERROR,

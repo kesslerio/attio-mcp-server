@@ -3,7 +3,14 @@ import type { UniversalResourceType } from '../../../handlers/tool-configs/unive
 import type { CreateStrategy, CreateStrategyParams } from './BaseCreateStrategy.js';
 import { getCreateService, shouldUseMockData } from '../../create/index.js';
 
-export class TaskCreateStrategy implements CreateStrategy {
+// Creates tasks by translating high-level fields to service API fields.
+// Mapping overview:
+// - content/title: ensure non-empty `content`; default in E2E
+// - assignees -> assigneeId: accept array/object/string and extract an identifier
+// - deadline_at -> dueDate
+// - linked_records/record_id -> recordId
+// - targetObject: forwarded unchanged (used by downstream service)
+export class TaskCreateStrategy implements CreateStrategy<AttioRecord> {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {
     const { values } = params;
     const payload = { ...(values as Record<string, unknown>) };

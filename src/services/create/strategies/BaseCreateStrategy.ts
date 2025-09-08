@@ -10,7 +10,6 @@ export interface CreateStrategyParams {
   context?: Record<string, unknown>;
 }
 
-export interface CreateStrategy {
-  create(params: CreateStrategyParams): Promise<AttioRecord | AttioTask>;
+export interface CreateStrategy<T = AttioRecord | AttioTask> {
+  create(params: CreateStrategyParams): Promise<T>;
 }
-
