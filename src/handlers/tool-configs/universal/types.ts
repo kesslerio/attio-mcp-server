@@ -337,8 +337,8 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
-  handler: (params: Record<string, unknown>) => Promise<unknown>;
-  formatResult: (results: Record<string, unknown>) => string;
+  handler: (params: any) => Promise<any>;
+  formatResult: (results: any, ...args: any[]) => string;
 }
 
 /**
