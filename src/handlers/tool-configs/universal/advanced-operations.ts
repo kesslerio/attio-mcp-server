@@ -18,7 +18,6 @@ import {
   BatchOperationType,
   RelativeTimeframe,
 } from './types.js';
-import { InteractionType } from '../../../types/attio.js';
 
 import {
   advancedSearchSchema,
@@ -71,7 +70,6 @@ import {
   validateBatchOperation,
   validateSearchQuery,
 } from '../../../utils/batch-validation.js';
-import { RATE_LIMITS } from '../../../config/security-limits.js';
 
 // Import new filter utilities
 import { normalizeOperator, apiSemaphore } from '../../../utils/AttioFilterOperators.js';
@@ -129,51 +127,11 @@ async function processInParallelWithErrorIsolation<T, R = unknown>(
   return results;
 }
 
-// Chunked processing with delay between chunks for rate limiting tests
-async function processInChunks<T, R = unknown>(
-  items: T[],
-  processor: (item: T, index: number) => Promise<R>,
-  chunkSize = RATE_LIMITS.MAX_CONCURRENT_REQUESTS,
-  chunkDelayMs = RATE_LIMITS.BATCH_DELAY_MS
-): Promise<Array<{ success: boolean; result?: R; error?: string; data?: T }>> {
-  const out: Array<{ success: boolean; result?: R; error?: string; data?: T }>[] = [];
-  for (let start = 0; start < items.length; start += chunkSize) {
-    const chunk = items.slice(start, start + chunkSize);
-    const settled = await Promise.allSettled(
-      chunk.map((item, idx) =>
-        (async () => {
-          try {
-            const result = await processor(item, start + idx);
-            return { success: true as const, result };
-          } catch (error: unknown) {
-            return {
-              success: false as const,
-              error: error instanceof Error ? error.message : String(error),
-              data: item,
-            };
-          }
-        })()
-      )
-    );
-    out.push(
-      settled.map((s, i) =>
-        s.status === 'fulfilled'
-          ? s.value
-          : ({ success: false as const, error: String(s.reason), data: chunk[i] })
-      )
-    );
-    if (start + chunkSize < items.length && chunkDelayMs > 0) {
-      await new Promise((r) => setTimeout(r, chunkDelayMs));
-    }
-  }
-  return out.flat();
-}
-
 /**
  * Universal advanced search tool
  * Consolidates complex filtering across all resource types
  */
-export const advancedSearchConfig = {
+export const advancedSearchConfig: UniversalToolConfig = {
   name: 'advanced-search',
   handler: async (params: AdvancedSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -366,13 +324,13 @@ export const advancedSearchConfig = {
       })
       .join('\n')}`;
   },
-} as unknown as UniversalToolConfig;
+};
 
 /**
  * Universal search by relationship tool
  * Handles cross-entity relationship searches
  */
-export const searchByRelationshipConfig = {
+export const searchByRelationshipConfig: UniversalToolConfig = {
   name: 'search-by-relationship',
   handler: async (params: RelationshipSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -475,14 +433,14 @@ export const searchByRelationshipConfig = {
       })
       .join('\n')}`;
   },
-} as unknown as UniversalToolConfig;
+};
 
 /**
  * Universal search by content tool
  * Searches within notes, activity, and interactions
  */
 
-export const searchByContentConfig = {
+export const searchByContentConfig: UniversalToolConfig = {
   name: 'search-by-content',
   handler: async (params: ContentSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -493,28 +451,7 @@ export const searchByContentConfig = {
 
       const { resource_type, content_type, search_query, limit, offset } = sanitizedParams;
 
-      // Support specialized content searches for companies/people by notes
-      if (content_type === ContentSearchType.NOTES) {
-        if (resource_type === UniversalResourceType.COMPANIES) {
-          const { searchCompaniesByNotes } = await import('../../../objects/companies/index.js');
-          return await searchCompaniesByNotes(search_query);
-        }
-        if (resource_type === UniversalResourceType.PEOPLE) {
-          const { searchPeopleByNotes } = await import('../../../objects/people/index.js');
-          return await searchPeopleByNotes(search_query);
-        }
-      }
-
-      // Support people activity search with sensible defaults
-      if (content_type === ContentSearchType.ACTIVITY && resource_type === UniversalResourceType.PEOPLE) {
-        const { searchPeopleByActivity } = await import('../../../objects/people/search.js');
-        return await searchPeopleByActivity({
-          dateRange: { preset: 'last_month' },
-          interactionType: InteractionType.ANY,
-        });
-      }
-
-      // For notes resource search, use the notes API directly since notes don't support query endpoints
+      // For notes search, use the notes API directly since notes don't support query endpoints
       if (content_type === ContentSearchType.NOTES && resource_type === UniversalResourceType.NOTES) {
         // Import the notes module for direct access
         const { listNotes } = await import('../../../objects/notes.js');
@@ -636,14 +573,14 @@ export const searchByContentConfig = {
       })
       .join('\n')}`;
   },
-} as unknown as UniversalToolConfig;
+};
 
 
 /**
  * Universal search by timeframe tool
  * Handles temporal filtering across resource types using Attio API v2 filters
  */
-export const searchByTimeframeConfig = {
+export const searchByTimeframeConfig: UniversalToolConfig = {
   name: 'search-by-timeframe',
   handler: async (params: TimeframeSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -680,44 +617,6 @@ export const searchByTimeframeConfig = {
           throw new Error(
             `Invalid relative_range '${relative_range}'. Supported options: today, yesterday, this_week, last_week, this_month, last_month, last_7_days, last_14_days, last_30_days, last_90_days`
           );
-        }
-      }
-
-      // SPECIAL CASE: People timeframe searches use specialized handlers (tested behavior)
-      if (resource_type === UniversalResourceType.PEOPLE) {
-        const peopleSearch = await import('../../../objects/people/search.js');
-        const dateUtils = await import('../../../utils/date-utils.js');
-
-        const effectiveType = timeframe_type || TimeframeType.MODIFIED;
-        switch (effectiveType) {
-          case TimeframeType.CREATED:
-            return await peopleSearch.searchPeopleByCreationDate({
-              start: start_date,
-              end: end_date,
-            });
-          case TimeframeType.MODIFIED:
-            return await peopleSearch.searchPeopleByModificationDate({
-              start: start_date,
-              end: end_date,
-            });
-          case TimeframeType.LAST_INTERACTION: {
-            const range = dateUtils.validateAndCreateDateRange(
-              start_date,
-              end_date
-            );
-            if (!range) {
-              // Match test expectation exactly
-              throw new Error(
-                'At least one date (start or end) is required for last interaction search'
-              );
-            }
-            return await peopleSearch.searchPeopleByLastInteraction({
-              start: range.start,
-              end: range.end,
-            });
-          }
-          default:
-            throw new Error(`Unsupported timeframe type: ${effectiveType}`);
         }
       }
 
@@ -845,13 +744,6 @@ export const searchByTimeframeConfig = {
       });
 
     } catch (error: unknown) {
-      // Preserve specific validation errors used by tests
-      if (
-        error instanceof Error &&
-        error.message.includes('At least one date (start or end) is required')
-      ) {
-        throw error;
-      }
       throw ErrorService.createUniversalError(
         'timeframe search',
         `${params.resource_type}:${params.timeframe_type || 'undefined'}`,
@@ -910,16 +802,15 @@ export const searchByTimeframeConfig = {
       })
       .join('\n')}`;
   },
-} as unknown as UniversalToolConfig;
+};
 
 /**
  * Universal batch operations tool
  * Handles bulk operations across resource types
  */
-export const batchOperationsConfig = {
+export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Batch operations return varies between arrays and objects depending on operation type
-  handler: async (params: Record<string, unknown>): Promise<any> => {
+  handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'batch-operations',
@@ -948,7 +839,7 @@ export const batchOperationsConfig = {
                     }),
                   };
                   
-                case 'update': {
+                case 'update':
                   const typedRecordData = record_data as Record<string, unknown>;
                   if (!typedRecordData?.id) {
                     throw new Error('Record ID is required for update operation');
@@ -965,9 +856,8 @@ export const batchOperationsConfig = {
                       return_details: true,
                     }),
                   };
-                }
                   
-                case 'delete': {
+                case 'delete':
                   const deleteRecordData = record_data as Record<string, unknown>;
                   if (!deleteRecordData?.id) {
                     throw new Error('Record ID is required for delete operation');
@@ -982,7 +872,6 @@ export const batchOperationsConfig = {
                         : (deleteRecordData.id as Record<string, unknown>)?.record_id as string || String(deleteRecordData.id),
                     }),
                   };
-                }
                   
                 default:
                   throw new Error(`Unsupported operation: ${operation}`);
@@ -1025,26 +914,20 @@ export const batchOperationsConfig = {
             );
           }
 
-          // Validate batch (size + payload)
-          const createValidation = validateBatchOperation({
-            items: records,
-            operationType: 'create',
-            resourceType: resource_type,
-            checkPayload: true,
-          });
-          if (!createValidation.isValid) {
-            throw new Error(createValidation.error);
-          }
-
-          // Process with controlled concurrency and inter-chunk delays
-          const results = await processInChunks(
-            records,
-            async (recordData: Record<string, unknown>) =>
-              await handleUniversalCreate({
-                resource_type,
-                record_data: recordData,
-                return_details: true,
-              })
+          // Use Promise.all for parallel processing
+          const results = await Promise.all(
+            records.map(async (recordData: Record<string, unknown>, index: number) => {
+              try {
+                const result = await handleUniversalCreate({
+                  resource_type,
+                  record_data: recordData,
+                  return_details: true,
+                });
+                return { index, success: true, result };
+              } catch (error: unknown) {
+                return { index, success: false, error: error instanceof Error ? error.message : String(error) };
+              }
+            })
           );
           
           return {
@@ -1075,13 +958,14 @@ export const batchOperationsConfig = {
             throw new Error(updateValidation.error);
           }
 
-          // Use chunked processing with delays and concurrency
-          const results = await processInChunks(
+          // Use parallel processing with controlled concurrency
+          const results = await processInParallelWithErrorIsolation(
             records,
             async (recordData: Record<string, unknown>) => {
               if (!recordData.id) {
                 throw new Error('Record ID is required for update operation');
               }
+
               return await handleUniversalUpdate({
                 resource_type,
                 record_id:
@@ -1122,14 +1006,15 @@ export const batchOperationsConfig = {
             throw new Error(deleteValidation.error);
           }
 
-          // Use chunked processing with delays and concurrency
-          const results = await processInChunks(
+          // Use parallel processing with controlled concurrency
+          const results = await processInParallelWithErrorIsolation(
             record_ids,
-            async (recordId: string) =>
-              await handleUniversalDelete({
+            async (recordId: string) => {
+              return await handleUniversalDelete({
                 resource_type,
                 record_id: recordId,
-              })
+              });
+            }
           );
           
           return {
@@ -1160,14 +1045,15 @@ export const batchOperationsConfig = {
             throw new Error(getValidation.error);
           }
 
-          // Use chunked processing with delays and concurrency
-          const results = await processInChunks(
+          // Use parallel processing with controlled concurrency
+          const results = await processInParallelWithErrorIsolation(
             record_ids,
-            async (recordId: string) =>
-              await handleUniversalGetDetails({
+            async (recordId: string) => {
+              return await handleUniversalGetDetails({
                 resource_type,
                 record_id: recordId,
-              })
+              });
+            }
           );
           
           return {
@@ -1225,8 +1111,14 @@ export const batchOperationsConfig = {
               limit,
               offset,
             });
-            // Legacy behavior: return raw results
-            return searchResults;
+            return {
+              operations: [{ success: true, results: searchResults }],
+              summary: {
+                total: searchResults.length,
+                successful: 1,
+                failed: 0,
+              },
+            };
           }
         }
 
@@ -1387,7 +1279,7 @@ export const batchOperationsConfig = {
 
     return `Batch ${operationName} result: ${JSON.stringify(results)}`;
   },
-} as unknown as UniversalToolConfig;
+};
 
 /**
  * Advanced operations tool definitions for MCP protocol
