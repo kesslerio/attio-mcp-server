@@ -716,37 +716,70 @@ export class UniversalCreateService {
     }
 
     switch (resource_type) {
-      case UniversalResourceType.COMPANIES:
-        return this.createCompanyRecord(mappedData, resource_type);
-
-      case UniversalResourceType.LISTS:
-        return this.createListRecord(mappedData, resource_type);
-
-      case UniversalResourceType.PEOPLE:
-        return this.createPersonRecord(mappedData, resource_type);
-
-      case UniversalResourceType.RECORDS:
-        // Ensure object slug is available in mappedData for createObjectRecord
+      case UniversalResourceType.COMPANIES: {
+        const { CompanyCreateStrategy } = await import(
+          './create/strategies/CompanyCreateStrategy.js'
+        );
+        return (await new CompanyCreateStrategy().create({
+          resourceType: resource_type,
+          values: mappedData,
+        })) as AttioRecord;
+      }
+      case UniversalResourceType.LISTS: {
+        const { ListCreateStrategy } = await import(
+          './create/strategies/ListCreateStrategy.js'
+        );
+        return (await new ListCreateStrategy().create({
+          resourceType: resource_type,
+          values: mappedData,
+        })) as AttioRecord;
+      }
+      case UniversalResourceType.PEOPLE: {
+        const { PersonCreateStrategy } = await import(
+          './create/strategies/PersonCreateStrategy.js'
+        );
+        return (await new PersonCreateStrategy().create({
+          resourceType: resource_type,
+          values: mappedData,
+        })) as AttioRecord;
+      }
+      case UniversalResourceType.RECORDS: {
+        const { RecordCreateStrategy } = await import(
+          './create/strategies/RecordCreateStrategy.js'
+        ).catch(() => ({ RecordCreateStrategy: undefined }) as any);
+        if (RecordCreateStrategy) {
+          const context = { objectSlug: recordsObjectSlug } as Record<
+            string,
+            unknown
+          >;
+          return (await new RecordCreateStrategy().create({
+            resourceType: resource_type,
+            values: mappedData,
+            context,
+          })) as AttioRecord;
+        }
+        // fallback to existing path if record strategy not present
         if (
           recordsObjectSlug &&
           !mappedData.object &&
           !mappedData.object_api_slug
         ) {
-          // Create a copy to avoid mutating the original mappedData
           const recordsData = { ...mappedData, object: recordsObjectSlug };
           return this.createObjectRecord(recordsData, resource_type);
         }
         return this.createObjectRecord(mappedData, resource_type);
-
+      }
       case UniversalResourceType.DEALS:
         return this.createDealRecord(mappedData, record_data);
-
-      case UniversalResourceType.TASKS:
-        return this.createTaskRecord(mappedData);
-
-      case UniversalResourceType.NOTES:
-        return this.createNoteRecord(mappedData);
-
+      case UniversalResourceType.TASKS: {
+        const { TaskCreateStrategy } = await import(
+          './create/strategies/TaskCreateStrategy.js'
+        );
+        return (await new TaskCreateStrategy().create({
+          resourceType: resource_type,
+          values: mappedData,
+        })) as AttioRecord;
+      }
       default:
         return this.handleUnsupportedResourceType(resource_type, params);
     }
