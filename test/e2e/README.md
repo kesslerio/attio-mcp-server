@@ -86,6 +86,28 @@ This E2E test suite provides comprehensive testing for:
 - **Real API Integration**: Tests against actual Attio workspace
 - **Data Isolation**: Safe testing without polluting workspace data
 
+## 🧪 Two-Lane E2E Model (Tools vs Workflows)
+
+Purpose: faster feedback and clearer intent by separating protocol QA from user scenarios.
+
+- Tools lane (MCP protocol QA)
+  - Location: `test/e2e/tools/`
+  - Focus: tool registration, `input_schema` constraints, error shapes, protocol fidelity via `mcp-test-client`.
+  - Run: `npm run test:e2e:tools`
+
+- Workflows lane (user scenarios)
+  - Location: `test/e2e/suites/`
+  - Focus: cross-tool flows, data lifecycle, rate limiting, diagnostics.
+  - Run: `npm run test:e2e:workflows`
+
+Diagnostics
+- Tools: `npm run e2e:diagnose:tools`
+- Workflows: `npm run e2e:diagnose:core`
+
+Notes
+- `npm run test:e2e` runs all E2E tests using the default Vitest includes.
+- Avoid duplicating assertions across lanes; prefer lowest-layer checks in Tools.
+
 ## 🚀 Quick Start
 
 ### 1. Setup Configuration

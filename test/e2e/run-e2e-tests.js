@@ -28,7 +28,9 @@ const CONFIG = {
   ],
   configFiles: ['test/e2e/config.local.json', 'test/e2e/config.template.json'],
   testPatterns: {
-    all: 'test/e2e/suites/**/*.e2e.test.ts',
+    all: 'test/e2e/**/*.e2e.test.ts',
+    tools: 'test/e2e/tools/**/*.e2e.test.ts',
+    workflows: 'test/e2e/suites/**/*.e2e.test.ts',
     errorHandling: 'test/e2e/suites/error-handling.e2e.test.ts',
     universal: 'test/e2e/suites/universal-*.e2e.test.ts',
     notes: 'test/e2e/suites/notes-*.e2e.test.ts',
