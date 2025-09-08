@@ -172,6 +172,41 @@ export const mockSpecializedHandlers = () => {
 };
 
 /**
+ * Mock notes module used by search-by-content
+ * Ensures listNotes returns a proper { data: AttioNote[] } shape
+ */
+const mockNotesModule = () => {
+  vi.mock('../../../../../src/objects/notes.js', () => ({
+    listNotes: vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: { note_id: 'note_1' },
+          parent_object: 'companies',
+          parent_record_id: 'comp-1',
+          title: 'Important Meeting',
+          content_plaintext: 'We discussed an important meeting and follow-ups.',
+          content_markdown: '# Important meeting notes',
+          format: 'markdown',
+          created_at: '2024-01-01T00:00:00Z',
+          tags: ['meeting'],
+        },
+        {
+          id: { note_id: 'note_2' },
+          parent_object: 'people',
+          parent_record_id: 'person-1',
+          title: 'Weekly sync',
+          content_plaintext: 'general updates',
+          content_markdown: 'general updates',
+          format: 'markdown',
+          created_at: '2024-01-02T00:00:00Z',
+          tags: [],
+        },
+      ],
+    }),
+  }));
+};
+
+/**
  * Mock setup for date utilities
  * Used by: advanced-operations.test.ts
  */
@@ -217,7 +252,34 @@ export const setupMockHandlers = async () => {
   } = shared as any;
 
   // Set up default mock implementations
-  vi.mocked(handleUniversalSearch).mockResolvedValue([]);
+  // Provide a smarter default for handleUniversalSearch to support timeframe tests
+  vi.mocked(handleUniversalSearch).mockImplementation(async (args: any) => {
+    // If timeframe-specific params are present for people, route to specialized mock
+    if (
+      args?.resource_type === 'people' &&
+      (args?.timeframe_attribute || args?.start_date || args?.end_date)
+    ) {
+      // Creation date heuristic: created_at attribute
+      if (String(args.timeframe_attribute || '').includes('created')) {
+        const res = await (mockInstances.mockSpecialized
+          .searchPeopleByCreationDate as any)({
+          start: args.start_date,
+          end: args.end_date,
+        });
+        return res;
+      }
+      // Otherwise, fall back to generic search mock
+      return await (mockInstances.mockSearchService.searchRecords as any)();
+    }
+    // Companies timeframe search should use searchRecords mock as tests expect
+    if (
+      args?.resource_type === 'companies' &&
+      (args?.timeframe_attribute || args?.start_date || args?.end_date)
+    ) {
+      return await (mockInstances.mockSearchService.searchRecords as any)();
+    }
+    return [];
+  });
   vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as any);
   vi.mocked(handleUniversalCreate).mockResolvedValue({} as any);
   vi.mocked(handleUniversalUpdate).mockResolvedValue({} as any);
@@ -288,6 +350,7 @@ export const setupUnitTestMocks = async () => {
   mockSchemasAndValidation();
   mockUniversalSearchService();
   mockSpecializedHandlers();
+  mockNotesModule();
   mockDateUtils();
   await initializeMockInstances();
   await setupMockHandlers();

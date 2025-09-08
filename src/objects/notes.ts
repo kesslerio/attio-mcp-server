@@ -137,20 +137,25 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
   const api = getAttioClient();
 
   try {
-    const { parent_object, parent_record_id, ...params } = query;
-
-    // If parent_object and parent_record_id are provided, use the record-specific endpoint
-    if (parent_object && parent_record_id) {
-      const endpoint = `/objects/${parent_object}/records/${parent_record_id}/notes`;
-      const response = await api.get(endpoint, { params });
-      return response.data;
-    } else {
-      // Fallback to generic notes endpoint
-      const response = await api.get('/notes', { params: query });
-      return response.data;
+    // Always use the official /notes endpoint with query params.
+    // Some environments may not support record-scoped endpoints like
+    // /objects/{object}/records/{record}/notes, which can 404.
+    // The /notes endpoint accepts filters (parent_object, parent_record_id)
+    // and returns an empty array when no notes exist.
+    const response = await api.get('/notes', { params: query });
+    const res = response.data ?? { data: [] };
+    // Ensure shape consistency
+    if (!Array.isArray(res.data)) {
+      return { data: [], meta: undefined };
     }
+    return res;
   } catch (error: any) {
     debug('notes', 'List notes failed', { error: error.message });
+    // Prefer returning an empty list on benign 404s for list operations
+    const status = error?.response?.status;
+    if (status === 404) {
+      return { data: [], meta: undefined };
+    }
     throw error;
   }
 }

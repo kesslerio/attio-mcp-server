@@ -113,7 +113,13 @@ export async function callToolWithEnhancements(
   try {
     // Step 0: Check if API key is available for API-dependent operations
     const apiKeyStatus = configLoader.getApiKeyStatus();
-    if (!apiKeyStatus.available && isApiDependentTool(toolName)) {
+    const allowE2EMock =
+      process.env.E2E_MODE === 'true' &&
+      process.env.USE_MOCK_DATA !== 'false' &&
+      // Tools that provide E2E-safe fallbacks (no real API needed)
+      ['list-notes'].includes(toolName);
+
+    if (!apiKeyStatus.available && isApiDependentTool(toolName) && !allowE2EMock) {
       const errorMessage = `Skipping API-dependent tool call: ${apiKeyStatus.message}`;
       logInfo(errorMessage, { toolName, skipped: true }, options.testName);
 

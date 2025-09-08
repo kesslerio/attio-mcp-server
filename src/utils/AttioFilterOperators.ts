@@ -133,7 +133,11 @@ export class AttioRateLimitSemaphore {
   private running = 0;
   private queue: Array<() => void> = [];
 
-  constructor(private maxConcurrent = 4) {}
+  constructor(
+    // Conservative limit to avoid rate limiting (429) errors
+    // Attio API typically allows ~10 req/sec, we use 4 concurrent for safety margin
+    private maxConcurrent = 4
+  ) {}
 
   async acquire<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {

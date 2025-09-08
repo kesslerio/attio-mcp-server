@@ -186,33 +186,33 @@ fi
 if [[ -n "$SUITE" ]]; then
   case "$SUITE" in
     error-handling)
-      TEST_PATTERN="error-handling"
-      TARGET_DESCRIPTION="error handling tests"
+      FILE="error-handling"
+      TARGET_DESCRIPTION="error handling tests (file match)"
       LOG_FILE_PREFIX="e2e-error-handling"
       ;;
     record-management)
-      TEST_PATTERN="record-management"
-      TARGET_DESCRIPTION="record management tests"
+      FILE="record-management"
+      TARGET_DESCRIPTION="record management tests (file match)"
       LOG_FILE_PREFIX="e2e-record-management"
       ;;
     core-workflows)
-      TEST_PATTERN="core-workflows"
-      TARGET_DESCRIPTION="core workflow tests"
+      FILE="core-workflows"
+      TARGET_DESCRIPTION="core workflow tests (file match)"
       LOG_FILE_PREFIX="e2e-core-workflows"
       ;;
     notes-management)
-      TEST_PATTERN="notes-management"
-      TARGET_DESCRIPTION="notes management tests"
+      FILE="notes-management"
+      TARGET_DESCRIPTION="notes management tests (file match)"
       LOG_FILE_PREFIX="e2e-notes"
       ;;
     infrastructure)
-      TEST_PATTERN="infrastructure"
-      TARGET_DESCRIPTION="infrastructure tests"
+      FILE="infrastructure"
+      TARGET_DESCRIPTION="infrastructure tests (file match)"
       LOG_FILE_PREFIX="e2e-infrastructure"
       ;;
     regression-prevention)
-      TEST_PATTERN="regression-prevention"
-      TARGET_DESCRIPTION="regression prevention tests"
+      FILE="regression-prevention"
+      TARGET_DESCRIPTION="regression prevention tests (file match)"
       LOG_FILE_PREFIX="e2e-regression"
       ;;
     *)
@@ -245,6 +245,15 @@ export MCP_LOG_LEVEL=DEBUG
 export LOG_FORMAT=json
 export E2E_MODE=true
 export USE_MOCK_DATA=false
+# Ensure E2E tests are not forcibly skipped
+export SKIP_E2E_TESTS=false
+
+# Quick environment summary for troubleshooting
+if [[ -n "${ATTIO_API_KEY:-}" ]]; then
+  echo "🔐 ATTIO_API_KEY detected (length: ${#ATTIO_API_KEY})"
+else
+  echo "⚠️  ATTIO_API_KEY not detected; some tests may skip"
+fi
 
 # Set API contract mode based on --debug flag
 if [[ "$DEBUG" == true ]]; then

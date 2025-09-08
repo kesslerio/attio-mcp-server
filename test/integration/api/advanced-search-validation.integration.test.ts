@@ -3,19 +3,19 @@
  * These tests specifically bypass mocks to test actual validation logic
  */
 import { describe, beforeAll, it, expect, vi } from 'vitest';
-import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { initializeAttioClient } from '../../../src/api/attio-client.js';
 
 // Clear any existing mocks before importing
 vi.clearAllMocks();
 vi.resetAllMocks();
 
 // Unmock the specific module we want to test
-vi.doUnmock('../../src/objects/companies/search.js');
+vi.doUnmock('../../../src/objects/companies/search.js');
 
 // Import after clearing mocks - use async function to handle top-level await
 let advancedSearchCompanies: any;
 (async () => {
-  const module = await import('../../src/objects/companies/search.js');
+  const module = await import('../../../src/objects/companies/search.js');
   advancedSearchCompanies = module.advancedSearchCompanies;
 })();
 
@@ -109,3 +109,4 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
     });
   });
 });
+
