@@ -302,54 +302,6 @@ import {
  */
 
 /**
- * Company creation with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
- */
-async function createCompanyWithMockSupport(
-  companyData: Record<string, unknown>
-): Promise<AttioRecord> {
-  if (shouldUseMockData()) {
-    // In mock/offline mode, route through the create service so unit tests
-    // can assert the service was called (tests mock getCreateService()).
-    const service = getCreateService();
-    return await service.createCompany(companyData);
-  }
-
-  const service = getCreateService();
-  return await service.createCompany(companyData);
-}
-
-/**
- * Person creation with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
- */
-async function createPersonWithMockSupport(
-  personData: Record<string, unknown>
-): Promise<AttioRecord> {
-  if (shouldUseMockData()) {
-    // In mock/offline mode, route through the create service so unit tests
-    // can assert the service was called (tests mock getCreateService()).
-    const service = getCreateService();
-    return await service.createPerson(personData);
-  }
-
-  const service = getCreateService();
-  return await service.createPerson(personData);
-}
-
-/**
- * Task creation with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
- */
-async function createTaskWithMockSupport(
-  taskData: Record<string, unknown>
-): Promise<AttioRecord> {
-  // Delegate to factory service for consistent behavior
-  const service = getCreateService();
-  return await service.createTask(taskData);
-}
-
-/**
  * Enhance uniqueness error messages with helpful context
  */
 async function enhanceUniquenessError(
@@ -725,6 +677,7 @@ export class UniversalCreateService {
           values: mappedData,
         })) as AttioRecord;
       }
+
       case UniversalResourceType.LISTS: {
         const { ListCreateStrategy } = await import(
           './create/strategies/ListCreateStrategy.js'
@@ -734,6 +687,7 @@ export class UniversalCreateService {
           values: mappedData,
         })) as AttioRecord;
       }
+
       case UniversalResourceType.PEOPLE: {
         const { PersonCreateStrategy } = await import(
           './create/strategies/PersonCreateStrategy.js'
@@ -743,34 +697,23 @@ export class UniversalCreateService {
           values: mappedData,
         })) as AttioRecord;
       }
-      case UniversalResourceType.RECORDS: {
-        const { RecordCreateStrategy } = await import(
-          './create/strategies/RecordCreateStrategy.js'
-        ).catch(() => ({ RecordCreateStrategy: undefined }) as any);
-        if (RecordCreateStrategy) {
-          const context = { objectSlug: recordsObjectSlug } as Record<
-            string,
-            unknown
-          >;
-          return (await new RecordCreateStrategy().create({
-            resourceType: resource_type,
-            values: mappedData,
-            context,
-          })) as AttioRecord;
-        }
-        // fallback to existing path if record strategy not present
+
+      case UniversalResourceType.RECORDS:
+        // Ensure object slug is available in mappedData for createObjectRecord
         if (
           recordsObjectSlug &&
           !mappedData.object &&
           !mappedData.object_api_slug
         ) {
+          // Create a copy to avoid mutating the original mappedData
           const recordsData = { ...mappedData, object: recordsObjectSlug };
           return this.createObjectRecord(recordsData, resource_type);
         }
         return this.createObjectRecord(mappedData, resource_type);
-      }
+
       case UniversalResourceType.DEALS:
         return this.createDealRecord(mappedData, record_data);
+
       case UniversalResourceType.TASKS: {
         const { TaskCreateStrategy } = await import(
           './create/strategies/TaskCreateStrategy.js'
@@ -780,295 +723,12 @@ export class UniversalCreateService {
           values: mappedData,
         })) as AttioRecord;
       }
+
+      case UniversalResourceType.NOTES:
+        return this.createNoteRecord(mappedData);
+
       default:
         return this.handleUnsupportedResourceType(resource_type, params);
-    }
-  }
-
-  /**
-   * Create a company record with error handling and validation
-   */
-  private static async createCompanyRecord(
-    mappedData: Record<string, unknown>,
-    resource_type: UniversalResourceType
-  ): Promise<AttioRecord> {
-    try {
-      // Validate required name field for companies
-      if (!mappedData.name && !mappedData.company_name) {
-        throw createFieldTypeError('name', 'string', undefined, resource_type);
-      }
-
-      // Apply format conversions for common mistakes
-      const correctedData = convertAttributeFormats('companies', mappedData);
-
-      // Use mock injection for test environments (Issue #480 compatibility)
-      const result = await createCompanyWithMockSupport(correctedData);
-
-      // Defensive validation: Ensure createCompany returned a valid record
-      if (!result) {
-        throw new UniversalValidationError(
-          'Company creation failed: createCompany returned null/undefined',
-          ErrorType.API_ERROR,
-          {
-            field: 'result',
-            suggestion: 'Check API connectivity and data format',
-          }
-        );
-      }
-
-      if (!result.id || !result.id.record_id) {
-        throw new UniversalValidationError(
-          `Company creation failed: Invalid record structure. Missing ID: ${JSON.stringify(result)}`,
-          ErrorType.API_ERROR,
-          {
-            field: 'id',
-            suggestion: 'Verify API response format and record creation',
-          }
-        );
-      }
-
-      return result;
-    } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      // Enhance error messages with format help
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(errorObj?.message || '');
-      if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
-        if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          const enhancedError = getFormatErrorHelp(
-            'companies',
-            match[1],
-            (error as Error).message
-          );
-          throw new UniversalValidationError(
-            enhancedError,
-            ErrorType.USER_ERROR,
-            { suggestion, field: match[1] }
-          );
-        }
-      }
-      // Check for uniqueness constraint violations
-      if (errorMessage.includes('uniqueness constraint')) {
-        const enhancedMessage = await enhanceUniquenessError(
-          resource_type,
-          errorMessage,
-          mappedData
-        );
-        throw new UniversalValidationError(
-          enhancedMessage,
-          ErrorType.USER_ERROR,
-          {
-            suggestion:
-              'Try searching for existing records first or use different unique values',
-          }
-        );
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Create a list record with format conversion
-   */
-  private static async createListRecord(
-    mappedData: Record<string, unknown>,
-    resource_type: UniversalResourceType
-  ): Promise<AttioRecord> {
-    try {
-      const list = await createList(mappedData);
-      // Convert AttioList to AttioRecord format
-      return {
-        id: {
-          record_id: list.id.list_id,
-          list_id: list.id.list_id,
-        },
-        values: {
-          name: list.name || list.title,
-          description: list.description,
-          parent_object: list.object_slug || list.parent_object,
-          api_slug: list.api_slug,
-          workspace_id: list.workspace_id,
-          workspace_member_access: list.workspace_member_access,
-          created_at: list.created_at,
-        },
-      } as unknown as AttioRecord;
-    } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(errorObj?.message || '');
-      if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
-        if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          throw new UniversalValidationError(
-            (error as Error).message,
-            ErrorType.USER_ERROR,
-            { suggestion, field: match[1] }
-          );
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Create a person record with email validation and normalization
-   */
-  private static async createPersonRecord(
-    mappedData: Record<string, unknown>,
-    resource_type: UniversalResourceType
-  ): Promise<AttioRecord> {
-    try {
-      // Apply field allowlist for E2E test isolation (prevent extra field rejections)
-      const allowlistedData = pickAllowedPersonFields(mappedData);
-
-      // Normalize people data first (handle name string/object, email singular/array)
-      const normalizedData =
-        PeopleDataNormalizer.normalizePeopleData(allowlistedData);
-
-      // Validate email addresses after normalization for consistent validation
-      ValidationService.validateEmailAddresses(normalizedData);
-
-      // Apply format conversions for common mistakes
-      const correctedData = convertAttributeFormats('people', normalizedData);
-
-      // Validate people attributes before POST to ensure correct Attio format
-      validatePeopleAttributesPrePost(correctedData);
-      logger.debug('People validation passed, final payload shape', {
-        name: Array.isArray(correctedData.name)
-          ? 'ARRAY'
-          : typeof correctedData.name,
-        email_addresses: Array.isArray(correctedData.email_addresses)
-          ? 'ARRAY'
-          : typeof correctedData.email_addresses,
-      });
-
-      // Use mock injection for test environments (Issue #480 compatibility)
-      const result = await createPersonWithMockSupport(correctedData);
-
-      // Defensive validation: Ensure createPerson returned a valid record
-      if (!result) {
-        throw new UniversalValidationError(
-          'Person creation failed: createPerson returned null/undefined',
-          ErrorType.API_ERROR,
-          {
-            field: 'result',
-            suggestion: 'Check API connectivity and data format',
-          }
-        );
-      }
-
-      if (!result.id || !result.id.record_id) {
-        throw new UniversalValidationError(
-          `Person creation failed: Invalid record structure. Missing ID: ${JSON.stringify(result)}`,
-          ErrorType.API_ERROR,
-          {
-            field: 'id',
-            suggestion: 'Verify API response format and record creation',
-          }
-        );
-      }
-
-      return result;
-    } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(errorObj?.message || '');
-
-      // Handle uniqueness conflicts with helpful guidance
-      if (
-        errorObj?.code === 'uniqueness_conflict' ||
-        errorMessage.includes('uniqueness_conflict')
-      ) {
-        // Check if it's an email uniqueness conflict
-        if (
-          errorMessage.includes('email') ||
-          errorMessage.includes('email_address')
-        ) {
-          const emailAddresses = (mappedData as any)
-            .email_addresses as string[];
-          const emailText =
-            emailAddresses?.length > 0
-              ? emailAddresses.join(', ')
-              : 'the provided email';
-
-          // FEATURE: Preflight duplicate check - disabled due to circular import
-          // Requires: search-records import path refactoring
-          // Next: Extract search logic to shared utility module
-
-          throw new UniversalValidationError(
-            `A person with email "${emailText}" already exists. Try searching for existing records first or use different email addresses.`,
-            ErrorType.USER_ERROR,
-            {
-              suggestion:
-                'Use search-records to find the existing person, or provide different email addresses',
-              field: 'email_addresses',
-            }
-          );
-        }
-
-        // Generic uniqueness conflict
-        const enhancedMessage = await enhanceUniquenessError(
-          resource_type,
-          errorMessage,
-          mappedData
-        );
-        throw new UniversalValidationError(
-          enhancedMessage,
-          ErrorType.USER_ERROR,
-          {
-            suggestion:
-              'Try searching for existing records first or use different unique values',
-          }
-        );
-      }
-
-      // Enhance error messages with format help
-      if (
-        errorMessage.includes('invalid value') ||
-        errorMessage.includes('Format Error')
-      ) {
-        const match = errorMessage.match(/slug "([^"]+)"/);
-        if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          const enhancedError = getFormatErrorHelp(
-            'people',
-            match[1],
-            (error as Error).message
-          );
-          throw new UniversalValidationError(
-            enhancedError,
-            ErrorType.USER_ERROR,
-            { suggestion, field: match[1] }
-          );
-        }
-      }
-
-      // Check for uniqueness constraint violations (fallback)
-      if (errorMessage.includes('uniqueness constraint')) {
-        const enhancedMessage = await enhanceUniquenessError(
-          resource_type,
-          errorMessage,
-          mappedData
-        );
-        throw new UniversalValidationError(
-          enhancedMessage,
-          ErrorType.USER_ERROR,
-          {
-            suggestion:
-              'Try searching for existing records first or use different unique values',
-          }
-        );
-      }
-      throw error;
     }
   }
 
@@ -1240,194 +900,6 @@ export class UniversalCreateService {
         } as any);
       }
       throw error;
-    }
-  }
-
-  /**
-   * Create a task record with field transformation and mock support
-   */
-  private static async createTaskRecord(
-    mappedData: Record<string, unknown>
-  ): Promise<AttioRecord> {
-    try {
-      // Issue #417: Enhanced task creation with field mapping guidance
-      // Check for content field first, then validate (handle empty strings)
-      const content =
-        (mappedData.content &&
-          typeof mappedData.content === 'string' &&
-          mappedData.content.trim()) ||
-        (mappedData.title &&
-          typeof mappedData.title === 'string' &&
-          mappedData.title.trim()) ||
-        (mappedData.name &&
-          typeof mappedData.name === 'string' &&
-          mappedData.name.trim()) ||
-        'New task';
-
-      // If content is missing but we have title, synthesize content from title
-      if (mappedData.title !== undefined && !mappedData.content) {
-        mappedData.content = content;
-      }
-
-      // Handle field mappings: The field mapper transforms to API field names
-      // assignees: can be array or single ID (from assignee_id mapping)
-      // deadline_at: from due_date mapping
-      // linked_records: from record_id mapping
-      const options: Record<string, unknown> = {};
-
-      // Only add fields that have actual values (not undefined)
-      // Normalize assignee inputs: accept string, array of strings, or array of objects
-      const assigneesInput =
-        mappedData.assignees || mappedData.assignee_id || mappedData.assigneeId;
-      if (assigneesInput !== undefined) {
-        let assigneeId: string | undefined;
-        if (typeof assigneesInput === 'string') {
-          assigneeId = assigneesInput;
-        } else if (Array.isArray(assigneesInput)) {
-          const first = assigneesInput[0] as any;
-          if (typeof first === 'string') assigneeId = first;
-          else if (first && typeof first === 'object') {
-            assigneeId =
-              first.referenced_actor_id ||
-              first.id ||
-              first.record_id ||
-              first.value ||
-              undefined;
-          }
-        } else if (
-          assigneesInput &&
-          typeof assigneesInput === 'object' &&
-          'referenced_actor_id' in (assigneesInput as any)
-        ) {
-          assigneeId = (assigneesInput as any).referenced_actor_id as string;
-        }
-
-        if (assigneeId) options.assigneeId = assigneeId;
-      }
-
-      const dueDate =
-        mappedData.deadline_at || mappedData.due_date || mappedData.dueDate;
-      if (dueDate) options.dueDate = dueDate;
-
-      const recordId =
-        mappedData.linked_records ||
-        mappedData.record_id ||
-        mappedData.recordId;
-      if (recordId) options.recordId = recordId;
-
-      // Target object for linking (Issue #545): ensure we pass along when provided
-      const targetObject =
-        (mappedData as any).target_object || (mappedData as any).targetObject;
-      if (typeof targetObject === 'string' && targetObject.trim()) {
-        (options as any).targetObject = targetObject.trim();
-      }
-
-      // Use mock-enabled task creation for test environments
-      const createdTask = await createTaskWithMockSupport({
-        content,
-        ...options,
-      });
-
-      // Debug logging before conversion
-      debug(
-        'universal.createTask',
-        'About to convert task to record',
-        {
-          hasCreatedTask: !!createdTask,
-          taskType: typeof createdTask,
-          taskHasId: !!createdTask?.id,
-          taskIdType: typeof createdTask?.id,
-          taskIdStructure: createdTask?.id ? Object.keys(createdTask.id) : [],
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-
-      // Convert AttioTask to AttioRecord using proper type conversion
-      // For tests, MockService.createTask already returns AttioRecord format
-      // For production, we need to convert from AttioTask to AttioRecord
-
-      // Handle both AttioTask and AttioRecord inputs
-      let convertedRecord: AttioRecord;
-      if ('values' in createdTask && createdTask.id?.record_id) {
-        // Already in AttioRecord format (from MockService)
-        convertedRecord = createdTask as AttioRecord;
-      } else {
-        // Convert from AttioTask to AttioRecord
-        // Ensure we have the properties needed for AttioTask conversion
-        if ('content' in createdTask) {
-          convertedRecord = UniversalUtilityService.convertTaskToRecord(
-            createdTask as unknown as AttioTask
-          );
-        } else {
-          throw new Error(
-            `Invalid task object structure: ${JSON.stringify(createdTask)}`
-          );
-        }
-      }
-
-      // Debug logging after conversion
-      debug(
-        'universal.createTask',
-        'Task converted to record',
-        {
-          hasRecord: !!convertedRecord,
-          recordType: typeof convertedRecord,
-          recordHasId: !!convertedRecord?.id,
-          recordIdType: typeof convertedRecord?.id,
-          recordIdStructure: convertedRecord?.id
-            ? Object.keys(convertedRecord.id)
-            : [],
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-
-      // Ensure assignees are preserved for E2E expectations
-      try {
-        const top: any = convertedRecord as any;
-        const values: any = convertedRecord.values || {};
-        const assigneeId = (options as any).assigneeId as string | undefined;
-        if (assigneeId) {
-          // Top-level assignees for E2E assertion
-          top.assignees = [
-            {
-              referenced_actor_type: 'workspace-member',
-              referenced_actor_id: assigneeId,
-            },
-          ];
-          // Values-level assignee for downstream consistency
-          if (!Array.isArray(values.assignee) || values.assignee.length === 0) {
-            values.assignee = [{ value: assigneeId }];
-          }
-          convertedRecord.values = values;
-        }
-      } catch {}
-
-      // Debugging shape insight
-      try {
-        const mod: any = await import('../utils/task-debug.js');
-        mod.logTaskDebug?.('createRecord', 'Created task record shape', {
-          mappedKeys: Object.keys(mappedData || {}),
-          optionsKeys: Object.keys(options || {}),
-          shape: mod.inspectTaskRecordShape?.(convertedRecord),
-        });
-      } catch {}
-
-      return convertedRecord;
-    } catch (error: unknown) {
-      // Log original error for debugging
-      logger.error('Task creation failed', error, { resource_type: 'tasks' });
-
-      // Issue #417: Enhanced task error handling with field mapping guidance
-      const errorObj: Error =
-        error instanceof Error ? error : new Error(String(error));
-      const enhancedError = ErrorEnhancer.autoEnhance(
-        errorObj,
-        'tasks',
-        'create-record'
-      );
-      throw enhancedError;
     }
   }
 
