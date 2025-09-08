@@ -7,6 +7,17 @@ import { AttioRecord } from '../../types/attio.js';
 import { TimeframeParams } from '../search-strategies/interfaces.js';
 
 /**
+ * Interfaces for type safety improvements (Issue #598)
+ */
+interface AttioFieldValueObject {
+  value: unknown;
+}
+
+interface AttioFieldValueArray extends Array<string | AttioFieldValueObject> {}
+
+type AttioFieldValue = string | AttioFieldValueArray | AttioFieldValueObject | null | undefined;
+
+/**
  * Utility functions for search operations
  */
 export class SearchUtilities {
@@ -76,37 +87,61 @@ export class SearchUtilities {
 
   /**
    * Helper method to extract field value from a record
+   * Issue #598: Simplified with better type safety and helper methods
    */
   static getFieldValue(record: AttioRecord, field: string): string {
-    const values = record.values as Record<string, unknown>;
+    const values = record.values as Record<string, AttioFieldValue>;
     if (!values) return '';
 
     const fieldValue = values[field];
+    return this.extractStringFromFieldValue(fieldValue);
+  }
 
-    // Handle different field value structures
+  /**
+   * Extract string value from various Attio field value structures
+   */
+  private static extractStringFromFieldValue(fieldValue: AttioFieldValue): string {
     if (typeof fieldValue === 'string') {
       return fieldValue;
-    } else if (Array.isArray(fieldValue) && fieldValue.length > 0) {
-      // For array fields like email_addresses, get the first value
-      const firstItem = fieldValue[0];
-      if (typeof firstItem === 'string') {
-        return firstItem;
-      } else if (
-        firstItem &&
-        typeof firstItem === 'object' &&
-        'value' in firstItem
-      ) {
-        return String(firstItem.value || '');
-      }
-    } else if (
-      fieldValue &&
-      typeof fieldValue === 'object' &&
-      'value' in fieldValue
-    ) {
-      return String((fieldValue as { value: unknown }).value || '');
     }
-
+    
+    if (Array.isArray(fieldValue)) {
+      return this.extractStringFromArray(fieldValue);
+    }
+    
+    if (this.isFieldValueObject(fieldValue)) {
+      return String(fieldValue.value || '');
+    }
+    
     return '';
+  }
+
+  /**
+   * Extract string from array field values (e.g., email_addresses)
+   */
+  private static extractStringFromArray(fieldArray: AttioFieldValueArray): string {
+    if (fieldArray.length === 0) return '';
+    
+    const firstItem = fieldArray[0];
+    if (typeof firstItem === 'string') {
+      return firstItem;
+    }
+    
+    if (this.isFieldValueObject(firstItem)) {
+      return String(firstItem.value || '');
+    }
+    
+    return '';
+  }
+
+  /**
+   * Type guard for field value objects
+   */
+  private static isFieldValueObject(value: unknown): value is AttioFieldValueObject {
+    return value !== null && 
+           value !== undefined && 
+           typeof value === 'object' && 
+           'value' in value;
   }
 
   /**

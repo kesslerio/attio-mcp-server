@@ -32,7 +32,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
   }
 
   supportsQuerySearch(): boolean {
-    return false; // Tasks are list-all only
+    return true; // Tasks support content search via applyContentSearch method
   }
 
   async search(params: SearchStrategyParams): Promise<AttioRecord[]> {

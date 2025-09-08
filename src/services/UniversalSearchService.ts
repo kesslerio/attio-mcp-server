@@ -75,59 +75,14 @@ import {
   StrategyDependencies,
 } from './search-strategies/index.js';
 import { SearchUtilities } from './search-utilities/SearchUtilities.js';
+import { ensureFunctionAvailability } from './search-utilities/FunctionValidator.js';
 
-// Dynamic imports for better error handling
-const ensureAdvancedSearchCompanies = async () => {
-  try {
-    debug(
-      'UniversalSearchService',
-      'Checking advancedSearchCompanies availability',
-      { type: typeof advancedSearchCompanies }
-    );
-    if (typeof advancedSearchCompanies !== 'function') {
-      error(
-        'UniversalSearchService',
-        'advancedSearchCompanies is not a function',
-        { advancedSearchCompanies }
-      );
-      return null;
-    }
-    return advancedSearchCompanies;
-  } catch (err) {
-    error(
-      'UniversalSearchService',
-      'Error accessing advancedSearchCompanies',
-      err
-    );
-    return null;
-  }
-};
+// Dynamic imports for better error handling using extracted utility pattern
+const ensureAdvancedSearchCompanies = () => 
+  ensureFunctionAvailability(advancedSearchCompanies, 'advancedSearchCompanies');
 
-const ensureAdvancedSearchPeople = async () => {
-  try {
-    debug(
-      'UniversalSearchService',
-      'Checking advancedSearchPeople availability',
-      { type: typeof advancedSearchPeople }
-    );
-    if (typeof advancedSearchPeople !== 'function') {
-      error(
-        'UniversalSearchService',
-        'advancedSearchPeople is not a function',
-        { advancedSearchPeople }
-      );
-      return null;
-    }
-    return advancedSearchPeople;
-  } catch (err) {
-    error(
-      'UniversalSearchService',
-      'Error accessing advancedSearchPeople',
-      err
-    );
-    return null;
-  }
-};
+const ensureAdvancedSearchPeople = () => 
+  ensureFunctionAvailability(advancedSearchPeople, 'advancedSearchPeople');
 
 /**
  * UniversalSearchService provides centralized record search functionality
