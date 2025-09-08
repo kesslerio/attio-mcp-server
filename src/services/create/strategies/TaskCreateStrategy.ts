@@ -68,6 +68,10 @@ export class TaskCreateStrategy implements CreateStrategy {
     } else if (payload.record_id !== undefined) {
       out.recordId = payload.record_id as string;
     }
+    // forward targetObject if present
+    if (payload.targetObject !== undefined) {
+      out.targetObject = payload.targetObject;
+    }
 
     const service = getCreateService();
     try {

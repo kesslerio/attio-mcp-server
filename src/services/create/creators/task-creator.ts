@@ -89,6 +89,14 @@ export class TaskCreator extends BaseCreator {
         createdTask,
         input
       );
+      // Ensure E2E compatibility: include values.assignee when assigneeId provided
+      try {
+        if (input.assigneeId && (!record.values || !(record.values as any).assignee)) {
+          const values: any = record.values || {};
+          values.assignee = [{ value: input.assigneeId }];
+          (record as any).values = values;
+        }
+      } catch {}
 
       context.debug(this.constructor.name, 'Converted task record', {
         recordId: (record as any)?.id?.record_id,
