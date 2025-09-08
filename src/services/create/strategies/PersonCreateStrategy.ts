@@ -1,16 +1,24 @@
 /**
  * PersonCreateStrategy - Handles person-specific creation logic
- * 
+ *
  * Extracted from UniversalCreateService.createPersonRecord (lines 903-1053)
  */
 
-import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
+import {
+  BaseCreateStrategy,
+  CreateStrategyParams,
+  CreateStrategyResult,
+} from './BaseCreateStrategy.js';
 import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import { getCreateService } from '../index.js';
-import { convertAttributeFormats, getFormatErrorHelp, validatePeopleAttributesPrePost } from '../../../utils/attribute-format-helpers.js';
+import {
+  convertAttributeFormats,
+  getFormatErrorHelp,
+  validatePeopleAttributesPrePost,
+} from '../../../utils/attribute-format-helpers.js';
 import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
 import { ValidationService } from '../../ValidationService.js';
-import { 
+import {
   UniversalValidationError,
   ErrorType,
 } from '../../../handlers/tool-configs/universal/schemas.js';
@@ -28,13 +36,14 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
 
   async create(params: CreateStrategyParams): Promise<CreateStrategyResult> {
     const { mapped_data } = params;
-    
+
     try {
       // Apply field allowlist for E2E test isolation (prevent extra field rejections)
       const allowlistedData = this.pickAllowedPersonFields(mapped_data);
 
       // Normalize people data first (handle name string/object, email singular/array)
-      const normalizedData = PeopleDataNormalizer.normalizePeopleData(allowlistedData);
+      const normalizedData =
+        PeopleDataNormalizer.normalizePeopleData(allowlistedData);
 
       // Validate email addresses after normalization for consistent validation
       ValidationService.validateEmailAddresses(normalizedData);
@@ -44,15 +53,19 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
 
       // Validate people attributes before POST to ensure correct Attio format
       validatePeopleAttributesPrePost(correctedData);
-      
-      debug('PersonCreateStrategy', 'People validation passed, final payload shape', {
-        name: Array.isArray(correctedData.name)
-          ? 'ARRAY'
-          : typeof correctedData.name,
-        email_addresses: Array.isArray(correctedData.email_addresses)
-          ? 'ARRAY'
-          : typeof correctedData.email_addresses,
-      });
+
+      debug(
+        'PersonCreateStrategy',
+        'People validation passed, final payload shape',
+        {
+          name: Array.isArray(correctedData.name)
+            ? 'ARRAY'
+            : typeof correctedData.name,
+          email_addresses: Array.isArray(correctedData.email_addresses)
+            ? 'ARRAY'
+            : typeof correctedData.email_addresses,
+        }
+      );
 
       // Use mock injection for test environments (Issue #480 compatibility)
       const result = await this.createPersonWithMockSupport(correctedData);
@@ -83,8 +96,8 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
       return {
         record: result,
         metadata: {
-          warnings: this.collectWarnings(correctedData)
-        }
+          warnings: this.collectWarnings(correctedData),
+        },
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
@@ -103,7 +116,8 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
           errorMessage.includes('email') ||
           errorMessage.includes('email_address')
         ) {
-          const emailAddresses = (mapped_data as any).email_addresses as string[];
+          const emailAddresses = (mapped_data as any)
+            .email_addresses as string[];
           const emailText =
             emailAddresses?.length > 0
               ? emailAddresses.join(', ')
@@ -171,7 +185,7 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
           }
         );
       }
-      
+
       throw error;
     }
   }
@@ -181,7 +195,9 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
     // No specific field requirements for person creation
   }
 
-  protected formatForAPI(data: Record<string, unknown>): Record<string, unknown> {
+  protected formatForAPI(
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     // Formatting is handled by the normalization process
     return data;
   }
@@ -191,7 +207,9 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
    * Uses smallest safe set to avoid 422 rejections in full test runs
    * Based on user guidance for maximum test stability
    */
-  private pickAllowedPersonFields(input: PersonFieldInput): AllowedPersonFields {
+  private pickAllowedPersonFields(
+    input: PersonFieldInput
+  ): AllowedPersonFields {
     const out: AllowedPersonFields = {};
 
     // Core required field
@@ -256,11 +274,16 @@ export class PersonCreateStrategy extends BaseCreateStrategy {
 
   private collectWarnings(data: Record<string, unknown>): string[] {
     const warnings: string[] = [];
-    
-    if (!data.email_addresses || (Array.isArray(data.email_addresses) && data.email_addresses.length === 0)) {
-      warnings.push('Person created without email addresses - consider adding one for better identification');
+
+    if (
+      !data.email_addresses ||
+      (Array.isArray(data.email_addresses) && data.email_addresses.length === 0)
+    ) {
+      warnings.push(
+        'Person created without email addresses - consider adding one for better identification'
+      );
     }
-    
+
     return warnings;
   }
 }

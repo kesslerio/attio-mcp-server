@@ -1,12 +1,18 @@
 /**
  * CreateValidation - Shared validation utilities for creation strategies
- * 
+ *
  * Extracted from UniversalCreateService to reduce duplication
  */
 
 import { validateRecordFields } from '../../utils/validation-utils.js';
-import { mapRecordFields, validateFields } from '../../handlers/tool-configs/universal/field-mapper.js';
-import { UniversalValidationError, ErrorType } from '../../handlers/tool-configs/universal/schemas.js';
+import {
+  mapRecordFields,
+  validateFields,
+} from '../../handlers/tool-configs/universal/field-mapper.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../handlers/tool-configs/universal/schemas.js';
 import { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 
 export class CreateValidation {
@@ -18,7 +24,11 @@ export class CreateValidation {
     resourceType: UniversalResourceType,
     availableAttributes?: string[]
   ): Promise<Record<string, unknown>> {
-    const result = await mapRecordFields(resourceType, data, availableAttributes);
+    const result = await mapRecordFields(
+      resourceType,
+      data,
+      availableAttributes
+    );
     return result.mapped ?? (result as unknown as Record<string, unknown>);
   }
 
@@ -40,7 +50,7 @@ export class CreateValidation {
     knownFields: string[]
   ): string[] {
     const unknownFields = Object.keys(data).filter(
-      field => !knownFields.includes(field)
+      (field) => !knownFields.includes(field)
     );
     return unknownFields;
   }

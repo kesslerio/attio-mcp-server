@@ -1,14 +1,18 @@
 /**
  * CompanyCreateStrategy - Handles company-specific creation logic
- * 
+ *
  * Extracted from UniversalCreateService.createCompanyRecord (lines 758-839)
  */
 
-import { BaseCreateStrategy, CreateStrategyParams, CreateStrategyResult } from './BaseCreateStrategy.js';
+import {
+  BaseCreateStrategy,
+  CreateStrategyParams,
+  CreateStrategyResult,
+} from './BaseCreateStrategy.js';
 import { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import { getCreateService, shouldUseMockData } from '../index.js';
 import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
-import { 
+import {
   UniversalValidationError,
   ErrorType,
 } from '../../../handlers/tool-configs/universal/schemas.js';
@@ -23,20 +27,20 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
 
   async create(params: CreateStrategyParams): Promise<CreateStrategyResult> {
     const { mapped_data } = params;
-    
+
     // Validate company-specific requirements
     this.validateResourceData(mapped_data);
-    
+
     // Format for API
     const formattedData = this.formatForAPI(mapped_data);
-    
+
     // Apply attribute format conversions
     const convertedData = convertAttributeFormats('companies', formattedData);
-    
+
     try {
       // Create via API with mock support
       const result = await this.createCompanyWithMockSupport(convertedData);
-      
+
       // Defensive validation: Ensure createCompany returned a valid record
       if (!result) {
         throw new UniversalValidationError(
@@ -62,14 +66,14 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
 
       debug('CompanyCreateStrategy', 'Company created successfully', {
         company_id: result.id.record_id,
-        name: convertedData.name
+        name: convertedData.name,
       });
 
       return {
         record: result,
         metadata: {
-          warnings: this.collectWarnings(convertedData)
-        }
+          warnings: this.collectWarnings(convertedData),
+        },
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
@@ -78,7 +82,7 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
-          
+
       if (errorMessage.includes('Cannot find attribute')) {
         const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
@@ -95,7 +99,7 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
           );
         }
       }
-      
+
       // Check for uniqueness constraint violations
       if (errorMessage.includes('uniqueness constraint')) {
         const enhancedMessage = await this.enhanceUniquenessError(
@@ -111,7 +115,7 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
           }
         );
       }
-      
+
       throw error;
     }
   }
@@ -123,21 +127,23 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
     }
   }
 
-  protected formatForAPI(data: Record<string, unknown>): Record<string, unknown> {
+  protected formatForAPI(
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     const formatted = { ...data };
-    
+
     // Handle domain normalization
     if (formatted.domains && typeof formatted.domains === 'string') {
       formatted.domains = [formatted.domains];
     }
-    
+
     // Ensure domains are lowercase
     if (Array.isArray(formatted.domains)) {
-      formatted.domains = formatted.domains.map(d => 
+      formatted.domains = formatted.domains.map((d) =>
         typeof d === 'string' ? d.toLowerCase() : d
       );
     }
-    
+
     return formatted;
   }
 
@@ -220,11 +226,13 @@ export class CompanyCreateStrategy extends BaseCreateStrategy {
 
   private collectWarnings(data: Record<string, unknown>): string[] {
     const warnings: string[] = [];
-    
+
     if (!data.name) {
-      warnings.push('Company created without a name - consider adding one for better identification');
+      warnings.push(
+        'Company created without a name - consider adding one for better identification'
+      );
     }
-    
+
     return warnings;
   }
 }

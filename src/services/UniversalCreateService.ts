@@ -716,47 +716,14 @@ export class UniversalCreateService {
     }
 
     switch (resource_type) {
-      case UniversalResourceType.COMPANIES: {
-        // Use new strategy pattern
-        const { CompanyCreateStrategy } = await import(
-          './create/strategies/CompanyCreateStrategy.js'
-        );
-        const strategy = new CompanyCreateStrategy();
-        const result = await strategy.create({
-          resource_type,
-          mapped_data: mappedData,
-          original_data: record_data,
-        });
-        return result.record as AttioRecord;
-      }
+      case UniversalResourceType.COMPANIES:
+        return this.createCompanyRecord(mappedData, resource_type);
 
-      case UniversalResourceType.LISTS: {
-        // Use new strategy pattern
-        const { ListCreateStrategy } = await import(
-          './create/strategies/ListCreateStrategy.js'
-        );
-        const strategy = new ListCreateStrategy();
-        const result = await strategy.create({
-          resource_type,
-          mapped_data: mappedData,
-          original_data: record_data,
-        });
-        return result.record as AttioRecord;
-      }
+      case UniversalResourceType.LISTS:
+        return this.createListRecord(mappedData, resource_type);
 
-      case UniversalResourceType.PEOPLE: {
-        // Use new strategy pattern
-        const { PersonCreateStrategy } = await import(
-          './create/strategies/PersonCreateStrategy.js'
-        );
-        const strategy = new PersonCreateStrategy();
-        const result = await strategy.create({
-          resource_type,
-          mapped_data: mappedData,
-          original_data: record_data,
-        });
-        return result.record as AttioRecord;
-      }
+      case UniversalResourceType.PEOPLE:
+        return this.createPersonRecord(mappedData, resource_type);
 
       case UniversalResourceType.RECORDS:
         // Ensure object slug is available in mappedData for createObjectRecord
@@ -771,33 +738,11 @@ export class UniversalCreateService {
         }
         return this.createObjectRecord(mappedData, resource_type);
 
-      case UniversalResourceType.DEALS: {
-        // Use new strategy pattern
-        const { DealCreateStrategy } = await import(
-          './create/strategies/DealCreateStrategy.js'
-        );
-        const strategy = new DealCreateStrategy();
-        const result = await strategy.create({
-          resource_type,
-          mapped_data: mappedData,
-          original_data: record_data,
-        });
-        return result.record as AttioRecord;
-      }
+      case UniversalResourceType.DEALS:
+        return this.createDealRecord(mappedData, record_data);
 
-      case UniversalResourceType.TASKS: {
-        // Use new strategy pattern
-        const { TaskCreateStrategy } = await import(
-          './create/strategies/TaskCreateStrategy.js'
-        );
-        const strategy = new TaskCreateStrategy();
-        const result = await strategy.create({
-          resource_type,
-          mapped_data: mappedData,
-          original_data: record_data,
-        });
-        return result.record as AttioRecord;
-      }
+      case UniversalResourceType.TASKS:
+        return this.createTaskRecord(mappedData);
 
       case UniversalResourceType.NOTES:
         return this.createNoteRecord(mappedData);
@@ -807,11 +752,137 @@ export class UniversalCreateService {
     }
   }
 
-  // REFACTORED TO: src/services/create/strategies/CompanyCreateStrategy.ts
+  /**
+   * Create a company record with error handling and validation
+   */
+  private static async createCompanyRecord(
+    mappedData: Record<string, unknown>,
+    resource_type: UniversalResourceType
+  ): Promise<AttioRecord> {
+    try {
+      // Validate required name field for companies
+      if (!mappedData.name && !mappedData.company_name) {
+        throw createFieldTypeError('name', 'string', undefined, resource_type);
+      }
 
-  // REFACTORED TO: src/services/create/strategies/ListCreateStrategy.ts
+      // Apply format conversions for common mistakes
+      const correctedData = convertAttributeFormats('companies', mappedData);
 
-  // REFACTORED TO: src/services/create/strategies/PersonCreateStrategy.ts
+      // Use mock injection for test environments (Issue #480 compatibility)
+      const result = await createCompanyWithMockSupport(correctedData);
+
+      // Defensive validation: Ensure createCompany returned a valid record
+      if (!result) {
+        throw new UniversalValidationError(
+          'Company creation failed: createCompany returned null/undefined',
+          ErrorType.API_ERROR,
+          {
+            field: 'result',
+            suggestion: 'Check API connectivity and data format',
+          }
+        );
+      }
+
+      if (!result.id || !result.id.record_id) {
+        throw new UniversalValidationError(
+          `Company creation failed: Invalid record structure. Missing ID: ${JSON.stringify(result)}`,
+          ErrorType.API_ERROR,
+          {
+            field: 'id',
+            suggestion: 'Verify API response format and record creation',
+          }
+        );
+      }
+
+      return result;
+    } catch (error: unknown) {
+      const errorObj = error as Record<string, unknown>;
+      // Enhance error messages with format help
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : String(errorObj?.message || '');
+      if (errorMessage.includes('Cannot find attribute')) {
+        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
+        if (match && match[1]) {
+          const suggestion = getFieldSuggestions(resource_type, match[1]);
+          const enhancedError = getFormatErrorHelp(
+            'companies',
+            match[1],
+            (error as Error).message
+          );
+          throw new UniversalValidationError(
+            enhancedError,
+            ErrorType.USER_ERROR,
+            { suggestion, field: match[1] }
+          );
+        }
+      }
+      // Check for uniqueness constraint violations
+      if (errorMessage.includes('uniqueness constraint')) {
+        const enhancedMessage = await enhanceUniquenessError(
+          resource_type,
+          errorMessage,
+          mappedData
+        );
+        throw new UniversalValidationError(
+          enhancedMessage,
+          ErrorType.USER_ERROR,
+          {
+            suggestion:
+              'Try searching for existing records first or use different unique values',
+          }
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Create a list record with format conversion
+   */
+  private static async createListRecord(
+    mappedData: Record<string, unknown>,
+    resource_type: UniversalResourceType
+  ): Promise<AttioRecord> {
+    try {
+      const list = await createList(mappedData);
+      // Convert AttioList to AttioRecord format
+      return {
+        id: {
+          record_id: list.id.list_id,
+          list_id: list.id.list_id,
+        },
+        values: {
+          name: list.name || list.title,
+          description: list.description,
+          parent_object: list.object_slug || list.parent_object,
+          api_slug: list.api_slug,
+          workspace_id: list.workspace_id,
+          workspace_member_access: list.workspace_member_access,
+          created_at: list.created_at,
+        },
+      } as unknown as AttioRecord;
+    } catch (error: unknown) {
+      const errorObj = error as Record<string, unknown>;
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : String(errorObj?.message || '');
+      if (errorMessage.includes('Cannot find attribute')) {
+        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
+        if (match && match[1]) {
+          const suggestion = getFieldSuggestions(resource_type, match[1]);
+          throw new UniversalValidationError(
+            (error as Error).message,
+            ErrorType.USER_ERROR,
+            { suggestion, field: match[1] }
+          );
+        }
+      }
+      throw error;
+    }
+  }
 
   /**
    * Create a person record with email validation and normalization
