@@ -78,10 +78,13 @@ import { SearchUtilities } from './search-utilities/SearchUtilities.js';
 import { ensureFunctionAvailability } from './search-utilities/FunctionValidator.js';
 
 // Dynamic imports for better error handling using extracted utility pattern
-const ensureAdvancedSearchCompanies = () => 
-  ensureFunctionAvailability(advancedSearchCompanies, 'advancedSearchCompanies');
+const ensureAdvancedSearchCompanies = () =>
+  ensureFunctionAvailability(
+    advancedSearchCompanies,
+    'advancedSearchCompanies'
+  );
 
-const ensureAdvancedSearchPeople = () => 
+const ensureAdvancedSearchPeople = () =>
   ensureFunctionAvailability(advancedSearchPeople, 'advancedSearchPeople');
 
 /**
@@ -103,23 +106,23 @@ export class UniversalSearchService {
       advancedSearchFunction: await ensureAdvancedSearchCompanies(),
       createDateFilter: SearchUtilities.createDateFilter,
       mergeFilters: SearchUtilities.mergeFilters,
-      rankByRelevance: SearchUtilities.rankByRelevance,
-      getFieldValue: SearchUtilities.getFieldValue,
+      rankByRelevance: SearchUtilities.rankByRelevance.bind(SearchUtilities),
+      getFieldValue: SearchUtilities.getFieldValue.bind(SearchUtilities),
     };
 
     const peopleDependencies: StrategyDependencies = {
       paginatedSearchFunction: await ensureAdvancedSearchPeople(),
       createDateFilter: SearchUtilities.createDateFilter,
       mergeFilters: SearchUtilities.mergeFilters,
-      rankByRelevance: SearchUtilities.rankByRelevance,
-      getFieldValue: SearchUtilities.getFieldValue,
+      rankByRelevance: SearchUtilities.rankByRelevance.bind(SearchUtilities),
+      getFieldValue: SearchUtilities.getFieldValue.bind(SearchUtilities),
     };
 
     const listDependencies: StrategyDependencies = {
       listFunction: (query?: string, limit?: number, offset?: number) =>
         searchLists(query || '', limit, offset),
-      rankByRelevance: SearchUtilities.rankByRelevance,
-      getFieldValue: SearchUtilities.getFieldValue,
+      rankByRelevance: SearchUtilities.rankByRelevance.bind(SearchUtilities),
+      getFieldValue: SearchUtilities.getFieldValue.bind(SearchUtilities),
     };
 
     const taskDependencies: StrategyDependencies = {
@@ -129,8 +132,8 @@ export class UniversalSearchService {
         page?: number,
         pageSize?: number
       ) => listTasks(status, assigneeId, page, pageSize),
-      rankByRelevance: SearchUtilities.rankByRelevance,
-      getFieldValue: SearchUtilities.getFieldValue,
+      rankByRelevance: SearchUtilities.rankByRelevance.bind(SearchUtilities),
+      getFieldValue: SearchUtilities.getFieldValue.bind(SearchUtilities),
     };
 
     // Initialize strategies

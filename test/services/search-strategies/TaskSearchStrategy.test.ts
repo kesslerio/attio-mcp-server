@@ -8,6 +8,10 @@ import { TaskSearchStrategy } from '../../../src/services/search-strategies/Task
 import { SearchType, MatchType, SortType, UniversalResourceType } from '../../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../../src/types/attio.js';
 import { StrategyDependencies } from '../../../src/services/search-strategies/interfaces.js';
+import { CachingService } from '../../../src/services/CachingService.js';
+import { UniversalUtilityService } from '../../../src/services/UniversalUtilityService.js';
+import { SearchUtilities } from '../../../src/services/search-utilities/SearchUtilities.js';
+import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
 
 // Mock dependencies
 vi.mock('../../../src/middleware/performance-enhanced.js', () => ({
@@ -68,19 +72,19 @@ describe('TaskSearchStrategy', () => {
     strategy = new TaskSearchStrategy(mockDependencies);
 
     // Mock SearchUtilities methods
-    vi.mocked(require('../../../src/services/search-utilities/SearchUtilities.js').SearchUtilities.getTaskFieldValue)
+    vi.mocked(SearchUtilities.getTaskFieldValue)
       .mockImplementation((record: AttioRecord, field: string) => {
         const value = (record as any)[field];
         return typeof value === 'string' ? value : '';
       });
 
-    vi.mocked(require('../../../src/services/search-utilities/SearchUtilities.js').SearchUtilities.rankByRelevance)
+    vi.mocked(SearchUtilities.rankByRelevance)
       .mockImplementation((results: AttioRecord[]) => results);
 
-    vi.mocked(require('../../../src/services/UniversalUtilityService.js').UniversalUtilityService.convertTaskToRecord)
+    vi.mocked(UniversalUtilityService.convertTaskToRecord)
       .mockImplementation((task: AttioTask) => mockTaskRecord);
 
-    vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+    vi.mocked(CachingService.getOrLoadTasks)
       .mockResolvedValue({ data: [mockTaskRecord], fromCache: false });
   });
 
@@ -111,11 +115,11 @@ describe('TaskSearchStrategy', () => {
       });
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks).toHaveBeenCalled();
+      expect(CachingService.getOrLoadTasks).toHaveBeenCalled();
     });
 
     it('should handle empty task list', async () => {
-      vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+      vi.mocked(CachingService.getOrLoadTasks)
         .mockResolvedValue({ data: [], fromCache: false });
 
       const results = await strategy.search({});
@@ -126,7 +130,7 @@ describe('TaskSearchStrategy', () => {
     it('should handle missing taskFunction gracefully', async () => {
       const strategyWithoutTask = new TaskSearchStrategy({});
       
-      vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+      vi.mocked(CachingService.getOrLoadTasks)
         .mockImplementation(async (loadFunction) => {
           const data = await loadFunction();
           return { data, fromCache: false };
@@ -140,7 +144,7 @@ describe('TaskSearchStrategy', () => {
 
   describe('content search', () => {
     beforeEach(() => {
-      vi.mocked(require('../../../src/services/search-utilities/SearchUtilities.js').SearchUtilities.getTaskFieldValue)
+      vi.mocked(SearchUtilities.getTaskFieldValue)
         .mockImplementation((record: AttioRecord, field: string) => {
           switch (field) {
             case 'content':
@@ -167,7 +171,7 @@ describe('TaskSearchStrategy', () => {
     });
 
     it('should filter out non-matching content', async () => {
-      vi.mocked(require('../../../src/services/search-utilities/SearchUtilities.js').SearchUtilities.getTaskFieldValue)
+      vi.mocked(SearchUtilities.getTaskFieldValue)
         .mockReturnValue('Different content');
 
       const results = await strategy.search({
@@ -196,7 +200,7 @@ describe('TaskSearchStrategy', () => {
       });
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(require('../../../src/services/search-utilities/SearchUtilities.js').SearchUtilities.getTaskFieldValue)
+      expect(SearchUtilities.getTaskFieldValue)
         .toHaveBeenCalledWith(mockTaskRecord, 'title');
     });
 
@@ -208,7 +212,7 @@ describe('TaskSearchStrategy', () => {
       });
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(require('../../../src/services/search-utilities/SearchUtilities.js').SearchUtilities.rankByRelevance)
+      expect(SearchUtilities.rankByRelevance)
         .toHaveBeenCalledWith([mockTaskRecord], 'test', ['content', 'title', 'content_plaintext']);
     });
   });
@@ -221,7 +225,7 @@ describe('TaskSearchStrategy', () => {
         { ...mockTaskRecord, id: { value: 'task-3' } },
       ];
       
-      vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+      vi.mocked(CachingService.getOrLoadTasks)
         .mockResolvedValue({ data: multipleRecords, fromCache: false });
     });
 
@@ -257,30 +261,30 @@ describe('TaskSearchStrategy', () => {
 
   describe('performance optimization', () => {
     it('should use cached data when available', async () => {
-      vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+      vi.mocked(CachingService.getOrLoadTasks)
         .mockResolvedValue({ data: [mockTaskRecord], fromCache: true });
 
       const results = await strategy.search({});
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(require('../../../src/middleware/performance-enhanced.js').enhancedPerformanceTracker.markTiming)
+      expect(enhancedPerformanceTracker.markTiming)
         .toHaveBeenCalledWith('tasks_search', 'other', 1);
     });
 
     it('should track API performance when not using cache', async () => {
-      vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+      vi.mocked(CachingService.getOrLoadTasks)
         .mockResolvedValue({ data: [mockTaskRecord], fromCache: false });
 
       await strategy.search({});
 
-      expect(require('../../../src/middleware/performance-enhanced.js').enhancedPerformanceTracker.markTiming)
+      expect(enhancedPerformanceTracker.markTiming)
         .toHaveBeenCalledWith('tasks_search', 'attioApi', expect.any(Number));
     });
   });
 
   describe('error handling', () => {
     it('should handle API errors gracefully', async () => {
-      vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+      vi.mocked(CachingService.getOrLoadTasks)
         .mockImplementation(async (loadFunction) => {
           const data = await loadFunction();
           return { data, fromCache: false };
@@ -294,7 +298,7 @@ describe('TaskSearchStrategy', () => {
     });
 
     it('should handle non-array task response', async () => {
-      vi.mocked(require('../../../src/services/CachingService.js').CachingService.getOrLoadTasks)
+      vi.mocked(CachingService.getOrLoadTasks)
         .mockImplementation(async (loadFunction) => {
           const data = await loadFunction();
           return { data, fromCache: false };

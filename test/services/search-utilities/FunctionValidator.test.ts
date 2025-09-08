@@ -5,6 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ensureFunctionAvailability } from '../../../src/services/search-utilities/FunctionValidator.js';
+import * as logger from '../../../src/utils/logger.js';
 
 // Mock logger
 vi.mock('../../../src/utils/logger.js', () => ({
@@ -32,7 +33,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockFunction);
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'TestService',
         'Checking testFunction availability',
         { type: 'function' }
@@ -49,12 +50,12 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'TestService',
         'Checking testFunction availability',
         { type: 'string' }
       );
-      expect(require('../../../src/utils/logger.js').error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'TestService',
         'testFunction is not a function',
         { testFunction: nonFunction }
@@ -69,12 +70,12 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'TestService',
         'Checking testFunction availability',
         { type: 'undefined' }
       );
-      expect(require('../../../src/utils/logger.js').error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'TestService',
         'testFunction is not a function',
         { testFunction: undefined }
@@ -89,12 +90,12 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'TestService',
         'Checking testFunction availability',
         { type: 'object' }
       );
-      expect(require('../../../src/utils/logger.js').error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'TestService',
         'testFunction is not a function',
         { testFunction: null }
@@ -102,25 +103,27 @@ describe('FunctionValidator', () => {
     });
 
     it('should handle exceptions during function checking', async () => {
-      // Create a proxy that throws when typeof is checked
-      const problematicObject = new Proxy({}, {
-        get() {
-          throw new Error('Access denied');
-        }
+      // Simulate an internal exception (e.g., logging failure) to exercise catch path
+      const originalDebug = logger.debug;
+      vi.spyOn(logger, 'debug').mockImplementation(() => {
+        throw new Error('Access denied');
       });
 
       const result = await ensureFunctionAvailability(
-        problematicObject,
+        () => 'noop',
         'testFunction',
         'TestService'
       );
 
       expect(result).toBeNull();
-      expect(require('../../../src/utils/logger.js').error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'TestService',
         'Error accessing testFunction',
         expect.any(Error)
       );
+
+      // restore
+      vi.spyOn(logger, 'debug').mockImplementation(originalDebug as any);
     });
 
     it('should use default service name when not provided', async () => {
@@ -132,7 +135,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockFunction);
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'UniversalSearchService',
         'Checking testFunction availability',
         { type: 'function' }
@@ -149,7 +152,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(arrowFunction);
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'TestService',
         'Checking arrowFunction availability',
         { type: 'function' }
@@ -166,7 +169,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(asyncFunction);
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'TestService',
         'Checking asyncFunction availability',
         { type: 'function' }
@@ -184,7 +187,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(boundFunction);
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'TestService',
         'Checking boundFunction availability',
         { type: 'function' }
@@ -239,7 +242,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockAdvancedSearchCompanies);
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'UniversalSearchService',
         'Checking advancedSearchCompanies availability',
         { type: 'function' }
@@ -256,7 +259,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockAdvancedSearchPeople);
-      expect(require('../../../src/utils/logger.js').debug).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'UniversalSearchService',
         'Checking advancedSearchPeople availability',
         { type: 'function' }
@@ -273,7 +276,7 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(require('../../../src/utils/logger.js').error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'UniversalSearchService',
         'advancedSearchCompanies is not a function',
         { advancedSearchCompanies: invalidFunction }

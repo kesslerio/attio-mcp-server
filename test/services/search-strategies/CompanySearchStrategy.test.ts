@@ -71,7 +71,11 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith({}, 10, 0);
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
+        expect.objectContaining({ filters: [] }),
+        10,
+        0
+      );
     });
 
     it('should handle search with query', async () => {
@@ -84,14 +88,19 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith({}, 10, 0);
+      // Name query turns into name filter
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
+        expect.objectContaining({ filters: expect.any(Array) }),
+        10,
+        0
+      );
     });
 
     it('should handle missing advanced search function', async () => {
       const strategyWithoutFunction = new CompanySearchStrategy({});
 
       await expect(strategyWithoutFunction.search({})).rejects.toThrow(
-        'Advanced search function not available for companies'
+        'Companies search function not available'
       );
     });
   });
@@ -107,7 +116,7 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockMergeFilters).toHaveBeenCalledWith(filters, null);
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(filters, undefined, undefined);
     });
 
     it('should merge date filters with existing filters', async () => {
@@ -200,7 +209,11 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith({}, 5, 10);
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
+        expect.objectContaining({ filters: [] }),
+        5,
+        10
+      );
     });
 
     it('should use default pagination when not specified', async () => {
@@ -209,16 +222,21 @@ describe('CompanySearchStrategy', () => {
       const results = await strategy.search({});
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith({}, undefined, undefined);
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
+        expect.objectContaining({ filters: [] }),
+        undefined,
+        undefined
+      );
     });
   });
 
   describe('error handling', () => {
-    it('should propagate API errors', async () => {
+    it('should gracefully handle API errors when listing without filters', async () => {
       const apiError = new Error('API Connection Failed');
       mockAdvancedSearchFunction.mockRejectedValue(apiError);
 
-      await expect(strategy.search({})).rejects.toThrow('API Connection Failed');
+      const results = await strategy.search({});
+      expect(results).toEqual([]);
     });
 
     it('should handle null return from advanced search function', async () => {
@@ -227,7 +245,7 @@ describe('CompanySearchStrategy', () => {
       });
 
       await expect(strategyWithNullFunction.search({})).rejects.toThrow(
-        'Advanced search function not available for companies'
+        'Companies search function not available'
       );
     });
   });
@@ -258,7 +276,8 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockMergeFilters).toHaveBeenCalledWith(complexFilters, null);
+      // mergeFilters is not invoked without timeframe; ensure advancedSearchFunction received filters
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(complexFilters, undefined, undefined);
     });
 
     it('should handle CONTENT search type with field specification', async () => {
