@@ -84,9 +84,42 @@ USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 - `npm run e2e:diagnose:core` - Focus on core-workflows suite  
 - `npm run e2e:analyze` - **Enhanced analysis with anomaly detection** (baseline comparison, flaky test detection)
 - `npm run e2e:analyze:trends` - 14-day trend analysis for pattern recognition
+- `npm run e2e:analyze -- --latest --stdout` - **Quick analysis of most recent run only**
+- `npm run e2e:analyze -- --basic --stdout` - Simple analysis without anomaly detection
 - `npm run e2e:health` - Environment health check (0-100 score, auto-fix with --fix)
 
 **POST-FAILURE ANALYSIS WORKFLOW**: Use after test failures for deep-dive debugging, NOT during normal passing test cycles
+
+#### E2E Analysis Integration Patterns [NEW]
+
+**Quick Analysis (Real-time Development):**
+```bash
+# Latest run analysis with auto-saved markdown report
+npm run e2e:analyze -- --latest
+
+# Console output for immediate feedback
+npm run e2e:analyze -- --latest --stdout
+
+# Pipe from diagnostics for immediate analysis
+./scripts/e2e-diagnostics.sh --json --verbose | npm run e2e:analyze -- --stdin --enhanced --stdout
+```
+
+**Advanced Analysis:**
+```bash
+# 14-day baseline comparison with flaky test detection
+npm run e2e:analyze -- --baseline-days 14 --flaky-days 14
+
+# Custom report filename
+npm run e2e:analyze -- --latest --export "sprint-analysis.md"
+
+# JSON output for CI integration
+npm run e2e:analyze -- --json --latest
+```
+
+**Output Locations:**
+- Default: Auto-generated `test-results/analysis-{timestamp}.md`
+- `--stdout`: Console output (good for piping)
+- `--export FILE`: Custom filename in test-results/
 
 ### E2E Debugging: Disable Bail and Capture Logs
 
