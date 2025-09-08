@@ -18,6 +18,7 @@ import {
   BatchOperationType,
   RelativeTimeframe,
 } from './types.js';
+import { InteractionType } from '../../../types/attio.js';
 
 import {
   advancedSearchSchema,
@@ -477,7 +478,7 @@ export const searchByContentConfig: UniversalToolConfig = {
           const { searchPeopleByActivity } = await import('../../../objects/people/search.js');
           return await searchPeopleByActivity({
             dateRange: { preset: 'last_month' },
-            interactionType: 'any',
+            interactionType: InteractionType.ANY,
           });
         }
         throw new Error(
@@ -783,7 +784,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
  */
 export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
-  handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  handler: async (params: Record<string, unknown>): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'batch-operations',
@@ -1138,7 +1139,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
         case BatchOperationType.SEARCH: {
           // Check if we have multiple queries for true batch search
-          const queries = sanitizedParams.queries as Array<Record<string, unknown>> | undefined;
+          const queries = sanitizedParams.queries as string[] | undefined;
 
           if (queries && Array.isArray(queries) && queries.length > 0) {
             // Explicit max batch size validation for tests
