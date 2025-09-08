@@ -42,11 +42,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         },
       ];
 
-      const { mockSearchService } = getMockInstances();
-      mockSearchService.searchRecords.mockResolvedValue(mockResults);
+      const { mockSpecialized } = getMockInstances();
+      mockSpecialized.searchCompaniesByNotes.mockResolvedValue(mockResults);
 
       const params: ContentSearchParams = {
-        resource_type: UniversalResourceType.NOTES,
+        resource_type: UniversalResourceType.COMPANIES,
         content_type: ContentSearchType.NOTES,
         search_query: 'important meeting',
         limit: 10,
@@ -54,7 +54,9 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByContentConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
+      expect(mockSpecialized.searchCompaniesByNotes).toHaveBeenCalledWith(
+        'important meeting'
+      );
     });
 
     it('should search people by notes content', async () => {
@@ -67,11 +69,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         },
       ];
 
-      const { mockSearchService } = getMockInstances();
-      mockSearchService.searchRecords.mockResolvedValue(mockResults);
+      const { mockSpecialized } = getMockInstances();
+      mockSpecialized.searchPeopleByNotes.mockResolvedValue(mockResults);
 
       const params: ContentSearchParams = {
-        resource_type: UniversalResourceType.NOTES,
+        resource_type: UniversalResourceType.PEOPLE,
         content_type: ContentSearchType.NOTES,
         search_query: 'follow up',
         limit: 5,
@@ -79,7 +81,9 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByContentConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
+      expect(mockSpecialized.searchPeopleByNotes).toHaveBeenCalledWith(
+        'follow up'
+      );
     });
 
     it('should search people by activity content', async () => {
@@ -203,8 +207,10 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         },
       ];
 
-      const { mockSearchService } = getMockInstances();
-      mockSearchService.searchRecords.mockResolvedValue(mockResults);
+      const { mockSpecialized } = getMockInstances();
+      mockSpecialized.searchPeopleByModificationDate.mockResolvedValue(
+        mockResults
+      );
 
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.PEOPLE,
@@ -215,7 +221,12 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
+      expect(
+        mockSpecialized.searchPeopleByModificationDate
+      ).toHaveBeenCalledWith({
+        start: '2023-12-01T00:00:00Z',
+        end: '2023-12-31T23:59:59Z',
+      });
     });
 
     it('should search people by last interaction with date validation', async () => {
@@ -228,8 +239,15 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         },
       ];
 
-      const { mockSearchService } = getMockInstances();
-      mockSearchService.searchRecords.mockResolvedValue(mockResults);
+      const { mockUtils, mockSpecialized } = getMockInstances();
+
+      mockUtils.validateAndCreateDateRange.mockReturnValue({
+        start: '2023-12-01T00:00:00Z',
+        end: '2023-12-31T23:59:59Z',
+      });
+      mockSpecialized.searchPeopleByLastInteraction.mockResolvedValue(
+        mockResults
+      );
 
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.PEOPLE,
@@ -240,43 +258,45 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
+      expect(mockUtils.validateAndCreateDateRange).toHaveBeenCalledWith(
+        '2023-12-01T00:00:00Z',
+        '2023-12-31T23:59:59Z'
+      );
+      expect(
+        mockSpecialized.searchPeopleByLastInteraction
+      ).toHaveBeenCalledWith({
+        start: '2023-12-01T00:00:00Z',
+        end: '2023-12-31T23:59:59Z',
+      });
     });
 
     it('should handle missing date range for last interaction', async () => {
+      const { mockUtils } = getMockInstances();
+      mockUtils.validateAndCreateDateRange.mockReturnValue(null);
+
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.PEOPLE,
         timeframe_type: TimeframeType.LAST_INTERACTION,
       };
 
       await expect(searchByTimeframeConfig.handler(params)).rejects.toThrow(
-        'At least one date (start_date or end_date) is required for timeframe search'
+        'At least one date (start or end) is required for last interaction search'
       );
     });
 
     it('should support timeframe search for companies', async () => {
       // Companies timeframe search is now enabled
       // This test validates that the old restriction is removed
-      const mockResults = [
-        {
-          id: { record_id: 'comp-1' },
-          values: { name: [{ value: 'Test Company' }] },
-        },
-      ];
-
-      const { mockSearchService } = getMockInstances();
-      mockSearchService.searchRecords.mockResolvedValue(mockResults);
-
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         timeframe_type: TimeframeType.CREATED,
         start_date: '2023-12-01T00:00:00Z',
       };
 
-      // Should successfully execute without throwing errors
-      const result = await searchByTimeframeConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
+      // Should not throw the old "not optimized for companies" error
+      await expect(searchByTimeframeConfig.handler(params)).rejects.not.toThrow(
+        /Timeframe search is not currently optimized for companies/
+      );
     });
 
     it('should format timeframe results with date info', async () => {

@@ -288,7 +288,7 @@ export function createPathBasedFilter(
   parentObjectType: string,
   parentAttributeSlug: string,
   condition: string,
-  value: unknown
+  value: any
 ): { path: string[][]; constraints: Record<string, unknown> } {
   // Create path array for drilling down through objects
   // First path element is [listSlug, "parent_record"] to navigate from list entry to its parent record
@@ -313,19 +313,19 @@ export function createPathBasedFilter(
   } else if (condition === 'ends_with') {
     constraints = { ends_with: value };
   } else if (condition === 'greater_than' || condition === 'gt') {
-    constraints = { $gt: value }; // Use proper Attio API operator
+    constraints = { gt: value };
   } else if (condition === 'less_than' || condition === 'lt') {
-    constraints = { $lt: value }; // Use proper Attio API operator
+    constraints = { lt: value };
   } else if (condition === 'greater_than_or_equals' || condition === 'gte') {
-    constraints = { $gte: value }; // Use proper Attio API operator
+    constraints = { gte: value };
   } else if (condition === 'less_than_or_equals' || condition === 'lte') {
-    constraints = { $lte: value }; // Use proper Attio API operator
+    constraints = { lte: value };
   } else if (condition === 'not_equals' || condition === 'ne') {
     constraints = { ne: value };
   } else if (condition === 'is_empty' || condition === 'is_not_set') {
     constraints = { is_empty: true };
   } else if (condition === 'is_not_empty' || condition === 'is_set') {
-    constraints = { $not_empty: true }; // Use proper Attio API operator
+    constraints = { is_not_empty: true };
   } else if (condition === 'in') {
     constraints = { in: Array.isArray(value) ? value : [value] };
   } else {

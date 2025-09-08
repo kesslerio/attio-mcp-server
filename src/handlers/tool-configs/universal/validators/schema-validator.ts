@@ -273,75 +273,38 @@ const toolValidators: Record<string, ToolValidator> = {
         { field: 'resource_type', example: `resource_type: 'companies'` }
       );
     }
-    
-    // Support both new flexible format (operations array) and legacy format (operation_type)
-    const hasOperations = p.operations && Array.isArray(p.operations) && p.operations.length > 0;
-    const hasLegacyFormat = p.operation_type;
-    
-    if (!hasOperations && !hasLegacyFormat) {
+    if (!p.operation_type) {
       throw new UniversalValidationError(
-        'Missing required parameters: either "operations" array or "operation_type"',
+        'Missing required parameter: operation_type',
         ErrorType.USER_ERROR,
         {
-          field: 'operations',
-          example: `operations: [{ operation: 'create', record_data: { name: 'Example' } }]`,
-          suggestion: 'Use either the new operations array format or legacy operation_type + records format',
+          field: 'operation_type',
+          example: `operation_type: 'create' | 'update' | 'delete' | 'search' | 'get'`,
         }
       );
     }
-    
-    // Validate new format
-    if (hasOperations) {
-      const operations = p.operations as Array<any>;
-      for (const [index, op] of operations.entries()) {
-        if (!op.operation) {
-          throw new UniversalValidationError(
-            `Missing operation type for operation at index ${index}`,
-            ErrorType.USER_ERROR,
-            {
-              field: `operations[${index}].operation`,
-              example: `operation: 'create'`,
-            }
-          );
+    const operationType = String(p.operation_type);
+    if (['create', 'update'].includes(operationType) && !p.records) {
+      throw new UniversalValidationError(
+        `Missing required parameter for ${operationType} operations: records`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'records',
+          suggestion: `Provide an array of record data for ${operationType} operations`,
+          example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`,
         }
-        if (!op.record_data) {
-          throw new UniversalValidationError(
-            `Missing record_data for operation at index ${index}`,
-            ErrorType.USER_ERROR,
-            {
-              field: `operations[${index}].record_data`,
-              example: `record_data: { name: 'Example' }`,
-            }
-          );
-        }
-      }
+      );
     }
-    
-    // Validate legacy format
-    if (hasLegacyFormat) {
-      const operationType = String(p.operation_type);
-      if (['create', 'update'].includes(operationType) && !p.records) {
-        throw new UniversalValidationError(
-          `Missing required parameter for ${operationType} operations: records`,
-          ErrorType.USER_ERROR,
-          {
-            field: 'records',
-            suggestion: `Provide an array of record data for ${operationType} operations`,
-            example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`,
-          }
-        );
-      }
-      if (['delete', 'get'].includes(operationType) && !p.record_ids) {
-        throw new UniversalValidationError(
-          `Missing required parameter for ${operationType} operations: record_ids`,
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_ids',
-            suggestion: `Provide an array of record IDs for ${operationType} operations`,
-            example: `record_ids: ['comp_abc123', 'comp_def456']`,
-          }
-        );
-      }
+    if (['delete', 'get'].includes(operationType) && !p.record_ids) {
+      throw new UniversalValidationError(
+        `Missing required parameter for ${operationType} operations: record_ids`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_ids',
+          suggestion: `Provide an array of record IDs for ${operationType} operations`,
+          example: `record_ids: ['comp_abc123', 'comp_def456']`,
+        }
+      );
     }
     return p;
   },

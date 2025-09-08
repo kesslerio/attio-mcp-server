@@ -2,14 +2,6 @@
 
 *Maintain strong customer relationships, track account health, and identify expansion opportunities through systematic CRM data management and outreach coordination.*
 
-> Important: Data Requirements
-> - These prompts assume your Attio workspace contains Customer Success data beyond sales (e.g., existing companies, relationships/contacts, and especially notes/tasks that reflect recent interactions).
-> - Content-based prompts only work when notes exist with the referenced keywords (e.g., “feedback satisfaction survey”, “success story expansion opportunity growth”).
-> - Timeframe prompts require records with created_at/modified_at dates in the requested range.
-> - If you only use Attio for sales, many examples will return “0 found” results. That’s expected and not a tool failure.
->
-> Tip: Seed a small demo dataset (one company + two notes) before running these prompts to see realistic outputs.
-
 ## 🎯 Quick Start: Your First Customer Review
 
 **Copy this exact prompt to test your setup:**
@@ -46,8 +38,6 @@ Find accounts requiring immediate attention:
 - High-value accounts with recent deal closures requiring onboarding support
 
 Prioritize by account value and relationship criticality.
-
-Note: This prompt relies on interaction history. If your workspace doesn’t log CS interactions (notes/tasks), you may get no results.
 ```
 
 **📝 Activity Planning**
@@ -72,8 +62,6 @@ Evaluate customer account health through available data:
 - Task completion rates and follow-through
 
 Document health status and improvement actions needed.
-
-Note: Health indicators come from the actual data you store (notes, tasks, deal progress). Without this data, the result will be empty or limited.
 ```
 
 **🔄 Renewal Preparation**
@@ -113,8 +101,6 @@ Identify expansion opportunities through systematic account review:
 - Success stories that could lead to additional purchases
 
 Document expansion potential and required next steps.
-
-Note: Expansion opportunities depend on existing notes/tasks and relationships indicating growth signals. Without such data, results will be empty.
 ```
 
 ### Relationship Building & Maintenance
@@ -128,8 +114,6 @@ Map and maintain customer relationships:
 - Maintain up-to-date contact information and role changes
 
 Ensure broad relationship coverage across customer organizations.
-
-Note: This assumes contact/relationship records exist for your customer companies.
 ```
 
 **💬 Communication Strategy**
@@ -154,8 +138,6 @@ Manage new customer onboarding through structured approach:
 - Track time-to-value and initial satisfaction indicators
 
 Ensure smooth transition from sales to customer success.
-
-Note: Onboarding timelines require recent “created_at” and “modified_at” data on accounts and related notes/tasks.
 ```
 
 **📚 Product Adoption Support**
@@ -184,8 +166,6 @@ Review customer success performance through available data:
 - Success story documentation and case study development
 
 Create improvement strategies for underperforming areas.
-
-Note: Metrics require historical data. If your workspace isn’t tracking CS KPIs in notes/tasks, expect limited output.
 ```
 
 **🎯 Account Planning & Strategy**
@@ -210,8 +190,6 @@ Systematically collect and analyze customer feedback:
 - Identify product improvement opportunities and feature requests
 
 Create feedback loops for continuous improvement.
-
-Note: This prompt searches notes for feedback-related content. If no such notes exist, you’ll receive a “Found 0” style message.
 ```
 
 **🔧 Process Improvement**
@@ -223,19 +201,6 @@ Continuously improve customer success processes:
 - Update customer success playbooks and best practices
 
 Optimize processes for scalability and effectiveness.
-
-Note: Process suggestions rely on the presence of logged CS interactions. Without that data, this remains a planning checklist rather than a data-driven report.
-
----
-
-## Troubleshooting and Expectations
-
-- “Found 0 records …” messages mean your workspace doesn’t have matching data for that prompt. This is expected in sales-only setups.
-- If you see 400 errors on certain searches, they often indicate missing/invalid filters or absent data (e.g., no notes matching the query). Re-run with broader keywords or seed a demo note.
-- For best results, ensure:
-  - At least one company exists
-  - Two notes attached to a company with keywords like “feedback satisfaction survey” and “success story expansion opportunity growth”
-  - Recent created_at/modified_at timestamps to exercise timeframe prompts
 ```
 
 ---

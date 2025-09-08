@@ -107,18 +107,6 @@ export const mockSchemasAndValidation = () => {
 };
 
 /**
- * Mock setup for UniversalSearchService (new strategy pattern)
- * Used by: advanced-operations.test.ts
- */
-export const mockUniversalSearchService = () => {
-  vi.mock('../../../../../src/services/UniversalSearchService.js', () => ({
-    UniversalSearchService: {
-      searchRecords: vi.fn().mockResolvedValue([]),
-    },
-  }));
-};
-
-/**
  * Mock setup for specialized handlers (companies, people)
  * Used by: advanced-operations.test.ts
  */
@@ -286,7 +274,6 @@ export const cleanupMocks = () => {
 export const setupUnitTestMocks = async () => {
   mockSharedHandlers();
   mockSchemasAndValidation();
-  mockUniversalSearchService();
   mockSpecializedHandlers();
   mockDateUtils();
   await initializeMockInstances();
@@ -360,9 +347,6 @@ export const initializeMockInstances = async () => {
   );
 
   const dateUtils = await import('../../../../../src/utils/date-utils.js');
-  const universalSearchService = await import(
-    '../../../../../src/services/UniversalSearchService.js'
-  );
 
   const companiesHandlers = await import(
     '../../../../../src/objects/companies/index.js'
@@ -398,9 +382,6 @@ export const initializeMockInstances = async () => {
     mockUtils: {
       validateAndCreateDateRange: dateUtils.validateAndCreateDateRange,
       isValidISODateString: dateUtils.isValidISODateString,
-    },
-    mockSearchService: {
-      searchRecords: universalSearchService.UniversalSearchService.searchRecords,
     },
     mockSpecialized: {
       // Companies
