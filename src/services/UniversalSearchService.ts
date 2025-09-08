@@ -168,8 +168,12 @@ export class UniversalSearchService {
     };
 
     const taskDependencies: StrategyDependencies = {
-      taskFunction: (status?: string, assigneeId?: string, page?: number, pageSize?: number) =>
-        listTasks(status, assigneeId, page, pageSize),
+      taskFunction: (
+        status?: string,
+        assigneeId?: string,
+        page?: number,
+        pageSize?: number
+      ) => listTasks(status, assigneeId, page, pageSize),
       rankByRelevance: SearchUtilities.rankByRelevance,
       getFieldValue: SearchUtilities.getFieldValue,
     };

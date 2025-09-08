@@ -756,7 +756,8 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
   },
   formatResult: (
     info: any,
-    resourceType?: UniversalResourceType
+    resourceType?: UniversalResourceType,
+    detailedInfoType?: any
   ): string => {
     if (!info) {
       return 'No detailed information found';
@@ -766,7 +767,25 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       ? getSingularResourceType(resourceType)
       : 'record';
 
-    let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} detailed information:\n\n`;
+    // Determine the header based on the detailed info type
+    let infoTypeLabel = 'detailed';
+    if (detailedInfoType) {
+      switch (detailedInfoType) {
+        case 'contact':
+          infoTypeLabel = 'contact';
+          break;
+        case 'business':
+          infoTypeLabel = 'business';
+          break;
+        case 'social':
+          infoTypeLabel = 'social';
+          break;
+        default:
+          infoTypeLabel = 'detailed';
+      }
+    }
+
+    let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} ${infoTypeLabel} information:\n\n`;
 
     if (typeof info === 'object' && info.values) {
       // Format as Attio record values
