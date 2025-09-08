@@ -16,7 +16,7 @@ import {
 import {
   advancedOperationsToolConfigs,
   advancedOperationsToolDefinitions,
-} from './advanced-operations.js';
+} from './operations/index.js';
 
 import {
   batchSearchConfig,
