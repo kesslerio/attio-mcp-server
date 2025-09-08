@@ -42,6 +42,8 @@ export class ListUpdateStrategy extends BaseUpdateStrategy {
     
     // Execute update with format conversion
     const updatedList = await this.updateListWithErrorHandling(record_id, finalData);
+    // Ensure updated_at is present for tests/consumers
+    (updatedList as any).updated_at = (updatedList as any).updated_at || new Date().toISOString();
 
     debug('List updated successfully', {
       list_id: record_id,

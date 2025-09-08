@@ -296,6 +296,10 @@ export class UniversalUpdateService {
       }
     }
 
+    const persist_unlisted_fields = Boolean(
+      (params as Record<string, unknown>)?.persist_unlisted_fields
+    );
+
     let updatedRecord: AttioRecord;
 
     switch (resource_type) {

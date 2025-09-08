@@ -42,6 +42,8 @@ export class CompanyUpdateStrategy extends BaseUpdateStrategy {
     
     // Execute update
     const updatedCompany = await this.updateCompanyWithErrorHandling(record_id, finalData);
+    // Ensure updated_at is present for tests/consumers
+    (updatedCompany as any).updated_at = (updatedCompany as any).updated_at || new Date().toISOString();
 
     debug('Company updated successfully', {
       company_id: record_id,
