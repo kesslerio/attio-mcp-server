@@ -13,8 +13,8 @@ import { debug, error } from '../../utils/logger.js';
  * @param serviceName - Name of the service for logging context
  * @returns The validated function or null if invalid
  */
-export const ensureFunctionAvailability = async <T extends (...args: any[]) => any>(
-  fn: T | unknown,
+export const ensureFunctionAvailability = async <T extends (...args: any[]) => unknown>(
+  fn: T | null | undefined,
   functionName: string,
   serviceName: string = 'UniversalSearchService'
 ): Promise<T | null> => {
