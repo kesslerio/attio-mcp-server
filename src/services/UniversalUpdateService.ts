@@ -300,11 +300,17 @@ export class UniversalUpdateService {
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
-        updatedRecord = await this.updateCompanyRecord(
-          record_id,
-          attioPayload,
-          resource_type
-        );
+        {
+          const { CompanyUpdateStrategy } = await import(
+            './update/strategies/CompanyUpdateStrategy.js'
+          );
+          const strategy = new CompanyUpdateStrategy();
+          updatedRecord = await strategy.update(
+            record_id,
+            attioPayload.values,
+            resource_type
+          );
+        }
         break;
 
       case UniversalResourceType.LISTS:
@@ -322,11 +328,17 @@ export class UniversalUpdateService {
         break;
 
       case UniversalResourceType.PEOPLE:
-        updatedRecord = await this.updatePersonRecord(
-          record_id,
-          attioPayload,
-          resource_type
-        );
+        {
+          const { PersonUpdateStrategy } = await import(
+            './update/strategies/PersonUpdateStrategy.js'
+          );
+          const strategy = new PersonUpdateStrategy();
+          updatedRecord = await strategy.update(
+            record_id,
+            attioPayload.values,
+            resource_type
+          );
+        }
         break;
 
       case UniversalResourceType.RECORDS:
@@ -400,38 +412,6 @@ export class UniversalUpdateService {
   }
 
   /**
-   * Update a company record with error handling
-   */
-  private static async updateCompanyRecord(
-    record_id: string,
-    attioPayload: { values: Record<string, unknown> },
-    resource_type: UniversalResourceType
-  ): Promise<AttioRecord> {
-    try {
-      // Extract values from Attio envelope for legacy updateCompany function
-      return await updateCompany(record_id, attioPayload.values);
-    } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(errorObj?.message || '');
-      if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
-        if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          throw new UniversalValidationError(
-            (error as Error).message,
-            ErrorType.USER_ERROR,
-            { suggestion, field: match[1] }
-          );
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
    * Update a list record with error handling and format conversion
    */
   private static async updateListRecord(
@@ -457,40 +437,6 @@ export class UniversalUpdateService {
           created_at: list.created_at,
         },
       } as unknown as AttioRecord;
-    } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(errorObj?.message || '');
-      if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
-        if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          throw new UniversalValidationError(
-            (error as Error).message,
-            ErrorType.USER_ERROR,
-            { suggestion, field: match[1] }
-          );
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Update a person record with email validation and error handling
-   */
-  private static async updatePersonRecord(
-    record_id: string,
-    attioPayload: { values: Record<string, unknown> },
-    resource_type: UniversalResourceType
-  ): Promise<AttioRecord> {
-    try {
-      // Validate email addresses for consistency with create operations
-      ValidationService.validateEmailAddresses(attioPayload.values);
-
-      return await updatePerson(record_id, attioPayload.values as any);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =
