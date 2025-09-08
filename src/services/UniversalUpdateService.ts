@@ -308,11 +308,17 @@ export class UniversalUpdateService {
         break;
 
       case UniversalResourceType.LISTS:
-        updatedRecord = await this.updateListRecord(
-          record_id,
-          attioPayload,
-          resource_type
-        );
+        {
+          const { ListUpdateStrategy } = await import(
+            './update/strategies/ListUpdateStrategy.js'
+          );
+          const strategy = new ListUpdateStrategy();
+          updatedRecord = await strategy.update(
+            record_id,
+            attioPayload.values,
+            resource_type
+          );
+        }
         break;
 
       case UniversalResourceType.PEOPLE:
