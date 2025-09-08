@@ -299,50 +299,95 @@ export class UniversalUpdateService {
     let updatedRecord: AttioRecord;
 
     switch (resource_type) {
-      case UniversalResourceType.COMPANIES:
-        updatedRecord = await this.updateCompanyRecord(
+      case UniversalResourceType.COMPANIES: {
+        // Use new strategy pattern
+        const { CompanyUpdateStrategy } = await import('./update/strategies/CompanyUpdateStrategy.js');
+        const strategy = new CompanyUpdateStrategy();
+        const result = await strategy.update({
+          resource_type,
           record_id,
-          attioPayload,
-          resource_type
-        );
+          mapped_data: attioPayload.values as Record<string, unknown>,
+          original_data: record_data,
+          persist_unlisted_fields
+        });
+        updatedRecord = result.record as AttioRecord;
         break;
+      }
 
-      case UniversalResourceType.LISTS:
-        updatedRecord = await this.updateListRecord(
+      case UniversalResourceType.LISTS: {
+        // Use new strategy pattern
+        const { ListUpdateStrategy } = await import('./update/strategies/ListUpdateStrategy.js');
+        const strategy = new ListUpdateStrategy();
+        const result = await strategy.update({
+          resource_type,
           record_id,
-          attioPayload,
-          resource_type
-        );
+          mapped_data: attioPayload.values as Record<string, unknown>,
+          original_data: record_data,
+          persist_unlisted_fields
+        });
+        updatedRecord = result.record as AttioRecord;
         break;
+      }
 
-      case UniversalResourceType.PEOPLE:
-        updatedRecord = await this.updatePersonRecord(
+      case UniversalResourceType.PEOPLE: {
+        // Use new strategy pattern
+        const { PersonUpdateStrategy } = await import('./update/strategies/PersonUpdateStrategy.js');
+        const strategy = new PersonUpdateStrategy();
+        const result = await strategy.update({
+          resource_type,
           record_id,
-          attioPayload,
-          resource_type
-        );
+          mapped_data: attioPayload.values as Record<string, unknown>,
+          original_data: record_data,
+          persist_unlisted_fields
+        });
+        updatedRecord = result.record as AttioRecord;
         break;
+      }
 
-      case UniversalResourceType.RECORDS:
-        // Extract object slug from record_data if available
-        const recordsObjectSlug =
-          (actualRecordData?.object as string) ||
-          (actualRecordData?.object_api_slug as string) ||
-          'records';
-        updatedRecord = await updateObjectRecord(
-          recordsObjectSlug,
+      case UniversalResourceType.RECORDS: {
+        // Use new strategy pattern
+        const { RecordUpdateStrategy } = await import('./update/strategies/RecordUpdateStrategy.js');
+        const strategy = new RecordUpdateStrategy();
+        const result = await strategy.update({
+          resource_type,
           record_id,
-          attioPayload
-        );
+          mapped_data: attioPayload.values as Record<string, unknown>,
+          original_data: record_data,
+          persist_unlisted_fields
+        });
+        updatedRecord = result.record as AttioRecord;
         break;
+      }
 
-      case UniversalResourceType.DEALS:
-        updatedRecord = await this.updateDealRecord(record_id, attioPayload);
+      case UniversalResourceType.DEALS: {
+        // Use new strategy pattern (deals are handled by RecordUpdateStrategy)
+        const { RecordUpdateStrategy } = await import('./update/strategies/RecordUpdateStrategy.js');
+        const strategy = new RecordUpdateStrategy();
+        const result = await strategy.update({
+          resource_type,
+          record_id,
+          mapped_data: attioPayload.values as Record<string, unknown>,
+          original_data: record_data,
+          persist_unlisted_fields
+        });
+        updatedRecord = result.record as AttioRecord;
         break;
+      }
 
-      case UniversalResourceType.TASKS:
-        updatedRecord = await this.updateTaskRecord(record_id, attioPayload);
+      case UniversalResourceType.TASKS: {
+        // Use new strategy pattern
+        const { TaskUpdateStrategy } = await import('./update/strategies/TaskUpdateStrategy.js');
+        const strategy = new TaskUpdateStrategy();
+        const result = await strategy.update({
+          resource_type,
+          record_id,
+          mapped_data: attioPayload.values as Record<string, unknown>,
+          original_data: record_data,
+          persist_unlisted_fields
+        });
+        updatedRecord = result.record as AttioRecord;
         break;
+      }
 
       default:
         updatedRecord = await this.handleUnsupportedResourceType(
@@ -353,7 +398,8 @@ export class UniversalUpdateService {
     }
 
     // Normalize response format across all resource types (Issue #473)
-    const normalizedRecord = this.normalizeResponseFormat(
+    const { UpdateValidation } = await import('./update/UpdateValidation.js');
+    const normalizedRecord = UpdateValidation.normalizeResponseFormat(
       resource_type,
       updatedRecord
     );
@@ -723,34 +769,6 @@ export class UniversalUpdateService {
     }
   }
 
-  /**
-   * Check if data contains forbidden content fields for tasks
-   */
-  private static hasForbiddenContent(values: Record<string, unknown>): boolean {
-    if (!values || typeof values !== 'object') {
-      return false;
-    }
-    const forbidden = ['content', 'content_markdown', 'content_plaintext'];
-    return forbidden.some((field) => field in values);
-  }
-
-  /**
-   * Validate that task content fields are not being updated (immutable)
-   */
-  private static assertNoTaskContentUpdate(
-    record_data: Record<string, unknown>
-  ): void {
-    // Null-safety: handle undefined/null record_data
-    if (!record_data || typeof record_data !== 'object') {
-      return; // Nothing to validate
-    }
-
-    if (this.hasForbiddenContent(record_data)) {
-      throw new FilterValidationError(
-        'Task content cannot be updated after creation. Content is immutable in the Attio API.'
-      );
-    }
-  }
 
   /**
    * Handle unsupported resource types with correction attempts
