@@ -1,6 +1,6 @@
 /**
  * BaseCreateStrategy - Abstract base class for resource-specific creation strategies
- * 
+ *
  * Provides common interface and shared utilities for all creation strategies.
  * Based on the pattern from search-strategies refactoring.
  */
@@ -43,7 +43,9 @@ export abstract class BaseCreateStrategy {
   /**
    * Format data for API submission
    */
-  protected abstract formatForAPI(data: Record<string, unknown>): Record<string, unknown>;
+  protected abstract formatForAPI(
+    data: Record<string, unknown>
+  ): Record<string, unknown>;
 
   /**
    * Common validation utilities
