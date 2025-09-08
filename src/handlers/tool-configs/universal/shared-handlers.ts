@@ -19,7 +19,6 @@ import {
   UniversalUpdateNoteParams,
   UniversalSearchNotesParams,
   UniversalDeleteNoteParams,
-  DetailedInfoType,
 } from './types.js';
 
 // Import extracted services from Issue #489 Phase 2 & 3
@@ -31,13 +30,7 @@ import { UniversalRetrievalService } from '../../../services/UniversalRetrievalS
 import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
 import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
 
-// Import existing handlers by resource type (used by handleUniversalGetDetailedInfo)
-import {
-  getCompanyBasicInfo,
-  getCompanyContactInfo,
-  getCompanyBusinessInfo,
-  getCompanySocialInfo,
-} from '../../../objects/companies/index.js';
+// Import existing handlers by resource type
 
 import { getListDetails } from '../../../objects/lists.js';
 
@@ -310,75 +303,51 @@ export async function handleUniversalDiscoverAttributes(
 export async function handleUniversalGetDetailedInfo(
   params: UniversalDetailedInfoParams
 ): Promise<Record<string, unknown>> {
-  const { resource_type, record_id, info_type } = params;
+  const { resource_type, record_id } = params;
 
-  // For now, we'll return the full record for non-company resource types
-  // TODO: Implement specialized detailed info methods for other resource types
-  if (resource_type !== UniversalResourceType.COMPANIES) {
-    // Return the full record as a fallback for other resource types
-    switch (resource_type) {
-      case UniversalResourceType.PEOPLE:
-        return getPersonDetails(record_id);
-      case UniversalResourceType.LISTS: {
-        const list = await getListDetails(record_id);
-        // Convert AttioList to AttioRecord format with robust shape handling
-        // Handle all documented Attio API list response shapes
-        const raw = list;
-        const listId =
-          raw?.id?.list_id ?? // nested shape from some endpoints
-          raw?.list_id ?? // flat shape from "Get a list" endpoint
-          raw?.id ?? // some responses use a flat id
-          record_id; // final fallback when caller already knows it
+  // Return the full record for all resource types using standard endpoints
+  switch (resource_type) {
+    case UniversalResourceType.COMPANIES:
+      return getObjectRecord('companies', record_id);
+    case UniversalResourceType.PEOPLE:
+      return getPersonDetails(record_id);
+    case UniversalResourceType.LISTS: {
+      const list = await getListDetails(record_id);
+      // Convert AttioList to AttioRecord format with robust shape handling
+      // Handle all documented Attio API list response shapes
+      const raw = list;
+      const listId =
+        raw?.id?.list_id ?? // nested shape from some endpoints
+        raw?.list_id ?? // flat shape from "Get a list" endpoint
+        raw?.id ?? // some responses use a flat id
+        record_id; // final fallback when caller already knows it
 
-        return {
-          id: {
-            record_id: listId,
-            list_id: listId,
-          },
-          values: {
-            name: list.name || list.title,
-            description: list.description,
-            parent_object: list.object_slug || list.parent_object,
-            api_slug: list.api_slug,
-            workspace_id: list.workspace_id,
-            workspace_member_access: list.workspace_member_access,
-            created_at: list.created_at,
-          },
-        } as unknown as AttioRecord;
-      }
-      case UniversalResourceType.DEALS:
-        return getObjectRecord('deals', record_id);
-      case UniversalResourceType.TASKS:
-        return getTask(record_id);
-      case UniversalResourceType.RECORDS:
-        return getObjectRecord('records', record_id);
-      default:
-        throw new Error(
-          `Unsupported resource type for detailed info: ${resource_type}`
-        );
+      return {
+        id: {
+          record_id: listId,
+          list_id: listId,
+        },
+        values: {
+          name: list.name || list.title,
+          description: list.description,
+          parent_object: list.object_slug || list.parent_object,
+          api_slug: list.api_slug,
+          workspace_id: list.workspace_id,
+          workspace_member_access: list.workspace_member_access,
+          created_at: list.created_at,
+        },
+      } as unknown as AttioRecord;
     }
-  }
-
-  // Company-specific detailed info
-  switch (info_type) {
-    case DetailedInfoType.BASIC:
-      return getCompanyBasicInfo(record_id);
-
-    case DetailedInfoType.CONTACT:
-      return getCompanyContactInfo(record_id);
-
-    case DetailedInfoType.BUSINESS:
-      return getCompanyBusinessInfo(record_id);
-
-    case DetailedInfoType.SOCIAL:
-      return getCompanySocialInfo(record_id);
-
-    case DetailedInfoType.CUSTOM:
-      // Custom fields would be implemented here
-      throw new Error('Custom detailed info not yet implemented');
-
+    case UniversalResourceType.DEALS:
+      return getObjectRecord('deals', record_id);
+    case UniversalResourceType.TASKS:
+      return getTask(record_id);
+    case UniversalResourceType.RECORDS:
+      return getObjectRecord('records', record_id);
     default:
-      throw new Error(`Unsupported info type: ${info_type}`);
+      throw new Error(
+        `Unsupported resource type for detailed info: ${resource_type}`
+      );
   }
 }
 

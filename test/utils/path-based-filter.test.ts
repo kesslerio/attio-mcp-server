@@ -90,7 +90,7 @@ describe('createPathBasedFilter', () => {
         100
       );
 
-      expect(filter.constraints).toEqual({ gt: 100 });
+      expect(filter.constraints).toEqual({ $gt: 100 });
     });
 
     it('should correctly map less_than condition', () => {
@@ -102,7 +102,7 @@ describe('createPathBasedFilter', () => {
         1000000
       );
 
-      expect(filter.constraints).toEqual({ lt: 1000000 });
+      expect(filter.constraints).toEqual({ $lt: 1000000 });
     });
 
     it('should correctly map is_empty condition', () => {
@@ -126,7 +126,7 @@ describe('createPathBasedFilter', () => {
         null
       );
 
-      expect(filter.constraints).toEqual({ is_not_empty: true });
+      expect(filter.constraints).toEqual({ $not_empty: true });
     });
 
     it('should correctly map in condition with array value', () => {

@@ -4,13 +4,10 @@ import {
 } from './common/properties.js';
 import {
   UniversalResourceType,
-  DetailedInfoType,
   RelationshipType,
   ContentSearchType,
   TimeframeType,
   BatchOperationType,
-  RelativeTimeframe,
-  DateField,
 } from '../types.js';
 
 export const getDetailedInfoSchema = {
@@ -25,16 +22,10 @@ export const getDetailedInfoSchema = {
       type: 'string' as const,
       description: 'Unique identifier of the record',
     },
-    info_type: {
-      type: 'string' as const,
-      enum: Object.values(DetailedInfoType),
-      description: 'Type of detailed info to retrieve',
-    },
   },
   required: [
     'resource_type' as const,
     'record_id' as const,
-    'info_type' as const,
   ],
   additionalProperties: false,
 };
@@ -137,42 +128,17 @@ export const searchByTimeframeSchema = {
     timeframe_type: {
       type: 'string' as const,
       enum: Object.values(TimeframeType),
-      description: 'Timeframe filter type (can be derived from date_field if not provided)',
+      description: 'Timeframe filter type',
     },
     start_date: {
       type: 'string' as const,
       format: 'date',
-      description: 'Start date (ISO 8601)',
+      description: 'Start date (ISO 8601 format)',
     },
     end_date: {
       type: 'string' as const,
       format: 'date',
-      description: 'End date (ISO 8601)',
-    },
-    relative_range: {
-      type: 'string' as const,
-      enum: [
-        'today',
-        'yesterday',
-        'this_week',
-        'last_week',
-        'this_month',
-        'last_month',
-        'last_7_days',
-        'last_14_days',  // Added to match sales playbook requirements
-        'last_30_days',
-        'last_90_days',  // Added to match RelativeTimeframe type
-      ] as const satisfies readonly RelativeTimeframe[],
-      description: 'Relative date range (alternative to start_date/end_date)',
-    },
-    date_field: {
-      type: 'string' as const,
-      enum: ['created_at', 'updated_at', 'due_date'] as const satisfies readonly DateField[],
-      description: 'Date field to filter on',
-    },
-    invert_range: {
-      type: 'boolean' as const,
-      description: 'Find records NOT in the date range',
+      description: 'End date (ISO 8601 format)',
     },
     ...paginationProperties,
   },
@@ -184,23 +150,46 @@ export const batchOperationsSchema = {
   type: 'object' as const,
   properties: {
     resource_type: resourceTypeProperty,
+    // New flexible format: operations array
+    operations: {
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          operation: {
+            type: 'string' as const,
+            enum: ['create', 'update', 'delete'],
+            description: 'Operation type for this specific operation',
+          },
+          record_data: {
+            type: 'object' as const,
+            additionalProperties: true,
+            description: 'Record data for the operation',
+          },
+        },
+        required: ['operation', 'record_data'],
+        additionalProperties: false,
+      },
+      description: 'Array of operations to perform',
+    },
+    // Legacy format: single operation type applied to multiple records
     operation_type: {
       type: 'string' as const,
       enum: Object.values(BatchOperationType),
-      description: 'Batch operation type',
+      description: 'Batch operation type (legacy format)',
     },
     records: {
       type: 'array' as const,
       items: { type: 'object' as const, additionalProperties: true },
-      description: 'Record data for create/update',
+      description: 'Record data for create/update (legacy format)',
     },
     record_ids: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Record IDs for delete/get',
+      description: 'Record IDs for delete/get (legacy format)',
     },
     ...paginationProperties,
   },
-  required: ['resource_type' as const, 'operation_type' as const],
+  required: ['resource_type' as const],
   additionalProperties: false,
 };

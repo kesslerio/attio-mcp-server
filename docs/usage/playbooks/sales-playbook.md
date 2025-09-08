@@ -2,6 +2,13 @@
 
 *Manage your sales pipeline effectively, track deal progression, and maintain organized prospect relationships through systematic CRM workflows.*
 
+> Important: Data Requirements
+> - These prompts assume your Attio workspace contains sales data: companies/prospects, deals/opportunities with stage and value, people/contacts, and notes/tasks for activity.
+> - Forecast and pipeline prompts require deal records with stages, values, and dates (e.g., created_at/modified_at/close_date).
+> - Outreach/activity prompts expect tasks/notes to exist to infer “last activity” and “next steps”. If you haven’t logged activity, you’ll often see “0 found”.
+>
+> Tip: Seed a single “Demo Sales Co” with one open deal and a couple of tasks/notes to see realistic outputs.
+
 ## 🎯 Quick Start: Your First Pipeline Review
 
 **Copy this exact prompt to test your setup:**
@@ -27,6 +34,8 @@ Review current sales pipeline status:
 - Recently updated deals requiring follow-up
 
 Create daily action priorities and follow-up schedule.
+
+Note: “Deals with no activity” relies on recent tasks/notes. If you don’t log activity, this will return empty.
 ```
 
 **🎯 Today's Action Items**
@@ -62,6 +71,8 @@ Review and qualify new leads systematically:
 - Decision-making authority and buying process
 
 Move qualified leads to active opportunity tracking.
+
+Note: Lead fields (industry, company size, email) must be populated for these checks to be meaningful.
 ```
 
 **📞 Outreach Activity Tracking**
@@ -90,6 +101,8 @@ Review deal progression and pipeline health:
 - Win/loss patterns and success factors
 
 Update deal stages and probability assessments.
+
+Note: This requires deals with valid stage, value, and timestamps; otherwise results will be sparse.
 ```
 
 **📊 Pipeline Forecasting**
@@ -101,6 +114,8 @@ Create pipeline forecast based on current opportunities:
 - Revenue projections based on deal values and probabilities
 
 Document forecast assumptions and risk factors.
+
+Note: Forecasts depend on well-maintained deal stages, values, and close dates; ensure these fields are present.
 ```
 
 ### Territory & Account Management
@@ -114,6 +129,8 @@ Organize and manage sales territory effectively:
 - Competitive landscape and market positioning
 
 Create focused account development strategies.
+
+Note: Territory prompts need location/industry fields; add these to company records for better results.
 ```
 
 **🏢 Account Development Planning**
@@ -138,6 +155,8 @@ Build and maintain prospect relationships:
 - Stakeholder influence mapping and engagement strategies
 
 Ensure broad relationship coverage in key accounts.
+
+Note: Relationship strategies rely on multiple contact records linked to target companies.
 ```
 
 **📱 Networking & Referral Generation**
@@ -340,6 +359,10 @@ Try: "Create systematic follow-up schedules and stick to them consistently"
 - Win/loss rates by source and competitor
 - Activity metrics (calls, meetings, proposals)
 - Conversion rates by stage
+
+Troubleshooting & Expectations
+- “Found 0 records …” often means the dataset lacks activity or properly staged deals. Seed one open deal and log a recent task to validate prompts.
+- 400 errors on filters typically indicate missing fields (e.g., close_date). Adjust filters or enrich data, then retry.
 
 ### Pipeline Health Indicators
 
