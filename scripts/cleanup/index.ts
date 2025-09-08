@@ -12,12 +12,15 @@ import { CleanupOptions, CleanupResult, ResourceSummary } from './core/types.js'
 import { initializeCleanupClient, testConnection, validateCleanupPermissions } from './core/client.js';
 import { getValidatedApiToken } from './filters/api-token-filter.js';
 import { fetchTasksByCreator } from './fetchers/tasks.js';
+import { fetchCompaniesByCreator } from './fetchers/companies.js';
+import { fetchPeopleByCreator } from './fetchers/people.js';
+import { fetchDealsByCreator } from './fetchers/deals.js';
 import { batchDeleteRecords, displayDeletionSummary, createResourceSummary, DeletionOptions } from './deleters/batch-deleter.js';
 import { filterByApiToken } from './filters/api-token-filter.js';
 import { filterByPatterns, getDefaultTestPatterns } from './filters/pattern-filter.js';
 import { logInfo, logError, logSuccess, formatDuration } from './core/utils.js';
 
-const DEFAULT_RESOURCES = ['tasks'];
+const DEFAULT_RESOURCES = ['tasks', 'companies', 'people', 'deals'];
 const DEFAULT_PARALLEL = 5;
 const DEFAULT_RATE_LIMIT = 250;
 
@@ -114,6 +117,195 @@ async function cleanupTasks(
 }
 
 /**
+ * Clean up companies
+ */
+async function cleanupCompanies(
+  apiToken: string, 
+  patterns: string[], 
+  deletionOptions: DeletionOptions
+): Promise<ResourceSummary> {
+  logInfo('🔍 Processing companies...');
+  
+  const client = initializeCleanupClient();
+  
+  // Fetch companies created by our API token
+  const fetchResult = await fetchCompaniesByCreator(client, apiToken);
+  
+  if (fetchResult.records.length === 0) {
+    logInfo('No companies found created by API token');
+    return createResourceSummary('companies', [], {
+      successful: 0,
+      failed: 0,
+      errors: [],
+      duration: 0
+    });
+  }
+
+  // Apply pattern filtering if specified
+  const patternResult = filterByPatterns(fetchResult.records, patterns, 'companies');
+  
+  if (patternResult.matched.length === 0) {
+    logInfo('No companies match the specified patterns');
+    return createResourceSummary('companies', [], {
+      successful: 0,
+      failed: 0,
+      errors: [],
+      duration: 0
+    });
+  }
+
+  // Display what we found
+  if (deletionOptions.dryRun) {
+    console.log(`\n📋 Found ${patternResult.matched.length} companies to delete:`);
+    patternResult.matched.slice(0, 10).forEach((company, index) => {
+      const name = company.values?.name?.[0]?.value || company.name || 'Unknown';
+      const id = company.id?.record_id || company.id || 'Unknown';
+      console.log(`  ${index + 1}. ${name} (${id})`);
+    });
+    
+    if (patternResult.matched.length > 10) {
+      console.log(`  ... and ${patternResult.matched.length - 10} more`);
+    }
+  }
+
+  // Delete the matched companies
+  const deletionResult = await batchDeleteRecords(
+    client, 
+    patternResult.matched, 
+    'companies', 
+    deletionOptions
+  );
+
+  return createResourceSummary('companies', patternResult.matched, deletionResult);
+}
+
+/**
+ * Clean up people
+ */
+async function cleanupPeople(
+  apiToken: string, 
+  patterns: string[], 
+  deletionOptions: DeletionOptions
+): Promise<ResourceSummary> {
+  logInfo('🔍 Processing people...');
+  
+  const client = initializeCleanupClient();
+  
+  // Fetch people created by our API token
+  const fetchResult = await fetchPeopleByCreator(client, apiToken);
+  
+  if (fetchResult.records.length === 0) {
+    logInfo('No people found created by API token');
+    return createResourceSummary('people', [], {
+      successful: 0,
+      failed: 0,
+      errors: [],
+      duration: 0
+    });
+  }
+
+  // Apply pattern filtering if specified
+  const patternResult = filterByPatterns(fetchResult.records, patterns, 'people');
+  
+  if (patternResult.matched.length === 0) {
+    logInfo('No people match the specified patterns');
+    return createResourceSummary('people', [], {
+      successful: 0,
+      failed: 0,
+      errors: [],
+      duration: 0
+    });
+  }
+
+  // Display what we found
+  if (deletionOptions.dryRun) {
+    console.log(`\n📋 Found ${patternResult.matched.length} people to delete:`);
+    patternResult.matched.slice(0, 10).forEach((person, index) => {
+      const name = person.values?.name?.[0]?.value || person.name || 'Unknown';
+      const id = person.id?.record_id || person.id || 'Unknown';
+      console.log(`  ${index + 1}. ${name} (${id})`);
+    });
+    
+    if (patternResult.matched.length > 10) {
+      console.log(`  ... and ${patternResult.matched.length - 10} more`);
+    }
+  }
+
+  // Delete the matched people
+  const deletionResult = await batchDeleteRecords(
+    client, 
+    patternResult.matched, 
+    'people', 
+    deletionOptions
+  );
+
+  return createResourceSummary('people', patternResult.matched, deletionResult);
+}
+
+/**
+ * Clean up deals
+ */
+async function cleanupDeals(
+  apiToken: string, 
+  patterns: string[], 
+  deletionOptions: DeletionOptions
+): Promise<ResourceSummary> {
+  logInfo('🔍 Processing deals...');
+  
+  const client = initializeCleanupClient();
+  
+  // Fetch deals created by our API token
+  const fetchResult = await fetchDealsByCreator(client, apiToken);
+  
+  if (fetchResult.records.length === 0) {
+    logInfo('No deals found created by API token');
+    return createResourceSummary('deals', [], {
+      successful: 0,
+      failed: 0,
+      errors: [],
+      duration: 0
+    });
+  }
+
+  // Apply pattern filtering if specified
+  const patternResult = filterByPatterns(fetchResult.records, patterns, 'deals');
+  
+  if (patternResult.matched.length === 0) {
+    logInfo('No deals match the specified patterns');
+    return createResourceSummary('deals', [], {
+      successful: 0,
+      failed: 0,
+      errors: [],
+      duration: 0
+    });
+  }
+
+  // Display what we found
+  if (deletionOptions.dryRun) {
+    console.log(`\n📋 Found ${patternResult.matched.length} deals to delete:`);
+    patternResult.matched.slice(0, 10).forEach((deal, index) => {
+      const name = deal.values?.name?.[0]?.value || deal.name || 'Unknown';
+      const id = deal.id?.record_id || deal.id || 'Unknown';
+      console.log(`  ${index + 1}. ${name} (${id})`);
+    });
+    
+    if (patternResult.matched.length > 10) {
+      console.log(`  ... and ${patternResult.matched.length - 10} more`);
+    }
+  }
+
+  // Delete the matched deals
+  const deletionResult = await batchDeleteRecords(
+    client, 
+    patternResult.matched, 
+    'deals', 
+    deletionOptions
+  );
+
+  return createResourceSummary('deals', patternResult.matched, deletionResult);
+}
+
+/**
  * Main cleanup function
  */
 async function performCleanup(options: CleanupOptions): Promise<CleanupResult> {
@@ -163,9 +355,23 @@ async function performCleanup(options: CleanupOptions): Promise<CleanupResult> {
           summaries.push(taskSummary);
           break;
         
+        case 'companies':
+          const companySummary = await cleanupCompanies(apiToken, patterns, deletionOptions);
+          summaries.push(companySummary);
+          break;
+        
+        case 'people':
+          const peopleSummary = await cleanupPeople(apiToken, patterns, deletionOptions);
+          summaries.push(peopleSummary);
+          break;
+        
+        case 'deals':
+          const dealSummary = await cleanupDeals(apiToken, patterns, deletionOptions);
+          summaries.push(dealSummary);
+          break;
+        
         default:
           logError(`Unsupported resource type: ${resourceType}`);
-          // Note: Other resource types (companies, people, etc.) would be implemented here
       }
     }
 

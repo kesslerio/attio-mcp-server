@@ -46,6 +46,9 @@ async function deleteSingleRecord(
       case 'people':
         endpoint = `/objects/people/records/${id}`;
         break;
+      case 'deals':
+        endpoint = `/objects/deals/records/${id}`;
+        break;
       case 'tasks':
         endpoint = `/tasks/${id}`;
         break;

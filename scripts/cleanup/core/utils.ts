@@ -7,14 +7,22 @@ import { AttioRecord, ResourceType } from './types.js';
  * Extract a human-readable name from a record
  */
 export function extractRecordName(record: AttioRecord, resourceType: ResourceType): string {
+  // Try to get name from values first (new API structure)
+  if (record.values?.name?.[0]?.value) {
+    return record.values.name[0].value;
+  }
+  
   switch (resourceType) {
     case 'companies':
       return record.name || 'Unknown';
     case 'people':
-      if (record.first_name && record.last_name) {
-        return `${record.first_name} ${record.last_name}`;
+      // Try first/last name from values
+      const firstName = record.values?.first_name?.[0]?.value || record.first_name;
+      const lastName = record.values?.last_name?.[0]?.value || record.last_name;
+      if (firstName && lastName) {
+        return `${firstName} ${lastName}`;
       }
-      return record.first_name || record.last_name || record.name || 'Unknown';
+      return firstName || lastName || record.name || 'Unknown';
     case 'tasks':
       return record.content_plaintext || record.content || record.title || 'Unknown';
     case 'lists':
@@ -35,8 +43,14 @@ export function extractRecordId(record: AttioRecord, resourceType: ResourceType)
     return record.id;
   }
 
-  // Handle object-based IDs
+  // Handle object-based IDs (new API structure)
   if (record.id && typeof record.id === 'object') {
+    // Try record_id first (new API structure)
+    if (record.id.record_id) {
+      return record.id.record_id;
+    }
+    
+    // Fallback to resource-specific ID fields
     switch (resourceType) {
       case 'companies':
         return record.id.company_id || record.id.id;
@@ -48,6 +62,8 @@ export function extractRecordId(record: AttioRecord, resourceType: ResourceType)
         return record.id.list_id || record.id.id;
       case 'notes':
         return record.id.note_id || record.id.id;
+      case 'deals':
+        return record.id.deal_id || record.id.id;
       default:
         return record.id.id || JSON.stringify(record.id);
     }

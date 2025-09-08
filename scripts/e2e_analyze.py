@@ -590,30 +590,115 @@ def generate_enhanced_text_report(all_stats: Dict, anomalies: List[Dict], flaky_
     return "\n".join(report_lines)
 
 def main():
-    parser = argparse.ArgumentParser(description='Enhanced E2E Test Analysis Script with anomaly detection and trend analysis.')
-    parser.add_argument('log_path', nargs='?', default='test-results', help='Path to a log file or directory.')
-    parser.add_argument('-j', '--json', action='store_true', help='Output analysis in JSON format.')
-    parser.add_argument('--export', help='Specify a custom filename for the report.')
-    parser.add_argument('--stdout', action='store_true', help='Print report to stdout instead of saving to a file.')
-    parser.add_argument('--enhanced', action='store_true', default=True, help='Use enhanced analysis with anomaly detection (default: True).')
-    parser.add_argument('--no-save', action='store_true', help='Do not save results to historical data.')
-    parser.add_argument('--baseline-days', type=int, default=7, help='Number of days to use for baseline calculation (default: 7).')
-    parser.add_argument('--flaky-days', type=int, default=7, help='Number of days to analyze for flaky test detection (default: 7).')
+    parser = argparse.ArgumentParser(
+        description='Enhanced E2E Test Analysis Script with anomaly detection and trend analysis.',
+        epilog='''
+EXAMPLES:
+  Basic Analysis:
+    %(prog)s                                   # Analyze all logs in test-results/
+    %(prog)s test-results/e2e-core.log        # Analyze specific log file
+    
+  Enhanced Analysis:
+    %(prog)s --enhanced --stdout               # Enhanced analysis to console
+    %(prog)s --json --stdout                   # JSON output to console
+    %(prog)s --export analysis.md             # Save to specific file
+    
+  Trend Analysis:
+    %(prog)s --baseline-days 14               # 14-day baseline comparison
+    %(prog)s --flaky-days 14                  # 14-day flaky test detection
+    
+  Integration with Diagnostics:
+    ./scripts/e2e-diagnostics.sh --json | %(prog)s --stdin --enhanced --stdout
+    
+  Quick Latest Run Analysis:
+    %(prog)s --latest --stdout                # Analyze most recent log only
+    %(prog)s test-results --latest --enhanced # Enhanced analysis of latest log
+    
+OUTPUT OPTIONS:
+  --stdout         Console output (good for piping)
+  --export FILE    Save to specific file
+  (default)        Auto-generated timestamped file in test-results/
+
+ANALYSIS MODES:
+  --enhanced       Full analysis with anomalies & flaky test detection (DEFAULT)
+  --basic          Simple test counts and failures only
+  --json           JSON format instead of human-readable markdown
+  
+HISTORICAL DATA:
+  --no-save        Don't update historical baseline data
+  --baseline-days  Days of history for baseline comparison (default: 7)
+  --flaky-days     Days of history for flaky test detection (default: 7)
+        ''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument('log_path', nargs='?', default='test-results', 
+                       help='Path to log file or directory (default: test-results/)')
+    parser.add_argument('-j', '--json', action='store_true', 
+                       help='Output in JSON format instead of markdown')
+    parser.add_argument('--export', metavar='FILE',
+                       help='Save report to specific file (auto-generated if not specified)')
+    parser.add_argument('--stdout', action='store_true', 
+                       help='Print to console instead of saving to file')
+    parser.add_argument('--enhanced', action='store_true', default=True, 
+                       help='Enhanced analysis with anomalies & flaky tests (DEFAULT)')
+    parser.add_argument('--basic', action='store_true',
+                       help='Basic analysis only (disable anomaly detection)')
+    parser.add_argument('--latest', action='store_true',
+                       help='Analyze only the most recent log file')
+    parser.add_argument('--stdin', action='store_true',
+                       help='Read log data from stdin (for piping from diagnostics)')
+    parser.add_argument('--no-save', action='store_true', 
+                       help='Don\'t save results to historical baseline data')
+    parser.add_argument('--baseline-days', type=int, default=7, metavar='N',
+                       help='Days of history for baseline comparison (default: 7)')
+    parser.add_argument('--flaky-days', type=int, default=7, metavar='N',
+                       help='Days of history for flaky test detection (default: 7)')
 
     args = parser.parse_args()
+    
+    # Handle conflicting options
+    if args.basic:
+        args.enhanced = False
 
     log_files = []
-    is_single_file = os.path.isfile(args.log_path)
+    is_single_file = False
 
-    if os.path.isdir(args.log_path):
-        for f in os.listdir(args.log_path):
-            if f.startswith('e2e-') and f.endswith('.log'):
-                log_files.append(os.path.join(args.log_path, f))
-    elif is_single_file:
-        log_files.append(args.log_path)
+    if args.stdin:
+        # Read from stdin and write to temporary file for processing
+        import tempfile
+        stdin_content = sys.stdin.read()
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False)
+        temp_file.write(stdin_content)
+        temp_file.close()
+        log_files.append(temp_file.name)
+        is_single_file = True
     else:
-        print(f"Error: Log path '{args.log_path}' not found.", file=sys.stderr)
-        sys.exit(1)
+        is_single_file = os.path.isfile(args.log_path)
+
+        if os.path.isdir(args.log_path):
+            # Find all log files
+            all_log_files = []
+            for f in os.listdir(args.log_path):
+                if f.startswith('e2e-') and f.endswith('.log'):
+                    full_path = os.path.join(args.log_path, f)
+                    all_log_files.append((full_path, os.path.getmtime(full_path)))
+            
+            # Sort by modification time (newest first)
+            all_log_files.sort(key=lambda x: x[1], reverse=True)
+            
+            if args.latest and all_log_files:
+                # Only use the most recent log file
+                log_files.append(all_log_files[0][0])
+                is_single_file = True
+            else:
+                # Use all log files
+                log_files = [f[0] for f in all_log_files]
+                
+        elif is_single_file:
+            log_files.append(args.log_path)
+        else:
+            print(f"Error: Log path '{args.log_path}' not found.", file=sys.stderr)
+            sys.exit(1)
 
     if not log_files:
         print("No log files found to analyze.")
@@ -687,6 +772,10 @@ def main():
             f.write(output)
         print(f"✅ Report saved to: {output_file}")
 
+    # Clean up temporary file if using stdin
+    if args.stdin:
+        os.unlink(log_files[0])
+    
     total_failed = sum(s['failed'] for s in all_stats.values())
     if total_failed > 0:
         sys.exit(1)
