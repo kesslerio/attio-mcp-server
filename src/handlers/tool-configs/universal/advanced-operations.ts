@@ -918,6 +918,7 @@ export const searchByTimeframeConfig = {
  */
 export const batchOperationsConfig = {
   name: 'batch-operations',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Batch operations return varies between arrays and objects depending on operation type
   handler: async (params: Record<string, unknown>): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams(

@@ -702,9 +702,10 @@ export const discoverAttributesConfig = {
 
     // Handle object with attributes property (from UniversalMetadataService)
     if (typeof schema === 'object' && schema !== null) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic API response structure requires flexible property access
       const s: any = schema as any;
       if (s.all && Array.isArray(s.all)) {
-        return `Available ${resourceTypeName} attributes (${(s.all as any[]).length}):\n${(s.all as any[])
+        return `Available ${resourceTypeName} attributes (${(s.all as any[]).length}):\n${(s.all as any[]) // eslint-disable-line @typescript-eslint/no-explicit-any -- API response arrays have dynamic structure
           .map((attr: Record<string, unknown>, index: number) => {
             const name = attr.name || attr.slug || 'Unnamed';
             const type = attr.type || 'unknown';

@@ -161,6 +161,7 @@ const toolValidators: Record<string, ToolValidator> = {
       const forbidden = ['content', 'content_markdown', 'content_plaintext'];
       if (p.record_data && typeof p.record_data === 'object') {
         for (const k of forbidden) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic property checking on user input requires flexible access
           if (k in (p.record_data as any)) {
             throw new UniversalValidationError(
               'Task content is immutable and cannot be updated'
@@ -292,6 +293,7 @@ const toolValidators: Record<string, ToolValidator> = {
     
     // Validate new format
     if (hasOperations) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Operations array contains user-provided objects with varying structure
       const operations = p.operations as Array<any>;
       for (const [index, op] of operations.entries()) {
         if (!op.operation) {
@@ -346,7 +348,9 @@ const toolValidators: Record<string, ToolValidator> = {
     return p;
   },
   'list-notes': (p) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Legacy parameter aliasing requires flexible property access
     if (!p.record_id && (p as any).parent_record_id) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Legacy parameter mapping
       (p as any).record_id = (p as any).parent_record_id;
     }
     if (!p.resource_type) {
@@ -373,7 +377,9 @@ const toolValidators: Record<string, ToolValidator> = {
 
 export function validateUniversalToolParams(
   toolName: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Function accepts any tool parameters for universal validation
   params: any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Returns sanitized parameters with preserved structure
 ): any {
   const sanitizedValue = InputSanitizer.sanitizeObject(params);
   if (

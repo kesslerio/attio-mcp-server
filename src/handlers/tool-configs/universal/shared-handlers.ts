@@ -116,11 +116,13 @@ export async function handleUniversalCreateNote(
       'universal.createNote',
       'Failed to create note',
       error,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error object structure varies, need flexible access
       { errorMessage: (error as any)?.message },
       'handleUniversalCreateNote',
       OperationType.TOOL_EXECUTION
     );
     return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error object structure varies, need flexible access
       error: (error as any)?.message,
       success: false,
     };
@@ -149,11 +151,16 @@ export async function handleUniversalGetNotes(
       offset,
     });
     const rawList = unwrapAttio<Record<string, unknown>>(response);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
     const noteArray: any[] = Array.isArray(rawList)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
       ? (rawList as any[])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure  
       : (((rawList as any)?.data as any[]) || []);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- normalizeNotes expects any[] for flexible note processing
     return normalizeNotes(noteArray as any[]);
   } catch (error: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error object structure varies, need flexible access
     const anyErr = error as any;
     const status = anyErr?.response?.status;
     const message =
