@@ -1,7 +1,7 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
 startCommand:
-  type: stdio
+  type: http
   configSchema:
     # JSON Schema defining the configuration options for the MCP
     type: object
@@ -14,13 +14,18 @@ startCommand:
       ATTIO_WORKSPACE_ID:
         type: string
         description: "The workspace ID for the Attio CRM server"
+      ALLOWED_ORIGINS:
+        type: string
+        description: "Comma-separated list of allowed CORS origins (optional)"
   commandFunction: |-
     (config) => ({
       command: 'node',
-      args: ['dist/index.js'],
+      args: ['dist/http.js'],
       env: {
         ATTIO_API_KEY: config.ATTIO_API_KEY,
         ATTIO_WORKSPACE_ID: config.ATTIO_WORKSPACE_ID || '',
-        NODE_ENV: 'production'
+        ALLOWED_ORIGINS: config.ALLOWED_ORIGINS || 'https://smithery.ai',
+        NODE_ENV: 'production',
+        PORT: process.env.PORT || '3000'
       }
     })
