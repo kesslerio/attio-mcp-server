@@ -34,8 +34,8 @@ describe('Domain-Based Company Search Integration', () => {
         expect(firstResult).toHaveProperty('values');
 
         // Check if domain matches appear first (if any companies with stripe.com exist)
-        const hasStripeResults = results.some(
-          (company) => company.values?.website?.includes('stripe.com')
+        const hasStripeResults = results.some((company) =>
+          company.values?.website?.includes('stripe.com')
         );
 
         if (hasStripeResults) {

@@ -254,9 +254,9 @@ export class MockService {
                 domain:
                   typeof rawDomains === 'string'
                     ? rawDomains
-                    : (rawDomains as any)?.domain ??
+                    : ((rawDomains as any)?.domain ??
                       (rawDomains as any)?.value ??
-                      String(rawDomains),
+                      String(rawDomains)),
               },
             ];
           }

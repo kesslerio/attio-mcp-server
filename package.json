@@ -16,7 +16,7 @@
     "postbuild": "shx chmod +x dist/*.js",
     "check": "wireit",
     "build:watch": "tsc --watch",
-    "lint:check": "wireit",
+        "lint:check": "wireit",
     "lint:fix": "wireit",
     "format": "npx prettier --write --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
     "check:format": "npx prettier --check --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
@@ -137,7 +137,7 @@
     "e2e:analyze:trends": "python3 ./scripts/e2e_analyze.py test-results --enhanced --baseline-days=14 --flaky-days=14 --stdout",
     "e2e:analyze:basic": "python3 ./scripts/e2e_analyze.py test-results --stdout",
     "e2e:health": "./scripts/e2e-health-check.sh",
-    "prepare": "husky install"
+    "prepare": "npx husky install"
   },
   "files": [
     "dist",

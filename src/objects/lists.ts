@@ -55,7 +55,9 @@ function ensureListShape(raw: any) {
   if (!raw || typeof raw !== 'object') raw = {};
   const id = raw.id ?? raw.list_id ?? raw?.id?.list_id;
   const list_id =
-    typeof id === 'string' ? id : crypto.randomUUID?.() ?? `tmp_${Date.now()}`;
+    typeof id === 'string'
+      ? id
+      : (crypto.randomUUID?.() ?? `tmp_${Date.now()}`);
   return {
     id: { list_id },
     name: raw.name ?? raw.title ?? 'Untitled List',
