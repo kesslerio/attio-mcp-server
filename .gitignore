@@ -67,3 +67,4 @@ logs.backup/
 
 # Ignore log files in the logs directory
 logs/*.log
+tsconfig.tsbuildinfo

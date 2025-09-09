@@ -87,7 +87,9 @@ export class UniversalUpdateService {
         ErrorType.USER_ERROR,
         {
           field: 'resource_type',
-          suggestion: `Valid resource types are: ${validResourceTypes.join(', ')}`,
+          suggestion: `Valid resource types are: ${validResourceTypes.join(
+            ', '
+          )}`,
         }
       );
     }

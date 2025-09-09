@@ -30,7 +30,9 @@ export function validateTestEnvironment(): void {
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required environment variables for integration tests: ${missing.join(', ')}\n` +
+      `Missing required environment variables for integration tests: ${missing.join(
+        ', '
+      )}\n` +
         'Please ensure you have a .env file with ATTIO_API_KEY set, or export the variable.'
     );
   }

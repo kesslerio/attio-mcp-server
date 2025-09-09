@@ -203,7 +203,9 @@ const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 const CI_MULTIPLIER = isCI ? 2.5 : 1; // 2.5x longer timeouts for CI environments
 
 console.log(
-  `Performance regression testing with ${isCI ? 'CI' : 'LOCAL'} budgets (multiplier: ${CI_MULTIPLIER}x)`
+  `Performance regression testing with ${
+    isCI ? 'CI' : 'LOCAL'
+  } budgets (multiplier: ${CI_MULTIPLIER}x)`
 );
 
 // Performance test configuration - use environment variables or defaults with CI adjustments
@@ -390,7 +392,9 @@ describe('Performance Regression Tests', () => {
       expect(bothVeryFast || secondFaster).toBe(true);
 
       console.log(
-        `404 cache performance: First: ${firstDuration.toFixed(0)}ms, Second: ${secondDuration.toFixed(0)}ms`
+        `404 cache performance: First: ${firstDuration.toFixed(
+          0
+        )}ms, Second: ${secondDuration.toFixed(0)}ms`
       );
     });
   });
@@ -416,7 +420,9 @@ describe('Performance Regression Tests', () => {
       expect(Array.isArray(results)).toBe(true);
 
       console.log(
-        `Search operation time: ${duration.toFixed(0)}ms (${(results as any[]).length} results)`
+        `Search operation time: ${duration.toFixed(0)}ms (${
+          (results as any[]).length
+        } results)`
       );
     });
 
@@ -659,7 +665,11 @@ describe('Performance Regression Tests', () => {
         expect((stats as any).timing.p99).toBeLessThan(10000);
 
         console.log(
-          `Latency percentiles - P50: ${(stats as any).timing.p50.toFixed(0)}ms, P95: ${(stats as any).timing.p95.toFixed(0)}ms, P99: ${(stats as any).timing.p99.toFixed(0)}ms`
+          `Latency percentiles - P50: ${(stats as any).timing.p50.toFixed(
+            0
+          )}ms, P95: ${(stats as any).timing.p95.toFixed(0)}ms, P99: ${(
+            stats as any
+          ).timing.p99.toFixed(0)}ms`
         );
       }
     });

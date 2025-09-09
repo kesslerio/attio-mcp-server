@@ -99,7 +99,9 @@ export class PerformanceTracker {
         const duration = performance.now() - startTime;
         if (duration > thresholds.critical) {
           console.warn(
-            `⚠️ Critical: ${toolName} is taking too long (${duration.toFixed(2)}ms)`
+            `⚠️ Critical: ${toolName} is taking too long (${duration.toFixed(
+              2
+            )}ms)`
           );
         } else if (duration > thresholds.warning) {
           console.warn(
@@ -362,8 +364,14 @@ export class PerformanceTracker {
 Performance Report
 ==================
 Total Operations: ${summary.totalOperations}
-Successful: ${summary.successfulOperations} (${((summary.successfulOperations / summary.totalOperations) * 100).toFixed(1)}%)
-Failed: ${summary.failedOperations} (${((summary.failedOperations / summary.totalOperations) * 100).toFixed(1)}%)
+Successful: ${summary.successfulOperations} (${(
+      (summary.successfulOperations / summary.totalOperations) *
+      100
+    ).toFixed(1)}%)
+Failed: ${summary.failedOperations} (${(
+      (summary.failedOperations / summary.totalOperations) *
+      100
+    ).toFixed(1)}%)
 
 Timing Statistics
 -----------------

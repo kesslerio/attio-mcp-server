@@ -55,9 +55,7 @@ function ensureListShape(raw: any) {
   if (!raw || typeof raw !== 'object') raw = {};
   const id = raw.id ?? raw.list_id ?? raw?.id?.list_id;
   const list_id =
-    typeof id === 'string'
-      ? id
-      : (crypto.randomUUID?.() ?? `tmp_${Date.now()}`);
+    typeof id === 'string' ? id : crypto.randomUUID?.() ?? `tmp_${Date.now()}`;
   return {
     id: { list_id },
     name: raw.name ?? raw.title ?? 'Untitled List',
@@ -250,7 +248,9 @@ export async function addRecordToList(
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
-        `Generic addRecordToList failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Generic addRecordToList failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
       console.error(
         `Falling back to direct implementation for list ${listId} and record ${recordId}`
@@ -327,7 +327,9 @@ export async function addRecordToList(
         const validationErrors = error.response?.data?.validation_errors || [];
         const errorDetails = validationErrors
           .map((e) => {
-            return `${e.path?.join('.') || 'unknown'}: ${e.message || 'unknown'}`;
+            return `${e.path?.join('.') || 'unknown'}: ${
+              e.message || 'unknown'
+            }`;
           })
           .join('; ');
 
@@ -381,7 +383,9 @@ export async function updateListEntry(
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
-        `Generic updateListEntry failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Generic updateListEntry failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
       console.error(
         `Falling back to direct implementation for list ${listId}, entry ${entryId}`
@@ -852,7 +856,9 @@ export async function filterListEntriesByParent(
     // Add context to error message
     if (hasErrorResponse(error) && error.response?.status === 400) {
       throw new Error(
-        `Invalid filter parameters: ${error instanceof Error ? error.message : 'Bad request'}`
+        `Invalid filter parameters: ${
+          error instanceof Error ? error.message : 'Bad request'
+        }`
       );
     } else if (hasErrorResponse(error) && error.response?.status === 404) {
       throw new Error(`List ${listId} not found`);
@@ -957,7 +963,9 @@ export async function createList(
     // Add context to error message
     if (hasErrorResponse(error) && error.response?.status === 400) {
       throw new Error(
-        `Invalid list attributes: ${error instanceof Error ? error.message : 'Bad request'}`
+        `Invalid list attributes: ${
+          error instanceof Error ? error.message : 'Bad request'
+        }`
       );
     } else if (hasErrorResponse(error) && error.response?.status === 403) {
       throw new Error('Insufficient permissions to create list');
@@ -1027,7 +1035,9 @@ export async function updateList(
       throw new Error(`List ${listId} not found`);
     } else if (hasErrorResponse(error) && error.response?.status === 400) {
       throw new Error(
-        `Invalid list attributes: ${error instanceof Error ? error.message : 'Bad request'}`
+        `Invalid list attributes: ${
+          error instanceof Error ? error.message : 'Bad request'
+        }`
       );
     } else if (hasErrorResponse(error) && error.response?.status === 403) {
       throw new Error(`Insufficient permissions to update list ${listId}`);

@@ -214,7 +214,9 @@ export class UniversalCreateService {
       // List available fields for this resource type
       const mapping = FIELD_MAPPINGS[resource_type];
       if (mapping && mapping.validFields.length > 0) {
-        errorMessage += `\n\n📋 Available fields for ${resource_type}:\n  ${mapping.validFields.join(', ')}`;
+        errorMessage += `\n\n📋 Available fields for ${resource_type}:\n  ${mapping.validFields.join(
+          ', '
+        )}`;
         remediation.push(
           `Use valid fields: ${mapping.validFields.slice(0, 5).join(', ')}`
         );
@@ -344,7 +346,9 @@ export class UniversalCreateService {
 
       // Generic mapping error with enhanced details
       throw createEnhancedValidationError(
-        `Field mapping failed for ${resource_type}: ${mappingResult.errors.join('; ')}`,
+        `Field mapping failed for ${resource_type}: ${mappingResult.errors.join(
+          '; '
+        )}`,
         {
           field: 'record_data',
           errorCode: 'FIELD_MAPPING_ERROR',

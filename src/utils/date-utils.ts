@@ -501,7 +501,9 @@ export function validateAndCreateDateRange(
   // If only one date is provided, it's still valid for open-ended ranges
   if ((result.start && !result.end) || (!result.start && result.end)) {
     console.info(
-      `Creating open-ended date range: ${result.start ? `from ${result.start}` : `until ${result.end}`}`
+      `Creating open-ended date range: ${
+        result.start ? `from ${result.start}` : `until ${result.end}`
+      }`
     );
   }
 
@@ -521,7 +523,9 @@ export function validateAndCreateDateRange(
     const diffYears = diffMs / (1000 * 60 * 60 * 24 * 365);
     if (diffYears > 10) {
       console.warn(
-        `Large date range detected: ${diffYears.toFixed(1)} years. This may impact performance.`
+        `Large date range detected: ${diffYears.toFixed(
+          1
+        )} years. This may impact performance.`
       );
     }
   }

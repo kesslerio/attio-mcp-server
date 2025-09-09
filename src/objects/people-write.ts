@@ -194,7 +194,9 @@ export class PersonValidator {
           }
         } else {
           throw new InvalidPersonDataError(
-            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+            `Invalid email format: "${JSON.stringify(
+              emailItem
+            )}". Please provide a valid email address (e.g., user@example.com)`
           );
         }
 
@@ -331,7 +333,9 @@ export class PersonValidator {
           }
         } else {
           throw new InvalidPersonDataError(
-            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+            `Invalid email format: "${JSON.stringify(
+              emailItem
+            )}". Please provide a valid email address (e.g., user@example.com)`
           );
         }
 

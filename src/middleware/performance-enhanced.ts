@@ -305,7 +305,11 @@ export class EnhancedPerformanceTracker extends EventEmitter {
         budget,
         percentOver,
         timestamp: new Date(),
-        message: `${metrics.toolName} (${metrics.operationType}) exceeded budget by ${percentOver.toFixed(1)}% (${metrics.duration.toFixed(0)}ms vs ${budget}ms budget)`,
+        message: `${metrics.toolName} (${
+          metrics.operationType
+        }) exceeded budget by ${percentOver.toFixed(
+          1
+        )}% (${metrics.duration.toFixed(0)}ms vs ${budget}ms budget)`,
       };
 
       this.alerts.push(alert);
@@ -510,8 +514,12 @@ export class EnhancedPerformanceTracker extends EventEmitter {
           : '🟢';
 
     console.error(
-      `${icon} ${metrics.toolName} (${metrics.operationType}): ${timeIcon} ${metrics.duration.toFixed(0)}ms ` +
-        `[API: ${metrics.timingSplit.attioApi.toFixed(0)}ms, MCP: ${metrics.timingSplit.mcpOverhead.toFixed(0)}ms]` +
+      `${icon} ${metrics.toolName} (${
+        metrics.operationType
+      }): ${timeIcon} ${metrics.duration.toFixed(0)}ms ` +
+        `[API: ${metrics.timingSplit.attioApi.toFixed(
+          0
+        )}ms, MCP: ${metrics.timingSplit.mcpOverhead.toFixed(0)}ms]` +
         (metrics.cached ? ' 📦 CACHED' : '') +
         (metrics.error ? ` ❌ ${metrics.error}` : '')
     );
@@ -560,7 +568,9 @@ Recent Alerts
 ${recentAlerts
   .map(
     (a) =>
-      `[${a.level.toUpperCase()}] ${a.toolName}: ${a.duration.toFixed(0)}ms (${a.percentOver.toFixed(0)}% over budget)`
+      `[${a.level.toUpperCase()}] ${a.toolName}: ${a.duration.toFixed(
+        0
+      )}ms (${a.percentOver.toFixed(0)}% over budget)`
   )
   .join('\n')}
     `.trim();

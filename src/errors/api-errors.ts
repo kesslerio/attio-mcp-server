@@ -37,7 +37,9 @@ export class AttioApiError extends Error {
   toFormattedString(): string {
     // In production, sanitize the output
     if (process.env.NODE_ENV === 'production') {
-      return `${this.name} (${this.statusCode}): ${sanitizeErrorMessage(this.message)}`;
+      return `${this.name} (${this.statusCode}): ${sanitizeErrorMessage(
+        this.message
+      )}`;
     }
 
     // In development, include more details but still sanitize sensitive data

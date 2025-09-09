@@ -105,11 +105,15 @@ export function generateFieldSuggestionMessage(
   }
 
   if (suggestions.length > 0) {
-    message += `. Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?`;
+    message += `. Did you mean: ${suggestions
+      .map((s) => `"${s}"`)
+      .join(', ')}?`;
   } else if (validFields.length > 0) {
     // Show first few valid fields if no close matches found
     const preview = validFields.slice(0, 5);
-    message += `. Valid fields include: ${preview.map((f) => `"${f}"`).join(', ')}`;
+    message += `. Valid fields include: ${preview
+      .map((f) => `"${f}"`)
+      .join(', ')}`;
     if (validFields.length > 5) {
       message += ` (and ${validFields.length - 5} more)`;
     }
@@ -136,16 +140,22 @@ export function generateEnumSuggestionMessage(
   let message = `Invalid value "${valueStr}" for field "${fieldName}"`;
 
   if (suggestions.length > 0) {
-    message += `. Did you mean: ${suggestions.map((s) => `"${s}"`).join(' or ')}?`;
+    message += `. Did you mean: ${suggestions
+      .map((s) => `"${s}"`)
+      .join(' or ')}?`;
   }
 
   // Always show all valid options for enums (usually limited set)
   if (validValues.length <= 10) {
-    message += ` Valid options are: ${validValues.map((v) => `"${v}"`).join(', ')}.`;
+    message += ` Valid options are: ${validValues
+      .map((v) => `"${v}"`)
+      .join(', ')}.`;
   } else {
     // For large sets, show a subset
     const preview = validValues.slice(0, 5);
-    message += ` Valid options include: ${preview.map((v) => `"${v}"`).join(', ')} (and ${validValues.length - 5} more).`;
+    message += ` Valid options include: ${preview
+      .map((v) => `"${v}"`)
+      .join(', ')} (and ${validValues.length - 5} more).`;
   }
 
   return message;
@@ -161,7 +171,9 @@ export function generateReadOnlyFieldMessage(
   fieldName: string,
   operation: 'create' | 'update' = 'update'
 ): string {
-  return `Field "${fieldName}" is read-only and cannot be ${operation === 'create' ? 'set during creation' : 'modified'}. This field is automatically managed by the system.`;
+  return `Field "${fieldName}" is read-only and cannot be ${
+    operation === 'create' ? 'set during creation' : 'modified'
+  }. This field is automatically managed by the system.`;
 }
 
 /**
@@ -179,10 +191,14 @@ export function generateResourceTypeSuggestionMessage(
   let message = `Invalid resource type: "${resourceType}"`;
 
   if (suggestions.length > 0) {
-    message += `. Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?`;
+    message += `. Did you mean: ${suggestions
+      .map((s) => `"${s}"`)
+      .join(', ')}?`;
   }
 
-  message += ` Valid resource types are: ${validTypes.map((t) => `"${t}"`).join(', ')}.`;
+  message += ` Valid resource types are: ${validTypes
+    .map((t) => `"${t}"`)
+    .join(', ')}.`;
 
   return message;
 }

@@ -742,7 +742,9 @@ export class SchemaPreValidator {
     // Check allowed values if specified
     if (attr.allowed_values && attr.allowed_values.length > 0) {
       if (!attr.allowed_values.includes(value)) {
-        return `Field "${field}" must be one of: ${attr.allowed_values.join(', ')}`;
+        return `Field "${field}" must be one of: ${attr.allowed_values.join(
+          ', '
+        )}`;
       }
     }
 

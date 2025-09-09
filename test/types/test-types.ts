@@ -55,7 +55,7 @@ export function createMockApiClient(): MockApiClient {
         ? raw.id.list_id
         : typeof raw?.list_id === 'string'
           ? raw.list_id
-          : (globalThis.crypto?.randomUUID?.() ?? `mock_${Date.now()}`);
+          : globalThis.crypto?.randomUUID?.() ?? `mock_${Date.now()}`;
     return {
       id: { list_id },
       name: raw.name ?? raw.title ?? 'Untitled List',

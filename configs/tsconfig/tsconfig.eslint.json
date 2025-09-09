@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.json",
   "include": [
     "src/**/*",
     "test/**/*",
@@ -7,8 +7,7 @@
     "*.ts",
     "*.js",
     "*.cjs",
-    "*.mjs",
-    "jest.config.js" // Including a common root-level JS config file as an example
+    "*.mjs"
   ],
   "exclude": [
     "node_modules",

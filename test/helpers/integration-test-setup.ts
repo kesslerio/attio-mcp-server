@@ -213,7 +213,9 @@ export function setupIntegrationTests(
       }
     } catch (error: unknown) {
       throw new Error(
-        `Failed to initialize API client: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to initialize API client: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -260,7 +262,9 @@ export function generateTestData(timestamp: number) {
     personName: `Test Person ${timestamp}`,
     personEmail: `test${timestamp}@example.com`,
     websiteUrl: `https://test${timestamp}.com`,
-    description: `Integration test data created at ${new Date(timestamp).toISOString()}`,
+    description: `Integration test data created at ${new Date(
+      timestamp
+    ).toISOString()}`,
   };
 }
 

@@ -312,7 +312,9 @@ export function sanitizeErrorMessage(
   }
 
   // In development, include sanitized technical details
-  return `${userMessage}\n[Dev Info: ${sanitized.substring(0, 200)}${sanitized.length > 200 ? '...' : ''}]`;
+  return `${userMessage}\n[Dev Info: ${sanitized.substring(0, 200)}${
+    sanitized.length > 200 ? '...' : ''
+  }]`;
 }
 
 /**

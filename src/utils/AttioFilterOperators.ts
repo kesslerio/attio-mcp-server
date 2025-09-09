@@ -72,7 +72,9 @@ export function normalizeOperator(op: string): FilterOperator {
   }
 
   throw new Error(
-    `Invalid filter operator: '${op}'. Supported: ${Object.values(FilterOperator).join(', ')}`
+    `Invalid filter operator: '${op}'. Supported: ${Object.values(
+      FilterOperator
+    ).join(', ')}`
   );
 }
 
@@ -174,7 +176,9 @@ export class AttioRateLimitSemaphore {
         const delay = baseDelay + jitter;
 
         console.warn(
-          `[AttioRateLimitSemaphore] Rate limit hit, retrying in ${Math.round(delay)}ms (attempt ${attempt})`
+          `[AttioRateLimitSemaphore] Rate limit hit, retrying in ${Math.round(
+            delay
+          )}ms (attempt ${attempt})`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
 

@@ -106,13 +106,17 @@ export function validateSelectField(
     for (const item of value) {
       if (typeof item === 'string' && !options.includes(item)) {
         errors.push(
-          `Invalid option '${item}' for ${fieldLabel}. Valid options: ${options.join(', ')}`
+          `Invalid option '${item}' for ${fieldLabel}. Valid options: ${options.join(
+            ', '
+          )}`
         );
       }
     }
   } else if (typeof value === 'string' && !options.includes(value)) {
     errors.push(
-      `Invalid option '${value}' for ${fieldLabel}. Valid options: ${options.join(', ')}`
+      `Invalid option '${value}' for ${fieldLabel}. Valid options: ${options.join(
+        ', '
+      )}`
     );
   }
 
@@ -284,7 +288,9 @@ export async function validateRecordFields(
         }
       } catch (ruleError) {
         warnings.push(
-          `Could not get validation rules for field '${fieldName}': ${ruleError instanceof Error ? ruleError.message : 'Unknown error'}`
+          `Could not get validation rules for field '${fieldName}': ${
+            ruleError instanceof Error ? ruleError.message : 'Unknown error'
+          }`
         );
       }
     }

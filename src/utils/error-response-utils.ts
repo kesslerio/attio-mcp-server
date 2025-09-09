@@ -62,11 +62,15 @@ export function createSelectOptionError(
   validOptions: string[]
 ): EnhancedErrorResponse {
   return {
-    error: `Invalid value '${invalidValue}' for select field '${fieldName}'. Valid options are: [${validOptions.map((opt) => `'${opt}'`).join(', ')}].`,
+    error: `Invalid value '${invalidValue}' for select field '${fieldName}'. Valid options are: [${validOptions
+      .map((opt) => `'${opt}'`)
+      .join(', ')}].`,
     error_code: ValidationErrorCode.INVALID_SELECT_OPTION,
     field: fieldName,
     suggestions: [
-      `Choose one of: ${validOptions.slice(0, 3).join(', ')}${validOptions.length > 3 ? '...' : ''}`,
+      `Choose one of: ${validOptions.slice(0, 3).join(', ')}${
+        validOptions.length > 3 ? '...' : ''
+      }`,
       'Use get-attributes to see all available options',
     ],
     context: {
@@ -86,11 +90,19 @@ export function createMultiSelectOptionError(
   validOptions: string[]
 ): EnhancedErrorResponse {
   return {
-    error: `Invalid values [${invalidValues.map((v) => `'${v}'`).join(', ')}] for multi-select field '${fieldName}'. Valid options are: [${validOptions.map((opt) => `'${opt}'`).join(', ')}].`,
+    error: `Invalid values [${invalidValues
+      .map((v) => `'${v}'`)
+      .join(
+        ', '
+      )}] for multi-select field '${fieldName}'. Valid options are: [${validOptions
+      .map((opt) => `'${opt}'`)
+      .join(', ')}].`,
     error_code: ValidationErrorCode.INVALID_MULTI_SELECT_OPTION,
     field: fieldName,
     suggestions: [
-      `Valid options include: ${validOptions.slice(0, 5).join(', ')}${validOptions.length > 5 ? '...' : ''}`,
+      `Valid options include: ${validOptions.slice(0, 5).join(', ')}${
+        validOptions.length > 5 ? '...' : ''
+      }`,
       'Use get-attributes to see all available options',
     ],
     context: {
@@ -112,11 +124,15 @@ export function createReadOnlyFieldError(
   const fieldList = fieldNames.map((field) => `'${field}'`).join(', ');
 
   return {
-    error: `Cannot update read-only field${plural ? 's' : ''} ${fieldList}. ${plural ? 'These fields are' : 'This field is'} automatically managed by the system and cannot be modified.`,
+    error: `Cannot update read-only field${plural ? 's' : ''} ${fieldList}. ${
+      plural ? 'These fields are' : 'This field is'
+    } automatically managed by the system and cannot be modified.`,
     error_code: ValidationErrorCode.READ_ONLY_FIELD_UPDATE,
     field: fieldNames.length === 1 ? fieldNames[0] : undefined,
     suggestions: [
-      `Remove ${plural ? 'these fields' : 'this field'} from your update request`,
+      `Remove ${
+        plural ? 'these fields' : 'this field'
+      } from your update request`,
       `Use get-attributes to see which fields are read-only for ${resourceType}`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
@@ -139,7 +155,9 @@ export function createUnknownFieldError(
   const actionableSuggestions = [];
 
   if (suggestions.length > 0) {
-    errorMessage += ` Did you mean: ${suggestions.map((s) => `'${s}'`).join(', ')}?`;
+    errorMessage += ` Did you mean: ${suggestions
+      .map((s) => `'${s}'`)
+      .join(', ')}?`;
     actionableSuggestions.push(`Try using: ${suggestions[0]}`);
   }
 
@@ -199,11 +217,15 @@ export function createRequiredFieldError(
   const fieldList = fieldNames.map((field) => `'${field}'`).join(', ');
 
   return {
-    error: `Required field${plural ? 's' : ''} ${fieldList} ${plural ? 'are' : 'is'} missing.`,
+    error: `Required field${plural ? 's' : ''} ${fieldList} ${
+      plural ? 'are' : 'is'
+    } missing.`,
     error_code: ValidationErrorCode.REQUIRED_FIELD_MISSING,
     field: fieldNames.length === 1 ? fieldNames[0] : undefined,
     suggestions: [
-      `Add ${plural ? 'these required fields' : 'this required field'} to your request`,
+      `Add ${
+        plural ? 'these required fields' : 'this required field'
+      } to your request`,
       `Use get-attributes to see all required fields for ${resourceType}`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,

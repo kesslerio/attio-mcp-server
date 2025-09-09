@@ -103,7 +103,9 @@ export async function validateSelectField(
       if (!validValues.includes(value)) {
         return {
           isValid: false,
-          error: `Invalid value '${value}' for field '${fieldName}'. Valid options are: [${validTitles.map((opt) => `'${opt}'`).join(', ')}]. Please choose one of the valid values.`,
+          error: `Invalid value '${value}' for field '${fieldName}'. Valid options are: [${validTitles
+            .map((opt) => `'${opt}'`)
+            .join(', ')}]. Please choose one of the valid values.`,
         };
       }
     }
@@ -137,7 +139,13 @@ export async function validateMultiSelectField(
       if (invalidValues.length > 0) {
         return {
           isValid: false,
-          error: `Invalid values [${invalidValues.map((v) => `'${v}'`).join(', ')}] for multi-select field '${fieldName}'. Valid options are: [${validTitles.map((opt) => `'${opt}'`).join(', ')}]. Please use only valid options.`,
+          error: `Invalid values [${invalidValues
+            .map((v) => `'${v}'`)
+            .join(
+              ', '
+            )}] for multi-select field '${fieldName}'. Valid options are: [${validTitles
+            .map((opt) => `'${opt}'`)
+            .join(', ')}]. Please use only valid options.`,
         };
       }
     }
@@ -174,7 +182,9 @@ export async function validateReadOnlyFields(
 
       return {
         isValid: false,
-        error: `Cannot update read-only field${plural} ${fieldList}. These fields are automatically managed by the system and cannot be modified. Remove ${plural ? 'these fields' : 'this field'} from your update request.`,
+        error: `Cannot update read-only field${plural} ${fieldList}. These fields are automatically managed by the system and cannot be modified. Remove ${
+          plural ? 'these fields' : 'this field'
+        } from your update request.`,
       };
     }
 
@@ -274,7 +284,9 @@ export async function validateFieldExistence(
         let errorMessage = `Unknown field '${fieldName}' for resource type '${resourceType}'.`;
 
         if (suggestions.length > 0) {
-          errorMessage += ` Did you mean: ${suggestions.map((s) => `'${s}'`).join(', ')}?`;
+          errorMessage += ` Did you mean: ${suggestions
+            .map((s) => `'${s}'`)
+            .join(', ')}?`;
         }
 
         errorMessage += ` Use get-attributes to see all available fields for this resource type.`;
