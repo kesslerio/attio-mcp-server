@@ -90,23 +90,38 @@ This E2E test suite provides comprehensive testing for:
 
 Purpose: faster feedback and clearer intent by separating protocol QA from user scenarios.
 
-- Tools lane (MCP protocol QA)
-  - Location: `test/e2e/tools/`
-  - Focus: tool registration, `input_schema` constraints, error shapes, protocol fidelity via `mcp-test-client`.
-  - Run: `npm run test:e2e:tools`
+### Tools Lane (MCP Protocol QA)
+- **Location**: `test/e2e/tools/`
+- **Focus**: tool registration, `input_schema` constraints, error shapes, protocol fidelity via `mcp-test-client`
+- **Run**: `npm run test:e2e:tools`
+- **Examples of what belongs here**:
+  - Schema validation (e.g., verifying `input_schema` constraints)
+  - Error shape testing (e.g., ensuring errors have correct format)
+  - MCP protocol compliance (e.g., tool registration, parameter validation)
+  - Tool-specific playbook evaluations (e.g., sales, operations playbooks)
+  - Input/output format verification for individual tools
 
-- Workflows lane (user scenarios)
-  - Location: `test/e2e/suites/`
-  - Focus: cross-tool flows, data lifecycle, rate limiting, diagnostics.
-  - Run: `npm run test:e2e:workflows`
+### Workflows Lane (User Scenarios)
+- **Location**: `test/e2e/suites/`
+- **Focus**: cross-tool flows, data lifecycle, rate limiting, diagnostics
+- **Run**: `npm run test:e2e:workflows`
+- **Examples of what belongs here**:
+  - End-to-end user journeys (e.g., create company → add people → link records)
+  - Data lifecycle testing (e.g., CRUD operations across multiple resources)
+  - Business logic validation (e.g., task assignment flows, list management)
+  - Rate limiting and error handling scenarios
+  - Integration between multiple tools in realistic workflows
 
-Diagnostics
+### Diagnostics
 - Tools: `npm run e2e:diagnose:tools`
 - Workflows: `npm run e2e:diagnose:core`
 
-Notes
-- `npm run test:e2e` runs all E2E tests using the default Vitest includes.
-- Avoid duplicating assertions across lanes; prefer lowest-layer checks in Tools.
+### Guidelines
+- `npm run test:e2e` runs all E2E tests using the default Vitest includes
+- Avoid duplicating assertions across lanes; prefer lowest-layer checks in Tools
+- When adding a new test, ask: "Am I testing the tool itself or how tools work together?"
+  - Tool itself → Tools lane
+  - Tools working together → Workflows lane
 
 ## 🚀 Quick Start
 
