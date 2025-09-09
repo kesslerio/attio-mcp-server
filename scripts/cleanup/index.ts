@@ -18,6 +18,7 @@ import { fetchDealsByCreator } from './fetchers/deals.js';
 import { batchDeleteRecords, displayDeletionSummary, createResourceSummary, DeletionOptions } from './deleters/batch-deleter.js';
 import { filterByApiToken } from './filters/api-token-filter.js';
 import { filterByPatterns, getDefaultTestPatterns } from './filters/pattern-filter.js';
+import { filterTestCompanies } from './filters/safe-companies.js';
 import { logInfo, logError, logSuccess, formatDuration } from './core/utils.js';
 
 const DEFAULT_RESOURCES = ['tasks', 'companies', 'people', 'deals'];
@@ -154,29 +155,53 @@ async function cleanupCompanies(
     });
   }
 
+  // Apply safe company filtering to protect real businesses
+  const { safe, toDelete } = filterTestCompanies(patternResult.matched);
+  
+  if (safe.length > 0) {
+    console.log(`\n⚠️  Protected ${safe.length} real companies from deletion:`);
+    safe.slice(0, 10).forEach((company, index) => {
+      const name = company.values?.name?.[0]?.value || company.name || 'Unknown';
+      console.log(`  ${index + 1}. ${name} (PROTECTED)`);
+    });
+    if (safe.length > 10) {
+      console.log(`  ... and ${safe.length - 10} more protected`);
+    }
+  }
+
+  if (toDelete.length === 0) {
+    logInfo('No test companies to delete after safety filtering');
+    return createResourceSummary('companies', [], {
+      successful: 0,
+      failed: 0,
+      errors: [],
+      duration: 0
+    });
+  }
+
   // Display what we found
   if (deletionOptions.dryRun) {
-    console.log(`\n📋 Found ${patternResult.matched.length} companies to delete:`);
-    patternResult.matched.slice(0, 10).forEach((company, index) => {
+    console.log(`\n📋 Found ${toDelete.length} TEST companies to delete:`);
+    toDelete.slice(0, 10).forEach((company, index) => {
       const name = company.values?.name?.[0]?.value || company.name || 'Unknown';
       const id = company.id?.record_id || company.id || 'Unknown';
       console.log(`  ${index + 1}. ${name} (${id})`);
     });
     
-    if (patternResult.matched.length > 10) {
-      console.log(`  ... and ${patternResult.matched.length - 10} more`);
+    if (toDelete.length > 10) {
+      console.log(`  ... and ${toDelete.length - 10} more`);
     }
   }
 
-  // Delete the matched companies
+  // Delete only the test companies
   const deletionResult = await batchDeleteRecords(
     client, 
-    patternResult.matched, 
+    toDelete, 
     'companies', 
     deletionOptions
   );
 
-  return createResourceSummary('companies', patternResult.matched, deletionResult);
+  return createResourceSummary('companies', toDelete, deletionResult);
 }
 
 /**
