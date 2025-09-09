@@ -185,6 +185,16 @@ fi
 
 if [[ -n "$SUITE" ]]; then
   case "$SUITE" in
+    tools)
+      # Run all tool protocol tests under test/e2e/tools
+      TARGET_DESCRIPTION="MCP tool protocol tests"
+      LOG_FILE_PREFIX="e2e-tools"
+      TOOLS_GLOB=$(find test/e2e/tools -name "*.e2e.test.ts" -type f | sort | tr '\n' ' ')
+      if [[ -z "$TOOLS_GLOB" ]]; then
+        echo "❌ No tool tests found under test/e2e/tools"
+        exit 1
+      fi
+      ;;
     error-handling)
       FILE="error-handling"
       TARGET_DESCRIPTION="error handling tests (file match)"
@@ -272,7 +282,13 @@ fi
 echo "▶ Starting test execution..."
 START_TIME=$(date +%s)
 
-if [[ -n "$FILE" ]]; then
+if [[ -n "$TOOLS_GLOB:-" && -n "$TOOLS_GLOB" ]]; then
+  echo "📁 Found tool test files:"
+  echo "$TOOLS_GLOB"
+  echo ""
+  # shellcheck disable=SC2086
+  $VITEST_CMD $TOOLS_GLOB 2>&1 | tee "$LOG_FILE" || true
+elif [[ -n "$FILE" ]]; then
   # If --file is used, find matching files in subdirectories
   MATCHING_FILES=$(find test/e2e/suites -name "*${FILE}*.e2e.test.ts" -type f)
   

@@ -22,9 +22,14 @@ interface ToolContent {
   [key: string]: unknown;
 }
 
+// NOTE: These playbook evals depend on a workspace configured for Customer Success.
+// They are not core to current Attio MCP usage. Default to skip unless explicitly enabled.
+// To enable, set CS_E2E_ENABLE=true in the environment.
+const CS_PLAYBOOKS_ENABLED = process.env.CS_E2E_ENABLE === 'true';
+const suiteFn = CS_PLAYBOOKS_ENABLED ? describe : describe.skip;
 
 
-describe('Customer Success Playbook Validation Suite', () => {
+suiteFn('Customer Success Playbook Validation Suite', () => {
   let client: MCPTestClient;
   const testResults: PlaybookTestResult[] = [];
   let resolvedCompanyId: string | null = null;
