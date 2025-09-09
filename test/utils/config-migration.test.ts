@@ -34,9 +34,12 @@ const mockLogger = vi.mocked(logger);
 // Test data
 const TEST_CONFIG_PATH = path.resolve(
   process.cwd(),
-  'config/mappings/user.json'
+  'configs/runtime/mappings/user.json'
 );
-const TEST_BACKUP_PATH = path.resolve(process.cwd(), 'config/mappings/backup');
+const TEST_BACKUP_PATH = path.resolve(
+  process.cwd(),
+  'configs/runtime/mappings/backup'
+);
 
 const VALID_USER_CONFIG = {
   version: '1.0',

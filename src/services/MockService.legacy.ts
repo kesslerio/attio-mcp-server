@@ -954,7 +954,9 @@ export class MockService {
         return createdTask as unknown as AttioRecord;
       } catch (error) {
         throw new Error(
-          `Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Failed to create task: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
         );
       }
     }
@@ -1078,7 +1080,9 @@ export class MockService {
 
         // Only wrap non-structured errors
         throw new Error(
-          `Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Failed to update task: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
         );
       }
     }

@@ -61,6 +61,9 @@ logs/
 logs.backup/
 
 # Other
-.archive
 .qodo
 .vscode
+
+# Ignore log files in the logs directory
+logs/*.log
+tsconfig.tsbuildinfo

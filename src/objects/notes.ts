@@ -108,7 +108,9 @@ export async function createNote(
     // Map HTTP errors to universal validation errors
     if (error.response?.status === 422) {
       throw new UniversalValidationError(
-        `Validation failed: ${error.response?.data?.message || 'Invalid note data'}`,
+        `Validation failed: ${
+          error.response?.data?.message || 'Invalid note data'
+        }`,
         ErrorType.USER_ERROR,
         { field: 'content' }
       );

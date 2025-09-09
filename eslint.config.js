@@ -37,7 +37,7 @@ export default [
       parserOptions: {
         ecmaVersion: 2021,
         sourceType: 'module',
-        project: './tsconfig.eslint.json'
+        project: './configs/tsconfig/tsconfig.eslint.json'
       },
       globals: {
         console: 'readonly',

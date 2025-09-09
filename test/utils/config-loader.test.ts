@@ -26,10 +26,10 @@ vi.mock('path', () => ({
   resolve: vi.fn().mockImplementation((...segments) => {
     const joined = segments.join('/');
     if (joined.includes('default.json')) {
-      return '/mock/path/config/mappings/default.json';
+      return '/mock/path/configs/runtime/mappings/default.json';
     }
     if (joined.includes('user.json')) {
-      return '/mock/path/config/mappings/user.json';
+      return '/mock/path/configs/runtime/mappings/user.json';
     }
     return joined;
   }),

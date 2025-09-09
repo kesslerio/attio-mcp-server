@@ -10,7 +10,7 @@ const { execSync } = require('child_process');
 
 class PerformanceBudgetChecker {
   constructor() {
-    this.budgetsPath = path.join(__dirname, '../config/performance-budgets.json');
+    this.budgetsPath = path.join(__dirname, '../configs/runtime/performance-budgets.json');
     this.resultsPath = path.join(__dirname, '../performance-results');
     this.budgets = this.loadBudgets();
     

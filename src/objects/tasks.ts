@@ -40,7 +40,9 @@ export async function createTask(
     }
 
     // Generate mock task ID
-    const mockId = `mock-task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const mockId = `mock-task-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
     // Return mock task response
     return {

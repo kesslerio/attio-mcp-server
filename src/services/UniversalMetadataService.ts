@@ -484,7 +484,9 @@ export class UniversalMetadataService {
       }
 
       throw new Error(
-        `Failed to discover ${resourceType} attributes: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to discover ${resourceType} attributes: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -872,7 +874,9 @@ export class UniversalMetadataService {
     } catch (error: unknown) {
       const err = error as { response?: { status?: number }; message?: string };
       throw new Error(
-        `Failed to discover attributes for object ${objectSlug}: ${err.message || 'Unknown error'}`
+        `Failed to discover attributes for object ${objectSlug}: ${
+          err.message || 'Unknown error'
+        }`
       );
     }
   }

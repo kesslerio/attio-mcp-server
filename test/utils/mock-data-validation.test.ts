@@ -368,7 +368,9 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
         const validation = TestDataInspector.validateTaskStructure(task);
         expect(
           validation.valid,
-          `${description} should pass validation: ${validation.errors.join(', ')}`
+          `${description} should pass validation: ${validation.errors.join(
+            ', '
+          )}`
         ).toBe(true);
       });
     });

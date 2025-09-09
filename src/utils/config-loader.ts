@@ -28,8 +28,8 @@ export interface MappingConfig {
  * Default paths for configuration files
  */
 const CONFIG_PATHS = {
-  default: path.resolve(process.cwd(), 'config/mappings/default.json'),
-  user: path.resolve(process.cwd(), 'config/mappings/user.json'),
+  default: path.resolve(process.cwd(), 'configs/runtime/mappings/default.json'),
+  user: path.resolve(process.cwd(), 'configs/runtime/mappings/user.json'),
 };
 
 /**

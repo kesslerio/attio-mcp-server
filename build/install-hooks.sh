@@ -48,9 +48,9 @@ chmod +x build/hooks/prepare-commit-msg
 
 # Install hooks based on selected method
 if [ "$INSTALL_METHOD" = "symlink" ]; then
-  # Create symlinks for pre-commit and prepare-commit-msg
-  ln -sf "$(pwd)/build/hooks/pre-commit" .git/hooks/pre-commit
-  ln -sf "$(pwd)/build/hooks/prepare-commit-msg" .git/hooks/prepare-commit-msg
+  # Create symlinks for pre-commit and prepare-commit-msg (using relative paths)
+  ln -sf "../../build/hooks/pre-commit" .git/hooks/pre-commit
+  ln -sf "../../build/hooks/prepare-commit-msg" .git/hooks/prepare-commit-msg
   
   echo -e "${GREEN}✅ Git hooks installed using symlinks${NC}"
   echo -e "Symlinks created to ensure hooks stay up-to-date with repository changes."

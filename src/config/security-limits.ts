@@ -72,15 +72,20 @@ export const RATE_LIMITS = {
  */
 export const LIMIT_ERROR_MESSAGES = {
   BATCH_SIZE_EXCEEDED: (size: number, limit: number, operation?: string) =>
-    `Batch size (${size}) exceeds maximum allowed (${limit})${operation ? ` for ${operation}` : ''}. ` +
-    `Please split into smaller batches for security and performance.`,
+    `Batch size (${size}) exceeds maximum allowed (${limit})${
+      operation ? ` for ${operation}` : ''
+    }. ` + `Please split into smaller batches for security and performance.`,
 
   PAYLOAD_SIZE_EXCEEDED: (size: number, limit: number) =>
-    `Request payload size (${formatBytes(size)}) exceeds maximum allowed (${formatBytes(limit)}). ` +
+    `Request payload size (${formatBytes(
+      size
+    )}) exceeds maximum allowed (${formatBytes(limit)}). ` +
     `Please reduce the amount of data in your request.`,
 
   SINGLE_RECORD_SIZE_EXCEEDED: (size: number, limit: number) =>
-    `Single record size (${formatBytes(size)}) exceeds maximum allowed (${formatBytes(limit)}). ` +
+    `Single record size (${formatBytes(
+      size
+    )}) exceeds maximum allowed (${formatBytes(limit)}). ` +
     `Please reduce the amount of data in this record.`,
 
   SEARCH_QUERY_TOO_LONG: (length: number, limit: number) =>
@@ -88,7 +93,9 @@ export const LIMIT_ERROR_MESSAGES = {
     `Please use a shorter search query.`,
 
   FILTER_TOO_COMPLEX: (size: number, limit: number) =>
-    `Filter object size (${formatBytes(size)}) exceeds maximum allowed (${formatBytes(limit)}). ` +
+    `Filter object size (${formatBytes(
+      size
+    )}) exceeds maximum allowed (${formatBytes(limit)}). ` +
     `Please simplify your filter criteria.`,
 
   RATE_LIMIT_EXCEEDED: (requests: number, limit: number) =>

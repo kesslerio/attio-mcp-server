@@ -146,7 +146,9 @@ export class EnhancedApiError extends AttioApiError {
 
     // Enhanced select field validation errors
     if (this.context?.validValues?.length) {
-      msg += ` Valid options for '${this.context.field}' are: [${this.context.validValues.join(', ')}].`;
+      msg += ` Valid options for '${
+        this.context.field
+      }' are: [${this.context.validValues.join(', ')}].`;
     }
 
     // Field name suggestions for typos
@@ -269,7 +271,9 @@ export const ErrorTemplates = {
         field,
         validValues: validOptions,
         resourceType,
-        documentationHint: `Use get-attributes${resourceType ? ` ${resourceType}` : ''} to see all available values.`,
+        documentationHint: `Use get-attributes${
+          resourceType ? ` ${resourceType}` : ''
+        } to see all available values.`,
       }
     ),
 

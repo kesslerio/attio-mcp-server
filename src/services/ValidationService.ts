@@ -265,7 +265,9 @@ export class ValidationService {
       // List available fields for this resource type
       const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
       if (mapping && mapping.validFields.length > 0) {
-        errorMessage += `\n\n📋 Available fields for ${resourceType}:\n  ${mapping.validFields.join(', ')}`;
+        errorMessage += `\n\n📋 Available fields for ${resourceType}:\n  ${mapping.validFields.join(
+          ', '
+        )}`;
       }
 
       if (throwOnInvalid) {

@@ -526,7 +526,9 @@ export function withValidation<T extends (...args: any[]) => any>(
 
       // Otherwise wrap in a system error
       throw new UniversalValidationError(
-        `Unexpected error in ${toolName}: ${error instanceof Error ? error.message : String(error)}`,
+        `Unexpected error in ${toolName}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
         ErrorType.SYSTEM_ERROR,
         {
           httpStatusCode: HttpStatusCode.INTERNAL_SERVER_ERROR,

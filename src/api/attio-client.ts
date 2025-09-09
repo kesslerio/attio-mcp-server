@@ -104,7 +104,9 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     process.env.E2E_MODE === 'true'
   ) {
     console.error(
-      `[createAttioClient] Initializing with API key (length: ${apiKey.length}, starts with: ${apiKey.substring(0, 4)}...)`
+      `[createAttioClient] Initializing with API key (length: ${
+        apiKey.length
+      }, starts with: ${apiKey.substring(0, 4)}...)`
     );
   }
 

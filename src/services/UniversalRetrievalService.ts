@@ -464,7 +464,9 @@ export class UniversalRetrievalService {
           // Cache legitimate 404s and create EnhancedApiError
           CachingService.cache404Response(resource_type, record_id);
           const error = new Error(
-            `${resource_type.charAt(0).toUpperCase() + resource_type.slice(1, -1)} record with ID "${record_id}" not found.`
+            `${
+              resource_type.charAt(0).toUpperCase() + resource_type.slice(1, -1)
+            } record with ID "${record_id}" not found.`
           );
           (error as any).statusCode = 404;
           throw ensureEnhanced(error, {

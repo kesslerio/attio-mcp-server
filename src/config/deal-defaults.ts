@@ -371,7 +371,9 @@ export async function validateDealStage(
     const defaults = getDealDefaults();
     warn(
       'deal-defaults',
-      `Deal stage "${stage}" not found. Available stages: ${availableStages.join(', ')}. Using default: "${defaults.stage}"`
+      `Deal stage "${stage}" not found. Available stages: ${availableStages.join(
+        ', '
+      )}. Using default: "${defaults.stage}"`
     );
 
     return defaults.stage;
