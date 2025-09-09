@@ -64,3 +64,6 @@ logs.backup/
 .archive
 .qodo
 .vscode
+
+# Ignore log files in the logs directory
+logs/*.log
