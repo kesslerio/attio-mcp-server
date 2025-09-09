@@ -36,8 +36,8 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-import * as express from 'express';
-import * as cors from 'cors';
+import express from 'express';
+import cors from 'cors';
 import { createServer } from './server/createServer.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { error as logError, OperationType } from './utils/logger.js';
