@@ -45,8 +45,8 @@ const MAPPINGS_TO_FIX = {
  * Paths for configuration files
  */
 const CONFIG_PATHS = {
-  user: path.resolve(process.cwd(), 'config/mappings/user.json'),
-  backup: path.resolve(process.cwd(), 'config/mappings/backup'),
+  user: path.resolve(process.cwd(), 'configs/runtime/mappings/user.json'),
+  backup: path.resolve(process.cwd(), 'configs/runtime/mappings/backup'),
 };
 
 /**

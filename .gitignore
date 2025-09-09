@@ -61,7 +61,6 @@ logs/
 logs.backup/
 
 # Other
-.archive
 .qodo
 .vscode
 

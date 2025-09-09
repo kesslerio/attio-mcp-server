@@ -41,7 +41,7 @@ const DEFAULT_CONFIG: AutoDiscoveryConfig = {
   enabled: true,
   runOnStartup: true,
   intervalMinutes: 60, // Run every hour by default
-  outputPath: 'config/mappings/user.json',
+  outputPath: 'configs/runtime/mappings/user.json',
 };
 
 let discoveryInterval: NodeJS.Timeout | null = null;

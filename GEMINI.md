@@ -1,1 +1,1 @@
-/Users/kesslerio/GDrive/Projects/attio-mcp-server/CLAUDE.md
+CLAUDE.md
