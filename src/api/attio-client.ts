@@ -3,14 +3,13 @@
  */
 import axios, { AxiosInstance } from 'axios';
 import { debug, error, OperationType } from '../utils/logger.js';
-import { fileURLToPath } from 'url';
 
-// module banner – shows up as soon as the file is evaluated
-// import.meta is valid with NodeNext module resolution in tsconfig.json
-const MODULE_FILE = fileURLToPath(import.meta.url);
+// Module identification for debugging (compatible with both ESM and CJS)
+const MODULE_FILE = 'attio-client';
+
 // Debug loading info - use logger instead of console.log to avoid JSON parsing issues
 debug('attio-client', 'Module loaded', {
-  file: MODULE_FILE,
+  file: `${MODULE_FILE}.js`,
   E2E_MODE: process.env.E2E_MODE,
   USE_MOCK_DATA: process.env.USE_MOCK_DATA,
 });
