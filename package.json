@@ -2,8 +2,8 @@
   "name": "attio-mcp",
   "version": "0.2.0",
   "description": "A Model Context Protocol server that connects Attio to LLMs",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "dist/http.js",
+  "module": "dist/http.js",
   "type": "module",
   "access": "public",
   "bin": {
@@ -14,6 +14,7 @@
     "clean": "shx rm -rf dist test-dist",
     "build": "tsc",
     "postbuild": "shx chmod +x dist/*.js",
+    "prepare": "npm run build",
     "start:stdio": "node dist/index.js",
     "start:http": "node dist/http.js",
     "check": "wireit",
@@ -138,8 +139,7 @@
     "e2e:analyze:json": "python3 ./scripts/e2e_analyze.py test-results --enhanced --json --stdout",
     "e2e:analyze:trends": "python3 ./scripts/e2e_analyze.py test-results --enhanced --baseline-days=14 --flaky-days=14 --stdout",
     "e2e:analyze:basic": "python3 ./scripts/e2e_analyze.py test-results --stdout",
-    "e2e:health": "./scripts/e2e-health-check.sh",
-    "prepare": "npx husky install"
+    "e2e:health": "./scripts/e2e-health-check.sh"
   },
   "files": [
     "dist",
