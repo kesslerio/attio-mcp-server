@@ -1,7 +1,7 @@
 /**
  * Relationship queries for People
  */
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   advancedSearchObject,
   ListEntryFilters,
@@ -30,7 +30,7 @@ export async function searchPeopleByCompany(
 
     // Use direct API call with correct Attio filter structure for record references
     // Attio expects company.target_record_id.$eq format for filtering people by company
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
 
     const filter = {
       company: {

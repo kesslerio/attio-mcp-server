@@ -1,7 +1,13 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import type { CreateStrategy, CreateStrategyParams } from './BaseCreateStrategy.js';
-import { UniversalValidationError, ErrorType } from '../../../handlers/tool-configs/universal/schemas.js';
+import type {
+  CreateStrategy,
+  CreateStrategyParams,
+} from './BaseCreateStrategy.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../../handlers/tool-configs/universal/schemas.js';
 import { createNote, normalizeNoteResponse } from '../../../objects/notes.js';
 
 export class NoteCreateStrategy implements CreateStrategy {

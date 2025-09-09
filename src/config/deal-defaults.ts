@@ -288,8 +288,8 @@ async function getAvailableDealStages(): Promise<string[]> {
 
   try {
     // Import here to avoid circular dependencies
-    const { getAttioClient } = await import('../api/attio-client.js');
-    const client = getAttioClient();
+    const { getLazyAttioClient } = await import('../api/lazy-client.js');
+    const client = getLazyAttioClient();
 
     // Get deal stage attribute configuration
     const response = await client.get('/objects/deals/attributes');

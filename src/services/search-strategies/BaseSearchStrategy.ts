@@ -5,8 +5,16 @@
 
 import { AttioRecord } from '../../types/attio.js';
 import { warn } from '../../utils/logger.js';
-import { MatchType, SortType } from '../../handlers/tool-configs/universal/types.js';
-import { ISearchStrategy, SearchStrategyParams, StrategyDependencies, TimeframeParams } from './interfaces.js';
+import {
+  MatchType,
+  SortType,
+} from '../../handlers/tool-configs/universal/types.js';
+import {
+  ISearchStrategy,
+  SearchStrategyParams,
+  StrategyDependencies,
+  TimeframeParams,
+} from './interfaces.js';
 
 /**
  * Abstract base class for search strategies
@@ -30,12 +38,17 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
     filters: Record<string, unknown> | undefined,
     timeframeParams?: TimeframeParams
   ): Record<string, unknown> | undefined {
-    if (!timeframeParams?.timeframe_attribute || 
-        (!timeframeParams.start_date && !timeframeParams.end_date)) {
+    if (
+      !timeframeParams?.timeframe_attribute ||
+      (!timeframeParams.start_date && !timeframeParams.end_date)
+    ) {
       return filters;
     }
 
-    if (!this.dependencies.createDateFilter || !this.dependencies.mergeFilters) {
+    if (
+      !this.dependencies.createDateFilter ||
+      !this.dependencies.mergeFilters
+    ) {
       warn('BaseSearchStrategy', 'Date filtering dependencies not available');
       return filters;
     }
@@ -67,10 +80,12 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
    * Check if a search looks like a domain
    */
   protected looksLikeDomain(query: string): boolean {
-    return query.includes('.') ||
-           query.includes('www') ||
-           query.includes('http') ||
-           /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
+    return (
+      query.includes('.') ||
+      query.includes('www') ||
+      query.includes('http') ||
+      /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query)
+    );
   }
 
   /**
@@ -120,7 +135,11 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
    * Handle empty filters for pagination
    */
   protected async handleEmptyFilters(
-    searchFunction: (filters: Record<string, unknown>, limit?: number, offset?: number) => Promise<AttioRecord[]>,
+    searchFunction: (
+      filters: Record<string, unknown>,
+      limit?: number,
+      offset?: number
+    ) => Promise<AttioRecord[]>,
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
@@ -128,7 +147,8 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
       return await searchFunction({ filters: [] }, limit, offset);
     } catch (error: unknown) {
       // If empty filters aren't supported, return empty array rather than failing
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       warn(
         'BaseSearchStrategy',
         'Search with empty filters failed, returning empty results',

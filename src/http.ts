@@ -36,8 +36,8 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-import express from 'express';
-import cors from 'cors';
+import * as express from 'express';
+import * as cors from 'cors';
 import { createServer } from './server/createServer.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { error as logError, OperationType } from './utils/logger.js';
@@ -46,13 +46,15 @@ const app = express();
 app.use(express.json());
 
 // Configure CORS for Smithery and local development
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? 
-    process.env.ALLOWED_ORIGINS.split(',') : 
-    ['https://smithery.ai', 'http://localhost:3000'],
-  allowedHeaders: ['Content-Type', 'mcp-session-id'],
-  exposedHeaders: ['Mcp-Session-Id'],
-}));
+app.use(
+  cors({
+    origin: process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',')
+      : ['https://smithery.ai', 'http://localhost:3000'],
+    allowedHeaders: ['Content-Type', 'mcp-session-id'],
+    exposedHeaders: ['Mcp-Session-Id'],
+  })
+);
 
 // Health check endpoint for load balancers
 app.get('/health', (_req, res) => {
@@ -67,13 +69,13 @@ app.all('/mcp', async (req, res) => {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined, // Stateless mode
     });
-    
+
     // Clean up when connection closes
     res.on('close', () => {
       transport.close();
       server.close();
     });
-    
+
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
@@ -85,7 +87,7 @@ app.all('/mcp', async (req, res) => {
       'mcp-request-error',
       OperationType.API_CALL
     );
-    
+
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: '2.0',
@@ -102,18 +104,20 @@ app.all('/mcp', async (req, res) => {
 // Start server
 const PORT = Number(process.env.PORT) || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Attio MCP HTTP Server listening on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
-}).on('error', (error) => {
-  logError(
-    'http',
-    'Failed to start HTTP server',
-    error,
-    { port: PORT },
-    'server-startup',
-    OperationType.SYSTEM
-  );
-  process.exit(1);
-});
+app
+  .listen(PORT, () => {
+    console.log(`Attio MCP HTTP Server listening on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
+  })
+  .on('error', (error) => {
+    logError(
+      'http',
+      'Failed to start HTTP server',
+      error,
+      { port: PORT },
+      'server-startup',
+      OperationType.SYSTEM
+    );
+    process.exit(1);
+  });

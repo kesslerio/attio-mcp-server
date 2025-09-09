@@ -5,7 +5,7 @@
 
 import { UniversalResourceType } from '../types.js';
 import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
-import { getAttioClient } from '../../../../../api/attio-client.js';
+import { getLazyAttioClient } from '../../../../../api/lazy-client.js';
 
 /**
  * Enhanced uniqueness constraint error message
@@ -31,7 +31,7 @@ export async function enhanceUniquenessError(
 
   // Try to map the attribute ID to a human-readable field name
   try {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
     const response = await client.get(`/objects/${resourceType}/attributes`);
     const attributes = response.data.data || [];
 

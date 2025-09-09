@@ -10,7 +10,7 @@ import {
 import { ListEntryFilters } from '../../api/operations/index.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { validateNumericParam } from '../../utils/filters/index.js';
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import { getListDetails } from '../lists.js';
 import {
   createCompaniesByPeopleFilter,
@@ -189,7 +189,7 @@ export async function getCompanyLists(
   companyId: string,
   limit: number = 50
 ): Promise<AttioList[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
 
   const response = await api.post<{ data: AttioListEntry[] }>(
     '/lists-entries/query',

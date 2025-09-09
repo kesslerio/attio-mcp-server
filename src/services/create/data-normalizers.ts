@@ -65,7 +65,9 @@ export function normalizeCompanyValues(
   // Then remove website to avoid unsupported attribute errors in Attio API.
   if (rawWebsite && typeof rawWebsite === 'string') {
     try {
-      const url = new URL(rawWebsite.includes('://') ? rawWebsite : `https://${rawWebsite}`);
+      const url = new URL(
+        rawWebsite.includes('://') ? rawWebsite : `https://${rawWebsite}`
+      );
       let host = url.hostname.toLowerCase();
       if (host.startsWith('www.')) host = host.slice(4);
       const domains: string[] = Array.isArray(normalizedCompany.domains)

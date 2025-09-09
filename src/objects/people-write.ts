@@ -13,7 +13,7 @@ import { AttioApiError } from '../utils/error-handler.js';
 import { getAttributeSlugById } from '../api/attribute-types.js';
 import { searchPeopleByEmail } from './people/search.js';
 import { searchCompanies } from './companies/search.js';
-import { getAttioClient } from '../api/attio-client.js';
+import { getLazyAttioClient } from '../api/lazy-client.js';
 import { isValidEmail } from '../utils/validation/email-validation.js';
 import { PersonAttributes } from './people/types.js';
 import {
@@ -48,7 +48,7 @@ export async function searchPeopleByEmails(
     return [];
   }
 
-  const client = getAttioClient();
+  const client = getLazyAttioClient();
   const results: { email: string; exists: boolean; personId?: string }[] = [];
 
   try {

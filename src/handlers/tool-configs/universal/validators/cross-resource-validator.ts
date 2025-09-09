@@ -4,6 +4,7 @@ import {
   HttpStatusCode,
   UniversalValidationError,
 } from '../errors/validation-errors.js';
+import { getLazyAttioClient } from '../../../../api/lazy-client.js';
 
 export class CrossResourceValidator {
   static async validateCompanyExists(companyId: string): Promise<{
@@ -29,10 +30,7 @@ export class CrossResourceValidator {
       };
     }
     try {
-      const { getAttioClient } = await import(
-        '../../../../api/attio-client.js'
-      );
-      const client = getAttioClient();
+      const client = getLazyAttioClient();
       await client.get(`/objects/companies/records/${companyId.trim()}`);
       return { exists: true };
     } catch (error: any) {

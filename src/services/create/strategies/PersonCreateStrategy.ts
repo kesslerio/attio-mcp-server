@@ -1,10 +1,16 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import type { CreateStrategy, CreateStrategyParams } from './BaseCreateStrategy.js';
+import type {
+  CreateStrategy,
+  CreateStrategyParams,
+} from './BaseCreateStrategy.js';
 import { getCreateService } from '../../create/index.js';
 import { ValidationService } from '../../ValidationService.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
-import { UniversalValidationError, ErrorType } from '../../../handlers/tool-configs/universal/schemas.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../../handlers/tool-configs/universal/schemas.js';
 import type { PersonCreateAttributes } from '../../../types/attio.js';
 import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
 import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
@@ -19,7 +25,9 @@ export class PersonCreateStrategy implements CreateStrategy<AttioRecord> {
       const castValues = { ...(values as Record<string, unknown>) };
       const comp = castValues.company as unknown;
       if (comp && typeof comp === 'object') {
-        const rid = (comp as Record<string, unknown>).record_id as string | undefined;
+        const rid = (comp as Record<string, unknown>).record_id as
+          | string
+          | undefined;
         if (typeof rid === 'string') castValues.company = rid;
         else delete castValues.company;
       }

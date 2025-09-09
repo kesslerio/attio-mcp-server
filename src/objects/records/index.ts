@@ -1,7 +1,7 @@
 /**
  * Record-related functionality
  */
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   createRecord,
   getRecord,
@@ -120,7 +120,7 @@ export async function createObjectRecord<T extends AttioRecord>(
       }
 
       try {
-        const api = getAttioClient();
+        const api = getLazyAttioClient();
         // Use the documented query endpoint with exact name match
         const queryResponse = await api.post(
           `/objects/companies/records/query`,
@@ -196,7 +196,7 @@ export async function createObjectRecord<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
+      const api = getLazyAttioClient();
       const path = `/objects/${objectId || objectSlug}/records`;
 
       // ENHANCED DEBUG: Add path builder logging as requested by user
@@ -339,7 +339,7 @@ export async function getObjectRecord<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
+      const api = getLazyAttioClient();
       let path = `/objects/${objectId || objectSlug}/records/${recordId}`;
 
       // Add attributes parameter if provided
@@ -389,7 +389,7 @@ export async function updateObjectRecord<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
+      const api = getLazyAttioClient();
       const path = `/objects/${objectId || objectSlug}/records/${recordId}`;
 
       const response = await api.patch(path, {
@@ -456,7 +456,7 @@ export async function deleteObjectRecord(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
+      const api = getLazyAttioClient();
       const path = `/objects/${objectId || objectSlug}/records/${recordId}`;
 
       const response = await api.delete(path);
@@ -511,7 +511,7 @@ export async function listObjectRecords<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
+      const api = getLazyAttioClient();
 
       // Build query parameters
       const queryParams = new URLSearchParams();

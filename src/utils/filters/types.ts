@@ -60,20 +60,23 @@ export type AttioApiFilter = {
  * Based on Attio API documentation for advanced filtering with constraints
  */
 export interface AttioQueryApiFilter {
-  filter?: {
-    path: string[];
-    constraints: {
-      operator: string;
-      value: unknown;
-    }[];
-  } | {
-    $and?: AttioQueryApiFilter[];
-    $or?: AttioQueryApiFilter[];
-  } | {
-    [field: string]: {
-      [operator: string]: any;
-    };
-  };
+  filter?:
+    | {
+        path: string[];
+        constraints: {
+          operator: string;
+          value: unknown;
+        }[];
+      }
+    | {
+        $and?: AttioQueryApiFilter[];
+        $or?: AttioQueryApiFilter[];
+      }
+    | {
+        [field: string]: {
+          [operator: string]: any;
+        };
+      };
 }
 
 /**

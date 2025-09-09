@@ -4,7 +4,12 @@
  */
 
 import { AttioRecord } from '../../types/attio.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import {
+  SearchType,
+  MatchType,
+  SortType,
+  UniversalResourceType,
+} from '../../handlers/tool-configs/universal/types.js';
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
@@ -43,7 +48,10 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     } = params;
 
     // Apply timeframe filtering
-    const enhancedFilters = this.applyTimeframeFiltering(filters, timeframeParams);
+    const enhancedFilters = this.applyTimeframeFiltering(
+      filters,
+      timeframeParams
+    );
 
     // If we have filters, use advanced search
     if (enhancedFilters) {
@@ -81,7 +89,11 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
 
     try {
       // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
-      return await this.dependencies.advancedSearchFunction(filters, limit, offset);
+      return await this.dependencies.advancedSearchFunction(
+        filters,
+        limit,
+        offset
+      );
     } catch (error: unknown) {
       // Let FilterValidationError bubble up for proper error handling
       if (error instanceof FilterValidationError) {
@@ -114,7 +126,14 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
 
     // Handle different search types
     if (searchType === SearchType.CONTENT) {
-      return this.searchByContent(query, fields, matchType, sort, limit, offset);
+      return this.searchByContent(
+        query,
+        fields,
+        matchType,
+        sort,
+        limit,
+        offset
+      );
     } else {
       return this.searchByName(query, matchType, limit, offset);
     }
@@ -123,12 +142,19 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
   /**
    * Search companies without any query or filters
    */
-  private async searchWithoutQuery(limit?: number, offset?: number): Promise<AttioRecord[]> {
+  private async searchWithoutQuery(
+    limit?: number,
+    offset?: number
+  ): Promise<AttioRecord[]> {
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Companies search function not available');
     }
 
-    return this.handleEmptyFilters(this.dependencies.advancedSearchFunction, limit, offset);
+    return this.handleEmptyFilters(
+      this.dependencies.advancedSearchFunction,
+      limit,
+      offset
+    );
   }
 
   /**
@@ -153,7 +179,11 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
       throw new Error('Companies search function not available');
     }
 
-    return await this.dependencies.advancedSearchFunction(domainFilters, limit, offset);
+    return await this.dependencies.advancedSearchFunction(
+      domainFilters,
+      limit,
+      offset
+    );
   }
 
   /**
@@ -168,17 +198,26 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     offset?: number
   ): Promise<AttioRecord[]> {
     // Default content fields for companies
-    const searchFields = fields && fields.length > 0
-      ? fields
-      : ['name', 'description', 'notes', 'domains'];
+    const searchFields =
+      fields && fields.length > 0
+        ? fields
+        : ['name', 'description', 'notes', 'domains'];
 
-    const contentFilters = this.createContentFilters(query, searchFields, matchType);
+    const contentFilters = this.createContentFilters(
+      query,
+      searchFields,
+      matchType
+    );
 
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Companies search function not available');
     }
 
-    const results = await this.dependencies.advancedSearchFunction(contentFilters, limit, offset);
+    const results = await this.dependencies.advancedSearchFunction(
+      contentFilters,
+      limit,
+      offset
+    );
 
     // Apply relevance ranking if requested
     return this.applyRelevanceRanking(results, query, searchFields, sort);
@@ -199,6 +238,10 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
       throw new Error('Companies search function not available');
     }
 
-    return await this.dependencies.advancedSearchFunction(nameFilters, limit, offset);
+    return await this.dependencies.advancedSearchFunction(
+      nameFilters,
+      limit,
+      offset
+    );
   }
 }

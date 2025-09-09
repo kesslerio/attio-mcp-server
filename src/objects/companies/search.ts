@@ -4,7 +4,7 @@
  * Simplified implementation following CLAUDE.md documentation-first rule.
  * Uses standard Attio API patterns instead of custom workarounds.
  */
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   searchObject,
   advancedSearchObject,
@@ -73,7 +73,7 @@ export async function searchCompaniesByDomain(
   }
 
   const normalizedDomain = normalizeDomain(domain);
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
 
   try {
     const response = await api.post('/objects/companies/records/query', {

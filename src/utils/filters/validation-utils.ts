@@ -159,7 +159,8 @@ export function collectInvalidFilters(
   filters: ListEntryFilter[],
   validateConditions: boolean = true
 ): { index: number; reason: string; filter: unknown }[] {
-  const invalidFilters: { index: number; reason: string; filter: unknown }[] = [];
+  const invalidFilters: { index: number; reason: string; filter: unknown }[] =
+    [];
 
   // Check each filter in the array
   filters.forEach((filter, index) => {
@@ -292,9 +293,10 @@ export function validateFilters(
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
 
     // Add examples to help the user fix their filters - show relevant example based on context
-    const relevantExample = invalidFilters.length > 1 
-      ? FILTER_EXAMPLES.MULTIPLE_CONDITIONS 
-      : FILTER_EXAMPLES.SIMPLE;
+    const relevantExample =
+      invalidFilters.length > 1
+        ? FILTER_EXAMPLES.MULTIPLE_CONDITIONS
+        : FILTER_EXAMPLES.SIMPLE;
     errorMessage +=
       '\n\nExample of valid filter structure: \n' + relevantExample;
 

@@ -1,7 +1,7 @@
 /**
  * Lists-related functionality
  */
-import { getAttioClient } from '../api/attio-client.js';
+import { getLazyAttioClient } from '../api/lazy-client.js';
 import {
   getAllLists as getGenericLists,
   getListDetails as getGenericListDetails,
@@ -94,7 +94,7 @@ export async function getLists(
       console.error(`Generic getLists failed: ${errorMessage}`);
     }
     // Fallback implementation
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     let path = `/lists?limit=${limit}`;
 
     if (objectSlug) {
@@ -123,7 +123,7 @@ export async function getListDetails(listId: string): Promise<AttioList> {
       console.error(`Generic getListDetails failed: ${errorMessage}`);
     }
     // Fallback implementation with proper error handling
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const path = `/lists/${listId}`;
 
     try {
@@ -260,7 +260,7 @@ export async function addRecordToList(
     }
 
     // Fallback implementation
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const path = `/lists/${listId}/entries`;
 
     // Construct the proper API payload according to Attio API requirements
@@ -395,7 +395,7 @@ export async function updateListEntry(
     }
 
     // Fallback implementation
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const path = `/lists/${listId}/entries/${entryId}`;
 
     if (process.env.NODE_ENV === 'development') {
@@ -447,7 +447,7 @@ export async function removeRecordFromList(
       );
     }
     // Fallback implementation
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const path = `/lists/${listId}/entries/${entryId}`;
 
     await api.delete(path);
@@ -559,7 +559,7 @@ export async function getRecordListMemberships(
   }
 
   try {
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const memberships: ListMembership[] = [];
 
     // Determine object type - if not provided, try common types
@@ -790,7 +790,7 @@ export async function filterListEntriesByParent(
   // Use direct API interaction to perform path-based filtering
   try {
     // Get API client
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
 
     // Create path-based filter using our utility function
     const { path, constraints } = createPathBasedFilter(
@@ -923,7 +923,7 @@ export async function createList(
     );
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = '/lists';
 
   try {
@@ -997,7 +997,7 @@ export async function updateList(
     throw new Error('Invalid attributes: Must be a non-empty object');
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/lists/${listId}`;
 
   try {
@@ -1061,7 +1061,7 @@ export async function deleteList(listId: string): Promise<boolean> {
     throw new Error('Invalid list ID: Must be a non-empty string');
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/lists/${listId}`;
 
   try {
@@ -1152,7 +1152,7 @@ export async function searchLists(
  * @returns List attributes schema
  */
 export async function getListAttributes(): Promise<Record<string, unknown>> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = '/lists/attributes';
 
   try {

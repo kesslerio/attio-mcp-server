@@ -7,7 +7,7 @@
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalAttributesParams } from '../handlers/tool-configs/universal/types.js';
-import { getAttioClient } from '../api/attio-client.js';
+import { getLazyAttioClient } from '../api/lazy-client.js';
 import { secureValidateCategories } from '../utils/validation/field-validation.js';
 import { CachingService } from './CachingService.js';
 import { OBJECT_SLUG_MAP } from '../constants/universal.constants.js';
@@ -413,7 +413,7 @@ export class UniversalMetadataService {
       categories?: string[];
     }
   ): Promise<Record<string, unknown>> {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
 
     try {
       // Convert resource type to API slug for schema discovery (uses plural object api_slugs)
@@ -598,7 +598,7 @@ export class UniversalMetadataService {
     resourceType: UniversalResourceType,
     recordId: string
   ): Promise<Record<string, unknown>> {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
 
     try {
       // Convert resource type to API slug for record-level operations (uses plural object api_slugs)
@@ -843,7 +843,7 @@ export class UniversalMetadataService {
       categories?: string[];
     }
   ): Promise<Record<string, unknown>> {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
 
     try {
       let path = `/objects/${objectSlug}/attributes`;

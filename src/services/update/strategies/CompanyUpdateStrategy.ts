@@ -1,7 +1,10 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import { updateCompany } from '../../../objects/companies/index.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
-import { UniversalValidationError, ErrorType } from '../../../handlers/tool-configs/universal/schemas.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../../handlers/tool-configs/universal/schemas.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 
@@ -23,14 +26,17 @@ export class CompanyUpdateStrategy implements UpdateStrategy {
         const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
           const suggestion = getFieldSuggestions(resourceType, match[1]);
-          throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
-            suggestion,
-            field: match[1],
-          });
+          throw new UniversalValidationError(
+            errorMessage,
+            ErrorType.USER_ERROR,
+            {
+              suggestion,
+              field: match[1],
+            }
+          );
         }
       }
       throw err;
     }
   }
 }
-

@@ -1,7 +1,7 @@
 /**
  * Attribute type detection and management for Attio attributes
  */
-import { getAttioClient } from './attio-client.js';
+import { getLazyAttioClient } from '../api/lazy-client.js';
 import { parsePersonalName } from '../utils/personal-name-parser.js';
 import { debug } from '../utils/logger.js';
 
@@ -79,7 +79,7 @@ export async function getObjectAttributeMetadata(
       return taskMetadata;
     }
 
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const response = await api.get(`/objects/${objectSlug}/attributes`);
     // Handle multiple API response structures for attributes
     const rawAttributes = response?.data?.data || response?.data || [];

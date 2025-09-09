@@ -1,7 +1,7 @@
 /**
  * Basic CRUD operations for companies
  */
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import { getObjectDetails, listObjects } from '../../api/operations/index.js';
 import { ResourceType, Company } from '../../types/attio.js';
 import { CompanyAttributes } from './types.js';
@@ -36,7 +36,7 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);
   } catch (error: unknown) {
     // Fallback implementation
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const path = '/objects/companies/records/query';
 
     const response = await api.post(path, {
@@ -283,7 +283,7 @@ export async function createCompany(
             : (attributes.name ?? '');
 
         try {
-          const api = getAttioClient();
+          const api = getLazyAttioClient();
           const queryResponse = await api.post(
             `/objects/companies/records/query`,
             {

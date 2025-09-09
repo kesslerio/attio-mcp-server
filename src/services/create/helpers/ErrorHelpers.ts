@@ -1,4 +1,7 @@
-import { UniversalValidationError, ErrorType } from '../../../handlers/tool-configs/universal/schemas.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../../handlers/tool-configs/universal/schemas.js';
 import { ERROR_MESSAGES } from '../../../constants/universal.constants.js';
 
 export enum ErrorCategory {
@@ -65,4 +68,3 @@ export function createFieldCollisionError(
     relatedFields: collidingFields,
   });
 }
-

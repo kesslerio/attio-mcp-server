@@ -7,7 +7,9 @@ export const ResponseNormalizer = {
     record: AttioRecord
   ): AttioRecord {
     if (!record || typeof record !== 'object') {
-      throw new Error(`Invalid record format received for ${resourceType}: ${typeof record}`);
+      throw new Error(
+        `Invalid record format received for ${resourceType}: ${typeof record}`
+      );
     }
     const normalized: AttioRecord = {
       id: record.id || { record_id: 'unknown' },
@@ -38,7 +40,10 @@ export const ResponseNormalizer = {
     const idObj = (record.id as unknown as Record<string, unknown>) || {};
     return {
       ...record,
-      id: { ...record.id, object_id: (idObj.object_id as string) || 'companies' },
+      id: {
+        ...record.id,
+        object_id: (idObj.object_id as string) || 'companies',
+      },
       values: {
         ...record.values,
         domains: Array.isArray(record.values.domains)

@@ -4,7 +4,12 @@
  */
 
 import { AttioRecord } from '../../types/attio.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import {
+  SearchType,
+  MatchType,
+  SortType,
+  UniversalResourceType,
+} from '../../handlers/tool-configs/universal/types.js';
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
@@ -43,7 +48,10 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     } = params;
 
     // Apply timeframe filtering
-    const enhancedFilters = this.applyTimeframeFiltering(filters, timeframeParams);
+    const enhancedFilters = this.applyTimeframeFiltering(
+      filters,
+      timeframeParams
+    );
 
     // If we have filters, use advanced search
     if (enhancedFilters) {
@@ -81,10 +89,13 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
 
     try {
       // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
-      const paginatedResult = await this.dependencies.paginatedSearchFunction(filters, {
-        limit,
-        offset,
-      });
+      const paginatedResult = await this.dependencies.paginatedSearchFunction(
+        filters,
+        {
+          limit,
+          offset,
+        }
+      );
       return paginatedResult.results;
     } catch (error: unknown) {
       // Let FilterValidationError bubble up for proper error handling
@@ -118,7 +129,14 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
 
     // Handle different search types
     if (searchType === SearchType.CONTENT) {
-      return this.searchByContent(query, fields, matchType, sort, limit, offset);
+      return this.searchByContent(
+        query,
+        fields,
+        matchType,
+        sort,
+        limit,
+        offset
+      );
     } else {
       return this.searchByNameAndEmail(query, matchType, limit, offset);
     }
@@ -127,7 +145,10 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
   /**
    * Search people without any query or filters
    */
-  private async searchWithoutQuery(limit?: number, offset?: number): Promise<AttioRecord[]> {
+  private async searchWithoutQuery(
+    limit?: number,
+    offset?: number
+  ): Promise<AttioRecord[]> {
     if (!this.dependencies.paginatedSearchFunction) {
       throw new Error('People search function not available');
     }
@@ -140,7 +161,8 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
       return paginatedResult.results;
     } catch (error: unknown) {
       // If empty filters aren't supported, return empty array rather than failing
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.warn(
         `People search with empty filters failed, returning empty results: ${errorMessage}`
       );
@@ -170,10 +192,13 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
       throw new Error('People search function not available');
     }
 
-    const paginatedResult = await this.dependencies.paginatedSearchFunction(emailFilters, {
-      limit,
-      offset,
-    });
+    const paginatedResult = await this.dependencies.paginatedSearchFunction(
+      emailFilters,
+      {
+        limit,
+        offset,
+      }
+    );
     return paginatedResult.results;
   }
 
@@ -189,23 +214,36 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     offset?: number
   ): Promise<AttioRecord[]> {
     // Default content fields for people
-    const searchFields = fields && fields.length > 0
-      ? fields
-      : ['name', 'notes', 'email_addresses', 'job_title'];
+    const searchFields =
+      fields && fields.length > 0
+        ? fields
+        : ['name', 'notes', 'email_addresses', 'job_title'];
 
-    const contentFilters = this.createContentFilters(query, searchFields, matchType);
+    const contentFilters = this.createContentFilters(
+      query,
+      searchFields,
+      matchType
+    );
 
     if (!this.dependencies.paginatedSearchFunction) {
       throw new Error('People search function not available');
     }
 
-    const paginatedResult = await this.dependencies.paginatedSearchFunction(contentFilters, {
-      limit,
-      offset,
-    });
+    const paginatedResult = await this.dependencies.paginatedSearchFunction(
+      contentFilters,
+      {
+        limit,
+        offset,
+      }
+    );
 
     // Apply relevance ranking if requested
-    const results = this.applyRelevanceRanking(paginatedResult.results, query, searchFields, sort);
+    const results = this.applyRelevanceRanking(
+      paginatedResult.results,
+      query,
+      searchFields,
+      sort
+    );
     return results;
   }
 
@@ -238,10 +276,13 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
       throw new Error('People search function not available');
     }
 
-    const paginatedResult = await this.dependencies.paginatedSearchFunction(nameEmailFilters, {
-      limit,
-      offset,
-    });
+    const paginatedResult = await this.dependencies.paginatedSearchFunction(
+      nameEmailFilters,
+      {
+        limit,
+        offset,
+      }
+    );
     return paginatedResult.results;
   }
 }

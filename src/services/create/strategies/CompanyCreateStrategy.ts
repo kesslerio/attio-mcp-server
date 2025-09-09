@@ -1,10 +1,19 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import type { CreateStrategy, CreateStrategyParams } from './BaseCreateStrategy.js';
+import type {
+  CreateStrategy,
+  CreateStrategyParams,
+} from './BaseCreateStrategy.js';
 import { getCreateService } from '../../create/index.js';
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
-import { UniversalValidationError, ErrorType } from '../../../handlers/tool-configs/universal/schemas.js';
-import { getFormatErrorHelp, convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../../handlers/tool-configs/universal/schemas.js';
+import {
+  getFormatErrorHelp,
+  convertAttributeFormats,
+} from '../../../utils/attribute-format-helpers.js';
 import { enhanceUniquenessError } from '../../../handlers/tool-configs/universal/field-mapper/validators/uniqueness-validator.js';
 
 export class CompanyCreateStrategy implements CreateStrategy<AttioRecord> {
@@ -14,7 +23,9 @@ export class CompanyCreateStrategy implements CreateStrategy<AttioRecord> {
       // Apply format conversions like monolith for test parity
       const corrected = convertAttributeFormats('companies', values);
       const service = getCreateService();
-      const result = (await service.createCompany(corrected)) as unknown as AttioRecord | null;
+      const result = (await service.createCompany(
+        corrected
+      )) as unknown as AttioRecord | null;
       if (!result) {
         throw new UniversalValidationError(
           'Company creation failed: createCompany returned null/undefined',

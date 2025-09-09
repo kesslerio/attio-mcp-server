@@ -8,7 +8,7 @@
  * - Structured error responses
  */
 
-import { getAttioClient } from '../api/attio-client.js';
+import { getLazyAttioClient } from '../api/lazy-client.js';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -67,7 +67,7 @@ export async function getResourceAttributes(
   }
 
   try {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
     const response = await client.get(`/objects/${resourceType}/attributes`);
     const attributes: AttributeInfo[] = response?.data?.data || [];
 

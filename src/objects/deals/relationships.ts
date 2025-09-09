@@ -4,7 +4,7 @@
 import { AttioRecord } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { validateNumericParam } from '../../utils/filters/index.js';
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 
 /**
  * Search for deals associated with a specific company
@@ -21,7 +21,11 @@ export async function searchDealsByCompany(
 ): Promise<AttioRecord[]> {
   try {
     // Validate companyId
-    if (!companyId || typeof companyId !== 'string' || companyId.trim() === '') {
+    if (
+      !companyId ||
+      typeof companyId !== 'string' ||
+      companyId.trim() === ''
+    ) {
       throw new FilterValidationError('Company ID must be a non-empty string');
     }
 
@@ -29,7 +33,7 @@ export async function searchDealsByCompany(
     const validatedLimit = validateNumericParam(limit, 'limit', 20);
     const validatedOffset = validateNumericParam(offset, 'offset', 0);
 
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
 
     // Query deals filtered by associated_company
     const response = await client.post('/objects/deals/records/query', {

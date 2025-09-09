@@ -156,7 +156,7 @@ export enum SortType {
  * Relative timeframe options for date filtering (Issue #475)
  * Updated to match sales playbook requirements and schema enum values
  */
-export type RelativeTimeframe = 
+export type RelativeTimeframe =
   | 'today'
   | 'yesterday'
   | 'this_week'
@@ -164,7 +164,7 @@ export type RelativeTimeframe =
   | 'this_month'
   | 'last_month'
   | 'last_7_days'
-  | 'last_14_days'  // Added for sales playbook "Deal Recovery" use case
+  | 'last_14_days' // Added for sales playbook "Deal Recovery" use case
   | 'last_30_days'
   | 'last_90_days';
 
@@ -197,7 +197,7 @@ export interface UniversalSearchParams {
   // New TC-011: Enhanced content search parameters
   content_fields?: string[];
   use_or_logic?: boolean;
-  
+
   // Issue #475: Enhanced date filtering parameters
   date_from?: string;
   date_to?: string;
@@ -345,11 +345,21 @@ export interface UniversalToolConfig extends ToolConfig {
  * Resource type handler mapping interface
  */
 export interface ResourceTypeHandler {
-  [UniversalResourceType.COMPANIES]: (params: Record<string, unknown>) => Promise<unknown>;
-  [UniversalResourceType.PEOPLE]: (params: Record<string, unknown>) => Promise<unknown>;
-  [UniversalResourceType.LISTS]: (params: Record<string, unknown>) => Promise<unknown>;
-  [UniversalResourceType.RECORDS]: (params: Record<string, unknown>) => Promise<unknown>;
-  [UniversalResourceType.TASKS]: (params: Record<string, unknown>) => Promise<unknown>;
+  [UniversalResourceType.COMPANIES]: (
+    params: Record<string, unknown>
+  ) => Promise<unknown>;
+  [UniversalResourceType.PEOPLE]: (
+    params: Record<string, unknown>
+  ) => Promise<unknown>;
+  [UniversalResourceType.LISTS]: (
+    params: Record<string, unknown>
+  ) => Promise<unknown>;
+  [UniversalResourceType.RECORDS]: (
+    params: Record<string, unknown>
+  ) => Promise<unknown>;
+  [UniversalResourceType.TASKS]: (
+    params: Record<string, unknown>
+  ) => Promise<unknown>;
 }
 
 /**

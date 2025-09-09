@@ -3,7 +3,7 @@
  * Handles basic and advanced search functionality
  */
 
-import { getAttioClient } from '../attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioRecord,
   ResourceType,
@@ -33,7 +33,7 @@ export async function searchObject<T extends AttioRecord>(
   query: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
   // Use different search logic based on object type
@@ -90,7 +90,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
   offset?: number,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
   // Coerce input parameters to ensure proper types
@@ -230,7 +230,7 @@ export async function listObjects<T extends AttioRecord>(
   limit?: number,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
   return callWithRetry(async () => {

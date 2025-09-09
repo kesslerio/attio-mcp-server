@@ -73,9 +73,7 @@ import { ErrorService } from '../../../services/ErrorService.js';
 import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
 // Note: Using simplified mock responses for E2E compatibility
 
-import {
-  isHttpResponseLike,
-} from '../../../lib/http/toMcpResult.js';
+import { isHttpResponseLike } from '../../../lib/http/toMcpResult.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -166,21 +164,21 @@ export const searchRecordsConfig: UniversalToolConfig = {
         } else if (resourceType === UniversalResourceType.PEOPLE) {
           // For people, use comprehensive name extraction logic (with proper type handling)
           const valuesAny = values as Record<string, any>;
-          const name = 
+          const name =
             valuesAny?.name?.[0]?.full_name ||
             valuesAny?.name?.[0]?.value ||
             valuesAny?.name?.[0]?.formatted ||
             valuesAny?.full_name?.[0]?.value ||
             getFirstValue(values.name) ||
             'Unnamed';
-          
+
           // Add email if available for better identification
-          const emailValue = 
+          const emailValue =
             valuesAny?.email_addresses?.[0]?.email_address ||
             valuesAny?.email_addresses?.[0]?.value ||
             getFirstValue(values.email) ||
             getFirstValue(valuesAny.email_addresses);
-          
+
           identifier = emailValue ? `${name} (${emailValue})` : name;
         } else if (resourceType === UniversalResourceType.COMPANIES) {
           // For companies, prefer name with optional website or email
@@ -645,7 +643,9 @@ export const discoverAttributesConfig: UniversalToolConfig = {
   handler: async (params: {
     resource_type: UniversalResourceType;
     categories?: string[]; // NEW: Category filtering support
-  }): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
+  }): Promise<
+    Record<string, unknown> | { error: string; success: boolean }
+  > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'discover-attributes',
@@ -789,18 +789,15 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
 
     if (typeof info === 'object' && info.values) {
       // Format as Attio record values
-      Object.entries(info.values).forEach(
-        ([field, values]: [string, any]) => {
-          if (Array.isArray(values) && values.length > 0) {
-            const value = values[0].value;
-            if (value) {
-              const displayField =
-                field.charAt(0).toUpperCase() + field.slice(1);
-              result += `${displayField}: ${value}\n`;
-            }
+      Object.entries(info.values).forEach(([field, values]: [string, any]) => {
+        if (Array.isArray(values) && values.length > 0) {
+          const value = values[0].value;
+          if (value) {
+            const displayField = field.charAt(0).toUpperCase() + field.slice(1);
+            result += `${displayField}: ${value}\n`;
           }
         }
-      );
+      });
     } else if (typeof info === 'object') {
       // Format as regular object
       Object.entries(info).forEach(([key, value]) => {
@@ -883,7 +880,9 @@ export const coreOperationsToolConfigs = {
   // ✨ Add notes tools (no feature flags in tests)
   'create-note': {
     name: 'create-note',
-    handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    handler: async (
+      params: Record<string, unknown>
+    ): Promise<Record<string, unknown>> => {
       try {
         const sanitizedParams = validateUniversalToolParams(
           'create-note',
@@ -928,7 +927,9 @@ export const coreOperationsToolConfigs = {
   },
   'list-notes': {
     name: 'list-notes',
-    handler: async (params: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
+    handler: async (
+      params: Record<string, unknown>
+    ): Promise<Record<string, unknown>[]> => {
       try {
         const sanitizedParams = validateUniversalToolParams(
           'list-notes',

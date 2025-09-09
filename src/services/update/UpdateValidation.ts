@@ -25,15 +25,21 @@ export const UpdateValidation = {
     }
   },
 
-  sanitizeSpecialCharacters(data: Record<string, unknown>): Record<string, unknown> {
+  sanitizeSpecialCharacters(
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {
         sanitized[key] = value;
       } else if (Array.isArray(value)) {
-        sanitized[key] = value.map((item) => (typeof item === 'string' ? item : item));
+        sanitized[key] = value.map((item) =>
+          typeof item === 'string' ? item : item
+        );
       } else if (value && typeof value === 'object') {
-        sanitized[key] = this.sanitizeSpecialCharacters(value as Record<string, unknown>);
+        sanitized[key] = this.sanitizeSpecialCharacters(
+          value as Record<string, unknown>
+        );
       } else {
         sanitized[key] = value;
       }
@@ -46,25 +52,49 @@ export const UpdateValidation = {
     recordId: string,
     expectedUpdates: Record<string, unknown>,
     updatedRecord: AttioRecord
-  ): Promise<{ verified: boolean; discrepancies: string[]; warnings: string[] }> {
-    const result = { verified: true, discrepancies: [] as string[], warnings: [] as string[] };
+  ): Promise<{
+    verified: boolean;
+    discrepancies: string[];
+    warnings: string[];
+  }> {
+    const result = {
+      verified: true,
+      discrepancies: [] as string[],
+      warnings: [] as string[],
+    };
     if (shouldUseMockData() || process.env.SKIP_FIELD_VERIFICATION === 'true') {
-      result.warnings.push('Field persistence verification skipped in test environment');
+      result.warnings.push(
+        'Field persistence verification skipped in test environment'
+      );
       return result;
     }
 
     try {
-      const verificationRecord = await this.fetchRecordForVerification(resourceType, recordId);
+      const verificationRecord = await this.fetchRecordForVerification(
+        resourceType,
+        recordId
+      );
       if (!verificationRecord) {
         result.verified = false;
-        result.discrepancies.push('Unable to fetch record for field persistence verification');
+        result.discrepancies.push(
+          'Unable to fetch record for field persistence verification'
+        );
         return result;
       }
 
-      for (const [fieldName, expectedValue] of Object.entries(expectedUpdates)) {
-        if (['created_at', 'updated_at', 'id', 'workspace_id'].includes(fieldName)) continue;
+      for (const [fieldName, expectedValue] of Object.entries(
+        expectedUpdates
+      )) {
+        if (
+          ['created_at', 'updated_at', 'id', 'workspace_id'].includes(fieldName)
+        )
+          continue;
         const actualValue = verificationRecord.values?.[fieldName];
-        const comparisonResult = this.compareFieldValues(fieldName, expectedValue, actualValue);
+        const comparisonResult = this.compareFieldValues(
+          fieldName,
+          expectedValue,
+          actualValue
+        );
         if (!comparisonResult.matches) {
           result.verified = false;
           result.discrepancies.push(
@@ -75,8 +105,11 @@ export const UpdateValidation = {
         }
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      result.warnings.push(`Field persistence verification failed: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      result.warnings.push(
+        `Field persistence verification failed: ${errorMessage}`
+      );
       console.error('Field persistence verification error:', error);
     }
     return result;
@@ -99,7 +132,8 @@ export const UpdateValidation = {
             values: {
               name: (list as any).name || (list as any).title,
               description: (list as any).description,
-              parent_object: (list as any).object_slug || (list as any).parent_object,
+              parent_object:
+                (list as any).object_slug || (list as any).parent_object,
               api_slug: (list as any).api_slug,
               workspace_id: (list as any).workspace_id,
               workspace_member_access: (list as any).workspace_member_access,
@@ -116,11 +150,16 @@ export const UpdateValidation = {
         case 'records' as unknown as UniversalResourceType:
           return await getObjectRecord('records', recordId);
         default:
-          console.warn(`No verification method available for resource type: ${resourceType}`);
+          console.warn(
+            `No verification method available for resource type: ${resourceType}`
+          );
           return null;
       }
     } catch (error: unknown) {
-      console.error(`Failed to fetch ${resourceType} record ${recordId} for verification:`, error);
+      console.error(
+        `Failed to fetch ${resourceType} record ${recordId} for verification:`,
+        error
+      );
       return null;
     }
   },
@@ -137,20 +176,38 @@ export const UpdateValidation = {
       return { matches: false };
     }
     let unwrappedActual = actualValue;
-    if (Array.isArray(actualValue) && actualValue.length > 0 && (actualValue as any)[0]?.value !== undefined) {
-      unwrappedActual = (actualValue as any).length === 1 ? (actualValue as any)[0].value : (actualValue as any).map((v: any) => v.value);
+    if (
+      Array.isArray(actualValue) &&
+      actualValue.length > 0 &&
+      (actualValue as any)[0]?.value !== undefined
+    ) {
+      unwrappedActual =
+        (actualValue as any).length === 1
+          ? (actualValue as any)[0].value
+          : (actualValue as any).map((v: any) => v.value);
     }
     if (Array.isArray(expectedValue)) {
       if (!Array.isArray(unwrappedActual)) return { matches: false };
-      const expectedSet = new Set((expectedValue as unknown[]).map((v) => String(v)));
-      const actualSet = new Set((unwrappedActual as unknown[]).map((v) => String(v)));
-      return { matches: expectedSet.size === actualSet.size && Array.from(expectedSet).every((v) => actualSet.has(v)) };
+      const expectedSet = new Set(
+        (expectedValue as unknown[]).map((v) => String(v))
+      );
+      const actualSet = new Set(
+        (unwrappedActual as unknown[]).map((v) => String(v))
+      );
+      return {
+        matches:
+          expectedSet.size === actualSet.size &&
+          Array.from(expectedSet).every((v) => actualSet.has(v)),
+      };
     }
     if (typeof expectedValue === 'string') {
       const actualStr = String(unwrappedActual);
       const matches = expectedValue === actualStr;
       if (!matches && expectedValue.toLowerCase() === actualStr.toLowerCase()) {
-        return { matches: true, warning: `Field "${fieldName}" case mismatch: expected "${expectedValue}", got "${actualStr}"` };
+        return {
+          matches: true,
+          warning: `Field "${fieldName}" case mismatch: expected "${expectedValue}", got "${actualStr}"`,
+        };
       }
       return { matches };
     }
@@ -165,4 +222,3 @@ export const UpdateValidation = {
     return { matches: String(expectedValue) === String(unwrappedActual) };
   },
 };
-

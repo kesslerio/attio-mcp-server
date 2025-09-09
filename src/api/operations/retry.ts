@@ -84,12 +84,12 @@ export function isRetryableError(
 
   // Check if status code is in the retryable list
   const statusCode = error.response.status;
-  
+
   // Never retry 4xx client errors (400, 401, 403, 404, etc.) as they won't succeed on retry
   if (statusCode >= 400 && statusCode < 500) {
     return false;
   }
-  
+
   return config.retryableStatusCodes.includes(statusCode);
 }
 

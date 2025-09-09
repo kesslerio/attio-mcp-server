@@ -1,7 +1,7 @@
 /**
  * Search functionality for People
  */
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   searchObject,
   advancedSearchObject,
@@ -48,7 +48,7 @@ export async function searchPeople(query: string): Promise<Person[]> {
     }
 
     // Use the API directly to avoid the phone field issue
-    const api = getAttioClient();
+    const api = getLazyAttioClient();
     const path = `/objects/people/records/query`;
 
     // Search only by name and email, not phone

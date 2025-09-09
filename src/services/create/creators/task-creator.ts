@@ -62,8 +62,13 @@ export class TaskCreator extends BaseCreator {
       if (input.assigneeId && input.assigneeId !== 'undefined') {
         options.assigneeId = input.assigneeId as string;
       }
-      if (input.dueDate && input.dueDate !== 'undefined' && input.dueDate !== 'null' && 
-          typeof input.dueDate === 'string' && input.dueDate.trim() !== '') {
+      if (
+        input.dueDate &&
+        input.dueDate !== 'undefined' &&
+        input.dueDate !== 'null' &&
+        typeof input.dueDate === 'string' &&
+        input.dueDate.trim() !== ''
+      ) {
         options.dueDate = input.dueDate as string;
       }
       if (input.recordId && input.recordId !== 'undefined') {
@@ -91,7 +96,10 @@ export class TaskCreator extends BaseCreator {
       );
       // Ensure E2E compatibility: include values.assignee when assigneeId provided
       try {
-        if (input.assigneeId && (!record.values || !(record.values as any).assignee)) {
+        if (
+          input.assigneeId &&
+          (!record.values || !(record.values as any).assignee)
+        ) {
           const values: any = record.values || {};
           values.assignee = [{ value: input.assigneeId }];
           (record as any).values = values;

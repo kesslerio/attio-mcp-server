@@ -13,8 +13,10 @@ export const CreateValidation = {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(data)) {
       if (typeof v === 'string') out[k] = v;
-      else if (Array.isArray(v)) out[k] = v.map((x) => (typeof x === 'string' ? x : x));
-      else if (v && typeof v === 'object') out[k] = this.sanitize(v as Record<string, unknown>);
+      else if (Array.isArray(v))
+        out[k] = v.map((x) => (typeof x === 'string' ? x : x));
+      else if (v && typeof v === 'object')
+        out[k] = this.sanitize(v as Record<string, unknown>);
       else out[k] = v;
     }
     return out;
@@ -34,11 +36,15 @@ export const CreateValidation = {
         case UniversalResourceType.LISTS: {
           const list = await getListDetails(recordId);
           return {
-            id: { record_id: (list as any).id.list_id, list_id: (list as any).id.list_id },
+            id: {
+              record_id: (list as any).id.list_id,
+              list_id: (list as any).id.list_id,
+            },
             values: {
               name: (list as any).name || (list as any).title,
               description: (list as any).description,
-              parent_object: (list as any).object_slug || (list as any).parent_object,
+              parent_object:
+                (list as any).object_slug || (list as any).parent_object,
               api_slug: (list as any).api_slug,
               workspace_id: (list as any).workspace_id,
               workspace_member_access: (list as any).workspace_member_access,
@@ -47,7 +53,9 @@ export const CreateValidation = {
           } as unknown as AttioRecord;
         }
         case UniversalResourceType.TASKS:
-          return UniversalUtilityService.convertTaskToRecord(await getTask(recordId));
+          return UniversalUtilityService.convertTaskToRecord(
+            await getTask(recordId)
+          );
         case UniversalResourceType.DEALS:
           return await getObjectRecord('deals', recordId);
         case UniversalResourceType.RECORDS:

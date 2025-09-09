@@ -15,7 +15,12 @@ interface AttioFieldValueObject {
 
 interface AttioFieldValueArray extends Array<string | AttioFieldValueObject> {}
 
-type AttioFieldValue = string | AttioFieldValueArray | AttioFieldValueObject | null | undefined;
+type AttioFieldValue =
+  | string
+  | AttioFieldValueArray
+  | AttioFieldValueObject
+  | null
+  | undefined;
 
 /**
  * Utility functions for search operations
@@ -100,48 +105,56 @@ export class SearchUtilities {
   /**
    * Extract string value from various Attio field value structures
    */
-  private static extractStringFromFieldValue(fieldValue: AttioFieldValue): string {
+  private static extractStringFromFieldValue(
+    fieldValue: AttioFieldValue
+  ): string {
     if (typeof fieldValue === 'string') {
       return fieldValue;
     }
-    
+
     if (Array.isArray(fieldValue)) {
       return this.extractStringFromArray(fieldValue);
     }
-    
+
     if (this.isFieldValueObject(fieldValue)) {
       return String(fieldValue.value || '');
     }
-    
+
     return '';
   }
 
   /**
    * Extract string from array field values (e.g., email_addresses)
    */
-  private static extractStringFromArray(fieldArray: AttioFieldValueArray): string {
+  private static extractStringFromArray(
+    fieldArray: AttioFieldValueArray
+  ): string {
     if (fieldArray.length === 0) return '';
-    
+
     const firstItem = fieldArray[0];
     if (typeof firstItem === 'string') {
       return firstItem;
     }
-    
+
     if (this.isFieldValueObject(firstItem)) {
       return String(firstItem.value || '');
     }
-    
+
     return '';
   }
 
   /**
    * Type guard for field value objects
    */
-  private static isFieldValueObject(value: unknown): value is AttioFieldValueObject {
-    return value !== null && 
-           value !== undefined && 
-           typeof value === 'object' && 
-           'value' in value;
+  private static isFieldValueObject(
+    value: unknown
+  ): value is AttioFieldValueObject {
+    return (
+      value !== null &&
+      value !== undefined &&
+      typeof value === 'object' &&
+      'value' in value
+    );
   }
 
   /**
@@ -193,8 +206,11 @@ export class SearchUtilities {
   /**
    * Create date filter from timeframe parameters
    */
-  static createDateFilter(timeframeParams: TimeframeParams): Record<string, unknown> | null {
-    const { timeframe_attribute, start_date, end_date, date_operator } = timeframeParams;
+  static createDateFilter(
+    timeframeParams: TimeframeParams
+  ): Record<string, unknown> | null {
+    const { timeframe_attribute, start_date, end_date, date_operator } =
+      timeframeParams;
 
     if (!timeframe_attribute) {
       return null;

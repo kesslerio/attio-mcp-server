@@ -1,6 +1,9 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
-import type { CreateStrategy, CreateStrategyParams } from './BaseCreateStrategy.js';
+import type {
+  CreateStrategy,
+  CreateStrategyParams,
+} from './BaseCreateStrategy.js';
 import { createObjectRecord } from '../../../objects/records/index.js';
 
 export class RecordCreateStrategy implements CreateStrategy {
@@ -13,6 +16,8 @@ export class RecordCreateStrategy implements CreateStrategy {
     if (!objectSlug) {
       throw new Error('records create requires object/object_api_slug');
     }
-    return (await createObjectRecord(objectSlug, { values })) as unknown as AttioRecord;
+    return (await createObjectRecord(objectSlug, {
+      values,
+    })) as unknown as AttioRecord;
   }
 }

@@ -3,7 +3,7 @@
  * Handles create, read, update, and delete operations
  */
 
-import { getAttioClient } from '../attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioRecord,
   ResourceType,
@@ -168,7 +168,7 @@ export async function getObjectDetails<T extends AttioRecord>(
     retryConfig?: Partial<RetryConfig>;
   }
 ): Promise<T> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   let path = `/objects/${objectType}/records/${recordId}`;
 
   // NEW: Add field filtering to query parameters with security validation
@@ -203,7 +203,7 @@ export async function createRecord<T extends AttioRecord>(
   params: RecordCreateParams,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records`;
 
@@ -356,7 +356,7 @@ export async function getRecord<T extends AttioRecord>(
   objectId?: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const objectPath = getObjectPath(objectSlug, objectId);
   let path = `${objectPath}/records/${recordId}`;
 
@@ -385,7 +385,7 @@ export async function updateRecord<T extends AttioRecord>(
   params: RecordUpdateParams,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/${params.recordId}`;
 
@@ -586,7 +586,7 @@ export async function deleteRecord(
   objectId?: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const objectPath = getObjectPath(objectSlug, objectId);
   const path = `${objectPath}/records/${recordId}`;
 
@@ -607,7 +607,7 @@ export async function listRecords<T extends AttioRecord>(
   params: RecordListParams,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
 
   // Build query parameters

@@ -122,4 +122,3 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
       .join('\n')}`;
   },
 };
-

@@ -15,7 +15,10 @@ export class RecordUpdateStrategy implements UpdateStrategy {
     context?: Record<string, unknown>
   ): Promise<AttioRecord> {
     if (resourceType === ('deals' as unknown as UniversalResourceType)) {
-      const updatedDealData = await applyDealDefaultsWithValidation(values, false);
+      const updatedDealData = await applyDealDefaultsWithValidation(
+        values,
+        false
+      );
       return updateObjectRecord('deals', recordId, { values: updatedDealData });
     }
 
@@ -28,4 +31,3 @@ export class RecordUpdateStrategy implements UpdateStrategy {
     return updateObjectRecord(objectSlug, recordId, { values });
   }
 }
-

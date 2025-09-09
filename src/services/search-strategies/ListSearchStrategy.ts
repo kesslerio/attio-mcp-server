@@ -4,7 +4,12 @@
  */
 
 import { AttioRecord, AttioList } from '../../types/attio.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import {
+  SearchType,
+  MatchType,
+  SortType,
+  UniversalResourceType,
+} from '../../handlers/tool-configs/universal/types.js';
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { SearchUtilities } from '../search-utilities/SearchUtilities.js';
@@ -71,15 +76,25 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         throw new Error('Lists search function not available');
       }
 
-      const lists = await this.dependencies.listFunction(searchQuery, requestLimit, 0);
+      const lists = await this.dependencies.listFunction(
+        searchQuery,
+        requestLimit,
+        0
+      );
 
       // Convert AttioList[] to AttioRecord[] format
       let records = this.convertListsToRecords(lists);
 
       // Apply content search filtering if requested
       if (search_type === SearchType.CONTENT && query && query.trim()) {
-        records = this.applyContentSearch(records, query.trim(), fields, match_type, sort);
-        
+        records = this.applyContentSearch(
+          records,
+          query.trim(),
+          fields,
+          match_type,
+          sort
+        );
+
         // Apply pagination to filtered results
         const start = offset || 0;
         const end = start + (limit || 10);

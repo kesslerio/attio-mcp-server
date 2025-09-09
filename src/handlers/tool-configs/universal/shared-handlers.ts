@@ -29,6 +29,7 @@ import { UniversalUpdateService } from '../../../services/UniversalUpdateService
 import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
 import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
 import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import { getLazyAttioClient } from '../../../api/lazy-client.js';
 
 // Import existing handlers by resource type
 
@@ -41,18 +42,16 @@ import { getObjectRecord } from '../../../objects/records/index.js';
 import { getTask } from '../../../objects/tasks.js';
 import { listNotes } from '../../../objects/notes.js';
 import { getCreateService } from '../../../services/create/index.js';
-import { debug, error as logError, OperationType } from '../../../utils/logger.js';
+import {
+  debug,
+  error as logError,
+  OperationType,
+} from '../../../utils/logger.js';
 
 // Note: Using direct Attio API client calls instead of object-specific note functions
 
 // Import Attio API client for direct note operations
-import {
-  getAttioClient,
-} from '../../../api/attio-client.js';
-import {
-  unwrapAttio,
-  normalizeNotes,
-} from '../../../utils/attio-response.js';
+import { unwrapAttio, normalizeNotes } from '../../../utils/attio-response.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -84,8 +83,7 @@ export async function handleUniversalGetDetails(
 export async function handleUniversalCreateNote(
   params: UniversalCreateNoteParams
 ): Promise<Record<string, unknown>> {
-  const { resource_type, record_id, title, content, format } =
-    params;
+  const { resource_type, record_id, title, content, format } = params;
 
   try {
     // Use factory service for consistent behavior
@@ -102,7 +100,9 @@ export async function handleUniversalCreateNote(
       '../../../utils/attio-response.js'
     );
 
-    const result = normalizeNote(unwrapAttio<Record<string, unknown>>(rawResult));
+    const result = normalizeNote(
+      unwrapAttio<Record<string, unknown>>(rawResult)
+    );
     debug(
       'universal.createNote',
       'Create note result',
@@ -162,10 +162,10 @@ export async function handleUniversalGetNotes(
     const rawList = unwrapAttio<Record<string, unknown>>(response);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
     const noteArray: any[] = Array.isArray(rawList)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
-      ? (rawList as any[])
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure  
-      : (((rawList as any)?.data as any[]) || []);
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
+        (rawList as any[])
+      : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure
+        ((rawList as any)?.data as any[]) || [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- normalizeNotes expects any[] for flexible note processing
     return normalizeNotes(noteArray as any[]);
   } catch (error: unknown) {
@@ -173,7 +173,9 @@ export async function handleUniversalGetNotes(
     const anyErr = error as any;
     const status = anyErr?.response?.status;
     const message =
-      anyErr?.response?.data?.error?.message || anyErr?.message || 'Unknown error';
+      anyErr?.response?.data?.error?.message ||
+      anyErr?.message ||
+      'Unknown error';
     const semanticMessage =
       status === 404
         ? 'record not found'
@@ -204,7 +206,7 @@ export async function handleUniversalUpdateNote(
   params: UniversalUpdateNoteParams
 ): Promise<Record<string, unknown>> {
   const { note_id, title, content, is_archived } = params;
-  const client = getAttioClient();
+  const client = getLazyAttioClient();
 
   const updateData: Record<string, unknown> = {};
   if (title !== undefined) updateData.title = title;
@@ -222,7 +224,7 @@ export async function handleUniversalSearchNotes(
   params: UniversalSearchNotesParams
 ): Promise<Record<string, unknown>[]> {
   const { resource_type, record_id, query, limit = 20, offset = 0 } = params;
-  const client = getAttioClient();
+  const client = getLazyAttioClient();
 
   const searchParams: Record<string, string> = {
     limit: limit.toString(),
@@ -245,7 +247,9 @@ export async function handleUniversalSearchNotes(
     };
     const parentObject = resourceTypeMap[resource_type];
     if (parentObject) {
-      notes = notes.filter((note: Record<string, unknown>) => note.parent_object === parentObject);
+      notes = notes.filter(
+        (note: Record<string, unknown>) => note.parent_object === parentObject
+      );
     }
   }
 
@@ -259,7 +263,7 @@ export async function handleUniversalDeleteNote(
   params: UniversalDeleteNoteParams
 ): Promise<{ success: boolean; note_id: string }> {
   const { note_id } = params;
-  const client = getAttioClient();
+  const client = getLazyAttioClient();
 
   await client.delete(`/notes/${note_id}`);
   return { success: true, note_id };

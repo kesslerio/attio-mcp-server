@@ -1,7 +1,7 @@
 /**
  * Task operations for Attio
  */
-import { getAttioClient } from '../attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioTask,
   AttioListResponse,
@@ -65,13 +65,18 @@ function extractTaskFromResponse(res: Record<string, unknown>): AttioTask {
  */
 function formatDateForAttio(dateStr: string): string | null {
   // Validate input - return null for invalid values to prevent API errors
-  if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '' || 
-      dateStr === 'undefined' || dateStr === 'null') {
+  if (
+    !dateStr ||
+    typeof dateStr !== 'string' ||
+    dateStr.trim() === '' ||
+    dateStr === 'undefined' ||
+    dateStr === 'null'
+  ) {
     return null;
   }
-  
+
   const trimmedDate = dateStr.trim();
-  
+
   // If already in ISO format, validate and return as-is
   if (trimmedDate.includes('T') && trimmedDate.includes('Z')) {
     const testDate = new Date(trimmedDate);
@@ -80,7 +85,7 @@ function formatDateForAttio(dateStr: string): string | null {
     }
     return trimmedDate;
   }
-  
+
   // Handle YYYY-MM-DD format by adding time component
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
     const testDate = new Date(`${trimmedDate}T00:00:00Z`);
@@ -89,13 +94,13 @@ function formatDateForAttio(dateStr: string): string | null {
     }
     return `${trimmedDate}T00:00:00Z`;
   }
-  
+
   // Try parsing other formats and convert to ISO
   const date = new Date(trimmedDate);
   if (isNaN(date.getTime())) {
     return null;
   }
-  
+
   return date.toISOString();
 }
 
@@ -103,10 +108,13 @@ function formatDateForAttio(dateStr: string): string | null {
  * Helper function to validate linking parameters
  * Both recordId and targetObject must be provided together, or neither
  */
-function validateLinkingParameters(recordId?: string, targetObject?: string): void {
+function validateLinkingParameters(
+  recordId?: string,
+  targetObject?: string
+): void {
   const hasRecordId = !!recordId;
   const hasTargetObject = !!targetObject;
-  
+
   if (hasRecordId !== hasTargetObject) {
     debug(
       'tasks.validateLinkingParameters',
@@ -117,7 +125,7 @@ function validateLinkingParameters(recordId?: string, targetObject?: string): vo
     );
     throw new Error(
       `Invalid task linking: both 'recordId' and 'targetObject' must be provided together, or neither. ` +
-      `Received recordId: ${recordId ? 'present' : 'missing'}, targetObject: ${targetObject ? 'present' : 'missing'}`
+        `Received recordId: ${recordId ? 'present' : 'missing'}, targetObject: ${targetObject ? 'present' : 'missing'}`
     );
   }
 }
@@ -129,7 +137,7 @@ export async function listTasks(
   pageSize: number = 25,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const params = new URLSearchParams();
   params.append('page', String(page));
   params.append('pageSize', String(pageSize));
@@ -148,21 +156,28 @@ export async function getTask(
   taskId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    const task = extractTaskFromResponse(res as unknown as Record<string, unknown>);
+    const task = extractTaskFromResponse(
+      res as unknown as Record<string, unknown>
+    );
     return transformTaskResponse(task);
   }, retryConfig);
 }
 
 export async function createTask(
   content: string,
-  options: { assigneeId?: string; dueDate?: string; recordId?: string; targetObject?: 'companies' | 'people' | 'records' } = {},
+  options: {
+    assigneeId?: string;
+    dueDate?: string;
+    recordId?: string;
+    targetObject?: 'companies' | 'people' | 'records';
+  } = {},
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = '/tasks';
 
   // Validate linking parameters: both recordId and targetObject required, or neither
@@ -175,7 +190,11 @@ export async function createTask(
   };
 
   // Only include deadline_at if a valid date is provided
-  if (options.dueDate && options.dueDate.trim() && options.dueDate !== 'undefined') {
+  if (
+    options.dueDate &&
+    options.dueDate.trim() &&
+    options.dueDate !== 'undefined'
+  ) {
     const formattedDate = formatDateForAttio(options.dueDate);
     if (formattedDate === null) {
       debug(
@@ -185,7 +204,9 @@ export async function createTask(
         'createTask',
         OperationType.VALIDATION
       );
-      throw new Error(`Invalid date format for task deadline: ${options.dueDate}`);
+      throw new Error(
+        `Invalid date format for task deadline: ${options.dueDate}`
+      );
     }
     taskData.deadline_at = formattedDate;
   }
@@ -205,9 +226,15 @@ export async function createTask(
   // If omitted, Attio returns 400 with validation error:
   // validation_errors: path ["data","linked_records"], expected "array", received "undefined"
   // When linking, use target_object and target_record_id format
-  const linkedRecords = options.recordId && options.targetObject
-    ? [{ target_object: options.targetObject, target_record_id: options.recordId }]
-    : [];
+  const linkedRecords =
+    options.recordId && options.targetObject
+      ? [
+          {
+            target_object: options.targetObject,
+            target_record_id: options.recordId,
+          },
+        ]
+      : [];
 
   // Build the request payload conditionally including deadline_at only when present
   const dataPayload: Record<string, unknown> = {
@@ -217,7 +244,7 @@ export async function createTask(
     assignees,
     linked_records: linkedRecords, // Always include as array (empty when not linking)
   };
-  
+
   // Always include deadline_at in payload - Attio API expects this field to be present
   // Use null when no deadline is provided (API validation requires field presence)
   dataPayload.deadline_at = taskData.deadline_at || null;
@@ -232,7 +259,7 @@ export async function createTask(
       'Prepared create payload',
       sanitizePayload({ path, payload: requestPayload })
     );
-    
+
     debug(
       'tasks.createTask',
       'Creating task',
@@ -243,7 +270,10 @@ export async function createTask(
 
     let res;
     try {
-      res = await api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
+      res = await api.post<AttioSingleResponse<AttioTask>>(
+        path,
+        requestPayload
+      );
     } catch (err) {
       debug(
         'tasks.createTask',
@@ -261,7 +291,7 @@ export async function createTask(
     // Handle response validation
     if (!res) {
       debug(
-        'tasks.createTask', 
+        'tasks.createTask',
         'API response is null/undefined',
         { path },
         'createTask',
@@ -283,7 +313,9 @@ export async function createTask(
       OperationType.API_CALL
     );
 
-    const task = extractTaskFromResponse(res as unknown as Record<string, unknown>);
+    const task = extractTaskFromResponse(
+      res as unknown as Record<string, unknown>
+    );
 
     // Note: Only transform content field for create response (status not returned on create)
     const transformed = transformTaskResponse(task);
@@ -307,7 +339,7 @@ export async function updateTask(
   },
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/tasks/${taskId}`;
   const data: TaskUpdateData = {};
   // Note: content is immutable and cannot be updated - ignore if provided
@@ -334,17 +366,21 @@ export async function updateTask(
         'updateTask',
         OperationType.VALIDATION
       );
-      throw new Error(`Invalid date format for task deadline: ${updates.dueDate}`);
+      throw new Error(
+        `Invalid date format for task deadline: ${updates.dueDate}`
+      );
     }
     data.deadline_at = formattedDate;
   }
-  
+
   // Include linked_records in PATCH request (per Attio API docs)
   if (updates.recordIds && updates.recordIds.length) {
-    (data as Record<string, unknown>).linked_records = updates.recordIds.map(recordId => ({
-      target_object: 'companies', // Default to companies - this should be improved to detect object type
-      target_record_id: recordId,
-    }));
+    (data as Record<string, unknown>).linked_records = updates.recordIds.map(
+      (recordId) => ({
+        target_object: 'companies', // Default to companies - this should be improved to detect object type
+        target_record_id: recordId,
+      })
+    );
   }
 
   // Wrap in Attio envelope as per API requirements
@@ -368,7 +404,9 @@ export async function updateTask(
       path,
       requestPayload
     );
-    const task = extractTaskFromResponse(res as unknown as Record<string, unknown>);
+    const task = extractTaskFromResponse(
+      res as unknown as Record<string, unknown>
+    );
 
     const transformed = transformTaskResponse(task);
     logTaskDebug(
@@ -379,7 +417,10 @@ export async function updateTask(
     debug(
       'tasks.updateTask',
       'PATCH response received',
-      { status: (res as unknown as Record<string, unknown>)?.status, hasData: !!res?.data },
+      {
+        status: (res as unknown as Record<string, unknown>)?.status,
+        hasData: !!res?.data,
+      },
       'updateTask',
       OperationType.API_CALL
     );
@@ -392,7 +433,7 @@ export async function deleteTask(
   taskId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     await api.delete(path);
@@ -405,7 +446,7 @@ export async function linkRecordToTask(
   recordId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/tasks/${taskId}/linked-records`;
   return callWithRetry(async () => {
     await api.post(path, { record_id: recordId });
@@ -418,7 +459,7 @@ export async function unlinkRecordFromTask(
   recordId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/tasks/${taskId}/linked-records/${recordId}`;
   return callWithRetry(async () => {
     await api.delete(path);

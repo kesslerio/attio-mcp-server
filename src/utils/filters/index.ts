@@ -28,7 +28,10 @@ export * from './cache.js';
 export * from './relationship.js';
 
 // Re-export namespaced Basic utilities for backward compatibility
-import { transformFiltersToApiFormat, transformFiltersToQueryApiFormat } from './translators.js';
+import {
+  transformFiltersToApiFormat,
+  transformFiltersToQueryApiFormat,
+} from './translators.js';
 import { validateFilterStructure } from './validators.js';
 import {
   createEqualsFilter,

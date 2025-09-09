@@ -5,7 +5,7 @@
  * They link to records via parent_object + parent_record_id
  */
 
-import { getAttioClient } from '../api/attio-client.js';
+import { getLazyAttioClient } from '../api/lazy-client.js';
 import {
   UniversalValidationError,
   ErrorType,
@@ -97,7 +97,7 @@ export async function createNote(
     );
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
 
   try {
     const response = await api.post('/notes', { data: body });
@@ -136,7 +136,7 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
 }> {
   debug('notes', 'Listing notes', query);
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
 
   try {
     // Always use the official /notes endpoint with query params.
@@ -176,7 +176,7 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
     );
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
 
   try {
     const response = await api.get(`/notes/${noteId}`);
@@ -208,7 +208,7 @@ export async function deleteNote(
     );
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
 
   try {
     await api.delete(`/notes/${noteId}`);

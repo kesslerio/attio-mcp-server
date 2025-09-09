@@ -3,7 +3,7 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { getAttioClient } from '../../../../../api/attio-client.js';
+import { getLazyAttioClient } from '../../../../../api/lazy-client.js';
 
 /**
  * Checks if a domain already exists in the system to prevent uniqueness conflicts
@@ -14,7 +14,7 @@ export async function checkDomainConflict(domain: string): Promise<{
   existingCompany?: { name: string; id: string };
 }> {
   try {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
 
     // Search for companies with this domain
     const response = await client.post('/objects/companies/records/query', {

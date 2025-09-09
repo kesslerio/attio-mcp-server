@@ -1,5 +1,8 @@
 import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
-import { UniversalValidationError, ErrorType } from '../../../handlers/tool-configs/universal/schemas.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../../handlers/tool-configs/universal/schemas.js';
 import { updateList } from '../../../objects/lists.js';
 import type { AttioRecord } from '../../../types/attio.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
@@ -30,7 +33,8 @@ export class ListUpdateStrategy implements UpdateStrategy {
         values: {
           name: (l.name as string) || (l.title as string),
           description: l.description as string,
-          parent_object: (l.object_slug as string) || (l.parent_object as string),
+          parent_object:
+            (l.object_slug as string) || (l.parent_object as string),
           api_slug: l.api_slug as string,
           workspace_id: l.workspace_id as string,
           workspace_member_access: l.workspace_member_access as string,
@@ -43,10 +47,14 @@ export class ListUpdateStrategy implements UpdateStrategy {
         const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
           const suggestion = getFieldSuggestions(resourceType, match[1]);
-          throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
-            suggestion,
-            field: match[1],
-          });
+          throw new UniversalValidationError(
+            errorMessage,
+            ErrorType.USER_ERROR,
+            {
+              suggestion,
+              field: match[1],
+            }
+          );
         }
       }
       throw err;

@@ -198,10 +198,10 @@ export function transformFiltersToApiFormat(
 
 /**
  * Transforms list entry filters to the new Query API format with path and constraints
- * 
+ *
  * This function creates the proper Attio Query API structure as required by Issue #523.
  * Uses path-based filtering with constraints for relationship, content, and timeframe searches.
- * 
+ *
  * @param filters - Filter configuration from the MCP API
  * @param validateConditions - Whether to validate condition types
  * @returns Query API formatted filter object
@@ -253,10 +253,10 @@ export function transformFiltersToQueryApiFormat(
 
     // Multiple filters case
     const useOrLogic = validatedFilters.matchAny === true;
-    
+
     if (useOrLogic) {
       // OR logic: create array of individual filter objects
-      const orConditions = validatedFilters.filters.map(filter => ({
+      const orConditions = validatedFilters.filters.map((filter) => ({
         path: [filter.attribute.slug],
         constraints: [
           {
@@ -268,13 +268,13 @@ export function transformFiltersToQueryApiFormat(
 
       return {
         filter: {
-          $or: orConditions.map(condition => ({ filter: condition })),
+          $or: orConditions.map((condition) => ({ filter: condition })),
         },
       };
     } else {
       // AND logic: create single filter with multiple constraints
       // For now, we'll use $and structure for multiple different attributes
-      const andConditions = validatedFilters.filters.map(filter => ({
+      const andConditions = validatedFilters.filters.map((filter) => ({
         filter: {
           path: [filter.attribute.slug],
           constraints: [

@@ -1,7 +1,7 @@
 /**
  * Note operations for companies
  */
-import { getAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   getObjectNotes,
   createObjectNote,
@@ -87,7 +87,7 @@ export async function getCompanyNotes(
 
       // Fallback implementation with better error handling
       try {
-        const api = getAttioClient();
+        const api = getLazyAttioClient();
         const path = `/notes?limit=${limit}&offset=${offset}&parent_object=companies&parent_record_id=${companyId}`;
 
         if (process.env.NODE_ENV === 'development') {
@@ -216,7 +216,7 @@ export async function createCompanyNote(
 
       // Fallback implementation with better error handling
       try {
-        const api = getAttioClient();
+        const api = getLazyAttioClient();
         const path = 'notes';
 
         if (process.env.NODE_ENV === 'development') {

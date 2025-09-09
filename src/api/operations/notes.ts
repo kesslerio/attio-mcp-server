@@ -3,7 +3,7 @@
  * Handles note creation and retrieval
  */
 
-import { getAttioClient } from '../attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioNote,
   ResourceType,
@@ -29,7 +29,7 @@ export async function getObjectNotes(
   offset: number = 0,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioNote[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/notes?limit=${limit}&offset=${offset}&parent_object=${objectType}&parent_record_id=${recordId}`;
 
   return callWithRetry(async () => {
@@ -55,7 +55,7 @@ export async function createObjectNote(
   noteText: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioNote> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = '/notes';
 
   return callWithRetry(async () => {

@@ -6,6 +6,8 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { ServerContext } from '../server/createServer.js';
+import { setGlobalContext } from '../api/lazy-client.js';
 import { createErrorResult } from '../utils/error-handler.js';
 import {
   listCompanies,
@@ -61,7 +63,14 @@ function formatListAsResource(list: AttioList) {
  *
  * @param server - The MCP server instance
  */
-export function registerResourceHandlers(server: Server): void {
+export function registerResourceHandlers(
+  server: Server,
+  context?: ServerContext
+): void {
+  // Set the global context for lazy initialization if provided
+  if (context) {
+    setGlobalContext(context);
+  }
   // Handler for listing resources (Companies, People, and Lists)
   server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
     try {

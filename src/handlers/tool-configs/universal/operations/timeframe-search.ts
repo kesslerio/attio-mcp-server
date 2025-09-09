@@ -13,7 +13,10 @@ import { AttioRecord } from '../../../../types/attio.js';
 
 import { validateUniversalToolParams } from '../schemas.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
-import { formatResourceType, handleUniversalSearch } from '../shared-handlers.js';
+import {
+  formatResourceType,
+  handleUniversalSearch,
+} from '../shared-handlers.js';
 import { normalizeOperator } from '../../../../utils/AttioFilterOperators.js';
 import { mapFieldName } from '../../../../utils/AttioFieldMapper.js';
 
@@ -26,28 +29,32 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         params
       );
 
-      const { 
-        resource_type, 
+      const {
+        resource_type,
         timeframe_type,
-        start_date, 
+        start_date,
         end_date,
         relative_range,
         invert_range,
         date_field,
         limit,
-        offset 
+        offset,
       } = sanitizedParams;
 
       // Process relative_range parameter if provided (Issue #475)
       let processedStartDate = start_date;
       let processedEndDate = end_date;
-      
+
       if (relative_range) {
         // Import the timeframe utility to convert relative ranges
-        const { getRelativeTimeframeRange } = await import('../../../../utils/filters/timeframe-utils.js');
-        
+        const { getRelativeTimeframeRange } = await import(
+          '../../../../utils/filters/timeframe-utils.js'
+        );
+
         try {
-          const range = getRelativeTimeframeRange(relative_range as RelativeTimeframe);
+          const range = getRelativeTimeframeRange(
+            relative_range as RelativeTimeframe
+          );
           processedStartDate = range.startDate;
           processedEndDate = range.endDate;
         } catch {
@@ -96,15 +103,20 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
             timestampField = mapFieldName('modified_at');
             break;
           default:
-            throw new Error(`Unsupported timeframe type: ${effectiveTimeframeType}`);
+            throw new Error(
+              `Unsupported timeframe type: ${effectiveTimeframeType}`
+            );
         }
       }
 
       // Build the date filter using proper Attio API v2 filter syntax
       // Use normalized operators with $ prefix
       const dateFilters: Record<string, unknown>[] = [];
-      
-      const coerceIso = (d?: string, endBoundary = false): string | undefined => {
+
+      const coerceIso = (
+        d?: string,
+        endBoundary = false
+      ): string | undefined => {
         if (!d) return undefined;
         // If date-only (YYYY-MM-DD), expand to full UTC boundary
         if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
@@ -126,21 +138,21 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
           dateFilters.push({
             attribute: { slug: timestampField },
             condition: normalizeOperator('lt'), // Less than start date
-            value: startIso
+            value: startIso,
           });
         } else if (startIso) {
           // Only start date - invert to find records older than this date
           dateFilters.push({
             attribute: { slug: timestampField },
             condition: normalizeOperator('lt'),
-            value: startIso
+            value: startIso,
           });
         } else if (endIso) {
           // Only end date - invert to find records newer than this date
           dateFilters.push({
             attribute: { slug: timestampField },
             condition: normalizeOperator('gt'),
-            value: endIso
+            value: endIso,
           });
         }
       } else {
@@ -149,15 +161,15 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
           dateFilters.push({
             attribute: { slug: timestampField },
             condition: normalizeOperator('gte'), // Normalize to $gte
-            value: startIso
+            value: startIso,
           });
         }
-        
+
         if (endIso) {
           dateFilters.push({
             attribute: { slug: timestampField },
             condition: normalizeOperator('lte'), // Normalize to $lte
-            value: endIso
+            value: endIso,
           });
         }
       }
@@ -179,7 +191,6 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         limit: limit || 20,
         offset: offset || 0,
       });
-
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         'timeframe search',
@@ -240,4 +251,3 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
       .join('\n')}`;
   },
 };
-

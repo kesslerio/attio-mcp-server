@@ -51,7 +51,7 @@ async function main() {
         console.error('[MCP] stdout error:', error);
       }
     });
-    
+
     process.stderr.on('error', (error: NodeJS.ErrnoException) => {
       if (error.code === 'EPIPE') {
         // Graceful exit on broken pipe - Claude Desktop closed connection
@@ -79,7 +79,6 @@ async function main() {
 
     // Server is now running and will process requests via stdio
     // Claude Desktop manages the process lifecycle - no PID files or health checks needed
-    
   } catch (error: unknown) {
     logError(
       'main',

@@ -273,11 +273,12 @@ const toolValidators: Record<string, ToolValidator> = {
         { field: 'resource_type', example: `resource_type: 'companies'` }
       );
     }
-    
+
     // Support both new flexible format (operations array) and legacy format (operation_type)
-    const hasOperations = p.operations && Array.isArray(p.operations) && p.operations.length > 0;
+    const hasOperations =
+      p.operations && Array.isArray(p.operations) && p.operations.length > 0;
     const hasLegacyFormat = p.operation_type;
-    
+
     if (!hasOperations && !hasLegacyFormat) {
       throw new UniversalValidationError(
         'Missing required parameters: either "operations" array or "operation_type"',
@@ -285,15 +286,17 @@ const toolValidators: Record<string, ToolValidator> = {
         {
           field: 'operations',
           example: `operations: [{ operation: 'create', record_data: { name: 'Example' } }]`,
-          suggestion: 'Use either the new operations array format or legacy operation_type + records format',
+          suggestion:
+            'Use either the new operations array format or legacy operation_type + records format',
         }
       );
     }
-    
+
     // Validate new format
     if (hasOperations) {
       const operations = p.operations as Array<any>;
-      for (const [index, op] of operations.entries()) {
+      for (let index = 0; index < operations.length; index++) {
+        const op = operations[index];
         if (!op.operation) {
           throw new UniversalValidationError(
             `Missing operation type for operation at index ${index}`,
@@ -316,7 +319,7 @@ const toolValidators: Record<string, ToolValidator> = {
         }
       }
     }
-    
+
     // Validate legacy format
     if (hasLegacyFormat) {
       const operationType = String(p.operation_type);

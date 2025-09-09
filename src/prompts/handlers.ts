@@ -7,6 +7,8 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { ServerContext } from '../server/createServer.js';
+import { setGlobalContext } from '../api/lazy-client.js';
 import {
   getAllPrompts,
   getPromptById,
@@ -18,7 +20,7 @@ import { createErrorResult } from './error-handler.js';
 
 // Import Handlebars using ES module import
 // This avoids the "require is not defined in ES module scope" error
-import Handlebars from 'handlebars';
+import * as Handlebars from 'handlebars';
 
 // Define template delegate type since it's not exported by the Handlebars module
 type HandlebarsTemplateDelegate = (
@@ -444,7 +446,14 @@ export async function executePrompt(
  * registerPromptHandlers(server);
  * ```
  */
-export function registerPromptHandlers(server: Server): void {
+export function registerPromptHandlers(
+  server: Server,
+  context?: ServerContext
+): void {
+  // Set the global context for lazy initialization if provided
+  if (context) {
+    setGlobalContext(context);
+  }
   // Register handler for prompts/list endpoint
   server.setRequestHandler(ListPromptsRequestSchema, async () => {
     const prompts = getAllPrompts();

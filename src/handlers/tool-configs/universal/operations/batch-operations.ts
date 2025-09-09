@@ -24,7 +24,10 @@ import {
 } from '../../../../api/operations/batch.js';
 
 import { ErrorService } from '../../../../services/ErrorService.js';
-import { validateBatchOperation, validateSearchQuery } from '../../../../utils/batch-validation.js';
+import {
+  validateBatchOperation,
+  validateSearchQuery,
+} from '../../../../utils/batch-validation.js';
 
 // Simple sleep helper for optional inter-chunk delays
 function sleep(ms: number): Promise<void> {
@@ -49,7 +52,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           operations.map(async (op: Record<string, unknown>, index: number) => {
             try {
               const { operation, record_data } = op;
-              
+
               switch (operation) {
                 case 'create':
                   return {
@@ -61,41 +64,57 @@ export const batchOperationsConfig: UniversalToolConfig = {
                       return_details: true,
                     }),
                   };
-                  
+
                 case 'update':
-                  const typedRecordData = record_data as Record<string, unknown>;
+                  const typedRecordData = record_data as Record<
+                    string,
+                    unknown
+                  >;
                   if (!typedRecordData?.id) {
-                    throw new Error('Record ID is required for update operation');
+                    throw new Error(
+                      'Record ID is required for update operation'
+                    );
                   }
                   return {
                     index,
                     success: true,
                     result: await handleUniversalUpdate({
                       resource_type,
-                      record_id: typeof typedRecordData.id === 'string' 
-                        ? typedRecordData.id 
-                        : (typedRecordData.id as Record<string, unknown>)?.record_id as string || String(typedRecordData.id),
+                      record_id:
+                        typeof typedRecordData.id === 'string'
+                          ? typedRecordData.id
+                          : ((typedRecordData.id as Record<string, unknown>)
+                              ?.record_id as string) ||
+                            String(typedRecordData.id),
                       record_data: typedRecordData,
                       return_details: true,
                     }),
                   };
-                  
+
                 case 'delete':
-                  const deleteRecordData = record_data as Record<string, unknown>;
+                  const deleteRecordData = record_data as Record<
+                    string,
+                    unknown
+                  >;
                   if (!deleteRecordData?.id) {
-                    throw new Error('Record ID is required for delete operation');
+                    throw new Error(
+                      'Record ID is required for delete operation'
+                    );
                   }
                   return {
                     index,
                     success: true,
                     result: await handleUniversalDelete({
                       resource_type,
-                      record_id: typeof deleteRecordData.id === 'string' 
-                        ? deleteRecordData.id 
-                        : (deleteRecordData.id as Record<string, unknown>)?.record_id as string || String(deleteRecordData.id),
+                      record_id:
+                        typeof deleteRecordData.id === 'string'
+                          ? deleteRecordData.id
+                          : ((deleteRecordData.id as Record<string, unknown>)
+                              ?.record_id as string) ||
+                            String(deleteRecordData.id),
                     }),
                   };
-                  
+
                 default:
                   throw new Error(`Unsupported operation: ${operation}`);
               }
@@ -109,25 +128,20 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
           })
         );
-        
+
         return {
           operations: results,
           summary: {
             total: results.length,
-            successful: results.filter(r => r.success).length,
-            failed: results.filter(r => !r.success).length,
+            successful: results.filter((r) => r.success).length,
+            failed: results.filter((r) => !r.success).length,
           },
         };
       }
 
       // Fallback to old format for backward compatibility
-      const {
-        operation_type,
-        records,
-        record_ids,
-        limit,
-        offset,
-      } = sanitizedParams;
+      const { operation_type, records, record_ids, limit, offset } =
+        sanitizedParams;
 
       switch (operation_type) {
         case BatchOperationType.CREATE: {
@@ -147,41 +161,52 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Process in chunks with optional delay between chunks (test timing)
           const CHUNK_SIZE = 5;
           const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
-          const results: Array<{ index: number; success: boolean; result?: unknown; error?: string }> = [];
+          const results: Array<{
+            index: number;
+            success: boolean;
+            result?: unknown;
+            error?: string;
+          }> = [];
 
           for (let i = 0; i < records.length; i += CHUNK_SIZE) {
             const chunk = records.slice(i, i + CHUNK_SIZE);
             const chunkResults = await Promise.all(
-              chunk.map(async (recordData: Record<string, unknown>, offsetIdx: number) => {
-                const index = i + offsetIdx;
-                try {
-                  const result = await handleUniversalCreate({
-                    resource_type,
-                    record_data: recordData,
-                    return_details: true,
-                  });
-                  return { index, success: true, result };
-                } catch (error: unknown) {
-                  return {
-                    index,
-                    success: false,
-                    error: error instanceof Error ? error.message : String(error),
-                  };
+              chunk.map(
+                async (
+                  recordData: Record<string, unknown>,
+                  offsetIdx: number
+                ) => {
+                  const index = i + offsetIdx;
+                  try {
+                    const result = await handleUniversalCreate({
+                      resource_type,
+                      record_data: recordData,
+                      return_details: true,
+                    });
+                    return { index, success: true, result };
+                  } catch (error: unknown) {
+                    return {
+                      index,
+                      success: false,
+                      error:
+                        error instanceof Error ? error.message : String(error),
+                    };
+                  }
                 }
-              })
+              )
             );
             results.push(...chunkResults);
             if (DELAY_MS && i + CHUNK_SIZE < records.length) {
               await sleep(DELAY_MS);
             }
           }
-          
+
           return {
             operations: results,
             summary: {
               total: results.length,
-              successful: results.filter(r => r.success).length,
-              failed: results.filter(r => !r.success).length,
+              successful: results.filter((r) => r.success).length,
+              failed: results.filter((r) => !r.success).length,
             },
           };
         }
@@ -213,45 +238,59 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
           const CHUNK_SIZE = 5;
           const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
-          const results = [] as Array<{ index: number; success: boolean; result?: unknown; error?: string }>;
+          const results = [] as Array<{
+            index: number;
+            success: boolean;
+            result?: unknown;
+            error?: string;
+          }>;
           for (let i = 0; i < records.length; i += CHUNK_SIZE) {
             const chunk = records.slice(i, i + CHUNK_SIZE);
             const chunkResults = await Promise.all(
-              chunk.map(async (recordData: Record<string, unknown>, offsetIdx: number) => {
-                const index = i + offsetIdx;
-                try {
-                  if (!recordData.id) throw new Error('Record ID is required for update operation');
-                  const result = await handleUniversalUpdate({
-                    resource_type,
-                    record_id:
-                      typeof recordData.id === 'string'
-                        ? recordData.id
-                        : String(recordData.id),
-                    record_data: recordData,
-                    return_details: true,
-                  });
-                  return { index, success: true, result };
-                } catch (error: unknown) {
-                  return {
-                    index,
-                    success: false,
-                    error: error instanceof Error ? error.message : String(error),
-                  };
+              chunk.map(
+                async (
+                  recordData: Record<string, unknown>,
+                  offsetIdx: number
+                ) => {
+                  const index = i + offsetIdx;
+                  try {
+                    if (!recordData.id)
+                      throw new Error(
+                        'Record ID is required for update operation'
+                      );
+                    const result = await handleUniversalUpdate({
+                      resource_type,
+                      record_id:
+                        typeof recordData.id === 'string'
+                          ? recordData.id
+                          : String(recordData.id),
+                      record_data: recordData,
+                      return_details: true,
+                    });
+                    return { index, success: true, result };
+                  } catch (error: unknown) {
+                    return {
+                      index,
+                      success: false,
+                      error:
+                        error instanceof Error ? error.message : String(error),
+                    };
+                  }
                 }
-              })
+              )
             );
             results.push(...chunkResults);
             if (DELAY_MS && i + CHUNK_SIZE < records.length) {
               await sleep(DELAY_MS);
             }
           }
-          
+
           return {
             operations: results,
             summary: {
               total: results.length,
-              successful: results.filter(r => r.success).length,
-              failed: results.filter(r => !r.success).length,
+              successful: results.filter((r) => r.success).length,
+              failed: results.filter((r) => !r.success).length,
             },
           };
         }
@@ -272,7 +311,13 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
           const CHUNK_SIZE = 5;
           const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
-          const results = [] as Array<{ index: number; success: boolean; result?: unknown; error?: string; record_id?: string }>;
+          const results = [] as Array<{
+            index: number;
+            success: boolean;
+            result?: unknown;
+            error?: string;
+            record_id?: string;
+          }>;
           for (let i = 0; i < record_ids.length; i += CHUNK_SIZE) {
             const chunk = record_ids.slice(i, i + CHUNK_SIZE);
             const chunkResults = await Promise.all(
@@ -288,7 +333,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
                   return {
                     index,
                     success: false,
-                    error: error instanceof Error ? error.message : String(error),
+                    error:
+                      error instanceof Error ? error.message : String(error),
                     record_id: recordId,
                   };
                 }
@@ -299,13 +345,13 @@ export const batchOperationsConfig: UniversalToolConfig = {
               await sleep(DELAY_MS);
             }
           }
-          
+
           return {
             operations: results,
             summary: {
               total: results.length,
-              successful: results.filter(r => r.success).length,
-              failed: results.filter(r => !r.success).length,
+              successful: results.filter((r) => r.success).length,
+              failed: results.filter((r) => !r.success).length,
             },
           };
         }
@@ -337,7 +383,13 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
           const CHUNK_SIZE = 5;
           const DELAY_MS = process.env.NODE_ENV === 'test' ? 60 : 0;
-          const results = [] as Array<{ index: number; success: boolean; result?: unknown; error?: string; record_id?: string }>;
+          const results = [] as Array<{
+            index: number;
+            success: boolean;
+            result?: unknown;
+            error?: string;
+            record_id?: string;
+          }>;
           for (let i = 0; i < record_ids.length; i += CHUNK_SIZE) {
             const chunk = record_ids.slice(i, i + CHUNK_SIZE);
             const chunkResults = await Promise.all(
@@ -353,7 +405,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
                   return {
                     index,
                     success: false,
-                    error: error instanceof Error ? error.message : String(error),
+                    error:
+                      error instanceof Error ? error.message : String(error),
                     record_id: recordId,
                   };
                 }
@@ -364,13 +417,13 @@ export const batchOperationsConfig: UniversalToolConfig = {
               await sleep(DELAY_MS);
             }
           }
-          
+
           return {
             operations: results,
             summary: {
               total: results.length,
-              successful: results.filter(r => r.success).length,
-              failed: results.filter(r => !r.success).length,
+              successful: results.filter((r) => r.success).length,
+              failed: results.filter((r) => !r.success).length,
             },
           };
         }
@@ -406,10 +459,14 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
             for (let i = 0; i < queries.length; i += CHUNK_SIZE) {
               const chunk = queries.slice(i, i + CHUNK_SIZE);
-              const chunkResults = await universalBatchSearch(resource_type, chunk, {
-                limit: sanitizedParams.limit,
-                offset: sanitizedParams.offset,
-              });
+              const chunkResults = await universalBatchSearch(
+                resource_type,
+                chunk,
+                {
+                  limit: sanitizedParams.limit,
+                  offset: sanitizedParams.offset,
+                }
+              );
               aggregatedResults.push(...chunkResults);
               if (DELAY_MS && i + CHUNK_SIZE < queries.length) {
                 await sleep(DELAY_MS);
@@ -417,7 +474,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
 
             // Return a flattened list of records
-            const flattened = aggregatedResults.flatMap((r) => (r as any)?.result || []);
+            const flattened = aggregatedResults.flatMap(
+              (r) => (r as any)?.result || []
+            );
             return flattened;
           } else {
             // Fallback to single search with pagination (legacy behavior)
@@ -430,7 +489,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
               throw new Error(searchValidation.error);
             }
 
-            const searchResults = await (await import('../shared-handlers.js')).handleUniversalSearch({
+            const searchResults = await (
+              await import('../shared-handlers.js')
+            ).handleUniversalSearch({
               resource_type,
               limit,
               offset,
@@ -504,7 +565,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
         // Handle batch search results with queries array (Issue #471)
         if (results.length > 0 && 'query' in results[0]) {
           // New format: UniversalBatchSearchResult[]
-          const batchResults = results as unknown as UniversalBatchSearchResult[];
+          const batchResults =
+            results as unknown as UniversalBatchSearchResult[];
           const successCount = batchResults.filter((r) => r.success).length;
           const failureCount = batchResults.length - successCount;
 
@@ -520,8 +582,14 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
               if (records.length > 0) {
                 records.slice(0, 3).forEach((record, recordIndex) => {
-                  const values = (record as any).values as Record<string, unknown>;
-                  const recordId = (record as any).id as Record<string, unknown>;
+                  const values = (record as any).values as Record<
+                    string,
+                    unknown
+                  >;
+                  const recordId = (record as any).id as Record<
+                    string,
+                    unknown
+                  >;
                   const name =
                     (values?.name as Record<string, unknown>[])?.[0]?.value ||
                     (values?.title as Record<string, unknown>[])?.[0]?.value ||
@@ -553,7 +621,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
               const values = (record as any).values as
                 | Record<string, unknown>
                 | undefined;
-              const recordId = (record as any).id as Record<string, unknown> | undefined;
+              const recordId = (record as any).id as
+                | Record<string, unknown>
+                | undefined;
               const name = extractName(values, 'Unnamed');
               const id = (recordId?.record_id as string) || 'unknown';
               return `${index + 1}. ${name} (ID: ${id})`;
@@ -586,7 +656,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
         summary += `\n\nFailed operations:\n${failed
           .map((op: Record<string, unknown>, index: number) => {
             const opData = op.data as Record<string, unknown>;
-            const identifier = (op as any).record_id || opData?.name || 'Unknown';
+            const identifier =
+              (op as any).record_id || opData?.name || 'Unknown';
             return `${index + 1}. ${identifier}: ${op.error}`;
           })
           .join('\n')}`;

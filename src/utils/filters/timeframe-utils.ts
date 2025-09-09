@@ -1,16 +1,16 @@
 /**
  * Timeframe utility functions for converting relative timeframes to date ranges
- * 
+ *
  * This module provides type-safe date range conversion for the Attio MCP Server
  * timeframe search functionality. All operations use UTC timezone to ensure
  * consistent behavior across different environments.
- * 
+ *
  * Key Features:
  * - Type-safe relative timeframe conversion
  * - UTC timezone handling for consistency
  * - ISO 8601 date format output
  * - Comprehensive validation and error handling
- * 
+ *
  * @example
  * ```typescript
  * const range = getRelativeTimeframeRange('last_7_days');
@@ -32,14 +32,14 @@ export interface DateRange {
  * Supported relative timeframe options
  * Each timeframe is converted to an absolute date range using UTC timezone
  */
-export type RelativeTimeframe = 
-  | 'today'        // Current day (00:00:00 to 23:59:59 UTC)
-  | 'yesterday'    // Previous day (00:00:00 to 23:59:59 UTC)
-  | 'this_week'    // Monday of current week to now
-  | 'last_week'    // Monday to Sunday of previous week
-  | 'this_month'   // First day of current month to now
-  | 'last_month'   // First to last day of previous month
-  | 'last_7_days'  // 7 days ago to now (rolling window)
+export type RelativeTimeframe =
+  | 'today' // Current day (00:00:00 to 23:59:59 UTC)
+  | 'yesterday' // Previous day (00:00:00 to 23:59:59 UTC)
+  | 'this_week' // Monday of current week to now
+  | 'last_week' // Monday to Sunday of previous week
+  | 'this_month' // First day of current month to now
+  | 'last_month' // First to last day of previous month
+  | 'last_7_days' // 7 days ago to now (rolling window)
   | 'last_14_days' // 14 days ago to now (rolling window) - Added for sales playbook
   | 'last_30_days' // 30 days ago to now (rolling window)
   | 'last_90_days'; // 90 days ago to now (rolling window)
@@ -56,7 +56,7 @@ export interface TimeframeValidation {
 /**
  * Converts a relative timeframe to an absolute date range
  * All dates are returned in ISO 8601 format
- * 
+ *
  * @param timeframe - The relative timeframe to convert
  * @param timezone - Optional timezone (defaults to UTC)
  * @returns Date range with startDate and endDate in ISO format
@@ -92,7 +92,7 @@ export function getRelativeTimeframeRange(
       const lastWeekStart = new Date(now);
       lastWeekStart.setUTCDate(now.getUTCDate() - 7);
       startDate = getStartOfWeek(lastWeekStart);
-      
+
       const lastWeekEnd = new Date(startDate);
       lastWeekEnd.setUTCDate(startDate.getUTCDate() + 6);
       endDate = getEndOfDay(lastWeekEnd);
@@ -156,7 +156,7 @@ export function getRelativeTimeframeRange(
 
 /**
  * Validates if a string is a valid ISO 8601 date
- * 
+ *
  * @param dateString - The date string to validate
  * @returns True if valid ISO date, false otherwise
  */
@@ -171,7 +171,7 @@ export function isValidISODate(dateString: string): boolean {
 
 /**
  * Validates a date range to ensure start comes before end
- * 
+ *
  * @param startDate - Start date in ISO format
  * @param endDate - End date in ISO format
  * @returns True if valid range, false otherwise
@@ -183,13 +183,13 @@ export function isValidDateRange(startDate: string, endDate: string): boolean {
 
   const start = new Date(startDate);
   const end = new Date(endDate);
-  
+
   return start <= end;
 }
 
 /**
  * Converts user-friendly date parameters to Attio API timeframe query parameters
- * 
+ *
  * @param params - User date parameters
  * @returns Attio API compatible parameters
  */
@@ -208,15 +208,15 @@ export function convertDateParamsToTimeframeQuery(params: {
   end_date?: string;
   date_operator?: 'greater_than' | 'less_than' | 'between' | 'equals';
 } | null {
-  const { 
-    date_from, 
-    date_to, 
-    created_after, 
-    created_before, 
-    updated_after, 
-    updated_before, 
-    timeframe, 
-    date_field = 'created_at' 
+  const {
+    date_from,
+    date_to,
+    created_after,
+    created_before,
+    updated_after,
+    updated_before,
+    timeframe,
+    date_field = 'created_at',
   } = params;
 
   // If relative timeframe is specified, use it (overrides absolute dates)
@@ -270,7 +270,9 @@ export function convertDateParamsToTimeframeQuery(params: {
   if (created_after || created_before) {
     if (created_after && created_before) {
       if (!isValidDateRange(created_after, created_before)) {
-        throw new Error('Invalid created date range: created_after must be before created_before');
+        throw new Error(
+          'Invalid created date range: created_after must be before created_before'
+        );
       }
       return {
         timeframe_attribute: 'created_at',
@@ -303,7 +305,9 @@ export function convertDateParamsToTimeframeQuery(params: {
   if (updated_after || updated_before) {
     if (updated_after && updated_before) {
       if (!isValidDateRange(updated_after, updated_before)) {
-        throw new Error('Invalid updated date range: updated_after must be before updated_before');
+        throw new Error(
+          'Invalid updated date range: updated_after must be before updated_before'
+        );
       }
       return {
         timeframe_attribute: 'updated_at',
@@ -371,10 +375,10 @@ function getEndOfMonth(date: Date): Date {
 
 /**
  * Validates a relative timeframe string against supported options
- * 
+ *
  * @param timeframe - The timeframe string to validate
  * @returns Validation result with error details if invalid
- * 
+ *
  * @example
  * ```typescript
  * const result = validateTimeframe('last_7_days');
@@ -387,49 +391,57 @@ function getEndOfMonth(date: Date): Date {
  */
 export function validateTimeframe(timeframe: string): TimeframeValidation {
   const supportedTimeframes: RelativeTimeframe[] = [
-    'today', 'yesterday', 'this_week', 'last_week', 'this_month', 
-    'last_month', 'last_7_days', 'last_14_days', 'last_30_days', 'last_90_days'
+    'today',
+    'yesterday',
+    'this_week',
+    'last_week',
+    'this_month',
+    'last_month',
+    'last_7_days',
+    'last_14_days',
+    'last_30_days',
+    'last_90_days',
   ];
 
   if (!timeframe || typeof timeframe !== 'string') {
     return {
       isValid: false,
-      error: 'Timeframe must be a non-empty string'
+      error: 'Timeframe must be a non-empty string',
     };
   }
 
   const normalizedString = timeframe.toLowerCase().trim();
-  
+
   // Check for empty string after trimming
   if (normalizedString === '') {
     return {
       isValid: false,
-      error: 'Timeframe must be a non-empty string'
+      error: 'Timeframe must be a non-empty string',
     };
   }
-  
+
   const normalizedTimeframe = normalizedString as RelativeTimeframe;
-  
+
   if (!supportedTimeframes.includes(normalizedTimeframe)) {
     return {
       isValid: false,
-      error: `Unsupported timeframe '${timeframe}'. Supported options: ${supportedTimeframes.join(', ')}`
+      error: `Unsupported timeframe '${timeframe}'. Supported options: ${supportedTimeframes.join(', ')}`,
     };
   }
 
   return {
     isValid: true,
-    normalizedTimeframe
+    normalizedTimeframe,
   };
 }
 
 /**
  * Validates that a date range is logical (start before end)
- * 
+ *
  * @param startDate - Start date in ISO 8601 format
  * @param endDate - End date in ISO 8601 format
  * @returns true if range is valid, false otherwise
- * 
+ *
  * @example
  * ```typescript
  * const isValid = validateDateRange('2024-01-01', '2024-01-31');
@@ -440,11 +452,11 @@ export function validateDateRange(startDate: string, endDate: string): boolean {
   try {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return false;
     }
-    
+
     return start <= end;
   } catch {
     return false;
@@ -453,13 +465,13 @@ export function validateDateRange(startDate: string, endDate: string): boolean {
 
 /**
  * Enhanced timeframe parameter conversion with comprehensive validation
- * 
+ *
  * This function provides better error handling and type safety compared to
  * the basic convertTimeframeParams function.
- * 
+ *
  * @param params - Search parameters potentially containing date/timeframe fields
  * @returns Validated timeframe query parameters or detailed error
- * 
+ *
  * @throws {Error} With descriptive error messages for invalid parameters
  */
 export function convertTimeframeParamsWithValidation(
@@ -495,7 +507,9 @@ export function convertTimeframeParamsWithValidation(
 
   if (dateFrom && dateTo) {
     if (!validateDateRange(dateFrom, dateTo)) {
-      throw new Error('Date parameter validation failed: start date must be before end date and both must be valid ISO 8601 dates');
+      throw new Error(
+        'Date parameter validation failed: start date must be before end date and both must be valid ISO 8601 dates'
+      );
     }
     return {
       timeframe_attribute: dateField,
@@ -508,7 +522,9 @@ export function convertTimeframeParamsWithValidation(
   // Handle single date bounds with validation
   if (dateFrom) {
     if (!isValidISODate(dateFrom)) {
-      throw new Error('Date parameter validation failed: date_from must be a valid ISO 8601 date');
+      throw new Error(
+        'Date parameter validation failed: date_from must be a valid ISO 8601 date'
+      );
     }
     return {
       timeframe_attribute: dateField,
@@ -519,7 +535,9 @@ export function convertTimeframeParamsWithValidation(
 
   if (dateTo) {
     if (!isValidISODate(dateTo)) {
-      throw new Error('Date parameter validation failed: date_to must be a valid ISO 8601 date');
+      throw new Error(
+        'Date parameter validation failed: date_to must be a valid ISO 8601 date'
+      );
     }
     return {
       timeframe_attribute: dateField,

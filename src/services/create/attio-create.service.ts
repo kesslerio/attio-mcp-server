@@ -23,7 +23,7 @@ import type {
   ResourceCreator,
   ResourceCreatorContext,
 } from './creators/types.js';
-import { buildAttioClient } from '../../api/attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import { debug, error as logError } from '../../utils/logger.js';
 import {
   CompanyCreator,
@@ -86,7 +86,7 @@ export class AttioCreateService implements CreateService {
 
     // Create shared context for all creators
     this.context = {
-      client: buildAttioClient(), // Guarantees proper Authorization header
+      client: getLazyAttioClient(), // Lazily gets the client with proper Authorization
       debug,
       logError,
     };

@@ -5,7 +5,7 @@
  * Enhanced for Issue #471: Batch Search Operations Support
  */
 
-import { getAttioClient } from '../attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioRecord,
   ResourceType,
@@ -75,7 +75,7 @@ export async function batchCreateRecords<T extends AttioRecord>(
     throw new Error(payloadValidation.error);
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
 
@@ -119,7 +119,7 @@ export async function batchUpdateRecords<T extends AttioRecord>(
     throw new Error(payloadValidation.error);
   }
 
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
 

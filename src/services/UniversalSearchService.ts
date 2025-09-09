@@ -47,7 +47,7 @@ import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
 import { assertNoMockInE2E } from './_guards.js';
 
 // Import Attio client for deal queries
-import { getAttioClient } from '../api/attio-client.js';
+import { getLazyAttioClient } from '../api/lazy-client.js';
 
 // Import factory for guard checks
 import { shouldUseMockData } from './create/index.js';
@@ -535,7 +535,7 @@ export class UniversalSearchService {
     query?: string;
   }): Promise<AttioRecord[]> {
     const { limit = 10, offset = 0, query } = params;
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
     try {
       // First try exact match if query provided
       if (query && query.trim()) {
@@ -705,7 +705,7 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
 
     const relationshipQuery: RelationshipQuery = {
       sourceObjectType: sourceResourceType,
@@ -767,7 +767,7 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
     const queryApiFilter = createTimeframeQuery(timeframeConfig);
 
     try {
@@ -819,7 +819,7 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getAttioClient();
+    const client = getLazyAttioClient();
 
     let fields = searchFields;
     if (fields.length === 0) {

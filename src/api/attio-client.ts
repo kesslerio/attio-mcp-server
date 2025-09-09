@@ -238,6 +238,7 @@ export function initializeAttioClient(apiKey: string): AxiosInstance {
 /**
  * Gets the global API client instance
  *
+ * @deprecated Use getLazyAttioClient from lazy-client.js instead for lazy initialization
  * @returns The Axios instance for the Attio API
  * @throws If the API client hasn't been initialized and no API key is available
  */

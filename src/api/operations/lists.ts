@@ -3,7 +3,7 @@
  * Handles list management and list entry operations
  */
 
-import { getAttioClient } from '../attio-client.js';
+import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioList,
   AttioListEntry,
@@ -37,7 +37,7 @@ export async function getAllLists(
   limit: number = 20,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioList[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   let path = `/lists?limit=${limit}`;
 
   if (objectSlug) {
@@ -71,7 +71,7 @@ export async function getListDetails(
   listId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioList> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/lists/${listId}`;
 
   return callWithRetry(async () => {
@@ -97,7 +97,7 @@ export async function getListEntries(
   filters?: ListEntryFilters,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry[]> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
 
   // Input validation - make sure we have a valid listId
   if (!listId) {
@@ -221,7 +221,7 @@ export async function addRecordToList(
   initialValues?: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/lists/${listId}/entries`;
 
   // Input validation to ensure required parameters
@@ -335,7 +335,7 @@ export async function updateListEntry(
   attributes: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/lists/${listId}/entries/${entryId}`;
 
   // Input validation
@@ -431,7 +431,7 @@ export async function removeRecordFromList(
   entryId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
+  const api = getLazyAttioClient();
   const path = `/lists/${listId}/entries/${entryId}`;
 
   return callWithRetry(async () => {

@@ -4,7 +4,12 @@
  */
 
 import { AttioRecord } from '../../types/attio.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import {
+  SearchType,
+  MatchType,
+  SortType,
+  UniversalResourceType,
+} from '../../handlers/tool-configs/universal/types.js';
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { performance } from 'perf_hooks';
@@ -65,7 +70,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
 
   /**
    * Search tasks with performance optimization, caching, and content search support
-   * 
+   *
    * PERFORMANCE-OPTIMIZED TASKS PAGINATION
    *
    * The Attio Tasks API does not support native pagination parameters.
@@ -115,7 +120,8 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
       }
     };
 
-    const { data: tasks, fromCache } = await CachingService.getOrLoadTasks(loadTasksData);
+    const { data: tasks, fromCache } =
+      await CachingService.getOrLoadTasks(loadTasksData);
 
     // Performance warning for large datasets
     if (!fromCache && tasks.length > 500) {

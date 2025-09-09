@@ -68,14 +68,14 @@ export const searchRecordsSchema = {
       type: 'string' as const,
       enum: [
         'today',
-        'yesterday', 
+        'yesterday',
         'this_week',
         'last_week',
         'this_month',
         'last_month',
         'last_7_days',
         'last_30_days',
-        'last_90_days'
+        'last_90_days',
       ] as const,
       description: 'Relative timeframe filter',
     },

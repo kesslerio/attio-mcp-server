@@ -20,7 +20,10 @@ export class TaskUpdateStrategy implements UpdateStrategy {
     } catch {
       throw {
         status: 404,
-        body: { code: 'not_found', message: `Task record with ID "${recordId}" not found.` },
+        body: {
+          code: 'not_found',
+          message: `Task record with ID "${recordId}" not found.`,
+        },
       };
     }
 
@@ -92,7 +95,9 @@ export class TaskUpdateStrategy implements UpdateStrategy {
           (link: unknown) => {
             if (!link || typeof link !== 'object') return link as unknown;
             const lo = link as Record<string, unknown>;
-            return (lo.record_id as string) || (lo.id as string) || (lo as unknown);
+            return (
+              (lo.record_id as string) || (lo.id as string) || (lo as unknown)
+            );
           }
         );
       } else {
@@ -104,13 +109,20 @@ export class TaskUpdateStrategy implements UpdateStrategy {
 
     // Debug hook
     try {
-      const mod = (await import('../../../utils/task-debug.js')) as Record<string, unknown>;
+      const mod = (await import('../../../utils/task-debug.js')) as Record<
+        string,
+        unknown
+      >;
       const fn = mod['logTaskDebug'] as unknown;
-      if (typeof fn === 'function') (fn as Function)('UPDATE_REQUEST', { recordId, taskUpdateData });
+      if (typeof fn === 'function')
+        (fn as Function)('UPDATE_REQUEST', { recordId, taskUpdateData });
     } catch {}
 
     // Execute update
-    const result = await this.updateTaskWithMockSupport(recordId, taskUpdateData);
+    const result = await this.updateTaskWithMockSupport(
+      recordId,
+      taskUpdateData
+    );
     return result as AttioRecord;
   }
 
@@ -118,11 +130,21 @@ export class TaskUpdateStrategy implements UpdateStrategy {
     taskId: string,
     updateData: Record<string, unknown>
   ): Promise<AttioRecord> {
-    if (shouldUseMockData() || process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    if (
+      shouldUseMockData() ||
+      process.env.VITEST === 'true' ||
+      process.env.NODE_ENV === 'test'
+    ) {
       const { MockService } = await import('../../MockService.js');
-      return (await MockService.updateTask(taskId, updateData)) as unknown as AttioRecord;
+      return (await MockService.updateTask(
+        taskId,
+        updateData
+      )) as unknown as AttioRecord;
     }
     const service = getCreateService();
-    return (await service.updateTask(taskId, updateData)) as unknown as AttioRecord;
+    return (await service.updateTask(
+      taskId,
+      updateData
+    )) as unknown as AttioRecord;
   }
 }

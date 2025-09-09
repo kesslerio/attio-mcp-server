@@ -8,6 +8,8 @@ import {
   CallToolRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 import { warn } from '../../utils/logger.js';
+import { ServerContext } from '../../server/createServer.js';
+import { setGlobalContext } from '../../api/lazy-client.js';
 
 // Import from modular components
 import { TOOL_DEFINITIONS } from './registry.js';
@@ -123,8 +125,17 @@ function normalizeToolRequest(
  * Registers tool-related request handlers with the server
  *
  * @param server - The MCP server instance
+ * @param context - Server context with configuration
  */
-export function registerToolHandlers(server: Server): void {
+export function registerToolHandlers(
+  server: Server,
+  context?: ServerContext
+): void {
+  // Set the global context for lazy initialization if provided
+  if (context) {
+    setGlobalContext(context);
+  }
+
   // Handler for listing available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     // Dynamically collect all available tool definitions

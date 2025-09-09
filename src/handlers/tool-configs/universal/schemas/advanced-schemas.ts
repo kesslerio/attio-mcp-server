@@ -23,10 +23,7 @@ export const getDetailedInfoSchema = {
       description: 'Unique identifier of the record',
     },
   },
-  required: [
-    'resource_type' as const,
-    'record_id' as const,
-  ],
+  required: ['resource_type' as const, 'record_id' as const],
   additionalProperties: false,
 };
 

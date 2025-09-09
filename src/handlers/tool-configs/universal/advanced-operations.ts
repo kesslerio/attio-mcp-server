@@ -15,4 +15,3 @@ export {
   searchByTimeframeConfig,
   batchOperationsConfig,
 } from './operations/index.js';
-
