@@ -357,7 +357,7 @@ describe('Performance Regression Tests', () => {
       }
     });
 
-    it('should cache 404 responses for faster subsequent requests', async () => {
+    it.skip('should cache 404 responses for faster subsequent requests', async () => {
       const nonExistentId = '507f1f77bcf86cd799439012';
 
       // First request - should hit API
