@@ -22,7 +22,7 @@ startCommand:
   commandFunction: |-
     (config) => ({
       command: 'node',
-      args: ['dist/http.js'],
+      args: ['dist/smithery.js'],
       env: {
         ATTIO_API_KEY: config.ATTIO_API_KEY,
         ATTIO_WORKSPACE_ID: config.ATTIO_WORKSPACE_ID || '',

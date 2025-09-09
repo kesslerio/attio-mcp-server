@@ -1,0 +1,28 @@
+# Build output
+dist/
+test-dist/
+.smithery/
+
+# Node modules
+node_modules/
+
+# Coverage reports
+coverage/
+coverage-e2e/
+
+# Test results
+test-results/
+test/e2e/outputs/
+
+# Log files
+logs/
+logs.backup/
+
+# Temporary directories
+/temp/
+/tmp/
+/scripts/fix/
+
+# Other
+.wireit/
+tsconfig.tsbuildinfo

@@ -23,6 +23,7 @@ CLAUDE.md
 # Build output
 dist/
 test-dist/
+.smithery/
 
 # Log files
 *.log
