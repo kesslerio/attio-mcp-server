@@ -32,47 +32,15 @@ function loadEnvFile() {
 }
 
 loadEnvFile();
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { initializeAttioClient } from './api/attio-client.js';
-import { registerResourceHandlers } from './handlers/resources.js';
-import { registerToolHandlers } from './handlers/tools/index.js';
-import { registerPromptHandlers } from './prompts/handlers.js';
+import { createServer } from './server/createServer.js';
 import { error as logError, OperationType } from './utils/logger.js';
 
 // Main function - simplified MCP server following FastMCP patterns
 async function main() {
   try {
-    // Validate required environment variables
-    if (!process.env.ATTIO_API_KEY) {
-      throw new Error('ATTIO_API_KEY environment variable not found');
-    }
-
-    // Initialize API client
-    initializeAttioClient(process.env.ATTIO_API_KEY);
-
-    // Create MCP server with proper capabilities declaration
-    const mcpServer = new Server(
-      {
-        name: 'attio-mcp-server',
-        version: '0.2.0',
-      },
-      {
-        capabilities: {
-          resources: {},
-          tools: {},
-          prompts: {
-            list: {},
-            get: {},
-          },
-        },
-      }
-    );
-
-    // Register all handlers
-    registerResourceHandlers(mcpServer);
-    registerToolHandlers(mcpServer);
-    registerPromptHandlers(mcpServer);
+    // Create the configured MCP server
+    const mcpServer = createServer();
 
     // Handle EPIPE errors gracefully (broken pipe during shutdown)
     process.stdout.on('error', (error: NodeJS.ErrnoException) => {

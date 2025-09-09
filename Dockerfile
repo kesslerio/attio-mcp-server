@@ -15,11 +15,12 @@ RUN npm run build
 # Health check setup
 RUN apk --no-cache add curl
 
-# Expose port
+# Expose port (Smithery sets PORT=8081)
 EXPOSE 3000
 
 # Set environment variables
 ENV NODE_ENV=production
 
-# Command to run the server
-CMD ["node", "dist/index.js"]
+# Command to run the HTTP server (for Smithery compatibility)
+# Use dist/index.js for STDIO if needed
+CMD ["node", "dist/http.js"]
