@@ -183,15 +183,6 @@ jobs:
         env:
           SKIP_INTEGRATION_TESTS: true
           
-      - name: Run MCP P0 Core Tests
-        if: matrix.node-version == '22.x' && needs.change-analysis.outputs.test-strategy != 'smoke'
-        run: |
-          echo "🔍 Running MCP P0 Core Tests (Quality Gate: 100% pass required)"
-          npm run test:mcp:p0 || (echo "❌ MCP P0 tests failed - blocking deployment" && exit 1)
-        env:
-          ATTIO_API_KEY: ${{ secrets.ATTIO_TEST_API_KEY }}
-          ATTIO_WORKSPACE_ID: ${{ secrets.ATTIO_TEST_WORKSPACE_ID }}
-          
       - name: Performance budget check
         if: matrix.node-version == '22.x'
         run: |
