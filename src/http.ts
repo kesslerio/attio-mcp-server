@@ -1,4 +1,3 @@
-// src/http.ts
 #!/usr/bin/env node
 
 import express from 'express';
@@ -20,9 +19,12 @@ import * as path from 'node:path';
       const t = line.trim();
       if (!t || t.startsWith('#')) continue;
       const [k, ...v] = t.split('=');
-      if (k && v.length && !process.env[k]) process.env[k] = v.join('=').replace(/^["']|["']$/g, '');
+      if (k && v.length && !process.env[k])
+        process.env[k] = v.join('=').replace(/^["']|["']$/g, '');
     }
-  } catch { /* silent */ }
+  } catch {
+    /* silent */
+  }
 })();
 
 const app = express();
@@ -67,7 +69,9 @@ setInterval(() => {
     // @ts-expect-error - _lastActive is internal; we update it below
     const last = sess.transport._lastActive as number | undefined;
     if (last && now - last > SESSION_TTL_MS) {
-      try { sess.close(); } catch {}
+      try {
+        sess.close();
+      } catch {}
       delete sessions[id];
     }
   }
@@ -76,8 +80,9 @@ setInterval(() => {
 // --- MCP endpoint (POST is sufficient) ---
 app.post('/mcp', async (req, res) => {
   try {
-    const sessionId = (req.headers['mcp-session-id'] as string | undefined) ||
-                      (req.headers['Mcp-Session-Id'] as string | undefined);
+    const sessionId =
+      (req.headers['mcp-session-id'] as string | undefined) ||
+      (req.headers['Mcp-Session-Id'] as string | undefined);
 
     let transport: StreamableHTTPServerTransport;
 
@@ -107,7 +112,10 @@ app.post('/mcp', async (req, res) => {
       // Not an initialize, and no valid session to route to
       res.status(400).json({
         jsonrpc: '2.0',
-        error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
+        error: {
+          code: -32000,
+          message: 'Bad Request: No valid session ID provided',
+        },
         id: null,
       });
       return;
@@ -116,7 +124,14 @@ app.post('/mcp', async (req, res) => {
     // Handle the JSON-RPC request
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
-    logError('http', 'Error handling MCP request', error, undefined, 'mcp-request-error', OperationType.API_CALL);
+    logError(
+      'http',
+      'Error handling MCP request',
+      error,
+      undefined,
+      'mcp-request-error',
+      OperationType.API_CALL
+    );
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: '2.0',
@@ -137,6 +152,13 @@ app
     console.error(`MCP endpoint: http://localhost:${PORT}/mcp`);
   })
   .on('error', (error) => {
-    logError('http', 'Failed to start HTTP server', error, { port: PORT }, 'server-startup', OperationType.SYSTEM);
+    logError(
+      'http',
+      'Failed to start HTTP server',
+      error,
+      { port: PORT },
+      'server-startup',
+      OperationType.SYSTEM
+    );
     process.exit(1);
   });
