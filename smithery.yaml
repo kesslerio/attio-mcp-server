@@ -9,6 +9,10 @@ startCommand:
 # Keep UI config simple at publish time; your TS entrypoint already exports configSchema
 # Empty strings prevent the scanner from thinking it has a valid key
 exampleConfig:
-  ATTIO_API_KEY: ""
-  ATTIO_WORKSPACE_ID: ""
+  ATTIO_API_KEY: ''
+  ATTIO_WORKSPACE_ID: ''
   debug: false
+  # Optional: set CORS allowlist (comma-separated)
+  # Example for local dev + Smithery UIs:
+  # "https://smithery.ai,https://app.smithery.ai,http://localhost:3000"
+  ALLOWED_ORIGINS: ''
