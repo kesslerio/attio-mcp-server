@@ -5,7 +5,7 @@
  * Smithery manages the HTTP transport and calls this function to get the MCP server instance.
  */
 
-import { createServer } from './server/createServer.js';
+import { createServer as buildServer } from './server/createServer.js';
 import { z } from 'zod';
 
 /**
@@ -27,10 +27,10 @@ export const configSchema = z.object({
  * @param config - User-provided configuration (validated against configSchema)
  * @returns The MCP server instance
  */
-export default function createSmitheryServer({
+export default function createServer({
   config,
 }: {
-  config?: z.infer<typeof configSchema>;
+  config: z.infer<typeof configSchema>;
 }) {
   // Enable debug logging if requested
   if (config?.debug) {
@@ -39,7 +39,7 @@ export default function createSmitheryServer({
 
   // Create the MCP server with a context that provides access to config
   // The API key is only checked when tools are actually invoked
-  const server = createServer({
+  const server = buildServer({
     getApiKey: () => config?.ATTIO_API_KEY || process.env.ATTIO_API_KEY,
     getWorkspaceId: () =>
       config?.ATTIO_WORKSPACE_ID || process.env.ATTIO_WORKSPACE_ID,

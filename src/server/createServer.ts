@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { registerResourceHandlers } from '../handlers/resources.js';
 import { registerToolHandlers } from '../handlers/tools/index.js';
 import { registerPromptHandlers } from '../prompts/handlers.js';
+import { setGlobalContext } from '../api/lazy-client.js';
 
 /**
  * Context interface for passing configuration to the server
@@ -48,6 +49,9 @@ export function createServer(context?: ServerContext) {
     getApiKey: () => process.env.ATTIO_API_KEY,
     getWorkspaceId: () => process.env.ATTIO_WORKSPACE_ID,
   };
+
+  // Set the global context so lazy client can access it
+  setGlobalContext(ctx);
 
   // Create MCP server with proper capabilities declaration
   // Note: No API key validation here - it's checked when tools are invoked
