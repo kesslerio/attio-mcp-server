@@ -1,18 +1,12 @@
 FROM node:20-alpine
-
 WORKDIR /app
 
-# Copy package files
+# Install all deps (we need dev deps for tsc and smithery's TS build)
 COPY package*.json ./
+RUN npm ci
 
-# Install all dependencies (Smithery's build may need dev deps)
-RUN npm install
-
-# Copy all source files
+# Copy sources and build
 COPY . .
-
-# Build TypeScript
 RUN npm run build
 
-# Smithery.yaml controls the start command, not Docker CMD
-# This CMD is irrelevant for Smithery-managed HTTP runtime
+# No CMD: smithery.yaml controls how the server starts
