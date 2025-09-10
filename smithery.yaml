@@ -12,3 +12,23 @@ exampleConfig:
   ATTIO_API_KEY: ""
   ATTIO_WORKSPACE_ID: ""
   debug: false
+
+tests:
+  - name: tools-list
+    rpc:
+      method: tools/list
+      params: {}
+  - name: prompts-list
+    rpc:
+      method: prompts/list
+      params: {}
+  - name: resources-list
+    rpc:
+      method: resources/list
+      params: {}
+  - name: health-check
+    rpc:
+      method: tools/call
+      params:
+        name: health-check
+        arguments: {}
