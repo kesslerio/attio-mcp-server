@@ -2,25 +2,29 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files first for better caching
 COPY package*.json ./
-RUN npm install
 
-# Copy source code
-COPY . .
+# Install only production dependencies to reduce build time
+RUN npm ci --only=production || npm install --production
 
-# Build TypeScript
-RUN npm run build
+# Copy source and build files
+COPY tsconfig.json ./
+COPY src ./src
+COPY configs ./configs
 
-# Health check setup
-RUN apk --no-cache add curl
+# Install dev dependencies temporarily for build, then remove
+RUN npm install --save-dev typescript @types/node && \
+    npm run build && \
+    npm prune --production
 
-# Expose port (Smithery sets PORT=8081)
-EXPOSE 3000
+# Expose port (Smithery typically uses 8081)
+EXPOSE 8081
 
 # Set environment variables
 ENV NODE_ENV=production
+ENV PORT=8081
 
-# Command to run the HTTP server (for Smithery compatibility)
-# Use dist/index.js for STDIO if needed
-CMD ["node", "dist/http.js"]
+# Command to run the Smithery entry point
+# Smithery will handle the HTTP transport layer
+CMD ["node", "dist/smithery.js"]
