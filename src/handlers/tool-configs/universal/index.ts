@@ -23,6 +23,41 @@ import {
   batchSearchToolDefinition,
 } from './batch-search.js';
 
+/**
+ * Simple no-auth health-check tool to support unauthenticated capability scanning
+ * This tool intentionally performs no Attio API calls and always succeeds.
+ */
+export const healthCheckToolDefinition = {
+  name: 'health-check',
+  description: 'Returns server status without requiring any credentials.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      echo: { type: 'string', description: 'Optional string to echo back' },
+    },
+    additionalProperties: false,
+  },
+};
+
+export const healthCheckConfig = {
+  name: 'health-check',
+  handler: async (params: { echo?: string }) => {
+    return {
+      ok: true,
+      echo: typeof params?.echo === 'string' ? params.echo : undefined,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'production',
+      needs_api_key: true,
+    } as const;
+  },
+  formatResult: (res: any): string => {
+    const parts: string[] = ['✅ Server healthy'];
+    if (res?.echo) parts.push(`echo: ${String(res.echo)}`);
+    if (res?.environment) parts.push(`env: ${String(res.environment)}`);
+    return parts.join(' | ');
+  },
+};
+
 // Re-export individual tool config objects for testing
 export {
   coreOperationsToolConfigs,
@@ -41,6 +76,8 @@ export * from './shared-handlers.js';
  * These replace 40+ resource-specific tools with 14 universal operations
  */
 export const universalToolConfigs = {
+  // Ensure health-check is listed first for scanners making a best-guess call
+  'health-check': healthCheckConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   'batch-search': batchSearchConfig,
@@ -50,6 +87,8 @@ export const universalToolConfigs = {
  * All universal tool definitions for MCP protocol
  */
 export const universalToolDefinitions = {
+  // Ensure health-check is listed first for scanners making a best-guess call
+  'health-check': healthCheckToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   'batch-search': batchSearchToolDefinition,
