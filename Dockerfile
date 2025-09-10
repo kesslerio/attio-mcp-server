@@ -2,29 +2,17 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy package files
 COPY package*.json ./
 
-# Install only production dependencies to reduce build time
-RUN npm ci --only=production || npm install --production
+# Install all dependencies (Smithery's build may need dev deps)
+RUN npm install
 
-# Copy source and build files
-COPY tsconfig.json ./
-COPY src ./src
-COPY configs ./configs
+# Copy all source files
+COPY . .
 
-# Install dev dependencies temporarily for build, then remove
-RUN npm install --save-dev typescript @types/node && \
-    npm run build && \
-    npm prune --production
+# Build TypeScript
+RUN npm run build
 
-# Expose port (Smithery typically uses 8081)
-EXPOSE 8081
-
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=8081
-
-# Command to run the Smithery entry point
-# Smithery will handle the HTTP transport layer
-CMD ["node", "dist/smithery.js"]
+# Smithery.yaml controls the start command, not Docker CMD
+# This CMD is irrelevant for Smithery-managed HTTP runtime
