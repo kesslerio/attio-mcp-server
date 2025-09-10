@@ -7,8 +7,8 @@ startCommand:
   runtime: typescript
 
 # Keep UI config simple at publish time; your TS entrypoint already exports configSchema
-# Optionally: help users with a sample (doesn't mark fields as "required")
+# Empty strings prevent the scanner from thinking it has a valid key
 exampleConfig:
-  ATTIO_API_KEY: "<paste-your-attio-api-key>"
-  ATTIO_WORKSPACE_ID: "<optional>"
+  ATTIO_API_KEY: ""
+  ATTIO_WORKSPACE_ID: ""
   debug: false

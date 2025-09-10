@@ -87,13 +87,12 @@ export function registerResourceHandlers(
                 formatRecordAsResource(person, ResourceType.PEOPLE)
               ),
             };
-          } catch (error: unknown) {
-            return createErrorResult(
-              error instanceof Error ? error : new Error('Unknown error'),
-              `/objects/people/records/query`,
-              'POST',
-              (error as ApiError).response?.data || {}
-            );
+          } catch {
+            // For resource requests, always return resources array even on error
+            // This allows capability scanning to work without API key
+            return {
+              resources: [],
+            };
           }
 
         case ResourceType.LISTS:
@@ -120,13 +119,12 @@ export function registerResourceHandlers(
                 formatRecordAsResource(company, ResourceType.COMPANIES)
               ),
             };
-          } catch (error: unknown) {
-            return createErrorResult(
-              error instanceof Error ? error : new Error('Unknown error'),
-              `/objects/companies/records/query`,
-              'POST',
-              (error as ApiError).response?.data || {}
-            );
+          } catch {
+            // For resource requests, always return resources array even on error
+            // This allows capability scanning to work without API key
+            return {
+              resources: [],
+            };
           }
       }
     } catch (error: unknown) {
