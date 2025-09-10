@@ -1,2 +1,2 @@
 # Full validation pipeline for fast local checks
-npm run check:format && npm run lint:check && npm run build && npm run test:offline
+npm run check:format && npm run lint:check && npm run build && npm run test:offline:run

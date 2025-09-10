@@ -26,6 +26,7 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:offline": "SKIP_INTEGRATION_TESTS=true vitest --config configs/vitest/vitest.config.offline.ts",
+    "test:offline:run": "SKIP_INTEGRATION_TESTS=true vitest --config configs/vitest/vitest.config.offline.ts --run",
     "test:coverage": "vitest --coverage --run",
     "test:coverage:offline": "SKIP_INTEGRATION_TESTS=true vitest --config configs/vitest/vitest.config.offline.ts --coverage --run",
     "test:coverage:watch": "vitest --coverage --watch",
