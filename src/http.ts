@@ -51,10 +51,13 @@ app.use(
     origin: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',')
       : ['https://smithery.ai', 'http://localhost:3000'],
-    allowedHeaders: ['Content-Type', 'mcp-session-id'],
+    allowedHeaders: ['Content-Type', 'Mcp-Session-Id', 'mcp-session-id'],
     exposedHeaders: ['Mcp-Session-Id'],
   })
 );
+
+// Ensure clean preflight handling for Streamable HTTP endpoint
+app.options('/mcp', cors());
 
 // Health check endpoint for load balancers
 app.get('/health', (_req, res) => {
@@ -106,9 +109,10 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app
   .listen(PORT, () => {
-    console.log(`Attio MCP HTTP Server listening on port ${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/health`);
-    console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
+    // Use stderr to avoid contaminating any stdout protocol streams in mixed environments
+    console.error(`Attio MCP HTTP Server listening on port ${PORT}`);
+    console.error(`Health check: http://localhost:${PORT}/health`);
+    console.error(`MCP endpoint: http://localhost:${PORT}/mcp`);
   })
   .on('error', (error) => {
     logError(
