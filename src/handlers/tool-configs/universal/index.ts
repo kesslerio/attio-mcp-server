@@ -28,32 +28,43 @@ import {
  * This tool intentionally performs no Attio API calls and always succeeds.
  */
 export const healthCheckToolDefinition = {
-  name: 'health-check',
+  name: 'aaa-health-check',
   description: 'Returns server status without requiring any credentials.',
   inputSchema: {
     type: 'object',
-    properties: {
-      echo: { type: 'string', description: 'Optional string to echo back' },
-    },
-    additionalProperties: false,
+    properties: {},
+    additionalProperties: true,
   },
 };
 
 export const healthCheckConfig = {
-  name: 'health-check',
-  handler: async (params: { echo?: string }) => {
-    return {
+  name: 'aaa-health-check',
+  handler: async (params: { [key: string]: unknown }) => {
+    const payload = {
       ok: true,
-      echo: typeof params?.echo === 'string' ? params.echo : undefined,
+      name: 'attio-mcp',
+      echo: typeof params?.echo === 'string' ? (params.echo as string) : undefined,
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'production',
       needs_api_key: true,
     } as const;
+
+    // Return MCP-shaped response so dispatching skips extra formatting
+    return {
+      content: [
+        {
+          type: 'json',
+          data: payload,
+        },
+      ],
+      isError: false,
+    };
   },
   formatResult: (res: any): string => {
+    const data = res?.content?.[0]?.data ?? res;
     const parts: string[] = ['✅ Server healthy'];
-    if (res?.echo) parts.push(`echo: ${String(res.echo)}`);
-    if (res?.environment) parts.push(`env: ${String(res.environment)}`);
+    if (data?.echo) parts.push(`echo: ${String(data.echo)}`);
+    if (data?.environment) parts.push(`env: ${String(data.environment)}`);
     return parts.join(' | ');
   },
 };
@@ -76,8 +87,8 @@ export * from './shared-handlers.js';
  * These replace 40+ resource-specific tools with 14 universal operations
  */
 export const universalToolConfigs = {
-  // Ensure health-check is listed first for scanners making a best-guess call
-  'health-check': healthCheckConfig,
+  // Ensure health-check is listed first alphabetically for best-guess scanners
+  'aaa-health-check': healthCheckConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   'batch-search': batchSearchConfig,
@@ -87,8 +98,8 @@ export const universalToolConfigs = {
  * All universal tool definitions for MCP protocol
  */
 export const universalToolDefinitions = {
-  // Ensure health-check is listed first for scanners making a best-guess call
-  'health-check': healthCheckToolDefinition,
+  // Ensure health-check is listed first alphabetically for best-guess scanners
+  'aaa-health-check': healthCheckToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   'batch-search': batchSearchToolDefinition,
