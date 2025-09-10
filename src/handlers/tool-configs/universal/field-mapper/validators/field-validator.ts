@@ -9,6 +9,41 @@ import { strictModeFor } from '../config.js';
 import { findSimilarStrings } from './similarity-utils.js';
 
 /**
+ * Gets helpful error message with examples for required fields
+ * Provides concrete examples based on resource type
+ */
+function getRequiredFieldErrorMessage(
+  resourceType: UniversalResourceType,
+  fieldName: string
+): string {
+  const baseMessage = `Required field "${fieldName}" is missing`;
+  
+  // Add resource-specific examples for common required fields
+  if (resourceType === UniversalResourceType.DEALS && fieldName === 'stage') {
+    return `${baseMessage}. Example: stage: "Interested" (common values: "Interested", "Qualified", "Proposal", "Negotiation", "Closed Won", "Closed Lost")`;
+  }
+  
+  if (resourceType === UniversalResourceType.DEALS && fieldName === 'name') {
+    return `${baseMessage}. Example: name: "Acme Corp Opportunity"`;
+  }
+  
+  if (resourceType === UniversalResourceType.COMPANIES && fieldName === 'name') {
+    return `${baseMessage}. Example: name: "Acme Corporation"`;
+  }
+  
+  if (resourceType === UniversalResourceType.PEOPLE && fieldName === 'email_addresses') {
+    return `${baseMessage}. Example: email_addresses: ["john@company.com"]`;
+  }
+  
+  if (resourceType === UniversalResourceType.TASKS && fieldName === 'content') {
+    return `${baseMessage}. Example: content: "Follow up with prospect about proposal"`;
+  }
+  
+  // Generic fallback
+  return baseMessage;
+}
+
+/**
  * Gets field suggestions when a field name is not recognized
  * Provides context-aware error messages and suggestions
  */
@@ -82,7 +117,8 @@ export function validateFields(
         );
 
         if (!hasMappedVersion) {
-          errors.push(`Required field "${required}" is missing`);
+          const errorMessage = getRequiredFieldErrorMessage(resourceType, required);
+          errors.push(errorMessage);
         }
       }
     }

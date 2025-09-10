@@ -3,6 +3,13 @@
  * Generates consistent test data for MCP QA test suite
  */
 
+import type { 
+  CompanyCreateData, 
+  PersonCreateData, 
+  TaskCreateData, 
+  NoteCreateData 
+} from './types.js';
+
 export class TestDataFactory {
   private static testRunId = Date.now();
 
@@ -17,7 +24,7 @@ export class TestDataFactory {
   /**
    * Generate test company data
    */
-  static createCompanyData(testCase: string): Record<string, unknown> {
+  static createCompanyData(testCase: string): CompanyCreateData {
     const uniqueId = this.generateTestId(testCase, 'company');
     return {
       name: `${testCase} Test Company ${uniqueId}`,
@@ -30,7 +37,7 @@ export class TestDataFactory {
   /**
    * Generate test person data
    */
-  static createPersonData(testCase: string): Record<string, unknown> {
+  static createPersonData(testCase: string): PersonCreateData {
     const uniqueId = this.generateTestId(testCase, 'person');
     return {
       name: `${testCase} Test Person ${uniqueId}`,
@@ -43,7 +50,7 @@ export class TestDataFactory {
   /**
    * Generate test task data
    */
-  static createTaskData(testCase: string): Record<string, unknown> {
+  static createTaskData(testCase: string): TaskCreateData {
     const uniqueId = this.generateTestId(testCase, 'task');
     return {
       title: `${testCase} Test Task ${uniqueId}`,
@@ -56,9 +63,9 @@ export class TestDataFactory {
   /**
    * Generate test note data
    */
-  static createNoteData(testCase: string, parentId?: string): Record<string, unknown> {
+  static createNoteData(testCase: string, parentId?: string): NoteCreateData {
     const uniqueId = this.generateTestId(testCase, 'note');
-    const data: Record<string, unknown> = {
+    const data: NoteCreateData = {
       title: `${testCase} Test Note ${uniqueId}`,
       content: `Note created by MCP test suite for ${testCase}`,
       created_at: new Date().toISOString()
