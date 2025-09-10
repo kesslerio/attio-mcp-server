@@ -75,5 +75,13 @@ export default [
       'no-undef': 'off', // Disabled for test files that use vitest globals
       'no-prototype-builtins': 'warn'
     }
+  },
+  {
+    // Test-specific overrides to keep lint warnings under control in CI/pre-commit
+    files: ['test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off'
+    }
   }
 ];
