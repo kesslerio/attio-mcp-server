@@ -19,19 +19,19 @@ vi.mock('../../../../src/objects/people/index.js', () => ({
 
 describe('Timeframe Search Integration', () => {
   const mockDate = new Date('2023-08-15T12:00:00.000Z');
-  
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(mockDate);
     vi.clearAllMocks();
-    
+
     // Mock the companies search function
     const mockCompanies = vi.fn().mockResolvedValue([]);
     vi.doMock('../../../../src/objects/companies/index.js', () => ({
       advancedSearchCompanies: mockCompanies,
     }));
-    
-    // Mock the people search function  
+
+    // Mock the people search function
     const mockPeople = vi.fn().mockResolvedValue({ results: [] });
     vi.doMock('../../../../src/objects/people/index.js', () => ({
       advancedSearchPeople: mockPeople,
@@ -126,8 +126,10 @@ describe('Timeframe Search Integration', () => {
   describe('API Path Structure Validation', () => {
     it('should build correct API path structure for timeframe queries', async () => {
       // Import the createTimeframeQuery function to test directly
-      const { createTimeframeQuery } = await import('../../../../src/utils/filters/builders/query-api.js');
-      
+      const { createTimeframeQuery } = await import(
+        '../../../../src/utils/filters/builders/query-api.js'
+      );
+
       // Test companies path structure
       const companiesConfig = {
         resourceType: 'companies',
@@ -136,14 +138,16 @@ describe('Timeframe Search Integration', () => {
         endDate: '2023-08-15T23:59:59.999Z',
         operator: 'between' as const,
       };
-      
+
       const companiesFilter = createTimeframeQuery(companiesConfig);
-      expect(companiesFilter.filter.path).toEqual([['companies', 'created_at']]);
+      expect(companiesFilter.filter.path).toEqual([
+        ['companies', 'created_at'],
+      ]);
       expect(companiesFilter.filter.constraints).toEqual({
         $gte: '2023-08-01T00:00:00.000Z',
         $lte: '2023-08-15T23:59:59.999Z',
       });
-      
+
       // Test people path structure
       const peopleConfig = {
         resourceType: 'people',
@@ -152,14 +156,14 @@ describe('Timeframe Search Integration', () => {
         endDate: '2023-08-15T23:59:59.999Z',
         operator: 'between' as const,
       };
-      
+
       const peopleFilter = createTimeframeQuery(peopleConfig);
       expect(peopleFilter.filter.path).toEqual([['people', 'created_at']]);
       expect(peopleFilter.filter.constraints).toEqual({
         $gte: '2023-08-01T00:00:00.000Z',
         $lte: '2023-08-15T23:59:59.999Z',
       });
-      
+
       // Test backwards compatibility (without resourceType)
       const legacyConfig = {
         attribute: 'created_at',
@@ -167,7 +171,7 @@ describe('Timeframe Search Integration', () => {
         endDate: '2023-08-15T23:59:59.999Z',
         operator: 'between' as const,
       };
-      
+
       const legacyFilter = createTimeframeQuery(legacyConfig);
       expect(legacyFilter.filter.path).toEqual([['created_at']]);
       expect(legacyFilter.filter.constraints).toEqual({

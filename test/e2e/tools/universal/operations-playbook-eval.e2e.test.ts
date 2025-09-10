@@ -97,7 +97,6 @@ describe('Operations Playbook Validation Suite', () => {
   });
 
   describe('🧹 Daily Data Maintenance Routines', () => {
-
     it('should find companies without industry classification (Critical Missing Info)', async () => {
       const prompt = 'Find companies without industry classification';
       const expectedOutcome =
@@ -305,8 +304,10 @@ describe('Operations Playbook Validation Suite', () => {
     // These tests cover advanced data management workflows from the operations playbook
     // including data standardization, enrichment opportunities, and task management
     it('should find companies with inconsistent naming for standardization', async () => {
-      const prompt = 'Find companies with similar names that might need standardization (variations like Inc, Incorporated, Corporation)';
-      const expectedOutcome = 'Companies with naming inconsistencies for standardization';
+      const prompt =
+        'Find companies with similar names that might need standardization (variations like Inc, Incorporated, Corporation)';
+      const expectedOutcome =
+        'Companies with naming inconsistencies for standardization';
 
       const result = await executePlaybookTest(
         prompt,
@@ -324,7 +325,8 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find people with LinkedIn URLs but incomplete job titles (Data Enrichment)', async () => {
-      const prompt = 'Find people with LinkedIn URLs but missing or incomplete job titles';
+      const prompt =
+        'Find people with LinkedIn URLs but missing or incomplete job titles';
       const expectedOutcome = 'People records ready for job title enrichment';
 
       const result = await executePlaybookTest(
@@ -350,7 +352,8 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find companies missing employee count or industry data (Enrichment Opportunities)', async () => {
-      const prompt = 'Find companies with domains but missing employee count or industry classification';
+      const prompt =
+        'Find companies with domains but missing employee count or industry classification';
       const expectedOutcome = 'Companies ready for data enrichment research';
 
       const result = await executePlaybookTest(
@@ -380,8 +383,10 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find tasks without due dates or assignees (Task Management)', async () => {
-      const prompt = 'Find active tasks without due dates or assignees that need attention';
-      const expectedOutcome = 'Incomplete tasks requiring assignment and scheduling';
+      const prompt =
+        'Find active tasks without due dates or assignees that need attention';
+      const expectedOutcome =
+        'Incomplete tasks requiring assignment and scheduling';
 
       const result = await executePlaybookTest(
         prompt,

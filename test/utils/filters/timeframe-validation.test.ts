@@ -16,11 +16,18 @@ describe('Enhanced Timeframe Validation', () => {
   describe('validateTimeframe', () => {
     it('should validate supported relative timeframes', () => {
       const validTimeframes: RelativeTimeframe[] = [
-        'today', 'yesterday', 'this_week', 'last_week',
-        'this_month', 'last_month', 'last_7_days', 'last_30_days', 'last_90_days'
+        'today',
+        'yesterday',
+        'this_week',
+        'last_week',
+        'this_month',
+        'last_month',
+        'last_7_days',
+        'last_30_days',
+        'last_90_days',
       ];
 
-      validTimeframes.forEach(timeframe => {
+      validTimeframes.forEach((timeframe) => {
         const result = validateTimeframe(timeframe);
         expect(result.isValid).toBe(true);
         expect(result.normalizedTimeframe).toBe(timeframe);
@@ -40,10 +47,10 @@ describe('Enhanced Timeframe Validation', () => {
         'last_6_days',
         'next_week',
         'tomorrow',
-        '7_days_ago'
+        '7_days_ago',
       ];
 
-      invalidTimeframes.forEach(timeframe => {
+      invalidTimeframes.forEach((timeframe) => {
         const result = validateTimeframe(timeframe);
         expect(result.isValid).toBe(false);
         expect(result.error).toContain('Unsupported timeframe');
@@ -52,9 +59,15 @@ describe('Enhanced Timeframe Validation', () => {
     });
 
     it('should handle empty and invalid inputs', () => {
-      const invalidInputs = ['', '   ', null as any, undefined as any, 123 as any];
+      const invalidInputs = [
+        '',
+        '   ',
+        null as any,
+        undefined as any,
+        123 as any,
+      ];
 
-      invalidInputs.forEach(input => {
+      invalidInputs.forEach((input) => {
         const result = validateTimeframe(input);
         expect(result.isValid).toBe(false);
         expect(result.error).toBe('Timeframe must be a non-empty string');
@@ -114,19 +127,23 @@ describe('Enhanced Timeframe Validation', () => {
     it('should convert valid relative timeframes', () => {
       const params = {
         timeframe: 'last_7_days',
-        date_field: 'created_at'
+        date_field: 'created_at',
       };
 
       const result = convertTimeframeParamsWithValidation(params);
-      
+
       expect(result.timeframe_attribute).toBe('created_at');
       expect(result.date_operator).toBe('between');
       expect(result.start_date).toBeDefined();
       expect(result.end_date).toBeDefined();
-      
+
       // Validate date format
-      expect(result.start_date).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-      expect(result.end_date).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(result.start_date).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+      );
+      expect(result.end_date).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+      );
     });
 
     it('should use default date field when not specified', () => {
@@ -139,11 +156,11 @@ describe('Enhanced Timeframe Validation', () => {
       const params = {
         date_from: '2024-01-01T00:00:00Z',
         date_to: '2024-01-31T23:59:59Z',
-        date_field: 'updated_at'
+        date_field: 'updated_at',
       };
 
       const result = convertTimeframeParamsWithValidation(params);
-      
+
       expect(result.timeframe_attribute).toBe('updated_at');
       expect(result.start_date).toBe('2024-01-01T00:00:00Z');
       expect(result.end_date).toBe('2024-01-31T23:59:59Z');
@@ -153,7 +170,7 @@ describe('Enhanced Timeframe Validation', () => {
     it('should handle single date bounds', () => {
       const paramsAfter = {
         date_from: '2024-06-01T00:00:00Z',
-        date_field: 'created_at'
+        date_field: 'created_at',
       };
 
       const resultAfter = convertTimeframeParamsWithValidation(paramsAfter);
@@ -163,7 +180,7 @@ describe('Enhanced Timeframe Validation', () => {
 
       const paramsBefore = {
         date_to: '2024-06-30T23:59:59Z',
-        date_field: 'updated_at'
+        date_field: 'updated_at',
       };
 
       const resultBefore = convertTimeframeParamsWithValidation(paramsBefore);
@@ -174,50 +191,59 @@ describe('Enhanced Timeframe Validation', () => {
 
     it('should throw descriptive errors for invalid timeframes', () => {
       const params = { timeframe: 'invalid_timeframe' };
-      
-      expect(() => convertTimeframeParamsWithValidation(params))
-        .toThrow('Timeframe validation failed: Unsupported timeframe');
+
+      expect(() => convertTimeframeParamsWithValidation(params)).toThrow(
+        'Timeframe validation failed: Unsupported timeframe'
+      );
     });
 
     it('should throw errors for invalid date ranges', () => {
       const params = {
         date_from: '2024-01-31T00:00:00Z',
-        date_to: '2024-01-01T00:00:00Z'
+        date_to: '2024-01-01T00:00:00Z',
       };
-      
-      expect(() => convertTimeframeParamsWithValidation(params))
-        .toThrow('Date parameter validation failed: start date must be before end date');
+
+      expect(() => convertTimeframeParamsWithValidation(params)).toThrow(
+        'Date parameter validation failed: start date must be before end date'
+      );
     });
 
     it('should throw errors for invalid date formats', () => {
       const paramsInvalidFrom = {
-        date_from: 'not-a-date'
+        date_from: 'not-a-date',
       };
-      
-      expect(() => convertTimeframeParamsWithValidation(paramsInvalidFrom))
-        .toThrow('Date parameter validation failed: date_from must be a valid ISO 8601 date');
+
+      expect(() =>
+        convertTimeframeParamsWithValidation(paramsInvalidFrom)
+      ).toThrow(
+        'Date parameter validation failed: date_from must be a valid ISO 8601 date'
+      );
 
       const paramsInvalidTo = {
-        date_to: '2024-13-32T25:61:61Z'
+        date_to: '2024-13-32T25:61:61Z',
       };
-      
-      expect(() => convertTimeframeParamsWithValidation(paramsInvalidTo))
-        .toThrow('Date parameter validation failed: date_to must be a valid ISO 8601 date');
+
+      expect(() =>
+        convertTimeframeParamsWithValidation(paramsInvalidTo)
+      ).toThrow(
+        'Date parameter validation failed: date_to must be a valid ISO 8601 date'
+      );
     });
 
     it('should throw error when no valid parameters provided', () => {
       const params = {
-        some_other_field: 'value'
+        some_other_field: 'value',
       };
-      
-      expect(() => convertTimeframeParamsWithValidation(params))
-        .toThrow('No valid timeframe or date parameters provided');
+
+      expect(() => convertTimeframeParamsWithValidation(params)).toThrow(
+        'No valid timeframe or date parameters provided'
+      );
     });
 
     it('should handle case normalization in timeframes', () => {
       const params = {
         timeframe: '  LAST_30_DAYS  ',
-        date_field: 'updated_at'
+        date_field: 'updated_at',
       };
 
       const result = convertTimeframeParamsWithValidation(params);
@@ -230,7 +256,7 @@ describe('Enhanced Timeframe Validation', () => {
     it('should maintain readonly properties in DateRange', () => {
       const params = { timeframe: 'today' };
       const result = convertTimeframeParamsWithValidation(params);
-      
+
       // These should be readonly properties
       expect(typeof result.start_date).toBe('string');
       expect(typeof result.end_date).toBe('string');
@@ -240,7 +266,7 @@ describe('Enhanced Timeframe Validation', () => {
       // This test validates TypeScript compilation
       const validation: TimeframeValidation = validateTimeframe('last_7_days');
       expect(validation.isValid).toBe(true);
-      
+
       if (validation.isValid && validation.normalizedTimeframe) {
         const timeframe: RelativeTimeframe = validation.normalizedTimeframe;
         expect(timeframe).toBe('last_7_days');
@@ -259,11 +285,12 @@ describe('Enhanced Timeframe Validation', () => {
     it('should include context in validation errors', () => {
       const params = {
         date_from: '2024-12-31T23:59:59Z',
-        date_to: '2024-01-01T00:00:00Z'
+        date_to: '2024-01-01T00:00:00Z',
       };
-      
-      expect(() => convertTimeframeParamsWithValidation(params))
-        .toThrow(/Date parameter validation failed.*start date must be before end date.*ISO 8601/);
+
+      expect(() => convertTimeframeParamsWithValidation(params)).toThrow(
+        /Date parameter validation failed.*start date must be before end date.*ISO 8601/
+      );
     });
   });
 });

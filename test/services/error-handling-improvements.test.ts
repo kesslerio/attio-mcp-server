@@ -16,13 +16,11 @@ import {
   ResourceNotFoundError,
 } from '../../src/errors/api-errors.js';
 
-// Mock the Attio client
+// Mock the Attio client using global override mechanism
 const mockPost = vi.fn();
-vi.mock('../../src/api/attio-client.js', () => ({
-  getAttioClient: () => ({
-    post: mockPost,
-  }),
-}));
+const mockClient = {
+  post: mockPost,
+};
 
 // Mock performance tracking
 vi.mock('../../src/middleware/performance-enhanced.js', () => ({
@@ -46,10 +44,14 @@ vi.mock('../../src/services/ValidationService.js', () => ({
 describe('Error Handling Improvements - Issue #523', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up test-specific client override
+    (globalThis as any).setTestApiClient?.(mockClient);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    // Clear test-specific client override
+    (globalThis as any).clearTestApiClient?.();
   });
 
   describe('Critical Errors Should Bubble Up', () => {

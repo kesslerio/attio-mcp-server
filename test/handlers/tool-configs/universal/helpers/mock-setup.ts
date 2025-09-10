@@ -184,7 +184,8 @@ const mockNotesModule = () => {
           parent_object: 'companies',
           parent_record_id: 'comp-1',
           title: 'Important Meeting',
-          content_plaintext: 'We discussed an important meeting and follow-ups.',
+          content_plaintext:
+            'We discussed an important meeting and follow-ups.',
           content_markdown: '# Important meeting notes',
           format: 'markdown',
           created_at: '2024-01-01T00:00:00Z',
@@ -261,8 +262,9 @@ export const setupMockHandlers = async () => {
     ) {
       // Creation date heuristic: created_at attribute
       if (String(args.timeframe_attribute || '').includes('created')) {
-        const res = await (mockInstances.mockSpecialized
-          .searchPeopleByCreationDate as any)({
+        const res = await (
+          mockInstances.mockSpecialized.searchPeopleByCreationDate as any
+        )({
           start: args.start_date,
           end: args.end_date,
         });
@@ -463,7 +465,8 @@ export const initializeMockInstances = async () => {
       isValidISODateString: dateUtils.isValidISODateString,
     },
     mockSearchService: {
-      searchRecords: universalSearchService.UniversalSearchService.searchRecords,
+      searchRecords:
+        universalSearchService.UniversalSearchService.searchRecords,
     },
     mockSpecialized: {
       // Companies

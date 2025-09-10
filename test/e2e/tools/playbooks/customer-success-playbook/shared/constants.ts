@@ -1,6 +1,6 @@
 /**
  * Constants for Customer Success Playbook Test Suite
- * 
+ *
  * Centralizes magic numbers and hard-coded values to improve maintainability
  * and make test configuration more explicit.
  */
@@ -38,9 +38,9 @@ export const TEST_CONSTANTS = {
    * Test timeout values (in milliseconds)
    */
   TIMEOUTS: {
-    SHORT: 5000,    // 5 seconds for quick operations
-    MEDIUM: 15000,  // 15 seconds for API calls
-    LONG: 30000,    // 30 seconds for complex operations
+    SHORT: 5000, // 5 seconds for quick operations
+    MEDIUM: 15000, // 15 seconds for API calls
+    LONG: 30000, // 30 seconds for complex operations
   },
 
   /**
@@ -72,7 +72,7 @@ export const TOOL_CONSTANTS = {
    */
   VALIDATION_LEVELS: {
     FRAMEWORK: 'framework',
-    API: 'api', 
+    API: 'api',
     DATA: 'data',
     BUSINESS_LOGIC: 'business_logic',
   },
@@ -81,5 +81,6 @@ export const TOOL_CONSTANTS = {
 /**
  * Type definitions for constants
  */
-export type ValidationLevel = typeof TOOL_CONSTANTS.VALIDATION_LEVELS[keyof typeof TOOL_CONSTANTS.VALIDATION_LEVELS];
+export type ValidationLevel =
+  (typeof TOOL_CONSTANTS.VALIDATION_LEVELS)[keyof typeof TOOL_CONSTANTS.VALIDATION_LEVELS];
 export type ErrorPattern = keyof typeof TEST_CONSTANTS.ERROR_PATTERNS;

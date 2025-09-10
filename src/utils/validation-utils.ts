@@ -8,7 +8,7 @@
  * - Structured error responses
  */
 
-import { getLazyAttioClient } from '../api/lazy-client.js';
+import * as AttioClientModule from '../api/attio-client.js';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -32,9 +32,9 @@ export interface AttributeInfo {
 const CONFIG = {
   CACHE_TTL: parseInt(process.env.ATTIO_CACHE_TTL || '300000', 10), // Default: 5 minutes
   SIMILARITY_THRESHOLD: parseInt(
-    process.env.ATTIO_SIMILARITY_THRESHOLD || '3',
+    process.env.ATTIO_SIMILARITY_THRESHOLD || '5',
     10
-  ), // Default: 3
+  ), // Default: 5 (more permissive to catch common typos)
   MAX_SUGGESTIONS: parseInt(process.env.ATTIO_MAX_FIELD_SUGGESTIONS || '3', 10), // Default: 3
 };
 
@@ -67,7 +67,24 @@ export async function getResourceAttributes(
   }
 
   try {
-    const client = getLazyAttioClient();
+    // Resolve client directly from the attio-client module to work with Vitest mocks
+    const mod: any = AttioClientModule as any;
+    let client: any;
+    if (typeof mod.getAttioClient === 'function') {
+      client = mod.getAttioClient();
+    } else if (
+      typeof mod.createAttioClient === 'function' &&
+      process.env.ATTIO_API_KEY
+    ) {
+      client = mod.createAttioClient(process.env.ATTIO_API_KEY);
+    } else if (
+      typeof mod.buildAttioClient === 'function' &&
+      process.env.ATTIO_API_KEY
+    ) {
+      client = mod.buildAttioClient({ apiKey: process.env.ATTIO_API_KEY });
+    } else {
+      throw new Error('No available Attio client factory');
+    }
     const response = await client.get(`/objects/${resourceType}/attributes`);
     const attributes: AttributeInfo[] = response?.data?.data || [];
 
@@ -244,6 +261,11 @@ export async function suggestFieldName(
   try {
     const attributes = await getResourceAttributes(resourceType);
     const validFieldNames = attributes.map((attr) => attr.api_slug);
+
+    // Exact match shortcut
+    if (validFieldNames.includes(invalidFieldName)) {
+      return [invalidFieldName];
+    }
 
     // Find similar field names using configurable threshold
     const suggestions = validFieldNames

@@ -5,7 +5,12 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { CompanySearchStrategy } from '../../../src/services/search-strategies/CompanySearchStrategy.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../../src/handlers/tool-configs/universal/types.js';
+import {
+  SearchType,
+  MatchType,
+  SortType,
+  UniversalResourceType,
+} from '../../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../../../src/types/attio.js';
 import { StrategyDependencies } from '../../../src/services/search-strategies/interfaces.js';
 import { FilterValidationError } from '../../../src/errors/api-errors.js';
@@ -39,7 +44,10 @@ describe('CompanySearchStrategy', () => {
     strategy = new CompanySearchStrategy(mockDependencies);
 
     // Default mock implementations
-    mockMergeFilters.mockImplementation((existing, dateFilter) => ({ ...existing, ...dateFilter }));
+    mockMergeFilters.mockImplementation((existing, dateFilter) => ({
+      ...existing,
+      ...dateFilter,
+    }));
     mockCreateDateFilter.mockReturnValue(null);
   });
 
@@ -116,7 +124,11 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(filters, undefined, undefined);
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
+        filters,
+        undefined,
+        undefined
+      );
     });
 
     it('should merge date filters with existing filters', async () => {
@@ -147,10 +159,12 @@ describe('CompanySearchStrategy', () => {
       const validationError = new FilterValidationError('Invalid filter field');
       mockAdvancedSearchFunction.mockRejectedValue(validationError);
 
-      await expect(strategy.search({
-        filters: invalidFilters,
-        search_type: SearchType.ADVANCED,
-      })).rejects.toThrow(FilterValidationError);
+      await expect(
+        strategy.search({
+          filters: invalidFilters,
+          search_type: SearchType.ADVANCED,
+        })
+      ).rejects.toThrow(FilterValidationError);
     });
 
     it('should handle missing filter utility functions', async () => {
@@ -167,7 +181,11 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith({ name: 'Test' }, undefined, undefined);
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
+        { name: 'Test' },
+        undefined,
+        undefined
+      );
     });
   });
 
@@ -267,7 +285,7 @@ describe('CompanySearchStrategy', () => {
         industry: { in: ['Technology', 'Software'] },
         employee_count: { gte: 100 },
       };
-      
+
       mockAdvancedSearchFunction.mockResolvedValue([mockCompanyRecord]);
 
       const results = await strategy.search({
@@ -277,7 +295,11 @@ describe('CompanySearchStrategy', () => {
 
       expect(results).toEqual([mockCompanyRecord]);
       // mergeFilters is not invoked without timeframe; ensure advancedSearchFunction received filters
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(complexFilters, undefined, undefined);
+      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
+        complexFilters,
+        undefined,
+        undefined
+      );
     });
 
     it('should handle CONTENT search type with field specification', async () => {

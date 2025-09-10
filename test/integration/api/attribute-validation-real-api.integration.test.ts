@@ -13,16 +13,21 @@ import {
 import { InvalidRequestError } from '../../../src/errors/api-errors.js';
 import { ResourceType } from '../../../src/types/attio.js';
 
-const SKIP_TESTS = process.env.RUN_REAL_API_TESTS !== 'true' || !process.env.ATTIO_API_KEY;
+const SKIP_TESTS =
+  process.env.RUN_REAL_API_TESTS !== 'true' || !process.env.ATTIO_API_KEY;
 const TEST_PREFIX = SKIP_TESTS ? 'skip' : 'only';
 
 const TEST_COMPANY_PREFIX = 'ValidationTest_';
-const generateUniqueName = () => `${TEST_COMPANY_PREFIX}${Math.floor(Math.random() * 100000)}`;
+const generateUniqueName = () =>
+  `${TEST_COMPANY_PREFIX}${Math.floor(Math.random() * 100000)}`;
 
 async function createTestCompany(attributes: Record<string, any>) {
   const companyData = { name: generateUniqueName(), ...attributes };
   const api = getAttioClient();
-  const response = await api.post(`/objects/${ResourceType.COMPANIES}/records`, { values: companyData });
+  const response = await api.post(
+    `/objects/${ResourceType.COMPANIES}/records`,
+    { values: companyData }
+  );
   return response.data.data.id.record_id;
 }
 
@@ -33,9 +38,13 @@ async function deleteTestCompany(companyId: string) {
 
 async function cleanupTestCompanies() {
   const api = getAttioClient();
-  const response = await api.get(`/objects/${ResourceType.COMPANIES}/records?limit=100`);
+  const response = await api.get(
+    `/objects/${ResourceType.COMPANIES}/records?limit=100`
+  );
   const companies = response.data.data || [];
-  const testCompanies = companies.filter((company: any) => company.values?.name?.[0]?.value?.startsWith?.(TEST_COMPANY_PREFIX));
+  const testCompanies = companies.filter((company: any) =>
+    company.values?.name?.[0]?.value?.startsWith?.(TEST_COMPANY_PREFIX)
+  );
   for (const company of testCompanies) {
     await deleteTestCompany(company.id.record_id);
   }
@@ -44,7 +53,9 @@ async function cleanupTestCompanies() {
 describe.skipIf(SKIP_TESTS)(`Attribute Validation with Real Attio API`, () => {
   beforeAll(async () => {
     clearAttributeCache();
-    (test as unknown as { setTimeout?: (ms: number) => void }).setTimeout?.(30000);
+    (test as unknown as { setTimeout?: (ms: number) => void }).setTimeout?.(
+      30000
+    );
   });
 
   afterAll(async () => {
@@ -79,14 +90,25 @@ describe.skipIf(SKIP_TESTS)(`Attribute Validation with Real Attio API`, () => {
     });
 
     it('should validate company update with type conversion', async () => {
-      const companyId = await createTestCompany({ name: generateUniqueName(), company_size: 50 });
+      const companyId = await createTestCompany({
+        name: generateUniqueName(),
+        company_size: 50,
+      });
       const updateData = { company_size: '200', is_customer: 1 };
-      const validated = await CompanyValidator.validateUpdate(companyId, updateData);
+      const validated = await CompanyValidator.validateUpdate(
+        companyId,
+        updateData
+      );
       expect(validated.company_size).toBe(200);
       expect(validated.is_customer).toBe(true);
       const api = getAttioClient();
-      await api.patch(`/objects/${ResourceType.COMPANIES}/records/${companyId}`, { values: validated });
-      const response = await api.get(`/objects/${ResourceType.COMPANIES}/records/${companyId}`);
+      await api.patch(
+        `/objects/${ResourceType.COMPANIES}/records/${companyId}`,
+        { values: validated }
+      );
+      const response = await api.get(
+        `/objects/${ResourceType.COMPANIES}/records/${companyId}`
+      );
       const updatedCompany = response.data.data;
       expect(updatedCompany).toBeDefined();
       await deleteTestCompany(companyId);
@@ -96,20 +118,33 @@ describe.skipIf(SKIP_TESTS)(`Attribute Validation with Real Attio API`, () => {
       const companyId = await createTestCompany({ name: generateUniqueName() });
       const attributeName = 'company_size';
       const attributeValue = '300';
-      const validatedValue = await CompanyValidator.validateAttributeUpdate(companyId, attributeName, attributeValue);
+      const validatedValue = await CompanyValidator.validateAttributeUpdate(
+        companyId,
+        attributeName,
+        attributeValue
+      );
       expect(validatedValue).toBe(300);
       const api = getAttioClient();
-      await api.patch(`/objects/${ResourceType.COMPANIES}/records/${companyId}`, { values: { [attributeName]: validatedValue } });
-      const response = await api.get(`/objects/${ResourceType.COMPANIES}/records/${companyId}`);
+      await api.patch(
+        `/objects/${ResourceType.COMPANIES}/records/${companyId}`,
+        { values: { [attributeName]: validatedValue } }
+      );
+      const response = await api.get(
+        `/objects/${ResourceType.COMPANIES}/records/${companyId}`
+      );
       const updatedCompany = response.data.data;
       expect(updatedCompany).toBeDefined();
       await deleteTestCompany(companyId);
     });
 
     it('should reject invalid attribute values', async () => {
-      const invalidData = { name: generateUniqueName(), company_size: 'not-a-number' };
-      await expect(CompanyValidator.validateCreate(invalidData)).rejects.toThrow();
+      const invalidData = {
+        name: generateUniqueName(),
+        company_size: 'not-a-number',
+      };
+      await expect(
+        CompanyValidator.validateCreate(invalidData)
+      ).rejects.toThrow();
     });
   });
 });
-

@@ -25,7 +25,7 @@ describe('FunctionValidator', () => {
   describe('ensureFunctionAvailability', () => {
     it('should return function when valid function is provided', async () => {
       const mockFunction = vi.fn();
-      
+
       const result = await ensureFunctionAvailability(
         mockFunction,
         'testFunction',
@@ -42,7 +42,7 @@ describe('FunctionValidator', () => {
 
     it('should return null when non-function is provided', async () => {
       const nonFunction = 'not a function';
-      
+
       const result = await ensureFunctionAvailability(
         nonFunction,
         'testFunction',
@@ -128,7 +128,7 @@ describe('FunctionValidator', () => {
 
     it('should use default service name when not provided', async () => {
       const mockFunction = vi.fn();
-      
+
       const result = await ensureFunctionAvailability(
         mockFunction,
         'testFunction'
@@ -144,7 +144,7 @@ describe('FunctionValidator', () => {
 
     it('should handle arrow functions correctly', async () => {
       const arrowFunction = () => 'test';
-      
+
       const result = await ensureFunctionAvailability(
         arrowFunction,
         'arrowFunction',
@@ -161,7 +161,7 @@ describe('FunctionValidator', () => {
 
     it('should handle async functions correctly', async () => {
       const asyncFunction = async () => 'test';
-      
+
       const result = await ensureFunctionAvailability(
         asyncFunction,
         'asyncFunction',
@@ -177,9 +177,11 @@ describe('FunctionValidator', () => {
     });
 
     it('should handle bound functions correctly', async () => {
-      const originalFunction = function(this: any) { return this.value; };
+      const originalFunction = function (this: any) {
+        return this.value;
+      };
       const boundFunction = originalFunction.bind({ value: 'test' });
-      
+
       const result = await ensureFunctionAvailability(
         boundFunction,
         'boundFunction',
@@ -200,10 +202,10 @@ describe('FunctionValidator', () => {
           return 'test';
         }
       }
-      
+
       const instance = new TestClass();
       const method = instance.testMethod;
-      
+
       const result = await ensureFunctionAvailability(
         method,
         'testMethod',
@@ -214,8 +216,9 @@ describe('FunctionValidator', () => {
     });
 
     it('should preserve function type information', async () => {
-      const typedFunction = (x: number, y: string): boolean => x > 0 && y.length > 0;
-      
+      const typedFunction = (x: number, y: string): boolean =>
+        x > 0 && y.length > 0;
+
       const result = await ensureFunctionAvailability(
         typedFunction,
         'typedFunction',
@@ -234,7 +237,7 @@ describe('FunctionValidator', () => {
   describe('integration with original use case', () => {
     it('should replicate the original ensureAdvancedSearchCompanies behavior', async () => {
       const mockAdvancedSearchCompanies = vi.fn();
-      
+
       const result = await ensureFunctionAvailability(
         mockAdvancedSearchCompanies,
         'advancedSearchCompanies',
@@ -251,7 +254,7 @@ describe('FunctionValidator', () => {
 
     it('should replicate the original ensureAdvancedSearchPeople behavior', async () => {
       const mockAdvancedSearchPeople = vi.fn();
-      
+
       const result = await ensureFunctionAvailability(
         mockAdvancedSearchPeople,
         'advancedSearchPeople',
@@ -268,7 +271,7 @@ describe('FunctionValidator', () => {
 
     it('should handle the exact error case from original implementation', async () => {
       const invalidFunction = { not: 'a function' };
-      
+
       const result = await ensureFunctionAvailability(
         invalidFunction,
         'advancedSearchCompanies',

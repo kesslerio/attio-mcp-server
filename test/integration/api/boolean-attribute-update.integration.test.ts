@@ -171,4 +171,3 @@ describe('Boolean Attribute API Tests', () => {
     TEST_TIMEOUT
   );
 });
-

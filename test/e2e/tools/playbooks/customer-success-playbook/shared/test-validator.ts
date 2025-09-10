@@ -7,50 +7,91 @@ export class TestValidator {
   private static toolSchemas: Record<string, any> = {
     'search-records': {
       expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid resource type']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Invalid resource type',
+      ],
     },
     'create-record': {
       expectedFields: ['id', 'data', 'attributes'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Missing required parameter']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Missing required parameter',
+      ],
     },
     'search-by-timeframe': {
       expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid date range', 'Unsupported', 'Bad Request']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Invalid date range',
+        'Unsupported',
+        'Bad Request',
+      ],
     },
     'advanced-search': {
       expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid filter']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Invalid filter',
+      ],
     },
     'search-by-relationship': {
       expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid relationship type']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Invalid relationship type',
+      ],
     },
     'batch-operations': {
       expectedFields: ['results', 'operations'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Batch operation failed']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Batch operation failed',
+      ],
     },
     'get-detailed-info': {
       expectedFields: ['data', 'attributes'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Record not found']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Record not found',
+      ],
     },
     'search-by-content': {
       expectedFields: ['data', 'results', 'records'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid search query']
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Invalid search query',
+      ],
     },
     'list-notes': {
       expectedFields: ['data', 'notes'],
-      errorPatterns: ['Error executing tool', 'failed with status code', 'Invalid record ID']
-    }
+      errorPatterns: [
+        'Error executing tool',
+        'failed with status code',
+        'Invalid record ID',
+      ],
+    },
   };
 
-  static validateToolResult(toolName: string, toolResult: ToolResult): ValidationResult {
+  static validateToolResult(
+    toolName: string,
+    toolResult: ToolResult
+  ): ValidationResult {
     const validation: ValidationResult = {
       frameworkSuccess: false,
       apiSuccess: false,
       dataValid: false,
       businessLogicValid: false,
       errorDetails: [],
-      warningDetails: []
+      warningDetails: [],
     };
 
     // Level 1: Framework execution validation
@@ -74,13 +115,13 @@ export class TestValidator {
 
     const responseText = content.text;
     const schema = this.toolSchemas[toolName];
-    
+
     if (schema) {
       // Check for API error patterns
       for (const errorPattern of schema.errorPatterns) {
         if (responseText.includes(errorPattern)) {
           validation.errorDetails.push(`API error detected: ${errorPattern}`);
-          
+
           // Extract HTTP status code if present
           const statusMatch = responseText.match(/status code (\d+)/i);
           if (statusMatch) {
@@ -89,7 +130,7 @@ export class TestValidator {
               validation.errorDetails.push(`HTTP ${statusCode} error`);
             }
           }
-          
+
           return validation;
         }
       }
@@ -108,7 +149,7 @@ export class TestValidator {
           }
         }
       }
-      
+
       // For responses that show records found
       const recordCountMatch = responseText.match(/found (\d+)/i);
       if (recordCountMatch) {
@@ -116,23 +157,29 @@ export class TestValidator {
         if (count >= 0) {
           hasValidData = true;
           if (count === 0) {
-            validation.warningDetails.push(`No records found (count: ${count})`);
+            validation.warningDetails.push(
+              `No records found (count: ${count})`
+            );
           }
         }
       }
 
       // Check for successful creation messages
-      if (responseText.includes('Successfully created') || responseText.includes('✅')) {
+      if (
+        responseText.includes('Successfully created') ||
+        responseText.includes('✅')
+      ) {
         hasValidData = true;
       }
-
     } catch (error) {
       validation.errorDetails.push(`Data validation error: ${error}`);
       return validation;
     }
 
     if (!hasValidData) {
-      validation.errorDetails.push('Response does not contain expected data fields');
+      validation.errorDetails.push(
+        'Response does not contain expected data fields'
+      );
       return validation;
     }
     validation.dataValid = true;
@@ -145,7 +192,9 @@ export class TestValidator {
     return validation;
   }
 
-  static determineValidationLevel(validation: ValidationResult): ValidationLevel {
+  static determineValidationLevel(
+    validation: ValidationResult
+  ): ValidationLevel {
     if (!validation.frameworkSuccess) {
       return ValidationLevel.FRAMEWORK_ERROR;
     }

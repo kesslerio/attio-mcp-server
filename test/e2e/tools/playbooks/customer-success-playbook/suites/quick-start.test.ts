@@ -1,6 +1,6 @@
 /**
  * Quick Start Examples - Customer Success Playbook Tests
- * 
+ *
  * Tests the foundational quick start examples that demonstrate
  * basic customer success operations.
  */
@@ -9,11 +9,11 @@ import { MCPTestClient } from 'mcp-test-client';
 import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { PlaybookTestResult, ValidationLevel } from '../shared/types.js';
 import { executePlaybookTest } from '../shared/test-executor.js';
-import { 
-  createFailureAnalysisReport, 
-  createSingleGitHubIssue, 
+import {
+  createFailureAnalysisReport,
+  createSingleGitHubIssue,
   createEnhancedValidationReport,
-  getValidationLevelEmoji 
+  getValidationLevelEmoji,
 } from '../shared/reporting.js';
 
 const CS_ENABLED = process.env.CS_E2E_ENABLE === 'true';
@@ -45,7 +45,10 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
             record_data: { name: seededCompanyName },
           },
           (toolResult: ToolResult) => {
-            const text = toolResult?.content?.[0] && 'text' in toolResult.content[0] ? (toolResult.content[0] as any).text as string : '';
+            const text =
+              toolResult?.content?.[0] && 'text' in toolResult.content[0]
+                ? ((toolResult.content[0] as any).text as string)
+                : '';
             const m = text.match(/\(ID:\s*([0-9a-fA-F-]{10,})\)/);
             if (m) resolvedCompanyId = m[1];
             return true;
@@ -59,7 +62,10 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
           'search-records',
           { resource_type: 'companies', query: '', limit: 1 },
           (result: ToolResult) => {
-            const text = result?.content?.[0] && 'text' in result.content[0] ? (result.content[0] as any).text as string : '';
+            const text =
+              result?.content?.[0] && 'text' in result.content[0]
+                ? ((result.content[0] as any).text as string)
+                : '';
             const m = text.match(/\(ID:\s*([0-9a-fA-F-]{10,})\)/);
             if (m) resolvedCompanyId = m[1];
             return true;
@@ -76,22 +82,31 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
 
     // Print local results for this suite
     const failures = testResults.filter((result) => !result.success);
-    const partialSuccesses = testResults.filter((result) => 
-      result.validationLevel === ValidationLevel.PARTIAL_SUCCESS);
-    const fullSuccesses = testResults.filter((result) => 
-      result.validationLevel === ValidationLevel.FULL_SUCCESS);
+    const partialSuccesses = testResults.filter(
+      (result) => result.validationLevel === ValidationLevel.PARTIAL_SUCCESS
+    );
+    const fullSuccesses = testResults.filter(
+      (result) => result.validationLevel === ValidationLevel.FULL_SUCCESS
+    );
 
     console.log('\n📊 Quick Start Suite Summary:');
-    console.log(`   🟢 Full Success: ${fullSuccesses.length}/${testResults.length}`);
-    console.log(`   🟡 Partial Success: ${partialSuccesses.length}/${testResults.length}`);
+    console.log(
+      `   🟢 Full Success: ${fullSuccesses.length}/${testResults.length}`
+    );
+    console.log(
+      `   🟡 Partial Success: ${partialSuccesses.length}/${testResults.length}`
+    );
     console.log(`   🔴 Failures: ${failures.length}/${testResults.length}`);
 
     // Print validation breakdown
-    const validationBreakdown = testResults.reduce((acc, result) => {
-      const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
-      acc[level] = (acc[level] || 0) + 1;
-      return acc;
-    }, {} as Record<ValidationLevel, number>);
+    const validationBreakdown = testResults.reduce(
+      (acc, result) => {
+        const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
+        acc[level] = (acc[level] || 0) + 1;
+        return acc;
+      },
+      {} as Record<ValidationLevel, number>
+    );
 
     console.log('\n🔍 Quick Start Validation Breakdown:');
     Object.entries(validationBreakdown).forEach(([level, count]) => {
@@ -106,7 +121,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
   describe('Customer Portfolio Overview', () => {
     it('should execute the main customer review prompt from playbook Quick Start', async () => {
       const prompt =
-        'Show me all customers (companies with closed deals) and their basic information. Include company name, total deal value, last contact date, and any open tasks or notes from the last 30 days. Help me identify which accounts haven\'t been contacted recently and might need attention.';
+        "Show me all customers (companies with closed deals) and their basic information. Include company name, total deal value, last contact date, and any open tasks or notes from the last 30 days. Help me identify which accounts haven't been contacted recently and might need attention.";
       const expectedOutcome =
         'A customer portfolio overview with recent activity and attention priorities';
 
@@ -156,7 +171,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-      
+
       const result = await executePlaybookTest(
         client,
         prompt,
@@ -174,7 +189,8 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
     });
 
     it('should create follow-up tasks for customer outreach planning', async () => {
-      const prompt = 'Create tasks for customer health checks and satisfaction surveys';
+      const prompt =
+        'Create tasks for customer health checks and satisfaction surveys';
       const expectedOutcome = 'Successfully created customer outreach tasks';
 
       const result = await executePlaybookTest(
@@ -186,8 +202,11 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
           resource_type: 'tasks',
           record_data: {
             title: 'Customer Health Check - Weekly Review',
-            content: 'Conduct customer satisfaction survey and account health assessment',
-            due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            content:
+              'Conduct customer satisfaction survey and account health assessment',
+            due_date: new Date(
+              Date.now() + 7 * 24 * 60 * 60 * 1000
+            ).toISOString(),
           },
         }
       );
@@ -199,7 +218,8 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
 
   describe('Weekly Strategic Operations', () => {
     it('should organize customer accounts by strategic importance (account segmentation)', async () => {
-      const prompt = 'Organize customer accounts by strategic importance and value';
+      const prompt =
+        'Organize customer accounts by strategic importance and value';
       const expectedOutcome = 'Segmented customer accounts by importance tiers';
 
       const result = await executePlaybookTest(

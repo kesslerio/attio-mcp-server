@@ -17,10 +17,10 @@ export interface PlaybookTestResult {
 
 export enum ValidationLevel {
   FRAMEWORK_ERROR = 'FRAMEWORK_ERROR',
-  API_ERROR = 'API_ERROR', 
+  API_ERROR = 'API_ERROR',
   DATA_ERROR = 'DATA_ERROR',
   PARTIAL_SUCCESS = 'PARTIAL_SUCCESS',
-  FULL_SUCCESS = 'FULL_SUCCESS'
+  FULL_SUCCESS = 'FULL_SUCCESS',
 }
 
 export interface ValidationResult {

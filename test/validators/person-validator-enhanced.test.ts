@@ -1,25 +1,21 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import {
-  PersonValidator,
-  searchPeopleByEmails,
-} from '../../src/objects/people-write.js';
+import { PersonValidator } from '../../src/objects/people-write.js';
 import { searchCompanies } from '../../src/objects/companies/search.js';
-
-// Mock the API client to avoid initialization issues
-vi.mock('../../src/api/attio-client.js');
-
-// Mock people search functions
-vi.mock('../../src/objects/people-write.js', async () => {
-  const actual = await vi.importActual('../../src/objects/people-write.js');
-  return {
-    ...actual,
-    searchPeopleByEmails: vi.fn(),
-  };
-});
 
 // Mock companies search
 vi.mock('../../src/objects/companies/search.js', () => ({
   searchCompanies: vi.fn(),
+}));
+
+// Mock the new email validation module
+vi.mock('../../src/objects/people/email-validation.js', () => ({
+  searchPeopleByEmails: vi.fn(async (emails: string[]) => {
+    return emails.map((email) => ({
+      email,
+      exists: email === 'dup@example.com',
+      personId: email === 'dup@example.com' ? 'existing-person-id' : undefined,
+    }));
+  }),
 }));
 
 describe('PersonValidator.validateCreate', () => {
@@ -28,9 +24,7 @@ describe('PersonValidator.validateCreate', () => {
   });
 
   it('should reject duplicate email addresses', async () => {
-    (searchPeopleByEmails as vi.Mock).mockResolvedValue([
-      { email: 'dup@example.com', exists: true, personId: 'p1' },
-    ]);
+    // This test uses the local mock which returns exists: true for dup@example.com
     const attrs = { name: 'Test', email_addresses: ['dup@example.com'] } as any;
     await expect(PersonValidator.validateCreate(attrs)).rejects.toThrow(
       'Person(s) with email(s) dup@example.com already exist'
@@ -38,9 +32,7 @@ describe('PersonValidator.validateCreate', () => {
   });
 
   it('should resolve company name to record id', async () => {
-    (searchPeopleByEmails as vi.Mock).mockResolvedValue([
-      { email: 'a@b.com', exists: false },
-    ]);
+    // This test uses the global mock which returns exists: false for emails other than dup@example.com
     (searchCompanies as vi.Mock).mockResolvedValue([
       { id: { record_id: 'comp_1' } },
     ]);
@@ -54,9 +46,6 @@ describe('PersonValidator.validateCreate', () => {
   });
 
   it('should throw error when company name not found', async () => {
-    (searchPeopleByEmails as vi.Mock).mockResolvedValue([
-      { email: 'a@b.com', exists: false },
-    ]);
     (searchCompanies as vi.Mock).mockResolvedValue([]);
     const attrs = {
       name: 'Test',

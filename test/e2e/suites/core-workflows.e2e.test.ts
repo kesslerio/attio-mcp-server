@@ -216,7 +216,7 @@ describe.skipIf(
 
       // Also populate the shared testCompanies array for notes tests
       testCompanies.push(company);
-      
+
       // Also create for notes (fallback)
       await createTestCompany();
     }, 45000);
@@ -244,7 +244,7 @@ describe.skipIf(
 
       // Also populate the shared testPeople array for notes tests
       testPeople.push(person);
-      
+
       // Also create for notes (fallback)
       await createTestPerson();
     }, 45000);

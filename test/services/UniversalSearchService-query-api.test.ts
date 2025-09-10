@@ -11,13 +11,11 @@ import {
 } from '../../src/handlers/tool-configs/universal/types.js';
 import type { UniversalSearchParams } from '../../src/handlers/tool-configs/universal/types.js';
 
-// Mock the Attio client
+// Mock the Attio client using global override mechanism
 const mockPost = vi.fn();
-vi.mock('../../src/api/attio-client.js', () => ({
-  getAttioClient: () => ({
-    post: mockPost,
-  }),
-}));
+const mockClient = {
+  post: mockPost,
+};
 
 // Mock performance tracking
 vi.mock('../../src/middleware/performance-enhanced.js', () => ({
@@ -41,6 +39,8 @@ vi.mock('../../src/services/ValidationService.js', () => ({
 describe('UniversalSearchService Query API Integration - Issue #523', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up test-specific client override
+    (globalThis as any).setTestApiClient?.(mockClient);
     mockPost.mockResolvedValue({
       data: {
         data: [
@@ -59,6 +59,8 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    // Clear test-specific client override
+    (globalThis as any).clearTestApiClient?.();
   });
 
   describe('TC-010: Relationship Search Integration', () => {

@@ -44,10 +44,12 @@ describe
     describe('Note Content and Format Validation', () => {
       it('should handle notes with special characters', async () => {
         if (testCompanies.length === 0) {
-          console.error('⏭️ Skipping special characters test - no test companies available');
+          console.error(
+            '⏭️ Skipping special characters test - no test companies available'
+          );
           return;
         }
-        
+
         const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
@@ -55,7 +57,7 @@ describe
           );
           return;
         }
-        
+
         const noteData = edgeCaseNotes.specialCharacters(
           testCompany.id.record_id
         );
@@ -194,9 +196,7 @@ describe
         E2EAssertions.expectValidNoteStructure(createdNote);
         // Note: Attio API converts HTML to plain text, so we check for text content
         expect(createdNote.content).toContain('HTML Content Test');
-        expect(createdNote.content).toContain(
-          'HTML formatting'
-        );
+        expect(createdNote.content).toContain('HTML formatting');
 
         createdNotes.push(createdNote);
 

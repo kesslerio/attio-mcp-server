@@ -5,7 +5,12 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { TaskSearchStrategy } from '../../../src/services/search-strategies/TaskSearchStrategy.js';
-import { SearchType, MatchType, SortType, UniversalResourceType } from '../../../src/handlers/tool-configs/universal/types.js';
+import {
+  SearchType,
+  MatchType,
+  SortType,
+  UniversalResourceType,
+} from '../../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../../src/types/attio.js';
 import { StrategyDependencies } from '../../../src/services/search-strategies/interfaces.js';
 import { CachingService } from '../../../src/services/CachingService.js';
@@ -72,20 +77,25 @@ describe('TaskSearchStrategy', () => {
     strategy = new TaskSearchStrategy(mockDependencies);
 
     // Mock SearchUtilities methods
-    vi.mocked(SearchUtilities.getTaskFieldValue)
-      .mockImplementation((record: AttioRecord, field: string) => {
+    vi.mocked(SearchUtilities.getTaskFieldValue).mockImplementation(
+      (record: AttioRecord, field: string) => {
         const value = (record as any)[field];
         return typeof value === 'string' ? value : '';
-      });
+      }
+    );
 
-    vi.mocked(SearchUtilities.rankByRelevance)
-      .mockImplementation((results: AttioRecord[]) => results);
+    vi.mocked(SearchUtilities.rankByRelevance).mockImplementation(
+      (results: AttioRecord[]) => results
+    );
 
-    vi.mocked(UniversalUtilityService.convertTaskToRecord)
-      .mockImplementation((task: AttioTask) => mockTaskRecord);
+    vi.mocked(UniversalUtilityService.convertTaskToRecord).mockImplementation(
+      (task: AttioTask) => mockTaskRecord
+    );
 
-    vi.mocked(CachingService.getOrLoadTasks)
-      .mockResolvedValue({ data: [mockTaskRecord], fromCache: false });
+    vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
+      data: [mockTaskRecord],
+      fromCache: false,
+    });
   });
 
   afterEach(() => {
@@ -119,33 +129,36 @@ describe('TaskSearchStrategy', () => {
     });
 
     it('should handle empty task list', async () => {
-      vi.mocked(CachingService.getOrLoadTasks)
-        .mockResolvedValue({ data: [], fromCache: false });
+      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
+        data: [],
+        fromCache: false,
+      });
 
       const results = await strategy.search({});
-      
+
       expect(results).toEqual([]);
     });
 
     it('should handle missing taskFunction gracefully', async () => {
       const strategyWithoutTask = new TaskSearchStrategy({});
-      
-      vi.mocked(CachingService.getOrLoadTasks)
-        .mockImplementation(async (loadFunction) => {
+
+      vi.mocked(CachingService.getOrLoadTasks).mockImplementation(
+        async (loadFunction) => {
           const data = await loadFunction();
           return { data, fromCache: false };
-        });
+        }
+      );
 
       const results = await strategyWithoutTask.search({});
-      
+
       expect(results).toEqual([]);
     });
   });
 
   describe('content search', () => {
     beforeEach(() => {
-      vi.mocked(SearchUtilities.getTaskFieldValue)
-        .mockImplementation((record: AttioRecord, field: string) => {
+      vi.mocked(SearchUtilities.getTaskFieldValue).mockImplementation(
+        (record: AttioRecord, field: string) => {
           switch (field) {
             case 'content':
               return 'Test task content';
@@ -156,7 +169,8 @@ describe('TaskSearchStrategy', () => {
             default:
               return '';
           }
-        });
+        }
+      );
     });
 
     it('should perform content search with query', async () => {
@@ -171,8 +185,9 @@ describe('TaskSearchStrategy', () => {
     });
 
     it('should filter out non-matching content', async () => {
-      vi.mocked(SearchUtilities.getTaskFieldValue)
-        .mockReturnValue('Different content');
+      vi.mocked(SearchUtilities.getTaskFieldValue).mockReturnValue(
+        'Different content'
+      );
 
       const results = await strategy.search({
         query: 'test',
@@ -200,8 +215,10 @@ describe('TaskSearchStrategy', () => {
       });
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(SearchUtilities.getTaskFieldValue)
-        .toHaveBeenCalledWith(mockTaskRecord, 'title');
+      expect(SearchUtilities.getTaskFieldValue).toHaveBeenCalledWith(
+        mockTaskRecord,
+        'title'
+      );
     });
 
     it('should support relevance sorting', async () => {
@@ -212,8 +229,11 @@ describe('TaskSearchStrategy', () => {
       });
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(SearchUtilities.rankByRelevance)
-        .toHaveBeenCalledWith([mockTaskRecord], 'test', ['content', 'title', 'content_plaintext']);
+      expect(SearchUtilities.rankByRelevance).toHaveBeenCalledWith(
+        [mockTaskRecord],
+        'test',
+        ['content', 'title', 'content_plaintext']
+      );
     });
   });
 
@@ -224,9 +244,11 @@ describe('TaskSearchStrategy', () => {
         { ...mockTaskRecord, id: { value: 'task-2' } },
         { ...mockTaskRecord, id: { value: 'task-3' } },
       ];
-      
-      vi.mocked(CachingService.getOrLoadTasks)
-        .mockResolvedValue({ data: multipleRecords, fromCache: false });
+
+      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
+        data: multipleRecords,
+        fromCache: false,
+      });
     });
 
     it('should handle pagination correctly', async () => {
@@ -261,53 +283,65 @@ describe('TaskSearchStrategy', () => {
 
   describe('performance optimization', () => {
     it('should use cached data when available', async () => {
-      vi.mocked(CachingService.getOrLoadTasks)
-        .mockResolvedValue({ data: [mockTaskRecord], fromCache: true });
+      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
+        data: [mockTaskRecord],
+        fromCache: true,
+      });
 
       const results = await strategy.search({});
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(enhancedPerformanceTracker.markTiming)
-        .toHaveBeenCalledWith('tasks_search', 'other', 1);
+      expect(enhancedPerformanceTracker.markTiming).toHaveBeenCalledWith(
+        'tasks_search',
+        'other',
+        1
+      );
     });
 
     it('should track API performance when not using cache', async () => {
-      vi.mocked(CachingService.getOrLoadTasks)
-        .mockResolvedValue({ data: [mockTaskRecord], fromCache: false });
+      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
+        data: [mockTaskRecord],
+        fromCache: false,
+      });
 
       await strategy.search({});
 
-      expect(enhancedPerformanceTracker.markTiming)
-        .toHaveBeenCalledWith('tasks_search', 'attioApi', expect.any(Number));
+      expect(enhancedPerformanceTracker.markTiming).toHaveBeenCalledWith(
+        'tasks_search',
+        'attioApi',
+        expect.any(Number)
+      );
     });
   });
 
   describe('error handling', () => {
     it('should handle API errors gracefully', async () => {
-      vi.mocked(CachingService.getOrLoadTasks)
-        .mockImplementation(async (loadFunction) => {
+      vi.mocked(CachingService.getOrLoadTasks).mockImplementation(
+        async (loadFunction) => {
           const data = await loadFunction();
           return { data, fromCache: false };
-        });
-      
+        }
+      );
+
       mockTaskFunction.mockRejectedValue(new Error('API Error'));
 
       const results = await strategy.search({});
-      
+
       expect(results).toEqual([]);
     });
 
     it('should handle non-array task response', async () => {
-      vi.mocked(CachingService.getOrLoadTasks)
-        .mockImplementation(async (loadFunction) => {
+      vi.mocked(CachingService.getOrLoadTasks).mockImplementation(
+        async (loadFunction) => {
           const data = await loadFunction();
           return { data, fromCache: false };
-        });
-      
+        }
+      );
+
       mockTaskFunction.mockResolvedValue('invalid response' as any);
 
       const results = await strategy.search({});
-      
+
       expect(results).toEqual([]);
     });
   });

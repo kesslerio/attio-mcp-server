@@ -1,33 +1,14 @@
-# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
-
-runtime: typescript
+name: Attio MCP
+description: Connect Attio CRM to MCP clients
+keywords: [attio, crm, contacts, companies, deals]
 
 startCommand:
   type: http
-  configSchema:
-    # JSON Schema defining the configuration options for the MCP
-    type: object
-    required:
-      - ATTIO_API_KEY
-    properties:
-      ATTIO_API_KEY:
-        type: string
-        description: "The API key for the Attio CRM server"
-      ATTIO_WORKSPACE_ID:
-        type: string
-        description: "The workspace ID for the Attio CRM server"
-      ALLOWED_ORIGINS:
-        type: string
-        description: "Comma-separated list of allowed CORS origins (optional)"
-  commandFunction: |-
-    (config) => ({
-      command: 'node',
-      args: ['dist/smithery.js'],
-      env: {
-        ATTIO_API_KEY: config.ATTIO_API_KEY,
-        ATTIO_WORKSPACE_ID: config.ATTIO_WORKSPACE_ID || '',
-        ALLOWED_ORIGINS: config.ALLOWED_ORIGINS || 'https://smithery.ai',
-        NODE_ENV: 'production',
-        PORT: process.env.PORT || '3000'
-      }
-    })
+  runtime: typescript
+
+# Keep UI config simple at publish time; your TS entrypoint already exports configSchema
+# Optionally: help users with a sample (doesn't mark fields as "required")
+exampleConfig:
+  ATTIO_API_KEY: "<paste-your-attio-api-key>"
+  ATTIO_WORKSPACE_ID: "<optional>"
+  debug: false

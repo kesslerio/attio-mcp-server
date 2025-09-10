@@ -16,9 +16,6 @@ import { AttioRecord, RecordAttributes } from '../../src/types/attio';
 
 // Mock the attio-operations module
 vi.mock('../../src/api/operations/index');
-vi.mock('../../src/api/attio-client', () => ({
-  getAttioClient: vi.fn(),
-}));
 
 describe('Records API', () => {
   // Sample mock data
@@ -32,17 +29,22 @@ describe('Records API', () => {
     },
   };
 
-  // Mock API client
+  // Mock API client for global override mechanism
+  const mockPost = vi.fn();
+  const mockGet = vi.fn();
+  const mockPatch = vi.fn();
+  const mockDelete = vi.fn();
   const mockApiClient = {
-    post: vi.fn(),
-    get: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  } as unknown as import('axios').AxiosInstance;
+    post: mockPost,
+    get: mockGet,
+    patch: mockPatch,
+    delete: mockDelete,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (getAttioClient as any).mockReturnValue(mockApiClient);
+    // Set up test-specific client override
+    (globalThis as any).setTestApiClient?.(mockApiClient);
   });
 
   describe('createObjectRecord', () => {
@@ -86,7 +88,7 @@ describe('Records API', () => {
       });
 
       // Mock the direct API call for fallback
-      (mockApiClient.post as any).mockResolvedValue({
+      mockPost.mockResolvedValue({
         data: {
           data: mockRecord,
         },

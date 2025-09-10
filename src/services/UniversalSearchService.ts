@@ -48,9 +48,23 @@ import { assertNoMockInE2E } from './_guards.js';
 
 // Import Attio client for deal queries
 import { getLazyAttioClient } from '../api/lazy-client.js';
+import * as AttioClientModule from '../api/attio-client.js';
+import type { AxiosInstance } from 'axios';
+
+// Note: Attio client resolution is centralized in getLazyAttioClient(),
+// which prefers mocked getAttioClient() during tests/offline.
 
 // Import factory for guard checks
 import { shouldUseMockData } from './create/index.js';
+
+// Prefer the module's getAttioClient (enables Vitest mocks). Fallback to lazy client.
+function resolveQueryApiClient(): AxiosInstance {
+  const mod: any = AttioClientModule as any;
+  if (typeof mod.getAttioClient === 'function') {
+    return mod.getAttioClient();
+  }
+  return getLazyAttioClient();
+}
 
 // Import new query API utilities
 import {
@@ -705,8 +719,6 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getLazyAttioClient();
-
     const relationshipQuery: RelationshipQuery = {
       sourceObjectType: sourceResourceType,
       targetObjectType: targetResourceType,
@@ -718,6 +730,7 @@ export class UniversalSearchService {
     const queryApiFilter = createRelationshipQuery(relationshipQuery);
 
     try {
+      const client = resolveQueryApiClient();
       const path = `/objects/${sourceResourceType}/records/query`;
       const requestBody = {
         ...queryApiFilter,
@@ -767,10 +780,10 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getLazyAttioClient();
     const queryApiFilter = createTimeframeQuery(timeframeConfig);
 
     try {
+      const client = resolveQueryApiClient();
       const path = `/objects/${resourceType}/records/query`;
       const requestBody = {
         ...queryApiFilter,
@@ -819,8 +832,6 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    const client = getLazyAttioClient();
-
     let fields = searchFields;
     if (fields.length === 0) {
       switch (resourceType) {
@@ -839,6 +850,7 @@ export class UniversalSearchService {
     const queryApiFilter = createContentSearchQuery(fields, query, useOrLogic);
 
     try {
+      const client = getLazyAttioClient();
       const path = `/objects/${resourceType}/records/query`;
       const requestBody = {
         ...queryApiFilter,

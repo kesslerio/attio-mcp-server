@@ -15,7 +15,7 @@ import {
 describe('TimeframeUtils', () => {
   // Mock current date for consistent testing
   const mockDate = new Date('2023-08-15T12:00:00.000Z'); // Tuesday
-  
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(mockDate);
@@ -81,7 +81,7 @@ describe('TimeframeUtils', () => {
     });
 
     it('should throw error for unsupported timeframe', () => {
-      expect(() => 
+      expect(() =>
         getRelativeTimeframeRange('invalid' as RelativeTimeframe)
       ).toThrow('Unsupported timeframe: invalid');
     });
@@ -106,30 +106,26 @@ describe('TimeframeUtils', () => {
 
   describe('isValidDateRange', () => {
     it('should validate correct date ranges', () => {
-      expect(isValidDateRange(
-        '2023-08-01T00:00:00Z',
-        '2023-08-15T23:59:59Z'
-      )).toBe(true);
-      
+      expect(
+        isValidDateRange('2023-08-01T00:00:00Z', '2023-08-15T23:59:59Z')
+      ).toBe(true);
+
       // Same date should be valid
-      expect(isValidDateRange(
-        '2023-08-15T00:00:00Z',
-        '2023-08-15T23:59:59Z'
-      )).toBe(true);
+      expect(
+        isValidDateRange('2023-08-15T00:00:00Z', '2023-08-15T23:59:59Z')
+      ).toBe(true);
     });
 
     it('should reject invalid date ranges', () => {
       // End before start
-      expect(isValidDateRange(
-        '2023-08-15T12:00:00Z',
-        '2023-08-14T12:00:00Z'
-      )).toBe(false);
-      
+      expect(
+        isValidDateRange('2023-08-15T12:00:00Z', '2023-08-14T12:00:00Z')
+      ).toBe(false);
+
       // Invalid dates
-      expect(isValidDateRange(
-        'invalid-date',
-        '2023-08-15T12:00:00Z'
-      )).toBe(false);
+      expect(isValidDateRange('invalid-date', '2023-08-15T12:00:00Z')).toBe(
+        false
+      );
     });
   });
 
@@ -139,7 +135,7 @@ describe('TimeframeUtils', () => {
         timeframe: 'last_7_days',
         date_field: 'created_at',
       });
-      
+
       expect(result).toEqual({
         timeframe_attribute: 'created_at',
         start_date: '2023-08-08T00:00:00.000Z',
@@ -154,7 +150,7 @@ describe('TimeframeUtils', () => {
         date_to: '2023-08-15T23:59:59Z',
         date_field: 'updated_at',
       });
-      
+
       expect(result).toEqual({
         timeframe_attribute: 'updated_at',
         start_date: '2023-08-01T00:00:00Z',
@@ -168,7 +164,7 @@ describe('TimeframeUtils', () => {
         date_from: '2023-08-01T00:00:00Z',
         date_field: 'created_at',
       });
-      
+
       expect(startOnly).toEqual({
         timeframe_attribute: 'created_at',
         start_date: '2023-08-01T00:00:00Z',
@@ -179,7 +175,7 @@ describe('TimeframeUtils', () => {
         date_to: '2023-08-15T23:59:59Z',
         date_field: 'created_at',
       });
-      
+
       expect(endOnly).toEqual({
         timeframe_attribute: 'created_at',
         end_date: '2023-08-15T23:59:59Z',
@@ -192,7 +188,7 @@ describe('TimeframeUtils', () => {
         created_after: '2023-08-01T00:00:00Z',
         created_before: '2023-08-15T23:59:59Z',
       });
-      
+
       expect(result).toEqual({
         timeframe_attribute: 'created_at',
         start_date: '2023-08-01T00:00:00Z',
@@ -205,7 +201,7 @@ describe('TimeframeUtils', () => {
       const result = convertDateParamsToTimeframeQuery({
         updated_after: '2023-08-01T00:00:00Z',
       });
-      
+
       expect(result).toEqual({
         timeframe_attribute: 'updated_at',
         start_date: '2023-08-01T00:00:00Z',
@@ -220,7 +216,7 @@ describe('TimeframeUtils', () => {
         date_to: '2023-08-10T00:00:00Z', // Should be ignored
         date_field: 'created_at',
       });
-      
+
       expect(result).toEqual({
         timeframe_attribute: 'created_at',
         start_date: '2023-08-15T00:00:00.000Z',
@@ -235,25 +231,35 @@ describe('TimeframeUtils', () => {
     });
 
     it('should throw error for invalid date formats', () => {
-      expect(() => convertDateParamsToTimeframeQuery({
-        date_from: 'invalid-date',
-      })).toThrow('Invalid date_from format: must be ISO 8601');
+      expect(() =>
+        convertDateParamsToTimeframeQuery({
+          date_from: 'invalid-date',
+        })
+      ).toThrow('Invalid date_from format: must be ISO 8601');
 
-      expect(() => convertDateParamsToTimeframeQuery({
-        created_after: 'not-a-date',
-      })).toThrow('Invalid created_after format: must be ISO 8601');
+      expect(() =>
+        convertDateParamsToTimeframeQuery({
+          created_after: 'not-a-date',
+        })
+      ).toThrow('Invalid created_after format: must be ISO 8601');
     });
 
     it('should throw error for invalid date ranges', () => {
-      expect(() => convertDateParamsToTimeframeQuery({
-        date_from: '2023-08-15T12:00:00Z',
-        date_to: '2023-08-14T12:00:00Z', // End before start
-      })).toThrow('Invalid date range: start date must be before end date');
+      expect(() =>
+        convertDateParamsToTimeframeQuery({
+          date_from: '2023-08-15T12:00:00Z',
+          date_to: '2023-08-14T12:00:00Z', // End before start
+        })
+      ).toThrow('Invalid date range: start date must be before end date');
 
-      expect(() => convertDateParamsToTimeframeQuery({
-        created_after: '2023-08-15T12:00:00Z',
-        created_before: '2023-08-14T12:00:00Z', // End before start
-      })).toThrow('Invalid created date range: created_after must be before created_before');
+      expect(() =>
+        convertDateParamsToTimeframeQuery({
+          created_after: '2023-08-15T12:00:00Z',
+          created_before: '2023-08-14T12:00:00Z', // End before start
+        })
+      ).toThrow(
+        'Invalid created date range: created_after must be before created_before'
+      );
     });
 
     it('should default to created_at when date_field not specified', () => {
@@ -262,7 +268,7 @@ describe('TimeframeUtils', () => {
         date_to: '2023-08-15T23:59:59Z',
         // date_field not specified
       });
-      
+
       expect(result?.timeframe_attribute).toBe('created_at');
     });
   });

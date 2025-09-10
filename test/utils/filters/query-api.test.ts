@@ -201,7 +201,11 @@ describe('Query API Implementation - Issue #523', () => {
     });
 
     it('should handle complex path arrays for relationship queries', () => {
-      const result = createQueryApiFilter(['company', 'industry'], 'equals', 'Technology');
+      const result = createQueryApiFilter(
+        ['company', 'industry'],
+        'equals',
+        'Technology'
+      );
 
       expect(result).toEqual({
         filter: {

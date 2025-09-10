@@ -9,12 +9,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UniversalMetadataService } from '../../src/services/UniversalMetadataService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
-// Mock the Attio client
-vi.mock('../../src/api/attio-client.js', () => ({
-  getAttioClient: vi.fn(() => ({
-    get: vi.fn(),
-  })),
-}));
+// Mock the Attio client using global override mechanism
+const mockGet = vi.fn();
+const mockClient = {
+  get: mockGet,
+};
 
 // Mock resource-specific attribute functions
 vi.mock('../../src/objects/companies/index.js', () => ({
@@ -26,7 +25,6 @@ vi.mock('../../src/objects/lists.js', () => ({
   getListAttributes: vi.fn(),
 }));
 
-import { getAttioClient } from '../../src/api/attio-client.js';
 import {
   getCompanyAttributes,
   discoverCompanyAttributes,
@@ -36,6 +34,8 @@ import { getListAttributes } from '../../src/objects/lists.js';
 describe('UniversalMetadataService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up test-specific client override
+    (globalThis as any).setTestApiClient?.(mockClient);
   });
 
   describe('discoverAttributesForResourceType', () => {
@@ -55,21 +55,16 @@ describe('UniversalMetadataService', () => {
         },
       ];
 
-      const mockClient = {
-        get: vi.fn().mockResolvedValue({
-          data: { data: mockAttributes },
-        }),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+      mockGet.mockResolvedValue({
+        data: { data: mockAttributes },
+      });
 
       const result =
         await UniversalMetadataService.discoverAttributesForResourceType(
           UniversalResourceType.COMPANIES
         );
 
-      expect(mockClient.get).toHaveBeenCalledWith(
-        '/objects/companies/attributes'
-      );
+      expect(mockGet).toHaveBeenCalledWith('/objects/companies/attributes');
       expect(result).toEqual({
         attributes: mockAttributes,
         mappings: {
@@ -103,10 +98,7 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const mockClient = {
-        get: vi.fn().mockRejectedValue(new Error('API Error')),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+      mockGet.mockRejectedValue(new Error('API Error'));
 
       await expect(
         UniversalMetadataService.discoverAttributesForResourceType(
@@ -158,31 +150,25 @@ describe('UniversalMetadataService', () => {
         status: 'active',
       };
 
-      const mockClient = {
-        get: vi.fn().mockResolvedValue({
-          data: { data: { values: mockValues } },
-        }),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+      mockGet.mockResolvedValue({
+        data: { data: { values: mockValues } },
+      });
 
       const result = await UniversalMetadataService.getAttributesForRecord(
         UniversalResourceType.COMPANIES,
         'comp_123'
       );
 
-      expect(mockClient.get).toHaveBeenCalledWith(
+      expect(mockGet).toHaveBeenCalledWith(
         '/objects/companies/records/comp_123'
       );
       expect(result).toEqual(mockValues);
     });
 
     it('should handle missing record data', async () => {
-      const mockClient = {
-        get: vi.fn().mockResolvedValue({
-          data: { data: {} },
-        }),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+      mockGet.mockResolvedValue({
+        data: { data: {} },
+      });
 
       const result = await UniversalMetadataService.getAttributesForRecord(
         UniversalResourceType.PEOPLE,
@@ -193,10 +179,7 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should handle API errors', async () => {
-      const mockClient = {
-        get: vi.fn().mockRejectedValue(new Error('Record not found')),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+      mockGet.mockRejectedValue(new Error('Record not found'));
 
       await expect(
         UniversalMetadataService.getAttributesForRecord(
@@ -396,12 +379,9 @@ describe('UniversalMetadataService', () => {
 
   describe('Integration with other resource types', () => {
     it('should handle people resource type for getAttributes', async () => {
-      const mockClient = {
-        get: vi.fn().mockResolvedValue({
-          data: { data: { values: { name: 'John Doe' } } },
-        }),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+      mockGet.mockResolvedValue({
+        data: { data: { values: { name: 'John Doe' } } },
+      });
 
       const result = await UniversalMetadataService.getAttributes({
         resource_type: UniversalResourceType.PEOPLE,
@@ -413,21 +393,17 @@ describe('UniversalMetadataService', () => {
 
     it('should handle records resource type for discovery', async () => {
       const mockAttributes = [{ id: 'test', api_slug: 'test', title: 'Test' }];
-      const mockClient = {
-        get: vi.fn().mockResolvedValue({
-          data: { data: mockAttributes },
-        }),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+
+      mockGet.mockResolvedValue({
+        data: { data: mockAttributes },
+      });
 
       const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.RECORDS,
         { objectSlug: 'companies' }
       );
 
-      expect(mockClient.get).toHaveBeenCalledWith(
-        '/objects/companies/attributes'
-      );
+      expect(mockGet).toHaveBeenCalledWith('/objects/companies/attributes');
       expect(result).toHaveProperty('attributes', mockAttributes);
     });
 
@@ -435,18 +411,16 @@ describe('UniversalMetadataService', () => {
       const mockAttributes = [
         { id: 'deal_attr', api_slug: 'deal_attr', title: 'Deal Attribute' },
       ];
-      const mockClient = {
-        get: vi.fn().mockResolvedValue({
-          data: { data: mockAttributes },
-        }),
-      };
-      vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
+
+      mockGet.mockResolvedValue({
+        data: { data: mockAttributes },
+      });
 
       const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.DEALS
       );
 
-      expect(mockClient.get).toHaveBeenCalledWith('/objects/deals/attributes');
+      expect(mockGet).toHaveBeenCalledWith('/objects/deals/attributes');
       expect(result).toHaveProperty('attributes', mockAttributes);
     });
   });

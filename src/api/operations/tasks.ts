@@ -2,6 +2,8 @@
  * Task operations for Attio
  */
 import { getLazyAttioClient } from '../../api/lazy-client.js';
+import * as AttioClientModule from '../../api/attio-client.js';
+import type { AxiosInstance } from 'axios';
 import {
   AttioTask,
   AttioListResponse,
@@ -137,7 +139,7 @@ export async function listTasks(
   pageSize: number = 25,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask[]> {
-  const api = getLazyAttioClient();
+  const api = resolveAttioClient();
   const params = new URLSearchParams();
   params.append('page', String(page));
   params.append('pageSize', String(pageSize));
@@ -156,7 +158,7 @@ export async function getTask(
   taskId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getLazyAttioClient();
+  const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
@@ -177,7 +179,7 @@ export async function createTask(
   } = {},
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getLazyAttioClient();
+  const api = resolveAttioClient();
   const path = '/tasks';
 
   // Validate linking parameters: both recordId and targetObject required, or neither
@@ -339,7 +341,7 @@ export async function updateTask(
   },
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getLazyAttioClient();
+  const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
   const data: TaskUpdateData = {};
   // Note: content is immutable and cannot be updated - ignore if provided
@@ -433,7 +435,7 @@ export async function deleteTask(
   taskId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getLazyAttioClient();
+  const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     await api.delete(path);
@@ -446,7 +448,7 @@ export async function linkRecordToTask(
   recordId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getLazyAttioClient();
+  const api = resolveAttioClient();
   const path = `/tasks/${taskId}/linked-records`;
   return callWithRetry(async () => {
     await api.post(path, { record_id: recordId });
@@ -459,10 +461,39 @@ export async function unlinkRecordFromTask(
   recordId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getLazyAttioClient();
+  const api = resolveAttioClient();
   const path = `/tasks/${taskId}/linked-records/${recordId}`;
   return callWithRetry(async () => {
     await api.delete(path);
     return true;
   }, retryConfig);
+}
+
+/**
+ * Resolve an Attio API client that works in both runtime and test environments.
+ * In tests/offline, prefer the mocked getAttioClient if available.
+ */
+function resolveAttioClient(): AxiosInstance {
+  const mod: any = AttioClientModule as any;
+  // Always prefer explicit factory if present (enables Vitest mocks)
+  if (typeof mod.getAttioClient === 'function') {
+    return mod.getAttioClient();
+  }
+  try {
+    return getLazyAttioClient();
+  } catch {
+    if (
+      typeof mod.createAttioClient === 'function' &&
+      process.env.ATTIO_API_KEY
+    ) {
+      return mod.createAttioClient(process.env.ATTIO_API_KEY);
+    }
+    if (
+      typeof mod.buildAttioClient === 'function' &&
+      process.env.ATTIO_API_KEY
+    ) {
+      return mod.buildAttioClient({ apiKey: process.env.ATTIO_API_KEY });
+    }
+    throw new Error('Unable to resolve Attio API client');
+  }
 }

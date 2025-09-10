@@ -74,7 +74,11 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(readResponse);
       // get-record-details returns data in content array, just verify success
       expect(readResponse.content).toBeDefined();
-      expect(Array.isArray(readResponse.content) ? readResponse.content.length > 0 : readResponse.content).toBeTruthy();
+      expect(
+        Array.isArray(readResponse.content)
+          ? readResponse.content.length > 0
+          : readResponse.content
+      ).toBeTruthy();
 
       const updateResponse = (await callUniversalTool('update-record', {
         resource_type: 'companies',
@@ -90,7 +94,11 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(verifyResponse);
       // Verify the response is valid (updated description verification would require parsing)
       expect(verifyResponse.content).toBeDefined();
-      expect(Array.isArray(verifyResponse.content) ? verifyResponse.content.length > 0 : verifyResponse.content).toBeTruthy();
+      expect(
+        Array.isArray(verifyResponse.content)
+          ? verifyResponse.content.length > 0
+          : verifyResponse.content
+      ).toBeTruthy();
       console.error('✅ Core CRUD workflow integrity preserved');
     },
     T45
@@ -143,7 +151,11 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(companyCheck);
       // Verify company details are returned successfully
       expect(companyCheck.content).toBeDefined();
-      expect(Array.isArray(companyCheck.content) ? companyCheck.content.length > 0 : companyCheck.content).toBeTruthy();
+      expect(
+        Array.isArray(companyCheck.content)
+          ? companyCheck.content.length > 0
+          : companyCheck.content
+      ).toBeTruthy();
       console.error('✅ Cross-resource relationship integrity preserved');
     },
     T60

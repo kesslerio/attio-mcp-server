@@ -48,16 +48,23 @@ class ApiContractTracker {
   /**
    * Log fallback and optionally throw error based on mode
    */
-  static logFallback(type: 'json_parse_failure' | 'string_extraction', details: string): void {
+  static logFallback(
+    type: 'json_parse_failure' | 'string_extraction',
+    details: string
+  ): void {
     const timestamp = new Date().toISOString();
     const mode = this.isStrictMode() ? 'STRICT' : 'DEBUG';
-    
+
     if (this.isStrictMode() && !this.isDebugMode()) {
-      console.error(`[API_CONTRACT_VIOLATION] ${timestamp} - ${type.toUpperCase()} (${mode}): ${details}`);
+      console.error(
+        `[API_CONTRACT_VIOLATION] ${timestamp} - ${type.toUpperCase()} (${mode}): ${details}`
+      );
     } else {
-      console.warn(`[API_CONTRACT_FALLBACK] ${timestamp} - ${type.toUpperCase()} (${mode}): ${details}`);
+      console.warn(
+        `[API_CONTRACT_FALLBACK] ${timestamp} - ${type.toUpperCase()} (${mode}): ${details}`
+      );
     }
-    
+
     switch (type) {
       case 'json_parse_failure':
         this.metrics.jsonParseFailures++;
@@ -72,13 +79,18 @@ class ApiContractTracker {
   /**
    * Throw error or warn based on mode setting
    */
-  static throwOrWarn(type: 'json_parse_failure' | 'string_extraction', message: string): void {
+  static throwOrWarn(
+    type: 'json_parse_failure' | 'string_extraction',
+    message: string
+  ): void {
     this.logFallback(type, message);
-    
+
     if (this.isStrictMode() && !this.isDebugMode()) {
-      throw new Error(`API Contract Violation (${type.replace('_', ' ')}): ${message}\n\n` +
-        'This indicates a real API integration issue that needs to be addressed.\n' +
-        'Set E2E_API_CONTRACT_DEBUG=true to temporarily enable fallback mode for troubleshooting.');
+      throw new Error(
+        `API Contract Violation (${type.replace('_', ' ')}): ${message}\n\n` +
+          'This indicates a real API integration issue that needs to be addressed.\n' +
+          'Set E2E_API_CONTRACT_DEBUG=true to temporarily enable fallback mode for troubleshooting.'
+      );
     }
   }
 
@@ -422,20 +434,22 @@ export class E2EAssertions {
 
     if (dataContent?.text) {
       const text = dataContent.text;
-      
+
       // Special handling for list-notes formatted output BEFORE trying JSON parse
       // This avoids API contract violations for known formatted responses
       const listNotesMatch = /^Found (\d+) notes/i.exec(text);
       if (listNotesMatch) {
         const count = parseInt(listNotesMatch[1], 10);
-        
+
         // For list-notes, we know it returns formatted text, not JSON
         // Return an empty array to satisfy test structure expectations
         // Tests should validate list operations differently (e.g., by checking the formatted text)
-        console.log(`[E2E] Detected list-notes format with ${count} notes. Returning empty array for test compatibility.`);
+        console.log(
+          `[E2E] Detected list-notes format with ${count} notes. Returning empty array for test compatibility.`
+        );
         return [] as unknown as McpResponseData;
       }
-      
+
       try {
         const parsedData = JSON.parse(text);
 
@@ -448,19 +462,20 @@ export class E2EAssertions {
         // In strict mode, throw error for JSON parse failures
         // In debug mode, continue with fallback logic
         ApiContractTracker.throwOrWarn(
-          'json_parse_failure', 
+          'json_parse_failure',
           `Failed to parse JSON response. Text length: ${text.length}, Preview: ${text.substring(0, 100)}...`
         );
 
         // If we reach here, we're in debug/fallback mode
         // Heuristic: handle formatted strings from certain tools (e.g., create-note, list-notes)
-        
+
         // Pattern 1: "✅ Note created successfully: <title> (ID: <id>)..."
-        const createNoteMatch = /Note created successfully:\s*(.+?)\s*\(ID:\s*([^\)]+)\)/i.exec(text);
+        const createNoteMatch =
+          /Note created successfully:\s*(.+?)\s*\(ID:\s*([^\)]+)\)/i.exec(text);
         if (createNoteMatch) {
           const title = createNoteMatch[1];
           const id = createNoteMatch[2];
-          
+
           // Log string extraction fallback (only logs in debug mode)
           ApiContractTracker.logFallback(
             'string_extraction',
@@ -474,29 +489,29 @@ export class E2EAssertions {
             format: 'markdown',
           } as unknown as McpResponseData;
         }
-        
+
         // Pattern 2: "Found 0 notes" or "Found X notes:\n1. title (timestamp) (ID: xxx)..."
         const listNotesMatch = /^Found (\d+) notes/i.exec(text);
         if (listNotesMatch) {
           const count = parseInt(listNotesMatch[1], 10);
-          
+
           // Log string extraction fallback (only logs in debug mode)
           ApiContractTracker.logFallback(
             'string_extraction',
             `Detected list-notes format with ${count} notes. Returning empty array for compatibility.`
           );
-          
+
           // For list-notes, return an empty array to satisfy test expectations
           // The actual data validation should be done differently for list operations
           return [] as unknown as McpResponseData;
         }
-        
+
         // Log when returning raw text as fallback (only logs in debug mode)
         ApiContractTracker.logFallback(
           'string_extraction',
           `No extraction pattern matched. Returning raw text as fallback. Length: ${text.length}`
         );
-        
+
         // Otherwise, return raw text to preserve debug behavior
         return text as unknown as McpResponseData;
       }
@@ -589,17 +604,29 @@ export class E2EAssertions {
         default:
           // Fallback to generic record assertion for unknown types
           expect(record.id, 'Record should have id object').toBeDefined();
-          expect(record.id.record_id, 'Record should have record_id').toBeDefined();
-          expect(typeof record.id.record_id, 'Record ID should be string').toBe('string');
-          expect(record.values, 'Record should have values object').toBeDefined();
-          expect(typeof record.values, 'Values should be object').toBe('object');
+          expect(
+            record.id.record_id,
+            'Record should have record_id'
+          ).toBeDefined();
+          expect(typeof record.id.record_id, 'Record ID should be string').toBe(
+            'string'
+          );
+          expect(
+            record.values,
+            'Record should have values object'
+          ).toBeDefined();
+          expect(typeof record.values, 'Values should be object').toBe(
+            'object'
+          );
           break;
       }
     } else {
       // Generic record assertion for backward compatibility
       expect(record.id, 'Record should have id object').toBeDefined();
       expect(record.id.record_id, 'Record should have record_id').toBeDefined();
-      expect(typeof record.id.record_id, 'Record ID should be string').toBe('string');
+      expect(typeof record.id.record_id, 'Record ID should be string').toBe(
+        'string'
+      );
       expect(record.values, 'Record should have values object').toBeDefined();
       expect(typeof record.values, 'Values should be object').toBe('object');
     }
@@ -664,7 +691,7 @@ export class E2EAssertions {
   static expectListRecord(list: TestDataObject): void {
     // Use resource-aware ID assertion for lists
     this.expectResourceId(list, 'lists');
-    
+
     expect(list.name, 'List should have name').toBeDefined();
     expect(list.parent_object, 'List should have parent_object').toBeDefined();
   }
@@ -675,7 +702,7 @@ export class E2EAssertions {
   static expectTaskRecord(task: TestDataObject): void {
     // Use resource-aware ID assertion for tasks
     this.expectResourceId(task, 'tasks');
-    
+
     expect(task.values, 'Task should have values object').toBeDefined();
     expect(typeof task.values, 'Values should be object').toBe('object');
 
@@ -930,7 +957,7 @@ export class E2EAssertions {
    * Resource-aware ID assertion helper
    */
   static expectResourceId(
-    obj: any, 
+    obj: any,
     resourceType: 'notes' | 'tasks' | 'companies' | 'people' | 'lists'
   ): void {
     // Coerce minimal note shapes into id object when possible
@@ -941,9 +968,15 @@ export class E2EAssertions {
       }
     }
     expect(obj, `${resourceType.slice(0, -1)} should be defined`).toBeDefined();
-    expect(obj.id, `${resourceType.slice(0, -1)} should have id object`).toBeDefined();
-    expect(typeof obj.id, `${resourceType.slice(0, -1)} ID should be object`).toBe('object');
-    
+    expect(
+      obj.id,
+      `${resourceType.slice(0, -1)} should have id object`
+    ).toBeDefined();
+    expect(
+      typeof obj.id,
+      `${resourceType.slice(0, -1)} ID should be object`
+    ).toBe('object');
+
     switch (resourceType) {
       case 'notes':
         // Support both raw notes (id.note_id) and normalized records (id.record_id)
@@ -953,29 +986,34 @@ export class E2EAssertions {
         break;
       case 'tasks':
         expect(obj.id.task_id, 'Task should have task_id').toBeDefined();
-        expect(typeof obj.id.task_id, 'Task ID should be string').toBe('string');
+        expect(typeof obj.id.task_id, 'Task ID should be string').toBe(
+          'string'
+        );
         break;
       case 'companies':
       case 'people':
         expect(obj.id.record_id, 'Record should have record_id').toBeDefined();
-        expect(typeof obj.id.record_id, 'Record ID should be string').toBe('string');
+        expect(typeof obj.id.record_id, 'Record ID should be string').toBe(
+          'string'
+        );
         break;
       case 'lists':
         expect(obj.id.list_id, 'List should have list_id').toBeDefined();
-        expect(typeof obj.id.list_id, 'List ID should be string').toBe('string');
+        expect(typeof obj.id.list_id, 'List ID should be string').toBe(
+          'string'
+        );
         break;
     }
-    
+
     // All resources should have workspace_id, except notes API may omit it
     if (resourceType !== 'notes') {
       expect(
         obj.id.workspace_id,
         `${resourceType.slice(0, -1)} should have workspace_id`
       ).toBeDefined();
-      expect(
-        typeof obj.id.workspace_id,
-        'Workspace ID should be string'
-      ).toBe('string');
+      expect(typeof obj.id.workspace_id, 'Workspace ID should be string').toBe(
+        'string'
+      );
     }
   }
 
@@ -988,11 +1026,13 @@ export class E2EAssertions {
 
     // Use resource-aware ID assertion for notes
     this.expectResourceId(note, 'notes');
-    
+
     // Support normalized and raw shapes for content/title
     const title = note.title ?? note.values?.title;
     const content =
-      note.content ?? note.values?.content_plaintext ?? note.values?.content_markdown;
+      note.content ??
+      note.values?.content_plaintext ??
+      note.values?.content_markdown;
     expect(title, 'Note should have title').toBeDefined();
     expect(content, 'Note should have content').toBeDefined();
     expect(typeof title, 'Note title should be string').toBe('string');

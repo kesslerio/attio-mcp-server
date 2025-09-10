@@ -152,7 +152,10 @@ describe.skipIf(
         content: [
           {
             type: 'text',
-            text: JSON.stringify({ id: { record_id: 'test-123' }, name: 'Test Company' }),
+            text: JSON.stringify({
+              id: { record_id: 'test-123' },
+              name: 'Test Company',
+            }),
           },
         ],
       } as any;

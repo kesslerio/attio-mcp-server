@@ -109,4 +109,3 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
     });
   });
 });
-

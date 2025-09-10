@@ -119,7 +119,11 @@ export async function callToolWithEnhancements(
       // Tools that provide E2E-safe fallbacks (no real API needed)
       ['list-notes'].includes(toolName);
 
-    if (!apiKeyStatus.available && isApiDependentTool(toolName) && !allowE2EMock) {
+    if (
+      !apiKeyStatus.available &&
+      isApiDependentTool(toolName) &&
+      !allowE2EMock
+    ) {
       const errorMessage = `Skipping API-dependent tool call: ${apiKeyStatus.message}`;
       logInfo(errorMessage, { toolName, skipped: true }, options.testName);
 

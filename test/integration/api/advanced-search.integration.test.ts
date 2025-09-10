@@ -48,7 +48,11 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
     it('should return companies matching a simple name filter', async () => {
       const filters = {
         filters: [
-          { attribute: { slug: 'name' }, condition: FilterConditionType.CONTAINS, value: 'inc' },
+          {
+            attribute: { slug: 'name' },
+            condition: FilterConditionType.CONTAINS,
+            value: 'inc',
+          },
         ],
       };
 
@@ -65,8 +69,16 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
     it('should handle OR logic with multiple conditions', async () => {
       const filters = {
         filters: [
-          { attribute: { slug: 'name' }, condition: FilterConditionType.CONTAINS, value: 'inc' },
-          { attribute: { slug: 'name' }, condition: FilterConditionType.CONTAINS, value: 'tech' },
+          {
+            attribute: { slug: 'name' },
+            condition: FilterConditionType.CONTAINS,
+            value: 'inc',
+          },
+          {
+            attribute: { slug: 'name' },
+            condition: FilterConditionType.CONTAINS,
+            value: 'tech',
+          },
         ],
         matchAny: true,
       };
@@ -78,7 +90,11 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
     it('should handle company-specific attributes', async () => {
       const filters = {
         filters: [
-          { attribute: { slug: 'website' }, condition: FilterConditionType.CONTAINS, value: '.com' },
+          {
+            attribute: { slug: 'website' },
+            condition: FilterConditionType.CONTAINS,
+            value: '.com',
+          },
         ],
       };
 
@@ -88,40 +104,61 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should throw appropriate error for invalid filter structure', async () => {
       const filters = {
-        filters: [
-          { condition: FilterConditionType.CONTAINS, value: 'test' },
-        ],
+        filters: [{ condition: FilterConditionType.CONTAINS, value: 'test' }],
       } as any;
-      await expect(advancedSearchCompanies(filters)).rejects.toThrow(/invalid/i);
+      await expect(advancedSearchCompanies(filters)).rejects.toThrow(
+        /invalid/i
+      );
     });
 
     it('should throw appropriate error for invalid condition', async () => {
       const filters = {
         filters: [
-          { attribute: { slug: 'name' }, condition: 'not_a_real_condition' as FilterConditionType, value: 'test' },
+          {
+            attribute: { slug: 'name' },
+            condition: 'not_a_real_condition' as FilterConditionType,
+            value: 'test',
+          },
         ],
       };
-      await expect(advancedSearchCompanies(filters)).rejects.toThrow(/invalid condition/i);
+      await expect(advancedSearchCompanies(filters)).rejects.toThrow(
+        /invalid condition/i
+      );
     });
   });
 
   describe('advancedSearchObject', () => {
-    if (SKIP_TESTS) { test.skip('Skipped: No API key available or tests disabled', () => {}); return; }
+    if (SKIP_TESTS) {
+      test.skip('Skipped: No API key available or tests disabled', () => {});
+      return;
+    }
 
     it('should search companies with the lower-level API function', async () => {
       const filters = {
         filters: [
-          { attribute: { slug: 'name' }, condition: FilterConditionType.CONTAINS, value: 'inc' },
+          {
+            attribute: { slug: 'name' },
+            condition: FilterConditionType.CONTAINS,
+            value: 'inc',
+          },
         ],
       };
-      const results = await advancedSearchObject(ResourceType.COMPANIES, filters, 5);
+      const results = await advancedSearchObject(
+        ResourceType.COMPANIES,
+        filters,
+        5
+      );
       expect(Array.isArray(results)).toBe(true);
     });
 
     it('should handle errors at the generic API level', async () => {
       const filters = {
         filters: [
-          { attribute: { slug: 'name' }, condition: 'not_a_real_condition' as FilterConditionType, value: 'test' },
+          {
+            attribute: { slug: 'name' },
+            condition: 'not_a_real_condition' as FilterConditionType,
+            value: 'test',
+          },
         ],
       };
       await expect(
@@ -137,4 +174,3 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
     });
   });
 });
-

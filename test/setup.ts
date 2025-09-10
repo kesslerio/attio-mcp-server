@@ -29,6 +29,19 @@ if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
   }
 }
 
+// Global test-specific client override mechanism
+let testSpecificClient: any = null;
+
+// Utility function for tests to override the API client
+(globalThis as any).setTestApiClient = (client: any) => {
+  testSpecificClient = client;
+};
+
+// Utility function for tests to clear overrides
+(globalThis as any).clearTestApiClient = () => {
+  testSpecificClient = null;
+};
+
 // ⬇️ keep this mock unconditionally; branch *inside* the factory
 vi.mock('../src/api/attio-client', async () => {
   // In E2E we want the *real* implementation
@@ -40,16 +53,21 @@ vi.mock('../src/api/attio-client', async () => {
     return actual;
   }
 
-  // Non-E2E: light stub that won't require an API key
-  // Use the rich mock API client that simulates Attio endpoints
-  const mockAxiosInstance = createMockApiClient() as any;
+  // Non-E2E: Use test-specific client if provided, otherwise default mock
+  const getClientInstance = () => {
+    if (testSpecificClient) {
+      return testSpecificClient;
+    }
+    // Use the rich mock API client that simulates Attio endpoints
+    return createMockApiClient();
+  };
 
   return {
     // New API
-    buildAttioClient: vi.fn(() => mockAxiosInstance),
+    buildAttioClient: vi.fn(() => getClientInstance()),
 
     // Legacy APIs kept for compatibility (return the same instance)
-    getAttioClient: vi.fn(() => mockAxiosInstance),
+    getAttioClient: vi.fn(() => getClientInstance()),
     initializeAttioClient: vi.fn(() => {}),
     isAttioClientInitialized: vi.fn(() => true),
   };
@@ -225,6 +243,9 @@ beforeEach(() => {
 
   // Clear all mocks before each test for isolation
   vi.clearAllMocks();
+
+  // Clear test-specific client override for clean test isolation
+  (globalThis as any).clearTestApiClient?.();
 
   // Clear mock company state for clean test isolation
   clearMockCompanies();

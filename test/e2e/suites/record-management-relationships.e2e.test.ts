@@ -12,7 +12,11 @@ import {
 } from 'vitest';
 import { E2ETestBase } from '../setup.js';
 import { E2EAssertions } from '../utils/assertions.js';
-import { CompanyFactory, PersonFactory, TaskFactory } from '../fixtures/index.js';
+import {
+  CompanyFactory,
+  PersonFactory,
+  TaskFactory,
+} from '../fixtures/index.js';
 import type { McpToolResponse } from '../types/index.js';
 import {
   callUniversalTool,

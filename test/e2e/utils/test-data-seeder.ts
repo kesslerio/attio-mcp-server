@@ -1,12 +1,6 @@
 import { E2EAssertions } from './assertions.js';
-import {
-  callUniversalTool,
-  callTasksTool,
-} from './enhanced-tool-caller.js';
-import {
-  CompanyFactory,
-  TaskFactory,
-} from '../fixtures/index.js';
+import { callUniversalTool, callTasksTool } from './enhanced-tool-caller.js';
+import { CompanyFactory, TaskFactory } from '../fixtures/index.js';
 import type { McpToolResponse, TestDataObject } from '../types/index.js';
 
 interface CacheMetrics {
@@ -39,7 +33,7 @@ export class TestDataSeeder {
 
   // Static instance for backward compatibility
   private static defaultInstance: TestDataSeeder | null = null;
-  
+
   private static getDefaultInstance(): TestDataSeeder {
     if (!this.defaultInstance) {
       this.defaultInstance = new TestDataSeeder('default-legacy');
@@ -57,7 +51,9 @@ export class TestDataSeeder {
       this.metrics.hits++;
       const cached = this.cache.get(cacheKey);
       if (!targetArray.includes(cached)) targetArray.push(cached);
-      console.log(`[SEEDER] Cache hit for company ${tag} in suite ${this.suiteId}`);
+      console.log(
+        `[SEEDER] Cache hit for company ${tag} in suite ${this.suiteId}`
+      );
       return cached;
     }
 
@@ -68,7 +64,9 @@ export class TestDataSeeder {
       return targetArray[0];
     }
 
-    console.log(`[SEEDER] Creating company for tag: ${tag} in suite: ${this.suiteId}`);
+    console.log(
+      `[SEEDER] Creating company for tag: ${tag} in suite: ${this.suiteId}`
+    );
     const companyData = CompanyFactory.create();
     const response = (await callUniversalTool('create-record', {
       resource_type: 'companies',
@@ -87,21 +85,22 @@ export class TestDataSeeder {
     this.setCachedItem(cacheKey, company);
     this.metrics.creations++;
     targetArray.push(company);
-    console.log(`[SEEDER] Created company ${(company as any).id.record_id} for ${tag} in suite ${this.suiteId}`);
+    console.log(
+      `[SEEDER] Created company ${(company as any).id.record_id} for ${tag} in suite ${this.suiteId}`
+    );
     return company;
   }
 
-  async ensureTask(
-    tag: string,
-    targetArray: TestDataObject[]
-  ): Promise<any> {
+  async ensureTask(tag: string, targetArray: TestDataObject[]): Promise<any> {
     const cacheKey = `${this.suiteId}:task-${tag}`;
 
     if (this.cache.has(cacheKey)) {
       this.metrics.hits++;
       const cached = this.cache.get(cacheKey);
       if (!targetArray.includes(cached)) targetArray.push(cached);
-      console.log(`[SEEDER] Cache hit for task ${tag} in suite ${this.suiteId}`);
+      console.log(
+        `[SEEDER] Cache hit for task ${tag} in suite ${this.suiteId}`
+      );
       return cached;
     }
 
@@ -112,7 +111,9 @@ export class TestDataSeeder {
       return targetArray[0];
     }
 
-    console.log(`[SEEDER] Creating task for tag: ${tag} in suite: ${this.suiteId}`);
+    console.log(
+      `[SEEDER] Creating task for tag: ${tag} in suite: ${this.suiteId}`
+    );
     const taskData = TaskFactory.create();
     const response = (await callTasksTool('create-record', {
       resource_type: 'tasks',
@@ -135,7 +136,9 @@ export class TestDataSeeder {
     this.setCachedItem(cacheKey, task);
     this.metrics.creations++;
     targetArray.push(task);
-    console.log(`[SEEDER] Created task ${(task as any).id.task_id} for ${tag} in suite ${this.suiteId}`);
+    console.log(
+      `[SEEDER] Created task ${(task as any).id.task_id} for ${tag} in suite ${this.suiteId}`
+    );
     return task;
   }
 
@@ -144,9 +147,11 @@ export class TestDataSeeder {
     if (this.cache.size >= this.maxCacheSize) {
       const firstKey = this.cache.keys().next().value;
       this.cache.delete(firstKey);
-      console.log(`[SEEDER] Cache evicted oldest entry to maintain size limit (${this.maxCacheSize})`);
+      console.log(
+        `[SEEDER] Cache evicted oldest entry to maintain size limit (${this.maxCacheSize})`
+      );
     }
-    
+
     this.cache.set(key, value);
     this.metrics.size = this.cache.size;
   }
@@ -155,7 +160,9 @@ export class TestDataSeeder {
     const sizeBefore = this.cache.size;
     this.cache.clear();
     this.metrics.size = 0;
-    console.log(`[SEEDER] Cleared cache for suite ${this.suiteId} (removed ${sizeBefore} entries)`);
+    console.log(
+      `[SEEDER] Cleared cache for suite ${this.suiteId} (removed ${sizeBefore} entries)`
+    );
   }
 
   getMetrics(): CacheMetrics {
@@ -164,14 +171,17 @@ export class TestDataSeeder {
 
   logMetrics(): void {
     const metrics = this.getMetrics();
-    const hitRate = metrics.hits + metrics.misses > 0 
-      ? ((metrics.hits / (metrics.hits + metrics.misses)) * 100).toFixed(1)
-      : '0';
-    
-    console.log(`[SEEDER] Cache metrics for ${this.suiteId}: ${JSON.stringify({
-      ...metrics,
-      hitRate: `${hitRate}%`
-    })}`);
+    const hitRate =
+      metrics.hits + metrics.misses > 0
+        ? ((metrics.hits / (metrics.hits + metrics.misses)) * 100).toFixed(1)
+        : '0';
+
+    console.log(
+      `[SEEDER] Cache metrics for ${this.suiteId}: ${JSON.stringify({
+        ...metrics,
+        hitRate: `${hitRate}%`,
+      })}`
+    );
   }
 
   // Static methods for backward compatibility
@@ -201,4 +211,3 @@ export class TestDataSeeder {
     this.getDefaultInstance().logMetrics();
   }
 }
-

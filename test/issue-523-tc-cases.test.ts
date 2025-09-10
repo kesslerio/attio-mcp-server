@@ -1,24 +1,25 @@
 /**
  * Issue #523 Test Cases - TC-010, TC-011, TC-012
- * 
+ *
  * These tests specifically validate the three failing test cases mentioned in Issue #523:
- * - TC-010: Search by Relationship 
+ * - TC-010: Search by Relationship
  * - TC-011: Search by Content
  * - TC-012: Search by Timeframe
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UniversalSearchService } from '../src/services/UniversalSearchService.js';
-import { UniversalResourceType, SearchType } from '../src/handlers/tool-configs/universal/types.js';
+import {
+  UniversalResourceType,
+  SearchType,
+} from '../src/handlers/tool-configs/universal/types.js';
 import type { UniversalSearchParams } from '../src/handlers/tool-configs/universal/types.js';
 
-// Mock the Attio client
+// Mock the Attio client using global override mechanism
 const mockPost = vi.fn();
-vi.mock('../src/api/attio-client.js', () => ({
-  getAttioClient: () => ({
-    post: mockPost,
-  }),
-}));
+const mockClient = {
+  post: mockPost,
+};
 
 // Mock performance tracking
 vi.mock('../src/middleware/performance-enhanced.js', () => ({
@@ -42,10 +43,14 @@ vi.mock('../src/services/ValidationService.js', () => ({
 describe('Issue #523 Test Cases - Query API Implementation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up test-specific client override
+    (globalThis as any).setTestApiClient?.(mockClient);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    // Clear test-specific client override
+    (globalThis as any).clearTestApiClient?.();
   });
 
   /**
@@ -70,7 +75,7 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
             {
               id: { record_id: 'person_124' },
               values: {
-                name: 'Jane Smith', 
+                name: 'Jane Smith',
                 email_addresses: [{ value: 'jane.smith@company.com' }],
                 company: { record_id: 'company_456' },
               },
@@ -143,13 +148,13 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
           },
         })
       );
-      
+
       expect(results).toHaveLength(1);
     });
   });
 
   /**
-   * TC-011: Search by Content - **FAILING** -> **SHOULD NOW PASS**  
+   * TC-011: Search by Content - **FAILING** -> **SHOULD NOW PASS**
    * Error: "Unknown attribute slug: $relationship"
    * Root Cause: Improper filter structure, should use query API with path and constraints
    */
@@ -396,7 +401,9 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
       // this should contribute to reaching the ≥50% target mentioned in the issue
 
       mockPost.mockResolvedValue({
-        data: { data: [{ id: { record_id: 'test' }, values: { name: 'Test' } }] },
+        data: {
+          data: [{ id: { record_id: 'test' }, values: { name: 'Test' } }],
+        },
       });
 
       const testCases = [
@@ -407,7 +414,7 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
           relationship_target_type: UniversalResourceType.PEOPLE,
           relationship_target_id: 'person_123',
         },
-        // TC-011: Content search  
+        // TC-011: Content search
         {
           resource_type: UniversalResourceType.COMPANIES,
           search_type: SearchType.CONTENT,
@@ -438,7 +445,9 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
       }
 
       const successRate = (passedCount / totalTests) * 100;
-      console.log(`P2 Test Success Rate: ${successRate}% (${passedCount}/${totalTests})`);
+      console.log(
+        `P2 Test Success Rate: ${successRate}% (${passedCount}/${totalTests})`
+      );
 
       // All TC cases should now pass (100% success rate for these 3 cases)
       expect(successRate).toBeGreaterThanOrEqual(100);

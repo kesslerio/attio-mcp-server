@@ -5,7 +5,10 @@ import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { PlaybookTestResult, ValidationLevel } from './types.js';
 
-export async function createFailureAnalysisReport(failures: PlaybookTestResult[], allResults: PlaybookTestResult[]) {
+export async function createFailureAnalysisReport(
+  failures: PlaybookTestResult[],
+  allResults: PlaybookTestResult[]
+) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const reportPath = `/tmp/customer-success-playbook-failures-${timestamp}.md`;
 
@@ -55,7 +58,10 @@ export async function createFailureAnalysisReport(failures: PlaybookTestResult[]
   console.log(`📄 Failure analysis report created: ${reportPath}`);
 }
 
-export async function createSingleGitHubIssue(failures: PlaybookTestResult[], allResults: PlaybookTestResult[]) {
+export async function createSingleGitHubIssue(
+  failures: PlaybookTestResult[],
+  allResults: PlaybookTestResult[]
+) {
   const issueBody = `# Customer Success Playbook Validation Failures
 
 **Generated:** ${new Date().toISOString()}
@@ -91,7 +97,9 @@ ${failures
 `;
 
   try {
-    console.log('🐙 Creating GitHub issue for customer success playbook failures...');
+    console.log(
+      '🐙 Creating GitHub issue for customer success playbook failures...'
+    );
     execSync(
       `gh issue create --title "Customer Success Playbook Validation: ${failures.length} Failed Examples" --body "${issueBody.replace(/"/g, '\\"')}" --label "P1,test,customer-success,area:testing"`,
       { stdio: 'inherit' }
@@ -103,10 +111,12 @@ ${failures
   }
 }
 
-export async function createEnhancedValidationReport(results: PlaybookTestResult[]) {
+export async function createEnhancedValidationReport(
+  results: PlaybookTestResult[]
+) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const reportPath = `/tmp/customer-success-enhanced-validation-${timestamp}.md`;
-  
+
   const report = `# Customer Success Playbook Enhanced Validation Report
 
 **Generated:** ${new Date().toISOString()}
@@ -116,35 +126,39 @@ export async function createEnhancedValidationReport(results: PlaybookTestResult
 
 ## Summary Statistics
 
-- 🟢 **Full Success:** ${results.filter(r => r.validationLevel === ValidationLevel.FULL_SUCCESS).length}/${results.length}
-- 🟡 **Partial Success:** ${results.filter(r => r.validationLevel === ValidationLevel.PARTIAL_SUCCESS).length}/${results.length}
-- 🔴 **API Errors:** ${results.filter(r => r.validationLevel === ValidationLevel.API_ERROR).length}/${results.length}
-- 🔴 **Data Errors:** ${results.filter(r => r.validationLevel === ValidationLevel.DATA_ERROR).length}/${results.length}
-- 🔴 **Framework Errors:** ${results.filter(r => r.validationLevel === ValidationLevel.FRAMEWORK_ERROR).length}/${results.length}
+- 🟢 **Full Success:** ${results.filter((r) => r.validationLevel === ValidationLevel.FULL_SUCCESS).length}/${results.length}
+- 🟡 **Partial Success:** ${results.filter((r) => r.validationLevel === ValidationLevel.PARTIAL_SUCCESS).length}/${results.length}
+- 🔴 **API Errors:** ${results.filter((r) => r.validationLevel === ValidationLevel.API_ERROR).length}/${results.length}
+- 🔴 **Data Errors:** ${results.filter((r) => r.validationLevel === ValidationLevel.DATA_ERROR).length}/${results.length}
+- 🔴 **Framework Errors:** ${results.filter((r) => r.validationLevel === ValidationLevel.FRAMEWORK_ERROR).length}/${results.length}
 
 ## Detailed Test Results
 
-${results.map((result, index) => {
-  const emoji = getValidationLevelEmoji(result.validationLevel || ValidationLevel.FRAMEWORK_ERROR);
-  const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
-  
-  let details = '';
-  if (result.validationDetails) {
-    if (result.validationDetails.errorDetails.length > 0) {
-      details += `\\n   **Errors:** ${result.validationDetails.errorDetails.join(', ')}`;
+${results
+  .map((result, index) => {
+    const emoji = getValidationLevelEmoji(
+      result.validationLevel || ValidationLevel.FRAMEWORK_ERROR
+    );
+    const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
+
+    let details = '';
+    if (result.validationDetails) {
+      if (result.validationDetails.errorDetails.length > 0) {
+        details += `\\n   **Errors:** ${result.validationDetails.errorDetails.join(', ')}`;
+      }
+      if (result.validationDetails.warningDetails.length > 0) {
+        details += `\\n   **Warnings:** ${result.validationDetails.warningDetails.join(', ')}`;
+      }
     }
-    if (result.validationDetails.warningDetails.length > 0) {
-      details += `\\n   **Warnings:** ${result.validationDetails.warningDetails.join(', ')}`;
-    }
-  }
-  
-  return `### Test ${index + 1}: ${result.prompt.substring(0, 80)}...
+
+    return `### Test ${index + 1}: ${result.prompt.substring(0, 80)}...
 
 - **Status:** ${emoji} ${level}
 - **Duration:** ${result.duration.toFixed(2)}ms
 - **Expected:** ${result.expectedOutcome}${details}${result.error ? `\\n   **Error:** ${result.error}` : ''}
 `;
-}).join('\\n')}
+  })
+  .join('\\n')}
 
 ## Validation Framework Improvements
 
@@ -186,11 +200,17 @@ This enhanced validation framework now provides:
 
 export function getValidationLevelEmoji(level: ValidationLevel): string {
   switch (level) {
-    case ValidationLevel.FULL_SUCCESS: return '🟢';
-    case ValidationLevel.PARTIAL_SUCCESS: return '🟡';
-    case ValidationLevel.API_ERROR: return '🔴';
-    case ValidationLevel.DATA_ERROR: return '🟠';
-    case ValidationLevel.FRAMEWORK_ERROR: return '⚫';
-    default: return '❓';
+    case ValidationLevel.FULL_SUCCESS:
+      return '🟢';
+    case ValidationLevel.PARTIAL_SUCCESS:
+      return '🟡';
+    case ValidationLevel.API_ERROR:
+      return '🔴';
+    case ValidationLevel.DATA_ERROR:
+      return '🟠';
+    case ValidationLevel.FRAMEWORK_ERROR:
+      return '⚫';
+    default:
+      return '❓';
   }
 }

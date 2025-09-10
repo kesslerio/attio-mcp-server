@@ -147,7 +147,9 @@ describe.skipIf(
 
         // Ensure at least 3 notes exist for the company for pagination tests
         const existingForCompany = createdNotes.filter(
-          (n: any) => n?.parent_record_id === companyId || n?.parent?.record_id === companyId
+          (n: any) =>
+            n?.parent_record_id === companyId ||
+            n?.parent?.record_id === companyId
         );
         if (existingForCompany.length < 3) {
           for (let i = existingForCompany.length; i < 3; i++) {

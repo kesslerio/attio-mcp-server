@@ -14,7 +14,11 @@ import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { TestValidator } from './customer-success-playbook/shared/test-validator.js';
-import { ValidationLevel, ValidationResult, PlaybookTestResult } from './customer-success-playbook/shared/types.js';
+import {
+  ValidationLevel,
+  ValidationResult,
+  PlaybookTestResult,
+} from './customer-success-playbook/shared/types.js';
 import { TEST_CONSTANTS } from './customer-success-playbook/shared/constants.js';
 
 interface ToolContent {
@@ -27,7 +31,6 @@ interface ToolContent {
 // To enable, set CS_E2E_ENABLE=true in the environment.
 const CS_PLAYBOOKS_ENABLED = process.env.CS_E2E_ENABLE === 'true';
 const suiteFn = CS_PLAYBOOKS_ENABLED ? describe : describe.skip;
-
 
 suiteFn('Customer Success Playbook Validation Suite', () => {
   let client: MCPTestClient;
@@ -70,14 +73,19 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
             resource_type: 'companies',
             filters: {
               filters: [
-                { attribute: { slug: 'name' }, condition: 'equals', value: seededCompanyName },
+                {
+                  attribute: { slug: 'name' },
+                  condition: 'equals',
+                  value: seededCompanyName,
+                },
               ],
             },
             limit: 1,
           },
           (result: ToolResult) => {
             const content = result?.content?.[0] as ToolContent;
-            const text = content && 'text' in content ? (content.text as string) : '';
+            const text =
+              content && 'text' in content ? (content.text as string) : '';
             const m = text.match(/\(ID:\s*([0-9a-fA-F-]{10,})\)/);
             if (m) {
               seededCompanyId = m[1];
@@ -115,14 +123,19 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
             resource_type: 'companies',
             filters: {
               filters: [
-                { attribute: { slug: 'name' }, condition: 'is_not_empty', value: true },
+                {
+                  attribute: { slug: 'name' },
+                  condition: 'is_not_empty',
+                  value: true,
+                },
               ],
             },
             limit: 3,
           },
           (result: ToolResult) => {
             const content = result?.content?.[0] as ToolContent;
-            const text = content && 'text' in content ? (content.text as string) : '';
+            const text =
+              content && 'text' in content ? (content.text as string) : '';
             const match = text.match(/\(ID:\s*([0-9a-fA-F-]{10,})\)/);
             if (match) {
               resolvedCompanyId = match[1];
@@ -132,7 +145,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
         );
       }
     } catch (error) {
-      console.warn('Failed to resolve company ID:', error instanceof Error ? error.message : String(error));
+      console.warn(
+        'Failed to resolve company ID:',
+        error instanceof Error ? error.message : String(error)
+      );
       resolvedCompanyId = null;
     }
   }, 120000);
@@ -142,14 +158,20 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
 
     // Enhanced analysis with validation levels
     const failures = testResults.filter((result) => !result.success);
-    const partialSuccesses = testResults.filter((result) => 
-      result.validationLevel === ValidationLevel.PARTIAL_SUCCESS);
-    const fullSuccesses = testResults.filter((result) => 
-      result.validationLevel === ValidationLevel.FULL_SUCCESS);
+    const partialSuccesses = testResults.filter(
+      (result) => result.validationLevel === ValidationLevel.PARTIAL_SUCCESS
+    );
+    const fullSuccesses = testResults.filter(
+      (result) => result.validationLevel === ValidationLevel.FULL_SUCCESS
+    );
 
     console.log('\n📊 Enhanced Test Summary:');
-    console.log(`   🟢 Full Success: ${fullSuccesses.length}/${testResults.length}`);
-    console.log(`   🟡 Partial Success: ${partialSuccesses.length}/${testResults.length}`);
+    console.log(
+      `   🟢 Full Success: ${fullSuccesses.length}/${testResults.length}`
+    );
+    console.log(
+      `   🟡 Partial Success: ${partialSuccesses.length}/${testResults.length}`
+    );
     console.log(`   🔴 Failures: ${failures.length}/${testResults.length}`);
 
     // Create detailed validation report
@@ -164,18 +186,25 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       if (process.env.CS_PLAYBOOK_REPORT === 'true') {
         await createSingleGitHubIssue(failures);
       } else {
-        console.log('🐙 Skipping GitHub issue creation (CS_PLAYBOOK_REPORT not set)');
+        console.log(
+          '🐙 Skipping GitHub issue creation (CS_PLAYBOOK_REPORT not set)'
+        );
       }
     } else {
-      console.log('\n✅ All customer success playbook examples validated successfully!');
+      console.log(
+        '\n✅ All customer success playbook examples validated successfully!'
+      );
     }
 
     // Print validation breakdown
-    const validationBreakdown = testResults.reduce((acc, result) => {
-      const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
-      acc[level] = (acc[level] || 0) + 1;
-      return acc;
-    }, {} as Record<ValidationLevel, number>);
+    const validationBreakdown = testResults.reduce(
+      (acc, result) => {
+        const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
+        acc[level] = (acc[level] || 0) + 1;
+        return acc;
+      },
+      {} as Record<ValidationLevel, number>
+    );
 
     console.log('\n🔍 Validation Level Breakdown:');
     Object.entries(validationBreakdown).forEach(([level, count]) => {
@@ -193,7 +222,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
         );
         console.log('🧹 Deleted seeded demo company');
       } catch (e) {
-        console.warn('⚠️ Cleanup: failed to delete seeded company:', (e as Error)?.message || String(e));
+        console.warn(
+          '⚠️ Cleanup: failed to delete seeded company:',
+          (e as Error)?.message || String(e)
+        );
       }
     }
   }, 120000);
@@ -201,7 +233,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
   describe('🎯 Quick Start Examples', () => {
     it('should execute the main customer review prompt from playbook Quick Start', async () => {
       const prompt =
-        'Show me all customers (companies with closed deals) and their basic information. Include company name, total deal value, last contact date, and any open tasks or notes from the last 30 days. Help me identify which accounts haven\'t been contacted recently and might need attention.';
+        "Show me all customers (companies with closed deals) and their basic information. Include company name, total deal value, last contact date, and any open tasks or notes from the last 30 days. Help me identify which accounts haven't been contacted recently and might need attention.";
       const expectedOutcome =
         'A customer portfolio overview with recent activity and attention priorities';
 
@@ -249,7 +281,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-      
+
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
@@ -266,7 +298,8 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should create follow-up tasks for customer outreach planning', async () => {
-      const prompt = 'Create tasks for customer health checks and satisfaction surveys';
+      const prompt =
+        'Create tasks for customer health checks and satisfaction surveys';
       const expectedOutcome = 'Successfully created customer outreach tasks';
 
       const result = await executePlaybookTest(
@@ -277,8 +310,11 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
           resource_type: 'tasks',
           record_data: {
             title: 'Customer Health Check - Weekly Review',
-            content: 'Conduct customer satisfaction survey and account health assessment',
-            due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            content:
+              'Conduct customer satisfaction survey and account health assessment',
+            due_date: new Date(
+              Date.now() + 7 * 24 * 60 * 60 * 1000
+            ).toISOString(),
           },
         }
       );
@@ -290,7 +326,8 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
 
   describe('📊 Weekly Customer Success Operations', () => {
     it('should organize customer accounts by strategic importance (account segmentation)', async () => {
-      const prompt = 'Organize customer accounts by strategic importance and value';
+      const prompt =
+        'Organize customer accounts by strategic importance and value';
       const expectedOutcome = 'Segmented customer accounts by importance tiers';
 
       const result = await executePlaybookTest(
@@ -318,7 +355,8 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should identify expansion opportunities through account review', async () => {
-      const prompt = 'Identify customers with expansion potential based on account activity';
+      const prompt =
+        'Identify customers with expansion potential based on account activity';
       const expectedOutcome = 'List of accounts with growth opportunities';
 
       const result = await executePlaybookTest(
@@ -337,8 +375,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should map and maintain customer relationships (stakeholder mapping)', async () => {
-      const prompt = 'Map decision makers, influencers, and end users across customer accounts';
-      const expectedOutcome = 'Comprehensive stakeholder mapping for customer accounts';
+      const prompt =
+        'Map decision makers, influencers, and end users across customer accounts';
+      const expectedOutcome =
+        'Comprehensive stakeholder mapping for customer accounts';
 
       const result = await executePlaybookTest(
         prompt,
@@ -356,8 +396,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should establish communication strategies with regular check-in schedules', async () => {
-      const prompt = 'Create systematic customer communication schedule based on account tier';
-      const expectedOutcome = 'Structured communication calendar for customer touchpoints';
+      const prompt =
+        'Create systematic customer communication schedule based on account tier';
+      const expectedOutcome =
+        'Structured communication calendar for customer touchpoints';
 
       const result = await executePlaybookTest(
         prompt,
@@ -385,8 +427,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
 
   describe('🔄 Monthly Strategic Customer Management', () => {
     it('should review customer success performance metrics', async () => {
-      const prompt = 'Review customer success performance through available data';
-      const expectedOutcome = 'Customer success metrics and performance analysis';
+      const prompt =
+        'Review customer success performance through available data';
+      const expectedOutcome =
+        'Customer success metrics and performance analysis';
 
       const result = await executePlaybookTest(
         prompt,
@@ -403,8 +447,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should develop strategic account plans for key customers', async () => {
-      const prompt = 'Develop strategic account plans for key customers with business review preparation';
-      const expectedOutcome = 'Strategic account plans with business review schedules';
+      const prompt =
+        'Develop strategic account plans for key customers with business review preparation';
+      const expectedOutcome =
+        'Strategic account plans with business review schedules';
 
       const result = await executePlaybookTest(
         prompt,
@@ -414,9 +460,11 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
           resource_type: 'notes',
           record_data: {
             title: 'Strategic Account Plan - Q4 Business Review',
-            content: 'Annual business review preparation and strategic planning for key customer account',
+            content:
+              'Annual business review preparation and strategic planning for key customer account',
             parent_object: 'companies',
-            parent_record_id: resolvedCompanyId || TEST_CONSTANTS.FALLBACK_COMPANY_ID,
+            parent_record_id:
+              resolvedCompanyId || TEST_CONSTANTS.FALLBACK_COMPANY_ID,
           },
         }
       );
@@ -426,8 +474,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should collect and analyze customer feedback systematically', async () => {
-      const prompt = 'Schedule regular satisfaction surveys and collect customer feedback';
-      const expectedOutcome = 'Systematic customer feedback collection and analysis';
+      const prompt =
+        'Schedule regular satisfaction surveys and collect customer feedback';
+      const expectedOutcome =
+        'Systematic customer feedback collection and analysis';
 
       // Seed a note with matching keywords to make content search deterministic
       if (resolvedCompanyId) {
@@ -437,7 +487,8 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
             resource_type: 'notes',
             record_data: {
               title: 'Customer Feedback Survey – Seed',
-              content: 'feedback satisfaction survey: seeded content for validation',
+              content:
+                'feedback satisfaction survey: seeded content for validation',
               parent_object: 'companies',
               parent_record_id: resolvedCompanyId,
             },
@@ -463,8 +514,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should optimize customer success processes for continuous improvement', async () => {
-      const prompt = 'Review customer success workflow efficiency and identify process improvements';
-      const expectedOutcome = 'Process improvement recommendations for customer success workflows';
+      const prompt =
+        'Review customer success workflow efficiency and identify process improvements';
+      const expectedOutcome =
+        'Process improvement recommendations for customer success workflows';
 
       const result = await executePlaybookTest(
         prompt,
@@ -484,14 +537,16 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
 
   describe('🎯 Customer Journey Optimization', () => {
     it('should track and optimize customer onboarding milestones', async () => {
-      const prompt = 'Track key implementation milestones and onboarding completion rates';
-      const expectedOutcome = 'Customer onboarding milestone tracking and optimization';
+      const prompt =
+        'Track key implementation milestones and onboarding completion rates';
+      const expectedOutcome =
+        'Customer onboarding milestone tracking and optimization';
 
       // Relax window: use longer timeframe to accommodate sparse data
       const daysAgo = new Date();
       daysAgo.setDate(daysAgo.getDate() - TEST_CONSTANTS.TIMEFRAME_DAYS);
       const startDate = daysAgo.toISOString().split('T')[0];
-      
+
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
@@ -509,7 +564,8 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
 
     it('should validate early customer success with 30-day check-ins', async () => {
       const prompt = 'Schedule 30-day success check-ins with new customers';
-      const expectedOutcome = 'Early success validation system for new customers';
+      const expectedOutcome =
+        'Early success validation system for new customers';
 
       const result = await executePlaybookTest(
         prompt,
@@ -519,8 +575,11 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
           resource_type: 'tasks',
           record_data: {
             title: '30-Day Customer Success Check-in',
-            content: 'Initial value realization and satisfaction assessment for new customer',
-            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            content:
+              'Initial value realization and satisfaction assessment for new customer',
+            due_date: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
           },
         }
       );
@@ -530,19 +589,29 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should identify and mitigate customer retention risks', async () => {
-      const prompt = 'Monitor customer engagement patterns and identify retention risks';
-      const expectedOutcome = 'Retention risk identification and mitigation strategies';
+      const prompt =
+        'Monitor customer engagement patterns and identify retention risks';
+      const expectedOutcome =
+        'Retention risk identification and mitigation strategies';
 
       // Prefer a guaranteed match: seeded company name if available; otherwise a broad contains filter
       const filters = seededCompanyName
         ? {
             filters: [
-              { attribute: { slug: 'name' }, condition: 'equals', value: seededCompanyName },
+              {
+                attribute: { slug: 'name' },
+                condition: 'equals',
+                value: seededCompanyName,
+              },
             ],
           }
         : {
             filters: [
-              { attribute: { slug: 'name' }, condition: 'contains', value: 'a' },
+              {
+                attribute: { slug: 'name' },
+                condition: 'contains',
+                value: 'a',
+              },
             ],
           };
 
@@ -564,8 +633,10 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     });
 
     it('should systematically develop customer growth opportunities', async () => {
-      const prompt = 'Identify successful customer use cases suitable for expansion';
-      const expectedOutcome = 'Customer growth opportunity development and tracking';
+      const prompt =
+        'Identify successful customer use cases suitable for expansion';
+      const expectedOutcome =
+        'Customer growth opportunity development and tracking';
 
       // Seed a note with matching keywords for deterministic content search
       if (resolvedCompanyId) {
@@ -632,55 +703,75 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
           console.log(`⏱️ Execution time: ${duration.toFixed(2)}ms`);
 
           // Use TestValidator for comprehensive validation
-          validationResult = TestValidator.validateToolResult(toolName, toolResult);
-          validationLevel = TestValidator.determineValidationLevel(validationResult);
+          validationResult = TestValidator.validateToolResult(
+            toolName,
+            toolResult
+          );
+          validationLevel =
+            TestValidator.determineValidationLevel(validationResult);
 
           // Enhanced logging based on validation results
           switch (validationLevel) {
             case ValidationLevel.FRAMEWORK_ERROR:
               console.error('❌ Framework execution failed');
               if (validationResult.errorDetails.length > 0) {
-                console.error('   Errors:', validationResult.errorDetails.join(', '));
+                console.error(
+                  '   Errors:',
+                  validationResult.errorDetails.join(', ')
+                );
               }
               return false;
-              
+
             case ValidationLevel.API_ERROR:
               console.error('❌ API call failed');
               if (validationResult.errorDetails.length > 0) {
-                console.error('   Errors:', validationResult.errorDetails.join(', '));
+                console.error(
+                  '   Errors:',
+                  validationResult.errorDetails.join(', ')
+                );
               }
               return false;
-              
+
             case ValidationLevel.DATA_ERROR:
               console.error('❌ Data validation failed');
               if (validationResult.errorDetails.length > 0) {
-                console.error('   Errors:', validationResult.errorDetails.join(', '));
+                console.error(
+                  '   Errors:',
+                  validationResult.errorDetails.join(', ')
+                );
               }
               return false;
-              
+
             case ValidationLevel.PARTIAL_SUCCESS:
               console.warn('⚠️ Partial success (with warnings)');
               if (validationResult.warningDetails.length > 0) {
-                console.warn('   Warnings:', validationResult.warningDetails.join(', '));
+                console.warn(
+                  '   Warnings:',
+                  validationResult.warningDetails.join(', ')
+                );
               }
               if (toolResult.content && toolResult.content.length > 0) {
                 const content = toolResult.content[0];
                 if ('text' in content) {
-                  console.log(`📄 Result preview: ${content.text.substring(0, 200)}...`);
+                  console.log(
+                    `📄 Result preview: ${content.text.substring(0, 200)}...`
+                  );
                 }
               }
               return true; // Accept partial success as valid test result
-              
+
             case ValidationLevel.FULL_SUCCESS:
               console.log('✅ Full validation success');
               if (toolResult.content && toolResult.content.length > 0) {
                 const content = toolResult.content[0];
                 if ('text' in content) {
-                  console.log(`📄 Result preview: ${content.text.substring(0, 200)}...`);
+                  console.log(
+                    `📄 Result preview: ${content.text.substring(0, 200)}...`
+                  );
                 }
               }
               return true;
-              
+
             default:
               console.error('❌ Unknown validation level');
               return false;
@@ -692,8 +783,9 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const duration = endTime - startTime;
 
       // Determine overall test success based on validation level
-      const testSuccess = validationLevel === ValidationLevel.FULL_SUCCESS || 
-                         validationLevel === ValidationLevel.PARTIAL_SUCCESS;
+      const testSuccess =
+        validationLevel === ValidationLevel.FULL_SUCCESS ||
+        validationLevel === ValidationLevel.PARTIAL_SUCCESS;
 
       return {
         success: testSuccess,
@@ -807,7 +899,9 @@ ${failures
 `;
 
     try {
-      console.log('🐙 Creating GitHub issue for customer success playbook failures...');
+      console.log(
+        '🐙 Creating GitHub issue for customer success playbook failures...'
+      );
       execSync(
         `gh issue create --title "Customer Success Playbook Validation: ${failures.length} Failed Examples" --body "${issueBody.replace(/"/g, '\\"')}" --label "P1,test,customer-success,area:testing"`,
         { stdio: 'inherit' }
@@ -822,7 +916,7 @@ ${failures
   async function createEnhancedValidationReport(results: PlaybookTestResult[]) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportPath = `/tmp/customer-success-enhanced-validation-${timestamp}.md`;
-    
+
     const report = `# Customer Success Playbook Enhanced Validation Report
 
 **Generated:** ${new Date().toISOString()}
@@ -832,35 +926,39 @@ ${failures
 
 ## Summary Statistics
 
-- 🟢 **Full Success:** ${results.filter(r => r.validationLevel === ValidationLevel.FULL_SUCCESS).length}/${results.length}
-- 🟡 **Partial Success:** ${results.filter(r => r.validationLevel === ValidationLevel.PARTIAL_SUCCESS).length}/${results.length}
-- 🔴 **API Errors:** ${results.filter(r => r.validationLevel === ValidationLevel.API_ERROR).length}/${results.length}
-- 🔴 **Data Errors:** ${results.filter(r => r.validationLevel === ValidationLevel.DATA_ERROR).length}/${results.length}
-- 🔴 **Framework Errors:** ${results.filter(r => r.validationLevel === ValidationLevel.FRAMEWORK_ERROR).length}/${results.length}
+- 🟢 **Full Success:** ${results.filter((r) => r.validationLevel === ValidationLevel.FULL_SUCCESS).length}/${results.length}
+- 🟡 **Partial Success:** ${results.filter((r) => r.validationLevel === ValidationLevel.PARTIAL_SUCCESS).length}/${results.length}
+- 🔴 **API Errors:** ${results.filter((r) => r.validationLevel === ValidationLevel.API_ERROR).length}/${results.length}
+- 🔴 **Data Errors:** ${results.filter((r) => r.validationLevel === ValidationLevel.DATA_ERROR).length}/${results.length}
+- 🔴 **Framework Errors:** ${results.filter((r) => r.validationLevel === ValidationLevel.FRAMEWORK_ERROR).length}/${results.length}
 
 ## Detailed Test Results
 
-${results.map((result, index) => {
-  const emoji = getValidationLevelEmoji(result.validationLevel || ValidationLevel.FRAMEWORK_ERROR);
-  const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
-  
-  let details = '';
-  if (result.validationDetails) {
-    if (result.validationDetails.errorDetails.length > 0) {
-      details += `\\n   **Errors:** ${result.validationDetails.errorDetails.join(', ')}`;
+${results
+  .map((result, index) => {
+    const emoji = getValidationLevelEmoji(
+      result.validationLevel || ValidationLevel.FRAMEWORK_ERROR
+    );
+    const level = result.validationLevel || ValidationLevel.FRAMEWORK_ERROR;
+
+    let details = '';
+    if (result.validationDetails) {
+      if (result.validationDetails.errorDetails.length > 0) {
+        details += `\\n   **Errors:** ${result.validationDetails.errorDetails.join(', ')}`;
+      }
+      if (result.validationDetails.warningDetails.length > 0) {
+        details += `\\n   **Warnings:** ${result.validationDetails.warningDetails.join(', ')}`;
+      }
     }
-    if (result.validationDetails.warningDetails.length > 0) {
-      details += `\\n   **Warnings:** ${result.validationDetails.warningDetails.join(', ')}`;
-    }
-  }
-  
-  return `### Test ${index + 1}: ${result.prompt.substring(0, 80)}...
+
+    return `### Test ${index + 1}: ${result.prompt.substring(0, 80)}...
 
 - **Status:** ${emoji} ${level}
 - **Duration:** ${result.duration.toFixed(2)}ms
 - **Expected:** ${result.expectedOutcome}${details}${result.error ? `\\n   **Error:** ${result.error}` : ''}
 `;
-}).join('\\n')}
+  })
+  .join('\\n')}
 
 ## Validation Framework Improvements
 
@@ -902,12 +1000,18 @@ This enhanced validation framework now provides:
 
   function getValidationLevelEmoji(level: ValidationLevel): string {
     switch (level) {
-      case ValidationLevel.FULL_SUCCESS: return '🟢';
-      case ValidationLevel.PARTIAL_SUCCESS: return '🟡';
-      case ValidationLevel.API_ERROR: return '🔴';
-      case ValidationLevel.DATA_ERROR: return '🟠';
-      case ValidationLevel.FRAMEWORK_ERROR: return '⚫';
-      default: return '❓';
+      case ValidationLevel.FULL_SUCCESS:
+        return '🟢';
+      case ValidationLevel.PARTIAL_SUCCESS:
+        return '🟡';
+      case ValidationLevel.API_ERROR:
+        return '🔴';
+      case ValidationLevel.DATA_ERROR:
+        return '🟠';
+      case ValidationLevel.FRAMEWORK_ERROR:
+        return '⚫';
+      default:
+        return '❓';
     }
   }
 });

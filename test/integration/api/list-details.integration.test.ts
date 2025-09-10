@@ -24,7 +24,9 @@ describe('get-list-details API test', () => {
       initializeAttioClient(process.env.ATTIO_API_KEY as string);
       console.log('Running Attio API integration tests with real API key');
     } else {
-      console.log('Skipping Attio API integration tests (SKIP_INTEGRATION_TESTS=true or no ATTIO_API_KEY)');
+      console.log(
+        'Skipping Attio API integration tests (SKIP_INTEGRATION_TESTS=true or no ATTIO_API_KEY)'
+      );
     }
   });
 
@@ -94,4 +96,3 @@ describe('get-list-details API test', () => {
     TIMEOUT
   );
 });
-
