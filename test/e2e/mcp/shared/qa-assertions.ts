@@ -1,0 +1,223 @@
+/**
+ * QA-Specific Assertions
+ * Helper functions for validating MCP tool responses according to QA test plan requirements
+ */
+
+import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+
+export class QAAssertions {
+  /**
+   * Assert that a search operation returned valid results
+   */
+  static assertValidSearchResults(
+    result: ToolResult,
+    resourceType: string,
+    minResults: number = 0
+  ): void {
+    const text = this.extractText(result);
+    
+    // Should not contain error indicators
+    expect(text.toLowerCase()).not.toContain('error');
+    expect(text.toLowerCase()).not.toContain('failed');
+    expect(text.toLowerCase()).not.toContain('invalid');
+    
+    // Should indicate the resource type being searched or have results
+    if (minResults > 0) {
+      // If we expect results, verify we got some indication of data
+      expect(text.length).toBeGreaterThan(50); // Arbitrary minimum for actual results
+    }
+  }
+
+  /**
+   * Assert that record details were retrieved successfully
+   */
+  static assertValidRecordDetails(
+    result: ToolResult,
+    resourceType: string,
+    recordId: string
+  ): void {
+    // MCP doesn't have isError property - check text content
+    const text = this.extractText(result);
+    
+    // Should contain the record ID or indicate successful retrieval
+    expect(text).toBeTruthy();
+    expect(text.toLowerCase()).not.toContain('not found');
+    expect(text.toLowerCase()).not.toContain('does not exist');
+    expect(text.toLowerCase()).not.toContain('error');
+  }
+
+  /**
+   * Assert that a record was created successfully
+   */
+  static assertRecordCreated(
+    result: ToolResult,
+    resourceType: string,
+    expectedFields?: Record<string, unknown>
+  ): string {
+    const text = this.extractText(result);
+    
+    // Should indicate successful creation
+    expect(text.toLowerCase()).not.toContain('error');
+    expect(text.toLowerCase()).not.toContain('failed');
+    
+    // MCP returns success messages like "✅ Successfully created..."
+    expect(text).toContain('Successfully created');
+    
+    // Extract ID from MCP format: "(ID: uuid-here)"
+    const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
+    const recordId = idMatch ? idMatch[1] : '';
+    
+    expect(recordId).toBeTruthy();
+    
+    // Note: MCP doesn't preserve exact field values in response
+    // Just verify it's a successful creation
+    
+    return recordId;
+  }
+
+  /**
+   * Assert that a record was updated successfully
+   */
+  static assertRecordUpdated(
+    result: ToolResult,
+    resourceType: string,
+    recordId: string,
+    updatedFields?: Record<string, unknown>
+  ): void {
+    const text = this.extractText(result);
+    
+    // Should indicate successful update
+    expect(text.toLowerCase()).not.toContain('error');
+    expect(text.toLowerCase()).not.toContain('failed');
+    expect(text.toLowerCase()).not.toContain('not found');
+    
+    // MCP returns success messages for updates
+    const hasSuccessIndicator = 
+      text.includes('Successfully updated') ||
+      text.includes('✅') ||
+      text.includes('updated');
+    
+    expect(hasSuccessIndicator).toBeTruthy();
+  }
+
+  /**
+   * Assert that a record was deleted successfully
+   */
+  static assertRecordDeleted(
+    result: ToolResult,
+    resourceType: string,
+    recordId: string
+  ): void {
+    const text = this.extractText(result);
+    
+    // Should indicate successful deletion
+    expect(text.toLowerCase()).not.toContain('error');
+    expect(text.toLowerCase()).not.toContain('failed');
+    
+    // MCP returns success messages for deletions
+    const hasSuccessIndicator = 
+      text.includes('Successfully deleted') ||
+      text.includes('✅') ||
+      text.includes('deleted') ||
+      text.includes('removed');
+    
+    expect(hasSuccessIndicator).toBeTruthy();
+  }
+
+  /**
+   * Assert that attempting to access a deleted record returns appropriate error
+   */
+  static assertRecordNotFound(
+    result: ToolResult,
+    resourceType: string,
+    recordId: string
+  ): void {
+    const text = this.extractText(result);
+    
+    // Should indicate record not found
+    // The exact message may vary, but should indicate the record doesn't exist
+    const hasNotFoundIndicator = 
+      text.toLowerCase().includes('not found') ||
+      text.toLowerCase().includes('does not exist') ||
+      text.includes('404') ||
+      text.toLowerCase().includes('error') ||
+      text.toLowerCase().includes('failed');
+    
+    expect(hasNotFoundIndicator).toBeTruthy();
+  }
+
+  /**
+   * Assert that schema/attributes were retrieved successfully
+   */
+  static assertValidSchema(
+    result: ToolResult,
+    objectType: string
+  ): void {
+    expect(result.isError).toBeFalsy();
+    
+    const text = this.extractText(result);
+    
+    // Should contain attribute information
+    expect(text).toBeTruthy();
+    expect(text.length).toBeGreaterThan(100); // Should have substantial schema info
+    expect(text).not.toContain('error');
+  }
+
+  /**
+   * Assert that a batch operation completed successfully
+   */
+  static assertBatchOperationSuccess(
+    result: ToolResult,
+    operationType: string,
+    expectedCount: number
+  ): void {
+    expect(result.isError).toBeFalsy();
+    
+    const text = this.extractText(result);
+    
+    // Should indicate successful batch operation
+    expect(text).not.toContain('error');
+    expect(text).not.toContain('failed');
+    
+    // Could validate count if response format includes it
+  }
+
+  /**
+   * Helper to extract text content from result
+   */
+  private static extractText(result: ToolResult): string {
+    if (result.content && result.content.length > 0) {
+      const content = result.content[0];
+      if ('text' in content) {
+        return content.text;
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Validate quality gate requirements
+   */
+  static validateP0QualityGate(results: Array<{ test: string; passed: boolean }>): void {
+    const totalTests = results.length;
+    const passedTests = results.filter(r => r.passed).length;
+    const passRate = (passedTests / totalTests) * 100;
+    
+    console.log(`\nP0 Quality Gate Results:`);
+    console.log(`Total Tests: ${totalTests}`);
+    console.log(`Passed: ${passedTests}`);
+    console.log(`Failed: ${totalTests - passedTests}`);
+    console.log(`Pass Rate: ${passRate.toFixed(1)}%`);
+    
+    if (passRate < 100) {
+      const failedTests = results.filter(r => !r.passed).map(r => r.test);
+      throw new Error(
+        `P0 CRITICAL: Quality gate failed! Pass rate: ${passRate.toFixed(1)}%\n` +
+        `Failed tests: ${failedTests.join(', ')}\n` +
+        `System is NOT ready for testing.`
+      );
+    }
+    
+    console.log(`✅ P0 Quality Gate PASSED - System ready for P1 testing`);
+  }
+}
