@@ -4,6 +4,11 @@
 // This ensures MCP JSON-RPC protocol compliance by preventing stdout contamination
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES module compatibility for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function loadEnvFile() {
   try {
@@ -31,13 +36,37 @@ function loadEnvFile() {
   }
 }
 
-loadEnvFile();
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createServer } from './server/createServer.js';
-import { error as logError, OperationType } from './utils/logger.js';
-
 // Main function - simplified MCP server following FastMCP patterns
 async function main() {
+  // Handle command-line arguments for CI/CD compatibility
+  // Do this BEFORE loading any modules to avoid unnecessary initialization
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    console.log('Attio MCP Server - Model Context Protocol server for Attio CRM');
+    console.log('\nUsage: node dist/index.js');
+    console.log('\nOptions:');
+    console.log('  --help, -h     Show this help message');
+    console.log('  --version, -v  Show version information');
+    console.log('\nEnvironment Variables:');
+    console.log('  ATTIO_API_KEY         Required: Your Attio API key');
+    console.log('  ATTIO_WORKSPACE_ID    Optional: Default workspace ID');
+    console.log('\nThe server communicates via stdio using the MCP protocol.');
+    process.exit(0);
+  }
+
+  if (process.argv.includes('--version') || process.argv.includes('-v')) {
+    const packageJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
+    console.log(`Attio MCP Server v${packageJson.version}`);
+    process.exit(0);
+  }
+
+  // Only load environment and modules when actually starting the server
+  loadEnvFile();
+
+  // Dynamic imports to avoid loading modules when showing help/version
+  const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
+  const { createServer } = await import('./server/createServer.js');
+  const { error: logError, OperationType } = await import('./utils/logger.js');
+
   try {
     // Create the configured MCP server
     const mcpServer = createServer();
@@ -92,7 +121,9 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
+  // Import logger only if needed for error handling
+  const { error: logError, OperationType } = await import('./utils/logger.js');
   logError(
     'main',
     'Unhandled error in main process',
