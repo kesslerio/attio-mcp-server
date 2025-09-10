@@ -438,6 +438,15 @@ npm run build
 npm run test:offline
 ```
 
+### **Smithery CLI Development**
+
+For local development and testing with Smithery Playground:
+```bash
+npm run dev  # Opens Smithery Playground with local server
+```
+
+See [docs/deployment/smithery-cli-setup.md](./docs/deployment/smithery-cli-setup.md) for detailed Smithery CLI development setup.
+
 ### **Testing**
 
 The project includes comprehensive testing at multiple levels with **100% E2E test pass rate**:
