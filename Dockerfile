@@ -1,12 +1,12 @@
 FROM node:20-alpine
 WORKDIR /app
 
-# Install all deps (we need dev deps for tsc and smithery's TS build)
+# Install deps without running prepare/postinstall (sources not copied yet)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
-# Copy sources and build
+# Now bring in the source, then build explicitly
 COPY . .
 RUN npm run build
 
-# No CMD: smithery.yaml controls how the server starts
+# No CMD; smithery.yaml starts the server
