@@ -104,30 +104,32 @@ describe('CachingService', () => {
     it('should clear only expired cache entries', () => {
       const shortTTL = 50;
       const longTTL = 10000;
+      // Use fake timers to make timing deterministic
+      vi.useFakeTimers();
 
-      // Cache with different keys (simulating different cache entries)
-      CachingService.setCachedTasks('key1', mockTasks);
+      try {
+        // Cache with different keys (simulating different cache entries)
+        CachingService.setCachedTasks('key1', mockTasks);
 
-      // Wait a bit then add another entry
-      setTimeout(() => {
+        // Advance time past shortTTL before setting second entry
+        vi.advanceTimersByTime(shortTTL + 10);
         CachingService.setCachedTasks('key2', mockTasks);
-      }, shortTTL + 10);
 
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // Clear expired entries
-          CachingService.clearExpiredTasksCache(shortTTL);
+        // Advance time so that key1 is expired but key2 is still valid
+        // Current elapsed since key1: shortTTL + 10; advance by (shortTTL - 10) => total 2*shortTTL
+        vi.advanceTimersByTime(shortTTL - 10);
 
-          // First entry should be cleared, second should remain
-          expect(
-            CachingService.getCachedTasks('key1', longTTL)
-          ).toBeUndefined();
-          expect(CachingService.getCachedTasks('key2', longTTL)).toEqual(
-            mockTasks
-          );
-          resolve(undefined);
-        }, shortTTL * 2);
-      });
+        // Clear expired entries
+        CachingService.clearExpiredTasksCache(shortTTL);
+
+        // First entry should be cleared, second should remain
+        expect(CachingService.getCachedTasks('key1', longTTL)).toBeUndefined();
+        expect(CachingService.getCachedTasks('key2', longTTL)).toEqual(
+          mockTasks
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should provide cache statistics', () => {
