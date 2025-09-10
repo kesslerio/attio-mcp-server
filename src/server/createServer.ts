@@ -4,6 +4,7 @@
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { z } from 'zod';
 import { registerResourceHandlers } from '../handlers/resources.js';
 import { registerToolHandlers } from '../handlers/tools/index.js';
 import { registerPromptHandlers } from '../prompts/handlers.js';
@@ -15,6 +16,24 @@ export interface ServerContext {
   getApiKey?: () => string | undefined;
   getWorkspaceId?: () => string | undefined;
 }
+
+/**
+ * Configuration schema for Smithery/Playground auto-discovery
+ * This allows scanners to build a test configuration without guessing.
+ */
+export const configSchema = z.object({
+  ATTIO_API_KEY: z.string().min(1).optional().describe('Attio API key'),
+  ATTIO_WORKSPACE_ID: z
+    .string()
+    .min(1)
+    .optional()
+    .describe('Attio workspace ID'),
+  ALLOWED_ORIGINS: z
+    .string()
+    .optional()
+    .describe('Comma-separated CORS origins'),
+  debug: z.boolean().default(false).describe('Enable verbose logging'),
+});
 
 /**
  * Creates an MCP server instance
