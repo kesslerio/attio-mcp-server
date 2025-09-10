@@ -438,6 +438,26 @@ npm run build
 npm run test:offline
 ```
 
+### **Smithery CLI Development (NEW)**
+
+Test locally with Smithery Playground without deploying:
+
+```bash
+# Start dev server with live Playground
+npm run dev
+
+# Or build and start in one command
+npm run dev:build
+```
+
+This provides:
+- 🚀 **Local Playground**: Test tools in browser with ngrok tunnel
+- 🔍 **Scanner Testing**: Verify capability discovery works
+- 🔐 **Per-Session Config**: Test with/without API keys
+- 🔄 **Hot Reload**: Make changes and test immediately
+
+See [Smithery Dev Setup Guide](docs/smithery-dev-setup.md) and [Quick Reference](docs/smithery-quick-reference.md) for details.
+
 ### **Testing**
 
 The project includes comprehensive testing at multiple levels with **100% E2E test pass rate**:

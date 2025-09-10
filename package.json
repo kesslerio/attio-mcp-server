@@ -17,6 +17,8 @@
     "prepare": "npm run build",
     "start:stdio": "node dist/index.js",
     "start:http": "node dist/http.js",
+    "dev": "npx @smithery/cli dev",
+    "dev:build": "npm run build && npm run dev",
     "check": "wireit",
     "build:watch": "tsc --watch",
     "lint:check": "wireit",
