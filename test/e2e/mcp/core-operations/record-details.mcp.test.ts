@@ -16,29 +16,7 @@ class RecordDetailsTest extends MCPTestBase {
   constructor() {
     super('TC002');
   }
-  
-  /**
-   * Helper to extract record ID from search results
-   */
-  extractRecordId(searchResult: string): string | null {
-    // Try multiple patterns to extract ID
-    const patterns = [
-      /"id"\s*:\s*"([^"]+)"/,
-      /\bid\s*=\s*["']([^"']+)["']/i,
-      /record_id["\s:]+([a-zA-Z0-9_-]+)/i,
-      /\b([a-f0-9]{24,})\b/, // MongoDB-style ID
-      /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i, // UUID
-    ];
-    
-    for (const pattern of patterns) {
-      const match = searchResult.match(pattern);
-      if (match && match[1]) {
-        return match[1];
-      }
-    }
-    
-    return null;
-  }
+  // Using extractRecordId from base class now
 }
 
 describe('TC-002: Get Record Details - Data Retrieval', () => {
@@ -230,6 +208,10 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
           record_id: fakeId
         }
       );
+      
+      // The result should exist (not undefined)
+      expect(result).toBeDefined();
+      expect(result?.content).toBeTruthy();
       
       // Should return appropriate error or not found message
       QAAssertions.assertRecordNotFound(result, 'companies', fakeId);

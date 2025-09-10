@@ -126,6 +126,35 @@ export abstract class MCPTestBase {
   }
 
   /**
+   * Extract record ID from MCP response text
+   * MCP returns IDs in format: "(ID: uuid-here)"
+   */
+  protected extractRecordId(text: string): string | null {
+    // Primary pattern for MCP responses: (ID: uuid)
+    const idInParensMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
+    if (idInParensMatch && idInParensMatch[1]) {
+      return idInParensMatch[1];
+    }
+    
+    // Fallback patterns
+    const patterns = [
+      /"id"\s*:\s*"([^"]+)"/i,
+      /\bid\s*=\s*["']([^"']+)["']/i,
+      /record_id["\s:]+([a-zA-Z0-9_-]+)/i,
+      /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i, // UUID
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return null;
+  }
+
+  /**
    * Check if result indicates an error condition
    */
   protected hasError(result: ToolResult): boolean {

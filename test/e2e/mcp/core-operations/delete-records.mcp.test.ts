@@ -53,8 +53,8 @@ describe('TC-005: Delete Records - Data Removal', () => {
       );
       
       const createText = testCase.extractTextContent(createResult);
-      const idMatch = createText.match(/"id"\s*:\s*"([^"]+)"/);
-      companyId = idMatch ? idMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      companyId = testCase.extractRecordId(createText);
       
       if (!companyId) {
         throw new Error('Failed to create company for deletion test');
@@ -118,8 +118,8 @@ describe('TC-005: Delete Records - Data Removal', () => {
       );
       
       const createText = testCase.extractTextContent(createResult);
-      const idMatch = createText.match(/"id"\s*:\s*"([^"]+)"/);
-      personId = idMatch ? idMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      personId = testCase.extractRecordId(createText);
       
       if (!personId) {
         throw new Error('Failed to create person for deletion test');
@@ -183,8 +183,8 @@ describe('TC-005: Delete Records - Data Removal', () => {
       );
       
       const createText = testCase.extractTextContent(createResult);
-      const idMatch = createText.match(/"id"\s*:\s*"([^"]+)"/);
-      taskId = idMatch ? idMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      taskId = testCase.extractRecordId(createText);
       
       if (!taskId) {
         throw new Error('Failed to create task for deletion test');
@@ -289,8 +289,8 @@ describe('TC-005: Delete Records - Data Removal', () => {
       );
       
       const createText = testCase.extractTextContent(createResult);
-      const idMatch = createText.match(/"id"\s*:\s*"([^"]+)"/);
-      companyId = idMatch ? idMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      companyId = testCase.extractRecordId(createText);
       
       if (!companyId) {
         throw new Error('Failed to create company for search deletion test');
@@ -368,8 +368,8 @@ describe('TC-005: Delete Records - Data Removal', () => {
       );
       
       const createText = testCase.extractTextContent(createResult);
-      const idMatch = createText.match(/"id"\s*:\s*"([^"]+)"/);
-      companyId = idMatch ? idMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      companyId = testCase.extractRecordId(createText);
       
       if (!companyId) {
         throw new Error('Failed to create company for confirmation test');

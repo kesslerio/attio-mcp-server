@@ -131,11 +131,14 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
         responses.push(result);
       }
 
-      // Verify all responses have consistent structure
+      // Verify all responses have consistent MCP structure
       for (const response of responses) {
         expect(response).toHaveProperty('content');
-        expect(response).toHaveProperty('isError');
-        expect(response.isError).toBeFalsy();
+        // MCP doesn't have isError property - check content instead
+        const text = testCase.extractTextContent(response);
+        expect(text).toBeTruthy();
+        // Check it's not an error response
+        expect(text.toLowerCase()).not.toContain('error');
       }
 
       passed = true;

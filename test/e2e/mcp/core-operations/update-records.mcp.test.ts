@@ -43,8 +43,8 @@ describe('TC-004: Update Records - Data Modification', () => {
         }
       );
       const companyText = testCase.extractTextContent(companyResult);
-      const companyMatch = companyText.match(/"id"\s*:\s*"([^"]+)"/);
-      companyId = companyMatch ? companyMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      companyId = testCase.extractRecordId(companyText);
       
       // Create a person
       const personData = TestDataFactory.createPersonData('TC004_SETUP');
@@ -56,8 +56,8 @@ describe('TC-004: Update Records - Data Modification', () => {
         }
       );
       const personText = testCase.extractTextContent(personResult);
-      const personMatch = personText.match(/"id"\s*:\s*"([^"]+)"/);
-      personId = personMatch ? personMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      personId = testCase.extractRecordId(personText);
       
       // Create a task
       const taskData = TestDataFactory.createTaskData('TC004_SETUP');
@@ -69,8 +69,8 @@ describe('TC-004: Update Records - Data Modification', () => {
         }
       );
       const taskText = testCase.extractTextContent(taskResult);
-      const taskMatch = taskText.match(/"id"\s*:\s*"([^"]+)"/);
-      taskId = taskMatch ? taskMatch[1] : null;
+      // Use the fixed ID extraction from base class
+      taskId = testCase.extractRecordId(taskText);
     } catch (e) {
       console.log('Warning: Could not create test records for updates. Some tests may fail.');
     }

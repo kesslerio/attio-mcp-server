@@ -22,9 +22,8 @@ export class TestDataFactory {
     return {
       name: `${testCase} Test Company ${uniqueId}`,
       domains: [`${testCase.toLowerCase()}-test-${this.testRunId}.com`],
-      description: `Created by MCP test suite for ${testCase}`,
-      size: 'small',
-      industry: 'Technology'
+      description: `Created by MCP test suite for ${testCase}`
+      // Note: size and industry fields removed as they don't exist in Attio workspace
     };
   }
 
@@ -92,8 +91,8 @@ export class TestDataFactory {
     switch (resourceType) {
       case 'companies':
         return {
-          description: `Updated by ${testCase} at ${timestamp}`,
-          size: 'medium'
+          description: `Updated by ${testCase} at ${timestamp}`
+          // Note: size field removed as it doesn't exist in Attio workspace
         };
         
       case 'people':
