@@ -6,6 +6,14 @@
  * This ensures it's safe to import from Smithery's metadata extraction process.
  */
 
+// Guard to prevent direct execution (forces use of CLI entry point)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.error('❌ This is a library entry point. Use the CLI instead:');
+  console.error('   node dist/cli.js');
+  console.error('   or: attio-mcp (if installed globally)');
+  process.exit(1);
+}
+
 // Export the main server creation function for use by CLI and Smithery
 export { createServer } from './server/createServer.js';
 

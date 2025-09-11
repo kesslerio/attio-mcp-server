@@ -84,6 +84,7 @@ if (!isMain) {
 
     try {
       // Create the configured MCP server
+      console.error('[mcp:cli] Creating server instance');
       const mcpServer = createServer();
 
       // Handle EPIPE errors gracefully (broken pipe during shutdown)
@@ -118,8 +119,10 @@ if (!isMain) {
       });
 
       // Connect to stdio transport - this is all we need!
+      console.error('[mcp:cli] Connecting to stdio transport');
       const transport = new StdioServerTransport();
       await mcpServer.connect(transport);
+      console.error('[mcp:cli] Server connected and ready');
 
       // Server is now running and will process requests via stdio
       // Claude Desktop manages the process lifecycle - no PID files or health checks needed
