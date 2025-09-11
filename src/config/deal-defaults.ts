@@ -128,13 +128,9 @@ export function applyDealDefaults(
   // === OWNER HANDLING ===
 
   // Apply owner default if not provided
+  // Note: Attio accepts email addresses directly in the owner field for both create and update
   if (!dealData.owner && defaults.owner) {
-    dealData.owner = [
-      {
-        referenced_actor_type: 'workspace-member',
-        referenced_actor_id: defaults.owner,
-      },
-    ];
+    dealData.owner = defaults.owner;
   }
 
   // === VALUE/CURRENCY HANDLING ===

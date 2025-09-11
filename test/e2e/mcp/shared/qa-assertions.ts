@@ -29,6 +29,17 @@ export class QAAssertions {
   }
 
   /**
+   * Assert that search results are valid (alias for assertValidSearchResults)
+   */
+  static assertSearchResults(
+    result: ToolResult,
+    resourceType: string,
+    minResults: number = 0
+  ): void {
+    this.assertValidSearchResults(result, resourceType, minResults);
+  }
+
+  /**
    * Assert that record details were retrieved successfully
    */
   static assertValidRecordDetails(
@@ -54,7 +65,15 @@ export class QAAssertions {
     resourceType: string,
     expectedFields?: Record<string, unknown>
   ): string {
+    // Explicit null checks with meaningful error messages
+    if (!result) {
+      throw new Error(`ASSERTION FAILURE: Tool result is null/undefined for ${resourceType} creation`);
+    }
+    
     const text = this.extractText(result);
+    if (!text || text.trim().length === 0) {
+      throw new Error(`ASSERTION FAILURE: Empty response text for ${resourceType} creation. Result: ${JSON.stringify(result)}`);
+    }
     
     // Should indicate successful creation
     expect(text.toLowerCase()).not.toContain('error');
@@ -67,7 +86,9 @@ export class QAAssertions {
     const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
     const recordId = idMatch ? idMatch[1] : '';
     
-    expect(recordId).toBeTruthy();
+    if (!recordId || recordId.trim().length === 0) {
+      throw new Error(`ASSERTION FAILURE: No valid record ID found in response for ${resourceType}. Response text: "${text}"`);
+    }
     
     // Note: MCP doesn't preserve exact field values in response
     // Just verify it's a successful creation

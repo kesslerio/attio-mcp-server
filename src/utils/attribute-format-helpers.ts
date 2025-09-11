@@ -25,6 +25,9 @@ export function convertAttributeFormats(
     case 'people':
       corrected = convertPeopleAttributes(corrected);
       break;
+    case 'deals':
+      corrected = convertDealAttributes(corrected);
+      break;
   }
 
   return corrected;
@@ -56,6 +59,79 @@ function convertCompanyAttributes(attributes: any): any {
     corrected.type = corrected.typpe;
     delete corrected.typpe;
     console.error(`[Format Helper] Fixed typo: 'typpe' -> 'type'`);
+  }
+
+  return corrected;
+}
+
+/**
+ * Converts deal attribute formats
+ */
+function convertDealAttributes(attributes: any): any {
+  const corrected = { ...attributes };
+
+  // Convert associated_company to array format: string -> [{ target_object, target_record_id }]
+  if ('associated_company' in corrected) {
+    const value = corrected.associated_company;
+    if (typeof value === 'string') {
+      corrected.associated_company = [
+        { target_object: 'companies', target_record_id: value },
+      ];
+      console.error(
+        `[Format Helper] Converted associated_company string to [{ target_object, target_record_id }] format`
+      );
+    } else if (Array.isArray(value)) {
+      corrected.associated_company = value.map((v) => {
+        if (typeof v === 'string') {
+          return { target_object: 'companies', target_record_id: v };
+        } else if (
+          v &&
+          typeof v === 'object' &&
+          'record_id' in v &&
+          !('target_record_id' in v)
+        ) {
+          // Convert { record_id: "..." } to { target_object: "companies", target_record_id: "..." }
+          return { target_object: 'companies', target_record_id: v.record_id };
+        } else {
+          return v; // Already in correct format or unknown format
+        }
+      });
+      console.error(
+        `[Format Helper] Converted associated_company array to [{ target_object, target_record_id }] format`
+      );
+    }
+  }
+
+  // Convert associated_people to array format: string -> [{ target_object, target_record_id }]
+  if ('associated_people' in corrected) {
+    const value = corrected.associated_people;
+    if (typeof value === 'string') {
+      corrected.associated_people = [
+        { target_object: 'people', target_record_id: value },
+      ];
+      console.error(
+        `[Format Helper] Converted associated_people string to [{ target_object, target_record_id }] format`
+      );
+    } else if (Array.isArray(value)) {
+      corrected.associated_people = value.map((v) => {
+        if (typeof v === 'string') {
+          return { target_object: 'people', target_record_id: v };
+        } else if (
+          v &&
+          typeof v === 'object' &&
+          'record_id' in v &&
+          !('target_record_id' in v)
+        ) {
+          // Convert { record_id: "..." } to { target_object: "people", target_record_id: "..." }
+          return { target_object: 'people', target_record_id: v.record_id };
+        } else {
+          return v; // Already in correct format or unknown format
+        }
+      });
+      console.error(
+        `[Format Helper] Converted associated_people array to [{ target_object, target_record_id }] format`
+      );
+    }
   }
 
   return corrected;

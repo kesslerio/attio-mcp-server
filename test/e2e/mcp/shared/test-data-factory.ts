@@ -7,7 +7,8 @@ import type {
   CompanyCreateData, 
   PersonCreateData, 
   TaskCreateData, 
-  NoteCreateData 
+  NoteCreateData,
+  DealCreateData
 } from './types.js';
 
 export class TestDataFactory {
@@ -90,6 +91,72 @@ export class TestDataFactory {
   }
 
   /**
+   * Generate test deal data
+   */
+  static createDealData(testCase: string): DealCreateData {
+    const uniqueId = this.generateTestId(testCase, 'deal');
+    // Use environment-configurable stages with fallback to known valid stages
+    const stages = this.getValidDealStages();
+    const values = [10000, 25000, 50000, 75000, 100000];
+    
+    return {
+      name: `${testCase} Test Deal ${uniqueId}`,
+      stage: stages[Math.floor(Math.random() * stages.length)],
+      value: values[Math.floor(Math.random() * values.length)],
+      // Add owner field to satisfy required field requirement (email format required)
+      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com'
+    };
+  }
+
+  /**
+   * Get valid deal stages from environment or use default fallback
+   */
+  static getValidDealStages(): string[] {
+    const envStages = process.env.ATTIO_VALID_DEAL_STAGES;
+    if (envStages) {
+      try {
+        return JSON.parse(envStages);
+      } catch (error) {
+        console.warn('Invalid ATTIO_VALID_DEAL_STAGES JSON format, using default stages:', error);
+      }
+    }
+    // Fallback to known valid stages in this Attio workspace
+    return ['Interested', 'Qualified', 'In Progress'];
+  }
+
+  /**
+   * Create deal pipeline stage progression test data
+   */
+  static createDealPipelineStages(): string[] {
+    const envPipelineStages = process.env.ATTIO_DEAL_PIPELINE_STAGES;
+    if (envPipelineStages) {
+      try {
+        return JSON.parse(envPipelineStages);
+      } catch (error) {
+        console.warn('Invalid ATTIO_DEAL_PIPELINE_STAGES JSON format, using default pipeline:', error);
+      }
+    }
+    // Fallback to full pipeline stages that exist in this Attio workspace
+    return ['Interested', 'Qualified', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost'];
+  }
+
+  /**
+   * Create deal with specific stage
+   */
+  static createDealWithStage(testCase: string, stage: string): DealCreateData {
+    const uniqueId = this.generateTestId(testCase, 'deal');
+    const values = [10000, 25000, 50000, 75000, 100000];
+    
+    return {
+      name: `${testCase} Deal ${stage} ${uniqueId}`,
+      stage: stage,
+      value: values[Math.floor(Math.random() * values.length)],
+      // Add owner field to satisfy required field requirement (email format required)
+      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com'
+    };
+  }
+
+  /**
    * Generate update data for a resource
    */
   static createUpdateData(resourceType: string, testCase: string): Record<string, unknown> {
@@ -113,6 +180,15 @@ export class TestDataFactory {
         return {
           is_completed: true,
           deadline_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days from now
+        };
+        
+      case 'deals':
+        const validStages = this.getValidDealStages();
+        // Use last stage as a typical progression target, or fallback
+        const targetStage = validStages.length > 1 ? validStages[validStages.length - 1] : 'Negotiation';
+        return {
+          stage: targetStage,
+          value: 50000
         };
         
       default:

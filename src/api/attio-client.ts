@@ -341,9 +341,9 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
 
   // If we need the raw E2E client, do NOT reuse any cached instance
   if (forceReal || opts?.rawE2E) {
-    console.log('🚨 E2E MODE: bypassing cache, creating fresh client');
+    debug('AttioClient', 'E2E MODE: bypassing cache, creating fresh client');
     apiInstance = null; // guarantee we don't return a stale client
-    console.log('🚨 CREATING RAW E2E CLIENT', {
+    debug('AttioClient', 'Creating raw E2E client', {
       forceReal,
       rawE2E: opts?.rawE2E,
       isE2E,
@@ -422,7 +422,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
       }
     );
 
-    console.log('🚀 RETURNING E2E RAW CLIENT');
+    debug('AttioClient', 'Returning E2E raw client');
     return rawClient;
   }
 
@@ -430,7 +430,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
-      console.log('🆕 CREATING DEFAULT CLIENT (auto-init from env)');
+      debug('attio-client', 'Creating default client (auto-init from env)');
       debug(
         'attio-client',
         'API client not initialized, auto-initializing from environment variable',
