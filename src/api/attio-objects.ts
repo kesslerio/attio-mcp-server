@@ -25,11 +25,13 @@ export async function resolveObjectSlug(
       }
       return slug;
     } else {
-      console.log('🔎 probe EMPTY', {
-        logical,
-        statusLike: data?.status,
-        body: data,
-      });
+      if (process.env.E2E_MODE === 'true') {
+        console.log('🔎 probe EMPTY', {
+          logical,
+          statusLike: data?.status,
+          body: data,
+        });
+      }
     }
   } catch (e) {
     if (process.env.E2E_MODE === 'true') {

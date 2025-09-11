@@ -124,7 +124,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
       );
       
       // Validate deal details were retrieved
-      QAAssertions.assertRecordDetailsRetrieved(result, 'deals');
+      QAAssertions.assertValidRecordDetails(result, 'deals');
       
       passed = true;
     } catch (e) {

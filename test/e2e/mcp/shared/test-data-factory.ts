@@ -95,13 +95,16 @@ export class TestDataFactory {
    */
   static createDealData(testCase: string): DealCreateData {
     const uniqueId = this.generateTestId(testCase, 'deal');
-    const stages = ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'];
+    // Use valid stages that exist in this Attio workspace
+    const stages = ['Interested', 'Qualified', 'In Progress'];
     const values = [10000, 25000, 50000, 75000, 100000];
     
     return {
       name: `${testCase} Test Deal ${uniqueId}`,
       stage: stages[Math.floor(Math.random() * stages.length)],
-      value: values[Math.floor(Math.random() * values.length)]
+      value: values[Math.floor(Math.random() * values.length)],
+      // Add owner field to satisfy required field requirement (email format required)
+      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com'
     };
   }
 
@@ -109,7 +112,8 @@ export class TestDataFactory {
    * Create deal pipeline stage progression test data
    */
   static createDealPipelineStages(): string[] {
-    return ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'];
+    // Use stages that exist in this Attio workspace
+    return ['Interested', 'Qualified', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost'];
   }
 
   /**
@@ -122,7 +126,9 @@ export class TestDataFactory {
     return {
       name: `${testCase} Deal ${stage} ${uniqueId}`,
       stage: stage,
-      value: values[Math.floor(Math.random() * values.length)]
+      value: values[Math.floor(Math.random() * values.length)],
+      // Add owner field to satisfy required field requirement (email format required)
+      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com'
     };
   }
 
