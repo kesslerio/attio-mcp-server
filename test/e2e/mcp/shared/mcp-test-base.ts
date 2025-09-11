@@ -15,9 +15,26 @@ export interface MCPTestConfig {
 export abstract class MCPTestBase {
   protected client: MCPTestClient;
   protected testPrefix: string;
+  private lastApiCall: number = 0;
+  private readonly API_RATE_LIMIT_MS = 100; // 100ms between API calls to prevent rate limiting
   
   constructor(testPrefix: string = 'TC') {
     this.testPrefix = testPrefix;
+  }
+
+  /**
+   * Rate limiting protection - ensures minimum delay between API calls
+   */
+  private async enforceRateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastCall = now - this.lastApiCall;
+    
+    if (timeSinceLastCall < this.API_RATE_LIMIT_MS) {
+      const delayNeeded = this.API_RATE_LIMIT_MS - timeSinceLastCall;
+      await new Promise(resolve => setTimeout(resolve, delayNeeded));
+    }
+    
+    this.lastApiCall = Date.now();
   }
 
   /**
@@ -49,6 +66,9 @@ export abstract class MCPTestBase {
     params: Record<string, unknown>,
     validator?: (result: ToolResult) => void
   ): Promise<ToolResult> {
+    // Apply rate limiting protection for sequential API calls
+    await this.enforceRateLimit();
+    
     let capturedResult: ToolResult | null = null;
     
     await this.client.assertToolCall(

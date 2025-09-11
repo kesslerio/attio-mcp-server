@@ -112,7 +112,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
     try {
       // Skip if deal creation failed
       if (!testDealId) {
-        throw new Error('No test deal available - creation may have failed');
+        throw new Error(`TC-D02 DEPENDENCY FAILURE: No test deal available from TC-D01 creation step. Previous test may have failed or returned invalid deal ID. Cannot proceed with deal details retrieval.`);
       }
 
       const result = await testCase.executeToolCall(

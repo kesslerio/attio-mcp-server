@@ -42,12 +42,42 @@ export interface NoteCreateData {
 
 export interface DealCreateData {
   name: string;
-  stage: string;
+  stage: DealStage;
   value?: number;
-  owner?: string;
-  associated_company?: string;
-  associated_people?: string[];
-  [key: string]: unknown;
+  owner?: string; // Email format expected
+  associated_company?: string | CompanyReference;
+  associated_people?: string[] | PersonReference[];
+}
+
+// More granular deal-specific types
+export type DealStage = 
+  | 'Interested' 
+  | 'Qualified' 
+  | 'In Progress' 
+  | 'Negotiation' 
+  | 'Closed Won' 
+  | 'Closed Lost'
+  | string; // Allow custom stages
+
+export type DealCurrency = 'USD' | 'EUR' | 'GBP' | 'CAD' | string;
+
+export interface CompanyReference {
+  target_object: 'companies';
+  target_record_id: string;
+}
+
+export interface PersonReference {
+  target_object: 'people';
+  target_record_id: string;
+}
+
+// Environment configuration types
+export interface DealEnvironmentConfig {
+  validStages?: DealStage[];
+  pipelineStages?: DealStage[];
+  defaultStage?: DealStage;
+  defaultOwner?: string;
+  defaultCurrency?: DealCurrency;
 }
 
 // Update data types (partial versions for updates)

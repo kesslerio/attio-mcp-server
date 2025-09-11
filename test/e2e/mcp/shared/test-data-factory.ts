@@ -95,8 +95,8 @@ export class TestDataFactory {
    */
   static createDealData(testCase: string): DealCreateData {
     const uniqueId = this.generateTestId(testCase, 'deal');
-    // Use valid stages that exist in this Attio workspace
-    const stages = ['Interested', 'Qualified', 'In Progress'];
+    // Use environment-configurable stages with fallback to known valid stages
+    const stages = this.getValidDealStages();
     const values = [10000, 25000, 50000, 75000, 100000];
     
     return {
@@ -109,10 +109,34 @@ export class TestDataFactory {
   }
 
   /**
+   * Get valid deal stages from environment or use default fallback
+   */
+  static getValidDealStages(): string[] {
+    const envStages = process.env.ATTIO_VALID_DEAL_STAGES;
+    if (envStages) {
+      try {
+        return JSON.parse(envStages);
+      } catch (error) {
+        console.warn('Invalid ATTIO_VALID_DEAL_STAGES JSON format, using default stages:', error);
+      }
+    }
+    // Fallback to known valid stages in this Attio workspace
+    return ['Interested', 'Qualified', 'In Progress'];
+  }
+
+  /**
    * Create deal pipeline stage progression test data
    */
   static createDealPipelineStages(): string[] {
-    // Use stages that exist in this Attio workspace
+    const envPipelineStages = process.env.ATTIO_DEAL_PIPELINE_STAGES;
+    if (envPipelineStages) {
+      try {
+        return JSON.parse(envPipelineStages);
+      } catch (error) {
+        console.warn('Invalid ATTIO_DEAL_PIPELINE_STAGES JSON format, using default pipeline:', error);
+      }
+    }
+    // Fallback to full pipeline stages that exist in this Attio workspace
     return ['Interested', 'Qualified', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost'];
   }
 
@@ -159,8 +183,11 @@ export class TestDataFactory {
         };
         
       case 'deals':
+        const validStages = this.getValidDealStages();
+        // Use last stage as a typical progression target, or fallback
+        const targetStage = validStages.length > 1 ? validStages[validStages.length - 1] : 'Negotiation';
         return {
-          stage: 'Negotiation',
+          stage: targetStage,
           value: 50000
         };
         
