@@ -30,6 +30,7 @@ RULE: Always use API token filtering | WHEN: Cleaning test data | DO: Use WORKSP
 RULE: Verify before deletion | WHEN: Running cleanup | DO: Always dry-run first | ELSE: Accidental data loss
 
 ### Commands
+
 `npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion  
 ⚠️ CRITICAL: Set `WORKSPACE_API_UUID` in .env | Only deletes MCP server data via API token filtering
 
@@ -81,7 +82,7 @@ USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 ### E2E Diagnostic Scripts [ENHANCED - Issue #545 & #568]
 
 - `npm run e2e:diagnose` - Enhanced test runner with standardized environment
-- `npm run e2e:diagnose:core` - Focus on core-workflows suite  
+- `npm run e2e:diagnose:core` - Focus on core-workflows suite
 - `npm run e2e:analyze` - **Enhanced analysis with anomaly detection** (baseline comparison, flaky test detection)
 - `npm run e2e:analyze:trends` - 14-day trend analysis for pattern recognition
 - `npm run e2e:analyze -- --latest --stdout` - **Quick analysis of most recent run only**
@@ -93,6 +94,7 @@ USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 #### E2E Analysis Integration Patterns [NEW]
 
 **Quick Analysis (Real-time Development):**
+
 ```bash
 # Latest run analysis with auto-saved markdown report
 npm run e2e:analyze -- --latest
@@ -105,6 +107,7 @@ npm run e2e:analyze -- --latest --stdout
 ```
 
 **Advanced Analysis:**
+
 ```bash
 # 14-day baseline comparison with flaky test detection
 npm run e2e:analyze -- --baseline-days 14 --flaky-days 14
@@ -117,6 +120,7 @@ npm run e2e:analyze -- --json --latest
 ```
 
 **Output Locations:**
+
 - Default: Auto-generated `test-results/analysis-{timestamp}.md`
 - `--stdout`: Console output (good for piping)
 - `--export FILE`: Custom filename in test-results/
@@ -146,8 +150,8 @@ python3 scripts/e2e_analyze.py -p
 
 # Manual grep for specific patterns
 
-rg -n "tasks\\.createTask|tasks\\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced_actor" \
- test-results/e2e-_-$(date +%Y%m%d)_.log
+rg -n "tasks\\.createTask|tasks\\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced*actor" \
+ test-results/e2e-*-$(date +%Y%m%d)\_.log
 
 - When to use: Anytime E2E tests appear to “skip” code paths (silent failures) or you need to confirm request/response shapes emitted to Attio.
 
@@ -379,15 +383,17 @@ RULE: No hmk mentions | WHEN: Issue/PR body or comments | DO: NEVER write "cc hm
 SEARCH FIRST: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`
 CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P2,type:bug,area:core"`
 RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp**clear-thought-server**mentalmodel | ELSE: Incomplete analysis
-REFACTORING: Follow docs/refactoring-guidelines.md template
 
-1. **Required Labels** (Enforced by Issue Hygiene Automation):
-   - **Priority**: P0(Critical), P1(High), P2(Medium), P3(Low), P4(Minor), P5(Trivial) - exactly one required
-   - **Type**: bug, feature, enhancement, documentation, test, refactor, chore, ci, dependencies - exactly one required
-   - **Status**: status:untriaged, status:ready, status:in-progress, status:blocked, status:needs-info, status:review - exactly one required
-   - **Area**: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging - at least one required
+**Required Labels** (Enforced by Issue Hygiene Automation):
 
-   **Note**: Label compliance is automatically enforced by GitHub workflows. Use Issue Forms or `scripts/issue-create.sh` for guaranteed compliance.
+- **Priority**: P0(Critical), P1(High), P2(Medium), P3(Low), P4(Minor), P5(Trivial) - exactly one required
+- **Type**: bug, feature, enhancement, documentation, test, refactor, chore, ci, dependencies - exactly one required
+- **Status**: status:untriaged, status:ready, status:in-progress, status:blocked, status:needs-info, status:review - exactly one required
+- **Area**: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging - at least one required
+
+**Lifecycle**: Open (Issue Form) → Triage (labels enforced) → Plan (AC for P0-P2) → Implement (PR with `Fixes #123`) → Review (AC validation) → Done (merge/close)
+
+**Acceptance Criteria**: Required for P0-P2, optional for P3-P5. Format: `### Acceptance Criteria` with `- [ ]` checklist items. Reviewers verify AC completion before merge.
 
 2. **Branch Strategy**
    - NEVER work directly on main (except critical hotfixes).
@@ -444,6 +450,7 @@ NEVER use web search as the first option. ALWAYS follow this sequence:
 RULE: Validate MCP tools with real API calls | WHEN: MCP tool changes | DO: Use mcp-test-client for end-to-end validation | ELSE: Production failures
 SETUP: `npm install --save-dev mcp-test-client` (already installed)
 USAGE: Create test in `test/mcp/` directory:
+
 ```typescript
 import { MCPTestClient } from 'mcp-test-client';
 
@@ -460,6 +467,7 @@ await client.assertToolCall('search-records', params, (result) => {
 
 await client.cleanup();
 ```
+
 BENEFITS: Tests real MCP server, validates tool registration, catches API integration issues, prevents regressions
 
 CLEAR THOUGHT MCP INTEGRATION

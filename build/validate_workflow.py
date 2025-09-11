@@ -80,6 +80,9 @@ def validate_commit_message_text(msg: str, allow_no_issue: bool = False) -> bool
     "feat(scope): subject"). Requires an issue reference unless bypassed.
     """
     first = (msg.splitlines()[0] if msg else "").strip()
+    max_len = int(os.environ.get("COMMIT_TITLE_MAXLEN", "0"))  # 0 = disabled
+    if max_len and len(first) > max_len:
+        print_warning(f"Commit title is {len(first)} chars (>{max_len}). Consider tightening.")
 
     # Auto-allow merges/reverts/releases
     if first.startswith("Merge ") or first.startswith("Revert ") or first.startswith("Release "):
@@ -199,6 +202,15 @@ def _ensure_gh() -> bool:
     print_error("GitHub CLI ('gh') not found. Install it or ensure it's on PATH.")
     return False
 
+def _append_summary(lines: List[str]) -> None:
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    except Exception:
+        pass
 
 def validate_issue_closure(issue_id: str) -> bool:
     """Validate issue closure requirements with detailed feedback.
@@ -211,58 +223,23 @@ def validate_issue_closure(issue_id: str) -> bool:
     if not _ensure_gh():
         return False
 
-    data_json, exit_code = run_command([
-        "gh", "issue", "view", issue_id, "--json", "body,labels,number,title,url",
-    ])
+    # Get issue details using GitHub CLI
+    output, exit_code = run_command(["gh", "issue", "view", issue_id])
     if exit_code != 0:
-        print_error(f"Failed to retrieve issue #{issue_id}: {data_json}")
+        print_error(f"Failed to retrieve issue #{issue_id}: {output}")
         return False
 
+    # Parse labels (JSON) once for policy decisions
+    labels_output, _ = run_command(["gh", "issue", "view", issue_id, "--json", "labels,body,title,number"])
     try:
-        data = json.loads(data_json)
-    except json.JSONDecodeError as e:
-        print_error(f"Failed to parse JSON from gh for issue #{issue_id}: {e}\nRaw: {data_json[:200]}...")
+        labels_data = json.loads(labels_output)
+        label_names = [label["name"] for label in labels_data.get("labels", [])]
+        issue_body = labels_data.get("body", "") or ""
+    except (json.JSONDecodeError, KeyError) as e:
+        print_error(f"Failed to parse labels for issue #{issue_id}: {e}")
         return False
 
-    body = (data.get("body") or "")
-    labels = [(l or {}).get("name", "") for l in (data.get("labels") or [])]
-    labels_lower = [l.lower() for l in labels]
-
-    # Find unchecked checklist items (supports nested bullets, quotes)
-    unchecked_pattern = re.compile(r"(?m)^[\s>*-]*-\s\[\s\]\s+(.*)$")
-    unchecked_items = unchecked_pattern.findall(body)
-
-    if unchecked_items:
-        print_error(f"Issue #{issue_id} has {len(unchecked_items)} unchecked criteria")
-        for idx, item in enumerate(unchecked_items, 1):
-            print(f"  {idx:2d}. {item}")
-    else:
-        print_success("All checklist items are checked")
-
-    # Required narrative sections (loose header or plain text match)
-    # comment_sections = [
-    # # "Implementation Details", #
-    # # "Key Implementation Elements", #
-    # # "Lessons Learned", #
-    # # "Challenges/Solutions", #
-    # # "Future Considerations", #
-    # ]
-    # missing_sections = []
-    # for section in comment_sections:
-    #     if not re.search(rf"(?mi)^\s*(#{1,6}\s*)?{re.escape(section)}\b", body):
-    #         missing_sections.append(section)
-
-    # if missing_sections:
-    #     print_error("Issue #" + str(issue_id) + " is missing these required sections: " + ", ".join(missing_sections))
-    # else:
-    #     print_success("All required narrative sections present")
-
-    # Verification phrase
-    # verification_ok = bool(re.search(r"(?i)✅\s*VERIFICATION:\s*", body))
-    # if not verification_ok:
-    #     print_error("Missing verification statement (expected '✅ VERIFICATION: ...')")
-    # else:
-    #     print_success("Verification statement found")
+    labels_lower = [l.lower() for l in label_names]
 
     # Label categories
     has_priority = any(re.fullmatch(r"p[0-5]", l) for l in labels_lower)
@@ -284,53 +261,87 @@ def validate_issue_closure(issue_id: str) -> bool:
         missing_label_categories.append("Status (status:*)")
 
     if missing_label_categories:
-        print_error("Missing required label categories: " + ", ".join(missing_label_categories))
-    else:
-        print_success("All required label categories present")
+        _append_summary([
+            f"### Issue #{issue_id} validation",
+            f"- ❌ Missing label categories: {', '.join(missing_label_categories)}"
+        ])
+        print_error(f"Issue #{issue_id} is missing required label categories: {', '.join(missing_label_categories)}")
+        return False
 
-    # Step summary (if available)
-    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-    if summary_path:
-        try:
-            with open(summary_path, "a", encoding="utf-8") as f:
-                f.write(f"## Issue #{data.get('number')} — {data.get('title', '').strip()}\n\n")
-                if data.get("url"):
-                    f.write(f"[Open in GitHub]({data['url']})\n\n")
-                f.write(f"**Unchecked criteria:** {len(unchecked_items)}\n\n")
-                if unchecked_items:
-                    for item in unchecked_items:
-                        f.write(f"- {item}\n")
-                    f.write("\n")
-                f.write("**Required label categories**\n")
-                f.write(f"- Priority (P0–P5): {'✅' if has_priority else '❌'}\n")
-                f.write(f"- Type (type:*): {'✅' if has_type else '❌'}\n")
-                f.write(f"- Status (status:*): {'✅' if has_status else '❌'}\n")
-                f.write(f"- Area (area:*): {'✅' if has_area else '❌'}\n\n")
-                # if missing_sections:
-                #     f.write("**Missing narrative sections**\n")
-                #     for s in missing_sections:
-                #         f.write(f"- {s}\n")
-                #     f.write("\n")
-        except Exception as e:
-            print_warning(f"Could not write step summary: {e}")
+    # ----- Acceptance Criteria policy -----
+    # AC is enforced based on strict-mode and priority
+    # Determine priority bucket
+    priority = next((l.lower() for l in label_names if re.fullmatch(r"P[0-5]", l, re.I)), "").lower()
+    is_high_priority = priority in ("p0", "p1", "p2")
 
-    all_ok = (not unchecked_items and not missing_label_categories)
-    if all_ok:
-        print_success(f"Issue #{issue_id} meets all closure requirements")
-        return True
+    # Count checkboxes if any are present
+    task_any = re.compile(r"(?m)^\s*[-*]\s*\[[ xX]\]\s+")
+    task_open = re.compile(r"(?m)^\s*[-*]\s*\[\s\]\s+")
+    total_boxes = len(task_any.findall(issue_body))
+    unchecked_boxes = len(task_open.findall(issue_body))
 
-    print_info(f"Review the issue and check off remaining items: gh issue view {issue_id} --web")
-    return False
+    # Read global args from env to keep function signature simple
+    strict_mode = os.environ.get("AC_STRICT_MODE", "auto")  # off|auto|strict
+    require_sections = os.environ.get("REQUIRE_SECTIONS", "")  # comma-separated
+    require_verification = os.environ.get("REQUIRE_VERIFICATION", "false").lower() == "true"
 
+    def is_strict() -> bool:
+        if strict_mode == "strict":
+            return True
+        if strict_mode == "off":
+            return False
+        # auto mode
+        return is_high_priority or ("enforce:strict" in [l.lower() for l in label_names])
+
+    # Enforce sections only if provided
+    if require_sections:
+        sections = [s.strip() for s in require_sections.split(",") if s.strip()]
+        missing = [s for s in sections if s not in issue_body]
+        if missing:
+            if is_strict():
+                print_error(f"Issue #{issue_id} missing required sections: {', '.join(missing)}")
+                return False
+            else:
+                print_warning(f"Issue #{issue_id} missing optional sections: {', '.join(missing)}")
+
+    # Enforce verification phrase only if requested
+    if require_verification:
+        if not re.search(r"(✅\s*)?verification\s*:", issue_body, re.IGNORECASE):
+            if is_strict():
+                print_error(f"Issue #{issue_id} missing verification section")
+                return False
+            else:
+                print_warning(f"Issue #{issue_id} missing verification section")
+
+    # Acceptance Criteria enforcement
+    if total_boxes > 0 and unchecked_boxes > 0:
+        msg = f"Issue #{issue_id} has {unchecked_boxes} unchecked acceptance criteria"
+        if is_strict():
+            print_error(msg)
+            return False
+        else:
+            print_warning(msg)
+
+    _append_summary([
+        f"### Issue #{issue_id} validation",
+        f"- Labels OK: {', '.join(label_names)}",
+        f"- Acceptance criteria: {'OK' if unchecked_boxes == 0 else f'{unchecked_boxes} unchecked'}",
+    ])
+
+    print_success(f"Issue #{issue_id} meets all closure requirements")
+    return True
 
 # ---------------------------------- Main ----------------------------------- #
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate Attio MCP workflow requirements")
     parser.add_argument("--commit-msg-file", metavar="PATH", help="Validate a commit message file (Husky commit-msg hook passes $1)")
-    parser.add_argument("--pre-commit", action="store_true", help="Backward-compatible flag; no-op because lint-staged handles formatting")
+    parser.add_argument("--pre-commit", action="store_true", help="Run pre-commit validations")
     parser.add_argument("--validate-branch", action="store_true", help="Validate current git branch name")
-    parser.add_argument("--issue-close", metavar="ISSUE_ID", help="Validate issue closure requirements for the specified issue ID")
+    parser.add_argument("--issue-close", help="Validate issue closure requirements for the specified issue ID")
+    parser.add_argument("--strict-mode", choices=["off","auto","strict"], default="auto")
+    parser.add_argument("--require-sections", nargs="*", default=[])
+    parser.add_argument("--require-verification", action="store_true")
     parser.add_argument("--allow-no-issue", action="store_true", help="Allow commit messages without issue references (or set ALLOW_NO_ISSUE=1)")
     parser.add_argument("--no-color", action="store_true", help="Disable ANSI colors (or set NO_COLOR=1)")
     parser.add_argument("--print-config", action="store_true", help="Print current validation config and exit")
@@ -349,6 +360,10 @@ def main() -> int:
         print_info("Allowed commit prefixes: " + ", ".join(_allowed_prefixes_from_env(defaults)))
         print_info("Conventional Commit types allowed: feat, fix, docs, refactor, test, chore, ci, build, perf, revert, release, style")
         print_info("Require issue reference: " + ("no" if args.allow_no_issue or os.environ.get("ALLOW_NO_ISSUE", "").lower() in {"1", "true", "yes"} else "yes"))
+        print_info(f"Strict-mode: {args.strict_mode}")
+        if args.require_sections:
+            print_info("Required sections: " + ", ".join(args.require_sections))
+        print_info("Require verification: " + ("yes" if args.require_verification else "no"))
         return 0
 
     # Back-compat: tolerate --pre-commit alone
@@ -367,9 +382,15 @@ def main() -> int:
         ok = validate_commit_message_file(args.commit_msg_file, allow_no_issue=args.allow_no_issue)
         return 0 if ok else 1
 
-    if args.issue_close:
-        ok = validate_issue_closure(args.issue_close)
-        return 0 if ok else 1
+    elif args.issue_close:
+        # Pass policy via env (keeps current function signature)
+        os.environ["AC_STRICT_MODE"] = args.strict_mode
+        os.environ["REQUIRE_SECTIONS"] = ",".join(args.require_sections or [])
+        os.environ["REQUIRE_VERIFICATION"] = "true" if args.require_verification else "false"
+        if validate_issue_closure(args.issue_close):
+            return 0
+        else:
+            return 1
 
     parser.print_help()
     return 0
