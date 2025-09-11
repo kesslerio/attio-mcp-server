@@ -46,10 +46,12 @@ function writeDeletionListToTmp(
       return record.values?.content?.[0]?.value || record.content || 'Unknown Task';
     } else if (resourceType === 'people') {
       // Enhanced people record details
-      const name = record.values?.name?.[0]?.value || 'Unknown Name';
-      const email = record.values?.primary_email_address?.[0]?.value || 'No Email';
+      const nameObj = record.values?.name?.[0];
+      const name = nameObj?.full_name || (nameObj?.first_name && nameObj?.last_name ? `${nameObj.first_name} ${nameObj.last_name}` : nameObj?.first_name || nameObj?.last_name) || 'Unknown Name';
+      const emailObj = record.values?.email_addresses?.[0];
+      const email = emailObj?.email_address || emailObj?.original_email_address || 'No Email';
       const recordId = record.id?.record_id || 'Unknown ID';
-      const attioUrl = `https://app.attio.com/${process.env.WORKSPACE_ID || 'workspace'}/person/${recordId}/overview`;
+      const attioUrl = record.web_url || `https://app.attio.com/${process.env.ATTIO_WORKSPACE_SLUG || 'workspace'}/person/${recordId}/overview`;
       return `${name} (${email}) - ${attioUrl}`;
     } else {
       // For companies, deals, etc.
