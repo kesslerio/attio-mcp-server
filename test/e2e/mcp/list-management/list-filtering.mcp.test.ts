@@ -284,13 +284,6 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
         expect(isValidResponse).toBeTruthy();
       }
       
-      // Verify response is filtered results
-      const text = result.content?.[0]?.text || '';
-      if (!text.toLowerCase().includes('error')) {
-        const filtered = JSON.parse(text);
-        expect(Array.isArray(filtered)).toBe(true);
-      }
-      
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);

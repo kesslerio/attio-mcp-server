@@ -26,7 +26,7 @@ export abstract class MCPTestBase {
   async setup(config: MCPTestConfig = {}): Promise<void> {
     this.client = new MCPTestClient({
       serverCommand: config.serverCommand || 'node',
-      serverArgs: config.serverArgs || ['./dist/index.js'],
+      serverArgs: config.serverArgs || ['./dist/cli.js'],
     });
     
     await this.client.init();
