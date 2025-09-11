@@ -1,0 +1,31 @@
+set -euo pipefail
+
+# Skip hooks in CI or when explicitly requested
+[ "${CI:-}" = "true" ] && exit 0
+[ "${SKIP_PREPUSH:-}" = "1" ] && exit 0
+
+echo "🔍 Validating branch name..."
+python3 -c "
+import sys
+sys.path.append('./build')
+from validate_workflow import validate_branch_name
+if not validate_branch_name():
+    exit(1)
+" || {
+  echo "❌ Branch validation failed"
+  exit 1
+}
+
+echo "🔍 Running TypeScript check..."
+npm run typecheck || {
+  echo "❌ TypeScript errors found"
+  exit 1
+}
+
+echo "🔍 Running fast tests..."
+eval "${PREPUSH_TEST_CMD:-"SKIP_INTEGRATION_TESTS=true npx vitest --run --reporter=dot --bail 1"}" || {
+  echo "❌ Tests failed"
+  exit 1
+}
+
+echo "✅ Pre-push validation complete"

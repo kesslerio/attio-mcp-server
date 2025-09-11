@@ -1,0 +1,4 @@
+set -euo pipefail
+
+# Ensure the validator reads the exact message file
+GIT_COMMIT_MSG_FILE="$1" ./build/validate_workflow.py --pre-commit
