@@ -381,11 +381,13 @@ CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P
 RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp**clear-thought-server**mentalmodel | ELSE: Incomplete analysis
 REFACTORING: Follow docs/refactoring-guidelines.md template
 
-1. **Required Labels**:
-   - Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
-   - Type: bug, feature, enhancement, documentation, test
-   - Status (Required): status:blocked, status:in-progress, status:ready, status:review, status:needs-info, status:untriaged
-   - Area: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
+1. **Required Labels** (Enforced by Issue Hygiene Automation):
+   - **Priority**: P0(Critical), P1(High), P2(Medium), P3(Low), P4(Minor), P5(Trivial) - exactly one required
+   - **Type**: bug, feature, enhancement, documentation, test, refactor, chore, ci, dependencies - exactly one required
+   - **Status**: status:untriaged, status:ready, status:in-progress, status:blocked, status:needs-info, status:review - exactly one required
+   - **Area**: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging - at least one required
+
+   **Note**: Label compliance is automatically enforced by GitHub workflows. Use Issue Forms or `scripts/issue-create.sh` for guaranteed compliance.
 
 2. **Branch Strategy**
    - NEVER work directly on main (except critical hotfixes).

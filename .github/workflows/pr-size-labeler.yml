@@ -1,0 +1,154 @@
+name: PR Size Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  size-label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          disable-sudo: true
+          egress-policy: audit
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files and calculate size
+        id: changes
+        uses: tj-actions/changed-files@v45
+        with:
+          files_ignore: |
+            **.md
+            **.txt
+            .gitignore
+            LICENSE
+            docs/**
+            package-lock.json
+            yarn.lock
+            pnpm-lock.yaml
+
+      - name: Calculate PR size and apply label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const filesCount = ${{ steps.changes.outputs.all_changed_files_count }};
+            const changedFiles = `${{ steps.changes.outputs.all_changed_files }}`.split(' ');
+
+            // Calculate lines changed (approximate from file count for now)
+            // In a more sophisticated setup, you'd parse actual diff
+            let sizeLabel = '';
+            let sizeColor = '';
+            let sizeDescription = '';
+
+            // Define size thresholds based on files changed
+            if (filesCount <= 3) {
+              sizeLabel = 'size/XS';
+              sizeColor = '00ff00';
+              sizeDescription = 'Extra Small: 1-3 files changed';
+            } else if (filesCount <= 8) {
+              sizeLabel = 'size/S';
+              sizeColor = '7cfc00';
+              sizeDescription = 'Small: 4-8 files changed';
+            } else if (filesCount <= 20) {
+              sizeLabel = 'size/M';
+              sizeColor = 'ffff00';
+              sizeDescription = 'Medium: 9-20 files changed';
+            } else if (filesCount <= 50) {
+              sizeLabel = 'size/L';
+              sizeColor = 'ff8c00';
+              sizeDescription = 'Large: 21-50 files changed';
+            } else {
+              sizeLabel = 'size/XL';
+              sizeColor = 'ff0000';
+              sizeDescription = 'Extra Large: 50+ files changed';
+            }
+
+            console.log(`PR size: ${sizeLabel} (${filesCount} files)`);
+
+            // Remove any existing size labels
+            const existingLabels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            for (const label of existingLabels.data) {
+              if (label.name.startsWith('size/')) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: label.name
+                });
+              }
+            }
+
+            // Create the size label if it doesn't exist
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: sizeLabel,
+                color: sizeColor,
+                description: sizeDescription
+              });
+            } catch (error) {
+              // Label might already exist, that's fine
+              console.log(`Label ${sizeLabel} might already exist: ${error.message}`);
+            }
+
+            // Apply the new size label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [sizeLabel]
+            });
+
+            // Add comment for XL PRs
+            if (sizeLabel === 'size/XL') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## 📏 Large PR Detected
+                
+                This PR changes **${filesCount} files** and has been labeled as \`${sizeLabel}\`.
+                
+                **Considerations for large PRs:**
+                - Consider breaking into smaller, focused PRs
+                - Claude analysis will run in summary-only mode
+                - Review time may be longer
+                - Increased risk of merge conflicts
+                
+                If this PR must remain large, ensure it has:
+                - [ ] Clear description of all changes
+                - [ ] Comprehensive test coverage
+                - [ ] Breaking changes documented
+                
+                Use \`/claude review\` to request detailed analysis if needed.`
+              });
+            }
+
+            console.log(`Applied label: ${sizeLabel}`);
+
+      - name: Output size information
+        run: |
+          echo "PR Size Analysis Complete"
+          echo "Files changed: ${{ steps.changes.outputs.all_changed_files_count }}"
+          echo "This helps Claude choose the appropriate analysis mode automatically."

@@ -1,0 +1,123 @@
+name: '🐛 Bug report'
+description: Report a bug and help us reproduce it
+title: 'bug: <short description>'
+labels: ['status:untriaged', 'type:bug']
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How critical is this bug?
+      options:
+        - P0 (Critical - System down, data loss)
+        - P1 (High - Major functionality broken)
+        - P2 (Medium - Important feature affected)
+        - P3 (Low - Minor issue or workaround exists)
+        - P4 (Minor - Cosmetic or edge case)
+        - P5 (Trivial - Nice to have fix)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which area of the system is affected?
+      options:
+        - area:core
+        - area:api
+        - area:build
+        - area:documentation
+        - area:testing
+        - area:performance
+        - area:refactor
+        - area:api:people
+        - area:api:lists
+        - area:api:notes
+        - area:api:objects
+        - area:api:records
+        - area:api:tasks
+        - area:extension
+        - area:integration
+        - area:security
+        - area:rate-limiting
+        - area:error-handling
+        - area:logging
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: Initial status
+      description: Current status of this issue
+      options:
+        - status:untriaged
+        - status:ready
+        - status:blocked
+        - status:needs-info
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened and what you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Precise steps to reproduce the issue
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide environment details
+      placeholder: |
+        - OS: [e.g. macOS 14.0]
+        - Node.js version: [e.g. 20.x]
+        - Package version: [e.g. 1.0.0]
+        - Attio API version: [e.g. v2]
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and error messages
+      description: Include any relevant logs, error messages, or screenshots
+      placeholder: Paste logs here or attach screenshots
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context about the problem

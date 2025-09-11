@@ -1,0 +1,138 @@
+name: Issue Creation Hygiene
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - reopened
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  enforce-labels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Apply required labels from form selections
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const body = (issue.body || "");
+
+            // Parse form selections and existing content
+            const priority = body.match(/\bP[0-5]\b/)?.[0] || "";
+            const type = (body.match(/\btype:(bug|feature|enhancement|documentation|test|refactor|chore|ci|dependencies)\b/i) || [])[0]?.toLowerCase() || "";
+            const status = (body.match(/\bstatus:(untriaged|ready|in-progress|blocked|needs-info|review)\b/i) || [])[0]?.toLowerCase() || "";
+            const areas = Array.from(new Set(
+              (body.match(/\barea:[a-z0-9:-]+\b/gi) || []).map(s => s.toLowerCase())
+            ));
+
+            console.log(`Parsed from issue body:
+              Priority: ${priority}
+              Type: ${type}
+              Status: ${status}
+              Areas: ${areas.join(', ')}`);
+
+            // Get existing labels
+            const current = (issue.labels || []).map(l => l.name.toLowerCase());
+            const add = new Set(current);
+
+            // Ensure exactly one P* (Priority)
+            const existingP = current.find(l => /^p[0-5]$/.test(l));
+            if (existingP) { add.delete(existingP); }
+            if (priority) { add.add(priority.toLowerCase()); }
+
+            // Ensure exactly one type:*
+            const existingType = current.find(l => /^type:/.test(l));
+            if (existingType) { add.delete(existingType); }
+            if (type) { add.add(type); }
+
+            // Ensure exactly one status:*
+            const existingStatus = current.find(l => /^status:/.test(l));
+            if (existingStatus) { add.delete(existingStatus); }
+            add.add(status || "status:untriaged");
+
+            // Ensure at least one area:*
+            const hasArea = Array.from(add).some(l => /^area:/.test(l));
+            if (!hasArea && areas.length) {
+              areas.forEach(a => add.add(a));
+            }
+
+            // Validate required categories
+            const labelsArr = Array.from(add);
+            const okPriority = labelsArr.some(l => /^p[0-5]$/.test(l));
+            const okType = labelsArr.some(l => /^type:/.test(l));
+            const okStatus = labelsArr.some(l => /^status:/.test(l));
+            const okArea = labelsArr.some(l => /^area:/.test(l));
+
+            console.log(`Label validation:
+              Priority: ${okPriority}
+              Type: ${okType}
+              Status: ${okStatus}
+              Area: ${okArea}
+              Final labels: ${labelsArr.join(', ')}`);
+
+            // Apply labels if we have any
+            if (labelsArr.length && labelsArr.join(',') !== current.join(',')) {
+              await github.rest.issues.setLabels({
+                owner, repo, issue_number: issue.number, labels: labelsArr
+              });
+              console.log(`Applied labels: ${labelsArr.join(', ')}`);
+            }
+
+            // Check for missing categories and provide helpful feedback
+            const missing = [];
+            if (!okPriority) missing.push("Priority (P0–P5)");
+            if (!okType) missing.push("Type (type:bug|feature|enhancement|documentation|test|refactor|chore|ci|dependencies)");
+            if (!okStatus) missing.push("Status (status:untriaged|ready|in-progress|blocked|needs-info|review)");
+            if (!okArea) missing.push("Area (area:core|api|build|documentation|testing|etc.)");
+
+            if (missing.length) {
+              const msg = [
+                '## ⚠️ Issue Hygiene Check',
+                '',
+                `Missing required label categories: **${missing.join(", ")}**`,
+                '',
+                'Please add the missing labels manually or edit this issue to include them in the description.',
+                '',
+                '**Required label format:**',
+                '- **Priority**: P0 (Critical), P1 (High), P2 (Medium), P3 (Low), P4 (Minor), P5 (Trivial)',
+                '- **Type**: type:bug, type:feature, type:enhancement, type:documentation, type:test, type:refactor, type:chore, type:ci, type:dependencies',
+                '- **Status**: status:untriaged, status:ready, status:in-progress, status:blocked, status:needs-info, status:review',
+                '- **Area**: area:core, area:api, area:build, area:documentation, area:testing, area:performance, area:security, etc.',
+                '',
+                `See [Label Guide](https://github.com/${owner}/${repo}/blob/main/docs/tools/github-cli/issues.md) for complete list.`
+              ].join('\n');
+
+              // Check if we already commented on this issue
+              const comments = await github.rest.issues.listComments({
+                owner, repo, issue_number: issue.number
+              });
+              
+              const existingHygieneComment = comments.data.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('Issue Hygiene Check')
+              );
+
+              if (existingHygieneComment) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existingHygieneComment.id, body: msg
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: issue.number, body: msg
+                });
+              }
+              
+              core.setFailed(`Issue hygiene: missing required label categories: ${missing.join(', ')}`);
+            } else {
+              console.log("✅ All required label categories present");
+            }

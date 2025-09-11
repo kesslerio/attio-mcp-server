@@ -98,48 +98,67 @@ gh label clone <source-repo>
 
 ## Attio MCP Label Structure
 
-The Attio MCP project uses a standardized set of labels to categorize issues and pull requests:
+The Attio MCP project uses a standardized set of labels to categorize issues and pull requests.
+
+### 🚨 Required Label Hygiene
+
+**Every issue MUST have exactly one Priority, one Type, one Status, and ≥1 Area label.**
+
+This is automatically enforced by GitHub workflows:
+
+- **Issue Creation**: Use [Issue Forms](https://github.com/kesslerio/attio-mcp-server/issues/new/choose) for automatic compliance
+- **CLI Creation**: Use `scripts/issue-create.sh` for guaranteed label validation
+- **Manual Creation**: Issue Creation Hygiene workflow will validate and prompt for missing labels
+
+**Non-compliant issues will receive automated guidance comments with links to this documentation.**
 
 ### Priority Labels
 
-| Label | Description |
-|-------|-------------|
-| `P0` | Critical priority (service down, security issue) |
-| `P1` | High priority (blocking functionality) |
-| `P2` | Medium priority (important but not blocking) |
-| `P3` | Low priority (minor improvements) |
-| `P4` | Trivial priority (cosmetic, nice-to-have) |
+| Label | Description                                      |
+| ----- | ------------------------------------------------ |
+| `P0`  | Critical priority (service down, security issue) |
+| `P1`  | High priority (blocking functionality)           |
+| `P2`  | Medium priority (important but not blocking)     |
+| `P3`  | Low priority (minor improvements)                |
+| `P4`  | Minor priority (small improvements)              |
+| `P5`  | Trivial priority (cosmetic, nice-to-have)        |
 
 ### Type Labels
 
-| Label | Description |
-|-------|-------------|
-| `bug` | Something isn't working as expected |
-| `feature` | New feature or request |
-| `enhancement` | Improvement to existing functionality |
-| `documentation` | Documentation improvements |
-| `test` | Test improvements |
+| Label                | Description                                 |
+| -------------------- | ------------------------------------------- |
+| `type:bug`           | Something isn't working as expected         |
+| `type:feature`       | New feature or request                      |
+| `type:enhancement`   | Improvement to existing functionality       |
+| `type:documentation` | Documentation improvements                  |
+| `type:test`          | Test improvements                           |
+| `type:refactor`      | Code refactoring without functional changes |
+| `type:chore`         | Maintenance tasks and updates               |
+| `type:ci`            | CI/CD pipeline improvements                 |
+| `type:dependencies`  | Dependency updates and management           |
 
 ### Status Labels
 
-| Label | Description |
-|-------|-------------|
-| `status:ready` | Ready for implementation |
-| `status:in-progress` | Currently being worked on |
-| `status:blocked` | Cannot proceed due to dependencies |
-| `status:needs-info` | Requires additional information |
-| `status:review` | Ready for or in review |
-| `status:untriaged` | Not yet assessed |
+| Label                | Description                        |
+| -------------------- | ---------------------------------- |
+| `status:ready`       | Ready for implementation           |
+| `status:in-progress` | Currently being worked on          |
+| `status:blocked`     | Cannot proceed due to dependencies |
+| `status:needs-info`  | Requires additional information    |
+| `status:review`      | Ready for or in review             |
+| `status:untriaged`   | Not yet assessed                   |
 
 ### Area Labels
 
 **Module Areas:**
+
 - `area:core` - Core module
 - `area:api` - API functionality
 - `area:build` - Build system
 - `area:dist` - Distribution
 
 **API-Specific Areas:**
+
 - `area:api:people` - People API functionality
 - `area:api:lists` - Lists API functionality
 - `area:api:notes` - Notes API functionality
@@ -148,13 +167,15 @@ The Attio MCP project uses a standardized set of labels to categorize issues and
 - `area:api:tasks` - Tasks API functionality
 
 **Content Areas:**
+
 - `area:documentation` - Documentation
 - `area:testing` - Testing
 - `area:performance` - Performance
 - `area:refactor` - Refactoring
 
 **Functional Areas:**
-- `area:extension` - MCP extension 
+
+- `area:extension` - MCP extension
 - `area:integration` - Integration with other systems
 - `area:security` - Security concerns
 - `area:rate-limiting` - API rate limiting
