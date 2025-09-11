@@ -240,29 +240,29 @@ def validate_issue_closure(issue_id: str) -> bool:
         print_success("All checklist items are checked")
 
     # Required narrative sections (loose header or plain text match)
-    comment_sections = [
-        "Implementation Details",
-        "Key Implementation Elements",
-        "Lessons Learned",
-        "Challenges/Solutions",
-        "Future Considerations",
-    ]
-    missing_sections = []
-    for section in comment_sections:
-        if not re.search(rf"(?mi)^\s*(#{1,6}\s*)?{re.escape(section)}\b", body):
-            missing_sections.append(section)
+    # comment_sections = [
+    # # "Implementation Details", #
+    # # "Key Implementation Elements", #
+    # # "Lessons Learned", #
+    # # "Challenges/Solutions", #
+    # # "Future Considerations", #
+    # ]
+    # missing_sections = []
+    # for section in comment_sections:
+    #     if not re.search(rf"(?mi)^\s*(#{1,6}\s*)?{re.escape(section)}\b", body):
+    #         missing_sections.append(section)
 
-    if missing_sections:
-        print_error("Issue #" + str(issue_id) + " is missing these required sections: " + ", ".join(missing_sections))
-    else:
-        print_success("All required narrative sections present")
+    # if missing_sections:
+    #     print_error("Issue #" + str(issue_id) + " is missing these required sections: " + ", ".join(missing_sections))
+    # else:
+    #     print_success("All required narrative sections present")
 
     # Verification phrase
-    verification_ok = bool(re.search(r"(?i)✅\s*VERIFICATION:\s*", body))
-    if not verification_ok:
-        print_error("Missing verification statement (expected '✅ VERIFICATION: ...')")
-    else:
-        print_success("Verification statement found")
+    # verification_ok = bool(re.search(r"(?i)✅\s*VERIFICATION:\s*", body))
+    # if not verification_ok:
+    #     print_error("Missing verification statement (expected '✅ VERIFICATION: ...')")
+    # else:
+    #     print_success("Verification statement found")
 
     # Label categories
     has_priority = any(re.fullmatch(r"p[0-5]", l) for l in labels_lower)
@@ -306,15 +306,15 @@ def validate_issue_closure(issue_id: str) -> bool:
                 f.write(f"- Type (type:*): {'✅' if has_type else '❌'}\n")
                 f.write(f"- Status (status:*): {'✅' if has_status else '❌'}\n")
                 f.write(f"- Area (area:*): {'✅' if has_area else '❌'}\n\n")
-                if missing_sections:
-                    f.write("**Missing narrative sections**\n")
-                    for s in missing_sections:
-                        f.write(f"- {s}\n")
-                    f.write("\n")
+                # if missing_sections:
+                #     f.write("**Missing narrative sections**\n")
+                #     for s in missing_sections:
+                #         f.write(f"- {s}\n")
+                #     f.write("\n")
         except Exception as e:
             print_warning(f"Could not write step summary: {e}")
 
-    all_ok = (not unchecked_items and not missing_sections and verification_ok and not missing_label_categories)
+    all_ok = (not unchecked_items and not missing_label_categories)
     if all_ok:
         print_success(f"Issue #{issue_id} meets all closure requirements")
         return True

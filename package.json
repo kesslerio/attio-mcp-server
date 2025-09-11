@@ -77,7 +77,6 @@
     "codex:verify": "./scripts/verify-codex-env.sh",
     "setup": "chmod +x scripts/setup-dev-env.sh && ./scripts/setup-dev-env.sh",
     "setup:minimal": "chmod +x scripts/setup-dev-env.sh && ./scripts/setup-dev-env.sh --skip-tdd --skip-ide --skip-hooks",
-    "setup-hooks": "chmod +x build/install-hooks.sh && ./build/install-hooks.sh",
     "postinstall": "[ -d .git ] && husky || echo 'Skipping git hooks setup (not a git repository)'",
     "test-hooks": "chmod +x build/test-hooks.sh && ./build/test-hooks.sh",
     "docker:build": "chmod +x scripts/docker-build.sh && ./scripts/docker-build.sh",
