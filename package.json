@@ -59,6 +59,8 @@
     "test:mcp": "vitest run test/e2e/mcp/",
     "test:mcp:p0": "vitest run test/e2e/mcp/core-operations/",
     "test:mcp:p1:lists": "vitest run test/e2e/mcp/list-management/",
+    "test:mcp:p1:deals": "vitest run test/e2e/mcp/deal-operations/",
+    "test:mcp:p1": "vitest run test/e2e/mcp/list-management/ test/e2e/mcp/deal-operations/",
     "test:mcp:watch": "vitest test/e2e/mcp/ --watch",
     "test:performance:all": "vitest --config configs/vitest/vitest.config.performance.ts --run",
     "test:performance:tools": "vitest --config configs/vitest/vitest.config.performance.ts --run test/handlers/tool-configs/universal/performance-*.test.ts",

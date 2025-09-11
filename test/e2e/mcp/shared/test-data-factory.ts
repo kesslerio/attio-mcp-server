@@ -7,7 +7,8 @@ import type {
   CompanyCreateData, 
   PersonCreateData, 
   TaskCreateData, 
-  NoteCreateData 
+  NoteCreateData,
+  DealCreateData
 } from './types.js';
 
 export class TestDataFactory {
@@ -90,6 +91,42 @@ export class TestDataFactory {
   }
 
   /**
+   * Generate test deal data
+   */
+  static createDealData(testCase: string): DealCreateData {
+    const uniqueId = this.generateTestId(testCase, 'deal');
+    const stages = ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'];
+    const values = [10000, 25000, 50000, 75000, 100000];
+    
+    return {
+      name: `${testCase} Test Deal ${uniqueId}`,
+      stage: stages[Math.floor(Math.random() * stages.length)],
+      value: values[Math.floor(Math.random() * values.length)]
+    };
+  }
+
+  /**
+   * Create deal pipeline stage progression test data
+   */
+  static createDealPipelineStages(): string[] {
+    return ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'];
+  }
+
+  /**
+   * Create deal with specific stage
+   */
+  static createDealWithStage(testCase: string, stage: string): DealCreateData {
+    const uniqueId = this.generateTestId(testCase, 'deal');
+    const values = [10000, 25000, 50000, 75000, 100000];
+    
+    return {
+      name: `${testCase} Deal ${stage} ${uniqueId}`,
+      stage: stage,
+      value: values[Math.floor(Math.random() * values.length)]
+    };
+  }
+
+  /**
    * Generate update data for a resource
    */
   static createUpdateData(resourceType: string, testCase: string): Record<string, unknown> {
@@ -113,6 +150,12 @@ export class TestDataFactory {
         return {
           is_completed: true,
           deadline_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days from now
+        };
+        
+      case 'deals':
+        return {
+          stage: 'Negotiation',
+          value: 50000
         };
         
       default:

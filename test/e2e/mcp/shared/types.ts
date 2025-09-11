@@ -40,11 +40,22 @@ export interface NoteCreateData {
   [key: string]: unknown;
 }
 
+export interface DealCreateData {
+  name: string;
+  stage: string;
+  value?: number;
+  owner?: string;
+  associated_company?: string;
+  associated_people?: string[];
+  [key: string]: unknown;
+}
+
 // Update data types (partial versions for updates)
 export type CompanyUpdateData = Partial<CompanyCreateData>;
 export type PersonUpdateData = Partial<PersonCreateData>;
 export type TaskUpdateData = Partial<Omit<TaskCreateData, 'title'>>; // Title typically not updatable
 export type NoteUpdateData = Partial<NoteCreateData>;
+export type DealUpdateData = Partial<DealCreateData>;
 
 // Search parameters
 export interface SearchParams {
