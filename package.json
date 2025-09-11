@@ -135,8 +135,6 @@
     "cleanup:test-data:companies": "npm run cleanup:test-data -- --resources=companies",
     "cleanup:test-data:people": "npm run cleanup:test-data -- --resources=people",
     "cleanup:test-data:deals": "npm run cleanup:test-data -- --resources=deals",
-    "cleanup:test-data:lists": "npm run cleanup:test-data -- --resources=lists",
-    "cleanup:test-data:notes": "npm run cleanup:test-data -- --resources=notes",
     "cleanup:test-data:verbose": "tsx scripts/cleanup/index.ts --verbose",
     "cleanup:test-data:pattern": "tsx scripts/cleanup/index.ts --pattern=\"TEST_*,E2E_*\"",
     "e2e:debug": "DEBUG=* vitest --config configs/vitest/vitest.config.e2e.ts --reporter=verbose",

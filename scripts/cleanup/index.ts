@@ -500,6 +500,8 @@ async function cleanupDeals(
   return createResourceSummary('deals', recordsToDelete, deletionResult);
 }
 
+
+
 /**
  * Main cleanup function
  */
@@ -564,6 +566,7 @@ async function performCleanup(options: CleanupOptions): Promise<CleanupResult> {
           const dealSummary = await cleanupDeals(apiToken, patterns, deletionOptions);
           summaries.push(dealSummary);
           break;
+        
         
         default:
           logError(`Unsupported resource type: ${resourceType}`);
