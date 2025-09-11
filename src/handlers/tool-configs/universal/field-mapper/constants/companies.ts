@@ -31,6 +31,7 @@ export const COMPANIES_FIELD_MAPPING: FieldMapping = {
     'name',
     'domains',
     'type',
+    'typpe',
     'industry',
     'categories',
     'description',
