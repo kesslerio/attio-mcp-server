@@ -29,6 +29,17 @@ export class QAAssertions {
   }
 
   /**
+   * Assert that search results are valid (alias for assertValidSearchResults)
+   */
+  static assertSearchResults(
+    result: ToolResult,
+    resourceType: string,
+    minResults: number = 0
+  ): void {
+    this.assertValidSearchResults(result, resourceType, minResults);
+  }
+
+  /**
    * Assert that record details were retrieved successfully
    */
   static assertValidRecordDetails(

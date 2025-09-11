@@ -19,7 +19,7 @@ export class RecordUpdateStrategy implements UpdateStrategy {
         values,
         false
       );
-      return updateObjectRecord('deals', recordId, { values: updatedDealData });
+      return updateObjectRecord('deals', recordId, updatedDealData);
     }
 
     // Default to 'records' and allow objectSlug override via context
@@ -28,6 +28,6 @@ export class RecordUpdateStrategy implements UpdateStrategy {
       (values.object as string | undefined) ||
       (values.object_api_slug as string | undefined) ||
       'records';
-    return updateObjectRecord(objectSlug, recordId, { values });
+    return updateObjectRecord(objectSlug, recordId, values);
   }
 }
