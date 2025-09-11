@@ -43,5 +43,17 @@ upsert_label "area:security" "d93f0b" "Security related issues"
 upsert_label "area:rate-limiting" "d93f0b" "Rate limiting related issues"
 upsert_label "area:error-handling" "d93f0b" "Error handling related issues"
 upsert_label "area:logging" "0366d6" "Logging related issues"
+upsert_label "area:cli" "0366d6" "Command line interface related issues"
+upsert_label "area:e2e" "0366d6" "End-to-end testing related issues"
+upsert_label "area:devex" "0366d6" "Developer experience improvements"
+
+# Community and release labels
+echo "Creating community and release labels..."
+upsert_label "good first issue" "7057ff" "Good for newcomers"
+upsert_label "help wanted" "008672" "Extra attention is needed"
+upsert_label "breaking-change" "d73a4a" "Changes that break backward compatibility"
+upsert_label "semver:major" "d73a4a" "Major version bump required"
+upsert_label "semver:minor" "fbca04" "Minor version bump required"
+upsert_label "semver:patch" "0e8a16" "Patch version bump required"
 
 echo "✅ Additional GitHub labels setup complete!"

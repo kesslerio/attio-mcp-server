@@ -1,3 +1,5 @@
-set -euo pipefail  # Strict mode for production safety
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/_/husky.sh"
 
 npm run verify:staged

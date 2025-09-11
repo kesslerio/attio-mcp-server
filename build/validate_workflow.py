@@ -193,15 +193,15 @@ def validate_issue_closure(issue_id: str) -> bool:
         
         # Check for required label categories
         has_priority = any(label.startswith("P") and label[1:2].isdigit() for label in label_names)
-        has_type = any(label in ["bug", "feature", "enhancement", "documentation", "test"] for label in label_names)
+        has_type = any(label in ["bug", "feature", "enhancement", "documentation", "test", "chore", "refactor", "ci", "dependencies"] for label in label_names)
         has_area = any(label.startswith("area:") for label in label_names)
         has_status = any(label.startswith("status:") for label in label_names)
         
         missing_label_categories = []
         if not has_priority:
-            missing_label_categories.append("Priority (P0-P4)")
+            missing_label_categories.append("Priority (P0-P5)")
         if not has_type:
-            missing_label_categories.append("Type (bug, feature, etc.)")
+            missing_label_categories.append("Type (bug, feature, enhancement, documentation, test, chore, refactor, ci, dependencies)")
         if not has_area:
             missing_label_categories.append("Area (area:*)")
         if not has_status:
@@ -222,6 +222,7 @@ def validate_issue_closure(issue_id: str) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate Attio MCP workflow requirements")
     parser.add_argument("--pre-commit", action="store_true", help="Run pre-commit validations")
+    parser.add_argument("--validate-branch", action="store_true", help="Validate branch name only")
     parser.add_argument("--issue-close", help="Validate issue closure requirements for the specified issue ID")
     
     args = parser.parse_args()
@@ -277,6 +278,12 @@ def main() -> int:
         
         print_success("All pre-commit checks passed!")
         return 0
+    
+    elif args.validate_branch:
+        if validate_branch_name():
+            return 0
+        else:
+            return 1
     
     elif args.issue_close:
         if validate_issue_closure(args.issue_close):

@@ -33,6 +33,7 @@ upsert_label "P1" "FF9900" "High priority"
 upsert_label "P2" "FFCC00" "Medium priority"
 upsert_label "P3" "FFFF00" "Low priority"
 upsert_label "P4" "CCFFCC" "Trivial priority"
+upsert_label "P5" "EDEDED" "Trivial priority - low effort tasks"
 
 # Type labels
 echo "Creating type labels..."
@@ -41,6 +42,10 @@ upsert_label "feature" "a2eeef" "New feature or request"
 upsert_label "enhancement" "a2eeef" "Improvement to existing functionality"
 upsert_label "documentation" "0075ca" "Documentation improvements"
 upsert_label "test" "0075ca" "Test improvements"
+upsert_label "chore" "fef2c0" "Maintenance tasks and updates"
+upsert_label "refactor" "d4c5f9" "Code refactoring without functional changes"
+upsert_label "ci" "1f883d" "CI/CD pipeline improvements"
+upsert_label "dependencies" "0366d6" "Dependency updates and management"
 
 # Status labels
 echo "Creating status labels..."
@@ -50,6 +55,9 @@ upsert_label "status:blocked" "B60205" "Cannot proceed due to dependencies"
 upsert_label "status:needs-info" "FEF2C0" "Requires additional information"
 upsert_label "status:review" "5319E7" "Ready for or in review"
 upsert_label "status:untriaged" "FBCA04" "Not yet assessed"
+upsert_label "status:needs-design" "E99695" "Requires design or architectural planning"
+upsert_label "status:ready-for-qa" "BFD4F2" "Ready for quality assurance testing"
+upsert_label "status:qa-passed" "D4FDD4" "Quality assurance tests passed"
 
 # Area labels
 echo "Creating area labels..."

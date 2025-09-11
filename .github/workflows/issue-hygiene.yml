@@ -1,0 +1,86 @@
+name: Issue Hygiene Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to validate'
+        required: true
+        type: string
+
+permissions:
+  issues: read
+  pull-requests: write
+  contents: read
+
+jobs:
+  validate-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup GitHub CLI
+        run: |
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && sudo apt update \
+          && sudo apt install gh -y
+
+      - name: Extract issue number from PR
+        id: extract-issue
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
+          else
+            # Extract issue number from PR title or body
+            issue_num=$(echo "${{ github.event.pull_request.title }}" | grep -o '#[0-9]\+' | head -1 | sed 's/#//')
+            if [ -z "$issue_num" ]; then
+              issue_num=$(echo "${{ github.event.pull_request.body }}" | grep -o 'Closes #[0-9]\+\|Fixes #[0-9]\+\|Resolves #[0-9]\+' | head -1 | grep -o '[0-9]\+')
+            fi
+            if [ -z "$issue_num" ]; then
+              echo "No issue reference found in PR title or body"
+              exit 0
+            fi
+            echo "issue_number=$issue_num" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate issue hygiene
+        if: steps.extract-issue.outputs.issue_number != ''
+        run: |
+          chmod +x ./build/validate_workflow.py
+          python3 ./build/validate_workflow.py --issue-close ${{ steps.extract-issue.outputs.issue_number }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR if validation fails
+        if: failure() && steps.extract-issue.outputs.issue_number != ''
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "## ❌ Issue Hygiene Check Failed
+
+          Issue #${{ steps.extract-issue.outputs.issue_number }} does not meet the required closure criteria.
+
+          Please ensure the following before merging:
+          - [ ] All checkboxes in the issue are checked
+          - [ ] Required labels are applied (Priority, Type, Area, Status)
+          - [ ] Implementation details comment is added
+          - [ ] Verification statement is included
+
+          Run \`./build/validate_workflow.py --issue-close ${{ steps.extract-issue.outputs.issue_number }}\` locally for detailed feedback."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR if validation passes
+        if: success() && steps.extract-issue.outputs.issue_number != ''
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "## ✅ Issue Hygiene Check Passed
+
+          Issue #${{ steps.extract-issue.outputs.issue_number }} meets all closure requirements and is ready for merge."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
