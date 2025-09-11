@@ -3,6 +3,7 @@
  */
 import axios, { AxiosInstance } from 'axios';
 import { debug, error, OperationType } from '../utils/logger.js';
+import { getLazyAttioClient } from './lazy-client.js';
 
 // Module identification for debugging (compatible with both ESM and CJS)
 const MODULE_FILE = 'attio-client';
@@ -223,6 +224,78 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   );
 
   return client;
+}
+
+/**
+ * Gets the schema for a specific attribute.
+ * @param objectSlug - The slug of the object (e.g., 'companies').
+ * @param attributeSlug - The slug of the attribute (e.g., 'categories').
+ * @returns The attribute schema.
+ */
+export async function getAttributeSchema(
+  objectSlug: string,
+  attributeSlug: string
+): Promise<any> {
+  const client = getLazyAttioClient();
+  const path = `/objects/${objectSlug}/attributes/${attributeSlug}`;
+  try {
+    const response = await client.get(path);
+    return response.data?.data;
+  } catch (error) {
+    console.error(
+      `Failed to get attribute schema for ${objectSlug}.${attributeSlug}`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Lists the available options for a select attribute.
+ * @param objectSlug - The slug of the object.
+ * @param attributeSlug - The slug of the select attribute.
+ * @returns A list of available select options.
+ */
+export async function getSelectOptions(
+  objectSlug: string,
+  attributeSlug: string
+): Promise<any[]> {
+  const client = getLazyAttioClient();
+  const path = `/objects/${objectSlug}/attributes/${attributeSlug}/options`;
+  try {
+    const response = await client.get(path);
+    return response.data?.data || [];
+  } catch (error) {
+    console.error(
+      `Failed to get select options for ${objectSlug}.${attributeSlug}`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Lists the available statuses for a status attribute.
+ * @param objectSlug - The slug of the object.
+ * @param attributeSlug - The slug of the status attribute.
+ * @returns A list of available statuses.
+ */
+export async function getStatusOptions(
+  objectSlug: string,
+  attributeSlug: string
+): Promise<any[]> {
+  const client = getLazyAttioClient();
+  const path = `/objects/${objectSlug}/attributes/${attributeSlug}/statuses`;
+  try {
+    const response = await client.get(path);
+    return response.data?.data || [];
+  } catch (error) {
+    console.error(
+      `Failed to get status options for ${objectSlug}.${attributeSlug}`,
+      error
+    );
+    throw error;
+  }
 }
 
 /**

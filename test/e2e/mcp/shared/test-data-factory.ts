@@ -176,4 +176,50 @@ export class TestDataFactory {
     // Add relationships (structure depends on Attio API)
     return { company, person, task };
   }
+
+
+  /**
+   * Create list entry test data
+   */
+  static createListEntryData(testCase: string): Record<string, unknown> {
+    const timestamp = Date.now();
+    return {
+      rating: Math.floor(Math.random() * 5) + 1,
+      notes: `Entry for ${testCase} - ${timestamp}`,
+      status: 'active'
+    };
+  }
+
+  /**
+   * Create filter criteria for list operations
+   */
+  static createFilterCriteria(testCase: string): Record<string, unknown> {
+    return {
+      attribute: 'name',
+      operator: 'contains',
+      value: testCase
+    };
+  }
+
+  /**
+   * Create advanced filter configuration
+   */
+  static createAdvancedFilter(testCase: string): Record<string, unknown> {
+    return {
+      filter: {
+        $and: [
+          {
+            attribute: 'created_at',
+            operator: 'greater_than',
+            value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // Last 7 days
+          },
+          {
+            attribute: 'name',
+            operator: 'contains', 
+            value: testCase
+          }
+        ]
+      }
+    };
+  }
 }

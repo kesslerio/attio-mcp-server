@@ -295,7 +295,7 @@ RULE: Runtime validation only | WHEN: Either/or parameters needed | DO: Validate
 
 RULE: PR target enforcement | WHEN: Creating any PR | DO: Target kesslerio/attio-mcp-server | ELSE: Wrong repository targeting
 RULE: Never target hmk repo | WHEN: PR creation | DO: Verify target is kesslerio | ELSE: Upstream pollution
-RULE: Never mention @hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include "cc @hmk" or any @hmk mention | ELSE: Unwanted notifications
+RULE: Never mention hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include "cc hmk" or any hmk mention | ELSE: Unwanted notifications
 RULE: Config consistency | WHEN: Any config file | DO: Use kesslerio URLs only | ELSE: Fork misconfiguration
 
 ## GIT COMMIT PIPELINE [ENFORCED] ⚠️ CRITICAL
@@ -375,11 +375,11 @@ CHECKLIST:
 ## ISSUE CREATION
 
 RULE: Create before coding | WHEN: Starting new work | DO: Create issue first | ELSE: Lack of tracking
-RULE: No @hmk mentions | WHEN: Issue/PR body or comments | DO: NEVER write "cc @hmk" or mention @hmk | ELSE: Unwanted notifications - CRITICAL VIOLATION
+RULE: No hmk mentions | WHEN: Issue/PR body or comments | DO: NEVER write "cc hmk" or mention hmk | ELSE: Unwanted notifications - CRITICAL VIOLATION
 SEARCH FIRST: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`
 CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P2,type:bug,area:core"`
 RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp**clear-thought-server**mentalmodel | ELSE: Incomplete analysis
-REFACTORING: Follow @docs/refactoring-guidelines.md template
+REFACTORING: Follow docs/refactoring-guidelines.md template
 
 1. **Required Labels**:
    - Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
@@ -462,7 +462,7 @@ BENEFITS: Tests real MCP server, validates tool registration, catches API integr
 
 CLEAR THOUGHT MCP INTEGRATION
 
-RULE: Use systematic problem-solving | WHEN: Complex problems | DO: See @docs/tools/clear-thought-tools.md for comprehensive tool reference | ELSE: Incomplete analysis
+RULE: Use systematic problem-solving | WHEN: Complex problems | DO: See docs/tools/clear-thought-tools.md for comprehensive tool reference | ELSE: Incomplete analysis
 
 EXTERNAL MCP SERVERS (Runtime Dependencies)
 
@@ -471,5 +471,5 @@ EXTERNAL MCP SERVERS (Runtime Dependencies)
   - Server: Context 7 MCP Server (https://github.com/upstash/context7)
   - Purpose: Up-to-date library and framework documentation retrieval.
   - Tools: resolve-library-id(libraryName), get-library-docs(context7CompatibleLibraryID, topic?, tokens?)
-  - Setup: Install with `npx -y @upstash/context7-mcp` or configure in MCP client.
+  - Setup: Install with `npx -y upstash/context7-mcp` or configure in MCP client.
   - Features: Official documentation, code examples, topic filtering, intelligent project ranking.
