@@ -24,6 +24,7 @@ import fs from 'fs';
 import path from 'path';
 
 const DEFAULT_RESOURCES = ['tasks', 'companies', 'people', 'deals'];
+const SUPPORTED_RESOURCES = ['tasks', 'companies', 'people', 'deals'] as const;
 const DEFAULT_PARALLEL = 5;
 const DEFAULT_RATE_LIMIT = 250;
 const SAFETY_MAX_DELETIONS = 100; // Maximum deletions allowed unless --force flag
@@ -87,10 +88,20 @@ function parseArguments(): CleanupOptions {
 
   const opts = program.opts();
   
+  const resources = opts.resources.split(',').map((s: string) => s.trim());
+  
+  // Validate resource types
+  const invalidResources = resources.filter(r => !SUPPORTED_RESOURCES.includes(r as any));
+  if (invalidResources.length > 0) {
+    logError(`Unsupported resource types: ${invalidResources.join(', ')}`);
+    logError(`Supported resource types: ${SUPPORTED_RESOURCES.join(', ')}`);
+    process.exit(1);
+  }
+
   return {
     dryRun: !opts.live, // Default to dry-run unless --live is specified
     live: opts.live,
-    resources: opts.resources.split(',').map((s: string) => s.trim()),
+    resources,
     apiToken: opts.apiToken,
     pattern: opts.pattern,
     parallel: parseInt(opts.parallel, 10),
