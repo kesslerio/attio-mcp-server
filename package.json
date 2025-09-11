@@ -78,7 +78,7 @@
     "setup": "chmod +x scripts/setup-dev-env.sh && ./scripts/setup-dev-env.sh",
     "setup:minimal": "chmod +x scripts/setup-dev-env.sh && ./scripts/setup-dev-env.sh --skip-tdd --skip-ide --skip-hooks",
     "setup-hooks": "chmod +x build/install-hooks.sh && ./build/install-hooks.sh",
-    "postinstall": "[ -d .git ] && npm run setup-hooks || echo 'Skipping git hooks setup (not a git repository)'",
+    "postinstall": "[ -d .git ] && husky || echo 'Skipping git hooks setup (not a git repository)'",
     "test-hooks": "chmod +x build/test-hooks.sh && ./build/test-hooks.sh",
     "docker:build": "chmod +x scripts/docker-build.sh && ./scripts/docker-build.sh",
     "docker:run": "docker run -p 3000:3000 -e ATTIO_API_KEY=${ATTIO_API_KEY} -e ATTIO_WORKSPACE_ID=${ATTIO_WORKSPACE_ID} attio-mcp-server:latest",
@@ -151,7 +151,9 @@
     "e2e:analyze:json": "python3 ./scripts/e2e_analyze.py test-results --enhanced --json --stdout",
     "e2e:analyze:trends": "python3 ./scripts/e2e_analyze.py test-results --enhanced --baseline-days=14 --flaky-days=14 --stdout",
     "e2e:analyze:basic": "python3 ./scripts/e2e_analyze.py test-results --stdout",
-    "e2e:health": "./scripts/e2e-health-check.sh"
+    "e2e:health": "./scripts/e2e-health-check.sh",
+    "verify:staged": "lint-staged",
+    "lint:ci": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=0 \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "files": [
     "dist",
@@ -228,9 +230,18 @@
     "vitest": "^3.2.4",
     "wireit": "^0.14.12"
   },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "prettier --write",
+      "eslint --max-warnings=0 --fix"
+    ],
+    "*.{md,mdx,json,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
   "wireit": {
     "lint:check": {
-      "command": "npx eslint -f compact --max-warnings 5000 \"src/**/*.ts\" \"test/**/*.ts\"",
+      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 5000 \"src/**/*.ts\" \"test/**/*.ts\"",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",

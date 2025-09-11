@@ -1,2 +1,5 @@
-# Full validation pipeline for fast local checks
-npm run check:format && npm run lint:check && npm run build && npm run test:offline:run
+#!/usr/bin/env bash
+set -euo pipefail  # Strict mode for production safety
+. "$(dirname "$0")/_/husky.sh"
+
+npm run verify:staged
