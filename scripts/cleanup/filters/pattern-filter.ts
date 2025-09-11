@@ -14,7 +14,13 @@ export function filterByPatterns(
   resourceType: ResourceType
 ): FilterResult {
   if (!patterns.length) {
-    return { matched: records, excluded: [], reasons: [] };
+    // SAFETY: When no patterns specified, return NO matches instead of ALL matches
+    // This prevents accidental deletion of all records when patterns are empty
+    logInfo(`⚠️  No patterns specified for ${resourceType} - returning no matches for safety`, {
+      recordsCount: records.length,
+      message: 'Use explicit patterns or API token filtering to select records for deletion'
+    });
+    return { matched: [], excluded: records, reasons: ['No patterns specified - defaulting to safe mode'] };
   }
 
   const matched: AttioRecord[] = [];
