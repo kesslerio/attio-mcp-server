@@ -268,7 +268,7 @@ export async function fetchResourcesByCreator(
       }
     }
     
-    // No created_by information found
+    // No created_by information found - CRITICAL SAFETY: exclude records without creator info
     noCreatedByField++;
     
     if (sampleNonMatches.length < 5) {
@@ -280,6 +280,8 @@ export async function fetchResourcesByCreator(
       });
     }
     
+    // SAFETY: If we can't verify the creator, exclude the record to prevent
+    // accidental deletion of legitimate business data
     return false;
   });
 
@@ -297,6 +299,32 @@ export async function fetchResourcesByCreator(
     },
     targetApiToken: apiToken.substring(0, 8) + '...'
   });
+
+  // SAFETY WARNINGS for suspicious filtering results
+  const rejectedCount = result.records.length - filteredRecords.length;
+  const rejectionRate = rejectedCount / result.records.length;
+  
+  if (noCreatedByField > 0) {
+    logInfo(`⚠️  SAFETY: ${noCreatedByField} ${resourceType} records excluded due to missing created_by field`, {
+      count: noCreatedByField,
+      percentage: Math.round((noCreatedByField / result.records.length) * 100),
+      message: 'Records without creator information are excluded for safety'
+    });
+  }
+  
+  if (rejectionRate > 0.9 && filteredRecords.length === 0) {
+    logInfo(`🚨 CRITICAL: API token filtering excluded ALL ${resourceType} records`, {
+      totalFetched: result.records.length,
+      rejectionRate: Math.round(rejectionRate * 100) + '%',
+      possibleCauses: [
+        'WORKSPACE_API_UUID is not set correctly',
+        'API token does not match any record creators',
+        'Records do not have created_by fields populated',
+        'API token format is incorrect'
+      ],
+      recommendation: 'Verify WORKSPACE_API_UUID matches your MCP server API token'
+    });
+  }
 
   // Log sample non-matching records for debugging
   if (sampleNonMatches.length > 0) {

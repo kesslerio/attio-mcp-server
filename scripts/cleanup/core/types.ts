@@ -10,6 +10,7 @@ export interface CleanupOptions {
   pattern?: string;
   parallel: number;
   verbose: boolean;
+  force: boolean;
 }
 
 export interface CleanupConfig {
@@ -63,7 +64,7 @@ export interface AttioRecord {
   [key: string]: any;
 }
 
-export type ResourceType = 'companies' | 'people' | 'deals' | 'tasks' | 'lists' | 'notes';
+export type ResourceType = 'companies' | 'people' | 'deals' | 'tasks';
 
 export interface FetchResult {
   records: AttioRecord[];

@@ -84,14 +84,33 @@ export function getValidatedApiToken(providedToken?: string): string {
   const apiToken = providedToken || process.env.WORKSPACE_API_UUID;
   
   if (!apiToken) {
-    throw new Error(
-      'API token is required. Provide --api-token flag or set WORKSPACE_API_UUID environment variable.'
-    );
+    throw new Error(`
+🚨 CRITICAL: API token is required for safe cleanup operations.
+
+The cleanup script requires an API token to ensure only data created by your 
+MCP server is deleted. Without this, the script could delete legitimate business data.
+
+Solutions:
+1. Set WORKSPACE_API_UUID environment variable in your .env file
+2. Use --api-token flag: npm run cleanup:test-data -- --api-token=YOUR_TOKEN
+
+⚠️  For safety, this script will NOT proceed without proper API token validation.
+`);
   }
 
   const validation = validateApiToken(apiToken);
   if (!validation.valid) {
-    throw new Error(`Invalid API token: ${validation.reason}`);
+    throw new Error(`
+🚨 INVALID API TOKEN: ${validation.reason}
+
+Expected: A valid Attio API token (UUID format)
+Received: ${apiToken.substring(0, 8)}... (${apiToken.length} characters)
+
+Please verify your API token in the Attio dashboard and ensure:
+- It's a valid UUID format (8-4-4-4-12 hexadecimal)
+- It corresponds to your MCP server's API key
+- It has appropriate permissions for your workspace
+`);
   }
 
   return apiToken;

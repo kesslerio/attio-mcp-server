@@ -16,7 +16,19 @@ export function extractRecordName(record: AttioRecord, resourceType: ResourceTyp
     case 'companies':
       return record.name || 'Unknown';
     case 'people':
-      // Try first/last name from values
+      // Try full name from values.name[0] first (new API structure)
+      if (record.values?.name?.[0]?.full_name) {
+        return record.values.name[0].full_name;
+      }
+      // Try first/last name from values.name[0]
+      const nameObj = record.values?.name?.[0];
+      if (nameObj?.first_name && nameObj?.last_name) {
+        return `${nameObj.first_name} ${nameObj.last_name}`;
+      }
+      if (nameObj?.first_name || nameObj?.last_name) {
+        return nameObj.first_name || nameObj.last_name;
+      }
+      // Fallback to legacy structure
       const firstName = record.values?.first_name?.[0]?.value || record.first_name;
       const lastName = record.values?.last_name?.[0]?.value || record.last_name;
       if (firstName && lastName) {

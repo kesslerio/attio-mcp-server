@@ -24,8 +24,10 @@ import fs from 'fs';
 import path from 'path';
 
 const DEFAULT_RESOURCES = ['tasks', 'companies', 'people', 'deals'];
+const SUPPORTED_RESOURCES = ['tasks', 'companies', 'people', 'deals'] as const;
 const DEFAULT_PARALLEL = 5;
 const DEFAULT_RATE_LIMIT = 250;
+const SAFETY_MAX_DELETIONS = 100; // Maximum deletions allowed unless --force flag
 
 /**
  * Write deletion list to /tmp/ file for user review during dry-run
@@ -40,16 +42,28 @@ function writeDeletionListToTmp(
   const filename = `${resourceType}-${suffix}-${timestamp}.txt`;
   const filepath = path.join('/tmp', filename);
   
-  const extractName = (record: any): string => {
+  const extractDetailedInfo = (record: any): string => {
     if (resourceType === 'tasks') {
       return record.values?.content?.[0]?.value || record.content || 'Unknown Task';
+    } else if (resourceType === 'people') {
+      // Enhanced people record details
+      const nameObj = record.values?.name?.[0];
+      const name = nameObj?.full_name || (nameObj?.first_name && nameObj?.last_name ? `${nameObj.first_name} ${nameObj.last_name}` : nameObj?.first_name || nameObj?.last_name) || 'Unknown Name';
+      const emailObj = record.values?.email_addresses?.[0];
+      const email = emailObj?.email_address || emailObj?.original_email_address || 'No Email';
+      const recordId = record.id?.record_id || 'Unknown ID';
+      const attioUrl = record.web_url || `https://app.attio.com/${process.env.ATTIO_WORKSPACE_SLUG || 'workspace'}/person/${recordId}/overview`;
+      return `${name} (${email}) - ${attioUrl}`;
     } else {
-      return record.values?.name?.[0]?.value || record.name || 'Unknown';
+      // For companies, deals, etc.
+      const name = record.values?.name?.[0]?.value || record.name || 'Unknown';
+      const recordId = record.id?.record_id || 'Unknown ID';
+      return `${name} (${recordId})`;
     }
   };
   
-  const names = records.map(extractName).sort();
-  const content = names.join('\n') + '\n';
+  const detailedInfo = records.map(extractDetailedInfo).sort();
+  const content = detailedInfo.join('\n') + '\n';
   
   fs.writeFileSync(filepath, content);
   return filepath;
@@ -69,18 +83,30 @@ function parseArguments(): CleanupOptions {
     .option('--pattern <patterns>', 'Comma-separated list of name patterns to match')
     .option('--parallel <count>', 'Number of parallel deletion operations', String(DEFAULT_PARALLEL))
     .option('--verbose', 'Enable verbose logging', false)
+    .option('--force', 'Override safety limits (allow >100 deletions)', false)
     .parse();
 
   const opts = program.opts();
   
+  const resources = opts.resources.split(',').map((s: string) => s.trim());
+  
+  // Validate resource types
+  const invalidResources = resources.filter(r => !SUPPORTED_RESOURCES.includes(r as any));
+  if (invalidResources.length > 0) {
+    logError(`Unsupported resource types: ${invalidResources.join(', ')}`);
+    logError(`Supported resource types: ${SUPPORTED_RESOURCES.join(', ')}`);
+    process.exit(1);
+  }
+
   return {
     dryRun: !opts.live, // Default to dry-run unless --live is specified
     live: opts.live,
-    resources: opts.resources.split(',').map((s: string) => s.trim()),
+    resources,
     apiToken: opts.apiToken,
     pattern: opts.pattern,
     parallel: parseInt(opts.parallel, 10),
-    verbose: opts.verbose
+    verbose: opts.verbose,
+    force: opts.force
   };
 }
 
@@ -109,11 +135,29 @@ async function cleanupTasks(
     });
   }
 
-  // Apply pattern filtering if specified
-  const patternResult = filterByPatterns(fetchResult.records, patterns, 'tasks');
+  // CRITICAL SAFETY: For tasks, we need BOTH API token filtering AND pattern filtering
+  // API token filtering ensures we only look at MCP-created records
+  // Pattern filtering ensures those records are actually test data (not legitimate business tasks)
+  
+  let finalPatterns = patterns;
+  if (patterns.length === 0) {
+    // Default to conservative test patterns for tasks
+    finalPatterns = ['*test*', '*Test*', '*TEST*', 'TEST_*', 'E2E_*', 'QA_*', 'Demo*', 'Mock*', 'Temp*', 'Basic task*', 'Integration*test*'];
+    logInfo('🛡️ SAFETY: Using default test patterns for tasks (no patterns specified)', {
+      defaultPatterns: finalPatterns,
+      reason: 'Tasks require pattern filtering to prevent deletion of legitimate business tasks'
+    });
+  }
+
+  // Apply pattern filtering to API-token-filtered records
+  const patternResult = filterByPatterns(fetchResult.records, finalPatterns, 'tasks');
   
   if (patternResult.matched.length === 0) {
-    logInfo('No tasks match the specified patterns');
+    logInfo('✅ SAFE: No tasks match test patterns - legitimate business tasks preserved', {
+      apiTokenRecords: fetchResult.records.length,
+      patternMatches: 0,
+      excludedRecords: patternResult.excluded.length
+    });
     return createResourceSummary('tasks', [], {
       successful: 0,
       failed: 0,
@@ -121,6 +165,13 @@ async function cleanupTasks(
       duration: 0
     });
   }
+
+  logInfo(`🔍 TASKS SAFETY CHECK: Found ${patternResult.matched.length} tasks matching BOTH API token AND test patterns`, {
+    totalApiTokenRecords: fetchResult.records.length,
+    patternMatches: patternResult.matched.length,
+    excludedByPatterns: patternResult.excluded.length,
+    safetyNote: 'Only MCP-created records with test patterns will be deleted'
+  });
 
   // Display what we found and write to /tmp/ file during dry-run
   if (deletionOptions.dryRun) {
@@ -176,11 +227,29 @@ async function cleanupCompanies(
     });
   }
 
-  // Apply pattern filtering if specified
-  const patternResult = filterByPatterns(fetchResult.records, patterns, 'companies');
+  // CRITICAL SAFETY: For companies, we need BOTH API token filtering AND pattern filtering
+  // API token filtering ensures we only look at MCP-created records
+  // Pattern filtering ensures those records are actually test data (not legitimate business companies)
+  
+  let finalPatterns = patterns;
+  if (patterns.length === 0) {
+    // Default to conservative test patterns for companies
+    finalPatterns = ['*test*', '*Test*', '*TEST*', 'TEST_*', 'E2E_*', 'QA_*', 'Demo*', 'Mock*', 'Temp*', 'Sample*', 'Example*'];
+    logInfo('🛡️ SAFETY: Using default test patterns for companies (no patterns specified)', {
+      defaultPatterns: finalPatterns,
+      reason: 'Companies require pattern filtering to prevent deletion of legitimate business data'
+    });
+  }
+
+  // Apply pattern filtering to API-token-filtered records
+  const patternResult = filterByPatterns(fetchResult.records, finalPatterns, 'companies');
   
   if (patternResult.matched.length === 0) {
-    logInfo('No companies match the specified patterns');
+    logInfo('✅ SAFE: No companies match test patterns - legitimate business data preserved', {
+      apiTokenRecords: fetchResult.records.length,
+      patternMatches: 0,
+      excludedRecords: patternResult.excluded.length
+    });
     return createResourceSummary('companies', [], {
       successful: 0,
       failed: 0,
@@ -188,6 +257,13 @@ async function cleanupCompanies(
       duration: 0
     });
   }
+
+  logInfo(`🔍 COMPANIES SAFETY CHECK: Found ${patternResult.matched.length} companies matching BOTH API token AND test patterns`, {
+    totalApiTokenRecords: fetchResult.records.length,
+    patternMatches: patternResult.matched.length,
+    excludedByPatterns: patternResult.excluded.length,
+    safetyNote: 'Only MCP-created records with test patterns will be deleted'
+  });
 
   // Apply safe company filtering to protect real businesses
   const { safe, toDelete } = filterTestCompanies(patternResult.matched);
@@ -272,11 +348,29 @@ async function cleanupPeople(
     });
   }
 
-  // Apply pattern filtering if specified
-  const patternResult = filterByPatterns(fetchResult.records, patterns, 'people');
+  // CRITICAL SAFETY: For people, we need BOTH API token filtering AND pattern filtering
+  // API token filtering ensures we only look at MCP-created records
+  // Pattern filtering ensures those records are actually test data (not legitimate contacts)
+  
+  let finalPatterns = patterns;
+  if (patterns.length === 0) {
+    // Default to conservative test patterns for people
+    finalPatterns = ['*test*', '*Test*', '*TEST*', 'TEST_*', 'E2E_*', 'QA_*', 'Demo*', 'Mock*', 'Temp*', 'Sample*', 'Example*'];
+    logInfo('🛡️ SAFETY: Using default test patterns for people (no patterns specified)', {
+      defaultPatterns: finalPatterns,
+      reason: 'People require pattern filtering to prevent deletion of legitimate contact data'
+    });
+  }
+
+  // Apply pattern filtering to API-token-filtered records
+  const patternResult = filterByPatterns(fetchResult.records, finalPatterns, 'people');
   
   if (patternResult.matched.length === 0) {
-    logInfo('No people match the specified patterns');
+    logInfo('✅ SAFE: No people match test patterns - legitimate contact data preserved', {
+      apiTokenRecords: fetchResult.records.length,
+      patternMatches: 0,
+      excludedRecords: patternResult.excluded.length
+    });
     return createResourceSummary('people', [], {
       successful: 0,
       failed: 0,
@@ -284,6 +378,13 @@ async function cleanupPeople(
       duration: 0
     });
   }
+
+  logInfo(`🔍 PEOPLE SAFETY CHECK: Found ${patternResult.matched.length} people matching BOTH API token AND test patterns`, {
+    totalApiTokenRecords: fetchResult.records.length,
+    patternMatches: patternResult.matched.length,
+    excludedByPatterns: patternResult.excluded.length,
+    safetyNote: 'Only MCP-created records with test patterns will be deleted'
+  });
 
   // Display what we found and write to /tmp/ file during dry-run
   if (deletionOptions.dryRun) {
@@ -339,11 +440,31 @@ async function cleanupDeals(
     });
   }
 
-  // Apply pattern filtering if specified
-  const patternResult = filterByPatterns(fetchResult.records, patterns, 'deals');
+  // CRITICAL SAFETY: For deals, we need BOTH API token filtering AND pattern filtering
+  // API token filtering ensures we only look at MCP-created records
+  // Pattern filtering ensures those records are actually test data (not legitimate business data)
+  
+  let finalPatterns = patterns;
+  if (patterns.length === 0) {
+    // Default to conservative test patterns for deals
+    finalPatterns = ['*test*', '*Test*', '*TEST*', 'TEST_*', 'E2E_*', 'QA_*', 'Demo*', 'Mock*', 'Temp*'];
+    logInfo('🛡️ SAFETY: Using default test patterns for deals (no patterns specified)', {
+      defaultPatterns: finalPatterns,
+      reason: 'Deals require pattern filtering to prevent deletion of legitimate business data'
+    });
+  }
+
+  // Apply pattern filtering to API-token-filtered records
+  const patternResult = filterByPatterns(fetchResult.records, finalPatterns, 'deals');
+  const recordsToDelete = patternResult.matched;
+  const filteringInfo = `API token + pattern filtering (${finalPatterns.join(', ')})`;
   
   if (patternResult.matched.length === 0) {
-    logInfo('No deals match the specified patterns');
+    logInfo('✅ SAFE: No deals match test patterns - legitimate business data preserved', {
+      apiTokenRecords: fetchResult.records.length,
+      patternMatches: 0,
+      excludedRecords: patternResult.excluded.length
+    });
     return createResourceSummary('deals', [], {
       successful: 0,
       failed: 0,
@@ -352,34 +473,45 @@ async function cleanupDeals(
     });
   }
 
+  logInfo(`🔍 DEALS SAFETY CHECK: Found ${recordsToDelete.length} deals matching BOTH API token AND test patterns`, {
+    totalApiTokenRecords: fetchResult.records.length,
+    patternMatches: recordsToDelete.length,
+    excludedByPatterns: patternResult.excluded.length,
+    safetyNote: 'Only MCP-created records with test patterns will be deleted'
+  });
+
   // Display what we found and write to /tmp/ file during dry-run
   if (deletionOptions.dryRun) {
-    console.log(`\n📋 Found ${patternResult.matched.length} deals to delete:`);
-    patternResult.matched.slice(0, 10).forEach((deal, index) => {
+    console.log(`\n📋 Found ${recordsToDelete.length} deals to delete (${filteringInfo}):`);
+    recordsToDelete.slice(0, 10).forEach((deal, index) => {
       const name = deal.values?.name?.[0]?.value || deal.name || 'Unknown';
       const id = deal.id?.record_id || deal.id || 'Unknown';
-      console.log(`  ${index + 1}. ${name} (${id})`);
+      const createdBy = deal.values?.created_by?.[0]?.referenced_actor_type || 'Unknown Creator';
+      const createdById = deal.values?.created_by?.[0]?.referenced_actor_id?.substring(0, 8) || 'Unknown ID';
+      console.log(`  ${index + 1}. ${name} (${id}) - Created by: ${createdBy} (${createdById}...)`);
     });
     
-    if (patternResult.matched.length > 10) {
-      console.log(`  ... and ${patternResult.matched.length - 10} more`);
+    if (recordsToDelete.length > 10) {
+      console.log(`  ... and ${recordsToDelete.length - 10} more`);
     }
 
     // Write deletion list to /tmp/ file for user review
-    const deleteFile = writeDeletionListToTmp('deals', patternResult.matched, false);
+    const deleteFile = writeDeletionListToTmp('deals', recordsToDelete, false);
     console.log(`\n📄 Deals to delete list saved: ${deleteFile}`);
   }
 
   // Delete the matched deals
   const deletionResult = await batchDeleteRecords(
     client, 
-    patternResult.matched, 
+    recordsToDelete, 
     'deals', 
     deletionOptions
   );
 
-  return createResourceSummary('deals', patternResult.matched, deletionResult);
+  return createResourceSummary('deals', recordsToDelete, deletionResult);
 }
+
+
 
 /**
  * Main cleanup function
@@ -446,6 +578,7 @@ async function performCleanup(options: CleanupOptions): Promise<CleanupResult> {
           summaries.push(dealSummary);
           break;
         
+        
         default:
           logError(`Unsupported resource type: ${resourceType}`);
       }
@@ -498,6 +631,37 @@ async function main(): Promise<void> {
     }
     
     console.log('🛡️  SAFETY: Only deletes data created by your MCP server API token\n');
+
+    // Perform a pre-flight check to estimate deletion count for safety
+    if (!options.dryRun) {
+      console.log('🔍 Performing safety pre-flight check...');
+      const preflightOptions = { ...options, dryRun: true };
+      const preflightResult = await performCleanup(preflightOptions);
+      
+      if (preflightResult.totalFound > SAFETY_MAX_DELETIONS && !options.force) {
+        throw new Error(`
+🚨 SAFETY LIMIT EXCEEDED: Found ${preflightResult.totalFound} records to delete.
+
+For safety, this script limits deletions to ${SAFETY_MAX_DELETIONS} records unless --force is used.
+
+This limit prevents accidental mass deletion of data. Review the records carefully:
+- Run with --dry-run to see what would be deleted
+- Check /tmp/ files for detailed record lists
+- Verify WORKSPACE_API_UUID is correctly set
+- Use --force flag if you're certain these are all test records
+
+To proceed: npm run cleanup:test-data -- --live --force
+`);
+      }
+
+      if (preflightResult.totalFound > SAFETY_MAX_DELETIONS) {
+        logInfo(`⚠️  FORCE MODE: Proceeding with ${preflightResult.totalFound} deletions (safety limit overridden)`, {
+          recordCount: preflightResult.totalFound,
+          safetyLimit: SAFETY_MAX_DELETIONS,
+          warning: 'Please ensure all records are test data'
+        });
+      }
+    }
 
     const result = await performCleanup(options);
     
