@@ -16,6 +16,7 @@ import {
   UniversalDetailedInfoParams,
   UniversalResourceType,
 } from './types.js';
+import { getAttributeSchema, getSelectOptions } from '../../../api/attio-client.js';
 
 // Helper function to get plural form of resource type
 function getPluralResourceType(resourceType: UniversalResourceType): string {
@@ -386,7 +387,44 @@ export const createRecordConfig: UniversalToolConfig = {
       }
 
       return result;
-    } catch (error: unknown) {
+    } catch (error: any) {
+        const status = error?.response?.status;
+        const errorCode = error?.response?.data?.code;
+        const errorMessage = error?.response?.data?.message;
+
+        if (status === 400 && errorCode === 'value_not_found' && errorMessage?.includes('Cannot find select option')) {
+            const invalidValueMatch = errorMessage.match(/Cannot find select option with title \"(.*)\"/);
+            const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
+
+            if (invalidValue) {
+                const recordData = params.record_data as Record<string, unknown>;
+                let attributeSlug: string | undefined;
+                for (const [key, value] of Object.entries(recordData)) {
+                    if (value === invalidValue || (Array.isArray(value) && value.includes(invalidValue))) {
+                        attributeSlug = key;
+                        break;
+                    }
+                }
+
+                if (attributeSlug) {
+                    try {
+                        const schema = await getAttributeSchema(params.resource_type, attributeSlug);
+                        if (schema && (schema.type === 'select' || schema.type === 'multi_select')) {
+                            const options = await getSelectOptions(params.resource_type, attributeSlug);
+                            if (options && options.length > 0) {
+                                const validOptions = options.map(opt => `'${opt.title}'`).join(', ');
+                                const newErrorMessage = `Invalid option \"${invalidValue}\" for field \"${attributeSlug}\". Valid options are: ${validOptions}.`;
+                                throw new Error(newErrorMessage); // Throw a clean, new error
+                            }
+                        }
+                    } catch (e) {
+                        // If fetching options fails, we'll fall through and the original error will be thrown
+                        console.error(`Failed to fetch select options for attribute ${attributeSlug}:`, e);
+                    }
+                }
+            }
+        }
+
       throw ErrorService.createUniversalError(
         'create',
         params.resource_type,
@@ -463,7 +501,48 @@ export const updateRecordConfig: UniversalToolConfig = {
         // Ignore formatting errors
       }
       return result;
-    } catch (error: unknown) {
+    } catch (error: any) {
+        const status = error?.response?.status;
+        const errorCode = error?.response?.data?.code;
+        const errorMessage = error?.response?.data?.message;
+
+        if (status === 400 && errorCode === 'value_not_found' && errorMessage?.includes('Cannot find select option')) {
+            const invalidValueMatch = errorMessage.match(/Cannot find select option with title \"(.*)\"/);
+            const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
+
+            if (invalidValue) {
+                const recordData = params.record_data as Record<string, unknown>;
+                let attributeSlug: string | undefined;
+                for (const [key, value] of Object.entries(recordData)) {
+                    if (value === invalidValue || (Array.isArray(value) && value.includes(invalidValue))) {
+                        attributeSlug = key;
+                        break;
+                    }
+                }
+
+                if (attributeSlug) {
+                    try {
+                        const schema = await getAttributeSchema(params.resource_type, attributeSlug);
+                        if (schema && (schema.type === 'select' || schema.type === 'multi_select')) {
+                            const options = await getSelectOptions(params.resource_type, attributeSlug);
+                            if (options && options.length > 0) {
+                                const validOptions = options.map(opt => `\'${opt.title}\'`).join(', ');
+                                const newErrorMessage = `Invalid option \"${invalidValue}\" for field \"${attributeSlug}\". Valid options are: ${validOptions}.`;
+                                throw new Error(newErrorMessage); // Throw a clean, new error
+                            } else {
+                                // If no options are found, it's still an invalid value scenario
+                                const newErrorMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". No valid options found.`;
+                                throw new Error(newErrorMessage);
+                            }
+                        }
+                    } catch (e) {
+                        // If fetching options fails, we'll fall through and the original error will be thrown
+                        console.error(`Failed to fetch select options for attribute ${attributeSlug}:`, e);
+                    }
+                }
+            }
+        }
+
       // Check if this is a structured HTTP response from our services
       if (isHttpResponseLike(error)) {
         // Let the dispatcher handle HTTP → MCP mapping

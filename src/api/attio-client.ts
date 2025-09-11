@@ -226,6 +226,78 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 }
 
 /**
+ * Gets the schema for a specific attribute.
+ * @param objectSlug - The slug of the object (e.g., 'companies').
+ * @param attributeSlug - The slug of the attribute (e.g., 'categories').
+ * @returns The attribute schema.
+ */
+export async function getAttributeSchema(
+  objectSlug: string,
+  attributeSlug: string
+): Promise<any> {
+  const client = getAttioClient();
+  const path = `/objects/${objectSlug}/attributes/${attributeSlug}`;
+  try {
+    const response = await client.get(path);
+    return response.data?.data;
+  } catch (error) {
+    console.error(
+      `Failed to get attribute schema for ${objectSlug}.${attributeSlug}`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Lists the available options for a select attribute.
+ * @param objectSlug - The slug of the object.
+ * @param attributeSlug - The slug of the select attribute.
+ * @returns A list of available select options.
+ */
+export async function getSelectOptions(
+  objectSlug: string,
+  attributeSlug: string
+): Promise<any[]> {
+  const client = getAttioClient();
+  const path = `/objects/${objectSlug}/attributes/${attributeSlug}/options`;
+  try {
+    const response = await client.get(path);
+    return response.data?.data || [];
+  } catch (error) {
+    console.error(
+      `Failed to get select options for ${objectSlug}.${attributeSlug}`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Lists the available statuses for a status attribute.
+ * @param objectSlug - The slug of the object.
+ * @param attributeSlug - The slug of the status attribute.
+ * @returns A list of available statuses.
+ */
+export async function getStatusOptions(
+  objectSlug: string,
+  attributeSlug: string
+): Promise<any[]> {
+  const client = getAttioClient();
+  const path = `/objects/${objectSlug}/attributes/${attributeSlug}/statuses`;
+  try {
+    const response = await client.get(path);
+    return response.data?.data || [];
+  } catch (error) {
+    console.error(
+      `Failed to get status options for ${objectSlug}.${attributeSlug}`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
  * Initializes the global API client with the provided API key
  *
  * @param apiKey - The Attio API key
@@ -269,9 +341,9 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
 
   // If we need the raw E2E client, do NOT reuse any cached instance
   if (forceReal || opts?.rawE2E) {
-    console.log('🚨 E2E MODE: bypassing cache, creating fresh client');
+    debug('AttioClient', 'E2E MODE: bypassing cache, creating fresh client');
     apiInstance = null; // guarantee we don't return a stale client
-    console.log('🚨 CREATING RAW E2E CLIENT', {
+    debug('AttioClient', 'Creating raw E2E client', {
       forceReal,
       rawE2E: opts?.rawE2E,
       isE2E,
@@ -350,7 +422,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
       }
     );
 
-    console.log('🚀 RETURNING E2E RAW CLIENT');
+    debug('AttioClient', 'Returning E2E raw client');
     return rawClient;
   }
 
@@ -358,7 +430,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
-      console.log('🆕 CREATING DEFAULT CLIENT (auto-init from env)');
+      debug('attio-client', 'Creating default client (auto-init from env)');
       debug(
         'attio-client',
         'API client not initialized, auto-initializing from environment variable',

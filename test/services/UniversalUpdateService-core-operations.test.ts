@@ -167,7 +167,7 @@ describe('UniversalUpdateService', () => {
       });
 
       expect(updateObjectRecord).toHaveBeenCalledWith('records', 'record_abc', {
-        values: { name: 'Test Company' },
+        name: 'Test Company',
       });
       expect(result.id.object_id).toBe('records');
     });
@@ -197,9 +197,11 @@ describe('UniversalUpdateService', () => {
         { name: 'Test Company' },
         false
       );
-      expect(updateObjectRecord).toHaveBeenCalledWith('deals', 'deal_def', {
-        values: mockDealData,
-      });
+      expect(updateObjectRecord).toHaveBeenCalledWith(
+        'deals',
+        'deal_def',
+        mockDealData
+      );
       expect(result.id.object_id).toBe('deals');
     });
 

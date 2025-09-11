@@ -61,14 +61,26 @@ npx -y @smithery/cli install @kesslerio/attio-mcp-server --client claude
     "attio-mcp": {
       "command": "attio-mcp-server",
       "env": {
-        "ATTIO_API_KEY": "YOUR_API_KEY_HERE"
+        "ATTIO_API_KEY": "YOUR_API_KEY_HERE",
+        "ATTIO_DEFAULT_DEAL_OWNER": "user@company.com",
+        "ATTIO_DEFAULT_DEAL_STAGE": "Interested",
+        "ATTIO_DEFAULT_CURRENCY": "USD"
       }
     }
   }
 }
 ```
 
-3. **Save and Restart Claude Desktop**
+3. **Optional: Configure Deal Defaults**
+   
+   The additional environment variables shown above configure default values for deal creation:
+   - `ATTIO_DEFAULT_DEAL_OWNER`: Email address of the default deal owner (typically your email)
+   - `ATTIO_DEFAULT_DEAL_STAGE`: Default stage for new deals (check your Attio workspace for available stages)
+   - `ATTIO_DEFAULT_CURRENCY`: Default currency code (e.g., USD, EUR, GBP)
+
+   These are optional but recommended if you plan to create deals via Claude.
+
+4. **Save and Restart Claude Desktop**
 
 ---
 

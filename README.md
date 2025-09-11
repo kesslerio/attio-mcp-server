@@ -305,9 +305,9 @@ export ATTIO_API_KEY="your_api_key_here"
 export ATTIO_WORKSPACE_ID="your_workspace_id_here"
 
 # Optional: Deal defaults configuration
-export ATTIO_DEFAULT_DEAL_STAGE="Interested"      # Default stage for new deals
-export ATTIO_DEFAULT_DEAL_OWNER="member_id_here"  # Default owner workspace member ID (see below)
-export ATTIO_DEFAULT_CURRENCY="USD"               # Default currency for deal values
+export ATTIO_DEFAULT_DEAL_STAGE="Interested"           # Default stage for new deals
+export ATTIO_DEFAULT_DEAL_OWNER="user@company.com"     # Default owner email address (see below)
+export ATTIO_DEFAULT_CURRENCY="USD"                    # Default currency for deal values
 ```
 
 ### 2. Test the Installation
@@ -325,14 +325,15 @@ Add to your Claude Desktop MCP configuration:
 
 #### Finding Required IDs
 
-**Workspace Member ID** (for deal owner defaults):
-```bash
-# Use the Attio API to list workspace members
-curl -H "Authorization: Bearer $ATTIO_API_KEY" \
-  https://api.attio.com/v2/workspace-members
+**Deal Owner Email** (for deal owner defaults):
+The `ATTIO_DEFAULT_DEAL_OWNER` should be set to the email address of the workspace member who should own new deals by default. This is typically your own email address or the email address of your sales team lead.
 
-# Look for your name in the response to find your member ID
+```bash
+# Example:
+export ATTIO_DEFAULT_DEAL_OWNER="john.smith@company.com"
 ```
+
+**Note**: The system will automatically resolve email addresses to workspace member references when creating deals.
 
 **Deal Stages**: 
 Deal stages are specific to your workspace. Check your Attio workspace settings or use the `discover-attributes` command to find available stages for deals.
@@ -346,7 +347,7 @@ Deal stages are specific to your workspace. Check your Attio workspace settings 
         "ATTIO_API_KEY": "your_api_key_here",
         "ATTIO_WORKSPACE_ID": "your_workspace_id_here",
         "ATTIO_DEFAULT_DEAL_STAGE": "Interested",
-        "ATTIO_DEFAULT_DEAL_OWNER": "member_id_here",
+        "ATTIO_DEFAULT_DEAL_OWNER": "user@company.com",
         "ATTIO_DEFAULT_CURRENCY": "USD"
       }
     }

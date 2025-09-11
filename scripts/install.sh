@@ -187,6 +187,15 @@ EOF
 ATTIO_API_KEY=your_attio_api_key_here
 ATTIO_WORKSPACE_ID=your_workspace_id_here
 
+# Optional: Deal defaults configuration
+ATTIO_DEFAULT_DEAL_OWNER=user@company.com
+ATTIO_DEFAULT_DEAL_STAGE=Interested
+ATTIO_DEFAULT_CURRENCY=USD
+
+# Optional: Testing configuration (advanced users)
+ATTIO_VALID_DEAL_STAGES=["Interested","Qualified","In Progress"]
+ATTIO_DEAL_PIPELINE_STAGES=["Interested","Qualified","In Progress","Negotiation","Closed Won","Closed Lost"]
+
 # Optional: Debug settings
 DEBUG=false
 LOG_LEVEL=info
@@ -221,6 +230,11 @@ show_next_steps() {
     echo "   export ATTIO_API_KEY=your_api_key"
     echo "   export ATTIO_WORKSPACE_ID=your_workspace_id"
     echo "   Get your API key from: https://app.attio.com/settings/api"
+    echo ""
+    echo "   📋 Optional: Deal creation defaults:"
+    echo "   export ATTIO_DEFAULT_DEAL_OWNER=user@company.com"
+    echo "   export ATTIO_DEFAULT_DEAL_STAGE=Interested"
+    echo "   export ATTIO_DEFAULT_CURRENCY=USD"
     echo ""
     
     echo "2. 🧪 Test the installation:"

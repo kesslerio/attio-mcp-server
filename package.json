@@ -7,15 +7,23 @@
   "type": "module",
   "access": "public",
   "bin": {
-    "attio-mcp": "dist/index.js",
+    "attio-mcp": "dist/cli.js",
     "attio-discover": "dist/cli/discover.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/smithery.ts",
+      "require": "./dist/http.js"
+    },
+    "./cli": "./dist/cli.js",
+    "./lib": "./dist/index.js"
   },
   "scripts": {
     "clean": "shx rm -rf dist test-dist",
     "build": "tsc",
     "postbuild": "shx chmod +x dist/*.js",
     "prepare": "npm run build",
-    "start:stdio": "node dist/index.js",
+    "start:stdio": "node dist/cli.js",
     "start:http": "node dist/http.js",
     "dev": "npx @smithery/cli dev",
     "check": "wireit",
@@ -50,6 +58,9 @@
     "test:performance": "vitest --run test/performance/regression.test.ts",
     "test:mcp": "vitest run test/e2e/mcp/",
     "test:mcp:p0": "vitest run test/e2e/mcp/core-operations/",
+    "test:mcp:p1:lists": "vitest run test/e2e/mcp/list-management/",
+    "test:mcp:p1:deals": "vitest run test/e2e/mcp/deal-operations/",
+    "test:mcp:p1": "vitest run test/e2e/mcp/list-management/ test/e2e/mcp/deal-operations/",
     "test:mcp:watch": "vitest test/e2e/mcp/ --watch",
     "test:performance:all": "vitest --config configs/vitest/vitest.config.performance.ts --run",
     "test:performance:tools": "vitest --config configs/vitest/vitest.config.performance.ts --run test/handlers/tool-configs/universal/performance-*.test.ts",

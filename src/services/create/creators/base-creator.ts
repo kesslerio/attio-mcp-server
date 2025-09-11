@@ -254,12 +254,13 @@ export abstract class BaseCreator implements ResourceCreator {
     payload?: any
   ): never {
     const error = err as {
-      response?: { status?: number; data?: unknown };
+      response?: { status?: number; data?: { message?: string } };
       message?: string;
       name?: string;
     };
     const status = error?.response?.status ?? 500;
     const data = error?.response?.data;
+    const detailMessage = data?.message;
 
     context.logError(
       this.constructor.name,
@@ -272,7 +273,9 @@ export abstract class BaseCreator implements ResourceCreator {
     );
 
     throw this.createEnhancedError(
-      new Error(error?.message || `${this.resourceType} creation error`),
+      new Error(
+        detailMessage || error?.message || `${this.resourceType} creation error`
+      ),
       context,
       status
     );
