@@ -60,6 +60,44 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Summarize unchecked criteria
+        if: always() && steps.extract-issue.outputs.issue_number != ''
+        run: |
+          body=$(gh issue view ${{ steps.extract-issue.outputs.issue_number }} -R ${{ github.repository }} --json body --jq '.body' || echo '')
+
+          echo "## Unchecked criteria in Issue #${{ steps.extract-issue.outputs.issue_number }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          unchecked="$(printf "%s\n" "$body" | grep -E '^[[:space:]]*[*-] \[ \] ' || true)"
+          count="$(printf "%s\n" "$unchecked" | grep -c '^[[:space:]]*[*-] \[ \] ' || true)"
+
+          echo "**Count:** $count" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$unchecked" ]; then
+            printf "%s\n" "$unchecked" | sed -E 's/^[[:space:]]*[*-] \[ \] /- /' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "_No unchecked items found._" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Required label categories" >> "$GITHUB_STEP_SUMMARY"
+
+          labels_raw="$(gh issue view ${{ steps.extract-issue.outputs.issue_number }} -R ${{ github.repository }} --json labels --jq '.labels[].name' || true)"
+          labels="$(printf "%s\n" "$labels_raw" | tr '[:upper:]' '[:lower:]')"
+
+          has_prio="$(printf "%s\n" "$labels" | grep -E '^p[0-5]$' -m1 || true)"
+          has_type="$(printf "%s\n" "$labels" | grep -E '^type:' -m1 || true)"
+          has_status="$(printf "%s\n" "$labels" | grep -E '^status:' -m1 || true)"
+          has_area="$(printf "%s\n" "$labels" | grep -E '^area:' -m1 || true)"
+
+          echo "- Priority (P0–P5): $([ -n \"$has_prio\" ] && echo ✅ || echo ❌)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Type (type:*): $([ -n \"$has_type\" ] && echo ✅ || echo ❌)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status (status:*): $([ -n \"$has_status\" ] && echo ✅ || echo ❌)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Area (area:*): $([ -n \"$has_area\" ] && echo ✅ || echo ❌)" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Comment on PR if validation fails
         if: failure() && steps.extract-issue.outputs.issue_number != ''
         run: |
