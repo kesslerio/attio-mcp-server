@@ -10,6 +10,7 @@ import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
+import { TestUtilities } from '../shared/test-utilities';
 import type { TestResult } from '../shared/quality-gates';
 
 class NoteSearchTest extends MCPTestBase {

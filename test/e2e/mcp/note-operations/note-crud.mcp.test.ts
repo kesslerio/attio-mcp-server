@@ -10,6 +10,7 @@ import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
+import { TestUtilities } from '../shared/test-utilities';
 import type { TestResult } from '../shared/quality-gates';
 
 class NoteCrudTest extends MCPTestBase {
@@ -34,14 +35,11 @@ class NoteCrudTest extends MCPTestBase {
         record_data: companyData
       });
 
-      if (!companyResult.isError) {
-        const text = companyResult.content?.[0]?.text || '';
-        const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-        if (idMatch) {
-          this.testCompanyId = idMatch[1];
-          TestDataFactory.trackRecord('companies', this.testCompanyId);
-        }
-      }
+      this.testCompanyId = TestUtilities.extractAndTrackId(
+        companyResult,
+        'company',
+        (id) => TestDataFactory.trackRecord('companies', id)
+      );
 
       // Create a test person
       const personData = TestDataFactory.createPersonData('TCN01');
@@ -50,14 +48,11 @@ class NoteCrudTest extends MCPTestBase {
         record_data: personData
       });
 
-      if (!personResult.isError) {
-        const text = personResult.content?.[0]?.text || '';
-        const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-        if (idMatch) {
-          this.testPersonId = idMatch[1];
-          TestDataFactory.trackRecord('people', this.testPersonId);
-        }
-      }
+      this.testPersonId = TestUtilities.extractAndTrackId(
+        personResult,
+        'person',
+        (id) => TestDataFactory.trackRecord('people', id)
+      );
 
       // Try to create a test deal (may not be configured in all workspaces)
       try {
@@ -67,14 +62,11 @@ class NoteCrudTest extends MCPTestBase {
           record_data: dealData
         });
 
-        if (!dealResult.isError) {
-          const text = dealResult.content?.[0]?.text || '';
-          const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-          if (idMatch) {
-            this.testDealId = idMatch[1];
-            TestDataFactory.trackRecord('deals', this.testDealId);
-          }
-        }
+        this.testDealId = TestUtilities.extractAndTrackId(
+          dealResult,
+          'deal',
+          (id) => TestDataFactory.trackRecord('deals', id)
+        );
       } catch (error) {
         console.warn('Deal creation failed (may not be configured):', error);
       }
@@ -168,16 +160,13 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         content: noteData.content
       });
 
-      expect(result.isError).toBeFalsy();
+      TestUtilities.assertOperationSuccess(result, 'Create company note', 'Note created successfully');
+      TestUtilities.assertContains(result, noteData.title, 'Company note creation');
       
-      const text = result.content?.[0]?.text || '';
-      expect(text).toContain('Note created successfully');
-      expect(text).toContain(noteData.title);
-      
-      // Extract note ID if possible for cleanup
-      const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-      if (idMatch) {
-        testCase.trackNote(idMatch[1]);
+      // Extract note ID for cleanup
+      const noteId = TestUtilities.extractRecordId(TestUtilities.getResponseText(result));
+      if (noteId) {
+        testCase.trackNote(noteId);
       }
       
       passed = true;
@@ -208,16 +197,13 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         content: noteData.content
       });
 
-      expect(result.isError).toBeFalsy();
+      TestUtilities.assertOperationSuccess(result, 'Create person note', 'Note created successfully');
+      TestUtilities.assertContains(result, noteData.title, 'Person note creation');
       
-      const text = result.content?.[0]?.text || '';
-      expect(text).toContain('Note created successfully');
-      expect(text).toContain(noteData.title);
-      
-      // Extract note ID if possible for cleanup
-      const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-      if (idMatch) {
-        testCase.trackNote(idMatch[1]);
+      // Extract note ID for cleanup
+      const noteId = TestUtilities.extractRecordId(TestUtilities.getResponseText(result));
+      if (noteId) {
+        testCase.trackNote(noteId);
       }
       
       passed = true;
@@ -249,13 +235,12 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         content: noteData.content
       });
 
-      expect(createResult.isError).toBeFalsy();
+      TestUtilities.assertOperationSuccess(createResult, 'Create note for retrieval test', 'Note created successfully');
       
       // Extract note ID for cleanup
-      const createText = createResult.content?.[0]?.text || '';
-      const idMatch = createText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-      if (idMatch) {
-        testCase.trackNote(idMatch[1]);
+      const noteId = TestUtilities.extractRecordId(TestUtilities.getResponseText(createResult));
+      if (noteId) {
+        testCase.trackNote(noteId);
       }
 
       // Now retrieve the notes
@@ -265,13 +250,8 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         limit: 10
       });
 
-      expect(result.isError).toBeFalsy();
-      
-      const text = result.content?.[0]?.text || '';
-      expect(text).toBeTruthy();
-      
-      // Should contain our created note
-      expect(text).toContain(noteData.title);
+      TestUtilities.assertOperationSuccess(result, 'List company notes');
+      TestUtilities.assertContains(result, noteData.title, 'Company notes listing');
       
       passed = true;
     } catch (err) {
@@ -302,13 +282,12 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         content: noteData.content
       });
 
-      expect(createResult.isError).toBeFalsy();
+      TestUtilities.assertOperationSuccess(createResult, 'Create note for person retrieval test', 'Note created successfully');
       
       // Extract note ID for cleanup
-      const createText = createResult.content?.[0]?.text || '';
-      const idMatch = createText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-      if (idMatch) {
-        testCase.trackNote(idMatch[1]);
+      const noteId = TestUtilities.extractRecordId(TestUtilities.getResponseText(createResult));
+      if (noteId) {
+        testCase.trackNote(noteId);
       }
 
       // Now retrieve the notes
@@ -318,13 +297,8 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         limit: 10
       });
 
-      expect(result.isError).toBeFalsy();
-      
-      const text = result.content?.[0]?.text || '';
-      expect(text).toBeTruthy();
-      
-      // Should contain our created note
-      expect(text).toContain(noteData.title);
+      TestUtilities.assertOperationSuccess(result, 'List person notes');
+      TestUtilities.assertContains(result, noteData.title, 'Person notes listing');
       
       passed = true;
     } catch (err) {
