@@ -30,24 +30,33 @@ jobs:
           && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
           && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
           && sudo apt update \
-          && sudo apt install gh -y
+          && sudo apt install gh -y \
+          && sudo apt install -y jq
 
       - name: Extract issue number from PR
         id: extract-issue
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.inputs.issue_number }}" >> "$GITHUB_OUTPUT"
           else
-            # Extract issue number from PR title or body
-            issue_num=$(echo "${{ github.event.pull_request.title }}" | grep -o '#[0-9]\+' | head -1 | sed 's/#//')
+            # SAFELY read PR title/body from event payload to avoid script injection
+            # Ref: https://docs.github.com/en/actions/concepts/security/script-injections
+            title=$(jq -r '.pull_request.title // ""' "$GITHUB_EVENT_PATH")
+            body=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+
+            # Prefer explicit #123 reference first
+            issue_num=$(printf '%s\n%s\n' "$title" "$body" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
+
+            # Fallback to "Closes|Fixes|Resolves #123" patterns
             if [ -z "$issue_num" ]; then
-              issue_num=$(echo "${{ github.event.pull_request.body }}" | grep -o 'Closes #[0-9]\+\|Fixes #[0-9]\+\|Resolves #[0-9]\+' | head -1 | grep -o '[0-9]\+')
+              issue_num=$(printf '%s\n' "$body" | grep -oE '(Closes|Fixes|Resolves) #[0-9]+' | head -1 | grep -oE '[0-9]+')
             fi
+
             if [ -z "$issue_num" ]; then
               echo "No issue reference found in PR title or body"
               exit 0
             fi
-            echo "issue_number=$issue_num" >> $GITHUB_OUTPUT
+            echo "issue_number=$issue_num" >> "$GITHUB_OUTPUT"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,7 +108,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Comment on PR if validation fails
-        if: failure() && steps.extract-issue.outputs.issue_number != ''
+        if: github.event_name == 'pull_request' && failure() && steps.extract-issue.outputs.issue_number != ''
         run: |
           gh pr comment ${{ github.event.pull_request.number }} --body "## ❌ Issue Closure Validation Failed
 
@@ -127,7 +136,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Comment on PR if validation passes
-        if: success() && steps.extract-issue.outputs.issue_number != ''
+        if: github.event_name == 'pull_request' && success() && steps.extract-issue.outputs.issue_number != ''
         run: |
           gh pr comment ${{ github.event.pull_request.number }} --body "## ✅ Issue Closure Validation Passed
 
