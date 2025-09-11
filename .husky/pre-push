@@ -15,7 +15,7 @@ npm run typecheck || {
 }
 
 echo "🔍 Running fast tests..."
-eval "${PREPUSH_TEST_CMD:-"npm run test:offline:run --silent -- --reporter=dot --bail=1"}" || {
+eval "${PREPUSH_TEST_CMD:-\"npm run test:offline:run --silent -- --reporter=dot --bail=1\"}" || {
   echo "❌ Tests failed"
   exit 1
 }
