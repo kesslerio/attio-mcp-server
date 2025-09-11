@@ -10,6 +10,7 @@ export interface CleanupOptions {
   pattern?: string;
   parallel: number;
   verbose: boolean;
+  force: boolean;
 }
 
 export interface CleanupConfig {
