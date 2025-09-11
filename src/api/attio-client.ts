@@ -3,7 +3,6 @@
  */
 import axios, { AxiosInstance } from 'axios';
 import { debug, error, OperationType } from '../utils/logger.js';
-import { getLazyAttioClient } from './lazy-client.js';
 
 // Module identification for debugging (compatible with both ESM and CJS)
 const MODULE_FILE = 'attio-client';
@@ -236,7 +235,7 @@ export async function getAttributeSchema(
   objectSlug: string,
   attributeSlug: string
 ): Promise<any> {
-  const client = getLazyAttioClient();
+  const client = getAttioClient();
   const path = `/objects/${objectSlug}/attributes/${attributeSlug}`;
   try {
     const response = await client.get(path);
@@ -260,7 +259,7 @@ export async function getSelectOptions(
   objectSlug: string,
   attributeSlug: string
 ): Promise<any[]> {
-  const client = getLazyAttioClient();
+  const client = getAttioClient();
   const path = `/objects/${objectSlug}/attributes/${attributeSlug}/options`;
   try {
     const response = await client.get(path);
@@ -284,7 +283,7 @@ export async function getStatusOptions(
   objectSlug: string,
   attributeSlug: string
 ): Promise<any[]> {
-  const client = getLazyAttioClient();
+  const client = getAttioClient();
   const path = `/objects/${objectSlug}/attributes/${attributeSlug}/statuses`;
   try {
     const response = await client.get(path);
