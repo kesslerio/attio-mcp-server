@@ -49,11 +49,21 @@ The server requires the following environment variables:
 - `ATTIO_API_KEY` (required): Your Attio API bearer token
 - `ATTIO_WORKSPACE_ID` (optional): Your Attio workspace ID
 
+**Optional Deal Configuration**:
+- `ATTIO_DEFAULT_DEAL_OWNER` (optional): Default owner email address for new deals (e.g., "user@company.com")
+- `ATTIO_DEFAULT_DEAL_STAGE` (optional): Default stage for new deals (e.g., "Interested")
+- `ATTIO_DEFAULT_CURRENCY` (optional): Default currency for deal values (e.g., "USD")
+
 You can set these in a `.env` file at the root of the project:
 
 ```
 ATTIO_API_KEY=your_api_key_here
 ATTIO_WORKSPACE_ID=your_workspace_id_here
+
+# Optional: Deal defaults
+ATTIO_DEFAULT_DEAL_OWNER=user@company.com
+ATTIO_DEFAULT_DEAL_STAGE=Interested
+ATTIO_DEFAULT_CURRENCY=USD
 ```
 
 Or pass them as environment variables when running the server.
