@@ -11,13 +11,19 @@ import {
 } from '../../../objects/companies/index.js';
 import { DetailsToolConfig } from '../../tool-types.js';
 
+interface SelectOption {
+  option?: {
+    title: string;
+  };
+}
+
 // Type-safe helper to access company values
 function getCompanyValue(
   company: Company,
   field: string
-): Array<{ value: any; [key: string]: any }> | undefined {
-  const values = company.values as any;
-  return values?.[field];
+): unknown[] | undefined {
+  const values = company.values as Record<string, unknown>;
+  return values?.[field] as unknown[] | undefined;
 }
 
 // Company formatter configurations
@@ -27,18 +33,26 @@ export const formatterConfigs = {
     handler: getCompanyDetails,
     formatResult: (company: Company) => {
       const companyName =
-        getCompanyValue(company, 'name')?.[0]?.value || 'Unnamed';
+        (getCompanyValue(company, 'name')?.[0] as { value: string })?.value ||
+        'Unnamed';
       const companyId = company.id?.record_id || 'unknown';
-      const domains = getCompanyValue(company, 'domains')?.[0]?.domain || 'Not available';
+      const domains =
+        (getCompanyValue(company, 'domains')?.[0] as { domain: string })
+          ?.domain || 'Not available';
       const categories =
-        getCompanyValue(company, 'categories')?.map((cat: any) => cat.option?.title).join(', ') || 'Not available';
+        (getCompanyValue(company, 'categories') as SelectOption[] | undefined)
+          ?.map((cat) => cat.option?.title)
+          .join(', ') || 'Not available';
       const description =
-        getCompanyValue(company, 'description')?.[0]?.value ||
-        'No description available';
-      const createdAt = (company as any).created_at || 'Unknown';
+        (getCompanyValue(company, 'description')?.[0] as { value: string })
+          ?.value || 'No description available';
+      const createdAt =
+        (company as { created_at?: string }).created_at || 'Unknown';
 
       // Extract other key details
-      const location = getCompanyValue(company, 'primary_location')?.[0];
+      const location = getCompanyValue(company, 'primary_location')?.[0] as
+        | { locality?: string; region?: string; country_code?: string }
+        | undefined;
       const locationStr = location
         ? `${location.locality || ''}, ${location.region || ''} ${
             location.country_code || ''
@@ -48,15 +62,7 @@ export const formatterConfigs = {
       // Note: employee_range and foundation_date removed as they're not standard Attio fields
       // Custom fields should be handled through user.json mapping
 
-      return `Company: ${companyName} (ID: ${companyId})
-Created: ${createdAt}
-Domains: ${domains}
-Categories: ${categories}
-Location: ${locationStr}
-Description:
-${description}
-
-For full details, use get-company-json with this ID: ${companyId}`;
+      return `Company: ${companyName} (ID: ${companyId})\nCreated: ${createdAt}\nDomains: ${domains}\nCategories: ${categories}\nLocation: ${locationStr}\nDescription:\n${description}\n\nFor full details, use get-company-json with this ID: ${companyId}`;
     },
   } as DetailsToolConfig,
 
@@ -65,23 +71,9 @@ For full details, use get-company-json with this ID: ${companyId}`;
     handler: getCompanyDetails,
     formatResult: (company: Company) => {
       try {
-        const cleanedCompany = JSON.parse(JSON.stringify(company)) as any;
-
-        // Fix the typo in the response data
-        if (cleanedCompany.values?.typpe) {
-          cleanedCompany.values.type = cleanedCompany.values.typpe;
-          delete cleanedCompany.values.typpe;
-        }
-
-        // Safely handle the services field if it exists
-        if (cleanedCompany.values?.services !== undefined) {
-          // Ensure services is an array
-          if (!Array.isArray(cleanedCompany.values.services)) {
-            cleanedCompany.values.services = cleanedCompany.values.services
-              ? [cleanedCompany.values.services]
-              : [];
-          }
-        }
+        const cleanedCompany = JSON.parse(
+          JSON.stringify(company)
+        ) as Company & { created_at?: string; web_url?: string };
 
         // Instead of returning the entire JSON at once, create a summary
         const summary = {
@@ -89,11 +81,20 @@ For full details, use get-company-json with this ID: ${companyId}`;
           created_at: cleanedCompany.created_at,
           web_url: cleanedCompany.web_url,
           basic_values: {
-            name: cleanedCompany.values?.name?.[0]?.value,
-            domains: cleanedCompany.values?.domains?.[0]?.domain,
-            description: cleanedCompany.values?.description?.[0]?.value,
-            categories: cleanedCompany.values?.categories?.map((cat: any) => cat.option?.title),
-            primary_location: cleanedCompany.values?.primary_location?.[0],
+            name: (cleanedCompany.values as { name?: [{ value?: string }] })
+              .name?.[0]?.value,
+            domains: (
+              cleanedCompany.values as { domains?: [{ domain?: string }] }
+            ).domains?.[0]?.domain,
+            description: (
+              cleanedCompany.values as { description?: [{ value?: string }] }
+            ).description?.[0]?.value,
+            categories: (
+              cleanedCompany.values as { categories?: Array<SelectOption> }
+            ).categories?.map((cat) => cat.option?.title),
+            primary_location: (
+              cleanedCompany.values as { primary_location?: [unknown] }
+            ).primary_location?.[0],
           },
           attribute_count: Object.keys(cleanedCompany.values || {}).length,
           message:
@@ -121,31 +122,41 @@ For full details, use get-company-json with this ID: ${companyId}`;
     handler: getCompanyBasicInfo,
     formatResult: (company: Partial<Company>) => {
       const name =
-        getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const domains = getCompanyValue(company as Company, 'domains')?.[0]?.domain || 'Not available';
+        (getCompanyValue(company as Company, 'name')?.[0] as { value: string })
+          ?.value || 'Unnamed';
+      const domains =
+        (
+          getCompanyValue(company as Company, 'domains')?.[0] as {
+            domain: string;
+          }
+        )?.domain || 'Not available';
       const categories =
-        getCompanyValue(company as Company, 'categories')?.map((cat: any) => cat.option?.title).join(', ') ||
-        'Not available';
+        (
+          getCompanyValue(company as Company, 'categories') as
+            | SelectOption[]
+            | undefined
+        )
+          ?.map((cat) => cat.option?.title)
+          .join(', ') || 'Not available';
       const location = getCompanyValue(
         company as Company,
         'primary_location'
-      )?.[0];
+      )?.[0] as
+        | { locality?: string; region?: string; country_code?: string }
+        | undefined;
       const locationStr = location
         ? `${location.locality || ''}, ${location.region || ''} ${
             location.country_code || ''
           }`.trim()
         : 'Not available';
       const description =
-        getCompanyValue(company as Company, 'description')?.[0]?.value ||
-        'No description available';
+        (
+          getCompanyValue(company as Company, 'description')?.[0] as {
+            value: string;
+          }
+        )?.value || 'No description available';
 
-      return `Company: ${name}
-Domains: ${domains}
-Categories: ${categories}
-Location: ${locationStr}
-
-Description:
-${description}`;
+      return `Company: ${name}\nDomains: ${domains}\nCategories: ${categories}\nLocation: ${locationStr}\n\nDescription:\n${description}`;
     },
   } as DetailsToolConfig,
 
@@ -154,19 +165,26 @@ ${description}`;
     handler: getCompanyContactInfo,
     formatResult: (company: Partial<Company>) => {
       const name =
-        getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const domains = getCompanyValue(company as Company, 'domains')?.[0]?.domain || 'Not available';
-      const location = getCompanyValue(company as Company, 'primary_location')?.[0];
+        (getCompanyValue(company as Company, 'name')?.[0] as { value: string })
+          ?.value || 'Unnamed';
+      const domains =
+        (
+          getCompanyValue(company as Company, 'domains')?.[0] as {
+            domain: string;
+          }
+        )?.domain || 'Not available';
+      const location = getCompanyValue(
+        company as Company,
+        'primary_location'
+      )?.[0] as
+        | { locality?: string; region?: string; country_code?: string }
+        | undefined;
       const locationStr = location
         ? `${location.locality || ''}, ${location.region || ''} ${location.country_code || ''}`.trim()
         : 'Not available';
       const team = getCompanyValue(company as Company, 'team') || [];
 
-      return `Company: ${name}
-Domains: ${domains}
-Location: ${locationStr}
-
-Team Members: ${team.length} people`;
+      return `Company: ${name}\nDomains: ${domains}\nLocation: ${locationStr}\n\nTeam Members: ${team.length} people`;
     },
   } as DetailsToolConfig,
 
@@ -175,21 +193,19 @@ Team Members: ${team.length} people`;
     handler: getCompanyBusinessInfo,
     formatResult: (company: Partial<Company>) => {
       const name =
-        getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      // Note: Removed non-standard fields (type, services, industry, estimated_arr_usd, 
+        (getCompanyValue(company as Company, 'name')?.[0] as { value: string })
+          ?.value || 'Unnamed';
+      // Note: Removed non-standard fields (type, services, industry, estimated_arr_usd,
       // funding_raised_usd, employee_range, foundation_date) as they don't exist in default Attio API
       // Custom fields should be handled through user.json mapping
       const categories =
-        getCompanyValue(company as Company, 'categories')?.map(
-          (cat: any) => cat.option?.title
-        ) || [];
+        (
+          getCompanyValue(company as Company, 'categories') as
+            | SelectOption[]
+            | undefined
+        )?.map((cat) => cat.option?.title) || [];
 
-      return `Company: ${name}
-
-Categories:
-${categories.join(', ') || 'None'}
-
-Note: Additional fields like industry, type, employees, revenue, etc. are custom fields 
+      return `Company: ${name}\n\nCategories:\n${categories.join(', ') || 'None'}\n\nNote: Additional fields like industry, type, employees, revenue, etc. are custom fields 
 that should be configured through user.json mapping for your specific workspace.`;
     },
   } as DetailsToolConfig,
@@ -199,36 +215,47 @@ that should be configured through user.json mapping for your specific workspace.
     handler: getCompanySocialInfo,
     formatResult: (company: Partial<Company>) => {
       const name =
-        getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const domains = getCompanyValue(company as Company, 'domains')?.[0]?.domain || 'Not available';
+        (getCompanyValue(company as Company, 'name')?.[0] as { value: string })
+          ?.value || 'Unnamed';
+      const domains =
+        (
+          getCompanyValue(company as Company, 'domains')?.[0] as {
+            domain: string;
+          }
+        )?.domain || 'Not available';
       const linkedin =
-        getCompanyValue(company as Company, 'linkedin')?.[0]?.value ||
-        'Not available';
+        (
+          getCompanyValue(company as Company, 'linkedin')?.[0] as {
+            value: string;
+          }
+        )?.value || 'Not available';
       const twitter =
-        getCompanyValue(company as Company, 'twitter')?.[0]?.value ||
-        'Not available';
+        (
+          getCompanyValue(company as Company, 'twitter')?.[0] as {
+            value: string;
+          }
+        )?.value || 'Not available';
       const facebook =
-        getCompanyValue(company as Company, 'facebook')?.[0]?.value ||
-        'Not available';
+        (
+          getCompanyValue(company as Company, 'facebook')?.[0] as {
+            value: string;
+          }
+        )?.value || 'Not available';
       const instagram =
-        getCompanyValue(company as Company, 'instagram')?.[0]?.value ||
-        'Not available';
+        (
+          getCompanyValue(company as Company, 'instagram')?.[0] as {
+            value: string;
+          }
+        )?.value || 'Not available';
       const angellist =
-        getCompanyValue(company as Company, 'angellist')?.[0]?.value ||
-        'Not available';
+        (
+          getCompanyValue(company as Company, 'angellist')?.[0] as {
+            value: string;
+          }
+        )?.value || 'Not available';
       // Note: twitter_follower_count removed as it's not a standard Attio field
 
-      return `Company: ${name}
-Domains: ${domains}
-
-Social Media:
-LinkedIn: ${linkedin}
-Twitter: ${twitter}
-Facebook: ${facebook}
-Instagram: ${instagram}
-AngelList: ${angellist}
-
-Note: Additional metrics like follower counts are custom fields 
+      return `Company: ${name}\nDomains: ${domains}\n\nSocial Media:\nLinkedIn: ${linkedin}\nTwitter: ${twitter}\nFacebook: ${facebook}\nInstagram: ${instagram}\nAngelList: ${angellist}\n\nNote: Additional metrics like follower counts are custom fields 
 that should be configured through user.json mapping for your workspace.`;
     },
   } as DetailsToolConfig,

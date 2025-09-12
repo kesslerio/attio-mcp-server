@@ -502,7 +502,7 @@ export const listsToolDefinitions = [
         parentAttributeSlug: {
           type: 'string',
           description:
-            'Attribute of the parent record to filter by (e.g., "name", "email_addresses", "industry")',
+            'Attribute of the parent record to filter by (e.g., "name", "email_addresses", "categories")',
         },
         condition: {
           type: 'string',

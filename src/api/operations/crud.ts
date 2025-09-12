@@ -12,6 +12,7 @@ import {
   RecordCreateParams,
   RecordUpdateParams,
   RecordListParams,
+  RecordAttributes,
 } from '../../types/attio.js';
 import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
@@ -250,7 +251,7 @@ export async function createRecord<T extends AttioRecord>(
     // Additional extraction patterns for different Attio API response formats
     if (!rawResult && response?.data?.attributes) {
       // Some APIs return { data: { attributes: {...}, id: {...} } }
-      rawResult = response.data as any;
+      rawResult = response.data as unknown as T;
     }
 
     // Handle array responses by taking first element
@@ -287,9 +288,10 @@ export async function createRecord<T extends AttioRecord>(
       return result;
     } catch (error) {
       // Robust fallback for { data: {} } responses - query the just-created record by name
+      const attributes = params?.attributes as Record<string, unknown>;
       const name =
-        (params?.attributes as any)?.name?.value ??
-        (params?.attributes as any)?.name;
+        (attributes?.name as { value?: string })?.value ??
+        (attributes?.name as string);
       if (
         name &&
         error instanceof Error &&
@@ -497,8 +499,7 @@ export async function updateRecord<T extends AttioRecord>(
               ])
             );
 
-            // For test environments: if we have 'categories' field, also add 'industry' for test compatibility
-            // This ensures tests that expect 'industry' field will still pass after attribute mapping
+            // For test environments: if we have 'categories' field
             const testCompatibleValues = { ...basicValues };
             if (basicValues.categories && !basicValues.industry) {
               testCompatibleValues.industry = basicValues.categories;

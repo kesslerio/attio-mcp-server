@@ -49,7 +49,7 @@ Required format:
 
 Examples:
 - Single filter: {"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Tech"}]}
-- Multiple filters: {"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Tech"}, {"attribute": {"slug": "industry"}, "condition": "equals", "value": "Technology"}]}
+- Multiple filters: {"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Tech"}, {"attribute": {"slug": "categories"}, "condition": "equals", "value": "Technology"}]}
 - OR logic: {"filters": [...], "matchAny": true}
 
 Supported conditions: contains, equals, starts_with, ends_with, greater_than, less_than, is_empty, is_not_empty`,

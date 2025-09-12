@@ -131,9 +131,7 @@ export function isTextAttribute(attributeSlug: string): boolean {
   const textAttributes = [
     ATTRIBUTES.NAME,
     ATTRIBUTES.EMAIL,
-    ATTRIBUTES.WEBSITE,
     ATTRIBUTES.NOTE_CONTENT,
-    ATTRIBUTES.INDUSTRY,
   ];
 
   return textAttributes.includes(attributeSlug);

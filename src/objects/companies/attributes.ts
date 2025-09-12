@@ -168,8 +168,9 @@ export async function getCompanySocialInfo(
 ): Promise<Partial<Company>> {
   const socialFields = [
     'name',
+    'domains',
     'linkedin',
-    'twitter', 
+    'twitter',
     'facebook',
     'instagram',
     'angellist',
@@ -209,6 +210,7 @@ export async function getCompanyCustomFields(
 
   // Standard fields that are NOT custom (based on actual Attio API)
   const standardFields = new Set([
+    // Official list from user
     'domains',
     'name',
     'description',
@@ -222,11 +224,21 @@ export async function getCompanyCustomFields(
     'twitter',
     'associated_deals',
     'associated_workspaces',
-    // System fields
+
+    // Other system/enriched fields (from old set, reasonable to keep)
     'created_at',
     'created_by',
-    'matching_id',
-    'record_id',
+    'record_id', // Not really an attribute, but good to filter out
+    'first_interaction',
+    'last_interaction',
+    'next_interaction',
+    'first_email_interaction',
+    'last_email_interaction',
+    'first_calendar_interaction',
+    'last_calendar_interaction',
+    'next_calendar_interaction',
+    'strongest_connection_strength',
+    'strongest_connection_user',
   ]);
 
   // Extract custom fields
@@ -344,6 +356,7 @@ export async function discoverCompanyAttributes(): Promise<{
     }
 
     const standardFields = new Set([
+      // Official list from user
       'domains',
       'name',
       'description',
@@ -357,11 +370,21 @@ export async function discoverCompanyAttributes(): Promise<{
       'twitter',
       'associated_deals',
       'associated_workspaces',
-      // System fields
+
+      // Other system/enriched fields (from old set, reasonable to keep)
       'created_at',
       'created_by',
-      'matching_id',
-      'record_id',
+      'record_id', // Not really an attribute, but good to filter out
+      'first_interaction',
+      'last_interaction',
+      'next_interaction',
+      'first_email_interaction',
+      'last_email_interaction',
+      'first_calendar_interaction',
+      'last_calendar_interaction',
+      'next_calendar_interaction',
+      'strongest_connection_strength',
+      'strongest_connection_user',
     ]);
 
     const standard: string[] = [];
@@ -429,7 +452,7 @@ export async function getCompanyAttributes(
   attributeName?: string
 ): Promise<{
   attributes?: string[];
-  value?: any;
+  value?: unknown;
   company: string;
 }> {
   const companyId = extractCompanyId(companyIdOrUri);

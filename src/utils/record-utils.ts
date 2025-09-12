@@ -223,11 +223,11 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
   }
 
   // Try to determine the record type based on available fields
-  // Companies typically have industry or website fields, people typically have email or phone
+  // Companies typically have categories or domains fields, people typically have email or phone
   const isPerson =
     'email' in entry.record.values || 'phone' in entry.record.values;
   const isCompany =
-    'industry' in entry.record.values || 'website' in entry.record.values;
+    'categories' in entry.record.values || 'domains' in entry.record.values;
 
   // Set the record type based on detected fields
   let recordType = '';
@@ -276,8 +276,8 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
  * @returns A filter object compatible with the Attio API for path-based filtering
  *
  * @example
- * // Filter for companies in a list named "prospects" that have "Tech" in their industry
- * const filter = createPathBasedFilter('prospects', 'companies', 'industry', 'contains', 'Tech');
+ * // Filter for companies in a list named "prospects" that have "Tech" in their categories
+ * const filter = createPathBasedFilter('prospects', 'companies', 'categories', 'contains', 'Tech');
  *
  * @example
  * // Filter for people in a list with ID "list_12345" who have an email from apple.com

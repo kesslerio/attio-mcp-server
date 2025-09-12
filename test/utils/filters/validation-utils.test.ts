@@ -352,7 +352,7 @@ describe('Filter Validation Utilities', () => {
     it('should return multiple conditions example when requested', () => {
       const example = getFilterExample('multiple');
       expect(example).toContain('name');
-      expect(example).toContain('website');
+      expect(example).toContain('domains');
       expect(example).not.toContain('matchAny'); // Should use AND logic by default
     });
   });

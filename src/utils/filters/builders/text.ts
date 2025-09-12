@@ -64,9 +64,7 @@ export function createIndustryFilter(
   condition: FilterConditionType = FilterConditionType.EQUALS
 ): ListEntryFilters {
   return {
-    filters: [
-      { attribute: { slug: ATTRIBUTES.INDUSTRY }, condition, value: industry },
-    ],
+    filters: [{ attribute: { slug: 'industry' }, condition, value: industry }],
     matchAny: false,
   };
 }
