@@ -240,7 +240,7 @@
   },
   "wireit": {
     "lint:check": {
-      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 5000 \"src/**/*.ts\" \"test/**/*.ts\"",
+      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 800 \"src/**/*.ts\" \"test/**/*.ts\"",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",
