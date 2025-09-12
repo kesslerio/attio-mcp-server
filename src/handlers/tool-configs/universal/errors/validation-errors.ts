@@ -16,13 +16,14 @@ export enum HttpStatusCode {
   SERVICE_UNAVAILABLE = 503,
 }
 
-export class UniversalValidationError extends Error {
+import { BaseWrappedError } from '../../../../errors/BaseWrappedError.js';
+
+export class UniversalValidationError extends BaseWrappedError {
   public readonly errorType: ErrorType;
   public readonly suggestion?: string;
   public readonly example?: string;
   public readonly field?: string;
   public readonly httpStatusCode: HttpStatusCode;
-  public readonly cause?: Error;
 
   constructor(
     message: string,
@@ -35,13 +36,15 @@ export class UniversalValidationError extends Error {
       httpStatusCode?: HttpStatusCode;
     } = {}
   ) {
-    super(message);
-    this.name = 'UniversalValidationError';
+    super(
+      'UniversalValidationError',
+      message,
+      options.cause ? { cause: options.cause } : undefined
+    );
     this.errorType = errorType;
     this.suggestion = options.suggestion;
     this.example = options.example;
     this.field = options.field;
-    this.cause = options.cause;
     this.httpStatusCode =
       options.httpStatusCode ?? this.getDefaultHttpStatus(errorType);
   }

@@ -48,32 +48,23 @@ export function buildAttioClient(opts?: {
   client.defaults.headers.common['Accept'] = 'application/json';
   client.defaults.headers.post['Content-Type'] = 'application/json';
 
-  // Optional: very lightweight debug logging (no bodies)
-  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-    client.interceptors.request.use((config) => {
-      console.debug(
-        '[attio] →',
-        config.method?.toUpperCase(),
-        (config.baseURL || '') + (config.url || ''),
-        {
-          hasAuth:
-            !!config.headers?.Authorization ||
-            !!client.defaults.headers.common?.Authorization,
-        }
-      );
-      return config;
-    });
-    client.interceptors.response.use(
-      (res) => {
-        console.debug('[attio] ←', res.status, res.config.url);
-        return res;
-      },
-      (err) => {
-        console.debug('[attio] ← ERR', err?.response?.status, err?.config?.url);
-        return Promise.reject(err);
+  // Response interceptor to attach serverData for error handling
+  client.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      const data = error?.response?.data;
+      if (data && typeof data === 'object') {
+        // Mirror serverData onto the error so wrappers can preserve it
+        error.serverData = {
+          status_code: data.status_code ?? error.response?.status,
+          type: data.type,
+          code: data.code,
+          message: data.message,
+        };
       }
-    );
-  }
+      return Promise.reject(error);
+    }
+  );
 
   return client;
 }

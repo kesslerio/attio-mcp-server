@@ -97,6 +97,16 @@ export class UniversalUpdateService {
     try {
       return await this._updateRecordInternal(params);
     } catch (error: unknown) {
+      // Check if this is already a structured HTTP response - if so, pass it through unchanged
+      if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        'body' in error
+      ) {
+        throw error; // Pass through HTTP-like errors unchanged
+      }
+
       // Handle TypeError exceptions that occur from malformed data
       if (
         error instanceof TypeError &&
@@ -134,7 +144,7 @@ export class UniversalUpdateService {
         }
       }
 
-      // Re-throw all other errors
+      // Re-throw all other errors with cause preserved
       throw error;
     }
   }
@@ -231,6 +241,7 @@ export class UniversalUpdateService {
           field: 'record_data',
           suggestion:
             'Please use only one field for each target. Multiple aliases mapping to the same field are not allowed.',
+          cause: undefined, // No specific cause for mapping errors
         }
       );
     }
@@ -282,6 +293,7 @@ export class UniversalUpdateService {
         throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
           suggestion: 'Please fix the validation errors and try again.',
           field: undefined,
+          cause: undefined, // No specific cause for validation errors
         });
       }
     }
