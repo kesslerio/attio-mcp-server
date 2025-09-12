@@ -370,49 +370,125 @@ export class ErrorService {
       | 'server_error';
     name: string;
     message: string;
+    details?: {
+      validation_errors?: Array<{
+        field?: string;
+        path?: string;
+        code?: string;
+        message: string;
+      }>;
+    };
+    suggestion?: string;
+    attio?: {
+      status_code?: number;
+      correlation_id?: string;
+    };
   } {
     const status = error?.response?.status || 500;
 
     // Extract validation message for 400/422 errors
-    const extractValidationMessage = (err: ValidationErrorContext): string => {
+    /**
+     * Format multiple validation errors into a readable multi-line message
+     */
+    const formatValidationErrors = (
+      validationErrors: Array<{
+        field?: string;
+        path?: string;
+        code?: string;
+        message: string;
+      }> = []
+    ): string => {
+      if (!validationErrors.length) return '';
+
+      const lines = validationErrors.slice(0, 10).map((v) => {
+        const fieldName = v.field
+          ? `Field "${v.field}"`
+          : v.path
+            ? `Path "${v.path}"`
+            : 'Field';
+        return `- ${fieldName}: ${v.message}`;
+      });
+
+      const suffix =
+        validationErrors.length > 10
+          ? `\n…and ${validationErrors.length - 10} more.`
+          : '';
+
+      return `Multiple validation errors:\n${lines.join('\n')}${suffix}`;
+    };
+
+    /**
+     * Normalize validation errors from different response formats
+     */
+    const normalizeValidationErrors = (
+      rawErrors: any[]
+    ): Array<{
+      field?: string;
+      path?: string;
+      code?: string;
+      message: string;
+    }> => {
+      if (!Array.isArray(rawErrors)) return [];
+
+      return rawErrors.map((v: any) => ({
+        field: v.field || v.attribute_slug,
+        path: Array.isArray(v.path) ? v.path.join('.') : v.path,
+        code: v.code,
+        message: String(v.message || v.error || 'Unknown error'),
+      }));
+    };
+
+    const extractValidationMessage = (
+      err: ValidationErrorContext
+    ): {
+      message: string;
+      validationErrors: Array<{
+        field?: string;
+        path?: string;
+        code?: string;
+        message: string;
+      }>;
+    } => {
       try {
         const rd = err?.response?.data as any;
-        // Prefer nested validation_errors if present
-        if (
-          Array.isArray(rd?.validation_errors) &&
-          rd.validation_errors.length
-        ) {
-          const details = rd.validation_errors
-            .map((v: any) => {
-              const path = Array.isArray(v.path) ? v.path.join('.') : '';
-              return path ? `${v.message} (at ${path})` : v.message;
-            })
-            .join('; ');
-          // If Attio included the slug in top-level message, include it
-          const m = /attribute with slug "(.*?)"/.exec(
-            String(rd?.message || '')
-          );
-          const fieldSlug = m ? m[1] : '';
-          let finalMessage = fieldSlug
-            ? `Field "${fieldSlug}": ${details}`
-            : details;
 
-          // Add specific suggestion for phone number validation
-          if (
-            fieldSlug.includes('phone') &&
-            finalMessage.includes('Invalid phone number')
-          ) {
-            finalMessage += '. Try E.164, e.g. +12136987788.';
-          }
-          return finalMessage;
-        }
-        if (rd?.message) return String(rd.message);
-        if (rd?.detail) return String(rd.detail);
-        if (typeof rd?.error === 'string') return rd.error;
-        return 'Invalid request';
+        // Extract and normalize validation errors
+        const validationErrors = normalizeValidationErrors(
+          rd?.validation_errors || []
+        );
+
+        // Get server message
+        const serverMessage =
+          rd?.message ||
+          rd?.detail ||
+          (typeof rd?.error === 'string' ? rd.error : '');
+
+        // Format multi-line validation errors
+        const multiErrorMessage = formatValidationErrors(validationErrors);
+
+        // Combine messages
+        const combinedMessage =
+          [serverMessage, multiErrorMessage]
+            .filter(Boolean)
+            .join(serverMessage && multiErrorMessage ? '\n' : '') ||
+          'Invalid request';
+
+        return {
+          message: combinedMessage,
+          validationErrors,
+        };
       } catch {
-        return 'Invalid request';
+        return {
+          message: 'Invalid request',
+          validationErrors: [],
+        };
       }
+    };
+
+    // Extract Attio metadata
+    const attioData = {
+      status_code: error?.response?.status,
+      correlation_id: (error?.response?.data as any)?.correlation_id,
     };
 
     switch (status) {
@@ -422,16 +498,24 @@ export class ErrorService {
           type: 'not_found',
           name: 'UniversalNotFoundError',
           message: 'Record not found',
+          attio: attioData,
         };
 
       case 400:
-      case 422:
+      case 422: {
+        const { message, validationErrors } = extractValidationMessage(error);
         return {
           code: status,
           type: 'validation_error',
           name: 'UniversalValidationError',
-          message: extractValidationMessage(error),
+          message,
+          details:
+            validationErrors.length > 0
+              ? { validation_errors: validationErrors }
+              : undefined,
+          attio: attioData,
         };
+      }
 
       case 401:
         return {
@@ -439,6 +523,7 @@ export class ErrorService {
           type: 'unauthorized',
           name: 'UniversalUnauthorizedError',
           message: 'Authentication required',
+          attio: attioData,
         };
 
       case 403:
@@ -447,6 +532,7 @@ export class ErrorService {
           type: 'forbidden',
           name: 'UniversalForbiddenError',
           message: 'Access denied',
+          attio: attioData,
         };
 
       case 409:
@@ -455,6 +541,7 @@ export class ErrorService {
           type: 'conflict',
           name: 'UniversalConflictError',
           message: 'Resource conflict',
+          attio: attioData,
         };
 
       case 429:
@@ -463,6 +550,7 @@ export class ErrorService {
           type: 'rate_limit',
           name: 'UniversalRateLimitError',
           message: 'Rate limit exceeded',
+          attio: attioData,
         };
 
       default:
@@ -471,6 +559,7 @@ export class ErrorService {
           type: 'server_error',
           name: 'UniversalServerError',
           message: 'Internal server error',
+          attio: attioData,
         };
     }
   }

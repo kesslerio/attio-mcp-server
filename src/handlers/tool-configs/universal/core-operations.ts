@@ -95,6 +95,31 @@ export const searchRecordsConfig: UniversalToolConfig = {
       );
       return await handleUniversalSearch(sanitizedParams);
     } catch (error: unknown) {
+      // Check if this is an Axios error with detailed response data
+      if ((error as any)?.response) {
+        const mapped = ErrorService.fromAxios(error as any);
+
+        // Return structured HTTP response with detailed validation errors
+        throw {
+          status: mapped.code ?? (error as any).response?.status ?? 400,
+          body: {
+            code: mapped.name ?? 'validation_error',
+            type: mapped.type,
+            message: mapped.message,
+            validation_errors: mapped.details?.validation_errors,
+            suggestion: mapped.suggestion,
+            attio: mapped.attio,
+          },
+        };
+      }
+
+      // Check if this is already a structured HTTP response from our services
+      if (isHttpResponseLike(error)) {
+        // Let the dispatcher handle HTTP → MCP mapping
+        throw error;
+      }
+
+      // For other errors, create a structured error response
       throw ErrorService.createUniversalError(
         'search',
         params.resource_type,
@@ -414,69 +439,111 @@ export const createRecordConfig: UniversalToolConfig = {
 
       return result;
     } catch (error: unknown) {
-      const err = error as {
-        response?: { status: number; data?: { code: string; message: string } };
-      };
-      const status = err?.response?.status;
-      const errorCode = err?.response?.data?.code;
-      const errorMessage = err?.response?.data?.message;
+      // Check if this is an Axios error with detailed response data
+      if ((error as any)?.response) {
+        const mapped = ErrorService.fromAxios(error as any);
 
-      if (
-        status === 400 &&
-        errorCode === 'value_not_found' &&
-        errorMessage?.includes('Cannot find select option')
-      ) {
-        const invalidValueMatch = errorMessage.match(
-          /Cannot find select option with title "(.*)"/
-        );
-        const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
+        // For select option errors, try to enhance with valid options
+        const err = error as {
+          response?: {
+            status: number;
+            data?: { code: string; message: string };
+          };
+        };
+        const status = err?.response?.status;
+        const errorCode = err?.response?.data?.code;
+        const errorMessage = err?.response?.data?.message;
 
-        if (invalidValue) {
-          const recordData = params.record_data as Record<string, unknown>;
-          let attributeSlug: string | undefined;
-          for (const [key, value] of Object.entries(recordData)) {
-            if (
-              value === invalidValue ||
-              (Array.isArray(value) && value.includes(invalidValue))
-            ) {
-              attributeSlug = key;
-              break;
-            }
-          }
+        if (
+          status === 400 &&
+          errorCode === 'value_not_found' &&
+          errorMessage?.includes('Cannot find select option')
+        ) {
+          const invalidValueMatch = errorMessage.match(
+            /Cannot find select option with title "(.*)"/
+          );
+          const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
 
-          if (attributeSlug) {
-            try {
-              const schema = await getAttributeSchema(
-                params.resource_type,
-                attributeSlug
-              );
+          if (invalidValue) {
+            const recordData = params.record_data as Record<string, unknown>;
+            let attributeSlug: string | undefined;
+            for (const [key, value] of Object.entries(recordData)) {
               if (
-                schema &&
-                (schema.type === 'select' || schema.type === 'multi_select')
+                value === invalidValue ||
+                (Array.isArray(value) && value.includes(invalidValue))
               ) {
-                const options = await getSelectOptions(
+                attributeSlug = key;
+                break;
+              }
+            }
+
+            if (attributeSlug) {
+              try {
+                const schema = await getAttributeSchema(
                   params.resource_type,
                   attributeSlug
                 );
-                if (options && options.length > 0) {
-                  const validOptions = options
-                    .map((opt) => `'${opt.title}'`)
-                    .join(', ');
-                  const newErrorMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". Valid options are: ${validOptions}.`;
-                  throw new Error(newErrorMessage); // Throw a clean, new error
+                if (
+                  schema &&
+                  (schema.type === 'select' || schema.type === 'multi_select')
+                ) {
+                  const options = await getSelectOptions(
+                    params.resource_type,
+                    attributeSlug
+                  );
+                  if (options && options.length > 0) {
+                    const validOptions = options
+                      .map((opt) => `'${opt.title}'`)
+                      .join(', ');
+                    const enhancedMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". Valid options are: ${validOptions}.`;
+
+                    // Return structured HTTP response with enhanced message
+                    throw {
+                      status:
+                        mapped.code ?? (error as any).response?.status ?? 400,
+                      body: {
+                        code: mapped.name ?? 'validation_error',
+                        type: mapped.type,
+                        message: enhancedMessage,
+                        validation_errors: mapped.details?.validation_errors,
+                        suggestion: mapped.suggestion,
+                        attio: mapped.attio,
+                      },
+                    };
+                  }
                 }
+              } catch (e) {
+                // If fetching options fails, continue with original mapped error
+                console.error(
+                  `Failed to fetch select options for attribute ${attributeSlug}:`,
+                  e
+                );
               }
-            } catch (e) {
-              // If fetching options fails, we'll fall through and the original error will be thrown
-              console.error(
-                `Failed to fetch select options for attribute ${attributeSlug}:`,
-                e
-              );
             }
           }
         }
+
+        // Return structured HTTP response with detailed validation errors
+        throw {
+          status: mapped.code ?? (error as any).response?.status ?? 400,
+          body: {
+            code: mapped.name ?? 'validation_error',
+            type: mapped.type,
+            message: mapped.message,
+            validation_errors: mapped.details?.validation_errors,
+            suggestion: mapped.suggestion,
+            attio: mapped.attio,
+          },
+        };
       }
 
+      // Check if this is already a structured HTTP response from our services
+      if (isHttpResponseLike(error)) {
+        // Let the dispatcher handle HTTP → MCP mapping
+        throw error;
+      }
+
+      // For other errors, create a structured error response
       throw ErrorService.createUniversalError(
         'create',
         params.resource_type,
@@ -559,74 +626,122 @@ export const updateRecordConfig: UniversalToolConfig = {
       }
       return result;
     } catch (error: unknown) {
-      const err = error as {
-        response?: { status: number; data?: { code: string; message: string } };
-      };
-      const status = err?.response?.status;
-      const errorCode = err?.response?.data?.code;
-      const errorMessage = err?.response?.data?.message;
+      // Check if this is an Axios error with detailed response data
+      if ((error as any)?.response) {
+        const mapped = ErrorService.fromAxios(error as any);
 
-      if (
-        status === 400 &&
-        errorCode === 'value_not_found' &&
-        errorMessage?.includes('Cannot find select option')
-      ) {
-        const invalidValueMatch = errorMessage.match(
-          /Cannot find select option with title "(.*)"/
-        );
-        const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
+        // For select option errors, try to enhance with valid options
+        const err = error as {
+          response?: {
+            status: number;
+            data?: { code: string; message: string };
+          };
+        };
+        const status = err?.response?.status;
+        const errorCode = err?.response?.data?.code;
+        const errorMessage = err?.response?.data?.message;
 
-        if (invalidValue) {
-          const recordData = params.record_data as Record<string, unknown>;
-          let attributeSlug: string | undefined;
-          for (const [key, value] of Object.entries(recordData)) {
-            if (
-              value === invalidValue ||
-              (Array.isArray(value) && value.includes(invalidValue))
-            ) {
-              attributeSlug = key;
-              break;
-            }
-          }
+        if (
+          status === 400 &&
+          errorCode === 'value_not_found' &&
+          errorMessage?.includes('Cannot find select option')
+        ) {
+          const invalidValueMatch = errorMessage.match(
+            /Cannot find select option with title "(.*)"/
+          );
+          const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
 
-          if (attributeSlug) {
-            try {
-              const schema = await getAttributeSchema(
-                params.resource_type,
-                attributeSlug
-              );
+          if (invalidValue) {
+            const recordData = params.record_data as Record<string, unknown>;
+            let attributeSlug: string | undefined;
+            for (const [key, value] of Object.entries(recordData)) {
               if (
-                schema &&
-                (schema.type === 'select' || schema.type === 'multi_select')
+                value === invalidValue ||
+                (Array.isArray(value) && value.includes(invalidValue))
               ) {
-                const options = await getSelectOptions(
+                attributeSlug = key;
+                break;
+              }
+            }
+
+            if (attributeSlug) {
+              try {
+                const schema = await getAttributeSchema(
                   params.resource_type,
                   attributeSlug
                 );
-                if (options && options.length > 0) {
-                  const validOptions = options
-                    .map((opt) => `'${opt.title}'`)
-                    .join(', ');
-                  const newErrorMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". Valid options are: ${validOptions}.`;
-                  throw new Error(newErrorMessage); // Throw a clean, new error
-                } else {
-                  // If no options are found, it's still an invalid value scenario
-                  const newErrorMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". No valid options found.`;
-                  throw new Error(newErrorMessage);
+                if (
+                  schema &&
+                  (schema.type === 'select' || schema.type === 'multi_select')
+                ) {
+                  const options = await getSelectOptions(
+                    params.resource_type,
+                    attributeSlug
+                  );
+                  if (options && options.length > 0) {
+                    const validOptions = options
+                      .map((opt) => `'${opt.title}'`)
+                      .join(', ');
+                    const enhancedMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". Valid options are: ${validOptions}.`;
+
+                    // Return structured HTTP response with enhanced message
+                    throw {
+                      status:
+                        mapped.code ?? (error as any).response?.status ?? 400,
+                      body: {
+                        code: mapped.name ?? 'validation_error',
+                        type: mapped.type,
+                        message: enhancedMessage,
+                        validation_errors: mapped.details?.validation_errors,
+                        suggestion: mapped.suggestion,
+                        attio: mapped.attio,
+                      },
+                    };
+                  } else {
+                    // If no options are found, it's still an invalid value scenario
+                    const enhancedMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". No valid options found.`;
+
+                    // Return structured HTTP response with enhanced message
+                    throw {
+                      status:
+                        mapped.code ?? (error as any).response?.status ?? 400,
+                      body: {
+                        code: mapped.name ?? 'validation_error',
+                        type: mapped.type,
+                        message: enhancedMessage,
+                        validation_errors: mapped.details?.validation_errors,
+                        suggestion: mapped.suggestion,
+                        attio: mapped.attio,
+                      },
+                    };
+                  }
                 }
+              } catch (e) {
+                // If fetching options fails, continue with original mapped error
+                console.error(
+                  `Failed to fetch select options for attribute ${attributeSlug}:`,
+                  e
+                );
               }
-            } catch (e) {
-              // If fetching options fails, we'll fall through and the original error will be thrown
-              console.error(
-                `Failed to fetch select options for attribute ${attributeSlug}:`,
-                e
-              );
             }
           }
         }
+
+        // Return structured HTTP response with detailed validation errors
+        throw {
+          status: mapped.code ?? (error as any).response?.status ?? 400,
+          body: {
+            code: mapped.name ?? 'validation_error',
+            type: mapped.type,
+            message: mapped.message,
+            validation_errors: mapped.details?.validation_errors,
+            suggestion: mapped.suggestion,
+            attio: mapped.attio,
+          },
+        };
       }
 
-      // Check if this is a structured HTTP response from our services
+      // Check if this is already a structured HTTP response from our services
       if (isHttpResponseLike(error)) {
         // Let the dispatcher handle HTTP → MCP mapping
         throw error;
