@@ -737,7 +737,7 @@ export class UniversalMetadataService {
         if (record_id) {
           result = await getCompanyAttributes(record_id);
         } else {
-          // Call discoverCompanyAttributes directly for schema-level discovery
+          // Back-compat for tests: call company-specific discovery (spied in unit tests)
           result = await discoverCompanyAttributes();
         }
         break;
@@ -805,12 +805,21 @@ export class UniversalMetadataService {
     resource_type: UniversalResourceType,
     options?: {
       categories?: string[]; // NEW: Category filtering support
+      objectSlug?: string; // NEW: Object slug support for records
     }
   ): Promise<Record<string, unknown>> {
     switch (resource_type) {
-      case UniversalResourceType.COMPANIES:
-        // Call discoverCompanyAttributes directly to match test expectations
-        return discoverCompanyAttributes();
+      case UniversalResourceType.COMPANIES: // Preserve legacy behavior and make tests' spy happy
+      {
+        const res = await discoverCompanyAttributes();
+        // Apply optional category filtering for symmetry with getAttributes()
+        return options?.categories
+          ? (this.filterAttributesByCategory(res, options.categories) as Record<
+              string,
+              unknown
+            >)
+          : res;
+      }
 
       case UniversalResourceType.PEOPLE:
         return this.discoverAttributesForResourceType(resource_type, options);
@@ -819,7 +828,13 @@ export class UniversalMetadataService {
         return getListAttributes();
 
       case UniversalResourceType.RECORDS:
-        return this.discoverAttributesForResourceType(resource_type, options);
+        if (options?.objectSlug) {
+          return this.discoverObjectAttributes(options.objectSlug, {
+            categories: options.categories,
+          });
+        } else {
+          return this.discoverAttributesForResourceType(resource_type, options);
+        }
 
       case UniversalResourceType.DEALS:
         return this.discoverAttributesForResourceType(resource_type, options);

@@ -546,8 +546,6 @@ export async function executeToolRequest(request: CallToolRequest) {
       const sanitizedResult = sanitizeMcpResponse(mcpResult);
       return sanitizedResult;
     }
-
-    // Enhanced error handling with structured logging
     const errorMessage =
       error instanceof Error
         ? error.message

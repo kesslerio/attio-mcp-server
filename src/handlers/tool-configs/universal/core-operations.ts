@@ -96,8 +96,18 @@ export const searchRecordsConfig: UniversalToolConfig = {
       );
       return await handleUniversalSearch(sanitizedParams);
     } catch (error: unknown) {
-      await handleCoreOperationError(error, 'search', params.resource_type);
-      throw error; // Never reached, but satisfies TypeScript
+      try {
+        await handleCoreOperationError(error, 'search', params.resource_type);
+        throw error; // not reached
+      } catch (e: any) {
+        if (e && typeof e.status === 'number' && e.body?.message) {
+          // For backward compatibility with tests, throw an Error with the enhanced message
+          const enhancedError = new Error(e.body.message);
+          enhancedError.name = e.body.code ?? 'ValidationError';
+          throw enhancedError;
+        }
+        throw e;
+      }
     }
   },
   formatResult: (
@@ -235,12 +245,22 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
-      await handleCoreOperationError(
-        error,
-        'get details',
-        params.resource_type
-      );
-      throw error; // Never reached, but satisfies TypeScript
+      try {
+        await handleCoreOperationError(
+          error,
+          'get details',
+          params.resource_type
+        );
+        throw error; // not reached
+      } catch (e: any) {
+        if (e && typeof e.status === 'number' && e.body?.message) {
+          // For backward compatibility with tests, throw an Error with the enhanced message
+          const enhancedError = new Error(e.body.message);
+          enhancedError.name = e.body.code ?? 'ValidationError';
+          throw enhancedError;
+        }
+        throw e;
+      }
     }
   },
   formatResult: (
@@ -406,13 +426,12 @@ export const createRecordConfig: UniversalToolConfig = {
 
       return result;
     } catch (error: unknown) {
-      await handleCoreOperationError(
+      return await handleCoreOperationError(
         error,
         'create',
         params.resource_type,
         params.record_data as Record<string, unknown>
       );
-      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -490,13 +509,23 @@ export const updateRecordConfig: UniversalToolConfig = {
       }
       return result;
     } catch (error: unknown) {
-      await handleCoreOperationError(
-        error,
-        'update',
-        params.resource_type,
-        params.record_data as Record<string, unknown>
-      );
-      throw error; // Never reached, but satisfies TypeScript
+      try {
+        await handleCoreOperationError(
+          error,
+          'update',
+          params.resource_type,
+          params.record_data as Record<string, unknown>
+        );
+        throw error; // not reached
+      } catch (e: any) {
+        if (e && typeof e.status === 'number' && e.body?.message) {
+          // For backward compatibility with tests, throw an Error with the enhanced message
+          const enhancedError = new Error(e.body.message);
+          enhancedError.name = e.body.code ?? 'ValidationError';
+          throw enhancedError;
+        }
+        throw e;
+      }
     }
   },
   formatResult: (
@@ -540,12 +569,11 @@ export const deleteRecordConfig: UniversalToolConfig = {
       );
       return await handleUniversalDelete(sanitizedParams);
     } catch (error: unknown) {
-      await handleCoreOperationError(
+      return await handleCoreOperationError(
         error,
         'delete record',
         params.resource_type
       );
-      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -601,7 +629,8 @@ export const getAttributesConfig: UniversalToolConfig = {
     if (Array.isArray(attributes)) {
       return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
         .map((attr: Record<string, unknown>, index: number) => {
-          const name = attr.name || attr.slug || 'Unnamed';
+          const name =
+            attr.title || attr.api_slug || attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           return `${index + 1}. ${name} (${type})`;
         })
@@ -615,7 +644,12 @@ export const getAttributesConfig: UniversalToolConfig = {
           attributes.all as Record<string, unknown>[]
         )
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.slug || 'Unnamed';
+            const name =
+              attr.title ||
+              attr.api_slug ||
+              attr.name ||
+              attr.slug ||
+              'Unnamed';
             const type = attr.type || 'unknown';
             return `${index + 1}. ${name} (${type})`;
           })
@@ -699,7 +733,8 @@ export const discoverAttributesConfig: UniversalToolConfig = {
     if (Array.isArray(schema)) {
       return `Available ${resourceTypeName} attributes (${schema.length}):\n${schema
         .map((attr: Record<string, unknown>, index: number) => {
-          const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
+          const name =
+            attr.title || attr.api_slug || attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           const required = attr.required ? ' (required)' : '';
           return `${index + 1}. ${name} (${type})${required}`;
@@ -713,7 +748,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       if (schemaRecord.all && Array.isArray(schemaRecord.all)) {
         return `Available ${resourceTypeName} attributes (${schemaRecord.all.length}):\n${schemaRecord.all
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.slug || 'Unnamed';
+            const name =
+              attr.title ||
+              attr.api_slug ||
+              attr.name ||
+              attr.slug ||
+              'Unnamed';
             const type = attr.type || 'unknown';
             const required = attr.required ? ' (required)' : '';
             return `${index + 1}. ${name} (${type})${required}`;
@@ -724,7 +764,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       if (schemaRecord.attributes && Array.isArray(schemaRecord.attributes)) {
         return `Available ${resourceTypeName} attributes (${schemaRecord.attributes.length}):\n${schemaRecord.attributes
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
+            const name =
+              attr.title ||
+              attr.api_slug ||
+              attr.name ||
+              attr.slug ||
+              'Unnamed';
             const type = attr.type || 'unknown';
             const required = attr.required ? ' (required)' : '';
             return `${index + 1}. ${name} (${type})${required}`;
@@ -744,7 +789,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         if (standard.length > 0) {
           result += `\nStandard attributes (${standard.length}):\n${standard
             .map((attr: Record<string, unknown>, index: number) => {
-              const name = attr.name || attr.slug || 'Unnamed';
+              const name =
+                attr.title ||
+                attr.api_slug ||
+                attr.name ||
+                attr.slug ||
+                'Unnamed';
               const type = attr.type || 'unknown';
               return `${index + 1}. ${name} (${type})`;
             })
@@ -754,7 +804,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         if (custom.length > 0) {
           result += `\n\nCustom attributes (${custom.length}):\n${custom
             .map((attr: Record<string, unknown>, index: number) => {
-              const name = attr.name || attr.slug || 'Unnamed';
+              const name =
+                attr.title ||
+                attr.api_slug ||
+                attr.name ||
+                attr.slug ||
+                'Unnamed';
               const type = attr.type || 'unknown';
               return `${standard.length + index + 1}. ${name} (${type})`;
             })
