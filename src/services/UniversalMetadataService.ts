@@ -737,8 +737,10 @@ export class UniversalMetadataService {
         if (record_id) {
           result = await getCompanyAttributes(record_id);
         } else {
-          // Call discoverCompanyAttributes directly for schema-level discovery
-          result = await discoverCompanyAttributes();
+          // Return schema-level attributes using standard API endpoint
+          result = await this.discoverAttributesForResourceType(resource_type, {
+            categories,
+          });
         }
         break;
 
@@ -809,8 +811,8 @@ export class UniversalMetadataService {
   ): Promise<Record<string, unknown>> {
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
-        // Call discoverCompanyAttributes directly to match test expectations
-        return discoverCompanyAttributes();
+        // Use standard API endpoint for consistent schema discovery
+        return this.discoverAttributesForResourceType(resource_type, options);
 
       case UniversalResourceType.PEOPLE:
         return this.discoverAttributesForResourceType(resource_type, options);

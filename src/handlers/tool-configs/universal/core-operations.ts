@@ -600,7 +600,8 @@ export const getAttributesConfig: UniversalToolConfig = {
     if (Array.isArray(attributes)) {
       return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
         .map((attr: Record<string, unknown>, index: number) => {
-          const name = attr.name || attr.slug || 'Unnamed';
+          const name =
+            attr.title || attr.api_slug || attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           return `${index + 1}. ${name} (${type})`;
         })
@@ -614,7 +615,12 @@ export const getAttributesConfig: UniversalToolConfig = {
           attributes.all as Record<string, unknown>[]
         )
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.slug || 'Unnamed';
+            const name =
+              attr.title ||
+              attr.api_slug ||
+              attr.name ||
+              attr.slug ||
+              'Unnamed';
             const type = attr.type || 'unknown';
             return `${index + 1}. ${name} (${type})`;
           })
@@ -698,7 +704,8 @@ export const discoverAttributesConfig: UniversalToolConfig = {
     if (Array.isArray(schema)) {
       return `Available ${resourceTypeName} attributes (${schema.length}):\n${schema
         .map((attr: Record<string, unknown>, index: number) => {
-          const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
+          const name =
+            attr.title || attr.api_slug || attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           const required = attr.required ? ' (required)' : '';
           return `${index + 1}. ${name} (${type})${required}`;
@@ -712,7 +719,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       if (schemaRecord.all && Array.isArray(schemaRecord.all)) {
         return `Available ${resourceTypeName} attributes (${schemaRecord.all.length}):\n${schemaRecord.all
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.slug || 'Unnamed';
+            const name =
+              attr.title ||
+              attr.api_slug ||
+              attr.name ||
+              attr.slug ||
+              'Unnamed';
             const type = attr.type || 'unknown';
             const required = attr.required ? ' (required)' : '';
             return `${index + 1}. ${name} (${type})${required}`;
@@ -723,7 +735,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       if (schemaRecord.attributes && Array.isArray(schemaRecord.attributes)) {
         return `Available ${resourceTypeName} attributes (${schemaRecord.attributes.length}):\n${schemaRecord.attributes
           .map((attr: Record<string, unknown>, index: number) => {
-            const name = attr.name || attr.api_slug || attr.slug || 'Unnamed';
+            const name =
+              attr.title ||
+              attr.api_slug ||
+              attr.name ||
+              attr.slug ||
+              'Unnamed';
             const type = attr.type || 'unknown';
             const required = attr.required ? ' (required)' : '';
             return `${index + 1}. ${name} (${type})${required}`;
@@ -743,7 +760,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         if (standard.length > 0) {
           result += `\nStandard attributes (${standard.length}):\n${standard
             .map((attr: Record<string, unknown>, index: number) => {
-              const name = attr.name || attr.slug || 'Unnamed';
+              const name =
+                attr.title ||
+                attr.api_slug ||
+                attr.name ||
+                attr.slug ||
+                'Unnamed';
               const type = attr.type || 'unknown';
               return `${index + 1}. ${name} (${type})`;
             })
@@ -753,7 +775,12 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         if (custom.length > 0) {
           result += `\n\nCustom attributes (${custom.length}):\n${custom
             .map((attr: Record<string, unknown>, index: number) => {
-              const name = attr.name || attr.slug || 'Unnamed';
+              const name =
+                attr.title ||
+                attr.api_slug ||
+                attr.name ||
+                attr.slug ||
+                'Unnamed';
               const type = attr.type || 'unknown';
               return `${standard.length + index + 1}. ${name} (${type})`;
             })
