@@ -1,0 +1,50 @@
+name: Daily Changelog
+
+on:
+  schedule:
+    - cron: '0 4 * * *' # 8 PM PT daily (4 AM UTC next day)
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Get full history for changelog generation
+
+      - name: Generate changelog with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Generate a daily changelog by analyzing commits since yesterday.
+
+            Tasks:
+            1. Review git commits from the last 24 hours
+            2. Categorize changes (Features, Fixes, Refactor, Documentation, etc.)
+            3. Update CHANGELOG.md with a new section for today's date
+            4. Create a new branch and commit the changes
+            5. Open a PR with title "chore: Daily changelog for [date]"
+
+            Format the changelog entry as:
+            ## [YYYY-MM-DD] - Daily Update
+            ### Added
+            - New features...
+            ### Fixed  
+            - Bug fixes...
+            ### Changed
+            - Refactoring...
+            ### Documentation
+            - Docs updates...
+
+            Include brief descriptions and PR/issue references where relevant.
+            Skip this workflow if no meaningful changes occurred yesterday.

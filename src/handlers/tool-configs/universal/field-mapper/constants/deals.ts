@@ -29,6 +29,7 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     // Company variations
     company: 'associated_company',
     company_id: 'associated_company',
+    primary_company: 'associated_company',
     account: 'associated_company',
     customer: 'associated_company',
     // People variations
@@ -61,6 +62,7 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
   commonMistakes: {
     company_id: 'Use "associated_company" to link deals to companies',
     company: 'Use "associated_company" with the company record ID',
+    primary_company: 'Use "associated_company" instead of "primary_company"',
     amount: 'Use "value" for deal amounts (numeric only, no currency symbols)',
     status: 'Use "stage" for deal pipeline stages',
     description:

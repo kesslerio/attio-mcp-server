@@ -78,6 +78,7 @@ import { UniversalUtilityService } from '../../../services/UniversalUtilityServi
 // Note: Using simplified mock responses for E2E compatibility
 
 import { isHttpResponseLike } from '../../../lib/http/toMcpResult.js';
+import { handleCoreOperationError } from '../../../utils/axios-error-mapper.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -95,11 +96,8 @@ export const searchRecordsConfig: UniversalToolConfig = {
       );
       return await handleUniversalSearch(sanitizedParams);
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError(
-        'search',
-        params.resource_type,
-        error
-      );
+      await handleCoreOperationError(error, 'search', params.resource_type);
+      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -237,18 +235,12 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
-      // Check if this is a structured HTTP response from our services
-      if (isHttpResponseLike(error)) {
-        // Let the dispatcher handle HTTP → MCP mapping
-        throw error;
-      }
-
-      // For other errors, create a structured error response
-      throw ErrorService.createUniversalError(
+      await handleCoreOperationError(
+        error,
         'get details',
-        params.resource_type,
-        error
+        params.resource_type
       );
+      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -414,74 +406,13 @@ export const createRecordConfig: UniversalToolConfig = {
 
       return result;
     } catch (error: unknown) {
-      const err = error as {
-        response?: { status: number; data?: { code: string; message: string } };
-      };
-      const status = err?.response?.status;
-      const errorCode = err?.response?.data?.code;
-      const errorMessage = err?.response?.data?.message;
-
-      if (
-        status === 400 &&
-        errorCode === 'value_not_found' &&
-        errorMessage?.includes('Cannot find select option')
-      ) {
-        const invalidValueMatch = errorMessage.match(
-          /Cannot find select option with title "(.*)"/
-        );
-        const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
-
-        if (invalidValue) {
-          const recordData = params.record_data as Record<string, unknown>;
-          let attributeSlug: string | undefined;
-          for (const [key, value] of Object.entries(recordData)) {
-            if (
-              value === invalidValue ||
-              (Array.isArray(value) && value.includes(invalidValue))
-            ) {
-              attributeSlug = key;
-              break;
-            }
-          }
-
-          if (attributeSlug) {
-            try {
-              const schema = await getAttributeSchema(
-                params.resource_type,
-                attributeSlug
-              );
-              if (
-                schema &&
-                (schema.type === 'select' || schema.type === 'multi_select')
-              ) {
-                const options = await getSelectOptions(
-                  params.resource_type,
-                  attributeSlug
-                );
-                if (options && options.length > 0) {
-                  const validOptions = options
-                    .map((opt) => `'${opt.title}'`)
-                    .join(', ');
-                  const newErrorMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". Valid options are: ${validOptions}.`;
-                  throw new Error(newErrorMessage); // Throw a clean, new error
-                }
-              }
-            } catch (e) {
-              // If fetching options fails, we'll fall through and the original error will be thrown
-              console.error(
-                `Failed to fetch select options for attribute ${attributeSlug}:`,
-                e
-              );
-            }
-          }
-        }
-      }
-
-      throw ErrorService.createUniversalError(
+      await handleCoreOperationError(
+        error,
         'create',
         params.resource_type,
-        error
+        params.record_data as Record<string, unknown>
       );
+      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -559,85 +490,13 @@ export const updateRecordConfig: UniversalToolConfig = {
       }
       return result;
     } catch (error: unknown) {
-      const err = error as {
-        response?: { status: number; data?: { code: string; message: string } };
-      };
-      const status = err?.response?.status;
-      const errorCode = err?.response?.data?.code;
-      const errorMessage = err?.response?.data?.message;
-
-      if (
-        status === 400 &&
-        errorCode === 'value_not_found' &&
-        errorMessage?.includes('Cannot find select option')
-      ) {
-        const invalidValueMatch = errorMessage.match(
-          /Cannot find select option with title "(.*)"/
-        );
-        const invalidValue = invalidValueMatch ? invalidValueMatch[1] : null;
-
-        if (invalidValue) {
-          const recordData = params.record_data as Record<string, unknown>;
-          let attributeSlug: string | undefined;
-          for (const [key, value] of Object.entries(recordData)) {
-            if (
-              value === invalidValue ||
-              (Array.isArray(value) && value.includes(invalidValue))
-            ) {
-              attributeSlug = key;
-              break;
-            }
-          }
-
-          if (attributeSlug) {
-            try {
-              const schema = await getAttributeSchema(
-                params.resource_type,
-                attributeSlug
-              );
-              if (
-                schema &&
-                (schema.type === 'select' || schema.type === 'multi_select')
-              ) {
-                const options = await getSelectOptions(
-                  params.resource_type,
-                  attributeSlug
-                );
-                if (options && options.length > 0) {
-                  const validOptions = options
-                    .map((opt) => `'${opt.title}'`)
-                    .join(', ');
-                  const newErrorMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". Valid options are: ${validOptions}.`;
-                  throw new Error(newErrorMessage); // Throw a clean, new error
-                } else {
-                  // If no options are found, it's still an invalid value scenario
-                  const newErrorMessage = `Invalid option "${invalidValue}" for field "${attributeSlug}". No valid options found.`;
-                  throw new Error(newErrorMessage);
-                }
-              }
-            } catch (e) {
-              // If fetching options fails, we'll fall through and the original error will be thrown
-              console.error(
-                `Failed to fetch select options for attribute ${attributeSlug}:`,
-                e
-              );
-            }
-          }
-        }
-      }
-
-      // Check if this is a structured HTTP response from our services
-      if (isHttpResponseLike(error)) {
-        // Let the dispatcher handle HTTP → MCP mapping
-        throw error;
-      }
-
-      // For other errors, create a structured error response
-      throw ErrorService.createUniversalError(
-        'update record',
+      await handleCoreOperationError(
+        error,
+        'update',
         params.resource_type,
-        error
+        params.record_data as Record<string, unknown>
       );
+      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -681,18 +540,12 @@ export const deleteRecordConfig: UniversalToolConfig = {
       );
       return await handleUniversalDelete(sanitizedParams);
     } catch (error: unknown) {
-      // Check if this is a structured HTTP response from our services
-      if (isHttpResponseLike(error)) {
-        // Let the dispatcher handle HTTP → MCP mapping
-        throw error;
-      }
-
-      // For other errors, create a structured error response
-      throw ErrorService.createUniversalError(
+      await handleCoreOperationError(
+        error,
         'delete record',
-        params.resource_type,
-        error
+        params.resource_type
       );
+      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (

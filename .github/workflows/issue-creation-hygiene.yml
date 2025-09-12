@@ -28,12 +28,48 @@ jobs:
             const body = (issue.body || "");
 
             // Parse form selections and existing content
-            const priority = body.match(/\bP[0-5]\b/)?.[0] || "";
-            const type = (body.match(/\btype:(bug|feature|enhancement|documentation|test|refactor|chore|ci|dependencies)\b/i) || [])[0]?.toLowerCase() || "";
-            const status = (body.match(/\bstatus:(untriaged|ready|in-progress|blocked|needs-info|review)\b/i) || [])[0]?.toLowerCase() || "";
-            const areas = Array.from(new Set(
-              (body.match(/\barea:[a-z0-9:-]+\b/gi) || []).map(s => s.toLowerCase())
-            ));
+            // GitHub forms output "P0 (Critical - System down, data loss)" format
+            const priorityMatch = body.match(/\b(P[0-5])\s*\([^)]*\)/i);
+            const priority = priorityMatch ? priorityMatch[1] : "";
+
+            // For type, check both direct labels and form dropdowns
+            let type = "";
+            const directTypeMatch = body.match(/\btype:(bug|feature|enhancement|documentation|test|refactor|chore|ci|dependencies)\b/i);
+            if (directTypeMatch) {
+              type = directTypeMatch[0].toLowerCase();
+            } else {
+              // Check issue template labels field
+              const labelsMatch = body.match(/labels:\s*\[([^\]]*)\]/);
+              if (labelsMatch) {
+                const labels = labelsMatch[1].split(',').map(l => l.trim().replace(/['"]/g, ''));
+                const typeLabel = labels.find(l => l.match(/^type:/i));
+                if (typeLabel) type = typeLabel.toLowerCase();
+              }
+            }
+
+            // For status, check form output and direct labels
+            const statusMatch = body.match(/\bstatus:(untriaged|ready|in-progress|blocked|needs-info|review)\b/i);
+            const status = statusMatch ? statusMatch[0].toLowerCase() : "";
+
+            // For areas, handle both form output and direct labels
+            let areas = [];
+
+            // First try direct area: labels
+            const directAreas = body.match(/\barea:[a-z0-9:-]+\b/gi);
+            if (directAreas) {
+              areas.push(...directAreas.map(s => s.toLowerCase()));
+            }
+
+            // Also check issue template labels field for area labels
+            const labelsMatch = body.match(/labels:\s*\[([^\]]*)\]/);
+            if (labelsMatch) {
+              const labels = labelsMatch[1].split(',').map(l => l.trim().replace(/['"]/g, ''));
+              const areaLabels = labels.filter(l => l.match(/^area:/i));
+              areas.push(...areaLabels.map(l => l.toLowerCase()));
+            }
+
+            // Deduplicate areas
+            areas = Array.from(new Set(areas));
 
             console.log(`Parsed from issue body:
               Priority: ${priority}
@@ -41,9 +77,15 @@ jobs:
               Status: ${status}
               Areas: ${areas.join(', ')}`);
 
-            // Get existing labels
+            // Get existing labels (GitHub template labels are already applied)
             const current = (issue.labels || []).map(l => l.name.toLowerCase());
             const add = new Set(current);
+
+            // If we didn't find type in body, check if it's already in labels (from template)
+            if (!type) {
+              const existingType = current.find(l => /^type:/.test(l));
+              if (existingType) type = existingType;
+            }
 
             // Ensure exactly one P* (Priority)
             const existingP = current.find(l => /^p[0-5]$/.test(l));

@@ -15,7 +15,7 @@ export const MappingDefaults: Record<
 > = {
   [UniversalResourceType.COMPANIES]: { strictMode: false },
   [UniversalResourceType.PEOPLE]: { strictMode: false },
-  [UniversalResourceType.DEALS]: { strictMode: false },
+  [UniversalResourceType.DEALS]: { strictMode: true },
   [UniversalResourceType.TASKS]: { strictMode: false },
   [UniversalResourceType.RECORDS]: { strictMode: true },
   [UniversalResourceType.NOTES]: { strictMode: true },
