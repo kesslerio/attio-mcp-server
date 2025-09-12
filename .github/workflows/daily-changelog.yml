@@ -2,7 +2,7 @@ name: Daily Changelog
 
 on:
   schedule:
-    - cron: '0 17 * * 1-5' # 9 AM PT weekdays
+    - cron: '0 4 * * *' # 8 PM PT daily (4 AM UTC next day)
   workflow_dispatch: # Allow manual triggering
 
 permissions:
