@@ -2,7 +2,7 @@ name: Issue & PR Hygiene
 
 on:
   issues:
-    types: [opened, edited, reopened, labeled, unlabeled]
+    types: [opened, edited, reopened]
   pull_request:
     types: [opened, edited, synchronize, ready_for_review, labeled, reopened]
 
@@ -37,21 +37,6 @@ jobs:
             const issue = context.payload.issue;
             const owner = context.repo.owner;
             const repo  = context.repo.repo;
-
-            // Debounce mechanism: Skip labeled/unlabeled events during initial issue creation
-            const eventAction = context.payload.action;
-            if (eventAction === 'labeled' || eventAction === 'unlabeled') {
-              const issueCreatedAt = new Date(issue.created_at);
-              const now = new Date();
-              const timeDiffMinutes = (now - issueCreatedAt) / (1000 * 60);
-              
-              // Skip label events within first 60 seconds of issue creation
-              if (timeDiffMinutes < 1) {
-                core.info(`Skipping ${eventAction} event - issue created ${timeDiffMinutes.toFixed(1)} minutes ago (within debounce window)`);
-                return;
-              }
-              core.info(`Processing ${eventAction} event - issue created ${timeDiffMinutes.toFixed(1)} minutes ago (outside debounce window)`);
-            }
 
             // Helper: upsert sticky comment to avoid spam
             async function upsertSticky(body) {
