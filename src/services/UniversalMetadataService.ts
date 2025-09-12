@@ -737,11 +737,8 @@ export class UniversalMetadataService {
         if (record_id) {
           result = await getCompanyAttributes(record_id);
         } else {
-          // Return schema-level attributes using standard API endpoint
-          result = await this.discoverAttributesForResourceType(resource_type, {
-            categories,
-            useCache: false, // Disable caching for tests to ensure spies work
-          });
+          // Return schema-level attributes using discoverCompanyAttributes
+          result = await discoverCompanyAttributes();
         }
         break;
 
