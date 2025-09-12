@@ -96,8 +96,11 @@ export const searchRecordsConfig: UniversalToolConfig = {
       );
       return await handleUniversalSearch(sanitizedParams);
     } catch (error: unknown) {
-      await handleCoreOperationError(error, 'search', params.resource_type);
-      throw error; // Never reached, but satisfies TypeScript
+      return await handleCoreOperationError(
+        error,
+        'search',
+        params.resource_type
+      );
     }
   },
   formatResult: (
@@ -235,12 +238,11 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
-      await handleCoreOperationError(
+      return await handleCoreOperationError(
         error,
         'get details',
         params.resource_type
       );
-      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -406,13 +408,12 @@ export const createRecordConfig: UniversalToolConfig = {
 
       return result;
     } catch (error: unknown) {
-      await handleCoreOperationError(
+      return await handleCoreOperationError(
         error,
         'create',
         params.resource_type,
         params.record_data as Record<string, unknown>
       );
-      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -490,13 +491,12 @@ export const updateRecordConfig: UniversalToolConfig = {
       }
       return result;
     } catch (error: unknown) {
-      await handleCoreOperationError(
+      return await handleCoreOperationError(
         error,
         'update',
         params.resource_type,
         params.record_data as Record<string, unknown>
       );
-      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
@@ -540,12 +540,11 @@ export const deleteRecordConfig: UniversalToolConfig = {
       );
       return await handleUniversalDelete(sanitizedParams);
     } catch (error: unknown) {
-      await handleCoreOperationError(
+      return await handleCoreOperationError(
         error,
         'delete record',
         params.resource_type
       );
-      throw error; // Never reached, but satisfies TypeScript
     }
   },
   formatResult: (
