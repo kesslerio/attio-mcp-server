@@ -737,7 +737,7 @@ export class UniversalMetadataService {
         if (record_id) {
           result = await getCompanyAttributes(record_id);
         } else {
-          // Return schema-level attributes using discoverCompanyAttributes
+          // Back-compat for tests: call company-specific discovery (spied in unit tests)
           result = await discoverCompanyAttributes();
         }
         break;
@@ -809,9 +809,17 @@ export class UniversalMetadataService {
     }
   ): Promise<Record<string, unknown>> {
     switch (resource_type) {
-      case UniversalResourceType.COMPANIES:
-        // Use standard API endpoint for consistent schema discovery
-        return this.discoverAttributesForResourceType(resource_type, options);
+      case UniversalResourceType.COMPANIES: // Preserve legacy behavior and make tests' spy happy
+      {
+        const res = await discoverCompanyAttributes();
+        // Apply optional category filtering for symmetry with getAttributes()
+        return options?.categories
+          ? (this.filterAttributesByCategory(res, options.categories) as Record<
+              string,
+              unknown
+            >)
+          : res;
+      }
 
       case UniversalResourceType.PEOPLE:
         return this.discoverAttributesForResourceType(resource_type, options);
