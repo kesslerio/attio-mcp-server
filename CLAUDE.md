@@ -185,6 +185,14 @@ RULE: Remove unused code | WHEN: Any unused import/variable | DO: Remove immedia
 STYLE: PascalCase (classes/interfaces) | camelCase (functions/variables) | snake_case (files) | 2-space indentation
 IMPORTS: Order as node → external → internal | Remove unused immediately
 
+## LOGGING STANDARDS
+
+RULE: Structured logging required | WHEN: Any logging in src/ | DO: Use logger.info/debug/warn/error | ELSE: console.* statements in production
+RULE: Log levels | WHEN: Logging | DO: debug (dev info), info (user actions), warn (recoverable), error (failures) | ELSE: Inappropriate log noise
+RULE: No console.* in src/ | WHEN: Production code | DO: Use structured logger only | ELSE: Uncontrolled output to stdout
+RULE: Context logging | WHEN: MCP tool execution | DO: Include operation context (toolName, userId, requestId) | ELSE: Difficult debugging
+ALLOWED: console.* in tests/, scripts/, debug utilities only
+
 ## AGENT AUTOMATION [Use `/agents` command]
 
 **CORE RULE**: Use native Claude Code subagents for specialized tasks → Separate context windows → Parallel development
