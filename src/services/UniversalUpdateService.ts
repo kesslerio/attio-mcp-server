@@ -253,6 +253,16 @@ export class UniversalUpdateService {
       attioPayload.values = updatedTaskData;
     }
 
+    // Normalize values (e.g., phone numbers to E.164)
+    const { normalizeValues } = await import(
+      './normalizers/AttributeAwareNormalizer.js'
+    );
+    attioPayload.values = await normalizeValues(
+      resource_type,
+      attioPayload.values,
+      availableAttributes
+    );
+
     // Sanitize special characters while preserving intended content
     const { UpdateValidation } = await import('./update/UpdateValidation.js');
     const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
