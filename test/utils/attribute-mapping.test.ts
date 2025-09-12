@@ -46,7 +46,7 @@ describe('Attribute Mapping', () => {
             },
             objects: {
               companies: {
-                'B2B Segment': 'type_persona',
+                Description: 'description',
               },
             },
             custom: {
@@ -64,7 +64,7 @@ describe('Attribute Mapping', () => {
       expect(getAttributeSlug('Email')).toBe('email');
 
       // Test object-specific attributes
-      expect(getAttributeSlug('B2B Segment', 'companies')).toBe('type_persona');
+      expect(getAttributeSlug('Description', 'companies')).toBe('description');
 
       // Test custom attributes
       expect(getAttributeSlug('Custom Field')).toBe('custom_slug');
@@ -97,7 +97,7 @@ describe('Attribute Mapping', () => {
       expect(getAttributeSlug('NAME')).toBe('name');
     });
 
-    it('should fall back to legacy map if not found in config', () => {
+    it('should return field name as-is when no mapping found (default behavior)', () => {
       // Mock the config loader to return a test configuration without the requested mapping
       (
         configLoader.loadMappingConfig as MockedFunction<
@@ -117,8 +117,8 @@ describe('Attribute Mapping', () => {
         },
       });
 
-      // This should fall back to the legacy map
-      expect(getAttributeSlug('B2B Segment')).toBe('type_persona');
+      // Should return field name as-is with default behavior (no legacy B2B mappings)
+      expect(getAttributeSlug('B2B Segment')).toBe('B2B Segment');
     });
 
     it('should return the original input if no mapping found', () => {

@@ -62,7 +62,7 @@ describe('Postal Code Field Mapping - Issue #219', () => {
       console.log(`"ZIP" maps to: "${result}"`);
     });
 
-    it('should have consistent mapping between postal_code variants', () => {
+    it('should test default mapping behavior without custom configuration', () => {
       const postalCodeResult = getAttributeSlug('postal_code', 'companies');
       const postalCodeDisplayResult = getAttributeSlug(
         'Postal Code',
@@ -70,15 +70,15 @@ describe('Postal Code Field Mapping - Issue #219', () => {
       );
       const zipResult = getAttributeSlug('ZIP', 'companies');
 
-      // All variants should map to the same underlying attribute
-      expect(postalCodeResult).toBe(postalCodeDisplayResult);
-      expect(postalCodeResult).toBe(zipResult);
-
-      // They should all map to 'postal_code' (the correct Attio attribute)
+      // Default behavior: field names return as-is without custom mappings
       expect(postalCodeResult).toBe('postal_code');
-      expect(zipResult).toBe('postal_code');
+      expect(postalCodeDisplayResult).toBe('Postal Code');
+      expect(zipResult).toBe('ZIP');
 
-      console.log('All variants map to:', postalCodeResult);
+      console.log('Default mapping results:');
+      console.log('postal_code ->', postalCodeResult);
+      console.log('Postal Code ->', postalCodeDisplayResult);
+      console.log('ZIP ->', zipResult);
     });
 
     it('should not map to non-existent "zip" slug if that causes the API error', () => {

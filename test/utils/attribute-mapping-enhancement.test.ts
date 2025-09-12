@@ -20,50 +20,57 @@ describe('Enhanced Attribute Mapping', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     invalidateConfigCache();
+
+    // Set up default empty configuration for tests
+    (configLoader.loadMappingConfig as any).mockReturnValue({
+      version: '1.0',
+      mappings: {
+        attributes: { common: {}, objects: {}, custom: {} },
+        objects: {},
+        lists: {},
+        relationships: {},
+      },
+    });
   });
 
   describe('Special Case Handling', () => {
-    it('should correctly map B2B Segment special cases', () => {
-      // We'll use different variations of the B2B Segment attribute
-      const variations = [
-        'B2B Segment',
-        'b2b_segment',
-        'b2bsegment',
-        'B2B',
-        'Business Segment',
-        'Customer Segment',
-        'Client Segment',
-      ];
+    it('should return field names as-is with default mapping (no B2B segment special cases)', () => {
+      // After legacy mapping removal (Issue #626), B2B segment no longer maps to type_persona
+      // Default behavior: field names return as-is without custom mappings
+      const variations = ['B2B Segment', 'b2b_segment', 'b2bsegment', 'B2B'];
 
-      // All should map to type_persona
-      variations.forEach((variation) => {
-        expect(getAttributeSlug(variation)).toBe('type_persona');
-      });
+      // Default behavior: return field names as-is
+      expect(getAttributeSlug('B2B Segment')).toBe('B2B Segment');
+      expect(getAttributeSlug('b2b_segment')).toBe('b2b_segment');
+      expect(getAttributeSlug('b2bsegment')).toBe('b2bsegment');
+      expect(getAttributeSlug('B2B')).toBe('B2B');
     });
 
-    it('should handle special cases with different character cases', () => {
-      expect(getAttributeSlug('b2b segment')).toBe('type_persona');
-      expect(getAttributeSlug('B2B SEGMENT')).toBe('type_persona');
-      expect(getAttributeSlug('B2b SeGmEnT')).toBe('type_persona');
+    it('should handle industry mapping (valid special case)', () => {
+      // Industry -> categories mapping is still valid as it maps to existing Attio field
+      expect(getAttributeSlug('industry')).toBe('categories');
+      expect(getAttributeSlug('Industry')).toBe('categories');
+      expect(getAttributeSlug('Industry Type')).toBe('categories');
     });
 
-    it('should handle special cases with different spacing and formats', () => {
-      expect(getAttributeSlug('b2b-segment')).toBe('type_persona');
-      expect(getAttributeSlug('b2b   segment')).toBe('type_persona');
-      expect(getAttributeSlug('b2b.segment')).toBe('type_persona');
+    it('should return other field names as-is with default behavior', () => {
+      // Default behavior: field names return as-is without custom mappings
+      expect(getAttributeSlug('b2b-segment')).toBe('b2b-segment');
+      expect(getAttributeSlug('b2b   segment')).toBe('b2b   segment');
+      expect(getAttributeSlug('b2b.segment')).toBe('b2b.segment');
     });
   });
 
   describe('Tiered Matching Approach', () => {
-    it('should first check for special cases', () => {
-      // Mock configuration with a different mapping for B2B Segment
-      // This shouldn't be used because special case handling has priority
+    it('should use valid special cases like industry mapping', () => {
+      // Mock configuration with a different mapping for industry
+      // Special case handling should override the config for valid mappings
       (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
             common: {
-              'B2B Segment': 'wrong_mapping',
+              industry: 'wrong_mapping',
             },
             objects: {},
             custom: {},
@@ -74,16 +81,16 @@ describe('Enhanced Attribute Mapping', () => {
         },
       });
 
-      // Special case handling should override the config
-      expect(getAttributeSlug('B2B Segment')).toBe('type_persona');
+      // Special case handling should override the config for valid mappings
+      expect(getAttributeSlug('industry')).toBe('categories');
 
       // Spy on handleSpecialCases to ensure it was called
       const handleSpecialCasesSpy = vi.spyOn(
         mappingUtils,
         'handleSpecialCases'
       );
-      getAttributeSlug('B2B Segment');
-      expect(handleSpecialCasesSpy).toHaveBeenCalledWith('B2B Segment');
+      getAttributeSlug('industry');
+      expect(handleSpecialCasesSpy).toHaveBeenCalledWith('industry');
     });
 
     it('should use case-insensitive lookup after special cases', () => {
@@ -169,7 +176,8 @@ describe('Enhanced Attribute Mapping', () => {
       expect(getAttributeSlug('account_manager')).toBe('account_manager');
     });
 
-    it('should map postal code fields without converting to zip', () => {
+    it('should return field names as-is when no custom mappings exist', () => {
+      // Test default behavior: no custom mappings should return field names as-is
       (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
@@ -181,7 +189,7 @@ describe('Enhanced Attribute Mapping', () => {
       });
 
       expect(getAttributeSlug('postal_code')).toBe('postal_code');
-      expect(getAttributeSlug('ZIP')).toBe('postal_code');
+      expect(getAttributeSlug('ZIP')).toBe('ZIP'); // No default mapping for ZIP
     });
   });
 

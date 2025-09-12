@@ -56,6 +56,7 @@ test-results/
 test/e2e/outputs/
 vitest-report.json
 performance-results/
+eslint.json
 
 # Log files
 logs/
