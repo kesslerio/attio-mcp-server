@@ -36,8 +36,8 @@ export const ATTRIBUTES = {
   EMAIL: 'email',
   PHONE: 'phone',
   NAME: 'name',
-  WEBSITE: 'website',
-  INDUSTRY: 'industry',
+  DOMAINS: 'domains',
+  CATEGORIES: 'categories',
   REVENUE: 'annual_revenue',
   EMPLOYEE_COUNT: 'employee_count',
   LIST_ID: 'list_id',
@@ -49,11 +49,11 @@ export const ATTRIBUTES = {
  * Type for the Attio API filter object format
  * Represents the structure expected by Attio API endpoints
  */
-export type AttioApiFilter = {
-  [attributeSlug: string]: {
-    [condition: string]: any;
-  };
-};
+export interface AttioApiFilter {
+  [attributeSlug: string]: unknown;
+  $or?: AttioApiFilter[];
+  $and?: AttioApiFilter[];
+}
 
 /**
  * New Query API format for Attio - proper path-based filtering
@@ -62,11 +62,17 @@ export type AttioApiFilter = {
 export interface AttioQueryApiFilter {
   filter?:
     | {
-        path: string[];
+        path: string[] | string[][];
         constraints: {
           operator: string;
           value: unknown;
         }[];
+      }
+    | {
+        path: string[] | string[][];
+        constraints: {
+          [operator: string]: unknown;
+        };
       }
     | {
         $and?: AttioQueryApiFilter[];
@@ -74,7 +80,7 @@ export interface AttioQueryApiFilter {
       }
     | {
         [field: string]: {
-          [operator: string]: any;
+          [operator: string]: unknown;
         };
       };
 }
@@ -150,7 +156,16 @@ export interface RelationshipFilterConfig {
 /**
  * Special case field-operator mappings and handling flags
  */
-export const FIELD_SPECIAL_HANDLING: Record<string, any> = {
+export const FIELD_SPECIAL_HANDLING: Record<
+  string,
+  Record<string, unknown> & {
+    in?: string;
+    contains_any?: string;
+    operators?: string[];
+    useShorthandFormat?: boolean;
+    allowStringValue?: boolean;
+  }
+> = {
   // Special handling for segment-related fields
   segment: {
     in: 'contains_any',

@@ -21,24 +21,11 @@ export const companiesPrompts: PromptTemplate[] = [
         required: true,
       },
       {
-        name: 'website',
-        type: 'string',
-        description: 'Website URL of the company',
-        required: false,
-      },
-      {
-        name: 'industry',
-        type: 'string',
-        description: 'Industry the company operates in',
-        required: false,
-      },
-      {
-        name: 'size',
+        name: 'domains',
         type: 'string',
         description:
-          'Size of the company (e.g., "1-10", "11-50", "51-200", "201-500", "501-1000", "1001+")',
+          'List of domains for the company (e.g., ["example.com", "example.org"])',
         required: false,
-        enum: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001+'],
       },
       {
         name: 'description',
@@ -48,7 +35,7 @@ export const companiesPrompts: PromptTemplate[] = [
       },
     ],
     template:
-      'Create a new company named {{name}}{{#if website}} with website {{website}}{{/if}}{{#if industry}} in the {{industry}} industry{{/if}}{{#if size}} with {{size}} employees{{/if}}{{#if description}}. Description: {{description}}{{/if}}.',
+      'Create a new company named {{name}}{{#if domains}} with domains {{domains}}{{/if}}{{#if description}}. Description: {{description}}{{/if}}.',
   },
   {
     id: 'find-company-by-name',
@@ -84,15 +71,15 @@ export const companiesPrompts: PromptTemplate[] = [
         required: false,
       },
       {
-        name: 'website',
+        name: 'domains',
         type: 'string',
-        description: 'New website URL for the company',
+        description: 'New domains for the company',
         required: false,
       },
       {
-        name: 'industry',
+        name: 'categories',
         type: 'string',
-        description: 'New industry for the company',
+        description: 'New categories for the company',
         required: false,
       },
       {
@@ -103,7 +90,7 @@ export const companiesPrompts: PromptTemplate[] = [
       },
     ],
     template:
-      'Update the company with ID {{companyId}}{{#if name}} to change its name to {{name}}{{/if}}{{#if website}}, update its website to {{website}}{{/if}}{{#if industry}}, update its industry to {{industry}}{{/if}}{{#if description}}, and update its description to "{{description}}"{{/if}}.',
+      'Update the company with ID {{companyId}}{{#if name}} to change its name to {{name}}{{/if}}{{#if domains}}, update its domains to {{domains}}{{/if}}{{#if description}}, and update its description to "{{description}}"{{/if}}.',
   },
   {
     id: 'add-note-to-company',

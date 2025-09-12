@@ -5,9 +5,9 @@ import { describe, beforeEach, it, expect, vi } from 'vitest';
 import {
   getAttributeSlug,
   invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/attribute-mappers';
-import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
-import * as configLoader from '../../src/utils/config-loader';
+} from '../../src/utils/attribute-mapping/attribute-mappers.js';
+import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils.js';
+import * as configLoader from '../../src/utils/config-loader.js';
 
 // Mock the config loader to test with controlled configurations
 vi.mock('../../src/utils/config-loader', () => ({
@@ -21,8 +21,9 @@ vi.mock('../../src/utils/config-loader', () => ({
         },
         objects: {
           companies: {
-            'Medical Field': 'categories',
-            'Healthcare Industry': 'categories',
+            'Venture Capital': 'categories',
+            Healthcare: 'categories',
+            'medical field': 'categories',
           },
         },
         custom: {},
@@ -56,10 +57,10 @@ describe('Attribute Mappers', () => {
     });
 
     it('should handle object-specific mappings', () => {
-      expect(getAttributeSlug('medical field', 'companies')).toBe('categories');
-      expect(getAttributeSlug('healthcare industry', 'companies')).toBe(
+      expect(getAttributeSlug('venture capital', 'companies')).toBe(
         'categories'
       );
+      expect(getAttributeSlug('healthcare', 'companies')).toBe('categories');
     });
 
     it('should NOT fall into infinite recursion when handling special cases', () => {

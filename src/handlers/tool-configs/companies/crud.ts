@@ -104,11 +104,6 @@ export const crudToolDefinitions = [
               type: 'string',
               description: 'Company description',
             },
-            industry: {
-              type: 'string',
-              description:
-                "Industry classification (maps to 'categories' in Attio API). If both 'industry' and 'categories' are provided, 'industry' takes precedence.",
-            },
           },
         },
       },

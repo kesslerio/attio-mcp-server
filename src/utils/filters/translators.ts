@@ -17,6 +17,7 @@ import {
   FilterValidationError,
   FilterErrorCategory,
 } from '../../errors/api-errors.js';
+import { FilterValue } from '../../types/api-operations.js';
 
 // Internal module dependencies
 import {
@@ -640,7 +641,7 @@ export function transformApiFormatToFilters(
               filters.push({
                 attribute: { slug },
                 condition: operator.replace('$', '') as FilterConditionType,
-                value,
+                value: value as FilterValue,
               });
             });
           }

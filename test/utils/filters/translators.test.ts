@@ -5,13 +5,13 @@
 import {
   transformFiltersToApiFormat,
   transformSingleFilterToApi,
-} from '../../../src/utils/filters/translators';
-import { FilterValidationError } from '../../../src/errors/api-errors';
+} from '../../../src/utils/filters/translators.js';
+import { FilterValidationError } from '../../../src/errors/api-errors.js';
 import {
   FilterConditionType,
   ListEntryFilters,
   ListEntryFilter,
-} from '../../../src/utils/filters/types';
+} from '../../../src/utils/filters/types.js';
 
 describe('Filter Translators', () => {
   describe('transformFiltersToApiFormat', () => {

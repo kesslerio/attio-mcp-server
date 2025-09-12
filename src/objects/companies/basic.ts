@@ -23,6 +23,7 @@ import {
   updateMockCompany,
   getMockCompany,
 } from '../../utils/mock-state.js';
+import { CompanyFieldValue } from '../../types/tool-types.js';
 
 /**
  * Lists companies sorted by most recent interaction
@@ -34,7 +35,7 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);
-  } catch (error: unknown) {
+  } catch {
     // Fallback implementation
     const api = getLazyAttioClient();
     const path = '/objects/companies/records/query';
@@ -90,7 +91,6 @@ export async function getCompanyDetails(
     // Fallback to static mock if not found in shared state
     const mockCompany = createMockCompanyWithApiStructure(companyIdOrUri, {
       name: `Mock Company ${companyIdOrUri}`,
-      industry: 'Software & Technology',
       categories: 'Software & Technology',
     });
 
@@ -128,7 +128,7 @@ export async function getCompanyDetails(
         }
 
         companyId = id;
-      } catch (parseError) {
+      } catch {
         const parts = companyIdOrUri.split('/');
         companyId = parts[parts.length - 1];
       }
@@ -162,7 +162,6 @@ export async function getCompanyDetails(
       // Fallback to static mock
       return createMockCompanyWithApiStructure(companyId, {
         name: `Mock Company ${companyId}`,
-        industry: 'Software & Technology',
         categories: 'Software & Technology',
       });
     }
@@ -185,7 +184,6 @@ export async function getCompanyDetails(
       // Fallback to static mock
       return createMockCompanyWithApiStructure(companyIdOrUri, {
         name: `Mock Company ${companyIdOrUri}`,
-        industry: 'Software & Technology',
         categories: 'Software & Technology',
       });
     }
@@ -205,8 +203,7 @@ export async function getCompanyDetails(
  * ```typescript
  * const company = await createCompany({
  *   name: "Acme Corp",
- *   website: "https://acme.com",
- *   industry: "Technology"
+ *   domains: ["acme.com"],
  * });
  * ```
  */
@@ -550,8 +547,7 @@ export async function createCompany(
  * @example
  * ```typescript
  * const updated = await updateCompany("comp_123", {
- *   industry: "Healthcare",
- *   employee_range: "100-500"
+ *   categories: ["SaaS", "B2B"],
  * });
  * ```
  */
@@ -645,8 +641,8 @@ export async function updateCompany(
  * // Update a simple string attribute
  * const updated = await updateCompanyAttribute(
  *   "company_123",
- *   "website",
- *   "https://example.com"
+ *   "domains",
+ *   "example.com"
  * );
  *
  * // Update main_contact with Person Record ID
@@ -666,7 +662,7 @@ export async function updateCompany(
  * // Clear an attribute
  * const cleared = await updateCompanyAttribute(
  *   "company_123",
- *   "website",
+ *   "domains",
  *   null
  * );
  * ```
@@ -711,7 +707,7 @@ export async function updateCompanyAttribute(
     const processedValue = await CompanyValidator.validateAttributeUpdate(
       companyId,
       attributeName,
-      valueToProcess as any // TODO: Replace with proper type once CompanyFieldValue is updated
+      valueToProcess as CompanyFieldValue
     );
 
     return await updateObjectAttributeWithDynamicFields<Company>(

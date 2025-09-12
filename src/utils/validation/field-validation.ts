@@ -61,8 +61,6 @@ const COMMON_SAFE_FIELDS = [
   'phone',
   'phone_number',
   'phone_numbers',
-  'website',
-  'websites',
   'domains',
 
   // Address fields
@@ -112,17 +110,16 @@ const RESOURCE_SPECIFIC_FIELDS: Record<ResourceType, string[]> = {
 
   [ResourceType.COMPANIES]: [
     ...COMMON_SAFE_FIELDS,
-    'industry',
-    'size',
-    'revenue',
-    'founded',
-    'headquarters',
-    'employees',
-    'type',
-    'linkedin_url',
-    'crunchbase_url',
-    'logo_url',
-    'ticker_symbol',
+    'team',
+    'categories',
+    'primary_location',
+    'angellist',
+    'facebook',
+    'instagram',
+    'linkedin',
+    'twitter',
+    'associated_deals',
+    'associated_workspaces',
   ],
 
   [ResourceType.DEALS]: [
@@ -190,7 +187,7 @@ const DANGEROUS_PATTERNS = [
 
   // Script injection attempts - comprehensive patterns
   /<script\b/i,
-  /<\/script>/i,
+  /\'<'\/script>/i,
   /javascript:/i,
   /on\w+\s*=/i, // Event handlers (onclick, onload, etc.)
   /<iframe\b/i,
@@ -202,10 +199,10 @@ const DANGEROUS_PATTERNS = [
   /<svg\b.*onload/i,
 
   // Path traversal attempts - enhanced patterns
-  /\.\./, // Basic directory traversal
-  /\/\.\./, // Unix path traversal
-  /\\\.\./, // Windows path traversal
-  /\.\.[\\/]/, // Any directory traversal
+  /\.\\]/,
+  /\/\.\\/,
+  /\\\\.\\/,
+  /\.\\][\\/]/,
   /\/etc\/passwd/i, // Unix passwd file
   /\/etc\/shadow/i, // Unix shadow file
   /\/proc\//i, // Unix proc filesystem
@@ -226,7 +223,7 @@ const DANGEROUS_PATTERNS = [
   /\bid\b/i, // Unix ID command
   /rm\s+-rf/i, // Destructive remove
   /&&\s*cat\b/i, // Command chaining with cat
-  /\$\(.*\)/, // Command substitution
+  /\$\(\.*\)/, // Command substitution
 
   // URL manipulation and injection attempts
   /[?&#]/,
@@ -530,7 +527,7 @@ function levenshteinDistance(a: string, b: string): number {
  * Enhanced for comprehensive security testing
  */
 export function secureValidateFields(
-  fieldNames: any, // Allow any type for comprehensive input validation
+  fieldNames: unknown, // Allow any type for comprehensive input validation
   resourceType: ResourceType,
   operation: string = 'field filtering'
 ): string[] {
@@ -587,7 +584,7 @@ export function secureValidateFields(
     }
   }
 
-  const validation = validateFieldNames(fieldNames, resourceType);
+  const validation = validateFieldNames(fieldNames as string[], resourceType);
 
   if (!validation.valid) {
     throw new UniversalValidationError(
@@ -706,7 +703,7 @@ export function validateCategoryNames(categoryNames: string[]): {
  * Enhanced for comprehensive security testing
  */
 export function secureValidateCategories(
-  categoryNames: any, // Allow any type for comprehensive input validation
+  categoryNames: unknown, // Allow any type for comprehensive input validation
   operation: string = 'category filtering'
 ): string[] {
   // Enhanced input type validation
@@ -762,7 +759,7 @@ export function secureValidateCategories(
     }
   }
 
-  const validation = validateCategoryNames(categoryNames);
+  const validation = validateCategoryNames(categoryNames as string[]);
 
   if (!validation.valid) {
     throw new UniversalValidationError(

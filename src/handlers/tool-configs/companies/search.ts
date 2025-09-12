@@ -20,10 +20,14 @@ export const searchToolConfigs = {
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies:\n${results
         .map((company) => {
-          const name = (company.values?.name as any)?.[0]?.value || 'Unnamed';
-          const website = (company.values?.website as any)?.[0]?.value || '';
+          const name =
+            (company.values.name as { value: string }[] | undefined)?.[0]
+              ?.value || 'Unnamed';
+          const domains =
+            (company.values.domains as { domain: string }[] | undefined)?.[0]
+              ?.domain || '';
           const id = company.id?.record_id || 'unknown';
-          return `- ${name}${website ? ` (${website})` : ''} (ID: ${id})`;
+          return `- ${name}${domains ? ` (${domains})` : ''} (ID: ${id})`;
         })
         .join('\n')}`;
     },
@@ -35,10 +39,14 @@ export const searchToolConfigs = {
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies by domain:\n${results
         .map((company) => {
-          const name = (company.values?.name as any)?.[0]?.value || 'Unnamed';
-          const website = (company.values?.website as any)?.[0]?.value || '';
+          const name =
+            (company.values.name as { value: string }[] | undefined)?.[0]
+              ?.value || 'Unnamed';
+          const domains =
+            (company.values.domains as { domain: string }[] | undefined)?.[0]
+              ?.domain || '';
           const id = company.id?.record_id || 'unknown';
-          return `- ${name}${website ? ` (${website})` : ''} (ID: ${id})`;
+          return `- ${name}${domains ? ` (${domains})` : ''} (ID: ${id})`;
         })
         .join('\n')}`;
     },
@@ -52,10 +60,14 @@ export const searchToolConfigs = {
         results.length
       } companies matching advanced search:\n${results
         .map((company) => {
-          const name = (company.values?.name as any)?.[0]?.value || 'Unnamed';
-          const website = (company.values?.website as any)?.[0]?.value || '';
+          const name =
+            (company.values.name as { value: string }[] | undefined)?.[0]
+              ?.value || 'Unnamed';
+          const domains =
+            (company.values.domains as { domain: string }[] | undefined)?.[0]
+              ?.domain || '';
           const id = company.id?.record_id || 'unknown';
-          return `- ${name}${website ? ` (${website})` : ''} (ID: ${id})`;
+          return `- ${name}${domains ? ` (${domains})` : ''} (ID: ${id})`;
         })
         .join('\n')}`;
     },
@@ -103,7 +115,7 @@ export const searchToolDefinitions = [
                       slug: {
                         type: 'string',
                         description:
-                          "Attribute to filter on (e.g., 'name', 'website', 'industry')",
+                          "Attribute to filter on (e.g., 'name', 'domains', 'categories')",
                       },
                     },
                     required: ['slug'],

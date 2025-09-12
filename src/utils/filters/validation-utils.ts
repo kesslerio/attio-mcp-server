@@ -56,7 +56,7 @@ See documentation for more examples.`,
  * Standard example format for filter structures to include in error messages
  */
 export const FILTER_EXAMPLES = {
-  SIMPLE: `{
+  SIMPLE: `{ 
   "filters": [
     {
       "attribute": { "slug": "name" },
@@ -65,7 +65,7 @@ export const FILTER_EXAMPLES = {
     }
   ]
 }`,
-  OR_LOGIC: `{
+  OR_LOGIC: `{ 
   "filters": [
     {
       "attribute": { "slug": "name" },
@@ -73,14 +73,14 @@ export const FILTER_EXAMPLES = {
       "value": "Inc"
     },
     {
-      "attribute": { "slug": "industry" },
-      "condition": "equals",
+      "attribute": { "slug": "description" },
+      "condition": "contains",
       "value": "Technology"
     }
   ],
   "matchAny": true
 }`,
-  MULTIPLE_CONDITIONS: `{
+  MULTIPLE_CONDITIONS: `{ 
   "filters": [
     {
       "attribute": { "slug": "name" },
@@ -88,7 +88,7 @@ export const FILTER_EXAMPLES = {
       "value": "Inc"
     },
     {
-      "attribute": { "slug": "website" },
+      "attribute": { "slug": "domains" },
       "condition": "contains",
       "value": ".com"
     }
@@ -333,13 +333,13 @@ export function getInvalidFilterReason(filter: unknown): string {
     return `filter is ${filter === null ? 'null' : typeof filter}`;
   }
 
-  const filterObj = filter as Record<string, any>;
+  const filterObj = filter as Record<string, unknown>;
 
   if (!filterObj.attribute) {
     return ERROR_MESSAGES.MISSING_ATTRIBUTE;
   }
 
-  if (!filterObj.attribute.slug) {
+  if (!(filterObj.attribute as Record<string, unknown>).slug) {
     return ERROR_MESSAGES.MISSING_ATTRIBUTE_SLUG;
   }
 
@@ -347,8 +347,8 @@ export function getInvalidFilterReason(filter: unknown): string {
     return ERROR_MESSAGES.MISSING_CONDITION;
   }
 
-  if (!isValidFilterCondition(filterObj.condition)) {
-    return `invalid condition '${filterObj.condition}'`;
+  if (!isValidFilterCondition(filterObj.condition as string)) {
+    return `invalid condition '${filterObj.condition as string}'`;
   }
 
   return 'unknown issue';

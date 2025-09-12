@@ -38,7 +38,7 @@ describe('Universal Core Operations Search Tests', () => {
           id: { record_id: 'comp-1' },
           values: {
             name: [{ value: 'Test Company' }],
-            website: [{ value: 'https://test.com' }],
+            domains: [{ domain: 'test.com' }],
           },
         },
       ];
@@ -123,7 +123,7 @@ describe('Universal Core Operations Search Tests', () => {
           id: { record_id: 'comp-1' },
           values: {
             name: [{ value: 'Test Company' }],
-            website: [{ value: 'https://test.com' }],
+            domains: [{ domain: 'test.com' }],
           },
         },
         {
@@ -141,9 +141,7 @@ describe('Universal Core Operations Search Tests', () => {
       );
 
       expect(formatted).toContain('Found 2 companies');
-      expect(formatted).toContain(
-        '1. Test Company (https://test.com) (ID: comp-1)'
-      );
+      expect(formatted).toContain('1. Test Company (test.com) (ID: comp-1)');
       expect(formatted).toContain(
         '2. Another Company (info@another.com) (ID: comp-2)'
       );
@@ -161,8 +159,7 @@ describe('Universal Core Operations Search Tests', () => {
         id: { record_id: 'comp-1' },
         values: {
           name: [{ value: 'Test Company' }],
-          website: [{ value: 'https://test.com' }],
-          industry: [{ value: 'Technology' }],
+          domains: [{ domain: 'test.com' }],
         },
       };
 
@@ -212,9 +209,8 @@ describe('Universal Core Operations Search Tests', () => {
         id: { record_id: 'comp-1' },
         values: {
           name: [{ value: 'Test Company' }],
-          website: [{ value: 'https://test.com' }],
-          industry: [{ value: 'Technology' }],
-          location: [{ value: 'San Francisco, CA' }],
+          domains: [{ domain: 'test.com' }],
+          primary_location: [{ value: 'San Francisco, CA' }],
         },
       };
 
@@ -230,9 +226,8 @@ describe('Universal Core Operations Search Tests', () => {
 
       expect(formatted).toContain('Company: Test Company');
       expect(formatted).toContain('ID: comp-1');
-      expect(formatted).toContain('Website: https://test.com');
-      expect(formatted).toContain('Industry: Technology');
-      expect(formatted).toContain('Location: San Francisco, CA');
+      expect(formatted).toContain('Domains: test.com');
+      expect(formatted).toContain('Primary location: San Francisco, CA');
     });
   });
 

@@ -26,7 +26,7 @@ export interface AttributeMetadata {
   is_system?: boolean;
   is_writable?: boolean;
   is_required?: boolean;
-  allowed_values?: any[];
+  allowed_values?: unknown[];
   format?: string;
 }
 
@@ -147,28 +147,31 @@ export class SchemaPreValidator {
   /**
    * Normalize attributes from API response
    */
-  private static normalizeAttributes(apiResponse: any): AttributeMetadata[] {
+  private static normalizeAttributes(
+    apiResponse: unknown
+  ): AttributeMetadata[] {
     // Handle both array format (direct attributes) and object format (discovery response)
-    let attributesList: any[] = [];
+    let attributesList: Record<string, unknown>[] = [];
 
     if (Array.isArray(apiResponse)) {
       attributesList = apiResponse;
     } else if (apiResponse && typeof apiResponse === 'object') {
+      const responseObject = apiResponse as Record<string, unknown>;
       // Handle discoverCompanyAttributes response format: { standard: [], custom: [], all: [] }
-      if (Array.isArray(apiResponse.all)) {
+      if (Array.isArray(responseObject.all)) {
         // Handle both string array and object array formats
-        attributesList = apiResponse.all.map((attr: any) => {
+        attributesList = responseObject.all.map((attr: unknown) => {
           if (typeof attr === 'string') {
             return { slug: attr, name: attr };
           }
-          return attr; // Already an object
+          return attr as Record<string, unknown>; // Already an object
         });
-      } else if (Array.isArray(apiResponse.standard)) {
-        attributesList = apiResponse.standard.map((attr: any) => {
+      } else if (Array.isArray(responseObject.standard)) {
+        attributesList = responseObject.standard.map((attr: unknown) => {
           if (typeof attr === 'string') {
             return { slug: attr, name: attr };
           }
-          return attr;
+          return attr as Record<string, unknown>;
         });
       }
     }
@@ -190,45 +193,29 @@ export class SchemaPreValidator {
 
     // Normalize and filter invalid entries defensively
     const normalizedAttrs = attributesList
-      .map((attr: any) => {
+      .map((attr: Record<string, unknown>) => {
         const rawSlug = attr?.slug ?? attr?.id ?? attr?.name ?? attr?.title;
         const slug = toSlug(rawSlug);
         if (!slug) return undefined;
         return {
-          id: attr?.id || slug,
+          id: (attr?.id as string) || slug,
           slug,
-          name: (attr?.name || attr?.title || slug) as string,
-          type: (attr?.value_type || attr?.type || 'text') as string,
+          name: (attr?.name as string) || (attr?.title as string) || slug,
+          type:
+            (attr?.value_type as string) || (attr?.type as string) || 'text',
           is_system: Boolean(attr?.is_system) || false,
           is_writable: attr?.is_writable !== false,
           // Treat name as required by default
           is_required:
             slug === 'name' ? true : Boolean(attr?.is_required) || false,
-          allowed_values: attr?.allowed_values || attr?.options,
-          format: attr?.format,
+          allowed_values:
+            (attr?.allowed_values as unknown[]) || (attr?.options as unknown[]),
+          format: attr?.format as string,
         } as AttributeMetadata;
       })
       .filter((a: AttributeMetadata | undefined): a is AttributeMetadata =>
         Boolean(a && a.slug)
       );
-
-    // Add employee_count if missing (for test compatibility)
-    const hasEmployeeCount = normalizedAttrs.some(
-      (attr) => attr.slug === 'employee_count'
-    );
-    if (!hasEmployeeCount) {
-      normalizedAttrs.push({
-        id: 'employee_count',
-        slug: 'employee_count',
-        name: 'Employee Count',
-        type: 'number',
-        is_system: false,
-        is_writable: true,
-        is_required: false,
-        allowed_values: undefined,
-        format: undefined,
-      });
-    }
 
     return normalizedAttrs;
   }
@@ -247,17 +234,10 @@ export class SchemaPreValidator {
         is_required: true,
       },
       {
-        id: 'domain',
-        slug: 'domain',
-        name: 'Domain',
+        id: 'domains',
+        slug: 'domains',
+        name: 'Domains',
         type: 'text',
-        is_system: true,
-      },
-      {
-        id: 'website',
-        slug: 'website',
-        name: 'Website',
-        type: 'url',
         is_system: true,
       },
       {
@@ -268,31 +248,73 @@ export class SchemaPreValidator {
         is_system: true,
       },
       {
-        id: 'employee_count',
-        slug: 'employee_count',
-        name: 'Employee Count',
-        type: 'number',
+        id: 'team',
+        slug: 'team',
+        name: 'Team',
+        type: 'record-reference',
         is_system: true,
       },
       {
-        id: 'industry',
-        slug: 'industry',
-        name: 'Industry',
-        type: 'text',
+        id: 'categories',
+        slug: 'categories',
+        name: 'Categories',
+        type: 'select',
         is_system: true,
       },
       {
-        id: 'founded_date',
-        slug: 'founded_date',
-        name: 'Founded Date',
-        type: 'date',
+        id: 'primary_location',
+        slug: 'primary_location',
+        name: 'Primary Location',
+        type: 'location',
         is_system: true,
       },
       {
-        id: 'team_size',
-        slug: 'team_size',
-        name: 'Team Size',
-        type: 'number',
+        id: 'angellist',
+        slug: 'angellist',
+        name: 'AngelList',
+        type: 'url',
+        is_system: true,
+      },
+      {
+        id: 'facebook',
+        slug: 'facebook',
+        name: 'Facebook',
+        type: 'url',
+        is_system: true,
+      },
+      {
+        id: 'instagram',
+        slug: 'instagram',
+        name: 'Instagram',
+        type: 'url',
+        is_system: true,
+      },
+      {
+        id: 'linkedin',
+        slug: 'linkedin',
+        name: 'LinkedIn',
+        type: 'url',
+        is_system: true,
+      },
+      {
+        id: 'twitter',
+        slug: 'twitter',
+        name: 'Twitter',
+        type: 'url',
+        is_system: true,
+      },
+      {
+        id: 'associated_deals',
+        slug: 'associated_deals',
+        name: 'Associated Deals',
+        type: 'record-reference',
+        is_system: true,
+      },
+      {
+        id: 'associated_workspaces',
+        slug: 'associated_workspaces',
+        name: 'Associated Workspaces',
+        type: 'record-reference',
         is_system: true,
       },
     ];
@@ -478,13 +500,6 @@ export class SchemaPreValidator {
         is_system: true,
       },
       {
-        id: 'employee_count',
-        slug: 'employee_count',
-        name: 'Employee Count',
-        type: 'number',
-        is_system: false,
-      },
-      {
         id: 'created_at',
         slug: 'created_at',
         name: 'Created At',
@@ -552,11 +567,6 @@ export class SchemaPreValidator {
       if (attr.slug === 'phone_numbers') {
         variationMap.set('phone', 'phone_numbers');
         variationMap.set('phone_number', 'phone_numbers');
-      }
-      // Company size synonyms
-      if (attr.slug === 'employee_range' || attr.slug === 'employees') {
-        variationMap.set('team_size', attr.slug);
-        variationMap.set('employee_count', attr.slug);
       }
     }
 
@@ -680,7 +690,7 @@ export class SchemaPreValidator {
    */
   private static validateFieldType(
     field: string,
-    value: any,
+    value: unknown,
     attr: AttributeMetadata
   ): string | null {
     if (value === null || value === undefined) {
@@ -732,7 +742,8 @@ export class SchemaPreValidator {
         // Currency can be number or object with amount and currency
         if (
           typeof value !== 'number' &&
-          (typeof value !== 'object' || !('amount' in value))
+          (typeof value !== 'object' ||
+            !('amount' in (value as Record<string, unknown>)))
         ) {
           return `Field "${field}" expects a number or currency object, got ${typeof value}`;
         }
@@ -741,7 +752,7 @@ export class SchemaPreValidator {
 
     // Check allowed values if specified
     if (attr.allowed_values && attr.allowed_values.length > 0) {
-      if (!attr.allowed_values.includes(value)) {
+      if (!(attr.allowed_values as unknown[]).includes(value)) {
         return `Field "${field}" must be one of: ${attr.allowed_values.join(
           ', '
         )}`;

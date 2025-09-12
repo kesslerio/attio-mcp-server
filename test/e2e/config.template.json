@@ -13,23 +13,15 @@
     "currency": "USD",
     "dealStages": [
       "Prospecting",
-      "Qualified", 
+      "Qualified",
       "Proposal",
       "Negotiation",
       "Closed Won",
       "Closed Lost"
     ],
     "customFields": {
-      "companies": [
-        "industry",
-        "size",
-        "annual_revenue"
-      ],
-      "people": [
-        "department",
-        "seniority",
-        "job_level"
-      ]
+      "companies": ["categories", "employee_count", "annual_revenue"],
+      "people": ["department", "seniority", "job_level"]
     },
     "comment": "Customize these to match your actual workspace configuration"
   },

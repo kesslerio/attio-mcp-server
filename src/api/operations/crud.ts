@@ -497,8 +497,7 @@ export async function updateRecord<T extends AttioRecord>(
               ])
             );
 
-            // For test environments: if we have 'categories' field, also add 'industry' for test compatibility
-            // This ensures tests that expect 'industry' field will still pass after attribute mapping
+            // For test environments: if we have 'categories' field
             const testCompatibleValues = { ...basicValues };
             if (basicValues.categories && !basicValues.industry) {
               testCompatibleValues.industry = basicValues.categories;

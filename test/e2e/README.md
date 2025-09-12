@@ -7,10 +7,12 @@ This directory contains comprehensive End-to-End (E2E) tests for the Attio MCP S
 ### 1. Environment Setup
 
 **Required:**
+
 - Set your Attio API key: `export ATTIO_API_KEY=your_api_key_here`
 - Copy configuration: `cp test/e2e/config.template.json test/e2e/config.local.json`
 
-**Optional:** 
+**Optional:**
+
 - Customize `config.local.json` with your test preferences
 - Set additional environment variables for custom test data
 - Configure API contract strictness (see API Contract Modes below)
@@ -36,12 +38,14 @@ npm run test:e2e:help
 The E2E test suite supports two modes for handling API contract violations:
 
 ### Strict Mode (Default) 🚫
+
 - **Purpose**: Catch real API integration issues early
 - **Behavior**: Tests **fail immediately** when API returns malformed responses
 - **Use for**: Normal development, CI/CD, production validation
 - **Configuration**: Default behavior (no environment variables needed)
 
-### Debug Mode 🐛  
+### Debug Mode 🐛
+
 - **Purpose**: Troubleshoot API issues without failing tests
 - **Behavior**: Log warnings but continue with fallback data parsing
 - **Use for**: Debugging API contract violations, investigating test failures
@@ -53,10 +57,10 @@ The E2E test suite supports two modes for handling API contract violations:
 # Strict mode (default) - fail on API contract violations
 export E2E_API_CONTRACT_STRICT=true  # Default: true
 
-# Debug mode - allow fallbacks with warnings  
+# Debug mode - allow fallbacks with warnings
 export E2E_API_CONTRACT_DEBUG=true   # Default: false
 
-# Example: Enable debug mode for troubleshooting  
+# Example: Enable debug mode for troubleshooting
 E2E_API_CONTRACT_DEBUG=true npm run test:e2e
 
 # Or use the diagnostic script with --debug flag
@@ -80,6 +84,7 @@ E2E_API_CONTRACT_DEBUG=true npm run test:e2e
 ## 🎯 Overview
 
 This E2E test suite provides comprehensive testing for:
+
 - **13 Universal Tools**: Complete coverage of all universal MCP operations
 - **Legacy Tools**: List management, notes, tasks, and other specific operations
 - **Error Scenarios**: Comprehensive error handling validation
@@ -91,6 +96,7 @@ This E2E test suite provides comprehensive testing for:
 Purpose: faster feedback and clearer intent by separating protocol QA from user scenarios.
 
 ### Tools Lane (MCP Protocol QA)
+
 - **Location**: `test/e2e/tools/`
 - **Focus**: tool registration, `input_schema` constraints, error shapes, protocol fidelity via `mcp-test-client`
 - **Run**: `npm run test:e2e:tools`
@@ -102,6 +108,7 @@ Purpose: faster feedback and clearer intent by separating protocol QA from user 
   - Input/output format verification for individual tools
 
 ### Workflows Lane (User Scenarios)
+
 - **Location**: `test/e2e/suites/`
 - **Focus**: cross-tool flows, data lifecycle, rate limiting, diagnostics
 - **Run**: `npm run test:e2e:workflows`
@@ -113,10 +120,12 @@ Purpose: faster feedback and clearer intent by separating protocol QA from user 
   - Integration between multiple tools in realistic workflows
 
 ### Diagnostics
+
 - Tools: `npm run e2e:diagnose:tools`
 - Workflows: `npm run e2e:diagnose:core`
 
 ### Guidelines
+
 - `npm run test:e2e` runs all E2E tests using the default Vitest includes
 - Avoid duplicating assertions across lanes; prefer lowest-layer checks in Tools
 - When adding a new test, ask: "Am I testing the tool itself or how tools work together?"
@@ -150,8 +159,8 @@ Edit `test/e2e/config.local.json`:
     "currency": "USD",
     "dealStages": ["Prospecting", "Qualified", "Closed Won"],
     "customFields": {
-      "companies": ["industry", "size"],
-      "people": ["department", "seniority"]
+      "companies": ["categories", "employee_count", "annual_revenue"],
+      "people": ["department", "seniority", "job_level"]
     }
   },
   "features": {
@@ -211,6 +220,7 @@ npm run e2e:cleanup:force
 ## 📋 Test Coverage
 
 ### Universal Tools (13 tools)
+
 - ✅ `search-records` - Search across all resource types
 - ✅ `get-record-details` - Get detailed record information
 - ✅ `create-record` - Create new records
@@ -226,13 +236,16 @@ npm run e2e:cleanup:force
 - ✅ `batch-operations` - Batch CRUD operations
 
 ### Legacy Tools
+
 - ✅ List management operations
 - ✅ Note creation and management
 - ✅ Task operations
 - ✅ Resource-specific tools (if not deprecated)
 
 ### Test Scenarios
+
 Each tool is tested with:
+
 - **Happy Path**: Standard successful operations
 - **Edge Cases**: Boundary conditions, special characters, empty data
 - **Error Cases**: Invalid inputs, non-existent resources, permission errors
@@ -242,6 +255,7 @@ Each tool is tested with:
 ## 🏗️ Architecture
 
 ### Directory Structure
+
 ```
 test/e2e/
 ├── config.template.json     # Configuration template (committed)
@@ -269,12 +283,14 @@ test/e2e/
 Note: When asserting IDs, use the resource-aware helper `E2EAssertions.expectResourceId(record, '<resource>')` instead of direct checks like `expect(record.id.task_id).toBeDefined()`. This ensures consistency across tasks (`task_id`), notes (`note_id`), lists (`list_id`), and default records (`record_id`).
 
 ### Configuration System
+
 - **Template Config**: Version-controlled template with all options documented
 - **Local Config**: Gitignored file with workspace-specific settings
 - **Environment Overrides**: CI/CD support via environment variables
 - **Validation**: Comprehensive config validation on startup
 
 ### Test Data Management
+
 - **Prefixed Data**: All test data prefixed with `E2E_TEST_` for easy identification
 - **Automatic Cleanup**: Test objects automatically tracked and cleaned up
 - **Data Isolation**: Separate test domains to avoid workspace pollution
@@ -283,57 +299,61 @@ Note: When asserting IDs, use the resource-aware helper `E2EAssertions.expectRes
 ## 🔧 Configuration Options
 
 ### Test Data Settings
+
 ```json
 {
   "testData": {
-    "testDataPrefix": "E2E_TEST_",          // Prefix for all test data
+    "testDataPrefix": "E2E_TEST_", // Prefix for all test data
     "testEmailDomain": "@test.example.com", // Domain for test emails
     "testCompanyDomain": "test.example.com", // Domain for test companies
-    "existingCompanyId": null,               // Optional: Use existing company for read tests
-    "existingPersonId": null,                // Optional: Use existing person for read tests
-    "existingListId": null                   // Optional: Use existing list for read tests
+    "existingCompanyId": null, // Optional: Use existing company for read tests
+    "existingPersonId": null, // Optional: Use existing person for read tests
+    "existingListId": null // Optional: Use existing list for read tests
   }
 }
 ```
 
 ### Workspace Configuration
+
 ```json
 {
   "workspace": {
-    "currency": "USD",                       // Workspace currency
-    "dealStages": ["Stage1", "Stage2"],      // Available deal stages
+    "currency": "USD", // Workspace currency
+    "dealStages": ["Stage1", "Stage2"], // Available deal stages
     "customFields": {
-      "companies": ["field1", "field2"],    // Custom company fields
-      "people": ["field1", "field2"]        // Custom people fields
+      "companies": ["field1", "field2"], // Custom company fields
+      "people": ["field1", "field2"] // Custom people fields
     }
   }
 }
 ```
 
 ### Feature Flags
+
 ```json
 {
   "features": {
-    "skipDealTests": false,          // Skip deal-related tests
-    "skipTaskTests": false,          // Skip task tests
-    "skipCustomObjectTests": true,   // Skip custom object tests
-    "skipNoteTests": false,          // Skip note tests
-    "skipListTests": false           // Skip list tests
+    "skipDealTests": false, // Skip deal-related tests
+    "skipTaskTests": false, // Skip task tests
+    "skipCustomObjectTests": true, // Skip custom object tests
+    "skipNoteTests": false, // Skip note tests
+    "skipListTests": false // Skip list tests
   }
 }
 ```
 
 ### Test Settings
+
 ```json
 {
   "testSettings": {
-    "cleanupAfterTests": true,       // Auto-cleanup test data
-    "maxRetries": 3,                 // Retry failed operations
-    "retryDelay": 1000,              // Delay between retries (ms)
-    "testTimeout": 60000,            // Test timeout (ms)
-    "hookTimeout": 10000,            // Setup/cleanup timeout (ms)
-    "sequentialExecution": true,     // Run tests sequentially
-    "verboseLogging": false          // Enable verbose logging
+    "cleanupAfterTests": true, // Auto-cleanup test data
+    "maxRetries": 3, // Retry failed operations
+    "retryDelay": 1000, // Delay between retries (ms)
+    "testTimeout": 60000, // Test timeout (ms)
+    "hookTimeout": 10000, // Setup/cleanup timeout (ms)
+    "sequentialExecution": true, // Run tests sequentially
+    "verboseLogging": false // Enable verbose logging
   }
 }
 ```
@@ -341,15 +361,18 @@ Note: When asserting IDs, use the resource-aware helper `E2EAssertions.expectRes
 ## 🌍 Environment Variables
 
 ### Required
+
 - `ATTIO_API_KEY` - Your Attio API key for workspace access
 
 ### Optional Test Control
+
 - `SKIP_E2E_TESTS=true` - Skip all E2E tests
 - `E2E_CLEANUP_AFTER_TESTS=false` - Disable automatic cleanup
 - `E2E_VERBOSE_LOGGING=true` - Enable verbose logging
 - `E2E_TEST_TIMEOUT=120000` - Override test timeout (ms)
 
 ### Optional Data Overrides
+
 - `E2E_TEST_PREFIX` - Override test data prefix
 - `E2E_TEST_EMAIL_DOMAIN` - Override test email domain
 - `E2E_TEST_COMPANY_DOMAIN` - Override test company domain
@@ -357,6 +380,7 @@ Note: When asserting IDs, use the resource-aware helper `E2EAssertions.expectRes
 - `E2E_EXISTING_PERSON_ID` - Use existing person for read tests
 
 ### Optional Feature Flags
+
 - `E2E_SKIP_DEAL_TESTS=true` - Skip deal tests
 - `E2E_SKIP_TASK_TESTS=true` - Skip task tests
 - `E2E_SKIP_CUSTOM_OBJECT_TESTS=true` - Skip custom object tests
@@ -364,6 +388,7 @@ Note: When asserting IDs, use the resource-aware helper `E2EAssertions.expectRes
 ## 🧪 Writing E2E Tests
 
 ### Basic Test Structure
+
 ```typescript
 import { describe, it, beforeAll, afterAll } from 'vitest';
 import { E2ETestBase } from '../setup.js';
@@ -374,7 +399,7 @@ describe('Universal Tools E2E', () => {
   beforeAll(async () => {
     await E2ETestBase.setup({
       requiresRealApi: true,
-      cleanupAfterTests: true
+      cleanupAfterTests: true,
     });
   });
 
@@ -384,11 +409,11 @@ describe('Universal Tools E2E', () => {
 
   it('should create company record', async () => {
     const companyData = CompanyFactory.create();
-    
+
     // Your test implementation here
     const response = await callMcpTool('create-record', {
       resource_type: 'companies',
-      record_data: companyData
+      record_data: companyData,
     });
 
     // Use custom E2E assertions
@@ -400,6 +425,7 @@ describe('Universal Tools E2E', () => {
 ```
 
 ### Using Test Fixtures
+
 ```typescript
 import companyFixtures from '../fixtures/companies.js';
 import personFixtures from '../fixtures/people.js';
@@ -413,6 +439,7 @@ const salesTeam = personFixtures.scenarios.salesOrganization();
 ```
 
 ### Custom Assertions
+
 ```typescript
 import { E2EAssertions, expectE2E } from '../utils/assertions.js';
 
@@ -430,6 +457,7 @@ expectE2E(email).toBeTestEmail();
 ## 🔍 Debugging
 
 ### Verbose Logging
+
 ```bash
 # Enable verbose logging for all operations
 npm run e2e:debug
@@ -439,6 +467,7 @@ E2E_VERBOSE_LOGGING=true npm run e2e
 ```
 
 ### Individual Test Debugging
+
 ```bash
 # Run specific test file with debugging
 vitest --config vitest.config.e2e.ts --reporter=verbose test/e2e/suites/universal-tools.e2e.test.ts
@@ -448,6 +477,7 @@ vitest --config vitest.config.e2e.ts -t "should create company"
 ```
 
 ### Configuration Debugging
+
 ```bash
 # Validate configuration
 npm run e2e:validate
@@ -465,11 +495,13 @@ npm run e2e:cleanup:dry
 **Root Cause:** E2E tests require `E2E_MODE=true` environment variable to activate mock data, but `npm test` uses the default vitest config instead of `vitest.config.e2e.ts`.
 
 **Symptoms:**
+
 - Tests fail with "ATTIO_API_KEY environment variable is required" even when it's set
 - Tests try to make real API calls instead of using mock data
 - Tests that previously passed suddenly fail after configuration changes
 
 **Solution:**
+
 ```bash
 # ❌ WRONG - Uses default vitest config, E2E tests will fail
 npm test
@@ -481,6 +513,7 @@ npx vitest --config vitest.config.e2e.ts
 ```
 
 **Why This Happens:**
+
 1. `npm test` runs `vitest` with default config (`vitest.config.ts`)
 2. Default config excludes integration tests but doesn't set `E2E_MODE=true`
 3. E2E tests need `vitest.config.e2e.ts` which sets critical environment variables:
@@ -489,6 +522,7 @@ npx vitest --config vitest.config.e2e.ts
    - E2E-specific test timeouts and setup
 
 **Prevention:**
+
 - Always use `npm run test:e2e` for E2E tests
 - Never run E2E tests with generic `npm test`
 - Check vitest config when tests mysteriously fail
@@ -496,6 +530,7 @@ npx vitest --config vitest.config.e2e.ts
 ### Common Issues
 
 #### Configuration Errors
+
 ```bash
 # Error: Configuration file not found
 # Solution: Copy template and configure
@@ -503,6 +538,7 @@ cp test/e2e/config.template.json test/e2e/config.local.json
 ```
 
 #### API Key Issues
+
 ```bash
 # Error: ATTIO_API_KEY required
 # Solution: Set environment variable
@@ -510,6 +546,7 @@ export ATTIO_API_KEY="your_key_here"
 ```
 
 #### Test Data Pollution
+
 ```bash
 # Clean up orphaned test data
 npm run e2e:cleanup:force
@@ -519,12 +556,15 @@ npm run e2e:cleanup:dry
 ```
 
 #### Workspace Permission Issues
+
 - Ensure API key has required permissions for all object types
 - Check that custom fields exist in your workspace
 - Verify deal stages match your workspace configuration
 
 ### Rate Limiting
+
 The E2E tests include automatic rate limiting to prevent API throttling:
+
 - Sequential test execution (no parallel requests)
 - Configurable request delays
 - Automatic retry with exponential backoff
@@ -532,6 +572,7 @@ The E2E tests include automatic rate limiting to prevent API throttling:
 ## 📊 CI/CD Integration
 
 ### GitHub Actions Example
+
 ```yaml
 name: E2E Tests
 on: [push, pull_request]
@@ -544,10 +585,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+
       - run: npm ci
       - run: npm run build
-      
+
       - name: Run E2E Tests
         env:
           ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
@@ -556,7 +597,9 @@ jobs:
 ```
 
 ### Environment-Specific Configuration
+
 For CI/CD, you can use environment variables instead of config files:
+
 ```bash
 export ATTIO_API_KEY="ci_api_key"
 export E2E_TEST_PREFIX="CI_TEST_"
@@ -567,6 +610,7 @@ export E2E_CLEANUP_AFTER_TESTS=true
 ## 🤝 Contributing
 
 ### Adding New Tests
+
 1. Create test files in `test/e2e/suites/`
 2. Use `.e2e.test.ts` extension
 3. Follow existing patterns and use fixtures
@@ -574,12 +618,14 @@ export E2E_CLEANUP_AFTER_TESTS=true
 5. Add cleanup tracking for any created objects
 
 ### Adding New Fixtures
+
 1. Add fixtures to appropriate files in `test/e2e/fixtures/`
 2. Follow naming conventions and include variety
 3. Create both individual fixtures and scenarios
 4. Include edge cases and performance test data
 
 ### Documentation Updates
+
 - Update this README for new features
 - Document configuration options
 - Include troubleshooting info for common issues
