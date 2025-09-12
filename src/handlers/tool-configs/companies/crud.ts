@@ -1,7 +1,7 @@
 /**
  * CRUD operation tool configurations for companies
  */
-import { Company } from '../../../types/attio.js';
+import { Company, AttioFieldValue } from '../../../types/attio.js';
 import {
   createCompany,
   updateCompany,
@@ -23,7 +23,9 @@ function extractCompanyDisplayInfo(company: Company): {
   id: string;
 } {
   // Handle potentially missing or malformed data safely
-  const name = (company?.values?.name as any)?.[0]?.value || 'Unnamed';
+  const name =
+    (company?.values?.name as unknown as AttioFieldValue[])?.[0]?.value ||
+    'Unnamed';
 
   // Handle the id which could be a string or an object with record_id
   let id: string = 'unknown';
