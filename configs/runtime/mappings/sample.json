@@ -1,45 +1,129 @@
 {
   "version": "1.0",
   "metadata": {
-    "generated": "2025-05-14T00:00:00Z",
-    "description": "Sample attribute mappings configuration - copy to user.json and customize"
+    "generated": "2025-01-22T00:00:00Z",
+    "description": "CUSTOM ATTRIBUTES/OVERRIDES ONLY - Template for workspace-specific mappings. Standard Attio attributes are in default.json. Copy to user.json and customize."
   },
   "mappings": {
     "attributes": {
       "common": {
-        "// Common mappings apply to all object types": "",
-        "Name": "name",
-        "Website": "website"
+        "// Only add custom common mappings here - standard mappings are in default.json": ""
       },
       "objects": {
-        "// Object-specific mappings take precedence over common mappings": "",
+        "// Only add custom attributes or overrides here - standard attributes are in default.json": "",
         "companies": {
-          "B2B Segment": "type_persona",
-          "// Add your custom company attributes here": ""
+          "// Custom company attribute examples": "",
+          "Lead Score": "lead_score_custom",
+          "Industry Segment": "industry_segment_custom",
+          "Annual Revenue": "annual_revenue_custom",
+          "Employee Count": "employee_count_custom",
+          "Technology Stack": "tech_stack_custom",
+          "Website": "website",
+          "About": "about",
+          "Services": "services",
+          "Notes": "notes"
         },
         "people": {
-          "First Name": "first_name",
-          "Last Name": "last_name",
-          "// Add your custom people attributes here": ""
+          "// Custom people attribute examples": "",
+          "Seniority Level": "seniority_level_custom",
+          "Decision Maker": "is_decision_maker_custom",
+          "Contact Preference": "contact_preference_custom",
+          "Last Contact Date": "last_contact_date_custom",
+          "Source": "source",
+          "Nickname": "nickname"
+        },
+        "deals": {
+          "// Custom deal attribute examples": "",
+          "Deal Source": "deal_source_custom",
+          "Expected Close Date": "expected_close_date_custom",
+          "Probability": "probability_custom",
+          "Close Reason": "close_reason_custom",
+          "Pipeline": "pipeline_custom"
         }
       },
       "custom": {
         "// Custom mappings for your specific workspace": "",
-        "My Custom Field": "custom_field_slug"
+        "// Example: Custom fields that don't fit standard objects": "",
+        "Product Interest": "product_interest_custom",
+        "Demo Scheduled": "demo_scheduled_custom",
+        "Research Notes": "research_notes_custom",
+        "Qualification Score": "qualification_score_custom",
+        "Referral Source": "referral_source_custom"
       }
     },
     "objects": {
-      "// Mappings for object names": "",
-      "Companies": "companies",
-      "People": "people"
+      "// Only add custom object mappings here - standard objects are in default.json": ""
     },
     "lists": {
-      "// Mappings for list names": "",
-      "My Important List": "important_list_slug"
+      "// Custom list mappings for your workspace": "",
+      "// Example: Pipeline and process lists": "",
+      "Prospects": "prospects_list",
+      "Qualified Leads": "qualified_leads_list",
+      "Active Opportunities": "active_opportunities_list",
+      "Won Deals": "won_deals_list",
+      "VIP Contacts": "vip_contacts_list"
     },
     "relationships": {
-      "// Mappings for relationship types": "",
-      "Works At": "works_at"
+      "// Custom relationship mappings - standard relationships are in default.json": "",
+      "Manages": "reports_to_custom",
+      "Referred By": "referred_by_custom",
+      "Main Contact": "main_contact"
+    },
+    "prospecting_list_pipeline": {
+      "// Example: Pipeline configuration for a Prospecting list": "",
+      "list_id": "your-list-id-here",
+      "list_name": "Prospecting",
+      "stage_attribute": "stage",
+      "stage_attribute_id": "your-stage-attribute-id",
+      "stages": {
+        "Interested": "Interested",
+        "Contacted": "Contacted",
+        "Discovery Call": "Discovery Call",
+        "Demo": "Demo",
+        "Won": "Won",
+        "Lost": "Lost"
+      }
+    },
+    "deals_pipeline": {
+      "// Example: Pipeline configuration for Deals object": "",
+      "object_name": "deals",
+      "stage_attribute": "stage",
+      "stage_attribute_id": "your-stage-attribute-id",
+      "stages": {
+        "MQL": "MQL",
+        "Interested": "Interested",
+        "Discovery Call": "Discovery Call",
+        "Demo": "Demo",
+        "Negotiations": "Negotiations",
+        "Won": "Won",
+        "Lost": "Lost"
+      }
+    },
+    "select_options": {
+      "// Example: Custom select field options": "",
+      "// Use these as templates for your custom select fields": "",
+      "industry_segment_custom": [
+        "Technology",
+        "Healthcare",
+        "Finance",
+        "Manufacturing",
+        "Retail",
+        "Other"
+      ],
+      "seniority_level_custom": [
+        "Individual Contributor",
+        "Manager",
+        "Director",
+        "VP",
+        "C-Level"
+      ],
+      "deal_source_custom": [
+        "Inbound",
+        "Outbound",
+        "Referral",
+        "Partner",
+        "Event"
+      ]
     }
   }
 }

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# DEPRECATED: Legacy git hooks installer for the Attio MCP project
+# This script is now deprecated in favor of Husky-managed hooks
+# See .husky/ directory for current hook implementation
+
+echo -e "\033[1;33mWARNING:\033[0m This script is deprecated. Git hooks are now managed by Husky."
+echo -e "Please use: \033[1;32mnpm install\033[0m to set up hooks automatically."
+echo -e "Hooks are located in .husky/ directory."
+exit 0
+
 # Script to install git hooks for the Attio MCP project
 # This script supports both copy and symlink installation methods
 

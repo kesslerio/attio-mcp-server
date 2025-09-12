@@ -1,43 +1,73 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 # Attio MCP GitHub Labels Setup Script
 # This script creates the required labels for the GitHub workflow system
 
+# Environment validation
+command -v gh >/dev/null || { echo "❌ gh CLI not found. Install GitHub CLI first."; exit 1; }
+gh auth status >/dev/null || { echo "❌ gh CLI not authenticated. Run 'gh auth login' first."; exit 1; }
+
+REPO="${REPO:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+export GH_REPO="$REPO"  # gh respects this when set
+DRY_RUN="${DRY_RUN:-false}"
+
+run() { 
+  echo "+ $*"
+  [ "$DRY_RUN" = "true" ] || "$@"
+}
+
+upsert_label() {
+  local name="$1" color="$2" desc="$3"
+  run gh label create "$name" --color "$color" --description "$desc" \
+    || run gh label edit "$name" --color "$color" --description "$desc"
+}
+
 echo "Setting up GitHub labels for Attio MCP workflow system..."
+echo "Repository: $REPO"
+[ "$DRY_RUN" = "true" ] && echo "🔍 DRY RUN MODE - no changes will be made"
 
 # Priority labels
 echo "Creating priority labels..."
-gh label create "P0" --color FF0000 --description "Critical priority" || echo "Label P0 already exists"
-gh label create "P1" --color FF9900 --description "High priority" || echo "Label P1 already exists"
-gh label create "P2" --color FFCC00 --description "Medium priority" || echo "Label P2 already exists"
-gh label create "P3" --color FFFF00 --description "Low priority" || echo "Label P3 already exists"
-gh label create "P4" --color CCFFCC --description "Trivial priority" || echo "Label P4 already exists"
+upsert_label "P0" "FF0000" "Critical priority"
+upsert_label "P1" "FF9900" "High priority"
+upsert_label "P2" "FFCC00" "Medium priority"
+upsert_label "P3" "FFFF00" "Low priority"
+upsert_label "P4" "CCFFCC" "Trivial priority"
+upsert_label "P5" "EDEDED" "Trivial priority - low effort tasks"
 
 # Type labels
 echo "Creating type labels..."
-gh label create "bug" --color d73a4a --description "Something isn't working" || echo "Label bug already exists"
-gh label create "feature" --color a2eeef --description "New feature or request" || echo "Label feature already exists"
-gh label create "enhancement" --color a2eeef --description "Improvement to existing functionality" || echo "Label enhancement already exists"
-gh label create "documentation" --color 0075ca --description "Documentation improvements" || echo "Label documentation already exists"
-gh label create "test" --color 0075ca --description "Test improvements" || echo "Label test already exists"
+upsert_label "bug" "d73a4a" "Something isn't working"
+upsert_label "feature" "a2eeef" "New feature or request"
+upsert_label "enhancement" "a2eeef" "Improvement to existing functionality"
+upsert_label "documentation" "0075ca" "Documentation improvements"
+upsert_label "test" "0075ca" "Test improvements"
+upsert_label "chore" "fef2c0" "Maintenance tasks and updates"
+upsert_label "refactor" "d4c5f9" "Code refactoring without functional changes"
+upsert_label "ci" "1f883d" "CI/CD pipeline improvements"
+upsert_label "dependencies" "0366d6" "Dependency updates and management"
 
 # Status labels
 echo "Creating status labels..."
-gh label create "status:ready" --color 0E8A16 --description "Ready for implementation" || echo "Label status:ready already exists"
-gh label create "status:in-progress" --color 1D76DB --description "Currently being worked on" || echo "Label status:in-progress already exists"
-gh label create "status:blocked" --color B60205 --description "Cannot proceed due to dependencies" || echo "Label status:blocked already exists"
-gh label create "status:needs-info" --color FEF2C0 --description "Requires additional information" || echo "Label status:needs-info already exists"
-gh label create "status:review" --color 5319E7 --description "Ready for or in review" || echo "Label status:review already exists"
-gh label create "status:untriaged" --color FBCA04 --description "Not yet assessed" || echo "Label status:untriaged already exists"
+upsert_label "status:ready" "0E8A16" "Ready for implementation"
+upsert_label "status:in-progress" "1D76DB" "Currently being worked on"
+upsert_label "status:blocked" "B60205" "Cannot proceed due to dependencies"
+upsert_label "status:needs-info" "FEF2C0" "Requires additional information"
+upsert_label "status:review" "5319E7" "Ready for or in review"
+upsert_label "status:untriaged" "FBCA04" "Not yet assessed"
+upsert_label "status:needs-design" "E99695" "Requires design or architectural planning"
+upsert_label "status:ready-for-qa" "BFD4F2" "Ready for quality assurance testing"
+upsert_label "status:qa-passed" "D4FDD4" "Quality assurance tests passed"
 
 # Area labels
 echo "Creating area labels..."
-gh label create "area:core" --color 0366d6 --description "Core module related issues" || echo "Label area:core already exists"
-gh label create "area:api" --color 0366d6 --description "API related issues" || echo "Label area:api already exists"
-gh label create "area:build" --color 0366d6 --description "Build system related issues" || echo "Label area:build already exists"
-gh label create "area:dist" --color 0366d6 --description "Distribution related issues" || echo "Label area:dist already exists"
-gh label create "area:documentation" --color 0366d6 --description "Documentation related issues" || echo "Label area:documentation already exists"
-gh label create "area:testing" --color 0366d6 --description "Testing related issues" || echo "Label area:testing already exists"
-gh label create "area:performance" --color 0366d6 --description "Performance related issues" || echo "Label area:performance already exists"
-gh label create "area:refactor" --color 0366d6 --description "Refactoring related issues" || echo "Label area:refactor already exists"
+upsert_label "area:core" "0366d6" "Core module related issues"
+upsert_label "area:api" "0366d6" "API related issues"
+upsert_label "area:build" "0366d6" "Build system related issues"
+upsert_label "area:dist" "0366d6" "Distribution related issues"
+upsert_label "area:documentation" "0366d6" "Documentation related issues"
+upsert_label "area:testing" "0366d6" "Testing related issues"
+upsert_label "area:performance" "0366d6" "Performance related issues"
+upsert_label "area:refactor" "0366d6" "Refactoring related issues"
 
 echo "✅ GitHub labels setup complete!"

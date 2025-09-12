@@ -1,0 +1,224 @@
+name: Issue & PR Hygiene
+
+on:
+  issues:
+    types: [opened, edited, reopened, labeled, unlabeled]
+  pull_request:
+    types: [opened, edited, synchronize, ready_for_review, labeled, reopened]
+
+# Cancel superseded runs on the same issue/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write # may be downgraded to read-only on forks
+  pull-requests: write # may be downgraded to read-only on forks
+
+env:
+  # Safe defaults (advisory). Flip to "true" to enforce.
+  STRICT_LABELS: 'false' # fail issues with missing categories
+  STRICT_PR_ISSUE: 'false' # fail PRs with no linked issue
+  STRICT_PR_AC: 'false' # fail PRs if AC exists but has unchecked items
+  ENFORCE_ON_LABEL: '' # e.g., "ready-to-merge" → only enforce when PR has that label
+  ONLY_PRIORITIES: 'P0,P1,P2' # AC enforcement scope when STRICT_PR_AC=true
+  STICKY_HEADER: 'issue-hygiene' # marker for upserted comments
+
+jobs:
+  issue_hygiene:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce required label categories (and nudge)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+
+            // Helper: upsert sticky comment to avoid spam
+            async function upsertSticky(body) {
+              const marker = `<!-- ${process.env.STICKY_HEADER} -->`;
+              const finalBody = `${marker}\n${body}`;
+              try {
+                const comments = await github.paginate(github.rest.issues.listComments, {
+                  owner, repo, issue_number: issue.number, per_page: 100
+                });
+                const mine = comments.find(c =>
+                  c.user?.type === "Bot" && typeof c.body === "string" && c.body.includes(marker)
+                );
+                if (mine) {
+                  await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body: finalBody });
+                } else {
+                  await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: finalBody });
+                }
+              } catch (e) {
+                core.info(`Non-fatal: could not create/update comment (forks often lack write perms): ${e.message}`);
+              }
+            }
+
+            const labels = (issue.labels || []).map(l => (typeof l === 'string' ? l : l.name)).filter(Boolean);
+            const lower  = labels.map(l => l.toLowerCase());
+            const has = (rx) => lower.some(l => rx.test(l));
+            const next = new Set(lower);
+
+            // Ensure status exists (default to untriaged). Do not auto-add others; just nudge.
+            if (!has(/^status:/)) next.add('status:untriaged');
+
+            // Apply normalized labels (keeps existing, adds default status if missing).
+            try {
+              await github.rest.issues.setLabels({
+                owner, repo, issue_number: issue.number,
+                labels: Array.from(next)
+              });
+            } catch (e) {
+              core.info(`Non-fatal: could not set labels (forks may be read-only): ${e.message}`);
+            }
+
+            // Compute missing categories
+            const missing = [];
+            if (!has(/^p[0-5]$/))        missing.push("Priority (P0–P5)");
+            if (!has(/^type:/))          missing.push("Type (type:*)");
+            if (![...next].some(l => /^status:/.test(l))) missing.push("Status (status:*)");
+            if (!has(/^area:/))          missing.push("Area (area:*)");
+
+            if (missing.length) {
+              const msg = [
+                `### 🧭 Issue hygiene`,
+                `Missing required label categories: **${missing.join(", ")}**.`,
+                `Please update labels (Priority one of P0–P5; Type "type:*"; Status "status:*"; at least one Area "area:*").`
+              ].join('\n');
+              await upsertSticky(msg);
+              if (process.env.STRICT_LABELS === "true") {
+                core.setFailed("Issue missing required label categories.");
+              }
+            } else {
+              // Optional nudge for Acceptance Criteria on high-priority issues (advisory)
+              const isHigh = lower.some(l => /^p[0-2]$/.test(l));
+              const body = issue.body || '';
+              const hasAC = /(^|\n)\s*[-*]\s*\[[ xX]\]\s+/.test(body); // any task list
+              if (isHigh && !hasAC) {
+                await upsertSticky([
+                  `### ✅ Acceptance Criteria requested`,
+                  `For P0–P2 issues, please include a short checklist to verify completeness before close:`,
+                  '```md',
+                  '### Acceptance Criteria',
+                  '- [ ] <criterion-1>',
+                  '- [ ] <criterion-2>',
+                  '```'
+                ].join('\n'));
+              }
+            }
+
+  pr_hygiene:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for linked issue & Acceptance Criteria (advisory by default)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr     = context.payload.pull_request;
+            const owner  = context.repo.owner;
+            const repo   = context.repo.repo;
+            const body   = pr.body || '';
+            const prLabels = (pr.labels || []).map(l => (typeof l === 'string' ? l : l.name).toLowerCase());
+
+            async function upsertSticky(body) {
+              const marker = `<!-- ${process.env.STICKY_HEADER} -->`;
+              const finalBody = `${marker}\n${body}`;
+              try {
+                const comments = await github.paginate(github.rest.issues.listComments, {
+                  owner, repo, issue_number: pr.number, per_page: 100
+                });
+                const mine = comments.find(c =>
+                  c.user?.type === "Bot" && typeof c.body === "string" && c.body.includes(marker)
+                );
+                if (mine) {
+                  await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body: finalBody });
+                } else {
+                  await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: finalBody });
+                }
+              } catch (e) {
+                core.info(`Non-fatal: could not create/update comment (forks often lack write perms): ${e.message}`);
+              }
+            }
+
+            // Enforce only when gated by label, if configured
+            const gateLabel = (process.env.ENFORCE_ON_LABEL || '').toLowerCase();
+            const gated = gateLabel ? prLabels.includes(gateLabel) : true;
+
+            // Detect linked issue (prefer closing keywords, then plain #123)
+            const closeRe = /(close[sd]?|fix(e[sd])?|resolve[sd]?)\s+#(\d+)/i;
+            let m = body.match(closeRe);
+            if (!m) m = body.match(/#(\d+)/);
+            if (!m) {
+              const msg = `### 🔗 Linked issue\nNo linked issue found in PR description. Please reference one (e.g., \`Closes #123\`).`;
+              await upsertSticky(msg);
+              if (process.env.STRICT_PR_ISSUE === "true" && gated) {
+                core.setFailed("PR missing linked issue.");
+              }
+              return;
+            }
+            const issue_number = Number(m[m.length - 1]); // last capture is the number
+            let issue;
+            try {
+              issue = (await github.rest.issues.get({ owner, repo, issue_number })).data;
+            } catch (e) {
+              await upsertSticky(`### 🔗 Linked issue\nCould not fetch issue #${issue_number}: ${e.message}`);
+              return;
+            }
+
+            // Parse Acceptance Criteria from the issue body (between AC header and next header)
+            const ibody = issue.body || '';
+            const acHead = /^(#+\s*Acceptance Criteria.*?)$/im;
+            const headMatch = ibody.match(acHead);
+            let acBlock = '';
+            if (headMatch) {
+              const start = ibody.indexOf(headMatch[0]);
+              const tail  = ibody.slice(start);
+              const next  = tail.search(/^#+\s+/m);
+              acBlock = next > 0 ? tail.slice(0, next) : tail;
+            }
+
+            // Count task items (support "-" and "*")
+            let checked = 0, unchecked = 0;
+            if (acBlock) {
+              const items = acBlock.match(/^\s*[-*]\s*\[( |x|X)\]\s+.*$/gm) || [];
+              for (const it of items) {
+                if (/\[(x|X)\]/.test(it)) checked++; else unchecked++;
+              }
+            }
+
+            // Decide enforcement based on priority + flags
+            const priorities = (process.env.ONLY_PRIORITIES || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            const issueLabels = (issue.labels || []).map(l => (typeof l === 'string' ? l : l.name).toLowerCase());
+            const issuePriority = issueLabels.find(l => /^p[0-5]$/.test(l));
+            const priorityInScope = priorities.length ? priorities.includes((issuePriority || '').toLowerCase()) : true;
+
+            if (acBlock && unchecked > 0) {
+              const msg = [
+                `### ✅ Acceptance Criteria`,
+                `Linked issue #${issue_number} has **${unchecked} unchecked** item(s) (checked: ${checked}).`,
+                `Please update the issue or the PR before merging.`
+              ].join('\n');
+              await upsertSticky(msg);
+              if (process.env.STRICT_PR_AC === "true" && gated && priorityInScope) {
+                core.setFailed("PR failing AC guard: linked issue has unchecked Acceptance Criteria.");
+              }
+            } else if (!acBlock && issuePriority && /^p[0-2]$/.test(issuePriority)) {
+              await upsertSticky([
+                `### ✅ Acceptance Criteria`,
+                `This is a high-priority issue (${issuePriority}). Consider adding a short checklist to the issue to verify completeness before merge:`,
+                '```md',
+                '### Acceptance Criteria',
+                '- [ ] <criterion-1>',
+                '- [ ] <criterion-2>',
+                '```'
+              ].join('\n'));
+            } else {
+              // Clean success note (won't spam due to sticky update)
+              await upsertSticky(`### 🧭 Hygiene checks\nLabels present and linked issue parsed${acBlock ? ' (AC found)' : ''}.`);
+            }

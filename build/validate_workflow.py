@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""
-Attio MCP Workflow Validator
-
-This script validates adherence to Attio MCP workflow requirements by checking:
-1. Git commit message format and issue references
-2. Branch naming conventions
-3. Verification of test execution
-4. Documentation requirements
-
-Usage:
-  ./build/validate_workflow.py [--pre-commit] [--issue-close ISSUE_ID]
-"""
+# -*- coding: utf-8 -*-
 
 import argparse
 import json
@@ -18,11 +7,10 @@ import os
 import re
 import subprocess
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 
 class Color:
-    """Terminal colors for formatted output."""
     RED = "\033[91m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
@@ -31,262 +19,381 @@ class Color:
     END = "\033[0m"
 
 
+def _disable_colors():
+    Color.RED = ""
+    Color.GREEN = ""
+    Color.YELLOW = ""
+    Color.BLUE = ""
+    Color.BOLD = ""
+    Color.END = ""
+
+
 def print_error(message: str) -> None:
-    """Print error message in red."""
     print(f"{Color.RED}{Color.BOLD}ERROR:{Color.END} {message}")
 
 
 def print_warning(message: str) -> None:
-    """Print warning message in yellow."""
     print(f"{Color.YELLOW}{Color.BOLD}WARNING:{Color.END} {message}")
 
 
 def print_success(message: str) -> None:
-    """Print success message in green."""
     print(f"{Color.GREEN}{Color.BOLD}SUCCESS:{Color.END} {message}")
 
 
 def print_info(message: str) -> None:
-    """Print info message in blue."""
     print(f"{Color.BLUE}{Color.BOLD}INFO:{Color.END} {message}")
 
 
 def run_command(command: List[str]) -> Tuple[str, int]:
-    """Run command and return output and exit code."""
     try:
         result = subprocess.run(
             command,
             check=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
         )
         return result.stdout.strip(), result.returncode
+    except FileNotFoundError:
+        return "", 127
     except Exception as e:
         return str(e), 1
 
 
-def validate_branch_name() -> bool:
-    """Validate branch name follows conventions."""
-    branch_output, _ = run_command(["git", "branch", "--show-current"])
-    branch_name = branch_output.strip()
-    
-    if branch_name == "main":
-        print_warning("You are on the main branch. Create a feature branch unless this is a critical hotfix.")
+# ------------------------ Commit Message Validation ------------------------- #
+
+def _allowed_prefixes_from_env(defaults: List[str]) -> List[str]:
+    raw = os.environ.get("ALLOWED_PREFIXES", "")
+    if not raw:
+        return defaults
+    # Split on comma or space, keep suffix ':' if provided; normalize spacing
+    toks = [t.strip() for t in re.split(r"[\s,]+", raw) if t.strip()]
+    # Ensure they end with ':' for our startswith check
+    norm = [t if t.endswith(":") else t + ":" for t in toks]
+    return norm or defaults
+
+
+def validate_commit_message_text(msg: str, allow_no_issue: bool = False) -> bool:
+    """Validate commit message against repo conventions.
+
+    Accepts either our "Prefix: subject" style or Conventional Commits (e.g.,
+    "feat(scope): subject"). Requires an issue reference unless bypassed.
+    """
+    first = (msg.splitlines()[0] if msg else "").strip()
+    max_len = int(os.environ.get("COMMIT_TITLE_MAXLEN", "0"))  # 0 = disabled
+    if max_len and len(first) > max_len:
+        print_warning(f"Commit title is {len(first)} chars (>{max_len}). Consider tightening.")
+
+    # Auto-allow merges/reverts/releases
+    if first.startswith("Merge ") or first.startswith("Revert ") or first.startswith("Release "):
+        print_info("Merge/Revert/Release commit detected — skipping prefix check")
         return True
-    
-    valid_prefixes = ["feature/", "fix/", "docs/", "refactor/", "test/"]
-    
-    if not any(branch_name.startswith(prefix) for prefix in valid_prefixes):
-        print_error(f"Branch name '{branch_name}' should start with one of: {', '.join(valid_prefixes)}")
+
+    # 1) Prefix style (configurable)
+    default_prefixes = [
+        "Feature:", "Fix:", "Docs:", "Documentation:", "Refactor:",
+        "Test:", "Chore:", "CI:", "Build:", "Perf:", "Hotfix:", "Release:",
+    ]
+    allowed_prefixes = _allowed_prefixes_from_env(default_prefixes)
+
+    prefix_ok = any(first.lower().startswith(p.lower()) for p in allowed_prefixes)
+
+    # 2) Conventional Commits style (type(scope)!?: ...)
+    cc_types = (
+        "feat|fix|docs|refactor|test|chore|ci|build|perf|revert|release|style"
+    )
+    cc_re = re.compile(rf"^(?:{cc_types})(?:\([^)]+\))?!?:\s+.+", re.IGNORECASE)
+    cc_ok = bool(cc_re.match(first))
+
+    if not (prefix_ok or cc_ok):
+        print_error(
+            "Commit message must start with one of: "
+            + ", ".join(allowed_prefixes)
+            + "  OR match Conventional Commits (e.g., 'feat: ...')."
+        )
+        print_error(f"First line was: '{first}'")
         return False
-    
-    if not re.match(r"^[a-z0-9/\-_]+$", branch_name):
-        print_error(f"Branch name '{branch_name}' should only contain lowercase letters, numbers, hyphens, and underscores")
-        return False
-    
-    print_success(f"Branch name '{branch_name}' follows naming conventions")
+
+    # Issue reference requirement
+    allow_no_issue = allow_no_issue or os.environ.get("ALLOW_NO_ISSUE", "").lower() in {"1", "true", "yes"}
+    if not allow_no_issue:
+        # Accept #123, ISSUE-123 (case-insensitive), or ABC-123 (Jira)
+        issue_ok = bool(re.search(r"(#[0-9]+|issue-[0-9]+|[A-Z][A-Z0-9]+-[0-9]+)", msg, re.IGNORECASE))
+        if not issue_ok:
+            print_error("Commit message must reference an issue (e.g., #123, issue-123, or ABC-123)")
+            return False
+
+    print_success("Commit message format OK")
     return True
 
 
-def validate_commit_message(commit_msg: str) -> bool:
-    """Validate commit message format and issue references."""
-    # Print debug information
-    print_info(f"Validating commit message: '{commit_msg[:50]}...'")
-    
-    # Skip validation for merge commits
-    if commit_msg.startswith("Merge "):
-        print_info("Detected merge commit, skipping validation")
-        return True
-    
-    # Check if commit message is a hotfix
-    is_hotfix = "[HOTFIX]" in commit_msg
-    if is_hotfix:
-        print_info("Detected hotfix commit, skipping prefix validation")
-        return True
-    
-    # Check commit message format
-    prefixes = ["Feature:", "Fix:", "Docs:", "Documentation:", "Refactor:", "Test:", "Chore:"]
-    
-    # Get the first line of the commit message
-    first_line = commit_msg.split('\n')[0].strip()
-    print_info(f"First line: '{first_line}'")
-    
-    # Try multiple matching approaches
-    # 1. Direct prefix match
-    direct_match = any(first_line.startswith(prefix) for prefix in prefixes)
-    
-    # 2. Case-insensitive match
-    case_insensitive_match = any(first_line.lower().startswith(prefix.lower()) for prefix in prefixes)
-    
-    # 3. Fuzzy match - check if any prefix is contained at the start with some tolerance
-    fuzzy_match = False
-    for prefix in prefixes:
-        prefix_lower = prefix.lower()
-        if prefix_lower[:-1] in first_line.lower()[:15]:  # Allow for slight variations, check without colon
-            fuzzy_match = True
-            break
-    
-    # Combine all matching approaches
-    has_prefix = direct_match or case_insensitive_match or fuzzy_match
-    
-    if not has_prefix:
-        print_error(f"Commit message should start with one of: {', '.join(prefixes)}")
-        print_error(f"Current first line: '{first_line}'")
+def validate_commit_message_file(path: str, allow_no_issue: bool = False) -> bool:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            msg = f.read()
+    except Exception as e:
+        print_warning(f"Could not read commit message file '{path}': {e}")
         return False
-    else:
-        print_success("Commit message has valid prefix")
-    
-    # Check for issue reference
-    issue_ref = re.search(r"(#\d+)", commit_msg)
-    if not issue_ref:
-        print_warning("Commit message should reference an issue number (e.g., #123)")
-        # Non-blocking warning
-    else:
-        print_success(f"Found issue reference: {issue_ref.group(1)}")
-    
-    return True
+    return validate_commit_message_text(msg, allow_no_issue=allow_no_issue)
 
+
+# --------------------------- Branch Name Validation ------------------------- #
+
+def get_current_branch() -> str:
+    """Return the current git branch name (or 'HEAD' if detached)."""
+    out, code = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    if code != 0 or not out:
+        print_warning(f"Could not determine current branch: {out}")
+        return ""
+    return out.strip()
+
+
+def validate_branch_name_text(name: str) -> bool:
+    """Validate branch name against repo conventions.
+
+    Allowed:
+      - protected branches: main, master, develop, staging, production
+      - type/TICKET[-slug]
+          where type ∈ {feature, fix, hotfix, chore, docs, documentation, refactor, test, ci, perf, build, release}
+          and TICKET ∈ {issue-<n>, <JIRAKEY>-<n>, <n>}
+          slug is optional and may contain [a-z0-9._-]
+    """
+    protected = {"main", "master", "develop", "staging", "production"}
+    if name in protected or name == "HEAD":
+        print_success(f"Branch '{name}' is allowed")
+        return True
+
+    if " " in name:
+        print_error("Branch name must not contain spaces")
+        return False
+
+    allowed_types = (
+        "feature|fix|hotfix|chore|docs|documentation|refactor|test|ci|perf|build|release"
+    )
+    pattern = re.compile(
+        rf"^(?:{allowed_types})/(?:issue-\d+|[A-Z][A-Z0-9]+-\d+|\d+)(?:-[a-z0-9._-]+)*$"
+    )
+    if pattern.fullmatch(name):
+        print_success(f"Branch '{name}' matches naming convention")
+        return True
+
+    print_error(
+        "Invalid branch name. Expected 'type/TICKET[-slug]' where type is one of "
+        "feature, fix, hotfix, chore, docs, documentation, refactor, test, ci, perf, build, release "
+        "and TICKET is issue-<n> / ABC-<n> / <n>."
+    )
+
+    lowered = name.lower()
+    if lowered != name:
+        print_info(f"Suggestion: use lowercase for the slug → '{lowered}'")
+
+    parts = re.split(r"[/_-]", name)
+    guess_issue = next((p for p in parts if p.isdigit()), "123")
+    print_info("Examples: feature/issue-" + guess_issue + "-short-slug  |  fix/ABC-" + guess_issue)
+    return False
+
+
+# ---------------------------- Issue Closure Check --------------------------- #
+
+def _ensure_gh() -> bool:
+    out, code = run_command(["gh", "--version"])
+    if code in (0,):
+        return True
+    print_error("GitHub CLI ('gh') not found. Install it or ensure it's on PATH.")
+    return False
+
+def _append_summary(lines: List[str]) -> None:
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    except Exception:
+        pass
 
 def validate_issue_closure(issue_id: str) -> bool:
-    """Validate issue closure requirements."""
+    """Validate issue closure requirements with detailed feedback.
+
+    - Lists each unchecked Markdown task list item ("- [ ] ...")
+    - Verifies required narrative sections
+    - Checks presence of required label categories (priority/type/status/area)
+    - Writes a rich summary to $GITHUB_STEP_SUMMARY when running in Actions
+    """
+    if not _ensure_gh():
+        return False
+
     # Get issue details using GitHub CLI
     output, exit_code = run_command(["gh", "issue", "view", issue_id])
     if exit_code != 0:
         print_error(f"Failed to retrieve issue #{issue_id}: {output}")
         return False
-    
-    # Check if all checkboxes are marked as completed
-    unchecked_items = re.findall(r"- \[ \]", output)
-    if unchecked_items:
-        print_error(f"Issue #{issue_id} has {len(unchecked_items)} unchecked criteria")
-        return False
-    
-    # Check if implementation comment exists
-    comment_sections = [
-        "Implementation Details",
-        "Key Implementation Elements",
-        "Lessons Learned",
-        "Challenges/Solutions",
-        "Future Considerations"
-    ]
-    
-    missing_sections = []
-    for section in comment_sections:
-        if section not in output:
-            missing_sections.append(section)
-    
-    if missing_sections:
-        print_error(f"Issue #{issue_id} is missing these required sections: {', '.join(missing_sections)}")
-        return False
-    
-    # Check for verification statement
-    if "✅ VERIFICATION:" not in output:
-        print_error(f"Issue #{issue_id} is missing the verification statement")
-        return False
-    
-    # Check if required labels are applied
-    labels_output, _ = run_command(["gh", "issue", "view", issue_id, "--json", "labels"])
+
+    # Parse labels (JSON) once for policy decisions
+    labels_output, _ = run_command(["gh", "issue", "view", issue_id, "--json", "labels,body,title,number"])
     try:
         labels_data = json.loads(labels_output)
         label_names = [label["name"] for label in labels_data.get("labels", [])]
-        
-        # Check for required label categories
-        has_priority = any(label.startswith("P") and label[1:2].isdigit() for label in label_names)
-        has_type = any(label in ["bug", "feature", "enhancement", "documentation", "test"] for label in label_names)
-        has_area = any(label.startswith("area:") for label in label_names)
-        has_status = any(label.startswith("status:") for label in label_names)
-        
-        missing_label_categories = []
-        if not has_priority:
-            missing_label_categories.append("Priority (P0-P4)")
-        if not has_type:
-            missing_label_categories.append("Type (bug, feature, etc.)")
-        if not has_area:
-            missing_label_categories.append("Area (area:*)")
-        if not has_status:
-            missing_label_categories.append("Status (status:*)")
-        
-        if missing_label_categories:
-            print_error(f"Issue #{issue_id} is missing required label categories: {', '.join(missing_label_categories)}")
-            return False
-            
+        issue_body = labels_data.get("body", "") or ""
     except (json.JSONDecodeError, KeyError) as e:
         print_error(f"Failed to parse labels for issue #{issue_id}: {e}")
         return False
-    
+
+    labels_lower = [l.lower() for l in label_names]
+
+    # Label categories
+    has_priority = any(re.fullmatch(r"p[0-5]", l) for l in labels_lower)
+    has_type = any(l.startswith("type:") for l in labels_lower) or any(
+        l in ["bug", "feature", "enhancement", "documentation", "test", "chore", "refactor", "ci", "dependencies"]
+        for l in labels_lower
+    )
+    has_area = any(l.startswith("area:") for l in labels_lower)
+    has_status = any(l.startswith("status:") for l in labels_lower)
+
+    missing_label_categories = []
+    if not has_priority:
+        missing_label_categories.append("Priority (P0–P5)")
+    if not has_type:
+        missing_label_categories.append("Type (type:bug|feature|enhancement|documentation|test|chore|refactor|ci|dependencies)")
+    if not has_area:
+        missing_label_categories.append("Area (area:*)")
+    if not has_status:
+        missing_label_categories.append("Status (status:*)")
+
+    if missing_label_categories:
+        _append_summary([
+            f"### Issue #{issue_id} validation",
+            f"- ❌ Missing label categories: {', '.join(missing_label_categories)}"
+        ])
+        print_error(f"Issue #{issue_id} is missing required label categories: {', '.join(missing_label_categories)}")
+        return False
+
+    # ----- Acceptance Criteria policy -----
+    # AC is enforced based on strict-mode and priority
+    # Determine priority bucket
+    priority = next((l.lower() for l in label_names if re.fullmatch(r"P[0-5]", l, re.I)), "").lower()
+    is_high_priority = priority in ("p0", "p1", "p2")
+
+    # Count checkboxes if any are present
+    task_any = re.compile(r"(?m)^\s*[-*]\s*\[[ xX]\]\s+")
+    task_open = re.compile(r"(?m)^\s*[-*]\s*\[\s\]\s+")
+    total_boxes = len(task_any.findall(issue_body))
+    unchecked_boxes = len(task_open.findall(issue_body))
+
+    # Read global args from env to keep function signature simple
+    strict_mode = os.environ.get("AC_STRICT_MODE", "auto")  # off|auto|strict
+    require_sections = os.environ.get("REQUIRE_SECTIONS", "")  # comma-separated
+    require_verification = os.environ.get("REQUIRE_VERIFICATION", "false").lower() == "true"
+
+    def is_strict() -> bool:
+        if strict_mode == "strict":
+            return True
+        if strict_mode == "off":
+            return False
+        # auto mode
+        return is_high_priority or ("enforce:strict" in [l.lower() for l in label_names])
+
+    # Enforce sections only if provided
+    if require_sections:
+        sections = [s.strip() for s in require_sections.split(",") if s.strip()]
+        missing = [s for s in sections if s not in issue_body]
+        if missing:
+            if is_strict():
+                print_error(f"Issue #{issue_id} missing required sections: {', '.join(missing)}")
+                return False
+            else:
+                print_warning(f"Issue #{issue_id} missing optional sections: {', '.join(missing)}")
+
+    # Enforce verification phrase only if requested
+    if require_verification:
+        if not re.search(r"(✅\s*)?verification\s*:", issue_body, re.IGNORECASE):
+            if is_strict():
+                print_error(f"Issue #{issue_id} missing verification section")
+                return False
+            else:
+                print_warning(f"Issue #{issue_id} missing verification section")
+
+    # Acceptance Criteria enforcement
+    if total_boxes > 0 and unchecked_boxes > 0:
+        msg = f"Issue #{issue_id} has {unchecked_boxes} unchecked acceptance criteria"
+        if is_strict():
+            print_error(msg)
+            return False
+        else:
+            print_warning(msg)
+
+    _append_summary([
+        f"### Issue #{issue_id} validation",
+        f"- Labels OK: {', '.join(label_names)}",
+        f"- Acceptance criteria: {'OK' if unchecked_boxes == 0 else f'{unchecked_boxes} unchecked'}",
+    ])
+
     print_success(f"Issue #{issue_id} meets all closure requirements")
     return True
 
+# ---------------------------------- Main ----------------------------------- #
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate Attio MCP workflow requirements")
+    parser.add_argument("--commit-msg-file", metavar="PATH", help="Validate a commit message file (Husky commit-msg hook passes $1)")
     parser.add_argument("--pre-commit", action="store_true", help="Run pre-commit validations")
+    parser.add_argument("--validate-branch", action="store_true", help="Validate current git branch name")
     parser.add_argument("--issue-close", help="Validate issue closure requirements for the specified issue ID")
-    
+    parser.add_argument("--strict-mode", choices=["off","auto","strict"], default="auto")
+    parser.add_argument("--require-sections", nargs="*", default=[])
+    parser.add_argument("--require-verification", action="store_true")
+    parser.add_argument("--allow-no-issue", action="store_true", help="Allow commit messages without issue references (or set ALLOW_NO_ISSUE=1)")
+    parser.add_argument("--no-color", action="store_true", help="Disable ANSI colors (or set NO_COLOR=1)")
+    parser.add_argument("--print-config", action="store_true", help="Print current validation config and exit")
+
     args = parser.parse_args()
-    
-    if args.pre_commit:
-        # Validate branch name
-        branch_valid = validate_branch_name()
-        
-        # Validate commit message
-        # Check for Husky environment variables first (from Husky v4 or v5+)
-        husky_params = os.environ.get("HUSKY_GIT_PARAMS") or os.environ.get("GIT_PARAMS")
-        
-        if husky_params:
-            print_info(f"Using Husky params: {husky_params}")
-            # In Husky, this is typically the path to the commit message file
-            try:
-                with open(husky_params, "r") as f:
-                    commit_msg = f.read().strip()
-                print_info("Successfully read commit message from Husky params")
-            except Exception as e:
-                print_warning(f"Error reading Husky commit message file: {e}")
-                commit_msg = None
-        else:
-            # Try multiple possible locations for the commit message file
-            possible_commit_msg_files = [
-                os.environ.get("GIT_COMMIT_MSG_FILE"),  # From environment variable
-                ".git/COMMIT_EDITMSG",                  # Standard Git location
-                os.path.join(os.getcwd(), ".git/COMMIT_EDITMSG"),  # Absolute path
-                ".git/MERGE_MSG"                        # For merge commits
-            ]
-            
-            commit_msg = None
-            for file_path in possible_commit_msg_files:
-                if file_path and os.path.exists(file_path):
-                    try:
-                        with open(file_path, "r") as f:
-                            commit_msg = f.read().strip()
-                        print_info(f"Successfully read commit message from {file_path}")
-                        break
-                    except Exception as e:
-                        print_warning(f"Error reading {file_path}: {e}")
-        
-        if not commit_msg:
-            # If we can't find the commit message file, try to get it from the command line
-            # This is a fallback for testing purposes
-            print_warning("Could not find commit message file, using test message")
-            commit_msg = "Feature: Test commit message"
-        
-        commit_valid = validate_commit_message(commit_msg)
-        
-        if not branch_valid or not commit_valid:
-            return 1
-        
-        print_success("All pre-commit checks passed!")
+
+    # Color control
+    if args.no_color or os.environ.get("NO_COLOR") or not sys.stdout.isatty():
+        _disable_colors()
+
+    if args.print_config:
+        defaults = [
+            "Feature:", "Fix:", "Docs:", "Documentation:", "Refactor:",
+            "Test:", "Chore:", "CI:", "Build:", "Perf:", "Hotfix:", "Release:",
+        ]
+        print_info("Allowed commit prefixes: " + ", ".join(_allowed_prefixes_from_env(defaults)))
+        print_info("Conventional Commit types allowed: feat, fix, docs, refactor, test, chore, ci, build, perf, revert, release, style")
+        print_info("Require issue reference: " + ("no" if args.allow_no_issue or os.environ.get("ALLOW_NO_ISSUE", "").lower() in {"1", "true", "yes"} else "yes"))
+        print_info(f"Strict-mode: {args.strict_mode}")
+        if args.require_sections:
+            print_info("Required sections: " + ", ".join(args.require_sections))
+        print_info("Require verification: " + ("yes" if args.require_verification else "no"))
         return 0
-    
+
+    # Back-compat: tolerate --pre-commit alone
+    if args.pre_commit and not (args.commit_msg_file or args.issue_close or args.validate_branch):
+        print_info("--pre-commit: no-op (use lint-staged & dedicated hooks)")
+        return 0
+
+    if args.validate_branch:
+        branch = get_current_branch()
+        if not branch:
+            return 1
+        ok = validate_branch_name_text(branch)
+        return 0 if ok else 1
+
+    if args.commit_msg_file:
+        ok = validate_commit_message_file(args.commit_msg_file, allow_no_issue=args.allow_no_issue)
+        return 0 if ok else 1
+
     elif args.issue_close:
+        # Pass policy via env (keeps current function signature)
+        os.environ["AC_STRICT_MODE"] = args.strict_mode
+        os.environ["REQUIRE_SECTIONS"] = ",".join(args.require_sections or [])
+        os.environ["REQUIRE_VERIFICATION"] = "true" if args.require_verification else "false"
         if validate_issue_closure(args.issue_close):
             return 0
         else:
             return 1
-    
-    else:
-        parser.print_help()
-        return 0
+
+    parser.print_help()
+    return 0
 
 
 if __name__ == "__main__":
