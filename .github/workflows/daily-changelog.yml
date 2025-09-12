@@ -20,6 +20,41 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Get full history for changelog generation
+          token: ${{ github.token }}
+
+      - name: Configure git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Environment check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "=== Environment Check ==="
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Ref: ${{ github.ref }}"
+
+          # Check tools availability
+          git --version
+          gh --version || echo "WARNING: gh CLI not available"
+
+          # Check permissions
+          echo "Testing git write permissions..."
+          git status
+
+          echo "Testing GitHub API access..."
+          gh auth status || echo "WARNING: GitHub auth may have issues"
+
+          # Check recent commits
+          echo "Recent commits (last 24h):"
+          COMMITS=$(git log --since="1 day ago" --oneline --no-merges || echo "No commits found")
+          echo "$COMMITS"
+
+          if [ -z "$COMMITS" ] || [ "$COMMITS" = "No commits found" ]; then
+            echo "No commits in last 24 hours - workflow may exit early"
+          fi
 
       - name: Generate changelog with Claude
         uses: anthropics/claude-code-action@v1
@@ -28,23 +63,130 @@ jobs:
           prompt: |
             Generate a daily changelog by analyzing commits since yesterday.
 
-            Tasks:
-            1. Review git commits from the last 24 hours
+            IMPORTANT: You have full permissions to write files and create branches. Use the following workflow:
+
+            1. Review git commits from the last 24 hours using: git log --since="1 day ago" --oneline
             2. Categorize changes (Features, Fixes, Refactor, Documentation, etc.)
-            3. Update CHANGELOG.md with a new section for today's date
-            4. Create a new branch and commit the changes
-            5. Open a PR with title "chore: Daily changelog for [date]"
+            3. Check if there are meaningful changes worth documenting
+            4. If yes, create a branch: git checkout -b chore/daily-changelog-$(date +%Y-%m-%d)
+            5. Update CHANGELOG.md by adding a new section after "## [Unreleased]"
+            6. Commit changes: git add CHANGELOG.md && git commit -m "chore: Daily changelog for $(date +%Y-%m-%d)"
+            7. Push branch: git push -u origin HEAD
+            8. Create PR using: gh pr create --title "chore: Daily changelog for $(date +%Y-%m-%d)" --body "Automated daily changelog generation"
 
             Format the changelog entry as:
             ## [YYYY-MM-DD] - Daily Update
             ### Added
-            - New features...
+            - New features with PR/issue references
             ### Fixed  
-            - Bug fixes...
+            - Bug fixes with PR/issue references
             ### Changed
-            - Refactoring...
+            - Refactoring/improvements with PR/issue references
             ### Documentation
-            - Docs updates...
+            - Docs updates with PR/issue references
 
-            Include brief descriptions and PR/issue references where relevant.
-            Skip this workflow if no meaningful changes occurred yesterday.
+            Rules:
+            - Only include meaningful changes (exclude merge commits)
+            - Include PR/issue numbers where available
+            - If no meaningful changes, output "No meaningful changes since yesterday - skipping changelog update"
+            - Group related changes logically
+            - Use past tense for all entries
+
+      - name: Fallback changelog generation
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Claude action failed, using fallback method..."
+
+          # Get commits from last 24 hours
+          COMMITS=$(git log --since="1 day ago" --oneline --no-merges | grep -E "(Fix|Feature|Add|Update|Improve|Remove|Refactor)" || true)
+
+          if [ -z "$COMMITS" ]; then
+            echo "No meaningful changes since yesterday - skipping changelog update"
+            exit 0
+          fi
+
+          # Create changelog entry
+          TODAY=$(date +%Y-%m-%d)
+          BRANCH_NAME="chore/daily-changelog-${TODAY}"
+
+          git checkout -b "$BRANCH_NAME"
+
+          # Prepare changelog content
+          CHANGELOG_ENTRY="## [$TODAY] - Daily Update\n\n"
+
+          # Categorize commits
+          FEATURES=$(echo "$COMMITS" | grep -E "(Feature|Add)" || true)
+          FIXES=$(echo "$COMMITS" | grep -E "(Fix|Improve)" || true)  
+          CHANGES=$(echo "$COMMITS" | grep -E "(Update|Refactor|Change)" || true)
+
+          if [ ! -z "$FEATURES" ]; then
+            CHANGELOG_ENTRY="${CHANGELOG_ENTRY}### Added\n"
+            echo "$FEATURES" | while read line; do
+              if [ ! -z "$line" ]; then
+                CHANGELOG_ENTRY="${CHANGELOG_ENTRY}- ${line#* }\n"
+              fi
+            done
+            CHANGELOG_ENTRY="${CHANGELOG_ENTRY}\n"
+          fi
+
+          if [ ! -z "$FIXES" ]; then
+            CHANGELOG_ENTRY="${CHANGELOG_ENTRY}### Fixed\n"
+            echo "$FIXES" | while read line; do
+              if [ ! -z "$line" ]; then
+                CHANGELOG_ENTRY="${CHANGELOG_ENTRY}- ${line#* }\n"
+              fi
+            done
+            CHANGELOG_ENTRY="${CHANGELOG_ENTRY}\n"
+          fi
+
+          if [ ! -z "$CHANGES" ]; then
+            CHANGELOG_ENTRY="${CHANGELOG_ENTRY}### Changed\n"
+            echo "$CHANGES" | while read line; do  
+              if [ ! -z "$line" ]; then
+                CHANGELOG_ENTRY="${CHANGELOG_ENTRY}- ${line#* }\n"
+              fi
+            done
+            CHANGELOG_ENTRY="${CHANGELOG_ENTRY}\n"
+          fi
+
+          # Insert into CHANGELOG.md after "## [Unreleased]"
+          sed -i "/^## \[Unreleased\]/a\\
+          $CHANGELOG_ENTRY" CHANGELOG.md
+
+          # Commit and push
+          git add CHANGELOG.md
+          git commit -m "chore: Daily changelog for $TODAY"
+          git push -u origin HEAD
+
+          # Create PR
+          gh pr create --title "chore: Daily changelog for $TODAY" --body "Automated daily changelog generation (fallback method)"
+
+          echo "Fallback changelog generation completed successfully"
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          echo "=== Daily Changelog Workflow Summary ==="
+          echo "Date: $(date +%Y-%m-%d)"
+          echo "Repository: ${{ github.repository }}"
+          echo "Triggered by: ${{ github.event_name }}"
+
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Status: SUCCESS - Changelog generated and PR created"
+          elif [ "${{ job.status }}" = "failure" ]; then
+            echo "❌ Status: FAILED - Check logs for details"
+          else
+            echo "⚠️  Status: ${{ job.status }}"
+          fi
+
+          # Check if PR was created
+          TODAY=$(date +%Y-%m-%d)
+          BRANCH_EXISTS=$(git ls-remote --heads origin chore/daily-changelog-${TODAY} || true)
+          if [ ! -z "$BRANCH_EXISTS" ]; then
+            echo "📝 Branch created: chore/daily-changelog-${TODAY}"
+            echo "🔗 Check for PR at: https://github.com/${{ github.repository }}/pulls"
+          else
+            echo "📝 No branch created - likely no meaningful changes"
+          fi

@@ -89,18 +89,48 @@ jobs:
 
             // Ensure exactly one P* (Priority)
             const existingP = current.find(l => /^p[0-5]$/.test(l));
-            if (existingP) { add.delete(existingP); }
-            if (priority) { add.add(priority.toLowerCase()); }
+            if (existingP && priority) { 
+              // Replace existing priority with parsed one
+              add.delete(existingP); 
+              add.add(priority.toLowerCase());
+            } else if (priority) {
+              // Add new priority
+              add.add(priority.toLowerCase());
+            } else if (existingP) {
+              // Keep existing priority if no new one found in body
+              add.add(existingP);
+            }
 
             // Ensure exactly one type:*
             const existingType = current.find(l => /^type:/.test(l));
-            if (existingType) { add.delete(existingType); }
-            if (type) { add.add(type); }
+            if (existingType && type) { 
+              // Replace existing type with parsed one
+              add.delete(existingType); 
+              add.add(type);
+            } else if (type) {
+              // Add new type
+              add.add(type);
+            } else if (existingType) {
+              // Keep existing type if no new one found in body
+              add.add(existingType);
+            }
 
             // Ensure exactly one status:*
             const existingStatus = current.find(l => /^status:/.test(l));
-            if (existingStatus) { add.delete(existingStatus); }
-            add.add(status || "status:untriaged");
+            if (existingStatus && status) {
+              // Replace existing status with parsed one
+              add.delete(existingStatus);
+              add.add(status);
+            } else if (status) {
+              // Add new status
+              add.add(status);
+            } else if (existingStatus) {
+              // Keep existing status if no new one found in body
+              add.add(existingStatus);
+            } else {
+              // Default status if none found
+              add.add("status:untriaged");
+            }
 
             // Ensure at least one area:*
             const hasArea = Array.from(add).some(l => /^area:/.test(l));
