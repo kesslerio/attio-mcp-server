@@ -393,7 +393,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         record_id: taskId,
         record_data: {
           status: 'completed',
-          content: completionNotes,
+          // Note: content is immutable - cannot update with completion notes
         },
       });
 
@@ -426,7 +426,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       const workflowSteps = [
         { status: 'in_progress', description: 'Start working on task' },
         {
-          content: 'Added progress notes and updated timeline',
+          // Note: content is immutable - simulating progress update with other fields
           description: 'Add progress notes',
         },
         {
@@ -435,7 +435,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         },
         {
           status: 'completed',
-          content: 'Task completed successfully with all objectives met',
+          // Note: content is immutable - cannot update with completion notes
           description: 'Mark as completed with notes',
         },
       ];
