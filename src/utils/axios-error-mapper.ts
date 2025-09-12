@@ -231,12 +231,12 @@ export const handleCoreOperationError = async (
       structuredError = mapAxiosToStructuredError(error as any);
     }
 
-    // Extract the enhanced message from the structured error and throw as a regular Error
-    // This ensures MCP can display the enhanced message properly
-    const enhancedMessage = structuredError.body.message;
-    const enhancedError = new Error(enhancedMessage);
-    enhancedError.name = structuredError.body.code;
-    throw enhancedError;
+    // Throw the structured HTTP response so dispatcher can properly handle it
+    // This ensures enhanced error messages are preserved and displayed
+    throw {
+      status: structuredError.status,
+      body: structuredError.body,
+    };
   }
 
   // Check if this is already a structured HTTP response from our services
