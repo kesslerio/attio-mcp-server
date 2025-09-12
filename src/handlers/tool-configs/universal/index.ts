@@ -76,7 +76,8 @@ export const healthCheckConfig = {
     };
   },
   formatResult: (res: Record<string, unknown>): string => {
-    const data = res?.content?.[0]?.data ?? res;
+    const content = res?.content as Array<Record<string, unknown>> | undefined;
+    const data = (content?.[0]?.data ?? res) as Record<string, unknown>;
     const parts: string[] = ['✅ Server healthy'];
     if (data?.echo) parts.push(`echo: ${String(data.echo)}`);
     if (data?.environment) parts.push(`env: ${String(data.environment)}`);
@@ -389,8 +390,8 @@ export function getMigrationParams(
     );
   }
 
-  // Base parameters for all universal tools
-  const baseParams = {
+  // Base parameters for all universal tools - use Record to allow dynamic property assignment
+  const baseParams: Record<string, unknown> = {
     resource_type: resourceType,
     ...originalParams,
   };
