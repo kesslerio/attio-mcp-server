@@ -238,11 +238,22 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
-      return await handleCoreOperationError(
-        error,
-        'get details',
-        params.resource_type
-      );
+      try {
+        await handleCoreOperationError(
+          error,
+          'get details',
+          params.resource_type
+        );
+        throw error; // not reached
+      } catch (e: any) {
+        if (e && typeof e.status === 'number' && e.body?.message) {
+          // For backward compatibility with tests, throw an Error with the enhanced message
+          const enhancedError = new Error(e.body.message);
+          enhancedError.name = e.body.code ?? 'ValidationError';
+          throw enhancedError;
+        }
+        throw e;
+      }
     }
   },
   formatResult: (
@@ -501,15 +512,10 @@ export const updateRecordConfig: UniversalToolConfig = {
         throw error; // not reached
       } catch (e: any) {
         if (e && typeof e.status === 'number' && e.body?.message) {
-          return {
-            isError: true,
-            error: {
-              code: e.body.code ?? e.status,
-              type: e.body.type ?? 'validation_error',
-              message: e.body.message,
-            },
-            content: [{ type: 'text', text: e.body.message }],
-          } as any;
+          // For backward compatibility with tests, throw an Error with the enhanced message
+          const enhancedError = new Error(e.body.message);
+          enhancedError.name = e.body.code ?? 'ValidationError';
+          throw enhancedError;
         }
         throw e;
       }
