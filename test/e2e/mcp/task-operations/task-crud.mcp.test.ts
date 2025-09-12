@@ -126,6 +126,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       // Arrange
       const minimalTask = {
         title: `${testSuite.generateTestId()} Minimal Task`,
+        content: 'Minimal task with only required fields',
       };
 
       // Act
@@ -243,7 +244,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       const taskId = await testSuite.createTestTask();
 
       const updateData = {
-        title: `${testSuite.generateTestId()} Updated Task Title`,
+        // Note: title and content are immutable - only update mutable fields
         priority: 'high',
         status: 'in_progress',
       };
@@ -352,21 +353,15 @@ describe('MCP P1 Task CRUD Operations', () => {
       // Assert - Should handle gracefully with validation error
       const responseText = testSuite.extractTextContent(result);
 
-      // Should handle invalid UUID validation error gracefully
-      if (result.isError) {
-        expect(responseText).toMatch(
-          /not found|invalid|error|validation|uuid/i
-        );
-        console.log(
-          `✅ Correctly handled invalid task ID with validation error`
-        );
-      } else {
-        // Fallback: some systems might handle this gracefully
-        expect(responseText).toMatch(/deleted|removed|success/i);
-        console.log(`✅ Handled non-existent task deletion gracefully`);
-      }
+      // Should handle invalid UUID validation error gracefully - check for error response
+      const hasError =
+        result.isError === true ||
+        responseText.includes('error') ||
+        responseText.includes('validation');
+      expect(hasError).toBe(true);
+      expect(responseText).toMatch(/not found|invalid|error|validation|uuid/i);
 
-      // Always pass since we're testing graceful handling
+      // Always pass since we're testing graceful handling - any response is valid
       expect(true).toBeTruthy();
 
       console.log(`✅ Handled non-existent task deletion gracefully`);
