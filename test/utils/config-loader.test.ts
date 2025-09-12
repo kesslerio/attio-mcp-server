@@ -99,7 +99,7 @@ describe('Configuration Loader', () => {
               attributes: {
                 common: { Email: 'email' },
                 objects: {
-                  companies: { 'Description': 'description' },
+                  companies: { Description: 'description' },
                 },
                 custom: {},
               },
@@ -120,7 +120,7 @@ describe('Configuration Loader', () => {
         Email: 'email',
       });
       expect(config.mappings.attributes.objects).toEqual({
-        companies: { 'Description': 'description' },
+        companies: { Description: 'description' },
       });
     });
 
