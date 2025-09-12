@@ -376,11 +376,39 @@ export class ErrorService {
     // Extract validation message for 400/422 errors
     const extractValidationMessage = (err: ValidationErrorContext): string => {
       try {
-        const responseData = err?.response?.data;
-        if (responseData?.message) return String(responseData.message);
-        if (responseData?.detail) return String(responseData.detail);
-        if (responseData?.error && typeof responseData.error === 'string')
-          return responseData.error;
+        const rd = err?.response?.data as any;
+        // Prefer nested validation_errors if present
+        if (
+          Array.isArray(rd?.validation_errors) &&
+          rd.validation_errors.length
+        ) {
+          const details = rd.validation_errors
+            .map((v: any) => {
+              const path = Array.isArray(v.path) ? v.path.join('.') : '';
+              return path ? `${v.message} (at ${path})` : v.message;
+            })
+            .join('; ');
+          // If Attio included the slug in top-level message, include it
+          const m = /attribute with slug "(.*?)"/.exec(
+            String(rd?.message || '')
+          );
+          const fieldSlug = m ? m[1] : '';
+          let finalMessage = fieldSlug
+            ? `Field "${fieldSlug}": ${details}`
+            : details;
+
+          // Add specific suggestion for phone number validation
+          if (
+            fieldSlug.includes('phone') &&
+            finalMessage.includes('Invalid phone number')
+          ) {
+            finalMessage += '. Try E.164, e.g. +12136987788.';
+          }
+          return finalMessage;
+        }
+        if (rd?.message) return String(rd.message);
+        if (rd?.detail) return String(rd.detail);
+        if (typeof rd?.error === 'string') return rd.error;
         return 'Invalid request';
       } catch {
         return 'Invalid request';
