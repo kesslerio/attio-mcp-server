@@ -151,21 +151,14 @@ export interface RelationshipFilterConfig {
  * Special case field-operator mappings and handling flags
  */
 export const FIELD_SPECIAL_HANDLING: Record<string, any> = {
-  // Special handling for B2B Segment field (type_persona)
-  type_persona: {
-    in: 'contains_any',
-    contains_any: 'contains_any',
-    not_empty: 'not_empty',
-    operators: ['in', 'contains_any', 'not_empty'],
-    allowStringValue: true,
-    disableDebugLogging: true,
-  },
-  // Other fields can be added here as needed
+  // Special handling for segment-related fields
   segment: {
     in: 'contains_any',
     contains_any: 'contains_any',
     operators: ['in', 'contains_any'],
   },
+  // Note: B2B Segment (type_persona) field removed as it doesn't exist in Attio API
+  // Custom segment fields should be configured via user.json mapping instead
 };
 
 /**

@@ -42,3 +42,17 @@ export { batchSearchPeople, batchGetPeopleDetails } from './batch.js';
 
 // Export note operations
 export { getPersonNotes, createPersonNote } from './notes.js';
+
+// Export attribute operations and field validation
+export {
+  isStandardPersonField,
+  getStandardPersonFields,
+  isCustomPersonField,
+  getPersonFields,
+  getPersonBasicInfo,
+  getPersonContactInfo,
+  getPersonProfessionalInfo,
+  getPersonSocialInfo,
+  validateAndCategorizePersonFields,
+  getPersonWithFieldAnalysis,
+} from './attributes.js';

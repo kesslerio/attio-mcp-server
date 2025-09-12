@@ -6,9 +6,9 @@ import { describe, beforeEach, it, expect, vi } from 'vitest';
 import {
   getAttributeSlug,
   invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/index';
-import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
-import * as configLoader from '../../src/utils/config-loader';
+} from '../../src/utils/attribute-mapping/index.js';
+import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils.js';
+import * as configLoader from '../../src/utils/config-loader.js';
 
 // Mock the config-loader
 vi.mock('../../src/utils/config-loader', () => ({

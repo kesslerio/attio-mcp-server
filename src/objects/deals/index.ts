@@ -8,3 +8,17 @@ export { getDealNotes, createDealNote } from './notes.js';
 
 // Relationship-based queries
 export { searchDealsByCompany } from './relationships.js';
+
+// Export attribute operations and field validation
+export {
+  isStandardDealField,
+  getStandardDealFields,
+  isCustomDealField,
+  getDealFields,
+  getDealBasicInfo,
+  getDealSalesInfo,
+  getDealRelationshipInfo,
+  getDealMetadataInfo,
+  validateAndCategorizeDealFields,
+  getDealWithFieldAnalysis,
+} from './attributes.js';

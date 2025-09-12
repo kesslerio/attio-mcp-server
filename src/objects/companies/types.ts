@@ -14,22 +14,21 @@ export type {
   CompanyAttributeUpdate,
 } from '../../types/company-types.js';
 
-// Define more specific types for company attributes
+// Define more specific types for company attributes (based on actual Attio API)
 export interface CompanyAttributes {
-  name?: string;
-  website?: string;
-  industry?: string;
   domains?: string[];
+  name?: string;
   description?: string;
-  type?: string;
-  type_persona?: string;
-  services?: string[];
+  team?: string[]; // Record reference to people
   categories?: string[];
-  estimated_arr_usd?: number;
-  funding_raised_usd?: number;
-  employee_range?: string;
-  foundation_date?: string;
   primary_location?: string;
+  angellist?: string;
+  facebook?: string;
+  instagram?: string;
+  linkedin?: string;
+  twitter?: string;
+  associated_deals?: string[]; // Record reference to deals
+  associated_workspaces?: string[]; // Record reference to workspaces
   [key: string]: any; // Allow for custom fields
 }
 

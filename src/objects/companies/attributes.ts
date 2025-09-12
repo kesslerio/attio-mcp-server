@@ -109,15 +109,10 @@ export async function getCompanyBasicInfo(
 ): Promise<Partial<Company>> {
   const basicFields = [
     'name',
-    'website',
-    'industry',
-    'type',
-    'type_persona',
-    'employee_range',
-    'foundation_date',
-    'primary_location',
+    'domains',
     'description',
-    'logo_url',
+    'primary_location',
+    'categories',
   ];
 
   return getCompanyFields(companyIdOrUri, basicFields);
@@ -134,16 +129,9 @@ export async function getCompanyContactInfo(
 ): Promise<Partial<Company>> {
   const contactFields = [
     'name',
-    'website',
-    'company_phone_5',
+    'domains',
     'primary_location',
-    'street_address',
-    'street_address_2',
-    'city',
-    'state',
-    'postal_code',
-    'country',
-    'main_contact',
+    'team', // Main contacts (people associated with company)
   ];
 
   return getCompanyFields(companyIdOrUri, contactFields);
@@ -160,15 +148,10 @@ export async function getCompanyBusinessInfo(
 ): Promise<Partial<Company>> {
   const businessFields = [
     'name',
-    'type',
-    'type_persona',
-    'services',
+    'description',
     'categories',
-    'industry',
-    'estimated_arr_usd',
-    'funding_raised_usd',
-    'employee_range',
-    'foundation_date',
+    'associated_deals',
+    'associated_workspaces',
   ];
 
   return getCompanyFields(companyIdOrUri, businessFields);
@@ -185,14 +168,11 @@ export async function getCompanySocialInfo(
 ): Promise<Partial<Company>> {
   const socialFields = [
     'name',
-    'website',
     'linkedin',
-    'twitter',
+    'twitter', 
     'facebook',
     'instagram',
     'angellist',
-    'twitter_follower_count',
-    'logo_url',
   ];
 
   return getCompanyFields(companyIdOrUri, socialFields);
@@ -227,52 +207,26 @@ export async function getCompanyCustomFields(
   // Otherwise, we need to fetch all fields first to identify custom ones
   const allData = await getCompanyDetails(companyIdOrUri);
 
-  // Standard fields that are NOT custom
+  // Standard fields that are NOT custom (based on actual Attio API)
   const standardFields = new Set([
-    'name',
-    'website',
-    'industry',
     'domains',
+    'name',
     'description',
-    'logo_url',
+    'team',
+    'categories',
     'primary_location',
-    'employee_range',
-    'foundation_date',
+    'angellist',
+    'facebook',
+    'instagram',
+    'linkedin',
+    'twitter',
+    'associated_deals',
+    'associated_workspaces',
+    // System fields
     'created_at',
     'created_by',
     'matching_id',
     'record_id',
-    'linkedin',
-    'twitter',
-    'facebook',
-    'instagram',
-    'angellist',
-    'twitter_follower_count',
-    'estimated_arr_usd',
-    'funding_raised_usd',
-    'categories',
-    'about',
-    'notes',
-    'team',
-    'main_contact',
-    'street_address',
-    'street_address_2',
-    'city',
-    'state',
-    'postal_code',
-    'country',
-    'first_interaction',
-    'last_interaction',
-    'next_interaction',
-    'first_email_interaction',
-    'last_email_interaction',
-    'first_calendar_interaction',
-    'last_calendar_interaction',
-    'next_calendar_interaction',
-    'strongest_connection_strength',
-    'strongest_connection_user',
-    'associated_deals',
-    'associated_workspaces',
   ]);
 
   // Extract custom fields
@@ -326,12 +280,12 @@ export async function discoverCompanyAttributes(): Promise<{
       // For tests, we can return some reasonable default attributes
       if (process.env.NODE_ENV === 'test') {
         const testAttributes = [
+          { slug: 'domains', type: 'domain' },
           { slug: 'name', type: 'text' },
-          { slug: 'website', type: 'text' },
-          { slug: 'industry', type: 'text' },
           { slug: 'description', type: 'text' },
-          { slug: 'domain', type: 'text' },
-          { slug: 'team_size', type: 'number' },
+          { slug: 'categories', type: 'select' },
+          { slug: 'primary_location', type: 'location' },
+          { slug: 'team', type: 'record-reference' },
         ];
         return {
           standard: testAttributes.map((a) => a.slug),
@@ -390,50 +344,24 @@ export async function discoverCompanyAttributes(): Promise<{
     }
 
     const standardFields = new Set([
-      'name',
-      'website',
-      'industry',
       'domains',
+      'name',
       'description',
-      'logo_url',
+      'team',
+      'categories',
       'primary_location',
-      'employee_range',
-      'foundation_date',
+      'angellist',
+      'facebook',
+      'instagram',
+      'linkedin',
+      'twitter',
+      'associated_deals',
+      'associated_workspaces',
+      // System fields
       'created_at',
       'created_by',
       'matching_id',
       'record_id',
-      'linkedin',
-      'twitter',
-      'facebook',
-      'instagram',
-      'angellist',
-      'twitter_follower_count',
-      'estimated_arr_usd',
-      'funding_raised_usd',
-      'categories',
-      'about',
-      'notes',
-      'team',
-      'main_contact',
-      'street_address',
-      'street_address_2',
-      'city',
-      'state',
-      'postal_code',
-      'country',
-      'first_interaction',
-      'last_interaction',
-      'next_interaction',
-      'first_email_interaction',
-      'last_email_interaction',
-      'first_calendar_interaction',
-      'last_calendar_interaction',
-      'next_calendar_interaction',
-      'strongest_connection_strength',
-      'strongest_connection_user',
-      'associated_deals',
-      'associated_workspaces',
     ]);
 
     const standard: string[] = [];

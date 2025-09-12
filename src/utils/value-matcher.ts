@@ -145,7 +145,7 @@ export function findPartialMatches(
  * Get value suggestions for a field
  * This could be extended to cache or fetch valid values from Attio
  *
- * @param fieldSlug - The field slug (e.g., 'type_persona')
+ * @param fieldSlug - The field slug (e.g., 'b2b_segment', 'categories')
  * @param searchValue - The value being searched for
  * @returns Array of suggested values or null if no suggestions available
  */
@@ -154,26 +154,14 @@ export async function getValueSuggestions(
   searchValue: string
 ): Promise<ValueMatch[] | null> {
   // This is where we could integrate with Attio API to fetch valid values
-  // For now, we'll use known values from our documentation
+  // For now, we'll use known values from user configuration
 
+  // Note: We intentionally don't hardcode custom fields here
+  // Custom field values should be discovered dynamically from Attio API
+  // or configured through user.json mapping
   const knownValues: Record<string, string[]> = {
-    type_persona: [
-      'Plastic Surgeon',
-      'Medical Spa/Aesthetics',
-      'Dermatologist',
-      'Medical Practice',
-      'Wellness Center',
-      'Cosmetic Surgery',
-      'Aesthetic Medicine',
-    ],
-    industry: [
-      'Healthcare',
-      'Technology',
-      'Finance',
-      'Education',
-      'Retail',
-      'Manufacturing',
-    ],
+    // Only include standard Attio fields with known valid options
+    // Custom fields like b2b_segment should be handled via user.json mapping
   };
 
   const validValues = knownValues[fieldSlug];

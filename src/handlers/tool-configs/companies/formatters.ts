@@ -29,10 +29,9 @@ export const formatterConfigs = {
       const companyName =
         getCompanyValue(company, 'name')?.[0]?.value || 'Unnamed';
       const companyId = company.id?.record_id || 'unknown';
-      const website =
-        getCompanyValue(company, 'website')?.[0]?.value || 'Not available';
-      const industry =
-        getCompanyValue(company, 'industry')?.[0]?.value || 'Not available';
+      const domains = getCompanyValue(company, 'domains')?.[0]?.domain || 'Not available';
+      const categories =
+        getCompanyValue(company, 'categories')?.map((cat: any) => cat.option?.title).join(', ') || 'Not available';
       const description =
         getCompanyValue(company, 'description')?.[0]?.value ||
         'No description available';
@@ -46,21 +45,14 @@ export const formatterConfigs = {
           }`.trim()
         : 'Not available';
 
-      const employeeRange =
-        getCompanyValue(company, 'employee_range')?.[0]?.option?.title ||
-        'Not available';
-      const foundationDate =
-        getCompanyValue(company, 'foundation_date')?.[0]?.value ||
-        'Not available';
+      // Note: employee_range and foundation_date removed as they're not standard Attio fields
+      // Custom fields should be handled through user.json mapping
 
       return `Company: ${companyName} (ID: ${companyId})
 Created: ${createdAt}
-Website: ${website}
-Industry: ${industry}
+Domains: ${domains}
+Categories: ${categories}
 Location: ${locationStr}
-Employees: ${employeeRange}
-Founded: ${foundationDate}
-
 Description:
 ${description}
 
@@ -98,14 +90,10 @@ For full details, use get-company-json with this ID: ${companyId}`;
           web_url: cleanedCompany.web_url,
           basic_values: {
             name: cleanedCompany.values?.name?.[0]?.value,
-            website: cleanedCompany.values?.website?.[0]?.value,
-            type: cleanedCompany.values?.type?.[0]?.option?.title,
-            type_persona:
-              cleanedCompany.values?.type_persona?.[0]?.option?.title,
-            services: cleanedCompany.values?.services || [],
-            employee_range:
-              cleanedCompany.values?.employee_range?.[0]?.option?.title,
-            foundation_date: cleanedCompany.values?.foundation_date?.[0]?.value,
+            domains: cleanedCompany.values?.domains?.[0]?.domain,
+            description: cleanedCompany.values?.description?.[0]?.value,
+            categories: cleanedCompany.values?.categories?.map((cat: any) => cat.option?.title),
+            primary_location: cleanedCompany.values?.primary_location?.[0],
           },
           attribute_count: Object.keys(cleanedCompany.values || {}).length,
           message:
@@ -134,23 +122,9 @@ For full details, use get-company-json with this ID: ${companyId}`;
     formatResult: (company: Partial<Company>) => {
       const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const website =
-        getCompanyValue(company as Company, 'website')?.[0]?.value ||
-        'Not available';
-      const industry =
-        getCompanyValue(company as Company, 'industry')?.[0]?.value ||
-        'Not available';
-      const type =
-        getCompanyValue(company as Company, 'type')?.[0]?.option?.title ||
-        'Not available';
-      const typePersona =
-        getCompanyValue(company as Company, 'type_persona')?.[0]?.option
-          ?.title || 'Not available';
-      const employees =
-        getCompanyValue(company as Company, 'employee_range')?.[0]?.option
-          ?.title || 'Not available';
-      const founded =
-        getCompanyValue(company as Company, 'foundation_date')?.[0]?.value ||
+      const domains = getCompanyValue(company as Company, 'domains')?.[0]?.domain || 'Not available';
+      const categories =
+        getCompanyValue(company as Company, 'categories')?.map((cat: any) => cat.option?.title).join(', ') ||
         'Not available';
       const location = getCompanyValue(
         company as Company,
@@ -166,13 +140,9 @@ For full details, use get-company-json with this ID: ${companyId}`;
         'No description available';
 
       return `Company: ${name}
-Website: ${website}
-Industry: ${industry}
-Type: ${type}
-Type Persona: ${typePersona}
+Domains: ${domains}
+Categories: ${categories}
 Location: ${locationStr}
-Employees: ${employees}
-Founded: ${founded}
 
 Description:
 ${description}`;
@@ -185,39 +155,18 @@ ${description}`;
     formatResult: (company: Partial<Company>) => {
       const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const website =
-        getCompanyValue(company as Company, 'website')?.[0]?.value ||
-        'Not available';
-      const phone =
-        getCompanyValue(company as Company, 'company_phone_5')?.[0]
-          ?.phone_number || 'Not available';
-      const streetAddress =
-        getCompanyValue(company as Company, 'street_address')?.[0]?.value || '';
-      const streetAddress2 =
-        getCompanyValue(company as Company, 'street_address_2')?.[0]?.value ||
-        '';
-      const city =
-        getCompanyValue(company as Company, 'city')?.[0]?.value || '';
-      const state =
-        getCompanyValue(company as Company, 'state')?.[0]?.value || '';
-      const postalCode =
-        getCompanyValue(company as Company, 'postal_code')?.[0]?.value || '';
-      const country =
-        getCompanyValue(company as Company, 'country')?.[0]?.value || '';
-
-      let address = streetAddress;
-      if (streetAddress2) address += `, ${streetAddress2}`;
-      if (city) address += `, ${city}`;
-      if (state) address += `, ${state}`;
-      if (postalCode) address += ` ${postalCode}`;
-      if (country) address += `, ${country}`;
+      const domains = getCompanyValue(company as Company, 'domains')?.[0]?.domain || 'Not available';
+      const location = getCompanyValue(company as Company, 'primary_location')?.[0];
+      const locationStr = location
+        ? `${location.locality || ''}, ${location.region || ''} ${location.country_code || ''}`.trim()
+        : 'Not available';
+      const team = getCompanyValue(company as Company, 'team') || [];
 
       return `Company: ${name}
-Website: ${website}
-Phone: ${phone}
+Domains: ${domains}
+Location: ${locationStr}
 
-Address:
-${address || 'Not available'}`;
+Team Members: ${team.length} people`;
     },
   } as DetailsToolConfig,
 
@@ -227,47 +176,21 @@ ${address || 'Not available'}`;
     formatResult: (company: Partial<Company>) => {
       const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const type =
-        getCompanyValue(company as Company, 'type')?.[0]?.option?.title ||
-        'Not available';
-      const typePersona =
-        getCompanyValue(company as Company, 'type_persona')?.[0]?.option
-          ?.title || 'Not available';
-      const services = getCompanyValue(company as Company, 'services') || [];
+      // Note: Removed non-standard fields (type, services, industry, estimated_arr_usd, 
+      // funding_raised_usd, employee_range, foundation_date) as they don't exist in default Attio API
+      // Custom fields should be handled through user.json mapping
       const categories =
         getCompanyValue(company as Company, 'categories')?.map(
           (cat: any) => cat.option?.title
         ) || [];
-      const industry =
-        getCompanyValue(company as Company, 'industry')?.[0]?.value ||
-        'Not available';
-      const revenue =
-        getCompanyValue(company as Company, 'estimated_arr_usd')?.[0]?.option
-          ?.title || 'Not available';
-      const funding =
-        getCompanyValue(company as Company, 'funding_raised_usd')?.[0]?.value ||
-        'Not available';
-      const employees =
-        getCompanyValue(company as Company, 'employee_range')?.[0]?.option
-          ?.title || 'Not available';
-      const founded =
-        getCompanyValue(company as Company, 'foundation_date')?.[0]?.value ||
-        'Not available';
 
       return `Company: ${name}
-Industry: ${industry}
-Type: ${type}
-Type Persona: ${typePersona}
-Employees: ${employees}
-Founded: ${founded}
-Estimated Revenue: ${revenue}
-Funding Raised: ${funding}
 
 Categories:
 ${categories.join(', ') || 'None'}
 
-Services:
-${services.length > 0 ? JSON.stringify(services, null, 2) : 'None'}`;
+Note: Additional fields like industry, type, employees, revenue, etc. are custom fields 
+that should be configured through user.json mapping for your specific workspace.`;
     },
   } as DetailsToolConfig,
 
@@ -277,9 +200,7 @@ ${services.length > 0 ? JSON.stringify(services, null, 2) : 'None'}`;
     formatResult: (company: Partial<Company>) => {
       const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const website =
-        getCompanyValue(company as Company, 'website')?.[0]?.value ||
-        'Not available';
+      const domains = getCompanyValue(company as Company, 'domains')?.[0]?.domain || 'Not available';
       const linkedin =
         getCompanyValue(company as Company, 'linkedin')?.[0]?.value ||
         'Not available';
@@ -295,12 +216,10 @@ ${services.length > 0 ? JSON.stringify(services, null, 2) : 'None'}`;
       const angellist =
         getCompanyValue(company as Company, 'angellist')?.[0]?.value ||
         'Not available';
-      const twitterFollowers =
-        getCompanyValue(company as Company, 'twitter_follower_count')?.[0]
-          ?.value || 'Not available';
+      // Note: twitter_follower_count removed as it's not a standard Attio field
 
       return `Company: ${name}
-Website: ${website}
+Domains: ${domains}
 
 Social Media:
 LinkedIn: ${linkedin}
@@ -309,7 +228,8 @@ Facebook: ${facebook}
 Instagram: ${instagram}
 AngelList: ${angellist}
 
-Twitter Followers: ${twitterFollowers}`;
+Note: Additional metrics like follower counts are custom fields 
+that should be configured through user.json mapping for your workspace.`;
     },
   } as DetailsToolConfig,
 };

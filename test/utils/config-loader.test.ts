@@ -99,7 +99,7 @@ describe('Configuration Loader', () => {
               attributes: {
                 common: { Email: 'email' },
                 objects: {
-                  companies: { 'B2B Segment': 'type_persona' },
+                  companies: { 'Description': 'description' },
                 },
                 custom: {},
               },
@@ -120,7 +120,7 @@ describe('Configuration Loader', () => {
         Email: 'email',
       });
       expect(config.mappings.attributes.objects).toEqual({
-        companies: { 'B2B Segment': 'type_persona' },
+        companies: { 'Description': 'description' },
       });
     });
 

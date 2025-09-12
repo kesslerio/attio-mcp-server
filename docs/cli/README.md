@@ -201,14 +201,65 @@ chmod +x scripts/run-discover.sh
 chmod +x scripts/discover-with-memory.sh
 ```
 
+## Dual-System Architecture: CLI + Default Mappings
+
+The Attio MCP server uses a sophisticated dual-system approach for attribute mapping:
+
+### System Components
+
+#### 1. **Static Default Mappings** (`configs/runtime/mappings/default.json`)
+- **Purpose**: Provides hardcoded fallback mappings for official Attio attributes
+- **Function**: Static reference of standard field mappings (e.g., "Name" → "name", "Categories" → "categories")
+- **Scope**: Contains only verified standard Attio API fields that exist in all workspaces
+- **Use Case**: Ensures MCP server works immediately with standard fields, even without user configuration
+
+#### 2. **Dynamic Discovery Tool** (`src/cli/commands/attributes.ts`)
+- **Purpose**: CLI command that makes live API calls to discover workspace-specific attributes
+- **Function**: Fetches real attribute mappings for custom fields (e.g., "Lead Score" → "lead_score")
+- **Output**: Writes discovered mappings to user.json configuration file
+- **Use Case**: Discovers custom fields that users have added to their specific Attio workspace
+
+### How They Work Together
+
+```
+Server Startup → Load default.json → Load user.json → Merge Configurations
+     ↓                    ↓              ↓                    ↓
+Default mappings    +   Custom fields  =  Complete mapping system
+(Name, Categories)     (Lead Score, etc.)  (All fields available)
+```
+
+#### Configuration Merging Priority:
+1. **default.json**: Base layer with standard Attio API fields
+2. **user.json**: Override layer with workspace-specific custom fields  
+3. **Result**: Merged configuration supporting both standard and custom attributes
+
+#### Benefits of This Architecture:
+- **Immediate functionality**: Works out-of-the-box with standard fields
+- **Extensibility**: Supports unlimited custom workspace fields
+- **Reliability**: Fallback to defaults if custom discovery fails
+- **Performance**: No API calls needed for standard field mapping
+
+### Example Mapping Flow
+
+**Standard Field (handled by default.json):**
+```
+User Query: "Company Name" → default.json → "name" → Attio API ✅
+```
+
+**Custom Field (requires CLI discovery):**
+```
+User Query: "Lead Score" → user.json → "lead_score" → Attio API ✅
+User Query: "Lead Score" (no discovery) → No mapping → Error ❌
+```
+
 ## Integration with Auto-Discovery
 
 The CLI works alongside automatic discovery:
 
-1. **Auto-Discovery Primary**: Server handles updates automatically
-2. **CLI for Special Cases**: Manual updates when needed
-3. **Shared Configuration**: Both use the same mapping files
-4. **Seamless Handoff**: Manual updates are preserved by auto-discovery
+1. **Auto-Discovery Primary**: Server handles updates automatically for both default and custom fields
+2. **CLI for Special Cases**: Manual updates when needed for immediate changes
+3. **Shared Configuration**: Both systems use the same dual-layer mapping architecture
+4. **Seamless Handoff**: Manual updates are preserved and enhanced by auto-discovery
 
 ## Future Enhancements
 

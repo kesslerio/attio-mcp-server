@@ -58,7 +58,7 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
     ? await validator(attributes)
     : attributes;
 
-  // Translate attribute names using the mapping system (e.g., "b2b_segment" -> "type_persona")
+  // Translate attribute names using the mapping system (e.g., "website" -> "domains")
   const mappedAttributes = translateAttributeNames(
     objectType,
     validatedAttributes
@@ -175,7 +175,7 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
     ? await validator(recordId, attributes)
     : attributes;
 
-  // Translate attribute names using the mapping system (e.g., "b2b_segment" -> "type_persona")
+  // Translate attribute names using the mapping system (e.g., "website" -> "domains")
   const mappedAttributes = translateAttributeNames(
     objectType,
     validatedAttributes
