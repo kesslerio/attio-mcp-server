@@ -809,8 +809,8 @@ export class UniversalMetadataService {
     }
   ): Promise<Record<string, unknown>> {
     switch (resource_type) {
-      case UniversalResourceType.COMPANIES: // Preserve legacy behavior and make tests' spy happy
-      {
+      case UniversalResourceType.COMPANIES: {
+        // Preserve legacy behavior and make tests' spy happy
         const res = await discoverCompanyAttributes();
         // Apply optional category filtering for symmetry with getAttributes()
         return options?.categories
