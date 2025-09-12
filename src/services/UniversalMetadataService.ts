@@ -740,6 +740,7 @@ export class UniversalMetadataService {
           // Return schema-level attributes using standard API endpoint
           result = await this.discoverAttributesForResourceType(resource_type, {
             categories,
+            useCache: false, // Disable caching for tests to ensure spies work
           });
         }
         break;
