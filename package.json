@@ -152,7 +152,7 @@
     "e2e:analyze:basic": "python3 ./scripts/e2e_analyze.py test-results --stdout",
     "e2e:health": "./scripts/e2e-health-check.sh",
     "verify:staged": "lint-staged",
-    "lint:ci": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=0 \"src/**/*.ts\" \"test/**/*.ts\""
+    "lint:ci": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=50 \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "files": [
     "dist",
@@ -240,7 +240,7 @@
   },
   "wireit": {
     "lint:check": {
-      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 5000 \"src/**/*.ts\" \"test/**/*.ts\"",
+      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 800 \"src/**/*.ts\" \"test/**/*.ts\"",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",

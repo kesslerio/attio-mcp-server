@@ -96,7 +96,7 @@ async function linkPersonToCompany(
 
     // Update company with new team
     await updateCompany(companyId, {
-      team: updatedTeamIds.map((id) => ({ target_record_id: id })),
+      team: updatedTeamIds,
     });
 
     return {
@@ -151,7 +151,7 @@ async function unlinkPersonFromCompany(
 
     // Update company with new team
     await updateCompany(companyId, {
-      team: updatedTeamIds.map((id) => ({ target_record_id: id })),
+      team: updatedTeamIds,
     });
 
     return {

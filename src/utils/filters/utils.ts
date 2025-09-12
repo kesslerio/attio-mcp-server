@@ -31,25 +31,8 @@ export function createModifiedDateFilter(dateRange: DateRange) {
   return createDateRangeFilter(ATTRIBUTES.UPDATED_AT, dateRange);
 }
 
-/**
- * Creates a filter for B2B Segment (type_persona)
- *
- * @param value - B2B Segment value to filter by
- * @returns Configured filter object
- */
-export function createB2BSegmentFilter(value: string) {
-  // Using a simple equals filter that will be transformed using the shorthand format
-  return {
-    filters: [
-      {
-        attribute: { slug: 'type_persona' },
-        condition: FilterConditionType.EQUALS, // This won't be used for type_persona due to shorthand format
-        value,
-      },
-    ],
-    matchAny: false,
-  };
-}
+// Note: createB2BSegmentFilter removed as type_persona field doesn't exist in Attio API
+// For custom segment fields, use createEqualsFilter() with the appropriate field name
 
 /**
  * Validates if a value falls within a numeric range

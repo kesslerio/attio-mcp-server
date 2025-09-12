@@ -10,6 +10,7 @@
         "Name": "name",
         "Description": "description",
         "Created At": "created_at",
+        "Created By": "created_by",
         "Record ID": "record_id"
       },
       "objects": {
@@ -29,18 +30,19 @@
           "Associated Workspaces": "associated_workspaces"
         },
         "people": {
-          "Email Addresses": "email_addresses",
           "Name": "name",
-          "Company": "company",
           "Description": "description",
+          "Email Addresses": "email_addresses",
           "Job Title": "job_title",
-          "Phone Numbers": "phone_numbers",
-          "Primary Location": "primary_location",
-          "AngelList": "angellist",
-          "Facebook": "facebook",
-          "Instagram": "instagram",
+          "Company": "company",
           "LinkedIn": "linkedin",
           "Twitter": "twitter",
+          "Facebook": "facebook",
+          "Instagram": "instagram",
+          "Phone Numbers": "phone_numbers",
+          "Primary Location": "primary_location",
+          "Avatar URL": "avatar_url",
+          "AngelList": "angellist",
           "Associated Deals": "associated_deals",
           "Associated Users": "associated_users"
         },
@@ -80,7 +82,12 @@
       "Company Team": "team",
       "Person Company": "company",
       "Deal People": "associated_people",
-      "Deal Company": "associated_company"
+      "Deal Company": "associated_company",
+      "Company Workspaces": "associated_workspaces",
+      "User Workspace": "workspace",
+      "Workspace Users": "users",
+      "User Person": "person",
+      "Person Users": "associated_users"
     }
   }
 }

@@ -6,16 +6,17 @@ import { InvalidPersonDataError } from './errors.js';
 
 /**
  * Interface for attributes when creating or updating a person
+ * Based on standard Attio People API fields
  */
 export interface PersonAttributes {
   /** Person's full name */
   name?: string;
 
+  /** Person's description */
+  description?: string;
+
   /** Email addresses (array of strings) */
   email_addresses?: string[];
-
-  /** Phone numbers (array of strings) */
-  phone_numbers?: string[];
 
   /** Job title */
   job_title?: string;
@@ -23,13 +24,44 @@ export interface PersonAttributes {
   /** Associated company ID or company name to look up */
   company?: string | { record_id: string };
 
-  /** Custom attributes */
+  /** LinkedIn profile URL */
+  linkedin?: string;
+
+  /** Twitter profile URL */
+  twitter?: string;
+
+  /** Facebook profile URL */
+  facebook?: string;
+
+  /** Instagram profile URL */
+  instagram?: string;
+
+  /** Phone numbers (array of strings) */
+  phone_numbers?: string[];
+
+  /** Primary location information */
+  primary_location?: string;
+
+  /** Avatar URL */
+  avatar_url?: string;
+
+  /** AngelList profile URL */
+  angellist?: string;
+
+  /** Associated deals */
+  associated_deals?: string[] | { record_id: string }[];
+
+  /** Associated users */
+  associated_users?: string[] | { record_id: string }[];
+
+  /** Custom attributes - any fields not in the standard schema */
   [key: string]:
     | string
     | string[]
     | number
     | boolean
     | { record_id: string }
+    | { record_id: string }[]
     | undefined;
 }
 

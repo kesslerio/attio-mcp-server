@@ -10,20 +10,12 @@ import axios from 'axios';
 
 // Known valid values for select fields - this should ideally come from Attio API
 const KNOWN_FIELD_VALUES: Record<string, string[]> = {
-  type_persona: [
-    'Plastic Surgeon',
-    'Medical Spa/Aesthetics',
-    'Dermatologist',
-    'Medical Practice',
-    'Wellness Center',
-    'Cosmetic Surgery',
-    'Aesthetic Medicine',
-    'Primary Care',
-    'Specialist',
-    'Hospital',
-    'Clinic',
-  ],
-  industry: [
+  // Note: type_persona removed as it doesn't exist in Attio API
+  // Custom fields should be discovered via CLI or auto-discovery
+  categories: [
+    'B2B',
+    'B2C',
+    'SaaS',
     'Healthcare',
     'Technology',
     'Finance',

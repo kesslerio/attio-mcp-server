@@ -151,8 +151,8 @@ export function invalidateConfigCache(): void {
  *
  * @example
  * ```typescript
- * // For input "b2b_segment", converts to "B2b Segment" and looks up mapping
- * const result = trySnakeCaseConversion("b2b_segment"); // Returns "type_persona"
+ * // For input "custom_field", converts to "Custom Field" and looks up mapping
+ * const result = trySnakeCaseConversion("custom_field"); // Returns mapped value if found
  * ```
  */
 function trySnakeCaseConversion(attributeName: string): string | undefined {
@@ -163,7 +163,7 @@ function trySnakeCaseConversion(attributeName: string): string | undefined {
   }
 
   try {
-    // Convert snake_case to Display Case (e.g., "b2b_segment" -> "B2b Segment")
+    // Convert snake_case to Display Case (e.g., "custom_field" -> "Custom Field")
     const potentialDisplayName = attributeName
       .replace(/_/g, ' ')
       .replace(/(\w)(\w*)/g, (_, first, rest) => first.toUpperCase() + rest);
