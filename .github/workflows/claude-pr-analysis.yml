@@ -10,15 +10,22 @@ on:
       - 'LICENSE'
       - 'docs/**'
 
+# Prevent interference with manual Claude workflow
+concurrency:
+  group: claude-pr-analysis-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   pull-requests: write
   # checks: write   # enable only if you intentionally create/update Checks
 
 jobs:
-  claude-review:
+  automated-security-review:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Skip if there are recent @claude comments to avoid conflicts
+    if: ${{ !contains(github.event.pull_request.body, '@claude') }}
 
     steps:
       - name: Harden Runner
@@ -88,12 +95,14 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `## 🤖 Claude Analysis Complete
+              body: `## 🛡️ Automated Security Review Complete
 
-              ✅ Security review finished for ${{ steps.changed.outputs.all_changed_files_count }} files.
+              ✅ Security-focused analysis finished for ${{ steps.changed.outputs.all_changed_files_count }} files.
 
-              **Re-run Analysis**: Comment \`/claude review\` to re-analyze this PR.
+              **Manual Claude Review**: Comment \`@claude review\` to get a full interactive review.
+              
+              **Re-run Security Scan**: Comment \`/security review\` to re-run automated security analysis.
 
               ---
-              *Automated by Claude Code Action*`
+              *Automated Security Review by Claude Code Action*`
             });
