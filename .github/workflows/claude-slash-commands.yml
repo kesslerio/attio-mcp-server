@@ -74,9 +74,25 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Add completion reaction
             await github.rest.reactions.createForIssueComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               comment_id: ${{ github.event.comment.id }},
               content: '+1'
+            });
+            
+            // Add completion comment to provide feedback
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🔄 Claude Re-Analysis Complete
+
+✅ Security review re-run completed at request of @${{ github.event.comment.user.login }}.
+
+**Note**: If no analysis appears above, the claude-code-action may have failed to post results. Check the [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+
+---
+*Re-analysis triggered by slash command*`
             });
