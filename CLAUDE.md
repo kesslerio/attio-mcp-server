@@ -445,6 +445,23 @@ NEVER use web search as the first option. ALWAYS follow this sequence:
 
 **Available Sources**: Attio API, GitHub API, Vitest, Node.js, TypeScript, React, Next.js, MongoDB, and many others
 
+## ATTIO API ENDPOINTS
+
+### CORE
+- Objects: `GET /v2/objects`
+- Attributes: `GET /v2/objects/{object}/attributes`
+- Records: `GET/POST/PATCH /v2/objects/{object}/records[/{id}]`
+- Lists: `GET /v2/lists`
+- Status: `GET /v2/{objects|lists}/{id}/attributes/{attr_id}/statuses`
+
+### KEY IDS
+- Prospecting List: `88709359-01f6-478b-ba66-c07347891b6f`
+- Prospecting Stage: `f78ef71e-9306-4c37-90d6-e83550326228`
+- Deal Stage: `28439dc6-e8b1-41e5-9819-cca5f18d2de2`
+
+### VERIFY ATTRIBUTES
+`curl -H "Authorization: Bearer $ATTIO_API_KEY" https://api.attio.com/v2/objects/companies/attributes | jq -r '.data[] | "\(.api_slug) - \(.title)"'`
+
 ## MCP TOOL TESTING
 
 RULE: Validate MCP tools with real API calls | WHEN: MCP tool changes | DO: Use mcp-test-client for end-to-end validation | ELSE: Production failures

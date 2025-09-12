@@ -1,54 +1,69 @@
 {
   "version": "1.0",
   "metadata": {
-    "generated": "2025-05-14T00:00:00Z",
-    "description": "Default attribute mappings for Attio MCP Server"
+    "generated": "2025-01-22T00:00:00Z",
+    "description": "Default attribute mappings for Attio MCP Server - Official Attio CRM attributes only"
   },
   "mappings": {
     "attributes": {
       "common": {
         "Name": "name",
-        "Website": "website",
-        "Industry": "industry",
-        "Revenue": "annual_revenue",
-        "Annual Revenue": "annual_revenue",
-        "Employee Count": "employee_count",
-        "Employees": "employee_count",
+        "Description": "description",
         "Created At": "created_at",
-        "Updated At": "updated_at",
-        "Last Interaction": "last_interaction",
-        "Interaction Type": "interaction_type",
-        "Notes": "notes",
-        "Email": "email",
-        "Phone": "phone",
-        "Mobile": "mobile",
-        "Address": "address",
-        "City": "city",
-        "State": "state",
-        "Country": "country",
-        "ZIP": "postal_code",
-        "Postal Code": "postal_code"
+        "Record ID": "record_id"
       },
       "objects": {
         "companies": {
+          "Domains": "domains",
           "Name": "name",
-          "B2B Segment": "type_persona",
-          "Type Persona": "type_persona",
-          "Company Name": "name",
-          "Company Website": "website",
-          "Company Type": "company_type"
+          "Description": "description",
+          "Team": "team",
+          "Categories": "categories",
+          "Primary Location": "primary_location",
+          "AngelList": "angellist",
+          "Facebook": "facebook",
+          "Instagram": "instagram",
+          "LinkedIn": "linkedin",
+          "Twitter": "twitter",
+          "Associated Deals": "associated_deals",
+          "Associated Workspaces": "associated_workspaces"
         },
         "people": {
+          "Email Addresses": "email_addresses",
           "Name": "name",
-          "First Name": "first_name",
-          "Last Name": "last_name",
-          "Full Name": "name",
-          "Phone": "phone_number",
-          "Title": "title",
-          "Job Title": "title",
-          "Position": "title",
-          "Department": "department",
-          "Company": "company"
+          "Company": "company",
+          "Description": "description",
+          "Job Title": "job_title",
+          "Phone Numbers": "phone_numbers",
+          "Primary Location": "primary_location",
+          "AngelList": "angellist",
+          "Facebook": "facebook",
+          "Instagram": "instagram",
+          "LinkedIn": "linkedin",
+          "Twitter": "twitter",
+          "Associated Deals": "associated_deals",
+          "Associated Users": "associated_users"
+        },
+        "deals": {
+          "Name": "name",
+          "Deal Stage": "stage",
+          "Deal Owner": "owner",
+          "Deal Value": "value",
+          "Associated People": "associated_people",
+          "Associated Company": "associated_company"
+        },
+        "users": {
+          "Person": "person",
+          "Primary Email Address": "primary_email_address",
+          "ID": "user_id",
+          "Workspaces": "workspace"
+        },
+        "workspaces": {
+          "ID": "workspace_id",
+          "Name": "name",
+          "Users": "users",
+          "Company": "company",
+          "Avatar URL": "avatar_url"
         }
       },
       "custom": {}
@@ -56,13 +71,16 @@
     "objects": {
       "Companies": "companies",
       "People": "people",
+      "Deals": "deals",
       "Users": "users",
-      "Activities": "activities"
+      "Workspaces": "workspaces"
     },
-    "lists": {
-      "Important Leads": "important_leads",
-      "VIP Contacts": "vip_contacts"
-    },
-    "relationships": {}
+    "lists": {},
+    "relationships": {
+      "Company Team": "team",
+      "Person Company": "company",
+      "Deal People": "associated_people",
+      "Deal Company": "associated_company"
+    }
   }
 }
