@@ -1,8 +1,10 @@
-import axios, {
+import axios from 'axios';
+import type {
   AxiosInstance,
   AxiosError,
   AxiosResponse,
   InternalAxiosRequestConfig,
+  AxiosRequestConfig,
 } from 'axios';
 import { enhanceApiError } from '../utils/error-enhancer.js';
 // If logger is used, ensure it's imported, e.g.:
@@ -24,6 +26,7 @@ export function createAttioApiClient(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
   });
 
@@ -64,7 +67,8 @@ export function createAttioApiClient(
           );
           // console.error('[Interceptor] Full error.response object:', JSON.stringify(axiosError.response)); // Can be very verbose
 
-          const config = axiosError.config as RetryableAxiosRequestConfig;
+          const config = (axiosError.config ??
+            {}) as RetryableAxiosRequestConfig;
           const { status } = axiosError.response;
 
           // Attempt to enhance the error first
@@ -78,8 +82,9 @@ export function createAttioApiClient(
 
           if (config.retryCount < MAX_RETRIES && shouldRetry) {
             config.retryCount++;
+            const target = config.url ?? '(unknown url)';
             console.warn(
-              `[Interceptor] Retrying request (${config.retryCount}/${MAX_RETRIES}) for ${config.url} due to ${status}`
+              `[Interceptor] Retrying request (${config.retryCount}/${MAX_RETRIES}) for ${target} due to ${status}`
             );
             // Exponential backoff with jitter to prevent thundering herd
             const baseDelay =
@@ -87,7 +92,10 @@ export function createAttioApiClient(
             const jitter = Math.floor(Math.random() * 300); // 0-300ms jitter
             const totalDelay = Math.min(baseDelay + jitter, 5000); // Cap at 5s
             await new Promise((resolve) => setTimeout(resolve, totalDelay));
-            return instance.request(config);
+
+            // Convert InternalAxiosRequestConfig to AxiosRequestConfig before retrying
+            const retryConfig: AxiosRequestConfig = { ...config };
+            return instance.request(retryConfig);
           }
           return Promise.reject(enhancedError); // Reject with the potentially enhanced error
         }
