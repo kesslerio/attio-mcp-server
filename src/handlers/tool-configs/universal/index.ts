@@ -37,13 +37,28 @@ export const healthCheckToolDefinition = {
   },
 };
 
+/**
+ * Backwards-compatible health-check alias for Smithery deployment validation
+ * This ensures both 'health-check' and 'aaa-health-check' work identically.
+ */
+export const healthCheckAliasToolDefinition = {
+  name: 'health-check',
+  description: 'Returns server status without requiring any credentials.',
+  inputSchema: {
+    type: 'object',
+    properties: {},
+    additionalProperties: true,
+  },
+};
+
 export const healthCheckConfig = {
   name: 'aaa-health-check',
   handler: async (params: { [key: string]: unknown }) => {
     const payload = {
       ok: true,
       name: 'attio-mcp',
-      echo: typeof params?.echo === 'string' ? (params.echo as string) : undefined,
+      echo:
+        typeof params?.echo === 'string' ? (params.echo as string) : undefined,
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'production',
       needs_api_key: true,
@@ -60,13 +75,23 @@ export const healthCheckConfig = {
       isError: false,
     };
   },
-  formatResult: (res: any): string => {
+  formatResult: (res: Record<string, unknown>): string => {
     const data = res?.content?.[0]?.data ?? res;
     const parts: string[] = ['✅ Server healthy'];
     if (data?.echo) parts.push(`echo: ${String(data.echo)}`);
     if (data?.environment) parts.push(`env: ${String(data.environment)}`);
     return parts.join(' | ');
   },
+};
+
+/**
+ * Backwards-compatible health-check config alias for Smithery deployment
+ * Uses the same handler as aaa-health-check but with the legacy name.
+ */
+export const healthCheckAliasConfig = {
+  name: 'health-check',
+  handler: healthCheckConfig.handler,
+  formatResult: healthCheckConfig.formatResult,
 };
 
 // Re-export individual tool config objects for testing
@@ -89,6 +114,8 @@ export * from './shared-handlers.js';
 export const universalToolConfigs = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckConfig,
+  // Backwards-compatible alias for Smithery deployment validation
+  'health-check': healthCheckAliasConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   'batch-search': batchSearchConfig,
@@ -100,6 +127,8 @@ export const universalToolConfigs = {
 export const universalToolDefinitions = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckToolDefinition,
+  // Backwards-compatible alias for Smithery deployment validation
+  'health-check': healthCheckAliasToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   'batch-search': batchSearchToolDefinition,
@@ -349,8 +378,8 @@ export function getUniversalEquivalent(
  */
 export function getMigrationParams(
   deprecatedToolName: string,
-  originalParams: any
-): any {
+  originalParams: Record<string, unknown>
+): Record<string, unknown> {
   const universalTool = getUniversalEquivalent(deprecatedToolName);
   const resourceType = resourceTypeMappings[deprecatedToolName];
 
