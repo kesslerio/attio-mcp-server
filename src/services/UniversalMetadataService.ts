@@ -807,6 +807,7 @@ export class UniversalMetadataService {
     resource_type: UniversalResourceType,
     options?: {
       categories?: string[]; // NEW: Category filtering support
+      objectSlug?: string; // NEW: Object slug support for records
     }
   ): Promise<Record<string, unknown>> {
     switch (resource_type) {
@@ -821,7 +822,13 @@ export class UniversalMetadataService {
         return getListAttributes();
 
       case UniversalResourceType.RECORDS:
-        return this.discoverAttributesForResourceType(resource_type, options);
+        if (options?.objectSlug) {
+          return this.discoverObjectAttributes(options.objectSlug, {
+            categories: options.categories,
+          });
+        } else {
+          return this.discoverAttributesForResourceType(resource_type, options);
+        }
 
       case UniversalResourceType.DEALS:
         return this.discoverAttributesForResourceType(resource_type, options);
