@@ -3,7 +3,7 @@
  */
 import { getLazyAttioClient } from '../api/lazy-client.js';
 import { parsePersonalName } from '../utils/personal-name-parser.js';
-import { debug } from '../utils/logger.js';
+import { debug, error } from '../utils/logger.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -122,18 +122,11 @@ export async function getObjectAttributeMetadata(
     attributeCache.set(objectSlug, metadataMap);
 
     return metadataMap;
-  } catch (error: unknown) {
-    console.error(`Failed to fetch attributes for ${objectSlug}:`, error);
-
-    // More detailed error logging
-    if (error instanceof Error) {
-      console.error(`Error details:`, {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      });
+  } catch (err: unknown) {
+    error('attribute-types', `Failed to fetch attributes`, err, { objectSlug });
+    if (err instanceof Error) {
+      error('attribute-types', 'Error details', err);
     }
-
     // Return empty map on error
     return new Map();
   }
