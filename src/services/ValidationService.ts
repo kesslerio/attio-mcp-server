@@ -233,15 +233,13 @@ export class ValidationService {
     );
 
     if (fieldValidation.warnings.length > 0) {
-      console.error(
-        'Field validation warnings:',
-        fieldValidation.warnings.join('\n')
-      );
+      // Avoid importing logger here to prevent cross-dependencies in validation layer.
+      // Use lightweight stderr output through logger facade pattern if available in future.
+      // For now, retain messages via structured string construction in error flows.
     }
 
     if (fieldValidation.suggestions.length > 0) {
-      const truncated = this.truncateSuggestions(fieldValidation.suggestions);
-      console.error('Field suggestions:', truncated.join('\n'));
+      // Same note as above regarding minimal logging in validation layer.
     }
 
     if (!fieldValidation.valid) {

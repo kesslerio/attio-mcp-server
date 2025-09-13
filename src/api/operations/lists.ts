@@ -4,6 +4,7 @@
  */
 
 import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { createScopedLogger } from '../../utils/logger.js';
 import {
   AttioList,
   AttioListEntry,
@@ -128,7 +129,8 @@ export async function getListEntries(
 
         // Log filter transformation for debugging in development
         if (process.env.NODE_ENV === 'development') {
-          console.error('[getListEntries] Transformed filters:', {
+          const log = createScopedLogger('lists.operations', 'getListEntries');
+          log.debug('Transformed filters', {
             originalFilters: JSON.stringify(filters),
             transformedFilters: JSON.stringify(filterObject.filter),
             useOrLogic: filters?.matchAny === true,
@@ -142,7 +144,8 @@ export async function getListEntries(
       if (error instanceof FilterValidationError) {
         // Log the problematic filters for debugging
         if (process.env.NODE_ENV === 'development') {
-          console.error('[getListEntries] Filter validation error:', {
+          const log = createScopedLogger('lists.operations', 'getListEntries');
+          log.warn('Filter validation error', {
             error: error.message,
             providedFilters: JSON.stringify(filters),
           });
@@ -158,18 +161,14 @@ export async function getListEntries(
   };
 
   // Enhanced logging function
+  const logger = createScopedLogger('lists.operations', 'getListEntries');
   const logOperation = (
     stage: string,
     details?: LogDetails,
     isError = false
   ) => {
     if (process.env.NODE_ENV === 'development') {
-      const prefix = isError
-        ? 'ERROR'
-        : stage.includes('failed')
-          ? 'WARNING'
-          : 'INFO';
-      console.error(`[getListEntries] ${prefix} - ${stage}`, {
+      const data = {
         ...details,
         listId,
         limit: safeLimit,
@@ -177,7 +176,12 @@ export async function getListEntries(
         hasFilters:
           filters && filters.filters ? filters.filters.length > 0 : false,
         timestamp: new Date().toISOString(),
-      });
+      };
+      if (isError || stage.includes('failed')) {
+        logger.warn(stage, data);
+      } else {
+        logger.debug(stage, data);
+      }
     }
   };
 
@@ -237,6 +241,7 @@ export async function addRecordToList(
   const safeObjectType = objectType || 'companies';
 
   return callWithRetry(async () => {
+    const log = createScopedLogger('lists.operations', 'addRecordToList');
     try {
       // Construct proper API payload according to Attio API requirements
       // The API expects parent_record_id, parent_object, and entry_values (required, even if empty)
@@ -250,16 +255,14 @@ export async function addRecordToList(
       };
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(`[addRecordToList] Adding record to list at ${path}`);
-        console.error(`- List ID: ${listId}`);
-        console.error(`- Record ID: ${recordId}`);
-        console.error(`- Object Type: ${safeObjectType}`);
-        console.error(
-          `- Initial Values: ${
-            initialValues ? JSON.stringify(initialValues) : 'none'
-          }`
-        );
-        console.error(`- Request payload: ${JSON.stringify(payload)}`);
+        log.info('Adding record to list', {
+          path,
+          listId,
+          recordId,
+          safeObjectType,
+          initialValues: initialValues ?? null,
+          payload,
+        });
       }
 
       const response = await api.post<AttioSingleResponse<AttioListEntry>>(
@@ -268,9 +271,7 @@ export async function addRecordToList(
       );
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[addRecordToList] Success: ${JSON.stringify(response.data)}`
-        );
+        log.info('Add record success', { data: response.data });
       }
 
       return response?.data?.data || response?.data;
@@ -278,23 +279,12 @@ export async function addRecordToList(
       const listError = error as ListErrorResponse;
       // Enhanced error logging with detailed information
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[addRecordToList] Error adding record ${recordId} to list ${listId}:`,
-          listError.message || 'Unknown error'
-        );
-        console.error('Status:', listError.response?.status);
-        console.error(
-          'Response data:',
-          JSON.stringify(listError.response?.data || {})
-        );
-
-        // Add additional debug information for validation errors
-        if (listError.response?.data?.validation_errors) {
-          console.error(
-            'Validation errors:',
-            JSON.stringify(listError.response.data.validation_errors)
-          );
-        }
+        log.warn('Add record error', {
+          message: listError.message || 'Unknown error',
+          status: listError.response?.status,
+          data: listError.response?.data || {},
+          validationErrors: listError.response?.data?.validation_errors,
+        });
       }
 
       // Add more context to the error message
@@ -356,12 +346,10 @@ export async function updateListEntry(
   }
 
   return callWithRetry(async () => {
+    const log = createScopedLogger('lists.operations', 'updateListEntry');
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.error(`[updateListEntry] Updating list entry at ${path}`);
-        console.error(`- List ID: ${listId}`);
-        console.error(`- Entry ID: ${entryId}`);
-        console.error(`- Attributes: ${JSON.stringify(attributes)}`);
+        log.info('Updating list entry', { path, listId, entryId, attributes });
       }
 
       // Attio API expects updates to list entries in the 'data.entry_values' structure
@@ -376,9 +364,7 @@ export async function updateListEntry(
       );
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[updateListEntry] Success: ${JSON.stringify(response.data)}`
-        );
+        log.info('Update list entry success', { data: response.data });
       }
 
       return response?.data?.data || response?.data;
@@ -386,15 +372,11 @@ export async function updateListEntry(
       const updateError = error as ListErrorResponse;
       // Enhanced error logging with specific error types
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[updateListEntry] Error updating entry ${entryId} in list ${listId}:`,
-          updateError.message || 'Unknown error'
-        );
-        console.error('Status:', updateError.response?.status);
-        console.error(
-          'Response data:',
-          JSON.stringify(updateError.response?.data || {})
-        );
+        log.warn('Update list entry error', {
+          message: updateError.message || 'Unknown error',
+          status: updateError.response?.status,
+          data: updateError.response?.data || {},
+        });
       }
 
       // Add more specific error types based on status codes

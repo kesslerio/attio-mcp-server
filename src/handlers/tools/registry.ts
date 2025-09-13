@@ -3,6 +3,7 @@
  */
 import { ResourceType } from '../../types/attio.js';
 import { ToolConfig } from '../tool-types.js';
+import { createScopedLogger } from '../../utils/logger.js';
 
 // Import consolidated tool configurations from modular files
 import {
@@ -111,8 +112,9 @@ export function findToolConfig(toolName: string):
   const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
 
   // Debug logging for all tool lookups in development
+  const log = createScopedLogger('tools.registry', 'findToolConfig');
   if (debugMode) {
-    console.error(`[findToolConfig] Looking for tool: ${toolName}`);
+    log.debug(`Looking for tool: ${toolName}`);
   }
 
   // Search in resource-specific tools first
@@ -120,9 +122,7 @@ export function findToolConfig(toolName: string):
     const resourceConfig = TOOL_CONFIGS[resourceType];
     if (!resourceConfig) {
       if (debugMode) {
-        console.error(
-          `[findToolConfig] No config found for resource type: ${resourceType}`
-        );
+        log.debug(`No config found for resource type: ${resourceType}`);
       }
       continue;
     }
@@ -131,9 +131,9 @@ export function findToolConfig(toolName: string):
     if (debugMode) {
       const toolTypes = Object.keys(resourceConfig);
       if (toolTypes.includes(toolName.replace(/-/g, ''))) {
-        console.error(
-          `[findToolConfig] Tool might be found under a different name. Available tool types:`,
-          toolTypes
+        log.info(
+          'Tool might be found under a different name. Available tool types',
+          { toolTypes }
         );
       }
 
@@ -156,15 +156,14 @@ export function findToolConfig(toolName: string):
         if (hasToolType) {
           const config =
             resourceConfig[toolTypeKey as keyof typeof resourceConfig];
-          console.error(`[findToolConfig] Found ${toolTypeKey} config:`, {
+          log.info('Found config for legacy mapping', {
+            toolTypeKey,
             name: (config as any).name,
             hasHandler: typeof (config as any).handler === 'function',
             hasFormatter: typeof (config as any).formatResult === 'function',
           });
         } else {
-          console.warn(
-            `[findToolConfig] ${toolTypeKey} not found in ${resourceType} configs!`
-          );
+          log.warn(`${toolTypeKey} not found in ${resourceType} configs`);
         }
       }
     }
@@ -172,9 +171,11 @@ export function findToolConfig(toolName: string):
     for (const [toolType, config] of Object.entries(resourceConfig)) {
       if (config && config.name === toolName) {
         if (debugMode) {
-          console.error(
-            `[findToolConfig] Found tool: ${toolName}, type: ${toolType}, resource: ${resourceType}`
-          );
+          log.info('Found tool in resource config', {
+            toolName,
+            toolType,
+            resourceType,
+          });
         }
 
         return {
@@ -192,9 +193,7 @@ export function findToolConfig(toolName: string):
     for (const [toolType, config] of Object.entries(universalConfig)) {
       if (config && config.name === toolName) {
         if (debugMode) {
-          console.error(
-            `[findToolConfig] Found universal tool: ${toolName}, type: ${toolType}, category: UNIVERSAL`
-          );
+          log.info('Found universal tool', { toolName, toolType });
         }
 
         return {
@@ -212,9 +211,7 @@ export function findToolConfig(toolName: string):
     for (const [toolType, config] of Object.entries(generalConfig)) {
       if (config && config.name === toolName) {
         if (debugMode) {
-          console.error(
-            `[findToolConfig] Found tool: ${toolName}, type: ${toolType}, category: GENERAL`
-          );
+          log.info('Found general tool', { toolName, toolType });
         }
 
         return {
@@ -227,7 +224,7 @@ export function findToolConfig(toolName: string):
   }
 
   if (debugMode) {
-    console.warn(`[findToolConfig] Tool not found: ${toolName}`);
+    log.warn('Tool not found', { toolName });
   }
 
   return undefined;

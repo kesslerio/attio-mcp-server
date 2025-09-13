@@ -447,8 +447,11 @@ export function getMigrationParams(
  */
 export function logConsolidationStats(): void {
   const stats = getConsolidationStats();
-  console.error(`Universal tool consolidation: ${stats.summary}`);
-  console.error(
-    `Reduced tool count by ${stats.reductionCount} tools (${stats.reductionPercentage}% reduction)`
-  );
+  const { createScopedLogger } = require('../../../utils/logger.js');
+  const log = createScopedLogger('universal.tools', 'consolidation');
+  log.info('Universal tool consolidation', { summary: stats.summary });
+  log.info('Tool count reduction', {
+    reductionCount: stats.reductionCount,
+    reductionPercentage: stats.reductionPercentage,
+  });
 }

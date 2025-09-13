@@ -28,6 +28,7 @@ import {
   ProcessedFieldValue,
 } from '../../types/tool-types.js';
 import { processFieldValue } from './field_detector.js';
+import { createScopedLogger } from '../../utils/logger.js';
 import { TypeCache } from './type_cache.js';
 import { CachedTypeInfo } from './types.js';
 
@@ -72,9 +73,14 @@ export class CompanyValidator {
         const normalizedDomain = normalizeDomain(extractedDomain);
 
         if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-          console.error(
-            `[CompanyValidator] Auto-extracted domain "${normalizedDomain}" from website "${attributes.website}"`
+          const log = createScopedLogger(
+            'CompanyValidator',
+            'extractDomainFromWebsite'
           );
+          log.info('Auto-extracted domain from website', {
+            normalizedDomain,
+            website: attributes.website,
+          });
         }
 
         attributes.domains = [normalizedDomain];
@@ -248,7 +254,8 @@ export class CompanyValidator {
         TypeCache.setFieldType(field, expectedType);
       }
     } catch {
-      console.warn(`Failed to detect field type for ${field}, using fallback`);
+      const log = createScopedLogger('CompanyValidator', 'validateFieldType');
+      log.warn('Failed to detect field type; using fallback', { field });
       expectedType = CompanyValidator.inferFieldType(field);
     }
 
@@ -548,8 +555,13 @@ export class CompanyValidator {
             const validatorType = await this.getValidatorType(attributeName);
             validatorTypes.set(attributeName, validatorType);
           } catch {
-            console.warn(
-              `Could not determine type for attribute "${attributeName}". Using string as fallback.`
+            const log = createScopedLogger(
+              'CompanyValidator',
+              'validateAttributeTypes'
+            );
+            log.warn(
+              'Could not determine type for attribute; using string as fallback',
+              { attributeName }
             );
             validatorTypes.set(attributeName, 'string');
           }
@@ -576,10 +588,11 @@ export class CompanyValidator {
         }
       }
     } catch (error: unknown) {
-      console.error(
-        'Unexpected error during batch validation:',
-        (error as Error).message
+      const log = createScopedLogger(
+        'CompanyValidator',
+        'validateAttributeTypes'
       );
+      log.error('Unexpected error during batch validation', error);
 
       for (const [attributeName, value] of Object.entries(
         attributesToValidate
@@ -606,8 +619,13 @@ export class CompanyValidator {
               result.error || `Invalid value for ${attributeName}`;
           }
         } catch {
-          console.warn(
-            `Validation failed for attribute "${attributeName}", proceeding with original value`
+          const log2 = createScopedLogger(
+            'CompanyValidator',
+            'validateAttributeTypes'
+          );
+          log2.warn(
+            'Validation failed for attribute; proceeding with original value',
+            { attributeName }
           );
           validatedAttributes[attributeName] = value;
         }

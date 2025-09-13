@@ -7,6 +7,7 @@ import {
 } from '../../../objects/people/index.js';
 import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 import { NoteDisplay } from '../../../types/tool-types.js';
+import { createScopedLogger } from '../../../utils/logger.js';
 
 export const notesToolConfigs = {
   notes: {
@@ -19,10 +20,10 @@ export const notesToolConfigs = {
 
       // Debug logging in development to help identify API response structure (Issue #365)
       if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-        console.error(
-          '[get-person-notes] Debug - Raw notes response:',
-          JSON.stringify(notes.slice(0, 1), null, 2)
-        );
+        const log = createScopedLogger('people.notes', 'get-person-notes');
+        log.debug('Raw notes response (first item)', {
+          first: notes.slice(0, 1),
+        });
       }
 
       return `Found ${notes.length} notes:\n${notes
@@ -55,15 +56,12 @@ export const notesToolConfigs = {
 
           // Additional debug logging for each note
           if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-            console.error(
-              `[get-person-notes] Note fields available:`,
-              Object.keys(note)
-            );
-            console.error(
-              `[get-person-notes] Content found:`,
-              !!content,
-              content ? `(${content.length} chars)` : '(none)'
-            );
+            const log = createScopedLogger('people.notes', 'get-person-notes');
+            log.debug('Note fields available', { keys: Object.keys(note) });
+            log.debug('Content presence', {
+              hasContent: !!content,
+              length: content ? content.length : 0,
+            });
           }
 
           // Truncate at 100 chars for person notes (shorter for readability in lists)

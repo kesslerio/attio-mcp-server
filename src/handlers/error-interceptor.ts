@@ -10,11 +10,18 @@
 // or an alternative interceptor. For now, it's a placeholder to avoid build issues
 // stemming from previous incorrect edits.
 
+import { createScopedLogger } from '../utils/logger.js';
+
+const log = createScopedLogger('error-interceptor');
+
 export function placeholderInterceptorLogic(error: unknown): unknown {
-  console.warn(
-    '[placeholderInterceptorLogic] This is a placeholder in src/handlers/error-interceptor.ts. Original error passed through:',
-    error instanceof Error ? error.message : String(error)
-  );
+  const message =
+    'Placeholder interceptor invoked. Original error passed through.';
+  const data =
+    error instanceof Error
+      ? { error: { message: error.message, name: error.name } }
+      : { error: { message: String(error) } };
+  log.warn(message, data);
   return error;
 }
 

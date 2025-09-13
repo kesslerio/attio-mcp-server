@@ -8,18 +8,18 @@ import { getRecord } from '../../api/operations/crud.js';
 // Standard fields that are NOT custom (based on actual Attio API)
 const standardFields = new Set([
   'name',
-  'stage', 
+  'stage',
   'owner',
   'value',
   'associated_people',
   'associated_company',
   'created_at',
-  'created_by'
+  'created_by',
 ]);
 
 /**
  * Determines if a field is a standard Attio deal field or a custom field
- * 
+ *
  * @param fieldName - The field name to check
  * @returns True if it's a standard field, false if custom
  */
@@ -29,7 +29,7 @@ export function isStandardDealField(fieldName: string): boolean {
 
 /**
  * Gets a list of all standard deal field names
- * 
+ *
  * @returns Array of standard field names
  */
 export function getStandardDealFields(): string[] {
@@ -75,12 +75,7 @@ export async function getDealFields(
 export async function getDealBasicInfo(
   dealIdOrUri: string
 ): Promise<Partial<AttioRecord>> {
-  const basicFields = [
-    'name',
-    'stage',
-    'owner',
-    'value'
-  ];
+  const basicFields = ['name', 'stage', 'owner', 'value'];
 
   return getDealFields(dealIdOrUri, basicFields);
 }
@@ -100,7 +95,7 @@ export async function getDealSalesInfo(
     'value',
     'owner',
     'associated_company',
-    'associated_people'
+    'associated_people',
   ];
 
   return getDealFields(dealIdOrUri, salesFields);
@@ -119,7 +114,7 @@ export async function getDealRelationshipInfo(
     'name',
     'associated_company',
     'associated_people',
-    'owner'
+    'owner',
   ];
 
   return getDealFields(dealIdOrUri, relationshipFields);
@@ -129,17 +124,12 @@ export async function getDealRelationshipInfo(
  * Gets deal metadata information
  *
  * @param dealIdOrUri - The ID of the deal or its URI
- * @returns Deal metadata information  
+ * @returns Deal metadata information
  */
 export async function getDealMetadataInfo(
   dealIdOrUri: string
 ): Promise<Partial<AttioRecord>> {
-  const metadataFields = [
-    'name',
-    'created_at',
-    'created_by',
-    'owner'
-  ];
+  const metadataFields = ['name', 'created_at', 'created_by', 'owner'];
 
   return getDealFields(dealIdOrUri, metadataFields);
 }
@@ -158,7 +148,7 @@ export function validateAndCategorizeDealFields(fields: string[]): {
   const result = {
     standardFields: [] as string[],
     customFields: [] as string[],
-    warnings: [] as string[]
+    warnings: [] as string[],
   };
 
   for (const fieldName of fields) {
@@ -166,7 +156,7 @@ export function validateAndCategorizeDealFields(fields: string[]): {
       result.standardFields.push(fieldName);
     } else {
       result.customFields.push(fieldName);
-      
+
       // Generate warnings for fields that look like they might be standard but aren't
       if (fieldName.includes('stage') && fieldName !== 'stage') {
         result.warnings.push(
@@ -204,12 +194,12 @@ export async function getDealWithFieldAnalysis(
 }> {
   // If no specific fields requested, get all basic fields
   const fieldsToFetch = requestedFields || getStandardDealFields();
-  
+
   const deal = await getDealFields(dealIdOrUri, fieldsToFetch);
   const fieldAnalysis = validateAndCategorizeDealFields(fieldsToFetch);
 
   return {
     deal,
-    fieldAnalysis
+    fieldAnalysis,
   };
 }

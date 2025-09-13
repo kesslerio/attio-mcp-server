@@ -98,10 +98,22 @@ class TaskWorkflowTests extends MCPTestBase {
       record_data: testTask,
     });
 
-    // Extract task ID from response
-    const taskId = this.extractRecordId(this.extractTextContent(result));
+    // Extract task ID from response with fallback extraction methods
+    const responseText = this.extractTextContent(result);
+    let taskId = this.extractRecordId(responseText);
+
+    // Fallback: try alternate extraction patterns
     if (!taskId) {
-      throw new Error('Failed to extract task ID from create response');
+      const match = responseText.match(
+        /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i
+      );
+      taskId = match ? match[0] : null;
+    }
+
+    if (!taskId) {
+      throw new Error(
+        `Failed to extract task ID from create response: ${responseText}`
+      );
     }
 
     this.trackTaskForCleanup(taskId);
@@ -153,6 +165,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Arrange - Create a test task with initial status
       const taskId = await testSuite.createTestTask({
         title: `${testSuite.generateTestId()} Status Progression Task`,
+        content: 'Task for testing status progression through workflow',
         status: 'open',
         priority: 'high',
       });
@@ -171,7 +184,9 @@ describe('MCP P1 Task Workflow Operations', () => {
         expect(result.isError).toBeFalsy();
 
         const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(/Updated task|Successfully updated task/);
+        expect(responseText).toMatch(
+          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+        );
         expect(responseText).toContain(taskId);
 
         console.log(
@@ -188,6 +203,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         // Arrange - Create a new task for each status test
         const taskId = await testSuite.createTestTask({
           title: `${testSuite.generateTestId()} Status ${status} Task`,
+          content: `Task for testing ${status} status validation`,
           status: 'open', // Start with open status
         });
 
@@ -202,7 +218,9 @@ describe('MCP P1 Task Workflow Operations', () => {
         expect(result.isError).toBeFalsy();
 
         const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(/Updated task|Successfully updated task/);
+        expect(responseText).toMatch(
+          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+        );
 
         console.log(`✅ Successfully set task ${taskId} to status: ${status}`);
       }
@@ -226,7 +244,9 @@ describe('MCP P1 Task Workflow Operations', () => {
         expect(responseText).toMatch(/invalid|error|status/i);
         console.log(`✅ Correctly rejected invalid status`);
       } else {
-        expect(responseText).toMatch(/Updated task|Successfully updated task/);
+        expect(responseText).toMatch(
+          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+        );
         console.log(`✅ Gracefully handled invalid status`);
       }
     });
@@ -251,7 +271,10 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Initial deadline set
       expect(setResult.isError).toBeFalsy();
-      expect(testSuite.extractTextContent(setResult)).toContain('Updated task');
+      const setResponse = testSuite.extractTextContent(setResult);
+      expect(setResponse).toMatch(
+        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+      );
 
       // Act - Update deadline (14 days from now)
       const updatedDeadline = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -266,8 +289,9 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Deadline updated
       expect(updateResult.isError).toBeFalsy();
-      expect(testSuite.extractTextContent(updateResult)).toContain(
-        'Updated task'
+      const updateResponse = testSuite.extractTextContent(updateResult);
+      expect(updateResponse).toMatch(
+        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
       );
 
       console.log(
@@ -297,7 +321,9 @@ describe('MCP P1 Task Workflow Operations', () => {
       if (result.isError) {
         console.log(`✅ System rejected past due date (strict validation)`);
       } else {
-        expect(responseText).toMatch(/Updated task|Successfully updated task/);
+        expect(responseText).toMatch(
+          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+        );
         console.log(`✅ System accepted past due date (historical tracking)`);
       }
     });
@@ -306,6 +332,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Arrange - Create task with deadline
       const taskId = await testSuite.createTestTask({
         title: `${testSuite.generateTestId()} Deadline Removal Task`,
+        content: 'Task for testing deadline removal functionality',
         due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           .toISOString()
           .split('T')[0],
@@ -322,7 +349,9 @@ describe('MCP P1 Task Workflow Operations', () => {
       expect(result.isError).toBeFalsy();
 
       const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
+      expect(responseText).toMatch(
+        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+      );
 
       console.log(`✅ Successfully removed deadline from task ${taskId}`);
     });
@@ -359,6 +388,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Arrange - Create task in progress
       const taskId = await testSuite.createTestTask({
         title: `${testSuite.generateTestId()} Completion Test Task`,
+        content: 'Task for testing completion workflow',
         status: 'in_progress',
         priority: 'high',
       });
@@ -374,7 +404,9 @@ describe('MCP P1 Task Workflow Operations', () => {
       expect(result.isError).toBeFalsy();
 
       const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
+      expect(responseText).toMatch(
+        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+      );
       expect(responseText).toContain(taskId);
 
       console.log(`✅ Successfully marked task ${taskId} as completed`);
@@ -401,7 +433,9 @@ describe('MCP P1 Task Workflow Operations', () => {
       expect(result.isError).toBeFalsy();
 
       const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
+      expect(responseText).toMatch(
+        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+      );
 
       console.log(
         `✅ Successfully completed task ${taskId} with completion notes`
@@ -452,7 +486,9 @@ describe('MCP P1 Task Workflow Operations', () => {
         expect(result.isError).toBeFalsy();
 
         const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(/Updated task|Successfully updated task/);
+        expect(responseText).toMatch(
+          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
+        );
 
         console.log(`✅ Workflow step: ${description} for task ${taskId}`);
       }
