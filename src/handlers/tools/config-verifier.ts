@@ -14,6 +14,8 @@
  * @param {string[]} requiredToolTypes - Array of tool types that must be present
  * @returns {boolean} - Whether all required tools are properly configured
  */
+import { createScopedLogger } from '../../utils/logger.js';
+
 export function verifyToolConfigsWithRequiredTools(
   resourceName: string,
   combinedConfigs: any,
@@ -23,9 +25,11 @@ export function verifyToolConfigsWithRequiredTools(
     process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
   if (!debugMode) return true;
 
-  console.error(
-    `[${resourceName}ToolConfigs] Verifying tool configs during initialization`
+  const log = createScopedLogger(
+    `${resourceName}ToolConfigs`,
+    'verifyToolConfigs'
   );
+  log.info('Verifying tool configs during initialization');
 
   let allPresent = true;
 
@@ -54,19 +58,18 @@ export function verifyToolConfigsWithRequiredTools(
   );
 
   if (duplicates.length > 0) {
-    console.warn(`[${resourceName}ToolConfigs] DUPLICATE TOOL NAMES DETECTED:`);
+    log.warn('DUPLICATE TOOL NAMES DETECTED');
     for (const [toolName, configTypes] of duplicates) {
-      console.warn(
-        `  Tool name "${toolName}" is defined in multiple configs: ${configTypes.join(
-          ', '
-        )}`
-      );
+      log.warn('Tool name defined in multiple configs', {
+        toolName,
+        locations: configTypes,
+      });
     }
 
     // In strict mode, fail validation
     if (process.env.STRICT_TOOL_VALIDATION === 'true') {
-      console.error(
-        `[${resourceName}ToolConfigs] ERROR: Duplicate tool names will cause MCP tool initialization failures.`
+      log.error(
+        'Duplicate tool names will cause MCP tool initialization failures.'
       );
       allPresent = false;
     }
@@ -76,15 +79,11 @@ export function verifyToolConfigsWithRequiredTools(
   for (const toolType of requiredToolTypes) {
     if (toolType in combinedConfigs) {
       const config = combinedConfigs[toolType];
-      console.error(
-        `[${resourceName}ToolConfigs] Found ${toolType} with name: ${config.name}`
-      );
+      log.info('Found required tool', { toolType, name: config.name });
 
       // Additional validation
       if (typeof config.handler !== 'function') {
-        console.warn(
-          `[${resourceName}ToolConfigs] WARNING: ${toolType} has no handler function!`
-        );
+        log.warn(`${toolType} has no handler function`);
         allPresent = false;
       }
 
@@ -93,24 +92,19 @@ export function verifyToolConfigsWithRequiredTools(
         toolType !== 'create' &&
         toolType !== 'update'
       ) {
-        console.warn(
-          `[${resourceName}ToolConfigs] WARNING: ${toolType} has no formatResult function!`
-        );
+        log.warn(`${toolType} has no formatResult function`);
       }
     } else {
-      console.warn(
-        `[${resourceName}ToolConfigs] MISSING: Required tool type '${toolType}' not found!`
-      );
+      log.warn('MISSING required tool type', { toolType });
       allPresent = false;
     }
   }
 
   // Log all available tool types for debugging
   if (debugMode) {
-    console.error(
-      `[${resourceName}ToolConfigs] All registered tool types:`,
-      Object.keys(combinedConfigs)
-    );
+    log.info('All registered tool types', {
+      types: Object.keys(combinedConfigs),
+    });
   }
 
   return allPresent;
@@ -135,18 +129,20 @@ export function verifySpecificTool(
     process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
   if (!debugMode) return true;
 
+  const log = createScopedLogger(
+    `${resourceName}ToolConfigs`,
+    'verifySpecificTool'
+  );
   if (subConfigs && toolType in subConfigs) {
-    console.error(
-      `[${resourceName}ToolConfigs] Found ${toolType} in sub-configs`
-    );
+    log.info('Found tool in sub-configs', { toolType });
 
     // Check if the tool was properly merged into the main configs
     if (toolType in configs) {
       return true;
     } else {
-      console.warn(
-        `[${resourceName}ToolConfigs] WARNING: ${toolType} exists in sub-config but not in combined config!`
-      );
+      log.warn('Tool exists in sub-config but not in combined config', {
+        toolType,
+      });
       return false;
     }
   }
@@ -156,8 +152,6 @@ export function verifySpecificTool(
     return true;
   }
 
-  console.warn(
-    `[${resourceName}ToolConfigs] WARNING: ${toolType} not found in configs!`
-  );
+  log.warn('Tool not found in configs', { toolType });
   return false;
 }
