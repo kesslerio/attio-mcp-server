@@ -241,6 +241,7 @@ export async function addRecordToList(
   const safeObjectType = objectType || 'companies';
 
   return callWithRetry(async () => {
+    const log = createScopedLogger('lists.operations', 'addRecordToList');
     try {
       // Construct proper API payload according to Attio API requirements
       // The API expects parent_record_id, parent_object, and entry_values (required, even if empty)
@@ -253,7 +254,6 @@ export async function addRecordToList(
         },
       };
 
-      const log = createScopedLogger('lists.operations', 'addRecordToList');
       if (process.env.NODE_ENV === 'development') {
         log.info('Adding record to list', {
           path,
@@ -346,8 +346,8 @@ export async function updateListEntry(
   }
 
   return callWithRetry(async () => {
+    const log = createScopedLogger('lists.operations', 'updateListEntry');
     try {
-      const log = createScopedLogger('lists.operations', 'updateListEntry');
       if (process.env.NODE_ENV === 'development') {
         log.info('Updating list entry', { path, listId, entryId, attributes });
       }
