@@ -4,6 +4,7 @@
  */
 
 import { ApiError } from '../../types/api-operations.js';
+import { createScopedLogger } from '../../utils/logger.js';
 
 /**
  * Configuration options for API call retry
@@ -135,9 +136,12 @@ export async function callWithRetry<T>(
 
       // Log retry attempt if in development
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `Retrying API call (attempt ${attempt}/${retryConfig.maxRetries}) after ${delay}ms delay`
-        );
+        const log = createScopedLogger('api.retry', 'callWithRetry');
+        log.warn('Retrying API call', {
+          attempt,
+          maxRetries: retryConfig.maxRetries,
+          delay,
+        });
       }
     }
   }

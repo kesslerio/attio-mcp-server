@@ -4,6 +4,7 @@
  */
 
 import { getLazyAttioClient } from '../../../../../api/lazy-client.js';
+import { createScopedLogger } from '../../../../../utils/logger.js';
 
 /**
  * Checks if a domain already exists in the system to prevent uniqueness conflicts
@@ -41,7 +42,8 @@ export async function checkDomainConflict(domain: string): Promise<{
 
     return { exists: false };
   } catch (error) {
-    console.warn('Failed to check domain conflict:', error);
+    const log = createScopedLogger('validators.domain', 'checkDomainConflict');
+    log.warn('Failed to check domain conflict', { error: String(error) });
     // If we can't check, assume no conflict to avoid blocking legitimate creates
     return { exists: false };
   }
