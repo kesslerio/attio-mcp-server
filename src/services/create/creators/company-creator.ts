@@ -17,6 +17,7 @@ import {
   normalizeRecordForOutput,
 } from '../extractor.js';
 import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
+import { createScopedLogger } from '../../../utils/logger.js';
 
 /**
  * Company-specific resource creator
@@ -58,7 +59,7 @@ export class CompanyCreator extends BaseCreator {
             h.Authorization ||
             h.authorization
         );
-        console.debug(`[CompanyCreator] Client probe:`, {
+        createScopedLogger('CompanyCreator', 'create').debug('Client probe', {
           baseURL: context.client.defaults?.baseURL,
           hasAuth,
         });
@@ -68,7 +69,7 @@ export class CompanyCreator extends BaseCreator {
 
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        console.debug(`[CompanyCreator] Raw response:`, {
+        createScopedLogger('CompanyCreator', 'create').debug('Raw response', {
           status: response.status,
           hasData: !!response.data,
           dataType: typeof response.data,
@@ -84,13 +85,16 @@ export class CompanyCreator extends BaseCreator {
 
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        console.debug(`[CompanyCreator] Extracted record:`, {
-          hasRec: !!rec,
-          recType: typeof rec,
-          recKeys: rec && typeof rec === 'object' ? Object.keys(rec) : null,
-          hasId: !!rec?.id,
-          hasRecordId: !!rec?.id?.record_id,
-        });
+        createScopedLogger('CompanyCreator', 'create').debug(
+          'Extracted record',
+          {
+            hasRec: !!rec,
+            recType: typeof rec,
+            recKeys: rec && typeof rec === 'object' ? Object.keys(rec) : null,
+            hasId: !!rec?.id,
+            hasRecordId: !!rec?.id?.record_id,
+          }
+        );
       }
 
       this.finalizeRecord(rec, context);
@@ -100,7 +104,7 @@ export class CompanyCreator extends BaseCreator {
 
       // Optional debug to confirm the shape:
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        console.debug('[CompanyCreator] types:', {
+        createScopedLogger('CompanyCreator', 'create').debug('types', {
           nameBefore: Array.isArray(rec?.values?.name)
             ? 'array'
             : typeof rec?.values?.name,
@@ -113,11 +117,14 @@ export class CompanyCreator extends BaseCreator {
     } catch (err: any) {
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        console.debug(`[CompanyCreator] Exception caught:`, {
-          message: err.message,
-          status: err?.response?.status,
-          hasResponseData: !!err?.response?.data,
-        });
+        createScopedLogger('CompanyCreator', 'create').debug(
+          'Exception caught',
+          {
+            message: err.message,
+            status: err?.response?.status,
+            hasResponseData: !!err?.response?.data,
+          }
+        );
       }
       return this.handleApiError(err, context, payload);
     }
@@ -292,11 +299,14 @@ export class CompanyCreator extends BaseCreator {
 
     /* istanbul ignore next */
     if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-      console.debug(
-        '[create] extracted keys:',
-        record && typeof record === 'object'
-          ? Object.keys(record)
-          : typeof record
+      createScopedLogger('CompanyCreator', 'finalizeRecord').debug(
+        'extracted keys',
+        {
+          keys:
+            record && typeof record === 'object'
+              ? Object.keys(record)
+              : typeof record,
+        }
       );
     }
 

@@ -21,6 +21,7 @@ import {
   normalizeRecordForOutput,
 } from '../extractor.js';
 import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
+import { createScopedLogger } from '../../../utils/logger.js';
 
 /**
  * Person-specific resource creator
@@ -61,7 +62,7 @@ export class PersonCreator extends BaseCreator {
 
       // Optional debug to confirm the shape:
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        console.debug('[PersonCreator] types:', {
+        createScopedLogger('PersonCreator', 'create').debug('types', {
           nameBefore: Array.isArray(rec?.values?.name)
             ? 'array'
             : typeof rec?.values?.name,
