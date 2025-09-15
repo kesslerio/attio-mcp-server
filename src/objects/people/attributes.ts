@@ -3,6 +3,7 @@
  * Contains functions for getting people information with different levels of detail
  */
 import { AttioRecord } from '../../types/attio.js';
+import { createScopedLogger } from '../../utils/logger.js';
 import { getRecord } from '../../api/operations/crud.js';
 
 // Standard fields that are NOT custom (based on actual Attio API)
@@ -10,7 +11,7 @@ const standardFields = new Set([
   'name',
   'description',
   'email_addresses',
-  'job_title', 
+  'job_title',
   'company',
   'linkedin',
   'twitter',
@@ -21,12 +22,12 @@ const standardFields = new Set([
   'avatar_url',
   'angellist',
   'associated_deals',
-  'associated_users'
+  'associated_users',
 ]);
 
 /**
  * Determines if a field is a standard Attio people field or a custom field
- * 
+ *
  * @param fieldName - The field name to check
  * @returns True if it's a standard field, false if custom
  */
@@ -36,7 +37,7 @@ export function isStandardPersonField(fieldName: string): boolean {
 
 /**
  * Gets a list of all standard people field names
- * 
+ *
  * @returns Array of standard field names
  */
 export function getStandardPersonFields(): string[] {
@@ -68,7 +69,10 @@ export async function getPersonFields(
     const person = await getRecord('people', personIdOrUri, fields);
     return person;
   } catch (error: unknown) {
-    console.error('Error fetching person fields:', error);
+    createScopedLogger('people.attributes', 'getPersonFields').error(
+      'Error fetching person fields',
+      error
+    );
     throw error;
   }
 }
@@ -87,7 +91,7 @@ export async function getPersonBasicInfo(
     'email_addresses',
     'job_title',
     'company',
-    'phone_numbers'
+    'phone_numbers',
   ];
 
   return getPersonFields(personIdOrUri, basicFields);
@@ -104,13 +108,13 @@ export async function getPersonContactInfo(
 ): Promise<Partial<AttioRecord>> {
   const contactFields = [
     'name',
-    'email_addresses', 
+    'email_addresses',
     'phone_numbers',
     'primary_location',
     'linkedin',
     'twitter',
     'facebook',
-    'instagram'
+    'instagram',
   ];
 
   return getPersonFields(personIdOrUri, contactFields);
@@ -128,10 +132,10 @@ export async function getPersonProfessionalInfo(
   const professionalFields = [
     'name',
     'job_title',
-    'company', 
+    'company',
     'linkedin',
     'associated_deals',
-    'associated_users'
+    'associated_users',
   ];
 
   return getPersonFields(personIdOrUri, professionalFields);
@@ -140,19 +144,13 @@ export async function getPersonProfessionalInfo(
 /**
  * Gets person social media and online presence
  *
- * @param personIdOrUri - The ID of the person or its URI  
+ * @param personIdOrUri - The ID of the person or its URI
  * @returns Person social media information
  */
 export async function getPersonSocialInfo(
   personIdOrUri: string
 ): Promise<Partial<AttioRecord>> {
-  const socialFields = [
-    'name',
-    'linkedin', 
-    'twitter',
-    'facebook',
-    'instagram'
-  ];
+  const socialFields = ['name', 'linkedin', 'twitter', 'facebook', 'instagram'];
 
   return getPersonFields(personIdOrUri, socialFields);
 }
@@ -171,7 +169,7 @@ export function validateAndCategorizePersonFields(fields: string[]): {
   const result = {
     standardFields: [] as string[],
     customFields: [] as string[],
-    warnings: [] as string[]
+    warnings: [] as string[],
   };
 
   for (const fieldName of fields) {
@@ -179,7 +177,7 @@ export function validateAndCategorizePersonFields(fields: string[]): {
       result.standardFields.push(fieldName);
     } else {
       result.customFields.push(fieldName);
-      
+
       // Generate warnings for fields that look like they might be standard but aren't
       if (fieldName.includes('email') && fieldName !== 'email_addresses') {
         result.warnings.push(
@@ -212,12 +210,12 @@ export async function getPersonWithFieldAnalysis(
 }> {
   // If no specific fields requested, get all basic fields
   const fieldsToFetch = requestedFields || getStandardPersonFields();
-  
+
   const person = await getPersonFields(personIdOrUri, fieldsToFetch);
   const fieldAnalysis = validateAndCategorizePersonFields(fieldsToFetch);
 
   return {
     person,
-    fieldAnalysis
+    fieldAnalysis,
   };
 }

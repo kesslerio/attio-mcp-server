@@ -25,11 +25,11 @@ export type AttributeType =
 /**
  * Result of attribute validation
  */
-export interface ValidationResult {
+export interface ValidationResult<T = unknown> {
   /** Whether the validation was successful */
   valid: boolean;
   /** The converted value (may differ from input if type conversion was applied) */
-  convertedValue?: any;
+  convertedValue?: T;
   /** Error message if validation failed */
   error?: string;
 }
@@ -68,7 +68,7 @@ export interface ValidationResult {
  */
 export function validateAttributeValue(
   attributeName: string,
-  value: any,
+  value: unknown,
   expectedType: AttributeType
 ): ValidationResult {
   // Handle null case first
@@ -128,8 +128,8 @@ export function validateAttributeValue(
  */
 function validateBooleanValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<boolean> {
   // Already a boolean - simple case
   if (typeof value === 'boolean') {
     return { valid: true, convertedValue: value };
@@ -210,8 +210,8 @@ function validateBooleanValue(
  */
 function validateNumberValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<number> {
   // Already a number - simple case
   if (typeof value === 'number' && !isNaN(value)) {
     return { valid: true, convertedValue: value };
@@ -281,8 +281,8 @@ function validateNumberValue(
  */
 function validateStringValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<string> {
   // Already a string - simple case
   if (typeof value === 'string') {
     return { valid: true, convertedValue: value };
@@ -348,8 +348,8 @@ function validateStringValue(
  */
 function validateDateValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<string> {
   // Already a date object - simple case
   if (value instanceof Date) {
     if (!isNaN(value.getTime())) {
@@ -416,8 +416,8 @@ function validateDateValue(
  */
 function validateArrayValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<unknown[]> {
   // Already an array - simple case
   if (Array.isArray(value)) {
     return { valid: true, convertedValue: value };
@@ -463,11 +463,11 @@ function validateArrayValue(
  */
 function validateObjectValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<Record<string, unknown>> {
   // Already an object - simple case
   if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return { valid: true, convertedValue: value };
+    return { valid: true, convertedValue: value as Record<string, unknown> };
   }
 
   // Invalid object value
@@ -506,8 +506,8 @@ function validateObjectValue(
  */
 function validateSelectValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<string | string[]> {
   // For select values, we expect strings or arrays of strings
   // Since we don't have access to the valid options list here,
   // we'll just validate that it's a string or array of strings
@@ -574,8 +574,8 @@ function validateSelectValue(
  */
 function validateRecordReferenceValue(
   attributeName: string,
-  value: any
-): ValidationResult {
+  value: unknown
+): ValidationResult<string | string[]> {
   // For record references, we need IDs
   // Could be a string ID, an object with record_id, or an array of either
 

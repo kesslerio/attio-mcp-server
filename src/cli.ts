@@ -2,7 +2,7 @@
 
 /**
  * CLI entrypoint for Attio MCP Server
- * 
+ *
  * This file is ONLY executed as a standalone binary, never imported.
  * It contains CLI argument parsing and process.exit() calls that would
  * interfere with Smithery's metadata extraction if run during imports.
@@ -17,7 +17,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- CRITICAL: Only run CLI logic when executed as main program ---
-const isMain = fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '');
+const isMain =
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '');
 
 if (!isMain) {
   // If someone imports this file, do nothing.
@@ -26,7 +27,7 @@ if (!isMain) {
   /* no-op - safe to import but does nothing */
 } else {
   // ---- CLI logic below (only runs when executed directly) ----
-  
+
   function loadEnvFile() {
     try {
       const envPath = path.resolve(process.cwd(), '.env');
@@ -56,7 +57,9 @@ if (!isMain) {
   async function main() {
     // Handle command-line arguments for CI/CD compatibility
     if (process.argv.includes('--help') || process.argv.includes('-h')) {
-      console.log('Attio MCP Server - Model Context Protocol server for Attio CRM');
+      console.log(
+        'Attio MCP Server - Model Context Protocol server for Attio CRM'
+      );
       console.log('\nUsage: node dist/cli.js');
       console.log('\nOptions:');
       console.log('  --help, -h     Show this help message');
@@ -64,12 +67,16 @@ if (!isMain) {
       console.log('\nEnvironment Variables:');
       console.log('  ATTIO_API_KEY         Required: Your Attio API key');
       console.log('  ATTIO_WORKSPACE_ID    Optional: Default workspace ID');
-      console.log('\nThe server communicates via stdio using the MCP protocol.');
+      console.log(
+        '\nThe server communicates via stdio using the MCP protocol.'
+      );
       process.exit(0);
     }
 
     if (process.argv.includes('--version') || process.argv.includes('-v')) {
-      const packageJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
+      const packageJson = JSON.parse(
+        fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8')
+      );
       console.log(`Attio MCP Server v${packageJson.version}`);
       process.exit(0);
     }
@@ -78,9 +85,13 @@ if (!isMain) {
     loadEnvFile();
 
     // Dynamic imports to avoid loading modules during help/version
-    const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
+    const { StdioServerTransport } = await import(
+      '@modelcontextprotocol/sdk/server/stdio.js'
+    );
     const { createServer } = await import('./server/createServer.js');
-    const { error: logError, OperationType } = await import('./utils/logger.js');
+    const { error: logError, OperationType } = await import(
+      './utils/logger.js'
+    );
 
     try {
       // Create the configured MCP server
@@ -141,7 +152,9 @@ if (!isMain) {
 
   main().catch(async (error) => {
     // Import logger only if needed for error handling
-    const { error: logError, OperationType } = await import('./utils/logger.js');
+    const { error: logError, OperationType } = await import(
+      './utils/logger.js'
+    );
     logError(
       'main',
       'Unhandled error in main process',

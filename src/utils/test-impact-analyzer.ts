@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import { createScopedLogger } from './logger.js';
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve, relative, dirname, join } from 'path';
 import { glob } from 'glob';
@@ -80,7 +81,10 @@ class TestImpactAnalyzer {
 
       return { modified, added, deleted };
     } catch (error) {
-      console.warn('Failed to get git diff, analyzing all tests:', error);
+      createScopedLogger('utils/test-impact-analyzer', 'getChangedFiles').warn(
+        'Failed to get git diff, analyzing all tests',
+        { error: error instanceof Error ? error.message : String(error) }
+      );
       return { modified: [], added: [], deleted: [] };
     }
   }
@@ -231,7 +235,10 @@ class TestImpactAnalyzer {
       try {
         return JSON.parse(readFileSync(mappingFile, 'utf-8'));
       } catch (error) {
-        console.warn('Failed to load test mapping, regenerating:', error);
+        createScopedLogger('utils/test-impact-analyzer', 'loadMapping').warn(
+          'Failed to load test mapping, regenerating',
+          { error: error instanceof Error ? error.message : String(error) }
+        );
       }
     }
 
@@ -322,7 +329,10 @@ class TestImpactAnalyzer {
         }
       });
     } catch (error) {
-      console.warn(`Failed to analyze imports in ${testFile}:`, error);
+      createScopedLogger('utils/test-impact-analyzer', 'analyzeImports').warn(
+        `Failed to analyze imports in ${testFile}`,
+        { error: error instanceof Error ? error.message : String(error) }
+      );
     }
 
     return sourceFiles;

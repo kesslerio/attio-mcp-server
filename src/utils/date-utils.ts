@@ -500,10 +500,9 @@ export function validateAndCreateDateRange(
 
   // If only one date is provided, it's still valid for open-ended ranges
   if ((result.start && !result.end) || (!result.start && result.end)) {
-    console.info(
-      `Creating open-ended date range: ${
-        result.start ? `from ${result.start}` : `until ${result.end}`
-      }`
+    createScopedLogger('utils.date-utils', 'parseDateRange').info(
+      'Creating open-ended date range',
+      { start: result.start, end: result.end }
     );
   }
 
@@ -532,3 +531,4 @@ export function validateAndCreateDateRange(
 
   return result;
 }
+import { createScopedLogger } from './logger.js';

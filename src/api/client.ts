@@ -7,8 +7,7 @@ import type {
   AxiosRequestConfig,
 } from 'axios';
 import { enhanceApiError } from '../utils/error-enhancer.js';
-// If logger is used, ensure it's imported, e.g.:
-// import { logger } from '../utils/logger';
+import { createScopedLogger, OperationType } from '../utils/logger.js';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
@@ -33,38 +32,34 @@ export function createAttioApiClient(
   instance.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: unknown) => {
-      // Enhanced logging to inspect the error object thoroughly
-      console.error(
-        '[Interceptor] Raw error received by interceptor. Message:',
-        error instanceof Error ? error.message : 'Unknown error'
+      const log = createScopedLogger(
+        'api.client',
+        'responseInterceptor',
+        OperationType.API_CALL
       );
-      console.error('[Interceptor] Is Axios Error:', axios.isAxiosError(error));
+      // Enhanced logging to inspect the error object thoroughly
+      log.error('Raw error received by interceptor', error, {
+        isAxiosError: axios.isAxiosError(error),
+      });
 
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
-        console.error('[Interceptor] Axios error config:', axiosError.config);
+        log.debug('Axios error config', {
+          config: axiosError.config as unknown,
+        });
         // console.error('[Interceptor] Axios error request:', axiosError.request); // Often large, skip for brevity unless needed
-        console.error(
-          '[Interceptor] Axios error response status:',
-          axiosError.response?.status
-        );
-        console.error(
-          '[Interceptor] Axios error response headers:',
-          JSON.stringify(axiosError.response?.headers)
-        );
-        console.error(
-          '[Interceptor] Axios error response data (raw):',
-          JSON.stringify(axiosError.response?.data)
-        );
+        log.error('Axios error response details', undefined, {
+          status: axiosError.response?.status,
+          headers: axiosError.response?.headers as unknown,
+          data: axiosError.response?.data as unknown,
+        });
 
         if (axiosError.response) {
-          console.error(
-            `[Interceptor] API Error: ${
-              axiosError.response.status
-            } ${axiosError.config?.method?.toUpperCase()} ${
-              axiosError.config?.url
-            }`
-          );
+          log.error('API Error', axiosError, {
+            status: axiosError.response.status,
+            method: axiosError.config?.method?.toUpperCase(),
+            url: axiosError.config?.url,
+          });
           // console.error('[Interceptor] Full error.response object:', JSON.stringify(axiosError.response)); // Can be very verbose
 
           const config = (axiosError.config ??
@@ -83,9 +78,12 @@ export function createAttioApiClient(
           if (config.retryCount < MAX_RETRIES && shouldRetry) {
             config.retryCount++;
             const target = config.url ?? '(unknown url)';
-            console.warn(
-              `[Interceptor] Retrying request (${config.retryCount}/${MAX_RETRIES}) for ${target} due to ${status}`
-            );
+            log.warn('Retrying request due to error status', {
+              retryCount: config.retryCount,
+              maxRetries: MAX_RETRIES,
+              target,
+              status,
+            });
             // Exponential backoff with jitter to prevent thundering herd
             const baseDelay =
               RETRY_DELAY_MS * Math.pow(2, config.retryCount - 1);
@@ -100,10 +98,7 @@ export function createAttioApiClient(
           return Promise.reject(enhancedError); // Reject with the potentially enhanced error
         }
       } else {
-        console.error(
-          '[Interceptor] Non-Axios error structure:',
-          JSON.stringify(error, Object.getOwnPropertyNames(error || {}))
-        );
+        log.error('Non-Axios error structure', error);
       }
 
       // Fallback for non-Axios errors or Axios errors without a response

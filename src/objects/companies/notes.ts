@@ -47,8 +47,10 @@ export async function getCompanyNotes(
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[getCompanyNotes] Extracted company ID ${companyId} from URI ${companyIdOrUri}`
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.notes', 'getCompanyNotes').debug(
+          'Extracted company ID from URI',
+          { companyId, companyIdOrUri }
         );
       }
     } else {
@@ -56,8 +58,10 @@ export async function getCompanyNotes(
       companyId = companyIdOrUri;
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[getCompanyNotes] Using direct company ID: ${companyId}`
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.notes', 'getCompanyNotes').debug(
+          'Using direct company ID',
+          { companyId }
         );
       }
     }
@@ -77,10 +81,9 @@ export async function getCompanyNotes(
       );
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[getCompanyNotes] Unified operation failed: ${
-            error.message || 'Unknown error'
-          }`,
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.notes', 'getCompanyNotes').error(
+          'Unified operation failed',
           error
         );
       }
@@ -91,21 +94,30 @@ export async function getCompanyNotes(
         const path = `/notes?limit=${limit}&offset=${offset}&parent_object=companies&parent_record_id=${companyId}`;
 
         if (process.env.NODE_ENV === 'development') {
-          console.error(`[getCompanyNotes] Trying direct API call: ${path}`);
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.notes', 'getCompanyNotes').warn(
+            'Trying direct API call',
+            { path }
+          );
         }
 
         const response = await api.get(path);
         return response?.data?.data || [];
       } catch (directError: any) {
         if (process.env.NODE_ENV === 'development') {
-          console.error(`[getCompanyNotes] All attempts failed:`, {
-            companyId,
-            originalUri: companyIdOrUri,
-            errors: {
-              unified: error.message || 'Unknown error',
-              direct: directError.message || 'Unknown error',
-            },
-          });
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.notes', 'getCompanyNotes').error(
+            'All attempts failed',
+            new Error('All attempts failed'),
+            {
+              companyId,
+              originalUri: companyIdOrUri,
+              errors: {
+                unified: error.message || 'Unknown error',
+                direct: directError.message || 'Unknown error',
+              },
+            }
+          );
         }
 
         // Return empty array instead of throwing error when no notes are found
@@ -176,8 +188,10 @@ export async function createCompanyNote(
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[createCompanyNote] Extracted company ID ${companyId} from URI ${companyIdOrUri}`
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.notes', 'createCompanyNote').debug(
+          'Extracted company ID from URI',
+          { companyId, companyIdOrUri }
         );
       }
     } else {
@@ -185,8 +199,10 @@ export async function createCompanyNote(
       companyId = companyIdOrUri;
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[createCompanyNote] Using direct company ID: ${companyId}`
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.notes', 'createCompanyNote').debug(
+          'Using direct company ID',
+          { companyId }
         );
       }
     }
@@ -206,10 +222,9 @@ export async function createCompanyNote(
       );
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[createCompanyNote] Unified operation failed: ${
-            error.message || 'Unknown error'
-          }`,
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.notes', 'createCompanyNote').error(
+          'Unified operation failed',
           error
         );
       }
@@ -220,7 +235,11 @@ export async function createCompanyNote(
         const path = 'notes';
 
         if (process.env.NODE_ENV === 'development') {
-          console.error(`[createCompanyNote] Trying direct API call: ${path}`);
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.notes', 'createCompanyNote').warn(
+            'Trying direct API call',
+            { path }
+          );
         }
 
         const response = await api.post(path, {
@@ -235,14 +254,19 @@ export async function createCompanyNote(
         return response.data;
       } catch (directError: any) {
         if (process.env.NODE_ENV === 'development') {
-          console.error(`[createCompanyNote] All attempts failed:`, {
-            companyId,
-            originalUri: companyIdOrUri,
-            errors: {
-              unified: error.message || 'Unknown error',
-              direct: directError.message || 'Unknown error',
-            },
-          });
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.notes', 'createCompanyNote').error(
+            'All attempts failed',
+            new Error('All attempts failed'),
+            {
+              companyId,
+              originalUri: companyIdOrUri,
+              errors: {
+                unified: error.message || 'Unknown error',
+                direct: directError.message || 'Unknown error',
+              },
+            }
+          );
         }
 
         throw new Error(

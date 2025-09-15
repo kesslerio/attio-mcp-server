@@ -9,6 +9,7 @@ import {
 } from './records/index.js';
 import { ResourceType, AttioRecord } from '../types/attio.js';
 import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
+import { createScopedLogger, OperationType } from '../utils/logger.js';
 
 /**
  * Translates all attribute names in a record using the attribute mapping system
@@ -23,15 +24,22 @@ function translateAttributeNames(
 ): Record<string, unknown> {
   const translated: Record<string, unknown> = {};
 
+  const logger = createScopedLogger(
+    'objects/base-operations',
+    'translateAttributeNames',
+    OperationType.TRANSFORMATION
+  );
   for (const [userKey, value] of Object.entries(attributes)) {
     // Translate the attribute name using the mapping system
     const apiKey = getAttributeSlug(userKey, objectType);
 
     // Log the translation in development mode
     if (process.env.NODE_ENV === 'development' && userKey !== apiKey) {
-      console.error(
-        `[translateAttributeNames:${objectType}] Mapped "${userKey}" -> "${apiKey}"`
-      );
+      logger.debug('Mapped attribute name', {
+        objectType,
+        from: userKey,
+        to: apiKey,
+      });
     }
 
     translated[apiKey] = value;
@@ -75,18 +83,16 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.error(
-      `[createObjectWithDynamicFields:${objectType}] Original attributes:`,
-      JSON.stringify(validatedAttributes, null, 2)
+    const logger = createScopedLogger(
+      'objects/base-operations',
+      'createObjectWithDynamicFields',
+      OperationType.TRANSFORMATION
     );
-    console.error(
-      `[createObjectWithDynamicFields:${objectType}] Mapped attributes:`,
-      JSON.stringify(mappedAttributes, null, 2)
-    );
-    console.error(
-      `[createObjectWithDynamicFields:${objectType}] Final transformed attributes:`,
-      JSON.stringify(transformedAttributes, null, 2)
-    );
+    logger.debug('Original attributes', { attributes: validatedAttributes });
+    logger.debug('Mapped attributes', { attributes: mappedAttributes });
+    logger.debug('Final transformed attributes', {
+      attributes: transformedAttributes,
+    });
   }
 
   try {
@@ -100,16 +106,16 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error(
-        `[createObjectWithDynamicFields:${objectType}] Result from createObjectRecord:`,
-        {
-          result,
-          hasId: !!result?.id,
-          hasValues: !!result?.values,
-          resultType: typeof result,
-          isEmptyObject: result && Object.keys(result).length === 0,
-        }
-      );
+      createScopedLogger(
+        'objects/base-operations',
+        'createObjectWithDynamicFields',
+        OperationType.DATA_PROCESSING
+      ).debug('Result from createObjectRecord', {
+        hasId: !!result?.id,
+        hasValues: !!result?.values,
+        resultType: typeof result,
+        isEmptyObject: result && Object.keys(result).length === 0,
+      });
     }
 
     // Additional check for empty objects that might slip through, but allow legitimate create responses
@@ -133,8 +139,12 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            `[createObjectWithDynamicFields:${objectType}] Empty result detected, passing to createObjectRecord fallback`
+          createScopedLogger(
+            'objects/base-operations',
+            'createObjectWithDynamicFields',
+            OperationType.DATA_PROCESSING
+          ).warn(
+            'Empty result detected, passing to createObjectRecord fallback'
           );
         }
         return result; // Let createObjectRecord handle the fallback
@@ -147,10 +157,11 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
 
     return result;
   } catch (error: unknown) {
-    console.error(
-      `[createObjectWithDynamicFields:${objectType}] Error creating record:`,
-      error instanceof Error ? error.message : String(error)
-    );
+    createScopedLogger(
+      'objects/base-operations',
+      'createObjectWithDynamicFields',
+      OperationType.API_CALL
+    ).error('Error creating record', error);
     throw error;
   }
 }
@@ -188,18 +199,16 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   );
 
   if (process.env.NODE_ENV === 'development') {
-    console.error(
-      `[updateObjectWithDynamicFields:${objectType}] Original attributes:`,
-      JSON.stringify(validatedAttributes, null, 2)
+    const logger = createScopedLogger(
+      'objects/base-operations',
+      'updateObjectWithDynamicFields',
+      OperationType.TRANSFORMATION
     );
-    console.error(
-      `[updateObjectWithDynamicFields:${objectType}] Mapped attributes:`,
-      JSON.stringify(mappedAttributes, null, 2)
-    );
-    console.error(
-      `[updateObjectWithDynamicFields:${objectType}] Final transformed attributes:`,
-      JSON.stringify(transformedAttributes, null, 2)
-    );
+    logger.debug('Original attributes', { attributes: validatedAttributes });
+    logger.debug('Mapped attributes', { attributes: mappedAttributes });
+    logger.debug('Final transformed attributes', {
+      attributes: transformedAttributes,
+    });
   }
 
   // Update the object
@@ -221,8 +230,12 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.error(
-          `[updateObjectWithDynamicFields:${objectType}] Empty result detected for update, allowing fallback logic to handle`
+        createScopedLogger(
+          'objects/base-operations',
+          'updateObjectWithDynamicFields',
+          OperationType.DATA_PROCESSING
+        ).warn(
+          'Empty result detected for update, allowing fallback logic to handle'
         );
       }
       // The fallback should have been handled in updateRecord, if we still get empty result, something is wrong

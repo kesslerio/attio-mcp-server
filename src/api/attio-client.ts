@@ -231,12 +231,14 @@ export async function getAttributeSchema(
   try {
     const response = await client.get(path);
     return response.data?.data;
-  } catch (error) {
-    console.error(
+  } catch (err) {
+    error(
+      'attio-client',
       `Failed to get attribute schema for ${objectSlug}.${attributeSlug}`,
-      error
+      err,
+      { objectSlug, attributeSlug }
     );
-    throw error;
+    throw err;
   }
 }
 
@@ -255,12 +257,14 @@ export async function getSelectOptions(
   try {
     const response = await client.get(path);
     return response.data?.data || [];
-  } catch (error) {
-    console.error(
+  } catch (err) {
+    error(
+      'attio-client',
       `Failed to get select options for ${objectSlug}.${attributeSlug}`,
-      error
+      err,
+      { objectSlug, attributeSlug }
     );
-    throw error;
+    throw err;
   }
 }
 
@@ -279,12 +283,14 @@ export async function getStatusOptions(
   try {
     const response = await client.get(path);
     return response.data?.data || [];
-  } catch (error) {
-    console.error(
+  } catch (err) {
+    error(
+      'attio-client',
       `Failed to get status options for ${objectSlug}.${attributeSlug}`,
-      error
+      err,
+      { objectSlug, attributeSlug }
     );
-    throw error;
+    throw err;
   }
 }
 

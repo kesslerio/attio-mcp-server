@@ -9,6 +9,7 @@
  */
 
 import { Company } from '../types/attio.js';
+import { createScopedLogger } from './logger.js';
 
 // In-memory storage for mock company data (test environments only)
 const mockCompanyStorage = new Map<string, Company>();
@@ -30,10 +31,13 @@ export function setMockCompany(companyId: string, company: Company): void {
   }
 
   if (!companyId || !company) {
-    console.warn('[MockState] Invalid parameters for setMockCompany:', {
-      companyId,
-      company,
-    });
+    createScopedLogger('utils/mock-state', 'setMockCompany').warn(
+      'Invalid parameters for setMockCompany',
+      {
+        companyId,
+        company,
+      }
+    );
     return;
   }
 
@@ -43,10 +47,13 @@ export function setMockCompany(companyId: string, company: Company): void {
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.log(`[MockState] Stored mock company: ${companyId}`, {
-      storedValues: company.values,
-      totalStoredCompanies: mockCompanyStorage.size,
-    });
+    createScopedLogger('utils/mock-state', 'setMockCompany').debug(
+      'Stored mock company',
+      {
+        companyId,
+        totalStoredCompanies: mockCompanyStorage.size,
+      }
+    );
   }
 }
 
@@ -65,10 +72,13 @@ export function getMockCompany(companyId: string): Company | null {
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.log(`[MockState] Retrieved mock company: ${companyId}`, {
-      found: !!company,
-      values: company?.values || null,
-    });
+    createScopedLogger('utils/mock-state', 'getMockCompany').debug(
+      'Retrieved mock company',
+      {
+        companyId,
+        found: !!company,
+      }
+    );
   }
 
   return company ? { ...company } : null;
@@ -92,8 +102,9 @@ export function updateMockCompany(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.warn(
-        `[MockState] Cannot update company ${companyId}: not found in mock storage`
+      createScopedLogger('utils/mock-state', 'updateMockCompany').warn(
+        'Cannot update company: not found in mock storage',
+        { companyId }
       );
     }
     return null;
@@ -116,10 +127,10 @@ export function updateMockCompany(
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.log(`[MockState] Updated mock company: ${companyId}`, {
-      newAttributes: attributes,
-      mergedValues: updatedValues,
-    });
+    createScopedLogger('utils/mock-state', 'updateMockCompany').debug(
+      'Updated mock company',
+      { companyId, updatedFields: Object.keys(attributes) }
+    );
   }
 
   return { ...updatedCompany };
@@ -151,7 +162,10 @@ export function clearMockCompanies(): void {
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.log(`[MockState] Cleared ${count} mock companies from storage`);
+    createScopedLogger('utils/mock-state', 'clearMockCompanies').info(
+      'Cleared mock companies from storage',
+      { count }
+    );
   }
 }
 
