@@ -88,45 +88,57 @@ jobs:
 
             console.log(`PR size: ${sizeLabel} (${filesCount} files)`);
 
-            // Remove any existing size labels
+            // Check existing size labels first to avoid unnecessary changes
             const existingLabels = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number
             });
 
-            for (const label of existingLabels.data) {
-              if (label.name.startsWith('size/')) {
-                await github.rest.issues.removeLabel({
+            const currentSizeLabels = existingLabels.data.filter(label => label.name.startsWith('size/'));
+            const hasCorrectLabel = currentSizeLabels.some(label => label.name === sizeLabel);
+
+            if (hasCorrectLabel && currentSizeLabels.length === 1) {
+              console.log(`Correct size label '${sizeLabel}' already applied, skipping update`);
+            } else {
+              // Remove incorrect size labels only if change is needed
+              for (const label of currentSizeLabels) {
+                if (label.name !== sizeLabel) {
+                  console.log(`Removing incorrect label: ${label.name}`);
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    name: label.name
+                  });
+                }
+              }
+
+              // Create the size label if it doesn't exist
+              if (!hasCorrectLabel) {
+                try {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: sizeLabel,
+                    color: sizeColor,
+                    description: sizeDescription
+                  });
+                } catch (error) {
+                  // Label might already exist, that's fine
+                  console.log(`Label ${sizeLabel} might already exist: ${error.message}`);
+                }
+
+                // Apply the new size label
+                console.log(`Adding new size label: ${sizeLabel}`);
+                await github.rest.issues.addLabels({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: context.issue.number,
-                  name: label.name
+                  labels: [sizeLabel]
                 });
               }
             }
-
-            // Create the size label if it doesn't exist
-            try {
-              await github.rest.issues.createLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: sizeLabel,
-                color: sizeColor,
-                description: sizeDescription
-              });
-            } catch (error) {
-              // Label might already exist, that's fine
-              console.log(`Label ${sizeLabel} might already exist: ${error.message}`);
-            }
-
-            // Apply the new size label
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              labels: [sizeLabel]
-            });
 
             // Check for existing XL comment to avoid duplicates
             if (sizeLabel === 'size/XL') {
