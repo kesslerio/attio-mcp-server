@@ -3,6 +3,7 @@
  * Contains functions for getting people information with different levels of detail
  */
 import { AttioRecord } from '../../types/attio.js';
+import { createScopedLogger } from '../../utils/logger.js';
 import { getRecord } from '../../api/operations/crud.js';
 
 // Standard fields that are NOT custom (based on actual Attio API)
@@ -68,7 +69,10 @@ export async function getPersonFields(
     const person = await getRecord('people', personIdOrUri, fields);
     return person;
   } catch (error: unknown) {
-    console.error('Error fetching person fields:', error);
+    createScopedLogger('people.attributes', 'getPersonFields').error(
+      'Error fetching person fields',
+      error
+    );
     throw error;
   }
 }

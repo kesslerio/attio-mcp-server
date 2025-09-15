@@ -3,6 +3,7 @@
  * Contains functions for getting deal information with different levels of detail
  */
 import { AttioRecord } from '../../types/attio.js';
+import { createScopedLogger } from '../../utils/logger.js';
 import { getRecord } from '../../api/operations/crud.js';
 
 // Standard fields that are NOT custom (based on actual Attio API)
@@ -61,7 +62,10 @@ export async function getDealFields(
     const deal = await getRecord('deals', dealIdOrUri, fields);
     return deal;
   } catch (error: unknown) {
-    console.error('Error fetching deal fields:', error);
+    createScopedLogger('deals.attributes', 'getDealFields').error(
+      'Error fetching deal fields',
+      error
+    );
     throw error;
   }
 }

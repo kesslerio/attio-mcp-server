@@ -36,7 +36,10 @@ export async function createTask(
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      console.error('[MockInjection] Using mock data for task creation');
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.tasks', 'createTask').debug(
+        'Using mock data for task creation'
+      );
     }
 
     // Generate mock task ID
@@ -99,7 +102,10 @@ export async function updateTask(
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      console.error('[MockInjection] Using mock data for task update');
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.tasks', 'updateTask').debug(
+        'Using mock data for task update'
+      );
     }
 
     // Return mock task update response
@@ -150,7 +156,10 @@ export async function deleteTask(taskId: string): Promise<boolean> {
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      console.error('[MockInjection] Using mock data for task deletion');
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.tasks', 'deleteTask').debug(
+        'Using mock data for task deletion'
+      );
     }
 
     // Return mock success response
@@ -193,7 +202,10 @@ export async function linkRecordToTask(
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      console.error('[MockInjection] Using mock data for task-record linking');
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.tasks', 'linkTaskRecord').debug(
+        'Using mock data for task-record linking'
+      );
     }
 
     // Return mock success response

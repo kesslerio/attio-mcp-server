@@ -221,6 +221,13 @@ export async function createObjectRecord<T extends AttioRecord>(
         { path, sampleKeys: Object.keys(attributes || {}) }
       );
 
+      // Use the same payload format as the main implementation
+      const body = {
+        data: {
+          values: attributes,
+        },
+      };
+
       if (
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
@@ -231,13 +238,6 @@ export async function createObjectRecord<T extends AttioRecord>(
           { path, payloadSize: JSON.stringify(body).length }
         );
       }
-
-      // Use the same payload format as the main implementation
-      const body = {
-        data: {
-          values: attributes,
-        },
-      };
 
       try {
         const response = await api.post(path, body);

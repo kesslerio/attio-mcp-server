@@ -108,7 +108,14 @@ function loadJsonFile(filePath: string): any {
       return JSON.parse(content);
     }
   } catch (error: unknown) {
-    console.warn(`Warning: Failed to load config file ${filePath}:`, error);
+    const { createScopedLogger } = await import('./logger.js');
+    createScopedLogger('utils/config-loader', 'loadJsonFile').warn(
+      'Failed to load config file',
+      {
+        filePath,
+        error: error instanceof Error ? error.message : String(error),
+      }
+    );
   }
   return null;
 }
