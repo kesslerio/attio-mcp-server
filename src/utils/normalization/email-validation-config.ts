@@ -36,24 +36,25 @@ export interface EmailValidationConfig {
 /**
  * Default email validation configuration
  */
+import { createScopedLogger } from '../logger.js';
+const evLogger = createScopedLogger('utils.email-validation', 'config');
+
 export const DEFAULT_EMAIL_VALIDATION_CONFIG: EmailValidationConfig = {
   mode: EmailValidationMode.STRICT,
   logDeprecationWarnings: true,
   logger: (message: string, level: string) => {
-    if (typeof console !== 'undefined') {
-      switch (level) {
-        case 'warn':
-          console.warn(message);
-          break;
-        case 'error':
-          console.error(message);
-          break;
-        case 'info':
-          console.info(message);
-          break;
-        default:
-          console.error(message);
-      }
+    switch (level) {
+      case 'warn':
+        evLogger.warn(message);
+        break;
+      case 'error':
+        evLogger.error(message);
+        break;
+      case 'info':
+        evLogger.info(message);
+        break;
+      default:
+        evLogger.warn(message);
     }
   },
 };
@@ -65,20 +66,18 @@ export const LEGACY_EMAIL_VALIDATION_CONFIG: EmailValidationConfig = {
   mode: EmailValidationMode.LEGACY,
   logDeprecationWarnings: true,
   logger: (message: string, level: string) => {
-    if (typeof console !== 'undefined') {
-      switch (level) {
-        case 'warn':
-          console.warn(message);
-          break;
-        case 'error':
-          console.error(message);
-          break;
-        case 'info':
-          console.info(message);
-          break;
-        default:
-          console.error(message);
-      }
+    switch (level) {
+      case 'warn':
+        evLogger.warn(message);
+        break;
+      case 'error':
+        evLogger.error(message);
+        break;
+      case 'info':
+        evLogger.info(message);
+        break;
+      default:
+        evLogger.warn(message);
     }
   },
 };
@@ -90,20 +89,18 @@ export const WARN_EMAIL_VALIDATION_CONFIG: EmailValidationConfig = {
   mode: EmailValidationMode.WARN,
   logDeprecationWarnings: false, // Warnings are already being generated
   logger: (message: string, level: string) => {
-    if (typeof console !== 'undefined') {
-      switch (level) {
-        case 'warn':
-          console.warn(message);
-          break;
-        case 'error':
-          console.error(message);
-          break;
-        case 'info':
-          console.info(message);
-          break;
-        default:
-          console.error(message);
-      }
+    switch (level) {
+      case 'warn':
+        evLogger.warn(message);
+        break;
+      case 'error':
+        evLogger.error(message);
+        break;
+      case 'info':
+        evLogger.info(message);
+        break;
+      default:
+        evLogger.warn(message);
     }
   },
 };
