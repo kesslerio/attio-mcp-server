@@ -513,15 +513,17 @@ export class UniversalSearchService {
     filters?: Record<string, unknown>
   ): Promise<AttioRecord[]> {
     // Handle list_membership filters - invalid UUID should return empty array
-    if (filters?.list_membership) {
-      const listId = String(filters.list_membership);
-      if (!ValidationService.validateUUIDForSearch(listId)) {
-        return []; // Return empty success for invalid UUID
+      if (filters?.list_membership) {
+        const listId = String(filters.list_membership);
+        if (!ValidationService.validateUUIDForSearch(listId)) {
+          return []; // Return empty success for invalid UUID
+        }
+        createScopedLogger(
+          'UniversalSearchService',
+          'searchRecords_ObjectType',
+          OperationType.DATA_PROCESSING
+        ).warn('list_membership filter not yet supported in listObjectRecords');
       }
-      console.warn(
-        'list_membership filter not yet supported in listObjectRecords'
-      );
-    }
 
     return await listObjectRecords('records', {
       pageSize: limit,
@@ -706,7 +708,11 @@ export class UniversalSearchService {
 
       return results;
     } catch (error: unknown) {
-      console.error('Failed to search notes:', error);
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchNotes',
+        OperationType.API_CALL
+      ).error('Failed to search notes', error);
       enhancedPerformanceTracker.markTiming(
         perfId,
         'other',
@@ -771,8 +777,12 @@ export class UniversalSearchService {
         return [];
       }
 
-      console.error(
-        `Relationship search failed for ${sourceResourceType} -> ${targetResourceType}:`,
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchByRelationship',
+        OperationType.API_CALL
+      ).error(
+        `Relationship search failed for ${sourceResourceType} -> ${targetResourceType}`,
         error
       );
       return [];
@@ -824,7 +834,11 @@ export class UniversalSearchService {
         return [];
       }
 
-      console.error(`Timeframe search failed for ${resourceType}:`, error);
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchByTimeframe',
+        OperationType.API_CALL
+      ).error(`Timeframe search failed for ${resourceType}`, error);
       return [];
     }
   }
@@ -891,7 +905,11 @@ export class UniversalSearchService {
         return [];
       }
 
-      console.error(`Content search failed for ${resourceType}:`, error);
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchByContent',
+        OperationType.API_CALL
+      ).error(`Content search failed for ${resourceType}`, error);
       return [];
     }
   }

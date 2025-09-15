@@ -31,7 +31,7 @@ export default [
     ),
   },
   {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
+    files: ['src/**/*.ts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -71,7 +71,7 @@ export default [
       'prefer-const': 'warn',
       'no-useless-escape': 'warn',
       '@typescript-eslint/ban-ts-comment': 'warn',
-      'no-undef': 'off', // Disabled for test files that use vitest globals
+      'no-undef': 'off',
       'no-prototype-builtins': 'warn',
       // Guardrail: disallow console.* in src/ except allowlisted files
       'no-console': ['error', { allow: ['warn', 'error'] }],
@@ -92,6 +92,7 @@ export default [
     // Test-specific overrides to keep lint warnings under control in CI/pre-commit
     files: ['test/**/*.ts'],
     rules: {
+      'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
     },

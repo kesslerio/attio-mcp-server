@@ -5,6 +5,7 @@ import { Company } from '../../types/attio.js';
 import { getCompanyDetails, extractCompanyId } from './basic.js';
 import { listCompanies } from './basic.js';
 import { wrapError, getErrorMessage } from '../../utils/error-utilities.js';
+import { createScopedLogger } from '../../utils/logger.js';
 
 /**
  * Logs attribute operation errors in a consistent format
@@ -18,14 +19,12 @@ function logAttributeError(
   error: unknown,
   context: Record<string, unknown> = {}
 ) {
-  import('../utils/logger.js').then(({ createScopedLogger }) => {
-    const log = createScopedLogger('companies.attributes', functionName);
-    log.error('Error occurred', error, {
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
-      message: getErrorMessage(error),
-      stack: (error as any)?.stack,
-      ...(Object.keys(context).length > 0 ? { context } : {}),
-    });
+  const log = createScopedLogger('companies.attributes', functionName);
+  log.error('Error occurred', error, {
+    errorType: error instanceof Error ? error.constructor.name : typeof error,
+    message: getErrorMessage(error),
+    stack: (error as any)?.stack,
+    ...(Object.keys(context).length > 0 ? { context } : {}),
   });
 }
 

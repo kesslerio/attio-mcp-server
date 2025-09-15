@@ -275,11 +275,14 @@ export class PersonCreator extends BaseCreator {
 
     /* istanbul ignore next */
     if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-      console.debug(
-        '[create] extracted keys:',
-        record && typeof record === 'object'
-          ? Object.keys(record)
-          : typeof record
+      createScopedLogger('PersonCreator', 'finalizeRecord').debug(
+        'extracted keys',
+        {
+          keys:
+            record && typeof record === 'object'
+              ? Object.keys(record)
+              : [typeof record],
+        }
       );
     }
 

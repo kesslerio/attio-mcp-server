@@ -27,6 +27,7 @@ import {
   validatePayloadSize,
 } from '../../utils/batch-validation.js';
 import { getBatchSizeLimit } from '../../config/security-limits.js';
+import { createScopedLogger, OperationType } from '../../utils/logger.js';
 
 // Import universal types for enhanced batch search support
 import {
@@ -398,9 +399,14 @@ export async function universalBatchSearch(
   const { limit, offset, filters } = searchParams || {};
 
   // Log batch search initiation
-  console.error(
-    `[Performance] Starting batch search for ${resourceType}: ${queries.length} queries`
+  const logger = createScopedLogger(
+    'api/operations/batch',
+    'batchSearchObjectsUniversal',
+    OperationType.API_CALL
   );
+  logger.info(`Starting batch search for ${resourceType}`, {
+    queryCount: queries.length,
+  });
 
   try {
     // Handle resource types not supported by legacy batch API
@@ -423,9 +429,11 @@ export async function universalBatchSearch(
       const performanceEnd = performance.now();
       const duration = performanceEnd - performanceStart;
       const successCount = result.filter((r) => r.success).length;
-      console.error(
-        `[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`
-      );
+      logger.info(`Batch search completed for ${resourceType}`, {
+        durationMs: Number(duration.toFixed(2)),
+        successCount,
+        total: queries.length,
+      });
 
       return result;
     }
@@ -455,17 +463,21 @@ export async function universalBatchSearch(
     const performanceEnd = performance.now();
     const duration = performanceEnd - performanceStart;
     const successCount = result.filter((r) => r.success).length;
-    console.error(
-      `[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`
-    );
+    logger.info(`Batch search completed for ${resourceType}`, {
+      durationMs: Number(duration.toFixed(2)),
+      successCount,
+      total: queries.length,
+    });
 
     return result;
   } catch (error: unknown) {
     // Log performance metrics for failed operations
     const performanceEnd = performance.now();
     const duration = performanceEnd - performanceStart;
-    console.error(
-      `[Performance] Batch search failed for ${resourceType}: ${duration.toFixed(2)}ms, error: ${error instanceof Error ? error.message : String(error)}`
+    logger.error(
+      `Batch search failed for ${resourceType}`,
+      error,
+      { durationMs: Number(duration.toFixed(2)) }
     );
 
     // If batch operation fails completely, return error for all queries

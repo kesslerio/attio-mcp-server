@@ -46,7 +46,7 @@ function convertCompanyAttributes(attributes: any): any {
       : [corrected.domain];
     delete corrected.domain;
     try {
-      const { createScopedLogger } = await import('./logger.js');
+      const { createScopedLogger } = require('./logger.js');
       createScopedLogger(
         'utils.format-helpers',
         'convertCompanyAttributes'
@@ -58,7 +58,7 @@ function convertCompanyAttributes(attributes: any): any {
   if (corrected.domains && !Array.isArray(corrected.domains)) {
     corrected.domains = [corrected.domains];
     try {
-      const { createScopedLogger } = await import('./logger.js');
+      const { createScopedLogger } = require('./logger.js');
       createScopedLogger(
         'utils.format-helpers',
         'convertCompanyAttributes'
@@ -71,7 +71,7 @@ function convertCompanyAttributes(attributes: any): any {
     corrected.type = corrected.typpe;
     delete corrected.typpe;
     try {
-      const { createScopedLogger } = await import('./logger.js');
+      const { createScopedLogger } = require('./logger.js');
       createScopedLogger(
         'utils.format-helpers',
         'convertCompanyAttributes'
@@ -96,7 +96,7 @@ function convertDealAttributes(attributes: any): any {
         { target_object: 'companies', target_record_id: value },
       ];
       try {
-        const { createScopedLogger } = await import('./logger.js');
+        const { createScopedLogger } = require('./logger.js');
         createScopedLogger(
           'utils.format-helpers',
           'convertDealAttributes'
@@ -119,7 +119,7 @@ function convertDealAttributes(attributes: any): any {
         }
       });
       try {
-        const { createScopedLogger } = await import('./logger.js');
+        const { createScopedLogger } = require('./logger.js');
         createScopedLogger(
           'utils.format-helpers',
           'convertDealAttributes'
@@ -136,7 +136,7 @@ function convertDealAttributes(attributes: any): any {
         { target_object: 'people', target_record_id: value },
       ];
       try {
-        const { createScopedLogger } = await import('./logger.js');
+        const { createScopedLogger } = require('./logger.js');
         createScopedLogger(
           'utils.format-helpers',
           'convertDealAttributes'
@@ -159,7 +159,7 @@ function convertDealAttributes(attributes: any): any {
         }
       });
       try {
-        const { createScopedLogger } = await import('./logger.js');
+        const { createScopedLogger } = require('./logger.js');
         createScopedLogger(
           'utils.format-helpers',
           'convertDealAttributes'
@@ -198,7 +198,7 @@ function convertPeopleAttributes(attributes: any): any {
       }
       nameObj.full_name = corrected.name;
       try {
-        const { createScopedLogger } = await import('./logger.js');
+        const { createScopedLogger } = require('./logger.js');
         createScopedLogger(
           'utils.format-helpers',
           'convertPeopleAttributes'
@@ -233,7 +233,7 @@ function convertPeopleAttributes(attributes: any): any {
     delete corrected.full_name;
 
     try {
-      const { createScopedLogger } = await import('./logger.js');
+      const { createScopedLogger } = require('./logger.js');
       createScopedLogger(
         'utils.format-helpers',
         'convertPeopleAttributes'
@@ -246,7 +246,7 @@ function convertPeopleAttributes(attributes: any): any {
     const converted = corrected.email_addresses.map((item: any) => {
       if (typeof item === 'object' && item.email_address) {
         try {
-          const { createScopedLogger } = await import('./logger.js');
+          const { createScopedLogger } = require('./logger.js');
           createScopedLogger(
             'utils.format-helpers',
             'convertPeopleAttributes'
@@ -263,7 +263,7 @@ function convertPeopleAttributes(attributes: any): any {
   if (corrected.email_addresses && !Array.isArray(corrected.email_addresses)) {
     corrected.email_addresses = [corrected.email_addresses];
     try {
-      const { createScopedLogger } = await import('./logger.js');
+      const { createScopedLogger } = require('./logger.js');
       createScopedLogger(
         'utils.format-helpers',
         'convertPeopleAttributes'
@@ -276,7 +276,7 @@ function convertPeopleAttributes(attributes: any): any {
     const converted = corrected.phone_numbers.map((item: any) => {
       if (typeof item === 'object' && (item.phone_number || item.number)) {
         try {
-          const { createScopedLogger } = await import('./logger.js');
+          const { createScopedLogger } = require('./logger.js');
           createScopedLogger(
             'utils.format-helpers',
             'convertPeopleAttributes'

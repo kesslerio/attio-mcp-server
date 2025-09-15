@@ -10,6 +10,7 @@ import { ResourceType } from '../../../../types/attio.js';
 import { SearchToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { createScopedLogger } from '../../../../utils/logger.js';
 
 /**
  * Check if the formatted results already contain a header to avoid duplication
@@ -101,7 +102,10 @@ export async function handleBasicSearch(
     toolConfig.name === 'search-records'
   ) {
     effectiveQuery = domainFromArgs;
-    console.warn(
+    createScopedLogger(
+      'handlers/tools/dispatcher/operations/search',
+      'handleBasicSearch'
+    ).warn(
       `[handleBasicSearch] Tool 'search-records' was called with a 'domain' parameter instead of 'query'. ` +
         `Using the 'domain' value ("${effectiveQuery}") as the search query. ` +
         `For clarity and future compatibility, please use the 'query' parameter for the 'search-records' tool, ` +
