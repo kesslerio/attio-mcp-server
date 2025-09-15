@@ -223,7 +223,10 @@ export class UniversalUpdateService {
         )
       ).map((s) => (s as string).toLowerCase());
     } catch (error) {
-      console.warn(`Failed to fetch attributes for ${resource_type}:`, error);
+      debug('UniversalUpdateService', 'Failed to fetch attributes', {
+        resource_type,
+        error: error instanceof Error ? error.message : String(error),
+      });
       availableAttributes = undefined;
     }
 

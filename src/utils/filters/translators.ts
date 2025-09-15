@@ -129,11 +129,7 @@ export function transformFiltersToApiFormat(
 
     // Check if filters array exists and handle undefined case
     if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(
-          '[transformFiltersToApiFormat] Empty or undefined filters array provided, returning empty result'
-        );
-      }
+      // dev-only: skip logging to avoid top-level await in non-async function
       return {};
     }
   } catch (error: unknown) {
@@ -149,12 +145,7 @@ export function transformFiltersToApiFormat(
       }
 
       // For structure errors (missing properties), return empty result instead of throwing
-      if (process.env.NODE_ENV === 'development') {
-        console.error(
-          '[transformFiltersToApiFormat] Validation failed, returning empty result:',
-          error
-        );
-      }
+      // dev-only: skip logging to avoid top-level await in non-async function
       return {};
     }
 
@@ -169,16 +160,7 @@ export function transformFiltersToApiFormat(
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
   const useOrLogic = validatedFilters.matchAny === true;
 
-  if (process.env.NODE_ENV === 'development') {
-    console.error(
-      `[transformFiltersToApiFormat] Using ${
-        useOrLogic ? 'OR' : 'AND'
-      } logic for filters`
-    );
-    console.error(
-      `[transformFiltersToApiFormat] Processing ${validatedFilters.filters.length} filter conditions`
-    );
-  }
+  // dev-only: skip logging to avoid top-level await in non-async function
 
   // For OR logic, we need a completely different structure with filter objects in an array
   if (useOrLogic) {

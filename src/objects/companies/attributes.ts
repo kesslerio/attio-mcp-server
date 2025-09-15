@@ -18,23 +18,15 @@ function logAttributeError(
   error: unknown,
   context: Record<string, unknown> = {}
 ) {
-  console.error(`[${functionName}] Error:`, error);
-  console.error(
-    `- Error type: ${
-      error instanceof Error ? error.constructor.name : typeof error
-    }`
-  );
-  console.error(`- Message: ${getErrorMessage(error)}`);
-
-  if (error instanceof Error && error.stack) {
-    console.error(`- Stack trace: ${error.stack}`);
-  } else {
-    console.error('- No stack trace available');
-  }
-
-  if (Object.keys(context).length > 0) {
-    console.error('- Context:', context);
-  }
+  import('../utils/logger.js').then(({ createScopedLogger }) => {
+    const log = createScopedLogger('companies.attributes', functionName);
+    log.error('Error occurred', error, {
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      message: getErrorMessage(error),
+      stack: (error as any)?.stack,
+      ...(Object.keys(context).length > 0 ? { context } : {}),
+    });
+  });
 }
 
 /**
@@ -55,9 +47,10 @@ export async function getCompanyFields(
     companyId = extractCompanyId(companyIdOrUri);
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[getCompanyFields] Fetching fields for company ${companyId}:`,
-        fields
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.attributes', 'getCompanyFields').debug(
+        'Fetching fields for company',
+        { companyId, fields }
       );
     }
 
@@ -85,10 +78,10 @@ export async function getCompanyFields(
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[getCompanyFields] Filtered to ${
-          Object.keys(filteredValues).length
-        } fields`
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.attributes', 'getCompanyFields').debug(
+        'Filtered fields count',
+        { count: Object.keys(filteredValues).length }
       );
     }
 

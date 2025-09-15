@@ -49,13 +49,10 @@ export async function createObjectRecord<T extends AttioRecord>(
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.error(
-      `[createObjectRecord] Creating record for object type: ${normalizedSlug}`
-    );
-    console.error(
-      `[createObjectRecord] Attributes:`,
-      JSON.stringify(attributes, null, 2)
-    );
+    const { createScopedLogger } = await import('../../utils/logger.js');
+    const log = createScopedLogger('objects.records', 'createObjectRecord');
+    log.info('Creating record', { objectSlug: normalizedSlug });
+    log.debug('Attributes', { attributes });
   }
 
   try {
@@ -64,11 +61,11 @@ export async function createObjectRecord<T extends AttioRecord>(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error('[createObjectRecord] Calling createRecord with:', {
-        objectSlug: normalizedSlug,
-        objectId,
-        attributes,
-      });
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('objects.records', 'createObjectRecord').info(
+        'Calling createRecord with',
+        { objectSlug: normalizedSlug, objectId, attributes }
+      );
     }
 
     const result = await createRecord<T>({
@@ -81,13 +78,16 @@ export async function createObjectRecord<T extends AttioRecord>(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error('[createObjectRecord] createRecord returned:', {
-        result,
-        hasId: !!result?.id,
-        hasValues: !!result?.values,
-        resultType: typeof result,
-        isEmptyObject: result && Object.keys(result).length === 0,
-      });
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('objects.records', 'createObjectRecord').info(
+        'createRecord returned',
+        {
+          hasId: !!result?.id,
+          hasValues: !!result?.values,
+          resultType: typeof result,
+          isEmptyObject: result && Object.keys(result).length === 0,
+        }
+      );
     }
 
     // Check for empty results and apply fallback query for companies
@@ -113,9 +113,10 @@ export async function createObjectRecord<T extends AttioRecord>(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.error(
-          '[createObjectRecord] Empty result detected for company creation, trying query fallback with name:',
-          nameValue
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('objects.records', 'createObjectRecord').warn(
+          'Empty result for company creation, trying query fallback',
+          { nameValue }
         );
       }
 
@@ -134,13 +135,17 @@ export async function createObjectRecord<T extends AttioRecord>(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error('[createObjectRecord] Query fallback response:', {
-            queryResponse: queryResponse?.data,
-            hasData: !!queryResponse?.data?.data,
-            dataLength: Array.isArray(queryResponse?.data?.data)
-              ? queryResponse.data.data.length
-              : 'not array',
-          });
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('objects.records', 'createObjectRecord').debug(
+            'Query fallback response',
+            {
+              queryResponse: queryResponse?.data,
+              hasData: !!queryResponse?.data?.data,
+              dataLength: Array.isArray(queryResponse?.data?.data)
+                ? queryResponse.data.data.length
+                : 'not array',
+            }
+          );
         }
 
         // If we found an existing record, return it
@@ -154,9 +159,12 @@ export async function createObjectRecord<T extends AttioRecord>(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            console.error(
-              '[createObjectRecord] Found existing company via query fallback:',
-              foundRecord
+            const { createScopedLogger } = await import(
+              '../../utils/logger.js'
+            );
+            createScopedLogger('objects.records', 'createObjectRecord').info(
+              'Found existing company via query fallback',
+              { foundRecord }
             );
           }
           return foundRecord as T;
@@ -166,9 +174,15 @@ export async function createObjectRecord<T extends AttioRecord>(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            '[createObjectRecord] Query fallback failed:',
-            queryError
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('objects.records', 'createObjectRecord').warn(
+            'Query fallback failed',
+            {
+              error:
+                queryError instanceof Error
+                  ? queryError.message
+                  : String(queryError),
+            }
           );
         }
         // Continue with original empty result rather than throwing
@@ -181,9 +195,10 @@ export async function createObjectRecord<T extends AttioRecord>(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error(
-        '[createObjectRecord] Primary createRecord failed, trying fallback:',
-        error
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('objects.records', 'createObjectRecord').warn(
+        'Primary createRecord failed, trying fallback',
+        { error: error instanceof Error ? error.message : String(error) }
       );
     }
 
@@ -200,20 +215,21 @@ export async function createObjectRecord<T extends AttioRecord>(
       const path = `/objects/${objectId || objectSlug}/records`;
 
       // ENHANCED DEBUG: Add path builder logging as requested by user
-      console.debug('[attio-client] POST', path, {
-        sampleKeys: Object.keys(attributes || {}),
-      });
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('objects.records', 'createObjectRecord').debug(
+        'POST',
+        { path, sampleKeys: Object.keys(attributes || {}) }
+      );
 
       if (
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.error(`[createObjectRecord:fallback] API path: ${path}`);
-        console.error(`[createObjectRecord:fallback] Sending payload:`, {
-          data: {
-            values: attributes,
-          },
-        });
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('objects.records', 'createObjectRecord').debug(
+          'Fallback request',
+          { path, payloadSize: JSON.stringify(body).length }
+        );
       }
 
       // Use the same payload format as the main implementation
@@ -230,8 +246,9 @@ export async function createObjectRecord<T extends AttioRecord>(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            '[createObjectRecord:fallback] API response structure:',
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('objects.records', 'createObjectRecord').debug(
+            'Fallback response structure',
             {
               hasData: !!response?.data,
               hasNestedData: !!response?.data?.data,
