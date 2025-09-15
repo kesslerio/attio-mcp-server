@@ -29,6 +29,9 @@
     "check": "wireit",
     "build:watch": "tsc --watch",
     "lint:check": "wireit",
+    "lint:src": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=1000 \"src/**/*.ts\"",
+    "lint:test": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=800 \"test/**/*.ts\"",
+    "lint:guard": "node scripts/ci/lint-warning-guard.cjs",
     "lint:fix": "wireit",
     "format": "npx prettier --write --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
     "check:format": "npx prettier --check --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
@@ -247,6 +250,26 @@
         "src/**/*.ts",
         "test/**/*.ts",
         "*.ts",
+        "eslint.config.js",
+        "tsconfig.json",
+        ".prettierrc"
+      ],
+      "output": []
+    },
+    "lint:src": {
+      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 1000 \"src/**/*.ts\"",
+      "files": [
+        "src/**/*.ts",
+        "eslint.config.js",
+        "tsconfig.json",
+        ".prettierrc"
+      ],
+      "output": []
+    },
+    "lint:test": {
+      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 800 \"test/**/*.ts\"",
+      "files": [
+        "test/**/*.ts",
         "eslint.config.js",
         "tsconfig.json",
         ".prettierrc"

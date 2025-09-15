@@ -44,12 +44,14 @@ export function createAttioApiClient(
 
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
-        log.debug('Axios error config', { config: axiosError.config as any });
+        log.debug('Axios error config', {
+          config: axiosError.config as unknown,
+        });
         // console.error('[Interceptor] Axios error request:', axiosError.request); // Often large, skip for brevity unless needed
         log.error('Axios error response details', undefined, {
           status: axiosError.response?.status,
-          headers: axiosError.response?.headers as any,
-          data: axiosError.response?.data as any,
+          headers: axiosError.response?.headers as unknown,
+          data: axiosError.response?.data as unknown,
         });
 
         if (axiosError.response) {
