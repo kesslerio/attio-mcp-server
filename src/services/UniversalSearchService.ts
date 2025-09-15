@@ -14,7 +14,7 @@ import {
 import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
-import { debug, error, createScopedLogger } from '../utils/logger.js';
+import { debug, error, createScopedLogger, OperationType } from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
