@@ -1,11 +1,7 @@
 #!/usr/bin/env node
-const { execSync } = require('node:child_process');
-const { readFileSync } = require('node:fs');
+const { execFileSync } = require('node:child_process');
+const { readFileSync, writeFileSync } = require('node:fs');
 const path = require('node:path');
-
-function run(cmd) {
-  return execSync(cmd, { stdio: 'pipe', encoding: 'utf8' });
-}
 
 function countWarnings(eslintJson) {
   let warnings = 0;
@@ -19,7 +15,14 @@ function countWarnings(eslintJson) {
 
 try {
   const tmp = path.join(process.cwd(), '.lint-src.json');
-  run(`npx eslint -f json "src/**/*.ts" > ${tmp}`);
+  const eslintOutput = execFileSync(
+    'npx',
+    ['eslint', '-f', 'json', 'src/**/*.ts'],
+    {
+      encoding: 'utf8',
+    }
+  );
+  writeFileSync(tmp, eslintOutput);
   const report = JSON.parse(readFileSync(tmp, 'utf8'));
   const current = countWarnings(report);
 
