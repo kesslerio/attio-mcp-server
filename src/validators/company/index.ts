@@ -573,11 +573,15 @@ export class CompanyValidator {
       )) {
         const validatorType = validatorTypes.get(attributeName) || 'string';
 
-        const result: ValidationResult<ProcessedFieldValue> =
-          validateAttributeValue(attributeName, value, validatorType);
+        const result = validateAttributeValue(
+          attributeName,
+          value,
+          validatorType
+        );
 
         if (result.valid) {
-          validatedAttributes[attributeName] = result.convertedValue;
+          validatedAttributes[attributeName] =
+            result.convertedValue as unknown as ProcessedFieldValue;
         } else {
           hasErrors = true;
           errors[attributeName] =
@@ -602,11 +606,15 @@ export class CompanyValidator {
             validatorType = 'string';
           }
 
-          const result: ValidationResult<ProcessedFieldValue> =
-            validateAttributeValue(attributeName, value, validatorType);
+          const result = validateAttributeValue(
+            attributeName,
+            value,
+            validatorType
+          );
 
           if (result.valid) {
-            validatedAttributes[attributeName] = result.convertedValue;
+            validatedAttributes[attributeName] =
+              result.convertedValue as unknown as ProcessedFieldValue;
           } else {
             hasErrors = true;
             errors[attributeName] =
