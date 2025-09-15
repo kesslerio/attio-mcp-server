@@ -500,11 +500,16 @@ export function validateAndCreateDateRange(
 
   // If only one date is provided, it's still valid for open-ended ranges
   if ((result.start && !result.end) || (!result.start && result.end)) {
-    console.info(
-      `Creating open-ended date range: ${
-        result.start ? `from ${result.start}` : `until ${result.end}`
-      }`
-    );
+    // Use structured logger for info-level note about open-ended ranges
+    try {
+      const { createScopedLogger } = await import('./logger.js');
+      createScopedLogger('utils.date-utils', 'parseDateRange').info(
+        'Creating open-ended date range',
+        { start: result.start, end: result.end }
+      );
+    } catch {
+      // no-op if logger import fails in non-async contexts
+    }
   }
 
   // Validate logical consistency if both dates are provided
