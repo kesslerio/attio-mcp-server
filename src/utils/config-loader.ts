@@ -4,6 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { createScopedLogger } from './logger.js';
 
 /**
  * Interface for mapping configuration
@@ -108,7 +109,6 @@ function loadJsonFile(filePath: string): any {
       return JSON.parse(content);
     }
   } catch (error: unknown) {
-    const { createScopedLogger } = await import('./logger.js');
     createScopedLogger('utils/config-loader', 'loadJsonFile').warn(
       'Failed to load config file',
       {
