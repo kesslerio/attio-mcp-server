@@ -20,6 +20,9 @@ permissions:
   pull-requests: write
   # checks: write   # enable only if you intentionally create/update Checks
 
+env:
+  SECURITY_COMMENT_MARKER: '🛡️ Automated Security Review Complete'
+
 jobs:
   automated-security-review:
     runs-on: ubuntu-latest
@@ -92,21 +95,29 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            });
+            try {
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number
+              });
 
-            const existingComment = comments.data.find(c =>
-              c.body.includes('🛡️ Automated Security Review Complete')
-            );
+              const existingComment = comments.data.find(c =>
+                c.body && c.body.includes(process.env.SECURITY_COMMENT_MARKER)
+              );
 
-            console.log('existing-comment=' + (existingComment ? 'true' : 'false'));
-            return existingComment ? 'true' : 'false';
+              console.log('existing-comment=' + (!!existingComment));
+              core.setOutput('exists', !!existingComment);
+              return !!existingComment;
+            } catch (error) {
+              console.log('Error checking for existing comments:', error.message);
+              // On error, assume no comment exists to avoid blocking
+              core.setOutput('exists', false);
+              return false;
+            }
 
       - name: Comment with slash command info
-        if: steps.gate.outputs.should_analyze == 'true' && github.event.pull_request.head.repo.full_name == github.repository && steps.comment-check.outputs.result == 'false'
+        if: steps.gate.outputs.should_analyze == 'true' && github.event.pull_request.head.repo.full_name == github.repository && steps.comment-check.outputs.exists == 'false'
         uses: actions/github-script@v7
         with:
           script: |
@@ -114,7 +125,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `## 🛡️ Automated Security Review Complete
+              body: `## ${{ env.SECURITY_COMMENT_MARKER }}
 
               ✅ Security-focused analysis finished for ${{ steps.changed.outputs.all_changed_files_count }} files.
 

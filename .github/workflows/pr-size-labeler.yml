@@ -13,6 +13,9 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  XL_COMMENT_MARKER: '📏 Large PR Detected'
+
 jobs:
   size-label:
     runs-on: ubuntu-latest
@@ -127,22 +130,23 @@ jobs:
 
             // Check for existing XL comment to avoid duplicates
             if (sizeLabel === 'size/XL') {
-              const comments = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number
-              });
+              try {
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number
+                });
 
-              const existingXLComment = comments.data.find(c =>
-                c.body.includes('📏 Large PR Detected')
-              );
+                const existingXLComment = comments.data.find(c =>
+                  c.body && c.body.includes(process.env.XL_COMMENT_MARKER)
+                );
 
-              if (!existingXLComment) {
+                if (!existingXLComment) {
                 await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `## 📏 Large PR Detected
+                body: `## ${{ env.XL_COMMENT_MARKER }}
                 
                 This PR changes **${filesCount} files** and has been labeled as \`${sizeLabel}\`.
                 
@@ -159,8 +163,33 @@ jobs:
                 
                 Use \`/claude review\` to request detailed analysis if needed.`
                 });
-              } else {
-                console.log('XL comment already exists, skipping duplicate');
+                } else {
+                  console.log('XL comment already exists, skipping duplicate');
+                }
+              } catch (error) {
+                console.log('Error checking for existing XL comments:', error.message);
+                // On error, proceed with comment creation to avoid blocking
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: `## ${{ env.XL_COMMENT_MARKER }}
+
+                  This PR changes **${filesCount} files** and has been labeled as \`${sizeLabel}\`.
+
+                  **Considerations for large PRs:**
+                  - Consider breaking into smaller, focused PRs
+                  - Claude analysis will run in summary-only mode
+                  - Review time may be longer
+                  - Increased risk of merge conflicts
+
+                  If this PR must remain large, ensure it has:
+                  - [ ] Clear description of all changes
+                  - [ ] Comprehensive test coverage
+                  - [ ] Breaking changes documented
+
+                  Use \`/claude review\` to request detailed analysis if needed.`
+                });
               }
             }
 
