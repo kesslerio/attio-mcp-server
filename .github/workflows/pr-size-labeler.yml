@@ -4,9 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-# SPAM REDUCTION: Prevent multiple runs of size labeler on rapid commits
-# Issue #651: Implements concurrency control to cancel previous runs when new commits arrive
-# Reduces workflow runs by ~70% and eliminates redundant executions
+# Cancel previous runs on new commits
 concurrency:
   group: pr-size-labeler-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -91,9 +89,7 @@ jobs:
 
             console.log(`PR size: ${sizeLabel} (${filesCount} files)`);
 
-            // LABEL CHURN ELIMINATION: Check existing labels first to avoid unnecessary changes
-            // Issue #651: Previously removed and re-added same label every run, creating pointless noise
-            // Now only changes labels when PR size actually changes
+            // Check existing labels to avoid unnecessary changes
             const existingLabels = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -106,7 +102,7 @@ jobs:
             if (hasCorrectLabel && currentSizeLabels.length === 1) {
               console.log(`Correct size label '${sizeLabel}' already applied, skipping update`);
             } else {
-              // SMART LABELING: Remove incorrect size labels only if change is needed
+              // Remove incorrect size labels
               for (const label of currentSizeLabels) {
                 if (label.name !== sizeLabel) {
                   console.log(`Removing incorrect label: ${label.name}`);

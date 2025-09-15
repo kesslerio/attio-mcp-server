@@ -10,9 +10,7 @@ on:
       - 'LICENSE'
       - 'docs/**'
 
-# SPAM REDUCTION: Enable cancellation of previous runs on new commits
-# Issue #651: Changed from cancel-in-progress: false to true
-# Prevents multiple security analysis runs on rapid commits
+# Cancel previous runs on new commits
 concurrency:
   group: claude-pr-analysis-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -22,8 +20,7 @@ permissions:
   pull-requests: write
   # checks: write   # enable only if you intentionally create/update Checks
 
-# MAINTAINABILITY: Environment variables for comment markers
-# Issue #651: Centralized comment text patterns for easier maintenance
+# Environment variables for comment markers
 env:
   SECURITY_COMMENT_MARKER: '🛡️ Automated Security Review Complete'
 
