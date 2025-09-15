@@ -15,10 +15,9 @@ permissions:
   contents: read
   pull-requests: write
 
-# MAINTAINABILITY: Environment variables for comment markers
-# Issue #651: Centralized comment text patterns for easier maintenance
+# Environment variables for comment markers
 env:
-  XL_COMMENT_MARKER: '📏 Large PR Detected'
+  SIZE_COMMENT_MARKER: '📏 PR Size Analysis'
 
 jobs:
   size-label:
@@ -146,71 +145,79 @@ jobs:
               }
             }
 
-            // COMMENT DEDUPLICATION: Check for existing XL comment to avoid duplicates
-            // Issue #651: Prevents multiple "Large PR Detected" comments on same PR
-            if (sizeLabel === 'size/XL') {
-              try {
-                const comments = await github.rest.issues.listComments({
+            // Inline pagination helper
+            async function fetchAllComments() {
+              let allComments = [];
+              let page = 1;
+
+              while (true) {
+                const { data } = await github.rest.issues.listComments({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: context.issue.number
+                  issue_number: context.issue.number,
+                  per_page: 100,
+                  page: page
                 });
 
-                const existingXLComment = comments.data.find(c =>
-                  c.body && c.body.includes(process.env.XL_COMMENT_MARKER)
-                );
+                allComments = allComments.concat(data);
+                if (data.length < 100) break;
+                page++;
+              }
 
-                if (!existingXLComment) {
-                await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: `## ${{ env.XL_COMMENT_MARKER }}
-                
-                This PR changes **${filesCount} files** and has been labeled as \`${sizeLabel}\`.
-                
-                **Considerations for large PRs:**
-                - Consider breaking into smaller, focused PRs
-                - Claude analysis will run in summary-only mode
-                - Review time may be longer
-                - Increased risk of merge conflicts
-                
-                If this PR must remain large, ensure it has:
-                - [ ] Clear description of all changes
-                - [ ] Comprehensive test coverage
-                - [ ] Breaking changes documented
-                
-                Use \`/claude review\` to request detailed analysis if needed.`
+              return allComments;
+            }
+
+            // Centralized comment body builder
+            function buildSizeComment(filesCount, sizeLabel) {
+              return `## ${{ env.SIZE_COMMENT_MARKER }}
+
+            **Current Size:** \`${sizeLabel}\` (${filesCount} files)
+
+            ${sizeLabel === 'size/XL' ? `
+            ### ⚠️ Large PR Considerations:
+            - Consider breaking into smaller, focused PRs
+            - Review time may be longer
+            - Increased risk of merge conflicts
+
+            **If this PR must remain large, ensure it has:**
+            - [ ] Clear description of all changes
+            - [ ] Comprehensive test coverage
+            - [ ] Breaking changes documented
+            ` : ''}
+
+            *Last updated: ${new Date().toISOString()}*`;
+            }
+
+            // ALWAYS refresh or create comment (runs regardless of label changes)
+            try {
+              const allComments = await fetchAllComments();
+              const existingComment = allComments.find(c =>
+                c.body && c.body.includes(process.env.SIZE_COMMENT_MARKER)
+              );
+
+              const commentBody = buildSizeComment(filesCount, sizeLabel);
+
+              if (existingComment) {
+                // Update existing comment with fresh data
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingComment.id,
+                  body: commentBody
                 });
-                } else {
-                  console.log('XL comment already exists, skipping duplicate');
-                }
-              } catch (error) {
-                console.log('Error checking for existing XL comments:', error.message);
-                // ERROR HANDLING: On error, proceed with comment creation to avoid blocking
-                // Issue #651: Graceful degradation ensures workflow doesn't fail on API errors
+                console.log('Updated existing size comment with fresh data');
+              } else if (sizeLabel === 'size/XL' || sizeLabel === 'size/L') {
+                // Create new comment for L/XL sizes
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: context.issue.number,
-                  body: `## ${{ env.XL_COMMENT_MARKER }}
-
-                  This PR changes **${filesCount} files** and has been labeled as \`${sizeLabel}\`.
-
-                  **Considerations for large PRs:**
-                  - Consider breaking into smaller, focused PRs
-                  - Claude analysis will run in summary-only mode
-                  - Review time may be longer
-                  - Increased risk of merge conflicts
-
-                  If this PR must remain large, ensure it has:
-                  - [ ] Clear description of all changes
-                  - [ ] Comprehensive test coverage
-                  - [ ] Breaking changes documented
-
-                  Use \`/claude review\` to request detailed analysis if needed.`
+                  body: commentBody
                 });
+                console.log('Created new size comment');
               }
+            } catch (error) {
+              console.log('Error handling size comment:', error.message);
             }
 
             console.log(`Applied label: ${sizeLabel}`);
