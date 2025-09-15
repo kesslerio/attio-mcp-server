@@ -11,8 +11,8 @@ export function getLazyAttioClient(): AxiosInstance {
   return getAttioClient();
 }
 
-export function setGlobalContext(_context: any): void {
-  // No-op for now - can be enhanced later
+export function setGlobalContext(_context: unknown): void {
+  // Intentionally unused for now (reserved for future use)
 }
 
 export function clearClientCache(): void {

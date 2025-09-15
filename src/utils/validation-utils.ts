@@ -9,6 +9,7 @@
  */
 
 import * as AttioClientModule from '../api/attio-client.js';
+import { createScopedLogger, OperationType } from './logger.js';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -94,7 +95,11 @@ export async function getResourceAttributes(
 
     return attributes;
   } catch (error) {
-    console.error(`Failed to fetch attributes for ${resourceType}:`, error);
+    createScopedLogger(
+      'utils/validation-utils',
+      'getResourceAttributes',
+      OperationType.API_CALL
+    ).error(`Failed to fetch attributes for ${resourceType}`, error);
     // Return empty array if fetch fails, don't break validation
     return [];
   }
@@ -130,7 +135,11 @@ export async function validateSelectField(
     return { isValid: true };
   } catch (error) {
     // Don't fail validation due to attribute fetch errors
-    console.error(`Error validating select field ${fieldName}:`, error);
+    createScopedLogger(
+      'utils/validation-utils',
+      'validateSelectField',
+      OperationType.VALIDATION
+    ).error(`Error validating select field ${fieldName}`, error);
     return { isValid: true };
   }
 }
@@ -169,7 +178,11 @@ export async function validateMultiSelectField(
 
     return { isValid: true };
   } catch (error) {
-    console.error(`Error validating multi-select field ${fieldName}:`, error);
+    createScopedLogger(
+      'utils/validation-utils',
+      'validateMultiSelectField',
+      OperationType.VALIDATION
+    ).error(`Error validating multi-select field ${fieldName}`, error);
     return { isValid: true };
   }
 }
@@ -207,7 +220,11 @@ export async function validateReadOnlyFields(
 
     return { isValid: true };
   } catch (error) {
-    console.error(`Error validating read-only fields:`, error);
+    createScopedLogger(
+      'utils/validation-utils',
+      'validateReadOnlyFields',
+      OperationType.VALIDATION
+    ).error(`Error validating read-only fields`, error);
     return { isValid: true };
   }
 }
@@ -283,7 +300,11 @@ export async function suggestFieldName(
 
     return suggestions;
   } catch (error) {
-    console.error(`Error suggesting field names for ${resourceType}:`, error);
+    createScopedLogger(
+      'utils/validation-utils',
+      'suggestFieldName',
+      OperationType.VALIDATION
+    ).error(`Error suggesting field names for ${resourceType}`, error);
     return [];
   }
 }
@@ -322,7 +343,11 @@ export async function validateFieldExistence(
 
     return { isValid: true };
   } catch (error) {
-    console.error(`Error validating field existence:`, error);
+    createScopedLogger(
+      'utils/validation-utils',
+      'validateFieldExistence',
+      OperationType.VALIDATION
+    ).error('Error validating field existence', error);
     return { isValid: true };
   }
 }

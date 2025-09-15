@@ -91,7 +91,11 @@ export async function getLists(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
-      console.error(`Generic getLists failed: ${errorMessage}`);
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'getLists').warn(
+        'Generic getLists failed',
+        { errorMessage }
+      );
     }
     // Fallback implementation
     const api = getLazyAttioClient();
@@ -120,7 +124,11 @@ export async function getListDetails(listId: string): Promise<AttioList> {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
-      console.error(`Generic getListDetails failed: ${errorMessage}`);
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'getListDetails').warn(
+        'Generic getListDetails failed',
+        { errorMessage }
+      );
     }
     // Fallback implementation with proper error handling
     const api = getLazyAttioClient();
@@ -249,13 +257,15 @@ export async function addRecordToList(
     );
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `Generic addRecordToList failed: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-      console.error(
-        `Falling back to direct implementation for list ${listId} and record ${recordId}`
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger('objects.lists', 'addRecordToList');
+      log.warn(
+        'Generic addRecordToList failed; falling back to direct implementation',
+        {
+          listId,
+          recordId,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }
       );
     }
 
@@ -278,13 +288,12 @@ export async function addRecordToList(
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[addRecordToList:fallback] Request to ${path} with payload:`,
-        JSON.stringify(payload)
-      );
-      console.error(`Object Type: ${objectType}`);
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger('objects.lists', 'addRecordToList');
+      log.info('Fallback request payload', { path, payload });
+      log.debug('Object Type', { objectType });
       if (initialValues) {
-        console.error(`Initial Values: ${JSON.stringify(initialValues)}`);
+        log.debug('Initial Values', { initialValues });
       }
     }
 
@@ -292,9 +301,10 @@ export async function addRecordToList(
       const response = await api.post(path, payload);
 
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[addRecordToList:fallback] Success response:`,
-          JSON.stringify(response.data || {})
+        const { createScopedLogger } = await import('../utils/logger.js');
+        createScopedLogger('objects.lists', 'addRecordToList').info(
+          'Fallback success response',
+          { data: response.data || {} }
         );
       }
 
@@ -302,26 +312,20 @@ export async function addRecordToList(
     } catch (error) {
       // Enhanced error handling for validation errors
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[addRecordToList] Error adding record ${recordId} to list ${listId}:`,
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-
-        if (hasErrorResponse(error)) {
-          console.error('Status:', error.response?.status);
-          console.error(
-            'Response data:',
-            JSON.stringify(error.response?.data || {})
-          );
-
-          // Add additional debug information for validation errors
-          if (error.response?.data?.validation_errors) {
-            console.error(
-              'Validation errors:',
-              JSON.stringify(error.response.data.validation_errors)
-            );
-          }
-        }
+        const { createScopedLogger } = await import('../utils/logger.js');
+        const log = createScopedLogger('objects.lists', 'addRecordToList');
+        log.warn('Error adding record to list (fallback path)', {
+          listId,
+          recordId,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          status: hasErrorResponse(error) ? error.response?.status : undefined,
+          data: hasErrorResponse(error)
+            ? error.response?.data || {}
+            : undefined,
+          validationErrors: hasErrorResponse(error)
+            ? error.response?.data?.validation_errors
+            : undefined,
+        });
       }
 
       // Add more context to the error message
@@ -384,14 +388,13 @@ export async function updateListEntry(
     return await updateGenericListEntry(listId, entryId, attributes);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `Generic updateListEntry failed: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-      console.error(
-        `Falling back to direct implementation for list ${listId}, entry ${entryId}`
-      );
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger('objects.lists', 'updateListEntry');
+      log.warn('Generic updateListEntry failed; falling back', {
+        listId,
+        entryId,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
 
     // Fallback implementation
@@ -399,9 +402,10 @@ export async function updateListEntry(
     const path = `/lists/${listId}/entries/${entryId}`;
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[updateListEntry:fallback] Request to ${path} with attributes:`,
-        JSON.stringify(attributes)
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'updateListEntry').info(
+        'Fallback request payload',
+        { path, attributes }
       );
     }
 
@@ -414,9 +418,10 @@ export async function updateListEntry(
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[updateListEntry:fallback] Success response:`,
-        JSON.stringify(response.data || {})
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'updateListEntry').info(
+        'Fallback success response',
+        { data: response.data || {} }
       );
     }
 
@@ -440,10 +445,12 @@ export async function removeRecordFromList(
     return await removeGenericRecordFromList(listId, entryId);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `Generic removeRecordFromList failed: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'removeRecordFromList').warn(
+        'Generic removeRecordFromList failed',
+        {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }
       );
     }
     // Fallback implementation
@@ -600,9 +607,10 @@ export async function getRecordListMemberships(
         }
         // For other errors, log but continue
         if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            `Error checking ${objType} entries for record ${recordId}:`,
-            error
+          const { createScopedLogger } = await import('../utils/logger.js');
+          createScopedLogger('lists', 'getRecordListMemberships').warn(
+            `Error checking ${objType} entries for record ${recordId}`,
+            { error: error instanceof Error ? error.message : String(error) }
           );
         }
       }
@@ -616,9 +624,10 @@ export async function getRecordListMemberships(
     }
     // For other errors, log and return empty array per user guidance
     if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        `Error in getRecordListMemberships for record ${recordId}:`,
-        error
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('lists', 'getRecordListMemberships').warn(
+        `Error in getRecordListMemberships for record ${recordId}`,
+        { error: error instanceof Error ? error.message : String(error) }
       );
     }
     return [];
@@ -811,14 +820,19 @@ export async function filterListEntriesByParent(
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[filterListEntriesByParent] Filtering list ${listId} with path-based filter:`
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger(
+        'objects.lists',
+        'filterListEntriesByParent'
       );
-      console.error(`- Parent Object Type: ${parentObjectType}`);
-      console.error(`- Parent Attribute: ${parentAttributeSlug}`);
-      console.error(`- Condition: ${condition}`);
-      console.error(`- Value: ${JSON.stringify(value)}`);
-      console.error(`- Request payload: ${JSON.stringify(payload)}`);
+      log.info('Filtering with path-based filter', {
+        listId,
+        parentObjectType,
+        parentAttributeSlug,
+        condition,
+        value,
+        payload,
+      });
     }
 
     // Create API URL endpoint
@@ -831,8 +845,10 @@ export async function filterListEntriesByParent(
     const entries = processListEntries(response.data.data || []);
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[filterListEntriesByParent] Found ${entries.length} matching entries`
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'filterListEntriesByParent').info(
+        'Matching entries found',
+        { count: entries.length }
       );
     }
 
@@ -840,19 +856,16 @@ export async function filterListEntriesByParent(
   } catch (error) {
     // Enhanced error logging
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[filterListEntriesByParent] Error filtering list entries: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger(
+        'objects.lists',
+        'filterListEntriesByParent'
       );
-
-      if (hasErrorResponse(error)) {
-        console.error('Status:', error.response?.status);
-        console.error(
-          'Response data:',
-          JSON.stringify(error.response?.data || {})
-        );
-      }
+      log.warn('Error filtering list entries', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        status: hasErrorResponse(error) ? error.response?.status : undefined,
+        data: hasErrorResponse(error) ? error.response?.data || {} : undefined,
+      });
     }
 
     // Add context to error message
@@ -928,9 +941,10 @@ export async function createList(
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[createList] Creating list with attributes:`,
-        JSON.stringify(attributes)
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'createList').info(
+        'Creating list with attributes',
+        { attributes }
       );
     }
 
@@ -939,7 +953,11 @@ export async function createList(
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[createList] Success:`, JSON.stringify(response.data));
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'createList').info(
+        'Create list success',
+        { data: response.data }
+      );
     }
 
     // Extract and normalize response, handling undefined case
@@ -949,17 +967,13 @@ export async function createList(
     return ensureListShape(extracted);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[createList] Error:`,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      if (hasErrorResponse(error)) {
-        console.error('Status:', error.response?.status);
-        console.error(
-          'Response data:',
-          JSON.stringify(error.response?.data || {})
-        );
-      }
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger('objects.lists', 'createList');
+      log.warn('Create list error', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        status: hasErrorResponse(error) ? error.response?.status : undefined,
+        data: hasErrorResponse(error) ? error.response?.data || {} : undefined,
+      });
     }
 
     // Add context to error message
@@ -1002,10 +1016,11 @@ export async function updateList(
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[updateList] Updating list ${listId} with attributes:`,
-        JSON.stringify(attributes)
-      );
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'updateList').info('Updating list', {
+        listId,
+        attributes,
+      });
     }
 
     const response = await api.patch(path, {
@@ -1013,23 +1028,23 @@ export async function updateList(
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[updateList] Success:`, JSON.stringify(response.data));
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'updateList').info(
+        'Update list success',
+        { data: response.data }
+      );
     }
 
     return extract<AttioList>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[updateList] Error:`,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      if (hasErrorResponse(error)) {
-        console.error('Status:', error.response?.status);
-        console.error(
-          'Response data:',
-          JSON.stringify(error.response?.data || {})
-        );
-      }
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger('objects.lists', 'updateList');
+      log.warn('Update list error', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        status: hasErrorResponse(error) ? error.response?.status : undefined,
+        data: hasErrorResponse(error) ? error.response?.data || {} : undefined,
+      });
     }
 
     // Add context to error message
@@ -1066,29 +1081,32 @@ export async function deleteList(listId: string): Promise<boolean> {
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[deleteList] Deleting list ${listId}`);
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'deleteList').info('Deleting list', {
+        listId,
+      });
     }
 
     await api.delete(path);
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[deleteList] Success: List ${listId} deleted`);
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('objects.lists', 'deleteList').info(
+        'Delete list success',
+        { listId }
+      );
     }
 
     return true;
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[deleteList] Error:`,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      if (hasErrorResponse(error)) {
-        console.error('Status:', error.response?.status);
-        console.error(
-          'Response data:',
-          JSON.stringify(error.response?.data || {})
-        );
-      }
+      const { createScopedLogger } = await import('../utils/logger.js');
+      const log = createScopedLogger('objects.lists', 'deleteList');
+      log.warn('Delete list error', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        status: hasErrorResponse(error) ? error.response?.status : undefined,
+        data: hasErrorResponse(error) ? error.response?.data || {} : undefined,
+      });
     }
 
     const status = error?.response?.status ?? error?.statusCode;

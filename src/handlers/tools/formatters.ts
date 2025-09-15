@@ -7,6 +7,7 @@ import {
   safeJsonStringify,
   sanitizeMcpResponse,
 } from '../../utils/json-serializer.js';
+import { createScopedLogger } from '../../utils/logger.js';
 
 /**
  * Safely extract value from record attributes
@@ -159,6 +160,7 @@ export function formatBatchResults(result: any, operation: string): string {
  * @param isError - Whether this is an error response
  * @returns Formatted response object
  */
+
 export function formatResponse(
   content: string | any,
   isError: boolean = false
@@ -185,10 +187,10 @@ export function formatResponse(
           : String(content);
     } catch (error: unknown) {
       if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
-        console.error(
-          '[formatResponse] Error converting content to string:',
-          error
-        );
+        const log = createScopedLogger('tools.formatters', 'formatResponse');
+        log.warn('Error converting content to string', {
+          error: String(error),
+        });
       }
       formattedContent = 'Error: Content could not be serialized';
     }

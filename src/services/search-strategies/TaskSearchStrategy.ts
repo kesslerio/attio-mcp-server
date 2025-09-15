@@ -14,6 +14,7 @@ import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { performance } from 'perf_hooks';
 import { SearchUtilities } from '../search-utilities/SearchUtilities.js';
+import { createScopedLogger, OperationType } from '../../utils/logger.js';
 
 // Import performance tracking and caching services
 import { enhancedPerformanceTracker } from '../../middleware/performance-enhanced.js';
@@ -94,6 +95,11 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     match_type: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
+    const log = createScopedLogger(
+      'TaskSearchStrategy',
+      'tasks_search',
+      OperationType.DATA_PROCESSING
+    );
     // Use CachingService for tasks data management
     const loadTasksData = async (): Promise<AttioRecord[]> => {
       try {
@@ -105,17 +111,16 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
 
         // Convert tasks to records and ensure it's always an array
         if (!Array.isArray(tasksList)) {
-          console.warn(
-            `⚠️  TASKS API WARNING: listTasks() returned non-array value:`,
-            typeof tasksList
-          );
+          log.warn('TASKS API WARNING: listTasks() returned non-array value', {
+            returnedType: typeof tasksList,
+          });
           return [];
         } else {
           // Convert AttioTask[] to AttioRecord[]
           return tasksList.map(UniversalUtilityService.convertTaskToRecord);
         }
       } catch (error: unknown) {
-        console.error(`Failed to load tasks from API:`, error);
+        log.error('Failed to load tasks from API', error);
         return []; // Fallback to empty array
       }
     };
@@ -125,10 +130,11 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
 
     // Performance warning for large datasets
     if (!fromCache && tasks.length > 500) {
-      console.warn(
-        `⚠️  PERFORMANCE WARNING: Loading ${tasks.length} tasks. ` +
-          `Consider requesting Attio API pagination support for tasks endpoint.`
-      );
+      log.warn('PERFORMANCE WARNING: Large tasks load', {
+        taskCount: tasks.length,
+        recommendation:
+          'Consider requesting Attio API pagination support for tasks endpoint.',
+      });
     }
 
     // Log performance metrics
@@ -165,9 +171,11 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
 
     // Performance optimization: Don't process if offset exceeds dataset
     if (start >= filteredTasks.length) {
-      console.info(
-        `Tasks pagination: offset ${start} exceeds filtered dataset size ${filteredTasks.length}, returning empty results`
-      );
+      log.info('Tasks pagination offset exceeds dataset size', {
+        offset: start,
+        filteredSize: filteredTasks.length,
+        action: 'returning empty results',
+      });
       return [];
     } else {
       const end = Math.min(start + requestedLimit, filteredTasks.length);

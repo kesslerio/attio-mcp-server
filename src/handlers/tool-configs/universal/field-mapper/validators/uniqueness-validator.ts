@@ -6,6 +6,7 @@
 import { UniversalResourceType } from '../types.js';
 import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
 import { getLazyAttioClient } from '../../../../../api/lazy-client.js';
+import { createScopedLogger } from '../../../../../utils/logger.js';
 
 /**
  * Enhanced uniqueness constraint error message
@@ -54,7 +55,11 @@ export async function enhanceUniquenessError(
     }
   } catch (error: unknown) {
     // Fall back to original message if we can't enhance it
-    console.error('Failed to enhance uniqueness error:', error);
+    const log = createScopedLogger(
+      'validators.uniqueness',
+      'enhanceUniquenessError'
+    );
+    log.warn('Failed to enhance uniqueness error', { error: String(error) });
   }
 
   // Try to guess based on unique fields

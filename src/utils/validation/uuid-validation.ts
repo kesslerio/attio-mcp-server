@@ -192,19 +192,21 @@ export function classifyRecordError(
   }
 
   // If UUID format is valid but we got an error, check the error type
+  const statusLike = error as Partial<{ status: number; statusCode: number }>;
   if (
     errorMessage.includes('not found') ||
     errorMessage.includes('does not exist') ||
-    (error as any).status === 404 ||
-    (error as any).statusCode === 404
+    statusLike.status === 404 ||
+    statusLike.statusCode === 404
   ) {
     return createRecordNotFoundError(recordId, resourceType);
   }
 
   // For other errors with valid UUIDs, preserve the original error but enhance it
+  const statusCode = statusLike.statusCode || statusLike.status || 500;
   return new EnhancedApiError(
     error.message,
-    (error as any).statusCode || (error as any).status || 500,
+    statusCode,
     `/objects/${resourceType}/${recordId}`,
     'GET',
     {

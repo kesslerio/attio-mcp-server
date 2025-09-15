@@ -109,8 +109,9 @@ export async function advancedSearchObject<T extends AttioRecord>(
       // If filters is undefined, return body without filter
       if (!filters) {
         if (process.env.NODE_ENV === 'development') {
-          console.error(
-            '[advancedSearchObject] No filters provided, using default parameters only'
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('operations.search', 'advancedSearchObject').debug(
+            'No filters provided, using default parameters only'
           );
         }
         return body;
@@ -144,12 +145,16 @@ export async function advancedSearchObject<T extends AttioRecord>(
 
         // Log filter transformation for debugging in development
         if (process.env.NODE_ENV === 'development') {
-          console.error('[advancedSearchObject] Transformed filters:', {
-            originalFilters: JSON.stringify(filters),
-            transformedFilters: JSON.stringify(filterObject.filter),
-            useOrLogic: filters?.matchAny === true,
-            filterCount: filters?.filters?.length || 0,
-          });
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('operations.search', 'advancedSearchObject').debug(
+            'Transformed filters',
+            {
+              originalFilters: JSON.stringify(filters),
+              transformedFilters: JSON.stringify(filterObject.filter),
+              useOrLogic: filters?.matchAny === true,
+              filterCount: filters?.filters?.length || 0,
+            }
+          );
         }
       }
     } catch (err: unknown) {
@@ -157,17 +162,21 @@ export async function advancedSearchObject<T extends AttioRecord>(
       if (err instanceof FilterValidationError) {
         // Log the full details for debugging
         if (process.env.NODE_ENV === 'development') {
-          console.error('[advancedSearchObject] Filter validation error:', {
-            error: err.message,
-            providedFilters: JSON.stringify(filters, (key, value) =>
-              // Handle circular references in error logging
-              typeof value === 'object' && value !== null
-                ? Object.keys(value).length > 0
-                  ? value
-                  : '[Empty Object]'
-                : value
-            ),
-          });
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('operations.search', 'advancedSearchObject').warn(
+            'Filter validation error',
+            {
+              error: err.message,
+              providedFilters: JSON.stringify(filters, (key, value) =>
+                // Handle circular references in error logging
+                typeof value === 'object' && value !== null
+                  ? Object.keys(value).length > 0
+                    ? value
+                    : '[Empty Object]'
+                  : value
+              ),
+            }
+          );
         }
 
         // The error message may already include examples, so just rethrow

@@ -13,6 +13,7 @@ import {
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { createScopedLogger } from '../../utils/logger.js';
 
 /**
  * Search strategy for people with advanced filtering, name/email search, and content search
@@ -163,8 +164,13 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
       // If empty filters aren't supported, return empty array rather than failing
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.warn(
-        `People search with empty filters failed, returning empty results: ${errorMessage}`
+      const log = createScopedLogger(
+        'PeopleSearchStrategy',
+        'searchWithoutQuery'
+      );
+      log.warn(
+        'People search with empty filters failed, returning empty results',
+        { errorMessage }
       );
       return [];
     }

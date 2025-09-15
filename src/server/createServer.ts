@@ -4,6 +4,7 @@
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { createScopedLogger } from '../utils/logger.js';
 import { z } from 'zod';
 import { registerResourceHandlers } from '../handlers/resources.js';
 import { registerToolHandlers } from '../handlers/tools/index.js';
@@ -44,7 +45,9 @@ export const configSchema = z.object({
  */
 export function createServer(context?: ServerContext) {
   const startTime = Date.now();
-  console.error('[mcp:init] Server creation started'); // Use stderr to avoid stdio pollution
+  createScopedLogger('mcp.init', 'createServer').info(
+    'Server creation started'
+  );
 
   // For backward compatibility: if no context provided (STDIO mode),
   // create one that reads from environment variables
@@ -55,7 +58,7 @@ export function createServer(context?: ServerContext) {
 
   // Set the global context so lazy client can access it
   setGlobalContext(ctx);
-  console.error('[mcp:init] Global context set');
+  createScopedLogger('mcp.init', 'createServer').info('Global context set');
 
   // Create MCP server with proper capabilities declaration
   // Note: No API key validation here - it's checked when tools are invoked
@@ -78,12 +81,14 @@ export function createServer(context?: ServerContext) {
 
   // Register all handlers with the context
   // The handlers will use the context to get API key when needed
-  console.error('[mcp:init] Registering handlers');
+  createScopedLogger('mcp.init', 'createServer').info('Registering handlers');
   registerResourceHandlers(mcpServer, ctx);
   registerToolHandlers(mcpServer, ctx);
   registerPromptHandlers(mcpServer, ctx);
 
   const duration = Date.now() - startTime;
-  console.error(`[mcp:init] Server created in ${duration}ms`);
+  createScopedLogger('mcp.init', 'createServer').info('Server created', {
+    durationMs: duration,
+  });
   return mcpServer;
 }

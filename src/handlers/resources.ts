@@ -37,9 +37,20 @@ interface ApiError extends Error {
 function formatRecordAsResource(record: AttioRecord, type: ResourceType) {
   return {
     uri: formatResourceUri(type, record.id?.record_id || ''),
-    name:
-      (record.values?.name as any)?.[0]?.value ||
-      `Unknown ${type.slice(0, -1)}`,
+    name: (() => {
+      const nameField = (record.values as Record<string, unknown> | undefined)
+        ?.name as unknown;
+      if (
+        Array.isArray(nameField) &&
+        nameField.length > 0 &&
+        nameField[0] &&
+        typeof (nameField[0] as any).value !== 'undefined'
+      ) {
+        const v = (nameField[0] as { value: unknown }).value;
+        return typeof v === 'string' ? v : String(v);
+      }
+      return `Unknown ${type.slice(0, -1)}`;
+    })(),
     mimeType: 'application/json',
   };
 }

@@ -1,4 +1,5 @@
 import type { AxiosInstance } from 'axios';
+import { createScopedLogger } from '../utils/logger.js';
 
 const slugCache = new Map<string, string>();
 
@@ -8,6 +9,7 @@ export async function resolveObjectSlug(
 ): Promise<string> {
   if (slugCache.has(logical)) return slugCache.get(logical)!;
 
+  const log = createScopedLogger('attio-objects', 'resolveObjectSlug');
   // 1) Try direct object endpoint (most reliable)
   try {
     const { data } = await client.get(`/objects/${logical}`);
@@ -16,7 +18,7 @@ export async function resolveObjectSlug(
       const slug = String(obj.api_slug || obj.slug || obj.id);
       slugCache.set(logical, slug);
       if (process.env.E2E_MODE === 'true') {
-        console.log('🔎 /objects/{logical} probe', {
+        log.debug('/objects/{logical} probe', {
           logical,
           ok: true,
           ...obj,
@@ -26,7 +28,7 @@ export async function resolveObjectSlug(
       return slug;
     } else {
       if (process.env.E2E_MODE === 'true') {
-        console.log('🔎 probe EMPTY', {
+        log.debug('probe EMPTY', {
           logical,
           statusLike: data?.status,
           body: data,
@@ -35,7 +37,7 @@ export async function resolveObjectSlug(
     }
   } catch (e) {
     if (process.env.E2E_MODE === 'true') {
-      console.log('🔎 /objects/{logical} probe failed', {
+      log.warn('/objects/{logical} probe failed', {
         logical,
         error:
           (e as { response?: { data?: unknown }; message?: unknown })?.response
@@ -67,7 +69,7 @@ export async function resolveObjectSlug(
 
   // 3) Last resort: assume standard slug
   if (process.env.E2E_MODE === 'true') {
-    console.log(`⚠️ resolveObjectSlug fallback → ${logical}`);
+    log.warn('resolveObjectSlug fallback', { logical });
   }
   slugCache.set(logical, logical);
   return logical;

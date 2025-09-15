@@ -14,7 +14,12 @@ import {
 import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
-import { debug, error } from '../utils/logger.js';
+import {
+  debug,
+  error,
+  createScopedLogger,
+  OperationType,
+} from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -518,9 +523,11 @@ export class UniversalSearchService {
       if (!ValidationService.validateUUIDForSearch(listId)) {
         return []; // Return empty success for invalid UUID
       }
-      console.warn(
-        'list_membership filter not yet supported in listObjectRecords'
-      );
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchRecords_ObjectType',
+        OperationType.DATA_PROCESSING
+      ).warn('list_membership filter not yet supported in listObjectRecords');
     }
 
     return await listObjectRecords('records', {
@@ -577,7 +584,9 @@ export class UniversalSearchService {
             return exactResults;
           }
         } catch {
-          console.debug('Exact match failed, trying client-side filtering');
+          createScopedLogger('UniversalSearchService', 'dealExactMatch').debug(
+            'Exact match failed, trying client-side filtering'
+          );
         }
       }
 
@@ -610,17 +619,20 @@ export class UniversalSearchService {
       const end = start + (limit || 10);
       return allDeals.slice(start, end);
     } catch (error: unknown) {
-      console.error('Failed to query deal records:', error);
+      createScopedLogger('UniversalSearchService', 'dealQuery').error(
+        'Failed to query deal records',
+        error
+      );
       if (error && typeof error === 'object' && 'response' in error) {
         const httpError = error as { response: { status: number } };
         if (httpError.response.status === 404) {
-          console.error(
+          createScopedLogger('UniversalSearchService', 'dealQuery').error(
             'Deal query endpoint not found, falling back to empty results'
           );
           return [];
         }
       }
-      console.warn(
+      createScopedLogger('UniversalSearchService', 'dealQuery').warn(
         'Deal query failed with unexpected error, returning empty results'
       );
       return [];
@@ -701,7 +713,11 @@ export class UniversalSearchService {
 
       return results;
     } catch (error: unknown) {
-      console.error('Failed to search notes:', error);
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchNotes',
+        OperationType.API_CALL
+      ).error('Failed to search notes', error);
       enhancedPerformanceTracker.markTiming(
         perfId,
         'other',
@@ -766,8 +782,12 @@ export class UniversalSearchService {
         return [];
       }
 
-      console.error(
-        `Relationship search failed for ${sourceResourceType} -> ${targetResourceType}:`,
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchByRelationship',
+        OperationType.API_CALL
+      ).error(
+        `Relationship search failed for ${sourceResourceType} -> ${targetResourceType}`,
         error
       );
       return [];
@@ -819,7 +839,11 @@ export class UniversalSearchService {
         return [];
       }
 
-      console.error(`Timeframe search failed for ${resourceType}:`, error);
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchByTimeframe',
+        OperationType.API_CALL
+      ).error(`Timeframe search failed for ${resourceType}`, error);
       return [];
     }
   }
@@ -886,7 +910,11 @@ export class UniversalSearchService {
         return [];
       }
 
-      console.error(`Content search failed for ${resourceType}:`, error);
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchByContent',
+        OperationType.API_CALL
+      ).error(`Content search failed for ${resourceType}`, error);
       return [];
     }
   }

@@ -5,6 +5,7 @@
 
 import axios, { AxiosError } from 'axios';
 import { createErrorResult, AttioApiError } from './error-handler.js';
+import { createScopedLogger } from './logger.js';
 
 /**
  * Safely gets the error message from an unknown error type
@@ -89,7 +90,18 @@ export function handleError(
         ? `${wrappedError.message}\nStack: ${error.stack}`
         : wrappedError.message;
 
-    console[logLevel](logMessage);
+    const logger = createScopedLogger('utils.error-utilities', 'handleError');
+    switch (logLevel) {
+      case 'warn':
+        logger.warn(logMessage);
+        break;
+      case 'debug':
+        logger.debug(logMessage);
+        break;
+      default:
+        logger.error(logMessage);
+        break;
+    }
   }
 
   return wrappedError;
