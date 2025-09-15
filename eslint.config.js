@@ -91,6 +91,18 @@ export default [
   {
     // Test-specific overrides to keep lint warnings under control in CI/pre-commit
     files: ['test/**/*.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 2021,
+        sourceType: 'module',
+        project: './configs/tsconfig/tsconfig.eslint.json',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      import: importPlugin,
+    },
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
