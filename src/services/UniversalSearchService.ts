@@ -14,7 +14,12 @@ import {
 import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
-import { debug, error, createScopedLogger, OperationType } from '../utils/logger.js';
+import {
+  debug,
+  error,
+  createScopedLogger,
+  OperationType,
+} from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -513,17 +518,17 @@ export class UniversalSearchService {
     filters?: Record<string, unknown>
   ): Promise<AttioRecord[]> {
     // Handle list_membership filters - invalid UUID should return empty array
-      if (filters?.list_membership) {
-        const listId = String(filters.list_membership);
-        if (!ValidationService.validateUUIDForSearch(listId)) {
-          return []; // Return empty success for invalid UUID
-        }
-        createScopedLogger(
-          'UniversalSearchService',
-          'searchRecords_ObjectType',
-          OperationType.DATA_PROCESSING
-        ).warn('list_membership filter not yet supported in listObjectRecords');
+    if (filters?.list_membership) {
+      const listId = String(filters.list_membership);
+      if (!ValidationService.validateUUIDForSearch(listId)) {
+        return []; // Return empty success for invalid UUID
       }
+      createScopedLogger(
+        'UniversalSearchService',
+        'searchRecords_ObjectType',
+        OperationType.DATA_PROCESSING
+      ).warn('list_membership filter not yet supported in listObjectRecords');
+    }
 
     return await listObjectRecords('records', {
       pageSize: limit,

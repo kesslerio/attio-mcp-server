@@ -177,7 +177,7 @@ export class UniversalUpdateService {
     const fieldValidation = validateFields(resource_type, values);
     if (fieldValidation.warnings.length > 0) {
       // Intentionally keep a console.warn for test expectations; mirror to logger.debug
-      // eslint-disable-next-line no-console
+       
       console.warn(
         'Field validation warnings:',
         fieldValidation.warnings.join('\n')
@@ -409,7 +409,7 @@ export class UniversalUpdateService {
         }
         if (!verification.verified) {
           // Intentionally keep a console.warn for test expectations; mirror to logger.error
-          // eslint-disable-next-line no-console
+           
           console.warn(
             `Field persistence verification failed for ${resource_type} ${record_id}:`,
             verification.discrepancies
@@ -422,7 +422,11 @@ export class UniversalUpdateService {
           );
         }
       } catch (error: unknown) {
-        logError('UniversalUpdateService', 'Field persistence verification error', error);
+        logError(
+          'UniversalUpdateService',
+          'Field persistence verification error',
+          error
+        );
       }
     }
 
@@ -437,11 +441,10 @@ export class UniversalUpdateService {
     const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
       // Retry with corrected resource type
-      debug(
-        'UniversalUpdateService',
-        `Resource type corrected`,
-        { from: resource_type, to: resourceValidation.corrected }
-      );
+      debug('UniversalUpdateService', `Resource type corrected`, {
+        from: resource_type,
+        to: resourceValidation.corrected,
+      });
       return this.updateRecord({
         ...params,
         resource_type: resourceValidation.corrected,

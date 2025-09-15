@@ -143,7 +143,9 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
             'objects/base-operations',
             'createObjectWithDynamicFields',
             OperationType.DATA_PROCESSING
-          ).warn('Empty result detected, passing to createObjectRecord fallback');
+          ).warn(
+            'Empty result detected, passing to createObjectRecord fallback'
+          );
         }
         return result; // Let createObjectRecord handle the fallback
       }
