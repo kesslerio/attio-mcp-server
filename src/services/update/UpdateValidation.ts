@@ -8,6 +8,7 @@ import { getPersonDetails } from '../../objects/people/basic.js';
 import { getObjectRecord } from '../../objects/records/index.js';
 import { getTask } from '../../objects/tasks.js';
 import type { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import { createScopedLogger } from '../../utils/logger.js';
 
 export const UpdateValidation = {
   hasForbiddenContent(values: Record<string, unknown>): boolean {
@@ -110,7 +111,10 @@ export const UpdateValidation = {
       result.warnings.push(
         `Field persistence verification failed: ${errorMessage}`
       );
-      console.error('Field persistence verification error:', error);
+      createScopedLogger('update/UpdateValidation', 'verifyFieldPersistence').error(
+        'Field persistence verification error',
+        error
+      );
     }
     return result;
   },
@@ -150,14 +154,14 @@ export const UpdateValidation = {
         case 'records' as unknown as UniversalResourceType:
           return await getObjectRecord('records', recordId);
         default:
-          console.warn(
+          createScopedLogger('update/UpdateValidation', 'fetchRecordForVerification').warn(
             `No verification method available for resource type: ${resourceType}`
           );
           return null;
       }
     } catch (error: unknown) {
-      console.error(
-        `Failed to fetch ${resourceType} record ${recordId} for verification:`,
+      createScopedLogger('update/UpdateValidation', 'fetchRecordForVerification').error(
+        `Failed to fetch ${resourceType} record ${recordId} for verification`,
         error
       );
       return null;

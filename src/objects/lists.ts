@@ -607,9 +607,10 @@ export async function getRecordListMemberships(
         }
         // For other errors, log but continue
         if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            `Error checking ${objType} entries for record ${recordId}:`,
-            error
+          const { createScopedLogger } = await import('../utils/logger.js');
+          createScopedLogger('lists', 'getRecordListMemberships').warn(
+            `Error checking ${objType} entries for record ${recordId}`,
+            { error: error instanceof Error ? error.message : String(error) }
           );
         }
       }
@@ -623,9 +624,10 @@ export async function getRecordListMemberships(
     }
     // For other errors, log and return empty array per user guidance
     if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        `Error in getRecordListMemberships for record ${recordId}:`,
-        error
+      const { createScopedLogger } = await import('../utils/logger.js');
+      createScopedLogger('lists', 'getRecordListMemberships').warn(
+        `Error in getRecordListMemberships for record ${recordId}`,
+        { error: error instanceof Error ? error.message : String(error) }
       );
     }
     return [];

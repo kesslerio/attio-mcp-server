@@ -77,8 +77,9 @@ export async function getCompanyDetails(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.log(
-          '[getCompanyDetails] Returning company from shared mock state:',
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.basic', 'getCompanyDetails').debug(
+          'Returning company from shared mock state',
           {
             companyId: companyIdOrUri,
             values: sharedMockCompany.values,
@@ -98,8 +99,9 @@ export async function getCompanyDetails(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.log(
-        '[getCompanyDetails] Returning static mock company (not found in shared state):',
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.basic', 'getCompanyDetails').debug(
+        'Returning static mock company (not found in shared state)',
         {
           companyId: companyIdOrUri,
           values: mockCompany.values,
@@ -406,9 +408,10 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              console.error(
-                '[createCompany] Created emergency mock company result after query failure:',
-                result
+              const { createScopedLogger } = await import('../../utils/logger.js');
+              createScopedLogger('companies.basic', 'createCompany').warn(
+                'Created emergency mock company result after query failure',
+                { result }
               );
             }
           }
@@ -442,9 +445,10 @@ export async function createCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            '[createCompany] Created mock company result without name for testing:',
-            result
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.basic', 'createCompany').warn(
+            'Created mock company result without name for testing',
+            { result }
           );
         }
       }
@@ -473,8 +477,10 @@ export async function createCompany(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.error(
-          '[createCompany] CRITICAL: Result still missing ID structure before return:',
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.basic', 'createCompany').error(
+          'CRITICAL: Result still missing ID structure before return',
+          undefined,
           {
             result,
             hasId: !!result?.id,
@@ -501,9 +507,10 @@ export async function createCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            '[createCompany] EMERGENCY: Created last-resort mock ID structure:',
-            result
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.basic', 'createCompany').warn(
+            'EMERGENCY: Created last-resort mock ID structure',
+            { result }
           );
         }
       } else {
@@ -519,11 +526,15 @@ export async function createCompany(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error('[createCompany] Returning valid company record:', {
-        recordId: result.id?.record_id,
-        hasValues: !!result.values,
-        valuesKeys: result.values ? Object.keys(result.values) : [],
-      });
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.basic', 'createCompany').debug(
+        'Returning valid company record',
+        {
+          recordId: result.id?.record_id,
+          hasValues: !!result.values,
+          valuesKeys: result.values ? Object.keys(result.values) : [],
+        }
+      );
     }
 
     return result;
@@ -532,12 +543,13 @@ export async function createCompany(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error('[createCompany] Error caught:', error);
-      console.error('[createCompany] Error type:', typeof error);
-      console.error(
-        '[createCompany] Error stack:',
-        error instanceof Error ? error.stack : 'No stack'
-      );
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      const logger = createScopedLogger('companies.basic', 'createCompany');
+      logger.error('Error caught', error);
+      logger.debug('Error type', { type: typeof error });
+      logger.debug('Error stack', {
+        stack: error instanceof Error ? error.stack : 'No stack',
+      });
     }
 
     if (error instanceof InvalidCompanyDataError) {
@@ -593,8 +605,9 @@ export async function updateCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            '[updateCompany] Updated mock company in shared state:',
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.basic', 'updateCompany').debug(
+            'Updated mock company in shared state',
             {
               companyId,
               updatedAttributes: attributes,
@@ -620,9 +633,10 @@ export async function updateCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            '[updateCompany] Created new mock company in shared state (not found):',
-            mockUpdatedCompany
+          const { createScopedLogger } = await import('../../utils/logger.js');
+          createScopedLogger('companies.basic', 'updateCompany').debug(
+            'Created new mock company in shared state (not found)',
+            { mockUpdatedCompany }
           );
         }
 

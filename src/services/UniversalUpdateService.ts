@@ -176,10 +176,15 @@ export class UniversalUpdateService {
     // Pre-validate fields and provide helpful suggestions (less strict for updates)
     const fieldValidation = validateFields(resource_type, values);
     if (fieldValidation.warnings.length > 0) {
+      // Intentionally keep a console.warn for test expectations; mirror to logger.debug
+      // eslint-disable-next-line no-console
       console.warn(
         'Field validation warnings:',
         fieldValidation.warnings.join('\n')
       );
+      debug('UniversalUpdateService', 'Field validation warnings', {
+        warnings: fieldValidation.warnings.join('\n'),
+      });
     }
     if (fieldValidation.suggestions.length > 0) {
       const truncated = ValidationService.truncateSuggestions(
@@ -403,13 +408,21 @@ export class UniversalUpdateService {
           );
         }
         if (!verification.verified) {
+          // Intentionally keep a console.warn for test expectations; mirror to logger.error
+          // eslint-disable-next-line no-console
           console.warn(
             `Field persistence verification failed for ${resource_type} ${record_id}:`,
             verification.discrepancies
           );
+          logError(
+            'UniversalUpdateService',
+            'Field persistence verification failed',
+            new Error('Verification failed'),
+            { discrepancies: verification.discrepancies }
+          );
         }
       } catch (error: unknown) {
-        console.error('Field persistence verification error:', error);
+        logError('UniversalUpdateService', 'Field persistence verification error', error);
       }
     }
 
@@ -424,8 +437,10 @@ export class UniversalUpdateService {
     const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
       // Retry with corrected resource type
-      console.error(
-        `Resource type corrected from "${resource_type}" to "${resourceValidation.corrected}"`
+      debug(
+        'UniversalUpdateService',
+        `Resource type corrected`,
+        { from: resource_type, to: resourceValidation.corrected }
       );
       return this.updateRecord({
         ...params,

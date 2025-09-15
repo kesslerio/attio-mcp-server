@@ -271,8 +271,9 @@ export async function discoverCompanyAttributes(): Promise<{
   // For now, we'll fetch a sample company and examine its fields
 
   if (process.env.NODE_ENV === 'development') {
-    console.error(
-      '[discoverCompanyAttributes] Starting attribute discovery...'
+    const { createScopedLogger } = await import('../../utils/logger.js');
+    createScopedLogger('companies.attributes', 'discoverCompanyAttributes').debug(
+      'Starting attribute discovery'
     );
   }
 
@@ -314,8 +315,9 @@ export async function discoverCompanyAttributes(): Promise<{
 
     const sampleCompanyId = sampleCompany?.id?.record_id;
     if (!sampleCompanyId) {
-      console.warn(
-        '[discoverCompanyAttributes] Sample company has no record ID:',
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.attributes', 'discoverCompanyAttributes').warn(
+        'Sample company has no record ID',
         {
           hasId: !!sampleCompany?.id,
           idType: typeof sampleCompany?.id,
@@ -331,8 +333,10 @@ export async function discoverCompanyAttributes(): Promise<{
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[discoverCompanyAttributes] Using sample company ID: ${sampleCompanyId}`
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.attributes', 'discoverCompanyAttributes').debug(
+        'Using sample company ID',
+        { sampleCompanyId }
       );
     }
 
@@ -340,10 +344,10 @@ export async function discoverCompanyAttributes(): Promise<{
     const values = sampleCompanyDetails.values || {};
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[discoverCompanyAttributes] Retrieved ${
-          Object.keys(values).length
-        } fields from sample company`
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.attributes', 'discoverCompanyAttributes').debug(
+        'Retrieved fields from sample company',
+        { count: Object.keys(values).length }
       );
     }
 
