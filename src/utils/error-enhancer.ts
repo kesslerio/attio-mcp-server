@@ -51,28 +51,21 @@ interface ErrorContext {
  * Parse API error to extract context
  */
 function parseApiError(error: any): ErrorContext {
-  console.error(`[enhancer-parseApiError] --- ENTERING parseApiError ---`);
-  console.error(
-    `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${
-      error?.constructor?.name
-    }`
-  );
+  const { createScopedLogger } = require('./logger.js');
+  const log = createScopedLogger('utils.error-enhancer', 'parseApiError');
+  log.debug('ENTERING parseApiError');
+  log.debug('Error type info', {
+    type: typeof error,
+    ctor: error?.constructor?.name,
+  });
 
   if (error && typeof error === 'object') {
-    console.error(
-      `[enhancer-parseApiError] error keys: ${JSON.stringify(
-        Object.keys(error)
-      )}`
-    );
-    console.error(
-      `[enhancer-parseApiError] error.message from input: ${error.message}`
-    );
+    log.debug('Error keys', { keys: Object.keys(error) });
+    log.debug('Error message from input', { message: error.message });
   }
 
   const isAxios = axios.isAxiosError(error);
-  console.error(
-    `[enhancer-parseApiError] Step 1: axios.isAxiosError(error) result: ${isAxios}`
-  );
+  log.debug('axios.isAxiosError result', { isAxios });
 
   let responseExists = false;
   let responseDataExists = false;
@@ -80,11 +73,7 @@ function parseApiError(error: any): ErrorContext {
 
   if (isAxios && error.response) {
     responseExists = true;
-    console.error(
-      `[enhancer-parseApiError] Step 2: error.response exists. Keys: ${JSON.stringify(
-        Object.keys(error.response)
-      )}`
-    );
+    log.debug('Response exists. Keys', { keys: Object.keys(error.response) });
 
     if (error.response.data) {
       responseDataExists = true;
@@ -93,27 +82,23 @@ function parseApiError(error: any): ErrorContext {
       } catch (e) {
         responseDataContent = 'Error stringifying response.data';
       }
-      console.error(
-        `[enhancer-parseApiError] Step 3: error.response.data exists. Type: ${typeof error
-          .response.data}, Content: ${responseDataContent}`
-      );
+      log.debug('Response data exists', {
+        type: typeof error.response.data,
+        content: responseDataContent,
+      });
     } else {
-      console.error(
-        `[enhancer-parseApiError] Step 3: error.response.data is FALSY.`
-      );
+      log.debug('Response data is falsy');
     }
   } else {
-    console.error(
-      `[enhancer-parseApiError] Step 2: error.response is FALSY or not an Axios error for this check.`
-    );
-    console.error(
-      `[enhancer-parseApiError] Step 3: error.response.data is FALSY (because error.response was not available).`
-    );
+    log.debug('Response is falsy or not an Axios error for this check');
+    log.debug('Response data is falsy (no response)');
   }
 
-  console.error(
-    `[enhancer-parseApiError] FINAL CHECK BEFORE CONDITION: isAxios=${isAxios}, responseExists=${responseExists}, responseDataExists=${responseDataExists}`
-  );
+  log.debug('Final check before condition', {
+    isAxios,
+    responseExists,
+    responseDataExists,
+  });
 
   if (
     isAxios &&

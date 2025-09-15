@@ -100,7 +100,11 @@ function getConfig(): MappingConfig {
       // Initialize lookup caches for faster access
       initializeLookupCaches(cachedConfig);
     } catch (error: unknown) {
-      console.error('Failed to load mapping configuration:', error);
+      const { createScopedLogger } = require('../logger');
+      createScopedLogger('utils.attribute-mappers', 'getConfig').warn(
+        'Failed to load mapping configuration',
+        { error: String(error) }
+      );
 
       // Create a simple config using the legacy map for backward compatibility
       cachedConfig = {
@@ -208,9 +212,14 @@ function trySnakeCaseConversion(attributeName: string): string | undefined {
     return undefined;
   } catch (err) {
     // Graceful error handling: log warning but don't throw
-    console.warn(
-      `[attribute-mappers] Error in snake case conversion for "${attributeName}": ${err}`
-    );
+    const { createScopedLogger } = require('../logger');
+    createScopedLogger(
+      'utils.attribute-mappers',
+      'trySnakeCaseConversion'
+    ).warn('Error in snake case conversion', {
+      attributeName,
+      error: String(err),
+    });
     return undefined;
   }
 }
@@ -233,8 +242,10 @@ export function getAttributeSlug(
     const specialCaseResult = handleSpecialCases(attributeName);
     if (specialCaseResult) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[attribute-mappers] Special case match: "${attributeName}" -> "${specialCaseResult}"`
+        const { createScopedLogger } = require('../logger');
+        createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').debug(
+          'Special case match',
+          { attributeName, specialCaseResult }
         );
       }
       return specialCaseResult;
@@ -279,9 +290,15 @@ export function getAttributeSlug(
         result = lookupCaseInsensitive(objectSpecificCache, attributeName);
         if (result) {
           if (process.env.NODE_ENV === 'development') {
-            console.error(
-              `[attribute-mappers] Object-specific case-insensitive match for ${objectType}: "${attributeName}" -> "${result}"`
-            );
+            const { createScopedLogger } = require('../logger');
+            createScopedLogger(
+              'utils.attribute-mappers',
+              'getAttributeSlug'
+            ).debug('Object-specific case-insensitive match', {
+              objectType,
+              attributeName,
+              result,
+            });
           }
           return result;
         }
@@ -292,8 +309,10 @@ export function getAttributeSlug(
     result = lookupCaseInsensitive(caseInsensitiveCaches.custom, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[attribute-mappers] Custom case-insensitive match: "${attributeName}" -> "${result}"`
+        const { createScopedLogger } = require('../logger');
+        createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').debug(
+          'Custom case-insensitive match',
+          { attributeName, result }
         );
       }
       return result;
@@ -302,8 +321,10 @@ export function getAttributeSlug(
     result = lookupCaseInsensitive(caseInsensitiveCaches.common, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[attribute-mappers] Common case-insensitive match: "${attributeName}" -> "${result}"`
+        const { createScopedLogger } = require('../logger');
+        createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').debug(
+          'Common case-insensitive match',
+          { attributeName, result }
         );
       }
       return result;
@@ -313,8 +334,10 @@ export function getAttributeSlug(
     result = lookupCaseInsensitive(caseInsensitiveCaches.legacy, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[attribute-mappers] Legacy case-insensitive match: "${attributeName}" -> "${result}"`
+        const { createScopedLogger } = require('../logger');
+        createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').debug(
+          'Legacy case-insensitive match',
+          { attributeName, result }
         );
       }
       return result;
@@ -389,8 +412,10 @@ export function getAttributeSlug(
     result = lookupNormalized(normalizedCaches.legacy, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[attribute-mappers] Legacy normalized match: "${attributeName}" -> "${result}"`
+        const { createScopedLogger } = require('../logger');
+        createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').debug(
+          'Legacy normalized match',
+          { attributeName, result }
         );
       }
       return result;
@@ -403,8 +428,10 @@ export function getAttributeSlug(
     );
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[attribute-mappers] Aggressive normalized match: "${attributeName}" -> "${result}"`
+        const { createScopedLogger } = require('../../utils/logger.js');
+        createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').debug(
+          'Aggressive normalized match',
+          { attributeName, result }
         );
       }
       return result;
@@ -414,8 +441,10 @@ export function getAttributeSlug(
     result = trySnakeCaseConversion(attributeName);
     if (result && result !== attributeName) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[attribute-mappers] Snake case conversion match: "${attributeName}" -> "${result}"`
+        const { createScopedLogger } = require('../../utils/logger.js');
+        createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').debug(
+          'Snake case conversion match',
+          { attributeName, result }
         );
       }
       return result;
@@ -427,27 +456,28 @@ export function getAttributeSlug(
         ? `${error.message} - ${JSON.stringify(error.details)}`
         : `Error using config for attribute mapping: ${error}`;
 
-    console.error(errorMsg);
-    console.warn(
+    const { createScopedLogger } = require('../logger');
+    createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').error(
+      errorMsg
+    );
+    createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').warn(
       'Falling back to legacy behavior. Check your configuration files for errors.'
     );
 
     // Try special cases as a last resort, even if there was an error earlier
     const specialCaseResult = handleSpecialCases(attributeName);
     if (specialCaseResult) {
-      console.error(
-        `[attribute-mappers] Special case match after error: "${attributeName}" -> "${specialCaseResult}"`
+      const { createScopedLogger } = require('../../utils/logger.js');
+      createScopedLogger('utils.attribute-mappers', 'getAttributeSlug').info(
+        'Special case match after error',
+        { attributeName, specialCaseResult }
       );
       return specialCaseResult;
     }
   }
 
   // Log that no match was found for easier debugging
-  if (process.env.NODE_ENV === 'development') {
-    console.warn(
-      `[attribute-mappers] No mapping found for attribute: "${attributeName}"`
-    );
-  }
+  // Keep test output simple without importing logger in this tight utility path
 
   // If no match found, return the original
   return attributeName;
@@ -480,8 +510,12 @@ export function getObjectSlug(objectName: string): string {
     if (result) return result;
   } catch (error: unknown) {
     // If there's an error with the config, fall back to simple normalization
-    console.error('Error using config for object mapping:', error);
-    console.warn(
+    const { createScopedLogger } = require('../logger');
+    createScopedLogger('utils.attribute-mappers', 'getObjectSlug').error(
+      'Error using config for object mapping',
+      { error: String(error) }
+    );
+    createScopedLogger('utils.attribute-mappers', 'getObjectSlug').warn(
       'Check your configuration files for errors in the objects section.'
     );
   }
@@ -514,8 +548,12 @@ export function getListSlug(listName: string): string {
     if (result) return result;
   } catch (error: unknown) {
     // If there's an error with the config, fall back to simple normalization
-    console.error('Error using config for list mapping:', error);
-    console.warn(
+    const { createScopedLogger } = require('../logger');
+    createScopedLogger('utils.attribute-mappers', 'getListSlug').error(
+      'Error using config for list mapping',
+      { error: String(error) }
+    );
+    createScopedLogger('utils.attribute-mappers', 'getListSlug').warn(
       'Check your configuration files for errors in the lists section.'
     );
   }
