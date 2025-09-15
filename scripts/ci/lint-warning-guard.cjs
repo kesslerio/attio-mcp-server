@@ -15,14 +15,11 @@ function countWarnings(eslintJson) {
 
 try {
   const tmp = path.join(process.cwd(), '.lint-src.json');
-  const eslintOutput = execFileSync(
-    'npx',
-    ['eslint', '-f', 'json', 'src/**/*.ts'],
-    {
-      encoding: 'utf8',
-    }
-  );
-  writeFileSync(tmp, eslintOutput);
+  // Write output directly to file to avoid large stdout buffers
+  execFileSync('npx', ['eslint', '-f', 'json', '-o', tmp, 'src/**/*.ts'], {
+    stdio: 'inherit',
+    maxBuffer: 1024 * 1024 * 128,
+  });
   const report = JSON.parse(readFileSync(tmp, 'utf8'));
   const current = countWarnings(report);
 
