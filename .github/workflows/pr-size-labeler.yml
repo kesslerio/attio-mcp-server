@@ -4,6 +4,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Prevent multiple runs of size labeler on rapid commits
+concurrency:
+  group: pr-size-labeler-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -120,9 +125,20 @@ jobs:
               labels: [sizeLabel]
             });
 
-            // Add comment for XL PRs
+            // Check for existing XL comment to avoid duplicates
             if (sizeLabel === 'size/XL') {
-              await github.rest.issues.createComment({
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number
+              });
+
+              const existingXLComment = comments.data.find(c =>
+                c.body.includes('📏 Large PR Detected')
+              );
+
+              if (!existingXLComment) {
+                await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
@@ -142,7 +158,10 @@ jobs:
                 - [ ] Breaking changes documented
                 
                 Use \`/claude review\` to request detailed analysis if needed.`
-              });
+                });
+              } else {
+                console.log('XL comment already exists, skipping duplicate');
+              }
             }
 
             console.log(`Applied label: ${sizeLabel}`);
