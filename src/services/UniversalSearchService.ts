@@ -14,7 +14,7 @@ import {
 import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
-import { debug, error } from '../utils/logger.js';
+import { debug, error, createScopedLogger } from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -577,7 +577,9 @@ export class UniversalSearchService {
             return exactResults;
           }
         } catch {
-          console.debug('Exact match failed, trying client-side filtering');
+          createScopedLogger('UniversalSearchService', 'dealExactMatch').debug(
+            'Exact match failed, trying client-side filtering'
+          );
         }
       }
 
@@ -610,17 +612,20 @@ export class UniversalSearchService {
       const end = start + (limit || 10);
       return allDeals.slice(start, end);
     } catch (error: unknown) {
-      console.error('Failed to query deal records:', error);
+      createScopedLogger('UniversalSearchService', 'dealQuery').error(
+        'Failed to query deal records',
+        error
+      );
       if (error && typeof error === 'object' && 'response' in error) {
         const httpError = error as { response: { status: number } };
         if (httpError.response.status === 404) {
-          console.error(
+          createScopedLogger('UniversalSearchService', 'dealQuery').error(
             'Deal query endpoint not found, falling back to empty results'
           );
           return [];
         }
       }
-      console.warn(
+      createScopedLogger('UniversalSearchService', 'dealQuery').warn(
         'Deal query failed with unexpected error, returning empty results'
       );
       return [];

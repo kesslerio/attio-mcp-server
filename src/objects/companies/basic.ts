@@ -214,7 +214,11 @@ export async function createCompany(
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.error('[createCompany] Input attributes:', attributes);
+    const { createScopedLogger } = await import('../../utils/logger.js');
+    createScopedLogger('companies.basic', 'createCompany').debug(
+      'Input attributes',
+      { attributes }
+    );
   }
 
   try {
@@ -229,8 +233,9 @@ export async function createCompany(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error(
-        '[createCompany] Result from createObjectWithDynamicFields:',
+      const { createScopedLogger } = await import('../../utils/logger.js');
+      createScopedLogger('companies.basic', 'createCompany').debug(
+        'Result from createObjectWithDynamicFields',
         {
           result,
           hasId: !!result?.id,
@@ -255,8 +260,9 @@ export async function createCompany(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.error(
-          '[createCompany] Invalid ID structure detected, attempting fallback:',
+        const { createScopedLogger } = await import('../../utils/logger.js');
+        createScopedLogger('companies.basic', 'createCompany').warn(
+          'Invalid ID structure detected, attempting fallback',
           {
             result,
             hasId: !!result?.id,
@@ -293,13 +299,19 @@ export async function createCompany(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            console.error('[createCompany] Query fallback response:', {
-              queryResponse: queryResponse?.data,
-              hasData: !!queryResponse?.data?.data,
-              dataLength: Array.isArray(queryResponse?.data?.data)
-                ? queryResponse.data.data.length
-                : 'not array',
-            });
+            const { createScopedLogger } = await import(
+              '../../utils/logger.js'
+            );
+            createScopedLogger('companies.basic', 'createCompany').debug(
+              'Query fallback response',
+              {
+                queryResponse: queryResponse?.data,
+                hasData: !!queryResponse?.data?.data,
+                dataLength: Array.isArray(queryResponse?.data?.data)
+                  ? queryResponse.data.data.length
+                  : 'not array',
+              }
+            );
           }
 
           // If we found an existing company, use it
@@ -313,9 +325,12 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              console.error(
-                '[createCompany] Found existing company via query fallback:',
-                foundCompany
+              const { createScopedLogger } = await import(
+                '../../utils/logger.js'
+              );
+              createScopedLogger('companies.basic', 'createCompany').info(
+                'Found existing company via query fallback',
+                { foundCompany }
               );
             }
             result = foundCompany; // Replace the empty result with the found company

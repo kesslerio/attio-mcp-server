@@ -7,6 +7,7 @@ import {
   safeJsonStringify,
   sanitizeMcpResponse,
 } from '../../utils/json-serializer.js';
+import { createScopedLogger } from '../../utils/logger.js';
 
 /**
  * Safely extract value from record attributes
@@ -159,7 +160,6 @@ export function formatBatchResults(result: any, operation: string): string {
  * @param isError - Whether this is an error response
  * @returns Formatted response object
  */
-import { createScopedLogger } from '../../utils/logger.js';
 
 export function formatResponse(
   content: string | any,
