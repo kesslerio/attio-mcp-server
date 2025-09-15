@@ -177,7 +177,7 @@ export class UniversalUpdateService {
     const fieldValidation = validateFields(resource_type, values);
     if (fieldValidation.warnings.length > 0) {
       // Intentionally keep a console.warn for test expectations; mirror to logger.debug
-       
+
       console.warn(
         'Field validation warnings:',
         fieldValidation.warnings.join('\n')
@@ -409,7 +409,7 @@ export class UniversalUpdateService {
         }
         if (!verification.verified) {
           // Intentionally keep a console.warn for test expectations; mirror to logger.error
-           
+
           console.warn(
             `Field persistence verification failed for ${resource_type} ${record_id}:`,
             verification.discrepancies
