@@ -10,7 +10,9 @@ on:
       - 'LICENSE'
       - 'docs/**'
 
-# Enable cancellation of previous runs on new commits
+# SPAM REDUCTION: Enable cancellation of previous runs on new commits
+# Issue #651: Changed from cancel-in-progress: false to true
+# Prevents multiple security analysis runs on rapid commits
 concurrency:
   group: claude-pr-analysis-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -20,6 +22,8 @@ permissions:
   pull-requests: write
   # checks: write   # enable only if you intentionally create/update Checks
 
+# MAINTAINABILITY: Environment variables for comment markers
+# Issue #651: Centralized comment text patterns for easier maintenance
 env:
   SECURITY_COMMENT_MARKER: '🛡️ Automated Security Review Complete'
 
@@ -89,6 +93,8 @@ jobs:
 
             Keep under 2000 tokens.
 
+      # COMMENT DEDUPLICATION: Check for existing security comment
+      # Issue #651: Prevents multiple "Security Review Complete" comments on same PR
       - name: Check for existing security comment
         if: steps.gate.outputs.should_analyze == 'true' && github.event.pull_request.head.repo.full_name == github.repository
         id: comment-check
@@ -107,11 +113,14 @@ jobs:
               );
 
               console.log('existing-comment=' + (!!existingComment));
+              // BOOLEAN OUTPUT FIX: Use proper core.setOutput() instead of string return
+              // Issue #651: Improved from string 'true'/'false' to actual boolean
               core.setOutput('exists', !!existingComment);
               return !!existingComment;
             } catch (error) {
               console.log('Error checking for existing comments:', error.message);
-              // On error, assume no comment exists to avoid blocking
+              // ERROR HANDLING: On error, assume no comment exists to avoid blocking
+              // Issue #651: Graceful degradation ensures workflow doesn't fail on API errors
               core.setOutput('exists', false);
               return false;
             }
