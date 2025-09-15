@@ -573,11 +573,8 @@ export class CompanyValidator {
       )) {
         const validatorType = validatorTypes.get(attributeName) || 'string';
 
-        const result: ValidationResult = validateAttributeValue(
-          attributeName,
-          value,
-          validatorType
-        );
+        const result: ValidationResult<ProcessedFieldValue> =
+          validateAttributeValue(attributeName, value, validatorType);
 
         if (result.valid) {
           validatedAttributes[attributeName] = result.convertedValue;
@@ -605,11 +602,8 @@ export class CompanyValidator {
             validatorType = 'string';
           }
 
-          const result = validateAttributeValue(
-            attributeName,
-            value,
-            validatorType
-          );
+          const result: ValidationResult<ProcessedFieldValue> =
+            validateAttributeValue(attributeName, value, validatorType);
 
           if (result.valid) {
             validatedAttributes[attributeName] = result.convertedValue;

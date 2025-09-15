@@ -467,7 +467,7 @@ function validateObjectValue(
 ): ValidationResult<Record<string, unknown>> {
   // Already an object - simple case
   if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return { valid: true, convertedValue: value };
+    return { valid: true, convertedValue: value as Record<string, unknown> };
   }
 
   // Invalid object value
