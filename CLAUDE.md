@@ -35,13 +35,16 @@ RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: Use Clear Thought `
 - Split work if a branch drifts past ~400 LOC or touches more than ~10 files; reviewers stay effective in the M/L range.
 - Avoid XXL (>1500 LOC or 41+ files) unless absolutely necessary.
 
-## Quality Gates — Pre‑commit & CI Thresholds
+## Quality Gates — Distributed Validation Strategy (PR #624)
 
-**PRE-COMMIT HOOK IS MANDATORY**: The git pre-commit hook at `build/hooks/pre-commit` MUST enforce this pipeline
-RULE: All commits must pass validation | WHEN: Any git commit | DO: Pre-commit hook runs `npm run lint:check && npm run check:format && npm run build && npm run test:offline && npx tsc --noEmit --skipLibCheck test/**/*.ts` | ELSE: Commit blocked at hook level
-RULE: Pipeline stages mandatory | GATES: lint:check [BLOCK if errors], check:format [BLOCK if issues], build [BLOCK if fails], test:offline [BLOCK if fails], test:typecheck [BLOCK if TS errors in tests]
-RULE: Bypass requires justification | WHEN: Using --no-verify | DO: Include "EMERGENCY: [issue-link] [justification]" in commit msg | ELSE: Rejection in code review
-**🚨 NEVER BYPASS RULE**: NEVER use `--no-verify` to bypass pre-commit hooks except for genuine emergencies | WHEN: TypeScript/lint errors occur | DO: Fix the errors, not bypass the check | ELSE: CI FAILURE and broken builds
+**FAST PRE-COMMIT (≤10s)**: Uses lint-staged for staged files only via `npm run verify:staged`
+**PRE-PUSH VALIDATION**: TypeScript + fast tests before sharing code (≤30s)
+**CI COMPREHENSIVE**: Full validation suite with branch protection
+
+RULE: Pre-commit fast feedback | WHEN: Committing | DO: Husky runs `npm run verify:staged` (prettier + eslint --fix on staged files) | ELSE: Commit blocked
+RULE: Pre-push safety check | WHEN: Pushing | DO: TypeScript validation + fast tests | ELSE: Push blocked (bypass with `SKIP_PREPUSH=1` for emergencies)
+RULE: CI full validation | WHEN: PR created | DO: Complete test suite + build + lint with ESLint ≤1030 warnings | ELSE: PR blocked
+**🚨 NEVER BYPASS RULE**: NEVER use `--no-verify` to bypass hooks except for genuine emergencies | WHEN: Errors occur | DO: Fix the errors, not bypass the check | ELSE: CI FAILURE and broken builds
 
 **CI threshold**: ESLint warnings ≤ **1030** (block PRs if exceeded).
 
