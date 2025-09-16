@@ -3,6 +3,7 @@
  * Handles create, read, update, and delete operations
  */
 
+import { AxiosResponse } from 'axios';
 import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioRecord,
@@ -188,7 +189,7 @@ export async function getObjectDetails<T extends AttioRecord>(
   }
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioSingleResponse<T>>(path);
+    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
     return (response?.data?.data || response?.data) as T;
   }, options?.retryConfig);
 }
@@ -224,7 +225,7 @@ export async function createRecord<T extends AttioRecord>(
       });
     }
 
-    const response = await api.post<AttioSingleResponse<T>>(path, {
+    const response: AxiosResponse<AttioSingleResponse<T>> = await api.post(path, {
       data: {
         values: params.attributes,
       },
@@ -307,7 +308,7 @@ export async function createRecord<T extends AttioRecord>(
         }
         try {
           // Use the documented query endpoint with exact name match
-          const queryResponse = await api.post(path + '/query', {
+          const queryResponse: AxiosResponse<AttioListResponse<T>> = await api.post(path + '/query', {
             filter: { name },
             limit: 1,
           });
@@ -371,7 +372,7 @@ export async function getRecord<T extends AttioRecord>(
   }
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioSingleResponse<T>>(path);
+    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
     return (response?.data?.data || response?.data) as T;
   }, retryConfig);
 }
@@ -415,7 +416,7 @@ export async function updateRecord<T extends AttioRecord>(
       },
     };
 
-    const response = await api.patch<AttioSingleResponse<T>>(path, payload);
+    const response: AxiosResponse<AttioSingleResponse<T>> = await api.patch(path, payload);
 
     // Debug log the full response
     if (
@@ -643,7 +644,7 @@ export async function listRecords<T extends AttioRecord>(
   }`;
 
   return callWithRetry(async () => {
-    const response = await api.get<AttioListResponse<T>>(path);
+    const response: AxiosResponse<AttioListResponse<T>> = await api.get(path);
     // Ensure we always return an array, never undefined/null/objects
     const items = Array.isArray(response?.data?.data)
       ? response.data.data

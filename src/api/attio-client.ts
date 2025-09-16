@@ -1,8 +1,17 @@
 /**
  * Attio API client and related utilities
  */
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { debug, error, OperationType } from '../utils/logger.js';
+import { 
+  AttioAxiosError, 
+  AttioServerError, 
+  AttioAttributeSchema, 
+  AttioSelectOption, 
+  AttioStatusOption,
+  extractResponseData,
+  isAttioErrorData
+} from './types.js';
 
 // Module identification for debugging (compatible with both ESM and CJS)
 const MODULE_FILE = 'attio-client';
@@ -50,17 +59,19 @@ export function buildAttioClient(opts?: {
 
   // Response interceptor to attach serverData for error handling
   client.interceptors.response.use(
-    (response) => response,
-    (error) => {
+    (response: AxiosResponse) => response,
+    (error: AxiosError) => {
       const data = error?.response?.data;
-      if (data && typeof data === 'object') {
+      if (isAttioErrorData(data)) {
         // Mirror serverData onto the error so wrappers can preserve it
-        error.serverData = {
+        const attioError = error as AttioAxiosError;
+        attioError.serverData = {
           status_code: data.status_code ?? error.response?.status,
           type: data.type,
           code: data.code,
           message: data.message,
         };
+        return Promise.reject(attioError);
       }
       return Promise.reject(error);
     }
@@ -130,7 +141,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 
   // TEMP DIAGNOSTICS (E2E only): show final URL + top-level shape
   if (process.env.E2E_MODE === 'true') {
-    client.interceptors.request.use((config) => {
+    client.interceptors.request.use((config: AxiosRequestConfig) => {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       debug('attio-client', 'Request sent', {
@@ -142,7 +153,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       return config;
     });
     client.interceptors.response.use(
-      (res) => {
+      (res: AxiosResponse) => {
         debug('attio-client', 'Response received', {
           status: res.status,
           url: res.config?.url,
@@ -154,12 +165,12 @@ export function createAttioClient(apiKey: string): AxiosInstance {
         });
         return res;
       },
-      (err) => {
+      (err: AxiosError) => {
         const r = err?.response;
         error(
           'attio-client',
           'HTTP request failed',
-          err,
+          err as Error,
           {
             url: r?.config?.url,
             status: r?.status,
@@ -176,7 +187,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // Add unconditional diagnostics and passthrough error handling
   debug('attio-client', 'Default client baseURL configured', { baseURL });
 
-  client.interceptors.request.use((config) => {
+  client.interceptors.request.use((config: AxiosRequestConfig) => {
     const redacted = { ...(config.headers || {}) };
     if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
     debug('attio-client', 'Request interceptor', {
@@ -189,7 +200,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   });
 
   client.interceptors.response.use(
-    (res) => {
+    (res: AxiosResponse) => {
       debug('attio-client', 'Response interceptor', {
         status: res.status,
         url: res.config?.url,
@@ -200,9 +211,9 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       });
       return res;
     },
-    (err) => {
+    (err: AxiosError) => {
       const r = err?.response;
-      error('attio-client', 'HTTP response error', err, {
+      error('attio-client', 'HTTP response error', err as Error, {
         url: r?.config?.url,
         method: r?.config?.method,
         status: r?.status,
@@ -225,7 +236,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 export async function getAttributeSchema(
   objectSlug: string,
   attributeSlug: string
-): Promise<any> {
+): Promise<AttioAttributeSchema> {
   const client = getAttioClient();
   const path = `/objects/${objectSlug}/attributes/${attributeSlug}`;
   try {
@@ -251,7 +262,7 @@ export async function getAttributeSchema(
 export async function getSelectOptions(
   objectSlug: string,
   attributeSlug: string
-): Promise<any[]> {
+): Promise<AttioSelectOption[]> {
   const client = getAttioClient();
   const path = `/objects/${objectSlug}/attributes/${attributeSlug}/options`;
   try {
@@ -277,7 +288,7 @@ export async function getSelectOptions(
 export async function getStatusOptions(
   objectSlug: string,
   attributeSlug: string
-): Promise<any[]> {
+): Promise<AttioStatusOption[]> {
   const client = getAttioClient();
   const path = `/objects/${objectSlug}/attributes/${attributeSlug}/statuses`;
   try {
@@ -382,7 +393,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     // Add diagnostics and passthrough error handling
     debug('attio-client', 'E2E RAW client baseURL configured', { baseURL });
 
-    rawClient.interceptors.request.use((config) => {
+    rawClient.interceptors.request.use((config: AxiosRequestConfig) => {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       debug('attio-client', 'E2E Request sent', {
@@ -395,7 +406,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     });
 
     rawClient.interceptors.response.use(
-      (res) => {
+      (res: AxiosResponse) => {
         debug('attio-client', 'E2E Response received', {
           status: res.status,
           url: res.config?.url,
@@ -406,9 +417,9 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
         });
         return res;
       },
-      (err) => {
+      (err: AxiosError) => {
         const r = err?.response;
-        error('attio-client', 'E2E HTTP error', err, {
+        error('attio-client', 'E2E HTTP error', err as Error, {
           url: r?.config?.url,
           method: r?.config?.method,
           status: r?.status,

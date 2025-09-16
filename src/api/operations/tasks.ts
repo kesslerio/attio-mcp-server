@@ -474,7 +474,10 @@ export async function unlinkRecordFromTask(
  * In tests/offline, prefer the mocked getAttioClient if available.
  */
 function resolveAttioClient(): AxiosInstance {
-  const mod: any = AttioClientModule as any;
+  const mod = AttioClientModule as typeof AttioClientModule & {
+    getAttioClient?: () => AxiosInstance;
+    createAttioClient?: (apiKey: string) => AxiosInstance;
+  };
   // Always prefer explicit factory if present (enables Vitest mocks)
   if (typeof mod.getAttioClient === 'function') {
     return mod.getAttioClient();
