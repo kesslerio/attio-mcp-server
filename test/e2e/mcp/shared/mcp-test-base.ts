@@ -4,7 +4,7 @@
  */
 
 import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { TestDataFactory } from './test-data-factory.js';
 
 export interface MCPTestConfig {
@@ -17,7 +17,11 @@ export abstract class MCPTestBase {
   protected client: MCPTestClient;
   protected testPrefix: string;
   private lastApiCall: number = 0;
-  private readonly API_RATE_LIMIT_MS = 100; // 100ms between API calls to prevent rate limiting
+  // Make rate limiting configurable for CI environments (Issue #649 feedback)
+  private readonly API_RATE_LIMIT_MS = parseInt(
+    process.env.MCP_TEST_RATE_LIMIT_MS || '100',
+    10
+  );
   private createdRecords: Array<{ type: string; id: string }> = [];
 
   constructor(testPrefix: string = 'TC') {
@@ -139,26 +143,30 @@ export abstract class MCPTestBase {
   async executeToolCall(
     toolName: string,
     params: Record<string, unknown>,
-    validator?: (result: ToolResult) => void
-  ): Promise<ToolResult> {
+    validator?: (result: CallToolResult) => void
+  ): Promise<CallToolResult> {
     // Apply rate limiting protection for sequential API calls
     await this.enforceRateLimit();
 
-    let capturedResult: ToolResult | null = null;
+    let capturedResult: CallToolResult | null = null;
 
-    await this.client.assertToolCall(toolName, params, (result: ToolResult) => {
-      capturedResult = result;
+    await this.client.assertToolCall(
+      toolName,
+      params,
+      (result: CallToolResult) => {
+        capturedResult = result;
 
-      // Basic validation that should pass for all successful calls
-      if (!result.isError) {
-        this.validateSuccessfulResult(result);
+        // Basic validation that should pass for all successful calls
+        if (!result.isError) {
+          this.validateSuccessfulResult(result);
+        }
+
+        // Custom validation if provided
+        if (validator) {
+          validator(result);
+        }
       }
-
-      // Custom validation if provided
-      if (validator) {
-        validator(result);
-      }
-    });
+    );
 
     if (!capturedResult) {
       throw new Error(`Tool call '${toolName}' did not capture a result`);
@@ -170,7 +178,7 @@ export abstract class MCPTestBase {
   /**
    * Basic validation for successful MCP responses
    */
-  protected validateSuccessfulResult(result: ToolResult): void {
+  protected validateSuccessfulResult(result: CallToolResult): void {
     // Ensure result has content
     if (!result.content || result.content.length === 0) {
       throw new Error('Successful result should have content');
@@ -186,7 +194,7 @@ export abstract class MCPTestBase {
   /**
    * Extract text content from a tool result
    */
-  protected extractTextContent(result: ToolResult): string {
+  protected extractTextContent(result: CallToolResult): string {
     if (result.content && result.content.length > 0) {
       const content = result.content[0];
       if ('text' in content) {
@@ -207,7 +215,7 @@ export abstract class MCPTestBase {
   /**
    * Parse JSON from result text content
    */
-  protected parseJsonFromResult(result: ToolResult): unknown {
+  protected parseJsonFromResult(result: CallToolResult): unknown {
     const text = this.extractTextContent(result);
     try {
       return JSON.parse(text);
@@ -248,7 +256,7 @@ export abstract class MCPTestBase {
   /**
    * Check if result indicates an error condition
    */
-  protected hasError(result: ToolResult): boolean {
+  protected hasError(result: CallToolResult): boolean {
     if (result.isError) return true;
 
     const text = this.extractTextContent(result).toLowerCase();
