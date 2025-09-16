@@ -4,7 +4,7 @@
  */
 
 import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 export interface MCPTestConfig {
   serverCommand?: string;
@@ -17,7 +17,7 @@ export abstract class MCPTestBase {
   protected testPrefix: string;
   private lastApiCall: number = 0;
   private readonly API_RATE_LIMIT_MS = 100; // 100ms between API calls to prevent rate limiting
-  
+
   constructor(testPrefix: string = 'TC') {
     this.testPrefix = testPrefix;
   }
@@ -28,12 +28,12 @@ export abstract class MCPTestBase {
   private async enforceRateLimit(): Promise<void> {
     const now = Date.now();
     const timeSinceLastCall = now - this.lastApiCall;
-    
+
     if (timeSinceLastCall < this.API_RATE_LIMIT_MS) {
       const delayNeeded = this.API_RATE_LIMIT_MS - timeSinceLastCall;
-      await new Promise(resolve => setTimeout(resolve, delayNeeded));
+      await new Promise((resolve) => setTimeout(resolve, delayNeeded));
     }
-    
+
     this.lastApiCall = Date.now();
   }
 
@@ -45,7 +45,7 @@ export abstract class MCPTestBase {
       serverCommand: config.serverCommand || 'node',
       serverArgs: config.serverArgs || ['./dist/cli.js'],
     });
-    
+
     await this.client.init();
   }
 
@@ -64,47 +64,47 @@ export abstract class MCPTestBase {
   async executeToolCall(
     toolName: string,
     params: Record<string, unknown>,
-    validator?: (result: ToolResult) => void
-  ): Promise<ToolResult> {
+    validator?: (result: CallToolResult) => void
+  ): Promise<CallToolResult> {
     // Apply rate limiting protection for sequential API calls
     await this.enforceRateLimit();
-    
-    let capturedResult: ToolResult | null = null;
-    
+
+    let capturedResult: CallToolResult | null = null;
+
     await this.client.assertToolCall(
       toolName,
       params,
-      (result: ToolResult) => {
+      (result: CallToolResult) => {
         capturedResult = result;
-        
+
         // Basic validation that should pass for all successful calls
         if (!result.isError) {
           this.validateSuccessfulResult(result);
         }
-        
+
         // Custom validation if provided
         if (validator) {
           validator(result);
         }
       }
     );
-    
+
     if (!capturedResult) {
       throw new Error(`Tool call '${toolName}' did not capture a result`);
     }
-    
+
     return capturedResult;
   }
 
   /**
    * Basic validation for successful MCP responses
    */
-  protected validateSuccessfulResult(result: ToolResult): void {
+  protected validateSuccessfulResult(result: CallToolResult): void {
     // Ensure result has content
     if (!result.content || result.content.length === 0) {
       throw new Error('Successful result should have content');
     }
-    
+
     // Ensure content has text
     const content = result.content[0];
     if (!('text' in content)) {
@@ -115,7 +115,7 @@ export abstract class MCPTestBase {
   /**
    * Extract text content from a tool result
    */
-  protected extractTextContent(result: ToolResult): string {
+  protected extractTextContent(result: CallToolResult): string {
     if (result.content && result.content.length > 0) {
       const content = result.content[0];
       if ('text' in content) {
@@ -136,7 +136,7 @@ export abstract class MCPTestBase {
   /**
    * Parse JSON from result text content
    */
-  protected parseJsonFromResult(result: ToolResult): unknown {
+  protected parseJsonFromResult(result: CallToolResult): unknown {
     const text = this.extractTextContent(result);
     try {
       return JSON.parse(text);
@@ -155,7 +155,7 @@ export abstract class MCPTestBase {
     if (idInParensMatch && idInParensMatch[1]) {
       return idInParensMatch[1];
     }
-    
+
     // Fallback patterns
     const patterns = [
       /"id"\s*:\s*"([^"]+)"/i,
@@ -163,27 +163,29 @@ export abstract class MCPTestBase {
       /record_id["\s:]+([a-zA-Z0-9_-]+)/i,
       /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i, // UUID
     ];
-    
+
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
         return match[1];
       }
     }
-    
+
     return null;
   }
 
   /**
    * Check if result indicates an error condition
    */
-  protected hasError(result: ToolResult): boolean {
+  protected hasError(result: CallToolResult): boolean {
     if (result.isError) return true;
-    
+
     const text = this.extractTextContent(result).toLowerCase();
-    return text.includes('error') || 
-           text.includes('failed') || 
-           text.includes('invalid') ||
-           text.includes('not found');
+    return (
+      text.includes('error') ||
+      text.includes('failed') ||
+      text.includes('invalid') ||
+      text.includes('not found')
+    );
   }
 }
