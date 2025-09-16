@@ -26,6 +26,9 @@ const resolveStatusCode = (
   error: unknown,
   fallback: number | undefined = DEFAULT_STATUS_CODE
 ): number | undefined => {
+  // Utilities know how to extract statuses from Axios, Attio API, and our wrapped
+  // StructuredHttpError instances. Always check them first to respect that
+  // centralised logic before falling back to heuristic property inspection.
   const statusFromUtilities = getErrorStatus(error);
   if (typeof statusFromUtilities === 'number') {
     return statusFromUtilities;
