@@ -12,38 +12,11 @@ import {
 } from '../handlers/tool-configs/universal/schemas.js';
 import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
 import { debug } from '../utils/logger.js';
-
-interface HttpErrorLike {
-  response?: {
-    status?: number;
-    data?: {
-      message?: string;
-    };
-  };
-  message?: string;
-}
-
-function getStatus(error: unknown): number | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
-  }
-  const candidate = error as HttpErrorLike;
-  const status = candidate.response?.status;
-  return typeof status === 'number' ? status : undefined;
-}
-
-function getErrorMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'object' && error !== null) {
-    return (error as HttpErrorLike).message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return undefined;
-}
+import {
+  getErrorStatus,
+  getErrorMessage,
+  HttpErrorLike,
+} from '../types/error-interfaces.js';
 
 /**
  * Create note body for Attio API
@@ -147,7 +120,7 @@ export async function createNote(
     });
 
     // Map HTTP errors to universal validation errors
-    if (getStatus(error) === 422) {
+    if (getErrorStatus(error) === 422) {
       throw new UniversalValidationError(
         `Validation failed: ${
           (typeof error === 'object' && error !== null
@@ -159,7 +132,7 @@ export async function createNote(
       );
     }
 
-    if (getStatus(error) === 404) {
+    if (getErrorStatus(error) === 404) {
       throw createRecordNotFoundError(
         body.parent_record_id,
         body.parent_object
@@ -199,7 +172,7 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
       error: getErrorMessage(error) || 'Unknown error',
     });
     // Prefer returning an empty list on benign 404s for list operations
-    const status = getStatus(error);
+    const status = getErrorStatus(error);
     if (status === 404) {
       return { data: [], meta: undefined };
     }
@@ -238,7 +211,7 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
       error: getErrorMessage(error) || 'Unknown error',
     });
 
-    if (getStatus(error) === 404) {
+    if (getErrorStatus(error) === 404) {
       throw createRecordNotFoundError(noteId, 'note');
     }
 
@@ -272,7 +245,7 @@ export async function deleteNote(
       error: getErrorMessage(error) || 'Unknown error',
     });
 
-    if (getStatus(error) === 404) {
+    if (getErrorStatus(error) === 404) {
       throw createRecordNotFoundError(noteId, 'note');
     }
 

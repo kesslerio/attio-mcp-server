@@ -19,40 +19,11 @@ import {
   RecordAttributes,
   RecordListParams,
 } from '../../types/attio.js';
-
-interface HttpErrorLike {
-  response?: {
-    status?: number;
-    data?: {
-      error?: {
-        message?: string;
-      };
-    };
-  };
-  message?: string;
-}
-
-function getStatus(error: unknown): number | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
-  }
-  const candidate = error as HttpErrorLike;
-  const status = candidate.response?.status;
-  return typeof status === 'number' ? status : undefined;
-}
-
-function getErrorMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'object' && error !== null) {
-    return (error as HttpErrorLike).message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return undefined;
-}
+import {
+  getErrorStatus,
+  getErrorMessage,
+  HttpErrorLike,
+} from '../../types/error-interfaces.js';
 
 /**
  * Creates a new record for a specific object type
@@ -326,7 +297,7 @@ export async function createObjectRecord<T extends AttioRecord>(
 
         return result;
       } catch (err: unknown) {
-        const status = getStatus(err);
+        const status = getErrorStatus(err);
         const messageFallback = getErrorMessage(err) ?? '';
         const msg = String(
           (typeof err === 'object' && err !== null

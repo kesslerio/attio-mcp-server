@@ -29,6 +29,11 @@ import {
 } from '../types/list-types.js';
 import { isValidUUID } from '../utils/validation/uuid-validation.js';
 import { createScopedLogger, OperationType } from '../utils/logger.js';
+import {
+  getErrorStatus,
+  getErrorMessage,
+  isStatusLikeError,
+} from '../types/error-interfaces.js';
 
 // Re-export for backward compatibility
 export type { ListMembership } from '../types/list-types.js';
@@ -129,31 +134,8 @@ interface ListEntryCreatePayload {
   };
 }
 
-function getStatusCode(error: unknown): number | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
-  }
-  const candidate = error as StatusLikeError;
-  const status =
-    candidate.status ?? candidate.statusCode ?? candidate.response?.status;
-  return typeof status === 'number' ? status : undefined;
-}
-
-function getErrorMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'object' && error !== null) {
-    return (error as StatusLikeError).message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return undefined;
-}
-
 function isNotFoundError(error: unknown): boolean {
-  return getStatusCode(error) === 404;
+  return getErrorStatus(error) === 404;
 }
 
 /**
@@ -224,7 +206,7 @@ export async function getListDetails(listId: string): Promise<AttioList> {
       // Use ensureListShape to normalize the response (handles undefined/null)
       return ensureListShape(extracted);
     } catch (apiError: unknown) {
-      const status = getStatusCode(apiError);
+      const status = getErrorStatus(apiError);
       if (status === 404) {
         throw new EnhancedApiError('Record not found', 404, path, 'GET', {
           resourceType: 'lists',
@@ -1215,7 +1197,7 @@ export async function deleteList(listId: string): Promise<boolean> {
       });
     }
 
-    const status = getStatusCode(error);
+    const status = getErrorStatus(error);
     if (status === 404) {
       throw new EnhancedApiError('Record not found', 404, path, 'DELETE', {
         resourceType: 'lists',

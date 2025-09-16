@@ -10,50 +10,11 @@ import { AttioTask } from '../types/attio.js';
 import { isValidId } from '../utils/validation.js';
 import { shouldUseMockData } from '../services/create/index.js';
 import { deleteTask as apiDelete } from '../api/operations/index.js';
-
-interface HttpErrorLike {
-  response?: {
-    status?: number;
-    data?: {
-      code?: string;
-      message?: string;
-    };
-  };
-  status?: number;
-  code?: string;
-  message?: string;
-}
-
-function getStatus(error: unknown): number | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
-  }
-  const candidate = error as HttpErrorLike;
-  const status = candidate.response?.status ?? candidate.status;
-  return typeof status === 'number' ? status : undefined;
-}
-
-function getCode(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
-  }
-  const candidate = error as HttpErrorLike;
-  return candidate.response?.data?.code ?? candidate.code;
-}
-
-function getMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'object' && error !== null) {
-    const candidate = error as HttpErrorLike;
-    return candidate.response?.data?.message ?? candidate.message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return undefined;
-}
+import {
+  getErrorStatus,
+  getErrorMessage,
+  getErrorCode,
+} from '../types/error-interfaces.js';
 
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 
@@ -214,9 +175,9 @@ export async function deleteTask(taskId: string): Promise<boolean> {
   try {
     return await apiDelete(taskId);
   } catch (err: unknown) {
-    const status = getStatus(err);
-    const code = getCode(err);
-    const msg = (getMessage(err) ?? '').toLowerCase();
+    const status = getErrorStatus(err);
+    const code = getErrorCode(err);
+    const msg = (getErrorMessage(err) ?? '').toLowerCase();
     // Normalize soft "not found" to boolean false so the service maps it to a structured 404
     if (status === 404 || code === 'not_found' || msg.includes('not found'))
       return false;

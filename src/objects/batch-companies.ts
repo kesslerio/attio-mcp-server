@@ -455,9 +455,12 @@ export async function batchCompanyOperations(
           } else if (operation.type === 'delete') {
             result = await deleteCompany(operation.data);
           } else {
-            throw new Error(
-              `Unknown operation type: ${(operation as any).type}`
-            );
+            // Type guard to safely extract the type from unknown operation
+            const operationType =
+              operation && typeof operation === 'object' && 'type' in operation
+                ? String((operation as Record<string, unknown>).type)
+                : 'unknown';
+            throw new Error(`Unknown operation type: ${operationType}`);
           }
 
           succeeded++;
