@@ -42,7 +42,7 @@ RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: Use Clear Thought `
 **CI COMPREHENSIVE**: Full validation suite with branch protection
 
 RULE: Pre-commit fast feedback | WHEN: Committing | DO: Husky runs `npm run verify:staged` (prettier + eslint --fix on staged files) | ELSE: Commit blocked
-RULE: Pre-push safety check | WHEN: Pushing | DO: TypeScript validation + fast tests | ELSE: Push blocked (bypass with `SKIP_PREPUSH=1` for emergencies)
+RULE: Pre-push safety check | WHEN: Pushing | DO: TypeScript validation + fast tests (generic pipeline; bypass with `SKIP_PREPUSH=1` for emergencies) | ELSE: Push blocked
 RULE: CI full validation | WHEN: PR created | DO: Complete test suite + build + lint with ESLint ≤1030 warnings | ELSE: PR blocked
 **🚨 NEVER BYPASS RULE**: NEVER use `--no-verify` to bypass hooks except for genuine emergencies | WHEN: Errors occur | DO: Fix the errors, not bypass the check | ELSE: CI FAILURE and broken builds
 
@@ -61,7 +61,7 @@ RULE: Use the right scope for the task.
 | Performance | `npm run test:performance` / `:all` / `:tools` | CI budgets auto‑adjust |
 | Affected | `npm run test:affected` | Git‑based selection |
 | Offline | `npm run test:offline` | No API calls |
-| CI JSON | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | For quality gates |
+| CI JSON | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | For quality gates (requires `ATTIO_API_KEY`) |
 
 ### CI vs OFFLINE TESTING (scope)
 
@@ -157,6 +157,8 @@ PIPELINE STAGES:
 3. **Integration Tests**: On-demand with label or main branch
 4. **Build Verification**: Ensure artifacts created correctly
 5. **Security Audit**: Dependency vulnerability scanning
+
+> This section replaces older CI/CD variants; remove any duplicate CI/CD sections below.
 
 ## Git Workflow & Issue/PR Policy
 
