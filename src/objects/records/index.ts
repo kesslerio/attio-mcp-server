@@ -20,6 +20,40 @@ import {
   RecordListParams,
 } from '../../types/attio.js';
 
+interface HttpErrorLike {
+  response?: {
+    status?: number;
+    data?: {
+      error?: {
+        message?: string;
+      };
+    };
+  };
+  message?: string;
+}
+
+function getStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const candidate = error as HttpErrorLike;
+  const status = candidate.response?.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null) {
+    return (error as HttpErrorLike).message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return undefined;
+}
+
 /**
  * Creates a new record for a specific object type
  *
@@ -264,18 +298,25 @@ export async function createObjectRecord<T extends AttioRecord>(
         const result = response?.data?.data || response?.data;
 
         // Check for empty or invalid responses, but allow legitimate create responses
-        const looksLikeCreatedRecord =
-          result &&
+        const resultIsObject =
+          result !== null &&
           typeof result === 'object' &&
-          (('id' in result && (result as any).id?.record_id) ||
-            'record_id' in result ||
-            'web_url' in result ||
-            'created_at' in result);
+          !Array.isArray(result);
+        const recordCandidate = resultIsObject
+          ? (result as Record<string, unknown>)
+          : undefined;
+        const looksLikeCreatedRecord =
+          !!recordCandidate &&
+          (typeof (recordCandidate.id as Record<string, unknown> | undefined)
+            ?.record_id === 'string' ||
+            typeof recordCandidate.record_id === 'string' ||
+            'web_url' in recordCandidate ||
+            'created_at' in recordCandidate);
 
         if (
           !result ||
-          (typeof result === 'object' &&
-            Object.keys(result).length === 0 &&
+          (resultIsObject &&
+            Object.keys(recordCandidate ?? {}).length === 0 &&
             !looksLikeCreatedRecord)
         ) {
           throw new Error(
@@ -284,10 +325,13 @@ export async function createObjectRecord<T extends AttioRecord>(
         }
 
         return result;
-      } catch (err: any) {
-        const status = err?.response?.status;
+      } catch (err: unknown) {
+        const status = getStatus(err);
+        const messageFallback = getErrorMessage(err) ?? '';
         const msg = String(
-          err?.response?.data?.error?.message || err?.message || ''
+          (typeof err === 'object' && err !== null
+            ? (err as HttpErrorLike).response?.data?.error?.message
+            : undefined) || messageFallback
         );
         const isDuplicateDomain =
           status === 422 &&

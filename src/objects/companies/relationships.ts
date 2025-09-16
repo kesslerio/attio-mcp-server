@@ -28,7 +28,7 @@ import { advancedSearchCompanies } from './search.js';
  * @returns Array of matching companies
  */
 export async function searchCompaniesByPeople(
-  peopleFilter: ListEntryFilters | string | any,
+  peopleFilter: ListEntryFilters | string | Record<string, unknown> | undefined,
   limit: number | string = 20,
   offset: number | string = 0
 ): Promise<Company[]> {
@@ -204,13 +204,29 @@ export async function getCompanyLists(
   const lists: AttioList[] = [];
   const seen = new Set<string>();
 
-  for (const entry of entries) {
-    const listId = (entry as any).list?.id?.list_id || entry.list_id;
+  const normalizedEntries = Array.isArray(entries)
+    ? (entries as Array<Record<string, unknown>>)
+    : [];
+
+  for (const entry of normalizedEntries) {
+    const rawList = entry.list as Record<string, unknown> | undefined;
+    const listIdFromEntry =
+      typeof entry.list_id === 'string' ? entry.list_id : undefined;
+    const listIdFromList =
+      typeof rawList?.id === 'object' && rawList?.id !== null
+        ? (rawList.id as Record<string, unknown>).list_id
+        : undefined;
+    const listId =
+      typeof listIdFromEntry === 'string'
+        ? listIdFromEntry
+        : typeof listIdFromList === 'string'
+          ? listIdFromList
+          : undefined;
     if (!listId || seen.has(listId)) continue;
     seen.add(listId);
 
-    if ((entry as any).list) {
-      lists.push((entry as any).list as AttioList);
+    if (rawList) {
+      lists.push(rawList as AttioList);
     } else {
       try {
         const detail = await getListDetails(listId);

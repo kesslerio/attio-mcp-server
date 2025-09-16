@@ -17,22 +17,14 @@ import {
 } from '../api/operations/index.js';
 import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { FilterValue } from '../types/api-operations.js';
-import {
-  AttioList,
-  AttioListEntry,
-  ResourceType,
-  AttioRecord,
-} from '../types/attio.js';
+import { AttioList, AttioListEntry, ResourceType } from '../types/attio.js';
 import {
   processListEntries,
-  transformFiltersToApiFormat,
   createPathBasedFilter,
 } from '../utils/record-utils.js';
 import {
   ListMembership,
   ListEntryValues,
-  ListEndpointConfig,
-  extractListEntryValues,
   hasErrorResponse,
 } from '../types/list-types.js';
 import { isValidUUID } from '../utils/validation/uuid-validation.js';
@@ -44,34 +36,124 @@ export type { ListMembership } from '../types/list-types.js';
 /**
  * Extract data from response, handling axios, fetch, and mock response shapes
  */
-function extract<T>(response: any): T {
-  // Support axios-like, fetch-like, and mocks
-  return (response?.data?.data ?? response?.data ?? response) as T;
+function extract<T>(response: unknown): T {
+  if (typeof response === 'object' && response !== null) {
+    const outer = response as { data?: unknown };
+    if (outer.data !== undefined) {
+      const inner = outer.data;
+      if (typeof inner === 'object' && inner !== null && 'data' in inner) {
+        const innerData = (inner as { data?: T }).data;
+        return (innerData ?? ({} as T)) as T;
+      }
+      return inner as T;
+    }
+  }
+  return response as T;
 }
 
 /**
  * Ensure list shape with proper ID structure and fallback values
  */
-function ensureListShape(raw: any) {
-  if (!raw || typeof raw !== 'object') raw = {};
-  const id = raw.id ?? raw.list_id ?? raw?.id?.list_id;
-  const list_id =
-    typeof id === 'string'
-      ? id
-      : (crypto.randomUUID?.() ?? `tmp_${Date.now()}`);
+function ensureListShape(raw: unknown): AttioList {
+  const value: Record<string, unknown> =
+    typeof raw === 'object' && raw !== null
+      ? (raw as Record<string, unknown>)
+      : {};
+
+  let listId: string | undefined;
+  const rawId = value.id;
+  if (typeof rawId === 'object' && rawId !== null && 'list_id' in rawId) {
+    const candidate = (rawId as Record<string, unknown>).list_id;
+    if (typeof candidate === 'string') {
+      listId = candidate;
+    }
+  }
+  if (typeof value.list_id === 'string') {
+    listId = value.list_id;
+  }
+
+  const resolvedListId = listId ?? crypto.randomUUID?.() ?? `tmp_${Date.now()}`;
+  const resolvedTitle =
+    typeof value.title === 'string'
+      ? value.title
+      : typeof value.name === 'string'
+        ? value.name
+        : 'Untitled List';
+  const resolvedName =
+    typeof value.name === 'string' ? value.name : resolvedTitle;
+
   return {
-    id: { list_id },
-    name: raw.name ?? raw.title ?? 'Untitled List',
-    description: raw.description ?? '',
-    ...raw,
+    ...value,
+    id: { list_id: resolvedListId },
+    title: resolvedTitle,
+    name: resolvedName,
+    description: typeof value.description === 'string' ? value.description : '',
+    object_slug:
+      typeof value.object_slug === 'string' ? value.object_slug : 'lists',
+    workspace_id:
+      typeof value.workspace_id === 'string' ? value.workspace_id : '',
+    created_at: typeof value.created_at === 'string' ? value.created_at : '',
+    updated_at: typeof value.updated_at === 'string' ? value.updated_at : '',
+    entry_count:
+      typeof value.entry_count === 'number' ? value.entry_count : undefined,
   };
 }
 
 /**
  * Helper to convert raw data to proper list array format
  */
-function asListArray(raw: any): any[] {
-  return Array.isArray(raw) ? raw.map(ensureListShape) : [];
+function asListArray(raw: unknown): AttioList[] {
+  return Array.isArray(raw) ? raw.map((item) => ensureListShape(item)) : [];
+}
+
+interface StatusLikeError {
+  response?: {
+    status?: number;
+    data?: {
+      validation_errors?: Array<{
+        path?: string[];
+        message?: string;
+      }>;
+    };
+  };
+  status?: number;
+  statusCode?: number;
+  message?: string;
+}
+
+interface ListEntryCreatePayload {
+  data: {
+    parent_record_id: string;
+    parent_object: ResourceType;
+    entry_values?: ListEntryValues;
+  };
+}
+
+function getStatusCode(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const candidate = error as StatusLikeError;
+  const status =
+    candidate.status ?? candidate.statusCode ?? candidate.response?.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null) {
+    return (error as StatusLikeError).message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return undefined;
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return getStatusCode(error) === 404;
 }
 
 /**
@@ -88,9 +170,8 @@ export async function getLists(
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericLists(objectSlug, limit);
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error) ?? 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../utils/logger.js');
       createScopedLogger('objects.lists', 'getLists').warn(
@@ -107,7 +188,7 @@ export async function getLists(
     }
 
     const response = await api.get(path);
-    return asListArray(extract<any[]>(response));
+    return asListArray(extract<AttioList[]>(response));
   }
 }
 
@@ -121,9 +202,8 @@ export async function getListDetails(listId: string): Promise<AttioList> {
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericListDetails(listId);
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error) ?? 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../utils/logger.js');
       createScopedLogger('objects.lists', 'getListDetails').warn(
@@ -143,8 +223,8 @@ export async function getListDetails(listId: string): Promise<AttioList> {
 
       // Use ensureListShape to normalize the response (handles undefined/null)
       return ensureListShape(extracted);
-    } catch (apiError: any) {
-      const status = apiError?.response?.status ?? apiError?.statusCode;
+    } catch (apiError: unknown) {
+      const status = getStatusCode(apiError);
       if (status === 404) {
         throw new EnhancedApiError('Record not found', 404, path, 'GET', {
           resourceType: 'lists',
@@ -162,9 +242,9 @@ export async function getListDetails(listId: string): Promise<AttioList> {
         );
       }
       // Surface other statuses as enhanced errors instead of generic 500s
-      const code = Number.isFinite(status) ? status : 500;
+      const code = typeof status === 'number' ? status : 500;
       throw new EnhancedApiError(
-        apiError?.message ?? 'List retrieval failed',
+        getErrorMessage(apiError) ?? 'List retrieval failed',
         code,
         path,
         'GET',
@@ -248,15 +328,17 @@ export async function addRecordToList(
     );
   }
 
+  const resourceType = objectType as ResourceType;
+
   // Use the generic operation with fallback to direct implementation
   try {
     return await addGenericRecordToList(
       listId,
       recordId,
-      objectType,
+      resourceType,
       initialValues
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../utils/logger.js');
       const log = createScopedLogger('objects.lists', 'addRecordToList');
@@ -276,10 +358,10 @@ export async function addRecordToList(
 
     // Construct the proper API payload according to Attio API requirements
     // The API expects parent_record_id, parent_object, and optionally entry_values
-    const payload: any = {
+    const payload: ListEntryCreatePayload = {
       data: {
         parent_record_id: recordId,
-        parent_object: objectType,
+        parent_object: resourceType,
       },
     };
 
@@ -310,7 +392,7 @@ export async function addRecordToList(
       }
 
       return extract<AttioListEntry>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       // Enhanced error handling for validation errors
       if (process.env.NODE_ENV === 'development') {
         const { createScopedLogger } = await import('../utils/logger.js');
@@ -342,8 +424,7 @@ export async function addRecordToList(
 
         throw new Error(
           `Validation error adding record to list: ${
-            errorDetails ||
-            (error instanceof Error ? error.message : 'Unknown error')
+            errorDetails || getErrorMessage(error) || 'Unknown error'
           }`
         );
       }
@@ -387,7 +468,7 @@ export async function updateListEntry(
   // Use the generic operation with fallback to direct implementation
   try {
     return await updateGenericListEntry(listId, entryId, attributes);
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../utils/logger.js');
       const log = createScopedLogger('objects.lists', 'updateListEntry');
@@ -426,7 +507,7 @@ export async function updateListEntry(
       );
     }
 
-    return extract<AttioList>(response);
+    return extract<AttioListEntry>(response);
   }
 }
 
@@ -444,7 +525,7 @@ export async function removeRecordFromList(
   // Use the generic operation with fallback to direct implementation
   try {
     return await removeGenericRecordFromList(listId, entryId);
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../utils/logger.js');
       createScopedLogger('objects.lists', 'removeRecordFromList').warn(
@@ -574,22 +655,49 @@ export async function getRecordListMemberships(
     const objectTypes = objectType
       ? [objectType]
       : ['companies', 'people', 'deals'];
+    const maxTypes = Math.max(1, batchSize);
+    const typesToQuery = objectTypes.slice(0, maxTypes);
 
-    for (const objType of objectTypes) {
+    for (const objType of typesToQuery) {
       try {
         // Use the correct API endpoint: GET /v2/objects/{object}/records/{record_id}/entries
         const response = await api.get(
           `/objects/${objType}/records/${recordId}/entries`
         );
-        const entries = response?.data?.data || [];
+        const rawEntries = Array.isArray(response?.data?.data)
+          ? (response.data.data as Array<Record<string, unknown>>)
+          : [];
 
         // Convert entries to ListMembership format
-        for (const entry of entries) {
+        for (const entry of rawEntries) {
+          const listId =
+            (entry.list_id as string | undefined) ||
+            (
+              (entry.list as Record<string, unknown> | undefined)?.id as
+                | { list_id?: string }
+                | undefined
+            )?.list_id ||
+            'unknown';
+          const listName =
+            ((entry.list as Record<string, unknown> | undefined)?.name as
+              | string
+              | undefined) || 'Unknown List';
+          const entryIdValue = entry.id as
+            | string
+            | { entry_id?: string }
+            | undefined;
+          const entryId =
+            typeof entryIdValue === 'string'
+              ? entryIdValue
+              : (entryIdValue?.entry_id ?? 'unknown');
+
           memberships.push({
-            listId: entry.list_id || entry.list?.id?.list_id || 'unknown',
-            listName: entry.list?.name || 'Unknown List',
-            entryId: entry.id?.entry_id || entry.id || 'unknown',
-            entryValues: includeEntryValues ? entry.values || {} : undefined,
+            listId,
+            listName,
+            entryId,
+            entryValues: includeEntryValues
+              ? ((entry.values as ListEntryValues | undefined) ?? {})
+              : undefined,
           });
         }
 
@@ -597,13 +705,10 @@ export async function getRecordListMemberships(
         if (objectType) {
           break;
         }
-      } catch (error) {
+      } catch (error: unknown) {
         // For 404 errors, this is normal - the record doesn't exist in this object type
         // Continue to check other object types
-        if (
-          (error as any)?.status === 404 ||
-          (error as any)?.statusCode === 404
-        ) {
+        if (isNotFoundError(error)) {
           continue;
         }
         // For other errors, log but continue
@@ -611,16 +716,16 @@ export async function getRecordListMemberships(
           const { createScopedLogger } = await import('../utils/logger.js');
           createScopedLogger('lists', 'getRecordListMemberships').warn(
             `Error checking ${objType} entries for record ${recordId}`,
-            { error: error instanceof Error ? error.message : String(error) }
+            { error: getErrorMessage(error) ?? String(error) }
           );
         }
       }
     }
 
     return memberships;
-  } catch (error) {
+  } catch (error: unknown) {
     // For valid UUID that returns 404, return empty array (no memberships found)
-    if ((error as any)?.status === 404 || (error as any)?.statusCode === 404) {
+    if (isNotFoundError(error)) {
       return [];
     }
     // For other errors, log and return empty array per user guidance
@@ -628,7 +733,7 @@ export async function getRecordListMemberships(
       const { createScopedLogger } = await import('../utils/logger.js');
       createScopedLogger('lists', 'getRecordListMemberships').warn(
         `Error in getRecordListMemberships for record ${recordId}`,
-        { error: error instanceof Error ? error.message : String(error) }
+        { error: getErrorMessage(error) ?? String(error) }
       );
     }
     return [];
@@ -1099,18 +1204,18 @@ export async function deleteList(listId: string): Promise<boolean> {
     }
 
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../utils/logger.js');
       const log = createScopedLogger('objects.lists', 'deleteList');
       log.warn('Delete list error', {
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: getErrorMessage(error) ?? 'Unknown error',
         status: hasErrorResponse(error) ? error.response?.status : undefined,
         data: hasErrorResponse(error) ? error.response?.data || {} : undefined,
       });
     }
 
-    const status = error?.response?.status ?? error?.statusCode;
+    const status = getStatusCode(error);
     if (status === 404) {
       throw new EnhancedApiError('Record not found', 404, path, 'DELETE', {
         resourceType: 'lists',
@@ -1118,9 +1223,9 @@ export async function deleteList(listId: string): Promise<boolean> {
         httpStatus: 404,
       });
     }
-    const code = Number.isFinite(status) ? status : 500;
+    const code = Number.isFinite(status) ? (status as number) : 500;
     throw new EnhancedApiError(
-      error?.message ?? 'List deletion failed',
+      getErrorMessage(error) ?? 'List deletion failed',
       code,
       path,
       'DELETE',

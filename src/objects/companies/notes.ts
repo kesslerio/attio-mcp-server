@@ -8,6 +8,35 @@ import {
 } from '../../api/operations/index.js';
 import { ResourceType, AttioNote } from '../../types/attio.js';
 
+interface HttpErrorLike {
+  response?: {
+    status?: number;
+  };
+  message?: string;
+}
+
+function getStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const candidate = error as HttpErrorLike;
+  const status = candidate.response?.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function getMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null) {
+    return (error as HttpErrorLike).message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return undefined;
+}
+
 /**
  * Gets notes for a specific company
  *
@@ -40,7 +69,7 @@ export async function getCompanyNotes(
         }
 
         companyId = id;
-      } catch (parseError) {
+      } catch {
         // Fallback to simple string splitting if formal parsing fails
         const parts = companyIdOrUri.split('/');
         companyId = parts[parts.length - 1];
@@ -79,12 +108,12 @@ export async function getCompanyNotes(
         limit,
         offset
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (process.env.NODE_ENV === 'development') {
         const { createScopedLogger } = await import('../../utils/logger.js');
         createScopedLogger('companies.notes', 'getCompanyNotes').error(
           'Unified operation failed',
-          error
+          error instanceof Error ? error : new Error(String(error))
         );
       }
 
@@ -102,8 +131,11 @@ export async function getCompanyNotes(
         }
 
         const response = await api.get(path);
-        return response?.data?.data || [];
-      } catch (directError: any) {
+        const notes = Array.isArray(response?.data?.data)
+          ? (response.data.data as AttioNote[])
+          : [];
+        return notes;
+      } catch (directError: unknown) {
         if (process.env.NODE_ENV === 'development') {
           const { createScopedLogger } = await import('../../utils/logger.js');
           createScopedLogger('companies.notes', 'getCompanyNotes').error(
@@ -113,21 +145,21 @@ export async function getCompanyNotes(
               companyId,
               originalUri: companyIdOrUri,
               errors: {
-                unified: error.message || 'Unknown error',
-                direct: directError.message || 'Unknown error',
+                unified: getMessage(error) || 'Unknown error',
+                direct: getMessage(directError) || 'Unknown error',
               },
             }
           );
         }
 
         // Return empty array instead of throwing error when no notes are found
-        if (directError.response?.status === 404) {
+        if (getStatus(directError) === 404) {
           return [];
         }
 
         throw new Error(
           `Could not retrieve notes for company ${companyIdOrUri}: ${
-            directError.message || 'Unknown error'
+            getMessage(directError) || 'Unknown error'
           }`
         );
       }
@@ -181,7 +213,7 @@ export async function createCompanyNote(
         }
 
         companyId = id;
-      } catch (parseError) {
+      } catch {
         // Fallback to simple string splitting if formal parsing fails
         const parts = companyIdOrUri.split('/');
         companyId = parts[parts.length - 1];
@@ -220,12 +252,12 @@ export async function createCompanyNote(
         title,
         content
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (process.env.NODE_ENV === 'development') {
         const { createScopedLogger } = await import('../../utils/logger.js');
         createScopedLogger('companies.notes', 'createCompanyNote').error(
           'Unified operation failed',
-          error
+          error instanceof Error ? error : new Error(String(error))
         );
       }
 
@@ -251,8 +283,12 @@ export async function createCompanyNote(
             content,
           },
         });
-        return response.data;
-      } catch (directError: any) {
+        const createdNote = response?.data as AttioNote | undefined;
+        if (!createdNote) {
+          throw new Error('Note creation returned empty response');
+        }
+        return createdNote;
+      } catch (directError: unknown) {
         if (process.env.NODE_ENV === 'development') {
           const { createScopedLogger } = await import('../../utils/logger.js');
           createScopedLogger('companies.notes', 'createCompanyNote').error(
@@ -262,8 +298,8 @@ export async function createCompanyNote(
               companyId,
               originalUri: companyIdOrUri,
               errors: {
-                unified: error.message || 'Unknown error',
-                direct: directError.message || 'Unknown error',
+                unified: getMessage(error) || 'Unknown error',
+                direct: getMessage(directError) || 'Unknown error',
               },
             }
           );
@@ -271,7 +307,7 @@ export async function createCompanyNote(
 
         throw new Error(
           `Could not create note for company ${companyIdOrUri}: ${
-            directError.message || 'Unknown error'
+            getMessage(directError) || 'Unknown error'
           }`
         );
       }

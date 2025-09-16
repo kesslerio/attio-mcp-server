@@ -11,6 +11,50 @@ import { isValidId } from '../utils/validation.js';
 import { shouldUseMockData } from '../services/create/index.js';
 import { deleteTask as apiDelete } from '../api/operations/index.js';
 
+interface HttpErrorLike {
+  response?: {
+    status?: number;
+    data?: {
+      code?: string;
+      message?: string;
+    };
+  };
+  status?: number;
+  code?: string;
+  message?: string;
+}
+
+function getStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const candidate = error as HttpErrorLike;
+  const status = candidate.response?.status ?? candidate.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function getCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const candidate = error as HttpErrorLike;
+  return candidate.response?.data?.code ?? candidate.code;
+}
+
+function getMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null) {
+    const candidate = error as HttpErrorLike;
+    return candidate.response?.data?.message ?? candidate.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return undefined;
+}
+
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 
 export async function listTasks(
@@ -169,12 +213,10 @@ export async function deleteTask(taskId: string): Promise<boolean> {
   // Delegate to API operations implementation (handles retries and envelopes)
   try {
     return await apiDelete(taskId);
-  } catch (err: any) {
-    const status = err?.response?.status ?? err?.status;
-    const code = err?.response?.data?.code ?? err?.code;
-    const msg = (err?.response?.data?.message ?? err?.message ?? '')
-      .toString()
-      .toLowerCase();
+  } catch (err: unknown) {
+    const status = getStatus(err);
+    const code = getCode(err);
+    const msg = (getMessage(err) ?? '').toLowerCase();
     // Normalize soft "not found" to boolean false so the service maps it to a structured 404
     if (status === 404 || code === 'not_found' || msg.includes('not found'))
       return false;

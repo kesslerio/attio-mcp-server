@@ -11,9 +11,7 @@ import {
 } from './base-operations.js';
 import { AttioApiError } from '../utils/error-handler.js';
 import { getAttributeSlugById } from '../api/attribute-types.js';
-import { searchPeopleByEmail } from './people/search.js';
 import { searchCompanies } from './companies/search.js';
-import { getLazyAttioClient } from '../api/lazy-client.js';
 import { isValidEmail } from '../utils/validation/email-validation.js';
 import { PersonAttributes } from './people/types.js';
 import {
@@ -21,16 +19,6 @@ import {
   InvalidPersonDataError,
 } from './people/errors.js';
 import { searchPeopleByEmails } from './people/email-validation.js';
-
-// Type definition for email input formats
-type EmailInput =
-  | string
-  | {
-      value?: string;
-      email?: string;
-      email_address?: string;
-      [key: string]: any;
-    };
 
 // Re-export error classes for backward compatibility
 export {
@@ -329,7 +317,11 @@ export async function updatePerson(
   attributes: PersonAttributes
 ): Promise<Person> {
   try {
-    return await updateObjectWithDynamicFields<Person>(
+    return await updateObjectWithDynamicFields<
+      Person,
+      PersonAttributes,
+      PersonAttributes
+    >(
       ResourceType.PEOPLE,
       personId,
       attributes,
@@ -370,7 +362,10 @@ export async function updatePersonAttribute(
       attributeValue
     );
 
-    return await updateObjectAttributeWithDynamicFields<Person>(
+    return await updateObjectAttributeWithDynamicFields<
+      Person,
+      PersonAttributes
+    >(
       ResourceType.PEOPLE,
       personId,
       attributeName,

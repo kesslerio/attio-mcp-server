@@ -13,6 +13,38 @@ import {
 import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
 import { debug } from '../utils/logger.js';
 
+interface HttpErrorLike {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+function getStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const candidate = error as HttpErrorLike;
+  const status = candidate.response?.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null) {
+    return (error as HttpErrorLike).message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return undefined;
+}
+
 /**
  * Create note body for Attio API
  */
@@ -101,22 +133,33 @@ export async function createNote(
 
   try {
     const response = await api.post('/notes', { data: body });
-    return response.data;
-  } catch (error: any) {
-    debug('notes', 'Create note failed', { error: error.message });
+    const data = response?.data as { data: AttioNote } | undefined;
+    if (!data) {
+      throw new UniversalValidationError(
+        'Note creation returned empty response',
+        ErrorType.SYSTEM_ERROR
+      );
+    }
+    return data;
+  } catch (error: unknown) {
+    debug('notes', 'Create note failed', {
+      error: getErrorMessage(error) || 'Unknown error',
+    });
 
     // Map HTTP errors to universal validation errors
-    if (error.response?.status === 422) {
+    if (getStatus(error) === 422) {
       throw new UniversalValidationError(
         `Validation failed: ${
-          error.response?.data?.message || 'Invalid note data'
+          (typeof error === 'object' && error !== null
+            ? (error as HttpErrorLike).response?.data?.message
+            : undefined) || 'Invalid note data'
         }`,
         ErrorType.USER_ERROR,
         { field: 'content' }
       );
     }
 
-    if (error.response?.status === 404) {
+    if (getStatus(error) === 404) {
       throw createRecordNotFoundError(
         body.parent_record_id,
         body.parent_object
@@ -145,16 +188,18 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
     // The /notes endpoint accepts filters (parent_object, parent_record_id)
     // and returns an empty array when no notes exist.
     const response = await api.get('/notes', { params: query });
-    const res = response.data ?? { data: [] };
-    // Ensure shape consistency
-    if (!Array.isArray(res.data)) {
-      return { data: [], meta: undefined };
-    }
-    return res;
-  } catch (error: any) {
-    debug('notes', 'List notes failed', { error: error.message });
+    const res = (response?.data as {
+      data?: AttioNote[];
+      meta?: { next_cursor?: string };
+    }) ?? { data: [] };
+    const items = Array.isArray(res.data) ? res.data : [];
+    return { data: items, meta: res.meta };
+  } catch (error: unknown) {
+    debug('notes', 'List notes failed', {
+      error: getErrorMessage(error) || 'Unknown error',
+    });
     // Prefer returning an empty list on benign 404s for list operations
-    const status = error?.response?.status;
+    const status = getStatus(error);
     if (status === 404) {
       return { data: [], meta: undefined };
     }
@@ -180,11 +225,20 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
 
   try {
     const response = await api.get(`/notes/${noteId}`);
-    return response.data;
-  } catch (error: any) {
-    debug('notes', 'Get note failed', { error: error.message });
+    const data = response?.data as { data: AttioNote } | undefined;
+    if (!data) {
+      throw new UniversalValidationError(
+        'Note lookup returned empty response',
+        ErrorType.SYSTEM_ERROR
+      );
+    }
+    return data;
+  } catch (error: unknown) {
+    debug('notes', 'Get note failed', {
+      error: getErrorMessage(error) || 'Unknown error',
+    });
 
-    if (error.response?.status === 404) {
+    if (getStatus(error) === 404) {
       throw createRecordNotFoundError(noteId, 'note');
     }
 
@@ -213,10 +267,12 @@ export async function deleteNote(
   try {
     await api.delete(`/notes/${noteId}`);
     return { success: true };
-  } catch (error: any) {
-    debug('notes', 'Delete note failed', { error: error.message });
+  } catch (error: unknown) {
+    debug('notes', 'Delete note failed', {
+      error: getErrorMessage(error) || 'Unknown error',
+    });
 
-    if (error.response?.status === 404) {
+    if (getStatus(error) === 404) {
       throw createRecordNotFoundError(noteId, 'note');
     }
 

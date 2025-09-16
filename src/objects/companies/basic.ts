@@ -3,7 +3,8 @@
  */
 import { getLazyAttioClient } from '../../api/lazy-client.js';
 import { getObjectDetails, listObjects } from '../../api/operations/index.js';
-import { ResourceType, Company } from '../../types/attio.js';
+import { ResourceType, Company, RecordAttributes } from '../../types/attio.js';
+import { CompanyUpdateInput } from '../../types/company-types.js';
 import { CompanyAttributes } from './types.js';
 import { CompanyValidator } from '../../validators/company-validator.js';
 import {
@@ -225,7 +226,7 @@ export async function createCompany(
 
   try {
     // Temporarily comment out validation to isolate the issue
-    let result = await createObjectWithDynamicFields<Company>(
+    let result = await createObjectWithDynamicFields<Company, RecordAttributes>(
       ResourceType.COMPANIES,
       attributes
       // CompanyValidator.validateCreate  // Temporarily disabled
@@ -594,11 +595,19 @@ export async function updateCompany(
   attributes: Partial<CompanyAttributes>
 ): Promise<Company> {
   try {
-    return await updateObjectWithDynamicFields<Company>(
+    return await updateObjectWithDynamicFields<
+      Company,
+      Partial<CompanyAttributes>,
+      CompanyUpdateInput
+    >(
       ResourceType.COMPANIES,
       companyId,
       attributes,
-      CompanyValidator.validateUpdate
+      async (id: string, attrs: Partial<CompanyAttributes>) =>
+        CompanyValidator.validateUpdate(
+          id,
+          attrs as Record<string, CompanyFieldValue>
+        )
     );
   } catch (error: unknown) {
     // Handle mock company updates in test environments using shared state

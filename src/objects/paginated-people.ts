@@ -77,7 +77,7 @@ export async function paginatedSearchPeople(
  * @returns Paginated response with matching people
  */
 export async function paginatedSearchPeopleByCreationDate(
-  dateRange: DateRange | string | any,
+  dateRange: DateRange | string | Record<string, unknown> | undefined,
   page: number | string = 1,
   pageSize: number | string = 20
 ): Promise<PaginatedResponse<Person>> {
@@ -123,7 +123,7 @@ export async function paginatedSearchPeopleByCreationDate(
  * @returns Paginated response with matching people
  */
 export async function paginatedSearchPeopleByModificationDate(
-  dateRange: DateRange | string | any,
+  dateRange: DateRange | string | Record<string, unknown> | undefined,
   page: number | string = 1,
   pageSize: number | string = 20
 ): Promise<PaginatedResponse<Person>> {
@@ -169,7 +169,7 @@ export async function paginatedSearchPeopleByModificationDate(
  * @returns Paginated response with matching people
  */
 export async function paginatedSearchPeopleByLastInteraction(
-  dateRange: DateRange | string | any,
+  dateRange: DateRange | string | Record<string, unknown> | undefined,
   interactionType?: InteractionType | string,
   page: number | string = 1,
   pageSize: number | string = 20
@@ -236,7 +236,7 @@ export async function paginatedSearchPeopleByLastInteraction(
  * @returns Paginated response with matching people
  */
 export async function paginatedSearchPeopleByActivity(
-  activityFilter: ActivityFilter | string | any,
+  activityFilter: ActivityFilter | string | Record<string, unknown> | undefined,
   page: number | string = 1,
   pageSize: number | string = 20
 ): Promise<PaginatedResponse<Person>> {

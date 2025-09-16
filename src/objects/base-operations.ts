@@ -11,6 +11,34 @@ import { ResourceType, AttioRecord } from '../types/attio.js';
 import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
 import { createScopedLogger, OperationType } from '../utils/logger.js';
 
+type AttributeMap = Record<string, unknown>;
+type AttributeValidator<
+  Raw extends AttributeMap,
+  Validated extends AttributeMap,
+> = (attrs: Raw) => Promise<Validated> | Validated;
+type UpdateValidator<
+  Raw extends AttributeMap,
+  Validated extends AttributeMap,
+> = (id: string, attrs: Raw) => Promise<Validated> | Validated;
+
+function isRecordObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function hasRecordIdentity(record: Record<string, unknown>): boolean {
+  const idValue = record.id as Record<string, unknown> | undefined;
+  if (idValue && typeof idValue.record_id === 'string') {
+    return true;
+  }
+  if (typeof record.record_id === 'string') {
+    return true;
+  }
+  if ('web_url' in record || 'created_at' in record) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Translates all attribute names in a record using the attribute mapping system
  *
@@ -56,20 +84,24 @@ function translateAttributeNames(
  * @param validator - Optional validator function
  * @returns Created object record
  */
-export async function createObjectWithDynamicFields<T extends AttioRecord>(
+export async function createObjectWithDynamicFields<
+  T extends AttioRecord,
+  RawAttrs extends AttributeMap = AttributeMap,
+  ValidatedAttrs extends AttributeMap = RawAttrs,
+>(
   objectType: ResourceType,
-  attributes: any,
-  validator?: (attrs: any) => Promise<unknown>
+  attributes: RawAttrs,
+  validator?: AttributeValidator<RawAttrs, ValidatedAttrs>
 ): Promise<T> {
   // Validate if validator provided
-  const validatedAttributes = validator
-    ? await validator(attributes)
-    : attributes;
+  const validatedAttributes = (
+    validator ? await validator(attributes) : attributes
+  ) as ValidatedAttrs;
 
   // Translate attribute names using the mapping system (e.g., "website" -> "domains")
   const mappedAttributes = translateAttributeNames(
     objectType,
-    validatedAttributes
+    validatedAttributes as AttributeMap
   );
 
   // Use dynamic field type detection to format attributes correctly
@@ -120,16 +152,11 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
 
     // Additional check for empty objects that might slip through, but allow legitimate create responses
     const looksLikeCreatedRecord =
-      result &&
-      typeof result === 'object' &&
-      (('id' in result && (result as any).id?.record_id) ||
-        'record_id' in result ||
-        'web_url' in result ||
-        'created_at' in result);
+      result && isRecordObject(result) && hasRecordIdentity(result);
 
     if (
       !result ||
-      (typeof result === 'object' &&
+      (isRecordObject(result) &&
         Object.keys(result).length === 0 &&
         !looksLikeCreatedRecord)
     ) {
@@ -175,21 +202,25 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
  * @param validator - Optional validator function
  * @returns Updated object record
  */
-export async function updateObjectWithDynamicFields<T extends AttioRecord>(
+export async function updateObjectWithDynamicFields<
+  T extends AttioRecord,
+  RawAttrs extends AttributeMap = AttributeMap,
+  ValidatedAttrs extends AttributeMap = RawAttrs,
+>(
   objectType: ResourceType,
   recordId: string,
-  attributes: any,
-  validator?: (id: string, attrs: any) => Promise<unknown>
+  attributes: RawAttrs,
+  validator?: UpdateValidator<RawAttrs, ValidatedAttrs>
 ): Promise<T> {
   // Validate if validator provided
-  const validatedAttributes = validator
-    ? await validator(recordId, attributes)
-    : attributes;
+  const validatedAttributes = (
+    validator ? await validator(recordId, attributes) : attributes
+  ) as ValidatedAttrs;
 
   // Translate attribute names using the mapping system (e.g., "website" -> "domains")
   const mappedAttributes = translateAttributeNames(
     objectType,
-    validatedAttributes
+    validatedAttributes as AttributeMap
   );
 
   // Use dynamic field type detection to format attributes correctly
@@ -268,15 +299,16 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
  */
 export async function updateObjectAttributeWithDynamicFields<
   T extends AttioRecord,
+  AttrMap extends AttributeMap = AttributeMap,
 >(
   objectType: ResourceType,
   recordId: string,
   attributeName: string,
-  attributeValue: any,
-  updateFn: (id: string, attrs: any) => Promise<T>
+  attributeValue: unknown,
+  updateFn: (id: string, attrs: AttrMap) => Promise<T>
 ): Promise<T> {
   // Update the specific attribute using the provided update function
-  const attributes = { [attributeName]: attributeValue };
+  const attributes = { [attributeName]: attributeValue } as AttrMap;
   return await updateFn(recordId, attributes);
 }
 
