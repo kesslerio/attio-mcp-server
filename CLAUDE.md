@@ -13,6 +13,12 @@ RULE: Documentation-first development | WHEN: Building any feature | DO: Check o
 RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use mcp**clear-thought-server**mentalmodel First Principles | ELSE: Perpetuating unnecessary complexity
 RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp**clear-thought-server**decisionframework → find alternative | ELSE: Wasted time on workarounds
 
+## PR SIZE TARGETS
+
+- **Aim for medium or large**: keep changes within 150–799 LOC and 6–20 files whenever possible.
+- Split work if a branch drifts past ~400 LOC or touches more than ~10 files; reviewers stay effective in the M/L range.
+- Avoid XXL (>1500 LOC or 41+ files) unless absolutely necessary.
+
 ## BUILD & TEST GOTCHAS
 
 ### SMART TEST CATEGORIES [PHASE IV]
