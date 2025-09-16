@@ -1,16 +1,19 @@
 /**
  * Attio API client and related utilities
  */
-import axios, { AxiosInstance, AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import { debug, error, OperationType } from '../utils/logger.js';
-import { 
-  AttioAxiosError, 
-  AttioServerError, 
-  AttioAttributeSchema, 
-  AttioSelectOption, 
+import {
+  AttioAxiosError,
+  AttioAttributeSchema,
+  AttioSelectOption,
   AttioStatusOption,
-  extractResponseData,
-  isAttioErrorData
+  isAttioErrorData,
 } from './types.js';
 
 // Module identification for debugging (compatible with both ESM and CJS)
@@ -141,7 +144,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 
   // TEMP DIAGNOSTICS (E2E only): show final URL + top-level shape
   if (process.env.E2E_MODE === 'true') {
-    client.interceptors.request.use((config: AxiosRequestConfig) => {
+    client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       debug('attio-client', 'Request sent', {
@@ -187,7 +190,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // Add unconditional diagnostics and passthrough error handling
   debug('attio-client', 'Default client baseURL configured', { baseURL });
 
-  client.interceptors.request.use((config: AxiosRequestConfig) => {
+  client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     const redacted = { ...(config.headers || {}) };
     if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
     debug('attio-client', 'Request interceptor', {
@@ -393,7 +396,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     // Add diagnostics and passthrough error handling
     debug('attio-client', 'E2E RAW client baseURL configured', { baseURL });
 
-    rawClient.interceptors.request.use((config: AxiosRequestConfig) => {
+    rawClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       debug('attio-client', 'E2E Request sent', {

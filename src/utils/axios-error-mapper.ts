@@ -165,7 +165,17 @@ export const handleSelectOptionError = async (
   const optionsCache = new Map<string, Array<{ id: string; title: string }>>();
   const loadOptions = async (field: string) => {
     if (!optionsCache.has(field)) {
-      optionsCache.set(field, await getSelectOptions(resourceType, field));
+      const options = await getSelectOptions(resourceType, field);
+      // Filter out options without id and map to required shape
+      const filtered = options
+        .filter(
+          (
+            opt
+          ): opt is Required<Pick<typeof opt, 'id' | 'title'>> & typeof opt =>
+            opt.id !== undefined && opt.id !== null && opt.title !== undefined
+        )
+        .map((opt) => ({ id: opt.id, title: opt.title }));
+      optionsCache.set(field, filtered);
     }
     return optionsCache.get(field)!;
   };
