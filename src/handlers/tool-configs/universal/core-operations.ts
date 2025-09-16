@@ -96,18 +96,11 @@ export const searchRecordsConfig: UniversalToolConfig = {
       );
       return await handleUniversalSearch(sanitizedParams);
     } catch (error: unknown) {
-      try {
-        await handleCoreOperationError(error, 'search', params.resource_type);
-        throw error; // not reached
-      } catch (e: any) {
-        if (e && typeof e.status === 'number' && e.body?.message) {
-          // For backward compatibility with tests, throw an Error with the enhanced message
-          const enhancedError = new Error(e.body.message);
-          enhancedError.name = e.body.code ?? 'ValidationError';
-          throw enhancedError;
-        }
-        throw e;
-      }
+      return await handleCoreOperationError(
+        error,
+        'search',
+        params.resource_type
+      );
     }
   },
   formatResult: (
@@ -245,22 +238,11 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
-      try {
-        await handleCoreOperationError(
-          error,
-          'get details',
-          params.resource_type
-        );
-        throw error; // not reached
-      } catch (e: any) {
-        if (e && typeof e.status === 'number' && e.body?.message) {
-          // For backward compatibility with tests, throw an Error with the enhanced message
-          const enhancedError = new Error(e.body.message);
-          enhancedError.name = e.body.code ?? 'ValidationError';
-          throw enhancedError;
-        }
-        throw e;
-      }
+      return await handleCoreOperationError(
+        error,
+        'get details',
+        params.resource_type
+      );
     }
   },
   formatResult: (
@@ -509,23 +491,12 @@ export const updateRecordConfig: UniversalToolConfig = {
       }
       return result;
     } catch (error: unknown) {
-      try {
-        await handleCoreOperationError(
-          error,
-          'update',
-          params.resource_type,
-          params.record_data as Record<string, unknown>
-        );
-        throw error; // not reached
-      } catch (e: any) {
-        if (e && typeof e.status === 'number' && e.body?.message) {
-          // For backward compatibility with tests, throw an Error with the enhanced message
-          const enhancedError = new Error(e.body.message);
-          enhancedError.name = e.body.code ?? 'ValidationError';
-          throw enhancedError;
-        }
-        throw e;
-      }
+      return await handleCoreOperationError(
+        error,
+        'update',
+        params.resource_type,
+        params.record_data as Record<string, unknown>
+      );
     }
   },
   formatResult: (
