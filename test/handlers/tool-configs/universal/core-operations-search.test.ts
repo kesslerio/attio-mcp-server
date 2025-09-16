@@ -107,9 +107,13 @@ describe('Universal Core Operations Search Tests', () => {
         query: 'test',
       };
 
-      await expect(searchRecordsConfig.handler(params)).rejects.toThrow(
-        'Universal search failed for resource type companies: API error'
-      );
+      await expect(searchRecordsConfig.handler(params)).rejects.toMatchObject({
+        status: expect.any(Number),
+        body: expect.objectContaining({
+          message:
+            'Universal search failed for resource type companies: API error',
+        }),
+      });
       expect(vi.mocked(ErrorService.createUniversalError)).toHaveBeenCalledWith(
         'search',
         UniversalResourceType.COMPANIES,
