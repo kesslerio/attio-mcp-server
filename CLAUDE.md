@@ -25,7 +25,7 @@
 
 ## CORE PRINCIPLES
 
-RULE: Documentation-first development | WHEN: Building any feature | DO: Check official docs (use Context 7, fallback: web search) → existing solutions → ONLY then custom | ELSE: Technical debt accumulation
+RULE: Documentation-first development | WHEN: Building any feature | DO: Check official docs (use Context7, fallback: web search) → existing solutions → ONLY then custom | ELSE: Technical debt accumulation
 RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use Clear Thought MCP (`clear_thought` → e.g., `mental_model`) after introspecting tool names | ELSE: Unnecessary complexity
 RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: Use Clear Thought `decision_framework` to choose alternatives | ELSE: Wasted time on workarounds
 
@@ -52,16 +52,16 @@ RULE: CI full validation | WHEN: PR created | DO: Complete test suite + build + 
 
 RULE: Use the right scope for the task.
 
-| **Type** | **Command** | **Notes** |
-|---|---|---|
-| Unit | `npm test` | Fast, offline with mocks |
-| Integration | `npm run test:integration` | Real Attio API (`ATTIO_API_KEY`) |
-| E2E | `npm run test:e2e` | End‑to‑end workflows |
-| Smoke | `npm run test:smoke` | <30s critical paths |
-| Performance | `npm run test:performance` / `:all` / `:tools` | CI budgets auto‑adjust |
-| Affected | `npm run test:affected` | Git‑based selection |
-| Offline | `npm run test:offline` | No API calls |
-| CI JSON | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | For quality gates (requires `ATTIO_API_KEY`) |
+| **Type**    | **Command**                                                         | **Notes**                                    |
+| ----------- | ------------------------------------------------------------------- | -------------------------------------------- |
+| Unit        | `npm test`                                                          | Fast, offline with mocks                     |
+| Integration | `npm run test:integration`                                          | Real Attio API (`ATTIO_API_KEY`)             |
+| E2E         | `npm run test:e2e`                                                  | End‑to‑end workflows                         |
+| Smoke       | `npm run test:smoke`                                                | <30s critical paths                          |
+| Performance | `npm run test:performance` / `:all` / `:tools`                      | CI budgets auto‑adjust                       |
+| Affected    | `npm run test:affected`                                             | Git‑based selection                          |
+| Offline     | `npm run test:offline`                                              | No API calls                                 |
+| CI JSON     | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | For quality gates (requires `ATTIO_API_KEY`) |
 
 ### CI vs OFFLINE TESTING (scope)
 
@@ -108,12 +108,14 @@ Avoid top‑level `oneOf`/`allOf`/`anyOf` in tool `inputSchema` due to client/In
 - `npm run e2e:health` — Env health (0–100), `--fix` to attempt auto‑fix
 
 **Quick path**
+
 ```bash
 ./scripts/e2e-diagnostics.sh --suite core-workflows --json --verbose
 npm run e2e:analyze -- --latest --stdout
 ```
 
 **Manual fallback** (no bail, capture logs)
+
 ```bash
 TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
   npx vitest run test/e2e/suites/core-workflows.e2e.test.ts --reporter=verbose --reporter=json --bail=0 \
@@ -121,6 +123,7 @@ TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA
 ```
 
 Grep examples (when needed)
+
 ```bash
 rg -n "tasks\.createTask|tasks\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced*actor" \
   test-results/e2e-*-$(date +%Y%m%d)_*.log
@@ -145,6 +148,7 @@ RULE: Local CI validation | WHEN: Before pushing | DO: `npm run ci:local` | ELSE
 RULE: Auto-fix issues | WHEN: Lint/format errors | DO: `npm run fix:all` | ELSE: Manual fixes take longer
 
 KEY COMMANDS:
+
 - `ci:local`: Simulate GitHub Actions locally (40% faster than remote)
 - `fix:all`: Auto-fix formatting, lint, imports (saves 5-10 min/day)
 - `perf:budgets`: Check performance against thresholds
@@ -152,7 +156,8 @@ KEY COMMANDS:
 - `emergency:rollback`: Quick recovery from bad commits
 
 PIPELINE STAGES:
-1. **Lint & Type Check**: ESLint (max 1030 warnings) + TypeScript validation
+
+1. **Lint & Type Check**: ESLint (see **Quality Gates** threshold) + TypeScript validation
 2. **Unit Tests**: Coverage tests only (no duplicate runs)
 3. **Integration Tests**: On-demand with label or main branch
 4. **Build Verification**: Ensure artifacts created correctly
@@ -189,6 +194,7 @@ SEARCH FIRST: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword
 CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P2,type:bug,area:core"`
 
 **Required Labels** (Enforced by Issue Hygiene Automation):
+
 - **Priority**: P0(Critical), P1(High), P2(Medium), P3(Low), P4(Minor), P5(Trivial) - exactly one required
 - **Type**: bug, feature, enhancement, documentation, test, refactor, chore, ci, dependencies - exactly one required
 - **Status**: status:untriaged, status:ready, status:in-progress, status:blocked, status:needs-info, status:review - exactly one required
@@ -198,10 +204,10 @@ CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P
 
 ## Documentation Search Workflow
 
-1) **Context7**: install & run via MCP (`npx -y @upstash/context7-mcp@latest`), then **introspect tools** and use the server's advertised names.
-2) **Official docs** (vendor sites).
-3) **Web search** last (only if 1–2 fail).
-**Do not invent tool IDs.**
+1. **Context7**: install & run via MCP (`npx -y @upstash/context7-mcp@latest`), then **introspect tools** and use the server's advertised names.
+2. **Official docs** (vendor sites).
+3. **Web search** last (only if 1–2 fail).
+   **Do not invent tool IDs.**
 
 ## Clear Thought Integration (Shared)
 
@@ -215,12 +221,14 @@ Use Clear Thought MCP. **Introspect tools** first. Typical pattern: call `clear_
 - Lists: `GET /v2/lists`
 
 **Verify attributes**
+
 ```bash
 curl -H "Authorization: Bearer $ATTIO_API_KEY" https://api.attio.com/v2/objects/companies/attributes \
 | jq -r '.data[] | "\(.api_slug) - \(.title)"'
 ```
 
 ### KEY IDS
+
 - Prospecting List: `88709359-01f6-478b-ba66-c07347891b6f`
 - Prospecting Stage: `f78ef71e-9306-4c37-90d6-e83550326228`
 - Deal Stage: `28439dc6-e8b1-41e5-9819-cca5f18d2de2`
@@ -231,6 +239,7 @@ RULE: Progressive `any` reduction | WHEN: Writing TypeScript | DO: Use Record<st
 CURRENT: 395 warnings (improved from 957) | TARGET: <350 this sprint | GOAL: <200 in 3 months
 RECOMMENDED: Use `Record<string, unknown>` instead of `Record<string, any>` for better type safety
 COMMON PATTERNS:
+
 - API responses: `Record<string, unknown>` or specific interface
 - Format functions: Always return string (never conditional types)
 - Configuration objects: Define specific interfaces
