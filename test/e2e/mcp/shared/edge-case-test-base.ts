@@ -330,8 +330,64 @@ export abstract class EdgeCaseTestBase extends MCPTestBase {
    * Clean up test data created during edge case testing
    */
   async cleanupTestData(): Promise<void> {
-    // Cleanup is handled by TestDataFactory's tracking system
+    const trackedRecords = TestDataFactory.getTrackedRecords();
+    console.log(`🧹 Cleaning up ${trackedRecords.length} tracked records...`);
+
+    for (const record of trackedRecords) {
+      try {
+        await this.executeToolCall('delete-record', {
+          resource_type: record.type,
+          record_id: record.id,
+        });
+        console.log(`✅ Deleted ${record.type}: ${record.id}`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to delete ${record.type}: ${record.id}`, error);
+      }
+    }
+
+    // Clear the tracking array after attempting deletion
     TestDataFactory.clearTrackedRecords();
+  }
+
+  /**
+   * Validate edge case response with proper error checking
+   * Replaces weak .toBeDefined() assertions
+   */
+  protected validateEdgeCaseResponse(
+    response: any,
+    context: string,
+    expectedErrorPatterns: string[] = [],
+    shouldBeError: boolean = false
+  ): boolean {
+    const responseText = this.extractTextContent(response);
+    const hasError = this.hasError(response);
+
+    if (shouldBeError) {
+      // For tests that should definitely produce errors
+      return (
+        hasError ||
+        expectedErrorPatterns.some((pattern) =>
+          responseText.toLowerCase().includes(pattern.toLowerCase())
+        )
+      );
+    } else {
+      // For graceful handling tests - should either error gracefully OR provide meaningful response
+      const hasErrorIndicators = expectedErrorPatterns.some((pattern) =>
+        responseText.toLowerCase().includes(pattern.toLowerCase())
+      );
+
+      const hasMeaningfulResponse =
+        responseText.length > 10 &&
+        !responseText.includes('undefined') &&
+        !responseText.includes('null');
+
+      // Log for debugging
+      console.log(
+        `🔍 ${context}: hasError=${hasError}, hasErrorIndicators=${hasErrorIndicators}, meaningful=${hasMeaningfulResponse}, text="${responseText.substring(0, 100)}..."`
+      );
+
+      return hasError || hasErrorIndicators || hasMeaningfulResponse;
+    }
   }
 
   /**

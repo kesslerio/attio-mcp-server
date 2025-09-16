@@ -212,6 +212,13 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     });
 
     expect(searchResult).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        searchResult,
+        'search after concurrent record creation',
+        ['[]', 'companies', 'results']
+      )
+    ).toBe(true);
 
     // Additional test: simultaneous creation with identical data
     const identicalDataConfig: ConcurrencyTestConfig = {

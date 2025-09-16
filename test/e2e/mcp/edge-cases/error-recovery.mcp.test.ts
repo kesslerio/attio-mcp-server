@@ -227,6 +227,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     });
 
     expect(recoveryResult).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        recoveryResult,
+        'recovery after data corruption test',
+        ['created', 'success', 'company', 'recovery']
+      )
+    ).toBe(true);
 
     // Verify system can still create valid records after handling corruption
     const recoveryId = testCase.extractRecordId(
@@ -252,9 +259,24 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Initial operation should handle missing reference gracefully
     expect(initial).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        initial,
+        'missing dependency operation',
+        ['error', 'not found', 'missing', 'invalid', 'non-existent'],
+        true // Should be error for non-existent ID
+      )
+    ).toBe(true);
 
     // Recovery operation should succeed
     expect(recovery).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        recovery,
+        'dependency recovery operation',
+        ['companies', 'results', '[]', 'TC_EC04']
+      )
+    ).toBe(true);
 
     // Test the dependency recovery pattern
     EdgeCaseAssertions.assertErrorRecovery(initial, recovery);

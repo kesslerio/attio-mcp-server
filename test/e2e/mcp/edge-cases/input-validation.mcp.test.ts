@@ -123,12 +123,23 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
 
     expect(result.passed).toBe(true);
 
-    // Verify response is defined and server doesn't crash
+    // Verify server handles invalid input properly with error validation
     const response = await testCase.executeToolCall('create-record', {
       resource_type: 'companies',
       record_data: emptyFieldsScenario!.inputData,
     });
     expect(response).toBeDefined();
+
+    // Verify error handling or graceful response
+    const responseText = testCase.extractTextContent(response);
+    const hasError =
+      testCase.hasError(response) ||
+      responseText.toLowerCase().includes('error') ||
+      responseText.toLowerCase().includes('required') ||
+      responseText.toLowerCase().includes('missing');
+
+    // Either should be error OR should provide meaningful feedback about the invalid input
+    expect(hasError || responseText.length > 10).toBe(true);
   });
 
   it('should handle malformed UUID identifiers gracefully', async () => {
@@ -188,6 +199,17 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     });
 
     expect(searchResponse).toBeDefined();
+
+    // Verify invalid limit is handled properly
+    const searchText = testCase.extractTextContent(searchResponse);
+    const hasValidHandling =
+      testCase.hasError(searchResponse) ||
+      searchText.toLowerCase().includes('error') ||
+      searchText.toLowerCase().includes('invalid') ||
+      searchText.toLowerCase().includes('limit') ||
+      searchText.includes('[]'); // Empty results are acceptable
+
+    expect(hasValidHandling).toBe(true);
   });
 
   it('should handle malformed JSON structures safely', async () => {
@@ -320,6 +342,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     );
 
     expect(attributesResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        attributesResponse,
+        'get-attributes with invalid resource type',
+        ['error', 'invalid', 'not found', 'unknown']
+      )
+    ).toBe(true);
 
     // Test discover-attributes with malformed parameters
     const discoverResponse = await testCase.executeToolCall(
@@ -331,6 +360,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     );
 
     expect(discoverResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        discoverResponse,
+        'discover-attributes with malformed parameters',
+        ['error', 'invalid', 'unexpected', 'unknown']
+      )
+    ).toBe(true);
 
     // Test get-detailed-info with invalid ID
     const detailedInfoResponse = await testCase.executeToolCall(
@@ -342,6 +378,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     );
 
     expect(detailedInfoResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        detailedInfoResponse,
+        'get-detailed-info with invalid UUID format',
+        ['error', 'invalid', 'not found', 'malformed', 'uuid']
+      )
+    ).toBe(true);
 
     // Test create-note with malformed data (if valid company exists)
     if (testCase['validCompanyId']) {
@@ -352,6 +395,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       });
 
       expect(noteResponse).toBeDefined();
+      expect(
+        testCase.validateEdgeCaseResponse(
+          noteResponse,
+          'create-note with null title',
+          ['error', 'invalid', 'required', 'title', 'missing']
+        )
+      ).toBe(true);
     }
   });
 });
