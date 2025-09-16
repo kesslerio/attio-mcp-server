@@ -15,7 +15,8 @@ permissions:
 
 # Environment variables for comment markers
 env:
-  SIZE_COMMENT_MARKER: '📏 PR Size Analysis'
+  SIZE_COMMENT_MARKER: '📏 Large PR Detected'
+  LEGACY_COMMENT_MARKER: '📏 PR Size Analysis'
 
 jobs:
   size-label:
@@ -188,7 +189,10 @@ jobs:
             try {
               const allComments = await fetchAllComments();
               const existingComment = allComments.find(c =>
-                c.body && c.body.includes(process.env.SIZE_COMMENT_MARKER)
+                c.body && (
+                  c.body.includes(process.env.SIZE_COMMENT_MARKER) ||
+                  c.body.includes(process.env.LEGACY_COMMENT_MARKER)
+                )
               );
 
               const commentBody = buildSizeComment(filesCount, sizeLabel);
