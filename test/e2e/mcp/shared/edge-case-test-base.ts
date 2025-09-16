@@ -354,44 +354,50 @@ export abstract class EdgeCaseTestBase extends MCPTestBase {
    * Replaces weak .toBeDefined() assertions
    */
   protected validateEdgeCaseResponse(
-    response: any,
+    response: CallToolResult,
     context: string,
-    expectedErrorPatterns: string[] = [],
-    shouldBeError: boolean = false
+    options: {
+      expectError: boolean;
+      errorIndicators?: string[];
+      successIndicators?: string[];
+      allowGracefulFallback?: boolean;
+    }
   ): boolean {
     const responseText = this.extractTextContent(response);
+    const normalizedText = responseText.toLowerCase();
     const hasError = this.hasError(response);
 
-    if (shouldBeError) {
-      // For tests that should definitely produce errors
-      const hasExpectedError =
-        hasError ||
-        expectedErrorPatterns.some((pattern) =>
-          responseText.toLowerCase().includes(pattern.toLowerCase())
+    const includesAny = (patterns: string[] | undefined): boolean => {
+      if (!patterns || patterns.length === 0) return false;
+      return patterns.some((pattern) =>
+        normalizedText.includes(pattern.toLowerCase())
+      );
+    };
+
+    if (options.expectError) {
+      const matchedIndicator = includesAny(options.errorIndicators);
+      const passed = hasError || matchedIndicator;
+
+      if (!passed) {
+        console.warn(
+          `⚠️ ${context}: expected error but received "${responseText.substring(0, 100)}..."`
         );
+      }
 
-      // Log for debugging
-      console.log(
-        `🔍 ${context}: shouldBeError=true, hasError=${hasError}, hasExpectedError=${hasExpectedError}, text="${responseText.substring(0, 100)}..."`
-      );
-
-      return hasExpectedError;
-    } else {
-      // For graceful handling tests - should error gracefully (NOT accept invalid input)
-      const hasErrorIndicators = expectedErrorPatterns.some((pattern) =>
-        responseText.toLowerCase().includes(pattern.toLowerCase())
-      );
-
-      // REMOVED: hasMeaningfulResponse fallback - invalid input should not succeed
-      // This was the critical flaw - tests would pass if invalid input wrongly succeeded
-
-      // Log for debugging
-      console.log(
-        `🔍 ${context}: shouldBeError=false, hasError=${hasError}, hasErrorIndicators=${hasErrorIndicators}, text="${responseText.substring(0, 100)}..."`
-      );
-
-      return hasError || hasErrorIndicators;
+      return passed;
     }
+
+    const successMatched = includesAny(options.successIndicators);
+    const passed =
+      !hasError && (successMatched || options.allowGracefulFallback === true);
+
+    if (!passed) {
+      console.warn(
+        `⚠️ ${context}: expected success but received "${responseText.substring(0, 100)}..."`
+      );
+    }
+
+    return passed;
   }
 
   /**

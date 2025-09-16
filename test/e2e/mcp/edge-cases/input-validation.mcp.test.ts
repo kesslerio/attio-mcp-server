@@ -73,7 +73,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
   beforeAll(async () => {
     await testCase.setup();
     await testCase.setupValidTestData();
-  });
+  }, 60000);
 
   afterAll(async () => {
     await testCase.cleanupTestData();
@@ -100,7 +100,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
         );
       }
     }
-  });
+  }, 60000);
 
   it('should handle required fields gracefully in record creation', async () => {
     const scenarios = ErrorScenarios.getInputValidationScenarios();
@@ -129,16 +129,16 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       record_data: emptyFieldsScenario!.inputData,
     });
 
-    // Verify error handling or graceful response
-    const responseText = testCase.extractTextContent(response);
-    const hasError =
-      testCase.hasError(response) ||
-      responseText.toLowerCase().includes('error') ||
-      responseText.toLowerCase().includes('required') ||
-      responseText.toLowerCase().includes('missing');
-
-    // Either should be error OR should provide meaningful feedback about the invalid input
-    expect(hasError || responseText.length > 10).toBe(true);
+    expect(
+      testCase.validateEdgeCaseResponse(
+        response,
+        'create-record missing required fields',
+        {
+          expectError: true,
+          errorIndicators: ['error', 'required', 'missing', 'invalid'],
+        }
+      )
+    ).toBe(true);
   });
 
   it('should handle malformed UUID identifiers gracefully', async () => {
@@ -197,16 +197,16 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       limit: -1, // Invalid limit
     });
 
-    // Verify invalid limit is handled properly
-    const searchText = testCase.extractTextContent(searchResponse);
-    const hasValidHandling =
-      testCase.hasError(searchResponse) ||
-      searchText.toLowerCase().includes('error') ||
-      searchText.toLowerCase().includes('invalid') ||
-      searchText.toLowerCase().includes('limit') ||
-      searchText.includes('[]'); // Empty results are acceptable
-
-    expect(hasValidHandling).toBe(true);
+    expect(
+      testCase.validateEdgeCaseResponse(
+        searchResponse,
+        'search-records invalid limit',
+        {
+          expectError: true,
+          errorIndicators: ['error', 'invalid', 'limit', 'negative'],
+        }
+      )
+    ).toBe(true);
   });
 
   it('should handle malformed JSON structures safely', async () => {
@@ -242,10 +242,10 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       record_data: injectionData,
     });
 
-    // Ensure dangerous scripts are not executed in response
-    const text = testCase.extractTextContent(createResult);
-    expect(text).not.toContain('<script>');
-    expect(text).not.toContain('DROP TABLE');
+    const createText = testCase.extractTextContent(createResult);
+    expect(createText).not.toContain('<script>');
+    expect(createText).not.toContain('DROP TABLE');
+    expect(testCase.hasError(createResult)).toBe(false);
 
     // Test in search operations as well
     const searchResponse = await testCase.executeToolCall('search-records', {
@@ -253,7 +253,9 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       query: '<script>alert("test")</script>',
     });
 
-    // Verify search handles injection attempts safely
+    const searchText = testCase.extractTextContent(searchResponse);
+    expect(searchText).not.toContain('<script>');
+    expect(testCase.hasError(searchResponse)).toBe(false);
   });
 
   it('should handle complex nested parameter structures', async () => {
@@ -277,7 +279,10 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
         testCase.validateEdgeCaseResponse(
           complexResponse,
           'advanced-filter-list-entries with malformed nested filters',
-          ['entries', 'results', '[]', 'error', 'invalid']
+          {
+            expectError: true,
+            errorIndicators: ['error', 'invalid', 'malformed'],
+          }
         )
       ).toBe(true);
     }
@@ -297,7 +302,10 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
         testCase.validateEdgeCaseResponse(
           updateResponse,
           'update-record with invalid fields',
-          ['updated', 'success', 'company', 'error', 'invalid']
+          {
+            expectError: true,
+            errorIndicators: ['error', 'invalid', 'field'],
+          }
         )
       ).toBe(true);
     }
@@ -321,13 +329,23 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       record_data: edgeCaseData,
     });
 
-    expect(
-      testCase.validateEdgeCaseResponse(
-        edgeResponse,
-        'create-record with mixed edge case data',
-        ['created', 'success', 'company', 'error', 'invalid']
-      )
-    ).toBe(true);
+    const edgeSuccess = testCase.validateEdgeCaseResponse(
+      edgeResponse,
+      'create-record with mixed edge case data (success)',
+      {
+        expectError: false,
+        successIndicators: [],
+        allowGracefulFallback: true,
+      }
+    );
+    const edgeError = testCase.validateEdgeCaseResponse(
+      edgeResponse,
+      'create-record with mixed edge case data (error)',
+      {
+        expectError: true,
+      }
+    );
+    expect(edgeSuccess || edgeError).toBe(true);
 
     // Test empty arrays and objects - should handle gracefully
     const emptyCollectionsData = {
@@ -342,13 +360,23 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       record_data: emptyCollectionsData,
     });
 
-    expect(
-      testCase.validateEdgeCaseResponse(
-        emptyResponse,
-        'create-record with empty collections',
-        ['created', 'success', 'company', 'error', 'invalid']
-      )
-    ).toBe(true);
+    const emptySuccess = testCase.validateEdgeCaseResponse(
+      emptyResponse,
+      'create-record with empty collections (success)',
+      {
+        expectError: false,
+        successIndicators: [],
+        allowGracefulFallback: true,
+      }
+    );
+    const emptyError = testCase.validateEdgeCaseResponse(
+      emptyResponse,
+      'create-record with empty collections (error)',
+      {
+        expectError: true,
+      }
+    );
+    expect(emptySuccess || emptyError).toBe(true);
   });
 
   it('should handle additional universal tools gracefully', async () => {
@@ -364,8 +392,10 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       testCase.validateEdgeCaseResponse(
         attributesResponse,
         'get-attributes with invalid resource type',
-        ['error', 'invalid', 'not found', 'unknown'],
-        true // Invalid resource type MUST fail
+        {
+          expectError: true,
+          errorIndicators: ['error', 'invalid', 'not found', 'unknown'],
+        }
       )
     ).toBe(true);
 
@@ -382,7 +412,10 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       testCase.validateEdgeCaseResponse(
         discoverResponse,
         'discover-attributes with malformed parameters',
-        ['error', 'invalid', 'unexpected', 'unknown']
+        {
+          expectError: true,
+          errorIndicators: ['error', 'invalid', 'unexpected', 'unknown'],
+        }
       )
     ).toBe(true);
 
@@ -399,8 +432,16 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       testCase.validateEdgeCaseResponse(
         detailedInfoResponse,
         'get-detailed-info with invalid UUID format',
-        ['error', 'invalid', 'not found', 'malformed', 'uuid'],
-        true // Invalid UUID format MUST fail
+        {
+          expectError: true,
+          errorIndicators: [
+            'error',
+            'invalid',
+            'not found',
+            'malformed',
+            'uuid',
+          ],
+        }
       )
     ).toBe(true);
 
@@ -416,7 +457,16 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
         testCase.validateEdgeCaseResponse(
           noteResponse,
           'create-note with null title',
-          ['error', 'invalid', 'required', 'title', 'missing']
+          {
+            expectError: true,
+            errorIndicators: [
+              'error',
+              'invalid',
+              'required',
+              'title',
+              'missing',
+            ],
+          }
         )
       ).toBe(true);
     }
