@@ -4,9 +4,19 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Cancel previous runs on new commits
+concurrency:
+  group: pr-size-labeler-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
+
+# Environment variables for comment markers
+env:
+  SIZE_COMMENT_MARKER: '📏 Large PR Detected'
+  LEGACY_COMMENT_MARKER: '📏 PR Size Analysis'
 
 jobs:
   size-label:
@@ -80,69 +90,134 @@ jobs:
 
             console.log(`PR size: ${sizeLabel} (${filesCount} files)`);
 
-            // Remove any existing size labels
+            // Check existing labels to avoid unnecessary changes
             const existingLabels = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number
             });
 
-            for (const label of existingLabels.data) {
-              if (label.name.startsWith('size/')) {
-                await github.rest.issues.removeLabel({
+            const currentSizeLabels = existingLabels.data.filter(label => label.name.startsWith('size/'));
+            const hasCorrectLabel = currentSizeLabels.some(label => label.name === sizeLabel);
+
+            if (hasCorrectLabel && currentSizeLabels.length === 1) {
+              console.log(`Correct size label '${sizeLabel}' already applied, skipping update`);
+            } else {
+              // Remove incorrect size labels
+              for (const label of currentSizeLabels) {
+                if (label.name !== sizeLabel) {
+                  console.log(`Removing incorrect label: ${label.name}`);
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    name: label.name
+                  });
+                }
+              }
+
+              // Create the size label if it doesn't exist
+              if (!hasCorrectLabel) {
+                try {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: sizeLabel,
+                    color: sizeColor,
+                    description: sizeDescription
+                  });
+                } catch (error) {
+                  // Label might already exist, that's fine
+                  console.log(`Label ${sizeLabel} might already exist: ${error.message}`);
+                }
+
+                // Apply the new size label
+                console.log(`Adding new size label: ${sizeLabel}`);
+                await github.rest.issues.addLabels({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: context.issue.number,
-                  name: label.name
+                  labels: [sizeLabel]
                 });
               }
             }
 
-            // Create the size label if it doesn't exist
-            try {
-              await github.rest.issues.createLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: sizeLabel,
-                color: sizeColor,
-                description: sizeDescription
-              });
-            } catch (error) {
-              // Label might already exist, that's fine
-              console.log(`Label ${sizeLabel} might already exist: ${error.message}`);
+            // Inline pagination helper
+            async function fetchAllComments() {
+              let allComments = [];
+              let page = 1;
+
+              while (true) {
+                const { data } = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  per_page: 100,
+                  page: page
+                });
+
+                allComments = allComments.concat(data);
+                if (data.length < 100) break;
+                page++;
+              }
+
+              return allComments;
             }
 
-            // Apply the new size label
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              labels: [sizeLabel]
-            });
+            // Centralized comment body builder
+            function buildSizeComment(filesCount, sizeLabel) {
+              return `## ${{ env.SIZE_COMMENT_MARKER }}
 
-            // Add comment for XL PRs
-            if (sizeLabel === 'size/XL') {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: `## 📏 Large PR Detected
-                
-                This PR changes **${filesCount} files** and has been labeled as \`${sizeLabel}\`.
-                
-                **Considerations for large PRs:**
-                - Consider breaking into smaller, focused PRs
-                - Claude analysis will run in summary-only mode
-                - Review time may be longer
-                - Increased risk of merge conflicts
-                
-                If this PR must remain large, ensure it has:
-                - [ ] Clear description of all changes
-                - [ ] Comprehensive test coverage
-                - [ ] Breaking changes documented
-                
-                Use \`/claude review\` to request detailed analysis if needed.`
-              });
+            **Current Size:** \`${sizeLabel}\` (${filesCount} files)
+
+            ${sizeLabel === 'size/XL' ? `
+            ### ⚠️ Large PR Considerations:
+            - Consider breaking into smaller, focused PRs
+            - Review time may be longer
+            - Increased risk of merge conflicts
+
+            **If this PR must remain large, ensure it has:**
+            - [ ] Clear description of all changes
+            - [ ] Comprehensive test coverage
+            - [ ] Breaking changes documented
+            ` : ''}
+
+            *Last updated: ${new Date().toISOString()}*`;
+            }
+
+            // ALWAYS refresh or create comment (runs regardless of label changes)
+            try {
+              const allComments = await fetchAllComments();
+              const existingComment = allComments.find(c =>
+                c.body && (
+                  c.body.includes(process.env.SIZE_COMMENT_MARKER) ||
+                  c.body.includes(process.env.LEGACY_COMMENT_MARKER)
+                )
+              );
+
+              const commentBody = buildSizeComment(filesCount, sizeLabel);
+
+              if (existingComment) {
+                // Update existing comment with fresh data
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingComment.id,
+                  body: commentBody
+                });
+                console.log('Updated existing size comment with fresh data');
+              } else if (sizeLabel === 'size/XL' || sizeLabel === 'size/L') {
+                // Create new comment for L/XL sizes
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: commentBody
+                });
+                console.log('Created new size comment');
+              }
+            } catch (error) {
+              console.log('Error handling size comment:', error.message);
             }
 
             console.log(`Applied label: ${sizeLabel}`);

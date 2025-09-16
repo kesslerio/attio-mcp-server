@@ -10,6 +10,11 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+# Prevent concurrent performance tests on the same PR/branch
+concurrency:
+  group: performance-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   performance-regression:
     runs-on: ubuntu-latest
