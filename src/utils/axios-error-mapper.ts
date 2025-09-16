@@ -250,7 +250,9 @@ export const handleSelectOptionError = async (
           const schema = await getAttributeSchema(resourceType, fieldName);
           if (
             schema &&
-            (schema.type === 'select' || schema.isMultiselect === true)
+            (schema.type === 'select' ||
+              schema.type === 'multi_select' ||
+              schema.isMultiselect === true)
           ) {
             const options = await loadOptions(fieldName);
             if (options && options.length > 0) {
@@ -282,7 +284,8 @@ export const handleSelectOptionError = async (
                   `Field "${fieldName}" (value: "${fieldValueString}") - valid options: ${validOptions}`
                 );
               } else if (
-                schema.isMultiselect === true &&
+                (schema.isMultiselect === true ||
+                  schema.type === 'multi_select') &&
                 typeof fieldValue === 'string'
               ) {
                 // Catch format errors (string instead of array for multi-select)
