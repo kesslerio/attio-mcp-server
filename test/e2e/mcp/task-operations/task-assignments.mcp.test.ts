@@ -20,39 +20,11 @@ import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 class TaskAssignmentTests extends MCPTestBase {
   private qa: QAAssertions;
   private testDataFactory: TestDataFactory;
-  private createdTaskIds: string[] = [];
 
   constructor() {
     super('TASK_ASSIGN');
     this.qa = new QAAssertions();
     this.testDataFactory = new TestDataFactory();
-  }
-
-  /**
-   * Track task ID for cleanup
-   */
-  private trackTaskForCleanup(taskId: string): void {
-    if (taskId && !this.createdTaskIds.includes(taskId)) {
-      this.createdTaskIds.push(taskId);
-    }
-  }
-
-  /**
-   * Clean up all created tasks
-   */
-  async cleanupCreatedTasks(): Promise<void> {
-    for (const taskId of this.createdTaskIds) {
-      try {
-        await this.executeToolCall('delete-record', {
-          resource_type: 'tasks',
-          record_id: taskId,
-        });
-        console.log(`✅ Cleaned up task ${taskId}`);
-      } catch (error) {
-        console.warn(`⚠️ Failed to cleanup task ${taskId}:`, error);
-      }
-    }
-    this.createdTaskIds.length = 0;
   }
 
   /**
@@ -78,7 +50,7 @@ class TaskAssignmentTests extends MCPTestBase {
       throw new Error('Failed to extract task ID from create response');
     }
 
-    this.trackTaskForCleanup(taskId);
+    this.trackRecord('tasks', taskId);
     return taskId;
   }
 }
@@ -93,7 +65,7 @@ describe('MCP P1 Task Assignment Operations', () => {
 
   afterEach(async () => {
     try {
-      await testSuite.cleanupCreatedTasks();
+      await testSuite.cleanupTestData();
     } finally {
       await testSuite.teardown();
     }

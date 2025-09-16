@@ -5,6 +5,7 @@
 
 import { MCPTestClient } from 'mcp-test-client';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { TestDataFactory } from './test-data-factory.js';
 
 export interface MCPTestConfig {
   serverCommand?: string;
@@ -21,6 +22,7 @@ export abstract class MCPTestBase {
     process.env.MCP_TEST_RATE_LIMIT_MS || '100',
     10
   );
+  private createdRecords: Array<{ type: string; id: string }> = [];
 
   constructor(testPrefix: string = 'TC') {
     this.testPrefix = testPrefix;
@@ -60,6 +62,79 @@ export abstract class MCPTestBase {
     if (this.client) {
       await this.client.cleanup();
     }
+  }
+
+  /**
+   * Track a record created during the test run so cleanup hooks can delete it reliably.
+   * Uses a simple de-dupe to avoid hitting the API multiple times for the same record.
+   */
+  public trackRecord(type: string, id: string | null | undefined): void {
+    if (!type || !id) {
+      return;
+    }
+
+    const alreadyTracked = this.createdRecords.some(
+      (record) => record.type === type && record.id === id
+    );
+
+    if (!alreadyTracked) {
+      this.createdRecords.push({ type, id });
+    }
+
+    TestDataFactory.trackRecord(type, id);
+  }
+
+  /**
+   * Delete all tracked records using the universal delete tool.
+   * Always best-effort: failures are logged but do not throw to keep tests from cascading.
+   */
+  public async cleanupTestData(): Promise<void> {
+    const trackedByInstance = [...this.createdRecords];
+    const trackedByFactory = TestDataFactory.getTrackedRecords();
+
+    // Merge and de-dupe by resource type + id
+    const allTracked = new Map<string, { type: string; id: string }>();
+    for (const record of [...trackedByInstance, ...trackedByFactory]) {
+      const key = `${record.type}:${record.id}`;
+      if (!allTracked.has(key)) {
+        allTracked.set(key, record);
+      }
+    }
+
+    if (allTracked.size === 0) {
+      return;
+    }
+
+    for (const { type, id } of allTracked.values()) {
+      try {
+        const result = await this.executeToolCall('delete-record', {
+          resource_type: type,
+          record_id: id,
+        });
+
+        const text = this.extractTextContent(result);
+
+        if (result.isError && !this.isBenignCleanupFailure(text)) {
+          console.warn(`⚠️ Cleanup failed for ${type} ${id}: ${text}`);
+        } else {
+          console.log(`✅ Cleanup removed ${type} ${id}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Cleanup threw for ${type} ${id}:`, error);
+      }
+    }
+
+    this.createdRecords = [];
+    TestDataFactory.clearTrackedRecords();
+  }
+
+  private isBenignCleanupFailure(responseText: string): boolean {
+    const normalized = responseText.toLowerCase();
+    return (
+      normalized.includes('not found') ||
+      normalized.includes('already deleted') ||
+      normalized.includes('does not exist')
+    );
   }
 
   /**

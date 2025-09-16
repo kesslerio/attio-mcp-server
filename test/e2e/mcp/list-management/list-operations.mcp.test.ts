@@ -1,7 +1,7 @@
 /**
  * TC-006: List Operations - Basic List Management
  * P1 Essential Test
- * 
+ *
  * Validates basic list operations including retrieval and details.
  * Must achieve 80% pass rate as part of P1 quality gate.
  */
@@ -29,7 +29,7 @@ class ListOperationsTest extends MCPTestBase {
       const companyData = TestDataFactory.createCompanyData('TC006');
       const createResult = await this.executeToolCall('create-record', {
         resource_type: 'companies',
-        record_data: companyData
+        record_data: companyData,
       });
 
       if (!createResult.isError) {
@@ -37,7 +37,7 @@ class ListOperationsTest extends MCPTestBase {
         const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
         if (idMatch) {
           this.testCompanyId = idMatch[1];
-          TestDataFactory.trackRecord('companies', this.testCompanyId);
+          this.trackRecord('companies', this.testCompanyId);
         }
       }
     } catch (error) {
@@ -49,10 +49,7 @@ class ListOperationsTest extends MCPTestBase {
    * Cleanup test data
    */
   async cleanupTestData(): Promise<void> {
-    // Cleanup will be handled by parent class
-    if (this.testCompanyId) {
-      TestDataFactory.trackRecord('companies', this.testCompanyId);
-    }
+    await super.cleanupTestData();
   }
 }
 
@@ -65,20 +62,26 @@ describe('TC-006: List Operations - Basic List Management', () => {
     await testCase.setupTestData();
   });
 
+  afterEach(async () => {
+    await testCase.cleanupTestData();
+  });
+
   afterAll(async () => {
     await testCase.cleanupTestData();
     await testCase.teardown();
-    
+
     // Log quality gate results for this test case
-    const passedCount = results.filter(r => r.passed).length;
+    const passedCount = results.filter((r) => r.passed).length;
     const totalCount = results.length;
     console.log(`\nTC-006 Results: ${passedCount}/${totalCount} passed`);
-    
+
     // P1 tests require 80% pass rate
     if (totalCount > 0) {
       const passRate = (passedCount / totalCount) * 100;
       if (passRate < 80) {
-        console.warn(`⚠️ TC-006 below P1 threshold: ${passRate.toFixed(1)}% (required: 80%)`);
+        console.warn(
+          `⚠️ TC-006 below P1 threshold: ${passRate.toFixed(1)}% (required: 80%)`
+        );
       }
     }
   });
@@ -92,15 +95,15 @@ describe('TC-006: List Operations - Basic List Management', () => {
       const result = await testCase.executeToolCall('get-lists', {});
 
       QAAssertions.assertValidListResponse(result, 'get-lists');
-      
+
       // Verify response contains array of lists
       const text = result.content?.[0]?.text || '';
       expect(text).toBeTruthy();
-      
+
       // Should be a JSON array
       const lists = JSON.parse(text);
       expect(Array.isArray(lists)).toBe(true);
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -120,7 +123,7 @@ describe('TC-006: List Operations - Basic List Management', () => {
       const listsResult = await testCase.executeToolCall('get-lists', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
-      
+
       if (!Array.isArray(lists) || lists.length === 0) {
         console.log('No lists available for detail test, skipping');
         passed = true;
@@ -128,19 +131,19 @@ describe('TC-006: List Operations - Basic List Management', () => {
       }
 
       const testListId = lists[0].id?.list_id || lists[0].api_slug;
-      
+
       const result = await testCase.executeToolCall('get-list-details', {
-        listId: testListId
+        listId: testListId,
       });
 
       QAAssertions.assertValidListResponse(result, 'get-list-details');
-      
+
       // Verify response contains list details
       const text = result.content?.[0]?.text || '';
       const listDetails = JSON.parse(text);
       expect(listDetails).toBeDefined();
       expect(listDetails.id).toBeDefined();
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -160,7 +163,7 @@ describe('TC-006: List Operations - Basic List Management', () => {
       const listsResult = await testCase.executeToolCall('get-lists', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
-      
+
       if (!Array.isArray(lists) || lists.length === 0) {
         console.log('No lists available for entries test, skipping');
         passed = true;
@@ -168,14 +171,14 @@ describe('TC-006: List Operations - Basic List Management', () => {
       }
 
       const testListId = lists[0].id?.list_id || lists[0].api_slug;
-      
+
       const result = await testCase.executeToolCall('get-list-entries', {
         listId: testListId,
-        limit: 10
+        limit: 10,
       });
 
       QAAssertions.assertValidListResponse(result, 'get-list-entries');
-      
+
       // Verify response contains array of entries
       const text = result.content?.[0]?.text || '';
       if (text.toLowerCase().includes('error')) {
@@ -187,7 +190,7 @@ describe('TC-006: List Operations - Basic List Management', () => {
         const entries = JSON.parse(text);
         expect(Array.isArray(entries)).toBe(true);
       }
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -207,7 +210,7 @@ describe('TC-006: List Operations - Basic List Management', () => {
       const listsResult = await testCase.executeToolCall('get-lists', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
-      
+
       if (!Array.isArray(lists) || lists.length === 0) {
         console.log('No lists available for pagination test, skipping');
         passed = true;
@@ -215,25 +218,25 @@ describe('TC-006: List Operations - Basic List Management', () => {
       }
 
       const testListId = lists[0].id?.list_id || lists[0].api_slug;
-      
+
       // Test with pagination parameters
       const result = await testCase.executeToolCall('get-list-entries', {
         listId: testListId,
         limit: 5,
-        offset: 0
+        offset: 0,
       });
 
       QAAssertions.assertValidListResponse(result, 'get-list-entries');
-      
+
       // Test second page
       const result2 = await testCase.executeToolCall('get-list-entries', {
         listId: testListId,
         limit: 5,
-        offset: 5
+        offset: 5,
       });
 
       QAAssertions.assertValidListResponse(result2, 'get-list-entries');
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);

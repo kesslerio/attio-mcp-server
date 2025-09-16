@@ -1,7 +1,7 @@
 /**
  * TC-002: Get Record Details - Data Retrieval
  * P0 Core Test - MANDATORY
- * 
+ *
  * Validates ability to retrieve specific record details by ID.
  * Must achieve 100% pass rate as part of P0 quality gate.
  */
@@ -22,7 +22,7 @@ class RecordDetailsTest extends MCPTestBase {
 describe('TC-002: Get Record Details - Data Retrieval', () => {
   const testCase = new RecordDetailsTest();
   const results: TestResult[] = [];
-  
+
   // Store IDs from search for detail retrieval
   let companyId: string | null = null;
   let personId: string | null = null;
@@ -30,51 +30,49 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
 
   beforeAll(async () => {
     await testCase.setup();
-    
+
     // First, we need to get some valid record IDs by searching
     try {
       // Search for companies to get an ID
-      const companySearch = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'companies',
-          limit: 1
-        }
-      );
+      const companySearch = await testCase.executeToolCall('search-records', {
+        resource_type: 'companies',
+        limit: 1,
+      });
       const companyText = testCase.extractTextContent(companySearch);
       companyId = testCase.extractRecordId(companyText);
-      
+
       // Search for people to get an ID
-      const personSearch = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'people',
-          limit: 1
-        }
-      );
+      const personSearch = await testCase.executeToolCall('search-records', {
+        resource_type: 'people',
+        limit: 1,
+      });
       const personText = testCase.extractTextContent(personSearch);
       personId = testCase.extractRecordId(personText);
-      
+
       // Search for tasks to get an ID
-      const taskSearch = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'tasks',
-          limit: 1
-        }
-      );
+      const taskSearch = await testCase.executeToolCall('search-records', {
+        resource_type: 'tasks',
+        limit: 1,
+      });
       const taskText = testCase.extractTextContent(taskSearch);
       taskId = testCase.extractRecordId(taskText);
     } catch (e) {
-      console.log('Warning: Could not retrieve IDs for testing. Some tests may be skipped.');
+      console.log(
+        'Warning: Could not retrieve IDs for testing. Some tests may be skipped.'
+      );
     }
   });
 
+  afterEach(async () => {
+    await testCase.cleanupTestData();
+  });
+
   afterAll(async () => {
+    await testCase.cleanupTestData();
     await testCase.teardown();
-    
+
     // Log quality gate results for this test case
-    const passedCount = results.filter(r => r.passed).length;
+    const passedCount = results.filter((r) => r.passed).length;
     const totalCount = results.length;
     console.log(`\nTC-002 Results: ${passedCount}/${totalCount} passed`);
   });
@@ -87,28 +85,26 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     try {
       if (!companyId) {
         // If we don't have a valid ID, we'll test error handling
-        const result = await testCase.executeToolCall(
-          'get-record-details',
-          {
-            resource_type: 'companies',
-            record_id: 'INVALID_ID_TC002'
-          }
-        );
-        
+        const result = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'companies',
+          record_id: 'INVALID_ID_TC002',
+        });
+
         // Should handle invalid ID gracefully
-        QAAssertions.assertRecordNotFound(result, 'companies', 'INVALID_ID_TC002');
-      } else {
-        const result = await testCase.executeToolCall(
-          'get-record-details',
-          {
-            resource_type: 'companies',
-            record_id: companyId
-          }
+        QAAssertions.assertRecordNotFound(
+          result,
+          'companies',
+          'INVALID_ID_TC002'
         );
-        
+      } else {
+        const result = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'companies',
+          record_id: companyId,
+        });
+
         QAAssertions.assertValidRecordDetails(result, 'companies', companyId);
       }
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -126,27 +122,21 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     try {
       if (!personId) {
         // Test error handling for invalid ID
-        const result = await testCase.executeToolCall(
-          'get-record-details',
-          {
-            resource_type: 'people',
-            record_id: 'INVALID_ID_TC002'
-          }
-        );
-        
+        const result = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'people',
+          record_id: 'INVALID_ID_TC002',
+        });
+
         QAAssertions.assertRecordNotFound(result, 'people', 'INVALID_ID_TC002');
       } else {
-        const result = await testCase.executeToolCall(
-          'get-record-details',
-          {
-            resource_type: 'people',
-            record_id: personId
-          }
-        );
-        
+        const result = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'people',
+          record_id: personId,
+        });
+
         QAAssertions.assertValidRecordDetails(result, 'people', personId);
       }
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -164,27 +154,21 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     try {
       if (!taskId) {
         // Test error handling for invalid ID
-        const result = await testCase.executeToolCall(
-          'get-record-details',
-          {
-            resource_type: 'tasks',
-            record_id: 'INVALID_ID_TC002'
-          }
-        );
-        
+        const result = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'tasks',
+          record_id: 'INVALID_ID_TC002',
+        });
+
         QAAssertions.assertRecordNotFound(result, 'tasks', 'INVALID_ID_TC002');
       } else {
-        const result = await testCase.executeToolCall(
-          'get-record-details',
-          {
-            resource_type: 'tasks',
-            record_id: taskId
-          }
-        );
-        
+        const result = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'tasks',
+          record_id: taskId,
+        });
+
         QAAssertions.assertValidRecordDetails(result, 'tasks', taskId);
       }
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -201,18 +185,15 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
 
     try {
       const fakeId = 'NONEXISTENT_' + Date.now();
-      const result = await testCase.executeToolCall(
-        'get-record-details',
-        {
-          resource_type: 'companies',
-          record_id: fakeId
-        }
-      );
-      
+      const result = await testCase.executeToolCall('get-record-details', {
+        resource_type: 'companies',
+        record_id: fakeId,
+      });
+
       // The result should exist (not undefined)
       expect(result).toBeDefined();
       expect(result?.content).toBeTruthy();
-      
+
       // Should return appropriate error or not found message
       QAAssertions.assertRecordNotFound(result, 'companies', fakeId);
       passed = true;
@@ -232,21 +213,18 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     try {
       // Use company ID if available
       if (companyId) {
-        const result = await testCase.executeToolCall(
-          'get-record-details',
-          {
-            resource_type: 'companies',
-            record_id: companyId
-          }
-        );
-        
+        const result = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'companies',
+          record_id: companyId,
+        });
+
         const text = testCase.extractTextContent(result);
-        
+
         // Verify we got substantial data back (not just an ID)
         expect(text.length).toBeGreaterThan(50);
         expect(result.isError).toBeFalsy();
       }
-      
+
       passed = true;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);

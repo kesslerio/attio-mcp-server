@@ -1,7 +1,7 @@
 /**
  * TC-001: Search Records - Basic Search Functionality
  * P0 Core Test - MANDATORY
- * 
+ *
  * Validates basic search capabilities across all resource types.
  * Must achieve 100% pass rate as part of P0 quality gate.
  */
@@ -26,11 +26,16 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     await testCase.setup();
   });
 
+  afterEach(async () => {
+    await testCase.cleanupTestData();
+  });
+
   afterAll(async () => {
+    await testCase.cleanupTestData();
     await testCase.teardown();
-    
+
     // Log quality gate results for this test case
-    const passedCount = results.filter(r => r.passed).length;
+    const passedCount = results.filter((r) => r.passed).length;
     const totalCount = results.length;
     console.log(`\nTC-001 Results: ${passedCount}/${totalCount} passed`);
   });
@@ -41,14 +46,11 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'companies',
-          query: TestDataFactory.createSearchQuery('TC001'),
-          limit: 5
-        }
-      );
+      const result = await testCase.executeToolCall('search-records', {
+        resource_type: 'companies',
+        query: TestDataFactory.createSearchQuery('TC001'),
+        limit: 5,
+      });
 
       QAAssertions.assertValidSearchResults(result, 'companies');
       passed = true;
@@ -66,14 +68,11 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'people',
-          query: TestDataFactory.createSearchQuery('TC001'),
-          limit: 5
-        }
-      );
+      const result = await testCase.executeToolCall('search-records', {
+        resource_type: 'people',
+        query: TestDataFactory.createSearchQuery('TC001'),
+        limit: 5,
+      });
 
       QAAssertions.assertValidSearchResults(result, 'people');
       passed = true;
@@ -91,14 +90,11 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'tasks',
-          query: TestDataFactory.createSearchQuery('TC001'),
-          limit: 5
-        }
-      );
+      const result = await testCase.executeToolCall('search-records', {
+        resource_type: 'tasks',
+        query: TestDataFactory.createSearchQuery('TC001'),
+        limit: 5,
+      });
 
       QAAssertions.assertValidSearchResults(result, 'tasks');
       passed = true;
@@ -120,14 +116,11 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
       const responses = [];
 
       for (const resourceType of resourceTypes) {
-        const result = await testCase.executeToolCall(
-          'search-records',
-          {
-            resource_type: resourceType,
-            query: TestDataFactory.createSearchQuery('TC001'),
-            limit: 2
-          }
-        );
+        const result = await testCase.executeToolCall('search-records', {
+          resource_type: resourceType,
+          query: TestDataFactory.createSearchQuery('TC001'),
+          limit: 2,
+        });
         responses.push(result);
       }
 
@@ -157,14 +150,11 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
 
     try {
       // Search for something unlikely to exist
-      const result = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'companies',
-          query: 'NONEXISTENT_COMPANY_' + Date.now(),
-          limit: 5
-        }
-      );
+      const result = await testCase.executeToolCall('search-records', {
+        resource_type: 'companies',
+        query: 'NONEXISTENT_COMPANY_' + Date.now(),
+        limit: 5,
+      });
 
       // Should not error, just return empty or no results
       expect(result.isError).toBeFalsy();
@@ -184,14 +174,11 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall(
-        'search-records',
-        {
-          resource_type: 'companies',
-          query: TestDataFactory.createSearchQuery('TC001'),
-          limit: 3
-        }
-      );
+      const result = await testCase.executeToolCall('search-records', {
+        resource_type: 'companies',
+        query: TestDataFactory.createSearchQuery('TC001'),
+        limit: 3,
+      });
 
       expect(result.isError).toBeFalsy();
       // Note: Actual validation of limit would require parsing the response

@@ -1,7 +1,7 @@
 /**
  * TC-N02: Note Relationship Operations - Note Parent Attachments
  * P1 Essential Test
- * 
+ *
  * Validates note relationships and parent record attachments.
  * Must achieve 100% pass rate as part of P1 quality gate.
  */
@@ -29,11 +29,12 @@ class NoteRelationshipsTest extends MCPTestBase {
    */
   async setupTestData(): Promise<void> {
     try {
+      this.createdNotes = [];
       // Create first test company
       const companyData1 = TestDataFactory.createCompanyData('TCN02_Company1');
       const companyResult1 = await this.executeToolCall('create-record', {
         resource_type: 'companies',
-        record_data: companyData1
+        record_data: companyData1,
       });
 
       if (!companyResult1.isError) {
@@ -41,7 +42,7 @@ class NoteRelationshipsTest extends MCPTestBase {
         const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
         if (idMatch) {
           this.testCompanyId = idMatch[1];
-          TestDataFactory.trackRecord('companies', this.testCompanyId);
+          this.trackRecord('companies', this.testCompanyId);
         }
       }
 
@@ -49,7 +50,7 @@ class NoteRelationshipsTest extends MCPTestBase {
       const companyData2 = TestDataFactory.createCompanyData('TCN02_Company2');
       const companyResult2 = await this.executeToolCall('create-record', {
         resource_type: 'companies',
-        record_data: companyData2
+        record_data: companyData2,
       });
 
       if (!companyResult2.isError) {
@@ -57,7 +58,7 @@ class NoteRelationshipsTest extends MCPTestBase {
         const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
         if (idMatch) {
           this.secondCompanyId = idMatch[1];
-          TestDataFactory.trackRecord('companies', this.secondCompanyId);
+          this.trackRecord('companies', this.secondCompanyId);
         }
       }
 
@@ -65,7 +66,7 @@ class NoteRelationshipsTest extends MCPTestBase {
       const personData = TestDataFactory.createPersonData('TCN02');
       const personResult = await this.executeToolCall('create-record', {
         resource_type: 'people',
-        record_data: personData
+        record_data: personData,
       });
 
       if (!personResult.isError) {
@@ -73,7 +74,7 @@ class NoteRelationshipsTest extends MCPTestBase {
         const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
         if (idMatch) {
           this.testPersonId = idMatch[1];
-          TestDataFactory.trackRecord('people', this.testPersonId);
+          this.trackRecord('people', this.testPersonId);
         }
       }
 
@@ -82,7 +83,7 @@ class NoteRelationshipsTest extends MCPTestBase {
         const dealData = TestDataFactory.createDealData('TCN02');
         const dealResult = await this.executeToolCall('create-record', {
           resource_type: 'deals',
-          record_data: dealData
+          record_data: dealData,
         });
 
         if (!dealResult.isError) {
@@ -90,7 +91,7 @@ class NoteRelationshipsTest extends MCPTestBase {
           const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
           if (idMatch) {
             this.testDealId = idMatch[1];
-            TestDataFactory.trackRecord('deals', this.testDealId);
+            this.trackRecord('deals', this.testDealId);
           }
         }
       } catch (error) {
@@ -110,7 +111,7 @@ class NoteRelationshipsTest extends MCPTestBase {
         // Try to delete via universal delete if supported
         await this.executeToolCall('delete-record', {
           resource_type: 'notes',
-          record_id: noteId
+          record_id: noteId,
         });
       } catch (error) {
         console.warn(`Failed to delete note ${noteId}:`, error);
@@ -124,7 +125,7 @@ class NoteRelationshipsTest extends MCPTestBase {
    */
   trackNote(noteId: string): void {
     this.createdNotes.push(noteId);
-    TestDataFactory.trackRecord('notes', noteId);
+    this.trackRecord('notes', noteId);
   }
 
   /**
@@ -132,7 +133,7 @@ class NoteRelationshipsTest extends MCPTestBase {
    */
   async cleanupTestData(): Promise<void> {
     await this.cleanupNotes();
-    // Parent record cleanup will be handled by TestDataFactory tracking
+    await super.cleanupTestData();
   }
 }
 
@@ -142,28 +143,33 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
 
   beforeAll(async () => {
     await testCase.setup();
+  });
+
+  beforeEach(async () => {
+    await testCase.cleanupTestData();
     await testCase.setupTestData();
   });
 
   afterEach(async () => {
-    // Clean up notes after each test to prevent pollution
-    await testCase.cleanupNotes();
+    await testCase.cleanupTestData();
   });
 
   afterAll(async () => {
     await testCase.cleanupTestData();
     await testCase.teardown();
-    
+
     // Log quality gate results for this test case
-    const passedCount = results.filter(r => r.passed).length;
+    const passedCount = results.filter((r) => r.passed).length;
     const totalCount = results.length;
     console.log(`\nTC-N02 Results: ${passedCount}/${totalCount} passed`);
-    
+
     // P1 tests require 100% pass rate for notes
     if (totalCount > 0) {
       const passRate = (passedCount / totalCount) * 100;
       if (passRate < 100) {
-        console.warn(`⚠️ TC-N02 below P1 threshold: ${passRate.toFixed(1)}% (required: 100%)`);
+        console.warn(
+          `⚠️ TC-N02 below P1 threshold: ${passRate.toFixed(1)}% (required: 100%)`
+        );
       }
     }
   });
@@ -184,11 +190,11 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         resource_type: 'companies',
         record_id: testCase.testCompanyId,
         title: noteData.title,
-        content: noteData.content
+        content: noteData.content,
       });
 
       expect(createResult.isError).toBeFalsy();
-      
+
       // Extract note ID for cleanup
       const createText = createResult.content?.[0]?.text || '';
       const idMatch = createText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
@@ -200,11 +206,11 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
       const notesResult = await testCase.executeToolCall('list-notes', {
         resource_type: 'companies',
         record_id: testCase.testCompanyId,
-        limit: 10
+        limit: 10,
       });
 
       expect(notesResult.isError).toBeFalsy();
-      
+
       const notesText = notesResult.content?.[0]?.text || '';
       expect(notesText).toContain(noteData.title);
       // Note: list-notes only returns titles, not full content
@@ -214,7 +220,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         const otherNotesResult = await testCase.executeToolCall('list-notes', {
           resource_type: 'companies',
           record_id: testCase.secondCompanyId,
-          limit: 10
+          limit: 10,
         });
 
         if (!otherNotesResult.isError) {
@@ -225,7 +231,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
           }
         }
       }
-      
+
       passed = true;
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -252,11 +258,11 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         resource_type: 'people',
         record_id: testCase.testPersonId,
         title: noteData.title,
-        content: noteData.content
+        content: noteData.content,
       });
 
       expect(createResult.isError).toBeFalsy();
-      
+
       // Extract note ID for cleanup
       const createText = createResult.content?.[0]?.text || '';
       const idMatch = createText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
@@ -268,22 +274,25 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
       const notesResult = await testCase.executeToolCall('list-notes', {
         resource_type: 'people',
         record_id: testCase.testPersonId,
-        limit: 10
+        limit: 10,
       });
 
       expect(notesResult.isError).toBeFalsy();
-      
+
       const notesText = notesResult.content?.[0]?.text || '';
       expect(notesText).toContain(noteData.title);
       // Note: list-notes only returns titles, not full content
 
       // Verify the note doesn't appear in company notes
       if (testCase.testCompanyId) {
-        const companyNotesResult = await testCase.executeToolCall('list-notes', {
-          resource_type: 'companies',
-          record_id: testCase.testCompanyId,
-          limit: 10
-        });
+        const companyNotesResult = await testCase.executeToolCall(
+          'list-notes',
+          {
+            resource_type: 'companies',
+            record_id: testCase.testCompanyId,
+            limit: 10,
+          }
+        );
 
         if (!companyNotesResult.isError) {
           const companyNotesText = companyNotesResult.content?.[0]?.text || '';
@@ -293,7 +302,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
           }
         }
       }
-      
+
       passed = true;
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -315,19 +324,23 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
       }
 
       // Create distinct notes for company and person
-      const companyNoteData = TestDataFactory.createNoteData('TCN02_CompanyIsolation');
-      const personNoteData = TestDataFactory.createNoteData('TCN02_PersonIsolation');
+      const companyNoteData = TestDataFactory.createNoteData(
+        'TCN02_CompanyIsolation'
+      );
+      const personNoteData = TestDataFactory.createNoteData(
+        'TCN02_PersonIsolation'
+      );
 
       // Create company note
       const companyNoteResult = await testCase.executeToolCall('create-note', {
         resource_type: 'companies',
         record_id: testCase.testCompanyId,
         title: companyNoteData.title,
-        content: companyNoteData.content
+        content: companyNoteData.content,
       });
 
       expect(companyNoteResult.isError).toBeFalsy();
-      
+
       // Extract company note ID for cleanup
       const companyText = companyNoteResult.content?.[0]?.text || '';
       const companyIdMatch = companyText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
@@ -340,11 +353,11 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         resource_type: 'people',
         record_id: testCase.testPersonId,
         title: personNoteData.title,
-        content: personNoteData.content
+        content: personNoteData.content,
       });
 
       expect(personNoteResult.isError).toBeFalsy();
-      
+
       // Extract person note ID for cleanup
       const personText = personNoteResult.content?.[0]?.text || '';
       const personIdMatch = personText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
@@ -356,7 +369,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
       const companyNotesResult = await testCase.executeToolCall('list-notes', {
         resource_type: 'companies',
         record_id: testCase.testCompanyId,
-        limit: 10
+        limit: 10,
       });
 
       expect(companyNotesResult.isError).toBeFalsy();
@@ -368,14 +381,14 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
       const personNotesResult = await testCase.executeToolCall('list-notes', {
         resource_type: 'people',
         record_id: testCase.testPersonId,
-        limit: 10
+        limit: 10,
       });
 
       expect(personNotesResult.isError).toBeFalsy();
       const personNotesText = personNotesResult.content?.[0]?.text || '';
       expect(personNotesText).toContain(personNoteData.title);
       expect(personNotesText).not.toContain(companyNoteData.title);
-      
+
       passed = true;
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);

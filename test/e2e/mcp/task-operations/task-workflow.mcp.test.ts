@@ -20,65 +20,11 @@ import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 class TaskWorkflowTests extends MCPTestBase {
   private qa: QAAssertions;
   private testDataFactory: TestDataFactory;
-  private createdTaskIds: string[] = [];
-  private createdRecordIds: string[] = [];
 
   constructor() {
     super('TASK_WORKFLOW');
     this.qa = new QAAssertions();
     this.testDataFactory = new TestDataFactory();
-  }
-
-  /**
-   * Track task ID for cleanup
-   */
-  private trackTaskForCleanup(taskId: string): void {
-    if (taskId && !this.createdTaskIds.includes(taskId)) {
-      this.createdTaskIds.push(taskId);
-    }
-  }
-
-  /**
-   * Track record ID for cleanup
-   */
-  private trackRecordForCleanup(recordId: string): void {
-    if (recordId && !this.createdRecordIds.includes(recordId)) {
-      this.createdRecordIds.push(recordId);
-    }
-  }
-
-  /**
-   * Clean up all created tasks and records
-   */
-  async cleanupCreatedData(): Promise<void> {
-    // Clean up tasks first
-    for (const taskId of this.createdTaskIds) {
-      try {
-        await this.executeToolCall('delete-record', {
-          resource_type: 'tasks',
-          record_id: taskId,
-        });
-        console.log(`✅ Cleaned up task ${taskId}`);
-      } catch (error) {
-        console.warn(`⚠️ Failed to cleanup task ${taskId}:`, error);
-      }
-    }
-
-    // Clean up any created records (companies/people)
-    for (const recordId of this.createdRecordIds) {
-      try {
-        await this.executeToolCall('delete-record', {
-          resource_type: 'companies',
-          record_id: recordId,
-        });
-        console.log(`✅ Cleaned up record ${recordId}`);
-      } catch (error) {
-        console.warn(`⚠️ Failed to cleanup record ${recordId}:`, error);
-      }
-    }
-
-    this.createdTaskIds.length = 0;
-    this.createdRecordIds.length = 0;
   }
 
   /**
@@ -116,7 +62,7 @@ class TaskWorkflowTests extends MCPTestBase {
       );
     }
 
-    this.trackTaskForCleanup(taskId);
+    this.trackRecord('tasks', taskId);
     return taskId;
   }
 
@@ -139,7 +85,7 @@ class TaskWorkflowTests extends MCPTestBase {
       throw new Error('Failed to extract company ID from create response');
     }
 
-    this.trackRecordForCleanup(recordId);
+    this.trackRecord('companies', recordId);
     return recordId;
   }
 }
@@ -154,7 +100,7 @@ describe('MCP P1 Task Workflow Operations', () => {
 
   afterEach(async () => {
     try {
-      await testSuite.cleanupCreatedData();
+      await testSuite.cleanupTestData();
     } finally {
       await testSuite.teardown();
     }

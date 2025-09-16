@@ -20,39 +20,11 @@ import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 class TaskCrudTests extends MCPTestBase {
   private qa: QAAssertions;
   private testDataFactory: TestDataFactory;
-  private createdTaskIds: string[] = [];
 
   constructor() {
     super('TASK_CRUD');
     this.qa = new QAAssertions();
     this.testDataFactory = new TestDataFactory();
-  }
-
-  /**
-   * Track task ID for cleanup
-   */
-  private trackTaskForCleanup(taskId: string): void {
-    if (taskId && !this.createdTaskIds.includes(taskId)) {
-      this.createdTaskIds.push(taskId);
-    }
-  }
-
-  /**
-   * Clean up all created tasks
-   */
-  async cleanupCreatedTasks(): Promise<void> {
-    for (const taskId of this.createdTaskIds) {
-      try {
-        await this.executeToolCall('delete-record', {
-          resource_type: 'tasks',
-          record_id: taskId,
-        });
-        console.log(`✅ Cleaned up task ${taskId}`);
-      } catch (error) {
-        console.warn(`⚠️ Failed to cleanup task ${taskId}:`, error);
-      }
-    }
-    this.createdTaskIds.length = 0;
   }
 
   /**
@@ -73,7 +45,7 @@ class TaskCrudTests extends MCPTestBase {
       throw new Error('Failed to extract task ID from create response');
     }
 
-    this.trackTaskForCleanup(taskId);
+    this.trackRecord('tasks', taskId);
     return taskId;
   }
 }
@@ -88,7 +60,7 @@ describe('MCP P1 Task CRUD Operations', () => {
 
   afterEach(async () => {
     try {
-      await testSuite.cleanupCreatedTasks();
+      await testSuite.cleanupTestData();
     } finally {
       await testSuite.teardown();
     }
@@ -117,7 +89,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       expect(taskId).toMatch(/^[a-f0-9-]{36}$/); // UUID format
 
       // Track for cleanup
-      testSuite.trackTaskForCleanup(taskId!);
+      testSuite.trackRecord('tasks', taskId!);
 
       console.log(`✅ Created task with ID: ${taskId}`);
     });
@@ -155,7 +127,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       }
 
       expect(taskId).toBeTruthy();
-      testSuite.trackTaskForCleanup(taskId!);
+      testSuite.trackRecord('tasks', taskId!);
       console.log(`✅ Created minimal task with ID: ${taskId}`);
     });
 
@@ -330,12 +302,6 @@ describe('MCP P1 Task CRUD Operations', () => {
 
       const responseText = testSuite.extractTextContent(deleteResult);
       expect(responseText).toMatch(/deleted|removed|success/i);
-
-      // Remove from cleanup tracking since we manually deleted it
-      const index = testSuite.createdTaskIds.indexOf(taskId);
-      if (index > -1) {
-        testSuite.createdTaskIds.splice(index, 1);
-      }
 
       console.log(`✅ Successfully deleted task ${taskId}`);
     });
