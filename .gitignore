@@ -65,6 +65,7 @@ logs.backup/
 # Other
 .qodo
 .vscode
+.eslintcache
 
 # Ignore log files in the logs directory
 logs/*.log
