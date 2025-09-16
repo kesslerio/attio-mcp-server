@@ -14,8 +14,56 @@ import {
   getErrorMessage,
   ensureError,
   getErrorStatus,
-  isAxiosError,
 } from './error-utilities.js';
+
+const DEFAULT_STATUS_CODE = 500;
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
+};
+
+const resolveStatusCode = (
+  error: unknown,
+  fallback: number | undefined = DEFAULT_STATUS_CODE
+): number | undefined => {
+  const statusFromUtilities = getErrorStatus(error);
+  if (typeof statusFromUtilities === 'number') {
+    return statusFromUtilities;
+  }
+
+  if (!isRecord(error)) {
+    return fallback;
+  }
+
+  if ('statusCode' in error && typeof error.statusCode === 'number') {
+    return error.statusCode;
+  }
+
+  if ('status' in error && typeof error.status === 'number') {
+    return error.status;
+  }
+
+  if (
+    'response' in error &&
+    isRecord(error.response) &&
+    'status' in error.response &&
+    typeof error.response.status === 'number'
+  ) {
+    return error.response.status;
+  }
+
+  return fallback;
+};
+
+const mapStatusToErrorType = (statusCode: number): string => {
+  if (statusCode === 400) return 'validation_error';
+  if (statusCode === 401) return 'authentication_error';
+  if (statusCode === 403) return 'authorization_error';
+  if (statusCode === 404) return 'not_found';
+  if (statusCode === 429) return 'rate_limit';
+  if (statusCode >= 500) return 'server_error';
+  return 'internal_error';
+};
 
 /**
  * Error context for enhanced error handling
@@ -27,7 +75,7 @@ export interface ErrorContext {
   recordId?: string;
   userId?: string;
   correlationId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -112,17 +160,8 @@ export function withSecureErrorHandling<
       );
 
       // Determine status code
-      const statusCode =
-        (error as any)?.statusCode || (error as any)?.response?.status || 500;
-
-      // Determine error type
-      let errorType = 'internal_error';
-      if (statusCode === 400) errorType = 'validation_error';
-      else if (statusCode === 401) errorType = 'authentication_error';
-      else if (statusCode === 403) errorType = 'authorization_error';
-      else if (statusCode === 404) errorType = 'not_found';
-      else if (statusCode === 429) errorType = 'rate_limit';
-      else if (statusCode >= 500) errorType = 'server_error';
+      const statusCode = resolveStatusCode(error) ?? DEFAULT_STATUS_CODE;
+      const errorType = mapStatusToErrorType(statusCode);
 
       // Create secure error with sanitized message
       throw new SecureApiError(
@@ -157,7 +196,7 @@ export interface SecureErrorResponse {
  * @returns Secure error response
  */
 export function createSecureErrorResponse(
-  error: any,
+  error: unknown,
   context?: Partial<ErrorContext>
 ): SecureErrorResponse {
   // If it's already a SecureApiError, use its safe data
@@ -173,11 +212,15 @@ export function createSecureErrorResponse(
   }
 
   // Otherwise, sanitize the error
-  const sanitized = createSanitizedError(error, error?.statusCode, {
-    module: context?.module || 'unknown',
-    operation: context?.operation || 'unknown',
-    includeContext: true,
-  });
+  const sanitized = createSanitizedError(
+    error,
+    resolveStatusCode(error, undefined),
+    {
+      module: context?.module || 'unknown',
+      operation: context?.operation || 'unknown',
+      includeContext: true,
+    }
+  );
 
   return {
     success: false,
@@ -203,16 +246,20 @@ export class BatchErrorHandler {
   /**
    * Add an error for a specific batch item
    */
-  addError(index: number, error: any): void {
+  addError(index: number, error: unknown): void {
+    const fallbackMessage = getErrorMessage(error, 'Batch operation failed');
+    const statusCode = resolveStatusCode(error) ?? DEFAULT_STATUS_CODE;
+    const originalError = error instanceof Error ? error : undefined;
+
     const secureError =
       error instanceof SecureApiError
         ? error
         : new SecureApiError(
-            error.message || 'Batch operation failed',
-            error?.statusCode || 500,
+            fallbackMessage,
+            statusCode,
             'batch_error',
             { ...this.context, batchIndex: index },
-            error instanceof Error ? error : undefined
+            originalError
           );
 
     this.errors.push({ index, error: secureError });
@@ -256,6 +303,13 @@ export class BatchErrorHandler {
 /**
  * Retry handler with exponential backoff and error sanitization
  */
+type ShouldRetryFn = (error: unknown) => boolean;
+
+const defaultShouldRetry: ShouldRetryFn = (error) => {
+  const statusCode = resolveStatusCode(error) ?? DEFAULT_STATUS_CODE;
+  return statusCode >= 500 || statusCode === 429;
+};
+
 export async function retryWithSecureErrors<T>(
   fn: () => Promise<T>,
   context: ErrorContext,
@@ -263,20 +317,17 @@ export async function retryWithSecureErrors<T>(
     maxRetries?: number;
     initialDelay?: number;
     maxDelay?: number;
-    shouldRetry?: (error: any) => boolean;
+    shouldRetry?: ShouldRetryFn;
   } = {}
 ): Promise<T> {
   const {
     maxRetries = 3,
     initialDelay = 1000,
     maxDelay = 10000,
-    shouldRetry = (error) => {
-      const statusCode = error?.statusCode || error?.response?.status || 500;
-      return statusCode >= 500 || statusCode === 429;
-    },
+    shouldRetry = defaultShouldRetry,
   } = options;
 
-  let lastError: any;
+  let lastError: unknown;
   let delay = initialDelay;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -301,9 +352,15 @@ export async function retryWithSecureErrors<T>(
         delay = Math.min(delay * 2, maxDelay);
       } else {
         // No more retries, throw secure error
+        const message = getErrorMessage(
+          lastError,
+          'Operation failed after retries'
+        );
+        const statusCode = resolveStatusCode(lastError) ?? DEFAULT_STATUS_CODE;
+
         throw new SecureApiError(
-          lastError.message || 'Operation failed after retries',
-          lastError?.statusCode || 500,
+          message,
+          statusCode,
           'retry_exhausted',
           { ...context, attempts: attempt + 1 },
           lastError instanceof Error ? lastError : undefined
@@ -314,8 +371,8 @@ export async function retryWithSecureErrors<T>(
 
   // This should never be reached, but just in case
   throw new SecureApiError(
-    'Maximum retries exceeded',
-    500,
+    getErrorMessage(lastError, 'Maximum retries exceeded'),
+    resolveStatusCode(lastError) ?? DEFAULT_STATUS_CODE,
     'retry_exhausted',
     { ...context, attempts: maxRetries + 1 },
     lastError instanceof Error ? lastError : undefined
@@ -393,8 +450,8 @@ export class SecureCircuitBreaker {
 
       // Re-throw the error (sanitized)
       throw new SecureApiError(
-        (error as Error).message || 'Operation failed',
-        (error as any)?.statusCode || 500,
+        getErrorMessage(error, 'Operation failed'),
+        resolveStatusCode(error) ?? DEFAULT_STATUS_CODE,
         'circuit_breaker_error',
         this.context,
         error instanceof Error ? error : undefined
