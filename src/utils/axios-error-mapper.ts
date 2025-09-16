@@ -8,6 +8,7 @@
 import { ErrorService } from '../services/ErrorService.js';
 import { getAttributeSchema, getSelectOptions } from '../api/attio-client.js';
 import type { AxiosErrorLike } from '../types/service-types.js';
+import { createScopedLogger, OperationType } from './logger.js';
 
 // Type definitions for better type safety
 interface WrappedError extends Error {
@@ -153,6 +154,11 @@ export const handleSelectOptionError = async (
   recordData: Record<string, unknown>,
   resourceType: string
 ): Promise<StructuredHttpError> => {
+  const log = createScopedLogger(
+    'utils.axios-error-mapper',
+    'handleSelectOptionError',
+    OperationType.DATA_PROCESSING
+  );
   const mapped = ErrorService.fromAxios(error);
 
   // Single-pass options cache to avoid multiple API calls for the same field
@@ -222,9 +228,12 @@ export const handleSelectOptionError = async (
               };
             }
           } catch (e) {
-            console.error(
-              `Failed to fetch select options for attribute ${attributeSlug}:`,
-              e
+            log.error(
+              `Failed to fetch select options for attribute ${attributeSlug}`,
+              e instanceof Error ? e : undefined,
+              {
+                attributeSlug,
+              }
             );
           }
         }
@@ -315,7 +324,10 @@ export const handleSelectOptionError = async (
         };
       }
     } catch (e) {
-      console.error('Failed to analyze select fields:', e);
+      log.error(
+        'Failed to analyze select field options while enhancing error message',
+        e instanceof Error ? e : undefined
+      );
     }
   }
 

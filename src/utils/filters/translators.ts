@@ -38,6 +38,7 @@ import {
   getFilterExample,
 } from './validation-utils.js';
 import { isListSpecificAttribute } from './utils.js';
+import { createScopedLogger, OperationType } from '../logger.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -309,6 +310,11 @@ function createOrFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
+  const log = createScopedLogger(
+    'filters.translators',
+    'createOrFilterStructure',
+    OperationType.TRANSFORMATION
+  );
   const orConditions: any[] = [];
 
   // Use centralized validation utility to collect invalid filters with consistent messages
@@ -316,10 +322,12 @@ function createOrFilterStructure(
 
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
-    console.warn(
-      '[createOrFilterStructure] Found invalid filters:',
-      invalidFilters.map((f) => `Index ${f.index}: ${f.reason}`)
-    );
+    log.warn('Found invalid filters during OR transformation', {
+      invalidFilters: invalidFilters.map((f) => ({
+        index: f.index,
+        reason: f.reason,
+      })),
+    });
   }
 
   // If all filters are invalid, throw a descriptive error with example
@@ -346,7 +354,8 @@ function createOrFilterStructure(
 
     // Debug log each filter
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[createOrFilterStructure] Processing filter ${index}:`, {
+      log.debug('Processing OR filter', {
+        index,
         attribute: filter.attribute,
         condition: filter.condition,
         value: filter.value,
@@ -363,9 +372,9 @@ function createOrFilterStructure(
       // For list-specific attributes, we don't need any path prefix
       // The API expects these attributes directly at the entry level
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[OR Logic] Using list-specific attribute format for field ${slug}`
-        );
+        log.debug('Using list-specific attribute format for OR filter', {
+          slug,
+        });
       }
 
       // List-specific attributes use direct field access
@@ -380,9 +389,7 @@ function createOrFilterStructure(
     ) {
       // For special fields that need shorthand format
       if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[OR Logic] Using shorthand filter format for field ${slug}`
-        );
+        log.debug('Using shorthand OR filter format', { slug });
       }
 
       // Direct value assignment for shorthand format
@@ -433,6 +440,11 @@ function createAndFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
+  const log = createScopedLogger(
+    'filters.translators',
+    'createAndFilterStructure',
+    OperationType.TRANSFORMATION
+  );
   // Use simple merged object for AND logic instead of $and wrapper
   const mergedConditions: any = {};
 
@@ -441,10 +453,12 @@ function createAndFilterStructure(
 
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
-    console.warn(
-      '[createAndFilterStructure] Found invalid filters:',
-      invalidFilters.map((f) => `Index ${f.index}: ${f.reason}`)
-    );
+    log.warn('Found invalid filters during AND transformation', {
+      invalidFilters: invalidFilters.map((f) => ({
+        index: f.index,
+        reason: f.reason,
+      })),
+    });
   }
 
   // If all filters are invalid, throw a descriptive error with example
@@ -472,7 +486,8 @@ function createAndFilterStructure(
 
     // Debug log each filter
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[createAndFilterStructure] Processing filter ${index}:`, {
+      log.debug('Processing AND filter', {
+        index,
         attribute: filter.attribute,
         condition: filter.condition,
         value: filter.value,
@@ -503,10 +518,11 @@ function createAndFilterStructure(
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[createAndFilterStructure] Added condition for ${fieldPath}:`,
-        mergedConditions[fieldPath]
-      );
+      log.debug('Added AND condition', {
+        fieldPath,
+        operator,
+        value: filter.value,
+      });
     }
   });
 

@@ -6,6 +6,13 @@
  */
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
+import { createScopedLogger, OperationType } from './logger.js';
+
+const log = createScopedLogger(
+  'utils.resource-mapping',
+  undefined,
+  OperationType.SYSTEM
+);
 
 /**
  * Resource path configuration
@@ -97,9 +104,9 @@ export class ResourceMapper {
       }
 
       // Default fallback for completely unknown types
-      console.warn(
-        `Unknown resource type: ${resourceType}, using generic records path`
-      );
+      log.warn('Unknown resource type, using generic records path', {
+        resourceType,
+      });
       return '/records';
     }
 
