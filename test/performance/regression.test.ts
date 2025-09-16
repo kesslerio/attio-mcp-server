@@ -319,7 +319,13 @@ describe('Performance Regression Tests', () => {
         const duration = performance.now() - startTime;
 
         // Verify it's a validation error (enhanced error message format)
-        expect(error.message).toContain('Invalid record identifier format');
+        expect(error).toMatchObject({
+          body: expect.objectContaining({
+            message: expect.stringContaining(
+              'Invalid record identifier format'
+            ),
+          }),
+        });
 
         // Check performance budget
         expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.notFound);
@@ -459,7 +465,13 @@ describe('Performance Regression Tests', () => {
         // Validation should be very fast (under 100ms)
         expect(duration).toBeLessThan(100);
         // Schema validation returns specific error message
-        expect(error.message).toMatch(/must be at least 1|positive integer/i);
+        expect(error).toMatchObject({
+          body: expect.objectContaining({
+            message: expect.stringMatching(
+              /must be at least 1|positive integer/i
+            ),
+          }),
+        });
 
         console.log(`Parameter validation time: ${duration.toFixed(0)}ms`);
       }
