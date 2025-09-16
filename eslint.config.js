@@ -79,11 +79,7 @@ export default [
   },
   {
     // Allow console in CLI and legacy or explicitly allowlisted files
-    files: [
-      'src/cli.ts',
-      'src/handlers/tools.ts.old',
-      'src/services/MockService.legacy.ts',
-    ],
+    files: ['src/cli.ts', 'src/handlers/tools.ts.old'],
     rules: {
       'no-console': 'off',
     },
