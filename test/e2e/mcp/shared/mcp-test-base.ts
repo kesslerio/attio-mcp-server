@@ -16,7 +16,11 @@ export abstract class MCPTestBase {
   protected client: MCPTestClient;
   protected testPrefix: string;
   private lastApiCall: number = 0;
-  private readonly API_RATE_LIMIT_MS = 100; // 100ms between API calls to prevent rate limiting
+  // Make rate limiting configurable for CI environments (Issue #649 feedback)
+  private readonly API_RATE_LIMIT_MS = parseInt(
+    process.env.MCP_TEST_RATE_LIMIT_MS || '100',
+    10
+  );
 
   constructor(testPrefix: string = 'TC') {
     this.testPrefix = testPrefix;
