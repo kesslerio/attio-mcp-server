@@ -12,12 +12,9 @@ vi.resetAllMocks();
 // Unmock the specific module we want to test
 vi.doUnmock('../../../src/objects/companies/search.js');
 
-// Import after clearing mocks - use async function to handle top-level await
-let advancedSearchCompanies: any;
-(async () => {
-  const module = await import('../../../src/objects/companies/search.js');
-  advancedSearchCompanies = module.advancedSearchCompanies;
-})();
+type AdvancedSearchCompaniesType =
+  typeof import('../../../src/objects/companies/search.js').advancedSearchCompanies;
+let advancedSearchCompanies: AdvancedSearchCompaniesType | undefined;
 
 // Skip tests if no API key or if explicitly disabled
 const SKIP_TESTS =
@@ -29,6 +26,11 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
       const apiKey = process.env.ATTIO_API_KEY as string;
       initializeAttioClient(apiKey);
       console.log('Running validation tests with API client');
+
+      if (!advancedSearchCompanies) {
+        const module = await import('../../../src/objects/companies/search.js');
+        advancedSearchCompanies = module.advancedSearchCompanies;
+      }
     }
   });
 
@@ -39,14 +41,14 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
     }
 
     it('should throw appropriate error for missing filters object', async () => {
-      await expect(advancedSearchCompanies(null as any)).rejects.toThrow(
+      await expect(advancedSearchCompanies!(null as any)).rejects.toThrow(
         'Filters object is required'
       );
     });
 
     it('should throw appropriate error for missing filters array', async () => {
       const filters = {} as any;
-      await expect(advancedSearchCompanies(filters)).rejects.toThrow(
+      await expect(advancedSearchCompanies!(filters)).rejects.toThrow(
         'must include a "filters" array'
       );
     });
@@ -55,7 +57,7 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
       const filters = {
         filters: 'not an array',
       } as any;
-      await expect(advancedSearchCompanies(filters)).rejects.toThrow(
+      await expect(advancedSearchCompanies!(filters)).rejects.toThrow(
         'must be an array'
       );
     });
@@ -71,7 +73,7 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
         ],
       } as any;
 
-      await expect(advancedSearchCompanies(filters)).rejects.toThrow(
+      await expect(advancedSearchCompanies!(filters)).rejects.toThrow(
         /missing attribute object/i
       );
     });
@@ -87,7 +89,7 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
         ],
       } as any;
 
-      await expect(advancedSearchCompanies(filters)).rejects.toThrow(
+      await expect(advancedSearchCompanies!(filters)).rejects.toThrow(
         /missing attribute.slug/i
       );
     });
@@ -103,7 +105,7 @@ describe('Advanced Search Validation Tests', { timeout: 30000 }, () => {
         ],
       } as any;
 
-      await expect(advancedSearchCompanies(filters)).rejects.toThrow(
+      await expect(advancedSearchCompanies!(filters)).rejects.toThrow(
         /missing condition property/i
       );
     });

@@ -12,7 +12,9 @@ import {
 import { initializeAttioClient } from '../../../src/api/attio-client.js';
 
 const SKIP_INTEGRATION_TESTS =
-  !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+  !process.env.ATTIO_API_KEY ||
+  process.env.SKIP_INTEGRATION_TESTS === 'true' ||
+  process.env.ENABLE_INDUSTRY_MAPPING_TESTS !== 'true';
 
 describe('Industry-Categories Mapping - E2E Tests', () => {
   if (SKIP_INTEGRATION_TESTS) {

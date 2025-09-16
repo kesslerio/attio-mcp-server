@@ -5,6 +5,7 @@
 
 import { MCPTestClient } from 'mcp-test-client';
 import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { TestDataFactory } from './test-data-factory.js';
 
 export interface MCPTestConfig {
   serverCommand?: string;
@@ -17,7 +18,8 @@ export abstract class MCPTestBase {
   protected testPrefix: string;
   private lastApiCall: number = 0;
   private readonly API_RATE_LIMIT_MS = 100; // 100ms between API calls to prevent rate limiting
-  
+  private createdRecords: Array<{ type: string; id: string }> = [];
+
   constructor(testPrefix: string = 'TC') {
     this.testPrefix = testPrefix;
   }
@@ -28,12 +30,12 @@ export abstract class MCPTestBase {
   private async enforceRateLimit(): Promise<void> {
     const now = Date.now();
     const timeSinceLastCall = now - this.lastApiCall;
-    
+
     if (timeSinceLastCall < this.API_RATE_LIMIT_MS) {
       const delayNeeded = this.API_RATE_LIMIT_MS - timeSinceLastCall;
-      await new Promise(resolve => setTimeout(resolve, delayNeeded));
+      await new Promise((resolve) => setTimeout(resolve, delayNeeded));
     }
-    
+
     this.lastApiCall = Date.now();
   }
 
@@ -45,7 +47,7 @@ export abstract class MCPTestBase {
       serverCommand: config.serverCommand || 'node',
       serverArgs: config.serverArgs || ['./dist/cli.js'],
     });
-    
+
     await this.client.init();
   }
 
@@ -59,6 +61,79 @@ export abstract class MCPTestBase {
   }
 
   /**
+   * Track a record created during the test run so cleanup hooks can delete it reliably.
+   * Uses a simple de-dupe to avoid hitting the API multiple times for the same record.
+   */
+  public trackRecord(type: string, id: string | null | undefined): void {
+    if (!type || !id) {
+      return;
+    }
+
+    const alreadyTracked = this.createdRecords.some(
+      (record) => record.type === type && record.id === id
+    );
+
+    if (!alreadyTracked) {
+      this.createdRecords.push({ type, id });
+    }
+
+    TestDataFactory.trackRecord(type, id);
+  }
+
+  /**
+   * Delete all tracked records using the universal delete tool.
+   * Always best-effort: failures are logged but do not throw to keep tests from cascading.
+   */
+  public async cleanupTestData(): Promise<void> {
+    const trackedByInstance = [...this.createdRecords];
+    const trackedByFactory = TestDataFactory.getTrackedRecords();
+
+    // Merge and de-dupe by resource type + id
+    const allTracked = new Map<string, { type: string; id: string }>();
+    for (const record of [...trackedByInstance, ...trackedByFactory]) {
+      const key = `${record.type}:${record.id}`;
+      if (!allTracked.has(key)) {
+        allTracked.set(key, record);
+      }
+    }
+
+    if (allTracked.size === 0) {
+      return;
+    }
+
+    for (const { type, id } of allTracked.values()) {
+      try {
+        const result = await this.executeToolCall('delete-record', {
+          resource_type: type,
+          record_id: id,
+        });
+
+        const text = this.extractTextContent(result);
+
+        if (result.isError && !this.isBenignCleanupFailure(text)) {
+          console.warn(`⚠️ Cleanup failed for ${type} ${id}: ${text}`);
+        } else {
+          console.log(`✅ Cleanup removed ${type} ${id}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Cleanup threw for ${type} ${id}:`, error);
+      }
+    }
+
+    this.createdRecords = [];
+    TestDataFactory.clearTrackedRecords();
+  }
+
+  private isBenignCleanupFailure(responseText: string): boolean {
+    const normalized = responseText.toLowerCase();
+    return (
+      normalized.includes('not found') ||
+      normalized.includes('already deleted') ||
+      normalized.includes('does not exist')
+    );
+  }
+
+  /**
    * Execute a tool call and validate the result
    */
   async executeToolCall(
@@ -68,31 +143,27 @@ export abstract class MCPTestBase {
   ): Promise<ToolResult> {
     // Apply rate limiting protection for sequential API calls
     await this.enforceRateLimit();
-    
+
     let capturedResult: ToolResult | null = null;
-    
-    await this.client.assertToolCall(
-      toolName,
-      params,
-      (result: ToolResult) => {
-        capturedResult = result;
-        
-        // Basic validation that should pass for all successful calls
-        if (!result.isError) {
-          this.validateSuccessfulResult(result);
-        }
-        
-        // Custom validation if provided
-        if (validator) {
-          validator(result);
-        }
+
+    await this.client.assertToolCall(toolName, params, (result: ToolResult) => {
+      capturedResult = result;
+
+      // Basic validation that should pass for all successful calls
+      if (!result.isError) {
+        this.validateSuccessfulResult(result);
       }
-    );
-    
+
+      // Custom validation if provided
+      if (validator) {
+        validator(result);
+      }
+    });
+
     if (!capturedResult) {
       throw new Error(`Tool call '${toolName}' did not capture a result`);
     }
-    
+
     return capturedResult;
   }
 
@@ -104,7 +175,7 @@ export abstract class MCPTestBase {
     if (!result.content || result.content.length === 0) {
       throw new Error('Successful result should have content');
     }
-    
+
     // Ensure content has text
     const content = result.content[0];
     if (!('text' in content)) {
@@ -155,7 +226,7 @@ export abstract class MCPTestBase {
     if (idInParensMatch && idInParensMatch[1]) {
       return idInParensMatch[1];
     }
-    
+
     // Fallback patterns
     const patterns = [
       /"id"\s*:\s*"([^"]+)"/i,
@@ -163,14 +234,14 @@ export abstract class MCPTestBase {
       /record_id["\s:]+([a-zA-Z0-9_-]+)/i,
       /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i, // UUID
     ];
-    
+
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
         return match[1];
       }
     }
-    
+
     return null;
   }
 
@@ -179,11 +250,13 @@ export abstract class MCPTestBase {
    */
   protected hasError(result: ToolResult): boolean {
     if (result.isError) return true;
-    
+
     const text = this.extractTextContent(result).toLowerCase();
-    return text.includes('error') || 
-           text.includes('failed') || 
-           text.includes('invalid') ||
-           text.includes('not found');
+    return (
+      text.includes('error') ||
+      text.includes('failed') ||
+      text.includes('invalid') ||
+      text.includes('not found')
+    );
   }
 }

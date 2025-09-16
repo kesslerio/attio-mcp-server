@@ -11,12 +11,13 @@ import { executeToolRequest } from '../../../src/handlers/tools/dispatcher/core.
 
 // Test config
 const TIMEOUT = 30000; // 30 seconds timeout for API tests
-const TEST_LIST_ID =
-  process.env.TEST_LIST_ID || 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+const TEST_LIST_ID = process.env.TEST_LIST_ID;
 
 describe('get-list-details API test', () => {
   const shouldSkip =
-    process.env.SKIP_INTEGRATION_TESTS === 'true' || !process.env.ATTIO_API_KEY;
+    process.env.SKIP_INTEGRATION_TESTS === 'true' ||
+    !process.env.ATTIO_API_KEY ||
+    !TEST_LIST_ID;
   const conditionalTest = shouldSkip ? test.skip : test;
 
   beforeAll(() => {
@@ -33,7 +34,7 @@ describe('get-list-details API test', () => {
   conditionalTest.skip(
     'should fetch list details directly from API',
     async () => {
-      const result = await getListDetails(TEST_LIST_ID);
+      const result = await getListDetails(TEST_LIST_ID!);
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
       expect(result.id.list_id).toBeDefined();
