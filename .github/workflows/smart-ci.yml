@@ -85,8 +85,6 @@ jobs:
             test_strategy="smoke"
           elif [ "$tests_only" = "true" ]; then
             test_strategy="affected"
-          elif [ "$needs_integration" = "true" ]; then
-            test_strategy="full"
           else
             test_strategy="core"
           fi

@@ -38,57 +38,126 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get changed files and calculate size
-        id: changes
-        uses: tj-actions/changed-files@v45
-        with:
-          files_ignore: |
-            **.md
-            **.txt
-            .gitignore
-            LICENSE
-            docs/**
-            package-lock.json
-            yarn.lock
-            pnpm-lock.yaml
-
       - name: Calculate PR size and apply label
         uses: actions/github-script@v7
         with:
           script: |
-            const filesCount = ${{ steps.changes.outputs.all_changed_files_count }};
-            const changedFiles = `${{ steps.changes.outputs.all_changed_files }}`.split(' ');
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
 
-            // Calculate lines changed (approximate from file count for now)
-            // In a more sophisticated setup, you'd parse actual diff
-            let sizeLabel = '';
-            let sizeColor = '';
-            let sizeDescription = '';
+            const ignorePatterns = [
+              /\/dist\//,
+              /\/build\//,
+              /\.min\./,
+              /-lock\.\w+$/,
+              /package-lock\.json$/,
+              /pnpm-lock\.yaml$/,
+              /yarn\.lock$/,
+              /go\.sum$/,
+              /Cargo\.lock$/,
+              /\.snap$/
+            ];
 
-            // Define size thresholds based on files changed
-            if (filesCount <= 3) {
-              sizeLabel = 'size/XS';
-              sizeColor = '00ff00';
-              sizeDescription = 'Extra Small: 1-3 files changed';
-            } else if (filesCount <= 8) {
-              sizeLabel = 'size/S';
-              sizeColor = '7cfc00';
-              sizeDescription = 'Small: 4-8 files changed';
-            } else if (filesCount <= 20) {
-              sizeLabel = 'size/M';
-              sizeColor = 'ffff00';
-              sizeDescription = 'Medium: 9-20 files changed';
-            } else if (filesCount <= 50) {
-              sizeLabel = 'size/L';
-              sizeColor = 'ff8c00';
-              sizeDescription = 'Large: 21-50 files changed';
-            } else {
-              sizeLabel = 'size/XL';
-              sizeColor = 'ff0000';
-              sizeDescription = 'Extra Large: 50+ files changed';
+            const isIgnoredFile = (path) => ignorePatterns.some((pattern) => pattern.test(path));
+
+            const fetchAllFiles = async () => {
+              const files = [];
+              let page = 1;
+              while (true) {
+                const { data } = await github.rest.pulls.listFiles({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  per_page: 100,
+                  page,
+                });
+                files.push(...data);
+                if (data.length < 100) break;
+                page += 1;
+              }
+              return files;
+            };
+
+            const files = await fetchAllFiles();
+
+            const totalFiles = pr.changed_files ?? files.length ?? 0;
+            const totalLines = (pr.additions ?? 0) + (pr.deletions ?? 0);
+
+            let effectiveLines = 0;
+            let effectiveFiles = 0;
+
+            for (const file of files) {
+              const { filename, additions = 0, deletions = 0, status } = file;
+              if (isIgnoredFile(filename)) continue;
+              if (status === 'renamed' && additions === 0 && deletions === 0) continue;
+
+              const loc = additions + deletions;
+              effectiveLines += loc;
+              effectiveFiles += 1;
             }
 
-            console.log(`PR size: ${sizeLabel} (${filesCount} files)`);
+            const normalizedLines = effectiveLines || totalLines || 0;
+            const normalizedFiles = effectiveFiles || totalFiles || 0;
+
+            const determineLinesBucket = (loc) => {
+              if (loc <= 49) return 'size/XS';
+              if (loc <= 149) return 'size/S';
+              if (loc <= 399) return 'size/M';
+              if (loc <= 799) return 'size/L';
+              if (loc <= 1499) return 'size/XL';
+              return 'size/XXL';
+            };
+
+            const determineFilesBucket = (count) => {
+              if (count <= 2) return 'size/XS';
+              if (count <= 5) return 'size/S';
+              if (count <= 10) return 'size/M';
+              if (count <= 20) return 'size/L';
+              if (count <= 40) return 'size/XL';
+              return 'size/XXL';
+            };
+
+            const severityOrder = ['size/XS', 'size/S', 'size/M', 'size/L', 'size/XL', 'size/XXL'];
+            const maxLabel = (a, b) => severityOrder.indexOf(a) >= severityOrder.indexOf(b) ? a : b;
+
+            const linesBucket = determineLinesBucket(normalizedLines);
+            const filesBucket = determineFilesBucket(normalizedFiles);
+            const sizeLabel = maxLabel(linesBucket, filesBucket);
+
+            let sizeColor = '';
+            let sizeDescription = '';
+            switch (sizeLabel) {
+              case 'size/XS':
+                sizeColor = '00ff00';
+                sizeDescription = 'Extra Small: ≤50 lines or ≤2 files';
+                break;
+              case 'size/S':
+                sizeColor = '7cfc00';
+                sizeDescription = 'Small: 51-149 lines or ≤5 files';
+                break;
+              case 'size/M':
+                sizeColor = 'ffff00';
+                sizeDescription = 'Medium: 150-399 lines or ≤10 files';
+                break;
+              case 'size/L':
+                sizeColor = 'ff8c00';
+                sizeDescription = 'Large: 400-799 lines or ≤20 files';
+                break;
+              case 'size/XL':
+                sizeColor = 'ff4500';
+                sizeDescription = 'XL: 800-1499 lines or ≤40 files';
+                break;
+              case 'size/XXL':
+              default:
+                sizeColor = '8b0000';
+                sizeDescription = 'XXL: 1500+ lines or 41+ files';
+                break;
+            }
+
+            console.log(`PR size: ${sizeLabel} (effective ${normalizedFiles} files / ${normalizedLines} lines, raw ${totalFiles} files / ${totalLines} lines)`);
 
             // Check existing labels to avoid unnecessary changes
             const existingLabels = await github.rest.issues.listLabelsOnIssue({
@@ -165,12 +234,17 @@ jobs:
             }
 
             // Centralized comment body builder
-            function buildSizeComment(filesCount, sizeLabel) {
+            function buildSizeComment(effectiveFiles, effectiveLines, totalFiles, totalLines, sizeLabel) {
               return `## ${{ env.SIZE_COMMENT_MARKER }}
 
-            **Current Size:** \`${sizeLabel}\` (${filesCount} files)
+            **Current Size:** \`${sizeLabel}\`
 
-            ${sizeLabel === 'size/XL' ? `
+            | Metric | Effective | Raw |
+            | --- | --- | --- |
+            | Files changed | ${effectiveFiles} | ${totalFiles} |
+            | Lines changed | ${effectiveLines} | ${totalLines} |
+
+            ${['size/XL','size/XXL'].includes(sizeLabel) ? `
             ### ⚠️ Large PR Considerations:
             - Consider breaking into smaller, focused PRs
             - Review time may be longer
@@ -195,7 +269,7 @@ jobs:
                 )
               );
 
-              const commentBody = buildSizeComment(filesCount, sizeLabel);
+              const commentBody = buildSizeComment(normalizedFiles, normalizedLines, totalFiles, totalLines, sizeLabel);
 
               if (existingComment) {
                 // Update existing comment with fresh data
@@ -222,8 +296,26 @@ jobs:
 
             console.log(`Applied label: ${sizeLabel}`);
 
+            core.setOutput('size-label', sizeLabel);
+            core.setOutput('effective-files', String(normalizedFiles));
+            core.setOutput('effective-lines', String(normalizedLines));
+            core.setOutput('total-files', String(totalFiles));
+            core.setOutput('total-lines', String(totalLines));
+
+            return {
+              sizeLabel,
+              effectiveFiles: normalizedFiles,
+              effectiveLines: normalizedLines,
+              totalFiles,
+              totalLines,
+            };
+
       - name: Output size information
         run: |
           echo "PR Size Analysis Complete"
-          echo "Files changed: ${{ steps.changes.outputs.all_changed_files_count }}"
+          echo "Size label: ${{ steps.size-label.outputs.size-label }}"
+          echo "Effective files: ${{ steps.size-label.outputs.effective-files }}"
+          echo "Effective lines: ${{ steps.size-label.outputs.effective-lines }}"
+          echo "Total files: ${{ steps.size-label.outputs.total-files }}"
+          echo "Total lines: ${{ steps.size-label.outputs.total-lines }}"
           echo "This helps Claude choose the appropriate analysis mode automatically."
