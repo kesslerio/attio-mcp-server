@@ -29,7 +29,7 @@ export interface CompanyAttributes {
   twitter?: string;
   associated_deals?: string[]; // Record reference to deals
   associated_workspaces?: string[]; // Record reference to workspaces
-  [key: string]: any; // Allow for custom fields
+  [key: string]: unknown; // Allow for custom fields
 }
 
 export interface CompanyFieldUpdate {

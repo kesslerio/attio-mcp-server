@@ -10,6 +10,11 @@ import { AttioTask } from '../types/attio.js';
 import { isValidId } from '../utils/validation.js';
 import { shouldUseMockData } from '../services/create/index.js';
 import { deleteTask as apiDelete } from '../api/operations/index.js';
+import {
+  getErrorStatus,
+  getErrorMessage,
+  getErrorCode,
+} from '../types/error-interfaces.js';
 
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 
@@ -169,12 +174,10 @@ export async function deleteTask(taskId: string): Promise<boolean> {
   // Delegate to API operations implementation (handles retries and envelopes)
   try {
     return await apiDelete(taskId);
-  } catch (err: any) {
-    const status = err?.response?.status ?? err?.status;
-    const code = err?.response?.data?.code ?? err?.code;
-    const msg = (err?.response?.data?.message ?? err?.message ?? '')
-      .toString()
-      .toLowerCase();
+  } catch (err: unknown) {
+    const status = getErrorStatus(err);
+    const code = getErrorCode(err);
+    const msg = (getErrorMessage(err) ?? '').toLowerCase();
     // Normalize soft "not found" to boolean false so the service maps it to a structured 404
     if (status === 404 || code === 'not_found' || msg.includes('not found'))
       return false;

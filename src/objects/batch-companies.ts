@@ -7,6 +7,8 @@ import {
   BatchResponse,
   BatchConfig,
   RecordAttributes,
+  RecordBatchCreateParams,
+  RecordBatchUpdateParams,
 } from '../types/attio.js';
 import { CompanyFieldValue } from '../types/tool-types.js';
 import {
@@ -23,6 +25,18 @@ import {
 } from './companies/index.js';
 import { CompanyValidator } from '../validators/company-validator.js';
 import { validateBatchOperation } from '../utils/batch-validation.js';
+
+type CompanyUpdatePayload = {
+  id: string;
+  attributes: RecordAttributes;
+};
+
+type CompanyOperationInput =
+  | { type: 'create'; data: RecordAttributes }
+  | { type: 'update'; data: CompanyUpdatePayload }
+  | { type: 'delete'; data: string };
+
+type BatchFunctionParams = unknown;
 
 /**
  * Helper function to execute a batch operation with improved error handling
@@ -44,7 +58,7 @@ import { validateBatchOperation } from '../utils/batch-validation.js';
 async function executeBatchCompanyOperation<T, R>(
   operationType: 'create' | 'update' | 'delete' | 'search' | 'get',
   records: T[],
-  batchFunction: (params: any) => Promise<R[]>,
+  batchFunction: (params: BatchFunctionParams) => Promise<R[]>,
   singleFunction: (params: T) => Promise<R>,
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<R>> {
@@ -69,13 +83,17 @@ async function executeBatchCompanyOperation<T, R>(
 
   try {
     // Attempt to use the batch API
-    const results = await batchFunction({
-      objectSlug: ResourceType.COMPANIES, // Always explicitly set the resource type
-      records:
-        operationType === 'create'
-          ? records.map((r: any) => ({ attributes: r }))
-          : records,
-    });
+    const payload =
+      operationType === 'create'
+        ? {
+            objectSlug: ResourceType.COMPANIES,
+            records: records.map((record) => ({ attributes: record })),
+          }
+        : {
+            objectSlug: ResourceType.COMPANIES,
+            records,
+          };
+    const results = await batchFunction(payload);
 
     // Format the response
     return {
@@ -203,7 +221,8 @@ export async function batchCreateCompanies(params: {
     return executeBatchCompanyOperation<RecordAttributes, Company>(
       'create',
       validatedCompanies,
-      batchCreateRecords,
+      (params: unknown) =>
+        batchCreateRecords(params as RecordBatchCreateParams),
       createCompany,
       batchConfig
     );
@@ -297,7 +316,8 @@ export async function batchUpdateCompanies(params: {
     >(
       'update',
       updates,
-      batchUpdateRecords,
+      (params: unknown) =>
+        batchUpdateRecords(params as RecordBatchUpdateParams),
       (params) => updateCompany(params.id, params.attributes),
       batchConfig
     );
@@ -392,17 +412,14 @@ export async function batchGetCompanyDetails(
  * @returns Batch response with results for each operation
  */
 export async function batchCompanyOperations(
-  operations: Array<{
-    type: 'create' | 'update' | 'delete';
-    data: any;
-  }>,
+  operations: CompanyOperationInput[],
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<Company | boolean>> {
   const results: Array<{
     id: string;
     success: boolean;
     data?: Company | boolean;
-    error?: any;
+    error?: unknown;
   }> = [];
 
   let succeeded = 0;
@@ -415,7 +432,7 @@ export async function batchCompanyOperations(
     ...batchConfig,
   };
 
-  const chunks = [];
+  const chunks: CompanyOperationInput[][] = [];
   for (let i = 0; i < operations.length; i += config.maxBatchSize) {
     chunks.push(operations.slice(i, i + config.maxBatchSize));
   }
@@ -428,21 +445,22 @@ export async function batchCompanyOperations(
         try {
           let result: Company | boolean;
 
-          switch (operation.type) {
-            case 'create':
-              result = await createCompany(operation.data);
-              break;
-            case 'update':
-              result = await updateCompany(
-                operation.data.id,
-                operation.data.attributes
-              );
-              break;
-            case 'delete':
-              result = await deleteCompany(operation.data);
-              break;
-            default:
-              throw new Error(`Unknown operation type: ${operation.type}`);
+          if (operation.type === 'create') {
+            result = await createCompany(operation.data);
+          } else if (operation.type === 'update') {
+            result = await updateCompany(
+              operation.data.id,
+              operation.data.attributes
+            );
+          } else if (operation.type === 'delete') {
+            result = await deleteCompany(operation.data);
+          } else {
+            // Type guard to safely extract the type from unknown operation
+            const operationType =
+              operation && typeof operation === 'object' && 'type' in operation
+                ? String((operation as Record<string, unknown>).type)
+                : 'unknown';
+            throw new Error(`Unknown operation type: ${operationType}`);
           }
 
           succeeded++;

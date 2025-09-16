@@ -23,7 +23,7 @@ function logAttributeError(
   log.error('Error occurred', error, {
     errorType: error instanceof Error ? error.constructor.name : typeof error,
     message: getErrorMessage(error),
-    stack: (error as any)?.stack,
+    stack: error instanceof Error ? error.stack : undefined,
     ...(Object.keys(context).length > 0 ? { context } : {}),
   });
 }
@@ -272,9 +272,10 @@ export async function discoverCompanyAttributes(): Promise<{
 
   if (process.env.NODE_ENV === 'development') {
     const { createScopedLogger } = await import('../../utils/logger.js');
-    createScopedLogger('companies.attributes', 'discoverCompanyAttributes').debug(
-      'Starting attribute discovery'
-    );
+    createScopedLogger(
+      'companies.attributes',
+      'discoverCompanyAttributes'
+    ).debug('Starting attribute discovery');
   }
 
   try {
@@ -316,15 +317,15 @@ export async function discoverCompanyAttributes(): Promise<{
     const sampleCompanyId = sampleCompany?.id?.record_id;
     if (!sampleCompanyId) {
       const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger('companies.attributes', 'discoverCompanyAttributes').warn(
-        'Sample company has no record ID',
-        {
-          hasId: !!sampleCompany?.id,
-          idType: typeof sampleCompany?.id,
-          idKeys: sampleCompany?.id ? Object.keys(sampleCompany.id) : null,
-          company: sampleCompany,
-        }
-      );
+      createScopedLogger(
+        'companies.attributes',
+        'discoverCompanyAttributes'
+      ).warn('Sample company has no record ID', {
+        hasId: !!sampleCompany?.id,
+        idType: typeof sampleCompany?.id,
+        idKeys: sampleCompany?.id ? Object.keys(sampleCompany.id) : null,
+        company: sampleCompany,
+      });
       return {
         standard: [],
         custom: [],
@@ -334,10 +335,10 @@ export async function discoverCompanyAttributes(): Promise<{
 
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger('companies.attributes', 'discoverCompanyAttributes').debug(
-        'Using sample company ID',
-        { sampleCompanyId }
-      );
+      createScopedLogger(
+        'companies.attributes',
+        'discoverCompanyAttributes'
+      ).debug('Using sample company ID', { sampleCompanyId });
     }
 
     const sampleCompanyDetails = await getCompanyDetails(sampleCompanyId);
@@ -345,10 +346,12 @@ export async function discoverCompanyAttributes(): Promise<{
 
     if (process.env.NODE_ENV === 'development') {
       const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger('companies.attributes', 'discoverCompanyAttributes').debug(
-        'Retrieved fields from sample company',
-        { count: Object.keys(values).length }
-      );
+      createScopedLogger(
+        'companies.attributes',
+        'discoverCompanyAttributes'
+      ).debug('Retrieved fields from sample company', {
+        count: Object.keys(values).length,
+      });
     }
 
     const standardFields = new Set([

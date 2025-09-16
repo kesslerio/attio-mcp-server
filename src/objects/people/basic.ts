@@ -34,11 +34,11 @@ export async function createPerson(
   attributes: PersonAttributes
 ): Promise<Person> {
   try {
-    const result = await createObjectWithDynamicFields<Person>(
-      ResourceType.PEOPLE,
-      attributes,
-      PersonValidator.validateCreate
-    );
+    const result = await createObjectWithDynamicFields<
+      Person,
+      PersonAttributes,
+      PersonAttributes
+    >(ResourceType.PEOPLE, attributes, PersonValidator.validateCreate);
 
     // Defensive validation: Ensure we have a valid person record
     if (!result) {
@@ -97,7 +97,11 @@ export async function updatePerson(
   attributes: PersonAttributes
 ): Promise<Person> {
   try {
-    return await updateObjectWithDynamicFields<Person>(
+    return await updateObjectWithDynamicFields<
+      Person,
+      PersonAttributes,
+      PersonAttributes
+    >(
       ResourceType.PEOPLE,
       personId,
       attributes,
@@ -135,17 +139,20 @@ export async function updatePerson(
 export async function updatePersonAttribute(
   personId: string,
   attributeName: string,
-  attributeValue: any
+  attributeValue: unknown
 ): Promise<Person> {
   try {
     // Validate attribute update
     await PersonValidator.validateAttributeUpdate(
       personId,
       attributeName,
-      attributeValue
+      attributeValue as string | string[] | { record_id: string } | undefined
     );
 
-    return await updateObjectAttributeWithDynamicFields<Person>(
+    return await updateObjectAttributeWithDynamicFields<
+      Person,
+      PersonAttributes
+    >(
       ResourceType.PEOPLE,
       personId,
       attributeName,

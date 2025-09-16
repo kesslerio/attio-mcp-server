@@ -10,7 +10,7 @@ import { RecordAttributes } from '../../types/attio.js';
  * @param value - Attribute value to format
  * @returns Properly formatted attribute value for the API
  */
-export function formatRecordAttribute(key: string, value: any): any {
+export function formatRecordAttribute(key: string, value: unknown): unknown {
   if (value === null || value === undefined) {
     return value;
   }
@@ -32,8 +32,13 @@ export function formatRecordAttribute(key: string, value: any): any {
     !Array.isArray(value) &&
     (key.includes('address') || key.includes('location'))
   ) {
-    if ('street' in value || 'city' in value || 'country' in value) {
-      return value;
+    const addressCandidate = value as Record<string, unknown>;
+    if (
+      'street' in addressCandidate ||
+      'city' in addressCandidate ||
+      'country' in addressCandidate
+    ) {
+      return addressCandidate;
     }
   }
 

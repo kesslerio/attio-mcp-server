@@ -46,7 +46,7 @@ export async function batchSearchPeople(
         queries,
         config
       );
-    } catch (batchError) {
+    } catch {
       // Fallback to individual searches
       const results = [];
       let succeeded = 0;
@@ -124,7 +124,7 @@ export async function batchGetPeopleDetails(
         personIds,
         config
       );
-    } catch (batchError) {
+    } catch {
       // Fallback to individual detail retrieval
       const results = [];
       let succeeded = 0;
