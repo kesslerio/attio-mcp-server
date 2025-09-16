@@ -211,7 +211,6 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
       limit: 50,
     });
 
-    expect(searchResult).toBeDefined();
     expect(
       testCase.validateEdgeCaseResponse(
         searchResult,
@@ -275,8 +274,24 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Analyze concurrent update results - use graceful handling approach
     expect(updateResults.length).toBeGreaterThan(0);
-    updateResults.forEach((result) => {
-      expect(result).toBeDefined();
+    updateResults.forEach((result, index) => {
+      expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+      if (result.status === 'fulfilled') {
+        // Each concurrent update should either succeed OR fail, not both
+        const hasSuccess = testCase.validateEdgeCaseResponse(
+          result.value,
+          `concurrent update operation ${index} (success)`,
+          ['updated', 'success', 'company'],
+          false
+        );
+        const hasError = testCase.validateEdgeCaseResponse(
+          result.value,
+          `concurrent update operation ${index} (conflict)`,
+          ['error', 'conflict', 'concurrent', 'locked'],
+          true
+        );
+        expect(hasSuccess || hasError).toBe(true); // Should be either success OR error
+      }
     });
 
     // Verify final state consistency
@@ -288,7 +303,13 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
       }
     );
 
-    expect(finalStateResult).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        finalStateResult,
+        'get-record-details after concurrent updates',
+        ['company', 'success', 'details', 'error', 'not found']
+      )
+    ).toBe(true);
 
     // Check that the record still exists and has valid data
     const finalText = testCase.extractTextContent(finalStateResult);
@@ -359,8 +380,24 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Analyze concurrent list addition results - use graceful handling approach
     expect(additionResults.length).toBeGreaterThan(0);
-    additionResults.forEach((result) => {
-      expect(result).toBeDefined();
+    additionResults.forEach((result, index) => {
+      expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+      if (result.status === 'fulfilled') {
+        // Each list addition should either succeed OR fail, not both
+        const hasSuccess = testCase.validateEdgeCaseResponse(
+          result.value,
+          `concurrent add-to-list operation ${index} (success)`,
+          ['added', 'success', 'entry'],
+          false
+        );
+        const hasError = testCase.validateEdgeCaseResponse(
+          result.value,
+          `concurrent add-to-list operation ${index} (duplicate)`,
+          ['error', 'already exists', 'duplicate'],
+          true
+        );
+        expect(hasSuccess || hasError).toBe(true); // Should be either success OR error
+      }
     });
 
     // Test concurrent additions of the same record to different lists
@@ -383,8 +420,24 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
       // All operations should handle duplicates gracefully
       expect(repeatedResults.length).toBeGreaterThan(0);
-      repeatedResults.forEach((result) => {
-        expect(result).toBeDefined();
+      repeatedResults.forEach((result, index) => {
+        expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+        if (result.status === 'fulfilled') {
+          // Each repeated addition should either succeed OR fail, not both
+          const hasSuccess = testCase.validateEdgeCaseResponse(
+            result.value,
+            `repeated add-to-list operation ${index} (success)`,
+            ['added', 'success', 'entry'],
+            false
+          );
+          const hasError = testCase.validateEdgeCaseResponse(
+            result.value,
+            `repeated add-to-list operation ${index} (duplicate)`,
+            ['error', 'already exists', 'duplicate'],
+            true
+          );
+          expect(hasSuccess || hasError).toBe(true); // Should be either success OR error
+        }
       });
     }
   });
@@ -409,8 +462,24 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Check results - use graceful handling approach
     expect(burstResults.length).toBe(20);
-    burstResults.forEach((result) => {
-      expect(result).toBeDefined();
+    burstResults.forEach((result, index) => {
+      expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+      if (result.status === 'fulfilled') {
+        // Each search should either succeed OR be rate limited, not both
+        const hasSuccess = testCase.validateEdgeCaseResponse(
+          result.value,
+          `burst search operation ${index} (success)`,
+          ['results', 'companies'],
+          false
+        );
+        const hasError = testCase.validateEdgeCaseResponse(
+          result.value,
+          `burst search operation ${index} (rate limited)`,
+          ['error', 'rate limit', 'throttled', 'too many'],
+          true
+        );
+        expect(hasSuccess || hasError).toBe(true); // Should be either success OR error
+      }
     });
 
     // Verify operations completed
@@ -433,8 +502,24 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Under sustained load with delays, all should complete gracefully
     expect(sustainedResults.length).toBe(10);
-    sustainedResults.forEach((result) => {
-      expect(result).toBeDefined();
+    sustainedResults.forEach((result, index) => {
+      expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+      if (result.status === 'fulfilled') {
+        // Each get-lists should either succeed OR be rate limited, not both
+        const hasSuccess = testCase.validateEdgeCaseResponse(
+          result.value,
+          `sustained get-lists operation ${index} (success)`,
+          ['lists', 'results'],
+          false
+        );
+        const hasError = testCase.validateEdgeCaseResponse(
+          result.value,
+          `sustained get-lists operation ${index} (rate limited)`,
+          ['error', 'rate limit', 'throttled'],
+          true
+        );
+        expect(hasSuccess || hasError).toBe(true); // Should be either success OR error
+      }
     });
   });
 
@@ -494,8 +579,24 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Analyze complex workflow results - use graceful handling approach
     expect(workflowResults.length).toBeGreaterThan(0);
-    workflowResults.forEach((result) => {
-      expect(result).toBeDefined();
+    workflowResults.forEach((result, index) => {
+      expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+      if (result.status === 'fulfilled') {
+        // Each workflow operation should either succeed OR fail, not both
+        const hasSuccess = testCase.validateEdgeCaseResponse(
+          result.value,
+          `complex workflow operation ${index} (success)`,
+          ['created', 'updated', 'added', 'results', 'success', 'company'],
+          false
+        );
+        const hasError = testCase.validateEdgeCaseResponse(
+          result.value,
+          `complex workflow operation ${index} (error)`,
+          ['error', 'failed', 'conflict'],
+          true
+        );
+        expect(hasSuccess || hasError).toBe(true); // Should be either success OR error
+      }
     });
 
     // Verify data consistency after complex operations
@@ -507,7 +608,13 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
       }
     );
 
-    expect(consistencyCheckResult).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        consistencyCheckResult,
+        'get-record-details consistency check after complex workflows',
+        ['company', 'success', 'details', 'error', 'not found']
+      )
+    ).toBe(true);
 
     // Check that the record still exists and has valid data
     const consistencyText = testCase.extractTextContent(consistencyCheckResult);

@@ -169,7 +169,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     console.log(`Network timeout simulation: ${initial.duration}ms duration`);
 
     // Recovery operation should succeed
-    expect(recovery).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        recovery,
+        'network timeout recovery operation',
+        ['results', 'companies', '[]', 'error', 'timeout']
+      )
+    ).toBe(true);
 
     // Test the error recovery pattern
     const result = await testCase.executeExpectedFailureTest(
@@ -203,6 +209,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       (s) => s.name === 'partial_data_corruption'
     );
 
+    // Verify scenario is available for testing
     expect(corruptionScenario).toBeDefined();
 
     // Test creating record with potentially corrupted data
@@ -226,7 +233,6 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       record_data: recoveryData,
     });
 
-    expect(recoveryResult).toBeDefined();
     expect(
       testCase.validateEdgeCaseResponse(
         recoveryResult,
@@ -250,7 +256,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
         }
       );
 
-      expect(verificationResult).toBeDefined();
+      expect(
+        testCase.validateEdgeCaseResponse(
+          verificationResult,
+          'get-record-details after corruption recovery',
+          ['company', 'success', 'details', 'error', 'not found']
+        )
+      ).toBe(true);
     }
   });
 
@@ -258,7 +270,6 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     const { initial, recovery } = await testCase.testDependencyRecovery();
 
     // Initial operation should handle missing reference gracefully
-    expect(initial).toBeDefined();
     expect(
       testCase.validateEdgeCaseResponse(
         initial,
@@ -269,7 +280,6 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     ).toBe(true);
 
     // Recovery operation should succeed
-    expect(recovery).toBeDefined();
     expect(
       testCase.validateEdgeCaseResponse(
         recovery,
@@ -309,7 +319,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
         );
 
         // This recovery should succeed (or handle gracefully if already exists)
-        expect(listRecoveryResult).toBeDefined();
+        expect(
+          testCase.validateEdgeCaseResponse(
+            listRecoveryResult,
+            'add-record-to-list recovery after missing dependency',
+            ['added', 'success', 'entry', 'error', 'already exists']
+          )
+        ).toBe(true);
       }
     }
   });
@@ -377,9 +393,17 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Verify transaction behavior - use graceful handling approach
     expect(operationResults.length).toBe(3);
-    operationResults.forEach((opResult) => {
+    operationResults.forEach((opResult, index) => {
       expect(opResult).toBeDefined();
-      expect(opResult.result).toBeDefined();
+      if (opResult.result) {
+        expect(
+          testCase.validateEdgeCaseResponse(
+            opResult.result,
+            `transaction step ${index + 1}`,
+            ['updated', 'success', 'company', 'error', 'not found', 'invalid']
+          )
+        ).toBe(true);
+      }
     });
 
     // Verify data consistency after failed transaction
@@ -391,7 +415,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       }
     );
 
-    expect(consistencyCheck).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        consistencyCheck,
+        'get-record-details consistency check after transaction',
+        ['company', 'success', 'details', 'error', 'not found']
+      )
+    ).toBe(true);
 
     const consistencyText = testCase.extractTextContent(consistencyCheck);
     expect(consistencyText).toContain(testCase['testCompanyIds'][0]); // Record should still exist
@@ -445,7 +475,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       }
     );
 
-    expect(recoveryResult).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        recoveryResult,
+        'get-record-details after inconsistent state conflicts',
+        ['company', 'success', 'details', 'error', 'not found']
+      )
+    ).toBe(true);
 
     // State should be consistent (one of the update values)
     const recoveryText = testCase.extractTextContent(recoveryResult);
@@ -459,7 +495,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       updates: { description: 'Consistent Recovery State' },
     });
 
-    expect(fixResult).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        fixResult,
+        'update-record fix for inconsistent state',
+        ['updated', 'success', 'company', 'error', 'not found']
+      )
+    ).toBe(true);
 
     // Verify fix was applied
     const verifyFixResult = await testCase.executeToolCall(
@@ -470,7 +512,13 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       }
     );
 
-    expect(verifyFixResult).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        verifyFixResult,
+        'get-record-details verification after fix',
+        ['company', 'success', 'details', 'error', 'not found']
+      )
+    ).toBe(true);
 
     const fixText = testCase.extractTextContent(verifyFixResult);
     expect(fixText).toContain(companyId); // Verify company still exists after recovery

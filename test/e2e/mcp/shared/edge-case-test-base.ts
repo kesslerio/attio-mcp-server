@@ -364,29 +364,33 @@ export abstract class EdgeCaseTestBase extends MCPTestBase {
 
     if (shouldBeError) {
       // For tests that should definitely produce errors
-      return (
+      const hasExpectedError =
         hasError ||
         expectedErrorPatterns.some((pattern) =>
           responseText.toLowerCase().includes(pattern.toLowerCase())
-        )
+        );
+
+      // Log for debugging
+      console.log(
+        `🔍 ${context}: shouldBeError=true, hasError=${hasError}, hasExpectedError=${hasExpectedError}, text="${responseText.substring(0, 100)}..."`
       );
+
+      return hasExpectedError;
     } else {
-      // For graceful handling tests - should either error gracefully OR provide meaningful response
+      // For graceful handling tests - should error gracefully (NOT accept invalid input)
       const hasErrorIndicators = expectedErrorPatterns.some((pattern) =>
         responseText.toLowerCase().includes(pattern.toLowerCase())
       );
 
-      const hasMeaningfulResponse =
-        responseText.length > 10 &&
-        !responseText.includes('undefined') &&
-        !responseText.includes('null');
+      // REMOVED: hasMeaningfulResponse fallback - invalid input should not succeed
+      // This was the critical flaw - tests would pass if invalid input wrongly succeeded
 
       // Log for debugging
       console.log(
-        `🔍 ${context}: hasError=${hasError}, hasErrorIndicators=${hasErrorIndicators}, meaningful=${hasMeaningfulResponse}, text="${responseText.substring(0, 100)}..."`
+        `🔍 ${context}: shouldBeError=false, hasError=${hasError}, hasErrorIndicators=${hasErrorIndicators}, text="${responseText.substring(0, 100)}..."`
       );
 
-      return hasError || hasErrorIndicators || hasMeaningfulResponse;
+      return hasError || hasErrorIndicators;
     }
   }
 

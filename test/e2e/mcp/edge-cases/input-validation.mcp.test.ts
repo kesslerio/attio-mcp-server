@@ -128,7 +128,6 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       resource_type: 'companies',
       record_data: emptyFieldsScenario!.inputData,
     });
-    expect(response).toBeDefined();
 
     // Verify error handling or graceful response
     const responseText = testCase.extractTextContent(response);
@@ -198,8 +197,6 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       limit: -1, // Invalid limit
     });
 
-    expect(searchResponse).toBeDefined();
-
     // Verify invalid limit is handled properly
     const searchText = testCase.extractTextContent(searchResponse);
     const hasValidHandling =
@@ -245,8 +242,6 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       record_data: injectionData,
     });
 
-    expect(createResult).toBeDefined();
-
     // Ensure dangerous scripts are not executed in response
     const text = testCase.extractTextContent(createResult);
     expect(text).not.toContain('<script>');
@@ -258,7 +253,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       query: '<script>alert("test")</script>',
     });
 
-    expect(searchResponse).toBeDefined();
+    // Verify search handles injection attempts safely
   });
 
   it('should handle complex nested parameter structures', async () => {
@@ -278,7 +273,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
         }
       );
 
-      expect(complexResponse).toBeDefined();
+      expect(
+        testCase.validateEdgeCaseResponse(
+          complexResponse,
+          'advanced-filter-list-entries with malformed nested filters',
+          ['entries', 'results', '[]', 'error', 'invalid']
+        )
+      ).toBe(true);
     }
 
     // Test invalid update operations with complex data
@@ -292,7 +293,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
         },
       });
 
-      expect(updateResponse).toBeDefined();
+      expect(
+        testCase.validateEdgeCaseResponse(
+          updateResponse,
+          'update-record with invalid fields',
+          ['updated', 'success', 'company', 'error', 'invalid']
+        )
+      ).toBe(true);
     }
   });
 
@@ -314,7 +321,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       record_data: edgeCaseData,
     });
 
-    expect(edgeResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        edgeResponse,
+        'create-record with mixed edge case data',
+        ['created', 'success', 'company', 'error', 'invalid']
+      )
+    ).toBe(true);
 
     // Test empty arrays and objects - should handle gracefully
     const emptyCollectionsData = {
@@ -329,7 +342,13 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       record_data: emptyCollectionsData,
     });
 
-    expect(emptyResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        emptyResponse,
+        'create-record with empty collections',
+        ['created', 'success', 'company', 'error', 'invalid']
+      )
+    ).toBe(true);
   });
 
   it('should handle additional universal tools gracefully', async () => {
@@ -341,12 +360,12 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       }
     );
 
-    expect(attributesResponse).toBeDefined();
     expect(
       testCase.validateEdgeCaseResponse(
         attributesResponse,
         'get-attributes with invalid resource type',
-        ['error', 'invalid', 'not found', 'unknown']
+        ['error', 'invalid', 'not found', 'unknown'],
+        true // Invalid resource type MUST fail
       )
     ).toBe(true);
 
@@ -359,7 +378,6 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       }
     );
 
-    expect(discoverResponse).toBeDefined();
     expect(
       testCase.validateEdgeCaseResponse(
         discoverResponse,
@@ -377,12 +395,12 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       }
     );
 
-    expect(detailedInfoResponse).toBeDefined();
     expect(
       testCase.validateEdgeCaseResponse(
         detailedInfoResponse,
         'get-detailed-info with invalid UUID format',
-        ['error', 'invalid', 'not found', 'malformed', 'uuid']
+        ['error', 'invalid', 'not found', 'malformed', 'uuid'],
+        true // Invalid UUID format MUST fail
       )
     ).toBe(true);
 
@@ -394,7 +412,6 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
         content: '',
       });
 
-      expect(noteResponse).toBeDefined();
       expect(
         testCase.validateEdgeCaseResponse(
           noteResponse,

@@ -139,7 +139,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       record_data: longStringData,
     });
 
-    expect(createResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        createResponse,
+        'create-record with extremely long strings',
+        ['error', 'invalid', 'too large', 'limit exceeded', 'rejected'],
+        true // Extremely long strings should be rejected
+      )
+    ).toBe(true);
 
     // Test long strings in search queries - should handle gracefully
     const queryLength = Math.min(maxStringLength, 1000); // Limit query length for performance
@@ -148,7 +155,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       query: 'A'.repeat(queryLength),
     });
 
-    expect(searchResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        searchResponse,
+        'search-records with extremely long query',
+        ['error', 'invalid', 'too large', 'query too long'],
+        true // Extremely long queries should be rejected
+      )
+    ).toBe(true);
 
     // Verify memory bounds are reasonable
     EdgeCaseAssertions.assertMemoryBounds(createResponse, 50 * 1024 * 1024); // 50MB limit
@@ -162,7 +176,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       offset: -100,
     });
 
-    expect(negativeResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        negativeResponse,
+        'search-records with negative pagination values',
+        ['error', 'invalid', 'negative', 'must be positive'],
+        true // Negative pagination values should be rejected
+      )
+    ).toBe(true);
 
     // Test zero values - should handle gracefully
     const zeroResponse = await testCase.executeToolCall('search-records', {
@@ -171,7 +192,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       offset: 0,
     });
 
-    expect(zeroResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        zeroResponse,
+        'search-records with zero pagination values',
+        ['results', 'companies', '[]'], // Zero limit should return empty results
+        false // Zero pagination is valid, should succeed
+      )
+    ).toBe(true);
 
     // Test very large values - should handle gracefully
     const largeResponse = await testCase.executeToolCall('search-records', {
@@ -180,7 +208,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       offset: 99999,
     });
 
-    expect(largeResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        largeResponse,
+        'search-records with very large pagination values',
+        ['error', 'invalid', 'too large', 'limit exceeded'],
+        true // Very large pagination should be rejected
+      )
+    ).toBe(true);
   });
 
   it('should handle pagination limits and large result sets', async () => {
@@ -194,7 +229,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       }
     );
 
-    expect(largeLimitResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        largeLimitResponse,
+        'search-records with large limit values',
+        ['error', 'invalid', 'too large', 'limit exceeded'],
+        true // Large limits should be rejected
+      )
+    ).toBe(true);
 
     // Test with large offset values - should handle gracefully
     const largeOffsetResponse = await testCase.executeToolCall(
@@ -206,7 +248,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       }
     );
 
-    expect(largeOffsetResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        largeOffsetResponse,
+        'search-records with large offset values',
+        ['error', 'invalid', 'too large', 'offset exceeded'],
+        true // Large offsets should be rejected
+      )
+    ).toBe(true);
 
     if (testCase['validListId']) {
       // Test list operations with large pagination
@@ -216,7 +265,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
         offset: 1000,
       });
 
-      expect(listResponse).toBeDefined();
+      expect(
+        testCase.validateEdgeCaseResponse(
+          listResponse,
+          'get-list-entries with large pagination',
+          ['error', 'invalid', 'too large', 'limit exceeded'],
+          true // Large pagination should be rejected
+        )
+      ).toBe(true);
     }
   });
 
@@ -235,7 +291,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       record_data: largeArrayData,
     });
 
-    expect(largeArrayResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        largeArrayResponse,
+        'create-record with large arrays and collections',
+        ['error', 'invalid', 'too large', 'array too large'],
+        true // Large arrays should be rejected
+      )
+    ).toBe(true);
 
     // Test empty collections - should handle gracefully
     const emptyCollectionsData = {
@@ -251,7 +314,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       record_data: emptyCollectionsData,
     });
 
-    expect(emptyResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        emptyResponse,
+        'create-record with empty collections',
+        ['created', 'success', 'company'], // Empty collections should be valid
+        false // This should succeed
+      )
+    ).toBe(true);
   });
 
   it('should handle Unicode and special character boundaries', async () => {
@@ -266,7 +336,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       record_data: unicodeData,
     });
 
-    expect(unicodeResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        unicodeResponse,
+        'create-record with Unicode boundary characters',
+        ['error', 'invalid', 'character', 'encoding'],
+        true // Null bytes and boundary characters should be rejected
+      )
+    ).toBe(true);
 
     // Test with emoji and extended Unicode
     const emojiData = {
@@ -280,7 +357,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       record_data: emojiData,
     });
 
-    expect(emojiResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        emojiResponse,
+        'create-record with emoji and extended Unicode',
+        ['created', 'success', 'company'], // Emojis and normal Unicode should be valid
+        false // This should succeed
+      )
+    ).toBe(true);
 
     // Test control characters
     const controlCharsData = {
@@ -293,7 +377,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       record_data: controlCharsData,
     });
 
-    expect(controlResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        controlResponse,
+        'create-record with control characters',
+        ['error', 'invalid', 'control character', 'not allowed'],
+        true // Control characters should be rejected
+      )
+    ).toBe(true);
   });
 
   it('should handle concurrent operation boundaries gracefully', async () => {
@@ -320,8 +411,24 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
 
     // Verify all operations complete (either success or handled gracefully)
     expect(results.length).toBeGreaterThan(0);
-    results.forEach((result) => {
-      expect(result).toBeDefined();
+    results.forEach((result, index) => {
+      expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+      if (result.status === 'fulfilled') {
+        expect(
+          testCase.validateEdgeCaseResponse(
+            result.value,
+            `concurrent add-record-to-list operation ${index}`,
+            [
+              'added',
+              'success',
+              'entry',
+              'error',
+              'already exists',
+              'duplicate',
+            ]
+          )
+        ).toBe(true);
+      }
     });
 
     // Test rapid successive search operations
@@ -340,8 +447,17 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
 
     // Verify rapid operations are handled gracefully
     expect(rapidResults.length).toBe(5);
-    rapidResults.forEach((result) => {
-      expect(result).toBeDefined();
+    rapidResults.forEach((result, index) => {
+      expect(result.status).toBe('fulfilled'); // Should not throw exceptions
+      if (result.status === 'fulfilled') {
+        expect(
+          testCase.validateEdgeCaseResponse(
+            result.value,
+            `rapid search operation ${index}`,
+            ['results', 'companies', '[]', 'error', 'rate limit', 'throttled']
+          )
+        ).toBe(true);
+      }
     });
   });
 
@@ -409,7 +525,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
         }
       );
 
-      expect(removeResponse).toBeDefined();
+      expect(
+        testCase.validateEdgeCaseResponse(
+          removeResponse,
+          'remove-record-from-list with invalid record ID',
+          ['error', 'not found', 'invalid', 'does not exist'],
+          true // Invalid ID should produce error
+        )
+      ).toBe(true);
 
       // Test update-list-entry with malformed data
       const updateEntryResponse = await testCase.executeToolCall(
@@ -421,7 +544,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
         }
       );
 
-      expect(updateEntryResponse).toBeDefined();
+      expect(
+        testCase.validateEdgeCaseResponse(
+          updateEntryResponse,
+          'update-list-entry with malformed data',
+          ['error', 'invalid', 'not found', 'malformed', 'null'],
+          true // Invalid entry ID and null updates should produce error
+        )
+      ).toBe(true);
     }
 
     // Test list-notes with invalid parent
@@ -430,7 +560,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       limit: -1, // Invalid limit
     });
 
-    expect(listNotesResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        listNotesResponse,
+        'list-notes with invalid parent and negative limit',
+        ['error', 'invalid', 'not found', 'limit', 'negative'],
+        true // Invalid parent ID and negative limit should produce error
+      )
+    ).toBe(true);
 
     // Test delete-record with invalid ID
     const deleteResponse = await testCase.executeToolCall('delete-record', {
@@ -438,6 +575,13 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       record_id: 'invalid-delete-id',
     });
 
-    expect(deleteResponse).toBeDefined();
+    expect(
+      testCase.validateEdgeCaseResponse(
+        deleteResponse,
+        'delete-record with invalid record ID',
+        ['error', 'not found', 'invalid', 'does not exist'],
+        true // Invalid ID should produce error
+      )
+    ).toBe(true);
   });
 });
