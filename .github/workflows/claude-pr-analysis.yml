@@ -10,15 +10,19 @@ on:
       - 'LICENSE'
       - 'docs/**'
 
-# Prevent interference with manual Claude workflow
+# Cancel previous runs on new commits
 concurrency:
   group: claude-pr-analysis-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
   pull-requests: write
   # checks: write   # enable only if you intentionally create/update Checks
+
+# Environment variables for comment markers
+env:
+  SECURITY_COMMENT_MARKER: '🛡️ Automated Security Review Complete'
 
 jobs:
   automated-security-review:
@@ -86,23 +90,86 @@ jobs:
 
             Keep under 2000 tokens.
 
-      - name: Comment with slash command info
+      - name: Check for existing security comment
         if: steps.gate.outputs.should_analyze == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        id: comment-check
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `## 🛡️ Automated Security Review Complete
+            try {
+              // Inline pagination helper
+              async function fetchAllComments() {
+                let allComments = [];
+                let page = 1;
 
-              ✅ Security-focused analysis finished for ${{ steps.changed.outputs.all_changed_files_count }} files.
+                while (true) {
+                  const { data } = await github.rest.issues.listComments({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    per_page: 100,
+                    page: page
+                  });
 
-              **Manual Claude Review**: Comment \`@claude review\` to get a full interactive review.
-              
-              **Re-run Security Scan**: Comment \`/security review\` to re-run automated security analysis.
+                  allComments = allComments.concat(data);
+                  if (data.length < 100) break;
+                  page++;
+                }
 
-              ---
-              *Automated Security Review by Claude Code Action*`
-            });
+                return allComments;
+              }
+
+              const allComments = await fetchAllComments();
+              const existingComment = allComments.find(c =>
+                c.body && c.body.includes(process.env.SECURITY_COMMENT_MARKER)
+              );
+
+              if (existingComment) {
+                core.setOutput('exists', true);
+                core.setOutput('comment_id', existingComment.id);
+              } else {
+                core.setOutput('exists', false);
+              }
+            } catch (error) {
+              console.log('Error checking for existing comments:', error.message);
+              core.setOutput('exists', false);
+            }
+
+      - name: Comment with slash command info
+        if: steps.gate.outputs.should_analyze == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        env:
+          COMMENT_EXISTS: ${{ steps.comment-check.outputs.exists }}
+          COMMENT_ID: ${{ steps.comment-check.outputs.comment_id }}
+          FILES_COUNT: ${{ steps.changed.outputs.all_changed_files_count }}
+        with:
+          script: |
+            const commentBody = `## ${{ env.SECURITY_COMMENT_MARKER }}
+
+            ✅ Security analysis updated for ${process.env.FILES_COUNT} files.
+
+            **Manual Claude Review**: Comment \`@claude review\` to get a full interactive review.
+
+            **Re-run Security Scan**: Comment \`/security review\` to re-run automated security analysis.
+
+            ---
+            *Last updated: ${new Date().toISOString()}*
+            *Automated Security Review by Claude Code Action*`;
+
+            if (process.env.COMMENT_EXISTS === 'true') {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: process.env.COMMENT_ID,
+                body: commentBody
+              });
+              console.log('Updated existing security comment with fresh data');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+              console.log('Created new security comment');
+            }
