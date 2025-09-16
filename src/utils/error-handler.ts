@@ -4,6 +4,7 @@
 import { AttioErrorResponse } from '../types/attio.js';
 import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
 import { enhanceErrorMessage } from './error-examples.js';
+import { createScopedLogger, OperationType } from './logger.js';
 
 /**
  * Enum for categorizing different types of errors
@@ -241,6 +242,11 @@ export function formatErrorResponse(
   type: ErrorType = ErrorType.UNKNOWN_ERROR,
   details?: any
 ) {
+  const log = createScopedLogger(
+    'utils.error-handler',
+    'formatErrorResponse',
+    OperationType.SYSTEM
+  );
   // Ensure we have a valid error object
   const normalizedError =
     error instanceof Error
@@ -306,9 +312,9 @@ export function formatErrorResponse(
         })
       );
     } catch (err) {
-      console.error(
-        '[formatErrorResponse] Error with safe stringification:',
-        err instanceof Error ? err.message : String(err)
+      log.error(
+        'Error during safe stringification while formatting error response',
+        err instanceof Error ? err : undefined
       );
       // Ultimate fallback
       safeDetails = {
@@ -321,10 +327,10 @@ export function formatErrorResponse(
 
   // Log the error for debugging purposes
   if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
-    console.error(
-      `[formatErrorResponse] Formatted error [${type}]:`,
-      errorMessage
-    );
+    log.debug('Formatted error response', {
+      errorType: type,
+      message: errorMessage,
+    });
   }
 
   // Return properly formatted MCP error response
@@ -370,6 +376,11 @@ export function createErrorResult(
     paramName?: string;
   } = {}
 ) {
+  const log = createScopedLogger(
+    'utils.error-handler',
+    'createErrorResult',
+    OperationType.SYSTEM
+  );
   // Ensure we have a valid error object to work with
   const normalizedError =
     error instanceof Error
@@ -377,10 +388,11 @@ export function createErrorResult(
       : new Error(typeof error === 'string' ? error : 'Unknown error');
 
   if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
-    console.error(
-      `[createErrorResult] Processing error for ${method} ${url}:`,
-      normalizedError.message
-    );
+    log.debug('Processing error result', {
+      method,
+      url,
+      message: normalizedError.message,
+    });
   }
 
   // If it's already an AttioApiError, use it directly
@@ -421,7 +433,10 @@ export function createErrorResult(
       return formatErrorResponse(apiError, apiError.type, errorDetails);
     } catch (formattingError) {
       // If error formatting fails, preserve the original error
-      console.error('Error while formatting API error:', formattingError);
+      log.error(
+        'Error while formatting API error',
+        formattingError instanceof Error ? formattingError : undefined
+      );
       const originalErrorDetails = {
         url,
         method,

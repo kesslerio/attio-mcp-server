@@ -36,6 +36,7 @@ import {
   hasErrorResponse,
 } from '../types/list-types.js';
 import { isValidUUID } from '../utils/validation/uuid-validation.js';
+import { createScopedLogger, OperationType } from '../utils/logger.js';
 
 // Re-export for backward compatibility
 export type { ListMembership } from '../types/list-types.js';
@@ -1170,6 +1171,11 @@ export async function searchLists(
  * @returns List attributes schema
  */
 export async function getListAttributes(): Promise<Record<string, unknown>> {
+  const log = createScopedLogger(
+    'objects.lists',
+    'getListAttributes',
+    OperationType.API_CALL
+  );
   const api = getLazyAttioClient();
   const path = '/lists/attributes';
 
@@ -1178,9 +1184,9 @@ export async function getListAttributes(): Promise<Record<string, unknown>> {
     return extract<Record<string, unknown>>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[getListAttributes] Error:`,
-        error instanceof Error ? error.message : 'Unknown error'
+      log.error(
+        'Failed to fetch list attributes, returning default schema',
+        error instanceof Error ? error : undefined
       );
     }
 

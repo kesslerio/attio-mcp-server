@@ -5,6 +5,14 @@
  * Provides deprecation warnings for unsupported aliases
  */
 
+import { createScopedLogger, OperationType } from './logger.js';
+
+const log = createScopedLogger(
+  'utils.AttioFieldMapper',
+  undefined,
+  OperationType.TRANSFORMATION
+);
+
 export const FIELD_MAPPINGS = {
   timestamp: {
     created: 'created_at',
@@ -36,9 +44,10 @@ export function mapFieldName(genericField: string): string {
   // Check for deprecated mappings
   const deprecated = DEPRECATED_FIELDS[genericField];
   if (deprecated) {
-    console.warn(
-      `[AttioFieldMapper] Deprecated field '${genericField}' used. Use '${deprecated}' instead. Attio API uses '${deprecated}' for timestamp fields.`
-    );
+    log.warn('Deprecated field alias used', {
+      field: genericField,
+      replacement: deprecated,
+    });
     return deprecated;
   }
 
