@@ -486,7 +486,7 @@ export class ParameterValidationMiddleware {
  */
 export function createValidationErrorResponse(
   error: UniversalValidationError
-): any {
+): Record<string, unknown> {
   return {
     error: error.toErrorResponse().error,
     status: 'error',
@@ -497,12 +497,12 @@ export function createValidationErrorResponse(
 /**
  * Wrap a handler with validation middleware
  */
-export function withValidation<T extends (...args: any[]) => any>(
+export function withValidation<T extends (...args: unknown[]) => unknown>(
   handler: T,
   schema: SchemaDefinition,
   toolName: string
 ): T {
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     try {
       // Validate parameters if provided
       if (args[0]) {

@@ -65,9 +65,9 @@ class PerformanceMonitorInstance {
       startTime = storedStartTime;
       actualSuccess =
         typeof startTimeOrSuccess === 'boolean' ? startTimeOrSuccess : true;
-      actualError = typeof success === 'string' ? (success as any) : error;
+      actualError = typeof success === 'string' ? (success as unknown as string) : error;
       actualMetadata =
-        error && typeof error === 'object' ? (error as any) : metadata;
+        error && typeof error === 'object' ? (error as unknown as Record<string, unknown>) : metadata;
 
       // Clean up stored operation
       this.activeOperations.delete(toolName);

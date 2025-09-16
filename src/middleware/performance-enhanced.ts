@@ -102,7 +102,18 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   private degradationThreshold: number = 0.2; // 20% degradation threshold
 
   // Timing context for current operation
-  private timingContext: Map<string, any> = new Map();
+  private timingContext: Map<string, {
+    toolName: string;
+    operationType: string;
+    startTime: number;
+    metadata?: Record<string, unknown>;
+    timings: {
+      validation: number;
+      attioApi: number;
+      serialization: number;
+      other: number;
+    };
+  }> = new Map();
 
   private constructor() {
     super();
@@ -201,7 +212,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     success: boolean = true,
     error?: string,
     statusCode?: number,
-    additionalMetadata?: Record<string, any>
+    additionalMetadata?: Record<string, unknown>
   ): EnhancedPerformanceMetrics | null {
     if (!this.enabled || !operationId) return null;
 
@@ -222,7 +233,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     const metrics: EnhancedPerformanceMetrics = {
       toolName: context.toolName,
       operationType: context.operationType,
-      resourceType: context.metadata?.resourceType,
+      resourceType: context.metadata?.resourceType as string | undefined,
       startTime: context.startTime,
       endTime,
       duration,
@@ -238,7 +249,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
       cached: false,
       error,
       statusCode,
-      recordCount: additionalMetadata?.recordCount,
+      recordCount: additionalMetadata?.recordCount as number | undefined,
       metadata: { ...context.metadata, ...additionalMetadata },
     };
 
@@ -540,26 +551,26 @@ export class EnhancedPerformanceTracker extends EventEmitter {
 Performance Report
 ==================
 Total Operations: ${stats.count}
-Success Rate: ${(stats.successRate as any).toFixed(1)}%
-Cache Hit Rate: ${(stats.cacheHitRate as any).toFixed(1)}%
+Success Rate: ${(stats.successRate as number).toFixed(1)}%
+Cache Hit Rate: ${(stats.cacheHitRate as number).toFixed(1)}%
 
 Timing Statistics (ms)
 ----------------------
-Average: ${(stats.timing as any).average.toFixed(0)}
-Min: ${(stats.timing as any).min.toFixed(0)}
-Max: ${(stats.timing as any).max.toFixed(0)}
-P50: ${(stats.timing as any).p50.toFixed(0)}
-P95: ${(stats.timing as any).p95.toFixed(0)}
-P99: ${(stats.timing as any).p99.toFixed(0)}
+Average: ${((stats.timing as Record<string, number>).average).toFixed(0)}
+Min: ${((stats.timing as Record<string, number>).min).toFixed(0)}
+Max: ${((stats.timing as Record<string, number>).max).toFixed(0)}
+P50: ${((stats.timing as Record<string, number>).p50).toFixed(0)}
+P95: ${((stats.timing as Record<string, number>).p95).toFixed(0)}
+P99: ${((stats.timing as Record<string, number>).p99).toFixed(0)}
 
 API vs MCP Overhead (ms)
 ------------------------
-API Average: ${(stats.apiTiming as any).average.toFixed(0)}
-API P95: ${(stats.apiTiming as any).p95.toFixed(0)}
-API P99: ${(stats.apiTiming as any).p99.toFixed(0)}
-MCP Average: ${(stats.overhead as any).average.toFixed(0)}
-MCP P95: ${(stats.overhead as any).p95.toFixed(0)}
-MCP P99: ${(stats.overhead as any).p99.toFixed(0)}
+API Average: ${((stats.apiTiming as Record<string, number>).average).toFixed(0)}
+API P95: ${((stats.apiTiming as Record<string, number>).p95).toFixed(0)}
+API P99: ${((stats.apiTiming as Record<string, number>).p99).toFixed(0)}
+MCP Average: ${((stats.overhead as Record<string, number>).average).toFixed(0)}
+MCP P95: ${((stats.overhead as Record<string, number>).p95).toFixed(0)}
+MCP P99: ${((stats.overhead as Record<string, number>).p99).toFixed(0)}
 
 Budget Violations: ${stats.budgetViolations}
 
