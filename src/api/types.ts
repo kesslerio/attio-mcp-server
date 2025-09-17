@@ -1,5 +1,12 @@
 /**
  * Typed response shapes for the Attio API client
+ *
+ * Design Decisions:
+ * - Limited use of index signatures to maintain type safety while allowing API evolution
+ * - Explicit optional properties for known Attio API fields
+ * - Type guards for runtime validation of API responses
+ * - Generic types to support different endpoint response shapes
+ *
  * Provides strong typing for API responses and error handling
  */
 
@@ -7,13 +14,24 @@ import { AxiosResponse, AxiosError } from 'axios';
 
 /**
  * Generic wrapper for Attio API responses
+ *
+ * Design: Explicitly defines known Attio API response fields without
+ * a catch-all index signature to maintain type safety. Additional fields
+ * that may be added by Attio in the future should be explicitly typed.
+ *
  * @template T The shape of the response data
  */
 export interface AttioResponse<T = unknown> {
   data: T;
   status?: number;
   message?: string;
-  [key: string]: unknown;
+  /** Additional metadata that may be present in responses */
+  meta?: {
+    total?: number;
+    cursor?: string;
+    has_more?: boolean;
+    [key: string]: unknown;
+  };
 }
 
 /**
@@ -36,27 +54,60 @@ export interface AttioAxiosError extends AxiosError {
 
 /**
  * Attribute schema response from Attio API
+ *
+ * Design: Explicit typing for known attribute properties with specific
+ * types for common field types. Avoids catch-all index signature.
  */
 export interface AttioAttributeSchema {
   id?: {
     attribute_id?: string;
-    [key: string]: unknown;
+    workspace_id?: string;
+    object_id?: string;
   };
   api_slug: string;
   title: string;
-  type: string;
+  /** Common Attio attribute types */
+  type:
+    | 'text'
+    | 'number'
+    | 'date'
+    | 'datetime'
+    | 'boolean'
+    | 'select'
+    | 'multiselect'
+    | 'status'
+    | 'currency'
+    | 'url'
+    | 'email'
+    | 'phone'
+    | 'location'
+    | 'rating'
+    | 'interaction'
+    | 'record-reference'
+    | string;
   is_system?: boolean;
   is_required?: boolean;
   is_unique?: boolean;
   is_multiselect?: boolean;
   description?: string;
   default_value?: unknown;
-  config?: Record<string, unknown>;
-  [key: string]: unknown;
+  /** Configuration specific to attribute type */
+  config?: {
+    /** For select/multiselect attributes */
+    options?: Array<{ id: string; title: string; color?: string }>;
+    /** For number/currency attributes */
+    precision?: number;
+    /** For text attributes */
+    max_length?: number;
+    [key: string]: unknown;
+  };
 }
 
 /**
  * Select option structure for select/status attributes
+ *
+ * Design: Explicit properties for known select option fields.
+ * Note: `id` is optional as some API responses may not include it.
  */
 export interface AttioSelectOption {
   id?: string;
@@ -65,7 +116,9 @@ export interface AttioSelectOption {
   color?: string;
   order?: number;
   is_archived?: boolean;
-  [key: string]: unknown;
+  /** Additional Attio option metadata */
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**

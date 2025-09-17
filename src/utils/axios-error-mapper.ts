@@ -262,7 +262,7 @@ export const handleSelectOptionError = async (
             schema &&
             (schema.type === 'select' ||
               schema.type === 'multi_select' ||
-              schema.isMultiselect === true)
+              schema.is_multiselect === true)
           ) {
             const options = await loadOptions(fieldName);
             if (options && options.length > 0) {
@@ -294,7 +294,7 @@ export const handleSelectOptionError = async (
                   `Field "${fieldName}" (value: "${fieldValueString}") - valid options: ${validOptions}`
                 );
               } else if (
-                (schema.isMultiselect === true ||
+                (schema.is_multiselect === true ||
                   schema.type === 'multi_select') &&
                 typeof fieldValue === 'string'
               ) {
