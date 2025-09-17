@@ -5,6 +5,46 @@
  * to improve user experience and reduce errors.
  */
 
+import { createScopedLogger } from './logger.js';
+
+// Type definitions for better type safety
+type AttributeValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Record<string, unknown>
+  | unknown[];
+type AttributesObject = Record<string, AttributeValue>;
+
+interface PersonalNameObject {
+  first_name?: string;
+  last_name?: string;
+  full_name: string;
+}
+
+interface RelationshipReference {
+  target_object: string;
+  target_record_id: string;
+}
+
+interface LegacyRelationshipReference {
+  record_id: string;
+}
+
+type EmailItem = string | { email_address: string };
+type PhoneItem = string | { phone_number?: string; number?: string };
+type RelationshipItem =
+  | string
+  | RelationshipReference
+  | LegacyRelationshipReference;
+
+const logger = createScopedLogger(
+  'utils.format-helpers',
+  'attribute-format-helpers'
+);
+
 /**
  * Converts common attribute format mistakes to correct API format
  *
@@ -14,8 +54,8 @@
  */
 export function convertAttributeFormats(
   resourceType: string,
-  attributes: any
-): any {
+  attributes: AttributesObject
+): AttributesObject {
   let corrected = { ...attributes };
 
   switch (resourceType) {
@@ -36,7 +76,9 @@ export function convertAttributeFormats(
 /**
  * Converts company attribute formats
  */
-function convertCompanyAttributes(attributes: any): any {
+function convertCompanyAttributes(
+  attributes: AttributesObject
+): AttributesObject {
   const corrected = { ...attributes };
 
   // Convert 'domain' to 'domains' array
@@ -46,24 +88,20 @@ function convertCompanyAttributes(attributes: any): any {
       : [corrected.domain];
     delete corrected.domain;
     try {
-      const { createScopedLogger } = require('./logger.js');
-      createScopedLogger(
-        'utils.format-helpers',
-        'convertCompanyAttributes'
-      ).debug("Converted 'domain' to 'domains' array");
-    } catch {}
+      logger.debug("Converted 'domain' to 'domains' array");
+    } catch {
+      // Logger not available, continue silently
+    }
   }
 
   // Ensure domains is always an array
   if (corrected.domains && !Array.isArray(corrected.domains)) {
     corrected.domains = [corrected.domains];
     try {
-      const { createScopedLogger } = require('./logger.js');
-      createScopedLogger(
-        'utils.format-helpers',
-        'convertCompanyAttributes'
-      ).debug('Converted domains to array format');
-    } catch {}
+      logger.debug('Converted domains to array format');
+    } catch {
+      // Logger not available, continue silently
+    }
   }
 
   // Handle common typos
@@ -71,12 +109,10 @@ function convertCompanyAttributes(attributes: any): any {
     corrected.type = corrected.typpe;
     delete corrected.typpe;
     try {
-      const { createScopedLogger } = require('./logger.js');
-      createScopedLogger(
-        'utils.format-helpers',
-        'convertCompanyAttributes'
-      ).debug("Fixed typo: 'typpe' -> 'type'");
-    } catch {}
+      logger.debug("Fixed typo: 'typpe' -> 'type'");
+    } catch {
+      // Logger not available, continue silently
+    }
   }
 
   return corrected;
@@ -85,7 +121,7 @@ function convertCompanyAttributes(attributes: any): any {
 /**
  * Converts deal attribute formats
  */
-function convertDealAttributes(attributes: any): any {
+function convertDealAttributes(attributes: AttributesObject): AttributesObject {
   const corrected = { ...attributes };
 
   // Convert associated_company to array format: string -> [{ target_object, target_record_id }]
@@ -96,35 +132,37 @@ function convertDealAttributes(attributes: any): any {
         { target_object: 'companies', target_record_id: value },
       ];
       try {
-        const { createScopedLogger } = require('./logger.js');
-        createScopedLogger(
-          'utils.format-helpers',
-          'convertDealAttributes'
-        ).debug('Converted associated_company string to object array');
-      } catch {}
+        logger.debug('Converted associated_company string to object array');
+      } catch {
+        // Logger not available, continue silently
+      }
     } else if (Array.isArray(value)) {
-      corrected.associated_company = value.map((v) => {
-        if (typeof v === 'string') {
-          return { target_object: 'companies', target_record_id: v };
-        } else if (
-          v &&
-          typeof v === 'object' &&
-          'record_id' in v &&
-          !('target_record_id' in v)
-        ) {
-          // Convert { record_id: "..." } to { target_object: "companies", target_record_id: "..." }
-          return { target_object: 'companies', target_record_id: v.record_id };
-        } else {
-          return v; // Already in correct format or unknown format
+      corrected.associated_company = (value as RelationshipItem[]).map(
+        (v: RelationshipItem) => {
+          if (typeof v === 'string') {
+            return { target_object: 'companies', target_record_id: v };
+          } else if (
+            v &&
+            typeof v === 'object' &&
+            'record_id' in v &&
+            !('target_record_id' in v)
+          ) {
+            // Convert { record_id: "..." } to { target_object: "companies", target_record_id: "..." }
+            const legacyRef = v as LegacyRelationshipReference;
+            return {
+              target_object: 'companies',
+              target_record_id: legacyRef.record_id,
+            };
+          } else {
+            return v; // Already in correct format or unknown format
+          }
         }
-      });
+      );
       try {
-        const { createScopedLogger } = require('./logger.js');
-        createScopedLogger(
-          'utils.format-helpers',
-          'convertDealAttributes'
-        ).debug('Converted associated_company array entries');
-      } catch {}
+        logger.debug('Converted associated_company array entries');
+      } catch {
+        // Logger not available, continue silently
+      }
     }
   }
 
@@ -136,35 +174,37 @@ function convertDealAttributes(attributes: any): any {
         { target_object: 'people', target_record_id: value },
       ];
       try {
-        const { createScopedLogger } = require('./logger.js');
-        createScopedLogger(
-          'utils.format-helpers',
-          'convertDealAttributes'
-        ).debug('Converted associated_people string to object array');
-      } catch {}
+        logger.debug('Converted associated_people string to object array');
+      } catch {
+        // Logger not available, continue silently
+      }
     } else if (Array.isArray(value)) {
-      corrected.associated_people = value.map((v) => {
-        if (typeof v === 'string') {
-          return { target_object: 'people', target_record_id: v };
-        } else if (
-          v &&
-          typeof v === 'object' &&
-          'record_id' in v &&
-          !('target_record_id' in v)
-        ) {
-          // Convert { record_id: "..." } to { target_object: "people", target_record_id: "..." }
-          return { target_object: 'people', target_record_id: v.record_id };
-        } else {
-          return v; // Already in correct format or unknown format
+      corrected.associated_people = (value as RelationshipItem[]).map(
+        (v: RelationshipItem) => {
+          if (typeof v === 'string') {
+            return { target_object: 'people', target_record_id: v };
+          } else if (
+            v &&
+            typeof v === 'object' &&
+            'record_id' in v &&
+            !('target_record_id' in v)
+          ) {
+            // Convert { record_id: "..." } to { target_object: "people", target_record_id: "..." }
+            const legacyRef = v as LegacyRelationshipReference;
+            return {
+              target_object: 'people',
+              target_record_id: legacyRef.record_id,
+            };
+          } else {
+            return v; // Already in correct format or unknown format
+          }
         }
-      });
+      );
       try {
-        const { createScopedLogger } = require('./logger.js');
-        createScopedLogger(
-          'utils.format-helpers',
-          'convertDealAttributes'
-        ).debug('Converted associated_people array entries');
-      } catch {}
+        logger.debug('Converted associated_people array entries');
+      } catch {
+        // Logger not available, continue silently
+      }
     }
   }
 
@@ -174,7 +214,9 @@ function convertDealAttributes(attributes: any): any {
 /**
  * Converts people attribute formats
  */
-function convertPeopleAttributes(attributes: any): any {
+function convertPeopleAttributes(
+  attributes: AttributesObject
+): AttributesObject {
   const corrected = { ...attributes };
 
   // Handle name conversion to personal-name array format
@@ -198,12 +240,12 @@ function convertPeopleAttributes(attributes: any): any {
       }
       nameObj.full_name = corrected.name;
       try {
-        const { createScopedLogger } = require('./logger.js');
-        createScopedLogger(
-          'utils.format-helpers',
-          'convertPeopleAttributes'
-        ).debug('Parsed string name into components', { name: corrected.name });
-      } catch {}
+        logger.debug('Parsed string name into components', {
+          name: corrected.name,
+        });
+      } catch {
+        // Logger not available, continue silently
+      }
     }
 
     // Handle individual name components
@@ -233,29 +275,27 @@ function convertPeopleAttributes(attributes: any): any {
     delete corrected.full_name;
 
     try {
-      const { createScopedLogger } = require('./logger.js');
-      createScopedLogger(
-        'utils.format-helpers',
-        'convertPeopleAttributes'
-      ).debug('Created personal-name array', { name: corrected.name });
-    } catch {}
+      logger.debug('Created personal-name array', { name: corrected.name });
+    } catch {
+      // Logger not available, continue silently
+    }
   }
 
   // Convert email_addresses from object format to string array
   if (corrected.email_addresses && Array.isArray(corrected.email_addresses)) {
-    const converted = corrected.email_addresses.map((item: any) => {
-      if (typeof item === 'object' && item.email_address) {
-        try {
-          const { createScopedLogger } = require('./logger.js');
-          createScopedLogger(
-            'utils.format-helpers',
-            'convertPeopleAttributes'
-          ).debug('Converting email object format to string');
-        } catch {}
-        return item.email_address;
+    const converted = (corrected.email_addresses as EmailItem[]).map(
+      (item: EmailItem) => {
+        if (typeof item === 'object' && item.email_address) {
+          try {
+            logger.debug('Converting email object format to string');
+          } catch {
+            // Logger not available, continue silently
+          }
+          return (item as { email_address: string }).email_address;
+        }
+        return item;
       }
-      return item;
-    });
+    );
     corrected.email_addresses = converted;
   }
 
@@ -263,29 +303,28 @@ function convertPeopleAttributes(attributes: any): any {
   if (corrected.email_addresses && !Array.isArray(corrected.email_addresses)) {
     corrected.email_addresses = [corrected.email_addresses];
     try {
-      const { createScopedLogger } = require('./logger.js');
-      createScopedLogger(
-        'utils.format-helpers',
-        'convertPeopleAttributes'
-      ).debug('Converted email_addresses to array format');
-    } catch {}
+      logger.debug('Converted email_addresses to array format');
+    } catch {
+      // Logger not available, continue silently
+    }
   }
 
   // Convert phone_numbers from object format to string array
   if (corrected.phone_numbers && Array.isArray(corrected.phone_numbers)) {
-    const converted = corrected.phone_numbers.map((item: any) => {
-      if (typeof item === 'object' && (item.phone_number || item.number)) {
-        try {
-          const { createScopedLogger } = require('./logger.js');
-          createScopedLogger(
-            'utils.format-helpers',
-            'convertPeopleAttributes'
-          ).debug('Converting phone object format to string');
-        } catch {}
-        return item.phone_number || item.number;
+    const converted = (corrected.phone_numbers as PhoneItem[]).map(
+      (item: PhoneItem) => {
+        if (typeof item === 'object' && (item.phone_number || item.number)) {
+          try {
+            logger.debug('Converting phone object format to string');
+          } catch {
+            // Logger not available, continue silently
+          }
+          const phoneObj = item as { phone_number?: string; number?: string };
+          return phoneObj.phone_number || phoneObj.number;
+        }
+        return item;
       }
-      return item;
-    });
+    );
     corrected.phone_numbers = converted;
   }
 
@@ -296,39 +335,36 @@ function convertPeopleAttributes(attributes: any): any {
  * Validates people attributes before POST to ensure correct Attio format
  * Throws validation errors if required formats are not met
  */
-export function validatePeopleAttributesPrePost(attributes: any): void {
+export function validatePeopleAttributesPrePost(
+  attributes: AttributesObject
+): void {
   // Validate name format if present
   if (attributes.name) {
-    if (!Array.isArray(attributes.name)) {
+    if (!Array.isArray(attributes.name as unknown)) {
       throw new Error('People name must be an array of personal-name objects');
     }
 
-    if (attributes.name.length > 0 && !attributes.name[0].full_name) {
+    const nameArray = attributes.name as PersonalNameObject[];
+    if (nameArray.length > 0 && !nameArray[0].full_name) {
       throw new Error('People name[0].full_name must be a non-empty string');
     }
 
-    if (
-      attributes.name.length > 0 &&
-      typeof attributes.name[0].full_name !== 'string'
-    ) {
+    if (nameArray.length > 0 && typeof nameArray[0].full_name !== 'string') {
       throw new Error('People name[0].full_name must be a string');
     }
 
-    if (
-      attributes.name.length > 0 &&
-      attributes.name[0].full_name.trim() === ''
-    ) {
+    if (nameArray.length > 0 && nameArray[0].full_name.trim() === '') {
       throw new Error('People name[0].full_name must be a non-empty string');
     }
   }
 
   // Validate email_addresses format if present
   if (attributes.email_addresses) {
-    if (!Array.isArray(attributes.email_addresses)) {
+    if (!Array.isArray(attributes.email_addresses as unknown)) {
       throw new Error('People email_addresses must be an array of strings');
     }
 
-    for (const email of attributes.email_addresses) {
+    for (const email of attributes.email_addresses as string[]) {
       if (typeof email !== 'string') {
         throw new Error('All email_addresses must be strings, not objects');
       }
