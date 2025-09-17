@@ -14,7 +14,6 @@ import { ErrorService } from '../../../services/ErrorService.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 import { validateBatchOperation } from '../../../utils/batch-validation.js';
-import { RATE_LIMITS } from '../../../config/security-limits.js';
 
 // Import enhanced batch API for optimized performance (Issue #471)
 import {
@@ -41,7 +40,9 @@ export interface BatchSearchParams {
  */
 export const batchSearchConfig = {
   name: 'batch-search',
-  handler: async (params: BatchSearchParams): Promise<any> => {
+  handler: async (
+    params: BatchSearchParams
+  ): Promise<UniversalBatchSearchResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'batch-search',
@@ -78,7 +79,10 @@ export const batchSearchConfig = {
       );
     }
   },
-  formatResult: (results: any, resourceType?: UniversalResourceType) => {
+  formatResult: (
+    results: UniversalBatchSearchResult[] | unknown,
+    resourceType?: UniversalResourceType
+  ) => {
     if (!results || !Array.isArray(results)) {
       return 'Batch search failed or returned no results';
     }

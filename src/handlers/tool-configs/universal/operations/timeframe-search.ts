@@ -10,6 +10,7 @@ import {
   RelativeTimeframe,
 } from '../types.js';
 import { AttioRecord } from '../../../../types/attio.js';
+import { safeExtractTimestamp } from '../../shared/type-utils.js';
 
 import { validateUniversalToolParams } from '../schemas.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
@@ -228,20 +229,15 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         const id = recordId?.record_id || 'unknown';
 
         // Try to show relevant date information
-        const created = (record as any).created_at;
-        const modified = (record as any).updated_at;
+        const created = safeExtractTimestamp(record.created_at);
+        const modified = safeExtractTimestamp(record.updated_at);
         let dateInfo = '';
 
-        if (
-          timeframeType === TimeframeType.CREATED &&
-          created &&
-          (typeof created === 'string' || typeof created === 'number')
-        ) {
+        if (timeframeType === TimeframeType.CREATED && created !== 'unknown') {
           dateInfo = ` (created: ${new Date(created).toLocaleDateString()})`;
         } else if (
           timeframeType === TimeframeType.MODIFIED &&
-          modified &&
-          (typeof modified === 'string' || typeof modified === 'number')
+          modified !== 'unknown'
         ) {
           dateInfo = ` (modified: ${new Date(modified).toLocaleDateString()})`;
         }

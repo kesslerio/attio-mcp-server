@@ -16,7 +16,7 @@ import { PaginatedResponse } from '../../utils/pagination.js';
  */
 interface PaginatedSearchToolConfig {
   name: string;
-  handler: (...args: any[]) => Promise<PaginatedResponse<Person>>;
+  handler: (...args: unknown[]) => Promise<PaginatedResponse<Person>>;
   formatResult: (result: PaginatedResponse<Person>) => string;
 }
 
@@ -38,7 +38,7 @@ function formatPaginatedPeopleResult(
   const resultList = results
     .map(
       (person: Person) =>
-        `- ${(person.values?.name as any)?.[0]?.value || 'Unnamed'} (ID: ${
+        `- ${(person.values?.name as unknown as Array<{ value: unknown }>)?.[0]?.value || 'Unnamed'} (ID: ${
           person.id?.record_id || 'unknown'
         })`
     )

@@ -9,6 +9,10 @@ import {
   getCompanyAttributes,
 } from '../../../objects/companies/index.js';
 import { ToolConfig } from '../../tool-types.js';
+import {
+  safeExtractFirstValue,
+  safeExtractRecordValues,
+} from '../shared/type-utils.js';
 
 // Company attribute tool configurations
 export const attributeToolConfigs = {
@@ -16,14 +20,15 @@ export const attributeToolConfigs = {
     name: 'get-company-fields',
     handler: getCompanyFields,
     formatResult: (company: Partial<Company>) => {
-      const name = (company.values?.name as any)?.[0]?.value || 'Unknown';
+      const values = safeExtractRecordValues(company);
+      const name = safeExtractFirstValue(values.name, 'Unknown');
       const id = company.id?.record_id || 'Unknown';
-      const fieldCount = Object.keys(company.values || {}).length;
-      const fields = Object.keys(company.values || {});
+      const fieldCount = Object.keys(values).length;
+      const fields = Object.keys(values);
 
       // Create a simplified version of the values for display
       const simplifiedValues: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(company.values || {})) {
+      for (const [key, value] of Object.entries(values)) {
         if (Array.isArray(value) && value.length > 0) {
           // Extract just the actual value from the array structure
           const firstItem = value[0];
@@ -67,9 +72,10 @@ ${JSON.stringify(simplifiedValues, null, 2)}`;
       return await getCompanyCustomFields(companyId, fields);
     },
     formatResult: (company: Partial<Company>) => {
-      const name = (company.values?.name as any)?.[0]?.value || 'Unknown';
+      const values = safeExtractRecordValues(company);
+      const name = safeExtractFirstValue(values.name, 'Unknown');
       const id = company.id?.record_id || 'Unknown';
-      const customFields = { ...company.values };
+      const customFields = { ...values };
       delete customFields.name;
 
       const fieldCount = Object.keys(customFields).length;
