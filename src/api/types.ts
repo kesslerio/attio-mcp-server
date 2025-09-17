@@ -101,11 +101,13 @@ export function isAttioErrorData(data: unknown): data is AttioServerError {
 /**
  * Extract error data from various error shapes
  */
-export function extractAttioError(error: unknown): AttioServerError | undefined {
+export function extractAttioError(
+  error: unknown
+): AttioServerError | undefined {
   if (hasAttioServerData(error)) {
     return error.serverData;
   }
-  
+
   if (error && typeof error === 'object' && 'response' in error) {
     const axiosError = error as AxiosError;
     const data = axiosError.response?.data;
@@ -113,7 +115,7 @@ export function extractAttioError(error: unknown): AttioServerError | undefined 
       return data;
     }
   }
-  
+
   return undefined;
 }
 
@@ -132,24 +134,28 @@ export function extractResponseData<T>(
   if (!response || typeof response !== 'object') {
     return undefined;
   }
-  
+
   // Handle Axios response structure
   if ('data' in response) {
     const responseData = (response as AxiosResponse).data;
-    
+
     // Handle nested { data: { data: T } }
-    if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'data' in responseData
+    ) {
       return responseData.data as T;
     }
-    
+
     // Handle direct { data: T }
     return responseData as T;
   }
-  
+
   // Handle raw data object
   if ('data' in response) {
     return (response as { data: T }).data;
   }
-  
+
   return response as T;
 }
