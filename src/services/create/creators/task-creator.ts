@@ -8,7 +8,6 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import type { ResourceCreatorContext } from './types.js';
 import { BaseCreator } from './base-creator.js';
-import { convertTaskToAttioRecord } from '../data-normalizers.js';
 
 /**
  * Task-specific resource creator
@@ -19,8 +18,8 @@ export class TaskCreator extends BaseCreator {
   readonly endpoint = '/tasks';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private taskModule: any = null;
-  private converterModule: any = null;
+  private taskModule: Record<string, unknown> | null = null;
+  private converterModule: Record<string, unknown> | null = null;
 
   /**
    * Lazy-loads task dependencies to prevent repeated dynamic imports
@@ -58,7 +57,7 @@ export class TaskCreator extends BaseCreator {
       await this.ensureDependencies();
 
       // Build options object with only defined values to avoid passing "undefined" strings
-      const options: any = {};
+      const options: Record<string, unknown> = {};
       if (input.assigneeId && input.assigneeId !== 'undefined') {
         options.assigneeId = input.assigneeId as string;
       }
@@ -98,23 +97,26 @@ export class TaskCreator extends BaseCreator {
       try {
         if (
           input.assigneeId &&
-          (!record.values || !(record.values as any).assignee)
+          (!record.values ||
+            !(record.values as Record<string, unknown>).assignee)
         ) {
-          const values: any = record.values || {};
+          const values: Record<string, unknown> = record.values || {};
           values.assignee = [{ value: input.assigneeId }];
-          (record as any).values = values;
+          (record as Record<string, unknown>).values = values;
         }
-      } catch {}
+      } catch {
+        // Ignore conversion errors, maintain compatibility
+      }
 
       context.debug(this.constructor.name, 'Converted task record', {
-        recordId: (record as any)?.id?.record_id,
+        recordId: (record as Record<string, unknown>)?.id?.record_id,
         resourceType: record.resource_type,
       });
 
       return record;
-    } catch (err: any) {
+    } catch (err: unknown) {
       context.logError(this.constructor.name, 'Task creation error', {
-        error: err?.message,
+        error: (err as Error)?.message,
         input,
       });
 
@@ -144,7 +146,7 @@ export class TaskCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     // Tasks are handled via delegation, so no direct recovery needed
     throw this.createEnhancedError(
       new Error('Task creation failed via delegation - no recovery available'),

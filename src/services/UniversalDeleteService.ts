@@ -212,9 +212,10 @@ export class UniversalDeleteService {
           throw error;
         }
 
-      case UniversalResourceType.NOTES:
+      case UniversalResourceType.NOTES: {
         const result = await deleteNote(record_id);
         return { success: result.success, record_id };
+      }
 
       default:
         throw new Error(

@@ -85,7 +85,7 @@ export class UniversalUtilityService {
         record_id = task.id;
       } else if (typeof task.id === 'object' && task.id !== null) {
         if ('task_id' in task.id) {
-          record_id = (task.id as any).task_id;
+          record_id = (task.id as Record<string, unknown>).task_id as string;
         } else if ('id' in task.id) {
           record_id = (task.id as Record<string, unknown>).id as string;
         } else {
@@ -136,7 +136,7 @@ export class UniversalUtilityService {
 
     // Add assignee as simple string (corrected after API verification)
     if (task.assignee) {
-      (flatFields as any).assignee =
+      (flatFields as Record<string, unknown>).assignee =
         typeof task.assignee === 'string' ? task.assignee : task.assignee.id;
     }
 

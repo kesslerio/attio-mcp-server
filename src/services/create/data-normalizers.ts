@@ -218,12 +218,12 @@ export function normalizePersonValues(
  * @returns AttioRecord with both nested values and flat field compatibility
  */
 export function convertTaskToAttioRecord(
-  createdTask: any,
-  originalInput: Record<string, unknown>
+  createdTask: Record<string, unknown>,
+  _originalInput: Record<string, unknown>
 ): AttioRecord {
   // Handle conversion from AttioTask to AttioRecord format
   if (createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
-    const task = createdTask as any;
+    const task = createdTask as Record<string, unknown>;
 
     // If it's already an AttioRecord with record_id, ensure flat fields exist and return
     if (task.values && task.id?.record_id) {
@@ -231,22 +231,27 @@ export function convertTaskToAttioRecord(
       return {
         ...base,
         // Provide flat field compatibility expected by E2E tests
-        content: (base.values?.content as any)?.[0]?.value || base.content,
+        content:
+          (base.values?.content as Record<string, unknown>[])?.[0]?.value ||
+          base.content,
         title:
-          (base.values?.title as any)?.[0]?.value ||
-          (base.values?.content as any)?.[0]?.value ||
+          (base.values?.title as Record<string, unknown>[])?.[0]?.value ||
+          (base.values?.content as Record<string, unknown>[])?.[0]?.value ||
           base.title,
-        status: (base.values?.status as any)?.[0]?.value || base.status,
+        status:
+          (base.values?.status as Record<string, unknown>[])?.[0]?.value ||
+          base.status,
         due_date:
-          (base.values?.due_date as any)?.[0]?.value ||
+          (base.values?.due_date as Record<string, unknown>[])?.[0]?.value ||
           base.due_date ||
           (task.deadline_at
             ? String(task.deadline_at).split('T')[0]
             : undefined),
         assignee_id:
-          (base.values?.assignee as any)?.[0]?.value || base.assignee_id,
+          (base.values?.assignee as Record<string, unknown>[])?.[0]?.value ||
+          base.assignee_id,
         priority: base.priority || 'medium',
-      } as any;
+      } as unknown as AttioRecord;
     }
 
     // If it has task_id, convert to AttioRecord format
@@ -281,7 +286,7 @@ export function convertTaskToAttioRecord(
           : undefined,
         assignee_id: task.assignee?.id || task.assignee_id,
         priority: task.priority || 'medium',
-      } as any;
+      } as unknown as AttioRecord;
     }
   }
 

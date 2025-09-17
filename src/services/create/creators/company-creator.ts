@@ -108,21 +108,23 @@ export class CompanyCreator extends BaseCreator {
           nameBefore: Array.isArray(rec?.values?.name)
             ? 'array'
             : typeof rec?.values?.name,
-          nameAfter: typeof (out as any)?.values?.name,
-          domainsAfter: Array.isArray((out as any)?.values?.domains),
+          nameAfter: typeof (out as Record<string, unknown>)?.values?.name,
+          domainsAfter: Array.isArray(
+            (out as Record<string, unknown>)?.values?.domains
+          ),
         });
       }
 
       return out;
-    } catch (err: any) {
+    } catch (err: unknown) {
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
         createScopedLogger('CompanyCreator', 'create').debug(
           'Exception caught',
           {
-            message: err.message,
-            status: err?.response?.status,
-            hasResponseData: !!err?.response?.data,
+            message: (err as Error).message,
+            status: (err as Record<string, unknown>)?.response?.status,
+            hasResponseData: !!(err as Record<string, unknown>)?.response?.data,
           }
         );
       }
@@ -169,7 +171,7 @@ export class CompanyCreator extends BaseCreator {
   protected async attemptRecovery(
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!normalizedInput) {
       throw this.createEnhancedError(
         new Error('Company creation returned empty/invalid record'),
@@ -249,7 +251,7 @@ export class CompanyCreator extends BaseCreator {
    * Includes recovery attempt with normalized input
    */
   protected async processResponse(
-    response: any,
+    response: Record<string, unknown>,
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
@@ -266,7 +268,9 @@ export class CompanyCreator extends BaseCreator {
 
     // Handle empty response with recovery attempt
     const mustRecover =
-      !record || !(record as any).id || !(record as any).id?.record_id;
+      !record ||
+      !(record as Record<string, unknown>).id ||
+      !(record as Record<string, unknown>).id?.record_id;
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -277,14 +281,18 @@ export class CompanyCreator extends BaseCreator {
   /**
    * Extracts record from API response
    */
-  private extractRecordFromResponse(response: any): any {
+  private extractRecordFromResponse(
+    response: Record<string, unknown>
+  ): Record<string, unknown> {
     return extractAttioRecord(response);
   }
 
   /**
    * Extracts record from search results
    */
-  private extractRecordFromSearch(searchData: any): any {
+  private extractRecordFromSearch(
+    searchData: Record<string, unknown>
+  ): Record<string, unknown> {
     return extractAttioRecord(searchData);
   }
 
@@ -292,7 +300,7 @@ export class CompanyCreator extends BaseCreator {
    * Finalizes record processing
    */
   private finalizeRecord(
-    record: any,
+    record: Record<string, unknown>,
     context: ResourceCreatorContext
   ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);
