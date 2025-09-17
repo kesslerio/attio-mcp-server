@@ -11,13 +11,22 @@ import { ContactValue } from '../../../types/tool-types.js';
  * @returns The person's name or 'Unnamed' if not found
  */
 export function getPersonName(person: AttioRecord): string {
-  const values = person.values as any;
+  const values = person.values as Record<string, unknown>;
+  const nameField = values?.name as
+    | Array<{ value?: unknown; full_name?: unknown; formatted?: unknown }>
+    | undefined;
+  const fullNameField = values?.full_name as
+    | Array<{ value?: unknown }>
+    | undefined;
   return (
-    values?.name?.[0]?.full_name ||
-    values?.name?.[0]?.value ||
-    values?.name?.[0]?.formatted ||
-    values?.full_name?.[0]?.value ||
-    (person as any).attributes?.name?.value ||
+    String(nameField?.[0]?.full_name || '') ||
+    String(nameField?.[0]?.value || '') ||
+    String(nameField?.[0]?.formatted || '') ||
+    String(fullNameField?.[0]?.value || '') ||
+    String(
+      (person as { attributes?: { name?: { value?: string } } }).attributes
+        ?.name?.value || ''
+    ) ||
     'Unnamed'
   );
 }
@@ -34,8 +43,9 @@ export function formatPersonDetails(person: Person): string {
   }
 
   const personId = person.id.record_id || 'unknown';
-  const values = person.values as any;
-  const name = values.name?.[0]?.value || 'Unnamed';
+  const values = person.values as Record<string, unknown>;
+  const nameField = values.name as Array<{ value?: unknown }> | undefined;
+  const name = String(nameField?.[0]?.value || 'Unnamed');
   const DISPLAYED_FIELDS = [
     'name',
     'email_addresses',
@@ -48,17 +58,23 @@ export function formatPersonDetails(person: Person): string {
   sections.push(`# Person Details: ${name} (ID: ${personId})`);
 
   const contactInfo: string[] = [];
-  if (values.email_addresses?.length) {
+  const emailAddresses = values.email_addresses as
+    | Array<{ email_address?: string; value?: string }>
+    | undefined;
+  if (emailAddresses?.length) {
     contactInfo.push(
-      `Email: ${values.email_addresses
-        .map((e: ContactValue) => e.email_address || e.value || 'N/A')
+      `Email: ${emailAddresses
+        .map((e) => e.email_address || e.value || 'N/A')
         .join(', ')}`
     );
   }
-  if (values.phone_numbers?.length) {
+  const phoneNumbers = values.phone_numbers as
+    | Array<{ phone_number?: string; value?: string }>
+    | undefined;
+  if (phoneNumbers?.length) {
     contactInfo.push(
-      `Phone: ${values.phone_numbers
-        .map((p: ContactValue) => p.phone_number || p.value || 'N/A')
+      `Phone: ${phoneNumbers
+        .map((p) => p.phone_number || p.value || 'N/A')
         .join(', ')}`
     );
   }
@@ -67,11 +83,15 @@ export function formatPersonDetails(person: Person): string {
   }
 
   const professionalInfo: string[] = [];
-  if (values.job_title?.[0]?.value) {
-    professionalInfo.push(`Job Title: ${values.job_title[0].value}`);
+  const jobTitleField = values.job_title as
+    | Array<{ value?: unknown }>
+    | undefined;
+  if (jobTitleField?.[0]?.value) {
+    professionalInfo.push(`Job Title: ${String(jobTitleField[0].value)}`);
   }
-  if (values.company?.[0]?.value) {
-    professionalInfo.push(`Company: ${values.company[0].value}`);
+  const companyField = values.company as Array<{ value?: unknown }> | undefined;
+  if (companyField?.[0]?.value) {
+    professionalInfo.push(`Company: ${String(companyField[0].value)}`);
   }
   if (professionalInfo.length) {
     sections.push(
@@ -86,7 +106,7 @@ export function formatPersonDetails(person: Person): string {
     }
     if (Array.isArray(fieldValues) && fieldValues.length > 0) {
       const formattedValues = fieldValues
-        .map((v: ContactValue) => {
+        .map((v: { value?: unknown }) => {
           if (v.value === undefined) return 'N/A';
           if (typeof v.value === 'object') return JSON.stringify(v.value);
           return String(v.value);
@@ -105,11 +125,17 @@ export function formatPersonDetails(person: Person): string {
   }
 
   const timestamps: string[] = [];
-  if (values.created_at?.[0]?.value) {
-    timestamps.push(`Created: ${values.created_at[0].value}`);
+  const createdAtField = values.created_at as
+    | Array<{ value?: unknown }>
+    | undefined;
+  if (createdAtField?.[0]?.value) {
+    timestamps.push(`Created: ${String(createdAtField[0].value)}`);
   }
-  if (values.updated_at?.[0]?.value) {
-    timestamps.push(`Updated: ${values.updated_at[0].value}`);
+  const updatedAtField = values.updated_at as
+    | Array<{ value?: unknown }>
+    | undefined;
+  if (updatedAtField?.[0]?.value) {
+    timestamps.push(`Updated: ${String(updatedAtField[0].value)}`);
   }
   if (timestamps.length) {
     sections.push(`## Timestamps\n${timestamps.join('\n')}`);

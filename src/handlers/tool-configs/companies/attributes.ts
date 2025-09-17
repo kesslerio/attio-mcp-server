@@ -16,7 +16,9 @@ export const attributeToolConfigs = {
     name: 'get-company-fields',
     handler: getCompanyFields,
     formatResult: (company: Partial<Company>) => {
-      const name = (company.values?.name as any)?.[0]?.value || 'Unknown';
+      const name =
+        (company.values?.name as unknown as Array<{ value: unknown }>)?.[0]
+          ?.value || 'Unknown';
       const id = company.id?.record_id || 'Unknown';
       const fieldCount = Object.keys(company.values || {}).length;
       const fields = Object.keys(company.values || {});
@@ -67,7 +69,9 @@ ${JSON.stringify(simplifiedValues, null, 2)}`;
       return await getCompanyCustomFields(companyId, fields);
     },
     formatResult: (company: Partial<Company>) => {
-      const name = (company.values?.name as any)?.[0]?.value || 'Unknown';
+      const name =
+        (company.values?.name as unknown as Array<{ value: unknown }>)?.[0]
+          ?.value || 'Unknown';
       const id = company.id?.record_id || 'Unknown';
       const customFields = { ...company.values };
       delete customFields.name;

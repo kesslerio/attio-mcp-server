@@ -20,7 +20,7 @@ export const relationshipToolConfigs = {
       return `Found ${results.length} companies with matching people:\n${results
         .map(
           (company) =>
-            `- ${(company.values?.name as any)?.[0]?.value || 'Unnamed'} (ID: ${
+            `- ${(company.values?.name as unknown as Array<{ value: unknown }>)?.[0]?.value || 'Unnamed'} (ID: ${
               company.id?.record_id || 'unknown'
             })`
         )
@@ -37,7 +37,7 @@ export const relationshipToolConfigs = {
       } companies with employees in the list:\n${results
         .map(
           (company) =>
-            `- ${(company.values?.name as any)?.[0]?.value || 'Unnamed'} (ID: ${
+            `- ${(company.values?.name as unknown as Array<{ value: unknown }>)?.[0]?.value || 'Unnamed'} (ID: ${
               company.id?.record_id || 'unknown'
             })`
         )
@@ -52,7 +52,7 @@ export const relationshipToolConfigs = {
       return `Found ${results.length} companies with matching notes:\n${results
         .map(
           (company) =>
-            `- ${(company.values?.name as any)?.[0]?.value || 'Unnamed'} (ID: ${
+            `- ${(company.values?.name as unknown as Array<{ value: unknown }>)?.[0]?.value || 'Unnamed'} (ID: ${
               company.id?.record_id || 'unknown'
             })`
         )

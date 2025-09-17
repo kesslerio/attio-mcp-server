@@ -2,7 +2,6 @@
  * Lists-related tool configurations
  */
 import { AttioList, AttioListEntry } from '../../types/attio.js';
-import { getRecordNameFromEntry } from '../../utils/record-utils.js';
 import { isValidUUID } from '../../utils/validation/uuid-validation.js';
 import {
   getLists,
@@ -72,7 +71,9 @@ export const listsToolConfigs = {
       return await getListEntries(listId, limit, offset);
     },
     formatResult: (
-      results: AttioListEntry[] | { isError: boolean; content: any[] }
+      results:
+        | AttioListEntry[]
+        | { isError: boolean; content: Array<Record<string, unknown>> }
     ) => {
       // Handle validation error response
       if (results && typeof results === 'object' && 'isError' in results) {
@@ -106,7 +107,7 @@ export const listsToolConfigs = {
       listId: string,
       recordId: string,
       objectType: string,
-      values?: any
+      values?: Record<string, unknown>
     ) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
@@ -124,7 +125,9 @@ export const listsToolConfigs = {
     },
     idParams: ['listId', 'recordId'],
     formatResult: (
-      result: AttioListEntry | { isError: boolean; content: any[] }
+      result:
+        | AttioListEntry
+        | { isError: boolean; content: Array<Record<string, unknown>> }
     ) => {
       // Handle validation error response
       if (result && typeof result === 'object' && 'isError' in result) {

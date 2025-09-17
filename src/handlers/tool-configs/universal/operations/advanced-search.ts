@@ -2,7 +2,11 @@
  * Advanced universal search tool configuration
  */
 
-import { UniversalToolConfig, AdvancedSearchParams } from '../types.js';
+import {
+  UniversalToolConfig,
+  AdvancedSearchParams,
+  UniversalResourceType,
+} from '../types.js';
 import { AttioRecord } from '../../../../types/attio.js';
 
 import { validateUniversalToolParams } from '../schemas.js';
@@ -116,8 +120,8 @@ export const advancedSearchConfig: UniversalToolConfig = {
         offset: sanitizedParams.offset,
       });
     } catch (error: unknown) {
-      const ctx = (params as any)?.resource_type
-        ? String((params as any).resource_type)
+      const ctx = (params as { resource_type?: unknown })?.resource_type
+        ? String((params as { resource_type: unknown }).resource_type)
         : '';
       throw ErrorService.createUniversalError('advanced search', ctx, error);
     }
@@ -125,7 +129,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
   formatResult: (results: AttioRecord[], resourceType?: string) => {
     const count = Array.isArray(results) ? results.length : 0;
     const typeName = resourceType
-      ? formatResourceType(resourceType as any)
+      ? formatResourceType(resourceType as UniversalResourceType)
       : 'record';
     const headerType = resourceType
       ? count === 1

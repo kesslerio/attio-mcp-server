@@ -445,9 +445,9 @@ export function getMigrationParams(
 /**
  * Log consolidation statistics
  */
-export function logConsolidationStats(): void {
+export async function logConsolidationStats(): Promise<void> {
   const stats = getConsolidationStats();
-  const { createScopedLogger } = require('../../../utils/logger.js');
+  const { createScopedLogger } = await import('../../../utils/logger.js');
   const log = createScopedLogger('universal.tools', 'consolidation');
   log.info('Universal tool consolidation', { summary: stats.summary });
   log.info('Tool count reduction', {

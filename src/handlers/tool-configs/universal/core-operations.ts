@@ -16,10 +16,7 @@ import {
   UniversalDetailedInfoParams,
   UniversalResourceType,
 } from './types.js';
-import {
-  getAttributeSchema,
-  getSelectOptions,
-} from '../../../api/attio-client.js';
+// Removed unused imports getAttributeSchema, getSelectOptions
 
 // Helper function to get plural form of resource type
 function getPluralResourceType(resourceType: UniversalResourceType): string {
@@ -77,7 +74,7 @@ import { ErrorService } from '../../../services/ErrorService.js';
 import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
 // Note: Using simplified mock responses for E2E compatibility
 
-import { isHttpResponseLike } from '../../../lib/http/toMcpResult.js';
+// Removed unused import isHttpResponseLike
 import { handleCoreOperationError } from '../../../utils/axios-error-mapper.js';
 
 import { AttioRecord } from '../../../types/attio.js';

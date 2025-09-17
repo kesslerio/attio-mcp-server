@@ -31,7 +31,9 @@ export const batchToolConfigs = {
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
           const data = item.data as AttioRecord;
-          const name = (data?.values?.name as any)?.[0]?.value || 'Unknown';
+          const name =
+            (data?.values?.name as unknown as Array<{ value: unknown }>)?.[0]
+              ?.value || 'Unknown';
           const recordId = data?.id?.record_id || 'Unknown';
           output += `✓ Created: ${name} (ID: ${recordId})\n`;
         } else if (item.error) {
@@ -56,7 +58,9 @@ export const batchToolConfigs = {
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
           const data = item.data as AttioRecord;
-          const name = (data?.values?.name as any)?.[0]?.value || 'Unknown';
+          const name =
+            (data?.values?.name as unknown as Array<{ value: unknown }>)?.[0]
+              ?.value || 'Unknown';
           const recordId = data?.id?.record_id || 'Unknown';
           output += `✓ Updated: ${name} (ID: ${recordId})\n`;
         } else if (item.error) {
@@ -107,7 +111,9 @@ export const batchToolConfigs = {
           output += `Query ${index + 1}: Found ${data.length} companies\n`;
           data.forEach((company: AttioRecord) => {
             const name =
-              (company?.values?.name as any)?.[0]?.value || 'Unknown';
+              (
+                company?.values?.name as unknown as Array<{ value: unknown }>
+              )?.[0]?.value || 'Unknown';
             const recordId = company?.id?.record_id || 'Unknown';
             output += `  - ${name} (ID: ${recordId})\n`;
           });
@@ -134,12 +140,18 @@ export const batchToolConfigs = {
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
           const company = item.data as AttioRecord;
-          const name = (company?.values?.name as any)?.[0]?.value || 'Unknown';
+          const name =
+            (company?.values?.name as unknown as Array<{ value: unknown }>)?.[0]
+              ?.value || 'Unknown';
           const recordId = company?.id?.record_id || 'Unknown';
           const website =
-            (company?.values?.website as any)?.[0]?.value || 'N/A';
+            (
+              company?.values?.website as unknown as Array<{ value: unknown }>
+            )?.[0]?.value || 'N/A';
           const industry =
-            (company?.values?.industry as any)?.[0]?.value || 'N/A';
+            (
+              company?.values?.industry as unknown as Array<{ value: unknown }>
+            )?.[0]?.value || 'N/A';
 
           output += `✓ ${name} (ID: ${recordId})\n`;
           output += `  Website: ${website}\n`;
