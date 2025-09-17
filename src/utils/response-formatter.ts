@@ -174,7 +174,7 @@ export function formatJsonResponse(
     },
   };
 
-  return sanitizeMcpResponse(response);
+  return sanitizeMcpResponse(response) as ToolResponse;
 }
 
 /**
@@ -279,5 +279,5 @@ export function formatErrorResponse(
     },
   };
 
-  return sanitizeMcpResponse(response);
+  return sanitizeMcpResponse(response) as ToolResponse;
 }
