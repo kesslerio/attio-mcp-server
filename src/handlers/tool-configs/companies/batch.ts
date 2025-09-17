@@ -16,6 +16,10 @@ import {
   extractBatchResults,
 } from '../../../types/batch-types.js';
 import { AttioRecord } from '../../../types/attio.js';
+import {
+  safeExtractFirstValue,
+  safeExtractRecordValues,
+} from '../shared/type-utils.js';
 
 // Company batch tool configurations
 export const batchToolConfigs = {
@@ -31,9 +35,8 @@ export const batchToolConfigs = {
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
           const data = item.data as AttioRecord;
-          const name =
-            (data?.values?.name as unknown as Array<{ value: unknown }>)?.[0]
-              ?.value || 'Unknown';
+          const values = safeExtractRecordValues(data);
+          const name = safeExtractFirstValue(values.name, 'Unknown');
           const recordId = data?.id?.record_id || 'Unknown';
           output += `✓ Created: ${name} (ID: ${recordId})\n`;
         } else if (item.error) {
@@ -58,9 +61,8 @@ export const batchToolConfigs = {
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
           const data = item.data as AttioRecord;
-          const name =
-            (data?.values?.name as unknown as Array<{ value: unknown }>)?.[0]
-              ?.value || 'Unknown';
+          const values = safeExtractRecordValues(data);
+          const name = safeExtractFirstValue(values.name, 'Unknown');
           const recordId = data?.id?.record_id || 'Unknown';
           output += `✓ Updated: ${name} (ID: ${recordId})\n`;
         } else if (item.error) {
@@ -110,10 +112,8 @@ export const batchToolConfigs = {
           const data = Array.isArray(item.data) ? item.data : [];
           output += `Query ${index + 1}: Found ${data.length} companies\n`;
           data.forEach((company: AttioRecord) => {
-            const name =
-              (
-                company?.values?.name as unknown as Array<{ value: unknown }>
-              )?.[0]?.value || 'Unknown';
+            const values = safeExtractRecordValues(company);
+            const name = safeExtractFirstValue(values.name, 'Unknown');
             const recordId = company?.id?.record_id || 'Unknown';
             output += `  - ${name} (ID: ${recordId})\n`;
           });
@@ -140,18 +140,11 @@ export const batchToolConfigs = {
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
           const company = item.data as AttioRecord;
-          const name =
-            (company?.values?.name as unknown as Array<{ value: unknown }>)?.[0]
-              ?.value || 'Unknown';
+          const values = safeExtractRecordValues(company);
+          const name = safeExtractFirstValue(values.name, 'Unknown');
           const recordId = company?.id?.record_id || 'Unknown';
-          const website =
-            (
-              company?.values?.website as unknown as Array<{ value: unknown }>
-            )?.[0]?.value || 'N/A';
-          const industry =
-            (
-              company?.values?.industry as unknown as Array<{ value: unknown }>
-            )?.[0]?.value || 'N/A';
+          const website = safeExtractFirstValue(values.website, 'N/A');
+          const industry = safeExtractFirstValue(values.industry, 'N/A');
 
           output += `✓ ${name} (ID: ${recordId})\n`;
           output += `  Website: ${website}\n`;

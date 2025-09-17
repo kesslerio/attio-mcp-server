@@ -8,6 +8,11 @@ import {
 import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 import { NoteDisplay } from '../../../types/tool-types.js';
 import { createScopedLogger } from '../../../utils/logger.js';
+import {
+  safeExtractNoteTitle,
+  safeExtractNoteContent,
+  safeExtractNoteTimestamp,
+} from '../shared/type-utils.js';
 
 export const notesToolConfigs = {
   notes: {
@@ -44,24 +49,9 @@ export const notesToolConfigs = {
             // 6. note.text/body - Alternative content field names (legacy/third-party support)
             // Note: Person notes include note.timestamp check that company notes don't have
             // This is intentional as person notes may use different timestamp field naming
-            const title =
-              note.title ||
-              (note as any).data?.title ||
-              (note as any).values?.title ||
-              'Untitled';
-            const content =
-              note.content ||
-              (note as any).data?.content ||
-              (note as any).values?.content ||
-              (note as any).text ||
-              (note as any).body ||
-              '';
-            const timestamp =
-              (note as any).timestamp ||
-              note.created_at ||
-              (note as any).data?.created_at ||
-              (note as any).values?.created_at ||
-              'unknown';
+            const title = safeExtractNoteTitle(note, 'Untitled');
+            const content = safeExtractNoteContent(note, '');
+            const timestamp = safeExtractNoteTimestamp(note, 'unknown');
 
             // Additional debug logging for each note
             if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
