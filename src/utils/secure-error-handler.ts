@@ -48,7 +48,7 @@ interface ErrorWithStatusCode {
 /**
  * Type guard to check if an error has a status property
  */
-const hasStatus = (error: unknown): error is ErrorWithStatus =>
+const isStatusError = (error: unknown): error is ErrorWithStatus =>
   typeof error === 'object' &&
   error !== null &&
   'status' in error &&
@@ -57,7 +57,7 @@ const hasStatus = (error: unknown): error is ErrorWithStatus =>
 /**
  * Type guard to check if an error has a statusCode property
  */
-const hasStatusCode = (error: unknown): error is ErrorWithStatusCode =>
+const isStatusCodeError = (error: unknown): error is ErrorWithStatusCode =>
   typeof error === 'object' &&
   error !== null &&
   'statusCode' in error &&
@@ -87,11 +87,11 @@ const resolveStatusCode = (
   }
 
   // Use type guards for better type safety
-  if (hasStatusCode(error)) {
+  if (isStatusCodeError(error)) {
     return error.statusCode;
   }
 
-  if (hasStatus(error)) {
+  if (isStatusError(error)) {
     return error.status;
   }
 
@@ -189,6 +189,21 @@ export class SecureApiError extends Error {
  * @param fn - The async function to wrap
  * @param context - Error context for logging and sanitization
  * @returns Wrapped function with automatic error sanitization
+ *
+ * @example
+ * ```typescript
+ * const context = { operation: 'fetchData', module: 'DataService' };
+ * const safeFetch = withSecureErrorHandling(
+ *   async (id: string) => await api.getData(id),
+ *   context
+ * );
+ *
+ * try {
+ *   const result = await safeFetch('user-123');
+ * } catch (error) {
+ *   // error is now a SecureApiError with sanitized message
+ * }
+ * ```
  */
 export function withSecureErrorHandling<
   TArgs extends readonly unknown[],
@@ -246,6 +261,19 @@ export interface SecureErrorResponse {
  * @param error - The error to convert
  * @param context - Additional context
  * @returns Secure error response
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await api.createUser(userData);
+ * } catch (error) {
+ *   const response = createSecureErrorResponse(error, {
+ *     operation: 'createUser',
+ *     module: 'UserService'
+ *   });
+ *   return response; // { success: false, error: { message, type, statusCode } }
+ * }
+ * ```
  */
 export function createSecureErrorResponse(
   error: unknown,
@@ -372,6 +400,24 @@ const defaultShouldRetry: ShouldRetryFn = (error) => {
   return statusCode >= 500 || statusCode === 429;
 };
 
+/**
+ * Retry an operation with exponential backoff and secure error handling
+ *
+ * @param fn - The async function to retry
+ * @param context - Error context for logging
+ * @param options - Retry configuration options
+ * @returns Promise that resolves with the function result or throws SecureApiError
+ *
+ * @example
+ * ```typescript
+ * const context = { operation: 'apiCall', module: 'ApiService' };
+ * const result = await retryWithSecureErrors(
+ *   () => api.unstableEndpoint(),
+ *   context,
+ *   { maxRetries: 3, initialDelay: 1000 }
+ * );
+ * ```
+ */
 export async function retryWithSecureErrors<T>(
   fn: () => Promise<T>,
   context: ErrorContext,
@@ -461,6 +507,21 @@ interface CircuitBreakerStatus {
 
 /**
  * Circuit breaker for preventing cascading failures
+ *
+ * @example
+ * ```typescript
+ * const context = { operation: 'externalApi', module: 'ApiService' };
+ * const circuitBreaker = new SecureCircuitBreaker(context, {
+ *   failureThreshold: 5,
+ *   resetTimeout: 60000
+ * });
+ *
+ * try {
+ *   const result = await circuitBreaker.execute(() => api.call());
+ * } catch (error) {
+ *   // Circuit breaker may be open, preventing cascading failures
+ * }
+ * ```
  */
 export class SecureCircuitBreaker {
   private failures = 0;
