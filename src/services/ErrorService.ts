@@ -14,12 +14,9 @@ import {
   validateResourceType,
   getFieldSuggestions,
 } from '../handlers/tool-configs/universal/field-mapper.js';
-import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import type {
   AxiosErrorLike,
   ValidationErrorContext,
-  UnknownRecord,
-  isRecord,
 } from '../types/service-types.js';
 
 /**
@@ -45,7 +42,7 @@ export class ErrorService {
       (originalError &&
         typeof originalError === 'object' &&
         (originalError.constructor.name === 'EnhancedApiError' ||
-          (originalError as any).name === 'EnhancedApiError'))
+          (originalError as { name?: string }).name === 'EnhancedApiError'))
     ) {
       return originalError as Error;
     }
@@ -421,7 +418,7 @@ export class ErrorService {
      * Normalize validation errors from different response formats
      */
     const normalizeValidationErrors = (
-      rawErrors: any[]
+      rawErrors: unknown[]
     ): Array<{
       field?: string;
       path?: string;
@@ -430,12 +427,26 @@ export class ErrorService {
     }> => {
       if (!Array.isArray(rawErrors)) return [];
 
-      return rawErrors.map((v: any) => ({
-        field: v.field || v.attribute_slug,
-        path: Array.isArray(v.path) ? v.path.join('.') : v.path,
-        code: v.code,
-        message: String(v.message || v.error || 'Unknown error'),
-      }));
+      return rawErrors.map((v: unknown) => {
+        const errorObj = v as {
+          field?: string;
+          attribute_slug?: string;
+          path?: string | string[];
+          code?: string;
+          message?: string;
+          error?: string;
+        };
+        return {
+          field: errorObj.field || errorObj.attribute_slug,
+          path: Array.isArray(errorObj.path)
+            ? errorObj.path.join('.')
+            : errorObj.path,
+          code: errorObj.code,
+          message: String(
+            errorObj.message || errorObj.error || 'Unknown error'
+          ),
+        };
+      });
     };
 
     const extractValidationMessage = (
@@ -488,7 +499,8 @@ export class ErrorService {
     // Extract Attio metadata
     const attioData = {
       status_code: error?.response?.status,
-      correlation_id: (error?.response?.data as any)?.correlation_id,
+      correlation_id: (error?.response?.data as { correlation_id?: string })
+        ?.correlation_id,
     };
 
     switch (status) {

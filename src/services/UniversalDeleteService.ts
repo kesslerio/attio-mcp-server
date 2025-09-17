@@ -11,19 +11,12 @@ import { isValidId } from '../utils/validation.js';
 import { debug } from '../utils/logger.js';
 
 // Import delete functions for each resource type
-import {
-  deleteCompany,
-  getCompanyDetails,
-} from '../objects/companies/index.js';
+import { deleteCompany } from '../objects/companies/index.js';
 import { deletePerson } from '../objects/people-write.js';
-import { deleteList, getListDetails } from '../objects/lists.js';
-import {
-  deleteObjectRecord,
-  getObjectRecord,
-} from '../objects/records/index.js';
+import { deleteList } from '../objects/lists.js';
+import { deleteObjectRecord } from '../objects/records/index.js';
 import { deleteTask, getTask } from '../objects/tasks.js';
 import { deleteNote } from '../objects/notes.js';
-import { getPersonDetails } from '../objects/people/basic.js';
 import { shouldUseMockData } from './create/index.js';
 
 /**
@@ -34,7 +27,15 @@ export class UniversalDeleteService {
    * Helper to detect 404 errors from various API error formats
    */
   private static is404Error(err: unknown): boolean {
-    const anyErr = err as any;
+    const anyErr = err as {
+      response?: {
+        status?: number;
+        data?: { code?: string; message?: string };
+      };
+      status?: number;
+      code?: string;
+      message?: string;
+    };
     const status = anyErr?.response?.status ?? anyErr?.status;
     const code = anyErr?.response?.data?.code ?? anyErr?.code;
     const msg = (anyErr?.response?.data?.message ?? anyErr?.message ?? '')
@@ -192,7 +193,11 @@ export class UniversalDeleteService {
             throw err; // dispatcher should mark isError=true
           }
           // Map specific 400 errors for task ID validation to clearer messages
-          const anyErr: any = error as any;
+          const anyErr = error as {
+            response?: { status?: number; data?: { message?: string } };
+            status?: number;
+            message?: string;
+          };
           const status = anyErr?.response?.status ?? anyErr?.status;
           const errorMessage = (
             anyErr?.response?.data?.message ??

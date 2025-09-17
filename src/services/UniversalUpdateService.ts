@@ -12,7 +12,6 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '../handlers/tool-configs/universal/schemas.js';
-import { FilterValidationError } from '../errors/api-errors.js';
 import { debug, error as logError } from '../utils/logger.js';
 
 // Import services
@@ -169,12 +168,15 @@ export class UniversalUpdateService {
     // Enhanced null-safety: Guard against undefined values access
     const raw =
       actualRecordData && typeof actualRecordData === 'object'
-        ? (actualRecordData as any)
-        : {};
+        ? (actualRecordData as Record<string, unknown>)
+        : ({} as Record<string, unknown>);
     const values = raw.values ?? raw;
 
     // Pre-validate fields and provide helpful suggestions (less strict for updates)
-    const fieldValidation = validateFields(resource_type, values);
+    const fieldValidation = validateFields(
+      resource_type,
+      values as Record<string, unknown>
+    );
     if (fieldValidation.warnings.length > 0) {
       // Intentionally keep a console.warn for test expectations; mirror to logger.debug
 
@@ -217,14 +219,19 @@ export class UniversalUpdateService {
           resource_type,
           options
         );
-      const attrs = (attributeResult?.attributes as any[]) ?? [];
+      const attrs = (attributeResult?.attributes as unknown[]) ?? [];
       availableAttributes = Array.from(
         new Set(
-          attrs.flatMap((a) =>
-            [a?.api_slug, a?.title, a?.name].filter(
-              (s: any) => typeof s === 'string'
-            )
-          )
+          attrs.flatMap((a) => {
+            const attrObj = a as {
+              api_slug?: string;
+              title?: string;
+              name?: string;
+            };
+            return [attrObj.api_slug, attrObj.title, attrObj.name].filter(
+              (s: unknown) => typeof s === 'string'
+            );
+          })
         )
       ).map((s) => (s as string).toLowerCase());
     } catch (error) {
@@ -238,7 +245,7 @@ export class UniversalUpdateService {
     // Map field names to correct ones with collision detection
     const mappingResult = await mapRecordFields(
       resource_type,
-      values,
+      values as Record<string, unknown>,
       availableAttributes
     );
     if (mappingResult.errors && mappingResult.errors.length > 0) {
