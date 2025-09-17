@@ -17,6 +17,7 @@ import { setGlobalContext } from '../api/lazy-client.js';
 export interface ServerContext {
   getApiKey?: () => string | undefined;
   getWorkspaceId?: () => string | undefined;
+  [key: string]: unknown;
 }
 
 /**
