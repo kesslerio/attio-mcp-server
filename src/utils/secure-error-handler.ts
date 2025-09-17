@@ -18,9 +18,61 @@ import {
 
 const DEFAULT_STATUS_CODE = 500;
 
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null;
-};
+/**
+ * Interface for Axios-like errors with response structure
+ */
+interface AxiosErrorLike {
+  response?: {
+    status: number;
+    statusText?: string;
+    data?: unknown;
+  };
+  request?: unknown;
+  message: string;
+}
+
+/**
+ * Interface for errors that have a status property
+ */
+interface ErrorWithStatus {
+  status: number;
+}
+
+/**
+ * Interface for errors that have a statusCode property
+ */
+interface ErrorWithStatusCode {
+  statusCode: number;
+}
+
+/**
+ * Type guard to check if an error has a status property
+ */
+const hasStatus = (error: unknown): error is ErrorWithStatus =>
+  typeof error === 'object' &&
+  error !== null &&
+  'status' in error &&
+  typeof (error as Record<string, unknown>).status === 'number';
+
+/**
+ * Type guard to check if an error has a statusCode property
+ */
+const hasStatusCode = (error: unknown): error is ErrorWithStatusCode =>
+  typeof error === 'object' &&
+  error !== null &&
+  'statusCode' in error &&
+  typeof (error as Record<string, unknown>).statusCode === 'number';
+
+/**
+ * Type guard to check if an error is Axios-like
+ */
+const isAxiosLike = (error: unknown): error is AxiosErrorLike =>
+  typeof error === 'object' &&
+  error !== null &&
+  'message' in error &&
+  (('response' in error &&
+    typeof (error as Record<string, unknown>).response === 'object') ||
+    'request' in error);
 
 const resolveStatusCode = (
   error: unknown,
@@ -34,24 +86,17 @@ const resolveStatusCode = (
     return statusFromUtilities;
   }
 
-  if (!isRecord(error)) {
-    return fallback;
-  }
-
-  if ('statusCode' in error && typeof error.statusCode === 'number') {
+  // Use type guards for better type safety
+  if (hasStatusCode(error)) {
     return error.statusCode;
   }
 
-  if ('status' in error && typeof error.status === 'number') {
+  if (hasStatus(error)) {
     return error.status;
   }
 
-  if (
-    'response' in error &&
-    isRecord(error.response) &&
-    'status' in error.response &&
-    typeof error.response.status === 'number'
-  ) {
+  // Check for Axios-like response structure
+  if (isAxiosLike(error) && error.response) {
     return error.response.status;
   }
 
@@ -146,9 +191,13 @@ export class SecureApiError extends Error {
  * @returns Wrapped function with automatic error sanitization
  */
 export function withSecureErrorHandling<
-  T extends (...args: unknown[]) => Promise<unknown>,
->(fn: T, context: ErrorContext): T {
-  return (async (...args: Parameters<T>) => {
+  TArgs extends readonly unknown[],
+  TReturn,
+>(
+  fn: (...args: TArgs) => Promise<TReturn>,
+  context: ErrorContext
+): (...args: TArgs) => Promise<TReturn> {
+  return async (...args: TArgs): Promise<TReturn> => {
     try {
       return await fn(...args);
     } catch (error: unknown) {
@@ -175,7 +224,7 @@ export function withSecureErrorHandling<
         ensureError(error)
       );
     }
-  }) as T;
+  };
 }
 
 /**
@@ -308,6 +357,16 @@ export class BatchErrorHandler {
  */
 type ShouldRetryFn = (error: unknown) => boolean;
 
+/**
+ * Configuration options for retry behavior
+ */
+interface RetryOptions {
+  maxRetries?: number;
+  initialDelay?: number;
+  maxDelay?: number;
+  shouldRetry?: ShouldRetryFn;
+}
+
 const defaultShouldRetry: ShouldRetryFn = (error) => {
   const statusCode = resolveStatusCode(error) ?? DEFAULT_STATUS_CODE;
   return statusCode >= 500 || statusCode === 429;
@@ -316,12 +375,7 @@ const defaultShouldRetry: ShouldRetryFn = (error) => {
 export async function retryWithSecureErrors<T>(
   fn: () => Promise<T>,
   context: ErrorContext,
-  options: {
-    maxRetries?: number;
-    initialDelay?: number;
-    maxDelay?: number;
-    shouldRetry?: ShouldRetryFn;
-  } = {}
+  options: RetryOptions = {}
 ): Promise<T> {
   const {
     maxRetries = 3,
@@ -383,20 +437,39 @@ export async function retryWithSecureErrors<T>(
 }
 
 /**
+ * Configuration options for circuit breaker behavior
+ */
+interface CircuitBreakerOptions {
+  failureThreshold?: number;
+  resetTimeout?: number;
+  halfOpenRequests?: number;
+}
+
+/**
+ * Circuit breaker state type
+ */
+type CircuitBreakerState = 'closed' | 'open' | 'half-open';
+
+/**
+ * Circuit breaker status information
+ */
+interface CircuitBreakerStatus {
+  state: string;
+  failures: number;
+  lastFailure?: Date;
+}
+
+/**
  * Circuit breaker for preventing cascading failures
  */
 export class SecureCircuitBreaker {
   private failures = 0;
   private lastFailureTime = 0;
-  private state: 'closed' | 'open' | 'half-open' = 'closed';
+  private state: CircuitBreakerState = 'closed';
 
   constructor(
     private readonly context: ErrorContext,
-    private readonly options: {
-      failureThreshold?: number;
-      resetTimeout?: number;
-      halfOpenRequests?: number;
-    } = {}
+    private readonly options: CircuitBreakerOptions = {}
   ) {
     this.options.failureThreshold = options.failureThreshold || 5;
     this.options.resetTimeout = options.resetTimeout || 60000;
@@ -465,7 +538,7 @@ export class SecureCircuitBreaker {
   /**
    * Get circuit breaker status
    */
-  getStatus(): { state: string; failures: number; lastFailure?: Date } {
+  getStatus(): CircuitBreakerStatus {
     return {
       state: this.state,
       failures: this.failures,
