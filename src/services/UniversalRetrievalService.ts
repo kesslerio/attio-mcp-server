@@ -27,7 +27,10 @@ import {
   ensureEnhanced,
   withEnumerableMessage,
 } from '../errors/enhanced-helpers.js';
-import { toMcpResult, HttpResponse } from '../lib/http/toMcpResult.js';
+
+// Import shared type definitions for better type safety
+// Note: These imports are available for future error handling improvements
+// but not yet fully integrated into this service
 
 // Import resource-specific retrieval functions
 import { getCompanyDetails } from '../objects/companies/index.js';
@@ -39,6 +42,15 @@ import { getNote, normalizeNoteResponse } from '../objects/notes.js';
 
 /**
  * UniversalRetrievalService provides centralized record retrieval functionality
+ *
+ * **Type Safety Strategy**: This service employs Record<string, unknown> instead of any
+ * for handling dynamic API responses. This approach provides:
+ * - Compile-time type checking for known properties
+ * - Safe property access for unknown API data structures
+ * - Prevention of runtime errors from property misuse
+ *
+ * **Record<string, unknown> Benefits**: Unlike any, this type prevents accidental
+ * operations while maintaining flexibility for varied API response formats.
  */
 export class UniversalRetrievalService {
   /**

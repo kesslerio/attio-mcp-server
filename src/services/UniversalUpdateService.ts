@@ -14,6 +14,14 @@ import {
 } from '../handlers/tool-configs/universal/schemas.js';
 import { debug, error as logError } from '../utils/logger.js';
 
+// Import shared type definitions for better type safety
+import {
+  createNotFoundError,
+  type DataPayload,
+  type AttributeObject,
+  isAttributeObject,
+} from '../types/universal-service-types.js';
+
 // Import services
 import { ValidationService } from './ValidationService.js';
 import { UniversalUtilityService } from './UniversalUtilityService.js';
@@ -73,6 +81,13 @@ async function updateTaskWithMockSupport(
 
 /**
  * UniversalUpdateService provides centralized record update functionality
+ *
+ * **Type Safety Enhancements**: This service uses Record<string, unknown> instead of any
+ * for better type safety. This provides compile-time checking while allowing dynamic
+ * property access needed for flexible API data handling.
+ *
+ * **Design Rationale**: Record<string, unknown> prevents accidental misuse of properties
+ * while maintaining the flexibility required for varied API response structures.
  */
 export class UniversalUpdateService {
   static async updateRecord(
@@ -114,13 +129,8 @@ export class UniversalUpdateService {
         // For TypeErrors caused by malformed data structure, return 404 for tasks
         const { resource_type, record_id } = params;
         if (resource_type === UniversalResourceType.TASKS) {
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Task record with ID "${record_id}" not found.`,
-            },
-          };
+          // Using shared error creation utility for consistency
+          throw createNotFoundError(resource_type, record_id);
         }
       }
 
@@ -133,13 +143,8 @@ export class UniversalUpdateService {
       ) {
         const { resource_type, record_id } = params;
         if (resource_type === UniversalResourceType.TASKS) {
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Task record with ID "${record_id}" not found.`,
-            },
-          };
+          // Using shared error creation utility for consistency
+          throw createNotFoundError(resource_type, record_id);
         }
       }
 
@@ -157,19 +162,26 @@ export class UniversalUpdateService {
     const { resource_type, record_id, record_data } = params;
 
     // Handle edge case where test uses 'data' instead of 'record_data'
-    type ParamsWithLegacy = { data?: unknown };
-    const legacyData = (params as ParamsWithLegacy).data as
-      | Record<string, unknown>
-      | undefined;
+    /**
+     * **Type Safety Note**: Using structured types instead of unknown casting
+     * to handle legacy parameter formats while maintaining type safety.
+     */
+    type ParamsWithLegacy = { data?: Record<string, unknown> };
+    const legacyData = (params as ParamsWithLegacy).data;
     const actualRecordData = (record_data ?? legacyData) as
-      | Record<string, unknown>
+      | DataPayload
       | undefined;
 
     // Enhanced null-safety: Guard against undefined values access
-    const raw =
+    /**
+     * **Record<string, unknown> Rationale**: Using Record<string, unknown> instead of any
+     * ensures type safety while allowing dynamic property access for API data structures.
+     * This prevents runtime errors while maintaining flexibility for varied data formats.
+     */
+    const raw: Record<string, unknown> =
       actualRecordData && typeof actualRecordData === 'object'
-        ? (actualRecordData as Record<string, unknown>)
-        : ({} as Record<string, unknown>);
+        ? actualRecordData
+        : {};
     const values = raw.values ?? raw;
 
     // Pre-validate fields and provide helpful suggestions (less strict for updates)
@@ -220,20 +232,22 @@ export class UniversalUpdateService {
           options
         );
       const attrs = (attributeResult?.attributes as unknown[]) ?? [];
+      /**
+       * **Type Guard Usage**: Using isAttributeObject type guard instead of inline casting
+       * for safer attribute processing and better runtime type validation.
+       */
       availableAttributes = Array.from(
         new Set(
           attrs.flatMap((a) => {
-            const attrObj = a as {
-              api_slug?: string;
-              title?: string;
-              name?: string;
-            };
-            return [attrObj.api_slug, attrObj.title, attrObj.name].filter(
-              (s: unknown) => typeof s === 'string'
+            if (!isAttributeObject(a)) {
+              return [];
+            }
+            return [a.api_slug, a.title, a.name].filter(
+              (s): s is string => typeof s === 'string'
             );
           })
         )
-      ).map((s) => (s as string).toLowerCase());
+      ).map((s) => s.toLowerCase());
     } catch (error) {
       debug('UniversalUpdateService', 'Failed to fetch attributes', {
         resource_type,
@@ -358,9 +372,17 @@ export class UniversalUpdateService {
           './update/strategies/RecordUpdateStrategy.js'
         );
         const strategy = new RecordUpdateStrategy();
+        /**
+         * **Safe Property Access**: Using type-safe property access for object slug
+         * extraction while providing sensible defaults.
+         */
         const recordsObjectSlug =
-          (actualRecordData?.object as string) ||
-          (actualRecordData?.object_api_slug as string) ||
+          (typeof actualRecordData?.object === 'string'
+            ? actualRecordData.object
+            : undefined) ||
+          (typeof actualRecordData?.object_api_slug === 'string'
+            ? actualRecordData.object_api_slug
+            : undefined) ||
           'records';
         updatedRecord = await strategy.update(
           record_id,
