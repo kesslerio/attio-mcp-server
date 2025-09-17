@@ -6,6 +6,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   CallToolRequest,
+  CallToolResult,
+  ListToolsResult,
 } from '@modelcontextprotocol/sdk/types.js';
 import { warn } from '../../utils/logger.js';
 import { ServerContext } from '../../server/createServer.js';
@@ -159,34 +161,39 @@ export function registerToolHandlers(
   });
 
   // Handler for calling tools
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    try {
-      // Normalize request to handle missing arguments wrapper (Issue #344)
-      // Cast is safe because we're handling the protocol mismatch
-      const normalizedRequest = normalizeToolRequest(
-        request as CallToolRequest | LooseCallToolRequest
-      );
-      return await executeToolRequest(normalizedRequest);
-    } catch (error: unknown) {
-      // Handle normalization errors
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown normalization error';
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Error normalizing tool request: ${errorMessage}`,
+  server.setRequestHandler(
+    CallToolRequestSchema,
+    async (request): Promise<CallToolResult> => {
+      try {
+        // Normalize request to handle missing arguments wrapper (Issue #344)
+        // Cast is safe because we're handling the protocol mismatch
+        const normalizedRequest = normalizeToolRequest(
+          request as CallToolRequest | LooseCallToolRequest
+        );
+        return (await executeToolRequest(normalizedRequest)) as CallToolResult;
+      } catch (error: unknown) {
+        // Handle normalization errors
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Unknown normalization error';
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Error normalizing tool request: ${errorMessage}`,
+            },
+          ],
+          isError: true,
+          error: {
+            code: 400,
+            message: errorMessage,
+            type: 'normalization_error',
           },
-        ],
-        isError: true,
-        error: {
-          code: 400,
-          message: errorMessage,
-          type: 'normalization_error',
-        },
-      };
+        };
+      }
     }
-  });
+  );
 }
 
 // Re-export commonly used components for backward compatibility

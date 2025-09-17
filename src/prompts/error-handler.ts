@@ -49,7 +49,11 @@ export function createErrorResult(
   };
 
   // Get the base response from the utility function
-  const baseResponse = formatErrorResponse(error, errorType, errorDetails);
+  const baseResponse = formatErrorResponse(
+    error,
+    errorType,
+    errorDetails
+  ) as any;
 
   // Create a new response object with our extended type
   const response: PromptErrorResponse = {
