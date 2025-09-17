@@ -8,15 +8,6 @@
 import { createScopedLogger } from './logger.js';
 
 // Type definitions for better type safety
-type AttributeValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | Record<string, unknown>
-  | unknown[];
-type AttributesObject = Record<string, AttributeValue>;
 
 interface PersonalNameObject {
   first_name?: string;
@@ -54,8 +45,8 @@ const logger = createScopedLogger(
  */
 export function convertAttributeFormats(
   resourceType: string,
-  attributes: AttributesObject
-): AttributesObject {
+  attributes: Record<string, unknown>
+): Record<string, unknown> {
   let corrected = { ...attributes };
 
   switch (resourceType) {
@@ -77,8 +68,8 @@ export function convertAttributeFormats(
  * Converts company attribute formats
  */
 function convertCompanyAttributes(
-  attributes: AttributesObject
-): AttributesObject {
+  attributes: Record<string, unknown>
+): Record<string, unknown> {
   const corrected = { ...attributes };
 
   // Convert 'domain' to 'domains' array
@@ -121,7 +112,9 @@ function convertCompanyAttributes(
 /**
  * Converts deal attribute formats
  */
-function convertDealAttributes(attributes: AttributesObject): AttributesObject {
+function convertDealAttributes(
+  attributes: Record<string, unknown>
+): Record<string, unknown> {
   const corrected = { ...attributes };
 
   // Convert associated_company to array format: string -> [{ target_object, target_record_id }]
@@ -215,8 +208,8 @@ function convertDealAttributes(attributes: AttributesObject): AttributesObject {
  * Converts people attribute formats
  */
 function convertPeopleAttributes(
-  attributes: AttributesObject
-): AttributesObject {
+  attributes: Record<string, unknown>
+): Record<string, unknown> {
   const corrected = { ...attributes };
 
   // Handle name conversion to personal-name array format
@@ -250,13 +243,13 @@ function convertPeopleAttributes(
 
     // Handle individual name components
     if (corrected.first_name) {
-      nameObj.first_name = corrected.first_name;
+      nameObj.first_name = String(corrected.first_name);
     }
     if (corrected.last_name) {
-      nameObj.last_name = corrected.last_name;
+      nameObj.last_name = String(corrected.last_name);
     }
     if (corrected.full_name) {
-      nameObj.full_name = corrected.full_name;
+      nameObj.full_name = String(corrected.full_name);
     }
 
     // Ensure full_name is always present for Attio's personal-name validation
@@ -336,7 +329,7 @@ function convertPeopleAttributes(
  * Throws validation errors if required formats are not met
  */
 export function validatePeopleAttributesPrePost(
-  attributes: AttributesObject
+  attributes: Record<string, unknown>
 ): void {
   // Validate name format if present
   if (attributes.name) {
