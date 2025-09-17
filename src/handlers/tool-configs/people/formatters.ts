@@ -2,7 +2,6 @@
  * Shared formatting utilities for people-related tool results
  */
 import { AttioRecord, Person } from '../../../types/attio.js';
-import { ContactValue } from '../../../types/tool-types.js';
 
 /**
  * Safely extract a person's name from an Attio record

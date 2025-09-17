@@ -8,6 +8,10 @@ import {
   UniversalResourceType,
 } from '../types.js';
 import { AttioRecord } from '../../../../types/attio.js';
+import {
+  safeExtractRecordValues,
+  safeExtractFirstValue,
+} from '../../shared/type-utils.js';
 
 import { validateUniversalToolParams } from '../schemas.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
@@ -143,21 +147,15 @@ export const advancedSearchConfig: UniversalToolConfig = {
 
     const lines = results.map(
       (record: Record<string, unknown>, index: number) => {
-        const values = (record as any).values as Record<string, unknown>;
-        const recordId = (record as any).id as Record<string, unknown>;
+        const values = safeExtractRecordValues(record);
+        const recordId = record.id as Record<string, unknown>;
 
         const coerce = (v: unknown): string | undefined => {
           if (v == null) return undefined;
           if (typeof v === 'string') return v;
-          if (Array.isArray(v)) {
-            const first = v[0] as any;
-            if (typeof first === 'string') return first;
-            if (first && typeof first === 'object' && 'value' in first)
-              return String(first.value);
-          }
-          if (typeof v === 'object' && 'value' in (v as any))
-            return String((v as any).value);
-          return undefined;
+          // Use our safe extraction utility for array values
+          const extracted = safeExtractFirstValue(v, '');
+          return extracted || undefined;
         };
 
         const name =

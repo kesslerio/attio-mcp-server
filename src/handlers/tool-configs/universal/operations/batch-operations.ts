@@ -9,6 +9,10 @@ import {
 } from '../types.js';
 
 import { validateUniversalToolParams } from '../schemas.js';
+import {
+  safeExtractRecordValues,
+  safeExtractFirstValue,
+} from '../../shared/type-utils.js';
 
 import {
   handleUniversalCreate,
@@ -36,7 +40,9 @@ function sleep(ms: number): Promise<void> {
 
 export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
-  handler: async (params: Record<string, unknown>): Promise<any> => {
+  handler: async (
+    params: Record<string, unknown>
+  ): Promise<Record<string, unknown>[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'batch-operations',
@@ -65,7 +71,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
                     }),
                   };
 
-                case 'update':
+                case 'update': {
                   const typedRecordData = record_data as Record<
                     string,
                     unknown
@@ -90,8 +96,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
                       return_details: true,
                     }),
                   };
+                }
 
-                case 'delete':
+                case 'delete': {
                   const deleteRecordData = record_data as Record<
                     string,
                     unknown
@@ -114,6 +121,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
                             String(deleteRecordData.id),
                     }),
                   };
+                }
 
                 default:
                   throw new Error(`Unsupported operation: ${operation}`);
@@ -136,7 +144,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
             successful: results.filter((r) => r.success).length,
             failed: results.filter((r) => !r.success).length,
           },
-        };
+        } as unknown as Record<string, unknown>[];
       }
 
       // Fallback to old format for backward compatibility
@@ -208,7 +216,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
               successful: results.filter((r) => r.success).length,
               failed: results.filter((r) => !r.success).length,
             },
-          };
+          } as unknown as Record<string, unknown>[];
         }
 
         case BatchOperationType.UPDATE: {
@@ -292,7 +300,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
               successful: results.filter((r) => r.success).length,
               failed: results.filter((r) => !r.success).length,
             },
-          };
+          } as unknown as Record<string, unknown>[];
         }
 
         case BatchOperationType.DELETE: {
@@ -353,7 +361,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
               successful: results.filter((r) => r.success).length,
               failed: results.filter((r) => !r.success).length,
             },
-          };
+          } as unknown as Record<string, unknown>[];
         }
 
         case BatchOperationType.GET: {
@@ -425,7 +433,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
               successful: results.filter((r) => r.success).length,
               failed: results.filter((r) => !r.success).length,
             },
-          };
+          } as unknown as Record<string, unknown>[];
         }
 
         case BatchOperationType.SEARCH: {
@@ -474,9 +482,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
 
             // Return a flattened list of records
-            const flattened = aggregatedResults.flatMap(
-              (r) => (r as any)?.result || []
-            );
+            const flattened = aggregatedResults.flatMap((r) => {
+              const result = r as unknown as Record<string, unknown>;
+              return Array.isArray(result?.result) ? result.result : [];
+            });
             return flattened;
           } else {
             // Fallback to single search with pagination (legacy behavior)
@@ -507,9 +516,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
           );
       }
     } catch (error: unknown) {
+      const typedParams = params as Record<string, unknown>;
       throw ErrorService.createUniversalError(
         'batch operations',
-        `${(params as any)?.resource_type}:${(params as any)?.operation_type}`,
+        `${typedParams?.resource_type}:${typedParams?.operation_type}`,
         error
       );
     }
@@ -582,18 +592,12 @@ export const batchOperationsConfig: UniversalToolConfig = {
 
               if (records.length > 0) {
                 records.slice(0, 3).forEach((record, recordIndex) => {
-                  const values = (record as any).values as Record<
-                    string,
-                    unknown
-                  >;
-                  const recordId = (record as any).id as Record<
-                    string,
-                    unknown
-                  >;
+                  const values = safeExtractRecordValues(record);
+                  const recordObj = record as Record<string, unknown>;
+                  const recordId = recordObj.id as Record<string, unknown>;
                   const name =
-                    (values?.name as Record<string, unknown>[])?.[0]?.value ||
-                    (values?.title as Record<string, unknown>[])?.[0]?.value ||
-                    'Unnamed';
+                    safeExtractFirstValue(values?.name) ||
+                    safeExtractFirstValue(values?.title, 'Unnamed');
                   const id = recordId?.record_id || 'unknown';
                   summary += `   ${recordIndex + 1}. ${name} (ID: ${id})\n`;
                 });
@@ -618,12 +622,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Legacy format: AttioRecord[] (single search)
           return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
             .map((record: Record<string, unknown>, index: number) => {
-              const values = (record as any).values as
-                | Record<string, unknown>
-                | undefined;
-              const recordId = (record as any).id as
-                | Record<string, unknown>
-                | undefined;
+              const values = safeExtractRecordValues(record);
+              const recordId = record.id as Record<string, unknown> | undefined;
               const name = extractName(values, 'Unnamed');
               const id = (recordId?.record_id as string) || 'unknown';
               return `${index + 1}. ${name} (ID: ${id})`;
@@ -656,8 +656,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
         summary += `\n\nFailed operations:\n${failed
           .map((op: Record<string, unknown>, index: number) => {
             const opData = op.data as Record<string, unknown>;
-            const identifier =
-              (op as any).record_id || opData?.name || 'Unknown';
+            const typedOp = op as Record<string, unknown>;
+            const identifier = typedOp.record_id || opData?.name || 'Unknown';
             return `${index + 1}. ${identifier}: ${op.error}`;
           })
           .join('\n')}`;
