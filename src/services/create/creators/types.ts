@@ -5,6 +5,7 @@
  * creators to handle different Attio resource types (companies, people, tasks, notes).
  */
 
+import type { AxiosInstance } from 'axios';
 import type { AttioRecord } from '../../../types/attio.js';
 
 /**
@@ -13,7 +14,7 @@ import type { AttioRecord } from '../../../types/attio.js';
  */
 export interface ResourceCreatorContext {
   /** Attio API client instance */
-  client: Record<string, unknown>;
+  client: AxiosInstance;
   /** Debug logging function */
   debug: (
     component: string,

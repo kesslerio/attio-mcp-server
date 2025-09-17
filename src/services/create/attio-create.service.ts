@@ -147,7 +147,7 @@ export class AttioCreateService implements CreateService {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
 
-    const updatedTask = await this.taskModule.updateTask(taskId, {
+    const updatedTask = await (this.taskModule as any)?.updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
       assigneeId: input.assigneeId as string,
@@ -156,7 +156,10 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return this.converterModule.convertTaskToAttioRecord(updatedTask, input);
+    return (this.converterModule as any)?.convertTaskToAttioRecord(
+      updatedTask,
+      input
+    );
   }
 
   /**
@@ -192,7 +195,7 @@ export class AttioCreateService implements CreateService {
       parent_record_id: params.record_id,
     };
 
-    const response = await this.noteModule.listNotes(query);
+    const response = await (this.noteModule as any)?.listNotes(query);
     return response.data || [];
   }
 
