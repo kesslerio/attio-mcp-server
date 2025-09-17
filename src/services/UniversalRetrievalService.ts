@@ -27,7 +27,10 @@ import {
   ensureEnhanced,
   withEnumerableMessage,
 } from '../errors/enhanced-helpers.js';
-import { toMcpResult, HttpResponse } from '../lib/http/toMcpResult.js';
+
+// Import shared type definitions for better type safety
+// Note: These imports are available for future error handling improvements
+// but not yet fully integrated into this service
 
 // Import resource-specific retrieval functions
 import { getCompanyDetails } from '../objects/companies/index.js';
@@ -39,6 +42,15 @@ import { getNote, normalizeNoteResponse } from '../objects/notes.js';
 
 /**
  * UniversalRetrievalService provides centralized record retrieval functionality
+ *
+ * **Type Safety Strategy**: This service employs Record<string, unknown> instead of any
+ * for handling dynamic API responses. This approach provides:
+ * - Compile-time type checking for known properties
+ * - Safe property access for unknown API data structures
+ * - Prevention of runtime errors from property misuse
+ *
+ * **Record<string, unknown> Benefits**: Unlike any, this type prevents accidental
+ * operations while maintaining flexibility for varied API response formats.
  */
 export class UniversalRetrievalService {
   /**
@@ -343,7 +355,7 @@ export class UniversalRetrievalService {
         const error = new Error(
           `List record with ID "${record_id}" not found.`
         );
-        (error as any).statusCode = 404;
+        (error as Error & { statusCode?: number }).statusCode = 404;
         throw ensureEnhanced(error, {
           endpoint: `/lists/${record_id}`,
           method: 'GET',
@@ -425,11 +437,19 @@ export class UniversalRetrievalService {
     try {
       if (shouldUseMockData()) {
         try {
-          const mod: any = await import('../utils/task-debug.js');
+          const mod = (await import('../utils/task-debug.js')) as {
+            logTaskDebug?: (
+              op: string,
+              msg: string,
+              data: Record<string, unknown>
+            ) => void;
+          };
           mod.logTaskDebug?.('getRecordDetails', 'Using mock task retrieval', {
             record_id,
           });
-        } catch {}
+        } catch {
+          // Ignore debug import errors
+        }
         // Return a minimal mock AttioRecord for tasks to satisfy E2E flows
         return {
           id: {
@@ -468,7 +488,7 @@ export class UniversalRetrievalService {
               resource_type.charAt(0).toUpperCase() + resource_type.slice(1, -1)
             } record with ID "${record_id}" not found.`
           );
-          (error as any).statusCode = 404;
+          (error as Error & { statusCode?: number }).statusCode = 404;
           throw ensureEnhanced(error, {
             endpoint: `/${resource_type}/${record_id}`,
             method: 'GET',
@@ -525,7 +545,7 @@ export class UniversalRetrievalService {
           // Cache legitimate 404s and create EnhancedApiError
           CachingService.cache404Response('notes', noteId);
           const error = new Error(`Note with ID "${noteId}" not found.`);
-          (error as any).statusCode = 404;
+          (error as Error & { statusCode?: number }).statusCode = 404;
           throw ensureEnhanced(error, {
             endpoint: `/notes/${noteId}`,
             method: 'GET',
@@ -646,9 +666,13 @@ export class UniversalRetrievalService {
       }
 
       // Check for structured HTTP response (404)
-      const statusCode =
-        (error as any)?.response?.status ?? (error as any)?.statusCode;
-      const message = (error as any)?.message ?? '';
+      const errorObj = error as {
+        response?: { status?: number };
+        statusCode?: number;
+        message?: string;
+      };
+      const statusCode = errorObj?.response?.status ?? errorObj?.statusCode;
+      const message = errorObj?.message ?? '';
 
       if (statusCode === 404 || message.includes('not found')) {
         return false;

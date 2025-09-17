@@ -11,15 +11,10 @@ import { getLazyAttioClient } from '../api/lazy-client.js';
 import { secureValidateCategories } from '../utils/validation/field-validation.js';
 import { CachingService } from './CachingService.js';
 import { OBJECT_SLUG_MAP } from '../constants/universal.constants.js';
-import type {
-  AttioAttribute,
-  AttributeResponse,
-  UnknownRecord,
-} from '../types/service-types.js';
+import type { AttributeResponse } from '../types/service-types.js';
 import { isAttioAttribute } from '../types/service-types.js';
 import {
   debug,
-  error,
   info,
   OperationType,
   createScopedLogger,
@@ -466,7 +461,13 @@ export class UniversalMetadataService {
 
       // If it's a 404 or similar API error, convert to structured error for MCP error detection
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as any;
+        const axiosError = error as {
+          response?: {
+            status?: number;
+            data?: { error?: { message?: string }; message?: string };
+          };
+          message?: string;
+        };
         const status = axiosError.response?.status || 500;
         const message =
           axiosError.response?.data?.error?.message ||
@@ -575,9 +576,10 @@ export class UniversalMetadataService {
     // NEW: Apply category filtering if categories parameter was provided
     let filteredAttributes = attributes;
     if (options?.categories && options.categories.length > 0) {
-      filteredAttributes = attributes.filter((attr: any) =>
-        options.categories!.includes(attr.category)
-      );
+      filteredAttributes = attributes.filter((attr: unknown) => {
+        const attrObj = attr as { category?: string };
+        return options.categories!.includes(attrObj.category!);
+      });
     }
 
     return {
@@ -695,7 +697,7 @@ export class UniversalMetadataService {
       const attrs = attributes as Record<string, unknown>;
       if (Array.isArray(attrs.attributes)) {
         const filtered = this.filterAttributesByCategory(
-          attrs.attributes as any[],
+          attrs.attributes as unknown[],
           requestedCategories
         );
         return {
@@ -708,7 +710,7 @@ export class UniversalMetadataService {
       // Handle format with 'all', 'custom', 'standard' fields (e.g., from discoverCompanyAttributes)
       if (Array.isArray(attrs.all)) {
         const filtered = this.filterAttributesByCategory(
-          attrs.all as any[],
+          attrs.all as unknown[],
           requestedCategories
         );
         return {
@@ -920,7 +922,7 @@ export class UniversalMetadataService {
   /**
    * Robustly parse attribute discovery responses from multiple possible shapes
    */
-  private static parseAttributesResponse(data: unknown): any[] {
+  private static parseAttributesResponse(data: unknown): unknown[] {
     // Common shapes:
     // - { data: AttioAttribute[] }
     // - { attributes: AttioAttribute[] }
@@ -929,7 +931,7 @@ export class UniversalMetadataService {
     // Fallback: []
 
     // Direct array
-    if (Array.isArray(data)) return data as any[];
+    if (Array.isArray(data)) return data as unknown[];
 
     // Object with nested arrays
     if (data && typeof data === 'object') {
@@ -937,17 +939,17 @@ export class UniversalMetadataService {
 
       // Prefer .data if it is an array
       const dataArr = obj.data as unknown;
-      if (Array.isArray(dataArr)) return dataArr as any[];
+      if (Array.isArray(dataArr)) return dataArr as unknown[];
 
       // .attributes array
       const attrs = obj.attributes as unknown;
-      if (Array.isArray(attrs)) return attrs as any[];
+      if (Array.isArray(attrs)) return attrs as unknown[];
 
       // Combined shape with .all / .custom / .standard
       const all = obj.all as unknown;
       const custom = obj.custom as unknown;
       const standard = obj.standard as unknown;
-      const merged: any[] = [];
+      const merged: unknown[] = [];
       if (Array.isArray(all)) merged.push(...all);
       if (Array.isArray(custom)) merged.push(...custom);
       if (Array.isArray(standard)) merged.push(...standard);
@@ -962,7 +964,7 @@ export class UniversalMetadataService {
         {
           receivedKeys:
             data && typeof data === 'object'
-              ? Object.keys(data as any)
+              ? Object.keys(data as Record<string, unknown>)
               : typeof data,
         },
         'parseAttributesResponse',

@@ -14,12 +14,7 @@ import {
 import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
-import {
-  debug,
-  error,
-  createScopedLogger,
-  OperationType,
-} from '../utils/logger.js';
+import { debug, createScopedLogger, OperationType } from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -30,7 +25,6 @@ import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.j
 
 // Import error types for validation and proper error handling
 import {
-  FilterValidationError,
   AuthenticationError,
   AuthorizationError,
   NetworkError,
@@ -49,7 +43,6 @@ import { listTasks } from '../objects/tasks.js';
 import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
 
 // Import guardrails
-import { assertNoMockInE2E } from './_guards.js';
 
 // Import Attio client for deal queries
 import { getLazyAttioClient } from '../api/lazy-client.js';
@@ -60,11 +53,10 @@ import type { AxiosInstance } from 'axios';
 // which prefers mocked getAttioClient() during tests/offline.
 
 // Import factory for guard checks
-import { shouldUseMockData } from './create/index.js';
 
 // Prefer the module's getAttioClient (enables Vitest mocks). Fallback to lazy client.
 function resolveQueryApiClient(): AxiosInstance {
-  const mod: any = AttioClientModule as any;
+  const mod = AttioClientModule as { getAttioClient?: () => AxiosInstance };
   if (typeof mod.getAttioClient === 'function') {
     return mod.getAttioClient();
   }

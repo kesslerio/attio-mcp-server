@@ -10,44 +10,35 @@ import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/t
 import { isValidId } from '../utils/validation.js';
 import { debug } from '../utils/logger.js';
 
+// Import shared type definitions and utilities
+import {
+  is404Error,
+  createNotFoundError,
+  type TaskError,
+  type ApiErrorWithResponse,
+} from '../types/universal-service-types.js';
+
 // Import delete functions for each resource type
-import {
-  deleteCompany,
-  getCompanyDetails,
-} from '../objects/companies/index.js';
+import { deleteCompany } from '../objects/companies/index.js';
 import { deletePerson } from '../objects/people-write.js';
-import { deleteList, getListDetails } from '../objects/lists.js';
-import {
-  deleteObjectRecord,
-  getObjectRecord,
-} from '../objects/records/index.js';
+import { deleteList } from '../objects/lists.js';
+import { deleteObjectRecord } from '../objects/records/index.js';
 import { deleteTask, getTask } from '../objects/tasks.js';
 import { deleteNote } from '../objects/notes.js';
-import { getPersonDetails } from '../objects/people/basic.js';
 import { shouldUseMockData } from './create/index.js';
 
 /**
  * UniversalDeleteService provides centralized record deletion functionality
+ *
+ * **Type Safety Improvements**: This service now uses shared type definitions from
+ * universal-service-types.ts to eliminate repeated inline types and improve
+ * runtime safety through type guards.
+ *
+ * **Record<string, unknown> vs any**: Throughout this service, we use
+ * Record<string, unknown> instead of any for better type safety. This allows
+ * property access while preventing unsafe operations on unknown data structures.
  */
 export class UniversalDeleteService {
-  /**
-   * Helper to detect 404 errors from various API error formats
-   */
-  private static is404Error(err: unknown): boolean {
-    const anyErr = err as any;
-    const status = anyErr?.response?.status ?? anyErr?.status;
-    const code = anyErr?.response?.data?.code ?? anyErr?.code;
-    const msg = (anyErr?.response?.data?.message ?? anyErr?.message ?? '')
-      .toString()
-      .toLowerCase();
-
-    return (
-      status === 404 ||
-      code === 'not_found' ||
-      msg.includes('not found') ||
-      msg.includes('404')
-    );
-  }
   /**
    * Delete a record across any supported resource type
    *
@@ -65,15 +56,12 @@ export class UniversalDeleteService {
           await deleteCompany(record_id);
           return { success: true, record_id };
         } catch (error: unknown) {
-          // Map API errors to structured format
-          if (this.is404Error(error)) {
-            throw {
-              status: 404,
-              body: {
-                code: 'not_found',
-                message: `Company record with ID "${record_id}" not found.`,
-              },
-            };
+          // Map API errors to structured format using shared type guards
+          if (is404Error(error)) {
+            throw createNotFoundError(
+              UniversalResourceType.COMPANIES,
+              record_id
+            );
           }
           throw error;
         }
@@ -83,15 +71,9 @@ export class UniversalDeleteService {
           await deletePerson(record_id);
           return { success: true, record_id };
         } catch (error: unknown) {
-          // Map API errors to structured format
-          if (this.is404Error(error)) {
-            throw {
-              status: 404,
-              body: {
-                code: 'not_found',
-                message: `Person record with ID "${record_id}" not found.`,
-              },
-            };
+          // Map API errors to structured format using shared type guards
+          if (is404Error(error)) {
+            throw createNotFoundError(UniversalResourceType.PEOPLE, record_id);
           }
           throw error;
         }
@@ -105,15 +87,9 @@ export class UniversalDeleteService {
           await deleteObjectRecord('records', record_id);
           return { success: true, record_id };
         } catch (error: unknown) {
-          // Map API errors to structured format
-          if (this.is404Error(error)) {
-            throw {
-              status: 404,
-              body: {
-                code: 'not_found',
-                message: `Record with ID "${record_id}" not found.`,
-              },
-            };
+          // Map API errors to structured format using shared type guards
+          if (is404Error(error)) {
+            throw createNotFoundError(UniversalResourceType.RECORDS, record_id);
           }
           throw error;
         }
@@ -126,7 +102,11 @@ export class UniversalDeleteService {
         // In mock mode, pre-validate IDs and emit deterministic message expected by tests
         if (shouldUseMockData()) {
           if (!isValidId(record_id)) {
-            const err: any = new Error(`Task not found: ${record_id}`);
+            /**
+             * **Type Safety Note**: Using TaskError interface instead of any
+             * to maintain type safety while preserving test compatibility.
+             */
+            const err: TaskError = new Error(`Task not found: ${record_id}`);
             err.status = 404;
             err.body = {
               code: 'not_found',
@@ -151,7 +131,11 @@ export class UniversalDeleteService {
 
           // deleteTask returns boolean - if false, treat as not found
           if (resp === false) {
-            const err: any = new Error(
+            /**
+             * **Type Safety Note**: Using TaskError interface for structured error
+             * properties while maintaining Error base class for compatibility.
+             */
+            const err: TaskError = new Error(
               `Task with ID "${record_id}" not found.`
             );
             err.status = 404;
@@ -165,7 +149,7 @@ export class UniversalDeleteService {
           return { success: true, record_id };
         } catch (error: unknown) {
           // Map API errors to structured format, with a single retry for occasional eventual consistency
-          if (this.is404Error(error)) {
+          if (is404Error(error)) {
             // Best-effort verification: if task still exists, wait briefly and retry once
             try {
               const exists = await getTask(record_id).then(
@@ -181,7 +165,10 @@ export class UniversalDeleteService {
               // ignore and fall through to not_found mapping
             }
 
-            const err: any = new Error(
+            /**
+             * **Type Safety**: Using TaskError instead of any for structured error properties
+             */
+            const err: TaskError = new Error(
               `Task with ID "${record_id}" not found.`
             );
             err.status = 404;
@@ -192,11 +179,15 @@ export class UniversalDeleteService {
             throw err; // dispatcher should mark isError=true
           }
           // Map specific 400 errors for task ID validation to clearer messages
-          const anyErr: any = error as any;
-          const status = anyErr?.response?.status ?? anyErr?.status;
+          /**
+           * **Type Safety**: Using ApiErrorWithResponse interface instead of inline any casting
+           * to provide proper type checking while maintaining flexibility for error handling.
+           */
+          const apiErr = error as ApiErrorWithResponse;
+          const status = apiErr?.response?.status ?? apiErr?.status;
           const errorMessage = (
-            anyErr?.response?.data?.message ??
-            anyErr?.message ??
+            apiErr?.response?.data?.message ??
+            apiErr?.message ??
             ''
           )
             .toString()
