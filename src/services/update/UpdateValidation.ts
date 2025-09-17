@@ -189,7 +189,7 @@ export const UpdateValidation = {
     if (actualValue === null || actualValue === undefined) {
       return { matches: false };
     }
-    let unwrappedActual = actualValue;
+    let unwrappedActual: unknown = actualValue;
     if (
       Array.isArray(actualValue) &&
       actualValue.length > 0 &&
@@ -198,9 +198,9 @@ export const UpdateValidation = {
       unwrappedActual =
         (actualValue as Record<string, unknown>[]).length === 1
           ? (actualValue as Record<string, unknown>[])[0].value
-          : (actualValue as Record<string, unknown>[]).map(
+          : ((actualValue as Record<string, unknown>[]).map(
               (v: Record<string, unknown>) => v.value
-            );
+            ) as unknown);
     }
     if (Array.isArray(expectedValue)) {
       if (!Array.isArray(unwrappedActual)) return { matches: false };

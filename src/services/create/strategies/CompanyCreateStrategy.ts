@@ -33,9 +33,13 @@ export class CompanyCreateStrategy implements CreateStrategy<AttioRecord> {
       }
       // Type guard for expected structure
       const hasRecordId =
-        typeof (result as Record<string, unknown>)?.id?.record_id ===
-          'string' &&
-        (result as Record<string, unknown>).id.record_id.length > 0;
+        typeof (
+          (result as Record<string, unknown>)?.id as Record<string, unknown>
+        )?.record_id === 'string' &&
+        (
+          ((result as Record<string, unknown>).id as Record<string, unknown>)
+            .record_id as string
+        ).length > 0;
       if (!hasRecordId) {
         throw new UniversalValidationError(
           'Company creation failed: Invalid record structure',

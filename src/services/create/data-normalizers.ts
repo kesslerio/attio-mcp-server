@@ -226,42 +226,47 @@ export function convertTaskToAttioRecord(
     const task = createdTask as Record<string, unknown>;
 
     // If it's already an AttioRecord with record_id, ensure flat fields exist and return
-    if (task.values && task.id?.record_id) {
+    if (task.values && (task.id as Record<string, unknown>)?.record_id) {
       const base: AttioRecord = task as AttioRecord;
       return {
         ...base,
         // Provide flat field compatibility expected by E2E tests
         content:
-          (base.values?.content as Record<string, unknown>[])?.[0]?.value ||
-          base.content,
+          (base.values?.content as unknown as Record<string, unknown>[])?.[0]
+            ?.value || base.content,
         title:
-          (base.values?.title as Record<string, unknown>[])?.[0]?.value ||
-          (base.values?.content as Record<string, unknown>[])?.[0]?.value ||
+          (base.values?.title as unknown as Record<string, unknown>[])?.[0]
+            ?.value ||
+          (base.values?.content as unknown as Record<string, unknown>[])?.[0]
+            ?.value ||
           base.title,
         status:
-          (base.values?.status as Record<string, unknown>[])?.[0]?.value ||
-          base.status,
+          (base.values?.status as unknown as Record<string, unknown>[])?.[0]
+            ?.value || base.status,
         due_date:
-          (base.values?.due_date as Record<string, unknown>[])?.[0]?.value ||
+          (base.values?.due_date as unknown as Record<string, unknown>[])?.[0]
+            ?.value ||
           base.due_date ||
           (task.deadline_at
             ? String(task.deadline_at).split('T')[0]
             : undefined),
         assignee_id:
-          (base.values?.assignee as Record<string, unknown>[])?.[0]?.value ||
-          base.assignee_id,
+          (base.values?.assignee as unknown as Record<string, unknown>[])?.[0]
+            ?.value || base.assignee_id,
         priority: base.priority || 'medium',
       } as unknown as AttioRecord;
     }
 
     // If it has task_id, convert to AttioRecord format
-    if (task.id?.task_id) {
+    if ((task.id as Record<string, unknown>)?.task_id) {
       const attioRecord: AttioRecord = {
         id: {
-          record_id: task.id.task_id,
-          task_id: task.id.task_id,
+          record_id: (task.id as Record<string, unknown>).task_id as string,
+          task_id: (task.id as Record<string, unknown>).task_id as string,
           object_id: 'tasks',
-          workspace_id: task.id.workspace_id || 'test-workspace',
+          workspace_id:
+            ((task.id as Record<string, unknown>).workspace_id as string) ||
+            'test-workspace',
         },
         values: {
           content: task.content || undefined,
@@ -284,7 +289,9 @@ export function convertTaskToAttioRecord(
         due_date: task.deadline_at
           ? String(task.deadline_at).split('T')[0]
           : undefined,
-        assignee_id: task.assignee?.id || task.assignee_id,
+        assignee_id:
+          ((task.assignee as Record<string, unknown>)?.id as string) ||
+          (task.assignee_id as string),
         priority: task.priority || 'medium',
       } as unknown as AttioRecord;
     }

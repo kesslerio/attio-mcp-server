@@ -77,10 +77,12 @@ export class TaskCreator extends BaseCreator {
         options.targetObject = input.targetObject as string;
       }
 
-      const createdTask = await this.taskModule.createTask(
-        input.content as string,
-        options
-      );
+      const createTaskFn = (this.taskModule as Record<string, unknown>)
+        .createTask as (
+        content: string,
+        options: Record<string, unknown>
+      ) => Promise<Record<string, unknown>>;
+      const createdTask = await createTaskFn(input.content as string, options);
 
       context.debug(this.constructor.name, 'Task creation response', {
         hasTask: !!createdTask,
@@ -89,10 +91,12 @@ export class TaskCreator extends BaseCreator {
       });
 
       // Convert task to AttioRecord format
-      const record = this.converterModule.convertTaskToAttioRecord(
-        createdTask,
-        input
-      );
+      const convertFn = (this.converterModule as Record<string, unknown>)
+        .convertTaskToAttioRecord as (
+        task: Record<string, unknown>,
+        input: Record<string, unknown>
+      ) => AttioRecord;
+      const record = convertFn(createdTask, input);
       // Ensure E2E compatibility: include values.assignee when assigneeId provided
       try {
         if (
@@ -109,7 +113,9 @@ export class TaskCreator extends BaseCreator {
       }
 
       context.debug(this.constructor.name, 'Converted task record', {
-        recordId: (record as Record<string, unknown>)?.id?.record_id,
+        recordId: (
+          (record as Record<string, unknown>)?.id as Record<string, unknown>
+        )?.record_id,
         resourceType: record.resource_type,
       });
 
@@ -145,8 +151,9 @@ export class TaskCreator extends BaseCreator {
    * Override attemptRecovery to handle delegation approach
    */
   protected async attemptRecovery(
-    context: ResourceCreatorContext
-  ): Promise<Record<string, unknown>> {
+    context: ResourceCreatorContext,
+    _normalizedInput?: Record<string, unknown>
+  ): Promise<AttioRecord> {
     // Tasks are handled via delegation, so no direct recovery needed
     throw this.createEnhancedError(
       new Error('Task creation failed via delegation - no recovery available'),
