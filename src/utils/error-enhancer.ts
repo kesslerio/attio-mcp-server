@@ -7,6 +7,8 @@ import {
   ValueMatchResult as ValueMatcherValueMatchResult,
 } from './value-matcher.js';
 import axios from 'axios';
+import { createScopedLogger } from './logger.js';
+import type { UnknownObject } from './types/common.js';
 
 // Known valid values for select fields - this should ideally come from Attio API
 const KNOWN_FIELD_VALUES: Record<string, string[]> = {
@@ -50,8 +52,8 @@ interface ErrorContext {
 /**
  * Parse API error to extract context
  */
-function parseApiError(error: any): ErrorContext {
-  const { createScopedLogger } = require('./logger.js');
+function parseApiError(error: UnknownObject): ErrorContext {
+  // Use imported createScopedLogger
   const log = createScopedLogger('utils.error-enhancer', 'parseApiError');
   log.debug('ENTERING parseApiError');
   log.debug('Error type info', {
@@ -79,7 +81,8 @@ function parseApiError(error: any): ErrorContext {
       responseDataExists = true;
       try {
         responseDataContent = JSON.stringify(error.response.data);
-      } catch (e) {
+      } catch {
+        // Failed to stringify response data
         responseDataContent = 'Error stringifying response.data';
       }
       log.debug('Response data exists', {
@@ -107,7 +110,7 @@ function parseApiError(error: any): ErrorContext {
     error.response &&
     error.response.data
   ) {
-    const { createScopedLogger } = require('./logger.js');
+    // Use imported createScopedLogger
     const log = createScopedLogger('utils.error-enhancer', 'parseApiError');
     log.debug('Condition met: processing error.response.data');
     const data = error.response.data;
@@ -136,23 +139,21 @@ function parseApiError(error: any): ErrorContext {
         errorMessage: message,
       };
     }
-    const { createScopedLogger: createLog2 } = require('./logger.js');
-    createLog2('utils.error-enhancer', 'parseApiError').debug(
+    createScopedLogger('utils.error-enhancer', 'parseApiError').debug(
       'Returning Non-ValueMismatch Axios context',
       { field: path }
     );
     return { fieldSlug: path, errorMessage: message };
   }
 
-  const { createScopedLogger: createLog3 } = require('./logger.js');
-  createLog3('utils.error-enhancer', 'parseApiError').debug(
+  createScopedLogger('utils.error-enhancer', 'parseApiError').debug(
     'Condition not met'
   );
   const genericErrorMessage =
     error && typeof error.message === 'string'
       ? error.message
       : 'Unknown error';
-  createLog3('utils.error-enhancer', 'parseApiError').debug(
+  createScopedLogger('utils.error-enhancer', 'parseApiError').debug(
     'Returning generic message',
     { genericErrorMessage }
   );
@@ -162,16 +163,16 @@ function parseApiError(error: any): ErrorContext {
 /**
  * Enhance an API error with value suggestions if applicable
  */
-export function enhanceApiError(error: any): Error {
-  const { createScopedLogger } = require('./logger.js');
+export function enhanceApiError(error: UnknownObject): Error {
+  // Use imported createScopedLogger
   const log = createScopedLogger('utils.error-enhancer', 'enhanceApiError');
   log.debug('Called with error', {
     type: error?.constructor?.name,
     isAxiosError: !!error?.isAxiosError,
   });
   log.debug('Attempting to enhance error', {
-    message: error?.message,
-    responseData: error?.response?.data,
+    message: (error as UnknownObject)?.message,
+    responseData: ((error as UnknownObject)?.response as UnknownObject)?.data,
   });
 
   const mismatchCheck = isValueMismatchError(error);
@@ -194,14 +195,17 @@ export function enhanceApiError(error: any): Error {
         searchValue,
         knownValues
       );
-      log.debug('Match result from findBestValueMatch', matchResult);
+      log.debug(
+        'Match result from findBestValueMatch',
+        matchResult as unknown as UnknownObject
+      );
 
       log.debug('Returning NEW ValueMatchError');
       return new ValueMatchError(
         fieldSlug,
         searchValue,
         matchResult,
-        error // Pass original Axios error for reference
+        error as unknown as Error // Pass original Axios error for reference
       );
     }
   } else {
@@ -211,23 +215,22 @@ export function enhanceApiError(error: any): Error {
   }
 
   log.debug('No specific enhancement applied; returning original error');
-  return error; // Fallback: return original error if not enhanced
+  return error as unknown as Error; // Fallback: return original error if not enhanced
 }
 
 /**
  * Check if an error is a value mismatch that we can enhance
  */
-export function isValueMismatchError(error: any): {
+export function isValueMismatchError(error: UnknownObject): {
   isMismatch: boolean;
   fieldSlug?: string;
   searchValue?: string;
   errorMessage?: string;
 } {
   const context = parseApiError(error);
-  const { createScopedLogger: createLog } = require('./logger.js');
-  createLog('utils.error-enhancer', 'isValueMismatchError').debug(
+  createScopedLogger('utils.error-enhancer', 'isValueMismatchError').debug(
     'Context from parseApiError',
-    context
+    context as unknown as UnknownObject
   );
   if (
     context.fieldSlug &&
@@ -241,7 +244,7 @@ export function isValueMismatchError(error: any): {
         (v) => v.toLowerCase() === context.searchValue?.toLowerCase()
       )
     ) {
-      createLog('utils.error-enhancer', 'isValueMismatchError').debug(
+      createScopedLogger('utils.error-enhancer', 'isValueMismatchError').debug(
         'Mismatch found',
         { fieldSlug: context.fieldSlug, searchValue: context.searchValue }
       );
@@ -253,7 +256,7 @@ export function isValueMismatchError(error: any): {
       };
     }
   }
-  createLog('utils.error-enhancer', 'isValueMismatchError').debug(
+  createScopedLogger('utils.error-enhancer', 'isValueMismatchError').debug(
     'No mismatch or field/value not in KNOWN_FIELD_VALUES'
   );
   return { isMismatch: false, errorMessage: context.errorMessage };

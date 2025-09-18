@@ -15,6 +15,8 @@ export default defineConfig({
       'test/real-api-validation.test.ts',
       'test/handlers/tool-configs/universal/integration-*.test.ts',
       'test/handlers/tool-configs/universal/performance-*.test.ts',
+      // Exclude performance tests from offline runs
+      'test/performance/**/*.test.ts',
     ],
     globals: true,
     testTimeout: 10000,
