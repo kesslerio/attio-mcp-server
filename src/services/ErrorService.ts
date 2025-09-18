@@ -461,11 +461,11 @@ export class ErrorService {
       }>;
     } => {
       try {
-        const rd = err?.response?.data as any;
+        const rd = err?.response?.data as Record<string, unknown>;
 
         // Extract and normalize validation errors
         const validationErrors = normalizeValidationErrors(
-          rd?.validation_errors || []
+          (rd?.validation_errors as unknown[]) || []
         );
 
         // Get server message

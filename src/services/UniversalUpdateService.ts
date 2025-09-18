@@ -7,7 +7,7 @@
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalUpdateParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord, AttioTask } from '../types/attio.js';
+import { AttioRecord } from '../types/attio.js';
 import {
   UniversalValidationError,
   ErrorType,
@@ -40,21 +40,9 @@ import {
 // Import validation utilities
 import { validateRecordFields } from '../utils/validation-utils.js';
 
-// Import deal defaults configuration
-import { applyDealDefaultsWithValidation } from '../config/deal-defaults.js';
+// Note: Deal defaults configuration removed as unused in update service
 
-// Import resource-specific update functions
-import { updateCompany } from '../objects/companies/index.js';
-import { updateList } from '../objects/lists.js';
-import { updatePerson } from '../objects/people-write.js';
-import { updateObjectRecord } from '../objects/records/index.js';
-
-// Import resource-specific get functions for field persistence verification
-import { getCompanyDetails } from '../objects/companies/index.js';
-import { getListDetails } from '../objects/lists.js';
-import { getPersonDetails } from '../objects/people/basic.js';
-import { getObjectRecord } from '../objects/records/index.js';
-import { getTask } from '../objects/tasks.js';
+// Note: Removed unused resource-specific function imports as service now uses strategy pattern
 
 /**
  * Task update with mock support - uses production MockService

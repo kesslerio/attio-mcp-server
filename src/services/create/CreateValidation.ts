@@ -8,6 +8,21 @@ import { getCompanyDetails } from '../../objects/companies/index.js';
 import { getPersonDetails } from '../../objects/people/basic.js';
 import { getListDetails } from '../../objects/lists.js';
 
+interface ListDetailsResponse {
+  id: {
+    list_id: string;
+  };
+  name?: string;
+  title?: string;
+  description?: string;
+  object_slug?: string;
+  parent_object?: string;
+  api_slug?: string;
+  workspace_id?: string;
+  workspace_member_access?: string;
+  created_at?: string;
+}
+
 export const CreateValidation = {
   sanitize(data: Record<string, unknown>): Record<string, unknown> {
     const out: Record<string, unknown> = {};
@@ -34,21 +49,20 @@ export const CreateValidation = {
         case UniversalResourceType.PEOPLE:
           return (await getPersonDetails(recordId)) as unknown as AttioRecord;
         case UniversalResourceType.LISTS: {
-          const list = await getListDetails(recordId);
+          const list = (await getListDetails(recordId)) as ListDetailsResponse;
           return {
             id: {
-              record_id: (list as any).id.list_id,
-              list_id: (list as any).id.list_id,
+              record_id: list.id.list_id,
+              list_id: list.id.list_id,
             },
             values: {
-              name: (list as any).name || (list as any).title,
-              description: (list as any).description,
-              parent_object:
-                (list as any).object_slug || (list as any).parent_object,
-              api_slug: (list as any).api_slug,
-              workspace_id: (list as any).workspace_id,
-              workspace_member_access: (list as any).workspace_member_access,
-              created_at: (list as any).created_at,
+              name: list.name || list.title,
+              description: list.description,
+              parent_object: list.object_slug || list.parent_object,
+              api_slug: list.api_slug,
+              workspace_id: list.workspace_id,
+              workspace_member_access: list.workspace_member_access,
+              created_at: list.created_at,
             },
           } as unknown as AttioRecord;
         }

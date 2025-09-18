@@ -7,7 +7,6 @@ import {
 } from '../../../handlers/tool-configs/universal/schemas.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
-import { BaseWrappedError } from '../../../errors/BaseWrappedError.js';
 
 /**
  * CompanyUpdateStrategy - Handles updates for Companies

@@ -264,16 +264,17 @@ export class UniversalCreateService {
           );
 
         // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
-        const attrs = (attributeResult?.attributes as any[]) ?? [];
+        const attrs = (attributeResult?.attributes as unknown[]) ?? [];
         availableAttributes = Array.from(
           new Set(
-            attrs.flatMap((a) =>
-              [
-                a?.api_slug,
-                a?.title,
-                a?.name, // accept all, some schemas use `title`, some `name`
-              ].filter((s: unknown): s is string => typeof s === 'string')
-            )
+            attrs.flatMap((a) => {
+              const attrObj = a as Record<string, unknown>;
+              return [
+                attrObj?.api_slug,
+                attrObj?.title,
+                attrObj?.name, // accept all, some schemas use `title`, some `name`
+              ].filter((s: unknown): s is string => typeof s === 'string');
+            })
           )
         ).map((s) => s.toLowerCase());
       } catch (error) {

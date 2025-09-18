@@ -232,7 +232,7 @@ export class UniversalRetrievalService {
 
         // Create and throw enhanced error
         const error = new Error(`Invalid record_id format: ${record_id}`);
-        (error as any).statusCode = 400;
+        (error as unknown as Record<string, unknown>).statusCode = 400;
         throw ensureEnhanced(error, {
           endpoint: `/${resource_type}/${record_id}`,
           method: 'GET',
@@ -249,11 +249,14 @@ export class UniversalRetrievalService {
         'body' in apiError
       ) {
         // Convert legacy HTTP response to EnhancedApiError
-        const message = (apiError as any).body?.message || 'HTTP error';
-        const status = (apiError as any).status || 500;
+        const errorObj = apiError as Record<string, unknown>;
+        const message = String(
+          (errorObj.body as Record<string, unknown>)?.message || 'HTTP error'
+        );
+        const status = Number(errorObj.status) || 500;
         enhancedPerformanceTracker.endOperation(perfId, false, message, status);
         const error = new Error(message);
-        (error as any).statusCode = status;
+        (error as unknown as Record<string, unknown>).statusCode = status;
         throw ensureEnhanced(error, {
           endpoint: `/${resource_type}/${record_id}`,
           method: 'GET',

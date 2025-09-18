@@ -1,5 +1,4 @@
 import type { AttioRecord } from '../../../types/attio.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type {
   CreateStrategy,
   CreateStrategyParams,
@@ -14,7 +13,6 @@ import {
   getFormatErrorHelp,
   convertAttributeFormats,
 } from '../../../utils/attribute-format-helpers.js';
-import { enhanceUniquenessError } from '../../../handlers/tool-configs/universal/field-mapper/validators/uniqueness-validator.js';
 
 export class CompanyCreateStrategy implements CreateStrategy<AttioRecord> {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {
@@ -35,8 +33,13 @@ export class CompanyCreateStrategy implements CreateStrategy<AttioRecord> {
       }
       // Type guard for expected structure
       const hasRecordId =
-        typeof (result as any)?.id?.record_id === 'string' &&
-        (result as any).id.record_id.length > 0;
+        typeof (
+          (result as Record<string, unknown>)?.id as Record<string, unknown>
+        )?.record_id === 'string' &&
+        (
+          ((result as Record<string, unknown>).id as Record<string, unknown>)
+            .record_id as string
+        ).length > 0;
       if (!hasRecordId) {
         throw new UniversalValidationError(
           'Company creation failed: Invalid record structure',

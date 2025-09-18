@@ -1,5 +1,4 @@
 import type { AttioRecord } from '../../../types/attio.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type {
   CreateStrategy,
   CreateStrategyParams,

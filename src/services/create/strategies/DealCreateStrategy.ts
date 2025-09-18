@@ -17,7 +17,9 @@ export class DealCreateStrategy implements CreateStrategy {
     // Run input validation for warnings/suggestions parity (non-blocking)
     try {
       validateDealInput(dealData);
-    } catch {}
+    } catch {
+      // Validation warnings are non-blocking, continue with creation
+    }
 
     // Apply format conversions (transforms associated_company string to proper array format)
     dealData = convertAttributeFormats('deals', dealData);

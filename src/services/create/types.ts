@@ -54,7 +54,7 @@ export interface CreateService {
     title: string;
     content: string;
     format?: string;
-  }): Promise<any>;
+  }): Promise<Record<string, unknown>>;
 
   /**
    * Lists notes for a resource
@@ -64,7 +64,7 @@ export interface CreateService {
   listNotes(params: {
     resource_type?: string;
     record_id?: string;
-  }): Promise<any[]>;
+  }): Promise<Record<string, unknown>[]>;
 }
 
 /**
