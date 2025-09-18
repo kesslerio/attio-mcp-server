@@ -12,6 +12,7 @@ import {
   getBatchSizeLimit,
 } from '../config/security-limits.js';
 import { ErrorType } from './error-handler.js';
+import { UnknownObject } from './types/common.js';
 
 /**
  * Validation result for batch operations
@@ -32,7 +33,7 @@ export interface BatchValidationResult {
  * Calculate the approximate size of a JavaScript object in bytes
  * This is used to estimate payload sizes for validation
  */
-function getObjectSize(obj: any): number {
+function getObjectSize(obj: unknown): number {
   let size = 0;
 
   if (obj === null || obj === undefined) {
@@ -82,7 +83,7 @@ function getObjectSize(obj: any): number {
  * @returns Validation result
  */
 export function validateBatchSize(
-  items: any[] | undefined | null,
+  items: unknown[] | undefined | null,
   operationType: string,
   resourceType?: string
 ): BatchValidationResult {
@@ -142,7 +143,7 @@ export function validateBatchSize(
  * @returns Validation result
  */
 export function validatePayloadSize(
-  payload: any,
+  payload: unknown,
   checkSingleRecords: boolean = true
 ): BatchValidationResult {
   // Calculate total payload size
@@ -199,7 +200,7 @@ export function validatePayloadSize(
  */
 export function validateSearchQuery(
   query?: string,
-  filters?: any
+  filters?: UnknownObject
 ): BatchValidationResult {
   // Validate query string length
   if (query && query.length > PAYLOAD_SIZE_LIMITS.SEARCH_QUERY) {
@@ -239,7 +240,7 @@ export function validateSearchQuery(
  * @returns Validation result
  */
 export function validateBatchOperation(params: {
-  items?: any[];
+  items?: unknown[];
   operationType: string;
   resourceType?: string;
   checkPayload?: boolean;

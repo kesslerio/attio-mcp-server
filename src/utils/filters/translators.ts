@@ -25,11 +25,11 @@ import {
   ListEntryFilter,
   AttioApiFilter,
   AttioQueryApiFilter,
-  PathConstraint,
   FilterConditionType,
   FIELD_SPECIAL_HANDLING,
 } from './types.js';
 import { validateFilterStructure } from './validators.js';
+import { UnknownObject } from '../types/common.js';
 import {
   validateFilters,
   collectInvalidFilters,
@@ -315,7 +315,7 @@ function createOrFilterStructure(
     'createOrFilterStructure',
     OperationType.TRANSFORMATION
   );
-  const orConditions: any[] = [];
+  const orConditions: UnknownObject[] = [];
 
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);
@@ -365,7 +365,7 @@ function createOrFilterStructure(
     const { slug } = filter.attribute;
 
     // Create a condition object for this individual filter
-    const condition: any = {};
+    const condition: UnknownObject = {};
 
     // Check if we're in list entry context and this is a list-specific attribute
     if (isListEntryContext && isListSpecificAttribute(slug)) {
@@ -446,7 +446,7 @@ function createAndFilterStructure(
     OperationType.TRANSFORMATION
   );
   // Use simple merged object for AND logic instead of $and wrapper
-  const mergedConditions: any = {};
+  const mergedConditions: UnknownObject = {};
 
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);
@@ -569,9 +569,9 @@ export function transformAttributeName(attributeSlug: string): string {
  * @returns The processed value
  */
 export function processFilterValue(
-  value: any,
+  value: unknown,
   condition: FilterConditionType
-): any {
+): unknown {
   // Empty conditions should not have a value
   if (
     condition === FilterConditionType.IS_EMPTY ||
