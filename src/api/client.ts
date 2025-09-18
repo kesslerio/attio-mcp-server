@@ -67,7 +67,9 @@ export function createAttioApiClient(
           const { status } = axiosError.response;
 
           // Attempt to enhance the error first
-          const enhancedError = enhanceApiError(axiosError); // Pass the original AxiosError
+          const enhancedError = enhanceApiError(
+            axiosError as unknown as Record<string, unknown>
+          ); // Pass the original AxiosError
 
           config.retryCount = config.retryCount || 0;
 
