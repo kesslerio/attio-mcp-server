@@ -27,7 +27,7 @@ export function logTaskDebug(
 
 export function sanitizePayload<T = unknown>(value: T): T {
   const seen = new WeakSet();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Recursive data sanitization requires any for handling arbitrary nested structures
   const redact = (v: any): any => {
     if (v === null || v === undefined) return v;
     if (typeof v === 'string') {
@@ -59,6 +59,7 @@ export function sanitizePayload<T = unknown>(value: T): T {
   return redact(value);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Task record structure varies widely, any needed for shape inspection
 export function inspectTaskRecordShape(record: any): Record<string, unknown> {
   const shape: Record<string, unknown> = {
     hasId: !!record?.id,
