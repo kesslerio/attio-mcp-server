@@ -102,17 +102,14 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     throw new Error('Invalid API key: API key appears to be too short');
   }
 
-  // Log API key info for debugging (without exposing the actual key)
-  if (
-    process.env.NODE_ENV === 'development' ||
-    process.env.E2E_MODE === 'true'
-  ) {
-    console.error(
-      `[createAttioClient] Initializing with API key (length: ${
-        apiKey.length
-      }, starts with: ${apiKey.substring(0, 4)}...)`
-    );
-  }
+  // Log client initialization for debugging (without exposing sensitive data)
+  debug(
+    MODULE_FILE,
+    'Initializing Attio client with provided API key',
+    { hasApiKey: Boolean(apiKey) },
+    'createAttioClient',
+    OperationType.API_CALL
+  );
 
   const baseURL = (
     process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'

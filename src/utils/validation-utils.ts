@@ -8,8 +8,8 @@
  * - Structured error responses
  */
 
-import * as AttioClientModule from '../api/attio-client.js';
 import { createScopedLogger, OperationType } from './logger.js';
+import { getValidatedAttioClient } from './client-resolver.js';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -25,6 +25,12 @@ export interface AttributeInfo {
     title?: string;
     value: string;
   }>;
+}
+
+interface AttioApiResponse {
+  data?: {
+    data?: AttributeInfo[];
+  };
 }
 
 /**
@@ -68,25 +74,11 @@ export async function getResourceAttributes(
   }
 
   try {
-    // Resolve client directly from the attio-client module to work with Vitest mocks
-    const mod: any = AttioClientModule as any;
-    let client: any;
-    if (typeof mod.getAttioClient === 'function') {
-      client = mod.getAttioClient();
-    } else if (
-      typeof mod.createAttioClient === 'function' &&
-      process.env.ATTIO_API_KEY
-    ) {
-      client = mod.createAttioClient(process.env.ATTIO_API_KEY);
-    } else if (
-      typeof mod.buildAttioClient === 'function' &&
-      process.env.ATTIO_API_KEY
-    ) {
-      client = mod.buildAttioClient({ apiKey: process.env.ATTIO_API_KEY });
-    } else {
-      throw new Error('No available Attio client factory');
-    }
-    const response = await client.get(`/objects/${resourceType}/attributes`);
+    // Use type-safe client resolver instead of dynamic any types
+    const client = getValidatedAttioClient();
+    const response = (await client.get(
+      `/objects/${resourceType}/attributes`
+    )) as AttioApiResponse;
     const attributes: AttributeInfo[] = response?.data?.data || [];
 
     // Cache the results

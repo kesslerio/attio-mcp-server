@@ -3,13 +3,9 @@
  * Consolidates utilities from filter-utils.ts and filter-utils-additions.ts
  */
 
-import {
-  DateRange,
-  NumericRange,
-  ATTRIBUTES,
-  FilterConditionType,
-} from './types.js';
+import { DateRange, NumericRange, ATTRIBUTES } from './types.js';
 import { resolveDateRange } from '../date-utils.js';
+import { debug, OperationType } from '../logger.js';
 
 /**
  * Creates a filter for records based on their creation date
@@ -87,10 +83,14 @@ export function isInDateRange(dateStr: string, range: DateRange): boolean {
  * @param operation - The operation being performed
  * @param details - Additional details to log
  */
-export function debugFilterLog(operation: string, details: any): void {
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`[Filter ${operation}]`, details);
-  }
+export function debugFilterLog(operation: string, details: unknown): void {
+  debug(
+    'utils/filters/utils',
+    `Filter operation: ${operation}`,
+    { operation, details },
+    'debugFilterLog',
+    OperationType.DATA_PROCESSING
+  );
 }
 
 /**

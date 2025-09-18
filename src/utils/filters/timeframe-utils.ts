@@ -63,6 +63,7 @@ export interface TimeframeValidation {
  */
 export function getRelativeTimeframeRange(
   timeframe: RelativeTimeframe,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _timezone: string = 'UTC'
 ): DateRange {
   const now = new Date();

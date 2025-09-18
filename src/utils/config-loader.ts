@@ -21,6 +21,7 @@ export interface MappingConfig {
     objects: Record<string, string>;
     lists: Record<string, string>;
     relationships: Record<string, string>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any; // Allow other mapping types
   };
 }
@@ -40,6 +41,7 @@ const CONFIG_PATHS = {
  * @param source - The source object to merge in
  * @returns The merged object
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Recursive merge function needs any for flexible object structure handling
 function deepMerge(target: any, source: any): any {
   const result = { ...target };
 
@@ -102,6 +104,7 @@ function createEmptyConfig(): MappingConfig {
  * @param filePath - Path to the JSON file
  * @returns Parsed JSON object, or null if the file doesn't exist
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON.parse returns any by design, content structure is unknown
 function loadJsonFile(filePath: string): any {
   try {
     if (fs.existsSync(filePath)) {

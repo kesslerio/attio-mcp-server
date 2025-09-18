@@ -228,6 +228,7 @@ export function generateIdCacheKey(resourceType: string, id: string): string {
  * @param error The error to check
  * @returns True if error appears to be ID-related
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error objects come from various sources with different structures
 export function isIdFormatError(error: any): boolean {
   if (!error) return false;
 

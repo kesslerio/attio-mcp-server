@@ -12,10 +12,11 @@ import {
   generateResourceTypeSuggestionMessage,
   VALID_RESOURCE_TYPES,
 } from './field-suggestions.js';
+import { UnknownObject } from './types/common.js';
 
 interface ErrorExample {
   description: string;
-  example: any;
+  example: UnknownObject;
   tip?: string;
 }
 
@@ -28,7 +29,7 @@ export function getErrorExamples(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: any;
+    actualValue?: unknown;
     path?: string;
   }
 ): ErrorExample[] {
@@ -146,7 +147,7 @@ export function enhanceErrorMessage(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: any;
+    actualValue?: unknown;
     path?: string;
     fieldName?: string;
     validFields?: string[];
@@ -189,11 +190,18 @@ export function enhanceErrorMessage(
       context.validValues &&
       context.validValues.length > 0
     ) {
-      if (context.actualValue !== undefined) {
+      if (context.actualValue !== undefined && context.actualValue !== null) {
         const valueStr = String(context.actualValue);
         if (!context.validValues.includes(valueStr)) {
+          // Only pass primitive values to generateEnumSuggestionMessage
+          const primitiveValue =
+            typeof context.actualValue === 'string' ||
+            typeof context.actualValue === 'number' ||
+            typeof context.actualValue === 'boolean'
+              ? context.actualValue
+              : valueStr;
           enhancedMessage = generateEnumSuggestionMessage(
-            context.actualValue,
+            primitiveValue,
             context.validValues,
             context.fieldName
           );
