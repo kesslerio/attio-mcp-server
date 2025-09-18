@@ -37,18 +37,26 @@ export const CreateValidation = {
           const list = await getListDetails(recordId);
           return {
             id: {
-              record_id: (list as any).id.list_id,
-              list_id: (list as any).id.list_id,
+              record_id: (
+                (list as Record<string, unknown>).id as Record<string, unknown>
+              )?.list_id,
+              list_id: (
+                (list as Record<string, unknown>).id as Record<string, unknown>
+              )?.list_id,
             },
             values: {
-              name: (list as any).name || (list as any).title,
-              description: (list as any).description,
+              name:
+                (list as Record<string, unknown>).name ||
+                (list as Record<string, unknown>).title,
+              description: (list as Record<string, unknown>).description,
               parent_object:
-                (list as any).object_slug || (list as any).parent_object,
-              api_slug: (list as any).api_slug,
-              workspace_id: (list as any).workspace_id,
-              workspace_member_access: (list as any).workspace_member_access,
-              created_at: (list as any).created_at,
+                (list as Record<string, unknown>).object_slug ||
+                (list as Record<string, unknown>).parent_object,
+              api_slug: (list as Record<string, unknown>).api_slug,
+              workspace_id: (list as Record<string, unknown>).workspace_id,
+              workspace_member_access: (list as Record<string, unknown>)
+                .workspace_member_access,
+              created_at: (list as Record<string, unknown>).created_at,
             },
           } as unknown as AttioRecord;
         }

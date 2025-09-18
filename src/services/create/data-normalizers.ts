@@ -218,12 +218,11 @@ export function normalizePersonValues(
  * @returns AttioRecord with both nested values and flat field compatibility
  */
 export function convertTaskToAttioRecord(
-  createdTask: any,
-  originalInput: Record<string, unknown>
+  createdTask: Record<string, unknown>
 ): AttioRecord {
   // Handle conversion from AttioTask to AttioRecord format
   if (createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
-    const task = createdTask as any;
+    const task = createdTask as Record<string, unknown>;
 
     // If it's already an AttioRecord with record_id, ensure flat fields exist and return
     if (task.values && task.id?.record_id) {
@@ -231,22 +230,28 @@ export function convertTaskToAttioRecord(
       return {
         ...base,
         // Provide flat field compatibility expected by E2E tests
-        content: (base.values?.content as any)?.[0]?.value || base.content,
+        content:
+          (base.values?.content as Array<{ value: string }>)?.[0]?.value ||
+          ((base as Record<string, unknown>).content as string),
         title:
-          (base.values?.title as any)?.[0]?.value ||
-          (base.values?.content as any)?.[0]?.value ||
-          base.title,
-        status: (base.values?.status as any)?.[0]?.value || base.status,
+          (base.values?.title as Array<{ value: string }>)?.[0]?.value ||
+          (base.values?.content as Array<{ value: string }>)?.[0]?.value ||
+          ((base as Record<string, unknown>).title as string),
+        status:
+          (base.values?.status as Array<{ value: string }>)?.[0]?.value ||
+          ((base as Record<string, unknown>).status as string),
         due_date:
-          (base.values?.due_date as any)?.[0]?.value ||
-          base.due_date ||
+          (base.values?.due_date as Array<{ value: string }>)?.[0]?.value ||
+          ((base as Record<string, unknown>).due_date as string) ||
           (task.deadline_at
             ? String(task.deadline_at).split('T')[0]
             : undefined),
         assignee_id:
-          (base.values?.assignee as any)?.[0]?.value || base.assignee_id,
-        priority: base.priority || 'medium',
-      } as any;
+          (base.values?.assignee as Array<{ value: string }>)?.[0]?.value ||
+          ((base as Record<string, unknown>).assignee_id as string),
+        priority:
+          ((base as Record<string, unknown>).priority as string) || 'medium',
+      } as AttioRecord & Record<string, unknown>;
     }
 
     // If it has task_id, convert to AttioRecord format
@@ -281,7 +286,7 @@ export function convertTaskToAttioRecord(
           : undefined,
         assignee_id: task.assignee?.id || task.assignee_id,
         priority: task.priority || 'medium',
-      } as any;
+      } as AttioRecord & Record<string, unknown>;
     }
   }
 

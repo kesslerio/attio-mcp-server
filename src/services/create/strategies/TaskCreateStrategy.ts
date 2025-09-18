@@ -1,10 +1,9 @@
 import type { AttioRecord } from '../../../types/attio.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type {
   CreateStrategy,
   CreateStrategyParams,
 } from './BaseCreateStrategy.js';
-import { getCreateService, shouldUseMockData } from '../../create/index.js';
+import { getCreateService } from '../../create/index.js';
 
 // Creates tasks by translating high-level fields to service API fields.
 // Mapping overview:

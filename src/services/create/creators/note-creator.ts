@@ -31,8 +31,8 @@ export class NoteCreator extends BaseCreator {
   readonly endpoint = '/objects/notes/records';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private noteModule: any = null;
-  private responseUtilsModule: any = null;
+  private noteModule: Record<string, unknown> | null = null;
+  private responseUtilsModule: Record<string, unknown> | null = null;
 
   /**
    * Lazy-loads note dependencies to prevent repeated dynamic imports
@@ -58,7 +58,7 @@ export class NoteCreator extends BaseCreator {
   async create(
     input: Record<string, unknown>,
     context: ResourceCreatorContext
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     this.assertClientHasAuth(context);
     // Validate note input format
     const noteInput = this.validateNoteInput(input);
@@ -118,9 +118,9 @@ export class NoteCreator extends BaseCreator {
       });
 
       return normalizeRecordForOutput(normalizedNote);
-    } catch (err: any) {
+    } catch (err: unknown) {
       context.logError(this.constructor.name, 'Note creation error', {
-        error: err?.message,
+        error: err instanceof Error ? err.message : String(err),
         input: noteInput,
       });
 
@@ -171,7 +171,7 @@ export class NoteCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext
-  ): Promise<any> {
+  ): Promise<never> {
     // Notes are handled via delegation, so no direct recovery needed
     throw this.createEnhancedError(
       new Error('Note creation failed via delegation - no recovery available'),

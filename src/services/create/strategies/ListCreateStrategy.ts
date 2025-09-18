@@ -1,5 +1,4 @@
 import type { AttioRecord } from '../../../types/attio.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type {
   CreateStrategy,
   CreateStrategyParams,
@@ -16,20 +15,23 @@ export class ListCreateStrategy implements CreateStrategy {
     const { values, resourceType } = params;
     try {
       const list = await createList(values);
+      const listData = list as Record<string, unknown>;
+      const listId = listData.id as Record<string, unknown>;
+
       return {
         id: {
-          record_id: (list as any).id.list_id,
-          list_id: (list as any).id.list_id,
+          record_id: listId.list_id as string,
+          list_id: listId.list_id as string,
         },
         values: {
-          name: (list as any).name || (list as any).title,
-          description: (list as any).description,
-          parent_object:
-            (list as any).object_slug || (list as any).parent_object,
-          api_slug: (list as any).api_slug,
-          workspace_id: (list as any).workspace_id,
-          workspace_member_access: (list as any).workspace_member_access,
-          created_at: (list as any).created_at,
+          name: (listData.name || listData.title) as string,
+          description: listData.description as string,
+          parent_object: (listData.object_slug ||
+            listData.parent_object) as string,
+          api_slug: listData.api_slug as string,
+          workspace_id: listData.workspace_id as string,
+          workspace_member_access: listData.workspace_member_access as string,
+          created_at: listData.created_at as string,
         },
       } as unknown as AttioRecord;
     } catch (err: unknown) {

@@ -7,6 +7,7 @@
 
 import type { AttioRecord } from '../../../types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
+import type { InputData } from '../../shared-types.js';
 import { BaseCreator } from './base-creator.js';
 import {
   normalizePersonValues,
@@ -39,7 +40,7 @@ export class PersonCreator extends BaseCreator {
    * @returns Promise<AttioRecord> - Created person record with id.record_id
    */
   async create(
-    input: Record<string, unknown>,
+    input: InputData,
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
@@ -66,14 +67,16 @@ export class PersonCreator extends BaseCreator {
           nameBefore: Array.isArray(rec?.values?.name)
             ? 'array'
             : typeof rec?.values?.name,
-          nameAfter: Array.isArray((out as any)?.values?.name)
+          nameAfter: Array.isArray(
+            (out as Record<string, unknown>)?.values?.name
+          )
             ? 'array'
-            : typeof (out as any)?.values?.name,
+            : typeof (out as Record<string, unknown>)?.values?.name,
         });
       }
 
       return out;
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.handleApiError(err, context, {
         data: { values: normalizedPerson },
       });
@@ -97,7 +100,7 @@ export class PersonCreator extends BaseCreator {
   private async createPersonWithRetry(
     context: ResourceCreatorContext,
     filteredPersonData: Record<string, unknown>
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const doCreate = async (values: Record<string, unknown>) =>
       context.client.post(this.endpoint, { data: { values } });
 
@@ -170,7 +173,7 @@ export class PersonCreator extends BaseCreator {
   protected async attemptRecovery(
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
-  ): Promise<any> {
+  ): Promise<AttioRecord> {
     if (!normalizedInput) {
       throw this.createEnhancedError(
         new Error('Person creation returned empty/invalid record'),
@@ -226,7 +229,7 @@ export class PersonCreator extends BaseCreator {
    * Includes recovery attempt with normalized input
    */
   protected async processResponse(
-    response: any,
+    response: Record<string, unknown>,
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
@@ -242,7 +245,9 @@ export class PersonCreator extends BaseCreator {
 
     // Handle empty response with recovery attempt
     const mustRecover =
-      !record || !(record as any).id || !(record as any).id?.record_id;
+      !record ||
+      !(record as Record<string, unknown>).id ||
+      !(record as Record<string, unknown>).id?.record_id;
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -253,14 +258,18 @@ export class PersonCreator extends BaseCreator {
   /**
    * Extracts record from API response
    */
-  private extractRecordFromResponse(response: any): any {
+  private extractRecordFromResponse(
+    response: Record<string, unknown>
+  ): Record<string, unknown> {
     return extractAttioRecord(response);
   }
 
   /**
    * Extracts record from search results
    */
-  private extractRecordFromSearch(searchData: any): any {
+  private extractRecordFromSearch(
+    searchData: Record<string, unknown>
+  ): Record<string, unknown> {
     return extractAttioRecord(searchData);
   }
 
@@ -268,7 +277,7 @@ export class PersonCreator extends BaseCreator {
    * Finalizes record processing
    */
   private finalizeRecord(
-    record: any,
+    record: Record<string, unknown>,
     context: ResourceCreatorContext
   ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);

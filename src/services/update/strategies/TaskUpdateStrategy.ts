@@ -3,13 +3,13 @@ import type { UniversalResourceType } from '../../../handlers/tool-configs/unive
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 import { shouldUseMockData, getCreateService } from '../../create/index.js';
 import { getTask } from '../../../objects/tasks.js';
-import { FilterValidationError } from '../../../errors/api-errors.js';
 import { UpdateValidation } from '../UpdateValidation.js';
 
 export class TaskUpdateStrategy implements UpdateStrategy {
   async update(
     recordId: string,
     values: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _resourceType: UniversalResourceType
   ): Promise<AttioRecord> {
     // 1) Existence check (skip in mock mode)
@@ -115,8 +115,13 @@ export class TaskUpdateStrategy implements UpdateStrategy {
       >;
       const fn = mod['logTaskDebug'] as unknown;
       if (typeof fn === 'function')
-        (fn as Function)('UPDATE_REQUEST', { recordId, taskUpdateData });
-    } catch {}
+        (fn as (...args: unknown[]) => unknown)('UPDATE_REQUEST', {
+          recordId,
+          taskUpdateData,
+        });
+    } catch {
+      // Ignore task debug import errors in environments where it's not available
+    }
 
     // Execute update
     const result = await this.updateTaskWithMockSupport(

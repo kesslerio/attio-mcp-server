@@ -52,9 +52,9 @@ export class AttioCreateService implements CreateService {
   private readonly context: ResourceCreatorContext;
 
   // Lazy-loaded dependencies for non-strategy methods
-  private taskModule: any = null;
-  private converterModule: any = null;
-  private noteModule: any = null;
+  private taskModule: Record<string, unknown> | null = null;
+  private converterModule: Record<string, unknown> | null = null;
+  private noteModule: Record<string, unknown> | null = null;
 
   // Supported resource types for validation
   static readonly SUPPORTED_RESOURCE_TYPES = {
@@ -169,7 +169,7 @@ export class AttioCreateService implements CreateService {
     title: string;
     content: string;
     format?: string;
-  }): Promise<any> {
+  }): Promise<Record<string, unknown>> {
     const creator = this.getCreator('notes');
     return creator.create(input, this.context);
   }

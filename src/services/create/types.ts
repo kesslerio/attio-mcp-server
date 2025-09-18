@@ -6,6 +6,7 @@
  */
 
 import type { AttioRecord } from '../../types/attio.js';
+import type { NoteRecord } from '../shared-types.js';
 
 /**
  * Core interface for all create service implementations
@@ -54,17 +55,17 @@ export interface CreateService {
     title: string;
     content: string;
     format?: string;
-  }): Promise<any>;
+  }): Promise<NoteRecord>;
 
   /**
    * Lists notes for a resource
    * @param params - Query parameters for listing notes
-   * @returns Promise<any[]> - Array of note records
+   * @returns Promise<NoteRecord[]> - Array of note records
    */
   listNotes(params: {
     resource_type?: string;
     record_id?: string;
-  }): Promise<any[]>;
+  }): Promise<NoteRecord[]>;
 }
 
 /**
