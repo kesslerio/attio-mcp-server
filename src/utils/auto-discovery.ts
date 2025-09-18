@@ -13,13 +13,28 @@ import {
 
 // Simple logging for auto-discovery - disabled for MCP protocol compatibility
 const log = {
-  info: (_message: string, _data?: any) => {
+  info: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _message: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _data?: Record<string, unknown>
+  ) => {
     /* Silent for MCP protocol compatibility */
   },
-  warn: (_message: string, _data?: any) => {
+  warn: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _message: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _data?: Record<string, unknown>
+  ) => {
     /* Silent for MCP protocol compatibility */
   },
-  error: (_message: string, _error?: any) => {
+  error: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _message: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _error?: Record<string, unknown>
+  ) => {
     /* Silent for MCP protocol compatibility */
   },
 };
@@ -60,7 +75,8 @@ export async function runDiscovery(
     let config: MappingConfig;
     try {
       config = loadMappingConfig();
-    } catch (error: unknown) {
+    } catch {
+      // Failed to load existing configuration
       log.warn('Failed to load existing configuration, creating new one...');
       config = {
         version: '1.0',

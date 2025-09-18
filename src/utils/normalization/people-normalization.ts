@@ -17,7 +17,6 @@ import {
 import {
   EmailValidationConfig,
   EmailValidationMode,
-  getEmailValidationConfig,
   DEFAULT_EMAIL_VALIDATION_CONFIG,
 } from './email-validation-config.js';
 
@@ -60,7 +59,7 @@ export interface NormalizedPeopleData {
     phone_number: string;
     phone_type?: string;
   }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -71,7 +70,7 @@ export class PeopleDataNormalizer {
    * Normalize name input to standard format
    */
   static normalizeName(
-    input: any,
+    input: unknown,
     options?: { includeFullName?: boolean }
   ):
     | { first_name?: string; last_name?: string; full_name?: string }
@@ -110,6 +109,7 @@ export class PeopleDataNormalizer {
 
       // Filter out full_name if not explicitly requested
       if (!options?.includeFullName && result.full_name) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { full_name, ...filtered } = result;
         return filtered;
       }
@@ -175,6 +175,7 @@ export class PeopleDataNormalizer {
 
       // Filter out full_name if not explicitly requested
       if (!options?.includeFullName && result.full_name) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { full_name, ...filtered } = result;
         return Object.keys(filtered).length > 0 ? filtered : undefined;
       }
@@ -193,7 +194,7 @@ export class PeopleDataNormalizer {
       return emailField;
     }
     if (typeof emailField === 'object' && emailField && 'value' in emailField) {
-      const value = (emailField as any).value;
+      const value = (emailField as Record<string, unknown>).value;
       if (typeof value === 'string') {
         return value;
       }
@@ -282,7 +283,7 @@ export class PeopleDataNormalizer {
    * @param config - Email validation configuration (optional)
    */
   static normalizeEmails(
-    input: any,
+    input: unknown,
     config: EmailValidationConfig = DEFAULT_EMAIL_VALIDATION_CONFIG
   ): Array<{ email_address: string; email_type?: string }> | undefined {
     if (input === null || input === undefined) return undefined;
@@ -430,7 +431,7 @@ export class PeopleDataNormalizer {
    * Normalize phone number input
    */
   static normalizePhones(
-    input: any
+    input: unknown
   ): Array<{ phone_number: string; phone_type?: string }> | undefined {
     if (!input) return undefined;
 
@@ -536,7 +537,7 @@ export class PeopleDataNormalizer {
    * @param emailConfig - Email validation configuration (optional)
    */
   static normalizePeopleData(
-    data: any,
+    data: unknown,
     emailConfig: EmailValidationConfig = DEFAULT_EMAIL_VALIDATION_CONFIG
   ): NormalizedPeopleData {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -641,7 +642,7 @@ export class PeopleDataNormalizer {
   /**
    * Check if data needs people normalization
    */
-  static needsNormalization(data: any): boolean {
+  static needsNormalization(data: unknown): boolean {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return false;
     }

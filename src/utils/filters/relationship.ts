@@ -40,8 +40,11 @@ import {
  * @throws RelationshipRateLimitError if rate limit exceeded
  */
 export function applyRateLimit(
-  req: any,
-  relationshipType: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _req: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _relationshipType: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _isPrecheck?: boolean
 ): void {
   // Check the rate limit
@@ -116,7 +119,7 @@ function createRelationshipFilter(
  */
 export function createPeopleByCompanyFilter(
   companyFilter: ListEntryFilters,
-  req?: any
+  req?: Record<string, unknown>
 ): ListEntryFilters {
   try {
     // Apply rate limiting if request object is provided
@@ -178,7 +181,7 @@ export function createPeopleByCompanyFilter(
  */
 export function createCompaniesByPeopleFilter(
   peopleFilter: ListEntryFilters,
-  req?: any
+  req?: Record<string, unknown>
 ): ListEntryFilters {
   try {
     // Apply rate limiting if request object is provided
@@ -243,7 +246,7 @@ export function createCompaniesByPeopleFilter(
 export function createRecordsByListFilter(
   resourceType: ResourceType,
   listId: string,
-  req?: any,
+  req?: Record<string, unknown>,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
@@ -323,7 +326,7 @@ export function createRecordsByListFilter(
  */
 export function createPeopleByCompanyListFilter(
   listId: string,
-  req?: any,
+  req?: Record<string, unknown>,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
@@ -405,7 +408,7 @@ export function createPeopleByCompanyListFilter(
  */
 export function createCompaniesByPeopleListFilter(
   listId: string,
-  req?: any,
+  req?: Record<string, unknown>,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
@@ -488,7 +491,7 @@ export function createCompaniesByPeopleListFilter(
 export function createRecordsByNotesFilter(
   resourceType: ResourceType,
   textSearch: string,
-  req?: any
+  req?: Record<string, unknown>
 ): ListEntryFilters {
   try {
     // Apply rate limiting if request object is provided
