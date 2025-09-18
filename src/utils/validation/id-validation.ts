@@ -5,8 +5,6 @@
  * for invalid ID formats, improving performance for 404 responses.
  */
 
-import { UnknownObject } from '../types/common.js';
-
 /**
  * Valid ID patterns for different resource types
  */
@@ -43,7 +41,6 @@ export interface IdValidationResult {
  */
 export function validateRecordId(
   id: string | undefined | null,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _resourceType?: string
 ): IdValidationResult {
   // Check for missing ID
@@ -231,11 +228,11 @@ export function generateIdCacheKey(resourceType: string, id: string): string {
  * @param error The error to check
  * @returns True if error appears to be ID-related
  */
-export function isIdFormatError(error: unknown): boolean {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isIdFormatError(error: any): boolean {
   if (!error) return false;
 
-  const errorMessage =
-    (error as UnknownObject)?.message || error?.toString() || '';
+  const errorMessage = error.message || error.toString() || '';
   const lowerMessage = errorMessage.toLowerCase();
 
   return (

@@ -10,7 +10,6 @@
 
 import * as AttioClientModule from '../api/attio-client.js';
 import { createScopedLogger, OperationType } from './logger.js';
-import { UnknownObject } from './types/common.js';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -70,8 +69,10 @@ export async function getResourceAttributes(
 
   try {
     // Resolve client directly from the attio-client module to work with Vitest mocks
-    const mod = AttioClientModule as UnknownObject;
-    let client: UnknownObject;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod: any = AttioClientModule as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let client: any;
     if (typeof mod.getAttioClient === 'function') {
       client = mod.getAttioClient();
     } else if (

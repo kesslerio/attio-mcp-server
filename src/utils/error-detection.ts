@@ -47,9 +47,8 @@ export function computeErrorWithContext(
 
   // 1) Always surface explicit API errors first
   if (
-    (result as UnknownObject)?.error ||
-    (Array.isArray((result as UnknownObject)?.errors) &&
-      ((result as UnknownObject).errors as unknown[]).length)
+    (result as any)?.error ||
+    (Array.isArray((result as any)?.errors) && (result as any).errors.length)
   ) {
     return { isError: true, reason: 'meaningful_error_object' };
   }
@@ -83,7 +82,7 @@ export function computeErrorWithContext(
   // 3) Legacy heuristics (unchanged for other tools)
   if (result == null)
     return { isError: true, reason: 'null_or_undefined_result' };
-  if (isEmptyObject) return { isError: true, reason: 'empty_response' };
+  if (isEmptyObject) return { isError: true, reason: 'empty_response' as any };
 
   // Detect empty objects as errors (per Issue #517 analysis)
   // Empty objects {} often indicate failed API responses that should be errors
@@ -99,7 +98,7 @@ export function computeErrorWithContext(
     ) {
       const id = record.id as Record<string, unknown>;
       if (id.record_id === 'unknown') {
-        return { isError: true, reason: 'empty_response' };
+        return { isError: true, reason: 'empty_response' as any };
       }
     }
   }

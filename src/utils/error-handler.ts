@@ -49,7 +49,7 @@ export class AttioApiError extends Error {
   detail: string;
   path: string;
   method: string;
-  responseData: UnknownObject;
+  responseData: any;
   type: ErrorType;
 
   constructor(
@@ -59,7 +59,7 @@ export class AttioApiError extends Error {
     path: string,
     method: string,
     type: ErrorType = ErrorType.API_ERROR,
-    responseData: UnknownObject = {}
+    responseData: any = {}
   ) {
     super(message);
     this.name = 'AttioApiError';
@@ -81,7 +81,7 @@ export class AttioApiError extends Error {
  * @param responseData - Response data from API
  * @returns Appropriate error instance
  */
-export function createAttioError(error: unknown): Error {
+export function createAttioError(error: any): Error {
   // If it's already an AttioApiError, return it
   if (error instanceof AttioApiError) {
     return error;
@@ -112,7 +112,7 @@ export function createApiError(
   status: number,
   path: string,
   method: string,
-  responseData: UnknownObject = {}
+  responseData: any = {}
 ): Error {
   const defaultMessage =
     responseData?.error?.message ||
@@ -128,7 +128,7 @@ export function createApiError(
 
   // Create specific error messages based on status code and context
   switch (status) {
-    case 400: {
+    case 400:
       // Detect common parameter and format errors in the 400 response
       const detailsString =
         typeof responseData?.error?.details === 'string'
@@ -159,7 +159,6 @@ export function createApiError(
         message = `Bad Request: ${defaultMessage}`;
       }
       break;
-    }
 
     case 401:
     case 403:
@@ -241,7 +240,7 @@ export function createApiError(
 export function formatErrorResponse(
   error: Error,
   type: ErrorType = ErrorType.UNKNOWN_ERROR,
-  details?: UnknownObject
+  details?: any
 ) {
   const log = createScopedLogger(
     'utils.error-handler',
@@ -369,7 +368,7 @@ export function formatErrorResponse(
  * @returns Formatted error result
  */
 export function createErrorResult(
-  error: Error | unknown,
+  error: Error | any,
   url: string,
   method: string,
   responseData: AttioErrorResponse & {

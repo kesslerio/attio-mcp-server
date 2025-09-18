@@ -17,7 +17,7 @@ export function createEqualsFilter(
       {
         attribute: { slug: attributeSlug },
         condition: FilterConditionType.EQUALS,
-        value: value,
+        value: value as any, // TODO: Update FilterValue type to accept unknown
       },
     ],
     matchAny: false,

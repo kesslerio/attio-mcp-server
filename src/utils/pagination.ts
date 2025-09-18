@@ -3,7 +3,6 @@
  * Provides functions for implementing efficient pagination with filtered results
  */
 import { AttioRecord } from '../types/attio.js';
-import { UnknownObject } from './types/common.js';
 
 /**
  * Standard pagination metadata interface
@@ -184,7 +183,7 @@ export function getPaginationParams(
  * @returns Standardized paginated response
  */
 export function processCursorPagination<T extends AttioRecord>(
-  apiResponse: UnknownObject,
+  apiResponse: any,
   records: T[],
   page: number = 1,
   pageSize: number = 20,

@@ -190,11 +190,18 @@ export function enhanceErrorMessage(
       context.validValues &&
       context.validValues.length > 0
     ) {
-      if (context.actualValue !== undefined) {
+      if (context.actualValue !== undefined && context.actualValue !== null) {
         const valueStr = String(context.actualValue);
         if (!context.validValues.includes(valueStr)) {
+          // Only pass primitive values to generateEnumSuggestionMessage
+          const primitiveValue =
+            typeof context.actualValue === 'string' ||
+            typeof context.actualValue === 'number' ||
+            typeof context.actualValue === 'boolean'
+              ? context.actualValue
+              : valueStr;
           enhancedMessage = generateEnumSuggestionMessage(
-            context.actualValue,
+            primitiveValue,
             context.validValues,
             context.fieldName
           );

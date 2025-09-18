@@ -3,13 +3,12 @@
  *
  * Handles both Axios (res.data) and fetch/mock response formats
  */
-import { UnknownObject } from './types/common.js';
 
 /**
  * Safely unwrap Attio API response envelope
  * Handles both Axios responses and direct API responses
  */
-export function unwrapAttio<T>(res: unknown): T {
+export function unwrapAttio<T>(res: any): T {
   const envelope = res?.data ?? res;
   // If the envelope clearly looks like an error, just return it as-is and let the caller detect it
   if (envelope?.error && !envelope?.data) return envelope as T;
@@ -20,7 +19,7 @@ export function unwrapAttio<T>(res: unknown): T {
  * Normalize Attio note to consistent structure
  * Provides compatibility with record-style tests via record_id alias
  */
-export function normalizeNote(note: UnknownObject) {
+export function normalizeNote(note: any) {
   // Ensure we always have a base object to work with
   const source = note || {};
   const idObj = source.id || {};
@@ -59,7 +58,7 @@ export function normalizeNote(note: UnknownObject) {
 /**
  * Normalize array of notes
  */
-export function normalizeNotes(notes: UnknownObject[]): UnknownObject[] {
+export function normalizeNotes(notes: any[]): any[] {
   if (!Array.isArray(notes)) return [];
   return notes.map(normalizeNote).filter(Boolean);
 }
