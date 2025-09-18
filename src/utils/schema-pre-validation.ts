@@ -100,7 +100,8 @@ export class SchemaPreValidator {
             if (attributes.length === 0) {
               attributes = this.getDefaultCompanyAttributes();
             }
-          } catch (error: unknown) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (_error: unknown) {
             // Fallback to defaults on error
             attributes = this.getDefaultCompanyAttributes();
           }

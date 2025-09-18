@@ -8,6 +8,8 @@
  * This is only active in test environments (E2E_MODE=true or NODE_ENV=test)
  */
 
+import { UnknownObject } from './types/common.js';
+
 import { Company } from '../types/attio.js';
 import { createScopedLogger } from './logger.js';
 
@@ -184,9 +186,9 @@ export function getAllMockCompanyIds(): string[] {
  * Attio API stores values as arrays of objects with metadata
  */
 export function createAttioApiValue(
-  value: any,
+  value: unknown,
   attributeType: string = 'text'
-): any[] {
+): UnknownObject[] {
   if (value === null || value === undefined) {
     return [];
   }

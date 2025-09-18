@@ -292,7 +292,7 @@ export class ResourceMapper {
     offset?: number;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
-    [key: string]: any;
+    [key: string]: unknown;
   }): URLSearchParams {
     const queryParams = new URLSearchParams();
 

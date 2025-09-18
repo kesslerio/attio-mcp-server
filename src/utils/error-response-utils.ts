@@ -9,6 +9,8 @@
  * - Links to documentation
  */
 
+import { UnknownObject } from './types/common.js';
+
 export interface EnhancedErrorResponse {
   error: string; // Human-readable error message
   error_code: string; // Machine-readable error code
@@ -241,7 +243,7 @@ export function createRequiredFieldError(
  */
 export function formatEnhancedErrorResponse(
   errorResponse: EnhancedErrorResponse
-): any {
+): UnknownObject {
   const formattedError = {
     content: [
       {
@@ -279,7 +281,7 @@ export function formatEnhancedErrorResponse(
 /**
  * Create a simple error response (for backward compatibility)
  */
-export function createErrorResponse(message: string): any {
+export function createErrorResponse(message: string): UnknownObject {
   return {
     content: [
       {

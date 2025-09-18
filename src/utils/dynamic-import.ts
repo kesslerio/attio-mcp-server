@@ -30,14 +30,14 @@
  * // Use with destructuring
  * const { compile, registerHelper } = await dynamicImport('handlebars');
  */
-export async function dynamicImport(moduleName: string): Promise<any> {
+export async function dynamicImport(moduleName: string): Promise<unknown> {
   try {
     return await import(moduleName);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error importing module ${moduleName}:`, error);
     throw new Error(
       `Failed to import module "${moduleName}": ${
-        error.message || 'Unknown error'
+        (error as Error)?.message || 'Unknown error'
       }`
     );
   }

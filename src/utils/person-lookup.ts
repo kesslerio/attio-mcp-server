@@ -3,6 +3,7 @@
  */
 import { searchPeople } from '../objects/people/search.js';
 import { CompanyOperationError } from '../errors/company-errors.js';
+import { UnknownObject } from './types/common.js';
 
 /**
  * Person ID validation regex
@@ -58,7 +59,10 @@ export async function findPersonReference(
 
     if (people.length > 1) {
       const names = people
-        .map((p: any) => p.values.name?.[0]?.value || 'Unknown Name')
+        .map(
+          (p: UnknownObject) =>
+            (p.values as UnknownObject)?.name?.[0]?.value || 'Unknown Name'
+        )
         .join(', ');
       throw new CompanyOperationError(
         operationContext,

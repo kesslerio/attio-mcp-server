@@ -12,10 +12,11 @@ import {
   generateResourceTypeSuggestionMessage,
   VALID_RESOURCE_TYPES,
 } from './field-suggestions.js';
+import { UnknownObject } from './types/common.js';
 
 interface ErrorExample {
   description: string;
-  example: any;
+  example: UnknownObject;
   tip?: string;
 }
 
@@ -28,7 +29,7 @@ export function getErrorExamples(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: any;
+    actualValue?: unknown;
     path?: string;
   }
 ): ErrorExample[] {
@@ -146,7 +147,7 @@ export function enhanceErrorMessage(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: any;
+    actualValue?: unknown;
     path?: string;
     fieldName?: string;
     validFields?: string[];

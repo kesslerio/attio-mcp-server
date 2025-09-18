@@ -3,6 +3,8 @@
  * Provides simple rate limiting functionality for API endpoints
  */
 
+import { UnknownObject } from './types/common.js';
+
 /**
  * Configuration for the rate limiter
  */
@@ -17,7 +19,7 @@ export interface RateLimiterConfig {
   trackByIp?: boolean;
 
   /** Optional key function to determine the rate limiting key */
-  keyFn?: (req: any) => string;
+  keyFn?: (req: UnknownObject) => string;
 }
 
 /**
@@ -48,7 +50,7 @@ export class RateLimiter {
    * @param req - Request object (with IP address or other identifying info)
    * @returns Object with allowed status and rate limit info
    */
-  check(req: any): {
+  check(req: UnknownObject): {
     allowed: boolean;
     remaining: number;
     resetTime: number;
@@ -105,7 +107,7 @@ export class RateLimiter {
    * @param req - Request object
    * @returns Key for rate limiting
    */
-  private getKey(req: any): string {
+  private getKey(req: UnknownObject): string {
     // Use custom key function if provided
     if (this.config.keyFn) {
       return this.config.keyFn(req);
@@ -163,7 +165,7 @@ export function rateLimiterMiddleware(config: RateLimiterConfig) {
   // Schedule cleanup every windowMs to prevent memory leaks
   setInterval(() => limiter.cleanup(), config.windowMs);
 
-  return (req: any, res: any, next: () => void) => {
+  return (req: UnknownObject, res: UnknownObject, next: () => void) => {
     const result = limiter.check(req);
 
     // Add rate limit headers
@@ -195,7 +197,7 @@ export function rateLimiterMiddleware(config: RateLimiterConfig) {
  * @returns Object with allowed status and rate limit info
  */
 export function checkFilterRateLimit(
-  req: any,
+  req: UnknownObject,
   endpoint: string
 ): {
   allowed: boolean;

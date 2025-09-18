@@ -17,6 +17,7 @@
 import { DateRangePreset, isValidFilterCondition } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { isValidISODateString } from '../date-utils.js';
+import { UnknownObject } from '../types/common.js';
 
 // Internal module dependencies
 import {
@@ -57,7 +58,7 @@ export function validateFilterStructure(filter: ListEntryFilter): boolean {
  * @returns Validated and normalized date range
  * @throws FilterValidationError if validation fails
  */
-export function validateDateRange(dateRange: any): DateRange {
+export function validateDateRange(dateRange: unknown): DateRange {
   if (!dateRange) {
     throw new FilterValidationError('Date range is required');
   }
@@ -83,7 +84,8 @@ export function validateDateRange(dateRange: any): DateRange {
   }
 
   // Must have at least one of preset, start, or end
-  if (!dateRange.preset && !dateRange.start && !dateRange.end) {
+  const range = dateRange as UnknownObject;
+  if (!range.preset && !range.start && !range.end) {
     throw new FilterValidationError(
       'Date range must specify at least one of: preset, start, or end'
     );
@@ -214,7 +216,9 @@ export function validateDateRange(dateRange: any): DateRange {
  * @returns Validated and normalized activity filter
  * @throws FilterValidationError if validation fails
  */
-export function validateActivityFilter(activityFilter: any): ActivityFilter {
+export function validateActivityFilter(
+  activityFilter: unknown
+): ActivityFilter {
   if (!activityFilter) {
     throw new FilterValidationError('Activity filter is required');
   }
@@ -282,7 +286,7 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
  * @returns Validated and normalized numeric range
  * @throws FilterValidationError if validation fails
  */
-export function validateNumericRange(range: any): NumericRange {
+export function validateNumericRange(range: unknown): NumericRange {
   if (!range) {
     throw new FilterValidationError('Numeric range is required');
   }
@@ -400,7 +404,7 @@ export function validateFilterCondition(
  * @throws FilterValidationError if validation fails
  */
 export function validateNumericParam(
-  value: any,
+  value: unknown,
   paramName: string,
   defaultValue?: number
 ): number {

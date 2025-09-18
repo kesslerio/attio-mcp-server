@@ -187,7 +187,7 @@ const DANGEROUS_PATTERNS = [
 
   // Script injection attempts - comprehensive patterns
   /<script\b/i,
-  /\'<'\/script>/i,
+  /'<'\/script>/i,
   /javascript:/i,
   /on\w+\s*=/i, // Event handlers (onclick, onload, etc.)
   /<iframe\b/i,

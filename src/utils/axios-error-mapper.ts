@@ -9,6 +9,7 @@ import { ErrorService } from '../services/ErrorService.js';
 import { getAttributeSchema, getSelectOptions } from '../api/attio-client.js';
 import type { AxiosErrorLike } from '../types/service-types.js';
 import { createScopedLogger, OperationType } from './logger.js';
+import { UnknownObject } from './types/common.js';
 
 // Type definitions for better type safety
 interface WrappedError extends Error {
@@ -42,7 +43,6 @@ interface AxiosLikeError {
 }
 
 type DeepPredicate<T> = (x: T) => boolean;
-type UnknownObject = Record<string, unknown>;
 
 // Helpers (top of file or near mapper)
 const WRAPPER_KEYS = [
@@ -130,7 +130,7 @@ export const mapAxiosToStructuredError = (
   error: AxiosErrorLike
 ): StructuredHttpError => {
   const mapped = ErrorService.fromAxios(error);
-  const httpStatus = (error as any)?.response?.status ?? 400;
+  const httpStatus = (error as UnknownObject)?.response?.status ?? 400;
 
   return {
     status: httpStatus,
@@ -511,12 +511,12 @@ export const handleCoreOperationError = async (
  */
 function isHttpResponseLike(
   error: unknown
-): error is { status: number; body: any } {
+): error is { status: number; body: UnknownObject } {
   return (
     typeof error === 'object' &&
     error !== null &&
     'status' in error &&
-    typeof (error as any).status === 'number' &&
+    typeof (error as UnknownObject).status === 'number' &&
     'body' in error
   );
 }

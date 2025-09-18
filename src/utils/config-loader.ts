@@ -21,7 +21,7 @@ export interface MappingConfig {
     objects: Record<string, string>;
     lists: Record<string, string>;
     relationships: Record<string, string>;
-    [key: string]: any; // Allow other mapping types
+    [key: string]: unknown; // Allow other mapping types
   };
 }
 
@@ -40,7 +40,10 @@ const CONFIG_PATHS = {
  * @param source - The source object to merge in
  * @returns The merged object
  */
-function deepMerge(target: any, source: any): any {
+function deepMerge(
+  target: UnknownObject,
+  source: UnknownObject
+): UnknownObject {
   const result = { ...target };
 
   for (const key in source) {
@@ -102,7 +105,7 @@ function createEmptyConfig(): MappingConfig {
  * @param filePath - Path to the JSON file
  * @returns Parsed JSON object, or null if the file doesn't exist
  */
-function loadJsonFile(filePath: string): any {
+function loadJsonFile(filePath: string): UnknownObject | null {
   try {
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, 'utf8');

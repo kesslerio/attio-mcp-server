@@ -2,6 +2,7 @@
  * Task debugging utilities
  */
 import { debug, OperationType } from './logger.js';
+import { UnknownObject } from './types/common.js';
 
 export function taskDebugEnabled(): boolean {
   const v = (process.env.TASKS_DEBUG || '').toLowerCase();
@@ -27,7 +28,7 @@ export function logTaskDebug(
 
 export function sanitizePayload<T = unknown>(value: T): T {
   const seen = new WeakSet();
-  const redact = (v: any): any => {
+  const redact = (v: unknown): unknown => {
     if (v === null || v === undefined) return v;
     if (typeof v === 'string') {
       // Redact email-like strings
@@ -58,7 +59,9 @@ export function sanitizePayload<T = unknown>(value: T): T {
   return redact(value);
 }
 
-export function inspectTaskRecordShape(record: any): Record<string, unknown> {
+export function inspectTaskRecordShape(
+  record: UnknownObject
+): Record<string, unknown> {
   const shape: Record<string, unknown> = {
     hasId: !!record?.id,
     idKeys: record?.id ? Object.keys(record.id) : [],

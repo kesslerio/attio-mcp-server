@@ -168,9 +168,9 @@ export class AttioRateLimitSemaphore {
   private async withRetry<T>(fn: () => Promise<T>, attempt = 1): Promise<T> {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 429 backoff with jitter
-      if (error?.status === 429 && attempt <= 4) {
+      if ((error as { status?: number })?.status === 429 && attempt <= 4) {
         const baseDelay = Math.pow(2, attempt - 1) * 250; // 250ms, 500ms, 1s, 2s
         const jitter = Math.random() * 100; // 0-100ms jitter
         const delay = baseDelay + jitter;

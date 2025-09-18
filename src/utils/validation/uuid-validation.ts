@@ -59,6 +59,7 @@ export interface UUIDValidationResult {
 
 export function validateUUIDWithDetails(
   uuid: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _options?: { resourceType?: string; operation?: string }
 ): UUIDValidationResult {
   if (!uuid || typeof uuid !== 'string') {
@@ -303,9 +304,9 @@ export const UUIDTestPatterns = {
   ],
   EDGE_CASES: [
     '', // Empty string
-    null as any, // Null
-    undefined as any, // Undefined
-    123 as any, // Number
-    {} as any, // Object
+    null as unknown, // Null
+    undefined as unknown, // Undefined
+    123 as unknown, // Number
+    {} as unknown, // Object
   ],
 };
