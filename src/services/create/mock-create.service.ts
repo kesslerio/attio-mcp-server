@@ -7,15 +7,10 @@
 
 import type { CreateService } from './types.js';
 import type { AttioRecord } from '../../types/attio.js';
-import type {
-  E2EMeta,
-  UnknownRecord,
-  isRecord,
-} from '../../types/service-types.js';
+import type { E2EMeta, UnknownRecord } from '../../types/service-types.js';
 import { extractRecordId } from '../../utils/validation/uuid-validation.js';
 import { isValidId } from '../../utils/validation.js';
 import { generateMockId } from './extractor.js';
-import { debug } from '../../utils/logger.js';
 
 /**
  * Pure mock implementation of CreateService
@@ -86,9 +81,11 @@ export class MockCreateService implements CreateService {
       logTaskDebug(
         'mock.createTask',
         'Incoming taskData',
-        sanitizePayload(input as any)
+        sanitizePayload(input as Record<string, unknown>)
       );
-    } catch {}
+    } catch {
+      // Ignore debug import failures in mock mode
+    }
 
     const attioRecord: AttioRecord = {
       id: {
@@ -124,7 +121,7 @@ export class MockCreateService implements CreateService {
 
     // Add assignee object format if assignee provided
     if (input.assigneeId) {
-      (flatFields as any).assignee = {
+      (flatFields as Record<string, unknown>).assignee = {
         id: input.assigneeId as string,
         type: 'person',
       };
@@ -132,7 +129,7 @@ export class MockCreateService implements CreateService {
 
     // Provide 'assignees' array for E2E expectations
     if (input.assigneeId) {
-      (flatFields as any).assignees = [
+      (flatFields as Record<string, unknown>).assignees = [
         {
           referenced_actor_type: 'workspace-member',
           referenced_actor_id: String(input.assigneeId),
@@ -145,7 +142,7 @@ export class MockCreateService implements CreateService {
 
     // Emit top-level assignees for E2E expectation
     if (input.assigneeId) {
-      (result as any).assignees = [
+      (result as Record<string, unknown>).assignees = [
         {
           referenced_actor_type: 'workspace-member',
           referenced_actor_id: String(input.assigneeId),
@@ -162,9 +159,11 @@ export class MockCreateService implements CreateService {
         'Returning mock task',
         inspectTaskRecordShape(result)
       );
-    } catch {}
+    } catch {
+      // Ignore debug import failures in mock mode
+    }
 
-    return result as any;
+    return result as AttioRecord;
   }
 
   async updateTask(
@@ -228,7 +227,7 @@ export class MockCreateService implements CreateService {
 
     // Add assignee object format if assignee provided
     if (updateData.assigneeId) {
-      (flatFields as any).assignee = {
+      (flatFields as Record<string, unknown>).assignee = {
         id: updateData.assigneeId as string,
         type: 'person',
       };
@@ -236,7 +235,7 @@ export class MockCreateService implements CreateService {
 
     // Provide 'assignees' array for E2E expectations on update
     if (updateData.assigneeId) {
-      (flatFields as any).assignees = [
+      (flatFields as Record<string, unknown>).assignees = [
         {
           referenced_actor_type: 'workspace-member',
           referenced_actor_id: String(updateData.assigneeId),
@@ -249,7 +248,7 @@ export class MockCreateService implements CreateService {
 
     // Emit top-level assignees for E2E expectation
     if (updateData.assigneeId) {
-      (result as any).assignees = [
+      (result as Record<string, unknown>).assignees = [
         {
           referenced_actor_type: 'workspace-member',
           referenced_actor_id: String(updateData.assigneeId),
@@ -266,9 +265,11 @@ export class MockCreateService implements CreateService {
         'Returning updated mock task',
         inspectTaskRecordShape(result)
       );
-    } catch {}
+    } catch {
+      // Ignore debug import failures in mock mode
+    }
 
-    return result as any;
+    return result as AttioRecord;
   }
 
   async createNote(noteData: {
@@ -277,7 +278,7 @@ export class MockCreateService implements CreateService {
     title: string;
     content: string;
     format?: string;
-  }): Promise<any> {
+  }): Promise<Record<string, unknown>> {
     // Validate required parameters
     if (
       !noteData.resource_type ||
@@ -340,10 +341,10 @@ export class MockCreateService implements CreateService {
     return markedNote;
   }
 
-  async listNotes(params: {
+  async listNotes(/* _params?: {
     resource_type?: string;
     record_id?: string;
-  }): Promise<unknown[]> {
+  } */): Promise<Record<string, unknown>[]> {
     // Return empty array for mock mode (tests focus on creation)
     return [];
   }

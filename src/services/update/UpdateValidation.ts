@@ -52,7 +52,7 @@ export const UpdateValidation = {
     resourceType: UniversalResourceType,
     recordId: string,
     expectedUpdates: Record<string, unknown>,
-    updatedRecord: AttioRecord
+    _updatedRecord: AttioRecord
   ): Promise<{
     verified: boolean;
     discrepancies: string[];
@@ -111,10 +111,10 @@ export const UpdateValidation = {
       result.warnings.push(
         `Field persistence verification failed: ${errorMessage}`
       );
-      createScopedLogger('update/UpdateValidation', 'verifyFieldPersistence').error(
-        'Field persistence verification error',
-        error
-      );
+      createScopedLogger(
+        'update/UpdateValidation',
+        'verifyFieldPersistence'
+      ).error('Field persistence verification error', error);
     }
     return result;
   },
@@ -134,14 +134,18 @@ export const UpdateValidation = {
           return {
             id: { record_id: list.id.list_id, list_id: list.id.list_id },
             values: {
-              name: (list as any).name || (list as any).title,
-              description: (list as any).description,
+              name:
+                (list as Record<string, unknown>).name ||
+                (list as Record<string, unknown>).title,
+              description: (list as Record<string, unknown>).description,
               parent_object:
-                (list as any).object_slug || (list as any).parent_object,
-              api_slug: (list as any).api_slug,
-              workspace_id: (list as any).workspace_id,
-              workspace_member_access: (list as any).workspace_member_access,
-              created_at: (list as any).created_at,
+                (list as Record<string, unknown>).object_slug ||
+                (list as Record<string, unknown>).parent_object,
+              api_slug: (list as Record<string, unknown>).api_slug,
+              workspace_id: (list as Record<string, unknown>).workspace_id,
+              workspace_member_access: (list as Record<string, unknown>)
+                .workspace_member_access,
+              created_at: (list as Record<string, unknown>).created_at,
             },
           } as unknown as AttioRecord;
         }
@@ -154,13 +158,19 @@ export const UpdateValidation = {
         case 'records' as unknown as UniversalResourceType:
           return await getObjectRecord('records', recordId);
         default:
-          createScopedLogger('update/UpdateValidation', 'fetchRecordForVerification').warn(
+          createScopedLogger(
+            'update/UpdateValidation',
+            'fetchRecordForVerification'
+          ).warn(
             `No verification method available for resource type: ${resourceType}`
           );
           return null;
       }
     } catch (error: unknown) {
-      createScopedLogger('update/UpdateValidation', 'fetchRecordForVerification').error(
+      createScopedLogger(
+        'update/UpdateValidation',
+        'fetchRecordForVerification'
+      ).error(
         `Failed to fetch ${resourceType} record ${recordId} for verification`,
         error
       );
@@ -179,16 +189,18 @@ export const UpdateValidation = {
     if (actualValue === null || actualValue === undefined) {
       return { matches: false };
     }
-    let unwrappedActual = actualValue;
+    let unwrappedActual: unknown = actualValue;
     if (
       Array.isArray(actualValue) &&
       actualValue.length > 0 &&
-      (actualValue as any)[0]?.value !== undefined
+      (actualValue as Record<string, unknown>[])[0]?.value !== undefined
     ) {
       unwrappedActual =
-        (actualValue as any).length === 1
-          ? (actualValue as any)[0].value
-          : (actualValue as any).map((v: any) => v.value);
+        (actualValue as Record<string, unknown>[]).length === 1
+          ? (actualValue as Record<string, unknown>[])[0].value
+          : ((actualValue as Record<string, unknown>[]).map(
+              (v: Record<string, unknown>) => v.value
+            ) as unknown);
     }
     if (Array.isArray(expectedValue)) {
       if (!Array.isArray(unwrappedActual)) return { matches: false };

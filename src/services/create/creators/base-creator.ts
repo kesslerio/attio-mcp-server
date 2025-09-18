@@ -51,7 +51,9 @@ export abstract class BaseCreator implements ResourceCreator {
   /**
    * Creates the API payload for resource creation
    */
-  protected createPayload(normalizedInput: Record<string, unknown>): any {
+  protected createPayload(
+    normalizedInput: Record<string, unknown>
+  ): Record<string, unknown> {
     return {
       data: {
         values: normalizedInput,
@@ -63,7 +65,7 @@ export abstract class BaseCreator implements ResourceCreator {
    * Processes API response and extracts record
    */
   protected async processResponse(
-    response: any,
+    response: Record<string, unknown>,
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
@@ -71,20 +73,31 @@ export abstract class BaseCreator implements ResourceCreator {
       status: response?.status,
       statusText: response?.statusText,
       hasData: !!response?.data,
-      hasNestedData: !!response?.data?.data,
-      dataKeys: response?.data ? Object.keys(response.data) : [],
+      hasNestedData: !!(response?.data as Record<string, unknown>)?.data,
+      dataKeys: response?.data
+        ? Object.keys(response.data as Record<string, unknown>)
+        : [],
     });
 
     let record = extractAttioRecord(response);
 
     // Enrich missing id from web_url if available
-    record = this.enrichRecordId(record, response);
+    const enrichedRecord = this.enrichRecordId(record || {}, response);
 
     // Handle empty response with recovery if needed
     const mustRecover =
-      !record || !(record as any).id || !(record as any).id?.record_id;
+      !enrichedRecord ||
+      !(enrichedRecord as Record<string, unknown>).id ||
+      !(
+        (enrichedRecord as Record<string, unknown>).id as Record<
+          string,
+          unknown
+        >
+      )?.record_id;
     if (mustRecover) {
       record = await this.attemptRecovery(context, normalizedInput);
+    } else {
+      record = enrichedRecord as AttioRecord;
     }
 
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);
@@ -103,12 +116,20 @@ export abstract class BaseCreator implements ResourceCreator {
   /**
    * Enriches record with ID extracted from web_url if missing
    */
-  protected enrichRecordId(record: any, response: any): any {
-    if (record && (!record.id || !record.id?.record_id)) {
-      const webUrl = record?.web_url || response?.data?.web_url;
+  protected enrichRecordId(
+    record: Record<string, unknown>,
+    response: Record<string, unknown>
+  ): Record<string, unknown> {
+    if (
+      record &&
+      (!record.id || !(record.id as Record<string, unknown>)?.record_id)
+    ) {
+      const webUrl =
+        record?.web_url || (response?.data as Record<string, unknown>)?.web_url;
       const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
       if (rid) {
-        record.id = { ...record.id, record_id: rid };
+        const existingId = (record.id as Record<string, unknown>) || {};
+        record.id = { ...existingId, record_id: rid };
       }
     }
     return record;
@@ -120,8 +141,8 @@ export abstract class BaseCreator implements ResourceCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
-    normalizedInput?: Record<string, unknown>
-  ): Promise<any> {
+    _normalizedInput?: Record<string, unknown>
+  ): Promise<AttioRecord> {
     const recoveryOptions = this.getRecoveryOptions();
     if (!recoveryOptions) {
       throw this.createEnhancedError(
@@ -162,7 +183,7 @@ export abstract class BaseCreator implements ResourceCreator {
               recordId: record.id.record_id,
             }
           );
-          return record;
+          return record as AttioRecord;
         }
       } catch (e) {
         context.debug(
@@ -227,7 +248,7 @@ export abstract class BaseCreator implements ResourceCreator {
     context.logError(
       this.constructor.name,
       `${this.resourceType} creation error`,
-      errorInfo
+      errorInfo as unknown as Record<string, unknown>
     );
 
     let message: string;
@@ -251,7 +272,7 @@ export abstract class BaseCreator implements ResourceCreator {
   protected handleApiError(
     err: unknown,
     context: ResourceCreatorContext,
-    payload?: any
+    payload?: Record<string, unknown>
   ): never {
     const error = err as {
       response?: { status?: number; data?: { message?: string } };

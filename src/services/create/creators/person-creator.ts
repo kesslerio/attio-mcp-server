@@ -5,6 +5,7 @@
  * email retry logic, error recovery, and person record processing.
  */
 
+import type { AxiosResponse } from 'axios';
 import type { AttioRecord } from '../../../types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
@@ -55,25 +56,55 @@ export class PersonCreator extends BaseCreator {
         context,
         normalizedPerson
       );
-      const rec = this.extractRecordFromResponse(response);
+      const rec = this.extractRecordFromResponse(
+        response as unknown as Record<string, unknown>
+      );
       this.finalizeRecord(rec, context);
-      registerMockAliasIfPresent(input, rec?.id?.record_id);
+      registerMockAliasIfPresent(
+        input,
+        ((rec as Record<string, unknown>)?.id as Record<string, unknown>)
+          ?.record_id as string
+      );
       const out = normalizeRecordForOutput(rec, 'people');
 
       // Optional debug to confirm the shape:
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
         createScopedLogger('PersonCreator', 'create').debug('types', {
-          nameBefore: Array.isArray(rec?.values?.name)
+          nameBefore: Array.isArray(
+            (
+              (rec as Record<string, unknown>)?.values as Record<
+                string,
+                unknown
+              >
+            )?.name
+          )
             ? 'array'
-            : typeof rec?.values?.name,
-          nameAfter: Array.isArray((out as any)?.values?.name)
+            : typeof (
+                (rec as Record<string, unknown>)?.values as Record<
+                  string,
+                  unknown
+                >
+              )?.name,
+          nameAfter: Array.isArray(
+            (
+              (out as Record<string, unknown>)?.values as Record<
+                string,
+                unknown
+              >
+            )?.name
+          )
             ? 'array'
-            : typeof (out as any)?.values?.name,
+            : typeof (
+                (out as Record<string, unknown>)?.values as Record<
+                  string,
+                  unknown
+                >
+              )?.name,
         });
       }
 
-      return out;
-    } catch (err: any) {
+      return out as AttioRecord;
+    } catch (err: unknown) {
       return this.handleApiError(err, context, {
         data: { values: normalizedPerson },
       });
@@ -97,7 +128,7 @@ export class PersonCreator extends BaseCreator {
   private async createPersonWithRetry(
     context: ResourceCreatorContext,
     filteredPersonData: Record<string, unknown>
-  ): Promise<any> {
+  ): Promise<AxiosResponse> {
     const doCreate = async (values: Record<string, unknown>) =>
       context.client.post(this.endpoint, { data: { values } });
 
@@ -170,7 +201,7 @@ export class PersonCreator extends BaseCreator {
   protected async attemptRecovery(
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
-  ): Promise<any> {
+  ): Promise<AttioRecord> {
     if (!normalizedInput) {
       throw this.createEnhancedError(
         new Error('Person creation returned empty/invalid record'),
@@ -196,16 +227,25 @@ export class PersonCreator extends BaseCreator {
         );
 
         const record = this.extractRecordFromSearch(searchResult);
-        if (record?.id?.record_id) {
+        if (
+          (record as Record<string, unknown>)?.id &&
+          ((record as Record<string, unknown>)?.id as Record<string, unknown>)
+            ?.record_id
+        ) {
           context.debug(
             this.constructor.name,
             'Person recovery succeeded by email',
             {
               email,
-              recordId: record.id.record_id,
+              recordId: (
+                (record as Record<string, unknown>)?.id as Record<
+                  string,
+                  unknown
+                >
+              )?.record_id,
             }
           );
-          return record;
+          return record as AttioRecord;
         }
       }
     } catch (e) {
@@ -226,7 +266,7 @@ export class PersonCreator extends BaseCreator {
    * Includes recovery attempt with normalized input
    */
   protected async processResponse(
-    response: any,
+    response: Record<string, unknown>,
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
@@ -234,7 +274,7 @@ export class PersonCreator extends BaseCreator {
       status: response?.status,
       statusText: response?.statusText,
       hasData: !!response?.data,
-      hasNestedData: !!response?.data?.data,
+      hasNestedData: !!(response?.data as Record<string, unknown>)?.data,
     });
 
     let record = this.extractRecordFromResponse(response);
@@ -242,7 +282,10 @@ export class PersonCreator extends BaseCreator {
 
     // Handle empty response with recovery attempt
     const mustRecover =
-      !record || !(record as any).id || !(record as any).id?.record_id;
+      !record ||
+      !(record as Record<string, unknown>).id ||
+      !((record as Record<string, unknown>).id as Record<string, unknown>)
+        ?.record_id;
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -253,22 +296,26 @@ export class PersonCreator extends BaseCreator {
   /**
    * Extracts record from API response
    */
-  private extractRecordFromResponse(response: any): any {
-    return extractAttioRecord(response);
+  private extractRecordFromResponse(
+    response: Record<string, unknown>
+  ): Record<string, unknown> {
+    return extractAttioRecord(response) || {};
   }
 
   /**
    * Extracts record from search results
    */
-  private extractRecordFromSearch(searchData: any): any {
-    return extractAttioRecord(searchData);
+  private extractRecordFromSearch(
+    searchData: Record<string, unknown>
+  ): Record<string, unknown> {
+    return extractAttioRecord(searchData) || {};
   }
 
   /**
    * Finalizes record processing
    */
   private finalizeRecord(
-    record: any,
+    record: Record<string, unknown>,
     context: ResourceCreatorContext
   ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);

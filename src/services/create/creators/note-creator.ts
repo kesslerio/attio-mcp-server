@@ -5,6 +5,7 @@
  * object and normalizing the response format.
  */
 
+import type { AttioRecord } from '../../../types/attio.js';
 import type { ResourceCreatorContext } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import { resolveMockId } from '../../../test-support/test-data-registry.js';
@@ -31,8 +32,8 @@ export class NoteCreator extends BaseCreator {
   readonly endpoint = '/objects/notes/records';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private noteModule: any = null;
-  private responseUtilsModule: any = null;
+  private noteModule: Record<string, unknown> | null = null;
+  private responseUtilsModule: Record<string, unknown> | null = null;
 
   /**
    * Lazy-loads note dependencies to prevent repeated dynamic imports
@@ -53,12 +54,12 @@ export class NoteCreator extends BaseCreator {
    *
    * @param input - Note data including resource_type, record_id, title, content, format
    * @param context - Shared context with client and utilities
-   * @returns Promise<any> - Created note record (normalized)
+   * @returns Promise<AttioRecord> - Created note record (normalized)
    */
   async create(
     input: Record<string, unknown>,
     context: ResourceCreatorContext
-  ): Promise<any> {
+  ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
     // Validate note input format
     const noteInput = this.validateNoteInput(input);
@@ -104,11 +105,15 @@ export class NoteCreator extends BaseCreator {
 
       context.debug(this.constructor.name, 'Creating note with data', noteData);
 
-      const response = await this.noteModule.createNote(noteData);
+      const response = await (this.noteModule as any)?.createNote(noteData);
 
       // Unwrap varying API envelopes and normalize to stable shape
-      const attioNote = this.responseUtilsModule.unwrapAttio(response);
-      const normalizedNote = this.responseUtilsModule.normalizeNote(attioNote);
+      const attioNote = (this.responseUtilsModule as any)?.unwrapAttio(
+        response
+      );
+      const normalizedNote = (this.responseUtilsModule as any)?.normalizeNote(
+        attioNote
+      );
 
       context.debug(this.constructor.name, 'Note creation response', {
         hasResponse: !!response,
@@ -118,13 +123,17 @@ export class NoteCreator extends BaseCreator {
       });
 
       return normalizeRecordForOutput(normalizedNote);
-    } catch (err: any) {
+    } catch (err: unknown) {
       context.logError(this.constructor.name, 'Note creation error', {
-        error: err?.message,
+        error: (err as Error)?.message,
         input: noteInput,
       });
 
-      return this.handleApiError(err, context, noteInput);
+      return this.handleApiError(
+        err,
+        context,
+        noteInput as unknown as Record<string, unknown>
+      );
     }
   }
 
@@ -171,7 +180,7 @@ export class NoteCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext
-  ): Promise<any> {
+  ): Promise<AttioRecord> {
     // Notes are handled via delegation, so no direct recovery needed
     throw this.createEnhancedError(
       new Error('Note creation failed via delegation - no recovery available'),
