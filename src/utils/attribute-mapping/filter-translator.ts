@@ -11,9 +11,9 @@ import { getAttributeSlug } from './attribute-mappers.js';
  * @returns A new filters object with attribute names translated to slugs where applicable
  */
 export function translateAttributeNamesInFilters(
-  filters: Record<string, unknown>,
+  filters: unknown,
   objectType?: string
-): Record<string, unknown> {
+): unknown {
   // Handle null, undefined, or non-object filters
   if (!filters || typeof filters !== 'object') {
     return filters;
@@ -26,8 +26,11 @@ export function translateAttributeNamesInFilters(
     );
   }
 
+  // Cast to object after array check
+  const filtersObj = filters as Record<string, unknown>;
+
   // Deep clone the filters object to avoid modifying the original
-  const translatedFilters = { ...filters };
+  const translatedFilters = { ...filtersObj };
 
   // Handle direct filter objects with attribute.slug
   if (isDirectFilterObject(translatedFilters)) {
@@ -50,7 +53,12 @@ export function translateAttributeNamesInFilters(
  * Checks if an object is a direct filter with attribute.slug
  */
 function isDirectFilterObject(filter: Record<string, unknown>): boolean {
-  return filter.attribute && filter.attribute.slug;
+  return !!(
+    filter.attribute &&
+    typeof filter.attribute === 'object' &&
+    filter.attribute !== null &&
+    'slug' in filter.attribute
+  );
 }
 
 /**
@@ -62,14 +70,17 @@ function translateDirectFilter(
 ): Record<string, unknown> {
   // Determine the object type to use for translation
   // Priority: filter's own objectType > parent objectType
-  const typeToUse = filter.objectType || objectType;
+  const typeToUse =
+    (typeof filter.objectType === 'string' ? filter.objectType : undefined) ||
+    objectType;
 
   // Create a new object with translated slug
+  const attribute = filter.attribute as Record<string, unknown>;
   return {
     ...filter,
     attribute: {
-      ...filter.attribute,
-      slug: getAttributeSlug(filter.attribute.slug, typeToUse),
+      ...attribute,
+      slug: getAttributeSlug(attribute.slug as string, typeToUse as string),
     },
   };
 }
@@ -78,23 +89,30 @@ function translateDirectFilter(
  * Checks if an object has nested filters
  */
 function hasNestedFilters(filter: Record<string, unknown>): boolean {
-  return filter.filters && Array.isArray(filter.filters);
+  return !!(filter.filters && Array.isArray(filter.filters));
 }
 
 /**
  * Translates nested filters
  */
 function translateNestedFilters(
-  filters: unknown[],
+  filters: unknown,
   objectType?: string
-): unknown[] {
-  return filters.map((filter: Record<string, unknown>) => {
-    if (isDirectFilterObject(filter)) {
-      // Determine the object type to use for this specific filter
-      const typeToUse = filter.objectType || objectType;
+): unknown {
+  if (!Array.isArray(filters)) return filters;
 
-      // Translate the attribute slug if it's a human-readable name
-      return translateDirectFilter(filter, typeToUse);
+  return filters.map((filter) => {
+    if (typeof filter === 'object' && filter !== null) {
+      const filterObj = filter as Record<string, unknown>;
+      if (isDirectFilterObject(filterObj)) {
+        // Determine the object type to use for this specific filter
+        const typeToUse =
+          (typeof filterObj.objectType === 'string'
+            ? filterObj.objectType
+            : undefined) || objectType;
+        // Translate the attribute slug if it's a human-readable name
+        return translateDirectFilter(filterObj, typeToUse);
+      }
     }
     return translateAttributeNamesInFilters(filter, objectType);
   });
@@ -133,7 +151,7 @@ function determineObjectTypeContext(
   }
 
   // If this is a resource-specific section with explicit object type, use that
-  if (filter.objectType) {
+  if (filter.objectType && typeof filter.objectType === 'string') {
     return filter.objectType;
   }
 

@@ -121,7 +121,10 @@ export async function runDiscovery(
           log.info(`Discovered ${attributeCount} attributes for ${objectSlug}`);
         }
       } catch (error: unknown) {
-        log.error(`Error discovering attributes for ${objectSlug}:`, error);
+        log.error(
+          `Error discovering attributes for ${objectSlug}:`,
+          error as Record<string, unknown>
+        );
       }
     }
 
@@ -137,7 +140,10 @@ export async function runDiscovery(
     await writeMappingConfig(config, outputPath || DEFAULT_CONFIG.outputPath);
     log.info('Automatic attribute discovery completed successfully');
   } catch (error: unknown) {
-    log.error('Failed to complete automatic discovery:', error);
+    log.error(
+      'Failed to complete automatic discovery:',
+      error as Record<string, unknown>
+    );
     throw error;
   }
 }
@@ -161,7 +167,10 @@ export async function startAutoDiscovery(
     try {
       await runDiscovery(apiKey, settings.outputPath);
     } catch (error: unknown) {
-      log.error('Failed to run discovery on startup:', error);
+      log.error(
+        'Failed to run discovery on startup:',
+        error as Record<string, unknown>
+      );
       // Don't fail the server startup, just log the error
     }
   }
@@ -175,7 +184,10 @@ export async function startAutoDiscovery(
       try {
         await runDiscovery(apiKey, settings.outputPath);
       } catch (error: unknown) {
-        log.error('Failed to run scheduled discovery:', error);
+        log.error(
+          'Failed to run scheduled discovery:',
+          error as Record<string, unknown>
+        );
       }
     }, intervalMs);
 

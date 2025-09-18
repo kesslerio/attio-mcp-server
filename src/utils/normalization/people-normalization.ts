@@ -119,6 +119,7 @@ export class PeopleDataNormalizer {
 
     // Handle object input
     if (typeof input === 'object' && !Array.isArray(input)) {
+      const inputObj = input as Record<string, unknown>;
       const result: {
         first_name?: string;
         last_name?: string;
@@ -126,21 +127,21 @@ export class PeopleDataNormalizer {
       } = {};
 
       // Check for name field (string)
-      if (typeof input.name === 'string') {
-        return this.normalizeName(input.name);
+      if (typeof inputObj.name === 'string') {
+        return this.normalizeName(inputObj.name);
       }
 
       // Check for first_name and last_name
-      if (input.first_name || input.last_name) {
-        if (input.first_name) {
-          result.first_name = String(input.first_name).trim();
+      if (inputObj.first_name || inputObj.last_name) {
+        if (inputObj.first_name) {
+          result.first_name = String(inputObj.first_name).trim();
         }
-        if (input.last_name) {
-          result.last_name = String(input.last_name).trim();
+        if (inputObj.last_name) {
+          result.last_name = String(inputObj.last_name).trim();
         }
 
         // Generate full_name if not provided
-        if (!input.full_name && (result.first_name || result.last_name)) {
+        if (!inputObj.full_name && (result.first_name || result.last_name)) {
           result.full_name = [result.first_name, result.last_name]
             .filter(Boolean)
             .join(' ');
@@ -148,8 +149,8 @@ export class PeopleDataNormalizer {
       }
 
       // Check for full_name
-      if (input.full_name) {
-        result.full_name = String(input.full_name).trim();
+      if (inputObj.full_name) {
+        result.full_name = String(inputObj.full_name).trim();
 
         // If we don't have first/last name, try to extract from full name
         if (!result.first_name && !result.last_name) {
@@ -164,11 +165,11 @@ export class PeopleDataNormalizer {
       }
 
       // Check for firstName/lastName (camelCase variants)
-      if (input.firstName) {
-        result.first_name = String(input.firstName).trim();
+      if (inputObj.firstName) {
+        result.first_name = String(inputObj.firstName).trim();
       }
-      if (input.lastName) {
-        result.last_name = String(input.lastName).trim();
+      if (inputObj.lastName) {
+        result.last_name = String(inputObj.lastName).trim();
       }
 
       if (Object.keys(result).length === 0) return undefined;
@@ -361,9 +362,10 @@ export class PeopleDataNormalizer {
     }
     // Handle object input
     else if (typeof input === 'object') {
+      const inputObj = input as Record<string, unknown>;
       // Check for email_address field
-      if (input.email_address) {
-        const emailValue = this.extractEmailValue(input.email_address);
+      if (inputObj.email_address) {
+        const emailValue = this.extractEmailValue(inputObj.email_address);
         if (emailValue) {
           const validatedEmail = this.validateAndProcessEmail(
             emailValue,
@@ -372,21 +374,28 @@ export class PeopleDataNormalizer {
           if (validatedEmail) {
             emails.push({
               email_address: validatedEmail,
-              email_type: input.email_type || input.type,
+              email_type:
+                (inputObj.email_type as string) || (inputObj.type as string),
             });
           }
         }
       }
       // Check for email_addresses field
-      else if (input.email_addresses && Array.isArray(input.email_addresses)) {
-        const normalized = this.normalizeEmails(input.email_addresses, config);
+      else if (
+        inputObj.email_addresses &&
+        Array.isArray(inputObj.email_addresses)
+      ) {
+        const normalized = this.normalizeEmails(
+          inputObj.email_addresses,
+          config
+        );
         if (normalized) {
           emails.push(...normalized);
         }
       }
       // Check for email field (singular)
-      else if (input.email) {
-        const emailValue = this.extractEmailValue(input.email);
+      else if (inputObj.email) {
+        const emailValue = this.extractEmailValue(inputObj.email);
         if (emailValue) {
           const validatedEmail = this.validateAndProcessEmail(
             emailValue,
@@ -398,8 +407,8 @@ export class PeopleDataNormalizer {
         }
       }
       // Check for emails field (plural)
-      else if (input.emails && Array.isArray(input.emails)) {
-        const normalized = this.normalizeEmails(input.emails, config);
+      else if (inputObj.emails && Array.isArray(inputObj.emails)) {
+        const normalized = this.normalizeEmails(inputObj.emails, config);
         if (normalized) {
           emails.push(...normalized);
         }
@@ -470,6 +479,7 @@ export class PeopleDataNormalizer {
     }
     // Handle object input
     else if (typeof input === 'object') {
+      const inputObj = input as Record<string, unknown>;
       // Check various phone field names
       const phoneFields = [
         'phone_number',
@@ -479,12 +489,15 @@ export class PeopleDataNormalizer {
         'telephone',
       ];
       for (const field of phoneFields) {
-        if (input[field]) {
-          const normalized = this.normalizePhoneNumber(input[field]);
+        if (inputObj[field]) {
+          const normalized = this.normalizePhoneNumber(
+            inputObj[field] as string
+          );
           if (normalized) {
             phones.push({
               phone_number: normalized,
-              phone_type: input.phone_type || input.type,
+              phone_type:
+                (inputObj.phone_type as string) || (inputObj.type as string),
             });
             break;
           }
@@ -492,9 +505,9 @@ export class PeopleDataNormalizer {
       }
 
       // Check for phone_numbers array
-      if (input.phone_numbers || input.phones) {
+      if (inputObj.phone_numbers || inputObj.phones) {
         const normalized = this.normalizePhones(
-          input.phone_numbers || input.phones
+          inputObj.phone_numbers || inputObj.phones
         );
         if (normalized) {
           phones.push(...normalized);

@@ -170,8 +170,8 @@ export function enhanceApiError(error: Record<string, unknown>): Error {
     isAxiosError: !!error?.isAxiosError,
   });
   log.debug('Attempting to enhance error', {
-    message: error?.message,
-    responseData: error?.response?.data,
+    message: (error as any)?.message,
+    responseData: (error as any)?.response?.data,
   });
 
   const mismatchCheck = isValueMismatchError(error);
@@ -194,14 +194,17 @@ export function enhanceApiError(error: Record<string, unknown>): Error {
         searchValue,
         knownValues
       );
-      log.debug('Match result from findBestValueMatch', matchResult);
+      log.debug(
+        'Match result from findBestValueMatch',
+        matchResult as unknown as Record<string, unknown>
+      );
 
       log.debug('Returning NEW ValueMatchError');
       return new ValueMatchError(
         fieldSlug,
         searchValue,
         matchResult,
-        error // Pass original Axios error for reference
+        error as unknown as Error // Pass original Axios error for reference
       );
     }
   } else {
@@ -211,7 +214,7 @@ export function enhanceApiError(error: Record<string, unknown>): Error {
   }
 
   log.debug('No specific enhancement applied; returning original error');
-  return error; // Fallback: return original error if not enhanced
+  return error as unknown as Error; // Fallback: return original error if not enhanced
 }
 
 /**
@@ -226,7 +229,7 @@ export function isValueMismatchError(error: Record<string, unknown>): {
   const context = parseApiError(error);
   createScopedLogger('utils.error-enhancer', 'isValueMismatchError').debug(
     'Context from parseApiError',
-    context
+    context as unknown as Record<string, unknown>
   );
   if (
     context.fieldSlug &&
