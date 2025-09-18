@@ -65,7 +65,7 @@ export abstract class BaseCreator implements ResourceCreator {
    * Processes API response and extracts record
    */
   protected async processResponse(
-    response: Record<string, unknown>,
+    response: any,
     context: ResourceCreatorContext,
     normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
@@ -80,14 +80,10 @@ export abstract class BaseCreator implements ResourceCreator {
     let record = extractAttioRecord(response);
 
     // Enrich missing id from web_url if available
-    record = this.enrichRecordId(record, response);
+    record = this.enrichRecordId(record, response) as AttioRecord;
 
     // Handle empty response with recovery if needed
-    const mustRecover =
-      !record ||
-      !(record as Record<string, unknown>).id ||
-      !((record as Record<string, unknown>).id as Record<string, unknown>)
-        ?.record_id;
+    const mustRecover = !record || !record.id || !record.id?.record_id;
     if (mustRecover) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -108,10 +104,7 @@ export abstract class BaseCreator implements ResourceCreator {
   /**
    * Enriches record with ID extracted from web_url if missing
    */
-  protected enrichRecordId(
-    record: Record<string, unknown>,
-    response: Record<string, unknown>
-  ): Record<string, unknown> {
+  protected enrichRecordId(record: any, response: any): any {
     if (record && (!record.id || !record.id?.record_id)) {
       const webUrl = record?.web_url || response?.data?.web_url;
       const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
@@ -130,7 +123,7 @@ export abstract class BaseCreator implements ResourceCreator {
     context: ResourceCreatorContext,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _normalizedInput?: Record<string, unknown>
-  ): Promise<Record<string, unknown>> {
+  ): Promise<any> {
     const recoveryOptions = this.getRecoveryOptions();
     if (!recoveryOptions) {
       throw this.createEnhancedError(

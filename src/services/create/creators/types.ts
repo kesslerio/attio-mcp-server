@@ -13,7 +13,7 @@ import type { AttioRecord } from '../../../types/attio.js';
  */
 export interface ResourceCreatorContext {
   /** Attio API client instance */
-  client: Record<string, unknown>;
+  client: any;
   /** Debug logging function */
   debug: (
     component: string,
@@ -21,11 +21,7 @@ export interface ResourceCreatorContext {
     data?: Record<string, unknown>
   ) => void;
   /** Error logging function */
-  logError: (
-    component: string,
-    message: string,
-    data?: Record<string, unknown>
-  ) => void;
+  logError: (component: string, message: string, data?: any) => void;
 }
 
 /**

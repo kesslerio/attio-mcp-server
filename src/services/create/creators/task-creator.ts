@@ -18,8 +18,8 @@ export class TaskCreator extends BaseCreator {
   readonly endpoint = '/tasks';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private taskModule: Record<string, unknown> | null = null;
-  private converterModule: Record<string, unknown> | null = null;
+  private taskModule: any = null;
+  private converterModule: any = null;
 
   /**
    * Lazy-loads task dependencies to prevent repeated dynamic imports
@@ -77,9 +77,10 @@ export class TaskCreator extends BaseCreator {
         options.targetObject = input.targetObject as string;
       }
 
-      const createdTask = await (
-        this.taskModule as Record<string, unknown>
-      ).createTask(input.content as string, options);
+      const createdTask = await (this.taskModule as any).createTask(
+        input.content as string,
+        options
+      );
 
       context.debug(this.constructor.name, 'Task creation response', {
         hasTask: !!createdTask,
@@ -88,9 +89,10 @@ export class TaskCreator extends BaseCreator {
       });
 
       // Convert task to AttioRecord format
-      const record = (
-        this.converterModule as Record<string, unknown>
-      ).convertTaskToAttioRecord(createdTask, input);
+      const record = (this.converterModule as any).convertTaskToAttioRecord(
+        createdTask,
+        input
+      );
       // Ensure E2E compatibility: include values.assignee when assigneeId provided
       try {
         if (

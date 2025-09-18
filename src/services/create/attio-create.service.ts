@@ -18,6 +18,7 @@
  */
 
 import type { CreateService } from './types.js';
+import type { NoteRecord } from '../shared-types.js';
 import type { AttioRecord } from '../../types/attio.js';
 import type {
   ResourceCreator,
@@ -52,9 +53,9 @@ export class AttioCreateService implements CreateService {
   private readonly context: ResourceCreatorContext;
 
   // Lazy-loaded dependencies for non-strategy methods
-  private taskModule: Record<string, unknown> | null = null;
-  private converterModule: Record<string, unknown> | null = null;
-  private noteModule: Record<string, unknown> | null = null;
+  private taskModule: any = null;
+  private converterModule: any = null;
+  private noteModule: any = null;
 
   // Supported resource types for validation
   static readonly SUPPORTED_RESOURCE_TYPES = {
@@ -147,7 +148,7 @@ export class AttioCreateService implements CreateService {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
 
-    const updatedTask = await this.taskModule.updateTask(taskId, {
+    const updatedTask = await this.taskModule!.updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
       assigneeId: input.assigneeId as string,
@@ -156,7 +157,7 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return this.converterModule.convertTaskToAttioRecord(updatedTask, input);
+    return this.converterModule!.convertTaskToAttioRecord(updatedTask, input);
   }
 
   /**
@@ -169,7 +170,7 @@ export class AttioCreateService implements CreateService {
     title: string;
     content: string;
     format?: string;
-  }): Promise<Record<string, unknown>> {
+  }): Promise<any> {
     const creator = this.getCreator('notes');
     return creator.create(input, this.context);
   }
@@ -183,7 +184,7 @@ export class AttioCreateService implements CreateService {
   async listNotes(params: {
     resource_type?: string;
     record_id?: string;
-  }): Promise<unknown[]> {
+  }): Promise<NoteRecord[]> {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
 
@@ -192,7 +193,7 @@ export class AttioCreateService implements CreateService {
       parent_record_id: params.record_id,
     };
 
-    const response = await this.noteModule.listNotes(query);
+    const response = await this.noteModule!.listNotes(query);
     return response.data || [];
   }
 
