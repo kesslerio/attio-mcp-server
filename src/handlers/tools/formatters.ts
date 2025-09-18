@@ -9,6 +9,26 @@ import {
 } from '../../utils/json-serializer.js';
 import { createScopedLogger } from '../../utils/logger.js';
 
+// Types for batch operations
+interface BatchOperationResult {
+  summary: {
+    total: number;
+    succeeded: number;
+    failed: number;
+  };
+  results: Array<{
+    id: string;
+    success: boolean;
+    error?: { message?: string };
+  }>;
+}
+
+// Type for attribute objects
+interface AttributeValue {
+  value?: unknown;
+  [key: string]: unknown;
+}
+
 /**
  * Safely extract value from record attributes
  *
@@ -24,7 +44,7 @@ function getAttributeValue(
   record:
     | {
         values?: Record<string, unknown> | undefined;
-        [key: string]: any;
+        [key: string]: unknown;
       }
     | undefined,
   fieldName: string
@@ -96,7 +116,8 @@ export function formatRecordDetails(record: AttioRecord): string {
   const attributes = record.attributes || ({} as Record<string, unknown>);
   const formattedAttrs = Object.entries(attributes)
     .map(([key, attr]) => {
-      const value = (attr as any).value || 'N/A';
+      const attrObj = attr as AttributeValue;
+      const value = attrObj.value || 'N/A';
       return `${key}: ${value}`;
     })
     .join('\n');
@@ -136,10 +157,13 @@ export function formatListEntries(entries: AttioListEntry[]): string {
  * @param operation - The type of batch operation
  * @returns Formatted string output
  */
-export function formatBatchResults(result: any, operation: string): string {
+export function formatBatchResults(
+  result: BatchOperationResult,
+  operation: string
+): string {
   const summary = result.summary;
   const details = result.results
-    .map((r: any) =>
+    .map((r) =>
       r.success
         ? `✅ Record ${r.id}: ${operation} successfully`
         : `❌ Record ${r.id}: Failed - ${r.error?.message || 'Unknown error'}`
@@ -162,7 +186,7 @@ export function formatBatchResults(result: any, operation: string): string {
  */
 
 export function formatResponse(
-  content: string | any,
+  content: string | unknown,
   isError: boolean = false
 ) {
   // Handle non-string content by converting it to a string

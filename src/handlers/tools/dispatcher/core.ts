@@ -15,6 +15,11 @@ import {
 
 // Import tool configurations
 import { findToolConfig } from '../registry.js';
+
+// Type for format result function that may accept additional parameters
+type FormatResultFunction =
+  | ((results: unknown) => string)
+  | ((results: unknown, resourceType?: unknown, infoType?: unknown) => string);
 import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
 import { computeErrorWithContext } from '../../../utils/error-detection.js';
@@ -132,12 +137,101 @@ export async function executeToolRequest(request: CallToolRequest) {
 
     let result;
 
-    // Handle search tools
-    if (toolType === 'search') {
+    // Handle Universal and General tools first (Issue #352)
+    if (resourceType === 'UNIVERSAL') {
+      // For universal tools, use the tool's own handler directly
+      const args = request.params.arguments as Record<string, unknown>;
+
+      // Canonicalize and freeze resource_type to prevent mutation
+      if (args && 'resource_type' in args) {
+        args.resource_type = canonicalizeResourceType(args.resource_type);
+        Object.defineProperty(args, 'resource_type', {
+          value: args.resource_type,
+          writable: false,
+        });
+      }
+
+      // Universal tools have their own parameter validation and handling
+      const rawResult = await (toolConfig as ToolConfig).handler(
+        args as Record<string, unknown>
+      );
+
+      // If a tool already returned an MCP-shaped object, stop double-wrapping
+      const isMcpResponseLike = (v: unknown) => {
+        return (
+          v &&
+          typeof v === 'object' &&
+          v !== null &&
+          'content' in v &&
+          'isError' in v
+        );
+      };
+
+      if (isMcpResponseLike(rawResult)) {
+        const sanitized = sanitizeMcpResponse(rawResult);
+        logToolSuccess(toolName, toolType, sanitized, timer);
+        return sanitized; // skip detection/formatting, it's already MCP
+      }
+
+      // Format the result using the tool's formatResult if available
+      let formattedResult: string;
+      if (rawResult === null || rawResult === undefined) {
+        formattedResult = JSON.stringify(rawResult, null, 2);
+      } else if (toolConfig.formatResult) {
+        try {
+          formattedResult = (toolConfig.formatResult as FormatResultFunction)(
+            rawResult,
+            args?.resource_type,
+            args?.info_type
+          );
+        } catch {
+          formattedResult = (toolConfig.formatResult as FormatResultFunction)(
+            rawResult
+          );
+        }
+      } else {
+        formattedResult = JSON.stringify(rawResult, null, 2);
+      }
+
+      result = {
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false,
+      };
+    } else if (resourceType === 'GENERAL') {
+      // For general tools, use the tool's own handler directly
+      const args = request.params.arguments as Record<string, unknown>;
+      let handlerArgs: unknown[] = [];
+
+      // Map arguments based on tool type
+      if (
+        toolType === 'linkPersonToCompany' ||
+        toolType === 'unlinkPersonFromCompany'
+      ) {
+        handlerArgs = [args?.personId, args?.companyId];
+      } else if (toolType === 'getPersonCompanies') {
+        handlerArgs = [args?.personId];
+      } else if (toolType === 'getCompanyTeam') {
+        handlerArgs = [args?.companyId];
+      } else {
+        handlerArgs = [args];
+      }
+
+      const rawResult = await (toolConfig as ToolConfig).handler(
+        ...handlerArgs
+      );
+      const formattedResult =
+        toolConfig.formatResult?.(rawResult) ||
+        JSON.stringify(rawResult, null, 2);
+
+      result = {
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false,
+      };
+    } else if (toolType === 'search') {
       result = await handleBasicSearch(
         request,
         toolConfig as SearchToolConfig,
-        resourceType
+        resourceType as ResourceType
       );
     } else if (toolType === 'searchByEmail') {
       result = await handleSearchByEmail(
@@ -326,206 +420,6 @@ export async function executeToolRequest(request: CallToolRequest) {
       result = await handleListOperation(request, toolConfig as ToolConfig);
     } else if (toolType === 'get') {
       result = await handleGetOperation(request, toolConfig as ToolConfig);
-
-      // Handle Universal tools (Issue #352 - Universal tool consolidation)
-    } else if (resourceType === ('UNIVERSAL' as any)) {
-      // For universal tools, use the tool's own handler directly
-      const args = request.params.arguments as Record<string, unknown>;
-
-      // Canonicalize and freeze resource_type to prevent mutation
-      if (args && 'resource_type' in args) {
-        args.resource_type = canonicalizeResourceType(args.resource_type);
-        Object.defineProperty(args, 'resource_type', {
-          value: args.resource_type,
-          writable: false,
-        });
-      }
-
-      // Universal tools have their own parameter validation and handling
-      let rawResult = await (toolConfig as ToolConfig).handler(
-        args as Record<string, unknown>
-      );
-
-      // If a tool already returned an MCP-shaped object, stop double-wrapping
-      const isMcpResponseLike = (v: any) => {
-        return v && typeof v === 'object' && 'content' in v && 'isError' in v;
-      };
-
-      if (isMcpResponseLike(rawResult)) {
-        const sanitized = sanitizeMcpResponse(rawResult);
-        logToolSuccess(toolName, toolType, sanitized, timer);
-        return sanitized; // skip detection/formatting, it's already MCP
-      }
-
-      // Special handling for lists resource type to return API-consistent shape
-      if (
-        toolName === 'search-records' &&
-        args?.resource_type === 'lists' &&
-        Array.isArray(rawResult)
-      ) {
-        rawResult = { data: rawResult };
-      }
-
-      // Universal tools may have different formatResult signatures - handle flexibly
-      let formattedResult: string;
-
-      // For E2E tests, return raw JSON data instead of formatted strings
-      // This allows tests to parse and validate the actual data structures
-      const isTestRun =
-        process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
-
-      // (debug logging removed for brevity)
-
-      if (
-        isTestRun &&
-        (toolName === 'create-record' ||
-          toolName === 'update-record' ||
-          toolName === 'get-record-details' ||
-          toolName === 'create-note' ||
-          toolName === 'search-records')
-      ) {
-        // Return raw JSON for record operations in E2E mode
-        // Handle null/undefined results gracefully instead of throwing
-        if (!rawResult) {
-          formattedResult = JSON.stringify(
-            {
-              error: `Tool ${toolName} returned null/undefined result`,
-              success: false,
-            },
-            null,
-            2
-          );
-        } else {
-          formattedResult = JSON.stringify(rawResult, null, 2);
-        }
-      } else if (toolConfig.formatResult) {
-        try {
-          // Try with all possible parameters (result, resourceType, infoType)
-          formattedResult = (toolConfig.formatResult as any)(
-            rawResult,
-            args?.resource_type,
-            args?.info_type
-          );
-
-          // Ensure consistent array formatting for list operations
-          if (
-            toolName.includes('search-records') ||
-            toolName.includes('get-lists')
-          ) {
-            // If formatResult returns false or null for list operations, provide empty array
-            if (
-              formattedResult === 'false' ||
-              formattedResult === 'null' ||
-              !formattedResult
-            ) {
-              formattedResult = JSON.stringify([], null, 2);
-            }
-          }
-        } catch {
-          // Fallback to just result if signature mismatch
-          formattedResult = (toolConfig.formatResult as any)(rawResult);
-
-          // Apply same array consistency check to fallback
-          if (
-            toolName.includes('search-records') ||
-            toolName.includes('get-lists')
-          ) {
-            if (
-              formattedResult === 'false' ||
-              formattedResult === 'null' ||
-              !formattedResult
-            ) {
-              formattedResult = JSON.stringify([], null, 2);
-            }
-          }
-        }
-      } else {
-        // For raw result formatting, ensure array consistency
-        if (
-          toolName.includes('search-records') ||
-          toolName.includes('get-lists')
-        ) {
-          if (!rawResult || rawResult === false) {
-            formattedResult = JSON.stringify([], null, 2);
-          } else {
-            formattedResult = JSON.stringify(rawResult, null, 2);
-          }
-        } else {
-          formattedResult = JSON.stringify(rawResult, null, 2);
-        }
-      }
-
-      // Build a normalized value for detection (pre-stringify)
-      // Prefer a tool-specific normalizer if you have it; else use rawResult
-      const detectionTarget =
-        (toolConfig as any)?.normalizeForDetection?.(rawResult) ?? rawResult;
-
-      // Use explicit error detection instead of string matching
-      const errorAnalysis = computeErrorWithContext(detectionTarget, {
-        toolName,
-      });
-
-      // Override formatted result with appropriate error message for certain error types
-      let finalFormattedResult = formattedResult;
-      // Notes: in E2E/test runs, empty lists are valid and should not be treated as errors
-      if (
-        toolName === 'list-notes' &&
-        (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test')
-      ) {
-        // Force success for notes listing even when empty
-        // Tests expect a successful response with 0 results to be valid
-        result = {
-          content: [{ type: 'text', text: formattedResult }],
-          isError: false,
-        };
-        logToolSuccess(toolName, toolType, result, timer);
-        const sanitized = sanitizeMcpResponse(result);
-        return sanitized;
-      }
-      if (errorAnalysis.isError && errorAnalysis.reason === 'empty_response') {
-        // Provide a meaningful error message for empty responses (typically 404s)
-        const args = request.params.arguments as Record<string, unknown>;
-        const recordId = args?.record_id as string;
-        const resourceType = args?.resource_type as string;
-        finalFormattedResult = `Record not found: ${recordId || 'unknown ID'} (${resourceType || 'unknown type'})`;
-      }
-
-      result = {
-        content: [{ type: 'text', text: finalFormattedResult }],
-        isError: errorAnalysis.isError,
-      };
-
-      // Handle General tools (relationship helpers, etc.)
-    } else if (resourceType === ('GENERAL' as any)) {
-      // For general tools, use the tool's own handler directly
-      const args = request.params.arguments as Record<string, unknown>;
-      let handlerArgs: any[] = [];
-
-      // Map arguments based on tool type
-      if (
-        toolType === 'linkPersonToCompany' ||
-        toolType === 'unlinkPersonFromCompany'
-      ) {
-        handlerArgs = [(args as any)?.personId, (args as any)?.companyId];
-      } else if (toolType === 'getPersonCompanies') {
-        handlerArgs = [(args as any)?.personId];
-      } else if (toolType === 'getCompanyTeam') {
-        handlerArgs = [(args as any)?.companyId];
-      } else {
-        // For other general tools, pass arguments as is
-        handlerArgs = [args as any];
-      }
-
-      const rawResult = await (toolConfig as ToolConfig).handler(
-        ...handlerArgs
-      );
-      const formattedResult =
-        toolConfig.formatResult?.(rawResult) ||
-        JSON.stringify(rawResult, null, 2);
-      result = {
-        content: [{ type: 'text', text: formattedResult }],
-        isError: false,
-      };
     } else {
       // Placeholder for other operations - will be extracted to modules later
       throw new Error(
@@ -540,19 +434,6 @@ export async function executeToolRequest(request: CallToolRequest) {
     const sanitizedResult = sanitizeMcpResponse(result);
     return sanitizedResult;
   } catch (error: unknown) {
-    // Check if this is a structured HTTP response from our services
-    if (isHttpResponseLike(error)) {
-      const mcpResult = toMcpResult(error);
-      const sanitizedResult = sanitizeMcpResponse(mcpResult);
-      return sanitizedResult;
-    }
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-          ? error
-          : 'Unknown error';
-
     // Get additional error details for better debugging
     const errorDetails = {
       tool: toolName,
@@ -563,14 +444,11 @@ export async function executeToolRequest(request: CallToolRequest) {
       stack: error instanceof Error ? error.stack : undefined,
       additionalInfo:
         error && typeof error === 'object' && 'details' in error
-          ? (error as any).details
+          ? (error as { details: unknown }).details
           : undefined,
     };
 
     // Log error using enhanced structured logging
-    // 'timer' (PerformanceTimer) from the try block should be used here.
-    // If timer is undefined (e.g. error before timer initialization), create a new one.
-    // toolType might also be undefined if error occurred before its assignment.
     const finalTimer = timer
       ? timer
       : new PerformanceTimer(
@@ -587,27 +465,25 @@ export async function executeToolRequest(request: CallToolRequest) {
       errorDetails
     );
 
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : 'Unknown error';
+
     // Create properly formatted MCP response with detailed error information
     const normalizedMessage = normalizeToolMsg(errorMessage);
     const errorResponse = {
       content: [
         {
           type: 'text',
-          text: `Error executing tool '${toolName}': ${normalizedMessage}`,
+          text: normalizedMessage,
         },
       ],
       isError: true,
-      error: {
-        code: 500,
-        message: normalizedMessage,
-        type: 'tool_execution_error',
-        details: errorDetails,
-      },
     };
 
-    // Ensure the error response is safely serializable
     return sanitizeMcpResponse(errorResponse);
   }
 }
-
-// Placeholder functions that need to be implemented (missing from main branch)

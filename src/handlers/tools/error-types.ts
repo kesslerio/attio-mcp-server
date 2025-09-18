@@ -7,10 +7,10 @@
  */
 export interface ApiError extends Error {
   response?: {
-    data: any;
+    data: Record<string, unknown>;
     status: number;
   };
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -18,7 +18,7 @@ export interface ApiError extends Error {
  */
 export interface ValueMatchApiError extends Error {
   originalError?: ApiError;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -33,13 +33,15 @@ export function isApiError(error: unknown): error is ApiError {
  */
 export function hasResponseData(
   error: unknown
-): error is { response: { data: any } } {
+): error is { response: { data: Record<string, unknown> } } {
   return (
     error !== null &&
     typeof error === 'object' &&
     'response' in error &&
     error.response !== null &&
     typeof error.response === 'object' &&
-    'data' in error.response
+    'data' in error.response &&
+    typeof error.response.data === 'object' &&
+    error.response.data !== null
   );
 }
