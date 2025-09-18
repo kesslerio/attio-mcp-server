@@ -21,7 +21,7 @@ export function logTaskDebug(
     // Fallback to console if logger fails for any reason
     // Avoid throwing in debug paths
 
-    console.error(`[tasks.${scope}] ${message}`, details || {});
+    debug(`tasks.${scope}`, message, details || {}, scope, op);
   }
 }
 

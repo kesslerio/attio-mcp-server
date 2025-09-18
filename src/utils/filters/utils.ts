@@ -5,6 +5,7 @@
 
 import { DateRange, NumericRange, ATTRIBUTES } from './types.js';
 import { resolveDateRange } from '../date-utils.js';
+import { debug, OperationType } from '../logger.js';
 
 /**
  * Creates a filter for records based on their creation date
@@ -83,9 +84,13 @@ export function isInDateRange(dateStr: string, range: DateRange): boolean {
  * @param details - Additional details to log
  */
 export function debugFilterLog(operation: string, details: unknown): void {
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`[Filter ${operation}]`, details);
-  }
+  debug(
+    'utils/filters/utils',
+    `Filter operation: ${operation}`,
+    { operation, details },
+    'debugFilterLog',
+    OperationType.DATA_PROCESSING
+  );
 }
 
 /**

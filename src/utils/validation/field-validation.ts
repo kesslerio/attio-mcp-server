@@ -10,6 +10,7 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '../../handlers/tool-configs/universal/schemas.js';
+import { warn, OperationType } from '../logger.js';
 
 /**
  * Valid category names for attribute filtering
@@ -599,9 +600,12 @@ export function secureValidateFields(
 
   // Log warnings but don't fail
   if (validation.warnings.length > 0) {
-    console.warn(
-      `Field validation warnings for ${operation}:`,
-      validation.warnings
+    warn(
+      'utils/validation/field-validation',
+      `Field validation warnings for ${operation}`,
+      { operation, warnings: validation.warnings },
+      'validateFieldNames',
+      OperationType.VALIDATION
     );
   }
 
@@ -774,9 +778,12 @@ export function secureValidateCategories(
 
   // Log warnings but don't fail
   if (validation.warnings.length > 0) {
-    console.warn(
-      `Category validation warnings for ${operation}:`,
-      validation.warnings
+    warn(
+      'utils/validation/field-validation',
+      `Category validation warnings for ${operation}`,
+      { operation, warnings: validation.warnings },
+      'validateCategoryNames',
+      OperationType.VALIDATION
     );
   }
 

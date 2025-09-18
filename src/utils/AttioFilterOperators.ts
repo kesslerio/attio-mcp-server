@@ -5,6 +5,8 @@
  * Provides operator normalization, validation, and 429 backoff handling
  */
 
+import { warn, OperationType } from './logger.js';
+
 export enum FilterOperator {
   // Equality and existence
   EQUALS = '$eq',
@@ -65,8 +67,12 @@ export function normalizeOperator(op: string): FilterOperator {
   // Legacy mapping with warning
   const normalized = LEGACY_OPERATOR_MAP[op];
   if (normalized) {
-    console.warn(
-      `[AttioFilterOperators] Deprecated operator '${op}' used. Use '${normalized}' instead.`
+    warn(
+      'utils/AttioFilterOperators',
+      `Deprecated operator '${op}' used. Use '${normalized}' instead.`,
+      { deprecatedOperator: op, suggestedOperator: normalized },
+      'normalizeFilterOperator',
+      OperationType.VALIDATION
     );
     return normalized;
   }
@@ -170,15 +176,21 @@ export class AttioRateLimitSemaphore {
       return await fn();
     } catch (error: unknown) {
       // 429 backoff with jitter
-      if ((error as { status?: number })?.status === 429 && attempt <= 4) {
+      const maxRetries = 4;
+      if (
+        (error as { status?: number })?.status === 429 &&
+        attempt <= maxRetries
+      ) {
         const baseDelay = Math.pow(2, attempt - 1) * 250; // 250ms, 500ms, 1s, 2s
         const jitter = Math.random() * 100; // 0-100ms jitter
         const delay = baseDelay + jitter;
 
-        console.warn(
-          `[AttioRateLimitSemaphore] Rate limit hit, retrying in ${Math.round(
-            delay
-          )}ms (attempt ${attempt})`
+        warn(
+          'utils/AttioFilterOperators',
+          `Rate limit hit, retrying in ${Math.round(delay)}ms (attempt ${attempt})`,
+          { delayMs: Math.round(delay), attempt, maxRetries },
+          'AttioRateLimitSemaphore',
+          OperationType.API_CALL
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
 

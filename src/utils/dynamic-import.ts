@@ -13,6 +13,8 @@
  * 4. Supporting both CommonJS and ES module imports in the same codebase
  */
 
+import { error, OperationType } from './logger.js';
+
 /**
  * Dynamically imports a module in an environment-agnostic way
  *
@@ -33,11 +35,18 @@
 export async function dynamicImport(moduleName: string): Promise<unknown> {
   try {
     return await import(moduleName);
-  } catch (error: unknown) {
-    console.error(`Error importing module ${moduleName}:`, error);
+  } catch (importError: unknown) {
+    error(
+      'utils/dynamic-import',
+      `Error importing module ${moduleName}`,
+      importError,
+      { moduleName },
+      'dynamicImport',
+      OperationType.SYSTEM
+    );
     throw new Error(
       `Failed to import module "${moduleName}": ${
-        (error as Error)?.message || 'Unknown error'
+        (importError as Error)?.message || 'Unknown error'
       }`
     );
   }

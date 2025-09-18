@@ -11,6 +11,7 @@ import {
   ErrorType,
   HttpStatusCode,
 } from '../handlers/tool-configs/universal/schemas.js';
+import { warn, OperationType } from './logger.js';
 
 // Import discover attribute handlers
 import { discoverCompanyAttributes } from '../objects/companies/index.js';
@@ -139,7 +140,16 @@ export class SchemaPreValidator {
 
       return attributes;
     } catch (error: unknown) {
-      console.warn(`Failed to fetch attributes for ${resourceType}:`, error);
+      warn(
+        'utils/schema-pre-validation',
+        `Failed to fetch attributes for ${resourceType}`,
+        {
+          resourceType,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'fetchAttributes',
+        OperationType.API_CALL
+      );
       // Return default attributes on error
       return this.getDefaultAttributes();
     }
@@ -783,7 +793,13 @@ export class SchemaPreValidator {
 
     // Log warnings
     if (validation.warnings.length > 0) {
-      console.warn('Schema validation warnings:', validation.warnings);
+      warn(
+        'utils/schema-pre-validation',
+        'Schema validation warnings detected',
+        { warnings: validation.warnings },
+        'validateRecordData',
+        OperationType.VALIDATION
+      );
     }
 
     // Apply suggestions automatically
