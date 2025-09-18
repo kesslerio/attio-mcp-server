@@ -5,6 +5,13 @@ import { ResourceType } from '../../types/attio.js';
 import { ToolConfig } from '../tool-types.js';
 import { createScopedLogger } from '../../utils/logger.js';
 
+// Type for return values that can include special resource markers
+type ToolConfigResult = {
+  resourceType: ResourceType | 'UNIVERSAL' | 'GENERAL';
+  toolConfig: ToolConfig;
+  toolType: string;
+};
+
 // Import consolidated tool configurations from modular files
 import {
   companyToolConfigs,
@@ -101,13 +108,7 @@ export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY
  * @param toolName - The name of the tool
  * @returns Tool configuration or undefined if not found
  */
-export function findToolConfig(toolName: string):
-  | {
-      resourceType: ResourceType;
-      toolConfig: ToolConfig;
-      toolType: string;
-    }
-  | undefined {
+export function findToolConfig(toolName: string): ToolConfigResult | undefined {
   // Debug logging for tool lookup in development
   const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
 
@@ -158,9 +159,10 @@ export function findToolConfig(toolName: string):
             resourceConfig[toolTypeKey as keyof typeof resourceConfig];
           log.info('Found config for legacy mapping', {
             toolTypeKey,
-            name: (config as any).name,
-            hasHandler: typeof (config as any).handler === 'function',
-            hasFormatter: typeof (config as any).formatResult === 'function',
+            name: (config as ToolConfig).name,
+            hasHandler: typeof (config as ToolConfig).handler === 'function',
+            hasFormatter:
+              typeof (config as ToolConfig).formatResult === 'function',
           });
         } else {
           log.warn(`${toolTypeKey} not found in ${resourceType} configs`);
@@ -197,7 +199,7 @@ export function findToolConfig(toolName: string):
         }
 
         return {
-          resourceType: 'UNIVERSAL' as any, // Using 'UNIVERSAL' as a special marker
+          resourceType: 'UNIVERSAL' as const,
           toolConfig: config as ToolConfig,
           toolType,
         };
@@ -215,7 +217,7 @@ export function findToolConfig(toolName: string):
         }
 
         return {
-          resourceType: 'GENERAL' as any, // Using 'GENERAL' as a special marker
+          resourceType: 'GENERAL' as const,
           toolConfig: config as ToolConfig,
           toolType,
         };

@@ -2,7 +2,6 @@
  * Core dispatcher module - main tool execution dispatcher with modular operation handlers
  */
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { ResourceType } from '../../../types/attio.js';
 
 // Import utilities
 import {
@@ -15,6 +14,11 @@ import {
 
 // Import tool configurations
 import { findToolConfig } from '../registry.js';
+
+// Type for format result function that may accept additional parameters
+type FormatResultFunction =
+  | ((results: unknown) => string)
+  | ((results: unknown, resourceType?: unknown, infoType?: unknown) => string);
 import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
 import { computeErrorWithContext } from '../../../utils/error-detection.js';
@@ -132,12 +136,14 @@ export async function executeToolRequest(request: CallToolRequest) {
 
     let result;
 
-    // Handle search tools
-    if (toolType === 'search') {
+    // Skip resource-specific handlers for UNIVERSAL/GENERAL tools
+    if (resourceType === 'UNIVERSAL' || resourceType === 'GENERAL') {
+      // These are handled in their specific sections below
+    } else if (toolType === 'search') {
       result = await handleBasicSearch(
         request,
         toolConfig as SearchToolConfig,
-        resourceType
+        resourceType as ResourceType
       );
     } else if (toolType === 'searchByEmail') {
       result = await handleSearchByEmail(
@@ -328,7 +334,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       result = await handleGetOperation(request, toolConfig as ToolConfig);
 
       // Handle Universal tools (Issue #352 - Universal tool consolidation)
-    } else if (resourceType === ('UNIVERSAL' as any)) {
+    } else if (resourceType === 'UNIVERSAL') {
       // For universal tools, use the tool's own handler directly
       const args = request.params.arguments as Record<string, unknown>;
 
@@ -347,8 +353,14 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
 
       // If a tool already returned an MCP-shaped object, stop double-wrapping
-      const isMcpResponseLike = (v: any) => {
-        return v && typeof v === 'object' && 'content' in v && 'isError' in v;
+      const isMcpResponseLike = (v: unknown) => {
+        return (
+          v &&
+          typeof v === 'object' &&
+          v !== null &&
+          'content' in v &&
+          'isError' in v
+        );
       };
 
       if (isMcpResponseLike(rawResult)) {
@@ -401,7 +413,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       } else if (toolConfig.formatResult) {
         try {
           // Try with all possible parameters (result, resourceType, infoType)
-          formattedResult = (toolConfig.formatResult as any)(
+          formattedResult = (toolConfig.formatResult as FormatResultFunction)(
             rawResult,
             args?.resource_type,
             args?.info_type
@@ -423,7 +435,9 @@ export async function executeToolRequest(request: CallToolRequest) {
           }
         } catch {
           // Fallback to just result if signature mismatch
-          formattedResult = (toolConfig.formatResult as any)(rawResult);
+          formattedResult = (toolConfig.formatResult as FormatResultFunction)(
+            rawResult
+          );
 
           // Apply same array consistency check to fallback
           if (
@@ -457,8 +471,11 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // Build a normalized value for detection (pre-stringify)
       // Prefer a tool-specific normalizer if you have it; else use rawResult
+      const toolConfigExt = toolConfig as ToolConfig & {
+        normalizeForDetection?: (result: unknown) => unknown;
+      };
       const detectionTarget =
-        (toolConfig as any)?.normalizeForDetection?.(rawResult) ?? rawResult;
+        toolConfigExt.normalizeForDetection?.(rawResult) ?? rawResult;
 
       // Use explicit error detection instead of string matching
       const errorAnalysis = computeErrorWithContext(detectionTarget, {
@@ -496,24 +513,24 @@ export async function executeToolRequest(request: CallToolRequest) {
       };
 
       // Handle General tools (relationship helpers, etc.)
-    } else if (resourceType === ('GENERAL' as any)) {
+    } else if (resourceType === 'GENERAL') {
       // For general tools, use the tool's own handler directly
       const args = request.params.arguments as Record<string, unknown>;
-      let handlerArgs: any[] = [];
+      let handlerArgs: unknown[] = [];
 
       // Map arguments based on tool type
       if (
         toolType === 'linkPersonToCompany' ||
         toolType === 'unlinkPersonFromCompany'
       ) {
-        handlerArgs = [(args as any)?.personId, (args as any)?.companyId];
+        handlerArgs = [args?.personId, args?.companyId];
       } else if (toolType === 'getPersonCompanies') {
-        handlerArgs = [(args as any)?.personId];
+        handlerArgs = [args?.personId];
       } else if (toolType === 'getCompanyTeam') {
-        handlerArgs = [(args as any)?.companyId];
+        handlerArgs = [args?.companyId];
       } else {
         // For other general tools, pass arguments as is
-        handlerArgs = [args as any];
+        handlerArgs = [args];
       }
 
       const rawResult = await (toolConfig as ToolConfig).handler(
@@ -563,7 +580,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       stack: error instanceof Error ? error.stack : undefined,
       additionalInfo:
         error && typeof error === 'object' && 'details' in error
-          ? (error as any).details
+          ? (error as { details: unknown }).details
           : undefined,
     };
 
