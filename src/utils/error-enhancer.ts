@@ -8,6 +8,7 @@ import {
 } from './value-matcher.js';
 import axios from 'axios';
 import { createScopedLogger } from './logger.js';
+import type { UnknownObject } from './types/common.js';
 
 // Known valid values for select fields - this should ideally come from Attio API
 const KNOWN_FIELD_VALUES: Record<string, string[]> = {
@@ -51,7 +52,7 @@ interface ErrorContext {
 /**
  * Parse API error to extract context
  */
-function parseApiError(error: Record<string, unknown>): ErrorContext {
+function parseApiError(error: UnknownObject): ErrorContext {
   // Use imported createScopedLogger
   const log = createScopedLogger('utils.error-enhancer', 'parseApiError');
   log.debug('ENTERING parseApiError');
@@ -162,7 +163,7 @@ function parseApiError(error: Record<string, unknown>): ErrorContext {
 /**
  * Enhance an API error with value suggestions if applicable
  */
-export function enhanceApiError(error: Record<string, unknown>): Error {
+export function enhanceApiError(error: UnknownObject): Error {
   // Use imported createScopedLogger
   const log = createScopedLogger('utils.error-enhancer', 'enhanceApiError');
   log.debug('Called with error', {
@@ -170,8 +171,8 @@ export function enhanceApiError(error: Record<string, unknown>): Error {
     isAxiosError: !!error?.isAxiosError,
   });
   log.debug('Attempting to enhance error', {
-    message: (error as any)?.message,
-    responseData: (error as any)?.response?.data,
+    message: (error as UnknownObject)?.message,
+    responseData: ((error as UnknownObject)?.response as UnknownObject)?.data,
   });
 
   const mismatchCheck = isValueMismatchError(error);
@@ -196,7 +197,7 @@ export function enhanceApiError(error: Record<string, unknown>): Error {
       );
       log.debug(
         'Match result from findBestValueMatch',
-        matchResult as unknown as Record<string, unknown>
+        matchResult as unknown as UnknownObject
       );
 
       log.debug('Returning NEW ValueMatchError');
@@ -220,7 +221,7 @@ export function enhanceApiError(error: Record<string, unknown>): Error {
 /**
  * Check if an error is a value mismatch that we can enhance
  */
-export function isValueMismatchError(error: Record<string, unknown>): {
+export function isValueMismatchError(error: UnknownObject): {
   isMismatch: boolean;
   fieldSlug?: string;
   searchValue?: string;
@@ -229,7 +230,7 @@ export function isValueMismatchError(error: Record<string, unknown>): {
   const context = parseApiError(error);
   createScopedLogger('utils.error-enhancer', 'isValueMismatchError').debug(
     'Context from parseApiError',
-    context as unknown as Record<string, unknown>
+    context as unknown as UnknownObject
   );
   if (
     context.fieldSlug &&

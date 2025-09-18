@@ -19,6 +19,7 @@ import {
   EmailValidationMode,
   DEFAULT_EMAIL_VALIDATION_CONFIG,
 } from './email-validation-config.js';
+import type { UnknownObject } from '../types/common.js';
 
 /**
  * People name input formats
@@ -119,7 +120,7 @@ export class PeopleDataNormalizer {
 
     // Handle object input
     if (typeof input === 'object' && !Array.isArray(input)) {
-      const inputObj = input as Record<string, unknown>;
+      const inputObj = input as UnknownObject;
       const result: {
         first_name?: string;
         last_name?: string;
@@ -195,7 +196,7 @@ export class PeopleDataNormalizer {
       return emailField;
     }
     if (typeof emailField === 'object' && emailField && 'value' in emailField) {
-      const value = (emailField as Record<string, unknown>).value;
+      const value = (emailField as UnknownObject).value;
       if (typeof value === 'string') {
         return value;
       }
@@ -362,7 +363,7 @@ export class PeopleDataNormalizer {
     }
     // Handle object input
     else if (typeof input === 'object') {
-      const inputObj = input as Record<string, unknown>;
+      const inputObj = input as UnknownObject;
       // Check for email_address field
       if (inputObj.email_address) {
         const emailValue = this.extractEmailValue(inputObj.email_address);
@@ -479,7 +480,7 @@ export class PeopleDataNormalizer {
     }
     // Handle object input
     else if (typeof input === 'object') {
-      const inputObj = input as Record<string, unknown>;
+      const inputObj = input as UnknownObject;
       // Check various phone field names
       const phoneFields = [
         'phone_number',
