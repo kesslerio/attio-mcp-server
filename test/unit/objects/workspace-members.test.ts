@@ -76,6 +76,7 @@ describe('Workspace Members Objects Layer', () => {
     });
 
     it('should return filtered results for search query', async () => {
+      // Note: Searching for 'example.com' as email domain filter (not URL validation)
       const result = await searchWorkspaceMembers('example.com');
 
       expect(result).toBeDefined();

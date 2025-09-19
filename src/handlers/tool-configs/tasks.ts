@@ -29,6 +29,12 @@ export const tasksToolConfigs = {
     name: 'create-task',
     handler: createTask,
     formatResult: (task: AttioTask) => {
+      const taskContent =
+        task.content_plaintext || task.content || 'Untitled task';
+      const taskTitle =
+        taskContent.length > 50
+          ? `${taskContent.substring(0, 47)}...`
+          : taskContent;
       const assigneeInfo =
         task.assignees && task.assignees.length > 0
           ? ` with ${task.assignees.length} assignee(s)`
@@ -37,18 +43,24 @@ export const tasksToolConfigs = {
         task.linked_records && task.linked_records.length > 0
           ? ` and ${task.linked_records.length} linked record(s)`
           : '';
-      return `Created task with ID ${task.id.task_id}${assigneeInfo}${linkedInfo}`;
+      return `Created task '${taskTitle}' (${task.id.task_id})${assigneeInfo}${linkedInfo}`;
     },
   } as ToolConfig,
   updateTask: {
     name: 'update-task',
     handler: updateTask,
     formatResult: (task: AttioTask) => {
+      const taskContent =
+        task.content_plaintext || task.content || 'Untitled task';
+      const taskTitle =
+        taskContent.length > 50
+          ? `${taskContent.substring(0, 47)}...`
+          : taskContent;
       const assigneeInfo =
         task.assignees && task.assignees.length > 0
           ? ` (${task.assignees.length} assignee(s))`
           : '';
-      return `Updated task ${task.id.task_id}${assigneeInfo}`;
+      return `Updated task '${taskTitle}' (${task.id.task_id})${assigneeInfo}`;
     },
   } as ToolConfig,
   deleteTask: {

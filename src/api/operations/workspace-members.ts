@@ -9,7 +9,12 @@ import { callWithRetry, RetryConfig } from './retry.js';
 import { debug, OperationType } from '../../utils/logger.js';
 
 /**
- * List all workspace members with optional search and pagination
+ * List workspace members with pagination and search
+ * @param search - Optional search query for filtering members by name, email, or role
+ * @param page - Page number (default: 1)
+ * @param pageSize - Results per page (default: 25, max: 100)
+ * @param retryConfig - Optional retry configuration for failed requests
+ * @returns Array of workspace members matching the search criteria
  */
 export async function listWorkspaceMembers(
   search?: string,
@@ -51,6 +56,9 @@ export async function listWorkspaceMembers(
 
 /**
  * Search workspace members by name, email, or role
+ * @param query - Search query string to match against member names, emails, or roles
+ * @param retryConfig - Optional retry configuration for failed requests
+ * @returns Array of workspace members matching the search query
  */
 export async function searchWorkspaceMembers(
   query: string,
@@ -88,6 +96,10 @@ export async function searchWorkspaceMembers(
 
 /**
  * Get a specific workspace member by ID
+ * @param memberId - Unique identifier of the workspace member
+ * @param retryConfig - Optional retry configuration for failed requests
+ * @returns The workspace member data
+ * @throws Error if the workspace member is not found
  */
 export async function getWorkspaceMember(
   memberId: string,
@@ -108,7 +120,9 @@ export async function getWorkspaceMember(
     const res = await api.get<{ data: AttioWorkspaceMember }>(path);
 
     if (!res?.data?.data) {
-      throw new Error(`Workspace member not found: ${memberId}`);
+      throw new Error(
+        `Workspace member '${memberId}' not found in current workspace`
+      );
     }
 
     return res.data.data;
