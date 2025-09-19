@@ -6,6 +6,15 @@ import {
 } from '../../../src/objects/workspace-members.js';
 import { WorkspaceMemberMockFactory } from '../../utils/mock-factories/WorkspaceMemberMockFactory.js';
 
+// Helper function for checking example.com email domain
+function isExampleDotComEmail(email?: string) {
+  if (!email) return false;
+  const atIndex = email.lastIndexOf('@');
+  if (atIndex === -1) return false;
+  const domain = email.slice(atIndex + 1).toLowerCase();
+  return domain === 'example.com';
+}
+
 // Mock the shouldUseMockData function to always return true for unit tests
 vi.mock('../../../src/services/create/index.js', () => ({
   shouldUseMockData: () => true,
@@ -74,7 +83,7 @@ describe('Workspace Members Objects Layer', () => {
 
       // Should contain members with matching email domain
       const hasMatchingEmail = result.some((member) =>
-        member.email_address?.includes('example.com')
+        isExampleDotComEmail(member.email_address)
       );
       expect(hasMatchingEmail).toBe(true);
     });
