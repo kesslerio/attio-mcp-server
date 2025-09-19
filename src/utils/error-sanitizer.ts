@@ -228,10 +228,10 @@ export function sanitizeErrorMessage(
     stackTrace = error.stack;
   } else if (typeof error === 'string') {
     originalMessage = error;
-  } else if (error?.message) {
-    originalMessage = String(error.message);
-    errorName = error.name || 'Error';
-    stackTrace = error.stack;
+  } else if (error && typeof error === 'object' && 'message' in error) {
+    originalMessage = String((error as any).message);
+    errorName = String((error as any).name || 'Error');
+    stackTrace = String((error as any).stack || '');
   } else {
     originalMessage = String(error);
   }
@@ -405,14 +405,12 @@ export function withErrorSanitization<
     try {
       return await fn(...args);
     } catch (error: unknown) {
-      const sanitized = createSanitizedError(error, undefined, options);
+      const sanitized = createSanitizedError(error as any, undefined, options);
       const sanitizedError = new Error(sanitized.message);
       sanitizedError.name = 'SanitizedError';
-      (sanitizedError as Record<string, unknown>).statusCode =
-        sanitized.statusCode;
-      (sanitizedError as Record<string, unknown>).type = sanitized.type;
-      (sanitizedError as Record<string, unknown>).safeMetadata =
-        sanitized.safeMetadata;
+      (sanitizedError as any).statusCode = sanitized.statusCode;
+      (sanitizedError as any).type = sanitized.type;
+      (sanitizedError as any).safeMetadata = sanitized.safeMetadata;
       throw sanitizedError;
     }
   }) as T;

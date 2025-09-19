@@ -293,7 +293,7 @@ export function createSecureErrorResponse(
 
   // Otherwise, sanitize the error
   const sanitized = createSanitizedError(
-    error,
+    error as any,
     resolveStatusCode(error, undefined),
     {
       module: context?.module || 'unknown',

@@ -81,7 +81,7 @@ export class AttioApiError extends Error {
  * @param responseData - Response data from API
  * @returns Appropriate error instance
  */
-export function createAttioError(error: Record<string, unknown>): Error {
+export function createAttioError(error: any): Error {
   // If it's already an AttioApiError, return it
   if (error instanceof AttioApiError) {
     return error;
@@ -96,7 +96,7 @@ export function createAttioError(error: Record<string, unknown>): Error {
   }
 
   // Return the original error if we can't enhance it
-  return error;
+  return error instanceof Error ? error : new Error(String(error));
 }
 
 /**
@@ -115,12 +115,12 @@ export function createApiError(
   responseData: Record<string, unknown> = {}
 ): Error {
   const defaultMessage =
-    responseData?.error?.message ||
-    responseData?.message ||
+    (responseData?.error as any)?.message ||
+    (responseData as any)?.message ||
     'Unknown API error';
   const detail =
-    responseData?.error?.detail ||
-    responseData?.detail ||
+    (responseData?.error as any)?.detail ||
+    (responseData as any)?.detail ||
     'No additional details';
 
   let errorType = ErrorType.API_ERROR;
@@ -130,7 +130,7 @@ export function createApiError(
   switch (status) {
     case 400: {
       // Detect common parameter and format errors in the 400 response
-      const errorDetails = responseData?.error?.details;
+      const errorDetails = (responseData?.error as any)?.details;
       const detailsString =
         typeof errorDetails === 'string'
           ? errorDetails
@@ -261,11 +261,11 @@ export function formatErrorResponse(
   // Enhance error message with examples if details contain context
   if (details && (details.toolName || details.paramName || details.path)) {
     errorMessage = enhanceErrorMessage(errorMessage, type, {
-      toolName: details.toolName,
-      paramName: details.paramName,
-      expectedType: details.expectedType,
-      actualValue: details.actualValue,
-      path: details.path || details.url,
+      toolName: String(details.toolName || ''),
+      paramName: String(details.paramName || ''),
+      expectedType: String(details.expectedType || ''),
+      actualValue: String(details.actualValue || ''),
+      path: String(details.path || details.url || ''),
     });
   }
 

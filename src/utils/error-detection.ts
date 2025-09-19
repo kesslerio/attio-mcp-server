@@ -47,9 +47,8 @@ export function computeErrorWithContext(
 
   // 1) Always surface explicit API errors first
   if (
-    (result as Record<string, unknown>)?.error ||
-    (Array.isArray((result as Record<string, unknown>)?.errors) &&
-      (result as Record<string, unknown>).errors.length)
+    (result as any)?.error ||
+    (Array.isArray((result as any)?.errors) && (result as any).errors.length)
   ) {
     return { isError: true, reason: 'meaningful_error_object' };
   }

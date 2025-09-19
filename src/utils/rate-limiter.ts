@@ -113,10 +113,11 @@ export class RateLimiter {
 
     // Track by IP if configured
     if (this.config.trackByIp) {
+      const reqAny = req as any;
       const ip =
-        req.ip ||
-        req.connection?.remoteAddress ||
-        req.headers?.['x-forwarded-for'] ||
+        reqAny.ip ||
+        reqAny.connection?.remoteAddress ||
+        reqAny.headers?.['x-forwarded-for'] ||
         'unknown';
       return `ip:${ip}`;
     }
@@ -163,11 +164,7 @@ export function rateLimiterMiddleware(config: RateLimiterConfig) {
   // Schedule cleanup every windowMs to prevent memory leaks
   setInterval(() => limiter.cleanup(), config.windowMs);
 
-  return (
-    req: Record<string, unknown>,
-    res: Record<string, unknown>,
-    next: () => void
-  ) => {
+  return (req: any, res: any, next: () => void) => {
     const result = limiter.check(req);
 
     // Add rate limit headers

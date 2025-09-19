@@ -57,9 +57,7 @@ export function validateFilterStructure(filter: ListEntryFilter): boolean {
  * @returns Validated and normalized date range
  * @throws FilterValidationError if validation fails
  */
-export function validateDateRange(
-  dateRange: Record<string, unknown>
-): DateRange {
+export function validateDateRange(dateRange: any): DateRange {
   if (!dateRange) {
     throw new FilterValidationError('Date range is required');
   }
@@ -124,29 +122,20 @@ export function validateDateRange(
       !Array.isArray(dateRange.start)
     ) {
       // It's a relative date object, validate basic structure
-      if (
-        !dateRange.start.unit ||
-        !dateRange.start.value ||
-        !dateRange.start.direction
-      ) {
+      const startObj = dateRange.start as any;
+      if (!startObj.unit || !startObj.value || !startObj.direction) {
         throw new FilterValidationError(
           'Relative start date must have unit, value, and direction properties'
         );
       }
 
       // Validate value is a number
-      if (
-        typeof dateRange.start.value !== 'number' ||
-        isNaN(dateRange.start.value)
-      ) {
+      if (typeof startObj.value !== 'number' || isNaN(startObj.value)) {
         throw new FilterValidationError('Relative date value must be a number');
       }
 
       // Validate direction
-      if (
-        dateRange.start.direction !== 'past' &&
-        dateRange.start.direction !== 'future'
-      ) {
+      if (startObj.direction !== 'past' && startObj.direction !== 'future') {
         throw new FilterValidationError(
           'Relative date direction must be either "past" or "future"'
         );
@@ -172,29 +161,20 @@ export function validateDateRange(
       !Array.isArray(dateRange.end)
     ) {
       // It's a relative date object, validate basic structure
-      if (
-        !dateRange.end.unit ||
-        !dateRange.end.value ||
-        !dateRange.end.direction
-      ) {
+      const endObj = dateRange.end as any;
+      if (!endObj.unit || !endObj.value || !endObj.direction) {
         throw new FilterValidationError(
           'Relative end date must have unit, value, and direction properties'
         );
       }
 
       // Validate value is a number
-      if (
-        typeof dateRange.end.value !== 'number' ||
-        isNaN(dateRange.end.value)
-      ) {
+      if (typeof endObj.value !== 'number' || isNaN(endObj.value)) {
         throw new FilterValidationError('Relative date value must be a number');
       }
 
       // Validate direction
-      if (
-        dateRange.end.direction !== 'past' &&
-        dateRange.end.direction !== 'future'
-      ) {
+      if (endObj.direction !== 'past' && endObj.direction !== 'future') {
         throw new FilterValidationError(
           'Relative date direction must be either "past" or "future"'
         );
@@ -216,9 +196,7 @@ export function validateDateRange(
  * @returns Validated and normalized activity filter
  * @throws FilterValidationError if validation fails
  */
-export function validateActivityFilter(
-  activityFilter: Record<string, unknown>
-): ActivityFilter {
+export function validateActivityFilter(activityFilter: any): ActivityFilter {
   if (!activityFilter) {
     throw new FilterValidationError('Activity filter is required');
   }
@@ -286,9 +264,7 @@ export function validateActivityFilter(
  * @returns Validated and normalized numeric range
  * @throws FilterValidationError if validation fails
  */
-export function validateNumericRange(
-  range: Record<string, unknown>
-): NumericRange {
+export function validateNumericRange(range: any): NumericRange {
   if (!range) {
     throw new FilterValidationError('Numeric range is required');
   }
@@ -337,21 +313,21 @@ export function validateNumericRange(
   // Check types and convert to number if needed
   if (range.min !== undefined) {
     range.min = Number(range.min);
-    if (isNaN(range.min)) {
+    if (isNaN(range.min as number)) {
       throw new FilterValidationError('Min value must be a valid number');
     }
   }
 
   if (range.max !== undefined) {
     range.max = Number(range.max);
-    if (isNaN(range.max)) {
+    if (isNaN(range.max as number)) {
       throw new FilterValidationError('Max value must be a valid number');
     }
   }
 
   if (range.equals !== undefined) {
     range.equals = Number(range.equals);
-    if (isNaN(range.equals)) {
+    if (isNaN(range.equals as number)) {
       throw new FilterValidationError('Equals value must be a valid number');
     }
   }
@@ -360,7 +336,7 @@ export function validateNumericRange(
   if (
     range.min !== undefined &&
     range.max !== undefined &&
-    range.min > range.max
+    (range.min as number) > (range.max as number)
   ) {
     throw new FilterValidationError(
       `Invalid numeric range: min (${range.min}) cannot be greater than max (${range.max})`
