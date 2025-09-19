@@ -141,6 +141,7 @@ export abstract class BaseCreator implements ResourceCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
     const recoveryOptions = this.getRecoveryOptions();

@@ -219,6 +219,7 @@ export function normalizePersonValues(
  */
 export function convertTaskToAttioRecord(
   createdTask: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _originalInput: Record<string, unknown>
 ): AttioRecord {
   // Handle conversion from AttioTask to AttioRecord format

@@ -57,7 +57,9 @@ export function validateFilterStructure(filter: ListEntryFilter): boolean {
  * @returns Validated and normalized date range
  * @throws FilterValidationError if validation fails
  */
-export function validateDateRange(dateRange: any): DateRange {
+export function validateDateRange(
+  dateRange: Record<string, unknown>
+): DateRange {
   if (!dateRange) {
     throw new FilterValidationError('Date range is required');
   }
@@ -214,7 +216,9 @@ export function validateDateRange(dateRange: any): DateRange {
  * @returns Validated and normalized activity filter
  * @throws FilterValidationError if validation fails
  */
-export function validateActivityFilter(activityFilter: any): ActivityFilter {
+export function validateActivityFilter(
+  activityFilter: Record<string, unknown>
+): ActivityFilter {
   if (!activityFilter) {
     throw new FilterValidationError('Activity filter is required');
   }
@@ -282,7 +286,9 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
  * @returns Validated and normalized numeric range
  * @throws FilterValidationError if validation fails
  */
-export function validateNumericRange(range: any): NumericRange {
+export function validateNumericRange(
+  range: Record<string, unknown>
+): NumericRange {
   if (!range) {
     throw new FilterValidationError('Numeric range is required');
   }
@@ -400,7 +406,7 @@ export function validateFilterCondition(
  * @throws FilterValidationError if validation fails
  */
 export function validateNumericParam(
-  value: any,
+  value: unknown,
   paramName: string,
   defaultValue?: number
 ): number {

@@ -43,7 +43,7 @@ export function createFilterWithSpecialHandling(
         {
           attribute: { slug: attributeSlug },
           condition: operator as FilterConditionType,
-          value: value as any, // TODO: Update FilterValue type to accept unknown
+          value: value as Record<string, unknown>, // TODO: Update FilterValue type to accept unknown
         },
       ],
       matchAny: false,
@@ -62,7 +62,7 @@ export function createFilterWithSpecialHandling(
       {
         attribute: { slug: attributeSlug },
         condition: mappedOperator as FilterConditionType,
-        value: processedValue as any, // TODO: Update FilterValue type to accept unknown
+        value: processedValue as Record<string, unknown>, // TODO: Update FilterValue type to accept unknown
       },
     ],
     matchAny: false,

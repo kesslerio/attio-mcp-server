@@ -8,7 +8,7 @@
  * Safely unwrap Attio API response envelope
  * Handles both Axios responses and direct API responses
  */
-export function unwrapAttio<T>(res: any): T {
+export function unwrapAttio<T>(res: Record<string, unknown>): T {
   const envelope = res?.data ?? res;
   // If the envelope clearly looks like an error, just return it as-is and let the caller detect it
   if (envelope?.error && !envelope?.data) return envelope as T;
@@ -19,7 +19,7 @@ export function unwrapAttio<T>(res: any): T {
  * Normalize Attio note to consistent structure
  * Provides compatibility with record-style tests via record_id alias
  */
-export function normalizeNote(note: any) {
+export function normalizeNote(note: Record<string, unknown>) {
   // Ensure we always have a base object to work with
   const source = note || {};
   const idObj = source.id || {};
@@ -58,7 +58,9 @@ export function normalizeNote(note: any) {
 /**
  * Normalize array of notes
  */
-export function normalizeNotes(notes: any[]): any[] {
+export function normalizeNotes(
+  notes: Record<string, unknown>[]
+): Record<string, unknown>[] {
   if (!Array.isArray(notes)) return [];
   return notes.map(normalizeNote).filter(Boolean);
 }

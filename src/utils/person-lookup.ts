@@ -58,7 +58,10 @@ export async function findPersonReference(
 
     if (people.length > 1) {
       const names = people
-        .map((p: any) => p.values.name?.[0]?.value || 'Unknown Name')
+        .map(
+          (p: Record<string, unknown>) =>
+            p.values.name?.[0]?.value || 'Unknown Name'
+        )
         .join(', ');
       throw new CompanyOperationError(
         operationContext,

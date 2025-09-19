@@ -105,15 +105,17 @@ export class NoteCreator extends BaseCreator {
 
       context.debug(this.constructor.name, 'Creating note with data', noteData);
 
-      const response = await (this.noteModule as any)?.createNote(noteData);
+      const response = await (
+        this.noteModule as Record<string, unknown>
+      )?.createNote(noteData);
 
       // Unwrap varying API envelopes and normalize to stable shape
-      const attioNote = (this.responseUtilsModule as any)?.unwrapAttio(
-        response
-      );
-      const normalizedNote = (this.responseUtilsModule as any)?.normalizeNote(
-        attioNote
-      );
+      const attioNote = (
+        this.responseUtilsModule as Record<string, unknown>
+      )?.unwrapAttio(response);
+      const normalizedNote = (
+        this.responseUtilsModule as Record<string, unknown>
+      )?.normalizeNote(attioNote);
 
       context.debug(this.constructor.name, 'Note creation response', {
         hasResponse: !!response,

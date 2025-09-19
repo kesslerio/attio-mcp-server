@@ -206,7 +206,7 @@ export interface SanitizationOptions {
  * @returns Sanitized error message safe for external exposure
  */
 export function sanitizeErrorMessage(
-  error: Error | string | any,
+  error: Error | string | Record<string, unknown>,
   options: SanitizationOptions = {}
 ): string {
   const {
@@ -336,7 +336,7 @@ export interface SanitizedError {
  * @returns Sanitized error object
  */
 export function createSanitizedError(
-  error: Error | string | any,
+  error: Error | string | Record<string, unknown>,
   statusCode?: number,
   options: SanitizationOptions = {}
 ): SanitizedError {
@@ -397,7 +397,9 @@ function inferStatusCode(errorType: string): number {
  * @returns Wrapped function that sanitizes errors
  */
 export function withErrorSanitization<
-  T extends (...args: any[]) => Promise<any>,
+  T extends (
+    ...args: Record<string, unknown>[]
+  ) => Promise<Record<string, unknown>>,
 >(fn: T, options: SanitizationOptions = {}): T {
   return (async (...args: Parameters<T>) => {
     try {
@@ -406,9 +408,11 @@ export function withErrorSanitization<
       const sanitized = createSanitizedError(error, undefined, options);
       const sanitizedError = new Error(sanitized.message);
       sanitizedError.name = 'SanitizedError';
-      (sanitizedError as any).statusCode = sanitized.statusCode;
-      (sanitizedError as any).type = sanitized.type;
-      (sanitizedError as any).safeMetadata = sanitized.safeMetadata;
+      (sanitizedError as Record<string, unknown>).statusCode =
+        sanitized.statusCode;
+      (sanitizedError as Record<string, unknown>).type = sanitized.type;
+      (sanitizedError as Record<string, unknown>).safeMetadata =
+        sanitized.safeMetadata;
       throw sanitizedError;
     }
   }) as T;
@@ -435,7 +439,9 @@ export function containsSensitiveInfo(message: string): boolean {
  * @param error - The error to summarize
  * @returns Safe summary string
  */
-export function getErrorSummary(error: Error | string | any): string {
+export function getErrorSummary(
+  error: Error | string | Record<string, unknown>
+): string {
   const errorType = classifyError(
     error instanceof Error ? error.message : String(error)
   );
