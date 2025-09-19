@@ -507,14 +507,37 @@ export const updateRecordConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
-    const name =
-      (record.values?.name &&
-        Array.isArray(record.values.name) &&
-        (record.values.name as { value: string }[])[0]?.value) ||
-      (record.values?.title &&
-        Array.isArray(record.values.title) &&
-        (record.values.title as { value: string }[])[0]?.value) ||
-      'Unnamed';
+
+    let name = 'Unnamed';
+
+    // Handle different resource types with proper name extraction
+    if (resourceType === UniversalResourceType.PEOPLE && record.values) {
+      // For people, use comprehensive name extraction logic
+      const valuesAny = record.values as Record<string, unknown>;
+      name =
+        (valuesAny?.name as { full_name?: string }[] | undefined)?.[0]
+          ?.full_name ||
+        (valuesAny?.name as { value?: string }[] | undefined)?.[0]?.value ||
+        (valuesAny?.name as { formatted?: string }[] | undefined)?.[0]
+          ?.formatted ||
+        (valuesAny?.full_name as { value?: string }[] | undefined)?.[0]
+          ?.value ||
+        'Unnamed';
+    } else if (record.values) {
+      // For other types, use the existing logic
+      name =
+        (record.values?.name &&
+          Array.isArray(record.values.name) &&
+          (record.values.name as { value: string }[])[0]?.value) ||
+        (record.values?.title &&
+          Array.isArray(record.values.title) &&
+          (record.values.title as { value: string }[])[0]?.value) ||
+        (record.values?.content && typeof record.values.content === 'string'
+          ? record.values.content
+          : undefined) ||
+        'Unnamed';
+    }
+
     const id = String(record.id?.record_id || 'unknown');
 
     return `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
