@@ -10,9 +10,13 @@ import { FieldMapping } from '../types.js';
  */
 export const DEALS_FIELD_MAPPING: FieldMapping = {
   fieldMappings: {
+    // Display names from discover-attributes (Issue #687)
+    'deal name': 'name',
+    'deal stage': 'stage',
+    'deal value': 'value',
+    'associated company': 'associated_company',
     // Value variations
     amount: 'value',
-    deal_value: 'value',
     deal_amount: 'value',
     price: 'value',
     revenue: 'value',
@@ -60,6 +64,14 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     'associated_people',
   ],
   commonMistakes: {
+    'deal name':
+      'Display name from discover-attributes. Maps to API field "name"',
+    'deal stage':
+      'Display name from discover-attributes. Maps to API field "stage"',
+    'deal value':
+      'Display name from discover-attributes. Maps to API field "value"',
+    'associated company':
+      'Display name from discover-attributes. Maps to API field "associated_company"',
     company_id: 'Use "associated_company" to link deals to companies',
     company: 'Use "associated_company" with the company record ID',
     primary_company: 'Use "associated_company" instead of "primary_company"',
