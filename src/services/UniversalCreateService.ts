@@ -327,9 +327,14 @@ export class UniversalCreateService {
     }
 
     // Map field names to correct ones with collision detection
+    const inputFields = (record_data.values || record_data) as Record<
+      string,
+      unknown
+    >;
+
     const mappingResult = await mapRecordFields(
       resource_type,
-      (record_data.values || record_data) as Record<string, unknown>,
+      inputFields,
       availableAttributes
     );
     if (mappingResult.errors && mappingResult.errors.length > 0) {
