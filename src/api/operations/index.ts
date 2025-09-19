@@ -58,6 +58,13 @@ export {
   unlinkRecordFromTask,
 } from './tasks.js';
 
+// Re-export workspace members operations
+export {
+  listWorkspaceMembers,
+  searchWorkspaceMembers,
+  getWorkspaceMember,
+} from './workspace-members.js';
+
 // Re-export all batch operations
 export {
   batchCreateRecords,

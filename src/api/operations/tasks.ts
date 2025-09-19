@@ -173,9 +173,14 @@ export async function createTask(
   content: string,
   options: {
     assigneeId?: string;
+    assignees?: string[];
     dueDate?: string;
     recordId?: string;
     targetObject?: 'companies' | 'people' | 'records';
+    linked_records?: Array<{
+      target_object: 'companies' | 'people' | 'deals';
+      target_record_id: string;
+    }>;
   } = {},
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
@@ -183,7 +188,10 @@ export async function createTask(
   const path = '/tasks';
 
   // Validate linking parameters: both recordId and targetObject required, or neither
-  validateLinkingParameters(options.recordId, options.targetObject);
+  // Skip validation if using the new linked_records format
+  if (!options.linked_records || options.linked_records.length === 0) {
+    validateLinkingParameters(options.recordId, options.targetObject);
+  }
 
   // Build task data according to TaskCreateData interface
   const taskData: TaskCreateData = {
@@ -215,28 +223,38 @@ export async function createTask(
 
   // Build the full request payload with all required fields for the API
   // Assignees: Attio v2 expects referenced actor references
-  const assignees = options.assigneeId
-    ? [
-        {
-          referenced_actor_type: 'workspace-member',
-          referenced_actor_id: options.assigneeId,
-        },
-      ]
-    : [];
+  // Merge assigneeId and assignees arrays, with assignees taking precedence
+  const allAssigneeIds = [...(options.assignees || [])];
+  if (options.assigneeId && !allAssigneeIds.includes(options.assigneeId)) {
+    allAssigneeIds.push(options.assigneeId);
+  }
+
+  const assignees = allAssigneeIds.map((id) => ({
+    referenced_actor_type: 'workspace-member',
+    referenced_actor_id: id,
+  }));
 
   // Always include linked_records as an array (Attio API requires the field)
   // If omitted, Attio returns 400 with validation error:
   // validation_errors: path ["data","linked_records"], expected "array", received "undefined"
   // When linking, use target_object and target_record_id format
-  const linkedRecords =
-    options.recordId && options.targetObject
-      ? [
-          {
-            target_object: options.targetObject,
-            target_record_id: options.recordId,
-          },
-        ]
-      : [];
+  let linkedRecords: Array<{
+    target_object: string;
+    target_record_id: string;
+  }> = [];
+
+  if (options.linked_records && options.linked_records.length) {
+    // Use the new typed linked_records format
+    linkedRecords = options.linked_records;
+  } else if (options.recordId && options.targetObject) {
+    // Backward compatibility: single record linking
+    linkedRecords = [
+      {
+        target_object: options.targetObject,
+        target_record_id: options.recordId,
+      },
+    ];
+  }
 
   // Build the request payload conditionally including deadline_at only when present
   const dataPayload: Record<string, unknown> = {
@@ -336,8 +354,13 @@ export async function updateTask(
     content?: string; // Keep for backward compatibility, but will be ignored
     status?: string;
     assigneeId?: string;
+    assignees?: string[];
     dueDate?: string;
     recordIds?: string[];
+    linked_records?: Array<{
+      target_object: 'companies' | 'people' | 'deals';
+      target_record_id: string;
+    }>;
   },
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
@@ -350,13 +373,17 @@ export async function updateTask(
     data.is_completed = updates.status === 'completed';
   }
   // Assignees: API expects an array in the request envelope
-  if (updates.assigneeId) {
-    (data as Record<string, unknown>).assignees = [
-      {
-        referenced_actor_type: 'workspace-member',
-        referenced_actor_id: updates.assigneeId,
-      },
-    ];
+  // Merge assigneeId and assignees arrays, with assignees taking precedence
+  if (updates.assignees || updates.assigneeId) {
+    const allAssigneeIds = [...(updates.assignees || [])];
+    if (updates.assigneeId && !allAssigneeIds.includes(updates.assigneeId)) {
+      allAssigneeIds.push(updates.assigneeId);
+    }
+
+    (data as Record<string, unknown>).assignees = allAssigneeIds.map((id) => ({
+      referenced_actor_type: 'workspace-member',
+      referenced_actor_id: id,
+    }));
   }
   if (updates.dueDate) {
     const formattedDate = formatDateForAttio(updates.dueDate);
@@ -376,10 +403,14 @@ export async function updateTask(
   }
 
   // Include linked_records in PATCH request (per Attio API docs)
-  if (updates.recordIds && updates.recordIds.length) {
+  if (updates.linked_records && updates.linked_records.length) {
+    // Use the new typed linked_records format
+    (data as Record<string, unknown>).linked_records = updates.linked_records;
+  } else if (updates.recordIds && updates.recordIds.length) {
+    // Backward compatibility: map recordIds to linked_records with default companies type
     (data as Record<string, unknown>).linked_records = updates.recordIds.map(
       (recordId) => ({
-        target_object: 'companies', // Default to companies - this should be improved to detect object type
+        target_object: 'companies', // Default to companies for backward compatibility
         target_record_id: recordId,
       })
     );
