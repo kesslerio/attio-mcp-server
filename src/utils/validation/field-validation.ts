@@ -169,6 +169,17 @@ const RESOURCE_SPECIFIC_FIELDS: Record<ResourceType, string[]> = {
     'stage',
     'probability',
   ],
+
+  [ResourceType.WORKSPACE_MEMBERS]: [
+    ...COMMON_SAFE_FIELDS,
+    'first_name',
+    'last_name',
+    'email_address',
+    'access_level',
+    'avatar_url',
+    'workspace_member_id',
+    'workspace_id',
+  ],
 };
 
 /**

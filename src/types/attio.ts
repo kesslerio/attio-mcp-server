@@ -319,7 +319,19 @@ export interface AttioTask {
     [key: string]: unknown;
   };
   content: string;
+  content_plaintext?: string;
   status: string;
+  is_completed?: boolean;
+  deadline_at?: string | null;
+  assignees: Array<{
+    referenced_actor_type: 'workspace-member';
+    referenced_actor_id: string;
+    name?: string;
+    email?: string;
+    avatar_url?: string;
+    [key: string]: unknown;
+  }>;
+  // Deprecated: Use assignees array instead
   assignee?: {
     id: string;
     type: string;
@@ -330,12 +342,32 @@ export interface AttioTask {
   };
   due_date?: string;
   linked_records?: Array<{
-    id: string;
+    id?: string;
+    target_object?: string;
+    target_record_id?: string;
     object_id?: string;
     object_slug?: string;
     title?: string;
     [key: string]: unknown;
   }>;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Workspace Member record type
+ */
+export interface AttioWorkspaceMember {
+  id: {
+    workspace_member_id: string;
+    [key: string]: unknown;
+  };
+  first_name?: string;
+  last_name?: string;
+  email_address?: string;
+  avatar_url?: string;
+  access_level?: 'admin' | 'editor' | 'viewer' | 'guest';
   created_at: string;
   updated_at: string;
   [key: string]: unknown;
@@ -351,6 +383,7 @@ export enum ResourceType {
   LISTS = 'lists',
   RECORDS = 'records',
   TASKS = 'tasks',
+  WORKSPACE_MEMBERS = 'workspace_members',
 }
 
 /**

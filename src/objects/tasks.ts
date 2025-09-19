@@ -33,7 +33,17 @@ export async function getTask(taskId: string): Promise<AttioTask> {
 
 export async function createTask(
   content: string,
-  options: { assigneeId?: string; dueDate?: string; recordId?: string } = {}
+  options: {
+    assigneeId?: string;
+    assignees?: string[];
+    dueDate?: string;
+    recordId?: string;
+    targetObject?: 'companies' | 'people' | 'records';
+    linked_records?: Array<{
+      target_object: 'companies' | 'people' | 'deals';
+      target_record_id: string;
+    }>;
+  } = {}
 ): Promise<AttioTask> {
   // Check if we should use mock data for testing
   if (shouldUseMockData()) {
@@ -68,14 +78,17 @@ export async function createTask(
       is_completed: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      assignees: options.assigneeId
-        ? [
-            {
-              referenced_actor_type: 'workspace-member' as const,
-              referenced_actor_id: options.assigneeId,
-            },
-          ]
-        : [],
+      assignees: (() => {
+        // Merge assigneeId and assignees arrays, with assignees taking precedence
+        const allAssignees = [...(options.assignees || [])];
+        if (options.assigneeId && !allAssignees.includes(options.assigneeId)) {
+          allAssignees.push(options.assigneeId);
+        }
+        return allAssignees.map((id) => ({
+          referenced_actor_type: 'workspace-member' as const,
+          referenced_actor_id: id,
+        }));
+      })(),
       linked_records: options.recordId
         ? [
             {
@@ -88,7 +101,13 @@ export async function createTask(
     } as unknown as AttioTask;
   }
 
-  return apiCreate(content, options);
+  return apiCreate(content, {
+    ...options,
+    // Convert assignees array to single assigneeId for backward compatibility with API
+    assigneeId: options.assignees?.length
+      ? options.assignees[0]
+      : options.assigneeId,
+  });
 }
 
 export async function updateTask(
@@ -97,8 +116,13 @@ export async function updateTask(
     content?: string;
     status?: string;
     assigneeId?: string;
+    assignees?: string[];
     dueDate?: string;
     recordIds?: string[];
+    linked_records?: Array<{
+      target_object: 'companies' | 'people' | 'deals';
+      target_record_id: string;
+    }>;
   }
 ): Promise<AttioTask> {
   // Check if we should use mock data for testing
@@ -128,14 +152,17 @@ export async function updateTask(
       status: updates.status || 'open',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      assignees: updates.assigneeId
-        ? [
-            {
-              referenced_actor_type: 'workspace-member' as const,
-              referenced_actor_id: updates.assigneeId,
-            },
-          ]
-        : [],
+      assignees: (() => {
+        // Merge assigneeId and assignees arrays, with assignees taking precedence
+        const allAssignees = [...(updates.assignees || [])];
+        if (updates.assigneeId && !allAssignees.includes(updates.assigneeId)) {
+          allAssignees.push(updates.assigneeId);
+        }
+        return allAssignees.map((id) => ({
+          referenced_actor_type: 'workspace-member' as const,
+          referenced_actor_id: id,
+        }));
+      })(),
       linked_records: updates.recordIds
         ? updates.recordIds.map((recordId) => ({
             id: recordId,

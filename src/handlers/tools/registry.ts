@@ -41,6 +41,10 @@ import {
   generalToolConfigs,
   generalToolDefinitions,
 } from '../tool-configs/general/index.js';
+import {
+  workspaceMembersToolConfigs,
+  workspaceMembersToolDefinitions,
+} from '../tool-configs/workspace-members.js';
 
 // Import universal tool configurations for consolidated operations
 import {
@@ -67,6 +71,8 @@ export const TOOL_CONFIGS = USE_UNIVERSAL_TOOLS_ONLY
       UNIVERSAL: universalToolConfigs,
       // Lists are relationship containers - always expose them (Issue #470)
       [ResourceType.LISTS]: listsToolConfigs,
+      // Workspace members for user discovery (Issue #684)
+      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolConfigs,
     }
   : {
       // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
@@ -76,6 +82,7 @@ export const TOOL_CONFIGS = USE_UNIVERSAL_TOOLS_ONLY
       [ResourceType.LISTS]: listsToolConfigs,
       [ResourceType.TASKS]: tasksToolConfigs,
       [ResourceType.RECORDS]: recordToolConfigs,
+      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolConfigs,
       GENERAL: generalToolConfigs,
       // Add other resource types as needed
     };
@@ -89,6 +96,8 @@ export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY
       UNIVERSAL: universalToolDefinitions,
       // Lists are relationship containers - always expose them (Issue #470)
       [ResourceType.LISTS]: listsToolDefinitions,
+      // Workspace members for user discovery (Issue #684)
+      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolDefinitions,
     }
   : {
       // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
@@ -98,6 +107,7 @@ export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY
       [ResourceType.LISTS]: listsToolDefinitions,
       [ResourceType.TASKS]: tasksToolDefinitions,
       [ResourceType.RECORDS]: recordToolDefinitions,
+      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolDefinitions,
       GENERAL: generalToolDefinitions,
       // Add other resource types as needed
     };
