@@ -838,8 +838,45 @@ export class UniversalMetadataService {
           return this.discoverAttributesForResourceType(resource_type, options);
         }
 
-      case UniversalResourceType.DEALS:
-        return this.discoverAttributesForResourceType(resource_type, options);
+      case UniversalResourceType.DEALS: {
+        // Get standard attributes first
+        const baseResult = await this.discoverAttributesForResourceType(
+          resource_type,
+          options
+        );
+
+        // Add mappings for display names to API field names (Issue #687)
+        const { FIELD_MAPPINGS } = await import(
+          '../handlers/tool-configs/universal/field-mapper.js'
+        );
+        const dealsMapping = FIELD_MAPPINGS[UniversalResourceType.DEALS];
+
+        if (dealsMapping && dealsMapping.fieldMappings) {
+          // Create mappings object from display names to API field names
+          const mappings: Record<string, string> = {};
+          Object.entries(dealsMapping.fieldMappings).forEach(
+            ([displayName, apiField]) => {
+              if (apiField && apiField !== null) {
+                mappings[displayName] = apiField;
+              }
+            }
+          );
+
+          // Add helpful mappings for the common display names
+          mappings['Deal name'] = 'name';
+          mappings['Deal stage'] = 'stage';
+          mappings['Deal value'] = 'value';
+          mappings['Associated company'] = 'associated_company';
+
+          return {
+            ...baseResult,
+            mappings,
+            note: 'Use mappings to convert display names to API field names for create-record',
+          };
+        }
+
+        return baseResult;
+      }
 
       case UniversalResourceType.TASKS:
         return this.discoverAttributesForResourceType(resource_type, options);

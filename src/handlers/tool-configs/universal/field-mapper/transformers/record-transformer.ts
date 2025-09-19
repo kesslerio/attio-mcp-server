@@ -73,9 +73,22 @@ export async function mapRecordFields(
       if (mistake) {
         warnings.push(`Field "${key}" mapped to "${mappedKey}": ${mistake}`);
       } else {
-        warnings.push(
-          `Field "${key}" was automatically mapped to "${mappedKey}"`
-        );
+        // Check if this is a display name for deals (Issue #687)
+        const isDisplayName =
+          resourceType === UniversalResourceType.DEALS &&
+          (key.includes(' ') ||
+            key.toLowerCase().includes('deal') ||
+            key.toLowerCase().includes('associated'));
+
+        if (isDisplayName) {
+          warnings.push(
+            `💡 Display name "${key}" mapped to API field "${mappedKey}". Tip: Use discover-attributes to see all display name mappings.`
+          );
+        } else {
+          warnings.push(
+            `Field "${key}" was automatically mapped to "${mappedKey}"`
+          );
+        }
       }
     }
 

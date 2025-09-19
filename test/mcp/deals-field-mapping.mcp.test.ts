@@ -10,6 +10,23 @@ import { MCPTestClient } from 'mcp-test-client';
 
 describe('Deals Field Mapping Fix - Issue #687', () => {
   let client: MCPTestClient;
+  const createdDealIds: string[] = [];
+
+  // Helper function to extract and track deal ID from successful creation
+  const trackDealId = (createResult: any): void => {
+    try {
+      if (!createResult.isError && createResult.content?.[0]?.text) {
+        const text = createResult.content[0].text;
+        const idMatch = text.match(/ID:\s*([a-f0-9-]+)/i);
+        if (idMatch && idMatch[1]) {
+          createdDealIds.push(idMatch[1]);
+          console.log(`📝 Tracking deal ID for cleanup: ${idMatch[1]}`);
+        }
+      }
+    } catch (error) {
+      // Silent fail - cleanup is nice-to-have, not critical
+    }
+  };
 
   beforeAll(async () => {
     client = new MCPTestClient({
@@ -20,6 +37,18 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
   });
 
   afterAll(async () => {
+    // Clean up created test deals
+    for (const dealId of createdDealIds) {
+      try {
+        await client.callTool('delete-record', {
+          resource_type: 'deals',
+          record_id: dealId,
+        });
+      } catch (error) {
+        console.log(`Failed to cleanup deal ${dealId}:`, error);
+      }
+    }
+
     if (client) {
       await client.cleanup();
     }
@@ -42,7 +71,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
     expect(discoverText).toContain('Associated company');
 
     // Extract JSON from the response if possible
-    let discoverData: any = null;
+    let discoverData: Record<string, unknown> | null = null;
     try {
       // The response might be wrapped or have extra text
       const jsonMatch = discoverText.match(/\{[\s\S]*\}/);
@@ -94,6 +123,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
     } else {
       // If creation succeeded, verify the result structure
       expect(createResult.content).toBeDefined();
+      trackDealId(createResult);
       console.log('✅ Deal created successfully using display names!');
     }
   });
@@ -111,6 +141,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
     // Whether it succeeds or fails, we expect the tool to run without crashing
     expect(createResult.content).toBeDefined();
+    trackDealId(createResult);
     console.log('✅ Tool executed without crashing when using display names');
   });
 
@@ -132,6 +163,8 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       const errorText = createResult.content?.[0]?.text || '';
       expect(errorText).not.toMatch(/collision|conflict/i);
       expect(errorText).not.toMatch(/Multiple fields map to/i);
+    } else {
+      trackDealId(createResult);
     }
   });
 
@@ -153,6 +186,8 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       // Should not fail due to field mapping of Associated company
       expect(errorText).not.toMatch(/Associated company.*unknown/i);
       expect(errorText).not.toMatch(/Associated company.*invalid/i);
+    } else {
+      trackDealId(createResult);
     }
   });
 });
