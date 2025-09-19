@@ -5,6 +5,18 @@
 import { AttioRecord } from '../types/attio.js';
 
 /**
+ * Interface for API response with cursor-based pagination
+ */
+interface CursorPaginationApiResponse {
+  pagination?: {
+    total_count?: number;
+    next_cursor?: string;
+  };
+  has_more?: boolean;
+  next_cursor?: string;
+}
+
+/**
  * Standard pagination metadata interface
  */
 export interface PaginationMetadata {
@@ -190,11 +202,12 @@ export function processCursorPagination<T extends AttioRecord>(
   baseUrl?: string
 ): PaginatedResponse<T> {
   // Extract pagination metadata from the API response
+  const paginationResponse = apiResponse as CursorPaginationApiResponse;
   const totalCount =
-    (apiResponse as any).pagination?.total_count || records.length;
+    paginationResponse.pagination?.total_count || records.length;
   const hasMore =
-    (apiResponse as any).has_more ||
-    (apiResponse as any).pagination?.next_cursor !== undefined;
+    paginationResponse.has_more ||
+    paginationResponse.pagination?.next_cursor !== undefined;
 
   // Calculate total pages based on total count and page size
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -213,8 +226,8 @@ export function processCursorPagination<T extends AttioRecord>(
     // Create next page URL if there's a next cursor
     if (hasMore) {
       const nextCursor =
-        (apiResponse as any).next_cursor ||
-        (apiResponse as any).pagination?.next_cursor;
+        paginationResponse.next_cursor ||
+        paginationResponse.pagination?.next_cursor;
       if (nextCursor) {
         pagination.nextPageUrl = `${baseUrl}?cursor=${encodeURIComponent(
           nextCursor

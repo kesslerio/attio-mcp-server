@@ -44,6 +44,24 @@ const SENSITIVE_PATTERNS: Record<SensitiveInfoType, RegExp> = {
 };
 
 /**
+ * Interface for error-like objects that have message, name, and stack properties
+ */
+interface ErrorLike {
+  message?: unknown;
+  name?: unknown;
+  stack?: unknown;
+}
+
+/**
+ * Interface for Error objects with additional sanitized properties
+ */
+interface SanitizedErrorObject extends Error {
+  statusCode?: number;
+  type?: string;
+  safeMetadata?: Record<string, unknown>;
+}
+
+/**
  * User-friendly error messages mapped by error type
  */
 const USER_FRIENDLY_MESSAGES: Record<string, string> = {
@@ -229,9 +247,10 @@ export function sanitizeErrorMessage(
   } else if (typeof error === 'string') {
     originalMessage = error;
   } else if (error && typeof error === 'object' && 'message' in error) {
-    originalMessage = String((error as any).message);
-    errorName = String((error as any).name || 'Error');
-    stackTrace = String((error as any).stack || '');
+    const errorLike = error as ErrorLike;
+    originalMessage = String(errorLike.message);
+    errorName = String(errorLike.name || 'Error');
+    stackTrace = String(errorLike.stack || '');
   } else {
     originalMessage = String(error);
   }
@@ -405,12 +424,18 @@ export function withErrorSanitization<
     try {
       return await fn(...args);
     } catch (error: unknown) {
-      const sanitized = createSanitizedError(error as any, undefined, options);
-      const sanitizedError = new Error(sanitized.message);
+      const sanitized = createSanitizedError(
+        error as Error | string | Record<string, unknown>,
+        undefined,
+        options
+      );
+      const sanitizedError = new Error(
+        sanitized.message
+      ) as SanitizedErrorObject;
       sanitizedError.name = 'SanitizedError';
-      (sanitizedError as any).statusCode = sanitized.statusCode;
-      (sanitizedError as any).type = sanitized.type;
-      (sanitizedError as any).safeMetadata = sanitized.safeMetadata;
+      sanitizedError.statusCode = sanitized.statusCode;
+      sanitizedError.type = sanitized.type;
+      sanitizedError.safeMetadata = sanitized.safeMetadata;
       throw sanitizedError;
     }
   }) as T;

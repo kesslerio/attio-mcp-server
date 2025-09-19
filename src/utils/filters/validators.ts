@@ -57,7 +57,9 @@ export function validateFilterStructure(filter: ListEntryFilter): boolean {
  * @returns Validated and normalized date range
  * @throws FilterValidationError if validation fails
  */
-export function validateDateRange(dateRange: any): DateRange {
+export function validateDateRange(
+  dateRange: Record<string, unknown> | string | null | undefined
+): DateRange {
   if (!dateRange) {
     throw new FilterValidationError('Date range is required');
   }
@@ -122,7 +124,7 @@ export function validateDateRange(dateRange: any): DateRange {
       !Array.isArray(dateRange.start)
     ) {
       // It's a relative date object, validate basic structure
-      const startObj = dateRange.start as any;
+      const startObj = dateRange.start as Record<string, unknown>;
       if (!startObj.unit || !startObj.value || !startObj.direction) {
         throw new FilterValidationError(
           'Relative start date must have unit, value, and direction properties'
@@ -161,7 +163,7 @@ export function validateDateRange(dateRange: any): DateRange {
       !Array.isArray(dateRange.end)
     ) {
       // It's a relative date object, validate basic structure
-      const endObj = dateRange.end as any;
+      const endObj = dateRange.end as Record<string, unknown>;
       if (!endObj.unit || !endObj.value || !endObj.direction) {
         throw new FilterValidationError(
           'Relative end date must have unit, value, and direction properties'
@@ -196,7 +198,9 @@ export function validateDateRange(dateRange: any): DateRange {
  * @returns Validated and normalized activity filter
  * @throws FilterValidationError if validation fails
  */
-export function validateActivityFilter(activityFilter: any): ActivityFilter {
+export function validateActivityFilter(
+  activityFilter: Record<string, unknown> | string | null | undefined
+): ActivityFilter {
   if (!activityFilter) {
     throw new FilterValidationError('Activity filter is required');
   }
@@ -264,7 +268,9 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
  * @returns Validated and normalized numeric range
  * @throws FilterValidationError if validation fails
  */
-export function validateNumericRange(range: any): NumericRange {
+export function validateNumericRange(
+  range: Record<string, unknown> | string | null | undefined
+): NumericRange {
   if (!range) {
     throw new FilterValidationError('Numeric range is required');
   }

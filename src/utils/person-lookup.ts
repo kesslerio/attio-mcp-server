@@ -19,6 +19,18 @@ export interface RecordReference {
 }
 
 /**
+ * Interface for person object from Attio API
+ */
+interface PersonObject {
+  id?: {
+    record_id?: string;
+  };
+  values?: {
+    name?: string;
+  };
+}
+
+/**
  * Finds a person by name or validates a Person Record ID
  *
  * This utility function helps with looking up people for record references.
@@ -58,7 +70,7 @@ export async function findPersonReference(
 
     if (people.length > 1) {
       const names = people
-        .map((p: any) => p.values?.name?.[0]?.value || 'Unknown Name')
+        .map((p: PersonObject) => p.values?.name || 'Unknown Name')
         .join(', ');
       throw new CompanyOperationError(
         operationContext,

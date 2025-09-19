@@ -21,6 +21,39 @@ export interface RateLimiterConfig {
 }
 
 /**
+ * Interface for request objects with IP tracking capabilities
+ */
+interface RequestWithIpInfo {
+  ip?: string;
+  connection?: {
+    remoteAddress?: string;
+  };
+  headers?: {
+    'x-forwarded-for'?: string;
+  };
+}
+
+/**
+ * Interface for Express-like request object
+ */
+interface ExpressRequest extends Record<string, unknown> {
+  ip?: string;
+  connection?: {
+    remoteAddress?: string;
+  };
+  headers?: Record<string, string>;
+}
+
+/**
+ * Interface for Express-like response object
+ */
+interface ExpressResponse {
+  setHeader: (name: string, value: string | number) => void;
+  status: (code: number) => ExpressResponse;
+  json: (data: Record<string, unknown>) => void;
+}
+
+/**
  * Rate limiter implementation
  */
 export class RateLimiter {
@@ -113,11 +146,11 @@ export class RateLimiter {
 
     // Track by IP if configured
     if (this.config.trackByIp) {
-      const reqAny = req as any;
+      const reqWithIp = req as RequestWithIpInfo;
       const ip =
-        reqAny.ip ||
-        reqAny.connection?.remoteAddress ||
-        reqAny.headers?.['x-forwarded-for'] ||
+        reqWithIp.ip ||
+        reqWithIp.connection?.remoteAddress ||
+        reqWithIp.headers?.['x-forwarded-for'] ||
         'unknown';
       return `ip:${ip}`;
     }
@@ -164,7 +197,7 @@ export function rateLimiterMiddleware(config: RateLimiterConfig) {
   // Schedule cleanup every windowMs to prevent memory leaks
   setInterval(() => limiter.cleanup(), config.windowMs);
 
-  return (req: any, res: any, next: () => void) => {
+  return (req: ExpressRequest, res: ExpressResponse, next: () => void) => {
     const result = limiter.check(req);
 
     // Add rate limit headers

@@ -130,7 +130,7 @@ export const mapAxiosToStructuredError = (
   error: AxiosErrorLike
 ): StructuredHttpError => {
   const mapped = ErrorService.fromAxios(error);
-  const httpStatus = (error as any)?.response?.status ?? 400;
+  const httpStatus = (error as AxiosLikeError)?.response?.status ?? 400;
 
   return {
     status: httpStatus,

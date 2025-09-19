@@ -24,6 +24,19 @@ export enum ErrorType {
 }
 
 /**
+ * Interface for API error response structure
+ */
+interface ApiErrorResponse {
+  error?: {
+    message?: unknown;
+    detail?: unknown;
+    details?: unknown;
+  };
+  message?: unknown;
+  detail?: unknown;
+}
+
+/**
  * Interface for error details with improved type safety
  */
 export interface ErrorDetails {
@@ -81,7 +94,9 @@ export class AttioApiError extends Error {
  * @param responseData - Response data from API
  * @returns Appropriate error instance
  */
-export function createAttioError(error: any): Error {
+export function createAttioError(
+  error: Error | Record<string, unknown>
+): Error {
   // If it's already an AttioApiError, return it
   if (error instanceof AttioApiError) {
     return error;
@@ -114,13 +129,12 @@ export function createApiError(
   method: string,
   responseData: Record<string, unknown> = {}
 ): Error {
+  const apiResponse = responseData as ApiErrorResponse;
   const defaultMessage =
-    (responseData?.error as any)?.message ||
-    (responseData as any)?.message ||
-    'Unknown API error';
+    apiResponse?.error?.message || apiResponse?.message || 'Unknown API error';
   const detail =
-    (responseData?.error as any)?.detail ||
-    (responseData as any)?.detail ||
+    apiResponse?.error?.detail ||
+    apiResponse?.detail ||
     'No additional details';
 
   let errorType = ErrorType.API_ERROR;
@@ -130,7 +144,8 @@ export function createApiError(
   switch (status) {
     case 400: {
       // Detect common parameter and format errors in the 400 response
-      const errorDetails = (responseData?.error as any)?.details;
+      const apiResponse = responseData as ApiErrorResponse;
+      const errorDetails = apiResponse?.error?.details;
       const detailsString =
         typeof errorDetails === 'string'
           ? errorDetails

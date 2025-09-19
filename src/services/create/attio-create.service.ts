@@ -17,6 +17,36 @@
  * See src/services/create/creators/README.md for full documentation.
  */
 
+/**
+ * Interfaces for lazy-loaded modules
+ */
+interface TaskModule {
+  updateTask: (
+    taskId: string,
+    input: {
+      content: string;
+      status: string;
+      assigneeId: string;
+      dueDate: string;
+      recordIds: string[];
+    }
+  ) => Promise<Record<string, unknown>>;
+}
+
+interface ConverterModule {
+  convertTaskToAttioRecord: (
+    task: Record<string, unknown>,
+    input: Record<string, unknown>
+  ) => Record<string, unknown>;
+}
+
+interface NoteModule {
+  listNotes: (query: {
+    parent_object?: string;
+    parent_record_id?: string;
+  }) => Promise<{ data?: Record<string, unknown>[] }>;
+}
+
 import type { CreateService } from './types.js';
 import type { AttioRecord } from '../../types/attio.js';
 import type {
@@ -52,9 +82,9 @@ export class AttioCreateService implements CreateService {
   private readonly context: ResourceCreatorContext;
 
   // Lazy-loaded dependencies for non-strategy methods
-  private taskModule: Record<string, unknown> | null = null;
-  private converterModule: Record<string, unknown> | null = null;
-  private noteModule: Record<string, unknown> | null = null;
+  private taskModule: TaskModule | null = null;
+  private converterModule: ConverterModule | null = null;
+  private noteModule: NoteModule | null = null;
 
   // Supported resource types for validation
   static readonly SUPPORTED_RESOURCE_TYPES = {
@@ -97,13 +127,15 @@ export class AttioCreateService implements CreateService {
    */
   private async ensureDependencies(): Promise<void> {
     if (!this.taskModule) {
-      this.taskModule = await import('../../objects/tasks.js');
+      this.taskModule = (await import('../../objects/tasks.js')) as TaskModule;
     }
     if (!this.converterModule) {
-      this.converterModule = await import('./data-normalizers.js');
+      this.converterModule = (await import(
+        './data-normalizers.js'
+      )) as ConverterModule;
     }
     if (!this.noteModule) {
-      this.noteModule = await import('../../objects/notes.js');
+      this.noteModule = (await import('../../objects/notes.js')) as NoteModule;
     }
   }
 
@@ -147,7 +179,7 @@ export class AttioCreateService implements CreateService {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
 
-    const updatedTask = await (this.taskModule as any)?.updateTask(taskId, {
+    const updatedTask = await this.taskModule?.updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
       assigneeId: input.assigneeId as string,
@@ -156,10 +188,7 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return (this.converterModule as any)?.convertTaskToAttioRecord(
-      updatedTask,
-      input
-    );
+    return this.converterModule?.convertTaskToAttioRecord(updatedTask, input);
   }
 
   /**
@@ -195,7 +224,7 @@ export class AttioCreateService implements CreateService {
       parent_record_id: params.record_id,
     };
 
-    const response = await (this.noteModule as any)?.listNotes(query);
+    const response = await this.noteModule?.listNotes(query);
     return response.data || [];
   }
 

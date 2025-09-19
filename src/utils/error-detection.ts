@@ -6,6 +6,14 @@
  * are actually valid success states.
  */
 
+/**
+ * Interface for API response that may contain error information
+ */
+interface ApiResponse {
+  error?: unknown;
+  errors?: unknown[];
+}
+
 export interface ErrorAnalysis {
   isError: boolean;
   reason?:
@@ -46,9 +54,10 @@ export function computeErrorWithContext(
     Object.keys(result as Record<string, unknown>).length === 0;
 
   // 1) Always surface explicit API errors first
+  const apiResponse = result as ApiResponse;
   if (
-    (result as any)?.error ||
-    (Array.isArray((result as any)?.errors) && (result as any).errors.length)
+    apiResponse?.error ||
+    (Array.isArray(apiResponse?.errors) && apiResponse.errors.length)
   ) {
     return { isError: true, reason: 'meaningful_error_object' };
   }
