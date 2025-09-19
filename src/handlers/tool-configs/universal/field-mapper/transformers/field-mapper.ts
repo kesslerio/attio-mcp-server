@@ -24,34 +24,29 @@ export async function mapFieldName(
   // Check if there's a direct mapping first
   const mappedField = mapping.fieldMappings[fieldName.toLowerCase()] || null;
 
-  // If we have a mapping, use it regardless of what's in availableAttributes
-  // This fixes Issue #687 where display names in availableAttributes prevented mapping
-  if (mappedField !== null && mappedField !== fieldName.toLowerCase()) {
-    return mappedField;
-  }
-
-  // Only check availableAttributes if there's no explicit mapping
-  // This prevents mapping when the field is actually a valid API field
-  if (
-    availableAttributes &&
-    mapping.validFields.includes(fieldName.toLowerCase())
-  ) {
-    // Field is in valid fields list, don't map it
-    return fieldName;
-  }
-
   // If mapped to null, it means the field doesn't exist
   if (mappedField === null) {
     return fieldName; // Return original, will trigger proper error
   }
 
-  // If there's a mapping, verify the target exists (if we have attributes, compare lowercase)
+  // Only skip mapping if the original field is a valid API field (not just a display name)
+  // This fixes Issue #687 where display names in availableAttributes prevented mapping
+  if (
+    availableAttributes &&
+    mapping.validFields.includes(fieldName.toLowerCase()) &&
+    attrHas(availableAttributes, fieldName)
+  ) {
+    // Field is in valid fields list AND exists in schema, don't map it
+    return fieldName;
+  }
+
+  // If there's a mapping, verify the target exists in the schema
   if (
     mappedField &&
     availableAttributes &&
     !attrHas(availableAttributes, mappedField)
   ) {
-    // Mapped field doesn't exist, return original
+    // Mapped field doesn't exist in schema, return original
     return fieldName;
   }
 

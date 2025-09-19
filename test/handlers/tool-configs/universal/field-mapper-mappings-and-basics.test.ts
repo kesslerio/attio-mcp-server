@@ -104,13 +104,16 @@ describe('field-mapper – mappings and basics', () => {
       expect(result).toBe('domains');
     });
 
-    it('respects available attributes (keeps original if present)', async () => {
+    it('maps fields even when display names are in available attributes (fixes #687)', async () => {
+      // This tests the fix for Issue #687:
+      // Even if 'website' appears in availableAttributes (as a display name),
+      // it should still be mapped to 'domains' because 'website' is not a valid API field
       const result = await mapFieldName(
         UniversalResourceType.COMPANIES,
         'website',
         ['website', 'domains']
       );
-      expect(result).toBe('website');
+      expect(result).toBe('domains');
     });
 
     it('maps when original not present in attributes', async () => {
@@ -120,6 +123,17 @@ describe('field-mapper – mappings and basics', () => {
         ['domains']
       );
       expect(result).toBe('domains');
+    });
+
+    it('respects valid API fields (does not map valid fields)', async () => {
+      // This tests that valid API fields are not mapped
+      // 'name' is a valid field for companies, so it should not be mapped
+      const result = await mapFieldName(
+        UniversalResourceType.COMPANIES,
+        'name',
+        ['name', 'company_name']
+      );
+      expect(result).toBe('name');
     });
 
     it('handles case-insensitive mapping', async () => {
