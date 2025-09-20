@@ -7,7 +7,6 @@ import {
   ListToolsRequestSchema,
   CallToolRequest,
   CallToolResult,
-  ListToolsResult,
 } from '@modelcontextprotocol/sdk/types.js';
 import { warn } from '../../utils/logger.js';
 import { ServerContext } from '../../server/createServer.js';

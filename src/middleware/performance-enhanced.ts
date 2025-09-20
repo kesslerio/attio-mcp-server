@@ -199,7 +199,15 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Mark API call start
    */
-  markApiStart(_operationId: string): number {
+  markApiStart(operationId: string): number {
+    if (this.enabled && operationId) {
+      const context = this.timingContext.get(operationId);
+      if (context) {
+        // Touch the context to keep TypeScript happy without altering behaviour
+        context.timings.attioApi += 0;
+      }
+    }
+
     return performance.now();
   }
 

@@ -48,7 +48,7 @@ if (!isMain) {
           }
         }
       }
-    } catch (error) {
+    } catch {
       // Silent failure to avoid stdout contamination
       // Environment variables will need to be set manually if .env loading fails
     }

@@ -18,20 +18,16 @@ import { debug, error as logError } from '../utils/logger.js';
 import {
   createNotFoundError,
   type DataPayload,
-  type AttributeObject,
   isAttributeObject,
 } from '../types/universal-service-types.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
-import { UniversalUtilityService } from './UniversalUtilityService.js';
-import { getCreateService, shouldUseMockData } from './create/index.js';
 
 // Import field mapping utilities
 import {
   mapRecordFields,
   validateResourceType,
-  getFieldSuggestions,
   validateFields,
   getValidResourceTypes,
   mapTaskFields,
@@ -43,29 +39,6 @@ import { validateRecordFields } from '../utils/validation-utils.js';
 // Note: Deal defaults configuration removed as unused in update service
 
 // Note: Removed unused resource-specific function imports as service now uses strategy pattern
-
-/**
- * Task update with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
- */
-async function updateTaskWithMockSupport(
-  taskId: string,
-  updateData: Record<string, unknown>
-): Promise<AttioRecord> {
-  // Prefer mock path whenever mock/offline data is enabled to allow Vitest spies
-  // to intercept MockService.updateTask even if E2E_MODE is set in tests.
-  if (
-    shouldUseMockData() ||
-    process.env.VITEST === 'true' ||
-    process.env.NODE_ENV === 'test'
-  ) {
-    const { MockService } = await import('./MockService.js');
-    return await MockService.updateTask(taskId, updateData);
-  }
-  // Otherwise, defer to the real/factory-backed service
-  const service = getCreateService();
-  return await service.updateTask(taskId, updateData);
-}
 
 /**
  * UniversalUpdateService provides centralized record update functionality

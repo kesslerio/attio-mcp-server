@@ -13,7 +13,6 @@ import {
   RecordCreateParams,
   RecordUpdateParams,
   RecordListParams,
-  RecordAttributes,
 } from '../../types/attio.js';
 import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
@@ -225,11 +224,14 @@ export async function createRecord<T extends AttioRecord>(
       });
     }
 
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.post(path, {
-      data: {
-        values: params.attributes,
-      },
-    });
+    const response: AxiosResponse<AttioSingleResponse<T>> = await api.post(
+      path,
+      {
+        data: {
+          values: params.attributes,
+        },
+      }
+    );
 
     // Debug log the full response
     if (
@@ -308,10 +310,11 @@ export async function createRecord<T extends AttioRecord>(
         }
         try {
           // Use the documented query endpoint with exact name match
-          const queryResponse: AxiosResponse<AttioListResponse<T>> = await api.post(path + '/query', {
-            filter: { name },
-            limit: 1,
-          });
+          const queryResponse: AxiosResponse<AttioListResponse<T>> =
+            await api.post(path + '/query', {
+              filter: { name },
+              limit: 1,
+            });
 
           const found = queryResponse?.data?.data?.[0];
           if (found) {
@@ -416,7 +419,10 @@ export async function updateRecord<T extends AttioRecord>(
       },
     };
 
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.patch(path, payload);
+    const response: AxiosResponse<AttioSingleResponse<T>> = await api.patch(
+      path,
+      payload
+    );
 
     // Debug log the full response
     if (

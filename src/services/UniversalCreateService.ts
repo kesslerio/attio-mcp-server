@@ -20,7 +20,6 @@ import { ValidationService } from './ValidationService.js';
 import {
   mapRecordFields,
   validateResourceType,
-  getFieldSuggestions,
   validateFields,
   getValidResourceTypes,
   FIELD_MAPPINGS,
