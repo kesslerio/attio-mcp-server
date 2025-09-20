@@ -46,6 +46,7 @@ function formatRecordAsResource(record: AttioRecord, type: ResourceType) {
         Array.isArray(nameField) &&
         nameField.length > 0 &&
         nameField[0] &&
+        // Type assertion needed: nameField array elements may have value property not in base type
         typeof (nameField[0] as any).value !== 'undefined'
       ) {
         const v = (nameField[0] as { value: unknown }).value;

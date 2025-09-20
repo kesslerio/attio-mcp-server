@@ -66,6 +66,7 @@ export function logToolRequest(
     // Log full request structure in debug mode
     ...(debugMode && {
       rawRequest: {
+        // Type assertion needed: MCP request objects may have additional method/jsonrpc/id properties not in base type
         method: (request as any).method,
         params: request.params,
         jsonrpc: (request as any).jsonrpc,

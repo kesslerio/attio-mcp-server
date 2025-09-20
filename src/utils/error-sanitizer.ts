@@ -409,17 +409,23 @@ function inferStatusCode(errorType: string): number {
 }
 
 /**
+ * Type alias for async functions that can be wrapped with error sanitization
+ */
+type AsyncFunction = (
+  ...args: Record<string, unknown>[]
+) => Promise<Record<string, unknown>>;
+
+/**
  * Middleware-style error sanitizer for wrapping async functions
  *
  * @param fn - The async function to wrap
  * @param options - Sanitization options
  * @returns Wrapped function that sanitizes errors
  */
-export function withErrorSanitization<
-  T extends (
-    ...args: Record<string, unknown>[]
-  ) => Promise<Record<string, unknown>>,
->(fn: T, options: SanitizationOptions = {}): T {
+export function withErrorSanitization<T extends AsyncFunction>(
+  fn: T,
+  options: SanitizationOptions = {}
+): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);

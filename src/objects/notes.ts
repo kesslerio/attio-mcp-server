@@ -264,6 +264,7 @@ export function normalizeNoteResponse(note: AttioNote): {
       parent_object: note.parent_object,
       parent_record_id: note.parent_record_id,
       created_at: note.created_at,
+      // Type assertion needed: AttioNote interface may have optional fields not in official schema
       meeting_id: (note as any).meeting_id || null,
       tags: (note as any).tags || [],
     },
