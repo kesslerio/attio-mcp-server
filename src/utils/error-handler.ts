@@ -24,6 +24,19 @@ export enum ErrorType {
 }
 
 /**
+ * Interface for API error response structure
+ */
+interface ApiErrorResponse {
+  error?: {
+    message?: unknown;
+    detail?: unknown;
+    details?: unknown;
+  };
+  message?: unknown;
+  detail?: unknown;
+}
+
+/**
  * Interface for error details with improved type safety
  */
 export interface ErrorDetails {
@@ -49,7 +62,7 @@ export class AttioApiError extends Error {
   detail: string;
   path: string;
   method: string;
-  responseData: any;
+  responseData: Record<string, unknown>;
   type: ErrorType;
 
   constructor(
@@ -59,7 +72,7 @@ export class AttioApiError extends Error {
     path: string,
     method: string,
     type: ErrorType = ErrorType.API_ERROR,
-    responseData: any = {}
+    responseData: Record<string, unknown> = {}
   ) {
     super(message);
     this.name = 'AttioApiError';
@@ -81,22 +94,43 @@ export class AttioApiError extends Error {
  * @param responseData - Response data from API
  * @returns Appropriate error instance
  */
-export function createAttioError(error: any): Error {
+export function createAttioError(
+  error: Error | Record<string, unknown>
+): Error {
   // If it's already an AttioApiError, return it
   if (error instanceof AttioApiError) {
     return error;
   }
 
-  // Handle Axios errors
-  if (error.isAxiosError && error.response) {
-    const { status, data, config } = error.response;
+  // Handle Axios errors - check if it's an object with axios error properties
+  if (
+    error &&
+    typeof error === 'object' &&
+    'isAxiosError' in error &&
+    error.isAxiosError &&
+    'response' in error &&
+    error.response
+  ) {
+    const axiosError = error as {
+      response: {
+        status: number;
+        data: unknown;
+        config?: { url?: string; method?: string };
+      };
+    };
+    const { status, data, config } = axiosError.response;
     const path = config?.url || 'unknown';
     const method = config?.method?.toUpperCase() || 'UNKNOWN';
-    return createApiError(status, path, method, data);
+    return createApiError(
+      status,
+      path,
+      method,
+      data as Record<string, unknown>
+    );
   }
 
   // Return the original error if we can't enhance it
-  return error;
+  return error instanceof Error ? error : new Error(String(error));
 }
 
 /**
@@ -112,28 +146,29 @@ export function createApiError(
   status: number,
   path: string,
   method: string,
-  responseData: any = {}
+  responseData: Record<string, unknown> = {}
 ): Error {
-  const defaultMessage =
-    responseData?.error?.message ||
-    responseData?.message ||
-    'Unknown API error';
-  const detail =
-    responseData?.error?.detail ||
-    responseData?.detail ||
-    'No additional details';
+  const apiResponse = responseData as ApiErrorResponse;
+  const defaultMessage = String(
+    apiResponse?.error?.message || apiResponse?.message || 'Unknown API error'
+  );
+  const detail = String(
+    apiResponse?.error?.detail || apiResponse?.detail || 'No additional details'
+  );
 
   let errorType = ErrorType.API_ERROR;
   let message = '';
 
   // Create specific error messages based on status code and context
   switch (status) {
-    case 400:
+    case 400: {
       // Detect common parameter and format errors in the 400 response
+      const apiResponse = responseData as ApiErrorResponse;
+      const errorDetails = apiResponse?.error?.details;
       const detailsString =
-        typeof responseData?.error?.details === 'string'
-          ? responseData.error.details
-          : JSON.stringify(responseData?.error?.details || '');
+        typeof errorDetails === 'string'
+          ? errorDetails
+          : JSON.stringify(errorDetails || '');
 
       if (
         defaultMessage.includes('parameter') ||
@@ -159,6 +194,7 @@ export function createApiError(
         message = `Bad Request: ${defaultMessage}`;
       }
       break;
+    }
 
     case 401:
     case 403:
@@ -240,7 +276,7 @@ export function createApiError(
 export function formatErrorResponse(
   error: Error,
   type: ErrorType = ErrorType.UNKNOWN_ERROR,
-  details?: any
+  details?: Record<string, unknown>
 ) {
   const log = createScopedLogger(
     'utils.error-handler',
@@ -259,11 +295,11 @@ export function formatErrorResponse(
   // Enhance error message with examples if details contain context
   if (details && (details.toolName || details.paramName || details.path)) {
     errorMessage = enhanceErrorMessage(errorMessage, type, {
-      toolName: details.toolName,
-      paramName: details.paramName,
-      expectedType: details.expectedType,
-      actualValue: details.actualValue,
-      path: details.path || details.url,
+      toolName: String(details.toolName || ''),
+      paramName: String(details.paramName || ''),
+      expectedType: String(details.expectedType || ''),
+      actualValue: String(details.actualValue || ''),
+      path: String(details.path || details.url || ''),
     });
   }
 
@@ -368,7 +404,7 @@ export function formatErrorResponse(
  * @returns Formatted error result
  */
 export function createErrorResult(
-  error: Error | any,
+  error: Error | Record<string, unknown>,
   url: string,
   method: string,
   responseData: AttioErrorResponse & {

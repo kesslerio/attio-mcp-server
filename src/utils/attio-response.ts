@@ -5,21 +5,80 @@
  */
 
 /**
+ * Interface for API response envelope
+ */
+interface ApiResponseEnvelope {
+  data?: unknown;
+  error?: unknown;
+}
+
+/**
+ * Interface for raw note data from API
+ */
+interface RawNoteData {
+  id?:
+    | {
+        note_id?: string;
+        record_id?: string;
+        workspace_id?: string;
+        id?: string;
+      }
+    | string;
+  note_id?: string;
+  record_id?: string;
+  workspace_id?: string;
+  parent_object?: string;
+  parent_record_id?: string;
+  title?: string;
+  content_markdown?: string;
+  content_plaintext?: string;
+  created_at?: string;
+  updated_at?: string;
+  tags?: unknown[];
+  meeting_id?: string;
+  format?: string;
+}
+
+/**
+ * Interface for normalized note structure
+ */
+export interface NormalizedNote extends Record<string, unknown> {
+  id: {
+    note_id: string | null;
+    workspace_id: string | null;
+    record_id: string | null;
+  };
+  parent_object: string | null;
+  parent_record_id: string | null;
+  title: string | null;
+  content_markdown: string | null;
+  content_plaintext: string | null;
+  content: string;
+  created_at: string | null;
+  updated_at: string | null;
+  tags: unknown[];
+  meeting_id: string | null;
+  format: string;
+}
+
+/**
  * Safely unwrap Attio API response envelope
  * Handles both Axios responses and direct API responses
  */
-export function unwrapAttio<T>(res: any): T {
-  const envelope = res?.data ?? res;
+export function unwrapAttio<T>(res: unknown): T {
+  const responseEnvelope = res as ApiResponseEnvelope;
+  const envelope = responseEnvelope?.data ?? res;
+  const envelopeObj = envelope as ApiResponseEnvelope;
   // If the envelope clearly looks like an error, just return it as-is and let the caller detect it
-  if (envelope?.error && !envelope?.data) return envelope as T;
-  return (envelope?.data ?? envelope) as T;
+  if (envelopeObj?.error && !envelopeObj?.data) return envelope as T;
+  return (envelopeObj?.data ?? envelope) as T;
 }
 
 /**
  * Normalize Attio note to consistent structure
  * Provides compatibility with record-style tests via record_id alias
  */
-export function normalizeNote(note: any) {
+export function normalizeNote(note: RawNoteData): NormalizedNote {
   // Ensure we always have a base object to work with
   const source = note || {};
   const idObj = source.id || {};
@@ -28,15 +87,20 @@ export function normalizeNote(note: any) {
   const rawId =
     source.note_id ||
     source.record_id ||
-    idObj.note_id ||
-    idObj.record_id ||
-    idObj.id ||
+    (typeof idObj === 'object' && idObj !== null ? idObj.note_id : null) ||
+    (typeof idObj === 'object' && idObj !== null ? idObj.record_id : null) ||
+    (typeof idObj === 'object' && idObj !== null ? idObj.id : null) ||
     (typeof source.id === 'string' ? source.id : null);
 
   const normalized = {
     id: {
       note_id: rawId,
-      workspace_id: source.workspace_id || idObj.workspace_id || null,
+      workspace_id:
+        source.workspace_id ||
+        (typeof idObj === 'object' && idObj !== null
+          ? idObj.workspace_id
+          : null) ||
+        null,
       record_id: rawId, // alias for tests
     },
     parent_object: source.parent_object || null,
@@ -58,7 +122,7 @@ export function normalizeNote(note: any) {
 /**
  * Normalize array of notes
  */
-export function normalizeNotes(notes: any[]): any[] {
+export function normalizeNotes(notes: RawNoteData[]): NormalizedNote[] {
   if (!Array.isArray(notes)) return [];
   return notes.map(normalizeNote).filter(Boolean);
 }

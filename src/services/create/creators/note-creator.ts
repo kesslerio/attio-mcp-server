@@ -24,6 +24,27 @@ interface NoteInput {
 }
 
 /**
+ * Interface for the note module
+ */
+interface NoteModule {
+  createNote: (data: {
+    parent_object: string;
+    parent_record_id: string;
+    title: string;
+    content: string;
+    format: string;
+  }) => Promise<Record<string, unknown>>;
+}
+
+/**
+ * Interface for the response utils module
+ */
+interface ResponseUtilsModule {
+  unwrapAttio: (response: Record<string, unknown>) => Record<string, unknown>;
+  normalizeNote: (note: Record<string, unknown>) => Record<string, unknown>;
+}
+
+/**
  * Note-specific resource creator
  * Implements Strategy Pattern for note creation via delegation
  */
@@ -32,20 +53,22 @@ export class NoteCreator extends BaseCreator {
   readonly endpoint = '/objects/notes/records';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private noteModule: Record<string, unknown> | null = null;
-  private responseUtilsModule: Record<string, unknown> | null = null;
+  private noteModule: NoteModule | null = null;
+  private responseUtilsModule: ResponseUtilsModule | null = null;
 
   /**
    * Lazy-loads note dependencies to prevent repeated dynamic imports
    */
   private async ensureDependencies(): Promise<void> {
     if (!this.noteModule) {
-      this.noteModule = await import('../../../objects/notes.js');
+      this.noteModule = (await import(
+        '../../../objects/notes.js'
+      )) as NoteModule;
     }
     if (!this.responseUtilsModule) {
-      this.responseUtilsModule = await import(
+      this.responseUtilsModule = (await import(
         '../../../utils/attio-response.js'
-      );
+      )) as ResponseUtilsModule;
     }
   }
 
@@ -105,14 +128,12 @@ export class NoteCreator extends BaseCreator {
 
       context.debug(this.constructor.name, 'Creating note with data', noteData);
 
-      const response = await (this.noteModule as any)?.createNote(noteData);
+      const response = await this.noteModule?.createNote(noteData);
 
       // Unwrap varying API envelopes and normalize to stable shape
-      const attioNote = (this.responseUtilsModule as any)?.unwrapAttio(
-        response
-      );
-      const normalizedNote = (this.responseUtilsModule as any)?.normalizeNote(
-        attioNote
+      const attioNote = this.responseUtilsModule?.unwrapAttio(response || {});
+      const normalizedNote = this.responseUtilsModule?.normalizeNote(
+        attioNote || {}
       );
 
       context.debug(this.constructor.name, 'Note creation response', {
@@ -122,7 +143,11 @@ export class NoteCreator extends BaseCreator {
         noteId: normalizedNote?.id,
       });
 
-      return normalizeRecordForOutput(normalizedNote);
+      if (!normalizedNote) {
+        throw new Error('Failed to normalize note response');
+      }
+
+      return normalizeRecordForOutput(normalizedNote as AttioRecord);
     } catch (err: unknown) {
       context.logError(this.constructor.name, 'Note creation error', {
         error: (err as Error)?.message,

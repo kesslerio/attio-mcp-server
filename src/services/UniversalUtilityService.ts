@@ -182,8 +182,13 @@ export class UniversalUtilityService {
       // Handle array values first (e.g., company names, person names)
       if (Array.isArray(field) && field.length > 0) {
         const firstItem = field[0] as AttioFieldValue;
-        // For name field, check both 'value' and 'full_name' properties
-        return firstItem?.value || firstItem?.full_name || null;
+        // For name field, check 'value', 'full_name', and 'formatted' properties
+        return (
+          firstItem?.value ||
+          firstItem?.full_name ||
+          (firstItem as { formatted?: string })?.formatted ||
+          null
+        );
       }
 
       // Handle simple string values as fallback (e.g., task content)

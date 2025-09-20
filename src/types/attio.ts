@@ -144,7 +144,7 @@ export interface RelativeDate {
 /**
  * Date range specification for filtering
  */
-export interface DateRange {
+export interface DateRange extends Record<string, unknown> {
   start?: string | RelativeDate;
   end?: string | RelativeDate;
   preset?: string;
@@ -153,7 +153,7 @@ export interface DateRange {
 /**
  * Numeric range specification for filtering
  */
-export interface NumericRange {
+export interface NumericRange extends Record<string, unknown> {
   min?: number;
   max?: number;
   equals?: number;
@@ -174,7 +174,7 @@ export enum InteractionType {
 /**
  * Activity history related filtering options
  */
-export interface ActivityFilter {
+export interface ActivityFilter extends Record<string, unknown> {
   dateRange: DateRange;
   interactionType?: InteractionType;
 }

@@ -43,8 +43,19 @@ export function formatPersonDetails(person: Person): string {
 
   const personId = person.id.record_id || 'unknown';
   const values = person.values as Record<string, unknown>;
-  const nameField = values.name as Array<{ value?: unknown }> | undefined;
-  const name = String(nameField?.[0]?.value || 'Unnamed');
+  const nameField = values.name as
+    | Array<{
+        value?: unknown;
+        full_name?: unknown;
+        formatted?: unknown;
+      }>
+    | undefined;
+  const name = String(
+    nameField?.[0]?.value ||
+      nameField?.[0]?.full_name ||
+      nameField?.[0]?.formatted ||
+      'Unnamed'
+  );
   const DISPLAYED_FIELDS = [
     'name',
     'email_addresses',

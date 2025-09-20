@@ -44,6 +44,24 @@ const SENSITIVE_PATTERNS: Record<SensitiveInfoType, RegExp> = {
 };
 
 /**
+ * Interface for error-like objects that have message, name, and stack properties
+ */
+interface ErrorLike {
+  message?: unknown;
+  name?: unknown;
+  stack?: unknown;
+}
+
+/**
+ * Interface for Error objects with additional sanitized properties
+ */
+interface SanitizedErrorObject extends Error {
+  statusCode?: number;
+  type?: string;
+  safeMetadata?: Record<string, unknown>;
+}
+
+/**
  * User-friendly error messages mapped by error type
  */
 const USER_FRIENDLY_MESSAGES: Record<string, string> = {
@@ -206,7 +224,7 @@ export interface SanitizationOptions {
  * @returns Sanitized error message safe for external exposure
  */
 export function sanitizeErrorMessage(
-  error: Error | string | any,
+  error: Error | string | Record<string, unknown>,
   options: SanitizationOptions = {}
 ): string {
   const {
@@ -228,10 +246,11 @@ export function sanitizeErrorMessage(
     stackTrace = error.stack;
   } else if (typeof error === 'string') {
     originalMessage = error;
-  } else if (error?.message) {
-    originalMessage = String(error.message);
-    errorName = error.name || 'Error';
-    stackTrace = error.stack;
+  } else if (error && typeof error === 'object' && 'message' in error) {
+    const errorLike = error as ErrorLike;
+    originalMessage = String(errorLike.message);
+    errorName = String(errorLike.name || 'Error');
+    stackTrace = String(errorLike.stack || '');
   } else {
     originalMessage = String(error);
   }
@@ -336,7 +355,7 @@ export interface SanitizedError {
  * @returns Sanitized error object
  */
 export function createSanitizedError(
-  error: Error | string | any,
+  error: Error | string | Record<string, unknown>,
   statusCode?: number,
   options: SanitizationOptions = {}
 ): SanitizedError {
@@ -390,25 +409,39 @@ function inferStatusCode(errorType: string): number {
 }
 
 /**
+ * Type alias for async functions that can be wrapped with error sanitization
+ */
+type AsyncFunction = (
+  ...args: Record<string, unknown>[]
+) => Promise<Record<string, unknown>>;
+
+/**
  * Middleware-style error sanitizer for wrapping async functions
  *
  * @param fn - The async function to wrap
  * @param options - Sanitization options
  * @returns Wrapped function that sanitizes errors
  */
-export function withErrorSanitization<
-  T extends (...args: any[]) => Promise<any>,
->(fn: T, options: SanitizationOptions = {}): T {
+export function withErrorSanitization<T extends AsyncFunction>(
+  fn: T,
+  options: SanitizationOptions = {}
+): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
     } catch (error: unknown) {
-      const sanitized = createSanitizedError(error, undefined, options);
-      const sanitizedError = new Error(sanitized.message);
+      const sanitized = createSanitizedError(
+        error as Error | string | Record<string, unknown>,
+        undefined,
+        options
+      );
+      const sanitizedError = new Error(
+        sanitized.message
+      ) as SanitizedErrorObject;
       sanitizedError.name = 'SanitizedError';
-      (sanitizedError as any).statusCode = sanitized.statusCode;
-      (sanitizedError as any).type = sanitized.type;
-      (sanitizedError as any).safeMetadata = sanitized.safeMetadata;
+      sanitizedError.statusCode = sanitized.statusCode;
+      sanitizedError.type = sanitized.type;
+      sanitizedError.safeMetadata = sanitized.safeMetadata;
       throw sanitizedError;
     }
   }) as T;
@@ -435,7 +468,9 @@ export function containsSensitiveInfo(message: string): boolean {
  * @param error - The error to summarize
  * @returns Safe summary string
  */
-export function getErrorSummary(error: Error | string | any): string {
+export function getErrorSummary(
+  error: Error | string | Record<string, unknown>
+): string {
   const errorType = classifyError(
     error instanceof Error ? error.message : String(error)
   );

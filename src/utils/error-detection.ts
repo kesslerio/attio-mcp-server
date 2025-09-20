@@ -6,6 +6,14 @@
  * are actually valid success states.
  */
 
+/**
+ * Interface for API response that may contain error information
+ */
+interface ApiResponse {
+  error?: unknown;
+  errors?: unknown[];
+}
+
 export interface ErrorAnalysis {
   isError: boolean;
   reason?:
@@ -46,9 +54,10 @@ export function computeErrorWithContext(
     Object.keys(result as Record<string, unknown>).length === 0;
 
   // 1) Always surface explicit API errors first
+  const apiResponse = result as ApiResponse;
   if (
-    (result as any)?.error ||
-    (Array.isArray((result as any)?.errors) && (result as any).errors.length)
+    apiResponse?.error ||
+    (Array.isArray(apiResponse?.errors) && apiResponse.errors.length)
   ) {
     return { isError: true, reason: 'meaningful_error_object' };
   }
@@ -82,7 +91,7 @@ export function computeErrorWithContext(
   // 3) Legacy heuristics (unchanged for other tools)
   if (result == null)
     return { isError: true, reason: 'null_or_undefined_result' };
-  if (isEmptyObject) return { isError: true, reason: 'empty_response' as any };
+  if (isEmptyObject) return { isError: true, reason: 'empty_response' };
 
   // Detect empty objects as errors (per Issue #517 analysis)
   // Empty objects {} often indicate failed API responses that should be errors
@@ -98,7 +107,7 @@ export function computeErrorWithContext(
     ) {
       const id = record.id as Record<string, unknown>;
       if (id.record_id === 'unknown') {
-        return { isError: true, reason: 'empty_response' as any };
+        return { isError: true, reason: 'empty_response' };
       }
     }
   }

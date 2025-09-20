@@ -152,6 +152,7 @@ export class TaskCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
     // Tasks are handled via delegation, so no direct recovery needed

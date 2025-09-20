@@ -10,6 +10,7 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '../handlers/tool-configs/universal/schemas.js';
+import type { AttioNote } from '../types/attio.js';
 import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
 import { debug } from '../utils/logger.js';
 import {
@@ -40,24 +41,6 @@ export interface ListNotesQuery extends Record<string, unknown> {
   limit?: number;
   offset?: number;
   cursor?: string;
-}
-
-/**
- * Attio Note response structure
- */
-export interface AttioNote {
-  id: {
-    note_id: string;
-  };
-  parent_object: string;
-  parent_record_id: string;
-  title?: string;
-  content_markdown?: string;
-  content_plaintext?: string;
-  format: 'markdown' | 'plaintext';
-  created_at: string;
-  meeting_id?: string;
-  tags: string[];
 }
 
 /**
@@ -276,13 +259,14 @@ export function normalizeNoteResponse(note: AttioNote): {
     resource_type: 'notes',
     values: {
       title: note.title,
-      content_markdown: note.content_markdown,
-      content_plaintext: note.content_plaintext,
+      content_markdown: note.content,
+      content_plaintext: note.content,
       parent_object: note.parent_object,
       parent_record_id: note.parent_record_id,
       created_at: note.created_at,
-      meeting_id: note.meeting_id || null,
-      tags: note.tags || [],
+      // Type assertion needed: AttioNote interface may have optional fields not in official schema
+      meeting_id: (note as any).meeting_id || null,
+      tags: (note as any).tags || [],
     },
     raw: note,
   };

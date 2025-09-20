@@ -57,15 +57,18 @@ export function validateFilterStructure(filter: ListEntryFilter): boolean {
  * @returns Validated and normalized date range
  * @throws FilterValidationError if validation fails
  */
-export function validateDateRange(dateRange: any): DateRange {
+export function validateDateRange(
+  dateRange: Record<string, unknown> | string | null | undefined
+): DateRange {
   if (!dateRange) {
     throw new FilterValidationError('Date range is required');
   }
 
   // Normalize dateRange if it's a string
+  let parsedDateRange: Record<string, unknown>;
   if (typeof dateRange === 'string') {
     try {
-      dateRange = JSON.parse(dateRange);
+      parsedDateRange = JSON.parse(dateRange) as Record<string, unknown>;
     } catch (error: unknown) {
       throw new FilterValidationError(
         `Invalid date range format: ${
@@ -73,78 +76,79 @@ export function validateDateRange(dateRange: any): DateRange {
         }`
       );
     }
+  } else {
+    parsedDateRange = dateRange;
   }
 
   // Check if it's a proper object
-  if (typeof dateRange !== 'object' || Array.isArray(dateRange)) {
+  if (
+    typeof parsedDateRange !== 'object' ||
+    Array.isArray(parsedDateRange) ||
+    parsedDateRange === null
+  ) {
     throw new FilterValidationError(
       'Date range must be an object with start, end, or preset properties'
     );
   }
 
   // Must have at least one of preset, start, or end
-  if (!dateRange.preset && !dateRange.start && !dateRange.end) {
+  if (
+    !parsedDateRange.preset &&
+    !parsedDateRange.start &&
+    !parsedDateRange.end
+  ) {
     throw new FilterValidationError(
       'Date range must specify at least one of: preset, start, or end'
     );
   }
 
   // Validate preset if provided
-  if (dateRange.preset) {
+  if (parsedDateRange.preset) {
     const normalizedPreset =
-      typeof dateRange.preset === 'string'
-        ? dateRange.preset.toLowerCase().trim()
-        : String(dateRange.preset);
+      typeof parsedDateRange.preset === 'string'
+        ? parsedDateRange.preset.toLowerCase().trim()
+        : String(parsedDateRange.preset);
 
     const validPresets = Object.values(DateRangePreset);
     if (!validPresets.includes(normalizedPreset as DateRangePreset)) {
       throw new FilterValidationError(
-        `Invalid date preset: "${dateRange.preset}". ` +
+        `Invalid date preset: "${parsedDateRange.preset}". ` +
           `Valid presets are: ${validPresets.join(', ')}`
       );
     }
 
     // Normalize the preset to ensure proper casing
-    dateRange.preset = normalizedPreset;
+    parsedDateRange.preset = normalizedPreset;
   }
 
   // Validate start date if provided
-  if (dateRange.start) {
-    if (typeof dateRange.start === 'string') {
+  if (parsedDateRange.start) {
+    if (typeof parsedDateRange.start === 'string') {
       // Validate ISO string format
-      if (!isValidISODateString(dateRange.start)) {
+      if (!isValidISODateString(parsedDateRange.start)) {
         throw new FilterValidationError(
-          `Invalid ISO date string format for start date: ${dateRange.start}`
+          `Invalid ISO date string format for start date: ${parsedDateRange.start}`
         );
       }
     } else if (
-      typeof dateRange.start === 'object' &&
-      !Array.isArray(dateRange.start)
+      typeof parsedDateRange.start === 'object' &&
+      !Array.isArray(parsedDateRange.start)
     ) {
       // It's a relative date object, validate basic structure
-      if (
-        !dateRange.start.unit ||
-        !dateRange.start.value ||
-        !dateRange.start.direction
-      ) {
+      const startObj = parsedDateRange.start as Record<string, unknown>;
+      if (!startObj.unit || !startObj.value || !startObj.direction) {
         throw new FilterValidationError(
           'Relative start date must have unit, value, and direction properties'
         );
       }
 
       // Validate value is a number
-      if (
-        typeof dateRange.start.value !== 'number' ||
-        isNaN(dateRange.start.value)
-      ) {
+      if (typeof startObj.value !== 'number' || isNaN(startObj.value)) {
         throw new FilterValidationError('Relative date value must be a number');
       }
 
       // Validate direction
-      if (
-        dateRange.start.direction !== 'past' &&
-        dateRange.start.direction !== 'future'
-      ) {
+      if (startObj.direction !== 'past' && startObj.direction !== 'future') {
         throw new FilterValidationError(
           'Relative date direction must be either "past" or "future"'
         );
@@ -157,42 +161,33 @@ export function validateDateRange(dateRange: any): DateRange {
   }
 
   // Validate end date if provided
-  if (dateRange.end) {
-    if (typeof dateRange.end === 'string') {
+  if (parsedDateRange.end) {
+    if (typeof parsedDateRange.end === 'string') {
       // Validate ISO string format
-      if (!isValidISODateString(dateRange.end)) {
+      if (!isValidISODateString(parsedDateRange.end)) {
         throw new FilterValidationError(
-          `Invalid ISO date string format for end date: ${dateRange.end}`
+          `Invalid ISO date string format for end date: ${parsedDateRange.end}`
         );
       }
     } else if (
-      typeof dateRange.end === 'object' &&
-      !Array.isArray(dateRange.end)
+      typeof parsedDateRange.end === 'object' &&
+      !Array.isArray(parsedDateRange.end)
     ) {
       // It's a relative date object, validate basic structure
-      if (
-        !dateRange.end.unit ||
-        !dateRange.end.value ||
-        !dateRange.end.direction
-      ) {
+      const endObj = parsedDateRange.end as Record<string, unknown>;
+      if (!endObj.unit || !endObj.value || !endObj.direction) {
         throw new FilterValidationError(
           'Relative end date must have unit, value, and direction properties'
         );
       }
 
       // Validate value is a number
-      if (
-        typeof dateRange.end.value !== 'number' ||
-        isNaN(dateRange.end.value)
-      ) {
+      if (typeof endObj.value !== 'number' || isNaN(endObj.value)) {
         throw new FilterValidationError('Relative date value must be a number');
       }
 
       // Validate direction
-      if (
-        dateRange.end.direction !== 'past' &&
-        dateRange.end.direction !== 'future'
-      ) {
+      if (endObj.direction !== 'past' && endObj.direction !== 'future') {
         throw new FilterValidationError(
           'Relative date direction must be either "past" or "future"'
         );
@@ -204,7 +199,7 @@ export function validateDateRange(dateRange: any): DateRange {
     }
   }
 
-  return dateRange as DateRange;
+  return parsedDateRange as DateRange;
 }
 
 /**
@@ -214,15 +209,21 @@ export function validateDateRange(dateRange: any): DateRange {
  * @returns Validated and normalized activity filter
  * @throws FilterValidationError if validation fails
  */
-export function validateActivityFilter(activityFilter: any): ActivityFilter {
+export function validateActivityFilter(
+  activityFilter: Record<string, unknown> | string | null | undefined
+): ActivityFilter {
   if (!activityFilter) {
     throw new FilterValidationError('Activity filter is required');
   }
 
   // Normalize if it's a string
+  let parsedActivityFilter: Record<string, unknown>;
   if (typeof activityFilter === 'string') {
     try {
-      activityFilter = JSON.parse(activityFilter);
+      parsedActivityFilter = JSON.parse(activityFilter) as Record<
+        string,
+        unknown
+      >;
     } catch (error: unknown) {
       throw new FilterValidationError(
         `Invalid activity filter format: ${
@@ -230,17 +231,23 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
         }`
       );
     }
+  } else {
+    parsedActivityFilter = activityFilter;
   }
 
   // Check if it's a proper object
-  if (typeof activityFilter !== 'object' || Array.isArray(activityFilter)) {
+  if (
+    typeof parsedActivityFilter !== 'object' ||
+    Array.isArray(parsedActivityFilter) ||
+    parsedActivityFilter === null
+  ) {
     throw new FilterValidationError(
       'Activity filter must be an object with dateRange and optional interactionType'
     );
   }
 
   // Validate required dateRange property
-  if (!activityFilter.dateRange) {
+  if (!parsedActivityFilter.dateRange) {
     throw new FilterValidationError(
       'Activity filter must include a dateRange property'
     );
@@ -248,7 +255,13 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
 
   // Validate dateRange
   try {
-    activityFilter.dateRange = validateDateRange(activityFilter.dateRange);
+    parsedActivityFilter.dateRange = validateDateRange(
+      parsedActivityFilter.dateRange as
+        | Record<string, unknown>
+        | string
+        | null
+        | undefined
+    );
   } catch (error: unknown) {
     throw new FilterValidationError(
       `Invalid dateRange in activity filter: ${
@@ -258,21 +271,23 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
   }
 
   // Validate interactionType if provided
-  if (activityFilter.interactionType !== undefined) {
+  if (parsedActivityFilter.interactionType !== undefined) {
     const validTypes = Object.values(InteractionType);
 
     if (
-      typeof activityFilter.interactionType !== 'string' ||
-      !validTypes.includes(activityFilter.interactionType as InteractionType)
+      typeof parsedActivityFilter.interactionType !== 'string' ||
+      !validTypes.includes(
+        parsedActivityFilter.interactionType as InteractionType
+      )
     ) {
       throw new FilterValidationError(
-        `Invalid interaction type: "${activityFilter.interactionType}". ` +
+        `Invalid interaction type: "${parsedActivityFilter.interactionType}". ` +
           `Valid types are: ${validTypes.join(', ')}`
       );
     }
   }
 
-  return activityFilter as ActivityFilter;
+  return parsedActivityFilter as ActivityFilter;
 }
 
 /**
@@ -282,15 +297,18 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
  * @returns Validated and normalized numeric range
  * @throws FilterValidationError if validation fails
  */
-export function validateNumericRange(range: any): NumericRange {
+export function validateNumericRange(
+  range: Record<string, unknown> | string | null | undefined
+): NumericRange {
   if (!range) {
     throw new FilterValidationError('Numeric range is required');
   }
 
   // Normalize if it's a string
+  let parsedRange: Record<string, unknown>;
   if (typeof range === 'string') {
     try {
-      range = JSON.parse(range);
+      parsedRange = JSON.parse(range) as Record<string, unknown>;
     } catch (error: unknown) {
       throw new FilterValidationError(
         `Invalid numeric range format: ${
@@ -298,10 +316,16 @@ export function validateNumericRange(range: any): NumericRange {
         }`
       );
     }
+  } else {
+    parsedRange = range;
   }
 
   // Check if it's a proper object
-  if (typeof range !== 'object' || Array.isArray(range)) {
+  if (
+    typeof parsedRange !== 'object' ||
+    Array.isArray(parsedRange) ||
+    parsedRange === null
+  ) {
     throw new FilterValidationError(
       'Numeric range must be an object with min, max, or equals properties'
     );
@@ -309,9 +333,9 @@ export function validateNumericRange(range: any): NumericRange {
 
   // Must have at least one of min, max, or equals
   if (
-    range.min === undefined &&
-    range.max === undefined &&
-    range.equals === undefined
+    parsedRange.min === undefined &&
+    parsedRange.max === undefined &&
+    parsedRange.equals === undefined
   ) {
     throw new FilterValidationError(
       'Numeric range must specify at least one of: min, max, or equals'
@@ -320,8 +344,8 @@ export function validateNumericRange(range: any): NumericRange {
 
   // If equals is specified, min and max should not be
   if (
-    range.equals !== undefined &&
-    (range.min !== undefined || range.max !== undefined)
+    parsedRange.equals !== undefined &&
+    (parsedRange.min !== undefined || parsedRange.max !== undefined)
   ) {
     throw new FilterValidationError(
       'Cannot specify both equals and min/max in a numeric range'
@@ -329,39 +353,39 @@ export function validateNumericRange(range: any): NumericRange {
   }
 
   // Check types and convert to number if needed
-  if (range.min !== undefined) {
-    range.min = Number(range.min);
-    if (isNaN(range.min)) {
+  if (parsedRange.min !== undefined) {
+    parsedRange.min = Number(parsedRange.min);
+    if (isNaN(parsedRange.min as number)) {
       throw new FilterValidationError('Min value must be a valid number');
     }
   }
 
-  if (range.max !== undefined) {
-    range.max = Number(range.max);
-    if (isNaN(range.max)) {
+  if (parsedRange.max !== undefined) {
+    parsedRange.max = Number(parsedRange.max);
+    if (isNaN(parsedRange.max as number)) {
       throw new FilterValidationError('Max value must be a valid number');
     }
   }
 
-  if (range.equals !== undefined) {
-    range.equals = Number(range.equals);
-    if (isNaN(range.equals)) {
+  if (parsedRange.equals !== undefined) {
+    parsedRange.equals = Number(parsedRange.equals);
+    if (isNaN(parsedRange.equals as number)) {
       throw new FilterValidationError('Equals value must be a valid number');
     }
   }
 
   // Check that min <= max if both are specified
   if (
-    range.min !== undefined &&
-    range.max !== undefined &&
-    range.min > range.max
+    parsedRange.min !== undefined &&
+    parsedRange.max !== undefined &&
+    (parsedRange.min as number) > (parsedRange.max as number)
   ) {
     throw new FilterValidationError(
-      `Invalid numeric range: min (${range.min}) cannot be greater than max (${range.max})`
+      `Invalid numeric range: min (${parsedRange.min}) cannot be greater than max (${parsedRange.max})`
     );
   }
 
-  return range as NumericRange;
+  return parsedRange as NumericRange;
 }
 
 /**
@@ -400,7 +424,7 @@ export function validateFilterCondition(
  * @throws FilterValidationError if validation fails
  */
 export function validateNumericParam(
-  value: any,
+  value: unknown,
   paramName: string,
   defaultValue?: number
 ): number {

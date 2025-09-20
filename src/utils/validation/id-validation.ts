@@ -41,6 +41,7 @@ export interface IdValidationResult {
  */
 export function validateRecordId(
   id: string | undefined | null,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _resourceType?: string
 ): IdValidationResult {
   // Check for missing ID
