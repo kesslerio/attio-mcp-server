@@ -424,25 +424,44 @@ export const createRecordConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
-    // Extract name from values (may be empty on create) or fall back to a generic name
-    const coerce = (v: unknown): string | undefined => {
-      if (v == null) return undefined;
-      if (typeof v === 'string') return v;
-      if (Array.isArray(v)) {
-        const first = v[0] as { value?: string };
-        if (typeof first === 'string') return first;
-        if (first && typeof first === 'object' && 'value' in first)
-          return String(first.value);
-      }
-      if (typeof v === 'object' && v !== null && 'value' in v)
-        return String((v as { value: string }).value);
-      return undefined;
-    };
-    const displayName =
-      coerce((record.values as Record<string, unknown>)?.name) ||
-      coerce((record.values as Record<string, unknown>)?.title) ||
-      coerce((record.values as Record<string, unknown>)?.content) ||
-      `New ${resourceTypeName}`;
+
+    let displayName = `New ${resourceTypeName}`;
+
+    // Handle different resource types with proper name extraction
+    if (resourceType === UniversalResourceType.PEOPLE && record.values) {
+      // For people, use comprehensive name extraction logic
+      const valuesAny = record.values as Record<string, unknown>;
+      displayName =
+        (valuesAny?.name as { full_name?: string }[] | undefined)?.[0]
+          ?.full_name ||
+        (valuesAny?.name as { value?: string }[] | undefined)?.[0]?.value ||
+        (valuesAny?.name as { formatted?: string }[] | undefined)?.[0]
+          ?.formatted ||
+        (valuesAny?.full_name as { value?: string }[] | undefined)?.[0]
+          ?.value ||
+        `New ${resourceTypeName}`;
+    } else if (record.values) {
+      // For other types, use the existing coerce logic
+      const coerce = (v: unknown): string | undefined => {
+        if (v == null) return undefined;
+        if (typeof v === 'string') return v;
+        if (Array.isArray(v)) {
+          const first = v[0] as { value?: string };
+          if (typeof first === 'string') return first;
+          if (first && typeof first === 'object' && 'value' in first)
+            return String(first.value);
+        }
+        if (typeof v === 'object' && v !== null && 'value' in v)
+          return String((v as { value: string }).value);
+        return undefined;
+      };
+      displayName =
+        coerce((record.values as Record<string, unknown>)?.name) ||
+        coerce((record.values as Record<string, unknown>)?.title) ||
+        coerce((record.values as Record<string, unknown>)?.content) ||
+        `New ${resourceTypeName}`;
+    }
+
     const id = String(
       record.id?.record_id ||
         (record as { record_id?: string }).record_id ||

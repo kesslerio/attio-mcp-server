@@ -102,12 +102,31 @@ export function createAttioError(
     return error;
   }
 
-  // Handle Axios errors
-  if (error.isAxiosError && error.response) {
-    const { status, data, config } = error.response;
+  // Handle Axios errors - check if it's an object with axios error properties
+  if (
+    error &&
+    typeof error === 'object' &&
+    'isAxiosError' in error &&
+    error.isAxiosError &&
+    'response' in error &&
+    error.response
+  ) {
+    const axiosError = error as {
+      response: {
+        status: number;
+        data: unknown;
+        config?: { url?: string; method?: string };
+      };
+    };
+    const { status, data, config } = axiosError.response;
     const path = config?.url || 'unknown';
     const method = config?.method?.toUpperCase() || 'UNKNOWN';
-    return createApiError(status, path, method, data);
+    return createApiError(
+      status,
+      path,
+      method,
+      data as Record<string, unknown>
+    );
   }
 
   // Return the original error if we can't enhance it
@@ -130,12 +149,12 @@ export function createApiError(
   responseData: Record<string, unknown> = {}
 ): Error {
   const apiResponse = responseData as ApiErrorResponse;
-  const defaultMessage =
-    apiResponse?.error?.message || apiResponse?.message || 'Unknown API error';
-  const detail =
-    apiResponse?.error?.detail ||
-    apiResponse?.detail ||
-    'No additional details';
+  const defaultMessage = String(
+    apiResponse?.error?.message || apiResponse?.message || 'Unknown API error'
+  );
+  const detail = String(
+    apiResponse?.error?.detail || apiResponse?.detail || 'No additional details'
+  );
 
   let errorType = ErrorType.API_ERROR;
   let message = '';

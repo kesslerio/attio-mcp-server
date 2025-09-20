@@ -36,12 +36,21 @@ function formatPaginatedPeopleResult(
 
   // Format result list
   const resultList = results
-    .map(
-      (person: Person) =>
-        `- ${(person.values?.name as unknown as Array<{ value: unknown }>)?.[0]?.value || 'Unnamed'} (ID: ${
-          person.id?.record_id || 'unknown'
-        })`
-    )
+    .map((person: Person) => {
+      const nameField = person.values?.name as
+        | Array<{
+            value?: unknown;
+            full_name?: unknown;
+            formatted?: unknown;
+          }>
+        | undefined;
+      const name =
+        nameField?.[0]?.value ||
+        nameField?.[0]?.full_name ||
+        nameField?.[0]?.formatted ||
+        'Unnamed';
+      return `- ${name} (ID: ${person.id?.record_id || 'unknown'})`;
+    })
     .join('\n');
 
   // Include navigation hints if applicable

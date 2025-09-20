@@ -37,18 +37,18 @@ interface ConverterModule {
   convertTaskToAttioRecord: (
     task: Record<string, unknown>,
     input: Record<string, unknown>
-  ) => Record<string, unknown>;
+  ) => AttioRecord;
 }
 
 interface NoteModule {
   listNotes: (query: {
     parent_object?: string;
     parent_record_id?: string;
-  }) => Promise<{ data?: Record<string, unknown>[] }>;
+  }) => Promise<{ data: AttioNote[]; meta?: { next_cursor?: string } }>;
 }
 
 import type { CreateService } from './types.js';
-import type { AttioRecord } from '../../types/attio.js';
+import type { AttioRecord, AttioNote } from '../../types/attio.js';
 import type {
   ResourceCreator,
   ResourceCreatorContext,
@@ -188,7 +188,14 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return this.converterModule?.convertTaskToAttioRecord(updatedTask, input);
+    const result = this.converterModule?.convertTaskToAttioRecord(
+      updatedTask,
+      input
+    );
+    if (!result) {
+      throw new Error('Task converter module not available');
+    }
+    return result;
   }
 
   /**

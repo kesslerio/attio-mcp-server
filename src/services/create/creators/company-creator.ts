@@ -51,13 +51,14 @@ export class CompanyCreator extends BaseCreator {
     try {
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        const h = context.client?.defaults?.headers ?? {};
-        const c = h.common ?? {};
+        const h =
+          (context.client?.defaults?.headers as Record<string, unknown>) ?? {};
+        const c = (h.common as Record<string, unknown>) ?? {};
         const hasAuth = Boolean(
-          c.Authorization ||
-            c.authorization ||
-            h.Authorization ||
-            h.authorization
+          (c.Authorization as string) ||
+            (c.authorization as string) ||
+            (h.Authorization as string) ||
+            (h.authorization as string)
         );
         createScopedLogger('CompanyCreator', 'create').debug('Client probe', {
           baseURL: context.client.defaults?.baseURL,

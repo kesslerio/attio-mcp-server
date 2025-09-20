@@ -10,6 +10,7 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '../handlers/tool-configs/universal/schemas.js';
+import type { AttioNote } from '../types/attio.js';
 import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
 import { debug } from '../utils/logger.js';
 import {
@@ -40,24 +41,6 @@ export interface ListNotesQuery extends Record<string, unknown> {
   limit?: number;
   offset?: number;
   cursor?: string;
-}
-
-/**
- * Attio Note response structure
- */
-export interface AttioNote {
-  id: {
-    note_id: string;
-  };
-  parent_object: string;
-  parent_record_id: string;
-  title?: string;
-  content_markdown?: string;
-  content_plaintext?: string;
-  format: 'markdown' | 'plaintext';
-  created_at: string;
-  meeting_id?: string;
-  tags: string[];
 }
 
 /**
