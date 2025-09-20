@@ -259,13 +259,13 @@ export function normalizeNoteResponse(note: AttioNote): {
     resource_type: 'notes',
     values: {
       title: note.title,
-      content_markdown: note.content_markdown,
-      content_plaintext: note.content_plaintext,
+      content_markdown: note.content,
+      content_plaintext: note.content,
       parent_object: note.parent_object,
       parent_record_id: note.parent_record_id,
       created_at: note.created_at,
-      meeting_id: note.meeting_id || null,
-      tags: note.tags || [],
+      meeting_id: (note as any).meeting_id || null,
+      tags: (note as any).tags || [],
     },
     raw: note,
   };

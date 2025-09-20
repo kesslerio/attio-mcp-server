@@ -131,8 +131,10 @@ export class NoteCreator extends BaseCreator {
       const response = await this.noteModule?.createNote(noteData);
 
       // Unwrap varying API envelopes and normalize to stable shape
-      const attioNote = this.responseUtilsModule?.unwrapAttio(response);
-      const normalizedNote = this.responseUtilsModule?.normalizeNote(attioNote);
+      const attioNote = this.responseUtilsModule?.unwrapAttio(response || {});
+      const normalizedNote = this.responseUtilsModule?.normalizeNote(
+        attioNote || {}
+      );
 
       context.debug(this.constructor.name, 'Note creation response', {
         hasResponse: !!response,
@@ -141,7 +143,11 @@ export class NoteCreator extends BaseCreator {
         noteId: normalizedNote?.id,
       });
 
-      return normalizeRecordForOutput(normalizedNote);
+      if (!normalizedNote) {
+        throw new Error('Failed to normalize note response');
+      }
+
+      return normalizeRecordForOutput(normalizedNote as AttioRecord);
     } catch (err: unknown) {
       context.logError(this.constructor.name, 'Note creation error', {
         error: (err as Error)?.message,

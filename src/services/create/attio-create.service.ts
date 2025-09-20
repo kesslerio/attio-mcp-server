@@ -188,6 +188,9 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
+    if (!updatedTask) {
+      throw new Error('Task update failed - no task returned');
+    }
     const result = this.converterModule?.convertTaskToAttioRecord(
       updatedTask,
       input
@@ -232,7 +235,7 @@ export class AttioCreateService implements CreateService {
     };
 
     const response = await this.noteModule?.listNotes(query);
-    return response.data || [];
+    return response?.data || [];
   }
 
   /**
