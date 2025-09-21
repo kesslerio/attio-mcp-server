@@ -5,51 +5,146 @@ on:
     types: [created]
   pull_request_review_comment:
     types: [created]
-  issues:
-    types: [opened, assigned]
   pull_request_review:
     types: [submitted]
 
 # Prevent concurrent runs for the same PR or issue, but allow different comment events
 concurrency:
-  group: claude-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.event.comment.id || github.event.review.id || github.run_id }}
+  group: claude-user-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.event.comment.id || github.event.review.id || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   claude:
+    # Only run if a comment/review mentions @claude in a PR context
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (
+        github.event_name == 'issue_comment' &&
+        contains(github.event.comment.body, '@claude') &&
+        github.event.issue.pull_request
+      ) || (
+        github.event_name == 'pull_request_review_comment' &&
+        contains(github.event.comment.body, '@claude')
+      ) || (
+        github.event_name == 'pull_request_review' &&
+        contains(github.event.review.body, '@claude')
+      )
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
-      id-token: write # Required for OIDC token authentication
+      id-token: write
       contents: write
       pull-requests: write
       issues: write
-      actions: read # Required for Claude to read CI results on PRs
+      actions: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run Claude Code
-        id: claude
+      # ---------- Opus path: only when user asks for "ultra review" ----------
+      - name: Claude PR Ultra Review (Opus 4.1)
+        if: |
+          (github.event_name == 'issue_comment' &&
+           contains(github.event.comment.body, '@claude') &&
+           (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
+          (github.event_name == 'pull_request_review_comment' &&
+           contains(github.event.comment.body, '@claude') &&
+           (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
+          (github.event_name == 'pull_request_review' &&
+           contains(github.event.review.body, '@claude') &&
+           (contains(github.event.review.body, 'ultra review') || contains(github.event.review.body, 'ultra')))
+        id: claude_ultra
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-
-          # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
             actions: read
+          claude_args: >
+            --model claude-opus-4-1-20250805
+            --max-turns 18
+            --allowed-tools=github,repo
+          prompt: |
+            You are performing a DEEP CRITICAL PR review for the current pull request.
+            Prioritize correctness, security, performance, robustness, and maintainability.
+            Treat this as a critical/complex change that may impact production.
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
+            ## Scope & Deliverables
+            1) Summary of the change and likely intent.
+            2) Critical issues with code examples (bugs, security, concurrency/race, perf hotspots, error-handling).
+            3) Test plan: concrete missing test cases (filenames + test names), suggest input matrices/edge cases.
+            4) Architecture/Design review: layering, hidden coupling, SRP adherence, refactor opportunities.
+            5) Minimal, actionable patches: propose exact diffs or code blocks for the most important fixes.
+            6) Risk assessment: High/Medium/Low, with rationale and rollback/mitigation notes.
 
-          # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://docs.anthropic.com/en/docs/claude-code/sdk#command-line for available options
-          # claude_args: '--model claude-opus-4-1-20250805 --allowed-tools Bash(gh pr:*)'
+            ## House Style & Standards (Enforce)
+            ### Single Responsibility Principle (SRP)
+            - Rule: One class/module → one reason to change.
+            - Detect: mixed concerns, many dependencies, multiple change reasons.
+            - Refactor: separate auth, data-access, business logic, UI concerns.
+
+            ### Size Limits & Triggers
+            - Functions: ≤ 30–40 lines; classes: ≤ 500 lines; files: ≤ 500 lines; methods/class: ≤ 20–30.
+
+            ### Refactoring Best Practices
+            - Small steps; test each change. Don’t mix refactors with bug fixes. Deduplicate first; add focused tests.
+
+            ### Universal Coding Standards
+            - TypeScript: prefer Record<string, unknown> over any; PascalCase (classes/interfaces); camelCase (funcs/vars).
+            - Errors: explicit; no swallowed failures. Imports: node → external → internal; remove unused.
+            - Commits: conventional format unless repo overrides; if overridden, keep #issue linkage.
+
+            ## Output Format (Markdown)
+            - **Overall Risk:** (High/Medium/Low) + brief rationale
+            - **Top Findings:** bullets with snippet/diff when helpful
+            - **Tests to Add:** file + test name + brief intent
+            - **Refactors:** incremental steps aligned with SRP/size limits
+            - **Perf/Sec Notes:** explicit callouts with quick wins
+
+      # ---------- Sonnet path: default review when no "ultra" keyword ----------
+      - name: Claude PR Review (Sonnet 4, solo-dev 80/20)
+        if: |
+          !(
+            (github.event_name == 'issue_comment' &&
+             contains(github.event.comment.body, '@claude') &&
+             (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
+            (github.event_name == 'pull_request_review_comment' &&
+             contains(github.event.comment.body, '@claude') &&
+             (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
+            (github.event_name == 'pull_request_review' &&
+             contains(github.event.review.body, '@claude') &&
+             (contains(github.event.review.body, 'ultra review') || contains(github.event.review.body, 'ultra')))
+          )
+        id: claude_default
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          claude_args: >
+            --model claude-sonnet-4-20250514
+            --max-turns 12
+            --allowed-tools=github,repo
+          prompt: |
+            You are performing a pragmatic PR review optimized for a solo maintainer.
+            Aim for an 80/20 balance: highest-impact issues and smallest viable fixes.
+
+            ## Deliverables (Concise)
+            - 3–7 key findings max, prioritized by risk and developer time.
+            - Minimal diffs/code blocks for quick fixes (prefer ≤20 lines).
+            - Short test plan: name concrete tests that would catch regressions.
+            - Merge guidance: approve / changes requested / comment-only, with one-line rationale.
+
+            ## Must-Check Areas
+            - Correctness & breaking changes (API/contract).
+            - Security & secrets exposure.
+            - Performance foot-guns (N+1, quadratic loops, chatty I/O).
+            - Error handling & logging levels (no swallowed errors).
+            - Docs/UX copy diffs (suggest concise rewrites when helpful).
+
+            ## House Style & Standards (Enforce)
+            - SRP; size limits (functions ≤ 30–40 lines; classes/files ≤ 500; methods/class ≤ 20–30).
+            - Refactoring: small steps; don’t mix with fixes; deduplicate first; add focused tests.
+            - TS: Record<string, unknown> over any; PascalCase classes/interfaces; camelCase funcs/vars.
+            - Imports ordered node → external → internal; remove unused.
+            - Commits: conventional format unless repo overrides; if overridden, keep #issue linkage.
