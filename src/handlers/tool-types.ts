@@ -13,7 +13,9 @@ import { ListEntryFilters } from '../api/operations/index.js';
 // Base tool configuration interface
 export interface ToolConfig {
   name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: any; // Keep as any for compatibility with existing tool configs
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatResult?: (results: any) => string;
 }
 

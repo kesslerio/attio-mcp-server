@@ -13,7 +13,7 @@ interface AttioFieldValueObject {
   value: unknown;
 }
 
-interface AttioFieldValueArray extends Array<string | AttioFieldValueObject> {}
+type AttioFieldValueArray = Array<string | AttioFieldValueObject>;
 
 type AttioFieldValue =
   | string

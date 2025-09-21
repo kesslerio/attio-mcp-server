@@ -11,6 +11,11 @@ export class TaskUpdateStrategy implements UpdateStrategy {
     values: Record<string, unknown>,
     _resourceType: UniversalResourceType
   ): Promise<AttioRecord> {
+    if (_resourceType !== 'tasks') {
+      throw new Error(
+        `TaskUpdateStrategy received unsupported resource type: ${_resourceType}`
+      );
+    }
     // 1) Existence check (skip in mock mode)
     try {
       if (!shouldUseMockData()) {

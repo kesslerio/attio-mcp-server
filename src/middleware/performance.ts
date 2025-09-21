@@ -83,7 +83,7 @@ export class PerformanceTracker {
    */
   static startOperation(
     toolName: string,
-    _metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>
   ): number {
     if (!this.enabled) return 0;
 
@@ -93,6 +93,10 @@ export class PerformanceTracker {
     if (process.env.NODE_ENV === 'development') {
       const thresholds =
         this.thresholds.get(toolName) || this.getDefaultThresholds();
+      const metadataHint =
+        metadata && Object.keys(metadata).length > 0
+          ? ` metadata=${JSON.stringify(metadata)}`
+          : '';
 
       // Set a timeout to warn about slow operations
       setTimeout(() => {
@@ -101,11 +105,11 @@ export class PerformanceTracker {
           console.warn(
             `⚠️ Critical: ${toolName} is taking too long (${duration.toFixed(
               2
-            )}ms)`
+            )}ms)${metadataHint}`
           );
         } else if (duration > thresholds.warning) {
           console.warn(
-            `⚠️ Warning: ${toolName} is slow (${duration.toFixed(2)}ms)`
+            `⚠️ Warning: ${toolName} is slow (${duration.toFixed(2)}ms)${metadataHint}`
           );
         }
       }, thresholds.warning);

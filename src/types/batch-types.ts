@@ -113,13 +113,18 @@ export function extractBatchSummary(response: unknown): BatchSummary {
   }
 
   // Fallback for malformed responses
-  const obj = response as Record<string, any>;
+  const obj = response as Record<string, unknown>;
+  const summary =
+    typeof obj.summary === 'object' && obj.summary !== null
+      ? (obj.summary as Record<string, unknown>)
+      : {};
+
   return {
-    total: obj?.summary?.total || 0,
-    succeeded: obj?.summary?.succeeded || 0,
-    failed: obj?.summary?.failed || 0,
-    skipped: obj?.summary?.skipped || 0,
-  } as BatchSummary;
+    total: Number(summary.total) || 0,
+    succeeded: Number(summary.succeeded) || 0,
+    failed: Number(summary.failed) || 0,
+    skipped: Number(summary.skipped) || 0,
+  };
 }
 
 /**
@@ -133,7 +138,7 @@ export function extractBatchResults<T = AttioRecord>(
   }
 
   // Fallback for malformed responses
-  const obj = response as Record<string, any>;
+  const obj = response as Record<string, unknown>;
   if (Array.isArray(obj?.results)) {
     return obj.results as BatchItemResult<T>[];
   }

@@ -51,8 +51,7 @@ export const UpdateValidation = {
   async verifyFieldPersistence(
     resourceType: UniversalResourceType,
     recordId: string,
-    expectedUpdates: Record<string, unknown>,
-    _updatedRecord: AttioRecord
+    expectedUpdates: Record<string, unknown>
   ): Promise<{
     verified: boolean;
     discrepancies: string[];

@@ -160,8 +160,9 @@ const toolValidators: Record<string, ToolValidator> = {
     if (p.resource_type === 'tasks') {
       const forbidden = ['content', 'content_markdown', 'content_plaintext'];
       if (p.record_data && typeof p.record_data === 'object') {
+        const recordData = p.record_data as Record<string, unknown>;
         for (const k of forbidden) {
-          if (k in (p.record_data as any)) {
+          if (k in recordData) {
             throw new UniversalValidationError(
               'Task content is immutable and cannot be updated'
             );
@@ -294,7 +295,7 @@ const toolValidators: Record<string, ToolValidator> = {
 
     // Validate new format
     if (hasOperations) {
-      const operations = p.operations as Array<any>;
+      const operations = p.operations as Array<Record<string, unknown>>;
       for (let index = 0; index < operations.length; index++) {
         const op = operations[index];
         if (!op.operation) {
@@ -349,8 +350,9 @@ const toolValidators: Record<string, ToolValidator> = {
     return p;
   },
   'list-notes': (p) => {
-    if (!p.record_id && (p as any).parent_record_id) {
-      (p as any).record_id = (p as any).parent_record_id;
+    const candidateParams = p as Record<string, unknown>;
+    if (!p.record_id && typeof candidateParams.parent_record_id === 'string') {
+      p.record_id = candidateParams.parent_record_id;
     }
     if (!p.resource_type) {
       throw new UniversalValidationError(
@@ -376,8 +378,9 @@ const toolValidators: Record<string, ToolValidator> = {
 
 export function validateUniversalToolParams(
   toolName: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
-): any {
+): any /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
   const sanitizedValue = InputSanitizer.sanitizeObject(params);
   if (
     !sanitizedValue ||

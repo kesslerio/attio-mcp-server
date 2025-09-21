@@ -29,11 +29,7 @@ import {
 } from '../types/list-types.js';
 import { isValidUUID } from '../utils/validation/uuid-validation.js';
 import { createScopedLogger, OperationType } from '../utils/logger.js';
-import {
-  getErrorStatus,
-  getErrorMessage,
-  isStatusLikeError,
-} from '../types/error-interfaces.js';
+import { getErrorStatus, getErrorMessage } from '../types/error-interfaces.js';
 
 // Re-export for backward compatibility
 export type { ListMembership } from '../types/list-types.js';
@@ -109,21 +105,6 @@ function ensureListShape(raw: unknown): AttioList {
  */
 function asListArray(raw: unknown): AttioList[] {
   return Array.isArray(raw) ? raw.map((item) => ensureListShape(item)) : [];
-}
-
-interface StatusLikeError {
-  response?: {
-    status?: number;
-    data?: {
-      validation_errors?: Array<{
-        path?: string[];
-        message?: string;
-      }>;
-    };
-  };
-  status?: number;
-  statusCode?: number;
-  message?: string;
 }
 
 interface ListEntryCreatePayload {

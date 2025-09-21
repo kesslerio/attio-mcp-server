@@ -337,7 +337,9 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: (params: any) => Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatResult: (results: any, ...args: any[]) => string;
 }
 

@@ -221,7 +221,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
       // For all other errors, enhance them for consistency
       throw ErrorEnhancer.ensureEnhanced(err, {
         resourceType: objectType,
-      } as any);
+      });
     }
   }, retryConfig);
 }

@@ -46,10 +46,10 @@ function formatRecordAsResource(record: AttioRecord, type: ResourceType) {
         Array.isArray(nameField) &&
         nameField.length > 0 &&
         nameField[0] &&
-        // Type assertion needed: nameField array elements may have value property not in base type
-        typeof (nameField[0] as any).value !== 'undefined'
+        typeof nameField[0] === 'object' &&
+        'value' in (nameField[0] as Record<string, unknown>)
       ) {
-        const v = (nameField[0] as { value: unknown }).value;
+        const v = (nameField[0] as Record<string, unknown>).value;
         return typeof v === 'string' ? v : String(v);
       }
       return `Unknown ${type.slice(0, -1)}`;

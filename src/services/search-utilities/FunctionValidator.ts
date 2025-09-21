@@ -14,6 +14,7 @@ import { debug, error } from '../../utils/logger.js';
  * @returns The validated function or null if invalid
  */
 export const ensureFunctionAvailability = async <
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends (...args: any[]) => unknown,
 >(
   fn: T | null | undefined,

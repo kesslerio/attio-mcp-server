@@ -137,7 +137,10 @@ export function extractListEntryValues(entry: unknown): ListEntryValues {
   }
 
   // If no specific values field, return the object itself (minus metadata)
-  const { id, listId, entryId, ...values } = obj;
+  const values = { ...obj };
+  delete values.id;
+  delete values.listId;
+  delete values.entryId;
   return values as ListEntryValues;
 }
 

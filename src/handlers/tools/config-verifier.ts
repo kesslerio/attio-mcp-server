@@ -15,10 +15,11 @@
  * @returns {boolean} - Whether all required tools are properly configured
  */
 import { createScopedLogger } from '../../utils/logger.js';
+import type { ToolConfig } from '../tool-types.js';
 
 export function verifyToolConfigsWithRequiredTools(
   resourceName: string,
-  combinedConfigs: any,
+  combinedConfigs: Record<string, ToolConfig>,
   requiredToolTypes: string[]
 ): boolean {
   const debugMode =
@@ -38,13 +39,9 @@ export function verifyToolConfigsWithRequiredTools(
 
   // Build a map of tool names to their config types
   for (const [configType, config] of Object.entries(combinedConfigs)) {
-    if (
-      config &&
-      typeof config === 'object' &&
-      'name' in config &&
-      typeof config.name === 'string'
-    ) {
-      const toolName = config.name;
+    if (config && typeof config === 'object' && 'name' in config) {
+      const toolConfig = config as ToolConfig;
+      const toolName = toolConfig.name;
       if (!toolNameMap[toolName]) {
         toolNameMap[toolName] = [];
       }
@@ -121,9 +118,9 @@ export function verifyToolConfigsWithRequiredTools(
  */
 export function verifySpecificTool(
   resourceName: string,
-  configs: any,
+  configs: Record<string, ToolConfig>,
   toolType: string,
-  subConfigs: any = null
+  subConfigs: Record<string, ToolConfig> | null = null
 ): boolean {
   const debugMode =
     process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';

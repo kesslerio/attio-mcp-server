@@ -14,6 +14,12 @@ import {
 } from '../../../utils/logger.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
+type RawCallToolRequest = CallToolRequest & {
+  method?: string;
+  id?: string | number;
+  jsonrpc?: string;
+};
+
 /**
  * Initialize tool execution context with correlation ID
  */
@@ -67,10 +73,10 @@ export function logToolRequest(
     ...(debugMode && {
       rawRequest: {
         // Type assertion needed: MCP request objects may have additional method/jsonrpc/id properties not in base type
-        method: (request as any).method,
+        method: (request as RawCallToolRequest).method,
         params: request.params,
-        jsonrpc: (request as any).jsonrpc,
-        id: (request as any).id,
+        jsonrpc: (request as RawCallToolRequest).jsonrpc,
+        id: (request as RawCallToolRequest).id,
       },
       paramsKeys: Object.keys(request.params || {}),
       argumentsStructure: request.params.arguments
@@ -113,7 +119,7 @@ export function logToolRequest(
 export function logToolSuccess(
   toolName: string,
   toolType: string,
-  result: any,
+  result: unknown,
   timer: PerformanceTimer
 ): void {
   const logger = createToolLogger(toolName, toolType);
@@ -121,11 +127,20 @@ export function logToolSuccess(
 
   const resultSummary = {
     success: true,
-    hasContent: !!result?.content,
-    contentLength: result?.content?.length || 0,
-    resultType: Array.isArray(result?.content)
-      ? 'array'
-      : typeof result?.content,
+    hasContent:
+      typeof result === 'object' && result !== null && 'content' in result,
+    contentLength:
+      typeof result === 'object' && result !== null && 'content' in result
+        ? Array.isArray((result as Record<string, unknown>).content)
+          ? ((result as Record<string, unknown>).content as unknown[]).length
+          : 0
+        : 0,
+    resultType:
+      typeof result === 'object' && result !== null && 'content' in result
+        ? Array.isArray((result as Record<string, unknown>).content)
+          ? 'array'
+          : typeof (result as Record<string, unknown>).content
+        : typeof result,
   };
 
   logger.operationSuccess(
@@ -179,7 +194,7 @@ export function logToolValidationError(
   toolName: string,
   toolType: string,
   validationError: string,
-  context?: any
+  context?: Record<string, unknown>
 ): void {
   warn(
     `tool:${toolName}`,
@@ -196,7 +211,7 @@ export function logToolValidationError(
 export function logToolConfigError(
   toolName: string,
   configError: string,
-  context?: any
+  context?: Record<string, unknown>
 ): void {
   error(
     'tool:registry',

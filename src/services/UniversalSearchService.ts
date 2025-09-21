@@ -912,10 +912,7 @@ export class UniversalSearchService {
   }
 
   // Utility methods remain unchanged
-  static async getSearchSuggestions(
-    _resource_type: UniversalResourceType,
-    _partialQuery: string
-  ): Promise<string[]> {
+  static async getSearchSuggestions(): Promise<string[]> {
     return [];
   }
 

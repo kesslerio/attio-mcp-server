@@ -5,7 +5,7 @@
 
 export interface HttpResponse {
   status: number;
-  body: any;
+  body: unknown;
 }
 
 export interface McpResult {
@@ -23,6 +23,11 @@ export interface McpResult {
  * Non-2xx responses become isError: true with appropriate error messages
  */
 export function toMcpResult(resp: HttpResponse): McpResult {
+  const responseBody =
+    typeof resp.body === 'object' && resp.body !== null
+      ? (resp.body as Record<string, unknown>)
+      : {};
+
   if (resp.status >= 200 && resp.status < 300) {
     return {
       isError: false,
@@ -31,24 +36,33 @@ export function toMcpResult(resp: HttpResponse): McpResult {
   }
 
   // Check if we have a structured error with code and type
-  if (resp.body?.code && resp.body?.type) {
+  if ('code' in responseBody && 'type' in responseBody) {
     return {
       isError: true,
       error: {
         code: resp.status,
-        type: resp.body.type,
-        message: resp.body.message,
+        type: String(responseBody.type),
+        message: responseBody.message as string | undefined,
       },
       content: [
-        { type: 'text', text: resp.body.message || `HTTP ${resp.status}` },
+        {
+          type: 'text',
+          text:
+            (responseBody.message as string | undefined) ||
+            `HTTP ${resp.status}`,
+        },
       ],
     };
   }
 
   // Fallback to simple message format
   const msg =
-    resp.body?.message ||
-    resp.body?.error?.message ||
+    (responseBody.message as string | undefined) ||
+    (typeof responseBody.error === 'object' && responseBody.error !== null
+      ? ((responseBody.error as Record<string, unknown>).message as
+          | string
+          | undefined)
+      : undefined) ||
     (resp.status === 404
       ? 'record not found'
       : resp.status === 400
@@ -64,11 +78,12 @@ export function toMcpResult(resp: HttpResponse): McpResult {
 /**
  * Check if a result looks like an HTTP response
  */
-export function isHttpResponseLike(result: any): result is HttpResponse {
+export function isHttpResponseLike(result: unknown): result is HttpResponse {
   return (
-    result &&
     typeof result === 'object' &&
-    typeof result.status === 'number' &&
+    result !== null &&
+    'status' in result &&
+    typeof (result as { status?: unknown }).status === 'number' &&
     'body' in result
   );
 }
