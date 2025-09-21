@@ -45,12 +45,15 @@ export function validateAttributes(
  */
 export function validateResourceId(
   resourceType: ResourceType,
-  args: any,
+  args: Record<string, unknown> | null | undefined,
   apiPath: string
 ): string | { error: ReturnType<typeof createErrorResult> } {
   const idParamName =
     resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = args?.[idParamName] as string;
+  const id =
+    args && typeof args === 'object'
+      ? (args[idParamName] as string | undefined)
+      : undefined;
 
   if (!id) {
     return {

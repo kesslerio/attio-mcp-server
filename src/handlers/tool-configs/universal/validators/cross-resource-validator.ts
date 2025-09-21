@@ -33,8 +33,17 @@ export class CrossResourceValidator {
       const client = getLazyAttioClient();
       await client.get(`/objects/companies/records/${companyId.trim()}`);
       return { exists: true };
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
+    } catch (error: unknown) {
+      const responseStatus =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { status?: number } }).response ===
+          'object'
+          ? (error as { response?: { status?: number } }).response?.status
+          : undefined;
+
+      if (responseStatus === 404) {
         return {
           exists: false,
           error: {
@@ -48,7 +57,11 @@ export class CrossResourceValidator {
         exists: false,
         error: {
           type: 'api_error',
-          message: `Failed to validate company existence: ${error?.message || 'Unknown API error'}`,
+          message: `Failed to validate company existence: ${
+            typeof error === 'object' && error !== null && 'message' in error
+              ? String((error as { message?: unknown }).message)
+              : 'Unknown API error'
+          }`,
           httpStatusCode: HttpStatusCode.BAD_GATEWAY,
         },
       };
@@ -57,13 +70,24 @@ export class CrossResourceValidator {
 
   static async validateRecordRelationships(
     resourceType: UniversalResourceType,
-    recordData: any
+    recordData: Record<string, unknown> | null | undefined
   ): Promise<void> {
     if (!recordData || typeof recordData !== 'object') return;
     switch (resourceType) {
       case UniversalResourceType.PEOPLE: {
+        const recordDataObj = recordData as Record<string, unknown>;
+        const companyField = recordDataObj.company as
+          | Record<string, unknown>
+          | string
+          | undefined;
+        const nestedCompanyId =
+          typeof companyField === 'object' &&
+          companyField !== null &&
+          'id' in companyField
+            ? (companyField as Record<string, unknown>).id
+            : undefined;
         const companyId =
-          recordData.company_id || recordData.company?.id || recordData.company;
+          recordDataObj.company_id ?? nestedCompanyId ?? companyField;
         if (companyId) {
           const companyIdString = String(companyId);
           const validationResult =

@@ -9,7 +9,7 @@ interface PromptErrorResponse {
     code: string | number;
     message: string;
     type: ErrorType;
-    details?: any;
+    details?: Record<string, unknown> | null;
   };
   content: Array<{ type: string; text: string }>;
   isError: boolean;
@@ -53,7 +53,7 @@ export function createErrorResult(
     error,
     errorType,
     errorDetails
-  ) as any;
+  ) as PromptErrorResponse;
 
   // Create a new response object with our extended type
   const response: PromptErrorResponse = {

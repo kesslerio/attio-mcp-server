@@ -254,6 +254,16 @@ export function normalizeNoteResponse(note: AttioNote): {
   };
   raw: AttioNote;
 } {
+  const noteRecord = note as Record<string, unknown>;
+  const meetingIdField =
+    'meeting_id' in noteRecord ? noteRecord.meeting_id : undefined;
+  const tagsField = 'tags' in noteRecord ? noteRecord.tags : undefined;
+  const tags = Array.isArray(tagsField)
+    ? (tagsField as unknown[]).filter(
+        (tag): tag is string => typeof tag === 'string'
+      )
+    : [];
+
   return {
     id: { record_id: note.id.note_id },
     resource_type: 'notes',
@@ -264,9 +274,11 @@ export function normalizeNoteResponse(note: AttioNote): {
       parent_object: note.parent_object,
       parent_record_id: note.parent_record_id,
       created_at: note.created_at,
-      // Type assertion needed: AttioNote interface may have optional fields not in official schema
-      meeting_id: (note as any).meeting_id || null,
-      tags: (note as any).tags || [],
+      meeting_id:
+        typeof meetingIdField === 'string' || meetingIdField === null
+          ? meetingIdField
+          : null,
+      tags,
     },
     raw: note,
   };

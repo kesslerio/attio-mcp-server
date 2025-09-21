@@ -18,7 +18,6 @@ import {
 import { ResourceType } from '../../types/attio.js';
 import {
   validateAttributeValue,
-  ValidationResult,
   AttributeType,
 } from '../attribute-validator.js';
 import { InvalidRequestError } from '../../errors/api-errors.js';

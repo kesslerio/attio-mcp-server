@@ -2,8 +2,9 @@ import { toE164 } from './PhoneNormalizer.js';
 export async function normalizeValues(
   resourceType: string,
   values: Record<string, unknown>,
-  attributes?: string[]
+  _attributes?: string[]
 ) {
+  void _attributes;
   const out: Record<string, unknown> = { ...values };
   for (const [k, v] of Object.entries(values)) {
     const isPhoney = /phone/.test(k); // fast path if you don't want to fetch schemas

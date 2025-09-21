@@ -670,19 +670,26 @@ export class UniversalMetadataService {
    * Filter attributes by category
    */
   static filterAttributesByCategory(
-    attributes: Record<string, unknown> | any[],
+    attributes: Record<string, unknown> | unknown[],
     requestedCategories?: string[]
-  ): Record<string, unknown> | any[] {
+  ): Record<string, unknown> | unknown[] {
     if (!requestedCategories || requestedCategories.length === 0) {
       return attributes; // Return all attributes if no categories specified
     }
 
     // Handle array of attributes
     if (Array.isArray(attributes)) {
-      const filtered = attributes.filter((attr: Record<string, unknown>) => {
+      const filtered = attributes.filter((attr) => {
+        if (typeof attr !== 'object' || attr === null) {
+          return false;
+        }
         // Check various possible category field names
+        const attributeRecord = attr as Record<string, unknown>;
         const category =
-          attr.category || attr.type || attr.attribute_type || attr.group;
+          attributeRecord.category ??
+          attributeRecord.type ??
+          attributeRecord.attribute_type ??
+          attributeRecord.group;
         return (
           category &&
           typeof category === 'string' &&

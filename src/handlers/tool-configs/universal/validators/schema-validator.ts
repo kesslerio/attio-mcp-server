@@ -378,8 +378,9 @@ const toolValidators: Record<string, ToolValidator> = {
 
 export function validateUniversalToolParams(
   toolName: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
-): any {
+): any /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
   const sanitizedValue = InputSanitizer.sanitizeObject(params);
   if (
     !sanitizedValue ||

@@ -387,8 +387,7 @@ export class UniversalUpdateService {
         const verification = await UpdateValidation.verifyFieldPersistence(
           resource_type,
           record_id,
-          sanitizedData,
-          normalizedRecord
+          sanitizedData
         );
         if (verification.warnings.length > 0) {
           logError(

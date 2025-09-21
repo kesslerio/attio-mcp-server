@@ -22,11 +22,6 @@ type FormatResultFunction =
   | ((results: unknown, resourceType?: unknown, infoType?: unknown) => string);
 import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
-import { computeErrorWithContext } from '../../../utils/error-detection.js';
-import {
-  toMcpResult,
-  isHttpResponseLike,
-} from '../../../lib/http/toMcpResult.js';
 
 // Import operation handlers
 import {
@@ -157,15 +152,16 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
 
       // If a tool already returned an MCP-shaped object, stop double-wrapping
-      const isMcpResponseLike = (v: unknown) => {
-        return (
-          v &&
-          typeof v === 'object' &&
-          v !== null &&
-          'content' in v &&
-          'isError' in v
-        );
-      };
+      const isMcpResponseLike = (
+        value: unknown
+      ): value is {
+        content: unknown;
+        isError: boolean;
+      } =>
+        typeof value === 'object' &&
+        value !== null &&
+        'content' in value &&
+        'isError' in value;
 
       if (isMcpResponseLike(rawResult)) {
         const sanitized = sanitizeMcpResponse(rawResult);
