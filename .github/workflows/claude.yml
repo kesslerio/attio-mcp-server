@@ -8,62 +8,82 @@ on:
   pull_request_review:
     types: [submitted]
 
-# Prevent concurrent runs for the same PR or issue, but allow different comment events
+# Prevent concurrent runs for the same PR or review thread
 concurrency:
   group: claude-user-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.event.comment.id || github.event.review.id || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   claude:
-    # Only run if a comment/review mentions @claude in a PR context
+    # Only run for PR contexts where someone actually tagged @claude
     if: |
       (
         github.event_name == 'issue_comment' &&
-        contains(github.event.comment.body, '@claude') &&
-        github.event.issue.pull_request
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '@claude')
       ) || (
         github.event_name == 'pull_request_review_comment' &&
         contains(github.event.comment.body, '@claude')
       ) || (
         github.event_name == 'pull_request_review' &&
+        github.event.review.body &&
         contains(github.event.review.body, '@claude')
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions:
-      id-token: write
-      contents: write
-      pull-requests: write
-      issues: write
-      actions: read
+      id-token: write         # for OIDC if used by the action
+      contents: read          # we don't need write to repo files for a review
+      pull-requests: write    # to post PR comments
+      issues: write           # to post issue comments on PRs
+      actions: read           # allow Claude to read CI status on PRs
+      checks: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ---------- Opus path: only when user asks for "ultra review" ----------
-      - name: Claude PR Ultra Review (Opus 4.1)
-        if: |
-          (github.event_name == 'issue_comment' &&
-           contains(github.event.comment.body, '@claude') &&
-           (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
-          (github.event_name == 'pull_request_review_comment' &&
-           contains(github.event.comment.body, '@claude') &&
-           (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
-          (github.event_name == 'pull_request_review' &&
-           contains(github.event.review.body, '@claude') &&
-           (contains(github.event.review.body, 'ultra review') || contains(github.event.review.body, 'ultra')))
-        id: claude_ultra
+      # Compute whether user requested the "ultra" (Opus) mode
+      - name: Detect ultra keyword
+        id: detect
+        run: |
+          TEXT="$(jq -r '.comment.body // .review.body // ""' "$GITHUB_EVENT_PATH")"
+          LCTEXT="$(printf '%s' "$TEXT" | tr '[:upper:]' '[:lower:]')"
+          if echo "$LCTEXT" | grep -q -E '\bultra( review)?\b'; then
+            echo "ultra=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ultra=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # === Opus 4.1: deep/critical review – only when explicitly requested ===
+      - name: Claude Review (Opus – ultra)
+        id: claude_opus
+        if: steps.detect.outputs.ultra == 'true'
         uses: anthropics/claude-code-action@v1
+        env:
+          # Ensure gh/CLI and API clients are authenticated
+          GH_TOKEN: ${{ github.token }}
         with:
+          # If you use OAuth for Claude Code, keep this; otherwise switch to your provider inputs.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          additional_permissions: |
-            actions: read
-          claude_args: >
+
+          # Let the action manage a single tracking comment on the PR
+          track_progress: true
+
+          # Give the action the repo token explicitly
+          github_token: ${{ github.token }}
+
+          # Keep the tools minimal; allow read/grep/glob & shell for repo introspection
+          # and leave room for Claude's built-in GitHub integrations.
+          claude_args: >-
             --model claude-opus-4-1-20250805
-            --max-turns 18
-            --allowed-tools=github,repo
+            --max-turns 22
+            --allowed-tools Read,Glob,Grep,Bash,NotebookEdit
+            --output-format stream-json
+
+          # Tight, production-grade prompt for critical reviews (SRP & quality gates included)
           prompt: |
             You are performing a DEEP CRITICAL PR review for the current pull request.
             Prioritize correctness, security, performance, robustness, and maintainability.
@@ -77,74 +97,118 @@ jobs:
             5) Minimal, actionable patches: propose exact diffs or code blocks for the most important fixes.
             6) Risk assessment: High/Medium/Low, with rationale and rollback/mitigation notes.
 
-            ## House Style & Standards (Enforce)
-            ### Single Responsibility Principle (SRP)
-            - Rule: One class/module → one reason to change.
-            - Detect: mixed concerns, many dependencies, multiple change reasons.
-            - Refactor: separate auth, data-access, business logic, UI concerns.
+            ## Code Quality Standards (ENFORCE)
+            - Single Responsibility Principle (SRP)
+            - Size limits: functions ≤ 30–40 lines; classes/files ≤ 500 lines; ≤ 20–30 methods/class
+            - Refactoring best practices: small steps; don't mix with bugfixes; dedupe first; add focused tests
+            - Universal standards:
+              * TypeScript: prefer Record<string, unknown> over any; PascalCase for classes/interfaces; camelCase for vars/functions
+              * Errors: explicit handling; no swallowed failures
+              * Imports: node → external → internal; remove unused
+              * Commits: conventional or repo override; retain #issue linkage
 
-            ### Size Limits & Triggers
-            - Functions: ≤ 30–40 lines; classes: ≤ 500 lines; files: ≤ 500 lines; methods/class: ≤ 20–30.
-
-            ### Refactoring Best Practices
-            - Small steps; test each change. Don’t mix refactors with bug fixes. Deduplicate first; add focused tests.
-
-            ### Universal Coding Standards
-            - TypeScript: prefer Record<string, unknown> over any; PascalCase (classes/interfaces); camelCase (funcs/vars).
-            - Errors: explicit; no swallowed failures. Imports: node → external → internal; remove unused.
-            - Commits: conventional format unless repo overrides; if overridden, keep #issue linkage.
-
-            ## Output Format (Markdown)
+            ## Output (Markdown)
             - **Overall Risk:** (High/Medium/Low) + brief rationale
             - **Top Findings:** bullets with snippet/diff when helpful
             - **Tests to Add:** file + test name + brief intent
             - **Refactors:** incremental steps aligned with SRP/size limits
             - **Perf/Sec Notes:** explicit callouts with quick wins
 
-      # ---------- Sonnet path: default review when no "ultra" keyword ----------
-      - name: Claude PR Review (Sonnet 4, solo-dev 80/20)
-        if: |
-          !(
-            (github.event_name == 'issue_comment' &&
-             contains(github.event.comment.body, '@claude') &&
-             (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
-            (github.event_name == 'pull_request_review_comment' &&
-             contains(github.event.comment.body, '@claude') &&
-             (contains(github.event.comment.body, 'ultra review') || contains(github.event.comment.body, 'ultra'))) ||
-            (github.event_name == 'pull_request_review' &&
-             contains(github.event.review.body, '@claude') &&
-             (contains(github.event.review.body, 'ultra review') || contains(github.event.review.body, 'ultra')))
-          )
-        id: claude_default
+      # === Sonnet: fast 80/20 review – default ===
+      - name: Claude Review (Sonnet – solo-dev 80/20)
+        id: claude_sonnet
+        if: steps.detect.outputs.ultra != 'true'
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          additional_permissions: |
-            actions: read
-          claude_args: >
+          track_progress: true
+          github_token: ${{ github.token }}
+          claude_args: >-
             --model claude-sonnet-4-20250514
-            --max-turns 12
-            --allowed-tools=github,repo
+            --max-turns 16
+            --allowed-tools Read,Glob,Grep,Bash,NotebookEdit
+            --output-format stream-json
           prompt: |
-            You are performing a pragmatic PR review optimized for a solo maintainer.
-            Aim for an 80/20 balance: highest-impact issues and smallest viable fixes.
+            You are reviewing a PR for a solo maintainer of the attio-mcp-server repo.
+            Be pragmatic and time-aware: prioritize the highest-impact fixes and clarity.
+            Strictly check:
+              - Correctness & regressions
+              - Security (input validation, secrets, auth, error messages)
+              - Performance red flags
+              - Maintainability & readability
+              - The standards listed below
+            Keep suggestions scoped and actionable; prefer small diffs over broad rewrites.
 
-            ## Deliverables (Concise)
-            - 3–7 key findings max, prioritized by risk and developer time.
-            - Minimal diffs/code blocks for quick fixes (prefer ≤20 lines).
-            - Short test plan: name concrete tests that would catch regressions.
-            - Merge guidance: approve / changes requested / comment-only, with one-line rationale.
+            ## Code Quality Standards (ENFORCE)
+            - SRP; size limits (fn ≤ 30–40 lines; classes/files ≤ 500; ≤ 20–30 methods/class)
+            - Refactor in small steps; don't mix refactors with fixes; dedupe first
+            - TS style: Record<string, unknown> over any; PascalCase/camelCase; ordered imports; no unused
+            - Commits: conventional or repo override; keep #issue linkage
 
-            ## Must-Check Areas
-            - Correctness & breaking changes (API/contract).
-            - Security & secrets exposure.
-            - Performance foot-guns (N+1, quadratic loops, chatty I/O).
-            - Error handling & logging levels (no swallowed errors).
-            - Docs/UX copy diffs (suggest concise rewrites when helpful).
+            ## Output (Markdown)
+            - **Summary**
+            - **Top 5 Issues** (with short code refs)
+            - **Suggested Tests**
+            - **Quick Refactors**
+            - **Risk Level** (and why)
 
-            ## House Style & Standards (Enforce)
-            - SRP; size limits (functions ≤ 30–40 lines; classes/files ≤ 500; methods/class ≤ 20–30).
-            - Refactoring: small steps; don’t mix with fixes; deduplicate first; add focused tests.
-            - TS: Record<string, unknown> over any; PascalCase classes/interfaces; camelCase funcs/vars.
-            - Imports ordered node → external → internal; remove unused.
-            - Commits: conventional format unless repo overrides; if overridden, keep #issue linkage.
+      # === Fallback: if no comment was created for any reason, post one ===
+      - name: Ensure review is posted (fallback)
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE_OPUS: ${{ steps.claude_opus.outputs.execution_file }}
+          EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            const execFile = process.env.EXEC_FILE_OPUS || process.env.EXEC_FILE_SONNET;
+            if (!execFile || !fs.existsSync(execFile)) {
+              core.info('No execution_file found; nothing to fallback-post.');
+              return;
+            }
+            // Check if a recent Claude comment already exists (avoid duplicates)
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 50,
+              page: 1
+            });
+            if (comments.some(c =>
+              c.user?.type === 'Bot' &&
+              /Overall Risk:|Top Findings:|Security Review/i.test(c.body || '')
+            )) {
+              core.info('A Claude review comment already exists; skipping fallback.');
+              return;
+            }
+
+            let body = '';
+            try {
+              const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
+              // Prefer a top-level "result" if present; else collect last assistant text
+              if (typeof data.result === 'string' && data.result.trim()) {
+                body = data.result.trim();
+              } else if (Array.isArray(data.turns)) {
+                for (let i = data.turns.length - 1; i >= 0; i--) {
+                  const m = data.turns[i]?.message;
+                  const parts = Array.isArray(m?.content) ? m.content : [];
+                  const text = parts.filter(p => p.type === 'text').map(p => p.text).join('\n').trim();
+                  if (text) { body = text; break; }
+                }
+              }
+            } catch (e) {
+              core.warning('Could not parse execution_file JSON; posting a generic note.');
+            }
+            if (!body) body = '_Claude produced a review, but no formatted output was found. Check the workflow logs for details._';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+            core.info('Posted fallback review comment.');
