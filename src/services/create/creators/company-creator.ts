@@ -18,6 +18,10 @@ import {
 } from '../extractor.js';
 import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
 import { createScopedLogger } from '../../../utils/logger.js';
+import {
+  safeExtractRecordId,
+  safeExtractValuesObject,
+} from '../../../utils/type-extraction.js';
 
 /**
  * Company-specific resource creator
@@ -95,19 +99,16 @@ export class CompanyCreator extends BaseCreator {
             recType: typeof rec,
             recKeys: rec && typeof rec === 'object' ? Object.keys(rec) : null,
             hasId: !!(rec as Record<string, unknown>)?.id,
-            hasRecordId: !!(
-              (rec as Record<string, unknown>)?.id as Record<string, unknown>
-            )?.record_id,
+            hasRecordId: !!safeExtractRecordId(rec),
           }
         );
       }
 
       this.finalizeRecord(rec, context);
-      registerMockAliasIfPresent(
-        input,
-        ((rec as Record<string, unknown>)?.id as Record<string, unknown>)
-          ?.record_id as string
-      );
+      const recordId = safeExtractRecordId(rec);
+      if (recordId) {
+        registerMockAliasIfPresent(input, recordId);
+      }
 
       const out = normalizeRecordForOutput(rec, 'companies');
 
@@ -129,9 +130,7 @@ export class CompanyCreator extends BaseCreator {
                   unknown
                 >
               )?.name,
-          nameAfter: typeof (
-            (out as Record<string, unknown>)?.values as Record<string, unknown>
-          )?.name,
+          nameAfter: typeof safeExtractValuesObject(out)?.name,
           domainsAfter: Array.isArray(
             (
               (out as Record<string, unknown>)?.values as Record<
@@ -244,12 +243,7 @@ export class CompanyCreator extends BaseCreator {
             'Company recovery succeeded by domain',
             {
               domain,
-              recordId: (
-                (record as Record<string, unknown>)?.id as Record<
-                  string,
-                  unknown
-                >
-              )?.record_id,
+              recordId: safeExtractRecordId(record),
             }
           );
           return record as AttioRecord;
@@ -278,12 +272,7 @@ export class CompanyCreator extends BaseCreator {
             'Company recovery succeeded by name',
             {
               name,
-              recordId: (
-                (record as Record<string, unknown>)?.id as Record<
-                  string,
-                  unknown
-                >
-              )?.record_id,
+              recordId: safeExtractRecordId(record),
             }
           );
           return record as AttioRecord;

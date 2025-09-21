@@ -23,6 +23,7 @@ import {
 } from '../extractor.js';
 import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
 import { createScopedLogger } from '../../../utils/logger.js';
+import { safeExtractRecordId } from '../../../utils/type-extraction.js';
 
 /**
  * Person-specific resource creator
@@ -60,11 +61,10 @@ export class PersonCreator extends BaseCreator {
         response as unknown as Record<string, unknown>
       );
       this.finalizeRecord(rec, context);
-      registerMockAliasIfPresent(
-        input,
-        ((rec as Record<string, unknown>)?.id as Record<string, unknown>)
-          ?.record_id as string
-      );
+      const recordId = safeExtractRecordId(rec);
+      if (recordId) {
+        registerMockAliasIfPresent(input, recordId);
+      }
       const out = normalizeRecordForOutput(rec, 'people');
 
       // Optional debug to confirm the shape:
@@ -229,8 +229,7 @@ export class PersonCreator extends BaseCreator {
         const record = this.extractRecordFromSearch(searchResult);
         if (
           (record as Record<string, unknown>)?.id &&
-          ((record as Record<string, unknown>)?.id as Record<string, unknown>)
-            ?.record_id
+          safeExtractRecordId(record)
         ) {
           context.debug(
             this.constructor.name,
@@ -284,8 +283,7 @@ export class PersonCreator extends BaseCreator {
     const mustRecover =
       !record ||
       !(record as Record<string, unknown>).id ||
-      !((record as Record<string, unknown>).id as Record<string, unknown>)
-        ?.record_id;
+      !safeExtractRecordId(record);
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }

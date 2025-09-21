@@ -8,6 +8,7 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import type { ResourceCreatorContext } from './types.js';
 import { BaseCreator } from './base-creator.js';
+import { safeExtractRecordId } from '../../../utils/type-extraction.js';
 
 /**
  * Task-specific resource creator
@@ -113,9 +114,7 @@ export class TaskCreator extends BaseCreator {
       }
 
       context.debug(this.constructor.name, 'Converted task record', {
-        recordId: (
-          (record as Record<string, unknown>)?.id as Record<string, unknown>
-        )?.record_id,
+        recordId: safeExtractRecordId(record),
         resourceType: record.resource_type,
       });
 
