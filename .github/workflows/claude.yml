@@ -33,19 +33,52 @@ jobs:
     timeout-minutes: 25
     permissions:
       id-token: write         # for OIDC if used by the action
-      contents: read          # we don't need write to repo files for a review
-      pull-requests: write    # to post PR comments
-      issues: write           # to post issue comments on PRs
-      actions: read           # allow Claude to read CI status on PRs
+      contents: read          # review-only: no file writes needed
+      pull-requests: write    # allow posting PR comments
+      issues: write           # allow posting on PR issue thread
+      actions: read           # allow reading CI status
       checks: read
 
     steps:
+      # Initial checkout (safe default); we'll replace the tree with PR head in a moment.
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Compute whether user requested the "ultra" (Opus) mode
+      # Ensure we analyze the PR head, so files exist locally before Claude runs.
+      - name: Get PR info from comment/review context
+        if: |
+          github.event_name == 'issue_comment' ||
+          github.event_name == 'pull_request_review_comment' ||
+          github.event_name == 'pull_request_review'
+        id: prinfo
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = (context.payload.pull_request?.number) || context.issue.number;
+            if (!prNumber) {
+              core.setFailed('No PR number found on this event.');
+              return;
+            }
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            core.setOutput('number', pr.number);
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('repo_full', pr.head.repo.full_name);
+
+      - name: Checkout PR head (ensures files exist before Claude runs)
+        if: steps.prinfo.outputs.head_sha != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.prinfo.outputs.head_sha }}
+          fetch-depth: 0
+
+      # Case-insensitive "ultra" detector for Opus mode
       - name: Detect ultra keyword
         id: detect
         run: |
@@ -63,27 +96,16 @@ jobs:
         if: steps.detect.outputs.ultra == 'true'
         uses: anthropics/claude-code-action@v1
         env:
-          # Ensure gh/CLI and API clients are authenticated
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}         # authenticate gh / GitHub API
         with:
-          # If you use OAuth for Claude Code, keep this; otherwise switch to your provider inputs.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-
-          # Let the action manage a single tracking comment on the PR
-          track_progress: true
-
-          # Give the action the repo token explicitly
-          github_token: ${{ github.token }}
-
-          # Keep the tools minimal; allow read/grep/glob & shell for repo introspection
-          # and leave room for Claude's built-in GitHub integrations.
+          github_token: ${{ github.token }}     # let the action post/update comments
+          track_progress: true                  # maintain a single tracking comment
           claude_args: >-
             --model claude-opus-4-1-20250805
             --max-turns 22
             --allowed-tools Read,Glob,Grep,Bash,NotebookEdit
             --output-format stream-json
-
-          # Tight, production-grade prompt for critical reviews (SRP & quality gates included)
           prompt: |
             You are performing a DEEP CRITICAL PR review for the current pull request.
             Prioritize correctness, security, performance, robustness, and maintainability.
@@ -123,8 +145,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          track_progress: true
           github_token: ${{ github.token }}
+          track_progress: true
           claude_args: >-
             --model claude-sonnet-4-20250514
             --max-turns 16
@@ -161,49 +183,52 @@ jobs:
         env:
           EXEC_FILE_OPUS: ${{ steps.claude_opus.outputs.execution_file }}
           EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
+          RESULT_OPUS: ${{ steps.claude_opus.outputs.result }}
+          RESULT_SONNET: ${{ steps.claude_sonnet.outputs.result }}
         with:
           script: |
             const fs = require('fs');
 
+            const result = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
             const execFile = process.env.EXEC_FILE_OPUS || process.env.EXEC_FILE_SONNET;
-            if (!execFile || !fs.existsSync(execFile)) {
-              core.info('No execution_file found; nothing to fallback-post.');
-              return;
-            }
-            // Check if a recent Claude comment already exists (avoid duplicates)
+
+            // Avoid duplicate bot comments if one already exists
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              per_page: 50,
-              page: 1
+              per_page: 50
             });
             if (comments.some(c =>
-              c.user?.type === 'Bot' &&
-              /Overall Risk:|Top Findings:|Security Review/i.test(c.body || '')
+              /Overall Risk:|Top Findings:|Security|Tests to Add/i.test(c.body || '') &&
+              c.user?.type === 'Bot'
             )) {
               core.info('A Claude review comment already exists; skipping fallback.');
               return;
             }
 
-            let body = '';
-            try {
-              const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
-              // Prefer a top-level "result" if present; else collect last assistant text
-              if (typeof data.result === 'string' && data.result.trim()) {
-                body = data.result.trim();
-              } else if (Array.isArray(data.turns)) {
-                for (let i = data.turns.length - 1; i >= 0; i--) {
-                  const m = data.turns[i]?.message;
-                  const parts = Array.isArray(m?.content) ? m.content : [];
-                  const text = parts.filter(p => p.type === 'text').map(p => p.text).join('\n').trim();
-                  if (text) { body = text; break; }
+            let body = result;
+            if (!body && execFile && fs.existsSync(execFile)) {
+              try {
+                const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
+                if (typeof data.result === 'string' && data.result.trim()) {
+                  body = data.result.trim();
+                } else if (Array.isArray(data.turns)) {
+                  for (let i = data.turns.length - 1; i >= 0; i--) {
+                    const m = data.turns[i]?.message;
+                    const parts = Array.isArray(m?.content) ? m.content : [];
+                    const text = parts.filter(p => p.type === 'text').map(p => p.text).join('\n').trim();
+                    if (text) { body = text; break; }
+                  }
                 }
+              } catch (e) {
+                core.warning('Could not parse execution_file JSON.');
               }
-            } catch (e) {
-              core.warning('Could not parse execution_file JSON; posting a generic note.');
             }
-            if (!body) body = '_Claude produced a review, but no formatted output was found. Check the workflow logs for details._';
+
+            if (!body) {
+              body = '_Claude produced a review, but no formatted output was found. Check the workflow logs._';
+            }
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
