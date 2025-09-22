@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   claude:
-    # Only run for PR contexts where someone actually tagged @claude
+    # Only run for PR contexts where someone tagged @claude
     if: |
       (
         github.event_name == 'issue_comment' &&
@@ -32,35 +32,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
-      id-token: write         # for OIDC if used by the action
-      contents: read          # review-only: no file writes needed
-      pull-requests: write    # allow posting PR comments
-      issues: write           # allow posting on PR issue thread
-      actions: read           # allow reading CI status
+      # Keep this job minimally privileged; do NOT grant repo write unless needed for comments.
+      contents: read
+      pull-requests: write      # needed to post PR comments
+      issues: write             # needed to post on PR issue thread
+      actions: read
       checks: read
+      id-token: write           # safe to keep; action may use OIDC
 
     steps:
-      # Initial checkout (safe default); we'll replace the tree with PR head in a moment.
-      - name: Checkout repository
+      - name: Baseline checkout (no PR code yet)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Ensure we analyze the PR head, so files exist locally before Claude runs.
-      - name: Get PR info from comment/review context
-        if: |
-          github.event_name == 'issue_comment' ||
-          github.event_name == 'pull_request_review_comment' ||
-          github.event_name == 'pull_request_review'
+      # Gather PR info safely via API
+      - name: Get PR info
         id: prinfo
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = (context.payload.pull_request?.number) || context.issue.number;
-            if (!prNumber) {
-              core.setFailed('No PR number found on this event.');
-              return;
-            }
+            if (!prNumber) { core.setFailed('No PR number found on this event.'); return; }
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -69,17 +62,12 @@ jobs:
             core.setOutput('number', pr.number);
             core.setOutput('head_sha', pr.head.sha);
             core.setOutput('head_ref', pr.head.ref);
-            core.setOutput('repo_full', pr.head.repo.full_name);
+            core.setOutput('head_repo_full', pr.head.repo.full_name);
+            core.setOutput('is_internal', String(pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`));
+            core.setOutput('actor_assoc', context.payload.comment?.author_association || context.payload.review?.author_association || context.actor_association || 'NONE');
 
-      - name: Checkout PR head (ensures files exist before Claude runs)
-        if: steps.prinfo.outputs.head_sha != ''
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.prinfo.outputs.head_sha }}
-          fetch-depth: 0
-
-      # Case-insensitive "ultra" detector for Opus mode
-      - name: Detect ultra keyword
+      # Detect keywords
+      - name: Detect modes (ultra / ok-to-test)
         id: detect
         run: |
           TEXT="$(jq -r '.comment.body // .review.body // ""' "$GITHUB_EVENT_PATH")"
@@ -89,57 +77,42 @@ jobs:
           else
             echo "ultra=false" >> "$GITHUB_OUTPUT"
           fi
+          if echo "$LCTEXT" | grep -q -E '\bok-?to-?test\b'; then
+            echo "ok_to_test=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok_to_test=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      # === Opus 4.1: deep/critical review – only when explicitly requested ===
-      - name: Claude Review (Opus – ultra)
-        id: claude_opus
-        if: steps.detect.outputs.ultra == 'true'
-        uses: anthropics/claude-code-action@v1
-        env:
-          GH_TOKEN: ${{ github.token }}         # authenticate gh / GitHub API
+      # SECURITY GATE:
+      # Only treat the PR HEAD as trusted if:
+      #   - it's INTERNAL (same repo), OR
+      #   - a trusted actor (OWNER/MEMBER/COLLABORATOR) has said "ok-to-test" in the triggering comment.
+      - name: Compute trust
+        id: trust
+        run: |
+          is_internal="${{ steps.prinfo.outputs.is_internal }}"
+          assoc="${{ steps.prinfo.outputs.actor_assoc }}"
+          ok_to_test="${{ steps.detect.outputs.ok_to_test }}"
+          trusted="false"
+          if [ "$is_internal" = "true" ]; then
+            trusted="true"
+          elif [ "$ok_to_test" = "true" ] && { [ "$assoc" = "OWNER" ] || [ "$assoc" = "MEMBER" ] || [ "$assoc" = "COLLABORATOR" ]; }; then
+            trusted="true"
+          fi
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      # If trusted, we can safely checkout PR HEAD for richer local analysis
+      - name: Checkout PR HEAD (trusted only)
+        if: steps.trust.outputs.trusted == 'true'
+        uses: actions/checkout@v4
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ github.token }}     # let the action post/update comments
-          track_progress: true                  # maintain a single tracking comment
-          claude_args: >-
-            --model claude-opus-4-1-20250805
-            --max-turns 22
-            --allowed-tools Read,Glob,Grep,Bash,NotebookEdit
-            --output-format stream-json
-          prompt: |
-            You are performing a DEEP CRITICAL PR review for the current pull request.
-            Prioritize correctness, security, performance, robustness, and maintainability.
-            Treat this as a critical/complex change that may impact production.
+          ref: ${{ steps.prinfo.outputs.head_sha }}
+          fetch-depth: 0
 
-            ## Scope & Deliverables
-            1) Summary of the change and likely intent.
-            2) Critical issues with code examples (bugs, security, concurrency/race, perf hotspots, error-handling).
-            3) Test plan: concrete missing test cases (filenames + test names), suggest input matrices/edge cases.
-            4) Architecture/Design review: layering, hidden coupling, SRP adherence, refactor opportunities.
-            5) Minimal, actionable patches: propose exact diffs or code blocks for the most important fixes.
-            6) Risk assessment: High/Medium/Low, with rationale and rollback/mitigation notes.
-
-            ## Code Quality Standards (ENFORCE)
-            - Single Responsibility Principle (SRP)
-            - Size limits: functions ≤ 30–40 lines; classes/files ≤ 500 lines; ≤ 20–30 methods/class
-            - Refactoring best practices: small steps; don't mix with bugfixes; dedupe first; add focused tests
-            - Universal standards:
-              * TypeScript: prefer Record<string, unknown> over any; PascalCase for classes/interfaces; camelCase for vars/functions
-              * Errors: explicit handling; no swallowed failures
-              * Imports: node → external → internal; remove unused
-              * Commits: conventional or repo override; retain #issue linkage
-
-            ## Output (Markdown)
-            - **Overall Risk:** (High/Medium/Low) + brief rationale
-            - **Top Findings:** bullets with snippet/diff when helpful
-            - **Tests to Add:** file + test name + brief intent
-            - **Refactors:** incremental steps aligned with SRP/size limits
-            - **Perf/Sec Notes:** explicit callouts with quick wins
-
-      # === Sonnet: fast 80/20 review – default ===
-      - name: Claude Review (Sonnet – solo-dev 80/20)
-        id: claude_sonnet
-        if: steps.detect.outputs.ultra != 'true'
+      # Trusted path → full toolset (you can drop Bash here too if you want to be extra strict)
+      - name: Claude Review (trusted tree)
+        id: claude_trusted
+        if: steps.trust.outputs.trusted == 'true'
         uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
@@ -148,51 +121,65 @@ jobs:
           github_token: ${{ github.token }}
           track_progress: true
           claude_args: >-
-            --model claude-sonnet-4-20250514
-            --max-turns 16
+            --model ${{ steps.detect.outputs.ultra == 'true' && 'claude-opus-4-1-20250805' || 'claude-sonnet-4-20250514' }}
+            --max-turns ${{ steps.detect.outputs.ultra == 'true' && '22' || '16' }}
             --allowed-tools Read,Glob,Grep,Bash,NotebookEdit
             --output-format stream-json
           prompt: |
-            You are reviewing a PR for a solo maintainer of the attio-mcp-server repo.
-            Be pragmatic and time-aware: prioritize the highest-impact fixes and clarity.
-            Strictly check:
-              - Correctness & regressions
-              - Security (input validation, secrets, auth, error messages)
-              - Performance red flags
-              - Maintainability & readability
-              - The standards listed below
-            Keep suggestions scoped and actionable; prefer small diffs over broad rewrites.
-
-            ## Code Quality Standards (ENFORCE)
-            - SRP; size limits (fn ≤ 30–40 lines; classes/files ≤ 500; ≤ 20–30 methods/class)
-            - Refactor in small steps; don't mix refactors with fixes; dedupe first
-            - TS style: Record<string, unknown> over any; PascalCase/camelCase; ordered imports; no unused
+            You are reviewing this PR with full working tree available.
+            Enforce:
+            - SRP; size limits (fn ≤ 30–40; classes/files ≤ 500; ≤ 20–30 methods/class)
+            - Refactor in small, tested steps; don't mix with bugfixes; dedupe first
+            - TS style: prefer Record<string, unknown>; PascalCase/camelCase; ordered imports; no unused
             - Commits: conventional or repo override; keep #issue linkage
+            Output Markdown with: Summary • Top findings • Suggested tests • Quick refactors • Risk level.
+            If "ultra" mode, add deep security/perf/architecture analysis and minimal corrective diffs.
 
-            ## Output (Markdown)
-            - **Summary**
-            - **Top 5 Issues** (with short code refs)
-            - **Suggested Tests**
-            - **Quick Refactors**
-            - **Risk Level** (and why)
+      # UNTRUSTED path → API-only analysis (NO checkout of PR head, NO shell)
+      - name: Claude Review (untrusted, API-only)
+        id: claude_untrusted
+        if: steps.trust.outputs.trusted != 'true'
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          track_progress: true
+          # No Bash; only safe read/glob/grep operations inside the action's sandbox
+          claude_args: >-
+            --model ${{ steps.detect.outputs.ultra == 'true' && 'claude-opus-4-1-20250805' || 'claude-sonnet-4-20250514' }}
+            --max-turns ${{ steps.detect.outputs.ultra == 'true' && '22' || '16' }}
+            --allowed-tools Read,Glob,Grep
+            --output-format stream-json
+          prompt: |
+            You are reviewing this PR WITHOUT checking out its code (untrusted context).
+            Use GitHub API metadata and diffs to analyze changes. Do NOT execute any PR code.
+            Enforce the same standards:
+            - SRP; size limits (fn ≤ 30–40; classes/files ≤ 500; ≤ 20–30 methods/class)
+            - Refactor in small, tested steps; no mixing refactors with fixes; dedupe first
+            - TS style: prefer Record<string, unknown>; PascalCase/camelCase; ordered imports; no unused
+            - Commits: conventional or repo override; keep #issue linkage
+            Output Markdown with: Summary • Top findings • Suggested tests • Quick refactors • Risk level.
+            If "ultra" mode, include deeper architecture/security/performance critique.
+            If the review is limited due to API-only context, clearly state the limitation and what extra checks you'd perform with a trusted checkout.
 
-      # === Fallback: if no comment was created for any reason, post one ===
+      # Fallback: if for any reason the action didn't post a comment, synthesize one from outputs
       - name: Ensure review is posted (fallback)
         if: always()
         uses: actions/github-script@v7
         env:
-          EXEC_FILE_OPUS: ${{ steps.claude_opus.outputs.execution_file }}
-          EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
-          RESULT_OPUS: ${{ steps.claude_opus.outputs.result }}
-          RESULT_SONNET: ${{ steps.claude_sonnet.outputs.result }}
+          EXEC_FILE_TRUSTED: ${{ steps.claude_trusted.outputs.execution_file }}
+          EXEC_FILE_UNTRUSTED: ${{ steps.claude_untrusted.outputs.execution_file }}
+          RESULT_TRUSTED: ${{ steps.claude_trusted.outputs.result }}
+          RESULT_UNTRUSTED: ${{ steps.claude_untrusted.outputs.result }}
         with:
           script: |
             const fs = require('fs');
+            const execFile = process.env.EXEC_FILE_TRUSTED || process.env.EXEC_FILE_UNTRUSTED;
+            let body = (process.env.RESULT_TRUSTED || process.env.RESULT_UNTRUSTED || '').trim();
 
-            const result = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
-            const execFile = process.env.EXEC_FILE_OPUS || process.env.EXEC_FILE_SONNET;
-
-            // Avoid duplicate bot comments if one already exists
+            // Avoid duplicate comments
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -200,20 +187,18 @@ jobs:
               per_page: 50
             });
             if (comments.some(c =>
-              /Overall Risk:|Top Findings:|Security|Tests to Add/i.test(c.body || '') &&
+              /Overall Risk:|Top Findings:|Suggested tests|Quick refactors/i.test(c.body || '') &&
               c.user?.type === 'Bot'
             )) {
               core.info('A Claude review comment already exists; skipping fallback.');
               return;
             }
 
-            let body = result;
             if (!body && execFile && fs.existsSync(execFile)) {
               try {
                 const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
-                if (typeof data.result === 'string' && data.result.trim()) {
-                  body = data.result.trim();
-                } else if (Array.isArray(data.turns)) {
+                if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
+                else if (Array.isArray(data.turns)) {
                   for (let i = data.turns.length - 1; i >= 0; i--) {
                     const m = data.turns[i]?.message;
                     const parts = Array.isArray(m?.content) ? m.content : [];
@@ -225,10 +210,7 @@ jobs:
                 core.warning('Could not parse execution_file JSON.');
               }
             }
-
-            if (!body) {
-              body = '_Claude produced a review, but no formatted output was found. Check the workflow logs._';
-            }
+            if (!body) body = '_Claude produced a review, but no formatted output was found. Check the workflow logs._';
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
