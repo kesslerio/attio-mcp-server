@@ -131,14 +131,7 @@ export class CompanyCreator extends BaseCreator {
                 >
               )?.name,
           nameAfter: typeof safeExtractValuesObject(out)?.name,
-          domainsAfter: Array.isArray(
-            (
-              (out as Record<string, unknown>)?.values as Record<
-                string,
-                unknown
-              >
-            )?.domains
-          ),
+          domainsAfter: Array.isArray(safeExtractValuesObject(out)?.domains),
         });
       }
 
