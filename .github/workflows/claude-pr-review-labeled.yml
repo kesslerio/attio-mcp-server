@@ -3,9 +3,11 @@ name: Claude PR Review (labeled)
 on:
   pull_request:
     types: [labeled, synchronize, reopened]
+  issues:
+    types: [labeled] # <— NEW: catch label events emitted via Issues API
 
 concurrency:
-  group: claude-pr-labeled-${{ github.event.pull_request.number }}
+  group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
   cancel-in-progress: true
 
 permissions:
@@ -17,6 +19,11 @@ permissions:
 
 jobs:
   review:
+    # Only proceed if this is a PR (issues:labeled can also fire on pure issues)
+    if: |
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'issues' && github.event.issue.pull_request)
+
     runs-on: ubuntu-latest
 
     steps:
@@ -31,9 +38,23 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const pr = context.payload.pull_request;
+            // Normalize to a PR object whether event is pull_request or issues
+            let pr;
+            if (context.payload.pull_request) {
+              pr = context.payload.pull_request;
+            } else {
+              const issue = context.payload.issue;
+              // issues:labeled fired on a PR
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: issue.number
+              });
+              pr = data;
+            }
+
             const labels = (pr.labels || []).map(l => l.name);
-            const eventLabel = context.payload.label?.name || '';
+            const eventLabel = (context.payload.label && context.payload.label.name) || '';
             const all = new Set(labels.concat([eventLabel].filter(Boolean)));
 
             const ultra = all.has('claude:ultra');
@@ -54,11 +75,12 @@ jobs:
             core.setOutput('turns', String(turns));
             core.setOutput('internal', String(internal));
             core.setOutput('pr', String(pr.number));
+            core.setOutput('sha', pr.head.sha);
             core.setOutput('changed', String(changed));
 
       - name: Stop if no claude:* label
         if: steps.decide.outputs.should_run != 'true'
-        run: echo "No claude:* label on this PR. Skipping."
+        run: echo "No claude:* label present. Skipping."
 
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
@@ -84,7 +106,7 @@ jobs:
         if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ steps.decide.outputs.sha }}
           fetch-depth: 0
 
       - name: Claude Review
