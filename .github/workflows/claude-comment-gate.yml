@@ -58,6 +58,9 @@ jobs:
 
       - name: Ensure label exists
         uses: actions/github-script@v7
+        env:
+          # Use PAT instead of GITHUB_TOKEN to trigger downstream workflows
+          GITHUB_TOKEN: ${{ secrets.CLAUDE_GATE_TOKEN || github.token }}
         with:
           script: |
             const name = '${{ steps.info.outputs.label }}';
@@ -80,6 +83,9 @@ jobs:
       - name: Add or toggle label (handles re-review)
         id: relabel
         uses: actions/github-script@v7
+        env:
+          # Use PAT instead of GITHUB_TOKEN to trigger downstream workflows
+          GITHUB_TOKEN: ${{ secrets.CLAUDE_GATE_TOKEN || github.token }}
         with:
           script: |
             const issue_number = Number('${{ steps.info.outputs.pr }}');
@@ -124,6 +130,9 @@ jobs:
 
       - name: Acknowledge
         uses: actions/github-script@v7
+        env:
+          # Use PAT instead of GITHUB_TOKEN to trigger downstream workflows
+          GITHUB_TOKEN: ${{ secrets.CLAUDE_GATE_TOKEN || github.token }}
         with:
           script: |
             const issue_number = Number('${{ steps.info.outputs.pr }}');
