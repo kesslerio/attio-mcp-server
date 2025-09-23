@@ -2,9 +2,9 @@ name: Claude PR Review (labeled)
 
 on:
   issues:
-    types: [labeled] # initial trigger comes from labels
+    types: [labeled] # for issues (if needed)
   pull_request:
-    types: [synchronize, reopened] # follow-ups on pushes if label still present
+    types: [labeled, synchronize, reopened] # initial trigger + follow-ups
 
 concurrency:
   group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
@@ -100,8 +100,14 @@ jobs:
           else                         sonnet_cap=56; opus_cap=64
           fi
 
+          # Calculate cutoff turns (when to stop using tools)
+          sonnet_cutoff=$((sonnet_cap - 6))
+          opus_cutoff=$((opus_cap - 8))
+
           echo "sonnet_turns=$sonnet_cap" >> $GITHUB_OUTPUT
           echo "opus_turns=$opus_cap" >> $GITHUB_OUTPUT
+          echo "sonnet_cutoff=$sonnet_cutoff" >> $GITHUB_OUTPUT
+          echo "opus_cutoff=$opus_cutoff" >> $GITHUB_OUTPUT
 
           # Summary for maintainers in both logs and step summary
           summary="🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns, Opus: $opus_cap turns"
@@ -149,7 +155,7 @@ jobs:
           prompt: |
             IMPORTANT EXECUTION RULES
             - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
-            - By turn ${{ fromJSON(steps.turns.outputs.sonnet_turns) - 6 }}, STOP using tools and write the final Markdown report.
+            - By turn ${{ steps.turns.outputs.sonnet_cutoff }}, STOP using tools and write the final Markdown report.
             - Always emit a single final report with sections:
               Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
             - End the report with the exact marker: END-OF-REPORT
@@ -199,7 +205,7 @@ jobs:
           prompt: |
             IMPORTANT EXECUTION RULES
             - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
-            - By turn ${{ fromJSON(steps.turns.outputs.opus_turns) - 8 }}, STOP using tools and write the final Markdown report.
+            - By turn ${{ steps.turns.outputs.opus_cutoff }}, STOP using tools and write the final Markdown report.
             - Always emit a single final report with sections:
               Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
             - End the report with the exact marker: END-OF-REPORT
