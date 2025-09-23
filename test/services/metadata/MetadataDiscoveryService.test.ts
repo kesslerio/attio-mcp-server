@@ -81,6 +81,42 @@ describe('DefaultMetadataDiscoveryService', () => {
     expect(mockGet).not.toHaveBeenCalled();
   });
 
+  it('returns normalized record metadata with mappings and counts', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            title: 'Name',
+            api_slug: 'name',
+            category: 'basic',
+            type: 'text',
+          },
+          {
+            title: 'Notes',
+            api_slug: 'notes',
+            category: 'extended',
+            type: 'text',
+          },
+        ],
+      },
+    });
+
+    const result = await service.discoverObject({
+      objectSlug: 'companies',
+      categories: ['basic'],
+    });
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/objects/companies/attributes?categories=basic'
+    );
+    expect(result.count).toBe(1);
+    expect(result.mappings).toEqual({ Name: 'name' });
+    expect(result.resource_type).toBe(UniversalResourceType.RECORDS);
+    expect(result.objectSlug).toBe('companies');
+    expect(Array.isArray(result.attributes)).toBe(true);
+    expect((result.attributes as unknown[]).length).toBe(1);
+  });
+
   it('propagates structured errors from API failures', async () => {
     mockGet.mockRejectedValue(new Error('boom'));
 
