@@ -203,7 +203,8 @@ jobs:
               ref: context.repo.default_branch,
               inputs: {
                 pr: String('${{ steps.info.outputs.pr }}'),
-                label: '${{ steps.info.outputs.label }}'
+                label: '${{ steps.info.outputs.label }}',
+                source: 'gate'
               }
             });
             core.info(`Dispatched review workflow for PR #${{ steps.info.outputs.pr }} with label ${{ steps.info.outputs.label }}`);

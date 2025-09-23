@@ -9,13 +9,15 @@ on:
       label:
         description: 'claude:review or claude:ultra'
         required: true
-  issues:
-    types: [labeled] # single trigger for both issues and PRs (no auto re-review on pushes)
+      source:
+        description: 'Dispatch source for debugging'
+        required: false
+        default: 'gate'
   pull_request:
     types: [reopened] # optional: manual nudge path for reopened PRs
 
 concurrency:
-  group: claude-pr-labeled-${{ github.event.inputs.pr || github.event.pull_request.number || github.event.issue.number }}
+  group: claude-pr-labeled-${{ github.event.inputs.pr || github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -27,26 +29,27 @@ permissions:
 
 jobs:
   review:
-    # Run for workflow_dispatch, Claude labels, or PR reopened
+    # Run for workflow_dispatch or PR reopened (with Claude label)
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'pull_request' && github.event.action == 'reopened') ||
-      (github.event_name == 'issues' && github.event.action == 'labeled' &&
-       github.event.issue.pull_request &&
-       (github.event.label.name == 'claude:review' || github.event.label.name == 'claude:ultra'))
+      (github.event_name == 'pull_request' && github.event.action == 'reopened' &&
+       (contains(github.event.pull_request.labels.*.name, 'claude:review') ||
+        contains(github.event.pull_request.labels.*.name, 'claude:ultra')))
 
     runs-on: ubuntu-latest
 
     concurrency:
-      group: pr-${{ github.event.pull_request.number || github.event.issue.number }}-claude-review
+      group: pr-${{ github.event.inputs.pr || github.event.pull_request.number }}-claude-review
       cancel-in-progress: true
 
     steps:
       - name: Resolve inputs
         id: resolve
         run: |
-          echo "pr=${{ github.event.inputs.pr || github.event.pull_request.number || github.event.issue.number }}" >> $GITHUB_OUTPUT
-          echo "label=${{ github.event.inputs.label || github.event.label.name || '' }}" >> $GITHUB_OUTPUT
+          echo "pr=${{ github.event.inputs.pr || github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "label=${{ github.event.inputs.label || 'claude:review' }}" >> $GITHUB_OUTPUT
+          echo "source=${{ github.event.inputs.source || 'reopened' }}" >> $GITHUB_OUTPUT
+          echo "🔍 Dispatch source: ${{ github.event.inputs.source || 'reopened' }}"
 
       # Fast label check to short-circuit unrelated label churn
       - name: Has claude label?
@@ -66,7 +69,7 @@ jobs:
             core.setOutput('has_ultra',  String(hasUltra));
 
       - name: Skip if not a Claude label
-        if: steps.haslabel.outputs.has != 'true' && !(github.event_name == 'pull_request' && github.event.action == 'reopened') && github.event_name != 'workflow_dispatch'
+        if: steps.haslabel.outputs.has != 'true' && github.event_name == 'pull_request'
         run: exit 0
 
       # Optional (audit egress): set to "audit" first; switch to "block" once stable
