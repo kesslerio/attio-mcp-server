@@ -38,24 +38,32 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // Normalize to a PR object whether event is pull_request or issues
-            let pr;
-            if (context.payload.pull_request) {
-              pr = context.payload.pull_request;
-            } else {
-              const issue = context.payload.issue;
-              // issues:labeled fired on a PR
-              const { data } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: issue.number
-              });
-              pr = data;
+            // Get PR number regardless of event
+            const prNumber = context.payload.pull_request?.number
+              ?? context.payload.issue?.number;
+            if (!prNumber) {
+              core.setFailed('No PR number on this event'); return;
             }
 
-            const labels = (pr.labels || []).map(l => l.name);
+            // Always fetch the PR fresh
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            // 🔑 CRITICAL: fetch labels from the Issues API (source of truth)
+            const { data: labelsResp } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100
+            });
+            const labelNames = labelsResp.map(l => l.name);
+
+            // Include the label from payload (handles races / eventual consistency)
             const eventLabel = (context.payload.label && context.payload.label.name) || '';
-            const all = new Set(labels.concat([eventLabel].filter(Boolean)));
+            const all = new Set(labelNames.concat([eventLabel].filter(Boolean)));
 
             const ultra = all.has('claude:ultra');
             const normal = all.has('claude:review');
@@ -64,10 +72,13 @@ jobs:
             const internal = pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`;
             const changed = pr.changed_files || 0;
 
-            // choose model/turns and cap for very large PRs
             const model = ultra ? 'claude-opus-4-1-20250805' : 'claude-sonnet-4-20250514';
             let turns = ultra ? 22 : 16;
             if (changed > 60 && turns > 18) turns = 18; // soft cost cap
+
+            // Optional debug (shows up in logs)
+            core.info(`labels: ${JSON.stringify([...all])}`);
+            core.info(`mode: ${ultra ? 'ultra' : (normal ? 'review' : 'none')}, internal: ${internal}, changed: ${changed}`);
 
             core.setOutput('should_run', String(should_run));
             core.setOutput('mode', ultra ? 'ultra' : (normal ? 'review' : 'none'));
@@ -76,11 +87,11 @@ jobs:
             core.setOutput('internal', String(internal));
             core.setOutput('pr', String(pr.number));
             core.setOutput('sha', pr.head.sha);
-            core.setOutput('changed', String(changed));
+            core.setOutput('labels', JSON.stringify([...all]));
 
       - name: Stop if no claude:* label
         if: steps.decide.outputs.should_run != 'true'
-        run: echo "No claude:* label present. Skipping."
+        run: echo "No claude:* label present. labels_seen=${{ steps.decide.outputs.labels || 'n/a' }} Skipping."
 
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
