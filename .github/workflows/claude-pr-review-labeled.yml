@@ -267,24 +267,105 @@ jobs:
 
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
+      - name: Capture Sonnet Review Output
+        if: steps.claude_sonnet.conclusion == 'success' && steps.claude_sonnet.outputs.execution_file
+        shell: bash
+        run: |
+          EXEC_FILE="${{ steps.claude_sonnet.outputs.execution_file }}"
+          if [ -f "$EXEC_FILE" ]; then
+            echo "📄 Processing execution file: $EXEC_FILE"
+            # Extract text content from the execution file and capture in env var
+            if command -v jq >/dev/null 2>&1; then
+              # Try to extract content using jq if available
+              REVIEW_CONTENT=$(jq -r '
+                def extract_text:
+                  if type == "object" then
+                    if .type == "text" and .text then .text
+                    elif .content then .content | map(extract_text) | join("\n")
+                    elif .messages then .messages | map(extract_text) | join("\n")
+                    elif .turns then .turns | map(extract_text) | join("\n")
+                    else empty
+                    end
+                  elif type == "array" then map(extract_text) | join("\n")
+                  else empty
+                  end;
+                extract_text' "$EXEC_FILE" 2>/dev/null || cat "$EXEC_FILE")
+            else
+              # Fallback to reading the file directly
+              REVIEW_CONTENT=$(cat "$EXEC_FILE")
+            fi
+
+            # Remove END-OF-REPORT marker and trim
+            REVIEW_CONTENT=$(echo "$REVIEW_CONTENT" | sed 's/END-OF-REPORT.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+            if [ -n "$REVIEW_CONTENT" ]; then
+              echo "✅ Captured Sonnet review content (${#REVIEW_CONTENT} chars)"
+              echo "RESULT_SONNET<<'EOF'" >> "$GITHUB_ENV"
+              echo "$REVIEW_CONTENT" >> "$GITHUB_ENV"
+              echo "EOF" >> "$GITHUB_ENV"
+            else
+              echo "❌ No review content found in execution file"
+            fi
+          else
+            echo "❌ Execution file not found: $EXEC_FILE"
+          fi
+
+      - name: Capture Opus Review Output
+        if: steps.claude_opus.conclusion == 'success' && steps.claude_opus.outputs.execution_file
+        shell: bash
+        run: |
+          EXEC_FILE="${{ steps.claude_opus.outputs.execution_file }}"
+          if [ -f "$EXEC_FILE" ]; then
+            echo "📄 Processing execution file: $EXEC_FILE"
+            # Extract text content from the execution file and capture in env var
+            if command -v jq >/dev/null 2>&1; then
+              # Try to extract content using jq if available
+              REVIEW_CONTENT=$(jq -r '
+                def extract_text:
+                  if type == "object" then
+                    if .type == "text" and .text then .text
+                    elif .content then .content | map(extract_text) | join("\n")
+                    elif .messages then .messages | map(extract_text) | join("\n")
+                    elif .turns then .turns | map(extract_text) | join("\n")
+                    else empty
+                    end
+                  elif type == "array" then map(extract_text) | join("\n")
+                  else empty
+                  end;
+                extract_text' "$EXEC_FILE" 2>/dev/null || cat "$EXEC_FILE")
+            else
+              # Fallback to reading the file directly
+              REVIEW_CONTENT=$(cat "$EXEC_FILE")
+            fi
+
+            # Remove END-OF-REPORT marker and trim
+            REVIEW_CONTENT=$(echo "$REVIEW_CONTENT" | sed 's/END-OF-REPORT.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+            if [ -n "$REVIEW_CONTENT" ]; then
+              echo "✅ Captured Opus review content (${#REVIEW_CONTENT} chars)"
+              echo "RESULT_OPUS<<'EOF'" >> "$GITHUB_ENV"
+              echo "$REVIEW_CONTENT" >> "$GITHUB_ENV"
+              echo "EOF" >> "$GITHUB_ENV"
+            else
+              echo "❌ No review content found in execution file"
+            fi
+          else
+            echo "❌ Execution file not found: $EXEC_FILE"
+          fi
+
       - name: Post PR review (robust)
         if: always() && steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
         uses: actions/github-script@v7
         env:
           EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
           EXEC_FILE_OPUS: ${{ steps.claude_opus.outputs.execution_file }}
-          RESULT_SONNET: ${{ steps.claude_sonnet.outputs.result }}
-          RESULT_OPUS: ${{ steps.claude_opus.outputs.result }}
         with:
           script: |
             const fs = require('fs');
             const LIMIT = 65000;
 
             // Event-agnostic PR number detection
-            const prNumber =
-              Number('${{ github.event.pull_request.number || '' }}') ||
-              Number('${{ github.event.issue.number || '' }}') ||
-              Number('${{ steps.decide.outputs.pr || '' }}');
+            const prNumber = Number('${{ steps.resolve.outputs.pr }}');
 
             if (!prNumber) {
               core.info('No PR number found; skipping comment posting.');
@@ -362,7 +443,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+            const prNumber = Number('${{ steps.resolve.outputs.pr }}');
 
             // Check which label was applied by looking at completed steps
             const sonnetRan = '${{ steps.claude_sonnet.outcome }}' !== '';
