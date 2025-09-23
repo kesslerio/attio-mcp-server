@@ -62,6 +62,7 @@ jobs:
         env:
           # Use PAT instead of GITHUB_TOKEN to trigger downstream workflows
           GITHUB_TOKEN: ${{ secrets.CLAUDE_GATE_TOKEN || github.token }}
+          CLAUDE_ALLOWED_USERS: kesslerio
         with:
           script: |
             const user = context.actor;
@@ -80,8 +81,6 @@ jobs:
             } else {
               core.setOutput('blocked', 'false');
             }
-        env:
-          CLAUDE_ALLOWED_USERS: kesslerio
 
       - name: Ensure label exists
         if: steps.guard.outputs.blocked != 'true'
