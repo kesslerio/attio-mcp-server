@@ -1,0 +1,126 @@
+name: Claude Trusted Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review (will checkout PR head)'
+        required: true
+        type: number
+      mode:
+        description: 'Model: sonnet | opus'
+        required: false
+        default: 'sonnet'
+        type: choice
+        options: [sonnet, opus]
+
+# Runs with repository context (maintainer-triggered), so we can safely checkout
+concurrency:
+  group: claude-trusted-review-${{ inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      actions: read
+      checks: read
+
+    steps:
+      - name: Get PR info
+        id: prinfo
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = Number(core.getInput('pr_number', { required: true }));
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner, repo: context.repo.repo, pull_number: prNumber,
+            });
+            core.setOutput('number', pr.number);
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('internal', String(pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`));
+
+      - name: Fail closed on external repo (optional)
+        if: steps.prinfo.outputs.internal != 'true'
+        run: |
+          echo "::error::PR is from an external repository; run API-only review instead."
+          exit 1
+
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.prinfo.outputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Select model
+        id: model
+        run: |
+          if [ "${{ inputs.mode }}" = "opus" ]; then
+            echo "name=claude-opus-4-1-20250805" >> $GITHUB_OUTPUT
+            echo "turns=22" >> $GITHUB_OUTPUT
+          else
+            echo "name=claude-sonnet-4-20250514" >> $GITHUB_OUTPUT
+            echo "turns=16" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Review (trusted)
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          track_progress: true
+          claude_args: >-
+            --model ${{ steps.model.outputs.name }}
+            --max-turns ${{ steps.model.outputs.turns }}
+            --allowed-tools Read,Glob,Grep,NotebookEdit
+            --output-format stream-json
+          prompt: |
+            You are reviewing this PR with full working tree access.
+            Enforce:
+            - SRP; size limits (fn ≤ 30–40; classes/files ≤ 500; ≤ 20–30 methods/class)
+            - Refactor in small, tested steps; don't mix with bugfixes; dedupe first
+            - TS style: prefer Record<string, unknown>; PascalCase/camelCase; ordered imports; no unused
+            - Commits: conventional or repo override; keep #issue linkage
+
+            Output Markdown:
+            - **Summary**
+            - **Top Findings** (with code snippets/diffs)
+            - **Suggested Tests**
+            - **Quick Refactors**
+            - **Risk Level** (and rationale)
+
+      - name: Ensure review is posted (fallback)
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+          RESULT: ${{ steps.claude.outputs.result }}
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = Number(process.env.PR_NUMBER || '${{ steps.prinfo.outputs.number }}');
+            let body = (process.env.RESULT || '').trim();
+            const p = process.env.EXEC_FILE;
+            if (!body && p && fs.existsSync(p)) {
+              try {
+                const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+                if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
+              } catch {}
+            }
+            if (!body) body = '_Claude produced a review, but no formatted output was found. See logs._';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body
+            });
+            core.info('Posted fallback review comment.');
