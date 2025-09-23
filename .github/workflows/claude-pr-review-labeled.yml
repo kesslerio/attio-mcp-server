@@ -1,10 +1,10 @@
 name: Claude PR Review (labeled)
 
 on:
-  pull_request:
-    types: [labeled, synchronize, reopened]
   issues:
-    types: [labeled] # <— NEW: catch label events emitted via Issues API
+    types: [labeled] # initial trigger comes from labels
+  pull_request:
+    types: [synchronize, reopened] # follow-ups on pushes if label still present
 
 concurrency:
   group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
@@ -25,6 +25,10 @@ jobs:
       (github.event_name == 'issues' && github.event.issue.pull_request)
 
     runs-on: ubuntu-latest
+
+    concurrency:
+      group: pr-${{ github.event.pull_request.number || github.event.issue.number }}-claude-review
+      cancel-in-progress: true
 
     steps:
       # Optional (audit egress): set to "audit" first; switch to "block" once stable
@@ -54,14 +58,55 @@ jobs:
 
             const internal = pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`;
             const changed = pr.changed_files || 0;
+            const additions = pr.additions || 0;
+            const deletions = pr.deletions || 0;
+            const totalLines = additions + deletions;
 
             // Optional debug (shows up in logs)
-            core.info(`PR #${pr.number}: internal=${internal}, changed=${changed} files`);
+            core.info(`PR #${pr.number}: internal=${internal}, changed=${changed} files, lines=${totalLines}`);
 
             core.setOutput('internal', String(internal));
             core.setOutput('pr', String(pr.number));
             core.setOutput('sha', pr.head.sha);
             core.setOutput('changed', String(changed));
+            core.setOutput('lines', String(totalLines));
+
+      - name: Has claude label?
+        id: haslabel
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
+            });
+            const names = new Set(labels.map(l => l.name));
+            const hasReview = names.has('claude:review');
+            const hasUltra  = names.has('claude:ultra');
+            core.setOutput('has', String(hasReview || hasUltra));
+            core.setOutput('has_review', String(hasReview));
+            core.setOutput('has_ultra',  String(hasUltra));
+
+      - name: Calculate turn limits based on PR size
+        id: turns
+        run: |
+          lines=${{ steps.decide.outputs.lines || 0 }}
+          files=${{ steps.decide.outputs.changed || 0 }}
+
+          # Scale turns with diff size (bigger diff → more turns)
+          if   [ $lines -le 400  ]; then sonnet_cap=22; opus_cap=26
+          elif [ $lines -le 1500 ]; then sonnet_cap=32; opus_cap=38
+          elif [ $lines -le 4000 ]; then sonnet_cap=44; opus_cap=52
+          else                         sonnet_cap=56; opus_cap=64
+          fi
+
+          echo "sonnet_turns=$sonnet_cap" >> $GITHUB_OUTPUT
+          echo "opus_turns=$opus_cap" >> $GITHUB_OUTPUT
+
+          # Summary for maintainers in both logs and step summary
+          summary="🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns, Opus: $opus_cap turns"
+          echo "$summary"
+          echo "$summary" >> $GITHUB_STEP_SUMMARY
 
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
@@ -82,40 +127,83 @@ jobs:
         run: exit 0
 
       - name: Checkout PR HEAD
-        if: steps.decide.outputs.internal == 'true'
+        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.decide.outputs.sha }}
           fetch-depth: 0
 
       - name: Claude Review (Sonnet)
-        if: steps.decide.outputs.internal == 'true'
+        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_review == 'true'
         id: claude_sonnet
+        timeout-minutes: 12
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          label_trigger: 'claude:review'
           claude_args: >-
             --model claude-sonnet-4-20250514
-            --max-turns 16
-            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --max-turns ${{ steps.turns.outputs.sonnet_turns }}
+            --allowed-tools Read,Glob,Grep,NotebookEdit
             --output-format stream-json
+          prompt: |
+            IMPORTANT EXECUTION RULES
+            - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
+            - By turn ${{ fromJSON(steps.turns.outputs.sonnet_turns) - 6 }}, STOP using tools and write the final Markdown report.
+            - Always emit a single final report with sections:
+              Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
+            - End the report with the exact marker: END-OF-REPORT
+
+            Perform a PR review with full working tree access.
+
+            Enforce:
+            ## Code Quality Standards
+            ### Single Responsibility Principle (SRP)
+            - One class/module → one reason to change. Detect mixed concerns, many dependencies, multiple change reasons.
+
+            ### Size Limits & Refactoring Triggers
+            - Functions: ≤30–40 lines; Classes/Files: ≤500 lines; Methods per class: ≤20–30.
+            - Trigger refactor on complexity or mixed concerns.
+
+            ### Refactoring Best Practices
+            - Small steps; test each change. Don't mix refactors with bug fixes.
+            - Deduplicate first; add focused tests.
+
+            ### Universal Coding Standards
+            - TypeScript: prefer Record<string, unknown> over any
+            - PascalCase (classes/interfaces), camelCase (functions/variables)
+            - Imports: node → external → internal; remove unused
+            - Commits: conventional or repo override; keep #issue linkage
+
+            Output Markdown:
+            - **Summary**
+            - **Top Findings** (with code snippets/diffs)
+            - **Suggested Tests** (file + test name)
+            - **Quick Refactors** (incremental, SRP-aligned)
+            - **Perf/Sec Notes** (explicit quick wins)
+            - **Risk Level** with rationale
 
       - name: Claude Review (Opus)
-        if: steps.decide.outputs.internal == 'true'
+        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_ultra == 'true'
         id: claude_opus
+        timeout-minutes: 15
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          label_trigger: 'claude:ultra'
           claude_args: >-
             --model claude-opus-4-1-20250805
-            --max-turns ${{ steps.decide.outputs.changed > 60 && '18' || '22' }}
-            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --max-turns ${{ steps.turns.outputs.opus_turns }}
+            --allowed-tools Read,Glob,Grep,NotebookEdit
             --output-format stream-json
           prompt: |
+            IMPORTANT EXECUTION RULES
+            - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
+            - By turn ${{ fromJSON(steps.turns.outputs.opus_turns) - 8 }}, STOP using tools and write the final Markdown report.
+            - Always emit a single final report with sections:
+              Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
+            - End the report with the exact marker: END-OF-REPORT
+
             Perform a PR review with full working tree access.
 
             Enforce:
@@ -147,8 +235,8 @@ jobs:
 
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
-      - name: Ensure review is posted (fallback)
-        if: always() && steps.decide.outputs.internal == 'true'
+      - name: Post PR review (robust)
+        if: always() && steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
         uses: actions/github-script@v7
         env:
           EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
@@ -158,41 +246,82 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+            const LIMIT = 65000;
 
-            // avoid duplicates when track_progress updated an existing comment
+            // Event-agnostic PR number detection
+            const prNumber =
+              Number('${{ github.event.pull_request.number || '' }}') ||
+              Number('${{ github.event.issue.number || '' }}') ||
+              Number('${{ steps.decide.outputs.pr || '' }}');
+
+            if (!prNumber) {
+              core.info('No PR number found; skipping comment posting.');
+              return;
+            }
+
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 50
             });
-            if (comments.some(c =>
-              /Overall Risk:|Top Findings:|Suggested Tests|Quick Refactors/i.test(c.body || '') &&
-              c.user?.type === 'Bot'
-            )) {
-              core.info('Review comment already exists; skipping fallback.');
-              process.exit(0);
+            // Don't double-post if our final-style comment already exists
+            const runTag = `claude-run-${context.runId}`;
+            const already = comments.some(c =>
+              (c.body || '').includes(runTag) ||
+              (/Top Findings:|Suggested Tests|Quick Refactors|Perf\/Sec Notes|Overall Risk:/i.test(c.body || '') &&
+               c.user?.type === 'Bot')
+            );
+            if (already) {
+              core.info('Review comment already exists for this run; skipping posting.');
+              return;
             }
 
             let body = (process.env.RESULT_SONNET || process.env.RESULT_OPUS || '').trim();
-            const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
-            if (!body && execFile && fs.existsSync(execFile)) {
-              try {
-                const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
-                if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
-                else if (Array.isArray(data.turns)) {
-                  for (let i = data.turns.length - 1; i >= 0; i--) {
-                    const parts = (data.turns[i]?.message?.content || []).filter(x => x.type === 'text').map(x => x.text);
-                    const text = parts.join('\n').trim();
-                    if (text) { body = text; break; }
-                  }
-                }
-              } catch {}
-            }
-            if (!body) body = '_Claude produced a review, but no formatted output was found. See logs._';
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body
-            });
-            core.info('Posted fallback review comment.');
+            function extractText(node, out) {
+              if (!node) return;
+              if (Array.isArray(node)) return node.forEach(n => extractText(n, out));
+              if (typeof node === 'object') {
+                if (node.type === 'message' && node.role === 'assistant') extractText(node.content, out);
+                if (node.type === 'text' && typeof node.text === 'string') out.push(node.text);
+                extractText(node.content, out); extractText(node.turns, out); extractText(node.messages, out);
+              }
+            }
+
+            if (!body) {
+              const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
+              if (execFile && fs.existsSync(execFile)) {
+                try {
+                  const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
+                  const chunks = []; extractText(data, chunks);
+                  body = chunks.join('\n\n').trim();
+                  const end = body.indexOf('END-OF-REPORT');
+                  if (end !== -1) body = body.slice(0, end + 'END-OF-REPORT'.length);
+                } catch (e) {
+                  core.warning(`Failed to parse execution file: ${e.message}`);
+                }
+              }
+            }
+
+            if (!body) {
+              core.info('No review content found; skipping comment posting.');
+              return; // don't post placeholders
+            }
+
+            // Clean up the END-OF-REPORT marker for final display
+            body = body.replace(/END-OF-REPORT\s*$/, '').trim();
+
+            // Chunk if needed
+            const parts = [];
+            for (let i = 0; i < body.length; i += LIMIT) parts.push(body.slice(i, i + LIMIT));
+
+            for (let i = 0; i < parts.length; i++) {
+              const runTag = `\n\n<!-- claude-run-${context.runId}-${i} -->`;
+              const suffix = parts.length > 1 ? `\n\n— part ${i+1}/${parts.length}` : '';
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
+                body: parts[i] + suffix + runTag
+              });
+            }
+            core.info(`Posted PR review comment (${parts.length} part${parts.length > 1 ? 's' : ''}).`);
 
       # Remove claude label after review completes to prevent auto re-runs on subsequent pushes
       - name: Remove claude label (prevents auto re-run)
