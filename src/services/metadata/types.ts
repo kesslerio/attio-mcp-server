@@ -5,6 +5,7 @@ export interface MetadataResult extends Record<string, unknown> {
   mappings?: Record<string, string>;
   count?: number;
   resource_type?: UniversalResourceType | string;
+  objectSlug?: string;
 }
 
 export interface DiscoverTypeOptions {

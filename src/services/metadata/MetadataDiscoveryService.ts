@@ -226,15 +226,16 @@ export class DefaultMetadataDiscoveryService
     try {
       let path = `/objects/${objectSlug}/attributes`;
 
+      let sanitizedCategories: string[] | undefined;
       if (categories && categories.length > 0) {
-        const validatedCategories = secureValidateCategories(
+        sanitizedCategories = secureValidateCategories(
           categories,
           'category filtering in discover-object-attributes'
         );
 
-        if (validatedCategories.length > 0) {
+        if (sanitizedCategories.length > 0) {
           path += `?categories=${encodeURIComponent(
-            validatedCategories.join(',')
+            sanitizedCategories.join(',')
           )}`;
         }
       }
@@ -243,9 +244,20 @@ export class DefaultMetadataDiscoveryService
       const parsed = this.transformService.parseAttributesResponse(
         response?.data as unknown
       );
+      const filtered =
+        sanitizedCategories && sanitizedCategories.length > 0
+          ? (this.transformService.filterByCategory(
+              parsed,
+              sanitizedCategories
+            ) as unknown[])
+          : parsed;
+      const mappings = this.transformService.buildMappings(filtered);
 
       return {
-        attributes: parsed,
+        attributes: filtered,
+        mappings,
+        count: Array.isArray(filtered) ? filtered.length : 0,
+        resource_type: UniversalResourceType.RECORDS,
         resourceType: 'records',
         objectSlug,
       };
