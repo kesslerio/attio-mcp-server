@@ -2,9 +2,9 @@ name: Claude PR Review (labeled)
 
 on:
   issues:
-    types: [labeled] # for issues (if needed)
+    types: [labeled] # single trigger for both issues and PRs (no auto re-review on pushes)
   pull_request:
-    types: [labeled, synchronize, reopened] # initial trigger + follow-ups
+    types: [reopened] # optional: manual nudge path for reopened PRs
 
 concurrency:
   group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
@@ -279,8 +279,8 @@ jobs:
               return;
             }
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 50
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
             });
             // Don't double-post if our final-style comment already exists
             const runTag = `claude-run-${context.runId}`;
@@ -294,7 +294,8 @@ jobs:
               return;
             }
 
-            let body = (process.env.RESULT_SONNET || process.env.RESULT_OPUS || '').trim();
+            // Prefer the deeper Opus pass if both exist
+            let body = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
 
             function extractText(node, out) {
               if (!node) return;
