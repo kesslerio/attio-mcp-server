@@ -36,6 +36,7 @@ describe('UniversalMetadataService', () => {
     vi.clearAllMocks();
     // Set up test-specific client override
     (globalThis as any).setTestApiClient?.(mockClient);
+    UniversalMetadataService.reset();
   });
 
   describe('discoverAttributesForResourceType', () => {
