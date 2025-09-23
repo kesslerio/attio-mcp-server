@@ -268,7 +268,7 @@ jobs:
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
       - name: Capture Sonnet Review Output
-        if: steps.claude_sonnet.conclusion == 'success' && steps.claude_sonnet.outputs.execution_file
+        if: steps.claude_sonnet.outcome == 'success' && steps.claude_sonnet.outputs.execution_file != ''
         shell: bash
         run: |
           EXEC_FILE="${{ steps.claude_sonnet.outputs.execution_file }}"
@@ -311,7 +311,7 @@ jobs:
           fi
 
       - name: Capture Opus Review Output
-        if: steps.claude_opus.conclusion == 'success' && steps.claude_opus.outputs.execution_file
+        if: steps.claude_opus.outcome == 'success' && steps.claude_opus.outputs.execution_file != ''
         shell: bash
         run: |
           EXEC_FILE="${{ steps.claude_opus.outputs.execution_file }}"
@@ -352,6 +352,13 @@ jobs:
           else
             echo "❌ Execution file not found: $EXEC_FILE"
           fi
+
+      - name: Debug review env
+        run: |
+          echo "RESULT_SONNET chars:" $(printf %s "$RESULT_SONNET" | wc -c)
+          echo "RESULT_OPUS chars:" $(printf %s "$RESULT_OPUS" | wc -c)
+          ls -l "${{ steps.claude_sonnet.outputs.execution_file }}" 2>/dev/null || true
+          ls -l "${{ steps.claude_opus.outputs.execution_file }}" 2>/dev/null || true
 
       - name: Post PR review (robust)
         if: always() && steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
@@ -404,8 +411,16 @@ jobs:
               const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
               if (execFile && fs.existsSync(execFile)) {
                 try {
-                  const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
-                  const chunks = []; extractText(data, chunks);
+                  const raw = fs.readFileSync(execFile, 'utf8').trim();
+                  const lines = raw.split(/\r?\n/);
+                  const chunks = [];
+                  for (const line of lines) {
+                    try {
+                      extractText(JSON.parse(line), chunks);
+                    } catch (e) {
+                      // Skip invalid JSON lines
+                    }
+                  }
                   body = chunks.join('\n\n').trim();
                   const end = body.indexOf('END-OF-REPORT');
                   if (end !== -1) body = body.slice(0, end + 'END-OF-REPORT'.length);
