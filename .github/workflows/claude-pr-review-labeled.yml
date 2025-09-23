@@ -19,8 +19,12 @@ permissions:
 
 jobs:
   review:
-    # DEBUG: Temporarily simplified condition to test triggering
-    if: github.event_name == 'issues' || github.event_name == 'pull_request'
+    # Only run for Claude labels or PR reopened
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'reopened') ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' &&
+       github.event.issue.pull_request &&
+       (github.event.label.name == 'claude:review' || github.event.label.name == 'claude:ultra'))
 
     runs-on: ubuntu-latest
 
@@ -43,6 +47,26 @@ jobs:
             console.log('Actor:', context.actor);
             console.log('Full payload:', JSON.stringify(context.payload, null, 2));
 
+      - name: Has claude label?
+        id: haslabel
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
+            });
+            const names = new Set(labels.map(l => l.name));
+            const hasReview = names.has('claude:review');
+            const hasUltra  = names.has('claude:ultra');
+            core.setOutput('has', String(hasReview || hasUltra));
+            core.setOutput('has_review', String(hasReview));
+            core.setOutput('has_ultra',  String(hasUltra));
+
+      - name: Skip if not a Claude label
+        if: steps.haslabel.outputs.has != 'true'
+        run: exit 0
+
       # Optional (audit egress): set to "audit" first; switch to "block" once stable
       - name: Harden Runner (egress audit)
         uses: step-security/harden-runner@v2
@@ -51,6 +75,7 @@ jobs:
 
       - name: Get PR info & determine environment
         id: decide
+        if: steps.haslabel.outputs.has == 'true' || (github.event_name == 'pull_request' && github.event.action == 'reopened')
         uses: actions/github-script@v7
         with:
           script: |
@@ -82,22 +107,6 @@ jobs:
             core.setOutput('sha', pr.head.sha);
             core.setOutput('changed', String(changed));
             core.setOutput('lines', String(totalLines));
-
-      - name: Has claude label?
-        id: haslabel
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
-            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
-              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
-            });
-            const names = new Set(labels.map(l => l.name));
-            const hasReview = names.has('claude:review');
-            const hasUltra  = names.has('claude:ultra');
-            core.setOutput('has', String(hasReview || hasUltra));
-            core.setOutput('has_review', String(hasReview));
-            core.setOutput('has_ultra',  String(hasUltra));
 
       - name: Calculate turn limits based on PR size
         id: turns
