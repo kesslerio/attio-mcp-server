@@ -19,12 +19,11 @@ permissions:
 
 jobs:
   review:
-    # Only run for Claude labels or PR reopened
+    # TEMP DEBUG: Simplified condition to test event delivery
     if: |
       (github.event_name == 'pull_request' && github.event.action == 'reopened') ||
       (github.event_name == 'issues' && github.event.action == 'labeled' &&
-       github.event.issue.pull_request &&
-       (github.event.label.name == 'claude:review' || github.event.label.name == 'claude:ultra'))
+       github.event.issue.pull_request)
 
     runs-on: ubuntu-latest
 
