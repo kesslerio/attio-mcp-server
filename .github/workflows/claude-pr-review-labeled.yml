@@ -359,18 +359,13 @@ jobs:
         env:
           EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
           EXEC_FILE_OPUS: ${{ steps.claude_opus.outputs.execution_file }}
-          RESULT_SONNET: ${{ steps.claude_sonnet.outputs.result }}
-          RESULT_OPUS: ${{ steps.claude_opus.outputs.result }}
         with:
           script: |
             const fs = require('fs');
             const LIMIT = 65000;
 
             // Event-agnostic PR number detection
-            const prNumber =
-              Number('${{ github.event.pull_request.number || '' }}') ||
-              Number('${{ github.event.issue.number || '' }}') ||
-              Number('${{ steps.decide.outputs.pr || '' }}');
+            const prNumber = Number('${{ steps.resolve.outputs.pr }}');
 
             if (!prNumber) {
               core.info('No PR number found; skipping comment posting.');
@@ -448,7 +443,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+            const prNumber = Number('${{ steps.resolve.outputs.pr }}');
 
             // Check which label was applied by looking at completed steps
             const sonnetRan = '${{ steps.claude_sonnet.outcome }}' !== '';
