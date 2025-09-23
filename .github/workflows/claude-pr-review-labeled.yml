@@ -158,7 +158,7 @@ jobs:
         run: exit 0
 
       - name: Checkout PR HEAD
-        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
+        if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has == 'true' || github.event_name == 'workflow_dispatch')
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.decide.outputs.sha }}
@@ -166,7 +166,7 @@ jobs:
           persist-credentials: false # defensive; we're not pushing
 
       - name: Claude Review (Sonnet)
-        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_review == 'true'
+        if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_review == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:review'))
         id: claude_sonnet
         timeout-minutes: 12
         uses: anthropics/claude-code-action@v1
@@ -216,7 +216,7 @@ jobs:
             - **Risk Level** with rationale
 
       - name: Claude Review (Opus)
-        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_ultra == 'true'
+        if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_ultra == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:ultra'))
         id: claude_opus
         timeout-minutes: 15
         uses: anthropics/claude-code-action@v1
@@ -271,40 +271,47 @@ jobs:
         if: steps.claude_sonnet.outcome == 'success' && steps.claude_sonnet.outputs.execution_file != ''
         shell: bash
         run: |
+          set -euo pipefail
           EXEC_FILE="${{ steps.claude_sonnet.outputs.execution_file }}"
           if [ -f "$EXEC_FILE" ]; then
             echo "📄 Processing execution file: $EXEC_FILE"
-            # Extract text content from the execution file and capture in env var
+
+            # 1) Try to pull ALL 'text' occurrences (covers delta.text too)
+            REVIEW_CONTENT=""
             if command -v jq >/dev/null 2>&1; then
-              # Try to extract content using jq if available
-              REVIEW_CONTENT=$(jq -r '
-                def extract_text:
-                  if type == "object" then
-                    if .type == "text" and .text then .text
-                    elif .content then .content | map(extract_text) | join("\n")
-                    elif .messages then .messages | map(extract_text) | join("\n")
-                    elif .turns then .turns | map(extract_text) | join("\n")
-                    else empty
-                    end
-                  elif type == "array" then map(extract_text) | join("\n")
-                  else empty
-                  end;
-                extract_text' "$EXEC_FILE" 2>/dev/null || cat "$EXEC_FILE")
-            else
-              # Fallback to reading the file directly
-              REVIEW_CONTENT=$(cat "$EXEC_FILE")
+              # Grab any .delta.text, then any plain .text, join in order
+              REVIEW_CONTENT="$(jq -r '
+                (.. | .delta?.text? // empty),
+                (.. | .text? // empty)
+              ' "$EXEC_FILE" 2>/dev/null | tr -d "\r")" || true
             fi
 
-            # Remove END-OF-REPORT marker and trim
-            REVIEW_CONTENT=$(echo "$REVIEW_CONTENT" | sed 's/END-OF-REPORT.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            # 2) Fallback: quick-and-dirty extractor for "text":"..." pairs (NDJSON safe)
+            if [ -z "$REVIEW_CONTENT" ]; then
+              REVIEW_CONTENT="$(awk '
+                {
+                  while (match($0, /\"text\"\s*:\s*\"((\\.|[^\"])*)\"/, m)) {
+                    s=m[1]; gsub(/\\n/, "\n", s); gsub(/\\"/, "\"", s); gsub(/\\\\/, "\\", s);
+                    printf "%s", s;
+                    $0=substr($0, RSTART+RLENGTH);
+                  }
+                }
+              ' "$EXEC_FILE")"
+            fi
+
+            # Trim and cut at END-OF-REPORT if present
+            REVIEW_CONTENT="$(printf "%s" "$REVIEW_CONTENT" | sed 's/END-OF-REPORT.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
             if [ -n "$REVIEW_CONTENT" ]; then
               echo "✅ Captured Sonnet review content (${#REVIEW_CONTENT} chars)"
-              echo "RESULT_SONNET<<'EOF'" >> "$GITHUB_ENV"
-              echo "$REVIEW_CONTENT" >> "$GITHUB_ENV"
-              echo "EOF" >> "$GITHUB_ENV"
+              {
+                echo "RESULT_SONNET<<'EOF'"
+                echo "$REVIEW_CONTENT"
+                echo "EOF"
+              } >> "$GITHUB_ENV"
             else
-              echo "❌ No review content found in execution file"
+              echo "❌ No review content found in execution file (after jq/awk). Showing tail:"
+              tail -n 20 "$EXEC_FILE" || true
             fi
           else
             echo "❌ Execution file not found: $EXEC_FILE"
@@ -314,40 +321,47 @@ jobs:
         if: steps.claude_opus.outcome == 'success' && steps.claude_opus.outputs.execution_file != ''
         shell: bash
         run: |
+          set -euo pipefail
           EXEC_FILE="${{ steps.claude_opus.outputs.execution_file }}"
           if [ -f "$EXEC_FILE" ]; then
             echo "📄 Processing execution file: $EXEC_FILE"
-            # Extract text content from the execution file and capture in env var
+
+            # 1) Try to pull ALL 'text' occurrences (covers delta.text too)
+            REVIEW_CONTENT=""
             if command -v jq >/dev/null 2>&1; then
-              # Try to extract content using jq if available
-              REVIEW_CONTENT=$(jq -r '
-                def extract_text:
-                  if type == "object" then
-                    if .type == "text" and .text then .text
-                    elif .content then .content | map(extract_text) | join("\n")
-                    elif .messages then .messages | map(extract_text) | join("\n")
-                    elif .turns then .turns | map(extract_text) | join("\n")
-                    else empty
-                    end
-                  elif type == "array" then map(extract_text) | join("\n")
-                  else empty
-                  end;
-                extract_text' "$EXEC_FILE" 2>/dev/null || cat "$EXEC_FILE")
-            else
-              # Fallback to reading the file directly
-              REVIEW_CONTENT=$(cat "$EXEC_FILE")
+              # Grab any .delta.text, then any plain .text, join in order
+              REVIEW_CONTENT="$(jq -r '
+                (.. | .delta?.text? // empty),
+                (.. | .text? // empty)
+              ' "$EXEC_FILE" 2>/dev/null | tr -d "\r")" || true
             fi
 
-            # Remove END-OF-REPORT marker and trim
-            REVIEW_CONTENT=$(echo "$REVIEW_CONTENT" | sed 's/END-OF-REPORT.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            # 2) Fallback: quick-and-dirty extractor for "text":"..." pairs (NDJSON safe)
+            if [ -z "$REVIEW_CONTENT" ]; then
+              REVIEW_CONTENT="$(awk '
+                {
+                  while (match($0, /\"text\"\s*:\s*\"((\\.|[^\"])*)\"/, m)) {
+                    s=m[1]; gsub(/\\n/, "\n", s); gsub(/\\"/, "\"", s); gsub(/\\\\/, "\\", s);
+                    printf "%s", s;
+                    $0=substr($0, RSTART+RLENGTH);
+                  }
+                }
+              ' "$EXEC_FILE")"
+            fi
+
+            # Trim and cut at END-OF-REPORT if present
+            REVIEW_CONTENT="$(printf "%s" "$REVIEW_CONTENT" | sed 's/END-OF-REPORT.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
             if [ -n "$REVIEW_CONTENT" ]; then
               echo "✅ Captured Opus review content (${#REVIEW_CONTENT} chars)"
-              echo "RESULT_OPUS<<'EOF'" >> "$GITHUB_ENV"
-              echo "$REVIEW_CONTENT" >> "$GITHUB_ENV"
-              echo "EOF" >> "$GITHUB_ENV"
+              {
+                echo "RESULT_OPUS<<'EOF'"
+                echo "$REVIEW_CONTENT"
+                echo "EOF"
+              } >> "$GITHUB_ENV"
             else
-              echo "❌ No review content found in execution file"
+              echo "❌ No review content found in execution file (after jq/awk). Showing tail:"
+              tail -n 20 "$EXEC_FILE" || true
             fi
           else
             echo "❌ Execution file not found: $EXEC_FILE"
@@ -361,7 +375,7 @@ jobs:
           ls -l "${{ steps.claude_opus.outputs.execution_file }}" 2>/dev/null || true
 
       - name: Post PR review (robust)
-        if: always() && steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
+        if: always() && steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has == 'true' || github.event_name == 'workflow_dispatch')
         uses: actions/github-script@v7
         env:
           EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
@@ -397,13 +411,24 @@ jobs:
             // Prefer the deeper Opus pass if both exist
             let body = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
 
+            // Robust extractor: handles delta.text, text nodes, arrays, messages, etc.
             function extractText(node, out) {
               if (!node) return;
-              if (Array.isArray(node)) return node.forEach(n => extractText(n, out));
+              if (Array.isArray(node)) { node.forEach(n => extractText(n, out)); return; }
               if (typeof node === 'object') {
-                if (node.type === 'message' && node.role === 'assistant') extractText(node.content, out);
+                // Anthropic stream deltas
+                if (node.delta && typeof node.delta.text === 'string') out.push(node.delta.text);
+
+                // Plain text nodes
                 if (node.type === 'text' && typeof node.text === 'string') out.push(node.text);
-                extractText(node.content, out); extractText(node.turns, out); extractText(node.messages, out);
+
+                // Generic: capture any string-valued "text"
+                if (Object.prototype.hasOwnProperty.call(node, 'text') && typeof node.text === 'string') out.push(node.text);
+
+                // Recurse
+                for (const k of ['content','turns','messages','delta','data','message']) {
+                  if (node[k] !== undefined) extractText(node[k], out);
+                }
               }
             }
 
@@ -412,18 +437,28 @@ jobs:
               if (execFile && fs.existsSync(execFile)) {
                 try {
                   const raw = fs.readFileSync(execFile, 'utf8').trim();
-                  const lines = raw.split(/\r?\n/);
                   const chunks = [];
-                  for (const line of lines) {
+
+                  // First try NDJSON (stream JSON)
+                  for (const line of raw.split(/\r?\n/)) {
+                    const s = line.trim();
+                    if (!s) continue;
                     try {
-                      extractText(JSON.parse(line), chunks);
-                    } catch (e) {
-                      // Skip invalid JSON lines
-                    }
+                      extractText(JSON.parse(s), chunks);
+                    } catch {}
                   }
-                  body = chunks.join('\n\n').trim();
+
+                  // Fallback: single JSON blob
+                  if (!chunks.length) {
+                    try { extractText(JSON.parse(raw), chunks); } catch {}
+                  }
+
+                  // Join deltas without injecting extra newlines
+                  body = chunks.join('').trim();
+
+                  // Cut at the sentinel if present
                   const end = body.indexOf('END-OF-REPORT');
-                  if (end !== -1) body = body.slice(0, end + 'END-OF-REPORT'.length);
+                  if (end !== -1) body = body.slice(0, end);
                 } catch (e) {
                   core.warning(`Failed to parse execution file: ${e.message}`);
                 }
