@@ -19,10 +19,8 @@ permissions:
 
 jobs:
   review:
-    # Only proceed if this is a PR (issues:labeled can also fire on pure issues)
-    if: |
-      (github.event_name == 'pull_request') ||
-      (github.event_name == 'issues' && github.event.issue.pull_request)
+    # DEBUG: Temporarily simplified condition to test triggering
+    if: github.event_name == 'issues' || github.event_name == 'pull_request'
 
     runs-on: ubuntu-latest
 
