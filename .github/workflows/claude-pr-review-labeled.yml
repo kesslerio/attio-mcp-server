@@ -1,0 +1,183 @@
+name: Claude PR Review (labeled)
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+concurrency:
+  group: claude-pr-labeled-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+  checks: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Optional (audit egress): set to "audit" first; switch to "block" once stable
+      - name: Harden Runner (egress audit)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
+      - name: Decide mode & environment
+        id: decide
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = (pr.labels || []).map(l => l.name);
+            const eventLabel = context.payload.label?.name || '';
+            const all = new Set(labels.concat([eventLabel].filter(Boolean)));
+
+            const ultra = all.has('claude:ultra');
+            const normal = all.has('claude:review');
+            const should_run = ultra || normal;
+
+            const internal = pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`;
+            const changed = pr.changed_files || 0;
+
+            // choose model/turns and cap for very large PRs
+            const model = ultra ? 'claude-opus-4-1-20250805' : 'claude-sonnet-4-20250514';
+            let turns = ultra ? 22 : 16;
+            if (changed > 60 && turns > 18) turns = 18; // soft cost cap
+
+            core.setOutput('should_run', String(should_run));
+            core.setOutput('mode', ultra ? 'ultra' : (normal ? 'review' : 'none'));
+            core.setOutput('model', model);
+            core.setOutput('turns', String(turns));
+            core.setOutput('internal', String(internal));
+            core.setOutput('pr', String(pr.number));
+            core.setOutput('changed', String(changed));
+
+      - name: Stop if no claude:* label
+        if: steps.decide.outputs.should_run != 'true'
+        run: echo "No claude:* label on this PR. Skipping."
+
+      # Fork PRs won't have repo secrets -> comment guidance and skip
+      - name: Handle forks (no secrets in PR context)
+        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+            const mode = '${{ steps.decide.outputs.mode }}';
+            const tag = mode === 'ultra' ? '**Opus (ultra)**' : '**Sonnet**';
+            const body =
+              `🔒 This is a fork PR. For security, secrets are not available in PR jobs.\n\n` +
+              `To run ${tag} with full checkout, use **Actions → Claude Trusted Review (manual)** on PR #${prNumber}, or approve a maintainer-run workflow.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body
+            });
+
+      - name: Exit on forks
+        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal != 'true'
+        run: exit 0
+
+      - name: Checkout PR HEAD
+        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Claude Review
+        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          track_progress: true
+          claude_args: >-
+            --model ${{ steps.decide.outputs.model }}
+            --max-turns ${{ steps.decide.outputs.turns }}
+            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --output-format stream-json
+          prompt: |
+            Perform a PR review with full working tree access.
+
+            Enforce:
+            ## Code Quality Standards
+            ### Single Responsibility Principle (SRP)
+            - One class/module → one reason to change. Detect mixed concerns, many dependencies, multiple change reasons.
+
+            ### Size Limits & Refactoring Triggers
+            - Functions: ≤30–40 lines; Classes/Files: ≤500 lines; Methods per class: ≤20–30.
+            - Trigger refactor on complexity or mixed concerns.
+
+            ### Refactoring Best Practices
+            - Small steps; test each change. Don't mix refactors with bug fixes.
+            - Deduplicate first; add focused tests.
+
+            ### Universal Coding Standards
+            - TypeScript: prefer Record<string, unknown> over any
+            - PascalCase (classes/interfaces), camelCase (functions/variables)
+            - Imports: node → external → internal; remove unused
+            - Commits: conventional or repo override; keep #issue linkage
+
+            Output Markdown:
+            - **Summary**
+            - **Top Findings** (with code snippets/diffs)
+            - **Suggested Tests** (file + test name)
+            - **Quick Refactors** (incremental, SRP-aligned)
+            - **Perf/Sec Notes** (explicit quick wins)
+            - **Risk Level** with rationale
+
+            If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
+
+      - name: Ensure review is posted (fallback)
+        if: always() && steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+          RESULT: ${{ steps.claude.outputs.result }}
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+
+            // avoid duplicates when track_progress updated an existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 50
+            });
+            if (comments.some(c =>
+              /Overall Risk:|Top Findings:|Suggested Tests|Quick Refactors/i.test(c.body || '') &&
+              c.user?.type === 'Bot'
+            )) {
+              core.info('Review comment already exists; skipping fallback.');
+              process.exit(0);
+            }
+
+            let body = (process.env.RESULT || '').trim();
+            const p = process.env.EXEC_FILE;
+            if (!body && p && fs.existsSync(p)) {
+              try {
+                const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+                if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
+                else if (Array.isArray(data.turns)) {
+                  for (let i = data.turns.length - 1; i >= 0; i--) {
+                    const parts = (data.turns[i]?.message?.content || []).filter(x => x.type === 'text').map(x => x.text);
+                    const text = parts.join('\n').trim();
+                    if (text) { body = text; break; }
+                  }
+                }
+              } catch {}
+            }
+            if (!body) body = '_Claude produced a review, but no formatted output was found. See logs._';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body
+            });
+            core.info('Posted fallback review comment.');
+
+      # Optional: keep re-running on new commits while labeled (no-op step just for clarity)
+      - name: Note re-run policy
+        if: steps.decide.outputs.should_run == 'true'
+        run: echo "This job will re-run on synchronize events as long as the claude:* label remains."

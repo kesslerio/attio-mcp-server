@@ -1,0 +1,139 @@
+name: Claude Comment Gate (no-checkout)
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: claude-comment-gate-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+
+jobs:
+  gate:
+    # Only when someone actually tags @claude on a PR thread/comment/review
+    if: |
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '@claude')
+      ) || (
+        github.event_name == 'pull_request_review_comment' &&
+        contains(github.event.comment.body, '@claude')
+      ) || (
+        github.event_name == 'pull_request_review' &&
+        github.event.review.body &&
+        contains(github.event.review.body, '@claude')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract PR number + intent
+        id: info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = (context.payload.pull_request?.number) || context.issue.number;
+            if (!prNumber) { core.setFailed('No PR number found'); return; }
+
+            const raw = (context.payload.comment?.body || context.payload.review?.body || '').toString();
+            const lc = raw.toLowerCase();
+
+            // detect "ultra" and "re-review"
+            const ultra = /\bultra(\W+review)?\b/.test(lc);
+            const rerun = /\b(re[- ]?review|re[- ]?run|rerun|again|refresh|recheck)\b/.test(lc);
+
+            core.setOutput('pr', String(prNumber));
+            core.setOutput('mode', ultra ? 'ultra' : 'review');
+            core.setOutput('label', ultra ? 'claude:ultra' : 'claude:review');
+            core.setOutput('rerun', String(rerun));
+
+      - name: Ensure label exists
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const name = '${{ steps.info.outputs.label }}';
+            const palette = {
+              'claude:ultra': { color: 'a371f7', description: 'Run deep Opus review' },
+              'claude:review': { color: '0e8a16', description: 'Run Sonnet review' },
+            };
+            const def = palette[name] || { color: '0366d6', description: 'Claude PR review trigger' };
+            try {
+              await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  name, color: def.color, description: def.description
+                });
+              } else { throw e; }
+            }
+
+      - name: Add or toggle label (handles re-review)
+        id: relabel
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = Number('${{ steps.info.outputs.pr }}');
+            const requested = '${{ steps.info.outputs.label }}';
+            const rerun = '${{ steps.info.outputs.rerun }}' === 'true';
+
+            // Current labels
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number
+            });
+            const names = new Set(labels.map(l => l.name));
+            const hasReview = names.has('claude:review');
+            const hasUltra  = names.has('claude:ultra');
+            const hasRequested = names.has(requested);
+
+            async function remove(name) {
+              try {
+                await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number, name });
+              } catch (e) { if (e.status !== 404) throw e; }
+            }
+            async function add() {
+              await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number, labels: [requested] });
+            }
+
+            if (rerun) {
+              if (hasReview) await remove('claude:review');
+              if (hasUltra)  await remove('claude:ultra');
+              await add();
+              core.setOutput('action', 're-run');
+              return;
+            }
+
+            if (!hasRequested) {
+              if (requested === 'claude:ultra' && hasReview) await remove('claude:review');
+              if (requested === 'claude:review' && hasUltra)  await remove('claude:ultra');
+              await add();
+              core.setOutput('action', 'queued');
+              return;
+            }
+
+            core.setOutput('action', 'already-queued');
+
+      - name: Acknowledge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = Number('${{ steps.info.outputs.pr }}');
+            const mode = '${{ steps.info.outputs.mode }}';
+            const action = '${{ steps.relabel.outputs.action }}';
+            const tag = mode === 'ultra' ? '**Opus (ultra)**' : '**Sonnet**';
+
+            const body =
+              action === 're-run'       ? `🔁 Re-queued ${tag} review in PR-safe context. I'll post results here shortly.` :
+              action === 'queued'       ? `🟢 Queued ${tag} review in PR-safe context. I'll post results here shortly.` :
+                                          `ℹ️ ${tag} review is already queued. Push new commits or comment \`@claude re-review\` to force a re-run.`;
+
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number, body });
