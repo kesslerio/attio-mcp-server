@@ -54,14 +54,18 @@ jobs:
 
             const internal = pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`;
             const changed = pr.changed_files || 0;
+            const additions = pr.additions || 0;
+            const deletions = pr.deletions || 0;
+            const totalLines = additions + deletions;
 
             // Optional debug (shows up in logs)
-            core.info(`PR #${pr.number}: internal=${internal}, changed=${changed} files`);
+            core.info(`PR #${pr.number}: internal=${internal}, changed=${changed} files, lines=${totalLines}`);
 
             core.setOutput('internal', String(internal));
             core.setOutput('pr', String(pr.number));
             core.setOutput('sha', pr.head.sha);
             core.setOutput('changed', String(changed));
+            core.setOutput('lines', String(totalLines));
 
       - name: Has claude label?
         id: haslabel
@@ -78,6 +82,23 @@ jobs:
             core.setOutput('has', String(hasReview || hasUltra));
             core.setOutput('has_review', String(hasReview));
             core.setOutput('has_ultra',  String(hasUltra));
+
+      - name: Calculate turn limits based on PR size
+        id: turns
+        run: |
+          lines=${{ steps.decide.outputs.lines || 0 }}
+          files=${{ steps.decide.outputs.changed || 0 }}
+
+          # Scale turns with diff size (bigger diff → more turns)
+          if   [ $lines -le 400  ]; then sonnet_cap=22; opus_cap=26
+          elif [ $lines -le 1500 ]; then sonnet_cap=32; opus_cap=38
+          elif [ $lines -le 4000 ]; then sonnet_cap=44; opus_cap=52
+          else                         sonnet_cap=56; opus_cap=64
+          fi
+
+          echo "sonnet_turns=$sonnet_cap" >> $GITHUB_OUTPUT
+          echo "opus_turns=$opus_cap" >> $GITHUB_OUTPUT
+          echo "🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns, Opus: $opus_cap turns"
 
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
@@ -107,16 +128,24 @@ jobs:
       - name: Claude Review (Sonnet)
         if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_review == 'true'
         id: claude_sonnet
+        timeout-minutes: 12
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           claude_args: >-
             --model claude-sonnet-4-20250514
-            --max-turns 16
-            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --max-turns ${{ steps.turns.outputs.sonnet_turns }}
+            --allowed-tools Read,Glob,Grep,NotebookEdit
             --output-format stream-json
           prompt: |
+            IMPORTANT EXECUTION RULES
+            - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
+            - By turn ${{ steps.turns.outputs.sonnet_turns - 6 }}, STOP using tools and write the final Markdown report.
+            - Always emit a single final report with sections:
+              Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
+            - End the report with the exact marker: END-OF-REPORT
+
             Perform a PR review with full working tree access.
 
             Enforce:
@@ -146,19 +175,29 @@ jobs:
             - **Perf/Sec Notes** (explicit quick wins)
             - **Risk Level** with rationale
 
+            END-OF-REPORT
+
       - name: Claude Review (Opus)
         if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_ultra == 'true'
         id: claude_opus
+        timeout-minutes: 15
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           claude_args: >-
             --model claude-opus-4-1-20250805
-            --max-turns ${{ fromJSON(steps.decide.outputs.changed) > 60 && '18' || '22' }}
-            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --max-turns ${{ steps.turns.outputs.opus_turns }}
+            --allowed-tools Read,Glob,Grep,NotebookEdit
             --output-format stream-json
           prompt: |
+            IMPORTANT EXECUTION RULES
+            - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
+            - By turn ${{ steps.turns.outputs.opus_turns - 8 }}, STOP using tools and write the final Markdown report.
+            - Always emit a single final report with sections:
+              Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
+            - End the report with the exact marker: END-OF-REPORT
+
             Perform a PR review with full working tree access.
 
             Enforce:
@@ -190,7 +229,9 @@ jobs:
 
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
-      - name: Ensure review is posted (fallback)
+            END-OF-REPORT
+
+      - name: Post PR review (robust)
         if: always() && steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
         uses: actions/github-script@v7
         env:
@@ -201,41 +242,69 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const LIMIT = 65000;
             const prNumber = Number('${{ steps.decide.outputs.pr }}');
 
-            // avoid duplicates when track_progress updated an existing comment
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 50
             });
-            if (comments.some(c =>
-              /Overall Risk:|Top Findings:|Suggested Tests|Quick Refactors/i.test(c.body || '') &&
+            // Don't double-post if our final-style comment already exists
+            const already = comments.some(c =>
+              /Top Findings:|Suggested Tests|Quick Refactors|Perf\/Sec Notes|Overall Risk:/i.test(c.body || '') &&
               c.user?.type === 'Bot'
-            )) {
-              core.info('Review comment already exists; skipping fallback.');
-              process.exit(0);
+            );
+            if (already) {
+              core.info('Review comment already exists; skipping posting.');
+              return;
             }
 
             let body = (process.env.RESULT_SONNET || process.env.RESULT_OPUS || '').trim();
-            const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
-            if (!body && execFile && fs.existsSync(execFile)) {
-              try {
-                const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
-                if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
-                else if (Array.isArray(data.turns)) {
-                  for (let i = data.turns.length - 1; i >= 0; i--) {
-                    const parts = (data.turns[i]?.message?.content || []).filter(x => x.type === 'text').map(x => x.text);
-                    const text = parts.join('\n').trim();
-                    if (text) { body = text; break; }
-                  }
-                }
-              } catch {}
-            }
-            if (!body) body = '_Claude produced a review, but no formatted output was found. See logs._';
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body
-            });
-            core.info('Posted fallback review comment.');
+            function extractText(node, out) {
+              if (!node) return;
+              if (Array.isArray(node)) return node.forEach(n => extractText(n, out));
+              if (typeof node === 'object') {
+                if (node.type === 'message' && node.role === 'assistant') extractText(node.content, out);
+                if (node.type === 'text' && typeof node.text === 'string') out.push(node.text);
+                extractText(node.content, out); extractText(node.turns, out); extractText(node.messages, out);
+              }
+            }
+
+            if (!body) {
+              const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
+              if (execFile && fs.existsSync(execFile)) {
+                try {
+                  const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
+                  const chunks = []; extractText(data, chunks);
+                  body = chunks.join('\n\n').trim();
+                  const end = body.indexOf('END-OF-REPORT');
+                  if (end !== -1) body = body.slice(0, end + 'END-OF-REPORT'.length);
+                } catch (e) {
+                  core.warning(`Failed to parse execution file: ${e.message}`);
+                }
+              }
+            }
+
+            if (!body) {
+              core.info('No review content found; skipping comment posting.');
+              return; // don't post placeholders
+            }
+
+            // Clean up the END-OF-REPORT marker for final display
+            body = body.replace(/END-OF-REPORT\s*$/, '').trim();
+
+            // Chunk if needed
+            const parts = [];
+            for (let i = 0; i < body.length; i += LIMIT) parts.push(body.slice(i, i + LIMIT));
+
+            for (let i = 0; i < parts.length; i++) {
+              const suffix = parts.length > 1 ? `\n\n— part ${i+1}/${parts.length}` : '';
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
+                body: parts[i] + suffix
+              });
+            }
+            core.info(`Posted PR review comment (${parts.length} part${parts.length > 1 ? 's' : ''}).`);
 
       # Remove claude label after review completes to prevent auto re-runs on subsequent pushes
       - name: Remove claude label (prevents auto re-run)
