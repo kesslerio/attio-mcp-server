@@ -16,7 +16,7 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  actions: read
+  actions: write
 
 jobs:
   gate:
@@ -196,15 +196,23 @@ jobs:
         with:
           github-token: ${{ secrets.CLAUDE_GATE_TOKEN }}
           script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Resolve default branch dynamically
+            const { data: r } = await github.rest.repos.get({ owner, repo });
+            const ref = r.default_branch || 'main';
+
+            // Dispatch the workflow on the default branch
             await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner, repo,
               workflow_id: 'claude-pr-review-labeled.yml',
-              ref: context.repo.default_branch,
+              ref,
               inputs: {
                 pr: String('${{ steps.info.outputs.pr }}'),
                 label: '${{ steps.info.outputs.label }}',
                 source: 'gate'
               }
             });
-            core.info(`Dispatched review workflow for PR #${{ steps.info.outputs.pr }} with label ${{ steps.info.outputs.label }}`);
+
+            core.info(`Dispatched review workflow for PR #${{ steps.info.outputs.pr }} on ref "${ref}" with label ${{ steps.info.outputs.label }}`);
