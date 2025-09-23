@@ -2,9 +2,9 @@ name: Claude PR Review (labeled)
 
 on:
   issues:
-    types: [labeled] # initial trigger comes from labels
+    types: [labeled] # for issues (if needed)
   pull_request:
-    types: [synchronize, reopened] # follow-ups on pushes if label still present
+    types: [labeled, synchronize, reopened] # initial trigger + follow-ups
 
 concurrency:
   group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
