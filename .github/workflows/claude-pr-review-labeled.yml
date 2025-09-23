@@ -1,10 +1,10 @@
 name: Claude PR Review (labeled)
 
 on:
-  pull_request:
-    types: [labeled, synchronize, reopened]
   issues:
-    types: [labeled] # <— NEW: catch label events emitted via Issues API
+    types: [labeled] # initial trigger comes from labels
+  pull_request:
+    types: [synchronize, reopened] # follow-ups on pushes if label still present
 
 concurrency:
   group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
@@ -63,6 +63,22 @@ jobs:
             core.setOutput('sha', pr.head.sha);
             core.setOutput('changed', String(changed));
 
+      - name: Has claude label?
+        id: haslabel
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
+            });
+            const names = new Set(labels.map(l => l.name));
+            const hasReview = names.has('claude:review');
+            const hasUltra  = names.has('claude:ultra');
+            core.setOutput('has', String(hasReview || hasUltra));
+            core.setOutput('has_review', String(hasReview));
+            core.setOutput('has_ultra',  String(hasUltra));
+
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
         if: steps.decide.outputs.internal != 'true'
@@ -82,14 +98,14 @@ jobs:
         run: exit 0
 
       - name: Checkout PR HEAD
-        if: steps.decide.outputs.internal == 'true'
+        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.decide.outputs.sha }}
           fetch-depth: 0
 
       - name: Claude Review (Sonnet)
-        if: steps.decide.outputs.internal == 'true'
+        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_review == 'true'
         id: claude_sonnet
         uses: anthropics/claude-code-action@v1
         with:
@@ -103,7 +119,7 @@ jobs:
             --output-format stream-json
 
       - name: Claude Review (Opus)
-        if: steps.decide.outputs.internal == 'true'
+        if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_ultra == 'true'
         id: claude_opus
         uses: anthropics/claude-code-action@v1
         with:
@@ -112,7 +128,7 @@ jobs:
           label_trigger: 'claude:ultra'
           claude_args: >-
             --model claude-opus-4-1-20250805
-            --max-turns ${{ steps.decide.outputs.changed > 60 && '18' || '22' }}
+            --max-turns ${{ fromJSON(steps.decide.outputs.changed) > 60 && '18' || '22' }}
             --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
             --output-format stream-json
           prompt: |
@@ -148,7 +164,7 @@ jobs:
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
       - name: Ensure review is posted (fallback)
-        if: always() && steps.decide.outputs.internal == 'true'
+        if: always() && steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
         uses: actions/github-script@v7
         env:
           EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
