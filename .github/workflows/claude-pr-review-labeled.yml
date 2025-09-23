@@ -120,17 +120,31 @@ jobs:
           ref: ${{ steps.decide.outputs.sha }}
           fetch-depth: 0
 
-      - name: Claude Review
-        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
-        id: claude
+      - name: Claude Review (Sonnet)
+        if: steps.decide.outputs.mode == 'review' && steps.decide.outputs.internal == 'true'
+        id: claude_sonnet
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          track_progress: true
+          label_trigger: 'claude:review'
           claude_args: >-
-            --model ${{ steps.decide.outputs.model }}
-            --max-turns ${{ steps.decide.outputs.turns }}
+            --model claude-sonnet-4-20250514
+            --max-turns 16
+            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --output-format stream-json
+
+      - name: Claude Review (Opus)
+        if: steps.decide.outputs.mode == 'ultra' && steps.decide.outputs.internal == 'true'
+        id: claude_opus
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          label_trigger: 'claude:ultra'
+          claude_args: >-
+            --model claude-opus-4-1-20250805
+            --max-turns 22
             --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
             --output-format stream-json
           prompt: |
@@ -169,8 +183,10 @@ jobs:
         if: always() && steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
         uses: actions/github-script@v7
         env:
-          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
-          RESULT: ${{ steps.claude.outputs.result }}
+          EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
+          EXEC_FILE_OPUS: ${{ steps.claude_opus.outputs.execution_file }}
+          RESULT_SONNET: ${{ steps.claude_sonnet.outputs.result }}
+          RESULT_OPUS: ${{ steps.claude_opus.outputs.result }}
         with:
           script: |
             const fs = require('fs');
@@ -188,11 +204,11 @@ jobs:
               process.exit(0);
             }
 
-            let body = (process.env.RESULT || '').trim();
-            const p = process.env.EXEC_FILE;
-            if (!body && p && fs.existsSync(p)) {
+            let body = (process.env.RESULT_SONNET || process.env.RESULT_OPUS || '').trim();
+            const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
+            if (!body && execFile && fs.existsSync(execFile)) {
               try {
-                const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+                const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
                 if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
                 else if (Array.isArray(data.turns)) {
                   for (let i = data.turns.length - 1; i >= 0; i--) {
@@ -210,7 +226,28 @@ jobs:
             });
             core.info('Posted fallback review comment.');
 
-      # Optional: keep re-running on new commits while labeled (no-op step just for clarity)
-      - name: Note re-run policy
-        if: steps.decide.outputs.should_run == 'true'
-        run: echo "This job will re-run on synchronize events as long as the claude:* label remains."
+      # Remove claude label after review completes to prevent auto re-runs on subsequent pushes
+      - name: Remove claude label (prevents auto re-run)
+        if: always() && steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+            const mode = '${{ steps.decide.outputs.mode }}';
+            const labelToRemove = mode === 'ultra' ? 'claude:ultra' : 'claude:review';
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                name: labelToRemove
+              });
+              core.info(`Removed ${labelToRemove} label to prevent auto re-runs on future pushes.`);
+            } catch (e) {
+              if (e.status === 404) {
+                core.info(`Label ${labelToRemove} was already removed.`);
+              } else {
+                core.warning(`Failed to remove label: ${e.message}`);
+              }
+            }
