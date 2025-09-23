@@ -19,6 +19,26 @@ permissions:
   actions: read
 
 jobs:
+  debug:
+    # Always run to help diagnose workflow issues
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug - Log Event Details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🔍 DEBUG: Comment gate workflow triggered!');
+            console.log('Event name:', context.eventName);
+            console.log('Event action:', context.payload.action);
+            console.log('PR number:', context.payload.pull_request?.number);
+            console.log('Issue number:', context.payload.issue?.number);
+            console.log('Has pull_request field:', !!context.payload.issue?.pull_request);
+            console.log('Comment body:', context.payload.comment?.body);
+            console.log('Contains @claude:', context.payload.comment?.body?.includes('@claude'));
+            console.log('Repository:', context.repo);
+            console.log('Actor:', context.actor);
+            console.log('Full payload keys:', Object.keys(context.payload));
+
   gate:
     # Only when someone actually tags @claude on a PR thread/comment/review
     if: |
