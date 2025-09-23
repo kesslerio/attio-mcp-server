@@ -26,6 +26,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    concurrency:
+      group: pr-${{ github.event.pull_request.number || github.event.issue.number }}-claude-review
+      cancel-in-progress: true
+
     steps:
       # Optional (audit egress): set to "audit" first; switch to "block" once stable
       - name: Harden Runner (egress audit)
@@ -98,7 +102,11 @@ jobs:
 
           echo "sonnet_turns=$sonnet_cap" >> $GITHUB_OUTPUT
           echo "opus_turns=$opus_cap" >> $GITHUB_OUTPUT
-          echo "🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns, Opus: $opus_cap turns"
+
+          # Summary for maintainers in both logs and step summary
+          summary="🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns, Opus: $opus_cap turns"
+          echo "$summary"
+          echo "$summary" >> $GITHUB_STEP_SUMMARY
 
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
@@ -141,7 +149,7 @@ jobs:
           prompt: |
             IMPORTANT EXECUTION RULES
             - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
-            - By turn ${{ steps.turns.outputs.sonnet_turns - 6 }}, STOP using tools and write the final Markdown report.
+            - By turn ${{ fromJSON(steps.turns.outputs.sonnet_turns) - 6 }}, STOP using tools and write the final Markdown report.
             - Always emit a single final report with sections:
               Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
             - End the report with the exact marker: END-OF-REPORT
@@ -175,8 +183,6 @@ jobs:
             - **Perf/Sec Notes** (explicit quick wins)
             - **Risk Level** with rationale
 
-            END-OF-REPORT
-
       - name: Claude Review (Opus)
         if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_ultra == 'true'
         id: claude_opus
@@ -193,7 +199,7 @@ jobs:
           prompt: |
             IMPORTANT EXECUTION RULES
             - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
-            - By turn ${{ steps.turns.outputs.opus_turns - 8 }}, STOP using tools and write the final Markdown report.
+            - By turn ${{ fromJSON(steps.turns.outputs.opus_turns) - 8 }}, STOP using tools and write the final Markdown report.
             - Always emit a single final report with sections:
               Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
             - End the report with the exact marker: END-OF-REPORT
@@ -229,8 +235,6 @@ jobs:
 
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
-            END-OF-REPORT
-
       - name: Post PR review (robust)
         if: always() && steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has == 'true'
         uses: actions/github-script@v7
@@ -243,18 +247,30 @@ jobs:
           script: |
             const fs = require('fs');
             const LIMIT = 65000;
-            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+
+            // Event-agnostic PR number detection
+            const prNumber =
+              Number('${{ github.event.pull_request.number || '' }}') ||
+              Number('${{ github.event.issue.number || '' }}') ||
+              Number('${{ steps.decide.outputs.pr || '' }}');
+
+            if (!prNumber) {
+              core.info('No PR number found; skipping comment posting.');
+              return;
+            }
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 50
             });
             // Don't double-post if our final-style comment already exists
+            const runTag = `claude-run-${context.runId}`;
             const already = comments.some(c =>
-              /Top Findings:|Suggested Tests|Quick Refactors|Perf\/Sec Notes|Overall Risk:/i.test(c.body || '') &&
-              c.user?.type === 'Bot'
+              (c.body || '').includes(runTag) ||
+              (/Top Findings:|Suggested Tests|Quick Refactors|Perf\/Sec Notes|Overall Risk:/i.test(c.body || '') &&
+               c.user?.type === 'Bot')
             );
             if (already) {
-              core.info('Review comment already exists; skipping posting.');
+              core.info('Review comment already exists for this run; skipping posting.');
               return;
             }
 
@@ -298,10 +314,11 @@ jobs:
             for (let i = 0; i < body.length; i += LIMIT) parts.push(body.slice(i, i + LIMIT));
 
             for (let i = 0; i < parts.length; i++) {
+              const runTag = `\n\n<!-- claude-run-${context.runId}-${i} -->`;
               const suffix = parts.length > 1 ? `\n\n— part ${i+1}/${parts.length}` : '';
               await github.rest.issues.createComment({
                 owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
-                body: parts[i] + suffix
+                body: parts[i] + suffix + runTag
               });
             }
             core.info(`Posted PR review comment (${parts.length} part${parts.length > 1 ? 's' : ''}).`);
