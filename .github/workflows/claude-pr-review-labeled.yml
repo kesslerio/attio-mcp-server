@@ -1,13 +1,23 @@
 name: Claude PR Review (labeled)
 
 on:
-  issues:
-    types: [labeled] # single trigger for both issues and PRs (no auto re-review on pushes)
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR number'
+        required: true
+      label:
+        description: 'claude:review or claude:ultra'
+        required: true
+      source:
+        description: 'Dispatch source for debugging'
+        required: false
+        default: 'gate'
   pull_request:
     types: [reopened] # optional: manual nudge path for reopened PRs
 
 concurrency:
-  group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: claude-pr-labeled-${{ github.event.inputs.pr || github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -19,41 +29,36 @@ permissions:
 
 jobs:
   review:
-    # Only run for Claude labels or PR reopened
+    # Run for workflow_dispatch or PR reopened (with Claude label)
     if: |
-      (github.event_name == 'pull_request' && github.event.action == 'reopened') ||
-      (github.event_name == 'issues' && github.event.action == 'labeled' &&
-       github.event.issue.pull_request &&
-       (github.event.label.name == 'claude:review' || github.event.label.name == 'claude:ultra'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && github.event.action == 'reopened' &&
+       (contains(github.event.pull_request.labels.*.name, 'claude:review') ||
+        contains(github.event.pull_request.labels.*.name, 'claude:ultra')))
 
     runs-on: ubuntu-latest
 
     concurrency:
-      group: pr-${{ github.event.pull_request.number || github.event.issue.number }}-claude-review
+      group: pr-${{ github.event.inputs.pr || github.event.pull_request.number }}-claude-review
       cancel-in-progress: true
 
     steps:
-      # DEBUG: Log event details to verify workflow is triggering
-      - name: Debug - Log Event Details
-        uses: actions/github-script@v7
-        with:
-          script: |
-            console.log('🔍 DEBUG: Workflow triggered!');
-            console.log('Event name:', context.eventName);
-            console.log('Event action:', context.payload.action);
-            console.log('PR number:', context.payload.pull_request?.number);
-            console.log('Issue number:', context.payload.issue?.number);
-            console.log('Repository:', context.repo);
-            console.log('Actor:', context.actor);
-            console.log('Full payload:', JSON.stringify(context.payload, null, 2));
+      - name: Resolve inputs
+        id: resolve
+        run: |
+          echo "pr=${{ github.event.inputs.pr || github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "label=${{ github.event.inputs.label || 'claude:review' }}" >> $GITHUB_OUTPUT
+          echo "source=${{ github.event.inputs.source || 'reopened' }}" >> $GITHUB_OUTPUT
+          echo "🔍 Dispatch source: ${{ github.event.inputs.source || 'reopened' }}"
 
+      # Fast label check to short-circuit unrelated label churn
       - name: Has claude label?
         id: haslabel
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
-            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+            const prNumber = '${{ steps.resolve.outputs.pr }}';
+            const labels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
               owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
             });
             const names = new Set(labels.map(l => l.name));
@@ -64,7 +69,7 @@ jobs:
             core.setOutput('has_ultra',  String(hasUltra));
 
       - name: Skip if not a Claude label
-        if: steps.haslabel.outputs.has != 'true'
+        if: steps.haslabel.outputs.has != 'true' && github.event_name == 'pull_request'
         run: exit 0
 
       # Optional (audit egress): set to "audit" first; switch to "block" once stable
@@ -75,15 +80,14 @@ jobs:
 
       - name: Get PR info & determine environment
         id: decide
-        if: steps.haslabel.outputs.has == 'true' || (github.event_name == 'pull_request' && github.event.action == 'reopened')
+        if: steps.haslabel.outputs.has == 'true' || (github.event_name == 'pull_request' && github.event.action == 'reopened') || github.event_name == 'workflow_dispatch'
         uses: actions/github-script@v7
         with:
           script: |
-            // Get PR number regardless of event
-            const prNumber = context.payload.pull_request?.number
-              ?? context.payload.issue?.number;
+            // Get PR number from resolved inputs
+            const prNumber = '${{ steps.resolve.outputs.pr }}';
             if (!prNumber) {
-              core.setFailed('No PR number on this event'); return;
+              core.setFailed('No PR number resolved'); return;
             }
 
             // Always fetch the PR fresh
@@ -159,6 +163,7 @@ jobs:
         with:
           ref: ${{ steps.decide.outputs.sha }}
           fetch-depth: 0
+          persist-credentials: false # defensive; we're not pushing
 
       - name: Claude Review (Sonnet)
         if: steps.decide.outputs.internal == 'true' && steps.haslabel.outputs.has_review == 'true'

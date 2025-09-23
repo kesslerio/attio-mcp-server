@@ -36,24 +36,22 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
-      - name: Validate PAT token availability
-        id: validate_token
+      - name: Validate CLAUDE_GATE_TOKEN
+        run: |
+          if [ -z "${{ secrets.CLAUDE_GATE_TOKEN }}" ]; then
+            echo "::error::CLAUDE_GATE_TOKEN not set (repo → Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+
+      - name: Who am I (should be your PAT user)
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.CLAUDE_GATE_TOKEN }}
           script: |
-            // Test PAT by making a simple API call and verify actor
-            try {
-              const { data: user } = await github.rest.users.getAuthenticated();
-              core.info(`✅ PAT working - authenticated as: ${user.login}`);
-              if (user.type === 'Bot') {
-                core.setFailed(`❌ PAT is still using bot token (${user.login}), not user PAT`);
-                return;
-              }
-              core.setOutput('pat_user', user.login);
-              core.setOutput('pat_available', 'true');
-            } catch (error) {
-              core.setFailed(`❌ PAT validation failed: ${error.message}`);
+            const me = await github.rest.users.getAuthenticated();
+            core.info(`Using token for @${me.data.login} (type=${me.data.type})`);
+            if (me.data.type === 'Bot') {
+              core.setFailed(`❌ Token is for bot account: ${me.data.login}`);
             }
 
       - name: Extract PR number + intent
@@ -78,12 +76,10 @@ jobs:
 
       - name: Guard - only maintainers may trigger Claude reviews
         id: guard
-        if: steps.validate_token.outputs.pat_available == 'true'
         uses: actions/github-script@v7
         env:
           CLAUDE_ALLOWED_USERS: kesslerio
         with:
-          # Use validated PAT to trigger downstream workflows
           github-token: ${{ secrets.CLAUDE_GATE_TOKEN }}
           script: |
             const user = context.actor;
@@ -193,3 +189,22 @@ jobs:
                                           `ℹ️ ${tag} review is already queued. Push new commits or comment \`@claude re-review\` to force a re-run.`;
 
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number, body });
+
+      - name: Kick off review (dispatch)
+        if: steps.guard.outputs.blocked != 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CLAUDE_GATE_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'claude-pr-review-labeled.yml',
+              ref: context.repo.default_branch,
+              inputs: {
+                pr: String('${{ steps.info.outputs.pr }}'),
+                label: '${{ steps.info.outputs.label }}',
+                source: 'gate'
+              }
+            });
+            core.info(`Dispatched review workflow for PR #${{ steps.info.outputs.pr }} with label ${{ steps.info.outputs.label }}`);
