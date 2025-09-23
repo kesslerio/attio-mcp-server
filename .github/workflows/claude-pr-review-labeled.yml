@@ -279,10 +279,9 @@ jobs:
             # 1) Try to pull ALL 'text' occurrences (covers delta.text too)
             REVIEW_CONTENT=""
             if command -v jq >/dev/null 2>&1; then
-              # Grab any .delta.text, then any plain .text, join in order
+              # Process line-by-line to preserve stream order, prefer delta.text over text
               REVIEW_CONTENT="$(jq -r '
-                (.. | .delta?.text? // empty),
-                (.. | .text? // empty)
+                if type=="object" then (.delta?.text? // .text // empty) else empty end
               ' "$EXEC_FILE" 2>/dev/null | tr -d "\r")" || true
             fi
 
@@ -305,7 +304,7 @@ jobs:
             if [ -n "$REVIEW_CONTENT" ]; then
               echo "✅ Captured Sonnet review content (${#REVIEW_CONTENT} chars)"
               {
-                echo "RESULT_SONNET<<'EOF'"
+                echo "RESULT_SONNET<<EOF"
                 echo "$REVIEW_CONTENT"
                 echo "EOF"
               } >> "$GITHUB_ENV"
@@ -329,10 +328,9 @@ jobs:
             # 1) Try to pull ALL 'text' occurrences (covers delta.text too)
             REVIEW_CONTENT=""
             if command -v jq >/dev/null 2>&1; then
-              # Grab any .delta.text, then any plain .text, join in order
+              # Process line-by-line to preserve stream order, prefer delta.text over text
               REVIEW_CONTENT="$(jq -r '
-                (.. | .delta?.text? // empty),
-                (.. | .text? // empty)
+                if type=="object" then (.delta?.text? // .text // empty) else empty end
               ' "$EXEC_FILE" 2>/dev/null | tr -d "\r")" || true
             fi
 
@@ -355,7 +353,7 @@ jobs:
             if [ -n "$REVIEW_CONTENT" ]; then
               echo "✅ Captured Opus review content (${#REVIEW_CONTENT} chars)"
               {
-                echo "RESULT_OPUS<<'EOF'"
+                echo "RESULT_OPUS<<EOF"
                 echo "$REVIEW_CONTENT"
                 echo "EOF"
               } >> "$GITHUB_ENV"
@@ -416,19 +414,23 @@ jobs:
               if (!node) return;
               if (Array.isArray(node)) { node.forEach(n => extractText(n, out)); return; }
               if (typeof node === 'object') {
-                // Anthropic stream deltas
-                if (node.delta && typeof node.delta.text === 'string') out.push(node.delta.text);
+                // Anthropic stream deltas - prefer this over plain text
+                if (node.delta && typeof node.delta.text === 'string') {
+                  out.push(node.delta.text);
+                  // Don't process plain text if we found delta.text to avoid duplication
+                } else {
+                  // Plain text nodes (only if no delta.text was found)
+                  if (node.type === 'text' && typeof node.text === 'string') out.push(node.text);
+                  // Generic: capture any string-valued "text" (only if no delta)
+                  else if (Object.prototype.hasOwnProperty.call(node, 'text') && typeof node.text === 'string') out.push(node.text);
+                }
 
-                // Plain text nodes
-                if (node.type === 'text' && typeof node.text === 'string') out.push(node.text);
-
-                // Generic: capture any string-valued "text"
-                if (Object.prototype.hasOwnProperty.call(node, 'text') && typeof node.text === 'string') out.push(node.text);
-
-                // Recurse
-                for (const k of ['content','turns','messages','delta','data','message']) {
+                // Recurse into nested structures (but skip delta to avoid double-processing)
+                for (const k of ['content','turns','messages','data','message']) {
                   if (node[k] !== undefined) extractText(node[k], out);
                 }
+                // Only recurse into delta if it doesn't have text (to avoid reprocessing delta.text)
+                if (node.delta && !node.delta.text) extractText(node.delta, out);
               }
             }
 
