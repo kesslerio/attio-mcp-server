@@ -1,0 +1,152 @@
+name: Claude PR Review (labeled)
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+concurrency:
+  group: claude-pr-labeled-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+  checks: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide mode from labels
+        id: decide
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = (pr.labels || []).map(l => l.name);
+            const eventLabel = context.payload.label?.name || '';
+            const all = new Set(labels.concat([eventLabel].filter(Boolean)));
+
+            const ultra = all.has('claude:ultra');
+            const normal = all.has('claude:review');
+
+            // Run only if one of our labels is present
+            const should_run = ultra || normal;
+            const model = ultra ? 'claude-opus-4-1-20250805' : 'claude-sonnet-4-20250514';
+            const turns = ultra ? 22 : 16;
+            core.setOutput('should_run', String(should_run));
+            core.setOutput('mode', ultra ? 'ultra' : (normal ? 'review' : 'none'));
+            core.setOutput('model', model);
+            core.setOutput('turns', String(turns));
+            core.setOutput('pr', String(pr.number));
+
+      - name: Stop if not labeled for Claude
+        if: steps.decide.outputs.should_run != 'true'
+        run: echo "No claude:* label on this PR. Skipping."
+
+      - name: Checkout PR HEAD
+        if: steps.decide.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Claude Review
+        if: steps.decide.outputs.should_run == 'true'
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          track_progress: true
+          claude_args: >-
+            --model ${{ steps.decide.outputs.model }}
+            --max-turns ${{ steps.decide.outputs.turns }}
+            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --output-format stream-json
+          prompt: |
+            Perform a PR review with full working tree access.
+
+            Enforce these repo standards:
+            ## Code Quality Standards
+            ### Single Responsibility Principle (SRP)
+            - One class/module → one reason to change. Detect mixed concerns, many dependencies, multiple change reasons.
+
+            ### Size Limits & Refactoring Triggers
+            - Functions: ≤30–40 lines; Classes/Files: ≤500 lines; Methods per class: ≤20–30.
+            - Trigger refactor on complexity or mixed concerns.
+
+            ### Refactoring Best Practices
+            - Small steps; test each change. Don't mix refactors with bug fixes.
+            - Deduplicate first; add focused tests.
+
+            ### Universal Coding Standards
+            - TypeScript: prefer Record<string, unknown> over any
+            - PascalCase (classes/interfaces), camelCase (functions/variables)
+            - Imports: node → external → internal; remove unused
+            - Commits: conventional or repo override; keep #issue linkage
+
+            Output Markdown:
+            - **Summary**
+            - **Top Findings** (with code snippets/diffs)
+            - **Suggested Tests** (file + test name)
+            - **Quick Refactors** (incremental, SRP-aligned)
+            - **Perf/Sec Notes** (explicit quick wins)
+            - **Risk Level** with rationale
+
+            If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
+
+      - name: Ensure review is posted (fallback)
+        if: always() && steps.decide.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+          RESULT: ${{ steps.claude.outputs.result }}
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+
+            // Avoid duplicates
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 50
+            });
+            if (comments.some(c =>
+              /Overall Risk:|Top Findings:|Suggested Tests|Quick Refactors/i.test(c.body || '') &&
+              c.user?.type === 'Bot'
+            )) {
+              core.info('Review comment already exists; skipping fallback.');
+              process.exit(0);
+            }
+
+            let body = (process.env.RESULT || '').trim();
+            const p = process.env.EXEC_FILE;
+            if (!body && p && fs.existsSync(p)) {
+              try {
+                const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+                if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
+                else if (Array.isArray(data.turns)) {
+                  for (let i = data.turns.length - 1; i >= 0; i--) {
+                    const parts = (data.turns[i]?.message?.content || []).filter(x => x.type === 'text').map(x => x.text);
+                    const text = parts.join('\n').trim();
+                    if (text) { body = text; break; }
+                  }
+                }
+              } catch {}
+            }
+            if (!body) body = '_Claude produced a review, but no formatted output was found. See logs._';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body
+            });
+            core.info('Posted fallback review comment.');
+
+      # Optional: keep re-running on new commits while labeled (no-op step just for clarity)
+      - name: Note re-run policy
+        if: steps.decide.outputs.should_run == 'true'
+        run: echo "This job will re-run on synchronize events as long as the claude:* label remains."
