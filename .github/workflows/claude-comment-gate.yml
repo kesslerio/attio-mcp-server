@@ -200,7 +200,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'claude-pr-review-labeled.yml',
-              ref: context.repo.default_branch,
+              ref: 'main',
               inputs: {
                 pr: String('${{ steps.info.outputs.pr }}'),
                 label: '${{ steps.info.outputs.label }}',
