@@ -2,9 +2,9 @@ name: Claude PR Review (labeled)
 
 on:
   issues:
-    types: [labeled] # for issues (if needed)
+    types: [labeled] # single trigger for both issues and PRs (no auto re-review on pushes)
   pull_request:
-    types: [labeled, synchronize, reopened] # initial trigger + follow-ups
+    types: [reopened] # optional: manual nudge path for reopened PRs
 
 concurrency:
   group: claude-pr-labeled-${{ github.event.pull_request.number || github.event.issue.number }}
@@ -19,10 +19,12 @@ permissions:
 
 jobs:
   review:
-    # Only proceed if this is a PR (issues:labeled can also fire on pure issues)
+    # Only run for Claude labels or PR reopened
     if: |
-      (github.event_name == 'pull_request') ||
-      (github.event_name == 'issues' && github.event.issue.pull_request)
+      (github.event_name == 'pull_request' && github.event.action == 'reopened') ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' &&
+       github.event.issue.pull_request &&
+       (github.event.label.name == 'claude:review' || github.event.label.name == 'claude:ultra'))
 
     runs-on: ubuntu-latest
 
@@ -31,6 +33,40 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      # DEBUG: Log event details to verify workflow is triggering
+      - name: Debug - Log Event Details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🔍 DEBUG: Workflow triggered!');
+            console.log('Event name:', context.eventName);
+            console.log('Event action:', context.payload.action);
+            console.log('PR number:', context.payload.pull_request?.number);
+            console.log('Issue number:', context.payload.issue?.number);
+            console.log('Repository:', context.repo);
+            console.log('Actor:', context.actor);
+            console.log('Full payload:', JSON.stringify(context.payload, null, 2));
+
+      - name: Has claude label?
+        id: haslabel
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
+            });
+            const names = new Set(labels.map(l => l.name));
+            const hasReview = names.has('claude:review');
+            const hasUltra  = names.has('claude:ultra');
+            core.setOutput('has', String(hasReview || hasUltra));
+            core.setOutput('has_review', String(hasReview));
+            core.setOutput('has_ultra',  String(hasUltra));
+
+      - name: Skip if not a Claude label
+        if: steps.haslabel.outputs.has != 'true'
+        run: exit 0
+
       # Optional (audit egress): set to "audit" first; switch to "block" once stable
       - name: Harden Runner (egress audit)
         uses: step-security/harden-runner@v2
@@ -39,6 +75,7 @@ jobs:
 
       - name: Get PR info & determine environment
         id: decide
+        if: steps.haslabel.outputs.has == 'true' || (github.event_name == 'pull_request' && github.event.action == 'reopened')
         uses: actions/github-script@v7
         with:
           script: |
@@ -70,22 +107,6 @@ jobs:
             core.setOutput('sha', pr.head.sha);
             core.setOutput('changed', String(changed));
             core.setOutput('lines', String(totalLines));
-
-      - name: Has claude label?
-        id: haslabel
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
-            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
-              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
-            });
-            const names = new Set(labels.map(l => l.name));
-            const hasReview = names.has('claude:review');
-            const hasUltra  = names.has('claude:ultra');
-            core.setOutput('has', String(hasReview || hasUltra));
-            core.setOutput('has_review', String(hasReview));
-            core.setOutput('has_ultra',  String(hasUltra));
 
       - name: Calculate turn limits based on PR size
         id: turns
@@ -265,8 +286,8 @@ jobs:
               return;
             }
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 50
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
             });
             // Don't double-post if our final-style comment already exists
             const runTag = `claude-run-${context.runId}`;
@@ -280,7 +301,8 @@ jobs:
               return;
             }
 
-            let body = (process.env.RESULT_SONNET || process.env.RESULT_OPUS || '').trim();
+            // Prefer the deeper Opus pass if both exist
+            let body = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
 
             function extractText(node, out) {
               if (!node) return;
