@@ -36,7 +36,7 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
-      - name: Extract PR number + text
+      - name: Extract PR number + intent
         id: info
         uses: actions/github-script@v7
         with:
@@ -47,17 +47,14 @@ jobs:
             const raw = (context.payload.comment?.body || context.payload.review?.body || '').toString();
             const lc = raw.toLowerCase();
 
-            // Detect "ultra" (allows "ultra review" too)
+            // detect "ultra" and "re-review"
             const ultra = /\bultra(\W+review)?\b/.test(lc);
-
-            // Detect re-run intents
             const rerun = /\b(re[- ]?review|re[- ]?run|rerun|again|refresh|recheck)\b/.test(lc);
 
             core.setOutput('pr', String(prNumber));
             core.setOutput('mode', ultra ? 'ultra' : 'review');
             core.setOutput('label', ultra ? 'claude:ultra' : 'claude:review');
             core.setOutput('rerun', String(rerun));
-            core.setOutput('raw', raw);
 
       - name: Ensure label exists
         uses: actions/github-script@v7
@@ -69,7 +66,6 @@ jobs:
               'claude:review': { color: '0e8a16', description: 'Run Sonnet review' },
             };
             const def = palette[name] || { color: '0366d6', description: 'Claude PR review trigger' };
-
             try {
               await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name });
             } catch (e) {
@@ -78,9 +74,7 @@ jobs:
                   owner: context.repo.owner, repo: context.repo.repo,
                   name, color: def.color, description: def.description
                 });
-              } else {
-                throw e;
-              }
+              } else { throw e; }
             }
 
       - name: Add or toggle label (handles re-review)
@@ -104,15 +98,12 @@ jobs:
             async function remove(name) {
               try {
                 await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number, name });
-              } catch (e) {
-                if (e.status !== 404) throw e;
-              }
+              } catch (e) { if (e.status !== 404) throw e; }
             }
             async function add() {
               await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number, labels: [requested] });
             }
 
-            // Re-run requested → force a re-label (remove then add)
             if (rerun) {
               if (hasReview) await remove('claude:review');
               if (hasUltra)  await remove('claude:ultra');
@@ -121,7 +112,6 @@ jobs:
               return;
             }
 
-            // Mode switch (e.g., review → ultra or vice versa)
             if (!hasRequested) {
               if (requested === 'claude:ultra' && hasReview) await remove('claude:review');
               if (requested === 'claude:review' && hasUltra)  await remove('claude:ultra');
@@ -130,7 +120,6 @@ jobs:
               return;
             }
 
-            // Already labeled and no re-run keyword → no-op
             core.setOutput('action', 'already-queued');
 
       - name: Acknowledge
@@ -140,20 +129,11 @@ jobs:
             const issue_number = Number('${{ steps.info.outputs.pr }}');
             const mode = '${{ steps.info.outputs.mode }}';
             const action = '${{ steps.relabel.outputs.action }}';
+            const tag = mode === 'ultra' ? '**Opus (ultra)**' : '**Sonnet**';
 
-            function label(mode) {
-              return mode === 'ultra' ? '**Opus (ultra)**' : '**Sonnet**';
-            }
+            const body =
+              action === 're-run'       ? `🔁 Re-queued ${tag} review in PR-safe context. I'll post results here shortly.` :
+              action === 'queued'       ? `🟢 Queued ${tag} review in PR-safe context. I'll post results here shortly.` :
+                                          `ℹ️ ${tag} review is already queued. Push new commits or comment \`@claude re-review\` to force a re-run.`;
 
-            let body;
-            if (action === 're-run') {
-              body = `🔁 Re-queued ${label(mode)} review in PR-safe context. I'll post results here shortly.`;
-            } else if (action === 'queued') {
-              body = `🟢 Queued ${label(mode)} review in PR-safe context. I'll post results here shortly.`;
-            } else {
-              body = `ℹ️ ${label(mode)} review is already queued for this PR. Push new commits or comment \`@claude re-review\` to force a re-run.`;
-            }
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo, issue_number, body
-            });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number, body });
