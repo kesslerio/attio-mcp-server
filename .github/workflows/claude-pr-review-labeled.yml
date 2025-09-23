@@ -33,7 +33,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Decide mode & environment
+      - name: Get PR info & determine environment
         id: decide
         uses: actions/github-script@v7
         with:
@@ -52,85 +52,67 @@ jobs:
               pull_number: prNumber
             });
 
-            // 🔑 CRITICAL: fetch labels from the Issues API (source of truth)
-            const { data: labelsResp } = await github.rest.issues.listLabelsOnIssue({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              per_page: 100
-            });
-            const labelNames = labelsResp.map(l => l.name);
-
-            // Include the label from payload (handles races / eventual consistency)
-            const eventLabel = (context.payload.label && context.payload.label.name) || '';
-            const all = new Set(labelNames.concat([eventLabel].filter(Boolean)));
-
-            const ultra = all.has('claude:ultra');
-            const normal = all.has('claude:review');
-            const should_run = ultra || normal;
-
             const internal = pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`;
             const changed = pr.changed_files || 0;
 
-            const model = ultra ? 'claude-opus-4-1-20250805' : 'claude-sonnet-4-20250514';
-            let turns = ultra ? 22 : 16;
-            if (changed > 60 && turns > 18) turns = 18; // soft cost cap
-
             // Optional debug (shows up in logs)
-            core.info(`labels: ${JSON.stringify([...all])}`);
-            core.info(`mode: ${ultra ? 'ultra' : (normal ? 'review' : 'none')}, internal: ${internal}, changed: ${changed}`);
+            core.info(`PR #${pr.number}: internal=${internal}, changed=${changed} files`);
 
-            core.setOutput('should_run', String(should_run));
-            core.setOutput('mode', ultra ? 'ultra' : (normal ? 'review' : 'none'));
-            core.setOutput('model', model);
-            core.setOutput('turns', String(turns));
             core.setOutput('internal', String(internal));
             core.setOutput('pr', String(pr.number));
             core.setOutput('sha', pr.head.sha);
-            core.setOutput('labels', JSON.stringify([...all]));
-
-      - name: Stop if no claude:* label
-        if: steps.decide.outputs.should_run != 'true'
-        run: echo "No claude:* label present. labels_seen=${{ steps.decide.outputs.labels || 'n/a' }} Skipping."
+            core.setOutput('changed', String(changed));
 
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
-        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal != 'true'
+        if: steps.decide.outputs.internal != 'true'
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = Number('${{ steps.decide.outputs.pr }}');
-            const mode = '${{ steps.decide.outputs.mode }}';
-            const tag = mode === 'ultra' ? '**Opus (ultra)**' : '**Sonnet**';
             const body =
               `🔒 This is a fork PR. For security, secrets are not available in PR jobs.\n\n` +
-              `To run ${tag} with full checkout, use **Actions → Claude Trusted Review (manual)** on PR #${prNumber}, or approve a maintainer-run workflow.`;
+              `To run Claude reviews with full checkout, use **Actions → Claude Trusted Review (manual)** on PR #${prNumber}, or approve a maintainer-run workflow.`;
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body
             });
 
       - name: Exit on forks
-        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal != 'true'
+        if: steps.decide.outputs.internal != 'true'
         run: exit 0
 
       - name: Checkout PR HEAD
-        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
+        if: steps.decide.outputs.internal == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.decide.outputs.sha }}
           fetch-depth: 0
 
-      - name: Claude Review
-        if: steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
-        id: claude
+      - name: Claude Review (Sonnet)
+        if: steps.decide.outputs.internal == 'true'
+        id: claude_sonnet
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          track_progress: true
+          label_trigger: 'claude:review'
           claude_args: >-
-            --model ${{ steps.decide.outputs.model }}
-            --max-turns ${{ steps.decide.outputs.turns }}
+            --model claude-sonnet-4-20250514
+            --max-turns 16
+            --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
+            --output-format stream-json
+
+      - name: Claude Review (Opus)
+        if: steps.decide.outputs.internal == 'true'
+        id: claude_opus
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          label_trigger: 'claude:ultra'
+          claude_args: >-
+            --model claude-opus-4-1-20250805
+            --max-turns ${{ steps.decide.outputs.changed > 60 && '18' || '22' }}
             --allowed-tools Read,Glob,Grep,NotebookEdit,Bash
             --output-format stream-json
           prompt: |
@@ -166,11 +148,13 @@ jobs:
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
       - name: Ensure review is posted (fallback)
-        if: always() && steps.decide.outputs.should_run == 'true' && steps.decide.outputs.internal == 'true'
+        if: always() && steps.decide.outputs.internal == 'true'
         uses: actions/github-script@v7
         env:
-          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
-          RESULT: ${{ steps.claude.outputs.result }}
+          EXEC_FILE_SONNET: ${{ steps.claude_sonnet.outputs.execution_file }}
+          EXEC_FILE_OPUS: ${{ steps.claude_opus.outputs.execution_file }}
+          RESULT_SONNET: ${{ steps.claude_sonnet.outputs.result }}
+          RESULT_OPUS: ${{ steps.claude_opus.outputs.result }}
         with:
           script: |
             const fs = require('fs');
@@ -188,11 +172,11 @@ jobs:
               process.exit(0);
             }
 
-            let body = (process.env.RESULT || '').trim();
-            const p = process.env.EXEC_FILE;
-            if (!body && p && fs.existsSync(p)) {
+            let body = (process.env.RESULT_SONNET || process.env.RESULT_OPUS || '').trim();
+            const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
+            if (!body && execFile && fs.existsSync(execFile)) {
               try {
-                const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+                const data = JSON.parse(fs.readFileSync(execFile, 'utf8'));
                 if (typeof data.result === 'string' && data.result.trim()) body = data.result.trim();
                 else if (Array.isArray(data.turns)) {
                   for (let i = data.turns.length - 1; i >= 0; i--) {
@@ -210,7 +194,36 @@ jobs:
             });
             core.info('Posted fallback review comment.');
 
-      # Optional: keep re-running on new commits while labeled (no-op step just for clarity)
-      - name: Note re-run policy
-        if: steps.decide.outputs.should_run == 'true'
-        run: echo "This job will re-run on synchronize events as long as the claude:* label remains."
+      # Remove claude label after review completes to prevent auto re-runs on subsequent pushes
+      - name: Remove claude label (prevents auto re-run)
+        if: always() && steps.decide.outputs.internal == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = Number('${{ steps.decide.outputs.pr }}');
+
+            // Check which label was applied by looking at completed steps
+            const sonnetRan = '${{ steps.claude_sonnet.outcome }}' !== '';
+            const opusRan = '${{ steps.claude_opus.outcome }}' !== '';
+
+            const labelsToRemove = [];
+            if (sonnetRan) labelsToRemove.push('claude:review');
+            if (opusRan) labelsToRemove.push('claude:ultra');
+
+            for (const label of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  name: label
+                });
+                core.info(`Removed ${label} label to prevent auto re-runs on future pushes.`);
+              } catch (e) {
+                if (e.status === 404) {
+                  core.info(`Label ${label} was already removed.`);
+                } else {
+                  core.warning(`Failed to remove label ${label}: ${e.message}`);
+                }
+              }
+            }

@@ -56,7 +56,35 @@ jobs:
             core.setOutput('label', ultra ? 'claude:ultra' : 'claude:review');
             core.setOutput('rerun', String(rerun));
 
+      - name: Guard - only maintainers may trigger Claude reviews
+        id: guard
+        uses: actions/github-script@v7
+        env:
+          # Use PAT instead of GITHUB_TOKEN to trigger downstream workflows
+          GITHUB_TOKEN: ${{ secrets.CLAUDE_GATE_TOKEN || github.token }}
+        with:
+          script: |
+            const user = context.actor;
+            const assoc =
+              context.payload.comment?.author_association ||
+              context.payload.review?.author_association || 'NONE';
+            const maintainer = ['OWNER','MEMBER','COLLABORATOR'].includes(assoc);
+
+            // Optional allowlist (comma-separated), e.g. "kesslerio,othermaintainer"
+            const allow = (process.env.CLAUDE_ALLOWED_USERS || '').split(',').map(s=>s.trim()).filter(Boolean);
+            const allowHit = allow.length === 0 || allow.includes(user);
+
+            if (!maintainer && !allowHit) {
+              core.notice(`@claude trigger ignored for ${user} (assoc=${assoc}). Only maintainers may trigger reviews.`);
+              core.setOutput('blocked', 'true');
+            } else {
+              core.setOutput('blocked', 'false');
+            }
+        env:
+          CLAUDE_ALLOWED_USERS: kesslerio
+
       - name: Ensure label exists
+        if: steps.guard.outputs.blocked != 'true'
         uses: actions/github-script@v7
         env:
           # Use PAT instead of GITHUB_TOKEN to trigger downstream workflows
@@ -81,6 +109,7 @@ jobs:
             }
 
       - name: Add or toggle label (handles re-review)
+        if: steps.guard.outputs.blocked != 'true'
         id: relabel
         uses: actions/github-script@v7
         env:
@@ -129,6 +158,7 @@ jobs:
             core.setOutput('action', 'already-queued');
 
       - name: Acknowledge
+        if: steps.guard.outputs.blocked != 'true'
         uses: actions/github-script@v7
         env:
           # Use PAT instead of GITHUB_TOKEN to trigger downstream workflows
