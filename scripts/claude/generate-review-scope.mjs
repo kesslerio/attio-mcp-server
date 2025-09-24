@@ -1,10 +1,29 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, extname, join, normalize } from 'node:path';
+import {
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  normalize,
+  relative,
+} from 'node:path';
 
 const RING1_MAX = Number(process.env.RING1_MAX || 200);
 const workspace = process.cwd();
+const runId = process.env.GITHUB_RUN_ID || `${Date.now()}`;
+
+function sanitizeRef(ref, fallback) {
+  if (!ref) return fallback;
+  const trimmed = String(ref).trim();
+  if (/^[0-9a-f]{40}$/i.test(trimmed)) return trimmed;
+  if (/^(refs\/|origin\/)?[A-Za-z0-9._\/-]+$/.test(trimmed)) return trimmed;
+  console.warn(
+    `[scope] Unsafe git ref '${trimmed}' → using fallback '${fallback}'`
+  );
+  return fallback;
+}
 
 function runGit(args, options = {}) {
   try {
@@ -14,23 +33,40 @@ function runGit(args, options = {}) {
       ...options,
     }).trim();
   } catch (error) {
-    const err = new Error(`git ${args.join(' ')} failed: ${error.message}`);
-    err.original = error;
-    throw err;
+    console.error(`[scope] git command failed: ${args.join(' ')}`);
+    throw error;
   }
 }
 
 function resolveBaseRef(baseRefInput) {
-  if (baseRefInput && baseRefInput !== '') return baseRefInput;
-  const defaultBase = process.env.GITHUB_BASE_REF;
-  if (defaultBase && defaultBase !== '') return defaultBase;
-  // Fallback to origin/main
-  return 'origin/main';
+  const defaultBase = process.env.GITHUB_BASE_REF || 'origin/main';
+  return sanitizeRef(baseRefInput, sanitizeRef(defaultBase, 'origin/main'));
+}
+
+function ensureSafePath(filePath) {
+  if (!filePath) return null;
+  const normalized = normalize(filePath);
+  if (isAbsolute(normalized)) {
+    console.warn(`[scope] Skipping absolute path: ${normalized}`);
+    return null;
+  }
+  const posix = toPosix(normalized);
+  if (posix.startsWith('../') || posix.includes('/../')) {
+    console.warn(`[scope] Skipping path outside workspace: ${posix}`);
+    return null;
+  }
+  const rel = toPosix(relative('.', normalized));
+  if (rel.startsWith('../')) {
+    console.warn(`[scope] Skipping path escaping workspace: ${normalized}`);
+    return null;
+  }
+  return rel;
 }
 
 function listRing0(baseRef, headRef) {
-  if (!headRef) headRef = 'HEAD';
-  const diffRange = `${baseRef}...${headRef}`;
+  const safeBase = sanitizeRef(baseRef, 'origin/main');
+  const safeHead = sanitizeRef(headRef, 'HEAD');
+  const diffRange = `${safeBase}...${safeHead}`;
   const output = runGit(['diff', '--name-status', diffRange]);
   const files = [];
   for (const line of output.split('\n')) {
@@ -38,8 +74,8 @@ function listRing0(baseRef, headRef) {
     const [status, file] = line.split('\t');
     if (!file) continue;
     if (status === 'D') continue; // skip deletions
-    // Normalize to posix for GitHub paths
-    files.push(toPosix(file));
+    const safePath = ensureSafePath(file);
+    if (safePath) files.push(safePath);
   }
   return Array.from(new Set(files));
 }
@@ -59,28 +95,29 @@ function extractRelativeImports(filePath, source) {
   capture(new RegExp(RELATIVE_IMPORT_RE));
   capture(new RegExp(EXPORT_IMPORT_RE));
   capture(new RegExp(REQUIRE_RE));
-  return Array.from(matches).map((rel) => normalizeRelative(filePath, rel));
+  return Array.from(matches)
+    .map((rel) => normalizeRelative(filePath, rel))
+    .filter(Boolean);
 }
 
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
 
 function normalizeRelative(fromFile, relativePath) {
   const baseDir = dirname(fromFile);
-  const resolved = normalize(join(baseDir, relativePath));
-  if (resolved.endsWith('/')) return toPosix(resolved + 'index.ts');
+  const resolved = ensureSafePath(join(baseDir, relativePath));
+  if (!resolved) return null;
+  if (resolved.endsWith('/')) return ensureSafePath(`${resolved}index.ts`);
   const ext = extname(resolved);
-  if (ext) return toPosix(resolved);
-  // Try appending known extensions
+  if (ext) return resolved;
   for (const candidateExt of EXTENSIONS) {
-    const candidate = `${resolved}${candidateExt}`;
-    if (existsSync(candidate)) return toPosix(candidate);
+    const candidate = ensureSafePath(`${resolved}${candidateExt}`);
+    if (candidate && existsSync(candidate)) return candidate;
   }
-  // Accept directory index fallback
   for (const candidateExt of EXTENSIONS) {
-    const candidate = join(resolved, `index${candidateExt}`);
-    if (existsSync(candidate)) return toPosix(candidate);
+    const candidate = ensureSafePath(join(resolved, `index${candidateExt}`));
+    if (candidate && existsSync(candidate)) return candidate;
   }
-  return toPosix(resolved);
+  return resolved;
 }
 
 function toPosix(path) {
@@ -104,13 +141,12 @@ function collectRing1(ring0) {
     const dir = toPosix(dirname(file));
     if (!seenDirs.has(dir)) {
       seenDirs.add(dir);
-      // Add peers in directory
       listDirPattern(dir, '*', ring1);
-      // Add tests
       listDirPattern(dir, '*.test.*', ring1);
       listDirPattern(dir, '*.spec.*', ring1);
     }
-    if (file.match(/\.(ts|tsx|js|jsx|mjs|cjs)$/)) {
+    const ext = extname(file);
+    if (EXTENSIONS.includes(ext)) {
       const source = readFileSafe(file);
       if (!source) continue;
       const relImports = extractRelativeImports(file, source);
@@ -123,14 +159,15 @@ function collectRing1(ring0) {
 }
 
 function listDirPattern(directory, globPattern, outSet) {
-  const dir = directory === '.' ? '' : directory;
-  const path = dir ? `${dir}/${globPattern}` : globPattern;
-  const matches = runGit(['ls-files', path], {
+  const safeDir = ensureSafePath(directory) || '';
+  const pathSpec = safeDir ? `${safeDir}/${globPattern}` : globPattern;
+  const matches = runGit(['ls-files', pathSpec], {
     stdio: ['ignore', 'pipe', 'ignore'],
   });
   for (const file of matches.split('\n')) {
     if (!file) continue;
-    outSet.add(toPosix(file));
+    const safePath = ensureSafePath(file);
+    if (safePath) outSet.add(safePath);
   }
 }
 
@@ -138,15 +175,16 @@ function main() {
   const baseRef = resolveBaseRef(
     process.env.INPUT_BASE ||
       process.env.BASE_REF ||
-      process.env.GITHUB_BASE_REF ||
       process.env.GITHUB_EVENT_PULL_REQUEST_BASE_REF ||
       'origin/main'
   );
-  const headRef =
+  const headRef = sanitizeRef(
     process.env.INPUT_HEAD ||
-    process.env.HEAD_REF ||
-    process.env.GITHUB_SHA ||
-    'HEAD';
+      process.env.HEAD_REF ||
+      process.env.GITHUB_SHA ||
+      'HEAD',
+    'HEAD'
+  );
 
   let fallback = false;
   let ring0 = [];
@@ -161,7 +199,6 @@ function main() {
   if (!fallback) {
     try {
       ring1Set = collectRing1(ring0);
-      // Drop ring0 files from ring1
       for (const file of ring0) ring1Set.delete(file);
     } catch (error) {
       console.error('[scope] Failed to expand Ring 1:', error.message);
@@ -181,7 +218,11 @@ function main() {
   ring0.sort();
   ring1.sort();
 
-  const outputDir = process.env.OUTPUT_DIR || '.github/claude-cache';
+  const baseOutput =
+    ensureSafePath(process.env.OUTPUT_DIR || '.github/claude-cache') ||
+    '.github/claude-cache';
+  const outputDir =
+    ensureSafePath(join(baseOutput, runId)) || `${baseOutput}/${runId}`;
   mkdirSync(outputDir, { recursive: true });
   const ring0Path = join(outputDir, 'ring0.json');
   const ring1Path = join(outputDir, 'ring1.json');
@@ -194,11 +235,11 @@ function main() {
     fallback,
     baseRef,
     headRef,
+    outputDir,
   };
   const summaryPath = join(outputDir, 'scope-summary.json');
   writeFileSync(summaryPath, JSON.stringify(summary, null, 2) + '\n');
 
-  // Optionally populate sparse-checkout patterns
   console.info(
     '[scope] ring0:',
     ring0.length,
@@ -207,6 +248,7 @@ function main() {
     'fallback:',
     fallback ? 'yes' : 'no'
   );
+  console.info(`[scope] output: ${outputDir}`);
 }
 
 main();
