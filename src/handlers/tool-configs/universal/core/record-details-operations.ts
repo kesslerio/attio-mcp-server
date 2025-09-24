@@ -12,7 +12,7 @@ import {
   handleUniversalGetDetails,
   getSingularResourceType,
 } from '../shared-handlers.js';
-import { handleCoreOperationError } from '../../../../utils/axios-error-mapper.js';
+import { handleCoreOperationError } from './error-utils.js';
 import { UniversalUtilityService } from '../../../../services/UniversalUtilityService.js';
 
 export const getRecordDetailsConfig: UniversalToolConfig = {

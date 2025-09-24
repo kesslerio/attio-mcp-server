@@ -18,7 +18,12 @@ import {
   handleUniversalDelete,
   getSingularResourceType,
 } from '../shared-handlers.js';
-import { handleCoreOperationError } from '../../../../utils/axios-error-mapper.js';
+import { handleCoreOperationError } from './error-utils.js';
+import {
+  extractDisplayName,
+  formatValidationDetails,
+  ValidationMetadata,
+} from './utils.js';
 
 export const createRecordConfig: UniversalToolConfig = {
   name: 'create-record',
@@ -71,40 +76,12 @@ export const createRecordConfig: UniversalToolConfig = {
       ? getSingularResourceType(resourceType)
       : 'record';
 
-    let displayName = `New ${resourceTypeName}`;
-
-    if (resourceType === UniversalResourceType.PEOPLE && record.values) {
-      const valuesAny = record.values as Record<string, unknown>;
-      displayName =
-        (valuesAny?.name as { full_name?: string }[] | undefined)?.[0]
-          ?.full_name ||
-        (valuesAny?.name as { value?: string }[] | undefined)?.[0]?.value ||
-        (valuesAny?.name as { formatted?: string }[] | undefined)?.[0]
-          ?.formatted ||
-        (valuesAny?.full_name as { value?: string }[] | undefined)?.[0]
-          ?.value ||
-        `New ${resourceTypeName}`;
-    } else if (record.values) {
-      const coerce = (v: unknown): string | undefined => {
-        if (v == null) return undefined;
-        if (typeof v === 'string') return v;
-        if (Array.isArray(v)) {
-          const first = v[0] as { value?: string };
-          if (typeof first === 'string') return first;
-          if (first && typeof first === 'object' && 'value' in first)
-            return String(first.value);
-        }
-        if (typeof v === 'object' && v !== null && 'value' in v)
-          return String((v as { value: string }).value);
-        return undefined;
-      };
-      const valuesRecord = record.values as Record<string, unknown>;
-      displayName =
-        coerce(valuesRecord?.name) ||
-        coerce(valuesRecord?.title) ||
-        coerce(valuesRecord?.content) ||
-        `New ${resourceTypeName}`;
-    }
+    const inferredName = extractDisplayName(
+      record.values as Record<string, unknown> | undefined,
+      resourceType
+    );
+    const displayName =
+      inferredName === 'Unnamed' ? `New ${resourceTypeName}` : inferredName;
 
     const id = String(
       record.id?.record_id ||
@@ -191,93 +168,27 @@ export const updateRecordConfig: UniversalToolConfig = {
       return 'Record update failed';
     }
 
-    const metadata = record.validationMetadata || {
-      warnings: [],
-      suggestions: [],
-    };
+    const metadata = (record.validationMetadata ??
+      (record.metadata as ValidationMetadata | undefined)) as
+      | ValidationMetadata
+      | undefined;
 
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
 
-    let name = 'Unnamed';
-
-    if (resourceType === UniversalResourceType.PEOPLE && record.values) {
-      const valuesAny = record.values as Record<string, unknown>;
-      name =
-        (valuesAny?.name as { full_name?: string }[] | undefined)?.[0]
-          ?.full_name ||
-        (valuesAny?.name as { value?: string }[] | undefined)?.[0]?.value ||
-        (valuesAny?.name as { formatted?: string }[] | undefined)?.[0]
-          ?.formatted ||
-        (valuesAny?.full_name as { value?: string }[] | undefined)?.[0]
-          ?.value ||
-        'Unnamed';
-    } else if (record.values) {
-      name =
-        (record.values?.name &&
-          Array.isArray(record.values.name) &&
-          (record.values.name as { value: string }[])[0]?.value) ||
-        (record.values?.title &&
-          Array.isArray(record.values.title) &&
-          (record.values.title as { value: string }[])[0]?.value) ||
-        (record.values?.content && typeof record.values.content === 'string'
-          ? record.values.content
-          : undefined) ||
-        'Unnamed';
-    }
-
+    const name = extractDisplayName(
+      record.values as Record<string, unknown> | undefined,
+      resourceType
+    );
     const id = String(record.id?.record_id || 'unknown');
+    const hasWarnings = Boolean(metadata?.warnings?.length);
 
-    const hasWarnings = metadata?.warnings && metadata.warnings.length > 0;
-    const hasSuggestions =
-      metadata?.suggestions && metadata.suggestions.length > 0;
-
-    let result = hasWarnings
+    const baseMessage = hasWarnings
       ? `⚠️  Updated ${resourceTypeName} with warnings: ${name} (ID: ${id})`
       : `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
 
-    if (hasWarnings) {
-      result += '\n\nWarnings:';
-      metadata!.warnings.forEach((warning: string) => {
-        result += `\n• ${warning}`;
-      });
-    }
-
-    if (
-      hasSuggestions &&
-      metadata!.suggestions.some((s: string) => !metadata!.warnings.includes(s))
-    ) {
-      result += hasWarnings ? '\n' : '\n\n';
-      result += 'Suggestions:';
-      metadata!.suggestions
-        .filter((s: string) => !metadata!.warnings.includes(s))
-        .forEach((suggestion: string) => {
-          result += `\n• ${suggestion}`;
-        });
-    }
-
-    if (
-      hasWarnings &&
-      metadata?.actualValues &&
-      Object.keys(metadata.actualValues).length > 0
-    ) {
-      result += '\n\nActual persisted values:';
-      Object.entries(metadata.actualValues).forEach(([key, value]) => {
-        let displayValue: string;
-        if (Array.isArray(value) && value.length > 0) {
-          displayValue =
-            value[0]?.value || value[0]?.full_name || JSON.stringify(value);
-        } else if (typeof value === 'object' && value !== null) {
-          displayValue = JSON.stringify(value);
-        } else {
-          displayValue = String(value);
-        }
-        result += `\n• ${key}: ${displayValue}`;
-      });
-    }
-
-    return result;
+    return `${baseMessage}${formatValidationDetails(metadata)}`;
   },
 };
 

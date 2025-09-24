@@ -9,7 +9,7 @@ import {
   validateUniversalToolParams,
   searchRecordsSchema,
 } from '../schemas.js';
-import { handleCoreOperationError } from '../../../../utils/axios-error-mapper.js';
+import { handleCoreOperationError } from './error-utils.js';
 import { handleUniversalSearch } from '../shared-handlers.js';
 
 /**
