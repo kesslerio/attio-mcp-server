@@ -29,6 +29,7 @@ vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
 }));
 vi.mock('../../src/config/deal-defaults.js', () => ({
   applyDealDefaultsWithValidation: vi.fn(),
+  applyDealDefaultsWithValidationLegacy: vi.fn(),
   getDealDefaults: vi.fn(() => ({ stage: 'default-stage' })),
   validateDealInput: vi.fn(() => ({
     isValid: true,
@@ -85,6 +86,7 @@ import { UniversalResourceType } from '../../src/handlers/tool-configs/universal
 import { AttioRecord } from '../../src/types/attio.js';
 import {
   applyDealDefaultsWithValidation,
+  applyDealDefaultsWithValidationLegacy,
   validateDealInput,
 } from '../../src/config/deal-defaults.js';
 import { createObjectRecord } from '../../src/objects/records/index.js';
@@ -142,7 +144,7 @@ describe('UniversalCreateService', () => {
         values: { name: 'Test Deal' },
       } as any;
       const mockDealData = { name: 'Test Deal', stage: 'qualified' } as any;
-      vi.mocked(applyDealDefaultsWithValidation).mockResolvedValue(
+      vi.mocked(applyDealDefaultsWithValidationLegacy).mockResolvedValue(
         mockDealData
       );
       vi.mocked(createObjectRecord).mockResolvedValue(mockDeal);
@@ -151,7 +153,7 @@ describe('UniversalCreateService', () => {
         record_data: { values: { name: 'Test Deal' } },
       });
       expect(validateDealInput).toHaveBeenCalledWith({ name: 'Test Deal' });
-      expect(applyDealDefaultsWithValidation).toHaveBeenCalled();
+      expect(applyDealDefaultsWithValidationLegacy).toHaveBeenCalled();
       expect(result).toEqual(mockDeal);
     });
 
@@ -198,7 +200,7 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'deal_123' },
         values: { name: 'Test Deal' },
       } as any;
-      vi.mocked(applyDealDefaultsWithValidation)
+      vi.mocked(applyDealDefaultsWithValidationLegacy)
         .mockResolvedValueOnce(originalData)
         .mockResolvedValueOnce(defaultData);
       vi.mocked(createObjectRecord)
