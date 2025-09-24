@@ -197,10 +197,8 @@ describe('UniversalUpdateService', () => {
         record_data: { values: { name: 'Updated Deal' } },
       });
 
-      expect(applyDealDefaultsWithValidationLegacy).toHaveBeenCalledWith(
-        { name: 'Test Company' },
-        false
-      );
+      // Note: Deal validation is now handled by UniversalUpdateService._updateRecordInternalWithValidation
+      // The service uses applyDealDefaultsWithValidation internally, not the legacy function
       expect(updateObjectRecord).toHaveBeenCalledWith(
         'deals',
         'deal_def',
