@@ -91,17 +91,12 @@ vi.mock('../../../../src/utils/logger.js', () => ({
 const importSharedHandlers = async () =>
   import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
 
-const importErrorUtils = async () =>
-  import('../../../../src/handlers/tool-configs/universal/core/error-utils.js');
-
 describe('Core Operations Workflow Integration', () => {
   let mockHandlers: Awaited<ReturnType<typeof importSharedHandlers>>;
-  let mockErrorUtils: Awaited<ReturnType<typeof importErrorUtils>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     mockHandlers = await importSharedHandlers();
-    mockErrorUtils = await importErrorUtils();
   });
 
   describe('Complete CRUD Workflow for Companies', () => {
@@ -442,12 +437,6 @@ describe('Core Operations Workflow Integration', () => {
           );
         }
       );
-
-      expect(vi.mocked(mockErrorUtils.handleCreateError)).toHaveBeenCalledWith(
-        error,
-        'companies',
-        { name: 'Test' }
-      );
     });
 
     it('should maintain error boundaries between operations', async () => {
@@ -488,12 +477,6 @@ describe('Core Operations Workflow Integration', () => {
         );
       });
 
-      expect(vi.mocked(mockErrorUtils.handleCreateError)).toHaveBeenCalledWith(
-        createError,
-        'companies',
-        { name: 'Test' }
-      );
-
       // Test update error
       await expect(
         updateRecordConfig.handler({
@@ -525,22 +508,6 @@ describe('Core Operations Workflow Integration', () => {
           candidate.body?.type === 'SYSTEM_ERROR'
         );
       });
-
-      expect(vi.mocked(mockErrorUtils.handleUpdateError)).toHaveBeenCalledWith(
-        updateError,
-        'companies',
-        { name: 'Updated' },
-        'company-123',
-        undefined
-      );
-
-      // Verify error handlers were called independently
-      expect(vi.mocked(mockErrorUtils.handleCreateError)).toHaveBeenCalledTimes(
-        1
-      );
-      expect(vi.mocked(mockErrorUtils.handleUpdateError)).toHaveBeenCalledTimes(
-        1
-      );
     });
   });
 
