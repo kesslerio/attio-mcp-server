@@ -128,8 +128,8 @@ jobs:
           fi
 
           # Calculate cutoff turns (when to stop using tools)
-          sonnet_cutoff=$((sonnet_cap - 10))
-          opus_cutoff=$((opus_cap - 12))
+          sonnet_cutoff=$((sonnet_cap - 6))
+          opus_cutoff=$((opus_cap - 8))
 
           echo "sonnet_turns=$sonnet_cap" >> $GITHUB_OUTPUT
           echo "opus_turns=$opus_cap" >> $GITHUB_OUTPUT
@@ -197,8 +197,6 @@ jobs:
 
           ring0_json=$(jq -c '.' "$RING0_JSON_PATH")
           ring1_json=$(jq -c '.' "$RING1_JSON_PATH")
-          # Normalize .js -> .ts for source paths; keeps everything JSON-safe
-          ring1_json=$(jq -c 'map(if endswith(".js") then sub("\\.js$"; ".ts") else . end)' <<< "$ring1_json")
           fallback=$(jq -r '.fallback // false' "$SUMMARY_PATH")
 
           printf 'RING0_JSON=%s\n' "$ring0_json" >> "$GITHUB_ENV"
@@ -263,7 +261,7 @@ jobs:
           claude_args: >-
             --model claude-sonnet-4-20250514
             --max-turns ${{ steps.turns.outputs.sonnet_turns }}
-            --allowed-tools Read,Glob,Grep
+            --allowed-tools Read,Glob,Grep,NotebookEdit
             --output-format stream-json
           prompt: |
             IMPORTANT EXECUTION RULES
@@ -275,22 +273,12 @@ jobs:
             - Start the report with the heading `# PR Review Report`.
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
 
-            TOOLS POLICY (hard rule)
-            - Use only: Read, Glob, Grep. Do NOT use Bash, Web*, NotebookEdit, or TodoWrite.
-            - If a command/build/test is needed, SKIP it and write the report instead.
-            - If you can't find a symbol after 3 tool calls, stop tool use and write the report.
-
             SCOPE RULES
             - Ring 0: Files changed in the PR (JSON supplied separately); findings must cite Ring 0 paths only.
             - Ring 1: Neighbor/test/import context only. Use Ring 1 to reason, never as independent findings.
             - Ignore absolute/tsconfig-path imports. Stay within the sparse checkout tree.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
             - Current fallback flag: ${{ env.RING_SCOPE_FALLBACK }}
-
-            PATH RESOLUTION RULES
-            - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
-            - When a Read(...) of a "*.js" path fails, immediately retry the same path with ".ts".
-            - Never treat missing "*.js" as missing code if a ".ts" twin exists.
 
             Changed files (Ring 0 JSON):
             ${{ env.RING0_JSON }}
@@ -338,7 +326,7 @@ jobs:
           claude_args: >-
             --model claude-opus-4-1-20250805
             --max-turns ${{ steps.turns.outputs.opus_turns }}
-            --allowed-tools Read,Glob,Grep
+            --allowed-tools Read,Glob,Grep,NotebookEdit
             --output-format stream-json
           prompt: |
             IMPORTANT EXECUTION RULES
@@ -350,22 +338,12 @@ jobs:
             - Start the report with the heading `# PR Review Report`.
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
 
-            TOOLS POLICY (hard rule)
-            - Use only: Read, Glob, Grep. Do NOT use Bash, Web*, NotebookEdit, or TodoWrite.
-            - If a command/build/test is needed, SKIP it and write the report instead.
-            - If you can't find a symbol after 3 tool calls, stop tool use and write the report.
-
             SCOPE RULES
             - Ring 0: Files changed in the PR (JSON supplied separately); findings must cite Ring 0 paths only.
             - Ring 1: Neighbor/test/import context only. Use Ring 1 to reason, never as independent findings.
             - Ignore absolute/tsconfig-path imports. Stay within the sparse checkout tree.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
             - Current fallback flag: ${{ env.RING_SCOPE_FALLBACK }}
-
-            PATH RESOLUTION RULES
-            - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
-            - When a Read(...) of a "*.js" path fails, immediately retry the same path with ".ts".
-            - Never treat missing "*.js" as missing code if a ".ts" twin exists.
 
             Changed files (Ring 0 JSON):
             ${{ env.RING0_JSON }}
@@ -483,11 +461,6 @@ jobs:
               return;
             }
 
-            // Require a proper report header; otherwise don't export anything
-            if (!/^#\s*PR Review Report\b/m.test(review)) {
-              core.warning('No PR Review header detected; skipping RESULT_SONNET export.');
-              return;
-            }
             core.exportVariable('RESULT_SONNET', review);
             core.info(`Captured Sonnet review content (${review.length} chars).`);
 
@@ -570,11 +543,6 @@ jobs:
               return;
             }
 
-            // Require a proper report header; otherwise don't export anything
-            if (!/^#\s*PR Review Report\b/m.test(review)) {
-              core.warning('No PR Review header detected; skipping RESULT_OPUS export.');
-              return;
-            }
             core.exportVariable('RESULT_OPUS', review);
             core.info(`Captured Opus review content (${review.length} chars).`);
 
@@ -712,12 +680,6 @@ jobs:
             };
 
             body = trimReport(body);
-
-            // Don't post unless it's a real report
-            if (!/^#\s*PR Review Report\b/m.test(body)) {
-              core.info('No final report detected; skipping comment to avoid posting process narration.');
-              return;
-            }
 
             const ring0Set = new Set();
             try {
