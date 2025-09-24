@@ -91,12 +91,17 @@ vi.mock('../../../../src/utils/logger.js', () => ({
 const importSharedHandlers = async () =>
   import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
 
+const importErrorUtils = async () =>
+  import('../../../../src/handlers/tool-configs/universal/core/error-utils.js');
+
 describe('Core Operations Workflow Integration', () => {
   let mockHandlers: Awaited<ReturnType<typeof importSharedHandlers>>;
+  let mockErrorUtils: Awaited<ReturnType<typeof importErrorUtils>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     mockHandlers = await importSharedHandlers();
+    mockErrorUtils = await importErrorUtils();
   });
 
   describe('Complete CRUD Workflow for Companies', () => {
@@ -438,11 +443,7 @@ describe('Core Operations Workflow Integration', () => {
         }
       );
 
-      const errorUtils = await import(
-        '../../../../src/handlers/tool-configs/universal/core/error-utils.js'
-      );
-
-      expect(vi.mocked(errorUtils.handleCreateError)).toHaveBeenCalledWith(
+      expect(vi.mocked(mockErrorUtils.handleCreateError)).toHaveBeenCalledWith(
         error,
         'companies',
         { name: 'Test' }
@@ -487,11 +488,7 @@ describe('Core Operations Workflow Integration', () => {
         );
       });
 
-      let errorUtils = await import(
-        '../../../../src/handlers/tool-configs/universal/core/error-utils.js'
-      );
-
-      expect(vi.mocked(errorUtils.handleCreateError)).toHaveBeenCalledWith(
+      expect(vi.mocked(mockErrorUtils.handleCreateError)).toHaveBeenCalledWith(
         createError,
         'companies',
         { name: 'Test' }
@@ -529,11 +526,7 @@ describe('Core Operations Workflow Integration', () => {
         );
       });
 
-      errorUtils = await import(
-        '../../../../src/handlers/tool-configs/universal/core/error-utils.js'
-      );
-
-      expect(vi.mocked(errorUtils.handleUpdateError)).toHaveBeenCalledWith(
+      expect(vi.mocked(mockErrorUtils.handleUpdateError)).toHaveBeenCalledWith(
         updateError,
         'companies',
         { name: 'Updated' },
@@ -542,8 +535,12 @@ describe('Core Operations Workflow Integration', () => {
       );
 
       // Verify error handlers were called independently
-      expect(vi.mocked(errorUtils.handleCreateError)).toHaveBeenCalledTimes(1);
-      expect(vi.mocked(errorUtils.handleUpdateError)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(mockErrorUtils.handleCreateError)).toHaveBeenCalledTimes(
+        1
+      );
+      expect(vi.mocked(mockErrorUtils.handleUpdateError)).toHaveBeenCalledTimes(
+        1
+      );
     });
   });
 
