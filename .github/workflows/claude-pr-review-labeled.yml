@@ -397,6 +397,12 @@ jobs:
             }
 
             let review = deltas.join('');
+            // Normalize newline before header for consistent parsing
+            const idx = review.search(/#[ \t]*PR Review Report\b/i);
+            if (idx > 0 && review[idx - 1] !== '\n') {
+              review = review.slice(0, idx) + '\n' + review.slice(idx);
+            }
+
             if (!review) {
               const regex = /"text"\s*:\s*"((?:\\.|[^"\r\n])*)"/g;
               const pieces = [];
@@ -409,14 +415,28 @@ jobs:
                 pieces.push(text);
               }
               review = pieces.join('');
+              // Also normalize for fallback regex extraction
+              const fallbackIdx = review.search(/#[ \t]*PR Review Report\b/i);
+              if (fallbackIdx > 0 && review[fallbackIdx - 1] !== '\n') {
+                review = review.slice(0, fallbackIdx) + '\n' + review.slice(fallbackIdx);
+              }
             }
 
             const trimReport = (input) => {
               if (!input) return '';
-              const headerMatch = input.match(/(^|\n)#[^\n]*PR Review Report/i);
-              if (headerMatch) input = input.slice(headerMatch.index);
+              // Find the first markdown header with "PR Review Report" anywhere in the string
+              const m = input.match(/#[ \t]*PR Review Report\b/i); // no newline required
+              if (m && typeof m.index === 'number') input = input.slice(m.index);
+
+              // Fallback: if a hash exists before any newline but no match above, still cut to first '#'
+              if (!m) {
+                const firstHash = input.indexOf('#');
+                if (firstHash > -1) input = input.slice(firstHash);
+              }
+
               const endIndex = input.indexOf('END-OF-REPORT');
               if (endIndex !== -1) input = input.slice(0, endIndex);
+
               return input.trim();
             };
 
@@ -459,6 +479,12 @@ jobs:
             }
 
             let review = deltas.join('');
+            // Normalize newline before header for consistent parsing
+            const idx = review.search(/#[ \t]*PR Review Report\b/i);
+            if (idx > 0 && review[idx - 1] !== '\n') {
+              review = review.slice(0, idx) + '\n' + review.slice(idx);
+            }
+
             if (!review) {
               const regex = /"text"\s*:\s*"((?:\\.|[^"\r\n])*)"/g;
               const pieces = [];
@@ -471,14 +497,28 @@ jobs:
                 pieces.push(text);
               }
               review = pieces.join('');
+              // Also normalize for fallback regex extraction
+              const fallbackIdx = review.search(/#[ \t]*PR Review Report\b/i);
+              if (fallbackIdx > 0 && review[fallbackIdx - 1] !== '\n') {
+                review = review.slice(0, fallbackIdx) + '\n' + review.slice(fallbackIdx);
+              }
             }
 
             const trimReport = (input) => {
               if (!input) return '';
-              const headerMatch = input.match(/(^|\n)#[^\n]*PR Review Report/i);
-              if (headerMatch) input = input.slice(headerMatch.index);
+              // Find the first markdown header with "PR Review Report" anywhere in the string
+              const m = input.match(/#[ \t]*PR Review Report\b/i); // no newline required
+              if (m && typeof m.index === 'number') input = input.slice(m.index);
+
+              // Fallback: if a hash exists before any newline but no match above, still cut to first '#'
+              if (!m) {
+                const firstHash = input.indexOf('#');
+                if (firstHash > -1) input = input.slice(firstHash);
+              }
+
               const endIndex = input.indexOf('END-OF-REPORT');
               if (endIndex !== -1) input = input.slice(0, endIndex);
+
               return input.trim();
             };
 
@@ -517,19 +557,22 @@ jobs:
               return;
             }
 
+            const headSha = '${{ steps.decide.outputs.sha }}';
+            const runTag = `claude-run-${context.runId}`;
+            const marker = `<!-- claude-review sha=${headSha} -->`;
+
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
             });
-            // Don't double-post if our final-style comment already exists
-            const runTag = `claude-run-${context.runId}`;
-            const already = comments.some(c =>
-              (c.body || '').includes(runTag) ||
-              (/Top Findings:|Suggested Tests|Quick Refactors|Perf\/Sec Notes|Overall Risk:/i.test(c.body || '') &&
-               c.user?.type === 'Bot')
-            );
-            if (already) {
-              core.info('Review comment already exists for this run; skipping posting.');
-              return;
+
+            // Prefer updating the most recent Claude comment (if any)
+            let prior = null;
+            for (const c of [...comments].reverse()) {
+              const body = c.body || '';
+              if (c.user?.type === 'Bot' && /<!--\s*claude-review\s+sha=/.test(body)) {
+                prior = c;
+                break;
+              }
             }
 
             // Prefer the deeper Opus pass if both exist
@@ -583,6 +626,11 @@ jobs:
 
                   // Join deltas without injecting extra newlines
                   body = chunks.join('').trim();
+                  // Normalize newline before header for consistent parsing
+                  const fallbackIdx = body.search(/#[ \t]*PR Review Report\b/i);
+                  if (fallbackIdx > 0 && body[fallbackIdx - 1] !== '\n') {
+                    body = body.slice(0, fallbackIdx) + '\n' + body.slice(fallbackIdx);
+                  }
 
                   // Cut at the sentinel if present
                   const end = body.indexOf('END-OF-REPORT');
@@ -600,10 +648,19 @@ jobs:
 
             const trimReport = (input) => {
               if (!input) return '';
-              const headerMatch = input.match(/(^|\n)#[^\n]*PR Review Report/i);
-              if (headerMatch) input = input.slice(headerMatch.index);
+              // Find the first markdown header with "PR Review Report" anywhere in the string
+              const m = input.match(/#[ \t]*PR Review Report\b/i); // no newline required
+              if (m && typeof m.index === 'number') input = input.slice(m.index);
+
+              // Fallback: if a hash exists before any newline but no match above, still cut to first '#'
+              if (!m) {
+                const firstHash = input.indexOf('#');
+                if (firstHash > -1) input = input.slice(firstHash);
+              }
+
               const endIndex = input.indexOf('END-OF-REPORT');
               if (endIndex !== -1) input = input.slice(0, endIndex);
+
               return input.trim();
             };
 
@@ -650,19 +707,22 @@ jobs:
               }
             }
 
-            // Chunk if needed
-            const parts = [];
-            for (let i = 0; i < body.length; i += LIMIT) parts.push(body.slice(i, i + LIMIT));
+            // Compose final message with fresh markers
+            const finalBody = `${marker}\n${body}\n\n${runTag}`;
 
-            for (let i = 0; i < parts.length; i++) {
-              const runTag = `\n\n<!-- claude-run-${context.runId}-${i} -->`;
-              const suffix = parts.length > 1 ? `\n\n— part ${i+1}/${parts.length}` : '';
-              await github.rest.issues.createComment({
-                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
-                body: parts[i] + suffix + runTag
+            // Update existing comment or create new one
+            if (prior) {
+              // If the previous comment is for the same SHA, update it; otherwise, still update (keeps one Claude comment/thread tidy)
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: finalBody
               });
+              core.info('Updated existing Claude review comment.');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: finalBody
+              });
+              core.info('Posted new Claude review comment.');
             }
-            core.info(`Posted PR review comment (${parts.length} part${parts.length > 1 ? 's' : ''}).`);
 
       # Remove claude label after review completes to prevent auto re-runs on subsequent pushes
       - name: Remove claude label (prevents auto re-run)
