@@ -4,18 +4,56 @@
  */
 
 import { FieldMapping } from '../types.js';
+import {
+  createDisplayNameConstants,
+  createPluralMappingConstants,
+  validateFieldMappingConstants,
+} from '../utils/field-mapping-constants.js';
+
+// Display name constants for better maintainability (Issue #720)
+const DISPLAY_NAMES = createDisplayNameConstants({
+  COMPANY_NAME: 'company name',
+  COMPANY_DOMAIN: 'company domain',
+  COMPANY_TYPE: 'company type',
+  FOUNDED_DATE: 'founded date',
+});
+
+// Plural to singular mapping pattern (Issue #720)
+const PLURAL_MAPPINGS = createPluralMappingConstants({
+  websites: 'domains',
+  urls: 'domains',
+  domains: 'domains', // Keep for consistency
+});
+
+// Validate constants for consistency
+const validation = validateFieldMappingConstants(
+  DISPLAY_NAMES,
+  PLURAL_MAPPINGS
+);
+if (!validation.valid) {
+  console.warn(
+    'Companies field mapping constants validation issues:',
+    validation.issues
+  );
+}
 
 /**
  * Field mapping configuration for companies resource type
  */
 export const COMPANIES_FIELD_MAPPING: FieldMapping = {
   fieldMappings: {
+    // Display names from discover-attributes
+    [DISPLAY_NAMES.COMPANY_NAME]: 'name',
+    [DISPLAY_NAMES.COMPANY_DOMAIN]: 'domains',
+    [DISPLAY_NAMES.COMPANY_TYPE]: 'type',
+    [DISPLAY_NAMES.FOUNDED_DATE]: 'founded',
     // Common incorrect field names -> correct ones
     website: 'domains',
     url: 'domains',
     company_name: 'name',
     company_domain: 'domains',
     primary_domain: 'domains',
+    ...PLURAL_MAPPINGS, // Use consolidated plural mappings
     // Note: Companies have a 'description' field - don't map to 'notes'
     note: 'description',
     size: 'estimated_arr',

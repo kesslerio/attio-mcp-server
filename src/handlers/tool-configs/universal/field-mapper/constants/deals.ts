@@ -4,17 +4,22 @@
  */
 
 import { FieldMapping } from '../types.js';
+import {
+  createDisplayNameConstants,
+  createPluralMappingConstants,
+  validateFieldMappingConstants,
+} from '../utils/field-mapping-constants.js';
 
 // Display name constants for better maintainability (Issue #720)
-const DISPLAY_NAMES = {
+const DISPLAY_NAMES = createDisplayNameConstants({
   DEAL_NAME: 'deal name',
   DEAL_STAGE: 'deal stage',
   DEAL_VALUE: 'deal value',
   ASSOCIATED_COMPANY: 'associated company',
-} as const;
+});
 
 // Plural to singular mapping pattern (Issue #720)
-const PLURAL_MAPPINGS = {
+const PLURAL_MAPPINGS = createPluralMappingConstants({
   companies: 'associated_company',
   organizations: 'associated_company',
   clients: 'associated_company',
@@ -22,7 +27,16 @@ const PLURAL_MAPPINGS = {
   customers: 'associated_company',
   contacts: 'associated_people',
   owners: 'owner',
-} as const;
+});
+
+// Validate constants for consistency
+const validation = validateFieldMappingConstants(
+  DISPLAY_NAMES,
+  PLURAL_MAPPINGS
+);
+if (!validation.valid) {
+  console.warn('Field mapping constants validation issues:', validation.issues);
+}
 
 /**
  * Field mapping configuration for deals resource type
