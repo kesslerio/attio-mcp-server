@@ -13,6 +13,7 @@ vi.mock('../../src/objects/records/index.js', () => ({
 }));
 vi.mock('../../src/config/deal-defaults.js', () => ({
   applyDealDefaultsWithValidation: vi.fn(),
+  applyDealDefaultsWithValidationLegacy: vi.fn(),
 }));
 vi.mock('../../src/objects/tasks.js', () => ({
   getTask: vi.fn(),
@@ -50,7 +51,10 @@ import { updateCompany } from '../../src/objects/companies/index.js';
 import { updateList } from '../../src/objects/lists.js';
 import { updatePerson } from '../../src/objects/people-write.js';
 import { updateObjectRecord } from '../../src/objects/records/index.js';
-import { applyDealDefaultsWithValidation } from '../../src/config/deal-defaults.js';
+import {
+  applyDealDefaultsWithValidation,
+  applyDealDefaultsWithValidationLegacy,
+} from '../../src/config/deal-defaults.js';
 import { ValidationService } from '../../src/services/ValidationService.js';
 import { MockService } from '../../src/services/MockService.js';
 import {
@@ -182,7 +186,7 @@ describe('UniversalUpdateService', () => {
         stage: 'qualified',
       } as any;
 
-      vi.mocked(applyDealDefaultsWithValidation).mockResolvedValue(
+      vi.mocked(applyDealDefaultsWithValidationLegacy).mockResolvedValue(
         mockDealData
       );
       vi.mocked(updateObjectRecord).mockResolvedValue(mockDeal);
@@ -193,7 +197,7 @@ describe('UniversalUpdateService', () => {
         record_data: { values: { name: 'Updated Deal' } },
       });
 
-      expect(applyDealDefaultsWithValidation).toHaveBeenCalledWith(
+      expect(applyDealDefaultsWithValidationLegacy).toHaveBeenCalledWith(
         { name: 'Test Company' },
         false
       );
