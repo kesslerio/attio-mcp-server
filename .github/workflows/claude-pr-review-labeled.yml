@@ -233,6 +233,9 @@ jobs:
           # Init with sparse index for performance
           git sparse-checkout init --sparse-index
 
+          # Silence the sparse index expanding hint for cleaner logs
+          git config --local advice.sparseIndexExpanded false || true
+
           # Use non-cone mode so individual file patterns are honored
           if git sparse-checkout set -h 2>&1 | grep -q -- '--no-cone'; then
             git sparse-checkout set --no-cone --stdin < "$tmpfile"
@@ -276,6 +279,12 @@ jobs:
             - Ignore absolute/tsconfig-path imports. Stay within the sparse checkout tree.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
             - Current fallback flag: ${{ env.RING_SCOPE_FALLBACK }}
+
+            Changed files (Ring 0 JSON):
+            ${{ env.RING0_JSON }}
+
+            Context files (Ring 1 JSON):
+            ${{ env.RING1_JSON }}
 
             Perform a PR review with full working tree access.
 
@@ -335,6 +344,12 @@ jobs:
             - Ignore absolute/tsconfig-path imports. Stay within the sparse checkout tree.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
             - Current fallback flag: ${{ env.RING_SCOPE_FALLBACK }}
+
+            Changed files (Ring 0 JSON):
+            ${{ env.RING0_JSON }}
+
+            Context files (Ring 1 JSON):
+            ${{ env.RING1_JSON }}
 
             Perform a PR review with full working tree access.
 
@@ -558,7 +573,7 @@ jobs:
             }
 
             const headSha = '${{ steps.decide.outputs.sha }}';
-            const runTag = `claude-run-${context.runId}`;
+            const runTag = `<!-- claude-run-${context.runId} -->`;
             const marker = `<!-- claude-review sha=${headSha} -->`;
 
             const comments = await github.paginate(github.rest.issues.listComments, {
@@ -710,18 +725,41 @@ jobs:
             // Compose final message with fresh markers
             const finalBody = `${marker}\n${body}\n\n${runTag}`;
 
-            // Update existing comment or create new one
-            if (prior) {
-              // If the previous comment is for the same SHA, update it; otherwise, still update (keeps one Claude comment/thread tidy)
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: finalBody
-              });
-              core.info('Updated existing Claude review comment.');
+            if (finalBody.length <= LIMIT) {
+              if (prior) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: finalBody
+                });
+                core.info('Updated existing Claude review comment.');
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: finalBody
+                });
+                core.info('Posted new Claude review comment.');
+              }
             } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: finalBody
-              });
-              core.info('Posted new Claude review comment.');
+              // Chunk: update the first (or create it), then add append-only parts
+              const parts = [];
+              for (let i = 0; i < body.length; i += LIMIT) parts.push(body.slice(i, i + LIMIT));
+
+              const first = `${marker}\n${parts[0]}\n\n<!-- claude-run-${context.runId}-0/${parts.length} -->`;
+              if (prior) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: first
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: first
+                });
+              }
+
+              for (let i = 1; i < parts.length; i++) {
+                const piece = `${marker}\n${parts[i]}\n\n<!-- claude-run-${context.runId}-${i}/${parts.length} -->`;
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: piece
+                });
+              }
+              core.info(`Posted PR review in ${parts.length} parts.`);
             }
 
       # Remove claude label after review completes to prevent auto re-runs on subsequent pushes
