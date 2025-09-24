@@ -7,21 +7,25 @@ Common issues, solutions, and frequently asked questions for the universal tools
 The following issues have been **RESOLVED** and should no longer affect universal tools users:
 
 ### ✅ Tasks API Attribute Discovery Fixed
+
 **Issue**: Tasks resource type failing due to missing `/objects/tasks/attributes` endpoint  
 **Status**: **RESOLVED** - Special handling implemented with predefined task attributes  
 **Impact**: All universal tools now work seamlessly with `resource_type: 'tasks'`
 
-### ✅ API Response Structure Issues Fixed  
+### ✅ API Response Structure Issues Fixed
+
 **Issue**: Inconsistent API response handling causing tool failures  
 **Status**: **RESOLVED** - Robust fallback pattern: `response?.data?.data || response?.data || []`  
 **Impact**: 100% reliability for all resource types
 
 ### ✅ Email Validation Consistency Fixed
+
 **Issue**: Different validation behavior between create and update operations  
 **Status**: **RESOLVED** - Unified validation logic across all universal tools  
 **Impact**: Reliable person creation and updates through universal tools
 
 ### ✅ Build and Integration Issues Fixed
+
 **Issue**: TypeScript compilation and integration test failures  
 **Status**: **RESOLVED** - Complete test infrastructure overhaul  
 **Impact**: 15/15 integration tests passing (100% pass rate)
@@ -35,16 +39,17 @@ The following issues have been **RESOLVED** and should no longer affect universa
 **Cause**: The `resource_type` parameter is required for all universal tools.
 
 **Solution**:
+
 ```typescript
 // ❌ Wrong - missing resource_type
 await client.callTool('search-records', {
-  query: 'tech startup'
+  query: 'tech startup',
 });
 
 // ✅ Correct - includes resource_type
 await client.callTool('search-records', {
   resource_type: 'companies',
-  query: 'tech startup'
+  query: 'tech startup',
 });
 ```
 
@@ -53,23 +58,25 @@ await client.callTool('search-records', {
 **Cause**: The provided resource type is not supported.
 
 **Valid resource types**:
+
 - `companies`
 - `people`
 - `records`
 - `tasks`
 
 **Solution**:
+
 ```typescript
 // ❌ Wrong - invalid resource type
 await client.callTool('search-records', {
-  resource_type: 'contacts',  // Invalid
-  query: 'john'
+  resource_type: 'contacts', // Invalid
+  query: 'john',
 });
 
 // ✅ Correct - valid resource type
 await client.callTool('search-records', {
-  resource_type: 'people',    // Valid
-  query: 'john'
+  resource_type: 'people', // Valid
+  query: 'john',
 });
 ```
 
@@ -82,17 +89,18 @@ await client.callTool('search-records', {
 > ⚠️ **BREAKING CHANGE**: Date operators were changed in PR #367 for Attio API compatibility.
 
 **Solution**: Use the new date operators:
+
 ```typescript
 // ❌ Wrong - deprecated operators (will cause API errors)
 {
   filters: {
     and: [
-      { 
-        attribute: 'created_at', 
-        condition: FilterConditionType.GREATER_THAN_OR_EQUALS, 
-        value: '2024-01-01' 
-      }
-    ]
+      {
+        attribute: 'created_at',
+        condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+        value: '2024-01-01',
+      },
+    ];
   }
 }
 
@@ -100,24 +108,24 @@ await client.callTool('search-records', {
 {
   filters: {
     and: [
-      { 
-        attribute: 'created_at', 
-        condition: FilterConditionType.AFTER, 
-        value: '2024-01-01T00:00:00Z' 
-      }
-    ]
+      {
+        attribute: 'created_at',
+        condition: FilterConditionType.AFTER,
+        value: '2024-01-01T00:00:00Z',
+      },
+    ];
   }
 }
 ```
 
 **Complete Date Operator Migration Table**:
 
-| ❌ Old (Deprecated) | ✅ New (Required) | Use Case | Example |
-|-------------------|-------------------|----------|---------|
-| `GREATER_THAN_OR_EQUALS` | `AFTER` | Records created on or after date | Created after Jan 1, 2024 |
-| `LESS_THAN_OR_EQUALS` | `BEFORE` | Records created on or before date | Created before Dec 31, 2024 |
-| `GREATER_THAN` | `AFTER` | Records created after date | Created after yesterday |
-| `LESS_THAN` | `BEFORE` | Records created before date | Created before today |
+| ❌ Old (Deprecated)      | ✅ New (Required) | Use Case                          | Example                     |
+| ------------------------ | ----------------- | --------------------------------- | --------------------------- |
+| `GREATER_THAN_OR_EQUALS` | `AFTER`           | Records created on or after date  | Created after Jan 1, 2024   |
+| `LESS_THAN_OR_EQUALS`    | `BEFORE`          | Records created on or before date | Created before Dec 31, 2024 |
+| `GREATER_THAN`           | `AFTER`           | Records created after date        | Created after yesterday     |
+| `LESS_THAN`              | `BEFORE`          | Records created before date       | Created before today        |
 
 **Migration Examples by Tool**:
 
@@ -135,7 +143,7 @@ await client.callTool('search-records', {
 
 // ✅ NEW (correct)
 {
-  resource_type: 'companies', 
+  resource_type: 'companies',
   timeframe_type: 'created',
   date_range: {
     condition: FilterConditionType.AFTER,
@@ -149,10 +157,10 @@ await client.callTool('search-records', {
   resource_type: 'people',
   filters: {
     and: [
-      { 
-        attribute: 'last_contacted', 
-        condition: FilterConditionType.LESS_THAN_OR_EQUALS, 
-        value: '2024-06-01' 
+      {
+        attribute: 'last_contacted',
+        condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+        value: '2024-06-01'
       }
     ]
   }
@@ -163,10 +171,10 @@ await client.callTool('search-records', {
   resource_type: 'people',
   filters: {
     and: [
-      { 
-        attribute: 'last_contacted', 
-        condition: FilterConditionType.BEFORE, 
-        value: '2024-06-01T23:59:59Z' 
+      {
+        attribute: 'last_contacted',
+        condition: FilterConditionType.BEFORE,
+        value: '2024-06-01T23:59:59Z'
       }
     ]
   }
@@ -181,28 +189,30 @@ await client.callTool('search-records', {
 
 **Complete Valid Date Presets List**:
 
-| ✅ Valid Preset | Description | Example Date Range |
-|----------------|-------------|-------------------|
-| `today` | Current day | Today 00:00 - 23:59 |
-| `yesterday` | Previous day | Yesterday 00:00 - 23:59 |
-| `this_week` | Current week (Mon-Sun) | This Monday - This Sunday |
-| `last_week` | Previous week | Last Monday - Last Sunday |
-| `this_month` | Current month | Month start - Month end |
-| `last_month` | Previous month | Last month start - Last month end |
-| `this_quarter` | Current quarter (Q1/Q2/Q3/Q4) | Quarter start - Quarter end |
-| `last_quarter` | Previous quarter | Last quarter start - Last quarter end |
-| `this_year` | Current year | Jan 1 - Dec 31 current year |
-| `last_year` | Previous year | Jan 1 - Dec 31 previous year |
+| ✅ Valid Preset | Description                   | Example Date Range                    |
+| --------------- | ----------------------------- | ------------------------------------- |
+| `today`         | Current day                   | Today 00:00 - 23:59                   |
+| `yesterday`     | Previous day                  | Yesterday 00:00 - 23:59               |
+| `this_week`     | Current week (Mon-Sun)        | This Monday - This Sunday             |
+| `last_week`     | Previous week                 | Last Monday - Last Sunday             |
+| `this_month`    | Current month                 | Month start - Month end               |
+| `last_month`    | Previous month                | Last month start - Last month end     |
+| `this_quarter`  | Current quarter (Q1/Q2/Q3/Q4) | Quarter start - Quarter end           |
+| `last_quarter`  | Previous quarter              | Last quarter start - Last quarter end |
+| `this_year`     | Current year                  | Jan 1 - Dec 31 current year           |
+| `last_year`     | Previous year                 | Jan 1 - Dec 31 previous year          |
 
 **❌ Common Invalid Presets** (will cause errors):
+
 - `last_30_days` → Use `last_month` instead
-- `last_7_days` → Use `last_week` instead  
+- `last_7_days` → Use `last_week` instead
 - `past_week` → Use `last_week` instead
 - `past_month` → Use `last_month` instead
 - `this_quarter` → Use `this_quarter` (already valid)
 - `current_year` → Use `this_year` instead
 
 **Solution Examples**:
+
 ```typescript
 // ❌ Wrong - invalid preset
 {
@@ -214,7 +224,7 @@ await client.callTool('search-records', {
 // ✅ Correct - valid preset
 {
   resource_type: 'companies',
-  timeframe_type: 'created', 
+  timeframe_type: 'created',
   preset: 'last_month'     // Valid - covers similar timeframe
 }
 
@@ -246,13 +256,13 @@ await client.callTool('search-records', {
 ```typescript
 // Convert common invalid presets to valid alternatives
 const presetMigrationMap = {
-  'last_30_days': 'last_month',
-  'last_7_days': 'last_week', 
-  'past_week': 'last_week',
-  'past_month': 'last_month',
-  'current_year': 'this_year',
-  'current_month': 'this_month',
-  'current_week': 'this_week'
+  last_30_days: 'last_month',
+  last_7_days: 'last_week',
+  past_week: 'last_week',
+  past_month: 'last_month',
+  current_year: 'this_year',
+  current_month: 'this_month',
+  current_week: 'this_week',
 };
 
 // Usage in migration
@@ -261,36 +271,147 @@ function migratePreset(oldPreset: string): string {
 }
 ```
 
-### 3. Query and Search Errors
+### 3. Field Mapping and Validation Errors
+
+#### Error: "Unknown field 'companies'" (Issue #720 - RESOLVED ✅)
+
+**Cause**: Using intuitive field names that weren't mapped to the correct Attio API fields.
+
+**Status**: **RESOLVED** in Issue #720 - Enhanced field name validation with intelligent mapping
+
+**Solution**: The system now automatically maps common field name variations to the correct API fields:
+
+```typescript
+// ✅ All of these now work for deals (Issue #720)
+await client.callTool('create-record', {
+  resource_type: 'deals',
+  record_data: {
+    values: {
+      name: 'New Deal',
+      stage: 'Interested',
+      // All these variations now map to 'associated_company':
+      companies: 'company-id', // ← NEW: Maps to associated_company
+      company: 'company-id', // Already worked
+      organizations: 'company-id', // ← NEW: Maps to associated_company
+      clients: 'company-id', // ← NEW: Maps to associated_company
+      accounts: 'company-id', // ← NEW: Maps to associated_company
+      // People variations now supported:
+      person: 'person-id', // ← NEW: Maps to associated_people
+      contact: 'person-id', // Already worked
+      // Owner variations:
+      owners: 'person-id', // ← NEW: Maps to owner
+    },
+  },
+});
+```
+
+#### Enhanced Field Mappings for Deals (Issue #720)
+
+**Company Field Variations** (all map to `associated_company`):
+
+- `companies` ← **NEW**
+- `company`
+- `organizations` ← **NEW**
+- `organization` ← **NEW**
+- `clients` ← **NEW**
+- `client` ← **NEW**
+- `accounts` ← **NEW**
+- `account`
+- `customers` ← **NEW**
+- `customer`
+
+**People Field Variations** (all map to `associated_people`):
+
+- `person` ← **NEW**
+- `people`
+- `contacts`
+- `contact`
+- `primary_contact`
+
+**Owner Field Variations**:
+
+- `owners` ← **NEW** (maps to `owner`)
+- `owner`
+
+#### Error: "Did you mean 'associated_company'?"
+
+**Cause**: The old system would suggest the API field name when users tried intuitive names.
+
+**Solution**: With Issue #720 enhancements, you no longer need to remember API field names:
+
+```typescript
+// ❌ Old way - required exact API field names
+await client.callTool('create-record', {
+  resource_type: 'deals',
+  record_data: {
+    values: {
+      name: 'New Deal',
+      associated_company: 'company-id', // Had to use exact API name
+    },
+  },
+});
+
+// ✅ New way - use intuitive field names (Issue #720)
+await client.callTool('create-record', {
+  resource_type: 'deals',
+  record_data: {
+    values: {
+      name: 'New Deal',
+      companies: 'company-id', // Automatically mapped!
+      // OR organizations: 'company-id'
+      // OR clients: 'company-id'
+      // All work the same way
+    },
+  },
+});
+```
+
+#### Helpful Field Mapping Messages
+
+The system now provides helpful context when field mapping occurs:
+
+```
+✅ Field "companies" mapped to "associated_company":
+   Use "associated_company" to link deals to companies (maps plural to singular form)
+```
+
+**What this means**:
+
+- ✅ Your field was recognized and automatically mapped
+- ✅ The deal will be created successfully
+- ℹ️ The message shows you what happened for transparency
+
+### 4. Query and Search Errors
 
 #### Error: "Search query cannot be empty"
 
 **Cause**: Providing an empty string or undefined value for search queries.
 
 **Solution**:
+
 ```typescript
 // ❌ Wrong - empty query
 await client.callTool('search-records', {
   resource_type: 'companies',
-  query: ''  // Empty string not allowed
+  query: '', // Empty string not allowed
 });
 
 await client.callTool('search-by-content', {
   resource_type: 'people',
   content_type: 'notes',
-  search_query: ''  // Empty string not allowed
+  search_query: '', // Empty string not allowed
 });
 
 // ✅ Correct - meaningful query
 await client.callTool('search-records', {
   resource_type: 'companies',
-  query: 'technology startup'  // Meaningful search term
+  query: 'technology startup', // Meaningful search term
 });
 
 await client.callTool('search-by-content', {
   resource_type: 'people',
   content_type: 'notes',
-  search_query: 'quarterly review'  // Specific search term
+  search_query: 'quarterly review', // Specific search term
 });
 ```
 
@@ -301,30 +422,33 @@ await client.callTool('search-by-content', {
 **Debugging steps**:
 
 1. **Broaden the search**:
+
 ```typescript
 // Try broader search terms
 await client.callTool('search-records', {
   resource_type: 'companies',
-  query: 'tech'  // Broader than 'technology startup fintech AI'
+  query: 'tech', // Broader than 'technology startup fintech AI'
 });
 ```
 
 2. **Remove filters temporarily**:
+
 ```typescript
 // Search without filters first
 await client.callTool('advanced-search', {
   resource_type: 'companies',
-  query: 'technology'
+  query: 'technology',
   // Remove filters temporarily
 });
 ```
 
 3. **Check resource type**:
+
 ```typescript
 // Make sure you're searching the right resource type
 await client.callTool('search-records', {
-  resource_type: 'people',  // Maybe it's people, not companies
-  query: 'john doe'
+  resource_type: 'people', // Maybe it's people, not companies
+  query: 'john doe',
 });
 ```
 
@@ -335,12 +459,13 @@ await client.callTool('search-records', {
 **Cause**: Trying to process more than 50 records in a single batch operation.
 
 **Solution**: Split into smaller batches:
+
 ```typescript
 // ❌ Wrong - too many records
 await client.callTool('batch-operations', {
   resource_type: 'companies',
   operation_type: 'create',
-  records: arrayOf100Records  // Too many
+  records: arrayOf100Records, // Too many
 });
 
 // ✅ Correct - split into batches
@@ -350,12 +475,12 @@ const batches = chunkArray(records, batchSize);
 for (const batch of batches) {
   await client.callTool('batch-operations', {
     resource_type: 'companies',
-    operation_type: 'create', 
-    records: batch
+    operation_type: 'create',
+    records: batch,
   });
-  
+
   // Optional: Add delay between batches
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
 function chunkArray<T>(array: T[], size: number): T[][] {
@@ -372,26 +497,28 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 **Cause**: Using an invalid operation type for batch operations.
 
 **Valid operation types**:
+
 - `create` - Create multiple records
-- `update` - Update multiple records  
+- `update` - Update multiple records
 - `delete` - Delete multiple records
 - `search` - Search with multiple queries
 - `get` - Get details for multiple records
 
 **Solution**:
+
 ```typescript
 // ❌ Wrong - invalid operation type
 await client.callTool('batch-operations', {
   resource_type: 'companies',
-  operation_type: 'duplicate',  // Invalid
-  record_ids: ['comp_1', 'comp_2']
+  operation_type: 'duplicate', // Invalid
+  record_ids: ['comp_1', 'comp_2'],
 });
 
 // ✅ Correct - valid operation type
 await client.callTool('batch-operations', {
   resource_type: 'companies',
-  operation_type: 'get',        // Valid
-  record_ids: ['comp_1', 'comp_2']
+  operation_type: 'get', // Valid
+  record_ids: ['comp_1', 'comp_2'],
 });
 ```
 
@@ -402,23 +529,25 @@ await client.callTool('batch-operations', {
 **Cause**: Using an unsupported relationship type.
 
 **Valid relationship types**:
+
 - `company_to_people` - Find people at a company
 - `people_to_company` - Find companies associated with a person
 - `person_to_tasks` - Find tasks assigned to a person
 - `company_to_tasks` - Find tasks related to a company
 
 **Solution**:
+
 ```typescript
 // ❌ Wrong - invalid relationship type
 await client.callTool('search-by-relationship', {
-  relationship_type: 'company_to_contacts',  // Invalid
-  source_id: 'comp_123'
+  relationship_type: 'company_to_contacts', // Invalid
+  source_id: 'comp_123',
 });
 
 // ✅ Correct - valid relationship type
 await client.callTool('search-by-relationship', {
-  relationship_type: 'company_to_people',    // Valid
-  source_id: 'comp_123'
+  relationship_type: 'company_to_people', // Valid
+  source_id: 'comp_123',
 });
 ```
 
@@ -429,6 +558,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 #### Core Tools Validation
 
 **search-records**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -446,6 +576,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **get-record-details**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -460,6 +591,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **create-record**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -473,6 +605,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **update-record**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -487,6 +620,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **delete-record**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -502,6 +636,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 #### Advanced Tools Validation
 
 **advanced-search**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -519,6 +654,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **search-by-relationship**:
+
 ```typescript
 {
   resource_type: string,         // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -533,6 +669,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **search-by-content**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' (records/tasks not supported)
@@ -548,6 +685,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **search-by-timeframe**:
+
 ```typescript
 {
   resource_type: string,     // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -564,6 +702,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 ```
 
 **batch-operations**:
+
 ```typescript
 {
   resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
@@ -585,62 +724,106 @@ Each universal tool has specific validation requirements. Understanding these ru
 #### Common Validation Errors
 
 **Resource Type Validation**:
+
 ```typescript
 // Valid resource types only
 const VALID_RESOURCE_TYPES = ['companies', 'people', 'records', 'tasks'];
 
 // ❌ Common mistakes
-'company'    // Should be 'companies' (plural)
-'person'     // Should be 'people' (plural)
-'contact'    // Should be 'people'
-'record'     // Should be 'records' (plural)
-'task'       // Should be 'tasks' (plural)
+('company'); // Should be 'companies' (plural)
+('person'); // Should be 'people' (plural)
+('contact'); // Should be 'people'
+('record'); // Should be 'records' (plural)
+('task'); // Should be 'tasks' (plural)
 ```
 
 **String Parameter Validation**:
+
 ```typescript
 // String parameters cannot be empty if provided
 // ❌ Invalid
-{ query: '' }         // Empty string not allowed
-{ search_query: '' }  // Empty string not allowed
-{ record_id: '' }     // Empty string not allowed
+{
+  query: '';
+} // Empty string not allowed
+{
+  search_query: '';
+} // Empty string not allowed
+{
+  record_id: '';
+} // Empty string not allowed
 
 // ✅ Valid
-{ query: 'technology' }        // Non-empty string
-{ search_query: 'meeting' }    // Non-empty string
-{ record_id: 'comp_123' }      // Non-empty string
+{
+  query: 'technology';
+} // Non-empty string
+{
+  search_query: 'meeting';
+} // Non-empty string
+{
+  record_id: 'comp_123';
+} // Non-empty string
 // Or omit optional string parameters entirely
-{ /* no query parameter */ }  // Valid for optional parameters
+{
+  /* no query parameter */
+} // Valid for optional parameters
 ```
 
 **Array Parameter Validation**:
+
 ```typescript
 // Arrays cannot be empty if provided
 // ❌ Invalid
-{ fields: [] }         // Empty array not allowed
-{ records: [] }        // Empty array not allowed
-{ record_ids: [] }     // Empty array not allowed
+{
+  fields: [];
+} // Empty array not allowed
+{
+  records: [];
+} // Empty array not allowed
+{
+  record_ids: [];
+} // Empty array not allowed
 
 // ✅ Valid
-{ fields: ['name', 'email'] }     // Non-empty array
-{ records: [{ name: 'Test' }] }   // Non-empty array
-{ record_ids: ['comp_123'] }      // Non-empty array
+{
+  fields: ['name', 'email'];
+} // Non-empty array
+{
+  records: [{ name: 'Test' }];
+} // Non-empty array
+{
+  record_ids: ['comp_123'];
+} // Non-empty array
 // Or omit optional array parameters entirely
-{ /* no fields parameter */ }    // Valid for optional parameters
+{
+  /* no fields parameter */
+} // Valid for optional parameters
 ```
 
 **Numeric Parameter Validation**:
+
 ```typescript
 // Numeric limits and ranges
 // ❌ Invalid
-{ limit: 0 }      // Must be >= 1
-{ limit: 101 }    // Must be <= 100
-{ offset: -1 }    // Must be >= 0
+{
+  limit: 0;
+} // Must be >= 1
+{
+  limit: 101;
+} // Must be <= 100
+{
+  offset: -1;
+} // Must be >= 0
 
 // ✅ Valid
-{ limit: 25 }     // 1-100 range
-{ offset: 0 }     // >= 0
-{ offset: 50 }    // Any positive number
+{
+  limit: 25;
+} // 1-100 range
+{
+  offset: 0;
+} // >= 0
+{
+  offset: 50;
+} // Any positive number
 ```
 
 ### 7. Record Not Found Errors
@@ -652,12 +835,13 @@ const VALID_RESOURCE_TYPES = ['companies', 'people', 'records', 'tasks'];
 **Debugging steps**:
 
 1. **Verify the record ID**:
+
 ```typescript
 // Search for the record first
 const searchResults = await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'company name',
-  limit: 1
+  limit: 1,
 });
 
 if (searchResults.length > 0) {
@@ -667,20 +851,22 @@ if (searchResults.length > 0) {
 ```
 
 2. **Check resource type**:
+
 ```typescript
 // Make sure you're using the right resource type
 await client.callTool('get-record-details', {
-  resource_type: 'people',  // Maybe it's a person, not a company
-  record_id: 'person_123'
+  resource_type: 'people', // Maybe it's a person, not a company
+  record_id: 'person_123',
 });
 ```
 
 3. **Verify access permissions**:
+
 ```typescript
 // Try a broader search to see if you have access to the list
 const allRecords = await client.callTool('search-records', {
   resource_type: 'companies',
-  limit: 5
+  limit: 5,
 });
 console.log('Available records:', allRecords.length);
 ```
@@ -696,13 +882,13 @@ console.log('Available records:', allRecords.length);
 ```typescript
 // ❌ Wrong - deprecated tool
 await client.callTool('search-companies', {
-  query: 'tech startup'
+  query: 'tech startup',
 });
 
 // ✅ Correct - universal tool
 await client.callTool('search-records', {
   resource_type: 'companies',
-  query: 'tech startup'
+  query: 'tech startup',
 });
 ```
 
@@ -715,14 +901,14 @@ await client.callTool('search-records', {
 ```typescript
 // Old tool call
 await client.callTool('get-company-basic-info', {
-  record_id: 'comp_123'
+  record_id: 'comp_123',
 });
 
 // Migrated tool call - add resource_type AND info_type
 await client.callTool('get-detailed-info', {
-  resource_type: 'companies',  // Required
+  resource_type: 'companies', // Required
   record_id: 'comp_123',
-  info_type: 'basic'          // Required for detailed info
+  info_type: 'basic', // Required for detailed info
 });
 ```
 
@@ -732,11 +918,11 @@ await client.callTool('get-detailed-info', {
 
 **Common parameter changes**:
 
-| Deprecated Tool | Old Parameter | Universal Tool | New Parameters |
-|----------------|---------------|----------------|----------------|
-| `get-company-contact-info` | `record_id` | `get-detailed-info` | `resource_type: 'companies'`<br>`record_id`<br>`info_type: 'contact'` |
-| `search-people-by-company` | `company_id` | `search-by-relationship` | `relationship_type: 'company_to_people'`<br>`source_id` |
-| `batch-create-companies` | `companies` | `batch-operations` | `resource_type: 'companies'`<br>`operation_type: 'create'`<br>`records` |
+| Deprecated Tool            | Old Parameter | Universal Tool           | New Parameters                                                          |
+| -------------------------- | ------------- | ------------------------ | ----------------------------------------------------------------------- |
+| `get-company-contact-info` | `record_id`   | `get-detailed-info`      | `resource_type: 'companies'`<br>`record_id`<br>`info_type: 'contact'`   |
+| `search-people-by-company` | `company_id`  | `search-by-relationship` | `relationship_type: 'company_to_people'`<br>`source_id`                 |
+| `batch-create-companies`   | `companies`   | `batch-operations`       | `resource_type: 'companies'`<br>`operation_type: 'create'`<br>`records` |
 
 ## Performance Issues
 
@@ -745,15 +931,21 @@ await client.callTool('get-detailed-info', {
 **Solutions**:
 
 1. **Use specific queries**:
+
 ```typescript
 // ❌ Slow - too broad
-{ query: 'company' }
+{
+  query: 'company';
+}
 
 // ✅ Fast - specific
-{ query: 'technology startup San Francisco' }
+{
+  query: 'technology startup San Francisco';
+}
 ```
 
 2. **Add filters to narrow results**:
+
 ```typescript
 await client.callTool('advanced-search', {
   resource_type: 'companies',
@@ -761,27 +953,33 @@ await client.callTool('advanced-search', {
   filters: {
     and: [
       { attribute: 'employee_count', condition: 'between', value: [10, 100] },
-      { attribute: 'country', condition: 'equals', value: 'United States' }
-    ]
-  }
+      { attribute: 'country', condition: 'equals', value: 'United States' },
+    ],
+  },
 });
 ```
 
 3. **Use smaller limits**:
+
 ```typescript
 // ❌ Slow - large result set
-{ limit: 100 }
+{
+  limit: 100;
+}
 
 // ✅ Fast - smaller result set
-{ limit: 25 }
+{
+  limit: 25;
+}
 ```
 
 4. **Specify fields for record details**:
+
 ```typescript
 await client.callTool('get-record-details', {
   resource_type: 'companies',
   record_id: 'comp_123',
-  fields: ['name', 'website', 'industry']  // Only get needed fields
+  fields: ['name', 'website', 'industry'], // Only get needed fields
 });
 ```
 
@@ -790,6 +988,7 @@ await client.callTool('get-record-details', {
 **Solutions**:
 
 1. **Reduce batch size**:
+
 ```typescript
 // ❌ Too large - may timeout
 const batchSize = 50;
@@ -799,29 +998,28 @@ const batchSize = 20;
 ```
 
 2. **Add delays between batches**:
+
 ```typescript
 for (const batch of batches) {
   await processBatch(batch);
-  
+
   // Add delay to respect rate limits
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 }
 ```
 
 3. **Use error isolation**:
+
 ```typescript
 // Process with error isolation
-const results = await processInParallel(
-  records,
-  async (record) => {
-    try {
-      return await processRecord(record);
-    } catch (error) {
-      console.warn(`Failed to process record ${record.id}:`, error);
-      return { success: false, error: error.message, record };
-    }
+const results = await processInParallel(records, async (record) => {
+  try {
+    return await processRecord(record);
+  } catch (error) {
+    console.warn(`Failed to process record ${record.id}:`, error);
+    return { success: false, error: error.message, record };
   }
-);
+});
 ```
 
 ## Authentication and Authorization Issues
@@ -831,6 +1029,7 @@ const results = await processInParallel(
 **Cause**: Missing or incorrect ATTIO_API_KEY environment variable.
 
 **Solution**:
+
 ```bash
 # Set the environment variable
 export ATTIO_API_KEY=your_actual_api_key_here
@@ -843,7 +1042,8 @@ echo $ATTIO_API_KEY
 
 **Cause**: Your API key doesn't have access to the specified resource type.
 
-**Solution**: 
+**Solution**:
+
 1. Check your Attio account permissions
 2. Verify the resource type exists in your workspace
 3. Try a different resource type to test access
@@ -875,24 +1075,32 @@ function validateUniversalParams(toolName: string, params: any): void {
   if (!params.resource_type) {
     throw new Error(`${toolName}: resource_type is required`);
   }
-  
+
   const validResourceTypes = ['companies', 'people', 'records', 'tasks'];
   if (!validResourceTypes.includes(params.resource_type)) {
-    throw new Error(`${toolName}: invalid resource_type "${params.resource_type}"`);
+    throw new Error(
+      `${toolName}: invalid resource_type "${params.resource_type}"`
+    );
   }
-  
+
   // Check for empty query strings
   if ('query' in params && params.query === '') {
     throw new Error(`${toolName}: query cannot be empty string`);
   }
-  
+
   if ('search_query' in params && params.search_query === '') {
     throw new Error(`${toolName}: search_query cannot be empty string`);
   }
-  
+
   // Check batch size limits
-  if ('records' in params && Array.isArray(params.records) && params.records.length > 50) {
-    throw new Error(`${toolName}: batch size (${params.records.length}) exceeds limit (50)`);
+  if (
+    'records' in params &&
+    Array.isArray(params.records) &&
+    params.records.length > 50
+  ) {
+    throw new Error(
+      `${toolName}: batch size (${params.records.length}) exceeds limit (50)`
+    );
   }
 }
 
@@ -908,7 +1116,7 @@ const result = await client.callTool('search-records', params);
 const simpleResult = await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'test',
-  limit: 1
+  limit: 1,
 });
 
 console.log('Simple search worked:', simpleResult.length > 0);
@@ -919,12 +1127,12 @@ const complexResult = await client.callTool('advanced-search', {
   query: 'technology',
   filters: {
     and: [
-      { attribute: 'employee_count', condition: 'greater_than', value: 10 }
-    ]
+      { attribute: 'employee_count', condition: 'greater_than', value: 10 },
+    ],
   },
   sort_by: 'created_at',
   sort_order: 'desc',
-  limit: 10
+  limit: 10,
 });
 ```
 
@@ -933,6 +1141,7 @@ const complexResult = await client.callTool('advanced-search', {
 ### Q: Why were the tools consolidated?
 
 **A**: The consolidation reduces tool count from 40+ to 13 universal operations (68% reduction), which:
+
 - Improves AI system performance (fewer tools to evaluate)
 - Provides consistent APIs across resource types
 - Simplifies maintenance and development
@@ -948,7 +1157,8 @@ const complexResult = await client.callTool('advanced-search', {
 
 ### Q: What's the difference between `search-records` and `advanced-search`?
 
-**A**: 
+**A**:
+
 - `search-records`: Basic search with simple filtering
 - `advanced-search`: Complex searches with sorting, advanced filters, and better performance optimization
 
@@ -982,18 +1192,21 @@ const complexResult = await client.callTool('advanced-search', {
 // ❌ Wrong - incorrect mock pattern
 vi.mock('../../src/handlers/tool-configs/universal/core-operations.ts', () => ({
   searchRecords: vi.fn(),
-  getRecordDetails: vi.fn()
+  getRecordDetails: vi.fn(),
 }));
 
 // ✅ Correct - importOriginal pattern
-vi.mock('../../src/handlers/tool-configs/universal/core-operations.ts', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    searchRecords: vi.fn(),
-    getRecordDetails: vi.fn()
-  };
-});
+vi.mock(
+  '../../src/handlers/tool-configs/universal/core-operations.ts',
+  async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      searchRecords: vi.fn(),
+      getRecordDetails: vi.fn(),
+    };
+  }
+);
 ```
 
 **Complete Testing Template**:
@@ -1002,29 +1215,35 @@ vi.mock('../../src/handlers/tool-configs/universal/core-operations.ts', async (i
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Proper mock setup with importOriginal
-vi.mock('../../src/handlers/tool-configs/universal/core-operations.ts', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    searchRecords: vi.fn(),
-    getRecordDetails: vi.fn(),
-    createRecord: vi.fn(),
-    updateRecord: vi.fn(),
-    deleteRecord: vi.fn()
-  };
-});
+vi.mock(
+  '../../src/handlers/tool-configs/universal/core-operations.ts',
+  async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      searchRecords: vi.fn(),
+      getRecordDetails: vi.fn(),
+      createRecord: vi.fn(),
+      updateRecord: vi.fn(),
+      deleteRecord: vi.fn(),
+    };
+  }
+);
 
-vi.mock('../../src/handlers/tool-configs/universal/advanced-operations.ts', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    advancedSearch: vi.fn(),
-    searchByRelationship: vi.fn(),
-    searchByContent: vi.fn(),
-    searchByTimeframe: vi.fn(),
-    batchOperations: vi.fn()
-  };
-});
+vi.mock(
+  '../../src/handlers/tool-configs/universal/advanced-operations.ts',
+  async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      advancedSearch: vi.fn(),
+      searchByRelationship: vi.fn(),
+      searchByContent: vi.fn(),
+      searchByTimeframe: vi.fn(),
+      batchOperations: vi.fn(),
+    };
+  }
+);
 
 describe('Universal Tools Tests', () => {
   beforeEach(() => {
@@ -1035,12 +1254,12 @@ describe('Universal Tools Tests', () => {
     // Your test implementation
     const mockResult = { records: [], total: 0 };
     vi.mocked(searchRecords).mockResolvedValue(mockResult);
-    
+
     const result = await callUniversalTool('search-records', {
       resource_type: 'companies',
-      query: 'test query'
+      query: 'test query',
     });
-    
+
     expect(result).toEqual(mockResult);
     expect(searchRecords).toHaveBeenCalledWith(
       'companies',
@@ -1061,28 +1280,28 @@ describe('Universal Tools Tests', () => {
 // ❌ Wrong - empty query in tests
 const testParams = {
   resource_type: 'companies',
-  query: ''  // Will cause validation error
+  query: '', // Will cause validation error
 };
 
 // ✅ Correct - meaningful query in tests
 const testParams = {
-  resource_type: 'companies', 
-  query: 'Universal Test Company'  // Specific test query
+  resource_type: 'companies',
+  query: 'Universal Test Company', // Specific test query
 };
 
 // For batch operations
 const batchParams = {
   resource_type: 'companies',
   operation_type: 'search',
-  query: 'Universal Test',  // Required for search operations
-  limit: 50
+  query: 'Universal Test', // Required for search operations
+  limit: 50,
 };
 
 // For content searches
 const contentParams = {
   resource_type: 'people',
   content_type: 'activity',
-  search_query: 'test interaction'  // NOT empty string
+  search_query: 'test interaction', // NOT empty string
 };
 ```
 
@@ -1096,23 +1315,23 @@ const contentParams = {
 // ❌ Wrong - old operators in tests
 const testFilters = {
   and: [
-    { 
-      attribute: 'created_at', 
-      condition: 'greater_than_or_equals',  // Old operator
-      value: '2024-01-01' 
-    }
-  ]
+    {
+      attribute: 'created_at',
+      condition: 'greater_than_or_equals', // Old operator
+      value: '2024-01-01',
+    },
+  ],
 };
 
 // ✅ Correct - new operators in tests
 const testFilters = {
   and: [
-    { 
-      attribute: 'created_at', 
-      condition: FilterConditionType.AFTER,  // New operator
-      value: '2024-01-01T00:00:00Z' 
-    }
-  ]
+    {
+      attribute: 'created_at',
+      condition: FilterConditionType.AFTER, // New operator
+      value: '2024-01-01T00:00:00Z',
+    },
+  ],
 };
 ```
 
@@ -1131,39 +1350,43 @@ const mockApiResponse = {
       values: {
         name: [{ value: 'Test Company' }],
         website: [{ value: 'https://test.com' }],
-        industry: [{ value: 'Technology' }]
-      }
-    }
+        industry: [{ value: 'Technology' }],
+      },
+    },
   ],
-  next_cursor: null
+  next_cursor: null,
 };
 
 // Mock the tool response format
 const mockToolResponse = {
-  content: [{
-    type: 'text',
-    text: 'Found 1 company matching "test"...'
-  }],
+  content: [
+    {
+      type: 'text',
+      text: 'Found 1 company matching "test"...',
+    },
+  ],
   isError: false,
   metadata: {
     items: mockApiResponse.data,
     pagination: {
       total: 1,
-      hasMore: false
-    }
-  }
+      hasMore: false,
+    },
+  },
 };
 ```
 
 ## Getting Additional Help
 
 ### Documentation Resources
+
 - **[Migration Guide](migration-guide.md)** - Complete tool mapping and migration examples
-- **[API Reference](api-reference.md)** - Detailed parameter schemas and examples  
+- **[API Reference](api-reference.md)** - Detailed parameter schemas and examples
 - **[User Guide](user-guide.md)** - Best practices and common use cases
 - **[Developer Guide](developer-guide.md)** - Extending and customizing universal tools
 
 ### Support Channels
+
 - **GitHub Issues**: [Create an issue](https://github.com/kesslerio/attio-mcp-server/issues) for bugs or feature requests
 - **Documentation Updates**: Submit PRs to improve this documentation
 - **Community**: Check existing issues for similar problems and solutions
@@ -1173,23 +1396,26 @@ const mockToolResponse = {
 When reporting issues, please include:
 
 1. **Tool name and parameters** used
-2. **Complete error message** 
+2. **Complete error message**
 3. **Expected behavior** vs actual behavior
 4. **Environment details** (Node.js version, etc.)
 5. **Minimal reproduction case**
 
 Example issue report:
-```markdown
+
+````markdown
 ## Issue: search-records returns empty results
 
 **Tool Call:**
+
 ```typescript
 await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'technology startup',
-  limit: 10
+  limit: 10,
 });
 ```
+````
 
 **Error/Behavior:**
 Returns empty array despite having technology companies in the workspace.
@@ -1198,7 +1424,11 @@ Returns empty array despite having technology companies in the workspace.
 Should return at least 3-5 technology companies.
 
 **Environment:**
+
 - Node.js 18.17.0
 - Attio MCP Server v1.2.0
 - API Key has full workspace access
+
+```
+
 ```

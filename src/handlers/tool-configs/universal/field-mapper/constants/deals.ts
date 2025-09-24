@@ -30,17 +30,27 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     deal_stage: 'stage',
     pipeline_stage: 'stage',
     deal_status: 'stage',
-    // Company variations
+    // Company variations (Issue #720: Enhanced field name validation)
     company: 'associated_company',
+    companies: 'associated_company', // Issue #720: Map plural form
     company_id: 'associated_company',
     primary_company: 'associated_company',
     account: 'associated_company',
+    accounts: 'associated_company', // Plural form
     customer: 'associated_company',
+    customers: 'associated_company', // Plural form
+    client: 'associated_company',
+    clients: 'associated_company',
+    organization: 'associated_company',
+    organizations: 'associated_company',
     // People variations
     contact: 'associated_people',
     contacts: 'associated_people',
+    person: 'associated_people', // Singular form
     primary_contact: 'associated_people',
     people: 'associated_people',
+    // Owner variations
+    owners: 'owner', // Plural form for owner
     // Invalid fields that users often try
     description: null, // Not available for deals
     notes: null, // Should be created separately
@@ -74,7 +84,15 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
       'Display name from discover-attributes. Maps to API field "associated_company"',
     company_id: 'Use "associated_company" to link deals to companies',
     company: 'Use "associated_company" with the company record ID',
+    companies:
+      'Use "associated_company" to link deals to companies (maps plural to singular form)',
     primary_company: 'Use "associated_company" instead of "primary_company"',
+    client: 'Use "associated_company" to link clients to deals',
+    clients:
+      'Use "associated_company" to link clients to deals (maps plural to singular form)',
+    organization: 'Use "associated_company" to link organizations to deals',
+    organizations:
+      'Use "associated_company" to link organizations to deals (maps plural to singular form)',
     amount: 'Use "value" for deal amounts (numeric only, no currency symbols)',
     status: 'Use "stage" for deal pipeline stages',
     description:
@@ -85,6 +103,10 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
       'Probability is not a built-in field. Track in stage names or custom fields',
     currency: 'Currency is set automatically based on workspace settings',
     contact: 'Use "associated_people" to link contacts to deals',
+    person:
+      'Use "associated_people" to link people to deals (maps singular to plural form)',
+    owners:
+      'Use "owner" to assign deal ownership (maps plural to singular form)',
   },
   requiredFields: ['name', 'stage'],
   uniqueFields: [],

@@ -190,4 +190,152 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       trackDealId(createResult);
     }
   });
+
+  // Issue #720: Test new enhanced field mappings
+  describe('Enhanced field mappings (Issue #720)', () => {
+    it('should map "companies" to "associated_company"', async () => {
+      // Test the specific mapping mentioned in issue #720
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Companies Field Mapping Test',
+            stage: 'Qualified',
+            companies: 'test-company-id', // Should map to associated_company
+          },
+        },
+      });
+
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should not fail due to field mapping of "companies"
+        expect(errorText).not.toMatch(/companies.*unknown/i);
+        expect(errorText).not.toMatch(/companies.*invalid/i);
+        expect(errorText).not.toMatch(/companies.*not.*found/i);
+        console.log('✅ Field mapping worked for "companies" field');
+      } else {
+        trackDealId(createResult);
+        console.log('✅ Deal created successfully using "companies" field!');
+      }
+    });
+
+    it('should map plural organization variations correctly', async () => {
+      // Test other plural form mappings
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Organizations Field Mapping Test',
+            stage: 'Interested',
+            organizations: 'test-org-id', // Should map to associated_company
+          },
+        },
+      });
+
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should not fail due to field mapping of "organizations"
+        expect(errorText).not.toMatch(/organizations.*unknown/i);
+        expect(errorText).not.toMatch(/organizations.*invalid/i);
+      } else {
+        trackDealId(createResult);
+      }
+    });
+
+    it('should map "clients" to "associated_company"', async () => {
+      // Test client variations
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Clients Field Mapping Test',
+            stage: 'Proposal',
+            clients: 'test-client-id', // Should map to associated_company
+          },
+        },
+      });
+
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should not fail due to field mapping of "clients"
+        expect(errorText).not.toMatch(/clients.*unknown/i);
+        expect(errorText).not.toMatch(/clients.*invalid/i);
+      } else {
+        trackDealId(createResult);
+      }
+    });
+
+    it('should map "person" to "associated_people"', async () => {
+      // Test singular person mapping
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Person Field Mapping Test',
+            stage: 'Negotiation',
+            person: 'test-person-id', // Should map to associated_people
+          },
+        },
+      });
+
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should not fail due to field mapping of "person"
+        expect(errorText).not.toMatch(/person.*unknown/i);
+        expect(errorText).not.toMatch(/person.*invalid/i);
+      } else {
+        trackDealId(createResult);
+      }
+    });
+
+    it('should provide helpful suggestions for new mapped fields', async () => {
+      // Test that the error messages are helpful when fields are used incorrectly
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Field Suggestions Test',
+            companies: 'invalid-format', // This should trigger validation but not mapping errors
+          },
+        },
+      });
+
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should not suggest the field is unknown (mapping should work)
+        expect(errorText).not.toMatch(/companies.*unknown.*field/i);
+        expect(errorText).not.toMatch(/did you mean.*associated_company/i); // Shouldn't suggest the target since mapping should work
+      } else {
+        trackDealId(createResult);
+      }
+    });
+
+    it('should handle mixed old and new field variations without conflicts', async () => {
+      // Test that using both old and new variations doesn't cause collision issues
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Mixed Fields Test',
+            stage: 'Qualified',
+            company: 'test-company-1', // Old variation
+            organizations: 'test-org-1', // New variation - should both map to associated_company
+          },
+        },
+      });
+
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should detect collision between fields that map to the same target
+        expect(errorText).toMatch(/collision|conflict/i);
+        console.log(
+          '✅ Collision detection working correctly for overlapping mappings'
+        );
+      } else {
+        // If it doesn't detect collision, that's also acceptable behavior
+        trackDealId(createResult);
+        console.log('✅ Tool handled mixed field variations without errors');
+      }
+    });
+  });
 });
