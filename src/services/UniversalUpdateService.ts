@@ -319,7 +319,8 @@ export class UniversalUpdateService {
     }
 
     // Continue with the rest of the update process using existing logic
-    const record = await this._updateRecordInternal(params);
+    // Skip verification in _updateRecordInternal to avoid duplication
+    const record = await this._updateRecordInternal(params, true);
 
     // Store actual values for comparison
     validationResult.actualValues = record.values || {};
@@ -378,7 +379,8 @@ export class UniversalUpdateService {
    * Internal update record implementation
    */
   private static async _updateRecordInternal(
-    params: UniversalUpdateParams
+    params: UniversalUpdateParams,
+    skipVerification: boolean = false
   ): Promise<AttioRecord> {
     const { resource_type, record_id, record_data } = params;
 
@@ -641,7 +643,11 @@ export class UniversalUpdateService {
 
     // Field persistence verification (enabled by default)
     // WARNING: Disabling this can cause silent data consistency issues
-    if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
+    // Skip verification if called from validation-aware path to avoid duplication
+    if (
+      !skipVerification &&
+      process.env.ENABLE_FIELD_VERIFICATION !== 'false'
+    ) {
       try {
         const verification = await UpdateValidation.verifyFieldPersistence(
           resource_type,

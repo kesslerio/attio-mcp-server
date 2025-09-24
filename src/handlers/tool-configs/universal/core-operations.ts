@@ -634,6 +634,29 @@ export const updateRecordConfig: UniversalToolConfig = {
         });
     }
 
+    // Add actual persisted values section if there are warnings and actual values
+    if (
+      hasWarnings &&
+      metadata?.actualValues &&
+      Object.keys(metadata.actualValues).length > 0
+    ) {
+      result += '\n\nActual persisted values:';
+      Object.entries(metadata.actualValues).forEach(([key, value]) => {
+        // Format value for display, handling arrays and objects
+        let displayValue: string;
+        if (Array.isArray(value) && value.length > 0) {
+          // For Attio field arrays, try to extract the value
+          displayValue =
+            value[0]?.value || value[0]?.full_name || JSON.stringify(value);
+        } else if (typeof value === 'object' && value !== null) {
+          displayValue = JSON.stringify(value);
+        } else {
+          displayValue = String(value);
+        }
+        result += `\n• ${key}: ${displayValue}`;
+      });
+    }
+
     return result;
   },
 };
