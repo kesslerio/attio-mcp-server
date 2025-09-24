@@ -51,8 +51,14 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(mockGet).not.toHaveBeenCalled();
 
       // Verify data was still processed (defaults applied)
-      expect(result.name).toEqual([{ value: 'Test Deal' }]);
-      expect(result.stage).toEqual([{ status: 'InvalidStage' }]);
+      expect(result.dealData.name).toEqual([{ value: 'Test Deal' }]);
+      expect(result.dealData.stage).toEqual([{ status: 'InvalidStage' }]);
+
+      // Verify structured result format
+      expect(result.warnings).toBeDefined();
+      expect(result.suggestions).toBeDefined();
+      expect(Array.isArray(result.warnings)).toBe(true);
+      expect(Array.isArray(result.suggestions)).toBe(true);
     });
 
     it('should make API call when skipValidation is false', async () => {
@@ -71,8 +77,8 @@ describe('Deal Defaults - PR #389 Fix', () => {
       const result = await applyDealDefaultsWithValidation(dealData, false);
 
       // Verify data was processed
-      expect(result.name).toEqual([{ value: 'Test Deal' }]);
-      expect(result.stage).toEqual([{ status: 'Interested' }]);
+      expect(result.dealData.name).toEqual([{ value: 'Test Deal' }]);
+      expect(result.dealData.stage).toEqual([{ status: 'Interested' }]);
     });
   });
 
@@ -125,7 +131,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // First attempt with validation (normal path)
       const attempt1 = await applyDealDefaultsWithValidation(dealData, false);
       // With new implementation, invalid stages are corrected to default
-      expect(attempt1.stage).toEqual([{ status: 'Interested' }]);
+      expect(attempt1.dealData.stage).toEqual([{ status: 'Interested' }]);
 
       // Simulate error occurred, now in error recovery path
       // This should NOT make API calls due to skipValidation=true
@@ -141,7 +147,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       );
 
       // Verify the error path processed correctly
-      expect(attempt2.stage).toEqual([{ status: defaults.stage }]);
+      expect(attempt2.dealData.stage).toEqual([{ status: defaults.stage }]);
     });
   });
 
@@ -151,17 +157,17 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // First call - may populate cache
       const result1 = await validateDealStage('Demo', false);
-      expect(result1).toBe('Demo'); // Should find in common stages
+      expect(result1.validatedStage).toBe('Demo'); // Should find in common stages
 
       // Clear caches
       clearDealCaches();
 
       // Second call after cache clear - should still work with fallback
       const result2 = await validateDealStage('Demo', false);
-      expect(result2).toBe('Demo'); // Should still work
+      expect(result2.validatedStage).toBe('Demo'); // Should still work
 
       // Test that cache clearing doesn't break functionality
-      expect(result1).toBe(result2);
+      expect(result1.validatedStage).toBe(result2.validatedStage);
     });
 
     it('should pre-warm cache without errors', async () => {
