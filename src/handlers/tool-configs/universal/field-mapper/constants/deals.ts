@@ -4,6 +4,39 @@
  */
 
 import { FieldMapping } from '../types.js';
+import {
+  createDisplayNameConstants,
+  createPluralMappingConstants,
+  validateFieldMappingConstants,
+} from '../utils/field-mapping-constants.js';
+
+// Display name constants for better maintainability (Issue #720)
+const DISPLAY_NAMES = createDisplayNameConstants({
+  DEAL_NAME: 'deal name',
+  DEAL_STAGE: 'deal stage',
+  DEAL_VALUE: 'deal value',
+  ASSOCIATED_COMPANY: 'associated company',
+});
+
+// Plural to singular mapping pattern (Issue #720)
+const PLURAL_MAPPINGS = createPluralMappingConstants({
+  companies: 'associated_company',
+  organizations: 'associated_company',
+  clients: 'associated_company',
+  accounts: 'associated_company',
+  customers: 'associated_company',
+  contacts: 'associated_people',
+  owners: 'owner',
+});
+
+// Validate constants for consistency
+const validation = validateFieldMappingConstants(
+  DISPLAY_NAMES,
+  PLURAL_MAPPINGS
+);
+if (!validation.valid) {
+  console.warn('Field mapping constants validation issues:', validation.issues);
+}
 
 /**
  * Field mapping configuration for deals resource type
@@ -11,10 +44,10 @@ import { FieldMapping } from '../types.js';
 export const DEALS_FIELD_MAPPING: FieldMapping = {
   fieldMappings: {
     // Display names from discover-attributes (Issue #687)
-    'deal name': 'name',
-    'deal stage': 'stage',
-    'deal value': 'value',
-    'associated company': 'associated_company',
+    [DISPLAY_NAMES.DEAL_NAME]: 'name',
+    [DISPLAY_NAMES.DEAL_STAGE]: 'stage',
+    [DISPLAY_NAMES.DEAL_VALUE]: 'value',
+    [DISPLAY_NAMES.ASSOCIATED_COMPANY]: 'associated_company',
     // Value variations
     amount: 'value',
     deal_amount: 'value',
@@ -32,25 +65,18 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     deal_status: 'stage',
     // Company variations (Issue #720: Enhanced field name validation)
     company: 'associated_company',
-    companies: 'associated_company', // Issue #720: Map plural form
+    ...PLURAL_MAPPINGS, // Use consolidated plural mappings
     company_id: 'associated_company',
     primary_company: 'associated_company',
     account: 'associated_company',
-    accounts: 'associated_company', // Plural form
     customer: 'associated_company',
-    customers: 'associated_company', // Plural form
     client: 'associated_company',
-    clients: 'associated_company',
     organization: 'associated_company',
-    organizations: 'associated_company',
     // People variations
     contact: 'associated_people',
-    contacts: 'associated_people',
     person: 'associated_people', // Singular form
     primary_contact: 'associated_people',
     people: 'associated_people',
-    // Owner variations
-    owners: 'owner', // Plural form for owner
     // Invalid fields that users often try
     description: null, // Not available for deals
     notes: null, // Should be created separately
@@ -64,7 +90,7 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     labels: null,
     type: null,
     deal_type: null,
-  },
+  } as const,
   validFields: [
     'name',
     'stage',
@@ -72,7 +98,7 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     'owner',
     'associated_company',
     'associated_people',
-  ],
+  ] as const,
   commonMistakes: {
     'deal name':
       'Display name from discover-attributes. Maps to API field "name"',
@@ -108,6 +134,6 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     owners:
       'Use "owner" to assign deal ownership (maps plural to singular form)',
   },
-  requiredFields: ['name', 'stage'],
-  uniqueFields: [],
-};
+  requiredFields: ['name', 'stage'] as const,
+  uniqueFields: [] as const,
+} as const;

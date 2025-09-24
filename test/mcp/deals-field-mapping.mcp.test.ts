@@ -337,5 +337,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
         console.log('✅ Tool handled mixed field variations without errors');
       }
     });
+
+    // NOTE: Edge case tests moved to deals-edge-cases.mcp.test.ts for better organization
   });
 });
