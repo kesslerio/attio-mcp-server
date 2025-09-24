@@ -337,5 +337,73 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
         console.log('✅ Tool handled mixed field variations without errors');
       }
     });
+
+    // Edge case tests from PR review feedback
+    it('should handle empty string field names gracefully', async () => {
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            '': 'Empty Field Test', // Empty field name
+            name: 'Valid Deal Name',
+            stage: 'Qualified',
+          },
+        },
+      });
+
+      // Should handle empty field names without crashing
+      expect(createResult.content).toBeDefined();
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should provide meaningful error for empty field name
+        expect(errorText).toMatch(/empty|invalid.*field/i);
+      } else {
+        trackDealId(createResult);
+      }
+    });
+
+    it('should validate case sensitivity in field mappings', async () => {
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Case Sensitivity Test',
+            stage: 'Qualified',
+            COMPANIES: 'test-company-uppercase', // Test uppercase variation
+            Organizations: 'test-org-mixed-case', // Test mixed case
+          },
+        },
+      });
+
+      // Should handle case variations properly
+      if (createResult.isError) {
+        const errorText = createResult.content?.[0]?.text || '';
+        // Should not fail due to case sensitivity in field mapping
+        expect(errorText).not.toMatch(/COMPANIES.*unknown/i);
+        expect(errorText).not.toMatch(/Organizations.*unknown/i);
+      } else {
+        trackDealId(createResult);
+      }
+    });
+
+    it('should handle null and undefined field values', async () => {
+      const createResult = await client.callTool('create-record', {
+        resource_type: 'deals',
+        record_data: {
+          values: {
+            name: 'Null Value Test',
+            stage: 'Qualified',
+            companies: null, // Test null value
+            organizations: undefined, // Test undefined value
+          },
+        },
+      });
+
+      // Should handle null/undefined values gracefully
+      expect(createResult.content).toBeDefined();
+      if (!createResult.isError) {
+        trackDealId(createResult);
+      }
+    });
   });
 });
