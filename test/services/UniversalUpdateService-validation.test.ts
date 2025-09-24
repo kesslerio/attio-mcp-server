@@ -16,6 +16,32 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
 vi.mock('../../src/utils/validation-utils.js', () => ({
   validateRecordFields: vi.fn(),
 }));
+vi.mock('../../src/utils/logger.js', () => ({
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  LogLevel: {},
+  OperationType: {},
+  createScopedLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  })),
+  setLogContext: vi.fn(),
+  getLogContext: vi.fn(),
+  clearLogContext: vi.fn(),
+  generateCorrelationId: vi.fn(),
+  PerformanceTimer: vi.fn(),
+  operationStart: vi.fn(),
+  operationSuccess: vi.fn(),
+  operationFailure: vi.fn(),
+  fallbackStart: vi.fn(),
+  withLogging: vi.fn(),
+  safeMcpLog: vi.fn(),
+  default: {},
+}));
 // Mock the create service factory to return a mock service
 const mockCreateService = {
   createCompany: vi.fn(),
@@ -88,10 +114,10 @@ describe('UniversalUpdateService', () => {
         warnings: ['Field warning 1', 'Field warning 2'],
         suggestions: ['Suggestion 1', 'Suggestion 2'],
       } as any);
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
+
+      // Mock the debug logger to verify structured logging is used
+      const { debug } = await import('../../src/utils/logger.js');
+      const debugSpy = vi.mocked(debug);
 
       mockCreateService.updateTask.mockResolvedValue({
         id: { record_id: 'comp_123' },
@@ -104,10 +130,22 @@ describe('UniversalUpdateService', () => {
         record_data: { values: { name: 'Test Company' } },
       });
 
-      expect(console.error).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
+      // Verify structured logging was used instead of console.warn
+      expect(debugSpy).toHaveBeenCalledWith(
+        'UniversalUpdateService',
+        'Field validation warnings',
+        expect.objectContaining({
+          warnings: expect.stringContaining('Field warning 1'),
+        })
+      );
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        'UniversalUpdateService',
+        'Field suggestions:',
+        expect.objectContaining({
+          suggestions: expect.stringContaining('Suggestion 1'),
+        })
+      );
     });
 
     it('should handle field mapping errors', async () => {
