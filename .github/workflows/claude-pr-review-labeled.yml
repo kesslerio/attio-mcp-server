@@ -218,8 +218,8 @@ jobs:
           # Prepare sparse checkout patterns (include limited defaults for workflow internals)
           tmpfile=$(mktemp)
           {
-            echo '.github'
-            echo 'scripts/claude'
+            echo '/.github/**'
+            echo '/scripts/claude/**'
             jq -r '.[]' "$RING0_JSON_PATH"
             jq -r '.[]' "$RING1_JSON_PATH"
           } | sed '/^\s*$/d' | sort -u > "$tmpfile"
@@ -230,8 +230,21 @@ jobs:
             exit 0
           fi
 
-          git sparse-checkout init --cone=false
-          git sparse-checkout set --stdin < "$tmpfile"
+          # Init with sparse index for performance
+          git sparse-checkout init --sparse-index
+
+          # Use non-cone mode so individual file patterns are honored
+          if git sparse-checkout set -h 2>&1 | grep -q -- '--no-cone'; then
+            git sparse-checkout set --no-cone --stdin < "$tmpfile"
+          else
+            # Legacy fallback: disable cone via config, then set patterns
+            git config --local core.sparseCheckoutCone false
+            git sparse-checkout set --stdin < "$tmpfile"
+          fi
+
+          # Sanity check
+          echo "Sparse checkout patterns applied:"
+          git sparse-checkout list || true
           rm -f "$tmpfile"
 
       - name: Claude Review (Sonnet)
