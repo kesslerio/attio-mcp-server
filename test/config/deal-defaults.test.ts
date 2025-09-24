@@ -333,4 +333,139 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(['Demo', 'Interested']).toContain(result);
     });
   });
+
+  describe('Edge Cases and Performance - PR Feedback', () => {
+    const mockGetStatusOptions = vi.fn();
+
+    beforeEach(async () => {
+      vi.doMock('../../src/api/attio-client.js', () => ({
+        getStatusOptions: mockGetStatusOptions,
+      }));
+      clearDealCaches();
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
+      vi.doUnmock('../../src/api/attio-client.js');
+    });
+
+    it('should handle API timeout gracefully', async () => {
+      // Mock API timeout
+      mockGetStatusOptions.mockRejectedValue(new Error('Request timeout'));
+
+      clearDealCaches();
+
+      // Test stage validation - should fall back to common stages
+      const result = await validateDealStage('Demo', false);
+
+      // Should fall back to common stages and find "Demo"
+      expect(result).toBe('Demo');
+    });
+
+    it('should respect cache TTL boundaries', async () => {
+      // Mock successful API response
+      mockGetStatusOptions.mockResolvedValue([
+        { title: 'Cached Stage', value: 'cached', is_archived: false },
+      ]);
+
+      clearDealCaches();
+
+      // First call should populate cache
+      const result1 = await validateDealStage('Cached Stage', false);
+      expect(result1).toBe('Cached Stage');
+      expect(mockGetStatusOptions).toHaveBeenCalledTimes(1);
+
+      // Second call within TTL should use cache
+      const result2 = await validateDealStage('Cached Stage', false);
+      expect(result2).toBe('Cached Stage');
+      expect(mockGetStatusOptions).toHaveBeenCalledTimes(1); // No additional call
+
+      // Test that cache respects TTL (we can't easily test time passage,
+      // but we can test the cache clearing function)
+      clearDealCaches();
+
+      // Third call after cache clear should make new API call
+      const result3 = await validateDealStage('Cached Stage', false);
+      expect(result3).toBe('Cached Stage');
+      expect(mockGetStatusOptions).toHaveBeenCalledTimes(2); // New API call
+    });
+
+    it('should prevent cache stampeding during high load', async () => {
+      // This test simulates multiple concurrent requests
+      mockGetStatusOptions.mockResolvedValue([
+        { title: 'Concurrent Stage', value: 'concurrent', is_archived: false },
+      ]);
+
+      clearDealCaches();
+
+      // Simulate multiple concurrent requests
+      const promises = Array.from({ length: 5 }, () =>
+        validateDealStage('Concurrent Stage', false)
+      );
+
+      const results = await Promise.all(promises);
+
+      // All should return the same result
+      results.forEach((result) => {
+        expect(result).toBe('Concurrent Stage');
+      });
+
+      // API should only be called once due to caching
+      expect(mockGetStatusOptions).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle malformed API responses', async () => {
+      // Mock malformed API response
+      mockGetStatusOptions.mockResolvedValue([
+        { title: null, value: 'invalid1', is_archived: false }, // null title
+        { value: 'invalid2', is_archived: false }, // missing title
+        { title: '', value: 'invalid3', is_archived: false }, // empty title
+        { title: 'Valid Stage', value: 'valid', is_archived: false }, // valid
+        { title: 123, value: 'invalid4', is_archived: false }, // non-string title
+      ]);
+
+      clearDealCaches();
+
+      // Test stage validation with valid stage from malformed response
+      const result = await validateDealStage('Valid Stage', false);
+      expect(result).toBe('Valid Stage');
+
+      // Test with invalid stage - should fall back to default
+      const result2 = await validateDealStage('Invalid Stage', false);
+      expect(result2).toBe('Interested');
+    });
+
+    it('should validate with mixed case stage names', async () => {
+      // Mock API response with mixed case stages
+      mockGetStatusOptions.mockResolvedValue([
+        {
+          title: 'Demo Scheduled',
+          value: 'demo_scheduled',
+          is_archived: false,
+        },
+        { title: 'QUALIFIED', value: 'qualified', is_archived: false },
+        { title: 'closed Won', value: 'closed_won', is_archived: false },
+      ]);
+
+      clearDealCaches();
+
+      // Test various case combinations
+      const testCases = [
+        { input: 'demo scheduled', expected: 'Demo Scheduled' },
+        { input: 'DEMO SCHEDULED', expected: 'Demo Scheduled' },
+        { input: 'Demo Scheduled', expected: 'Demo Scheduled' },
+        { input: 'qualified', expected: 'QUALIFIED' },
+        { input: 'Qualified', expected: 'QUALIFIED' },
+        { input: 'QUALIFIED', expected: 'QUALIFIED' },
+        { input: 'closed won', expected: 'closed Won' },
+        { input: 'CLOSED WON', expected: 'closed Won' },
+        { input: 'Closed Won', expected: 'closed Won' },
+      ];
+
+      for (const testCase of testCases) {
+        const result = await validateDealStage(testCase.input, false);
+        expect(result).toBe(testCase.expected);
+      }
+    });
+  });
 });

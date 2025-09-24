@@ -3,6 +3,33 @@
  *
  * Extracted from shared-handlers.ts as part of Issue #489 Phase 3.
  * Provides universal update functionality across all resource types.
+ *
+ * ENVIRONMENT VARIABLES (Runtime Behavior Configuration):
+ *
+ * @env ENABLE_ENHANCED_VALIDATION - Enable additional validation checks (default: false)
+ *      Values: "true" | "false" | undefined
+ *      Example: ENABLE_ENHANCED_VALIDATION="true"
+ *      Impact: Adds extra field validation before API calls
+ *      Production Risk: May reject previously valid requests
+ *
+ * @env ENABLE_FIELD_VERIFICATION - Enable post-update field verification (default: true)
+ *      Values: "true" | "false" | undefined
+ *      Example: ENABLE_FIELD_VERIFICATION="false"
+ *      Impact: Skips verification that fields were persisted correctly
+ *      Production Risk: Silent data consistency issues if disabled
+ *
+ * @env STRICT_FIELD_VALIDATION - Fail operations on verification failures (default: false)
+ *      Values: "true" | "false" | undefined
+ *      Example: STRICT_FIELD_VALIDATION="true"
+ *      Impact: Throws errors when field verification fails instead of logging warnings
+ *      Production Risk: Operations may fail that previously succeeded with warnings
+ *
+ * PRODUCTION SAFETY NOTES:
+ * - These environment variables significantly change runtime behavior
+ * - Test thoroughly in staging before changing production values
+ * - Monitor error rates and data consistency when changing validation settings
+ * - Consider gradual rollout with feature flags for validation strictness changes
+ * - Document all environment variable usage in deployment runbooks
  */
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
@@ -151,12 +178,7 @@ export class UniversalUpdateService {
       values as Record<string, unknown>
     );
     if (fieldValidation.warnings.length > 0) {
-      // Intentionally keep a console.warn for test expectations; mirror to logger.debug
-
-      console.warn(
-        'Field validation warnings:',
-        fieldValidation.warnings.join('\n')
-      );
+      // Use structured logging for field validation warnings
       debug('UniversalUpdateService', 'Field validation warnings', {
         warnings: fieldValidation.warnings.join('\n'),
       });
@@ -272,6 +294,8 @@ export class UniversalUpdateService {
     attioPayload.values = sanitizedData;
 
     // Optional enhanced validation
+    // WARNING: This environment variable changes runtime behavior
+    // Production Impact: May reject previously valid requests
     if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
       const validation = await validateRecordFields(
         resource_type,
@@ -382,6 +406,8 @@ export class UniversalUpdateService {
       updatedRecord
     );
 
+    // Field persistence verification (enabled by default)
+    // WARNING: Disabling this can cause silent data consistency issues
     if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
       try {
         const verification = await UpdateValidation.verifyFieldPersistence(
@@ -397,20 +423,21 @@ export class UniversalUpdateService {
           );
         }
         if (!verification.verified) {
-          // Intentionally keep a console.warn for test expectations; mirror to logger.error
-
-          console.warn(
-            `Field persistence verification failed for ${resource_type} ${record_id}:`,
-            verification.discrepancies
-          );
+          // Use structured logging for field persistence verification failures
           logError(
             'UniversalUpdateService',
             'Field persistence verification failed',
             new Error('Verification failed'),
-            { discrepancies: verification.discrepancies }
+            {
+              resource_type,
+              record_id,
+              discrepancies: verification.discrepancies,
+            }
           );
 
           // If strict validation is enabled, fail the operation
+          // WARNING: This environment variable changes runtime behavior
+          // Production Impact: Operations may fail that previously succeeded
           if (process.env.STRICT_FIELD_VALIDATION === 'true') {
             throw new UniversalValidationError(
               `Field persistence verification failed: ${verification.discrepancies.join('; ')}`,

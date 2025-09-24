@@ -177,90 +177,182 @@ export const UpdateValidation = {
     }
   },
 
-  compareFieldValues(
-    fieldName: string,
+  /**
+   * Check if a field name represents a status field (like deal stages)
+   */
+  isStatusField(fieldName: string): boolean {
+    return fieldName === 'stage' || fieldName.includes('stage');
+  },
+
+  /**
+   * Handle null or undefined values
+   */
+  handleNullValues(
     expectedValue: unknown,
     actualValue: unknown
-  ): { matches: boolean; warning?: string } {
+  ): { matches: boolean } | null {
     if (expectedValue === null || expectedValue === undefined) {
       return { matches: actualValue === null || actualValue === undefined };
     }
     if (actualValue === null || actualValue === undefined) {
       return { matches: false };
     }
-    let unwrappedActual: unknown = actualValue;
+    return null; // Continue with other comparisons
+  },
 
-    // Handle array responses from Attio API
-    if (Array.isArray(actualValue) && actualValue.length > 0) {
-      const firstItem = actualValue[0] as Record<string, unknown>;
-
-      // Handle status fields (like deal stages) - they use 'status' property
-      if (fieldName === 'stage' || fieldName.includes('stage')) {
-        if (firstItem?.status !== undefined) {
-          unwrappedActual =
-            actualValue.length === 1
-              ? firstItem.status
-              : (actualValue as Record<string, unknown>[]).map(
-                  (v: Record<string, unknown>) => v.status
-                );
-        }
-      }
-      // Handle regular value fields
-      else if (firstItem?.value !== undefined) {
-        unwrappedActual =
-          actualValue.length === 1
-            ? firstItem.value
-            : (actualValue as Record<string, unknown>[]).map(
-                (v: Record<string, unknown>) => v.value
-              );
-      }
+  /**
+   * Unwrap array responses from Attio API
+   * Handles both status fields and regular value fields
+   */
+  unwrapArrayValue(fieldName: string, actualValue: unknown): unknown {
+    if (!Array.isArray(actualValue) || actualValue.length === 0) {
+      return actualValue;
     }
-    if (Array.isArray(expectedValue)) {
-      if (!Array.isArray(unwrappedActual)) return { matches: false };
-      const expectedSet = new Set(
-        (expectedValue as unknown[]).map((v) => String(v))
-      );
-      const actualSet = new Set(
-        (unwrappedActual as unknown[]).map((v) => String(v))
-      );
+
+    const firstItem = actualValue[0] as Record<string, unknown>;
+
+    // Handle status fields (like deal stages) - they use 'status' property
+    if (this.isStatusField(fieldName) && firstItem?.status !== undefined) {
+      return actualValue.length === 1
+        ? firstItem.status
+        : (actualValue as Record<string, unknown>[]).map(
+            (v: Record<string, unknown>) => v.status
+          );
+    }
+
+    // Handle regular value fields
+    if (firstItem?.value !== undefined) {
+      return actualValue.length === 1
+        ? firstItem.value
+        : (actualValue as Record<string, unknown>[]).map(
+            (v: Record<string, unknown>) => v.value
+          );
+    }
+
+    return actualValue;
+  },
+
+  /**
+   * Compare array values using set comparison
+   */
+  compareArrayValues(
+    expectedValue: unknown[],
+    actualValue: unknown
+  ): { matches: boolean } {
+    if (!Array.isArray(actualValue)) {
+      return { matches: false };
+    }
+
+    const expectedSet = new Set(expectedValue.map((v) => String(v)));
+    const actualSet = new Set((actualValue as unknown[]).map((v) => String(v)));
+
+    return {
+      matches:
+        expectedSet.size === actualSet.size &&
+        Array.from(expectedSet).every((v) => actualSet.has(v)),
+    };
+  },
+
+  /**
+   * Compare string values with case-insensitive fallback
+   */
+  compareStringValues(
+    fieldName: string,
+    expectedValue: string,
+    actualValue: unknown
+  ): { matches: boolean; warning?: string } {
+    const actualStr = String(actualValue);
+    const matches = expectedValue === actualStr;
+
+    if (!matches && expectedValue.toLowerCase() === actualStr.toLowerCase()) {
       return {
-        matches:
-          expectedSet.size === actualSet.size &&
-          Array.from(expectedSet).every((v) => actualSet.has(v)),
+        matches: true,
+        warning: `Field "${fieldName}" case mismatch: expected "${expectedValue}", got "${actualStr}"`,
       };
     }
-    if (typeof expectedValue === 'string') {
-      const actualStr = String(unwrappedActual);
-      const matches = expectedValue === actualStr;
-      if (!matches && expectedValue.toLowerCase() === actualStr.toLowerCase()) {
-        return {
-          matches: true,
-          warning: `Field "${fieldName}" case mismatch: expected "${expectedValue}", got "${actualStr}"`,
-        };
-      }
-      return { matches };
+
+    return { matches };
+  },
+
+  /**
+   * Compare status objects (like deal stages)
+   */
+  compareStatusObjects(
+    fieldName: string,
+    expectedValue: Record<string, unknown>,
+    actualValue: unknown
+  ): { matches: boolean } | null {
+    if (!this.isStatusField(fieldName) || !('status' in expectedValue)) {
+      return null; // Not a status object comparison
     }
 
-    // Handle expected values that are status objects (like deal stages)
+    const expectedStatus = expectedValue.status;
+    const actualStr = String(actualValue);
+    return { matches: String(expectedStatus) === actualStr };
+  },
+
+  /**
+   * Compare primitive values (number, boolean, string)
+   */
+  comparePrimitiveValues(
+    expectedValue: unknown,
+    actualValue: unknown
+  ): { matches: boolean } {
+    if (typeof expectedValue === 'number') {
+      const actualNum = Number(actualValue);
+      return { matches: !isNaN(actualNum) && expectedValue === actualNum };
+    }
+
+    if (typeof expectedValue === 'boolean') {
+      const actualBool = Boolean(actualValue);
+      return { matches: expectedValue === actualBool };
+    }
+
+    // String fallback
+    return { matches: String(expectedValue) === String(actualValue) };
+  },
+
+  compareFieldValues(
+    fieldName: string,
+    expectedValue: unknown,
+    actualValue: unknown
+  ): { matches: boolean; warning?: string } {
+    // Handle null/undefined values
+    const nullCheck = this.handleNullValues(expectedValue, actualValue);
+    if (nullCheck) return nullCheck;
+
+    // Unwrap array responses from Attio API
+    const unwrappedActual = this.unwrapArrayValue(fieldName, actualValue);
+
+    // Handle array comparisons
+    if (Array.isArray(expectedValue)) {
+      return this.compareArrayValues(expectedValue, unwrappedActual);
+    }
+
+    // Handle string comparisons with case handling
+    if (typeof expectedValue === 'string') {
+      return this.compareStringValues(
+        fieldName,
+        expectedValue,
+        unwrappedActual
+      );
+    }
+
+    // Handle status objects (like deal stages)
     if (
       typeof expectedValue === 'object' &&
       expectedValue !== null &&
-      !Array.isArray(expectedValue) &&
-      'status' in expectedValue &&
-      (fieldName === 'stage' || fieldName.includes('stage'))
+      !Array.isArray(expectedValue)
     ) {
-      const expectedStatus = (expectedValue as Record<string, unknown>).status;
-      const actualStr = String(unwrappedActual);
-      return { matches: String(expectedStatus) === actualStr };
+      const statusComparison = this.compareStatusObjects(
+        fieldName,
+        expectedValue as Record<string, unknown>,
+        unwrappedActual
+      );
+      if (statusComparison) return statusComparison;
     }
-    if (typeof expectedValue === 'number') {
-      const actualNum = Number(unwrappedActual);
-      return { matches: !isNaN(actualNum) && expectedValue === actualNum };
-    }
-    if (typeof expectedValue === 'boolean') {
-      const actualBool = Boolean(unwrappedActual);
-      return { matches: expectedValue === actualBool };
-    }
-    return { matches: String(expectedValue) === String(unwrappedActual) };
+
+    // Handle primitive values (number, boolean, string fallback)
+    return this.comparePrimitiveValues(expectedValue, unwrappedActual);
   },
 };
