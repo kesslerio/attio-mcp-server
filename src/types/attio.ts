@@ -202,6 +202,18 @@ export interface AttioRecord {
 }
 
 /**
+ * Enhanced AttioRecord with validation metadata
+ * Used when validation warnings/suggestions need to be passed with the record
+ */
+export interface EnhancedAttioRecord extends AttioRecord {
+  validationMetadata?: {
+    warnings: string[];
+    suggestions: string[];
+    actualValues?: Record<string, unknown>;
+  };
+}
+
+/**
  * Interface for a batch request item
  */
 export interface BatchRequestItem<T> {

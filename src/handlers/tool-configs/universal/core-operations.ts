@@ -16,6 +16,7 @@ import {
   UniversalDetailedInfoParams,
   UniversalResourceType,
 } from './types.js';
+import { EnhancedAttioRecord } from '../../../types/attio.js';
 // Removed unused imports getAttributeSchema, getSelectOptions
 
 // Helper function to get plural form of resource type
@@ -478,7 +479,9 @@ export const createRecordConfig: UniversalToolConfig = {
  */
 export const updateRecordConfig: UniversalToolConfig = {
   name: 'update-record',
-  handler: async (params: UniversalUpdateParams): Promise<AttioRecord> => {
+  handler: async (
+    params: UniversalUpdateParams
+  ): Promise<EnhancedAttioRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'update-record',
@@ -492,7 +495,38 @@ export const updateRecordConfig: UniversalToolConfig = {
         sanitizedParams.record_data
       );
 
-      const result = await handleUniversalUpdate(sanitizedParams);
+      // Try to use enhanced validation-aware update for deals
+      let result: EnhancedAttioRecord;
+      if (sanitizedParams.resource_type === 'deals') {
+        try {
+          const { UniversalUpdateService } = await import(
+            '../../../services/UniversalUpdateService.js'
+          );
+          const enhancedResult =
+            await UniversalUpdateService.updateRecordWithValidation(
+              sanitizedParams
+            );
+
+          // Create properly typed EnhancedAttioRecord with validation metadata
+          result = {
+            ...enhancedResult.record,
+            validationMetadata: {
+              warnings: enhancedResult.validation.warnings,
+              suggestions: enhancedResult.validation.suggestions,
+              actualValues: enhancedResult.validation.actualValues,
+            },
+          } as EnhancedAttioRecord;
+        } catch (error: unknown) {
+          // Fall back to standard update if enhanced version fails
+          const standardResult = await handleUniversalUpdate(sanitizedParams);
+          result = { ...standardResult } as EnhancedAttioRecord; // No validation metadata for fallback
+        }
+      } else {
+        // Use standard update for non-deal resources
+        const standardResult = await handleUniversalUpdate(sanitizedParams);
+        result = { ...standardResult } as EnhancedAttioRecord; // No validation metadata for non-deals
+      }
+
       try {
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } = await import(
@@ -516,12 +550,18 @@ export const updateRecordConfig: UniversalToolConfig = {
     }
   },
   formatResult: (
-    record: AttioRecord,
+    record: EnhancedAttioRecord,
     resourceType?: UniversalResourceType
   ): string => {
     if (!record) {
       return 'Record update failed';
     }
+
+    // Extract validation metadata from the properly typed EnhancedAttioRecord
+    const metadata = record.validationMetadata || {
+      warnings: [],
+      suggestions: [],
+    };
 
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
@@ -559,7 +599,65 @@ export const updateRecordConfig: UniversalToolConfig = {
 
     const id = String(record.id?.record_id || 'unknown');
 
-    return `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
+    // Check if there are validation warnings
+    const hasWarnings = metadata?.warnings && metadata.warnings.length > 0;
+    const hasSuggestions =
+      metadata?.suggestions && metadata.suggestions.length > 0;
+
+    // Base success message - conditional based on warnings
+    let result: string;
+    if (hasWarnings) {
+      result = `⚠️  Updated ${resourceTypeName} with warnings: ${name} (ID: ${id})`;
+    } else {
+      result = `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
+    }
+
+    // Add warnings section if present
+    if (hasWarnings) {
+      result += '\n\nWarnings:';
+      metadata!.warnings.forEach((warning: string) => {
+        result += `\n• ${warning}`;
+      });
+    }
+
+    // Add suggestions section if present (but not if they're just duplicates of warnings)
+    if (
+      hasSuggestions &&
+      metadata!.suggestions.some((s: string) => !metadata!.warnings.includes(s))
+    ) {
+      result += hasWarnings ? '\n' : '\n\n';
+      result += 'Suggestions:';
+      metadata!.suggestions
+        .filter((s: string) => !metadata!.warnings.includes(s))
+        .forEach((suggestion: string) => {
+          result += `\n• ${suggestion}`;
+        });
+    }
+
+    // Add actual persisted values section if there are warnings and actual values
+    if (
+      hasWarnings &&
+      metadata?.actualValues &&
+      Object.keys(metadata.actualValues).length > 0
+    ) {
+      result += '\n\nActual persisted values:';
+      Object.entries(metadata.actualValues).forEach(([key, value]) => {
+        // Format value for display, handling arrays and objects
+        let displayValue: string;
+        if (Array.isArray(value) && value.length > 0) {
+          // For Attio field arrays, try to extract the value
+          displayValue =
+            value[0]?.value || value[0]?.full_name || JSON.stringify(value);
+        } else if (typeof value === 'object' && value !== null) {
+          displayValue = JSON.stringify(value);
+        } else {
+          displayValue = String(value);
+        }
+        result += `\n• ${key}: ${displayValue}`;
+      });
+    }
+
+    return result;
   },
 };
 

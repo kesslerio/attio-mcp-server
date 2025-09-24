@@ -29,6 +29,7 @@ vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
 }));
 vi.mock('../../src/config/deal-defaults.js', () => ({
   applyDealDefaultsWithValidation: vi.fn(),
+  applyDealDefaultsWithValidationLegacy: vi.fn(),
   getDealDefaults: vi.fn(() => ({ stage: 'default-stage' })),
   validateDealInput: vi.fn(() => ({
     isValid: true,
@@ -142,8 +143,13 @@ describe('UniversalCreateService', () => {
         values: { name: 'Test Deal' },
       } as any;
       const mockDealData = { name: 'Test Deal', stage: 'qualified' } as any;
+      const mockDealValidation = {
+        dealData: mockDealData,
+        warnings: [],
+        suggestions: [],
+      };
       vi.mocked(applyDealDefaultsWithValidation).mockResolvedValue(
-        mockDealData
+        mockDealValidation
       );
       vi.mocked(createObjectRecord).mockResolvedValue(mockDeal);
       const result = await UniversalCreateService.createRecord({
@@ -198,9 +204,19 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'deal_123' },
         values: { name: 'Test Deal' },
       } as any;
+      const originalValidation = {
+        dealData: originalData,
+        warnings: ['Invalid stage warning'],
+        suggestions: ['Use default-stage'],
+      };
+      const defaultValidation = {
+        dealData: defaultData,
+        warnings: [],
+        suggestions: [],
+      };
       vi.mocked(applyDealDefaultsWithValidation)
-        .mockResolvedValueOnce(originalData)
-        .mockResolvedValueOnce(defaultData);
+        .mockResolvedValueOnce(originalValidation)
+        .mockResolvedValueOnce(defaultValidation);
       vi.mocked(createObjectRecord)
         .mockRejectedValueOnce(new Error('Cannot find Status "invalid-stage"'))
         .mockResolvedValueOnce(mockDeal);

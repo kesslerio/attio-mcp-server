@@ -51,8 +51,14 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(mockGet).not.toHaveBeenCalled();
 
       // Verify data was still processed (defaults applied)
-      expect(result.name).toEqual([{ value: 'Test Deal' }]);
-      expect(result.stage).toEqual([{ status: 'InvalidStage' }]);
+      expect(result.dealData.name).toEqual([{ value: 'Test Deal' }]);
+      expect(result.dealData.stage).toEqual([{ status: 'InvalidStage' }]);
+
+      // Verify structured result format
+      expect(result.warnings).toBeDefined();
+      expect(result.suggestions).toBeDefined();
+      expect(Array.isArray(result.warnings)).toBe(true);
+      expect(Array.isArray(result.suggestions)).toBe(true);
     });
 
     it('should make API call when skipValidation is false', async () => {
@@ -71,8 +77,8 @@ describe('Deal Defaults - PR #389 Fix', () => {
       const result = await applyDealDefaultsWithValidation(dealData, false);
 
       // Verify data was processed
-      expect(result.name).toEqual([{ value: 'Test Deal' }]);
-      expect(result.stage).toEqual([{ status: 'Interested' }]);
+      expect(result.dealData.name).toEqual([{ value: 'Test Deal' }]);
+      expect(result.dealData.stage).toEqual([{ status: 'Interested' }]);
     });
   });
 
@@ -87,7 +93,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(mockGet).not.toHaveBeenCalled();
 
       // Should return original stage when no cache and can't make API call
-      expect(result).toBe('SomeStage');
+      expect(result.validatedStage).toBe('SomeStage');
     });
 
     it('should cache results to prevent repeated API calls', async () => {
@@ -100,15 +106,15 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // First call - should fall back to common stages
       const result1 = await validateDealStage('Demo', false);
       // With new implementation, 'Demo' should be found in common stages
-      expect(result1).toBe('Demo');
+      expect(result1.validatedStage).toBe('Demo');
 
       // Second call should also work with fallback
       const result2 = await validateDealStage('Interested', false);
-      expect(result2).toBe('Interested');
+      expect(result2.validatedStage).toBe('Interested');
 
       // Invalid stage should fall back to default
       const result3 = await validateDealStage('NonExistentStage', false);
-      expect(result3).toBe('Interested'); // Falls back to default
+      expect(result3.validatedStage).toBe('Interested'); // Falls back to default
     });
   });
 
@@ -125,7 +131,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // First attempt with validation (normal path)
       const attempt1 = await applyDealDefaultsWithValidation(dealData, false);
       // With new implementation, invalid stages are corrected to default
-      expect(attempt1.stage).toEqual([{ status: 'Interested' }]);
+      expect(attempt1.dealData.stage).toEqual([{ status: 'Interested' }]);
 
       // Simulate error occurred, now in error recovery path
       // This should NOT make API calls due to skipValidation=true
@@ -141,7 +147,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       );
 
       // Verify the error path processed correctly
-      expect(attempt2.stage).toEqual([{ status: defaults.stage }]);
+      expect(attempt2.dealData.stage).toEqual([{ status: defaults.stage }]);
     });
   });
 
@@ -151,17 +157,17 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // First call - may populate cache
       const result1 = await validateDealStage('Demo', false);
-      expect(result1).toBe('Demo'); // Should find in common stages
+      expect(result1.validatedStage).toBe('Demo'); // Should find in common stages
 
       // Clear caches
       clearDealCaches();
 
       // Second call after cache clear - should still work with fallback
       const result2 = await validateDealStage('Demo', false);
-      expect(result2).toBe('Demo'); // Should still work
+      expect(result2.validatedStage).toBe('Demo'); // Should still work
 
       // Test that cache clearing doesn't break functionality
-      expect(result1).toBe(result2);
+      expect(result1.validatedStage).toBe(result2.validatedStage);
     });
 
     it('should pre-warm cache without errors', async () => {
@@ -235,7 +241,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       const result = await validateDealStage('Demo', false);
 
       expect(mockGetStatusOptions).toHaveBeenCalledWith('deals', 'stage');
-      expect(result).toBe('Demo'); // Should return the valid stage
+      expect(result.validatedStage).toBe('Demo'); // Should return the valid stage
     });
 
     it('should filter out archived stages from API response', async () => {
@@ -250,7 +256,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // Test with archived stage - should not find it
       const result = await validateDealStage('Archived Stage', false);
 
-      expect(result).toBe('Interested'); // Should fall back to default
+      expect(result.validatedStage).toBe('Interested'); // Should fall back to default
     });
 
     it('should use common fallback stages when API fails', async () => {
@@ -263,7 +269,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       const result = await validateDealStage('Demo', false);
 
       // Should fall back to common stages and find "Demo"
-      expect(result).toBe('Demo');
+      expect(result.validatedStage).toBe('Demo');
     });
 
     it('should provide better error messages with available stages', async () => {
@@ -278,7 +284,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // Test with invalid stage to trigger warning message
       const result = await validateDealStage('InvalidStage', false);
 
-      expect(result).toBe('Interested'); // Should fall back to default
+      expect(result.validatedStage).toBe('Interested'); // Should fall back to default
     });
 
     it('should throw error in strict validation mode', async () => {
@@ -330,7 +336,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // With empty API response, it should fall back to common stages where 'Demo' exists
       // or fall back to 'Interested' if the fallback logic isn't working as expected
-      expect(['Demo', 'Interested']).toContain(result);
+      expect(['Demo', 'Interested']).toContain(result.validatedStage);
     });
   });
 
@@ -359,7 +365,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       const result = await validateDealStage('Demo', false);
 
       // Should fall back to common stages and find "Demo"
-      expect(result).toBe('Demo');
+      expect(result.validatedStage).toBe('Demo');
     });
 
     it('should respect cache TTL boundaries', async () => {
@@ -372,12 +378,12 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // First call should populate cache
       const result1 = await validateDealStage('Cached Stage', false);
-      expect(result1).toBe('Cached Stage');
+      expect(result1.validatedStage).toBe('Cached Stage');
       expect(mockGetStatusOptions).toHaveBeenCalledTimes(1);
 
       // Second call within TTL should use cache
       const result2 = await validateDealStage('Cached Stage', false);
-      expect(result2).toBe('Cached Stage');
+      expect(result2.validatedStage).toBe('Cached Stage');
       expect(mockGetStatusOptions).toHaveBeenCalledTimes(1); // No additional call
 
       // Test that cache respects TTL (we can't easily test time passage,
@@ -386,7 +392,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // Third call after cache clear should make new API call
       const result3 = await validateDealStage('Cached Stage', false);
-      expect(result3).toBe('Cached Stage');
+      expect(result3.validatedStage).toBe('Cached Stage');
       expect(mockGetStatusOptions).toHaveBeenCalledTimes(2); // New API call
     });
 
@@ -407,7 +413,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // All should return the same result
       results.forEach((result) => {
-        expect(result).toBe('Concurrent Stage');
+        expect(result.validatedStage).toBe('Concurrent Stage');
       });
 
       // API should be called but with minimal calls (allowing for some race conditions)
@@ -431,11 +437,11 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // Test stage validation with valid stage from malformed response
       const result = await validateDealStage('Valid Stage', false);
-      expect(result).toBe('Valid Stage');
+      expect(result.validatedStage).toBe('Valid Stage');
 
       // Test with invalid stage - should fall back to default
       const result2 = await validateDealStage('Invalid Stage', false);
-      expect(result2).toBe('Interested');
+      expect(result2.validatedStage).toBe('Interested');
     });
 
     it('should validate with mixed case stage names', async () => {
@@ -467,7 +473,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       for (const testCase of testCases) {
         const result = await validateDealStage(testCase.input, false);
-        expect(result).toBe(testCase.expected);
+        expect(result.validatedStage).toBe(testCase.expected);
       }
     });
   });
