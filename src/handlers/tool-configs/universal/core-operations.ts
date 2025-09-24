@@ -16,6 +16,7 @@ import {
   UniversalDetailedInfoParams,
   UniversalResourceType,
 } from './types.js';
+import { EnhancedAttioRecord } from '../../../types/attio.js';
 // Removed unused imports getAttributeSchema, getSelectOptions
 
 // Helper function to get plural form of resource type
@@ -478,7 +479,9 @@ export const createRecordConfig: UniversalToolConfig = {
  */
 export const updateRecordConfig: UniversalToolConfig = {
   name: 'update-record',
-  handler: async (params: UniversalUpdateParams): Promise<AttioRecord> => {
+  handler: async (
+    params: UniversalUpdateParams
+  ): Promise<EnhancedAttioRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'update-record',
@@ -493,7 +496,7 @@ export const updateRecordConfig: UniversalToolConfig = {
       );
 
       // Try to use enhanced validation-aware update for deals
-      let result: AttioRecord;
+      let result: EnhancedAttioRecord;
       if (sanitizedParams.resource_type === 'deals') {
         try {
           const { UniversalUpdateService } = await import(
@@ -504,20 +507,24 @@ export const updateRecordConfig: UniversalToolConfig = {
               sanitizedParams
             );
 
-          // Store validation metadata in the record for formatResult to access
-          result = enhancedResult.record;
-          (result as any).__validationMetadata = {
-            warnings: enhancedResult.validation.warnings,
-            suggestions: enhancedResult.validation.suggestions,
-            actualValues: enhancedResult.validation.actualValues,
-          };
+          // Create properly typed EnhancedAttioRecord with validation metadata
+          result = {
+            ...enhancedResult.record,
+            validationMetadata: {
+              warnings: enhancedResult.validation.warnings,
+              suggestions: enhancedResult.validation.suggestions,
+              actualValues: enhancedResult.validation.actualValues,
+            },
+          } as EnhancedAttioRecord;
         } catch (error: unknown) {
           // Fall back to standard update if enhanced version fails
-          result = await handleUniversalUpdate(sanitizedParams);
+          const standardResult = await handleUniversalUpdate(sanitizedParams);
+          result = { ...standardResult } as EnhancedAttioRecord; // No validation metadata for fallback
         }
       } else {
         // Use standard update for non-deal resources
-        result = await handleUniversalUpdate(sanitizedParams);
+        const standardResult = await handleUniversalUpdate(sanitizedParams);
+        result = { ...standardResult } as EnhancedAttioRecord; // No validation metadata for non-deals
       }
 
       try {
@@ -543,25 +550,18 @@ export const updateRecordConfig: UniversalToolConfig = {
     }
   },
   formatResult: (
-    record: AttioRecord,
-    resourceType?: UniversalResourceType,
-    validationMetadata?: {
-      warnings: string[];
-      suggestions: string[];
-      actualValues?: Record<string, unknown>;
-    }
+    record: EnhancedAttioRecord,
+    resourceType?: UniversalResourceType
   ): string => {
     if (!record) {
       return 'Record update failed';
     }
 
-    // Extract validation metadata from record if not provided directly
-    const recordWithMetadata = record as any;
-    const metadata = validationMetadata ||
-      recordWithMetadata.__validationMetadata || {
-        warnings: [],
-        suggestions: [],
-      };
+    // Extract validation metadata from the properly typed EnhancedAttioRecord
+    const metadata = record.validationMetadata || {
+      warnings: [],
+      suggestions: [],
+    };
 
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)

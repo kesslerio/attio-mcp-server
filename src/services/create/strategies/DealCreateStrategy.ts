@@ -4,12 +4,13 @@ import type {
   CreateStrategyParams,
 } from './BaseCreateStrategy.js';
 import {
-  applyDealDefaultsWithValidationLegacy,
+  applyDealDefaultsWithValidation,
   validateDealInput,
 } from '../../../config/deal-defaults.js';
 import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
 import { createObjectRecord as createObjectRecordApi } from '../../../objects/records/index.js';
 import { getDealDefaults } from '../../../config/deal-defaults.js';
+import { debug } from '../../../utils/logger.js';
 
 export class DealCreateStrategy implements CreateStrategy {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {
@@ -25,7 +26,18 @@ export class DealCreateStrategy implements CreateStrategy {
     dealData = convertAttributeFormats('deals', dealData);
 
     // Validate + apply configured defaults (proactive stage validation)
-    dealData = await applyDealDefaultsWithValidationLegacy(dealData, false);
+    const dealValidation = await applyDealDefaultsWithValidation(
+      dealData,
+      false
+    );
+    dealData = dealValidation.dealData;
+
+    // Log validation warnings for debugging (create operations are less strict about user warnings)
+    if (dealValidation.warnings.length > 0) {
+      debug('DealCreateStrategy', 'Deal validation warnings during create', {
+        warnings: dealValidation.warnings,
+      });
+    }
 
     try {
       return (await createObjectRecordApi(

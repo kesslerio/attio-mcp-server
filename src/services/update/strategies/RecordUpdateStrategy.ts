@@ -1,11 +1,13 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import { updateObjectRecord } from '../../../objects/records/index.js';
-import { applyDealDefaultsWithValidationLegacy } from '../../../config/deal-defaults.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 
 /**
  * RecordUpdateStrategy - Handles updates for generic records and deals
+ *
+ * NOTE: Deal validation is handled by UniversalUpdateService before calling this strategy.
+ * This strategy only handles the actual record update without duplicate processing.
  */
 export class RecordUpdateStrategy implements UpdateStrategy {
   async update(
@@ -14,12 +16,9 @@ export class RecordUpdateStrategy implements UpdateStrategy {
     resourceType: UniversalResourceType,
     context?: Record<string, unknown>
   ): Promise<AttioRecord> {
+    // For deals, use 'deals' as the object slug since validation is already handled upstream
     if (resourceType === ('deals' as unknown as UniversalResourceType)) {
-      const updatedDealData = await applyDealDefaultsWithValidationLegacy(
-        values,
-        false
-      );
-      return updateObjectRecord('deals', recordId, updatedDealData);
+      return updateObjectRecord('deals', recordId, values);
     }
 
     // Default to 'records' and allow objectSlug override via context
