@@ -4,7 +4,7 @@ import type {
   CreateStrategyParams,
 } from './BaseCreateStrategy.js';
 import {
-  applyDealDefaultsWithValidation,
+  applyDealDefaultsWithValidationLegacy,
   validateDealInput,
 } from '../../../config/deal-defaults.js';
 import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
@@ -25,7 +25,7 @@ export class DealCreateStrategy implements CreateStrategy {
     dealData = convertAttributeFormats('deals', dealData);
 
     // Validate + apply configured defaults (proactive stage validation)
-    dealData = await applyDealDefaultsWithValidation(dealData, false);
+    dealData = await applyDealDefaultsWithValidationLegacy(dealData, false);
 
     try {
       return (await createObjectRecordApi(

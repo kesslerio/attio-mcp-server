@@ -402,8 +402,88 @@ function getCommonDealStages(): string[] {
 }
 
 /**
+ * Result of deal stage validation
+ */
+export interface DealStageValidationResult {
+  validatedStage: string | undefined;
+  warnings: string[];
+  suggestions: string[];
+}
+
+/**
+ * Find close matches for invalid stage names using fuzzy matching
+ */
+function getStageSuggestions(
+  invalidStage: string,
+  availableStages: string[]
+): string[] {
+  const lowercaseInvalid = invalidStage.toLowerCase();
+  const suggestions: string[] = [];
+
+  // Find exact case-insensitive matches first
+  const exactMatch = availableStages.find(
+    (stage) => stage.toLowerCase() === lowercaseInvalid
+  );
+  if (exactMatch) {
+    suggestions.push(exactMatch);
+    return suggestions;
+  }
+
+  // Find stages that contain the invalid stage or vice versa
+  const partialMatches = availableStages.filter((stage) => {
+    const lowercaseStage = stage.toLowerCase();
+    return (
+      lowercaseStage.includes(lowercaseInvalid) ||
+      lowercaseInvalid.includes(lowercaseStage)
+    );
+  });
+
+  if (partialMatches.length > 0) {
+    suggestions.push(...partialMatches.slice(0, 3)); // Limit to 3 suggestions
+    return suggestions;
+  }
+
+  // Levenshtein distance for close matches
+  const calculateDistance = (str1: string, str2: string): number => {
+    const matrix = Array(str2.length + 1)
+      .fill(null)
+      .map(() => Array(str1.length + 1).fill(null));
+
+    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+
+    for (let j = 1; j <= str2.length; j++) {
+      for (let i = 1; i <= str1.length; i++) {
+        const substitutionCost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j - 1][i] + 1, // deletion
+          matrix[j][i - 1] + 1, // insertion
+          matrix[j - 1][i - 1] + substitutionCost // substitution
+        );
+      }
+    }
+
+    return matrix[str2.length][str1.length];
+  };
+
+  // Find stages with small edit distance (similar spelling)
+  const closeMatches = availableStages
+    .map((stage) => ({
+      stage,
+      distance: calculateDistance(lowercaseInvalid, stage.toLowerCase()),
+    }))
+    .filter(({ distance }) => distance <= 3) // Allow up to 3 character differences
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 3) // Limit to 3 suggestions
+    .map(({ stage }) => stage);
+
+  suggestions.push(...closeMatches);
+  return suggestions;
+}
+
+/**
  * Validate and correct deal stage
- * Returns the validated stage or the default if invalid
+ * Returns validation result with warnings and suggestions
  *
  * @param stage - The stage to validate
  * @param skipApiCall - If true, skip API call and use cached data only
@@ -411,9 +491,13 @@ function getCommonDealStages(): string[] {
 export async function validateDealStage(
   stage: string | undefined,
   skipApiCall: boolean = false
-): Promise<string | undefined> {
+): Promise<DealStageValidationResult> {
   if (!stage) {
-    return undefined;
+    return {
+      validatedStage: undefined,
+      warnings: [],
+      suggestions: [],
+    };
   }
 
   try {
@@ -426,7 +510,11 @@ export async function validateDealStage(
         availableStages = stageCache;
       } else {
         // No cache available and can't make API call, return original
-        return stage;
+        return {
+          validatedStage: stage,
+          warnings: ['Unable to validate stage - no cached data available'],
+          suggestions: [],
+        };
       }
     } else {
       availableStages = await getAvailableDealStages();
@@ -438,7 +526,11 @@ export async function validateDealStage(
     );
 
     if (validStage) {
-      return validStage; // Return the correctly cased version
+      return {
+        validatedStage: validStage, // Return the correctly cased version
+        warnings: [],
+        suggestions: [],
+      };
     }
 
     // Stage not found - either fail or use default based on strict validation mode
@@ -448,7 +540,23 @@ export async function validateDealStage(
         ? availableStages.join(', ')
         : 'Unable to fetch available stages from API';
 
-    const errorMessage = `Deal stage "${stage}" not found. Available stages: ${availableStagesText}`;
+    // Get suggestions for the invalid stage
+    const stageSuggestions = getStageSuggestions(stage, availableStages);
+
+    // Build warning message with suggestions
+    let warningMessage = `Deal stage "${stage}" not found. Updated to default "${defaults.stage}".`;
+    if (stageSuggestions.length > 0) {
+      warningMessage += ` Did you mean "${stageSuggestions[0]}"?`;
+    }
+
+    const result: DealStageValidationResult = {
+      validatedStage: defaults.stage,
+      warnings: [warningMessage],
+      suggestions: [
+        `Available stages: ${availableStagesText}`,
+        ...stageSuggestions.map((s) => `"${s}"`),
+      ],
+    };
 
     // If strict validation is enabled, throw an error instead of silent fallback
     // WARNING: This environment variable changes runtime behavior
@@ -457,22 +565,32 @@ export async function validateDealStage(
       const { UniversalValidationError, ErrorType } = await import(
         '../handlers/tool-configs/universal/schemas.js'
       );
-      throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
-        field: 'stage',
-        suggestion: `Use one of the available stages: ${availableStagesText}`,
-      });
+      throw new UniversalValidationError(
+        `Deal stage "${stage}" not found. Available stages: ${availableStagesText}`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'stage',
+          suggestion:
+            stageSuggestions.length > 0
+              ? `Did you mean "${stageSuggestions[0]}"? Available stages: ${availableStagesText}`
+              : `Use one of the available stages: ${availableStagesText}`,
+        }
+      );
     }
 
-    // Otherwise, log warning and return default (existing behavior)
-    warn(
-      'deal-defaults',
-      `${errorMessage}. Using default: "${defaults.stage}"`
-    );
+    // Also log warning for backward compatibility
+    warn('deal-defaults', warningMessage);
 
-    return defaults.stage;
+    return result;
   } catch (err: unknown) {
     error('deal-defaults', 'Stage validation failed', err);
-    return stage; // Return original stage if validation fails
+    return {
+      validatedStage: stage, // Return original stage if validation fails
+      warnings: [
+        `Stage validation failed: ${err instanceof Error ? err.message : String(err)}`,
+      ],
+      suggestions: [],
+    };
   }
 }
 
@@ -496,7 +614,17 @@ export async function getAvailableStagesForErrors(): Promise<string[]> {
 }
 
 /**
+ * Enhanced deal defaults result with validation metadata
+ */
+export interface DealDefaultsValidationResult {
+  dealData: Record<string, unknown>;
+  warnings: string[];
+  suggestions: string[];
+}
+
+/**
  * Enhanced apply deal defaults with stage validation
+ * Returns both processed data and validation warnings for user feedback
  *
  * @param recordData - The deal data to process
  * @param skipValidation - Skip API validation (used in error paths to prevent cascading failures)
@@ -504,8 +632,13 @@ export async function getAvailableStagesForErrors(): Promise<string[]> {
 export async function applyDealDefaultsWithValidation(
   recordData: Record<string, unknown>,
   skipValidation: boolean = false
-): Promise<Record<string, unknown>> {
+): Promise<DealDefaultsValidationResult> {
   const dealData = applyDealDefaults(recordData);
+  const result: DealDefaultsValidationResult = {
+    dealData,
+    warnings: [],
+    suggestions: [],
+  };
 
   // Validate stage if present
   if (
@@ -514,14 +647,33 @@ export async function applyDealDefaultsWithValidation(
     dealData.stage[0]?.status
   ) {
     // Pass skipValidation flag to validateDealStage to control API calls
-    const validatedStage = await validateDealStage(
+    const stageValidation = await validateDealStage(
       dealData.stage[0].status,
       skipValidation // Skip API calls when in error paths
     );
-    if (validatedStage) {
-      dealData.stage = [{ status: validatedStage }];
+
+    if (stageValidation.validatedStage) {
+      dealData.stage = [{ status: stageValidation.validatedStage }];
     }
+
+    // Collect validation warnings and suggestions
+    result.warnings.push(...stageValidation.warnings);
+    result.suggestions.push(...stageValidation.suggestions);
   }
 
-  return dealData;
+  return result;
+}
+
+/**
+ * Backward compatible version that returns only the data (for existing callers)
+ */
+export async function applyDealDefaultsWithValidationLegacy(
+  recordData: Record<string, unknown>,
+  skipValidation: boolean = false
+): Promise<Record<string, unknown>> {
+  const result = await applyDealDefaultsWithValidation(
+    recordData,
+    skipValidation
+  );
+  return result.dealData;
 }

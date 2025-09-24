@@ -1,6 +1,6 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import { updateObjectRecord } from '../../../objects/records/index.js';
-import { applyDealDefaultsWithValidation } from '../../../config/deal-defaults.js';
+import { applyDealDefaultsWithValidationLegacy } from '../../../config/deal-defaults.js';
 import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 
@@ -15,7 +15,7 @@ export class RecordUpdateStrategy implements UpdateStrategy {
     context?: Record<string, unknown>
   ): Promise<AttioRecord> {
     if (resourceType === ('deals' as unknown as UniversalResourceType)) {
-      const updatedDealData = await applyDealDefaultsWithValidation(
+      const updatedDealData = await applyDealDefaultsWithValidationLegacy(
         values,
         false
       );

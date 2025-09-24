@@ -492,7 +492,34 @@ export const updateRecordConfig: UniversalToolConfig = {
         sanitizedParams.record_data
       );
 
-      const result = await handleUniversalUpdate(sanitizedParams);
+      // Try to use enhanced validation-aware update for deals
+      let result: AttioRecord;
+      if (sanitizedParams.resource_type === 'deals') {
+        try {
+          const { UniversalUpdateService } = await import(
+            '../../../services/UniversalUpdateService.js'
+          );
+          const enhancedResult =
+            await UniversalUpdateService.updateRecordWithValidation(
+              sanitizedParams
+            );
+
+          // Store validation metadata in the record for formatResult to access
+          result = enhancedResult.record;
+          (result as any).__validationMetadata = {
+            warnings: enhancedResult.validation.warnings,
+            suggestions: enhancedResult.validation.suggestions,
+            actualValues: enhancedResult.validation.actualValues,
+          };
+        } catch (error: unknown) {
+          // Fall back to standard update if enhanced version fails
+          result = await handleUniversalUpdate(sanitizedParams);
+        }
+      } else {
+        // Use standard update for non-deal resources
+        result = await handleUniversalUpdate(sanitizedParams);
+      }
+
       try {
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } = await import(
@@ -517,11 +544,24 @@ export const updateRecordConfig: UniversalToolConfig = {
   },
   formatResult: (
     record: AttioRecord,
-    resourceType?: UniversalResourceType
+    resourceType?: UniversalResourceType,
+    validationMetadata?: {
+      warnings: string[];
+      suggestions: string[];
+      actualValues?: Record<string, unknown>;
+    }
   ): string => {
     if (!record) {
       return 'Record update failed';
     }
+
+    // Extract validation metadata from record if not provided directly
+    const recordWithMetadata = record as any;
+    const metadata = validationMetadata ||
+      recordWithMetadata.__validationMetadata || {
+        warnings: [],
+        suggestions: [],
+      };
 
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
@@ -559,7 +599,42 @@ export const updateRecordConfig: UniversalToolConfig = {
 
     const id = String(record.id?.record_id || 'unknown');
 
-    return `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
+    // Check if there are validation warnings
+    const hasWarnings = metadata?.warnings && metadata.warnings.length > 0;
+    const hasSuggestions =
+      metadata?.suggestions && metadata.suggestions.length > 0;
+
+    // Base success message - conditional based on warnings
+    let result: string;
+    if (hasWarnings) {
+      result = `⚠️  Updated ${resourceTypeName} with warnings: ${name} (ID: ${id})`;
+    } else {
+      result = `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
+    }
+
+    // Add warnings section if present
+    if (hasWarnings) {
+      result += '\n\nWarnings:';
+      metadata!.warnings.forEach((warning: string) => {
+        result += `\n• ${warning}`;
+      });
+    }
+
+    // Add suggestions section if present (but not if they're just duplicates of warnings)
+    if (
+      hasSuggestions &&
+      metadata!.suggestions.some((s: string) => !metadata!.warnings.includes(s))
+    ) {
+      result += hasWarnings ? '\n' : '\n\n';
+      result += 'Suggestions:';
+      metadata!.suggestions
+        .filter((s: string) => !metadata!.warnings.includes(s))
+        .forEach((suggestion: string) => {
+          result += `\n• ${suggestion}`;
+        });
+    }
+
+    return result;
   },
 };
 

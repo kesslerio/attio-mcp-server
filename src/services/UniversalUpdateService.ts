@@ -51,6 +51,23 @@ import {
 // Import services
 import { ValidationService } from './ValidationService.js';
 
+/**
+ * Validation result containing warnings and actual persisted values
+ */
+export interface ValidationResult {
+  warnings: string[];
+  actualValues: Record<string, unknown>;
+  suggestions: string[];
+}
+
+/**
+ * Enhanced update result that includes validation metadata
+ */
+export interface EnhancedUpdateResult {
+  record: AttioRecord;
+  validation: ValidationResult;
+}
+
 // Import field mapping utilities
 import {
   mapRecordFields,
@@ -78,6 +95,72 @@ import { validateRecordFields } from '../utils/validation-utils.js';
  * while maintaining the flexibility required for varied API response structures.
  */
 export class UniversalUpdateService {
+  /**
+   * Enhanced update method that returns validation metadata
+   */
+  static async updateRecordWithValidation(
+    params: UniversalUpdateParams
+  ): Promise<EnhancedUpdateResult> {
+    // Validate resource type is supported
+    const validResourceTypes = Object.values(UniversalResourceType);
+    if (!validResourceTypes.includes(params.resource_type)) {
+      throw new UniversalValidationError(
+        `Unsupported resource type: ${params.resource_type}`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'resource_type',
+          suggestion: `Valid resource types are: ${validResourceTypes.join(
+            ', '
+          )}`,
+        }
+      );
+    }
+
+    try {
+      return await this._updateRecordInternalWithValidation(params);
+    } catch (error: unknown) {
+      // Check if this is already a structured HTTP response - if so, pass it through unchanged
+      if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        'body' in error
+      ) {
+        throw error; // Pass through HTTP-like errors unchanged
+      }
+
+      // Handle TypeError exceptions that occur from malformed data
+      if (
+        error instanceof TypeError &&
+        error.message.includes('Cannot read properties of undefined')
+      ) {
+        // For TypeErrors caused by malformed data structure, return 404 for tasks
+        const { resource_type, record_id } = params;
+        if (resource_type === UniversalResourceType.TASKS) {
+          // Using shared error creation utility for consistency
+          throw createNotFoundError(resource_type, record_id);
+        }
+      }
+
+      // Also handle wrapped TypeErrors from MockService
+      if (
+        error instanceof Error &&
+        error.message.includes(
+          'Failed to update task: Cannot read properties of undefined'
+        )
+      ) {
+        const { resource_type, record_id } = params;
+        if (resource_type === UniversalResourceType.TASKS) {
+          // Using shared error creation utility for consistency
+          throw createNotFoundError(resource_type, record_id);
+        }
+      }
+
+      // Re-throw all other errors with cause preserved
+      throw error;
+    }
+  }
+
   static async updateRecord(
     params: UniversalUpdateParams
   ): Promise<AttioRecord> {
@@ -139,6 +222,156 @@ export class UniversalUpdateService {
       // Re-throw all other errors with cause preserved
       throw error;
     }
+  }
+
+  /**
+   * Internal update record implementation with validation tracking
+   */
+  private static async _updateRecordInternalWithValidation(
+    params: UniversalUpdateParams
+  ): Promise<EnhancedUpdateResult> {
+    const validationResult: ValidationResult = {
+      warnings: [],
+      actualValues: {},
+      suggestions: [],
+    };
+
+    const { resource_type, record_id, record_data } = params;
+
+    // Handle edge case where test uses 'data' instead of 'record_data'
+    /**
+     * **Type Safety Note**: Using structured types instead of unknown casting
+     * to handle legacy parameter formats while maintaining type safety.
+     */
+    type ParamsWithLegacy = { data?: Record<string, unknown> };
+    const legacyData = (params as ParamsWithLegacy).data;
+    const actualRecordData = (record_data ?? legacyData) as
+      | DataPayload
+      | undefined;
+
+    // Enhanced null-safety: Guard against undefined values access
+    /**
+     * **Record<string, unknown> Rationale**: Using Record<string, unknown> instead of any
+     * ensures type safety while allowing dynamic property access for API data structures.
+     * This prevents runtime errors while maintaining flexibility for varied data formats.
+     */
+    const raw: Record<string, unknown> =
+      actualRecordData && typeof actualRecordData === 'object'
+        ? actualRecordData
+        : {};
+    const values = raw.values ?? raw;
+
+    // Pre-validate fields and provide helpful suggestions (less strict for updates)
+    const fieldValidation = validateFields(
+      resource_type,
+      values as Record<string, unknown>
+    );
+    if (fieldValidation.warnings.length > 0) {
+      validationResult.warnings.push(...fieldValidation.warnings);
+      // Use structured logging for field validation warnings
+      debug('UniversalUpdateService', 'Field validation warnings', {
+        warnings: fieldValidation.warnings.join('\n'),
+      });
+    }
+    if (fieldValidation.suggestions.length > 0) {
+      validationResult.suggestions.push(...fieldValidation.suggestions);
+      const truncated = ValidationService.truncateSuggestions(
+        fieldValidation.suggestions
+      );
+      debug('UniversalUpdateService', 'Field suggestions:', {
+        suggestions: truncated.join('\n'),
+      });
+    }
+
+    // Apply deal-specific validation for deals
+    if (resource_type === UniversalResourceType.DEALS) {
+      try {
+        const { applyDealDefaultsWithValidation } = await import(
+          '../config/deal-defaults.js'
+        );
+
+        const dealValidation = await applyDealDefaultsWithValidation(
+          values as Record<string, unknown>,
+          false // Don't skip API validation for user requests
+        );
+
+        // Update values with validated deal data
+        Object.assign(values, dealValidation.dealData);
+
+        // Collect deal-specific warnings and suggestions
+        validationResult.warnings.push(...dealValidation.warnings);
+        validationResult.suggestions.push(...dealValidation.suggestions);
+
+        debug('UniversalUpdateService', 'Deal validation applied', {
+          warnings: dealValidation.warnings,
+          suggestions: dealValidation.suggestions,
+        });
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        validationResult.warnings.push(
+          `Deal validation warning: ${errorMessage}`
+        );
+        debug('UniversalUpdateService', 'Deal validation failed', {
+          error: errorMessage,
+        });
+      }
+    }
+
+    // Continue with the rest of the update process using existing logic
+    const record = await this._updateRecordInternal(params);
+
+    // Store actual values for comparison
+    validationResult.actualValues = record.values || {};
+
+    // Capture field persistence verification warnings if enabled
+    if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
+      try {
+        // Reconstruct sanitized data for verification
+        const { mapped: mappedData } = await mapRecordFields(
+          resource_type,
+          values as Record<string, unknown>
+        );
+        const attioPayload = { values: mappedData };
+        const { UpdateValidation } = await import(
+          './update/UpdateValidation.js'
+        );
+        const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
+          attioPayload.values
+        );
+
+        const verification = await UpdateValidation.verifyFieldPersistence(
+          resource_type,
+          record_id,
+          sanitizedData
+        );
+
+        // Add field persistence warnings to validation result
+        if (verification.warnings.length > 0) {
+          validationResult.warnings.push(...verification.warnings);
+        }
+
+        if (!verification.verified) {
+          // Add discrepancies as warnings for user visibility
+          validationResult.warnings.push(
+            ...verification.discrepancies.map(
+              (discrepancy) => `Field persistence issue: ${discrepancy}`
+            )
+          );
+        }
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        validationResult.warnings.push(
+          `Field verification warning: ${errorMessage}`
+        );
+      }
+    }
+
+    return {
+      record,
+      validation: validationResult,
+    };
   }
 
   /**
