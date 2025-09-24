@@ -1,0 +1,369 @@
+name: Claude Issue Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Issue number'
+        required: true
+      mode:
+        description: 'claude:review (default) or claude:ultra'
+        required: false
+        default: 'claude:review'
+      source:
+        description: 'Dispatch source for debugging'
+        required: false
+        default: 'manual'
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: claude-issue-${{ github.event.issue.number || github.event.inputs.issue || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  review:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' && !github.event.issue.pull_request)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve issue target
+        id: resolve
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const allowedAssociations = new Set(['OWNER','MEMBER','COLLABORATOR']);
+            const eventName = context.eventName;
+            let issueNumber = null;
+            let mode = 'review';
+            let shouldRun = false;
+            let triggerId = null;
+            let source = 'manual';
+
+            if (eventName === 'workflow_dispatch') {
+              const inputs = context.payload.inputs || {};
+              issueNumber = Number(inputs.issue);
+              const rawMode = String(inputs.mode || '').toLowerCase();
+              mode = rawMode.includes('ultra') ? 'ultra' : 'review';
+              shouldRun = Number.isFinite(issueNumber) && issueNumber > 0;
+              source = String(inputs.source || 'manual');
+            } else if (eventName === 'issue_comment') {
+              const issue = context.payload.issue;
+              if (!issue || issue.pull_request) {
+                core.info('Comment is not on an issue; skipping.');
+              } else {
+                issueNumber = issue.number;
+                const body = (context.payload.comment?.body || '').toString();
+                const match = body.match(/\b(?:@|\/)?claude(?:\s*[: ]\s*|\s+)(review|ultra)\b/i);
+                if (!match) {
+                  core.info('No @claude review trigger detected; skipping.');
+                } else {
+                  const assoc = context.payload.comment?.author_association || 'NONE';
+                  if (!allowedAssociations.has(assoc)) {
+                    core.notice(`@claude trigger ignored for ${context.actor} (assoc=${assoc}). Only maintainers may trigger issue reviews.`);
+                  } else {
+                    mode = match[1].toLowerCase() === 'ultra' ? 'ultra' : 'review';
+                    shouldRun = true;
+                    triggerId = context.payload.comment?.id ? String(context.payload.comment.id) : null;
+                    source = 'comment';
+                  }
+                }
+              }
+            }
+
+            core.setOutput('should_run', String(shouldRun));
+            if (!shouldRun) return;
+
+            core.setOutput('issue', String(issueNumber));
+            core.setOutput('mode', mode);
+            core.setOutput('trigger_comment_id', triggerId || '');
+            core.setOutput('source', source);
+
+      - name: Stop if trigger not satisfied
+        if: steps.resolve.outputs.should_run != 'true'
+        run: echo 'No Claude issue review requested.'
+
+      - name: Fetch issue context
+        if: steps.resolve.outputs.should_run == 'true'
+        id: context
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ steps.resolve.outputs.issue }}
+          TRIGGER_COMMENT_ID: ${{ steps.resolve.outputs.trigger_comment_id }}
+        with:
+          script: |
+            const issueNumber = Number(process.env.ISSUE_NUMBER || '0');
+            if (!issueNumber) {
+              core.setFailed('Missing issue number');
+              return;
+            }
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+
+            const limitText = (value, limit, label) => {
+              if (!value) return '';
+              if (value.length <= limit) return value;
+              return `${value.slice(0, limit)}\n[...${label} truncated at ${limit} chars]`;
+            };
+
+            const body = (issue.body || '').replace(/\r\n/g, '\n');
+            const truncatedBody = limitText(body, 8000, 'issue body');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+
+            const triggerId = process.env.TRIGGER_COMMENT_ID || '';
+            const filtered = comments
+              .filter((comment) => !triggerId || String(comment.id) !== triggerId)
+              .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            const limitComment = (comment) => {
+              const header = `@${comment.user?.login || 'unknown'} on ${comment.created_at}`;
+              const body = limitText((comment.body || '').replace(/\r\n/g, '\n'), 1500, 'comment');
+              const indented = body ? body.split('\n').map(line => `  ${line}`).join('\n') : '  (no content)';
+              return `${header}\n${indented}`;
+            };
+
+            const recentComments = filtered.slice(-15).map(limitComment);
+            const commentsBlock = recentComments.length ? recentComments.join('\n\n') : 'None';
+
+            const summaryLine = `🧵 Issue #${issueNumber}: ${issue.title || '(untitled)'}`;
+            await core.summary
+              .addHeading('Claude Issue Review Context', 3)
+              .addRaw(`${summaryLine}\n`)
+              .addRaw(`Included comments: ${recentComments.length}\n`)
+              .addSeparator()
+              .write();
+
+            core.setOutput('title', issue.title || '');
+            core.setOutput('author', issue.user?.login || '');
+            core.setOutput('url', issue.html_url || '');
+            core.setOutput('body', truncatedBody);
+            core.setOutput('comments_block', commentsBlock);
+            core.setOutput('comment_count', String(recentComments.length));
+
+      - name: Claude Issue Review (Sonnet)
+        if: steps.resolve.outputs.should_run == 'true' && steps.resolve.outputs.mode == 'review'
+        id: claude_issue_sonnet
+        timeout-minutes: 8
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: >-
+            --model claude-sonnet-4-20250514
+            --max-turns 28
+            --allowed-tools Read
+            --output-format stream-json
+          prompt: |
+            IMPORTANT EXECUTION RULES
+            - Start the report with the heading `# Issue Review Report`.
+            - Output sections in order: Summary • Likely Root Causes • Repro Steps • Affected Areas • Quick Checks • Suggested Tests • Next Actions • Risk Level.
+            - Stay grounded in the issue details and comments provided below; do NOT assume code context you cannot see.
+            - Flag missing information explicitly and suggest what to gather next.
+            - End with the marker END-OF-REPORT.
+
+            ISSUE DETAILS
+            Title: ${{ steps.context.outputs.title }}
+            URL: ${{ steps.context.outputs.url }}
+            Author: @${{ steps.context.outputs.author }}
+
+            Body (truncated to 8000 chars):
+            """
+            ${{ steps.context.outputs.body }}
+            """
+
+            Recent comments (latest 15, truncated to 1500 chars each):
+            ${{ steps.context.outputs.comments_block }}
+
+      - name: Claude Issue Review (Opus)
+        if: steps.resolve.outputs.should_run == 'true' && steps.resolve.outputs.mode == 'ultra'
+        id: claude_issue_opus
+        timeout-minutes: 10
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: >-
+            --model claude-opus-4-1-20250805
+            --max-turns 36
+            --allowed-tools Read
+            --output-format stream-json
+          prompt: |
+            IMPORTANT EXECUTION RULES
+            - Start the report with the heading `# Issue Review Report`.
+            - Output sections in order: Summary • Likely Root Causes • Repro Steps • Affected Areas • Quick Checks • Suggested Tests • Next Actions • Risk Level.
+            - Provide deeper analysis on security, performance, concurrency, and missing instrumentation when applicable.
+            - Stay grounded in the issue details and comments provided below; do NOT assume code context you cannot see.
+            - Flag missing information explicitly and suggest what to gather next.
+            - End with the marker END-OF-REPORT.
+
+            ISSUE DETAILS
+            Title: ${{ steps.context.outputs.title }}
+            URL: ${{ steps.context.outputs.url }}
+            Author: @${{ steps.context.outputs.author }}
+
+            Body (truncated to 8000 chars):
+            """
+            ${{ steps.context.outputs.body }}
+            """
+
+            Recent comments (latest 15, truncated to 1500 chars each):
+            ${{ steps.context.outputs.comments_block }}
+
+      - name: Capture issue review output
+        if: |
+          (steps.claude_issue_sonnet.outcome == 'success' && steps.claude_issue_sonnet.outputs.execution_file != '') ||
+          (steps.claude_issue_opus.outcome == 'success' && steps.claude_issue_opus.outputs.execution_file != '')
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE: ${{ steps.claude_issue_opus.outputs.execution_file || steps.claude_issue_sonnet.outputs.execution_file }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = process.env.EXEC_FILE;
+            if (!path || !fs.existsSync(path)) {
+              core.info('No execution file to parse.');
+              return;
+            }
+
+            const raw = fs.readFileSync(path, 'utf8');
+            const chunks = [];
+            for (const line of raw.split(/\r?\n/)) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
+              try {
+                const parsed = JSON.parse(trimmed);
+                if (parsed?.delta?.text) {
+                  chunks.push(parsed.delta.text);
+                } else if (typeof parsed?.text === 'string') {
+                  chunks.push(parsed.text);
+                }
+              } catch {}
+            }
+
+            let body = chunks.join('');
+            if (!body) body = raw;
+
+            const trimReport = (input) => {
+              if (!input) return '';
+              const headerMatch = input.match(/(^|\n)#[^\n]*Issue Review Report/i);
+              if (headerMatch) input = input.slice(headerMatch.index);
+              const endIndex = input.indexOf('END-OF-REPORT');
+              if (endIndex !== -1) input = input.slice(0, endIndex);
+              return input.trim();
+            };
+
+            body = trimReport(body);
+            if (!body) {
+              core.info('Issue review content empty after trimming.');
+              return;
+            }
+
+            core.exportVariable('ISSUE_REVIEW_RESULT', body);
+
+      - name: Post issue review comment
+        if: steps.resolve.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE_ISSUE: ${{ steps.claude_issue_opus.outputs.execution_file || steps.claude_issue_sonnet.outputs.execution_file }}
+          ISSUE_NUMBER: ${{ steps.resolve.outputs.issue }}
+          MODE: ${{ steps.resolve.outputs.mode }}
+        with:
+          script: |
+            const issueNumber = Number(process.env.ISSUE_NUMBER || '0');
+            if (!issueNumber) {
+              core.info('No issue number resolved; skipping comment.');
+              return;
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+
+            const runTag = `claude-issue-run-${context.runId}`;
+            if (comments.some((comment) => (comment.body || '').includes(runTag))) {
+              core.info('Issue review comment already posted for this run; skipping.');
+              return;
+            }
+
+            const trimReport = (input) => {
+              if (!input) return '';
+              const headerMatch = input.match(/(^|\n)#[^\n]*Issue Review Report/i);
+              if (headerMatch) input = input.slice(headerMatch.index);
+              const endIndex = input.indexOf('END-OF-REPORT');
+              if (endIndex !== -1) input = input.slice(0, endIndex);
+              return input.trim();
+            };
+
+            let body = (process.env.ISSUE_REVIEW_RESULT || '').trim();
+
+            const fs = require('fs');
+            if (!body) {
+              const execFile = process.env.EXEC_FILE_ISSUE;
+              if (execFile && fs.existsSync(execFile)) {
+                try {
+                  const raw = fs.readFileSync(execFile, 'utf8');
+                  const chunks = [];
+                  for (const line of raw.split(/\r?\n/)) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    try {
+                      const parsed = JSON.parse(trimmed);
+                      if (parsed?.delta?.text) {
+                        chunks.push(parsed.delta.text);
+                      } else if (typeof parsed?.text === 'string') {
+                        chunks.push(parsed.text);
+                      }
+                    } catch {}
+                  }
+                  body = chunks.join('').trim();
+                } catch (error) {
+                  core.warning(`Failed to parse execution file: ${error.message}`);
+                }
+              }
+            }
+
+            body = trimReport(body);
+            if (!body) {
+              core.info('No issue review content found; skipping posting.');
+              return;
+            }
+
+            const mode = (process.env.MODE || 'review').toLowerCase();
+            const footer = mode === 'ultra' ? '\n\n_Mode: Opus ultra_' : '\n\n_Mode: Sonnet review_';
+            body = `${body}${footer}`;
+
+            const LIMIT = 65000;
+            const parts = [];
+            for (let i = 0; i < body.length; i += LIMIT) parts.push(body.slice(i, i + LIMIT));
+
+            for (let i = 0; i < parts.length; i++) {
+              const tag = `\n\n<!-- ${runTag}-${i} -->`;
+              const suffix = parts.length > 1 ? `\n\n— part ${i + 1}/${parts.length}` : '';
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: parts[i] + suffix + tag,
+              });
+            }
+
+            core.info(`Posted Claude issue review (${parts.length} part${parts.length > 1 ? 's' : ''}).`);
