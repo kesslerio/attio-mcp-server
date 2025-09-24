@@ -10,7 +10,7 @@ import { UniversalResourceType } from '../src/handlers/tool-configs/universal/ty
 import type { ResourceType } from '../src/types/attio.js';
 
 // Import configurations to test
-import * as coreOps from '../src/handlers/tool-configs/universal/core-operations.js';
+import * as coreOps from '../src/handlers/tool-configs/universal/core/index.js';
 import * as advancedOps from '../src/handlers/tool-configs/universal/advanced-operations.js';
 
 // Mock data factories

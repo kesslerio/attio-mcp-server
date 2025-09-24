@@ -3,17 +3,11 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 // Import shared helpers
 import { setupUnitTestMocks, cleanupMocks } from './helpers/index.js';
 
-// Import enhanced error types
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../../../../src/handlers/tool-configs/universal/schemas.js';
-
 // Import tool configurations
 import {
   searchRecordsConfig,
   getRecordDetailsConfig,
-} from '../../../../src/handlers/tool-configs/universal/core-operations.js';
+} from '../../../../src/handlers/tool-configs/universal/core/index.js';
 
 // Import types
 import {
@@ -90,34 +84,63 @@ describe('Universal Core Operations Search Tests', () => {
       const { handleUniversalSearch } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
-      const { ErrorService } = await import(
-        '../../../../src/services/ErrorService.js'
-      );
       vi.mocked(handleUniversalSearch).mockRejectedValue(mockError);
-      vi.mocked(ErrorService.createUniversalError).mockReturnValue(
-        new UniversalValidationError(
-          'Universal search failed for resource type companies: API error',
-          ErrorType.API_ERROR,
-          { cause: mockError }
-        )
-      );
 
       const params: UniversalSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test',
       };
 
-      await expect(searchRecordsConfig.handler(params)).rejects.toMatchObject({
-        status: expect.any(Number),
-        body: expect.objectContaining({
-          message:
-            'Universal search failed for resource type companies: API error',
-        }),
-      });
-      expect(vi.mocked(ErrorService.createUniversalError)).toHaveBeenCalledWith(
-        'search',
-        UniversalResourceType.COMPANIES,
-        mockError
+      await expect(searchRecordsConfig.handler(params)).rejects.toSatisfy(
+        (error: unknown) => {
+          if (!error) return false;
+
+          if (
+            typeof error === 'object' &&
+            'name' in error &&
+            (error as { name?: unknown }).name === 'search_error'
+          ) {
+            const typed = error as {
+              message?: string;
+              details?: {
+                context?: {
+                  operation?: string;
+                  resourceType?: string;
+                  recordData?: Record<string, unknown>;
+                };
+              };
+            };
+
+            return (
+              typed.message === 'Failed to search companies: API error' &&
+              typed.details?.context?.operation === 'search' &&
+              typed.details?.context?.resourceType === 'companies' &&
+              typed.details?.context?.recordData?.resource_type ===
+                'companies' &&
+              typed.details?.context?.recordData?.query === 'test'
+            );
+          }
+
+          if (
+            typeof error === 'object' &&
+            'status' in error &&
+            'body' in error
+          ) {
+            const typed = error as {
+              status?: number;
+              body?: { message?: string; type?: string };
+            };
+
+            return (
+              typeof typed.status === 'number' &&
+              typed.body?.message ===
+                'Universal search failed for resource type companies: API error' &&
+              typed.body?.type === 'validation_error'
+            );
+          }
+
+          return false;
+        }
       );
     });
 

@@ -94,7 +94,7 @@ export const batchSearchConfig = {
       ? formatResourceType(resourceType)
       : 'record';
 
-    // Handle proper pluralization (same logic as core-operations.ts)
+    // Handle proper pluralization (reuse helper logic from core/index.ts)
     const getPluralForm = (count: number, singular: string): string => {
       if (count === 1) return singular;
       if (singular === 'company') return 'companies';

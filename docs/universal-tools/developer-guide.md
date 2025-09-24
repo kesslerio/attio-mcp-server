@@ -14,7 +14,14 @@ src/handlers/tool-configs/universal/
 ├── index.ts              // Main module exports and mappings
 ├── types.ts              // TypeScript type definitions
 ├── schemas.ts            // MCP-compliant JSON schemas
-├── core-operations.ts    // 8 core CRUD operations
+├── core/
+│   ├── search-operations.ts        // Universal search tools
+│   ├── record-details-operations.ts // Record detail retrieval
+│   ├── crud-operations.ts          // Create/update/delete operations
+│   ├── metadata-operations.ts      // Attribute discovery
+│   ├── detailed-info-operations.ts // Detailed info formatting
+│   ├── notes-operations.ts         // Note creation/listing
+│   └── index.ts                    // Core tool aggregator exports
 ├── advanced-operations.ts // 5 advanced search/batch operations
 └── shared-handlers.ts    // Common handler utilities
 ```
@@ -37,17 +44,20 @@ export const toolConfig: UniversalToolConfig = {
   handler: async (params: ToolParams): Promise<Result> => {
     // 1. Validate parameters
     validateUniversalToolParams('tool-name', params);
-    
+
     // 2. Route to resource-specific handler
     return await handleUniversalOperation(params);
   },
-  formatResult: (result: Result, resourceType?: UniversalResourceType): string => {
+  formatResult: (
+    result: Result,
+    resourceType?: UniversalResourceType
+  ): string => {
     // ✅ NEW ARCHITECTURE (PR #483): Always returns string
     // - No environment-dependent behavior
     // - 89.7% performance improvement
     // - Type-safe Record<string, unknown> patterns
     return formatResult(result, resourceType);
-  }
+  },
 };
 ```
 
@@ -57,11 +67,14 @@ export const toolConfig: UniversalToolConfig = {
 
 ```typescript
 // ✅ CORRECT: Consistent string return type
-formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResourceType): string => {
+formatResult: (
+  data: AttioRecord | AttioRecord[],
+  resourceType?: UniversalResourceType
+): string => {
   if (!data || (Array.isArray(data) && data.length === 0)) {
     return `No ${resourceType || 'records'} found`;
   }
-  
+
   const records = Array.isArray(data) ? data : [data];
   return records
     .map((record, index) => {
@@ -70,16 +83,17 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
       return `${index + 1}. ${name} (ID: ${id})`;
     })
     .join('\n');
-}
+};
 
 // ❌ ELIMINATED: Dual-mode anti-pattern
 formatResult: (data: any): string | object => {
   if (process.env.NODE_ENV === 'test') return data; // REMOVED
   return formatString(data);
-}
+};
 ```
 
 **Benefits Achieved**:
+
 - **Performance**: 89.7% speed improvement
 - **Memory**: 227KB reduction through optimized string templates
 - **Type Safety**: 59% ESLint warning reduction (957→395)
@@ -93,11 +107,11 @@ formatResult: (data: any): string | object => {
 // src/handlers/tool-configs/universal/types.ts
 export enum UniversalResourceType {
   COMPANIES = 'companies',
-  PEOPLE = 'people', 
+  PEOPLE = 'people',
   RECORDS = 'records',
   TASKS = 'tasks',
-  PROJECTS = 'projects',  // New resource type
-  DEALS = 'deals'         // New resource type
+  PROJECTS = 'projects', // New resource type
+  DEALS = 'deals', // New resource type
 }
 ```
 
@@ -107,13 +121,13 @@ export enum UniversalResourceType {
 // src/handlers/tool-configs/universal/index.ts
 export const resourceTypeMappings: Record<string, string> = {
   // Existing mappings...
-  
+
   // New resource type mappings
   'create-project': 'projects',
   'search-projects': 'projects',
   'get-project-details': 'projects',
   'create-deal': 'deals',
-  'search-deals': 'deals'
+  'search-deals': 'deals',
 };
 ```
 
@@ -121,22 +135,24 @@ export const resourceTypeMappings: Record<string, string> = {
 
 ```typescript
 // src/handlers/tool-configs/universal/shared-handlers.ts
-export async function handleUniversalSearch(params: UniversalSearchParams): Promise<AttioRecord[]> {
+export async function handleUniversalSearch(
+  params: UniversalSearchParams
+): Promise<AttioRecord[]> {
   const { resource_type, query, filters, limit, offset } = params;
-  
+
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
       return await searchCompanies(query, filters, limit, offset);
-      
+
     case UniversalResourceType.PEOPLE:
       return await searchPeople(query, filters, limit, offset);
-      
-    case UniversalResourceType.PROJECTS:  // New handler
+
+    case UniversalResourceType.PROJECTS: // New handler
       return await searchProjects(query, filters, limit, offset);
-      
-    case UniversalResourceType.DEALS:     // New handler
+
+    case UniversalResourceType.DEALS: // New handler
       return await searchDeals(query, filters, limit, offset);
-      
+
     default:
       throw new Error(`Unsupported resource type: ${resource_type}`);
   }
@@ -154,31 +170,33 @@ export async function searchProjects(
   offset?: number
 ): Promise<AttioRecord[]> {
   const projectList = await getListByType('projects');
-  
+
   return await searchListEntries({
     list: projectList,
     query,
     filters,
     limit: limit || 10,
-    offset: offset || 0
+    offset: offset || 0,
   });
 }
 
 export async function createProject(projectData: any): Promise<AttioRecord> {
   const projectList = await getListByType('projects');
-  
+
   return await createListEntry({
     list: projectList,
-    data: projectData
+    data: projectData,
   });
 }
 
-export async function getProjectDetails(recordId: string): Promise<AttioRecord> {
+export async function getProjectDetails(
+  recordId: string
+): Promise<AttioRecord> {
   const projectList = await getListByType('projects');
-  
+
   return await getListEntry({
     list: projectList,
-    record_id: recordId
+    record_id: recordId,
   });
 }
 ```
@@ -188,9 +206,10 @@ export async function getProjectDetails(recordId: string): Promise<AttioRecord> 
 ```typescript
 // src/handlers/tool-configs/universal/schemas.ts
 const resourceTypeProperty = {
-  type: 'string' as const,  
+  type: 'string' as const,
   enum: Object.values(UniversalResourceType), // Automatically includes new types
-  description: 'Type of resource to operate on (companies, people, records, tasks, projects, deals)'
+  description:
+    'Type of resource to operate on (companies, people, records, tasks, projects, deals)',
 };
 ```
 
@@ -198,15 +217,24 @@ const resourceTypeProperty = {
 
 ```typescript
 // src/handlers/tool-configs/universal/shared-handlers.ts
-export function formatResourceType(resourceType: UniversalResourceType): string {
+export function formatResourceType(
+  resourceType: UniversalResourceType
+): string {
   switch (resourceType) {
-    case UniversalResourceType.COMPANIES: return 'company';
-    case UniversalResourceType.PEOPLE: return 'person';
-    case UniversalResourceType.RECORDS: return 'record';
-    case UniversalResourceType.TASKS: return 'task';
-    case UniversalResourceType.PROJECTS: return 'project';  // New
-    case UniversalResourceType.DEALS: return 'deal';        // New
-    default: return 'record';
+    case UniversalResourceType.COMPANIES:
+      return 'company';
+    case UniversalResourceType.PEOPLE:
+      return 'person';
+    case UniversalResourceType.RECORDS:
+      return 'record';
+    case UniversalResourceType.TASKS:
+      return 'task';
+    case UniversalResourceType.PROJECTS:
+      return 'project'; // New
+    case UniversalResourceType.DEALS:
+      return 'deal'; // New
+    default:
+      return 'record';
   }
 }
 ```
@@ -227,16 +255,16 @@ export const duplicateRecordSchema = {
     resource_type: resourceTypeProperty,
     source_record_id: {
       type: 'string' as const,
-      description: 'ID of record to duplicate'
+      description: 'ID of record to duplicate',
     },
     modifications: {
       type: 'object' as const,
       description: 'Fields to modify in the duplicate',
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   },
   required: ['resource_type' as const, 'source_record_id' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 ```
 
@@ -250,13 +278,13 @@ export async function handleUniversalDuplicate(params: {
   modifications?: Record<string, any>;
 }): Promise<AttioRecord> {
   const { resource_type, source_record_id, modifications = {} } = params;
-  
+
   // Get original record
   const original = await handleUniversalGetDetails({
     resource_type,
-    record_id: source_record_id
+    record_id: source_record_id,
   });
-  
+
   // Create duplicate with modifications
   const duplicateData = {
     ...original.values,
@@ -264,12 +292,12 @@ export async function handleUniversalDuplicate(params: {
     // Remove ID and system fields
     id: undefined,
     created_at: undefined,
-    updated_at: undefined
+    updated_at: undefined,
   };
-  
+
   return await handleUniversalCreate({
     resource_type,
-    record_data: duplicateData
+    record_data: duplicateData,
   });
 }
 ```
@@ -277,7 +305,7 @@ export async function handleUniversalDuplicate(params: {
 #### Step 3: Create Tool Configuration
 
 ```typescript
-// src/handlers/tool-configs/universal/core-operations.ts
+// src/handlers/tool-configs/universal/core/crud-operations.ts
 export const duplicateRecordConfig: UniversalToolConfig = {
   name: 'duplicate-record',
   handler: async (params: any): Promise<AttioRecord> => {
@@ -289,29 +317,31 @@ export const duplicateRecordConfig: UniversalToolConfig = {
     }
   },
   formatResult: (record: AttioRecord, resourceType?: UniversalResourceType) => {
-    const resourceTypeName = resourceType ? getSingularResourceType(resourceType) : 'record';
+    const resourceTypeName = resourceType
+      ? getSingularResourceType(resourceType)
+      : 'record';
     const name = record.values?.name?.[0]?.value || 'Unnamed';
     const id = record.id?.record_id || 'unknown';
-    
+
     return `✅ Successfully duplicated ${resourceTypeName}: ${name} (ID: ${id})`;
-  }
+  },
 };
 ```
 
 #### Step 4: Register Tool
 
 ```typescript
-// src/handlers/tool-configs/universal/core-operations.ts
+// src/handlers/tool-configs/universal/core/index.ts
 export const coreOperationsToolConfigs = {
   'search-records': searchRecordsConfig,
   'get-record-details': getRecordDetailsConfig,
   'create-record': createRecordConfig,
   'update-record': updateRecordConfig,
   'delete-record': deleteRecordConfig,
-  'duplicate-record': duplicateRecordConfig,  // New tool
+  'duplicate-record': duplicateRecordConfig, // New tool
   'get-attributes': getAttributesConfig,
   'discover-attributes': discoverAttributesConfig,
-  'get-detailed-info': getDetailedInfoConfig
+  'get-detailed-info': getDetailedInfoConfig,
 };
 
 export const coreOperationsToolDefinitions = {
@@ -319,8 +349,8 @@ export const coreOperationsToolDefinitions = {
   'duplicate-record': {
     name: 'duplicate-record',
     description: 'Duplicate a record with optional modifications',
-    inputSchema: duplicateRecordSchema
-  }
+    inputSchema: duplicateRecordSchema,
+  },
 };
 ```
 
@@ -340,13 +370,13 @@ export const crossResourceSearchConfig: UniversalToolConfig = {
     limit?: number;
   }): Promise<{ resource_type: string; results: AttioRecord[] }[]> => {
     const { query, resource_types, limit = 10 } = params;
-    
+
     const searchPromises = resource_types.map(async (resource_type) => {
       try {
         const results = await handleUniversalSearch({
           resource_type,
           query,
-          limit
+          limit,
         });
         return { resource_type, results };
       } catch (error) {
@@ -354,14 +384,17 @@ export const crossResourceSearchConfig: UniversalToolConfig = {
         return { resource_type, results: [] };
       }
     });
-    
+
     return await Promise.all(searchPromises);
   },
   formatResult: (searchResults: any[]) => {
-    const totalResults = searchResults.reduce((sum, r) => sum + r.results.length, 0);
-    
+    const totalResults = searchResults.reduce(
+      (sum, r) => sum + r.results.length,
+      0
+    );
+
     let output = `Cross-resource search found ${totalResults} total results:\n\n`;
-    
+
     for (const { resource_type, results } of searchResults) {
       if (results.length > 0) {
         output += `${formatResourceType(resource_type)}s (${results.length}):\n`;
@@ -372,9 +405,9 @@ export const crossResourceSearchConfig: UniversalToolConfig = {
         output += '\n';
       }
     }
-    
+
     return output.trim();
-  }
+  },
 };
 ```
 
@@ -392,14 +425,14 @@ export const conditionalBatchConfig: UniversalToolConfig = {
     actions: any[];
   }): Promise<any[]> => {
     const { resource_type, operation_type, conditions, actions } = params;
-    
+
     // Find records matching conditions
     const candidates = await handleUniversalSearch({
       resource_type,
       filters: { and: conditions },
-      limit: 50
+      limit: 50,
     });
-    
+
     // Apply actions to matching records
     const results = await processInParallelWithErrorIsolation(
       candidates,
@@ -409,27 +442,29 @@ export const conditionalBatchConfig: UniversalToolConfig = {
             return await handleUniversalUpdate({
               resource_type,
               record_id: record.id.record_id,
-              record_data: actions[0] // First action for updates
+              record_data: actions[0], // First action for updates
             });
           case BatchOperationType.DELETE:
             return await handleUniversalDelete({
               resource_type,
-              record_id: record.id.record_id
+              record_id: record.id.record_id,
             });
           default:
-            throw new Error(`Unsupported conditional operation: ${operation_type}`);
+            throw new Error(
+              `Unsupported conditional operation: ${operation_type}`
+            );
         }
       }
     );
-    
+
     return results;
   },
   formatResult: (results: any[]) => {
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
-    
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+
     return `Conditional batch operation completed:\n✅ ${successful} successful\n❌ ${failed} failed`;
-  }
+  },
 };
 ```
 
@@ -440,7 +475,7 @@ export const conditionalBatchConfig: UniversalToolConfig = {
 ```typescript
 // test/universal-tools/search-records.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { searchRecordsConfig } from '../../src/handlers/tool-configs/universal/core-operations.js';
+import { searchRecordsConfig } from '../../src/handlers/tool-configs/universal/core/index.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
 describe('search-records universal tool', () => {
@@ -452,11 +487,14 @@ describe('search-records universal tool', () => {
     const params = {
       resource_type: UniversalResourceType.COMPANIES,
       query: 'tech startup',
-      limit: 10
+      limit: 10,
     };
 
     const mockResults = [
-      { id: { record_id: 'comp_1' }, values: { name: [{ value: 'TechCorp' }] } }
+      {
+        id: { record_id: 'comp_1' },
+        values: { name: [{ value: 'TechCorp' }] },
+      },
     ];
 
     // Mock the handler
@@ -468,26 +506,30 @@ describe('search-records universal tool', () => {
 
   it('should validate required parameters', async () => {
     const invalidParams = {
-      query: 'tech startup'
+      query: 'tech startup',
       // Missing resource_type
     };
 
-    await expect(searchRecordsConfig.handler(invalidParams))
-      .rejects.toThrow('Missing required parameter: resource_type');
+    await expect(searchRecordsConfig.handler(invalidParams)).rejects.toThrow(
+      'Missing required parameter: resource_type'
+    );
   });
 
   it('should format results correctly', () => {
     const mockResults = [
-      { 
-        id: { record_id: 'comp_1' }, 
-        values: { 
+      {
+        id: { record_id: 'comp_1' },
+        values: {
           name: [{ value: 'TechCorp' }],
-          website: [{ value: 'https://techcorp.com' }]
-        } 
-      }
+          website: [{ value: 'https://techcorp.com' }],
+        },
+      },
     ];
 
-    const formatted = searchRecordsConfig.formatResult(mockResults, UniversalResourceType.COMPANIES);
+    const formatted = searchRecordsConfig.formatResult(
+      mockResults,
+      UniversalResourceType.COMPANIES
+    );
     expect(formatted).toContain('Found 1 company:');
     expect(formatted).toContain('TechCorp (https://techcorp.com)');
   });
@@ -513,8 +555,8 @@ describe('Universal Tools Integration', () => {
       resource_type: 'companies',
       record_data: {
         name: 'Test Company',
-        website: 'https://test.com'
-      }
+        website: 'https://test.com',
+      },
     });
 
     expect(createResult.id).toBeDefined();
@@ -523,7 +565,7 @@ describe('Universal Tools Integration', () => {
     // Read
     const getResult = await universalToolConfigs['get-record-details'].handler({
       resource_type: 'companies',
-      record_id: recordId
+      record_id: recordId,
     });
 
     expect(getResult.values.name[0].value).toBe('Test Company');
@@ -533,8 +575,8 @@ describe('Universal Tools Integration', () => {
       resource_type: 'companies',
       record_id: recordId,
       record_data: {
-        industry: 'Technology'
-      }
+        industry: 'Technology',
+      },
     });
 
     expect(updateResult.values.industry[0].value).toBe('Technology');
@@ -542,7 +584,7 @@ describe('Universal Tools Integration', () => {
     // Delete
     const deleteResult = await universalToolConfigs['delete-record'].handler({
       resource_type: 'companies',
-      record_id: recordId
+      record_id: recordId,
     });
 
     expect(deleteResult.success).toBe(true);
@@ -561,17 +603,20 @@ export const mockUniversalHandlers = {
   handleUniversalGetDetails: vi.fn(),
   handleUniversalCreate: vi.fn(),
   handleUniversalUpdate: vi.fn(),
-  handleUniversalDelete: vi.fn()
+  handleUniversalDelete: vi.fn(),
 };
 
 // Use importOriginal pattern for proper mocking
-vi.mock('../../src/handlers/tool-configs/universal/shared-handlers.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    ...mockUniversalHandlers
-  };
-});
+vi.mock(
+  '../../src/handlers/tool-configs/universal/shared-handlers.js',
+  async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      ...mockUniversalHandlers,
+    };
+  }
+);
 ```
 
 ## Performance Optimization
@@ -587,19 +632,19 @@ class UniversalToolCache {
   get(key: string): any | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
-    
+
     if (Date.now() - entry.timestamp > this.ttl) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data;
   }
 
   set(key: string, data: any): void {
     this.cache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -611,15 +656,17 @@ class UniversalToolCache {
 export const universalCache = new UniversalToolCache();
 
 // Usage in handlers
-export async function handleUniversalGetDetails(params: UniversalRecordDetailsParams): Promise<AttioRecord> {
+export async function handleUniversalGetDetails(
+  params: UniversalRecordDetailsParams
+): Promise<AttioRecord> {
   const cacheKey = universalCache.generateKey('get-details', params);
   const cached = universalCache.get(cacheKey);
-  
+
   if (cached) return cached;
-  
+
   const result = await getRecordDetails(params);
   universalCache.set(cacheKey, result);
-  
+
   return result;
 }
 ```
@@ -636,14 +683,14 @@ class RateLimiter {
   async checkLimit(identifier: string): Promise<boolean> {
     const now = Date.now();
     const windowStart = now - this.windowMs;
-    
+
     const requestTimes = this.requests.get(identifier) || [];
-    const recentRequests = requestTimes.filter(time => time > windowStart);
-    
+    const recentRequests = requestTimes.filter((time) => time > windowStart);
+
     if (recentRequests.length >= this.maxRequests) {
       return false; // Rate limit exceeded
     }
-    
+
     recentRequests.push(now);
     this.requests.set(identifier, recentRequests);
     return true;
@@ -651,7 +698,7 @@ class RateLimiter {
 
   async waitForSlot(identifier: string): Promise<void> {
     while (!(await this.checkLimit(identifier))) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 }
@@ -672,7 +719,9 @@ export class UniversalToolError extends Error {
     public originalError: Error,
     public code: string = 'UNIVERSAL_TOOL_ERROR'
   ) {
-    super(`Universal ${operation} failed for ${resourceType}: ${originalError.message}`);
+    super(
+      `Universal ${operation} failed for ${resourceType}: ${originalError.message}`
+    );
     this.name = 'UniversalToolError';
   }
 }
@@ -686,7 +735,12 @@ export class ValidationError extends UniversalToolError {
 
 export class ResourceNotFoundError extends UniversalToolError {
   constructor(operation: string, resourceType: string, resourceId: string) {
-    super(operation, resourceType, new Error(`Resource not found: ${resourceId}`), 'RESOURCE_NOT_FOUND');
+    super(
+      operation,
+      resourceType,
+      new Error(`Resource not found: ${resourceId}`),
+      'RESOURCE_NOT_FOUND'
+    );
     this.name = 'ResourceNotFoundError';
   }
 }
@@ -702,30 +756,36 @@ export async function withRetry<T>(
   backoffMs: number = 1000
 ): Promise<T> {
   let lastError: Error;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      
+
       if (attempt === maxRetries) break;
-      
+
       // Exponential backoff
       const delay = backoffMs * Math.pow(2, attempt - 1);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError!;
 }
 
 // Usage
-export async function handleUniversalCreate(params: UniversalCreateParams): Promise<AttioRecord> {
-  return await withRetry(async () => {
-    // Actual creation logic
-    return await createRecord(params);
-  }, 3, 500);
+export async function handleUniversalCreate(
+  params: UniversalCreateParams
+): Promise<AttioRecord> {
+  return await withRetry(
+    async () => {
+      // Actual creation logic
+      return await createRecord(params);
+    },
+    3,
+    500
+  );
 }
 ```
 
@@ -769,25 +829,25 @@ export function getMigrationPath(deprecatedTool: string): {
 } | null {
   const universalTool = deprecatedToolMappings[deprecatedTool];
   const resourceType = resourceTypeMappings[deprecatedTool];
-  
+
   if (!universalTool || !resourceType) return null;
-  
+
   const additionalParams: Record<string, any> = {};
-  
+
   // Add specific parameters based on tool type
   const infoType = infoTypeMappings[deprecatedTool];
   if (infoType) additionalParams.info_type = infoType;
-  
+
   const contentType = contentTypeMappings[deprecatedTool];
   if (contentType) additionalParams.content_type = contentType;
-  
+
   const timeframeType = timeframeTypeMappings[deprecatedTool];
   if (timeframeType) additionalParams.timeframe_type = timeframeType;
-  
+
   return {
     universalTool,
     resourceType,
-    additionalParams
+    additionalParams,
   };
 }
 ```

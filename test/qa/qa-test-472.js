@@ -1,12 +1,15 @@
 // QA Test Case for Issue #472: Verify task display names
 // Based on the test case provided in the GitHub issue
 
-import { searchRecordsConfig, getRecordDetailsConfig } from './src/handlers/tool-configs/universal/core-operations.js';
+import {
+  searchRecordsConfig,
+  getRecordDetailsConfig,
+} from './src/handlers/tool-configs/universal/core/index.js';
 import { UniversalResourceType } from './src/handlers/tool-configs/universal/types.js';
 
 async function testTaskDisplayNames() {
   console.log('Testing Task Display Names (Issue #472)...\n');
-  
+
   // Test 1: Search Tasks and Check Display Names with Mock Data
   console.log('Test 1: Search Tasks Display Names with Mock Data');
   try {
@@ -34,22 +37,22 @@ async function testTaskDisplayNames() {
         },
       },
     ];
-    
+
     console.log(`Found ${mockTaskResults.length} tasks\n`);
-    
+
     let unnamedCount = 0;
     let namedCount = 0;
-    
+
     // Test the formatResult function directly
     const formatted = searchRecordsConfig.formatResult(
       mockTaskResults,
       UniversalResourceType.TASKS
     );
-    
+
     console.log('Formatted search results:');
     console.log(formatted);
     console.log('');
-    
+
     // Check if any tasks show as "Unnamed"
     if (formatted.includes('Unnamed')) {
       console.log('❌ Some tasks still show as "Unnamed"');
@@ -58,9 +61,9 @@ async function testTaskDisplayNames() {
       console.log('✅ No tasks show as "Unnamed"');
       namedCount = mockTaskResults.length;
     }
-    
+
     console.log(`Summary: ${namedCount} named, ${unnamedCount} unnamed`);
-    
+
     if (unnamedCount === 0) {
       console.log('✅ All tasks display with proper names');
     } else {
@@ -84,16 +87,16 @@ async function testTaskDisplayNames() {
         due_date: [{ value: '2025-08-20' }],
       },
     };
-    
+
     const formatted = getRecordDetailsConfig.formatResult(
       mockTaskRecord,
       UniversalResourceType.TASKS
     );
-    
+
     console.log('Formatted task details:');
     console.log(formatted);
     console.log('');
-    
+
     if (formatted.includes('QA Test Task - Display Name Verification')) {
       console.log('✅ Task details display with correct name');
     } else if (formatted.includes('Unnamed')) {
@@ -118,18 +121,20 @@ async function testTaskDisplayNames() {
         status: [{ value: 'pending' }],
       },
     };
-    
+
     const formattedEmpty = getRecordDetailsConfig.formatResult(
       mockTaskWithoutContent,
       UniversalResourceType.TASKS
     );
-    
+
     if (formattedEmpty.includes('Unnamed')) {
       console.log('✅ Tasks without content correctly show as "Unnamed"');
     } else {
-      console.log('⚠️ Tasks without content don\'t show as "Unnamed" - may be an issue');
+      console.log(
+        '⚠️ Tasks without content don\'t show as "Unnamed" - may be an issue'
+      );
     }
-    
+
     // Test task with empty content array
     const mockTaskWithEmptyArray = {
       id: { record_id: 'task-empty-array', task_id: 'task-empty-array' },
@@ -138,18 +143,19 @@ async function testTaskDisplayNames() {
         status: [{ value: 'pending' }],
       },
     };
-    
+
     const formattedEmptyArray = getRecordDetailsConfig.formatResult(
       mockTaskWithEmptyArray,
       UniversalResourceType.TASKS
     );
-    
+
     if (formattedEmptyArray.includes('Unnamed')) {
-      console.log('✅ Tasks with empty content array correctly show as "Unnamed"');
+      console.log(
+        '✅ Tasks with empty content array correctly show as "Unnamed"'
+      );
     } else {
       console.log('⚠️ Tasks with empty content array don\'t show as "Unnamed"');
     }
-    
   } catch (error) {
     console.log('❌ Edge case testing failed:', error.message);
   }

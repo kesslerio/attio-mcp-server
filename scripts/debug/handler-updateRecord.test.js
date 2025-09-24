@@ -1,6 +1,6 @@
 // ESM test: node scripts/debug/handler-updateRecord.test.mjs
 const mod = await import(
-  '../../dist/handlers/tool-configs/universal/core-operations.js'
+  '../../dist/handlers/tool-configs/universal/core/index.js'
 );
 const updateRecordConfig =
   mod.updateRecordConfig ?? mod.default?.updateRecordConfig ?? mod.default;
