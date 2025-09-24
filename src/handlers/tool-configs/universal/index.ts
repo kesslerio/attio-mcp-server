@@ -11,7 +11,7 @@
 import {
   coreOperationsToolConfigs,
   coreOperationsToolDefinitions,
-} from './core-operations.js';
+} from './core/index.js';
 
 import {
   advancedOperationsToolConfigs,

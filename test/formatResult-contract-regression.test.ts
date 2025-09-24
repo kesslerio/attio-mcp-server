@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ResourceType } from '../src/types/attio.js';
 
 // Import all universal tool configurations
-import * as coreOpsConfig from '../src/handlers/tool-configs/universal/core-operations.js';
+import * as coreOpsConfig from '../src/handlers/tool-configs/universal/core/index.js';
 import * as advancedOpsConfig from '../src/handlers/tool-configs/universal/advanced-operations.js';
 
 // Mock data factories for testing

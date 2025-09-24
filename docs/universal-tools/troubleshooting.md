@@ -1190,14 +1190,14 @@ const complexResult = await client.callTool('advanced-search', {
 
 ```typescript
 // ❌ Wrong - incorrect mock pattern
-vi.mock('../../src/handlers/tool-configs/universal/core-operations.ts', () => ({
+vi.mock('../../src/handlers/tool-configs/universal/core/index.ts', () => ({
   searchRecords: vi.fn(),
   getRecordDetails: vi.fn(),
 }));
 
 // ✅ Correct - importOriginal pattern
 vi.mock(
-  '../../src/handlers/tool-configs/universal/core-operations.ts',
+  '../../src/handlers/tool-configs/universal/core/index.ts',
   async (importOriginal) => {
     const actual = await importOriginal();
     return {
@@ -1216,7 +1216,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Proper mock setup with importOriginal
 vi.mock(
-  '../../src/handlers/tool-configs/universal/core-operations.ts',
+  '../../src/handlers/tool-configs/universal/core/index.ts',
   async (importOriginal) => {
     const actual = await importOriginal();
     return {

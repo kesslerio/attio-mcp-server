@@ -12,7 +12,7 @@ import {
   getDetailedInfoConfig,
   searchRecordsConfig,
   getRecordDetailsConfig,
-} from '../../../../src/handlers/tool-configs/universal/core-operations.js';
+} from '../../../../src/handlers/tool-configs/universal/core/index.js';
 
 // Import types
 import {

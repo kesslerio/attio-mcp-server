@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Import the updateRecordConfig
-import { updateRecordConfig } from '../../../../src/handlers/tool-configs/universal/core-operations.js';
+import { updateRecordConfig } from '../../../../src/handlers/tool-configs/universal/core/index.js';
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 import { EnhancedAttioRecord } from '../../../../src/types/attio.js';
 
