@@ -18,6 +18,33 @@
  * - probability: Use custom number field or encode in stage names
  * - source/lead_source: Use custom field
  * - type/deal_type: Use custom field or stages
+ *
+ * ENVIRONMENT VARIABLES (Runtime Behavior Configuration):
+ *
+ * @env ATTIO_DEFAULT_DEAL_STAGE - Default stage for new deals (default: "Interested")
+ *      Example: ATTIO_DEFAULT_DEAL_STAGE="Qualified"
+ *      Impact: Changes default fallback stage when none provided
+ *
+ * @env ATTIO_DEFAULT_DEAL_OWNER - Default owner workspace member ID
+ *      Example: ATTIO_DEFAULT_DEAL_OWNER="member-uuid-here"
+ *      Impact: Auto-assigns deals to specified owner when none provided
+ *
+ * @env ATTIO_DEFAULT_CURRENCY - Default currency code (default: "USD")
+ *      Example: ATTIO_DEFAULT_CURRENCY="EUR"
+ *      Impact: Sets currency for deal values when not specified
+ *
+ * @env STRICT_DEAL_STAGE_VALIDATION - Enable strict stage validation (default: false)
+ *      Values: "true" | "false" | undefined
+ *      Example: STRICT_DEAL_STAGE_VALIDATION="true"
+ *      Impact: When "true", throws errors for invalid stages instead of silent fallbacks
+ *      WARNING: Changing this in production can cause previously working deals to fail
+ *
+ * PRODUCTION SAFETY NOTES:
+ * - Environment variables change runtime behavior and can cause production inconsistencies
+ * - Test all environment variable combinations before deploying
+ * - Document environment variables in deployment guides
+ * - Consider gradual rollout when changing validation strictness
+ * - Monitor error rates when enabling strict validation
  */
 
 import { warn, error } from '../utils/logger.js';
@@ -74,22 +101,12 @@ export function getDealDefaults(): DealDefaults {
 }
 
 /**
- * Apply deal defaults and handle all field conversions
- *
- * This function:
- * 1. Applies configured defaults to deal data
- * 2. Handles all legacy field name conversions
- * 3. Formats values to proper Attio API format
- * 4. Allows user-provided values to override defaults
+ * Apply field name conversions for legacy compatibility
+ * Handles company_id → associated_company, deal_name → name
  */
-export function applyDealDefaults(
-  recordData: Record<string, unknown>
+function applyFieldNameConversions(
+  dealData: Record<string, unknown>
 ): Record<string, unknown> {
-  const defaults = getDealDefaults();
-  const dealData = { ...recordData };
-
-  // === FIELD NAME CONVERSIONS (Legacy Support) ===
-
   // Handle company field name conversion (company_id → associated_company)
   if (dealData.company_id && !dealData.associated_company) {
     dealData.associated_company = dealData.company_id;
@@ -111,8 +128,17 @@ export function applyDealDefaults(
     dealData.name = [{ value: dealData.name }];
   }
 
-  // === STAGE HANDLING ===
+  return dealData;
+}
 
+/**
+ * Apply stage defaults and convert stage formats
+ * Handles deal_stage → stage conversion and proper array formatting
+ */
+function applyStageDefaults(
+  dealData: Record<string, unknown>,
+  defaults: DealDefaults
+): Record<string, unknown> {
   // Apply stage default if not provided, or convert to proper format
   if (!dealData.stage && !dealData.deal_stage && defaults.stage) {
     dealData.stage = [{ status: defaults.stage }];
@@ -125,34 +151,49 @@ export function applyDealDefaults(
     delete dealData.deal_stage;
   }
 
-  // === OWNER HANDLING ===
+  return dealData;
+}
 
+/**
+ * Apply owner defaults
+ * Note: Attio accepts email addresses directly in the owner field
+ */
+function applyOwnerDefaults(
+  dealData: Record<string, unknown>,
+  defaults: DealDefaults
+): Record<string, unknown> {
   // Apply owner default if not provided
-  // Note: Attio accepts email addresses directly in the owner field for both create and update
   if (!dealData.owner && defaults.owner) {
     dealData.owner = defaults.owner;
   }
 
-  // === VALUE/CURRENCY HANDLING ===
+  return dealData;
+}
 
+/**
+ * Apply value/currency defaults and convert various formats
+ * Handles object formats, arrays, and legacy deal_value field
+ */
+function applyValueDefaults(
+  dealData: Record<string, unknown>
+): Record<string, unknown> {
   // Handle various value formats - Attio accepts simple numbers for currency fields
   if (dealData.value && typeof dealData.value === 'number') {
     // Simple number format: value: 9780 - Attio accepts this directly
-    // Keep as number, don't wrap in array
-  } else if (
+    return dealData;
+  }
+
+  if (
     dealData.value &&
     typeof dealData.value === 'object' &&
     !Array.isArray(dealData.value)
   ) {
     // Handle different object formats - convert to simple number
     if ('value' in dealData.value) {
-      // Format: {value: 9780, currency_code: "USD"} - extract just the number
       dealData.value = dealData.value.value;
     } else if ('amount' in dealData.value) {
-      // Format: {amount: 9780, currency_code: "USD"} - extract just the number
       dealData.value = dealData.value.amount;
     } else if ('currency_value' in dealData.value) {
-      // Format: {currency_value: 9780, currency_code: "USD"} - extract just the number
       dealData.value = dealData.value.currency_value;
     }
   } else if (
@@ -172,6 +213,30 @@ export function applyDealDefaults(
     dealData.value = dealData.deal_value;
     delete dealData.deal_value;
   }
+
+  return dealData;
+}
+
+/**
+ * Apply deal defaults and handle all field conversions
+ *
+ * This function:
+ * 1. Applies configured defaults to deal data
+ * 2. Handles all legacy field name conversions
+ * 3. Formats values to proper Attio API format
+ * 4. Allows user-provided values to override defaults
+ */
+export function applyDealDefaults(
+  recordData: Record<string, unknown>
+): Record<string, unknown> {
+  const defaults = getDealDefaults();
+  let dealData = { ...recordData };
+
+  // Apply transformations in logical order
+  dealData = applyFieldNameConversions(dealData);
+  dealData = applyStageDefaults(dealData, defaults);
+  dealData = applyOwnerDefaults(dealData, defaults);
+  dealData = applyValueDefaults(dealData);
 
   return dealData;
 }
@@ -279,34 +344,22 @@ async function getAvailableDealStages(): Promise<string[]> {
 
   // Check error cache to prevent repeated failed requests
   if (errorCache && now - errorCache.timestamp < ERROR_CACHE_TTL) {
-    return [];
+    // Return common fallback stages when API is unavailable
+    return getCommonDealStages();
   }
 
   try {
     // Import here to avoid circular dependencies
-    const { getLazyAttioClient } = await import('../api/lazy-client.js');
-    const client = getLazyAttioClient();
+    const { getStatusOptions } = await import('../api/attio-client.js');
 
-    // Get deal stage attribute configuration
-    const response = await client.get('/objects/deals/attributes');
-    const attributes = response.data.data || [];
+    // Get status options for the deal stage attribute
+    const statusOptions = await getStatusOptions('deals', 'stage');
 
-    // Find the stage attribute
-    const stageAttribute = attributes.find(
-      (attr: Record<string, unknown>) => attr.api_slug === 'stage'
-    );
-
-    if (!stageAttribute) {
-      return [];
-    }
-
-    // Get status options for the stage attribute
-    // Note: Status attributes in Attio don't have a separate /options endpoint
-    // The valid statuses are typically defined within the attribute configuration
-    // For now, we'll return an empty array and rely on the fallback mechanism
-    const stages: string[] = [];
-
-    // TODO: Investigate the correct way to fetch status options from Attio API
+    // Extract stage titles from the status options
+    const stages = statusOptions
+      .filter((option) => !option.is_archived) // Only include active stages
+      .map((option) => option.title)
+      .filter((title) => typeof title === 'string' && title.length > 0);
 
     // Update cache and clear error cache on success
     stageCache = stages;
@@ -318,9 +371,34 @@ async function getAvailableDealStages(): Promise<string[]> {
     // Cache the error to prevent cascading failures
     errorCache = { timestamp: now, error };
 
-    // Return previously cached stages if available, otherwise empty array
-    return stageCache || [];
+    // Log warning about falling back to common stages
+    warn(
+      'deal-defaults',
+      'Failed to fetch deal stages from API, falling back to common stages',
+      { error: error instanceof Error ? error.message : String(error) }
+    );
+
+    // Return previously cached stages if available, otherwise use common fallback stages
+    return stageCache || getCommonDealStages();
   }
+}
+
+/**
+ * Get common deal stages as fallback when API is unavailable
+ * These are typical stages found in most CRM systems
+ */
+function getCommonDealStages(): string[] {
+  return [
+    'Interested',
+    'Qualified',
+    'Demo Scheduled',
+    'Demo',
+    'Demo No Show',
+    'Proposal',
+    'Negotiation',
+    'Closed Won',
+    'Closed Lost',
+  ];
 }
 
 /**
@@ -363,19 +441,57 @@ export async function validateDealStage(
       return validStage; // Return the correctly cased version
     }
 
-    // Stage not found, log warning and return default
+    // Stage not found - either fail or use default based on strict validation mode
     const defaults = getDealDefaults();
+    const availableStagesText =
+      availableStages.length > 0
+        ? availableStages.join(', ')
+        : 'Unable to fetch available stages from API';
+
+    const errorMessage = `Deal stage "${stage}" not found. Available stages: ${availableStagesText}`;
+
+    // If strict validation is enabled, throw an error instead of silent fallback
+    // WARNING: This environment variable changes runtime behavior
+    // Production Impact: Previously working deals may start failing
+    if (process.env.STRICT_DEAL_STAGE_VALIDATION === 'true') {
+      const { UniversalValidationError, ErrorType } = await import(
+        '../handlers/tool-configs/universal/schemas.js'
+      );
+      throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
+        field: 'stage',
+        suggestion: `Use one of the available stages: ${availableStagesText}`,
+      });
+    }
+
+    // Otherwise, log warning and return default (existing behavior)
     warn(
       'deal-defaults',
-      `Deal stage "${stage}" not found. Available stages: ${availableStages.join(
-        ', '
-      )}. Using default: "${defaults.stage}"`
+      `${errorMessage}. Using default: "${defaults.stage}"`
     );
 
     return defaults.stage;
   } catch (err: unknown) {
     error('deal-defaults', 'Stage validation failed', err);
     return stage; // Return original stage if validation fails
+  }
+}
+
+/**
+ * Get available deal stages for error reporting
+ * This is a non-caching version for immediate error feedback
+ */
+export async function getAvailableStagesForErrors(): Promise<string[]> {
+  try {
+    // Try to get from cache first (fast path)
+    if (stageCache && Date.now() - stageCacheTimestamp < STAGE_CACHE_TTL) {
+      return stageCache;
+    }
+
+    // If no valid cache, return common stages for immediate error reporting
+    return getCommonDealStages();
+  } catch {
+    // Always return common stages if anything fails
+    return getCommonDealStages();
   }
 }
 
