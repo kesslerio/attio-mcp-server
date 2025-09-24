@@ -86,7 +86,6 @@ import { UniversalResourceType } from '../../src/handlers/tool-configs/universal
 import { AttioRecord } from '../../src/types/attio.js';
 import {
   applyDealDefaultsWithValidation,
-  applyDealDefaultsWithValidationLegacy,
   validateDealInput,
 } from '../../src/config/deal-defaults.js';
 import { createObjectRecord } from '../../src/objects/records/index.js';
@@ -144,8 +143,13 @@ describe('UniversalCreateService', () => {
         values: { name: 'Test Deal' },
       } as any;
       const mockDealData = { name: 'Test Deal', stage: 'qualified' } as any;
-      vi.mocked(applyDealDefaultsWithValidationLegacy).mockResolvedValue(
-        mockDealData
+      const mockDealValidation = {
+        dealData: mockDealData,
+        warnings: [],
+        suggestions: [],
+      };
+      vi.mocked(applyDealDefaultsWithValidation).mockResolvedValue(
+        mockDealValidation
       );
       vi.mocked(createObjectRecord).mockResolvedValue(mockDeal);
       const result = await UniversalCreateService.createRecord({
@@ -153,7 +157,7 @@ describe('UniversalCreateService', () => {
         record_data: { values: { name: 'Test Deal' } },
       });
       expect(validateDealInput).toHaveBeenCalledWith({ name: 'Test Deal' });
-      expect(applyDealDefaultsWithValidationLegacy).toHaveBeenCalled();
+      expect(applyDealDefaultsWithValidation).toHaveBeenCalled();
       expect(result).toEqual(mockDeal);
     });
 
@@ -200,9 +204,19 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'deal_123' },
         values: { name: 'Test Deal' },
       } as any;
-      vi.mocked(applyDealDefaultsWithValidationLegacy)
-        .mockResolvedValueOnce(originalData)
-        .mockResolvedValueOnce(defaultData);
+      const originalValidation = {
+        dealData: originalData,
+        warnings: ['Invalid stage warning'],
+        suggestions: ['Use default-stage'],
+      };
+      const defaultValidation = {
+        dealData: defaultData,
+        warnings: [],
+        suggestions: [],
+      };
+      vi.mocked(applyDealDefaultsWithValidation)
+        .mockResolvedValueOnce(originalValidation)
+        .mockResolvedValueOnce(defaultValidation);
       vi.mocked(createObjectRecord)
         .mockRejectedValueOnce(new Error('Cannot find Status "invalid-stage"'))
         .mockResolvedValueOnce(mockDeal);
