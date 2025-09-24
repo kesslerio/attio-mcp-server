@@ -189,17 +189,31 @@ export const UpdateValidation = {
       return { matches: false };
     }
     let unwrappedActual: unknown = actualValue;
-    if (
-      Array.isArray(actualValue) &&
-      actualValue.length > 0 &&
-      (actualValue as Record<string, unknown>[])[0]?.value !== undefined
-    ) {
-      unwrappedActual =
-        (actualValue as Record<string, unknown>[]).length === 1
-          ? (actualValue as Record<string, unknown>[])[0].value
-          : ((actualValue as Record<string, unknown>[]).map(
-              (v: Record<string, unknown>) => v.value
-            ) as unknown);
+
+    // Handle array responses from Attio API
+    if (Array.isArray(actualValue) && actualValue.length > 0) {
+      const firstItem = actualValue[0] as Record<string, unknown>;
+
+      // Handle status fields (like deal stages) - they use 'status' property
+      if (fieldName === 'stage' || fieldName.includes('stage')) {
+        if (firstItem?.status !== undefined) {
+          unwrappedActual =
+            actualValue.length === 1
+              ? firstItem.status
+              : (actualValue as Record<string, unknown>[]).map(
+                  (v: Record<string, unknown>) => v.status
+                );
+        }
+      }
+      // Handle regular value fields
+      else if (firstItem?.value !== undefined) {
+        unwrappedActual =
+          actualValue.length === 1
+            ? firstItem.value
+            : (actualValue as Record<string, unknown>[]).map(
+                (v: Record<string, unknown>) => v.value
+              );
+      }
     }
     if (Array.isArray(expectedValue)) {
       if (!Array.isArray(unwrappedActual)) return { matches: false };
@@ -225,6 +239,19 @@ export const UpdateValidation = {
         };
       }
       return { matches };
+    }
+
+    // Handle expected values that are status objects (like deal stages)
+    if (
+      typeof expectedValue === 'object' &&
+      expectedValue !== null &&
+      !Array.isArray(expectedValue) &&
+      'status' in expectedValue &&
+      (fieldName === 'stage' || fieldName.includes('stage'))
+    ) {
+      const expectedStatus = (expectedValue as Record<string, unknown>).status;
+      const actualStr = String(unwrappedActual);
+      return { matches: String(expectedStatus) === actualStr };
     }
     if (typeof expectedValue === 'number') {
       const actualNum = Number(unwrappedActual);

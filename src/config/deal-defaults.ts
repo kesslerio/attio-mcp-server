@@ -279,34 +279,22 @@ async function getAvailableDealStages(): Promise<string[]> {
 
   // Check error cache to prevent repeated failed requests
   if (errorCache && now - errorCache.timestamp < ERROR_CACHE_TTL) {
-    return [];
+    // Return common fallback stages when API is unavailable
+    return getCommonDealStages();
   }
 
   try {
     // Import here to avoid circular dependencies
-    const { getLazyAttioClient } = await import('../api/lazy-client.js');
-    const client = getLazyAttioClient();
+    const { getStatusOptions } = await import('../api/attio-client.js');
 
-    // Get deal stage attribute configuration
-    const response = await client.get('/objects/deals/attributes');
-    const attributes = response.data.data || [];
+    // Get status options for the deal stage attribute
+    const statusOptions = await getStatusOptions('deals', 'stage');
 
-    // Find the stage attribute
-    const stageAttribute = attributes.find(
-      (attr: Record<string, unknown>) => attr.api_slug === 'stage'
-    );
-
-    if (!stageAttribute) {
-      return [];
-    }
-
-    // Get status options for the stage attribute
-    // Note: Status attributes in Attio don't have a separate /options endpoint
-    // The valid statuses are typically defined within the attribute configuration
-    // For now, we'll return an empty array and rely on the fallback mechanism
-    const stages: string[] = [];
-
-    // TODO: Investigate the correct way to fetch status options from Attio API
+    // Extract stage titles from the status options
+    const stages = statusOptions
+      .filter((option) => !option.is_archived) // Only include active stages
+      .map((option) => option.title)
+      .filter((title) => typeof title === 'string' && title.length > 0);
 
     // Update cache and clear error cache on success
     stageCache = stages;
@@ -318,9 +306,34 @@ async function getAvailableDealStages(): Promise<string[]> {
     // Cache the error to prevent cascading failures
     errorCache = { timestamp: now, error };
 
-    // Return previously cached stages if available, otherwise empty array
-    return stageCache || [];
+    // Log warning about falling back to common stages
+    warn(
+      'deal-defaults',
+      'Failed to fetch deal stages from API, falling back to common stages',
+      { error: error instanceof Error ? error.message : String(error) }
+    );
+
+    // Return previously cached stages if available, otherwise use common fallback stages
+    return stageCache || getCommonDealStages();
   }
+}
+
+/**
+ * Get common deal stages as fallback when API is unavailable
+ * These are typical stages found in most CRM systems
+ */
+function getCommonDealStages(): string[] {
+  return [
+    'Interested',
+    'Qualified',
+    'Demo Scheduled',
+    'Demo',
+    'Demo No Show',
+    'Proposal',
+    'Negotiation',
+    'Closed Won',
+    'Closed Lost',
+  ];
 }
 
 /**
@@ -363,19 +376,55 @@ export async function validateDealStage(
       return validStage; // Return the correctly cased version
     }
 
-    // Stage not found, log warning and return default
+    // Stage not found - either fail or use default based on strict validation mode
     const defaults = getDealDefaults();
+    const availableStagesText =
+      availableStages.length > 0
+        ? availableStages.join(', ')
+        : 'Unable to fetch available stages from API';
+
+    const errorMessage = `Deal stage "${stage}" not found. Available stages: ${availableStagesText}`;
+
+    // If strict validation is enabled, throw an error instead of silent fallback
+    if (process.env.STRICT_DEAL_STAGE_VALIDATION === 'true') {
+      const { UniversalValidationError, ErrorType } = await import(
+        '../handlers/tool-configs/universal/schemas.js'
+      );
+      throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
+        field: 'stage',
+        suggestion: `Use one of the available stages: ${availableStagesText}`,
+      });
+    }
+
+    // Otherwise, log warning and return default (existing behavior)
     warn(
       'deal-defaults',
-      `Deal stage "${stage}" not found. Available stages: ${availableStages.join(
-        ', '
-      )}. Using default: "${defaults.stage}"`
+      `${errorMessage}. Using default: "${defaults.stage}"`
     );
 
     return defaults.stage;
   } catch (err: unknown) {
     error('deal-defaults', 'Stage validation failed', err);
     return stage; // Return original stage if validation fails
+  }
+}
+
+/**
+ * Get available deal stages for error reporting
+ * This is a non-caching version for immediate error feedback
+ */
+export async function getAvailableStagesForErrors(): Promise<string[]> {
+  try {
+    // Try to get from cache first (fast path)
+    if (stageCache && Date.now() - stageCacheTimestamp < STAGE_CACHE_TTL) {
+      return stageCache;
+    }
+
+    // If no valid cache, return common stages for immediate error reporting
+    return getCommonDealStages();
+  } catch {
+    // Always return common stages if anything fails
+    return getCommonDealStages();
   }
 }
 

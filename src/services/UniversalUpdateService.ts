@@ -409,6 +409,19 @@ export class UniversalUpdateService {
             new Error('Verification failed'),
             { discrepancies: verification.discrepancies }
           );
+
+          // If strict validation is enabled, fail the operation
+          if (process.env.STRICT_FIELD_VALIDATION === 'true') {
+            throw new UniversalValidationError(
+              `Field persistence verification failed: ${verification.discrepancies.join('; ')}`,
+              ErrorType.API_ERROR,
+              {
+                field: 'field_verification',
+                suggestion:
+                  'Check that the field values are correctly formatted and supported by the API',
+              }
+            );
+          }
         }
       } catch (error: unknown) {
         logError(
