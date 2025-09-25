@@ -6,22 +6,22 @@
  * and response processing.
  */
 
-import type { AttioRecord, JsonObject } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '@shared-types/attio.js';
 import type {
   ResourceCreator,
   ResourceCreatorContext,
   ResourceCreatorError,
   RecoveryOptions,
 } from './types.js';
-import { EnhancedApiError } from '../../../errors/enhanced-api-errors.js';
-import { extractRecordId } from '../../../utils/validation/uuid-validation.js';
+import { EnhancedApiError } from '@errors/enhanced-api-errors.js';
+import { extractRecordId } from '@utils/validation/uuid-validation.js';
 import {
   extractAttioRecord,
   assertLooksLikeCreated,
   isTestRun,
   debugRecordShape,
-} from '../extractor.js';
-import { validateRequiredArrayField } from '../validators.js';
+} from '@services/create/extractor.js';
+import { validateRequiredArrayField } from '@services/create/validators.js';
 
 /**
  * Abstract base class for resource creators

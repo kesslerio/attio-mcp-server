@@ -221,6 +221,7 @@
     "dotenv-cli": "^10.0.0",
     "eslint": "^9.33.0",
     "eslint-formatter-compact": "^8.40.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "glob": "^11.0.3",
     "husky": "^9.1.7",

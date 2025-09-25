@@ -360,7 +360,7 @@ export const coreOperationsToolDefinitions = {
 
 Example: Multi-resource search across different types:
 
-```typescript
+````typescript
 // src/handlers/tool-configs/universal/advanced-operations.ts
 export const crossResourceSearchConfig: UniversalToolConfig = {
   name: 'cross-resource-search',
@@ -406,10 +406,36 @@ export const crossResourceSearchConfig: UniversalToolConfig = {
       }
     }
 
-    return output.trim();
+    return output;
   },
 };
-```
+
+## Development Tooling
+
+### TypeScript Path Aliases
+
+To keep imports readable the project defines shared TypeScript path aliases in `tsconfig.json` and `test/tsconfig.json`. They are also surfaced to Vitest through `configs/vitest/aliases.ts` and to ESLint via `eslint.config.js`. The most commonly used aliases are:
+
+- `@src/*` → `src/*`
+- `@api/*` → `src/api/*`
+- `@config/*` → `src/config/*`
+- `@constants/*` → `src/constants/*`
+- `@handlers/*` → `src/handlers/*`
+- `@services/*` → `src/services/*`
+- `@errors/*` → `src/errors/*`
+- `@shared-types/*` → `src/types/*`
+- `@utils/*` → `src/utils/*`
+- `@test-support/*` → `src/test-support/*`
+- `@test/*` → `test/*`
+
+When adding new modules prefer these aliases over deep relative paths. If you introduce a new top-level folder, update the alias definitions in:
+
+- `tsconfig.json`
+- `test/tsconfig.json`
+- `configs/vitest/aliases.ts`
+- `eslint.config.js`
+
+and run `npx tsc --noEmit` to confirm TypeScript resolves the new paths.
 
 ### Batch Operation Extensions
 
@@ -466,7 +492,7 @@ export const conditionalBatchConfig: UniversalToolConfig = {
     return `Conditional batch operation completed:\n✅ ${successful} successful\n❌ ${failed} failed`;
   },
 };
-```
+````
 
 ## Testing Strategies
 

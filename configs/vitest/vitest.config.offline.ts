@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { aliasEntries } from './aliases.ts';
 
 export default defineConfig({
   test: {
@@ -55,8 +56,6 @@ export default defineConfig({
     // Note: File watching exclusions not available in this config
   },
   resolve: {
-    alias: {
-      '^(\\.{1,2}/.*)\\.js$': '$1',
-    },
+    alias: aliasEntries,
   },
 });

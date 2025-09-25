@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { aliasEntries } from './aliases.ts';
 
 /**
  * Vitest configuration for smoke tests
@@ -27,7 +28,12 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
 
     // Optimized for speed
-    threads: false, // Single thread for predictable timing
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
     isolate: false, // Faster but less isolated
 
     // Minimal coverage for smoke tests
@@ -36,14 +42,12 @@ export default defineConfig({
     },
 
     // Fast reporter
-    reporter: ['dot'],
+    reporters: ['dot'],
 
     // Fail fast on first error
     bail: 1,
   },
   resolve: {
-    alias: {
-      '^(\\.{1,2}/.*)\\.js$': '$1',
-    },
+    alias: aliasEntries,
   },
 });
