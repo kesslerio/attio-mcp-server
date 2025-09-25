@@ -15,12 +15,15 @@ import {
   type UniversalBatchSearchResult,
 } from '../../../../api/operations/batch.js';
 import { extractRecordId } from './operations-array.js';
+import { BATCH_CONFIG } from '../../../../config/batch-constants.js';
 
-const DEFAULT_CHUNK_SIZE = 5;
-const DEFAULT_MAX_BATCH = 100;
-const TEST_DELAY_MS = 60;
-const SEARCH_CHUNK_SIZE = 25;
-const SEARCH_TEST_DELAY_MS = 25;
+const {
+  DEFAULT_CHUNK_SIZE,
+  DEFAULT_MAX_BATCH,
+  TEST_DELAY_MS,
+  SEARCH_CHUNK_SIZE,
+  SEARCH_TEST_DELAY_MS,
+} = BATCH_CONFIG;
 
 type LegacyBatchParams = {
   resourceType: UniversalResourceType;
@@ -316,10 +319,14 @@ async function executeSearchBatch(
     }
 
     return aggregated.flatMap((result) => {
-      const typedResult = result as unknown as JsonObject;
-      const records = typedResult.result;
-      return Array.isArray(records) ? records : [];
-    }) as JsonObject[];
+      const records = (result as unknown as JsonObject).result;
+      return Array.isArray(records)
+        ? (records.filter(
+            (entry): entry is JsonObject =>
+              typeof entry === 'object' && entry !== null
+          ) as JsonObject[])
+        : [];
+    });
   }
 
   const validation = validateSearchQuery(undefined, {

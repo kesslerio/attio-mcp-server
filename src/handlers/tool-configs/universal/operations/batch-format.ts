@@ -7,8 +7,29 @@ import {
 import type { JsonObject } from '../../../../types/attio.js';
 import type { UniversalBatchSearchResult } from '../../../../api/operations/batch.js';
 
+function isJsonObject(value: unknown): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function isJsonObjectArray(value: unknown): value is JsonObject[] {
-  return Array.isArray(value);
+  return Array.isArray(value) && value.every(isJsonObject);
+}
+
+function isUniversalBatchSearchResultArray(
+  value: unknown
+): value is UniversalBatchSearchResult[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isJsonObject(item) &&
+        'success' in item &&
+        typeof (item as JsonObject).success === 'boolean' &&
+        ('query' in item
+          ? typeof (item as JsonObject).query === 'string'
+          : true)
+    )
+  );
 }
 
 function coerceDisplayValue(value: unknown): string | undefined {
@@ -82,6 +103,79 @@ function formatBatchSearchResults(
   return summary;
 }
 
+function pluralizeResource(resourceTypeName: string, count: number): string {
+  const base = resourceTypeName || 'record';
+  if (count === 1) {
+    return base;
+  }
+  if (base.endsWith('y')) {
+    return `${base.slice(0, -1)}ies`;
+  }
+  if (base.endsWith('s')) {
+    return base;
+  }
+  return `${base}s`;
+}
+
+function formatSuccessfulOperations(
+  operations: JsonObject[],
+  resourceTypeName: string
+): string {
+  if (!operations.length) {
+    return '';
+  }
+
+  const header = 'Successful operations:';
+  const lines = operations.map((op: JsonObject, index: number) => {
+    const opResult = op.result as JsonObject | undefined;
+    const values = opResult?.values as JsonObject | undefined;
+    const fallbackId = (opResult?.record_id as string | undefined) ?? 'Unknown';
+    const name = extractDisplayName(values, fallbackId);
+    const descriptor = resourceTypeName ? `${name}` : name;
+    return `${index + 1}. ${descriptor}`;
+  });
+
+  return `${header}\n${lines.join('\n')}`;
+}
+
+function formatFailedOperations(operations: JsonObject[]): string {
+  if (!operations.length) {
+    return '';
+  }
+
+  const header = 'Failed operations:';
+  const lines = operations.map((op: JsonObject, index: number) => {
+    const opData = op.data as JsonObject | undefined;
+    const identifier =
+      (op.record_id as string | undefined) ??
+      (opData?.name as string | undefined) ??
+      'Unknown';
+    const error = op.error ?? 'Unknown error';
+    return `${index + 1}. ${identifier}: ${error}`;
+  });
+
+  return `${header}\n${lines.join('\n')}`;
+}
+
+function formatSearchRecords(
+  records: JsonObject[],
+  resourceTypeName: string
+): string {
+  if (!records.length) {
+    return `Batch search found 0 ${pluralizeResource(resourceTypeName, 0)}`;
+  }
+
+  const lines = records.map((record: JsonObject, index: number) => {
+    const values = safeExtractRecordValues(record) as JsonObject | undefined;
+    const recordId = record.id as JsonObject | undefined;
+    const name = extractDisplayName(values, 'Unnamed');
+    const id = (recordId?.record_id as string) || 'unknown';
+    return `${index + 1}. ${name} (ID: ${id})`;
+  });
+
+  return `Batch search found ${records.length} ${pluralizeResource(resourceTypeName, records.length)}:\n${lines.join('\n')}`;
+}
+
 export function formatBatchResult(
   results: JsonObject | JsonObject[] | undefined,
   operationType?: BatchOperationType,
@@ -100,62 +194,36 @@ export function formatBatchResult(
     return `Batch ${operationName} result: ${JSON.stringify(results)}`;
   }
 
-  const successCount = results.filter((r) => r.success).length;
-  const failureCount = results.length - successCount;
-
-  let summary = `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed\n\n`;
-
   if (operationType === BatchOperationType.SEARCH) {
-    if (results.length > 0 && 'query' in results[0]) {
-      return formatBatchSearchResults(
-        results as unknown as UniversalBatchSearchResult[],
-        resourceTypeName
-      );
+    if (isUniversalBatchSearchResultArray(results)) {
+      return formatBatchSearchResults(results, resourceTypeName);
     }
 
-    return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
-      .map((record: JsonObject, index: number) => {
-        const values = safeExtractRecordValues(record) as
-          | JsonObject
-          | undefined;
-        const recordId = record.id as JsonObject | undefined;
-        const name = extractDisplayName(values, 'Unnamed');
-        const id = (recordId?.record_id as string) || 'unknown';
-        return `${index + 1}. ${name} (ID: ${id})`;
-      })
-      .join('\n')}`;
+    return formatSearchRecords(results, resourceTypeName);
   }
 
   const successful = results.filter((r) => r.success);
-  if (successful.length > 0) {
-    summary += 'Successful operations:\n';
-    summary += successful
-      .map((op: JsonObject, index: number) => {
-        const opResult = op.result as JsonObject | undefined;
-        const values = opResult?.values as JsonObject | undefined;
-        const name = extractDisplayName(
-          values,
-          (opResult?.record_id as string | undefined) ?? 'Unknown'
-        );
-        return `${index + 1}. ${name}`;
-      })
-      .join('\n');
-  }
-
   const failed = results.filter((r) => !r.success);
-  if (failed.length > 0) {
-    summary += '\n\nFailed operations:\n';
-    summary += failed
-      .map((op: JsonObject, index: number) => {
-        const opData = op.data as JsonObject | undefined;
-        const identifier =
-          (op.record_id as string | undefined) ??
-          (opData?.name as string | undefined) ??
-          'Unknown';
-        return `${index + 1}. ${identifier}: ${op.error}`;
-      })
-      .join('\n');
+
+  const successCount = successful.length;
+  const failureCount = failed.length;
+
+  const sections: string[] = [
+    `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed`,
+  ];
+
+  const successSection = formatSuccessfulOperations(
+    successful,
+    resourceTypeName
+  );
+  if (successSection) {
+    sections.push(successSection);
   }
 
-  return summary;
+  const failedSection = formatFailedOperations(failed);
+  if (failedSection) {
+    sections.push(failedSection);
+  }
+
+  return sections.join('\n\n');
 }

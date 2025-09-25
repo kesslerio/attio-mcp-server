@@ -21,6 +21,7 @@ import {
   isTestRun,
   debugRecordShape,
 } from '../extractor.js';
+import { validateRequiredArrayField } from '../validators.js';
 
 /**
  * Abstract base class for resource creators
@@ -44,6 +45,17 @@ export abstract class BaseCreator implements ResourceCreator {
    */
   protected normalizeInput(input: JsonObject): JsonObject {
     return input;
+  }
+
+  /**
+   * Validates required array field presence
+   */
+  protected assertRequiredArray(
+    payload: JsonObject,
+    field: string,
+    errorMessage: string
+  ): void {
+    validateRequiredArrayField(payload, field, errorMessage);
   }
 
   /**

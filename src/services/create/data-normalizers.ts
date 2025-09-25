@@ -157,15 +157,6 @@ export function normalizePersonValues(input: JsonObject): JsonObject {
     filteredPersonData.email_addresses = [String(rawEmails)];
   }
 
-  // Ensure required fields exist
-  if (
-    !filteredPersonData.email_addresses ||
-    !Array.isArray(filteredPersonData.email_addresses) ||
-    filteredPersonData.email_addresses.length === 0
-  ) {
-    throw new Error('missing required parameter: email_addresses');
-  }
-
   if (!filteredPersonData.name) {
     // Derive a safe name from email local part
     const emailAddresses = filteredPersonData.email_addresses as string[];

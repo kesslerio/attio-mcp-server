@@ -53,6 +53,14 @@ export class TaskCreator extends BaseCreator {
       targetObject: input.targetObject,
     } as JsonObject);
 
+    if (typeof input.content !== 'string' || input.content.trim() === '') {
+      throw this.createEnhancedError(
+        new Error('missing required parameter: content'),
+        context,
+        400
+      );
+    }
+
     try {
       // Ensure dependencies are loaded
       await this.ensureDependencies();

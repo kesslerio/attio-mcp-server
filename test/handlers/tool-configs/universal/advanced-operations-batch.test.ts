@@ -266,7 +266,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       expect(formatted).toContain('1. Failed Company: Creation failed');
     });
 
-    it('should format batch search results correctly', async () => {
+    it('should format legacy batch search results correctly', async () => {
       const mockResults = [
         {
           id: { record_id: 'comp-1' },
@@ -289,9 +289,49 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         UniversalResourceType.COMPANIES
       );
 
-      expect(formatted).toContain('Batch search found 2 companys');
+      expect(formatted).toContain('Batch search found 2 companies');
       expect(formatted).toContain('1. Company 1 (ID: comp-1)');
       expect(formatted).toContain('2. Company 2 (ID: comp-2)');
+    });
+
+    it('should format batch search results with query metadata correctly', () => {
+      const mockResults = [
+        {
+          success: true,
+          query: 'name contains attio',
+          result: [
+            {
+              id: { record_id: 'comp-1' },
+              values: { name: 'Attio' },
+            },
+          ],
+        },
+        {
+          success: false,
+          query: 'name contains missing',
+          error: 'Search failed',
+        },
+      ];
+
+      const mockFormatResourceType = vi.mocked(
+        sharedHandlers.formatResourceType
+      );
+      mockFormatResourceType.mockReturnValue('company');
+
+      const formatted = (batchOperationsConfig.formatResult as any)(
+        mockResults,
+        BatchOperationType.SEARCH,
+        UniversalResourceType.COMPANIES
+      );
+
+      expect(formatted).toContain(
+        'Batch search completed: 1 successful, 1 failed'
+      );
+      expect(formatted).toContain('Successful searches:');
+      expect(formatted).toContain('Query: "name contains attio"');
+      expect(formatted).toContain('Found 1 company');
+      expect(formatted).toContain('Failed searches:');
+      expect(formatted).toContain('Search failed');
     });
 
     it('should handle missing records/record_ids for batch operations', async () => {
@@ -358,7 +398,9 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         UniversalResourceType.COMPANIES
       );
 
-      expect(formatted).toContain('Batch search found 0');
+      expect(formatted).toContain(
+        'Batch search completed: 0 successful, 0 failed'
+      );
     });
   });
 
