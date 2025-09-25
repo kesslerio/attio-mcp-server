@@ -622,6 +622,17 @@ jobs:
               }
             }
 
+            let priorSha = null;
+            let sameSha = false;
+            if (prior) {
+              const priorShaMatch = (prior.body || '').match(/<!--\s*claude-review\s+sha=([^\s>]+)\s*-->/);
+              priorSha = priorShaMatch ? priorShaMatch[1] : null;
+              sameSha = priorSha === headSha;
+              core.info(`Prior Claude review SHA=${priorSha || 'none'}, current SHA=${headSha}, sameSha=${sameSha}`);
+            } else {
+              core.info('No prior Claude review comment found.');
+            }
+
             // Prefer the deeper Opus pass if both exist
             let body = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
 
@@ -764,16 +775,16 @@ jobs:
             const finalBody = `${marker}\n${body}\n\n${runTag}`;
 
             if (finalBody.length <= LIMIT) {
-              if (prior) {
+              if (prior && sameSha) {
                 await github.rest.issues.updateComment({
                   owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: finalBody
                 });
-                core.info('Updated existing Claude review comment.');
+                core.info('Updated existing Claude review comment (same SHA).');
               } else {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: finalBody
                 });
-                core.info('Posted new Claude review comment.');
+                core.info(prior ? 'Created new Claude review comment (SHA changed).' : 'Posted new Claude review comment.');
               }
             } else {
               // Chunk: update the first (or create it), then add append-only parts
@@ -781,7 +792,7 @@ jobs:
               for (let i = 0; i < body.length; i += LIMIT) parts.push(body.slice(i, i + LIMIT));
 
               const first = `${marker}\n${parts[0]}\n\n<!-- claude-run-${context.runId}-0/${parts.length} -->`;
-              if (prior) {
+              if (prior && sameSha) {
                 await github.rest.issues.updateComment({
                   owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: first
                 });
@@ -791,13 +802,21 @@ jobs:
                 });
               }
 
+              if (!(prior && sameSha)) {
+                core.info(prior ? `Created new Claude review (chunked) base comment due to SHA change. Total parts=${parts.length}.` : `Posted new Claude review comment (chunked). Total parts=${parts.length}.`);
+              } else {
+                core.info(`Updated existing Claude review comment (chunked, same SHA). Total parts=${parts.length}.`);
+              }
+
               for (let i = 1; i < parts.length; i++) {
                 const piece = `${marker}\n${parts[i]}\n\n<!-- claude-run-${context.runId}-${i}/${parts.length} -->`;
                 await github.rest.issues.createComment({
                   owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: piece
                 });
               }
-              core.info(`Posted PR review in ${parts.length} parts.`);
+              if (parts.length > 1) {
+                core.info(`Posted PR review in ${parts.length} parts.`);
+              }
             }
 
       # Remove claude label after review completes to prevent auto re-runs on subsequent pushes
