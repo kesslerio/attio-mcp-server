@@ -4,6 +4,12 @@
 import { RetryConfig } from '../api/operations/index.js';
 
 /**
+ * Shared JSON object type used across the codebase to replace repetitive
+ * `Record<string, unknown>` declarations while preserving type safety.
+ */
+export type JsonObject = Record<string, unknown>;
+
+/**
  * Base interface for Attio record values
  */
 export interface AttioValue<T> {

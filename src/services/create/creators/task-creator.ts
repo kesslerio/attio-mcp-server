@@ -5,7 +5,7 @@
  * object and converting the result to AttioRecord format.
  */
 
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '../../../types/attio.js';
 import type { ResourceCreatorContext } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import { safeExtractRecordId } from '../../../utils/type-extraction.js';
@@ -19,8 +19,8 @@ export class TaskCreator extends BaseCreator {
   readonly endpoint = '/tasks';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
-  private taskModule: Record<string, unknown> | null = null;
-  private converterModule: Record<string, unknown> | null = null;
+  private taskModule: JsonObject | null = null;
+  private converterModule: JsonObject | null = null;
 
   /**
    * Lazy-loads task dependencies to prevent repeated dynamic imports
@@ -42,7 +42,7 @@ export class TaskCreator extends BaseCreator {
    * @returns Promise<AttioRecord> - Created task record in AttioRecord format
    */
   async create(
-    input: Record<string, unknown>,
+    input: JsonObject,
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
     context.debug(this.constructor.name, '🔍 Task creation input', {
@@ -51,14 +51,14 @@ export class TaskCreator extends BaseCreator {
       dueDate: input.dueDate,
       recordId: input.recordId,
       targetObject: input.targetObject,
-    });
+    } as JsonObject);
 
     try {
       // Ensure dependencies are loaded
       await this.ensureDependencies();
 
       // Build options object with only defined values to avoid passing "undefined" strings
-      const options: Record<string, unknown> = {};
+      const options: JsonObject = {};
       if (input.assigneeId && input.assigneeId !== 'undefined') {
         options.assigneeId = input.assigneeId as string;
       }
@@ -78,36 +78,34 @@ export class TaskCreator extends BaseCreator {
         options.targetObject = input.targetObject as string;
       }
 
-      const createTaskFn = (this.taskModule as Record<string, unknown>)
-        .createTask as (
+      const createTaskFn = (this.taskModule as JsonObject).createTask as (
         content: string,
-        options: Record<string, unknown>
-      ) => Promise<Record<string, unknown>>;
+        options: JsonObject
+      ) => Promise<JsonObject>;
       const createdTask = await createTaskFn(input.content as string, options);
 
       context.debug(this.constructor.name, 'Task creation response', {
         hasTask: !!createdTask,
         taskId: createdTask?.id,
         taskKeys: createdTask ? Object.keys(createdTask) : [],
-      });
+      } as JsonObject);
 
       // Convert task to AttioRecord format
-      const convertFn = (this.converterModule as Record<string, unknown>)
+      const convertFn = (this.converterModule as JsonObject)
         .convertTaskToAttioRecord as (
-        task: Record<string, unknown>,
-        input: Record<string, unknown>
+        task: JsonObject,
+        input: JsonObject
       ) => AttioRecord;
       const record = convertFn(createdTask, input);
       // Ensure E2E compatibility: include values.assignee when assigneeId provided
       try {
         if (
           input.assigneeId &&
-          (!record.values ||
-            !(record.values as Record<string, unknown>).assignee)
+          (!record.values || !(record.values as JsonObject).assignee)
         ) {
-          const values: Record<string, unknown> = record.values || {};
+          const values: JsonObject = (record.values as JsonObject) || {};
           values.assignee = [{ value: input.assigneeId }];
-          (record as Record<string, unknown>).values = values;
+          (record as JsonObject).values = values;
         }
       } catch {
         // Ignore conversion errors, maintain compatibility
@@ -116,14 +114,14 @@ export class TaskCreator extends BaseCreator {
       context.debug(this.constructor.name, 'Converted task record', {
         recordId: safeExtractRecordId(record),
         resourceType: record.resource_type,
-      });
+      } as JsonObject);
 
       return record;
     } catch (err: unknown) {
       context.logError(this.constructor.name, 'Task creation error', {
         error: (err as Error)?.message,
         input,
-      });
+      } as JsonObject);
 
       return this.handleApiError(err, context, input);
     }
@@ -132,9 +130,7 @@ export class TaskCreator extends BaseCreator {
   /**
    * Tasks don't require input normalization beyond what's in the input
    */
-  protected normalizeInput(
-    input: Record<string, unknown>
-  ): Record<string, unknown> {
+  protected normalizeInput(input: JsonObject): JsonObject {
     return input;
   }
 
@@ -152,7 +148,7 @@ export class TaskCreator extends BaseCreator {
   protected async attemptRecovery(
     context: ResourceCreatorContext,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _normalizedInput?: Record<string, unknown>
+    _normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     // Tasks are handled via delegation, so no direct recovery needed
     throw this.createEnhancedError(

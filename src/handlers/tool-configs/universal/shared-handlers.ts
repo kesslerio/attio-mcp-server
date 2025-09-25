@@ -21,6 +21,8 @@ import {
   UniversalDeleteNoteParams,
 } from './types.js';
 
+import { JsonObject } from '../../../types/attio.js';
+
 // Import extracted services from Issue #489 Phase 2 & 3
 import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
 import { UniversalMetadataService } from '../../../services/UniversalMetadataService.js';
@@ -82,7 +84,7 @@ export async function handleUniversalGetDetails(
  */
 export async function handleUniversalCreateNote(
   params: UniversalCreateNoteParams
-): Promise<Record<string, unknown>> {
+): Promise<JsonObject> {
   const { resource_type, record_id, title, content, format } = params;
 
   try {
@@ -100,9 +102,7 @@ export async function handleUniversalCreateNote(
       '../../../utils/attio-response.js'
     );
 
-    const result = normalizeNote(
-      unwrapAttio<Record<string, unknown>>(rawResult)
-    );
+    const result = normalizeNote(unwrapAttio<JsonObject>(rawResult));
     debug(
       'universal.createNote',
       'Create note result',
@@ -134,7 +134,7 @@ export async function handleUniversalCreateNote(
  */
 export async function handleUniversalGetNotes(
   params: UniversalGetNotesParams
-): Promise<Record<string, unknown>[]> {
+): Promise<JsonObject[]> {
   const { resource_type, record_id, limit = 20, offset = 0 } = params;
 
   // Validate key inputs early for clearer messages
@@ -159,7 +159,7 @@ export async function handleUniversalGetNotes(
       limit,
       offset,
     });
-    const rawList = unwrapAttio<Record<string, unknown>>(response);
+    const rawList = unwrapAttio<JsonObject>(response);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
     const noteArray: any[] = Array.isArray(rawList)
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
@@ -195,7 +195,7 @@ export async function handleUniversalGetNotes(
  */
 export async function handleUniversalListNotes(
   params: UniversalGetNotesParams
-): Promise<Record<string, unknown>[]> {
+): Promise<JsonObject[]> {
   return handleUniversalGetNotes(params);
 }
 
@@ -204,11 +204,11 @@ export async function handleUniversalListNotes(
  */
 export async function handleUniversalUpdateNote(
   params: UniversalUpdateNoteParams
-): Promise<Record<string, unknown>> {
+): Promise<JsonObject> {
   const { note_id, title, content, is_archived } = params;
   const client = getLazyAttioClient();
 
-  const updateData: Record<string, unknown> = {};
+  const updateData: JsonObject = {};
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (is_archived !== undefined) updateData.is_archived = is_archived;
@@ -222,7 +222,7 @@ export async function handleUniversalUpdateNote(
  */
 export async function handleUniversalSearchNotes(
   params: UniversalSearchNotesParams
-): Promise<Record<string, unknown>[]> {
+): Promise<JsonObject[]> {
   const { resource_type, record_id, query, limit = 20, offset = 0 } = params;
   const client = getLazyAttioClient();
 
@@ -248,7 +248,7 @@ export async function handleUniversalSearchNotes(
     const parentObject = resourceTypeMap[resource_type];
     if (parentObject) {
       notes = notes.filter(
-        (note: Record<string, unknown>) => note.parent_object === parentObject
+        (note: JsonObject) => note.parent_object === parentObject
       );
     }
   }
@@ -301,7 +301,7 @@ export async function handleUniversalDelete(
  */
 export async function handleUniversalGetAttributes(
   params: UniversalAttributesParams
-): Promise<Record<string, unknown>> {
+): Promise<JsonObject> {
   return UniversalMetadataService.getAttributes(params);
 }
 
@@ -313,7 +313,7 @@ export async function handleUniversalDiscoverAttributes(
   options?: {
     categories?: string[]; // NEW: Category filtering support
   }
-): Promise<Record<string, unknown>> {
+): Promise<JsonObject> {
   return UniversalMetadataService.discoverAttributes(resource_type, options);
 }
 
@@ -322,7 +322,7 @@ export async function handleUniversalDiscoverAttributes(
  */
 export async function handleUniversalGetDetailedInfo(
   params: UniversalDetailedInfoParams
-): Promise<Record<string, unknown>> {
+): Promise<JsonObject> {
   const { resource_type, record_id } = params;
 
   // Return the full record for all resource types using standard endpoints

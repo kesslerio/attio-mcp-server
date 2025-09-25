@@ -5,7 +5,7 @@
  * object and normalizing the response format.
  */
 
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '../../../types/attio.js';
 import type { ResourceCreatorContext } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import { resolveMockId } from '../../../test-support/test-data-registry.js';
@@ -33,15 +33,15 @@ interface NoteModule {
     title: string;
     content: string;
     format: string;
-  }) => Promise<Record<string, unknown>>;
+  }) => Promise<JsonObject>;
 }
 
 /**
  * Interface for the response utils module
  */
 interface ResponseUtilsModule {
-  unwrapAttio: (response: Record<string, unknown>) => Record<string, unknown>;
-  normalizeNote: (note: Record<string, unknown>) => Record<string, unknown>;
+  unwrapAttio: (response: JsonObject) => JsonObject;
+  normalizeNote: (note: JsonObject) => JsonObject;
 }
 
 /**
@@ -80,7 +80,7 @@ export class NoteCreator extends BaseCreator {
    * @returns Promise<AttioRecord> - Created note record (normalized)
    */
   async create(
-    input: Record<string, unknown>,
+    input: JsonObject,
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
@@ -118,7 +118,7 @@ export class NoteCreator extends BaseCreator {
       const coercedFormat =
         noteInput.format === 'markdown' ? 'markdown' : 'plaintext'; // Any non-markdown format becomes plaintext
 
-      const noteData = {
+      const noteData: JsonObject = {
         parent_object: noteInput.resource_type,
         parent_record_id,
         title: noteInput.title,
@@ -128,12 +128,22 @@ export class NoteCreator extends BaseCreator {
 
       context.debug(this.constructor.name, 'Creating note with data', noteData);
 
-      const response = await this.noteModule?.createNote(noteData);
+      const response = await this.noteModule?.createNote(
+        noteData as {
+          parent_object: string;
+          parent_record_id: string;
+          title: string;
+          content: string;
+          format: string;
+        }
+      );
 
       // Unwrap varying API envelopes and normalize to stable shape
-      const attioNote = this.responseUtilsModule?.unwrapAttio(response || {});
+      const attioNote = this.responseUtilsModule?.unwrapAttio(
+        (response || {}) as JsonObject
+      );
       const normalizedNote = this.responseUtilsModule?.normalizeNote(
-        attioNote || {}
+        (attioNote || {}) as JsonObject
       );
 
       context.debug(this.constructor.name, 'Note creation response', {
@@ -157,7 +167,7 @@ export class NoteCreator extends BaseCreator {
       return this.handleApiError(
         err,
         context,
-        noteInput as unknown as Record<string, unknown>
+        noteInput as unknown as JsonObject
       );
     }
   }
@@ -165,7 +175,7 @@ export class NoteCreator extends BaseCreator {
   /**
    * Validates and structures note input
    */
-  private validateNoteInput(input: Record<string, unknown>): NoteInput {
+  private validateNoteInput(input: JsonObject): NoteInput {
     const requiredFields = ['resource_type', 'record_id', 'title', 'content'];
 
     for (const field of requiredFields) {
@@ -186,9 +196,7 @@ export class NoteCreator extends BaseCreator {
   /**
    * Notes use delegation to notes object, so no input normalization needed
    */
-  protected normalizeInput(
-    input: Record<string, unknown>
-  ): Record<string, unknown> {
+  protected normalizeInput(input: JsonObject): JsonObject {
     return input;
   }
 

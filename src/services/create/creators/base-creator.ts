@@ -6,7 +6,7 @@
  * and response processing.
  */
 
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '../../../types/attio.js';
 import type {
   ResourceCreator,
   ResourceCreatorContext,
@@ -34,7 +34,7 @@ export abstract class BaseCreator implements ResourceCreator {
    * Creates a resource record (implemented by subclasses)
    */
   abstract create(
-    input: Record<string, unknown>,
+    input: JsonObject,
     context: ResourceCreatorContext
   ): Promise<AttioRecord>;
 
@@ -42,18 +42,14 @@ export abstract class BaseCreator implements ResourceCreator {
    * Normalizes input data for the specific resource type
    * Override in subclasses for resource-specific normalization
    */
-  protected normalizeInput(
-    input: Record<string, unknown>
-  ): Record<string, unknown> {
+  protected normalizeInput(input: JsonObject): JsonObject {
     return input;
   }
 
   /**
    * Creates the API payload for resource creation
    */
-  protected createPayload(
-    normalizedInput: Record<string, unknown>
-  ): Record<string, unknown> {
+  protected createPayload(normalizedInput: JsonObject): JsonObject {
     return {
       data: {
         values: normalizedInput,
@@ -65,9 +61,9 @@ export abstract class BaseCreator implements ResourceCreator {
    * Processes API response and extracts record
    */
   protected async processResponse(
-    response: Record<string, unknown>,
+    response: JsonObject,
     context: ResourceCreatorContext,
-    normalizedInput?: Record<string, unknown>
+    normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     context.debug(this.constructor.name, `${this.resourceType} API response`, {
       status: response?.status,
@@ -82,18 +78,16 @@ export abstract class BaseCreator implements ResourceCreator {
     let record = extractAttioRecord(response);
 
     // Enrich missing id from web_url if available
-    const enrichedRecord = this.enrichRecordId(record || {}, response);
+    const enrichedRecord = this.enrichRecordId(
+      record || ({} as JsonObject),
+      response
+    );
 
     // Handle empty response with recovery if needed
     const mustRecover =
       !enrichedRecord ||
-      !(enrichedRecord as Record<string, unknown>).id ||
-      !(
-        (enrichedRecord as Record<string, unknown>).id as Record<
-          string,
-          unknown
-        >
-      )?.record_id;
+      !(enrichedRecord as JsonObject).id ||
+      !((enrichedRecord as JsonObject).id as JsonObject)?.record_id;
     if (mustRecover) {
       record = await this.attemptRecovery(context, normalizedInput);
     } else {
@@ -117,18 +111,14 @@ export abstract class BaseCreator implements ResourceCreator {
    * Enriches record with ID extracted from web_url if missing
    */
   protected enrichRecordId(
-    record: Record<string, unknown>,
-    response: Record<string, unknown>
-  ): Record<string, unknown> {
-    if (
-      record &&
-      (!record.id || !(record.id as Record<string, unknown>)?.record_id)
-    ) {
-      const webUrl =
-        record?.web_url || (response?.data as Record<string, unknown>)?.web_url;
+    record: JsonObject,
+    response: JsonObject
+  ): JsonObject {
+    if (record && (!record.id || !(record.id as JsonObject)?.record_id)) {
+      const webUrl = record?.web_url || (response?.data as JsonObject)?.web_url;
       const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
       if (rid) {
-        const existingId = (record.id as Record<string, unknown>) || {};
+        const existingId = (record.id as JsonObject) || ({} as JsonObject);
         record.id = { ...existingId, record_id: rid };
       }
     }
@@ -142,7 +132,7 @@ export abstract class BaseCreator implements ResourceCreator {
   protected async attemptRecovery(
     context: ResourceCreatorContext,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _normalizedInput?: Record<string, unknown>
+    _normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     const recoveryOptions = this.getRecoveryOptions();
     if (!recoveryOptions) {
@@ -158,7 +148,7 @@ export abstract class BaseCreator implements ResourceCreator {
     for (const filter of recoveryOptions.searchFilters) {
       try {
         const searchEndpoint = `${this.endpoint}/search`;
-        const searchFilter = {
+        const searchFilter: JsonObject = {
           [filter.field]:
             filter.operator === 'contains'
               ? { contains: filter.value }
@@ -175,16 +165,20 @@ export abstract class BaseCreator implements ResourceCreator {
         );
 
         const record = extractAttioRecord(searchResult);
-        if (record?.id?.record_id) {
+        const typedRecord = record as JsonObject | undefined;
+        const recordId = typedRecord?.id
+          ? (typedRecord.id as JsonObject)?.record_id
+          : undefined;
+        if (recordId) {
           context.debug(
             this.constructor.name,
             `${this.resourceType} recovery succeeded`,
             {
               recoveredBy: filter.field,
-              recordId: record.id.record_id,
+              recordId,
             }
           );
-          return record as AttioRecord;
+          return typedRecord as unknown as AttioRecord;
         }
       } catch (e) {
         context.debug(
@@ -249,7 +243,7 @@ export abstract class BaseCreator implements ResourceCreator {
     context.logError(
       this.constructor.name,
       `${this.resourceType} creation error`,
-      errorInfo as unknown as Record<string, unknown>
+      errorInfo as unknown as JsonObject
     );
 
     let message: string;
@@ -273,7 +267,7 @@ export abstract class BaseCreator implements ResourceCreator {
   protected handleApiError(
     err: unknown,
     context: ResourceCreatorContext,
-    payload?: Record<string, unknown>
+    payload?: JsonObject
   ): never {
     const error = err as {
       response?: { status?: number; data?: { message?: string } };
