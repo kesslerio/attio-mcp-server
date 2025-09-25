@@ -6,7 +6,7 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '../../../types/attio.js';
 
 /**
  * Context shared among all resource creators
@@ -16,17 +16,9 @@ export interface ResourceCreatorContext {
   /** Attio API client instance */
   client: AxiosInstance;
   /** Debug logging function */
-  debug: (
-    component: string,
-    message: string,
-    data?: Record<string, unknown>
-  ) => void;
+  debug: (component: string, message: string, data?: JsonObject) => void;
   /** Error logging function */
-  logError: (
-    component: string,
-    message: string,
-    data?: Record<string, unknown>
-  ) => void;
+  logError: (component: string, message: string, data?: JsonObject) => void;
 }
 
 /**
@@ -41,7 +33,7 @@ export interface ResourceCreator {
    * @returns Promise<AttioRecord> - Created resource record
    */
   create(
-    input: Record<string, unknown>,
+    input: JsonObject,
     context: ResourceCreatorContext
   ): Promise<AttioRecord>;
 

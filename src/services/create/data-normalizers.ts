@@ -11,7 +11,7 @@
  * - Email schema transformations
  */
 
-import type { AttioRecord } from '../../types/attio.js';
+import type { AttioRecord, JsonObject } from '../../types/attio.js';
 
 /**
  * Normalizes company input data, particularly domain handling
@@ -30,10 +30,8 @@ import type { AttioRecord } from '../../types/attio.js';
  * // Output: { name: "Corp", domains: ["corp.com", "corp.io"] }
  * ```
  */
-export function normalizeCompanyValues(
-  input: Record<string, unknown>
-): Record<string, unknown> {
-  const normalizedCompany: Record<string, unknown> = { ...input };
+export function normalizeCompanyValues(input: JsonObject): JsonObject {
+  const normalizedCompany: JsonObject = { ...input };
   const rawDomain = input.domain as string | undefined;
   const rawDomains = input.domains as unknown;
   const rawWebsite = input.website as string | undefined;
@@ -43,16 +41,14 @@ export function normalizeCompanyValues(
       normalizedCompany.domains = rawDomains.map((d: unknown) =>
         typeof d === 'string'
           ? d
-          : ((d as Record<string, unknown>)?.domain ??
-            (d as Record<string, unknown>)?.value ??
-            String(d))
+          : ((d as JsonObject)?.domain ?? (d as JsonObject)?.value ?? String(d))
       );
     } else {
       normalizedCompany.domains = [
         typeof rawDomains === 'string'
           ? rawDomains
-          : ((rawDomains as Record<string, unknown>)?.domain ??
-            (rawDomains as Record<string, unknown>)?.value ??
+          : ((rawDomains as JsonObject)?.domain ??
+            (rawDomains as JsonObject)?.value ??
             String(rawDomains)),
       ];
     }
@@ -117,10 +113,8 @@ export function normalizeCompanyValues(
  * });
  * ```
  */
-export function normalizePersonValues(
-  input: Record<string, unknown>
-): Record<string, unknown> {
-  const filteredPersonData: Record<string, unknown> = {};
+export function normalizePersonValues(input: JsonObject): JsonObject {
+  const filteredPersonData: JsonObject = {};
 
   // 1) Name normalization: array of personal-name objects
   const rawName = input.name;
@@ -140,7 +134,7 @@ export function normalizePersonValues(
     } else if (Array.isArray(rawName)) {
       filteredPersonData.name = rawName;
     } else if (typeof rawName === 'object') {
-      const obj = rawName as Record<string, unknown>;
+      const obj = rawName as JsonObject;
       if ('first_name' in obj || 'last_name' in obj || 'full_name' in obj) {
         filteredPersonData.name = [obj];
       }
@@ -152,7 +146,7 @@ export function normalizePersonValues(
   if (Array.isArray(rawEmails) && rawEmails.length) {
     const normalized = rawEmails.map((e: unknown) =>
       e && typeof e === 'object' && e !== null && 'email_address' in e
-        ? String((e as Record<string, unknown>).email_address)
+        ? String((e as JsonObject).email_address)
         : String(e)
     );
     filteredPersonData.email_addresses = normalized;
@@ -161,15 +155,6 @@ export function normalizePersonValues(
   } else if (typeof rawEmails === 'string' && rawEmails) {
     // Handle case where email_addresses is a single string
     filteredPersonData.email_addresses = [String(rawEmails)];
-  }
-
-  // Ensure required fields exist
-  if (
-    !filteredPersonData.email_addresses ||
-    !Array.isArray(filteredPersonData.email_addresses) ||
-    filteredPersonData.email_addresses.length === 0
-  ) {
-    throw new Error('missing required parameter: email_addresses');
   }
 
   if (!filteredPersonData.name) {
@@ -218,55 +203,52 @@ export function normalizePersonValues(
  * @returns AttioRecord with both nested values and flat field compatibility
  */
 export function convertTaskToAttioRecord(
-  createdTask: Record<string, unknown>,
+  createdTask: JsonObject,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _originalInput: Record<string, unknown>
+  _originalInput: JsonObject
 ): AttioRecord {
   // Handle conversion from AttioTask to AttioRecord format
   if (createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
-    const task = createdTask as Record<string, unknown>;
+    const task = createdTask as JsonObject;
 
     // If it's already an AttioRecord with record_id, ensure flat fields exist and return
-    if (task.values && (task.id as Record<string, unknown>)?.record_id) {
+    if (task.values && (task.id as JsonObject)?.record_id) {
       const base: AttioRecord = task as AttioRecord;
       return {
         ...base,
         // Provide flat field compatibility expected by E2E tests
         content:
-          (base.values?.content as unknown as Record<string, unknown>[])?.[0]
-            ?.value || base.content,
+          (base.values?.content as unknown as JsonObject[])?.[0]?.value ||
+          base.content,
         title:
-          (base.values?.title as unknown as Record<string, unknown>[])?.[0]
-            ?.value ||
-          (base.values?.content as unknown as Record<string, unknown>[])?.[0]
-            ?.value ||
+          (base.values?.title as unknown as JsonObject[])?.[0]?.value ||
+          (base.values?.content as unknown as JsonObject[])?.[0]?.value ||
           base.title,
         status:
-          (base.values?.status as unknown as Record<string, unknown>[])?.[0]
-            ?.value || base.status,
+          (base.values?.status as unknown as JsonObject[])?.[0]?.value ||
+          base.status,
         due_date:
-          (base.values?.due_date as unknown as Record<string, unknown>[])?.[0]
-            ?.value ||
+          (base.values?.due_date as unknown as JsonObject[])?.[0]?.value ||
           base.due_date ||
           (task.deadline_at
             ? String(task.deadline_at).split('T')[0]
             : undefined),
         assignee_id:
-          (base.values?.assignee as unknown as Record<string, unknown>[])?.[0]
-            ?.value || base.assignee_id,
+          (base.values?.assignee as unknown as JsonObject[])?.[0]?.value ||
+          base.assignee_id,
         priority: base.priority || 'medium',
       } as unknown as AttioRecord;
     }
 
     // If it has task_id, convert to AttioRecord format
-    if ((task.id as Record<string, unknown>)?.task_id) {
+    if ((task.id as JsonObject)?.task_id) {
       const attioRecord: AttioRecord = {
         id: {
-          record_id: (task.id as Record<string, unknown>).task_id as string,
-          task_id: (task.id as Record<string, unknown>).task_id as string,
+          record_id: (task.id as JsonObject).task_id as string,
+          task_id: (task.id as JsonObject).task_id as string,
           object_id: 'tasks',
           workspace_id:
-            ((task.id as Record<string, unknown>).workspace_id as string) ||
+            ((task.id as JsonObject).workspace_id as string) ||
             'test-workspace',
         },
         values: {
@@ -291,7 +273,7 @@ export function convertTaskToAttioRecord(
           ? String(task.deadline_at).split('T')[0]
           : undefined,
         assignee_id:
-          ((task.assignee as Record<string, unknown>)?.id as string) ||
+          ((task.assignee as JsonObject)?.id as string) ||
           (task.assignee_id as string),
         priority: task.priority || 'medium',
       } as unknown as AttioRecord;

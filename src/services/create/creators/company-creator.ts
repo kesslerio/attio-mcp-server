@@ -5,7 +5,7 @@
  * error recovery, and company record processing.
  */
 
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '../../../types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import { normalizeCompanyValues } from '../data-normalizers.js';
@@ -39,7 +39,7 @@ export class CompanyCreator extends BaseCreator {
    * @returns Promise<AttioRecord> - Created company record with id.record_id
    */
   async create(
-    input: Record<string, unknown>,
+    input: JsonObject,
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
@@ -56,8 +56,9 @@ export class CompanyCreator extends BaseCreator {
       /* istanbul ignore next */
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
         const h =
-          (context.client?.defaults?.headers as Record<string, unknown>) ?? {};
-        const c = (h.common as Record<string, unknown>) ?? {};
+          (context.client?.defaults?.headers as JsonObject) ??
+          ({} as JsonObject);
+        const c = (h.common as JsonObject) ?? ({} as JsonObject);
         const hasAuth = Boolean(
           (c.Authorization as string) ||
             (c.authorization as string) ||
@@ -87,7 +88,7 @@ export class CompanyCreator extends BaseCreator {
       }
 
       const rec = this.extractRecordFromResponse(
-        response as unknown as Record<string, unknown>
+        response as unknown as JsonObject
       );
 
       /* istanbul ignore next */
@@ -98,7 +99,7 @@ export class CompanyCreator extends BaseCreator {
             hasRec: !!rec,
             recType: typeof rec,
             recKeys: rec && typeof rec === 'object' ? Object.keys(rec) : null,
-            hasId: !!(rec as Record<string, unknown>)?.id,
+            hasId: !!(rec as JsonObject)?.id,
             hasRecordId: !!safeExtractRecordId(rec),
           }
         );
@@ -116,20 +117,10 @@ export class CompanyCreator extends BaseCreator {
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
         createScopedLogger('CompanyCreator', 'create').debug('types', {
           nameBefore: Array.isArray(
-            (
-              (rec as Record<string, unknown>)?.values as Record<
-                string,
-                unknown
-              >
-            )?.name
+            ((rec as JsonObject)?.values as JsonObject)?.name
           )
             ? 'array'
-            : typeof (
-                (rec as Record<string, unknown>)?.values as Record<
-                  string,
-                  unknown
-                >
-              )?.name,
+            : typeof ((rec as JsonObject)?.values as JsonObject)?.name,
           nameAfter: typeof safeExtractValuesObject(out)?.name,
           domainsAfter: Array.isArray(safeExtractValuesObject(out)?.domains),
         });
@@ -166,9 +157,7 @@ export class CompanyCreator extends BaseCreator {
    * Normalizes company input data
    * Handles domain/domains field normalization
    */
-  protected normalizeInput(
-    input: Record<string, unknown>
-  ): Record<string, unknown> {
+  protected normalizeInput(input: JsonObject): JsonObject {
     return normalizeCompanyValues(input);
   }
 
@@ -200,7 +189,7 @@ export class CompanyCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
-    normalizedInput?: Record<string, unknown>
+    normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     if (!normalizedInput) {
       throw this.createEnhancedError(
@@ -226,11 +215,10 @@ export class CompanyCreator extends BaseCreator {
           }
         );
         const record = this.extractRecordFromSearch(searchByDomain);
-        if (
-          (record as Record<string, unknown>)?.id &&
-          ((record as Record<string, unknown>)?.id as Record<string, unknown>)
-            ?.record_id
-        ) {
+        const recordId =
+          (record as JsonObject)?.id &&
+          ((record as JsonObject)?.id as JsonObject)?.record_id;
+        if (recordId) {
           context.debug(
             this.constructor.name,
             'Company recovery succeeded by domain',
@@ -255,11 +243,10 @@ export class CompanyCreator extends BaseCreator {
           }
         );
         const record = this.extractRecordFromSearch(searchByName);
-        if (
-          (record as Record<string, unknown>)?.id &&
-          ((record as Record<string, unknown>)?.id as Record<string, unknown>)
-            ?.record_id
-        ) {
+        const recordId =
+          (record as JsonObject)?.id &&
+          ((record as JsonObject)?.id as JsonObject)?.record_id;
+        if (recordId) {
           context.debug(
             this.constructor.name,
             'Company recovery succeeded by name',
@@ -289,18 +276,16 @@ export class CompanyCreator extends BaseCreator {
    * Includes recovery attempt with normalized input
    */
   protected async processResponse(
-    response: Record<string, unknown>,
+    response: JsonObject,
     context: ResourceCreatorContext,
-    normalizedInput?: Record<string, unknown>
+    normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     context.debug(this.constructor.name, `${this.resourceType} API response`, {
       status: response?.status,
       statusText: response?.statusText,
       hasData: !!response?.data,
-      hasNestedData: !!(response?.data as Record<string, unknown>)?.data,
-      dataKeys: response?.data
-        ? Object.keys(response.data as Record<string, unknown>)
-        : [],
+      hasNestedData: !!(response?.data as JsonObject)?.data,
+      dataKeys: response?.data ? Object.keys(response.data as JsonObject) : [],
     });
 
     let record = this.extractRecordFromResponse(response);
@@ -309,9 +294,8 @@ export class CompanyCreator extends BaseCreator {
     // Handle empty response with recovery attempt
     const mustRecover =
       !record ||
-      !(record as Record<string, unknown>).id ||
-      !((record as Record<string, unknown>).id as Record<string, unknown>)
-        ?.record_id;
+      !(record as JsonObject).id ||
+      !((record as JsonObject).id as JsonObject)?.record_id;
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -322,18 +306,14 @@ export class CompanyCreator extends BaseCreator {
   /**
    * Extracts record from API response
    */
-  private extractRecordFromResponse(
-    response: Record<string, unknown>
-  ): Record<string, unknown> {
+  private extractRecordFromResponse(response: JsonObject): JsonObject {
     return extractAttioRecord(response) || {};
   }
 
   /**
    * Extracts record from search results
    */
-  private extractRecordFromSearch(
-    searchData: Record<string, unknown>
-  ): Record<string, unknown> {
+  private extractRecordFromSearch(searchData: JsonObject): JsonObject {
     return extractAttioRecord(searchData) || {};
   }
 
@@ -341,7 +321,7 @@ export class CompanyCreator extends BaseCreator {
    * Finalizes record processing
    */
   private finalizeRecord(
-    record: Record<string, unknown>,
+    record: JsonObject,
     context: ResourceCreatorContext
   ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);

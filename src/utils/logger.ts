@@ -5,6 +5,7 @@
 import { randomUUID } from 'crypto';
 import { safeJsonStringify } from './json-serializer.js';
 import { safeGet } from '../types/error-types.js';
+import type { JsonObject } from '../types/attio.js';
 
 /**
  * Log level enum for controlling verbosity
@@ -52,7 +53,7 @@ export interface LogMetadata {
 export interface LogEntry {
   message: string;
   metadata: LogMetadata;
-  data?: Record<string, unknown>;
+  data?: JsonObject;
   error?: {
     message: string;
     name: string;
@@ -165,7 +166,7 @@ function createLogMetadata(
   module: string,
   operation?: string,
   operationType?: OperationType,
-  additionalMetadata?: Record<string, unknown>
+  additionalMetadata?: JsonObject
 ): LogMetadata {
   return {
     timestamp: new Date().toISOString(),
@@ -210,7 +211,7 @@ function outputLog(
 export function debug(
   module: string,
   message: string,
-  data?: Record<string, unknown>,
+  data?: JsonObject,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -236,7 +237,7 @@ export function debug(
 export function info(
   module: string,
   message: string,
-  data?: Record<string, unknown>,
+  data?: JsonObject,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -262,7 +263,7 @@ export function info(
 export function warn(
   module: string,
   message: string,
-  data?: Record<string, unknown>,
+  data?: JsonObject,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -290,7 +291,7 @@ export function error(
   module: string,
   message: string,
   errorObj?: unknown,
-  data?: Record<string, unknown>,
+  data?: JsonObject,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -376,7 +377,7 @@ export function operationStart(
   module: string,
   operation: string,
   operationType: OperationType = OperationType.SYSTEM,
-  params?: Record<string, unknown>
+  params?: JsonObject
 ): PerformanceTimer {
   debug(
     module,
@@ -400,7 +401,7 @@ export function operationStart(
 export function operationSuccess(
   module: string,
   operation: string,
-  resultSummary?: Record<string, unknown>,
+  resultSummary?: JsonObject,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -431,7 +432,7 @@ export function operationFailure(
   module: string,
   operation: string,
   errorObj: unknown,
-  context?: Record<string, unknown>,
+  context?: JsonObject,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -481,21 +482,18 @@ export function createScopedLogger(
   operationType?: OperationType
 ) {
   return {
-    debug: (message: string, data?: Record<string, unknown>) =>
+    debug: (message: string, data?: JsonObject) =>
       debug(module, message, data, operation, operationType),
-    info: (message: string, data?: Record<string, unknown>) =>
+    info: (message: string, data?: JsonObject) =>
       info(module, message, data, operation, operationType),
-    warn: (message: string, data?: Record<string, unknown>) =>
+    warn: (message: string, data?: JsonObject) =>
       warn(module, message, data, operation, operationType),
-    error: (
-      message: string,
-      errorObj?: unknown,
-      data?: Record<string, unknown>
-    ) => error(module, message, errorObj, data, operation, operationType),
+    error: (message: string, errorObj?: unknown, data?: JsonObject) =>
+      error(module, message, errorObj, data, operation, operationType),
     operationStart: (
       op?: string,
       opType?: OperationType,
-      params?: Record<string, unknown>
+      params?: JsonObject
     ) =>
       operationStart(
         module,
@@ -505,7 +503,7 @@ export function createScopedLogger(
       ),
     operationSuccess: (
       op?: string,
-      resultSummary?: Record<string, unknown>,
+      resultSummary?: JsonObject,
       opType?: OperationType,
       duration?: number
     ) =>
@@ -519,7 +517,7 @@ export function createScopedLogger(
     operationFailure: (
       op?: string,
       errorObj?: unknown,
-      context?: Record<string, unknown>,
+      context?: JsonObject,
       opType?: OperationType,
       duration?: number
     ) =>
@@ -542,7 +540,7 @@ export async function withLogging<T>(
   operation: string,
   operationType: OperationType,
   fn: () => Promise<T>,
-  context?: Record<string, unknown>
+  context?: JsonObject
 ): Promise<T> {
   const timer = operationStart(module, operation, operationType, context);
   try {
@@ -570,13 +568,6 @@ export async function withLogging<T>(
   }
 }
 
-/**
- * Safe logging function that never interferes with MCP protocol
- * Always use this for any direct console logging that might occur during MCP operations
- *
- * @param message - Message to log
- * @param args - Additional arguments to log
- */
 export function safeMcpLog(message: string, ...args: unknown[]): void {
   // Always use console.error to avoid interfering with MCP protocol
   console.error(`[MCP_SAFE_LOG] ${message}`, ...args);

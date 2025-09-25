@@ -6,7 +6,7 @@
  */
 
 import type { AxiosResponse } from 'axios';
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '../../../types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import {
@@ -41,16 +41,21 @@ export class PersonCreator extends BaseCreator {
    * @returns Promise<AttioRecord> - Created person record with id.record_id
    */
   async create(
-    input: Record<string, unknown>,
+    input: JsonObject,
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
     const normalizedPerson = this.normalizeInput(input);
+    this.assertRequiredArray(
+      normalizedPerson,
+      'email_addresses',
+      'missing required parameter: email_addresses'
+    );
 
     context.debug(this.constructor.name, '🔍 EXACT API PAYLOAD', {
       url: this.endpoint,
       payload: JSON.stringify({ data: { values: normalizedPerson } }, null, 2),
-    });
+    } as JsonObject);
 
     try {
       const response = await this.createPersonWithRetry(
@@ -58,7 +63,7 @@ export class PersonCreator extends BaseCreator {
         normalizedPerson
       );
       const rec = this.extractRecordFromResponse(
-        response as unknown as Record<string, unknown>
+        response as unknown as JsonObject
       );
       this.finalizeRecord(rec, context);
       const recordId = safeExtractRecordId(rec);
@@ -71,35 +76,15 @@ export class PersonCreator extends BaseCreator {
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
         createScopedLogger('PersonCreator', 'create').debug('types', {
           nameBefore: Array.isArray(
-            (
-              (rec as Record<string, unknown>)?.values as Record<
-                string,
-                unknown
-              >
-            )?.name
+            ((rec as JsonObject)?.values as JsonObject)?.name
           )
             ? 'array'
-            : typeof (
-                (rec as Record<string, unknown>)?.values as Record<
-                  string,
-                  unknown
-                >
-              )?.name,
+            : typeof ((rec as JsonObject)?.values as JsonObject)?.name,
           nameAfter: Array.isArray(
-            (
-              (out as Record<string, unknown>)?.values as Record<
-                string,
-                unknown
-              >
-            )?.name
+            ((out as JsonObject)?.values as JsonObject)?.name
           )
             ? 'array'
-            : typeof (
-                (out as Record<string, unknown>)?.values as Record<
-                  string,
-                  unknown
-                >
-              )?.name,
+            : typeof ((out as JsonObject)?.values as JsonObject)?.name,
         });
       }
 
@@ -107,7 +92,7 @@ export class PersonCreator extends BaseCreator {
     } catch (err: unknown) {
       return this.handleApiError(err, context, {
         data: { values: normalizedPerson },
-      });
+      } as JsonObject);
     }
   }
 
@@ -115,9 +100,7 @@ export class PersonCreator extends BaseCreator {
    * Normalizes person input data
    * Handles name and email field normalization
    */
-  protected normalizeInput(
-    input: Record<string, unknown>
-  ): Record<string, unknown> {
+  protected normalizeInput(input: JsonObject): JsonObject {
     return normalizePersonValues(input);
   }
 
@@ -127,9 +110,9 @@ export class PersonCreator extends BaseCreator {
    */
   private async createPersonWithRetry(
     context: ResourceCreatorContext,
-    filteredPersonData: Record<string, unknown>
+    filteredPersonData: JsonObject
   ): Promise<AxiosResponse> {
-    const doCreate = async (values: Record<string, unknown>) =>
+    const doCreate = async (values: JsonObject) =>
       context.client.post(this.endpoint, { data: { values } });
 
     try {
@@ -141,7 +124,7 @@ export class PersonCreator extends BaseCreator {
 
       // Only retry on 400 with alternate email schema
       if (status === 400) {
-        const alt: Record<string, unknown> = { ...filteredPersonData };
+        const alt: JsonObject = { ...filteredPersonData };
         const emails = alt.email_addresses as unknown[] | undefined;
 
         if (emails && emails.length) {
@@ -167,7 +150,7 @@ export class PersonCreator extends BaseCreator {
                 alt.email_addresses.length > 0
                   ? typeof alt.email_addresses[0]
                   : 'undefined',
-            }
+            } as JsonObject
           );
 
           return await doCreate(alt);
@@ -200,7 +183,7 @@ export class PersonCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
-    normalizedInput?: Record<string, unknown>
+    normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     if (!normalizedInput) {
       throw this.createEnhancedError(
@@ -227,22 +210,14 @@ export class PersonCreator extends BaseCreator {
         );
 
         const record = this.extractRecordFromSearch(searchResult);
-        if (
-          (record as Record<string, unknown>)?.id &&
-          safeExtractRecordId(record)
-        ) {
+        if ((record as JsonObject)?.id && safeExtractRecordId(record)) {
           context.debug(
             this.constructor.name,
             'Person recovery succeeded by email',
             {
               email,
-              recordId: (
-                (record as Record<string, unknown>)?.id as Record<
-                  string,
-                  unknown
-                >
-              )?.record_id,
-            }
+              recordId: ((record as JsonObject)?.id as JsonObject)?.record_id,
+            } as JsonObject
           );
           return record as AttioRecord;
         }
@@ -250,7 +225,7 @@ export class PersonCreator extends BaseCreator {
     } catch (e) {
       context.debug(this.constructor.name, 'Person recovery failed', {
         message: (e as Error)?.message,
-      });
+      } as JsonObject);
     }
 
     throw this.createEnhancedError(
@@ -265,25 +240,23 @@ export class PersonCreator extends BaseCreator {
    * Includes recovery attempt with normalized input
    */
   protected async processResponse(
-    response: Record<string, unknown>,
+    response: JsonObject,
     context: ResourceCreatorContext,
-    normalizedInput?: Record<string, unknown>
+    normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     context.debug(this.constructor.name, `${this.resourceType} API response`, {
       status: response?.status,
       statusText: response?.statusText,
       hasData: !!response?.data,
-      hasNestedData: !!(response?.data as Record<string, unknown>)?.data,
-    });
+      hasNestedData: !!(response?.data as JsonObject)?.data,
+    } as JsonObject);
 
     let record = this.extractRecordFromResponse(response);
     record = this.enrichRecordId(record, response);
 
     // Handle empty response with recovery attempt
     const mustRecover =
-      !record ||
-      !(record as Record<string, unknown>).id ||
-      !safeExtractRecordId(record);
+      !record || !(record as JsonObject).id || !safeExtractRecordId(record);
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -294,26 +267,22 @@ export class PersonCreator extends BaseCreator {
   /**
    * Extracts record from API response
    */
-  private extractRecordFromResponse(
-    response: Record<string, unknown>
-  ): Record<string, unknown> {
-    return extractAttioRecord(response) || {};
+  private extractRecordFromResponse(response: JsonObject): JsonObject {
+    return extractAttioRecord(response) || ({} as JsonObject);
   }
 
   /**
    * Extracts record from search results
    */
-  private extractRecordFromSearch(
-    searchData: Record<string, unknown>
-  ): Record<string, unknown> {
-    return extractAttioRecord(searchData) || {};
+  private extractRecordFromSearch(searchData: JsonObject): JsonObject {
+    return extractAttioRecord(searchData) || ({} as JsonObject);
   }
 
   /**
    * Finalizes record processing
    */
   private finalizeRecord(
-    record: Record<string, unknown>,
+    record: JsonObject,
     context: ResourceCreatorContext
   ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);
@@ -327,7 +296,7 @@ export class PersonCreator extends BaseCreator {
             record && typeof record === 'object'
               ? Object.keys(record)
               : [typeof record],
-        }
+        } as JsonObject
       );
     }
 

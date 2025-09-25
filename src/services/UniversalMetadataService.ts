@@ -7,6 +7,7 @@
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalAttributesParams } from '../handlers/tool-configs/universal/types.js';
+import type { JsonObject } from '../types/attio.js';
 import {
   getCompanyAttributes,
   discoverCompanyAttributes,
@@ -53,7 +54,7 @@ class UniversalMetadataFacade {
       useCache?: boolean;
       cacheTtl?: number;
     }
-  ): Promise<Record<string, unknown>> {
+  ): Promise<JsonObject> {
     const discoverOptions: DiscoverTypeOptions = {
       resourceType,
       categories: options?.categories,
@@ -67,14 +68,14 @@ class UniversalMetadataFacade {
 
   async discoverTaskAttributes(options?: {
     categories?: string[];
-  }): Promise<Record<string, unknown>> {
+  }): Promise<JsonObject> {
     return this.discoveryService.discoverTasks(options);
   }
 
   async getAttributesForRecord(
     resourceType: UniversalResourceType,
     recordId: string
-  ): Promise<Record<string, unknown>> {
+  ): Promise<JsonObject> {
     return this.recordService.getAttributesForRecord(resourceType, recordId);
   }
 
@@ -85,12 +86,10 @@ class UniversalMetadataFacade {
     return this.transformService.filterByCategory(attributes, categories);
   }
 
-  async getAttributes(
-    params: UniversalAttributesParams
-  ): Promise<Record<string, unknown>> {
+  async getAttributes(params: UniversalAttributesParams): Promise<JsonObject> {
     const { resource_type, record_id, categories } = params;
 
-    let result: Record<string, unknown>;
+    let result: JsonObject;
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES: {
@@ -170,7 +169,7 @@ class UniversalMetadataFacade {
     }
 
     const filtered = this.transformService.filterByCategory(result, categories);
-    return filtered as Record<string, unknown>;
+    return filtered as JsonObject;
   }
 
   async discoverAttributes(
@@ -179,7 +178,7 @@ class UniversalMetadataFacade {
       categories?: string[];
       objectSlug?: string;
     }
-  ): Promise<Record<string, unknown>> {
+  ): Promise<JsonObject> {
     switch (resource_type) {
       case UniversalResourceType.COMPANIES: {
         const res = await discoverCompanyAttributes();
@@ -189,7 +188,7 @@ class UniversalMetadataFacade {
         return this.transformService.filterByCategory(
           res,
           options.categories
-        ) as Record<string, unknown>;
+        ) as JsonObject;
       }
 
       case UniversalResourceType.PEOPLE:
@@ -237,7 +236,7 @@ class UniversalMetadataFacade {
           return {
             ...baseResult,
             mappings: {
-              ...(baseResult.mappings as Record<string, string> | undefined),
+              ...(baseResult.mappings as JsonObject | undefined),
               ...mappings,
             },
             note: 'Use mappings to convert display names to API field names for create-record',
