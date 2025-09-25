@@ -54,7 +54,7 @@ for (const [alias, relativePath] of Object.entries(aliasDirectories)) {
 
 // Relative path .js mapping (cached)
 aliasEntries.push({
-  find: getOrCreateRegex('^(\.{1,2}\/.*)\.js$'),
+  find: getOrCreateRegex('^(\\.{1,2}/.*)\\.js$'),
   replacement: '$1',
 });
 
