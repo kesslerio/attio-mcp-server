@@ -2,11 +2,11 @@
 
 // Test field validation without API calls
 
-import * from '../../dist/handlers/tool-configs/universal/field-mapper.js';
-import * from '../../dist/handlers/tool-configs/universal/types.js';
+import { validateFields } from '../../dist/handlers/tool-configs/universal/field-mapper.js';
+import { UniversalResourceType } from '../../dist/handlers/tool-configs/universal/types.js';
 
 console.log('Testing field validation improvements for Issue #388\n');
-console.log('=' .repeat(60));
+console.log('='.repeat(60));
 
 // Test 1: Wrong field name for tasks
 console.log('\n📝 Test 1: Using wrong field names for tasks');
@@ -14,7 +14,7 @@ console.log('Input: { title: "My Task", status: "pending" }');
 
 const taskValidation = validateFields(UniversalResourceType.TASKS, {
   title: 'My Task',
-  status: 'pending'
+  status: 'pending',
 });
 
 console.log('\nValidation Result:');
@@ -35,7 +35,7 @@ console.log('Input: { content: "My Task", is_completed: false }');
 
 const correctValidation = validateFields(UniversalResourceType.TASKS, {
   content: 'My Task',
-  is_completed: false
+  is_completed: false,
 });
 
 console.log('\nValidation Result:');
@@ -49,7 +49,7 @@ console.log('\n📝 Test 3: Missing required field for companies');
 console.log('Input: { website: "example.com" } (missing "name")');
 
 const missingFieldValidation = validateFields(UniversalResourceType.COMPANIES, {
-  website: 'example.com'
+  website: 'example.com',
 });
 
 console.log('\nValidation Result:');

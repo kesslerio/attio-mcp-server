@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-import * from '../../dist/utils/normalization/people-normalization.js';
+import { PeopleDataNormalizer } from '../../dist/utils/normalization/people-normalization.js';
 
 console.log('=== SPECIFIC EMAIL NORMALIZATION DEBUG ===');
 
 // Test the exact failing case
 const testInput = {
   name: 'Test User',
-  email_addresses: [{ email_address: 'test@example.com' }]
+  email_addresses: [{ email_address: 'test@example.com' }],
 };
 
 console.log('Input:', JSON.stringify(testInput, null, 2));
@@ -30,13 +30,13 @@ console.log('Is array:', Array.isArray(testInput.email_addresses));
 console.log('\n4. Testing email field detection logic:');
 const emailFields = [
   'email',
-  'emails', 
+  'emails',
   'email_address',
   'email_addresses',
   'emailAddress',
 ];
 console.log('Field presence:');
-emailFields.forEach(field => {
+emailFields.forEach((field) => {
   console.log(`  ${field}:`, field in testInput);
 });
 

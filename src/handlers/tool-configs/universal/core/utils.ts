@@ -1,4 +1,16 @@
 import { UniversalResourceType } from '../types.js';
+import {
+  extractDisplayName as extractDisplayNameTyped,
+  extractDisplayValue,
+  extractMultipleDisplayValues,
+  coerceArrayValue as legacyCoerceArrayValue,
+  coerceScalar as legacyCoerceScalar,
+} from './value-extractors.js';
+import {
+  sanitizeValidationMetadata,
+  formatSanitizedActualValue,
+  type SanitizedValidationMetadata,
+} from './pii-sanitizer.js';
 
 /**
  * Return plural form label for universal resource types. Used solely for result formatting.
@@ -26,62 +38,13 @@ export function getPluralResourceType(
   }
 }
 
-const ARRAY_VALUE_KEYS = ['value', 'full_name', 'formatted'];
+// Legacy functions maintained for backward compatibility
+// @deprecated Use extractDisplayValue from value-extractors.ts instead
+const coerceArrayValue = legacyCoerceArrayValue;
+const coerceScalar = legacyCoerceScalar;
 
-const coerceArrayValue = (value: unknown): string | undefined => {
-  if (!Array.isArray(value) || value.length === 0) return undefined;
-  const first = value[0] as Record<string, unknown> | string | undefined;
-  if (typeof first === 'string') return first;
-  if (first && typeof first === 'object') {
-    for (const key of ARRAY_VALUE_KEYS) {
-      const token = first[key];
-      if (typeof token === 'string' && token.length > 0) {
-        return token;
-      }
-    }
-  }
-  return undefined;
-};
-
-const coerceScalar = (value: unknown): string | undefined => {
-  if (!value) return undefined;
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value)) return coerceArrayValue(value);
-  if (
-    typeof value === 'object' &&
-    'value' in (value as Record<string, unknown>)
-  ) {
-    const inner = (value as Record<string, unknown>).value;
-    return typeof inner === 'string' ? inner : undefined;
-  }
-  return undefined;
-};
-
-export const extractDisplayName = (
-  values: Record<string, unknown> | undefined,
-  resourceType?: UniversalResourceType
-): string => {
-  if (!values) return 'Unnamed';
-
-  if (resourceType === UniversalResourceType.PEOPLE) {
-    const nameCandidate =
-      coerceArrayValue(values.name) ||
-      coerceArrayValue(values.full_name) ||
-      coerceScalar(values.name) ||
-      coerceScalar(values.full_name);
-
-    if (nameCandidate) {
-      return nameCandidate;
-    }
-  }
-
-  const fallbackName =
-    coerceScalar(values.name) ||
-    coerceScalar(values.title) ||
-    coerceScalar(values.content);
-
-  return fallbackName || 'Unnamed';
-};
+// Use the new type-safe extraction function
+export const extractDisplayName = extractDisplayNameTyped;
 
 export interface ValidationMetadata {
   warnings?: string[];
@@ -90,15 +53,8 @@ export interface ValidationMetadata {
 }
 
 const formatActualValue = (value: unknown): string => {
-  if (Array.isArray(value) && value.length > 0) {
-    return coerceArrayValue(value) ?? JSON.stringify(value);
-  }
-
-  if (value && typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-
-  return String(value);
+  // Use PII-sanitized formatting
+  return formatSanitizedActualValue(value);
 };
 
 export const formatValidationDetails = (
@@ -106,18 +62,26 @@ export const formatValidationDetails = (
 ): string => {
   if (!metadata) return '';
 
+  // Sanitize metadata before processing
+  const sanitizedMetadata = sanitizeValidationMetadata(metadata);
+  if (!sanitizedMetadata) return '';
+
   const sections: string[] = [];
 
-  if (metadata.warnings?.length) {
+  if (sanitizedMetadata.warnings?.length) {
     sections.push(
-      ['Warnings:', ...metadata.warnings.map((warning) => `• ${warning}`)].join(
-        '\n'
-      )
+      [
+        'Warnings:',
+        ...sanitizedMetadata.warnings.map((warning) => `• ${warning}`),
+      ].join('\n')
     );
   }
 
-  const uniqueSuggestions = metadata.suggestions?.filter((suggestion) =>
-    metadata.warnings ? !metadata.warnings.includes(suggestion) : true
+  const uniqueSuggestions = sanitizedMetadata.suggestions?.filter(
+    (suggestion) =>
+      sanitizedMetadata.warnings
+        ? !sanitizedMetadata.warnings.includes(suggestion)
+        : true
   );
 
   if (uniqueSuggestions && uniqueSuggestions.length > 0) {
@@ -130,11 +94,11 @@ export const formatValidationDetails = (
   }
 
   if (
-    metadata.warnings?.length &&
-    metadata.actualValues &&
-    Object.keys(metadata.actualValues).length > 0
+    sanitizedMetadata.warnings?.length &&
+    sanitizedMetadata.actualValues &&
+    Object.keys(sanitizedMetadata.actualValues).length > 0
   ) {
-    const actualLines = Object.entries(metadata.actualValues).map(
+    const actualLines = Object.entries(sanitizedMetadata.actualValues).map(
       ([key, value]) => `• ${key}: ${formatActualValue(value)}`
     );
     sections.push(['Actual persisted values:', ...actualLines].join('\n'));

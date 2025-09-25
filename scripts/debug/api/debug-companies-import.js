@@ -6,8 +6,11 @@ try {
   const companiesModule = await import('./dist/objects/companies/index.js');
   console.log('✅ Companies module imported successfully');
   console.log('Available exports:', Object.keys(companiesModule));
-  console.log('advancedSearchCompanies type:', typeof companiesModule.advancedSearchCompanies);
-  
+  console.log(
+    'advancedSearchCompanies type:',
+    typeof companiesModule.advancedSearchCompanies
+  );
+
   if (companiesModule.advancedSearchCompanies) {
     console.log('✅ advancedSearchCompanies is available');
   } else {
@@ -22,7 +25,10 @@ try {
   const searchModule = await import('./dist/objects/companies/search.js');
   console.log('✅ Search module imported successfully');
   console.log('Search module exports:', Object.keys(searchModule));
-  console.log('advancedSearchCompanies type in search module:', typeof searchModule.advancedSearchCompanies);
+  console.log(
+    'advancedSearchCompanies type in search module:',
+    typeof searchModule.advancedSearchCompanies
+  );
 } catch (error) {
   console.error('❌ Error importing search module:', error);
 }

@@ -5,7 +5,10 @@
  * This validates the fix for Issue #470
  */
 
-import * from '../../dist/handlers/tools/registry.js';
+import {
+  TOOL_DEFINITIONS,
+  findToolConfig,
+} from '../../dist/handlers/tools/registry.js';
 
 console.log('=== Testing Lists Tool Exposure (Issue #470) ===\n');
 
@@ -16,7 +19,7 @@ if (listToolsFound) {
   console.log('✅ Lists tools found in TOOL_DEFINITIONS');
   if (Array.isArray(listToolsFound)) {
     console.log(`   Found ${listToolsFound.length} Lists tools`);
-    listToolsFound.slice(0, 3).forEach(tool => {
+    listToolsFound.slice(0, 3).forEach((tool) => {
       console.log(`   - ${tool.name}`);
     });
   } else {
@@ -34,14 +37,14 @@ console.log();
 console.log('Test 2: Finding specific Lists tools');
 const testTools = [
   'get-lists',
-  'get-list-details', 
+  'get-list-details',
   'add-record-to-list',
   'remove-record-from-list',
-  'update-list-entry'
+  'update-list-entry',
 ];
 
 let foundCount = 0;
-testTools.forEach(toolName => {
+testTools.forEach((toolName) => {
   const toolConfig = findToolConfig(toolName);
   if (toolConfig) {
     console.log(`✅ Found: ${toolName} (resource: ${toolConfig.resourceType})`);

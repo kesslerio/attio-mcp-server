@@ -1,5 +1,5 @@
 // Test import from compiled dist to debug the issue
-import * from '../../dist/objects/companies/index.js';
+import { advancedSearchCompanies } from '../../dist/objects/companies/index.js';
 
 console.log('advancedSearchCompanies:', typeof advancedSearchCompanies);
 console.log('Function exists:', advancedSearchCompanies !== undefined);
