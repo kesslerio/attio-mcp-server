@@ -42,11 +42,34 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { data: pr } = await github.rest.pulls.get({
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            async function withRetries(fn, label, { attempts = 3, baseDelayMs = 1000 } = {}) {
+              let lastError;
+              for (let attempt = 1; attempt <= attempts; attempt++) {
+                try {
+                  return await fn();
+                } catch (error) {
+                  lastError = error;
+                  const status = error?.status || error?.response?.status;
+                  // Retry only on 5xx or network failures
+                  const retryable = !status || status >= 500;
+                  if (!retryable || attempt === attempts) {
+                    throw error;
+                  }
+                  const delay = baseDelayMs * attempt;
+                  core.warning(`Attempt ${attempt} for ${label} failed (${error.message || error}). Retrying in ${delay}ms...`);
+                  await sleep(delay);
+                }
+              }
+              throw lastError;
+            }
+
+            const { data: pr } = await withRetries(() => github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number
-            });
+            }), 'github.rest.pulls.get');
 
             const ignorePatterns = [
               /\/dist\//,
@@ -67,13 +90,13 @@ jobs:
               const files = [];
               let page = 1;
               while (true) {
-                const { data } = await github.rest.pulls.listFiles({
+                const { data } = await withRetries(() => github.rest.pulls.listFiles({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   pull_number: context.issue.number,
                   per_page: 100,
                   page,
-                });
+                }), `github.rest.pulls.listFiles page ${page}`);
                 files.push(...data);
                 if (data.length < 100) break;
                 page += 1;
@@ -160,11 +183,11 @@ jobs:
             console.log(`PR size: ${sizeLabel} (effective ${normalizedFiles} files / ${normalizedLines} lines, raw ${totalFiles} files / ${totalLines} lines)`);
 
             // Check existing labels to avoid unnecessary changes
-            const existingLabels = await github.rest.issues.listLabelsOnIssue({
+            const existingLabels = await withRetries(() => github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number
-            });
+            }), 'github.rest.issues.listLabelsOnIssue');
 
             const currentSizeLabels = existingLabels.data.filter(label => label.name.startsWith('size/'));
             const hasCorrectLabel = currentSizeLabels.some(label => label.name === sizeLabel);
