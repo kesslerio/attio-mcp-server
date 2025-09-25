@@ -11,7 +11,7 @@
  * - Email schema transformations
  */
 
-import type { AttioRecord, JsonObject } from '@shared-types/attio.js';
+import type { AttioRecord, JsonObject } from '@shared-types/attio';
 
 /**
  * Normalizes company input data, particularly domain handling

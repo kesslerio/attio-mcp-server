@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Hoist mocks to the top level
-vi.mock('@handlers/tool-configs/universal/shared-handlers.js', () => ({
+vi.mock('@handlers/tool-configs/universal/shared-handlers', () => ({
   handleUniversalSearch: vi.fn(),
   handleUniversalGetDetails: vi.fn(),
   handleUniversalCreate: vi.fn(),
@@ -33,28 +33,25 @@ vi.mock('@handlers/tool-configs/universal/shared-handlers.js', () => ({
   ),
 }));
 
-vi.mock(
-  '@handlers/tool-configs/universal/schemas.js',
-  async (importOriginal) => {
-    const actual = (await importOriginal()) as any;
-    return {
-      ...actual,
-      validateUniversalToolParams: vi.fn((operation: string, params: any) => {
-        return params || {};
-      }),
-    };
-  }
-);
+vi.mock('@handlers/tool-configs/universal/schemas', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+      return params || {};
+    }),
+  };
+});
 
-import { batchOperationsConfig } from '@handlers/tool-configs/universal/advanced-operations.js';
+import { batchOperationsConfig } from '@handlers/tool-configs/universal/advanced-operations';
 import {
   UniversalResourceType,
   BatchOperationType,
   BatchOperationsParams,
-} from '@handlers/tool-configs/universal/types.js';
+} from '@handlers/tool-configs/universal/types';
 // Import the mock modules to get access to the mocked functions
-import * as sharedHandlers from '@handlers/tool-configs/universal/shared-handlers.js';
-import * as schemas from '@handlers/tool-configs/universal/schemas.js';
+import * as sharedHandlers from '@handlers/tool-configs/universal/shared-handlers';
+import * as schemas from '@handlers/tool-configs/universal/schemas';
 
 describe('Universal Advanced Operations - Batch Tests', () => {
   beforeEach(() => {

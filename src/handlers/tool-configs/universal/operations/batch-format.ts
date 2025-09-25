@@ -1,14 +1,14 @@
 import {
   BatchOperationType,
   UniversalResourceType,
-} from '@handlers/tool-configs/universal/types.js';
-import { formatResourceType } from '@handlers/tool-configs/universal/shared-handlers.js';
+} from '@handlers/tool-configs/universal/types';
+import { formatResourceType } from '@handlers/tool-configs/universal/shared-handlers';
 import {
   safeExtractRecordValues,
   safeExtractFirstValue,
-} from '@handlers/tool-configs/shared/type-utils.js';
-import type { JsonObject } from '@shared-types/attio.js';
-import type { UniversalBatchSearchResult } from '@api/operations/batch.js';
+} from '@handlers/tool-configs/shared/type-utils';
+import type { JsonObject } from '@shared-types/attio';
+import type { UniversalBatchSearchResult } from '@api/operations/batch';
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

@@ -6,24 +6,24 @@
  */
 
 import type { AxiosResponse } from 'axios';
-import type { AttioRecord, JsonObject } from '@shared-types/attio.js';
+import type { AttioRecord, JsonObject } from '@shared-types/attio';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import {
   normalizePersonValues,
   normalizeEmailsToObjectFormat,
   normalizeEmailsToStringFormat,
-} from '@services/create/data-normalizers.js';
+} from '@services/create/data-normalizers';
 import {
   extractAttioRecord,
   assertLooksLikeCreated,
   isTestRun,
   debugRecordShape,
   normalizeRecordForOutput,
-} from '@services/create/extractor.js';
-import { registerMockAliasIfPresent } from '@test-support/mock-alias.js';
-import { createScopedLogger } from '@utils/logger.js';
-import { safeExtractRecordId } from '@utils/type-extraction.js';
+} from '@services/create/extractor';
+import { registerMockAliasIfPresent } from '@test-support/mock-alias';
+import { createScopedLogger } from '@utils/logger';
+import { safeExtractRecordId } from '@utils/type-extraction';
 
 /**
  * Person-specific resource creator
