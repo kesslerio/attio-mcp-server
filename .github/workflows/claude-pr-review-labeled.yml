@@ -596,6 +596,28 @@ jobs:
             const fs = require('fs');
             const LIMIT = 65000;
 
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            async function withRetries(fn, label, { attempts = 3, baseDelayMs = 1000 } = {}) {
+              let lastError;
+              for (let attempt = 1; attempt <= attempts; attempt++) {
+                try {
+                  return await fn();
+                } catch (error) {
+                  lastError = error;
+                  const status = error?.status || error?.response?.status;
+                  const retryable = !status || status >= 500;
+                  if (!retryable || attempt === attempts) {
+                    throw error;
+                  }
+                  const delay = baseDelayMs * attempt;
+                  core.warning(`Attempt ${attempt} for ${label} failed (${error.message || error}). Retrying in ${delay}ms...`);
+                  await sleep(delay);
+                }
+              }
+              throw lastError;
+            }
+
             // Event-agnostic PR number detection
             const prNumber = Number('${{ steps.resolve.outputs.pr }}');
 
@@ -608,9 +630,15 @@ jobs:
             const runTag = `<!-- claude-run-${context.runId} -->`;
             const marker = `<!-- claude-review sha=${headSha} -->`;
 
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100
-            });
+            const comments = await withRetries(() =>
+              github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100
+              }),
+              'github.paginate issues.listComments'
+            );
 
             // Prefer updating the most recent Claude comment (if any)
             let prior = null;
@@ -776,14 +804,20 @@ jobs:
 
             if (finalBody.length <= LIMIT) {
               if (prior && sameSha) {
-                await github.rest.issues.updateComment({
-                  owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: finalBody
-                });
+                await withRetries(() => github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: prior.id,
+                  body: finalBody
+                }), 'github.rest.issues.updateComment (final single)');
                 core.info('Updated existing Claude review comment (same SHA).');
               } else {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: finalBody
-                });
+                await withRetries(() => github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: finalBody
+                }), 'github.rest.issues.createComment (final single)');
                 core.info(prior ? 'Created new Claude review comment (SHA changed).' : 'Posted new Claude review comment.');
               }
             } else {
@@ -793,13 +827,19 @@ jobs:
 
               const first = `${marker}\n${parts[0]}\n\n<!-- claude-run-${context.runId}-0/${parts.length} -->`;
               if (prior && sameSha) {
-                await github.rest.issues.updateComment({
-                  owner: context.repo.owner, repo: context.repo.repo, comment_id: prior.id, body: first
-                });
+                await withRetries(() => github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: prior.id,
+                  body: first
+                }), 'github.rest.issues.updateComment (chunk base)');
               } else {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: first
-                });
+                await withRetries(() => github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: first
+                }), 'github.rest.issues.createComment (chunk base)');
               }
 
               if (!(prior && sameSha)) {
@@ -810,9 +850,12 @@ jobs:
 
               for (let i = 1; i < parts.length; i++) {
                 const piece = `${marker}\n${parts[i]}\n\n<!-- claude-run-${context.runId}-${i}/${parts.length} -->`;
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: piece
-                });
+                await withRetries(() => github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: piece
+                }), `github.rest.issues.createComment (chunk ${i})`);
               }
               if (parts.length > 1) {
                 core.info(`Posted PR review in ${parts.length} parts.`);
