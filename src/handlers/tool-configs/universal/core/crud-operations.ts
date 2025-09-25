@@ -18,7 +18,11 @@ import {
   handleUniversalDelete,
   getSingularResourceType,
 } from '../shared-handlers.js';
-import { handleCoreOperationError } from './error-utils.js';
+import {
+  handleCreateError,
+  handleUpdateError,
+  handleDeleteError,
+} from './error-utils.js';
 import {
   extractDisplayName,
   formatValidationDetails,
@@ -56,9 +60,8 @@ export const createRecordConfig: UniversalToolConfig = {
 
       return result;
     } catch (error: unknown) {
-      return await handleCoreOperationError(
+      return await handleCreateError(
         error,
-        'create',
         params.resource_type,
         params.record_data as Record<string, unknown>
       );
@@ -152,11 +155,12 @@ export const updateRecordConfig: UniversalToolConfig = {
       }
       return result;
     } catch (error: unknown) {
-      return await handleCoreOperationError(
+      return await handleUpdateError(
         error,
-        'update',
         params.resource_type,
-        params.record_data as Record<string, unknown>
+        params.record_data as Record<string, unknown>,
+        params.record_id,
+        undefined // validation metadata not available in error case
       );
     }
   },
@@ -204,10 +208,10 @@ export const deleteRecordConfig: UniversalToolConfig = {
       );
       return await handleUniversalDelete(sanitizedParams);
     } catch (error: unknown) {
-      return await handleCoreOperationError(
+      return await handleDeleteError(
         error,
-        'delete record',
-        params.resource_type
+        params.resource_type,
+        params.record_id
       );
     }
   },

@@ -534,18 +534,20 @@ describe('Attribute Mapping', () => {
       const translated = translateAttributeNamesInFilters(complexFilter);
 
       // Check nested OR filters
-      expect(translated.filters[0].filters[0].attribute.slug).toBe(
+      expect(translated.filters?.[0]?.filters?.[0]?.attribute?.slug).toBe(
         'name_companies'
       );
-      expect(translated.filters[0].filters[1].attribute.slug).toBe(
+      expect(translated.filters?.[0]?.filters?.[1]?.attribute?.slug).toBe(
         'categories'
       ); // Industry maps to categories
 
       // Check object-specific sections
-      expect(translated.filters[1].companies.attribute.slug).toBe(
+      expect(translated.filters?.[1]?.companies?.attribute?.slug).toBe(
         'name_companies'
       );
-      expect(translated.filters[2].people.attribute.slug).toBe('phone_number');
+      expect(translated.filters?.[2]?.people?.attribute?.slug).toBe(
+        'phone_number'
+      );
     });
   });
 });

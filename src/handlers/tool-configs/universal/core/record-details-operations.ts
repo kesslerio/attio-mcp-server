@@ -12,7 +12,7 @@ import {
   handleUniversalGetDetails,
   getSingularResourceType,
 } from '../shared-handlers.js';
-import { handleCoreOperationError } from './error-utils.js';
+import { handleSearchError } from './error-utils.js';
 import { UniversalUtilityService } from '../../../../services/UniversalUtilityService.js';
 
 export const getRecordDetailsConfig: UniversalToolConfig = {
@@ -27,10 +27,10 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
-      return await handleCoreOperationError(
+      return await handleSearchError(
         error,
-        'get details',
-        params.resource_type
+        params.resource_type,
+        params as unknown as Record<string, unknown>
       );
     }
   },

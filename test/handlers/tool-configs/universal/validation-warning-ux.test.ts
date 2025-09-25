@@ -120,7 +120,7 @@ describe('Validation Warning UX', () => {
       );
 
       expect(result).toContain('Actual persisted values:');
-      expect(result).toContain('• name: Fallback Deal');
+      expect(result).toContain('• name: [REDACTED]');
       expect(result).toContain('• stage: default-stage');
       expect(result).toContain('• associated_company: acme-corp');
     });
@@ -176,7 +176,7 @@ describe('Validation Warning UX', () => {
 
       expect(result).toContain('• simple_string: test value');
       expect(result).toContain('• attio_array: extracted value');
-      expect(result).toContain('• full_name_array: John Doe');
+      expect(result).toContain('• full_name_array: [REDACTED]');
       expect(result).toContain(
         '• complex_object: {"nested":"data","count":42}'
       );

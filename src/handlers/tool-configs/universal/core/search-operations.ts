@@ -9,7 +9,7 @@ import {
   validateUniversalToolParams,
   searchRecordsSchema,
 } from '../schemas.js';
-import { handleCoreOperationError } from './error-utils.js';
+import { handleSearchError } from './error-utils.js';
 import { handleUniversalSearch } from '../shared-handlers.js';
 
 /**
@@ -26,10 +26,10 @@ export const searchRecordsConfig: UniversalToolConfig = {
       );
       return await handleUniversalSearch(sanitizedParams);
     } catch (error: unknown) {
-      return await handleCoreOperationError(
+      return await handleSearchError(
         error,
-        'search',
-        params.resource_type
+        params.resource_type,
+        params as unknown as Record<string, unknown>
       );
     }
   },

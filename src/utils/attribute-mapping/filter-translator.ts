@@ -11,10 +11,10 @@ import type { FilterObject, UnknownObject } from '../types/common.js';
  * @param objectType - Optional object type for more specific attribute mapping
  * @returns A new filters object with attribute names translated to slugs where applicable
  */
-export function translateAttributeNamesInFilters(
-  filters: unknown,
+export function translateAttributeNamesInFilters<T>(
+  filters: T,
   objectType?: string
-): FilterObject | unknown {
+): T {
   // Handle null, undefined, or non-object filters
   if (!filters || typeof filters !== 'object') {
     return filters;
@@ -24,7 +24,7 @@ export function translateAttributeNamesInFilters(
   if (Array.isArray(filters)) {
     return filters.map((filter) =>
       translateAttributeNamesInFilters(filter, objectType)
-    );
+    ) as T;
   }
 
   // Cast to object after array check
@@ -35,7 +35,7 @@ export function translateAttributeNamesInFilters(
 
   // Handle direct filter objects with attribute.slug
   if (isDirectFilterObject(translatedFilters)) {
-    return translateDirectFilter(translatedFilters, objectType);
+    return translateDirectFilter(translatedFilters, objectType) as unknown as T;
   }
 
   // Handle nested filter structures
@@ -47,7 +47,10 @@ export function translateAttributeNamesInFilters(
   }
 
   // Process all other properties recursively
-  return translateRemainingProperties(translatedFilters, objectType);
+  return translateRemainingProperties(
+    translatedFilters,
+    objectType
+  ) as unknown as T;
 }
 
 /**
