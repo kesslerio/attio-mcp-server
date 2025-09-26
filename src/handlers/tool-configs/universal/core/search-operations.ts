@@ -16,7 +16,10 @@ import { handleUniversalSearch } from '../shared-handlers.js';
  * Universal search records tool configuration.
  * Consolidates: search-companies, search-people, list-records, list-tasks.
  */
-export const searchRecordsConfig: UniversalToolConfig = {
+export const searchRecordsConfig: UniversalToolConfig<
+  UniversalSearchParams,
+  AttioRecord[]
+> = {
   name: 'search-records',
   handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -35,8 +38,9 @@ export const searchRecordsConfig: UniversalToolConfig = {
   },
   formatResult: (
     results: AttioRecord[] | { data: AttioRecord[] },
-    resourceType?: UniversalResourceType
+    ...args: unknown[]
   ): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
     if (!results) {
       const typeName = resourceType
         ? getPluralResourceType(resourceType)
@@ -110,7 +114,10 @@ export const searchRecordsConfig: UniversalToolConfig = {
 
           identifier = emailValue ? `${name} (${emailValue})` : name;
         } else if (resourceType === UniversalResourceType.COMPANIES) {
-          const name = getFirstValue(values.name) || 'Unnamed';
+          const name =
+            typeof values.name === 'string'
+              ? values.name
+              : getFirstValue(values.name) || 'Unnamed';
           const website = getFirstValue(values.website);
           const domain =
             values.domains &&

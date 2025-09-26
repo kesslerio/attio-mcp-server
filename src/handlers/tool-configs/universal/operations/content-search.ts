@@ -13,9 +13,13 @@ import { AttioRecord, InteractionType } from '../../../../types/attio.js';
 import { validateUniversalToolParams } from '../schemas.js';
 import { UniversalSearchService } from '../../../../services/UniversalSearchService.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
+import { getTypedErrorMessage } from '../typed-error-handling.js';
 import { formatResourceType } from '../shared-handlers.js';
 
-export const searchByContentConfig: UniversalToolConfig = {
+export const searchByContentConfig: UniversalToolConfig<
+  ContentSearchParams,
+  AttioRecord[]
+> = {
   name: 'search-by-content',
   handler: async (params: ContentSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -90,11 +94,9 @@ export const searchByContentConfig: UniversalToolConfig = {
       );
     }
   },
-  formatResult: (
-    results: AttioRecord[],
-    contentType?: ContentSearchType,
-    resourceType?: UniversalResourceType
-  ) => {
+  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+    const contentType = args[0] as ContentSearchType | undefined;
+    const resourceType = args[1] as UniversalResourceType | undefined;
     if (!Array.isArray(results)) {
       return 'Found 0 records (content search)\nTip: Ensure your workspace has notes/content for this query.';
     }

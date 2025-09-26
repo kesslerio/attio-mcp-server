@@ -12,17 +12,18 @@ import {
   getSingularResourceType,
 } from '../shared-handlers.js';
 
-export const getDetailedInfoConfig: UniversalToolConfig = {
+export const getDetailedInfoConfig: UniversalToolConfig<
+  UniversalDetailedInfoParams,
+  Record<string, unknown>
+> = {
   name: 'get-detailed-info',
   handler: async (params: UniversalDetailedInfoParams) => {
     validateUniversalToolParams('get-detailed-info', params);
     return await handleUniversalGetDetailedInfo(params);
   },
-  formatResult: (
-    info: Record<string, unknown>,
-    resourceType?: UniversalResourceType,
-    detailedInfoType?: string
-  ): string => {
+  formatResult: (info: Record<string, unknown>, ...args: unknown[]): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
+    const detailedInfoType = args[1] as string | undefined;
     if (!info) {
       return 'No detailed information found';
     }
