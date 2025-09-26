@@ -14,7 +14,10 @@ import {
   getSingularResourceType,
 } from '../shared-handlers.js';
 
-export const getAttributesConfig: UniversalToolConfig = {
+export const getAttributesConfig: UniversalToolConfig<
+  UniversalAttributesParams,
+  Record<string, unknown> | { error: string; success: boolean }
+> = {
   name: 'get-attributes',
   handler: async (
     params: UniversalAttributesParams
@@ -33,8 +36,9 @@ export const getAttributesConfig: UniversalToolConfig = {
   },
   formatResult: (
     attributes: Record<string, unknown>,
-    resourceType?: UniversalResourceType
+    ...args: unknown[]
   ): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
     if (!attributes) {
       return 'No attributes found';
     }
@@ -102,7 +106,10 @@ export const getAttributesConfig: UniversalToolConfig = {
   },
 };
 
-export const discoverAttributesConfig: UniversalToolConfig = {
+export const discoverAttributesConfig: UniversalToolConfig<
+  { resource_type: UniversalResourceType; categories?: string[] },
+  Record<string, unknown> | { error: string; success: boolean }
+> = {
   name: 'discover-attributes',
   handler: async (params: {
     resource_type: UniversalResourceType;
@@ -127,10 +134,8 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       return { error: errorMessage, success: false };
     }
   },
-  formatResult: (
-    schema: unknown,
-    resourceType?: UniversalResourceType
-  ): string => {
+  formatResult: (schema: unknown, ...args: unknown[]): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
     if (!schema) {
       return 'No attribute schema found';
     }

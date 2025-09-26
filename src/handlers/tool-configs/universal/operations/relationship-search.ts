@@ -35,7 +35,10 @@ import {
   searchDealsByPerson,
 } from '@src/objects/deals/index.js';
 
-export const searchByRelationshipConfig: UniversalToolConfig = {
+export const searchByRelationshipConfig: UniversalToolConfig<
+  RelationshipSearchParams,
+  AttioRecord[]
+> = {
   name: 'search-by-relationship',
   handler: async (params: RelationshipSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -108,10 +111,8 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
       );
     }
   },
-  formatResult: (
-    results: AttioRecord[],
-    relationshipType?: RelationshipType
-  ) => {
+  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+    const relationshipType = args[0] as RelationshipType | undefined;
     if (!Array.isArray(results)) {
       return 'No related records found';
     }

@@ -15,7 +15,10 @@ import {
 import { handleSearchError } from './error-utils.js';
 import { UniversalUtilityService } from '../../../../services/UniversalUtilityService.js';
 
-export const getRecordDetailsConfig: UniversalToolConfig = {
+export const getRecordDetailsConfig: UniversalToolConfig<
+  UniversalRecordDetailsParams,
+  AttioRecord
+> = {
   name: 'get-record-details',
   handler: async (
     params: UniversalRecordDetailsParams
@@ -34,10 +37,8 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       );
     }
   },
-  formatResult: (
-    record: AttioRecord,
-    resourceType?: UniversalResourceType
-  ): string => {
+  formatResult: (record: AttioRecord, ...args: unknown[]): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
     if (!record) {
       return 'Record not found';
     }

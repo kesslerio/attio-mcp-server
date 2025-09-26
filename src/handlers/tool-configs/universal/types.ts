@@ -335,13 +335,16 @@ export interface BatchOperationsParams {
 }
 
 /**
- * Universal tool configuration interface
+ * Universal tool configuration interface with proper type safety
+ * @template TParams - The expected parameter type for the handler
+ * @template TResult - The expected result type from the handler
  */
-export interface UniversalToolConfig extends ToolConfig {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handler: (params: any) => Promise<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  formatResult: (results: any, ...args: any[]) => string;
+export interface UniversalToolConfig<
+  TParams = Record<string, unknown>,
+  TResult = unknown,
+> extends ToolConfig {
+  handler: (params: TParams) => Promise<TResult>;
+  formatResult: (results: TResult, ...args: unknown[]) => string;
 }
 
 /**

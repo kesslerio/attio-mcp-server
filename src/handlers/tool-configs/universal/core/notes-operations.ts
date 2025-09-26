@@ -10,7 +10,10 @@ import {
 } from '../shared-handlers.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
 
-export const createNoteConfig: UniversalToolConfig = {
+export const createNoteConfig: UniversalToolConfig<
+  Record<string, unknown>,
+  Record<string, unknown>
+> = {
   name: 'create-note',
   handler: async (
     params: Record<string, unknown>
@@ -67,7 +70,10 @@ export const createNoteConfig: UniversalToolConfig = {
   },
 };
 
-export const listNotesConfig: UniversalToolConfig = {
+export const listNotesConfig: UniversalToolConfig<
+  Record<string, unknown>,
+  Record<string, unknown>[]
+> = {
   name: 'list-notes',
   handler: async (
     params: Record<string, unknown>

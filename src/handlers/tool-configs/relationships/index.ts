@@ -62,6 +62,38 @@ export interface GetCompanyTeamToolConfig extends ToolConfig {
 }
 
 /**
+ * Helper function to handle inconsistent relationships during linking
+ */
+async function handleInconsistentLink(
+  personId: string,
+  companyId: string,
+  state: { isInTeam: boolean; isCompanySet: boolean; currentTeamIds: string[] }
+): Promise<RelationshipOperationResult> {
+  const { isInTeam, isCompanySet, currentTeamIds } = state;
+
+  if (isInTeam && !isCompanySet) {
+    await updatePerson(personId, { company: companyId });
+    return {
+      success: true,
+      message: 'Fixed relationship inconsistency: updated person company field',
+      companyId,
+      personId,
+      teamSize: currentTeamIds.length,
+    };
+  }
+
+  const updatedTeamIds = [...currentTeamIds, personId];
+  await updateCompany(companyId, { team: updatedTeamIds });
+  return {
+    success: true,
+    message: 'Fixed relationship inconsistency: updated company team field',
+    companyId,
+    personId,
+    teamSize: updatedTeamIds.length,
+  };
+}
+
+/**
  * Helper function to bidirectionally link a person to a company
  * Updates both the company's team field and the person's company field
  */
@@ -76,13 +108,11 @@ async function linkPersonToCompany(
       getPersonDetails(personId),
     ]);
 
-    // Extract current team members
+    // Extract current team members and person's company
     const currentTeam = Array.isArray(company.values?.team)
       ? company.values.team
       : [];
     const currentTeamIds = extractRecordIds(currentTeam);
-
-    // Extract current person's company
     const currentPersonCompany = person.values?.company;
     const currentPersonCompanyId = currentPersonCompany
       ? typeof currentPersonCompany === 'string'
@@ -90,10 +120,11 @@ async function linkPersonToCompany(
         : String(currentPersonCompany)
       : null;
 
-    // Check if already linked bidirectionally
+    // Check current linking state
     const isInTeam = currentTeamIds.includes(personId);
     const isCompanySet = currentPersonCompanyId === companyId;
 
+    // Already fully linked
     if (isInTeam && isCompanySet) {
       return {
         success: true,
@@ -104,34 +135,16 @@ async function linkPersonToCompany(
       };
     }
 
-    // If partially linked, we'll fix the inconsistency
-    if (isInTeam && !isCompanySet) {
-      // Person is in company team but company not set on person - update person only
-      await updatePerson(personId, { company: companyId });
-      return {
-        success: true,
-        message:
-          'Fixed relationship inconsistency: updated person company field',
-        companyId,
-        personId,
-        teamSize: currentTeamIds.length,
-      };
+    // Handle partial linking inconsistencies
+    if (isInTeam || isCompanySet) {
+      return await handleInconsistentLink(personId, companyId, {
+        isInTeam,
+        isCompanySet,
+        currentTeamIds,
+      });
     }
 
-    if (!isInTeam && isCompanySet) {
-      // Person has company set but not in team - update company team only
-      const updatedTeamIds = [...currentTeamIds, personId];
-      await updateCompany(companyId, { team: updatedTeamIds });
-      return {
-        success: true,
-        message: 'Fixed relationship inconsistency: updated company team field',
-        companyId,
-        personId,
-        teamSize: updatedTeamIds.length,
-      };
-    }
-
-    // Handle person already having a different company
+    // Conflict: person already has different company
     if (currentPersonCompanyId && currentPersonCompanyId !== companyId) {
       return {
         success: false,
@@ -142,10 +155,8 @@ async function linkPersonToCompany(
       };
     }
 
-    // Perform bidirectional linking - add to team and set company
+    // Perform new bidirectional linking
     const updatedTeamIds = [...currentTeamIds, personId];
-
-    // Use retry mechanism for better reliability in bidirectional operations
     await executeWithRetry([
       () => updateCompany(companyId, { team: updatedTeamIds }),
       () => updatePerson(personId, { company: companyId }),
@@ -166,6 +177,62 @@ async function linkPersonToCompany(
 }
 
 /**
+ * Helper function to handle inconsistent relationships during unlinking
+ */
+async function handleInconsistentUnlink(
+  personId: string,
+  companyId: string,
+  state: {
+    isInTeam: boolean;
+    isCompanySet: boolean;
+    currentTeamIds: string[];
+    currentPersonCompanyId: string | null;
+  }
+): Promise<RelationshipOperationResult> {
+  const { isInTeam, isCompanySet, currentTeamIds, currentPersonCompanyId } =
+    state;
+
+  if (isInTeam && !isCompanySet) {
+    const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
+    await updateCompany(companyId, { team: updatedTeamIds });
+    return {
+      success: true,
+      message:
+        'Fixed relationship inconsistency: removed person from company team',
+      companyId,
+      personId,
+      teamSize: updatedTeamIds.length,
+    };
+  }
+
+  if (!isInTeam && isCompanySet) {
+    await updatePerson(personId, { company: undefined });
+    return {
+      success: true,
+      message: 'Fixed relationship inconsistency: cleared person company field',
+      companyId,
+      personId,
+      teamSize: currentTeamIds.length,
+    };
+  }
+
+  // Company mismatch but person is in team
+  if (currentPersonCompanyId !== companyId && isInTeam) {
+    const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
+    await updateCompany(companyId, { team: updatedTeamIds });
+    return {
+      success: true,
+      message: `Removed person from team, but person's company field points to ${currentPersonCompanyId}, not ${companyId}`,
+      companyId,
+      personId,
+      teamSize: updatedTeamIds.length,
+    };
+  }
+
+  throw new Error('Unexpected state in handleInconsistentUnlink');
+}
+
+/**
  * Helper function to bidirectionally unlink a person from a company
  * Updates both the company's team field and the person's company field
  */
@@ -180,13 +247,11 @@ async function unlinkPersonFromCompany(
       getPersonDetails(personId),
     ]);
 
-    // Extract current team members
+    // Extract current team members and person's company
     const currentTeam = Array.isArray(company.values?.team)
       ? company.values.team
       : [];
     const currentTeamIds = extractRecordIds(currentTeam);
-
-    // Extract current person's company
     const currentPersonCompany = person.values?.company;
     const currentPersonCompanyId = currentPersonCompany
       ? typeof currentPersonCompany === 'string'
@@ -198,7 +263,7 @@ async function unlinkPersonFromCompany(
     const isInTeam = currentTeamIds.includes(personId);
     const isCompanySet = currentPersonCompanyId === companyId;
 
-    // If not linked at all, return success
+    // Not linked at all
     if (!isInTeam && !isCompanySet) {
       return {
         success: true,
@@ -209,54 +274,18 @@ async function unlinkPersonFromCompany(
       };
     }
 
-    // If partially linked, fix the inconsistency
-    if (isInTeam && !isCompanySet) {
-      // Person is in team but company not set - remove from team only
-      const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
-      await updateCompany(companyId, { team: updatedTeamIds });
-      return {
-        success: true,
-        message:
-          'Fixed relationship inconsistency: removed person from company team',
-        companyId,
-        personId,
-        teamSize: updatedTeamIds.length,
-      };
+    // Handle partial relationships or mismatches
+    if (!isInTeam || !isCompanySet || currentPersonCompanyId !== companyId) {
+      return await handleInconsistentUnlink(personId, companyId, {
+        isInTeam,
+        isCompanySet,
+        currentTeamIds,
+        currentPersonCompanyId,
+      });
     }
 
-    if (!isInTeam && isCompanySet) {
-      // Person has company set but not in team - clear person company only
-      await updatePerson(personId, { company: undefined });
-      return {
-        success: true,
-        message:
-          'Fixed relationship inconsistency: cleared person company field',
-        companyId,
-        personId,
-        teamSize: currentTeamIds.length,
-      };
-    }
-
-    // If person's company doesn't match the target company, warn but proceed
-    if (currentPersonCompanyId && currentPersonCompanyId !== companyId) {
-      // Still remove from team if they're in it, but warn about company mismatch
-      if (isInTeam) {
-        const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
-        await updateCompany(companyId, { team: updatedTeamIds });
-        return {
-          success: true,
-          message: `Removed person from team, but person's company field points to ${currentPersonCompanyId}, not ${companyId}`,
-          companyId,
-          personId,
-          teamSize: updatedTeamIds.length,
-        };
-      }
-    }
-
-    // Perform bidirectional unlinking - remove from team and clear company
+    // Perform full bidirectional unlinking
     const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
-
-    // Use retry mechanism for better reliability in bidirectional operations
     await executeWithRetry([
       () => updateCompany(companyId, { team: updatedTeamIds }),
       () => updatePerson(personId, { company: undefined }),
@@ -277,13 +306,67 @@ async function unlinkPersonFromCompany(
 }
 
 /**
+ * Helper function to validate company and check bidirectional consistency
+ */
+async function validateCompanyForPerson(
+  personId: string,
+  companyId: string
+): Promise<CompanyInfo> {
+  try {
+    const company = await getCompanyDetails(companyId);
+    const companyName =
+      (company.values?.name as { value: string }[] | undefined)?.[0]?.value ||
+      'Unknown Company';
+
+    const currentTeamIds = extractRecordIds(
+      (company.values?.team as TeamMember[]) || []
+    );
+    const isInTeam = currentTeamIds.includes(personId);
+
+    return {
+      id: companyId,
+      name: isInTeam
+        ? companyName
+        : `${companyName} ⚠️ (inconsistent - not in team)`,
+    };
+  } catch {
+    return {
+      id: companyId,
+      name: '⚠️ Unknown Company (company not found)',
+    };
+  }
+}
+
+/**
+ * Helper function to process legacy companies field
+ */
+function processLegacyCompanies(
+  legacyCompanies: (TeamMember | string)[],
+  existingCompanyIds: string[]
+): CompanyInfo[] {
+  return legacyCompanies
+    .map((company: TeamMember | string) => ({
+      id:
+        typeof company === 'string'
+          ? company
+          : company.target_record_id || company.record_id || String(company),
+      name:
+        typeof company === 'string'
+          ? 'Unknown Company (legacy field)'
+          : `${company.name || 'Unknown Company'} (legacy field)`,
+    }))
+    .filter((legacyCompany) => !existingCompanyIds.includes(legacyCompany.id));
+}
+
+/**
  * Get all companies a person is associated with, with bidirectional consistency validation
  */
 async function getPersonCompanies(personId: string): Promise<CompanyInfo[]> {
   try {
     const person = await getPersonDetails(personId);
+    const result: CompanyInfo[] = [];
 
-    // Check person's direct company field first
+    // Process primary company field
     const personCompany = person.values?.company;
     const personCompanyId = personCompany
       ? typeof personCompany === 'string'
@@ -291,71 +374,23 @@ async function getPersonCompanies(personId: string): Promise<CompanyInfo[]> {
         : String(personCompany)
       : null;
 
-    const result: CompanyInfo[] = [];
-
     if (personCompanyId) {
-      try {
-        // Get company details to validate bidirectional consistency
-        const company = await getCompanyDetails(personCompanyId);
-        const companyName =
-          (company.values?.name as { value: string }[] | undefined)?.[0]
-            ?.value || 'Unknown Company';
-
-        // Check if person is in company's team
-        const currentTeam = company.values?.team || [];
-        const currentTeamIds = Array.isArray(currentTeam)
-          ? currentTeam
-              .map((member: TeamMember | string) =>
-                typeof member === 'string'
-                  ? member
-                  : member.target_record_id ||
-                    member.record_id ||
-                    String(member)
-              )
-              .filter(Boolean)
-          : [];
-
-        const isInTeam = currentTeamIds.includes(personId);
-
-        result.push({
-          id: personCompanyId,
-          name: isInTeam
-            ? companyName
-            : `${companyName} ⚠️ (inconsistent - not in team)`,
-        });
-      } catch (companyError) {
-        // Company might not exist or be accessible
-        result.push({
-          id: personCompanyId,
-          name: '⚠️ Unknown Company (company not found)',
-        });
-      }
+      const companyInfo = await validateCompanyForPerson(
+        personId,
+        personCompanyId
+      );
+      result.push(companyInfo);
     }
 
-    // Also check legacy companies field if it exists (backward compatibility)
+    // Process legacy companies field for backward compatibility
     const legacyCompanies = person.values?.companies || [];
     if (Array.isArray(legacyCompanies) && legacyCompanies.length > 0) {
-      const legacyCompanyInfos = legacyCompanies.map(
-        (company: TeamMember | string) => ({
-          id:
-            typeof company === 'string'
-              ? company
-              : company.target_record_id ||
-                company.record_id ||
-                String(company),
-          name:
-            typeof company === 'string'
-              ? 'Unknown Company (legacy field)'
-              : `${company.name || 'Unknown Company'} (legacy field)`,
-        })
+      const existingIds = result.map((c) => c.id);
+      const legacyCompanyInfos = processLegacyCompanies(
+        legacyCompanies,
+        existingIds
       );
-
-      // Add legacy companies that aren't already in the main company field
-      legacyCompanyInfos.forEach((legacyCompany) => {
-        if (!result.some((existing) => existing.id === legacyCompany.id)) {
-          result.push(legacyCompany);
-        }
-      });
+      result.push(...legacyCompanyInfos);
     }
 
     return result;

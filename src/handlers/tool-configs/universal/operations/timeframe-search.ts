@@ -21,7 +21,10 @@ import {
 import { normalizeOperator } from '../../../../utils/AttioFilterOperators.js';
 import { mapFieldName } from '../../../../utils/AttioFieldMapper.js';
 
-export const searchByTimeframeConfig: UniversalToolConfig = {
+export const searchByTimeframeConfig: UniversalToolConfig<
+  TimeframeSearchParams,
+  AttioRecord[]
+> = {
   name: 'search-by-timeframe',
   handler: async (params: TimeframeSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -200,11 +203,9 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
       );
     }
   },
-  formatResult: (
-    results: AttioRecord[],
-    timeframeType?: TimeframeType,
-    resourceType?: UniversalResourceType
-  ) => {
+  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+    const timeframeType = args[0] as TimeframeType | undefined;
+    const resourceType = args[1] as UniversalResourceType | undefined;
     if (!Array.isArray(results)) {
       return 'Found 0 records (timeframe search)\nTip: Ensure your workspace has data in the requested date range.';
     }
