@@ -7,7 +7,7 @@ import type { JsonObject } from '@shared-types/attio.js';
 import {
   normalizeEmailsToObjectFormat,
   normalizeEmailsToStringFormat,
-} from '@services/create/data-normalizers.js';
+} from '../data-normalizers.js';
 
 /**
  * Interface for email format strategies
@@ -40,7 +40,11 @@ export interface EmailFormatStrategy {
  */
 export class StringEmailStrategy implements EmailFormatStrategy {
   canHandle(emails: unknown[]): boolean {
-    return emails.length > 0 && typeof emails[0] === 'string';
+    return (
+      Array.isArray(emails) &&
+      emails.length > 0 &&
+      typeof emails[0] === 'string'
+    );
   }
 
   convertToAlternativeFormat(emails: unknown[]): unknown[] {
@@ -65,9 +69,11 @@ export class StringEmailStrategy implements EmailFormatStrategy {
 export class ObjectEmailStrategy implements EmailFormatStrategy {
   canHandle(emails: unknown[]): boolean {
     return (
+      Array.isArray(emails) &&
       emails.length > 0 &&
       emails[0] != null &&
       typeof emails[0] === 'object' &&
+      !Array.isArray(emails[0]) &&
       'email_address' in emails[0]
     );
   }
@@ -118,17 +124,22 @@ export class EmailRetryManager {
     }
 
     // Convert the emails using the strategy
-    const convertedEmails = strategy.convertToAlternativeFormat(emails);
-    const convertedData: JsonObject = {
-      ...personData,
-      email_addresses: convertedEmails,
-    };
+    try {
+      const convertedEmails = strategy.convertToAlternativeFormat(emails);
+      const convertedData: JsonObject = {
+        ...personData,
+        email_addresses: convertedEmails,
+      };
 
-    return {
-      convertedData,
-      originalFormat: strategy.getOriginalFormatDescription(emails),
-      alternativeFormat:
-        strategy.getAlternativeFormatDescription(convertedEmails),
-    };
+      return {
+        convertedData,
+        originalFormat: strategy.getOriginalFormatDescription(emails),
+        alternativeFormat:
+          strategy.getAlternativeFormatDescription(convertedEmails),
+      };
+    } catch (error) {
+      // Return null if conversion fails for any reason
+      return null;
+    }
   }
 }

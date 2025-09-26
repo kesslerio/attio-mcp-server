@@ -9,7 +9,7 @@ import type { AxiosResponse } from 'axios';
 import type { AttioRecord, JsonObject } from '@shared-types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
-import { normalizePersonValues } from '@services/create/data-normalizers.js';
+import { normalizePersonValues } from '../data-normalizers.js';
 import { EmailRetryManager } from './email-strategies.js';
 import {
   extractAttioRecord,
@@ -17,10 +17,10 @@ import {
   isTestRun,
   debugRecordShape,
   normalizeRecordForOutput,
-} from '@services/create/extractor.js';
-import { registerMockAliasIfPresent } from '@test-support/mock-alias.js';
-import { createScopedLogger } from '@utils/logger.js';
-import { safeExtractRecordId } from '@utils/type-extraction.js';
+} from '../extractor.js';
+import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
+import { createScopedLogger } from '../../../utils/logger.js';
+import { safeExtractRecordId } from '../../../utils/type-extraction.js';
 
 /**
  * Person-specific resource creator
