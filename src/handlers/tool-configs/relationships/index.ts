@@ -16,6 +16,10 @@ import {
 import { getCompanyDetails } from '@src/objects/companies/index.js';
 import { getPersonDetails, updatePerson } from '@src/objects/people/index.js';
 import { updateCompany } from '@src/objects/companies/index.js';
+import { RelationshipStateAnalyzer } from './state-analyzer.js';
+import { RelationshipValidator } from './validators.js';
+import { RelationshipOperationExecutor } from './operation-executors.js';
+import { getTypedErrorMessage } from '../universal/typed-error-handling.js';
 
 // Relationship result interfaces
 interface RelationshipOperationResult {
@@ -62,38 +66,6 @@ export interface GetCompanyTeamToolConfig extends ToolConfig {
 }
 
 /**
- * Helper function to handle inconsistent relationships during linking
- */
-async function handleInconsistentLink(
-  personId: string,
-  companyId: string,
-  state: { isInTeam: boolean; isCompanySet: boolean; currentTeamIds: string[] }
-): Promise<RelationshipOperationResult> {
-  const { isInTeam, isCompanySet, currentTeamIds } = state;
-
-  if (isInTeam && !isCompanySet) {
-    await updatePerson(personId, { company: companyId });
-    return {
-      success: true,
-      message: 'Fixed relationship inconsistency: updated person company field',
-      companyId,
-      personId,
-      teamSize: currentTeamIds.length,
-    };
-  }
-
-  const updatedTeamIds = [...currentTeamIds, personId];
-  await updateCompany(companyId, { team: updatedTeamIds });
-  return {
-    success: true,
-    message: 'Fixed relationship inconsistency: updated company team field',
-    companyId,
-    personId,
-    teamSize: updatedTeamIds.length,
-  };
-}
-
-/**
  * Helper function to bidirectionally link a person to a company
  * Updates both the company's team field and the person's company field
  */
@@ -102,134 +74,50 @@ async function linkPersonToCompany(
   companyId: string
 ): Promise<RelationshipOperationResult> {
   try {
-    // Get current company and person details
-    const [company, person] = await Promise.all([
-      getCompanyDetails(companyId),
-      getPersonDetails(personId),
-    ]);
+    // Analyze current relationship state
+    const state = await RelationshipStateAnalyzer.analyzeForLinking(
+      personId,
+      companyId
+    );
 
-    // Extract current team members and person's company
-    const currentTeam = Array.isArray(company.values?.team)
-      ? company.values.team
-      : [];
-    const currentTeamIds = extractRecordIds(currentTeam);
-    const currentPersonCompany = person.values?.company;
-    const currentPersonCompanyId = currentPersonCompany
-      ? typeof currentPersonCompany === 'string'
-        ? currentPersonCompany
-        : String(currentPersonCompany)
-      : null;
+    // Validate operation before proceeding
+    const validation = RelationshipValidator.validateForLink(
+      personId,
+      companyId,
+      state.isInTeam,
+      state.isCompanySet,
+      state.hasConflict,
+      state.conflictMessage,
+      state.currentTeamIds
+    );
 
-    // Check current linking state
-    const isInTeam = currentTeamIds.includes(personId);
-    const isCompanySet = currentPersonCompanyId === companyId;
-
-    // Already fully linked
-    if (isInTeam && isCompanySet) {
-      return {
-        success: true,
-        message: 'Person is already bidirectionally linked to this company',
-        companyId,
-        personId,
-        teamSize: currentTeamIds.length,
-      };
+    // Return early if validation says not to proceed
+    if (!validation.shouldProceed) {
+      return validation.result!;
     }
 
     // Handle partial linking inconsistencies
-    if (isInTeam || isCompanySet) {
-      return await handleInconsistentLink(personId, companyId, {
-        isInTeam,
-        isCompanySet,
-        currentTeamIds,
-      });
-    }
-
-    // Conflict: person already has different company
-    if (currentPersonCompanyId && currentPersonCompanyId !== companyId) {
-      return {
-        success: false,
-        message: `Person is already linked to company ${currentPersonCompanyId}. Use unlink-person-from-company first.`,
-        companyId,
+    if (state.isInTeam || state.isCompanySet) {
+      return await RelationshipOperationExecutor.executePartialLinkResolution(
         personId,
-        error: 'Person already has a different company assigned',
-      };
+        companyId,
+        state.isInTeam,
+        state.isCompanySet,
+        state.currentTeamIds
+      );
     }
 
     // Perform new bidirectional linking
-    const updatedTeamIds = [...currentTeamIds, personId];
-    await executeWithRetry([
-      () => updateCompany(companyId, { team: updatedTeamIds }),
-      () => updatePerson(personId, { company: companyId }),
-    ]);
-
-    return {
-      success: true,
-      message: 'Successfully linked person to company bidirectionally',
-      companyId,
+    return await RelationshipOperationExecutor.executeFullLinking(
       personId,
-      teamSize: updatedTeamIds.length,
-    };
+      companyId,
+      state.currentTeamIds
+    );
   } catch (error: unknown) {
     throw new Error(
-      `Failed to link person to company: ${(error as Error).message}`
+      `Failed to link person to company: ${getTypedErrorMessage(error)}`
     );
   }
-}
-
-/**
- * Helper function to handle inconsistent relationships during unlinking
- */
-async function handleInconsistentUnlink(
-  personId: string,
-  companyId: string,
-  state: {
-    isInTeam: boolean;
-    isCompanySet: boolean;
-    currentTeamIds: string[];
-    currentPersonCompanyId: string | null;
-  }
-): Promise<RelationshipOperationResult> {
-  const { isInTeam, isCompanySet, currentTeamIds, currentPersonCompanyId } =
-    state;
-
-  if (isInTeam && !isCompanySet) {
-    const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
-    await updateCompany(companyId, { team: updatedTeamIds });
-    return {
-      success: true,
-      message:
-        'Fixed relationship inconsistency: removed person from company team',
-      companyId,
-      personId,
-      teamSize: updatedTeamIds.length,
-    };
-  }
-
-  if (!isInTeam && isCompanySet) {
-    await updatePerson(personId, { company: undefined });
-    return {
-      success: true,
-      message: 'Fixed relationship inconsistency: cleared person company field',
-      companyId,
-      personId,
-      teamSize: currentTeamIds.length,
-    };
-  }
-
-  // Company mismatch but person is in team
-  if (currentPersonCompanyId !== companyId && isInTeam) {
-    const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
-    await updateCompany(companyId, { team: updatedTeamIds });
-    return {
-      success: true,
-      message: `Removed person from team, but person's company field points to ${currentPersonCompanyId}, not ${companyId}`,
-      companyId,
-      personId,
-      teamSize: updatedTeamIds.length,
-    };
-  }
-
-  throw new Error('Unexpected state in handleInconsistentUnlink');
 }
 
 /**
@@ -241,66 +129,47 @@ async function unlinkPersonFromCompany(
   companyId: string
 ): Promise<RelationshipOperationResult> {
   try {
-    // Get current company and person details
-    const [company, person] = await Promise.all([
-      getCompanyDetails(companyId),
-      getPersonDetails(personId),
-    ]);
+    // Analyze current relationship state
+    const state = await RelationshipStateAnalyzer.analyzeForUnlinking(
+      personId,
+      companyId
+    );
 
-    // Extract current team members and person's company
-    const currentTeam = Array.isArray(company.values?.team)
-      ? company.values.team
-      : [];
-    const currentTeamIds = extractRecordIds(currentTeam);
-    const currentPersonCompany = person.values?.company;
-    const currentPersonCompanyId = currentPersonCompany
-      ? typeof currentPersonCompany === 'string'
-        ? currentPersonCompany
-        : String(currentPersonCompany)
-      : null;
+    // Validate operation before proceeding
+    const validation = RelationshipValidator.validateForUnlink(
+      personId,
+      companyId,
+      state.isInTeam,
+      state.isCompanySet,
+      state.currentTeamIds
+    );
 
-    // Check current linking state
-    const isInTeam = currentTeamIds.includes(personId);
-    const isCompanySet = currentPersonCompanyId === companyId;
-
-    // Not linked at all
-    if (!isInTeam && !isCompanySet) {
-      return {
-        success: true,
-        message: 'Person is not linked to this company',
-        companyId,
-        personId,
-        teamSize: currentTeamIds.length,
-      };
+    // Return early if validation says not to proceed
+    if (!validation.shouldProceed) {
+      return validation.result!;
     }
 
     // Handle partial relationships or mismatches
-    if (!isInTeam || !isCompanySet || currentPersonCompanyId !== companyId) {
-      return await handleInconsistentUnlink(personId, companyId, {
-        isInTeam,
-        isCompanySet,
-        currentTeamIds,
-        currentPersonCompanyId,
-      });
+    if (state.needsPartialUnlink) {
+      return await RelationshipOperationExecutor.executePartialUnlinkResolution(
+        personId,
+        companyId,
+        state.isInTeam,
+        state.isCompanySet,
+        state.currentTeamIds,
+        state.currentPersonCompanyId
+      );
     }
 
     // Perform full bidirectional unlinking
-    const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
-    await executeWithRetry([
-      () => updateCompany(companyId, { team: updatedTeamIds }),
-      () => updatePerson(personId, { company: undefined }),
-    ]);
-
-    return {
-      success: true,
-      message: 'Successfully unlinked person from company bidirectionally',
-      companyId,
+    return await RelationshipOperationExecutor.executeFullUnlinking(
       personId,
-      teamSize: updatedTeamIds.length,
-    };
+      companyId,
+      state.currentTeamIds
+    );
   } catch (error: unknown) {
     throw new Error(
-      `Failed to unlink person from company: ${(error as Error).message}`
+      `Failed to unlink person from company: ${getTypedErrorMessage(error)}`
     );
   }
 }
@@ -422,23 +291,13 @@ async function getCompanyTeam(companyId: string): Promise<PersonInfo[]> {
       if (!memberId) continue;
 
       try {
-        // Get person details to validate bidirectional consistency
+        // Get person details and extract name using analyzer utility
         const person = await getPersonDetails(memberId);
-        const personName =
-          (person.values?.name as { value: string }[] | undefined)?.[0]
-            ?.value ||
-          (person.values?.full_name as { value: string }[] | undefined)?.[0]
-            ?.value ||
-          'Unknown Person';
+        const personName = RelationshipStateAnalyzer.extractPersonName(person);
 
-        // Check if person's company field points back to this company
-        const personCompany = person.values?.company;
-        const personCompanyId = personCompany
-          ? typeof personCompany === 'string'
-            ? personCompany
-            : String(personCompany)
-          : null;
-
+        // Check consistency using analyzer utility
+        const personCompanyId =
+          RelationshipStateAnalyzer.extractPersonCompanyId(person);
         const isConsistent = personCompanyId === companyId;
 
         result.push({
@@ -458,7 +317,9 @@ async function getCompanyTeam(companyId: string): Promise<PersonInfo[]> {
 
     return result;
   } catch (error: unknown) {
-    throw new Error(`Failed to get company team: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to get company team: ${getTypedErrorMessage(error)}`
+    );
   }
 }
 

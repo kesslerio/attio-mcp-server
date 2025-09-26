@@ -82,7 +82,12 @@ describe('Shared Validators', () => {
       expect(ErrorService.createUniversalError).toHaveBeenCalledWith(
         'test-operation',
         'test-resource',
-        originalError
+        expect.objectContaining({
+          message: 'Original error',
+          name: 'Error',
+          operation: 'test-operation',
+          resourceType: 'test-resource',
+        })
       );
     });
   });
@@ -211,7 +216,12 @@ describe('Shared Validators', () => {
       expect(ErrorService.createUniversalError).toHaveBeenCalledWith(
         'test-operation',
         'test-resource',
-        originalError
+        expect.objectContaining({
+          message: 'Handler error',
+          name: 'Error',
+          operation: 'test-operation',
+          resourceType: 'test-resource',
+        })
       );
     });
   });

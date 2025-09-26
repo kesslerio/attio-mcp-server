@@ -14,6 +14,7 @@ import { safeExtractTimestamp } from '../../shared/type-utils.js';
 
 import { validateUniversalToolParams } from '../schemas.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
+import { getTypedErrorMessage } from '../typed-error-handling.js';
 import {
   formatResourceType,
   handleUniversalSearch,

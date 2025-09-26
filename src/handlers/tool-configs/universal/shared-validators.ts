@@ -6,6 +6,10 @@
 import { isValidUUID } from '@utils/validation/uuid-validation.js';
 import { ValidationService } from '@services/ValidationService.js';
 import { ErrorService } from '@services/ErrorService.js';
+import {
+  withTypedErrorHandling,
+  type TypedError,
+} from './typed-error-handling.js';
 import { validateUniversalToolParams } from './schemas.js';
 
 /**
@@ -15,14 +19,8 @@ export function withUniversalErrorHandling<T, P extends unknown[]>(
   operation: string,
   resourceType: string,
   handler: (...args: P) => Promise<T>
-) {
-  return async (...args: P): Promise<T> => {
-    try {
-      return await handler(...args);
-    } catch (error: unknown) {
-      throw ErrorService.createUniversalError(operation, resourceType, error);
-    }
-  };
+): (...args: P) => Promise<T> {
+  return withTypedErrorHandling(operation, resourceType, handler);
 }
 
 /**

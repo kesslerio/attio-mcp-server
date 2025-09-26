@@ -13,6 +13,7 @@ import { AttioRecord, InteractionType } from '../../../../types/attio.js';
 import { validateUniversalToolParams } from '../schemas.js';
 import { UniversalSearchService } from '../../../../services/UniversalSearchService.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
+import { getTypedErrorMessage } from '../typed-error-handling.js';
 import { formatResourceType } from '../shared-handlers.js';
 
 export const searchByContentConfig: UniversalToolConfig<
