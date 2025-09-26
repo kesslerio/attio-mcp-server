@@ -28,6 +28,7 @@
 RULE: Documentation-first development | WHEN: Building any feature | DO: Check official docs (use Context7, fallback: web search) → existing solutions → ONLY then custom | ELSE: Technical debt accumulation
 RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use Clear Thought MCP (`clear_thought` → e.g., `mental_model`) after introspecting tool names | ELSE: Unnecessary complexity
 RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: Use Clear Thought `decision_framework` to choose alternatives | ELSE: Wasted time on workarounds
+RULE: Path aliases over relative imports | WHEN: Editing any file | DO: Use `@/` aliases instead of `../../../` relative paths; convert existing relative imports to aliases | ELSE: Import path maintenance burden
 
 ## PR SIZE TARGETS
 
