@@ -228,26 +228,60 @@ export function formatBatchResult(
     : 'record';
 
   if (!isJsonObjectArray(results)) {
-    return `Batch ${operationName} result: ${JSON.stringify(results)}`;
+    return formatInvalidResultsStructure(operationName, results);
   }
 
   if (operationType === BatchOperationType.SEARCH) {
-    if (isUniversalBatchSearchResultArray(results)) {
-      return formatBatchSearchResults(results, resourceTypeName);
-    }
-
-    return formatSearchRecords(results, resourceTypeName);
+    return formatSearchOperationResults(results, resourceTypeName);
   }
 
-  const successful = results.filter((r) => r.success);
-  const failed = results.filter((r) => !r.success);
+  return formatStandardOperationResults(
+    results,
+    operationName,
+    resourceTypeName
+  );
+}
 
-  const successCount = successful.length;
-  const failureCount = failed.length;
+/**
+ * Formats results when structure is invalid (not an array)
+ */
+function formatInvalidResultsStructure(
+  operationName: string,
+  results: JsonObject | JsonObject[]
+): string {
+  return `Batch ${operationName} result: ${JSON.stringify(results)}`;
+}
 
-  const sections: string[] = [
-    `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed`,
-  ];
+/**
+ * Formats search operation results (handles both batch search and simple search)
+ */
+function formatSearchOperationResults(
+  results: JsonObject[],
+  resourceTypeName: string
+): string {
+  if (isUniversalBatchSearchResultArray(results)) {
+    return formatBatchSearchResults(results, resourceTypeName);
+  }
+
+  return formatSearchRecords(results, resourceTypeName);
+}
+
+/**
+ * Formats standard CRUD operation results with success/failure summary
+ */
+function formatStandardOperationResults(
+  results: JsonObject[],
+  operationName: string,
+  resourceTypeName: string
+): string {
+  const { successful, failed } = categorizeOperationResults(results);
+  const summary = buildResultSummary(
+    operationName,
+    successful.length,
+    failed.length
+  );
+
+  const sections = [summary];
 
   const successSection = formatSuccessfulOperations(
     successful,
@@ -263,4 +297,28 @@ export function formatBatchResult(
   }
 
   return sections.join('\n\n');
+}
+
+/**
+ * Categorizes operation results into successful and failed
+ */
+function categorizeOperationResults(results: JsonObject[]): {
+  successful: JsonObject[];
+  failed: JsonObject[];
+} {
+  return {
+    successful: results.filter((r) => r.success),
+    failed: results.filter((r) => !r.success),
+  };
+}
+
+/**
+ * Builds a summary line for batch operation results
+ */
+function buildResultSummary(
+  operationName: string,
+  successCount: number,
+  failureCount: number
+): string {
+  return `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed`;
 }

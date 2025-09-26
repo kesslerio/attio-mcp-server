@@ -1,6 +1,10 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
+// Constants for magic numbers and patterns
+const RELATIVE_PATH_CAPTURE_GROUP = '$1';
+const JS_EXTENSION_REGEX = '^(\\.{1,2}/.*)\\.js$';
+
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(currentDir, '..', '..');
 
@@ -54,8 +58,8 @@ for (const [alias, relativePath] of Object.entries(aliasDirectories)) {
 
 // Relative path .js mapping (cached)
 aliasEntries.push({
-  find: getOrCreateRegex('^(\\.{1,2}/.*)\\.js$'),
-  replacement: '$1',
+  find: getOrCreateRegex(JS_EXTENSION_REGEX),
+  replacement: RELATIVE_PATH_CAPTURE_GROUP,
 });
 
 export { aliasEntries };

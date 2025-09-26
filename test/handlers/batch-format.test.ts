@@ -40,7 +40,7 @@ describe('Batch Format Type Safety', () => {
           typeof value === 'object' &&
           value !== null &&
           'record_id' in value &&
-          typeof (value as any).record_id === 'string'
+          typeof (value as Record<string, unknown>).record_id === 'string'
         );
       };
 
