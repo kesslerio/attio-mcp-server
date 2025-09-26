@@ -6,7 +6,7 @@
  * and response processing.
  */
 
-import type { AttioRecord, JsonObject } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '@shared-types/attio.js';
 import type {
   ResourceCreator,
   ResourceCreatorContext,
@@ -77,6 +77,26 @@ export abstract class BaseCreator implements ResourceCreator {
     context: ResourceCreatorContext,
     normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
+    this.logResponseMetadata(response, context);
+
+    const extractedRecord = this.extractAndEnrichRecord(response);
+
+    const finalRecord = await this.validateAndRecoverRecord(
+      extractedRecord,
+      context,
+      normalizedInput
+    );
+
+    return this.finalizeAndDebugRecord(finalRecord, context);
+  }
+
+  /**
+   * Logs API response metadata for debugging
+   */
+  private logResponseMetadata(
+    response: JsonObject,
+    context: ResourceCreatorContext
+  ): void {
     context.debug(this.constructor.name, `${this.resourceType} API response`, {
       status: response?.status,
       statusText: response?.statusText,
@@ -86,26 +106,51 @@ export abstract class BaseCreator implements ResourceCreator {
         ? Object.keys(response.data as Record<string, unknown>)
         : [],
     });
+  }
 
-    let record = extractAttioRecord(response);
+  /**
+   * Extracts record from response and enriches with ID if needed
+   */
+  private extractAndEnrichRecord(response: JsonObject): JsonObject {
+    const record = extractAttioRecord(response);
+    return this.enrichRecordId(record || ({} as JsonObject), response);
+  }
 
-    // Enrich missing id from web_url if available
-    const enrichedRecord = this.enrichRecordId(
-      record || ({} as JsonObject),
-      response
-    );
+  /**
+   * Validates record and attempts recovery if needed
+   */
+  private async validateAndRecoverRecord(
+    record: JsonObject,
+    context: ResourceCreatorContext,
+    normalizedInput?: JsonObject
+  ): Promise<AttioRecord> {
+    const mustRecover = this.shouldAttemptRecovery(record);
 
-    // Handle empty response with recovery if needed
-    const mustRecover =
-      !enrichedRecord ||
-      !(enrichedRecord as JsonObject).id ||
-      !((enrichedRecord as JsonObject).id as JsonObject)?.record_id;
     if (mustRecover) {
-      record = await this.attemptRecovery(context, normalizedInput);
-    } else {
-      record = enrichedRecord as AttioRecord;
+      return await this.attemptRecovery(context, normalizedInput);
     }
 
+    return record as AttioRecord;
+  }
+
+  /**
+   * Determines if recovery should be attempted based on record state
+   */
+  private shouldAttemptRecovery(record: JsonObject): boolean {
+    return (
+      !record ||
+      !(record as JsonObject).id ||
+      !((record as JsonObject).id as JsonObject)?.record_id
+    );
+  }
+
+  /**
+   * Finalizes record validation and adds debug logging
+   */
+  private finalizeAndDebugRecord(
+    record: AttioRecord,
+    context: ResourceCreatorContext
+  ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);
 
     if (isTestRun()) {
@@ -116,7 +161,7 @@ export abstract class BaseCreator implements ResourceCreator {
       );
     }
 
-    return record as AttioRecord;
+    return record;
   }
 
   /**

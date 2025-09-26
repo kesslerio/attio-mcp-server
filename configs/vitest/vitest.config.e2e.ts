@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
+import { aliasEntries } from './aliases.ts';
 
 export default defineConfig({
   // Project root for env file resolution
@@ -121,9 +122,7 @@ export default defineConfig({
 
   // Module resolution
   resolve: {
-    alias: {
-      '^(\\.{1,2}/.*)\\.js$': '$1',
-    },
+    alias: aliasEntries,
   },
 
   // Define custom test environment for E2E

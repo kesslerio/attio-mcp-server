@@ -1,63 +1,57 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Hoist mocks to the top level
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/shared-handlers.js',
-  () => ({
-    handleUniversalSearch: vi.fn(),
-    handleUniversalGetDetails: vi.fn(),
-    handleUniversalCreate: vi.fn(),
-    handleUniversalUpdate: vi.fn(),
-    handleUniversalDelete: vi.fn(),
-    handleUniversalGetAttributes: vi.fn(),
-    handleUniversalDiscoverAttributes: vi.fn(),
-    handleUniversalGetDetailedInfo: vi.fn(),
-    formatResourceType: vi.fn((type: string) => {
-      switch (type) {
-        case 'companies':
-          return 'company';
-        case 'people':
-          return 'person';
-        case 'records':
-          return 'record';
-        case 'tasks':
-          return 'task';
-        default:
-          return type;
-      }
+vi.mock('@handlers/tool-configs/universal/shared-handlers', () => ({
+  handleUniversalSearch: vi.fn(),
+  handleUniversalGetDetails: vi.fn(),
+  handleUniversalCreate: vi.fn(),
+  handleUniversalUpdate: vi.fn(),
+  handleUniversalDelete: vi.fn(),
+  handleUniversalGetAttributes: vi.fn(),
+  handleUniversalDiscoverAttributes: vi.fn(),
+  handleUniversalGetDetailedInfo: vi.fn(),
+  formatResourceType: vi.fn((type: string) => {
+    switch (type) {
+      case 'companies':
+        return 'company';
+      case 'people':
+        return 'person';
+      case 'records':
+        return 'record';
+      case 'tasks':
+        return 'task';
+      default:
+        return type;
+    }
+  }),
+  getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
+  createUniversalError: vi.fn(
+    (operation: string, resourceType: string, error: any) =>
+      new Error(
+        `${operation} failed for ${resourceType}: ${error.message || error}`
+      )
+  ),
+}));
+
+vi.mock('@handlers/tool-configs/universal/schemas', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+      return params || {};
     }),
-    getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
-    createUniversalError: vi.fn(
-      (operation: string, resourceType: string, error: any) =>
-        new Error(
-          `${operation} failed for ${resourceType}: ${error.message || error}`
-        )
-    ),
-  })
-);
+  };
+});
 
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/schemas.js',
-  async (importOriginal) => {
-    const actual = (await importOriginal()) as any;
-    return {
-      ...actual,
-      validateUniversalToolParams: vi.fn((operation: string, params: any) => {
-        return params || {};
-      }),
-    };
-  }
-);
-
-import { batchOperationsConfig } from '../../../../src/handlers/tool-configs/universal/advanced-operations.js';
+import { batchOperationsConfig } from '@handlers/tool-configs/universal/advanced-operations';
 import {
   UniversalResourceType,
   BatchOperationType,
   BatchOperationsParams,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
+} from '@handlers/tool-configs/universal/types';
 // Import the mock modules to get access to the mocked functions
-import * as sharedHandlers from '../../../../src/handlers/tool-configs/universal/shared-handlers.js';
-import * as schemas from '../../../../src/handlers/tool-configs/universal/schemas.js';
+import * as sharedHandlers from '@handlers/tool-configs/universal/shared-handlers';
+import * as schemas from '@handlers/tool-configs/universal/schemas';
 
 describe('Universal Advanced Operations - Batch Tests', () => {
   beforeEach(() => {

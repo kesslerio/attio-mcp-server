@@ -1,14 +1,34 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "types": ["vitest/globals", "node"],
+    "types": ["vitest", "node"],
     "esModuleInterop": true,
     "rootDir": "..",
+    "baseUrl": "..",
+    "paths": {
+      "@src/*": ["src/*"],
+      "@src/*.js": ["src/*.ts"],
+      "@api/*": ["src/api/*"],
+      "@api/*.js": ["src/api/*.ts"],
+      "@config/*": ["src/config/*"],
+      "@config/*.js": ["src/config/*.ts"],
+      "@constants/*": ["src/constants/*"],
+      "@constants/*.js": ["src/constants/*.ts"],
+      "@handlers/*": ["src/handlers/*"],
+      "@handlers/*.js": ["src/handlers/*.ts"],
+      "@services/*": ["src/services/*"],
+      "@services/*.js": ["src/services/*.ts"],
+      "@shared-types/*": ["src/types/*"],
+      "@shared-types/*.js": ["src/types/*.ts"],
+      "@utils/*": ["src/utils/*"],
+      "@utils/*.js": ["src/utils/*.ts"],
+      "@test-support/*": ["src/test-support/*"],
+      "@test-support/*.js": ["src/test-support/*.ts"],
+      "@test/*": ["test/*"],
+      "@test/*.js": ["test/*.ts"]
+    },
     "noImplicitAny": false
   },
-  "include": [
-    "**/*.ts",
-    "../src/**/*.ts"
-  ],
+  "include": ["**/*.ts", "../src/**/*.ts"],
   "exclude": ["node_modules"]
 }

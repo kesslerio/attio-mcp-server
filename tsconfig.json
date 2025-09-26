@@ -28,7 +28,31 @@
     "module": "NodeNext" /* Specify what module code is generated. */,
     "rootDir": "./src" /* Specify the root folder within your source files. */,
     "moduleResolution": "NodeNext" /* Specify how TypeScript looks up a file from a given module specifier. */,
-    // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
+    "baseUrl": "." /* Specify the base directory to resolve non-relative module names. */,
+    "paths": {
+      "@src/*": ["src/*"],
+      "@src/*.js": ["src/*.ts"],
+      "@api/*": ["src/api/*"],
+      "@api/*.js": ["src/api/*.ts"],
+      "@config/*": ["src/config/*"],
+      "@config/*.js": ["src/config/*.ts"],
+      "@constants/*": ["src/constants/*"],
+      "@constants/*.js": ["src/constants/*.ts"],
+      "@handlers/*": ["src/handlers/*"],
+      "@handlers/*.js": ["src/handlers/*.ts"],
+      "@services/*": ["src/services/*"],
+      "@services/*.js": ["src/services/*.ts"],
+      "@errors/*": ["src/errors/*"],
+      "@errors/*.js": ["src/errors/*.ts"],
+      "@shared-types/*": ["src/types/*"],
+      "@shared-types/*.js": ["src/types/*.ts"],
+      "@utils/*": ["src/utils/*"],
+      "@utils/*.js": ["src/utils/*.ts"],
+      "@test-support/*": ["src/test-support/*"],
+      "@test-support/*.js": ["src/test-support/*.ts"],
+      "@test/*": ["test/*"],
+      "@test/*.js": ["test/*.ts"]
+    },
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
     // "types": [],                                      /* Specify type package names to be included without being referenced in a source file. */

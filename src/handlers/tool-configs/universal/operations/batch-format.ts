@@ -4,8 +4,8 @@ import {
   safeExtractRecordValues,
   safeExtractFirstValue,
 } from '../../shared/type-utils.js';
-import type { JsonObject } from '../../../../types/attio.js';
-import type { UniversalBatchSearchResult } from '../../../../api/operations/batch.js';
+import type { JsonObject } from '@shared-types/attio.js';
+import type { UniversalBatchSearchResult } from '@api/operations/batch.js';
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -24,11 +24,35 @@ function isUniversalBatchSearchResultArray(
       (item) =>
         isJsonObject(item) &&
         'success' in item &&
-        typeof (item as JsonObject).success === 'boolean' &&
-        ('query' in item
-          ? typeof (item as JsonObject).query === 'string'
-          : true)
+        typeof item.success === 'boolean' &&
+        ('query' in item ? typeof item.query === 'string' : true)
     )
+  );
+}
+
+function isRecordId(
+  value: unknown
+): value is JsonObject & { record_id: string } {
+  return (
+    isJsonObject(value) &&
+    'record_id' in value &&
+    typeof value.record_id === 'string'
+  );
+}
+
+function isOperationResult(
+  value: unknown
+): value is JsonObject & { result?: JsonObject } {
+  return (
+    isJsonObject(value) && (!('result' in value) || isJsonObject(value.result))
+  );
+}
+
+function isOperationData(
+  value: unknown
+): value is JsonObject & { data?: JsonObject } {
+  return (
+    isJsonObject(value) && (!('data' in value) || isJsonObject(value.data))
   );
 }
 
@@ -73,16 +97,18 @@ function formatBatchSearchResults(
       summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${records.length} ${resourceTypeName}s\n`;
 
       if (records.length > 0) {
-        records.slice(0, 3).forEach((record, recordIndex) => {
-          const recordObj = record as JsonObject;
-          const values = safeExtractRecordValues(recordObj) as
-            | JsonObject
-            | undefined;
-          const recordId = recordObj.id as JsonObject | undefined;
+        records.slice(0, 3).forEach((record: unknown, recordIndex: number) => {
+          if (!isJsonObject(record)) {
+            summary += `   ${recordIndex + 1}. Invalid record format\n`;
+            return;
+          }
+
+          const values = safeExtractRecordValues(record);
+          const recordId = isJsonObject(record.id) ? record.id : undefined;
           const name =
             safeExtractFirstValue(values?.name) ??
             safeExtractFirstValue(values?.title, 'Unnamed');
-          const id = (recordId?.record_id as string) || 'unknown';
+          const id = isRecordId(recordId) ? recordId.record_id : 'unknown';
           summary += `   ${recordIndex + 1}. ${name} (ID: ${id})\n`;
         });
         if (records.length > 3) {
@@ -127,9 +153,16 @@ function formatSuccessfulOperations(
 
   const header = 'Successful operations:';
   const lines = operations.map((op: JsonObject, index: number) => {
-    const opResult = op.result as JsonObject | undefined;
-    const values = opResult?.values as JsonObject | undefined;
-    const fallbackId = (opResult?.record_id as string | undefined) ?? 'Unknown';
+    if (!isOperationResult(op)) {
+      return `${index + 1}. Invalid operation format`;
+    }
+
+    const opResult = op.result;
+    const values = isJsonObject(opResult?.values) ? opResult.values : undefined;
+    const fallbackId =
+      (typeof opResult?.record_id === 'string'
+        ? opResult.record_id
+        : undefined) ?? 'Unknown';
     const name = extractDisplayName(values, fallbackId);
     const descriptor = resourceTypeName ? `${name}` : name;
     return `${index + 1}. ${descriptor}`;
@@ -145,10 +178,14 @@ function formatFailedOperations(operations: JsonObject[]): string {
 
   const header = 'Failed operations:';
   const lines = operations.map((op: JsonObject, index: number) => {
-    const opData = op.data as JsonObject | undefined;
+    if (!isOperationData(op)) {
+      return `${index + 1}. Invalid operation format: Unknown error`;
+    }
+
+    const opData = op.data;
     const identifier =
-      (op.record_id as string | undefined) ??
-      (opData?.name as string | undefined) ??
+      (typeof op.record_id === 'string' ? op.record_id : undefined) ??
+      (typeof opData?.name === 'string' ? opData.name : undefined) ??
       'Unknown';
     const error = op.error ?? 'Unknown error';
     return `${index + 1}. ${identifier}: ${error}`;
@@ -166,10 +203,10 @@ function formatSearchRecords(
   }
 
   const lines = records.map((record: JsonObject, index: number) => {
-    const values = safeExtractRecordValues(record) as JsonObject | undefined;
-    const recordId = record.id as JsonObject | undefined;
+    const values = safeExtractRecordValues(record);
+    const recordId = isJsonObject(record.id) ? record.id : undefined;
     const name = extractDisplayName(values, 'Unnamed');
-    const id = (recordId?.record_id as string) || 'unknown';
+    const id = isRecordId(recordId) ? recordId.record_id : 'unknown';
     return `${index + 1}. ${name} (ID: ${id})`;
   });
 
@@ -191,26 +228,60 @@ export function formatBatchResult(
     : 'record';
 
   if (!isJsonObjectArray(results)) {
-    return `Batch ${operationName} result: ${JSON.stringify(results)}`;
+    return formatInvalidResultsStructure(operationName, results);
   }
 
   if (operationType === BatchOperationType.SEARCH) {
-    if (isUniversalBatchSearchResultArray(results)) {
-      return formatBatchSearchResults(results, resourceTypeName);
-    }
-
-    return formatSearchRecords(results, resourceTypeName);
+    return formatSearchOperationResults(results, resourceTypeName);
   }
 
-  const successful = results.filter((r) => r.success);
-  const failed = results.filter((r) => !r.success);
+  return formatStandardOperationResults(
+    results,
+    operationName,
+    resourceTypeName
+  );
+}
 
-  const successCount = successful.length;
-  const failureCount = failed.length;
+/**
+ * Formats results when structure is invalid (not an array)
+ */
+function formatInvalidResultsStructure(
+  operationName: string,
+  results: JsonObject | JsonObject[]
+): string {
+  return `Batch ${operationName} result: ${JSON.stringify(results)}`;
+}
 
-  const sections: string[] = [
-    `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed`,
-  ];
+/**
+ * Formats search operation results (handles both batch search and simple search)
+ */
+function formatSearchOperationResults(
+  results: JsonObject[],
+  resourceTypeName: string
+): string {
+  if (isUniversalBatchSearchResultArray(results)) {
+    return formatBatchSearchResults(results, resourceTypeName);
+  }
+
+  return formatSearchRecords(results, resourceTypeName);
+}
+
+/**
+ * Formats standard CRUD operation results with success/failure summary
+ */
+function formatStandardOperationResults(
+  results: JsonObject[],
+  operationName: string,
+  resourceTypeName: string
+): string {
+  const { successful, failed } = categorizeOperationResults(results);
+  const summary = buildResultSummary(
+    operationName,
+    successful.length,
+    failed.length
+  );
+
+  const sections = [summary];
 
   const successSection = formatSuccessfulOperations(
     successful,
@@ -226,4 +297,28 @@ export function formatBatchResult(
   }
 
   return sections.join('\n\n');
+}
+
+/**
+ * Categorizes operation results into successful and failed
+ */
+function categorizeOperationResults(results: JsonObject[]): {
+  successful: JsonObject[];
+  failed: JsonObject[];
+} {
+  return {
+    successful: results.filter((r) => r.success),
+    failed: results.filter((r) => !r.success),
+  };
+}
+
+/**
+ * Builds a summary line for batch operation results
+ */
+function buildResultSummary(
+  operationName: string,
+  successCount: number,
+  failureCount: number
+): string {
+  return `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed`;
 }

@@ -9,16 +9,27 @@ export default [
       'dist/**',
       'node_modules/**',
       'coverage/**',
+      'coverage-e2e/**',
       'build/**',
       'scripts/**',
+      'scripts/fix/**',
       'test/**/*.js',
       'test/**/*.mjs',
       'test/**/*.cjs',
       'test-dist/**', // Ignore compiled test files
+      '.smithery/**',
+      'test-results/**',
+      'test/e2e/outputs/**',
       '*.js',
       '*.mjs',
       '*.cjs',
       '**/*.d.ts', // Ignore TypeScript declaration files
+      'logs/**',
+      'logs.backup/**',
+      'temp/**',
+      'tmp/**',
+      '.wireit/**',
+      'tsconfig.tsbuildinfo',
     ],
   },
   {
@@ -54,6 +65,19 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       import: importPlugin,
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          project: [
+            './tsconfig.json',
+            './test/tsconfig.json',
+            './configs/tsconfig/tsconfig.eslint.json',
+            './configs/tsconfig/tsconfig.tests.json',
+          ],
+          alwaysTryTypes: true,
+        },
+      },
     },
     rules: {
       // Import recommended rules but convert errors to warnings for migration phase
@@ -98,6 +122,19 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       import: importPlugin,
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          project: [
+            './tsconfig.json',
+            './test/tsconfig.json',
+            './configs/tsconfig/tsconfig.eslint.json',
+            './configs/tsconfig/tsconfig.tests.json',
+          ],
+          alwaysTryTypes: true,
+        },
+      },
     },
     rules: {
       'no-console': 'off',

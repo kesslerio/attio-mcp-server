@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { config } from 'dotenv';
+import { aliasEntries } from './aliases.ts';
 
 // Load environment variables from .env file for integration tests
 config();
@@ -56,8 +57,6 @@ export default defineConfig({
     reporters: ['verbose'],
   },
   resolve: {
-    alias: {
-      '^(\\.{1,2}/.*)\\.js$': '$1',
-    },
+    alias: aliasEntries,
   },
 });

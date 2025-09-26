@@ -6,14 +6,11 @@
  */
 
 import type { AxiosResponse } from 'axios';
-import type { AttioRecord, JsonObject } from '../../../types/attio.js';
+import type { AttioRecord, JsonObject } from '@shared-types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
-import {
-  normalizePersonValues,
-  normalizeEmailsToObjectFormat,
-  normalizeEmailsToStringFormat,
-} from '../data-normalizers.js';
+import { normalizePersonValues } from '../data-normalizers.js';
+import { EmailRetryManager } from './email-strategies.js';
 import {
   extractAttioRecord,
   assertLooksLikeCreated,
@@ -32,6 +29,7 @@ import { safeExtractRecordId } from '../../../utils/type-extraction.js';
 export class PersonCreator extends BaseCreator {
   readonly resourceType = 'people';
   readonly endpoint = '/objects/people/records';
+  private emailRetryManager = new EmailRetryManager();
 
   /**
    * Creates a person record with name and email normalization
@@ -105,8 +103,8 @@ export class PersonCreator extends BaseCreator {
   }
 
   /**
-   * Creates person with email format retry logic
-   * Implements the same retry pattern as original createPerson
+   * Creates person with email format retry logic using strategy pattern
+   * Attempts alternative email formats on 400 errors
    */
   private async createPersonWithRetry(
     context: ResourceCreatorContext,
@@ -116,44 +114,28 @@ export class PersonCreator extends BaseCreator {
       context.client.post(this.endpoint, { data: { values } });
 
     try {
-      // Attempt #1
+      // Attempt #1: Try original format
       return await doCreate(filteredPersonData);
     } catch (firstErr: unknown) {
       const error = firstErr as { response?: { status?: number } };
       const status = error?.response?.status;
 
-      // Only retry on 400 with alternate email schema
+      // Only retry on 400 (validation error) with alternate email schema
       if (status === 400) {
-        const alt: JsonObject = { ...filteredPersonData };
-        const emails = alt.email_addresses as unknown[] | undefined;
+        const retryResult =
+          this.emailRetryManager.tryConvertEmailFormat(filteredPersonData);
 
-        if (emails && emails.length) {
-          if (typeof emails[0] === 'string') {
-            alt.email_addresses = normalizeEmailsToObjectFormat(emails);
-          } else if (
-            emails[0] &&
-            typeof emails[0] === 'object' &&
-            emails[0] !== null &&
-            'email_address' in emails[0]
-          ) {
-            alt.email_addresses = normalizeEmailsToStringFormat(emails);
-          }
-
+        if (retryResult) {
           context.debug(
             this.constructor.name,
             'Retrying person creation with alternate email format',
             {
-              originalFormat:
-                emails.length > 0 ? typeof emails[0] : 'undefined',
-              retryFormat:
-                Array.isArray(alt.email_addresses) &&
-                alt.email_addresses.length > 0
-                  ? typeof alt.email_addresses[0]
-                  : 'undefined',
+              originalFormat: retryResult.originalFormat,
+              retryFormat: retryResult.alternativeFormat,
             } as JsonObject
           );
 
-          return await doCreate(alt);
+          return await doCreate(retryResult.convertedData);
         }
       }
       throw firstErr;
