@@ -7,19 +7,33 @@ import {
   RelationshipSearchParams,
   RelationshipType,
 } from '../types.js';
-import { AttioRecord } from '../../../../types/attio.js';
+import { AttioRecord } from '@shared-types/attio.js';
+
+// Specific interfaces for better type safety
+interface RecordValues {
+  name?: Array<{ value?: string; full_name?: string }>;
+  full_name?: Array<{ value?: string }>;
+  title?: Array<{ value?: string }>;
+  email?: Array<{ value?: string }>;
+  role?: Array<{ value?: string }>;
+  position?: Array<{ value?: string }>;
+}
+
+interface RecordId {
+  record_id?: string;
+}
 
 import { validateUniversalToolParams } from '../schemas.js';
-import { ValidationService } from '../../../../services/ValidationService.js';
-import { isValidUUID } from '../../../../utils/validation/uuid-validation.js';
-import { ErrorService } from '../../../../services/ErrorService.js';
+import { ValidationService } from '@services/ValidationService.js';
+import { isValidUUID } from '@utils/validation/uuid-validation.js';
+import { ErrorService } from '@services/ErrorService.js';
 
-import { searchCompaniesByPeople } from '../../../../objects/companies/index.js';
-import { searchPeopleByCompany } from '../../../../objects/people/index.js';
+import { searchCompaniesByPeople } from '@src/objects/companies/index.js';
+import { searchPeopleByCompany } from '@src/objects/people/index.js';
 import {
   searchDealsByCompany,
   searchDealsByPerson,
-} from '../../../../objects/deals/index.js';
+} from '@src/objects/deals/index.js';
 
 export const searchByRelationshipConfig: UniversalToolConfig = {
   name: 'search-by-relationship',
@@ -72,10 +86,13 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
           ) {
             // Invalid listId should return error, not empty array
             throw new Error(`Invalid list_id: must be a UUID. Got: ${list_id}`);
-          } else {
-            // Operation requiring valid list id → throw validation error
-            throw new Error('invalid list id');
           }
+
+          // list_entries is not implemented as a relationship search - this should use list tools instead
+          throw new Error(
+            `List entries search is not supported via relationship search. ` +
+              `Use 'get-list-details' or list-specific tools to retrieve list entries.`
+          );
         }
 
         default:
@@ -104,20 +121,18 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
       : 'relationship';
 
     return `Found ${results.length} records for ${relationshipName}:\n${results
-      .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown>;
-        const recordId = record.id as Record<string, unknown>;
+      .map((record: AttioRecord, index: number) => {
+        const values = record.values as RecordValues;
+        const recordId = record.id as RecordId;
         const name =
-          (values?.name as Record<string, unknown>[])?.[0]?.value ||
-          (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
-          (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
-          (values?.title as Record<string, unknown>[])?.[0]?.value ||
+          values?.name?.[0]?.value ||
+          values?.name?.[0]?.full_name ||
+          values?.full_name?.[0]?.value ||
+          values?.title?.[0]?.value ||
           'Unnamed';
         const id = recordId?.record_id || 'unknown';
-        const email = (values?.email as Record<string, unknown>[])?.[0]?.value;
-        const role =
-          (values?.role as Record<string, unknown>[])?.[0]?.value ||
-          (values?.position as Record<string, unknown>[])?.[0]?.value;
+        const email = values?.email?.[0]?.value;
+        const role = values?.role?.[0]?.value || values?.position?.[0]?.value;
 
         let details = '';
         if (role) details += ` (${role})`;

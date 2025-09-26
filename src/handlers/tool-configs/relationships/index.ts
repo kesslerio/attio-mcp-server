@@ -5,13 +5,17 @@
  * people and companies in Attio, abstracting away the complexity of
  * which direction the relationship needs to be updated.
  */
-import { ToolConfig } from '../../tool-types.js';
-import { getCompanyDetails } from '../../../objects/companies/index.js';
+import { ToolConfig } from '@handlers/tool-types.js';
 import {
-  getPersonDetails,
-  updatePerson,
-} from '../../../objects/people/index.js';
-import { updateCompany } from '../../../objects/companies/index.js';
+  extractRecordIds,
+  extractSingleRecordId,
+  analyzeRelationshipState,
+  executeWithRetry,
+  type TeamMember,
+} from '@utils/relationship-helpers.js';
+import { getCompanyDetails } from '@src/objects/companies/index.js';
+import { getPersonDetails, updatePerson } from '@src/objects/people/index.js';
+import { updateCompany } from '@src/objects/companies/index.js';
 
 // Relationship result interfaces
 interface RelationshipOperationResult {
@@ -33,11 +37,7 @@ interface PersonInfo {
   name: string;
 }
 
-interface TeamMember {
-  target_record_id?: string;
-  record_id?: string;
-  name?: string;
-}
+// TeamMember type is now imported from @utils/relationship-helpers.js
 
 export interface LinkPersonToCompanyToolConfig extends ToolConfig {
   handler: (
@@ -77,16 +77,10 @@ async function linkPersonToCompany(
     ]);
 
     // Extract current team members
-    const currentTeam = company.values?.team || [];
-    const currentTeamIds = Array.isArray(currentTeam)
-      ? currentTeam
-          .map((member: TeamMember | string) =>
-            typeof member === 'string'
-              ? member
-              : member.target_record_id || member.record_id || String(member)
-          )
-          .filter(Boolean)
+    const currentTeam = Array.isArray(company.values?.team)
+      ? company.values.team
       : [];
+    const currentTeamIds = extractRecordIds(currentTeam);
 
     // Extract current person's company
     const currentPersonCompany = person.values?.company;
@@ -151,10 +145,10 @@ async function linkPersonToCompany(
     // Perform bidirectional linking - add to team and set company
     const updatedTeamIds = [...currentTeamIds, personId];
 
-    // Use Promise.all for atomic-like operation (though not truly atomic in API)
-    await Promise.all([
-      updateCompany(companyId, { team: updatedTeamIds }),
-      updatePerson(personId, { company: companyId }),
+    // Use retry mechanism for better reliability in bidirectional operations
+    await executeWithRetry([
+      () => updateCompany(companyId, { team: updatedTeamIds }),
+      () => updatePerson(personId, { company: companyId }),
     ]);
 
     return {
@@ -187,16 +181,10 @@ async function unlinkPersonFromCompany(
     ]);
 
     // Extract current team members
-    const currentTeam = company.values?.team || [];
-    const currentTeamIds = Array.isArray(currentTeam)
-      ? currentTeam
-          .map((member: TeamMember | string) =>
-            typeof member === 'string'
-              ? member
-              : member.target_record_id || member.record_id || String(member)
-          )
-          .filter(Boolean)
+    const currentTeam = Array.isArray(company.values?.team)
+      ? company.values.team
       : [];
+    const currentTeamIds = extractRecordIds(currentTeam);
 
     // Extract current person's company
     const currentPersonCompany = person.values?.company;
@@ -268,10 +256,10 @@ async function unlinkPersonFromCompany(
     // Perform bidirectional unlinking - remove from team and clear company
     const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
 
-    // Use Promise.all for atomic-like operation
-    await Promise.all([
-      updateCompany(companyId, { team: updatedTeamIds }),
-      updatePerson(personId, { company: undefined }),
+    // Use retry mechanism for better reliability in bidirectional operations
+    await executeWithRetry([
+      () => updateCompany(companyId, { team: updatedTeamIds }),
+      () => updatePerson(personId, { company: undefined }),
     ]);
 
     return {
@@ -394,10 +382,7 @@ async function getCompanyTeam(companyId: string): Promise<PersonInfo[]> {
 
     // Process each team member and validate bidirectional consistency
     for (const member of team) {
-      const memberId =
-        typeof member === 'string'
-          ? member
-          : member.target_record_id || member.record_id || String(member);
+      const memberId = extractSingleRecordId(member);
 
       if (!memberId) continue;
 

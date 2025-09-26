@@ -1,10 +1,10 @@
 /**
  * Relationship-based queries for deals
  */
-import { AttioRecord } from '../../types/attio.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { validateNumericParam } from '../../utils/filters/index.js';
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { AttioRecord } from '@shared-types/attio.js';
+import { FilterValidationError } from '@errors/api-errors.js';
+import { validateNumericParam } from '@utils/filters/index.js';
+import { getLazyAttioClient } from '@api/lazy-client.js';
 
 /**
  * Search for deals associated with a specific company
