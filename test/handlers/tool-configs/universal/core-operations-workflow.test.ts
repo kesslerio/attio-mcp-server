@@ -10,77 +10,68 @@ import {
   createRecordConfig,
   updateRecordConfig,
   deleteRecordConfig,
-} from '../../../../src/handlers/tool-configs/universal/core/crud-operations.js';
-import { searchRecordsConfig } from '../../../../src/handlers/tool-configs/universal/core/search-operations.js';
-import { getRecordDetailsConfig } from '../../../../src/handlers/tool-configs/universal/core/record-details-operations.js';
-import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
+} from '@handlers/tool-configs/universal/core/crud-operations.js';
+import { searchRecordsConfig } from '@handlers/tool-configs/universal/core/search-operations.js';
+import { getRecordDetailsConfig } from '@handlers/tool-configs/universal/core/record-details-operations.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
 
 // Mock dependencies
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/shared-handlers.js',
-  () => ({
-    handleUniversalCreate: vi.fn(),
-    handleUniversalUpdate: vi.fn(),
-    handleUniversalDelete: vi.fn(),
-    handleUniversalSearch: vi.fn(),
-    handleUniversalGetDetails: vi.fn(),
-    getSingularResourceType: vi.fn((type) => {
-      const mapping: Record<string, string> = {
-        companies: 'company',
-        people: 'person',
-        deals: 'deal',
-        tasks: 'task',
-        notes: 'note',
-        lists: 'list',
-        records: 'record',
-      };
-      return mapping[type] ?? type;
-    }),
-  })
-);
+vi.mock('@handlers/tool-configs/universal/shared-handlers.js', () => ({
+  handleUniversalCreate: vi.fn(),
+  handleUniversalUpdate: vi.fn(),
+  handleUniversalDelete: vi.fn(),
+  handleUniversalSearch: vi.fn(),
+  handleUniversalGetDetails: vi.fn(),
+  getSingularResourceType: vi.fn((type) => {
+    const mapping: Record<string, string> = {
+      companies: 'company',
+      people: 'person',
+      deals: 'deal',
+      tasks: 'task',
+      notes: 'note',
+      lists: 'list',
+      records: 'record',
+    };
+    return mapping[type] ?? type;
+  }),
+}));
 
-vi.mock('../../../../src/services/UniversalUpdateService.js', () => ({
+vi.mock('@services/UniversalUpdateService.js', () => ({
   UniversalUpdateService: {
     updateRecordWithValidation: vi.fn(),
   },
 }));
 
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/schemas.js',
-  async () => {
-    const actual = await vi.importActual<
-      typeof import('../../../../src/handlers/tool-configs/universal/schemas.js')
-    >('../../../../src/handlers/tool-configs/universal/schemas.js');
+vi.mock('@handlers/tool-configs/universal/schemas.js', async () => {
+  const actual = await vi.importActual<
+    typeof import('@handlers/tool-configs/universal/schemas.js')
+  >('@handlers/tool-configs/universal/schemas.js');
 
-    return {
-      ...actual,
-      validateUniversalToolParams: vi.fn((toolName, params) => params),
-      CrossResourceValidator: {
-        validateRecordRelationships: vi.fn(),
-      },
-    };
-  }
-);
+  return {
+    ...actual,
+    validateUniversalToolParams: vi.fn((toolName, params) => params),
+    CrossResourceValidator: {
+      validateRecordRelationships: vi.fn(),
+    },
+  };
+});
 
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/core/error-utils.js',
-  async () => {
-    const actual = await vi.importActual<
-      typeof import('../../../../src/handlers/tool-configs/universal/core/error-utils.js')
-    >('../../../../src/handlers/tool-configs/universal/core/error-utils.js');
+vi.mock('@handlers/tool-configs/universal/core/error-utils.js', async () => {
+  const actual = await vi.importActual<
+    typeof import('@handlers/tool-configs/universal/core/error-utils.js')
+  >('@handlers/tool-configs/universal/core/error-utils.js');
 
-    return {
-      ...actual,
-      handleCreateError: vi.fn(actual.handleCreateError),
-      handleUpdateError: vi.fn(actual.handleUpdateError),
-      handleDeleteError: vi.fn(actual.handleDeleteError),
-      handleSearchError: vi.fn(actual.handleSearchError),
-      handleCoreOperationError: vi.fn(actual.handleCoreOperationError),
-    };
-  }
-);
+  return {
+    ...actual,
+    handleCreateError: vi.fn(actual.handleCreateError),
+    handleUpdateError: vi.fn(actual.handleUpdateError),
+    handleDeleteError: vi.fn(actual.handleDeleteError),
+    handleSearchError: vi.fn(actual.handleSearchError),
+    handleCoreOperationError: vi.fn(actual.handleCoreOperationError),
+  };
+});
 
-vi.mock('../../../../src/utils/logger.js', () => ({
+vi.mock('@utils/logger.js', () => ({
   createScopedLogger: vi.fn(() => ({
     error: vi.fn(),
     warn: vi.fn(),
@@ -90,7 +81,7 @@ vi.mock('../../../../src/utils/logger.js', () => ({
 }));
 
 const importSharedHandlers = async () =>
-  import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+  import('@handlers/tool-configs/universal/shared-handlers.js');
 
 describe('Core Operations Workflow Integration', () => {
   type SharedHandlersModule = Awaited<ReturnType<typeof importSharedHandlers>>;
@@ -376,7 +367,7 @@ describe('Core Operations Workflow Integration', () => {
       };
 
       const { UniversalUpdateService } = await import(
-        '../../../../src/services/UniversalUpdateService.js'
+        '@services/UniversalUpdateService.js'
       );
 
       vi.mocked(
@@ -544,7 +535,7 @@ describe('Core Operations Workflow Integration', () => {
   describe('Parameter Validation Integration', () => {
     it('should validate parameters before processing', async () => {
       const { validateUniversalToolParams } = await import(
-        '../../../../src/handlers/tool-configs/universal/schemas.js'
+        '@handlers/tool-configs/universal/schemas.js'
       );
 
       const createParams = {
@@ -567,7 +558,7 @@ describe('Core Operations Workflow Integration', () => {
 
     it('should validate cross-resource relationships', async () => {
       const { CrossResourceValidator } = await import(
-        '../../../../src/handlers/tool-configs/universal/schemas.js'
+        '@handlers/tool-configs/universal/schemas.js'
       );
 
       const createParams = {

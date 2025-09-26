@@ -2,9 +2,9 @@
  * Relationship state analysis utilities for SRP compliance
  */
 
-import { extractRecordIds } from '../../../utils/relationship-helpers.js';
-import { getCompanyDetails } from '../../../objects/companies/index.js';
-import { getPersonDetails as getPersonDetailsFromPeople } from '../../../objects/people/index.js';
+import { extractRecordIds } from '@/utils/relationship-helpers.js';
+import { getCompanyDetails } from '@/objects/companies/index.js';
+import { getPersonDetails as getPersonDetailsFromPeople } from '@/objects/people/index.js';
 
 export interface LinkingState {
   currentTeamIds: string[];
