@@ -114,7 +114,10 @@ export const searchRecordsConfig: UniversalToolConfig<
 
           identifier = emailValue ? `${name} (${emailValue})` : name;
         } else if (resourceType === UniversalResourceType.COMPANIES) {
-          const name = getFirstValue(values.name) || 'Unnamed';
+          const name =
+            typeof values.name === 'string'
+              ? values.name
+              : getFirstValue(values.name) || 'Unnamed';
           const website = getFirstValue(values.website);
           const domain =
             values.domains &&
