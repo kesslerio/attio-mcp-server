@@ -121,6 +121,7 @@ export enum RelationshipType {
   PERSON_TO_TASKS = 'person_to_tasks',
   COMPANY_TO_TASKS = 'company_to_tasks',
   COMPANY_TO_DEALS = 'company_to_deals',
+  PERSON_TO_DEALS = 'person_to_deals',
 }
 
 /**

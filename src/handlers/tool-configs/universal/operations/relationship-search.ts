@@ -16,7 +16,10 @@ import { ErrorService } from '../../../../services/ErrorService.js';
 
 import { searchCompaniesByPeople } from '../../../../objects/companies/index.js';
 import { searchPeopleByCompany } from '../../../../objects/people/index.js';
-import { searchDealsByCompany } from '../../../../objects/deals/index.js';
+import {
+  searchDealsByCompany,
+  searchDealsByPerson,
+} from '../../../../objects/deals/index.js';
 
 export const searchByRelationshipConfig: UniversalToolConfig = {
   name: 'search-by-relationship',
@@ -45,6 +48,9 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
 
         case RelationshipType.COMPANY_TO_DEALS:
           return await searchDealsByCompany(source_id);
+
+        case RelationshipType.PERSON_TO_DEALS:
+          return await searchDealsByPerson(source_id);
 
         case RelationshipType.PERSON_TO_TASKS:
         case RelationshipType.COMPANY_TO_TASKS:
