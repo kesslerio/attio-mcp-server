@@ -2,7 +2,7 @@
   "name": "attio-mcp",
   "version": "0.2.0",
   "description": "A Model Context Protocol server that connects Attio to LLMs",
-  "main": "dist/http.js",
+  "main": "dist/smithery.js",
   "module": "src/smithery.ts",
   "type": "module",
   "access": "public",
@@ -13,7 +13,7 @@
   "exports": {
     ".": {
       "import": "./src/smithery.ts",
-      "require": "./dist/http.js"
+      "require": "./dist/smithery.js"
     },
     "./cli": "./dist/cli.js",
     "./lib": "./dist/index.js"
