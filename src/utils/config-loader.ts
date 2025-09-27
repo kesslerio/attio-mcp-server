@@ -22,8 +22,7 @@ export interface MappingConfig {
     objects: Record<string, string>;
     lists: Record<string, string>;
     relationships: Record<string, string>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [key: string]: any; // Allow other mapping types
+    [key: string]: Record<string, unknown>; // Allow other mapping types
   };
 }
 
@@ -52,6 +51,46 @@ function isSafeKey(key: string): boolean {
  * Type for mergeable objects that ensures type safety during configuration merging
  */
 type MergeableObject = Record<string, unknown>;
+
+/**
+ * Type guard to validate if an object is a valid MappingConfig
+ * @param obj - Object to validate
+ * @returns True if the object is a valid MappingConfig
+ */
+function isValidMappingConfig(obj: unknown): obj is MappingConfig {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'mappings' in obj &&
+    typeof (obj as Record<string, unknown>).mappings === 'object'
+  );
+}
+
+/**
+ * Safely converts an object to MergeableObject for security processing
+ * @param obj - Object to convert
+ * @returns Converted object or empty object if invalid
+ */
+function toMergeableObject(obj: unknown): MergeableObject {
+  if (typeof obj === 'object' && obj !== null) {
+    return obj as MergeableObject;
+  }
+  return {};
+}
+
+/**
+ * Validates section path parts for security risks
+ * @param sectionParts - Array of section path components to validate
+ * @throws Error if any part contains dangerous keys
+ */
+function validateSectionPath(sectionParts: string[]): void {
+  const invalidPart = sectionParts.find((part) => !isSafeKey(part));
+  if (invalidPart) {
+    throw new Error(
+      `Invalid section key detected: ${invalidPart}. This key poses a security risk.`
+    );
+  }
+}
 
 /**
  * Safely deep merges two objects, with values from the source object taking precedence
@@ -169,19 +208,25 @@ export function loadMappingConfig(): MappingConfig {
   // Load and merge the default configuration
   const defaultConfig = loadJsonFile(CONFIG_PATHS.default);
   if (defaultConfig) {
-    config = safeMerge(
-      config as unknown as MergeableObject,
-      defaultConfig as unknown as MergeableObject
-    ) as unknown as MappingConfig;
+    const mergedConfig = safeMerge(
+      toMergeableObject(config),
+      toMergeableObject(defaultConfig)
+    );
+    if (isValidMappingConfig(mergedConfig)) {
+      config = mergedConfig;
+    }
   }
 
   // Load and merge the user configuration
   const userConfig = loadJsonFile(CONFIG_PATHS.user);
   if (userConfig) {
-    config = safeMerge(
-      config as unknown as MergeableObject,
-      userConfig as unknown as MergeableObject
-    ) as unknown as MappingConfig;
+    const mergedConfig = safeMerge(
+      toMergeableObject(config),
+      toMergeableObject(userConfig)
+    );
+    if (isValidMappingConfig(mergedConfig)) {
+      config = mergedConfig;
+    }
   }
 
   return config;
@@ -237,23 +282,17 @@ export async function updateMappingSection(
 
   // Parse the section path and navigate to the target section
   const sectionParts = section.split('.');
-  let target = config.mappings;
+  let target: Record<string, unknown> = config.mappings;
 
   // Security: Validate all section parts for prototype pollution safety
-  for (const part of sectionParts) {
-    if (!isSafeKey(part)) {
-      throw new Error(
-        `Invalid section key detected: ${part}. This key poses a security risk.`
-      );
-    }
-  }
+  validateSectionPath(sectionParts);
 
   for (let i = 0; i < sectionParts.length - 1; i++) {
     const part = sectionParts[i];
     if (!target[part]) {
       target[part] = {};
     }
-    target = target[part];
+    target = target[part] as Record<string, unknown>;
   }
 
   const finalPart = sectionParts[sectionParts.length - 1];
@@ -261,13 +300,15 @@ export async function updateMappingSection(
   // Update the target section with security validation
   if (merge && target[finalPart]) {
     // Use safe merging for existing sections
-    target[finalPart] = safeMerge(
-      target[finalPart] as MergeableObject,
-      mappings as MergeableObject
+    const mergedSection = safeMerge(
+      toMergeableObject(target[finalPart]),
+      toMergeableObject(mappings)
     );
+    target[finalPart] = mergedSection as Record<string, unknown>;
   } else {
     // For new sections, ensure the mappings object is safe
-    target[finalPart] = safeMerge({}, mappings as MergeableObject);
+    const safeSection = safeMerge({}, toMergeableObject(mappings));
+    target[finalPart] = safeSection as Record<string, unknown>;
   }
 
   // Write the updated config
