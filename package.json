@@ -20,7 +20,7 @@
   },
   "scripts": {
     "clean": "shx rm -rf dist test-dist",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "postbuild": "shx chmod +x dist/*.js",
     "prepare": "npm run build",
     "start:stdio": "node dist/cli.js",
@@ -230,6 +230,7 @@
     "prettier": "^3.6.2",
     "shx": "^0.4.0",
     "syncpack": "^13.0.4",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4",

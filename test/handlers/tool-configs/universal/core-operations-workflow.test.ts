@@ -5,81 +5,73 @@
  * resource type routing works correctly across all operations.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
 import {
   createRecordConfig,
   updateRecordConfig,
   deleteRecordConfig,
-} from '../../../../src/handlers/tool-configs/universal/core/crud-operations.js';
-import { searchRecordsConfig } from '../../../../src/handlers/tool-configs/universal/core/search-operations.js';
-import { getRecordDetailsConfig } from '../../../../src/handlers/tool-configs/universal/core/record-details-operations.js';
+} from '@handlers/tool-configs/universal/core/crud-operations.js';
+import { searchRecordsConfig } from '@handlers/tool-configs/universal/core/search-operations.js';
+import { getRecordDetailsConfig } from '@handlers/tool-configs/universal/core/record-details-operations.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
 
 // Mock dependencies
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/shared-handlers.js',
-  () => ({
-    handleUniversalCreate: vi.fn(),
-    handleUniversalUpdate: vi.fn(),
-    handleUniversalDelete: vi.fn(),
-    handleUniversalSearch: vi.fn(),
-    handleUniversalGetDetails: vi.fn(),
-    getSingularResourceType: vi.fn((type) => {
-      const mapping: Record<string, string> = {
-        companies: 'company',
-        people: 'person',
-        deals: 'deal',
-        tasks: 'task',
-        notes: 'note',
-        lists: 'list',
-        records: 'record',
-      };
-      return mapping[type] ?? type;
-    }),
-  })
-);
+vi.mock('@handlers/tool-configs/universal/shared-handlers.js', () => ({
+  handleUniversalCreate: vi.fn(),
+  handleUniversalUpdate: vi.fn(),
+  handleUniversalDelete: vi.fn(),
+  handleUniversalSearch: vi.fn(),
+  handleUniversalGetDetails: vi.fn(),
+  getSingularResourceType: vi.fn((type) => {
+    const mapping: Record<string, string> = {
+      companies: 'company',
+      people: 'person',
+      deals: 'deal',
+      tasks: 'task',
+      notes: 'note',
+      lists: 'list',
+      records: 'record',
+    };
+    return mapping[type] ?? type;
+  }),
+}));
 
-vi.mock('../../../../src/services/UniversalUpdateService.js', () => ({
+vi.mock('@services/UniversalUpdateService.js', () => ({
   UniversalUpdateService: {
     updateRecordWithValidation: vi.fn(),
   },
 }));
 
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/schemas.js',
-  async () => {
-    const actual = await vi.importActual<
-      typeof import('../../../../src/handlers/tool-configs/universal/schemas.js')
-    >('../../../../src/handlers/tool-configs/universal/schemas.js');
+vi.mock('@handlers/tool-configs/universal/schemas.js', async () => {
+  const actual = await vi.importActual<
+    typeof import('@handlers/tool-configs/universal/schemas.js')
+  >('@handlers/tool-configs/universal/schemas.js');
 
-    return {
-      ...actual,
-      validateUniversalToolParams: vi.fn((toolName, params) => params),
-      CrossResourceValidator: {
-        validateRecordRelationships: vi.fn(),
-      },
-    };
-  }
-);
+  return {
+    ...actual,
+    validateUniversalToolParams: vi.fn((toolName, params) => params),
+    CrossResourceValidator: {
+      validateRecordRelationships: vi.fn(),
+    },
+  };
+});
 
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/core/error-utils.js',
-  async () => {
-    const actual = await vi.importActual<
-      typeof import('../../../../src/handlers/tool-configs/universal/core/error-utils.js')
-    >('../../../../src/handlers/tool-configs/universal/core/error-utils.js');
+vi.mock('@handlers/tool-configs/universal/core/error-utils.js', async () => {
+  const actual = await vi.importActual<
+    typeof import('@handlers/tool-configs/universal/core/error-utils.js')
+  >('@handlers/tool-configs/universal/core/error-utils.js');
 
-    return {
-      ...actual,
-      handleCreateError: vi.fn(actual.handleCreateError),
-      handleUpdateError: vi.fn(actual.handleUpdateError),
-      handleDeleteError: vi.fn(actual.handleDeleteError),
-      handleSearchError: vi.fn(actual.handleSearchError),
-      handleCoreOperationError: vi.fn(actual.handleCoreOperationError),
-    };
-  }
-);
+  return {
+    ...actual,
+    handleCreateError: vi.fn(actual.handleCreateError),
+    handleUpdateError: vi.fn(actual.handleUpdateError),
+    handleDeleteError: vi.fn(actual.handleDeleteError),
+    handleSearchError: vi.fn(actual.handleSearchError),
+    handleCoreOperationError: vi.fn(actual.handleCoreOperationError),
+  };
+});
 
-vi.mock('../../../../src/utils/logger.js', () => ({
+vi.mock('@utils/logger.js', () => ({
   createScopedLogger: vi.fn(() => ({
     error: vi.fn(),
     warn: vi.fn(),
@@ -89,14 +81,15 @@ vi.mock('../../../../src/utils/logger.js', () => ({
 }));
 
 const importSharedHandlers = async () =>
-  import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+  import('@handlers/tool-configs/universal/shared-handlers.js');
 
 describe('Core Operations Workflow Integration', () => {
-  let mockHandlers: Awaited<ReturnType<typeof importSharedHandlers>>;
+  type SharedHandlersModule = Awaited<ReturnType<typeof importSharedHandlers>>;
+  let mockHandlers: Mocked<SharedHandlersModule>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockHandlers = await importSharedHandlers();
+    mockHandlers = vi.mocked(await importSharedHandlers());
   });
 
   describe('Complete CRUD Workflow for Companies', () => {
@@ -107,18 +100,18 @@ describe('Core Operations Workflow Integration', () => {
         description: 'A test company',
       };
 
-      const resourceType = 'companies';
+      const resourceType = UniversalResourceType.COMPANIES;
       const recordId = 'company-123';
 
       // Mock successful responses
       const createdRecord = {
         id: { record_id: recordId },
-        values: { name: [{ value: 'Test Company' }] },
+        values: { name: 'Test Company' },
       };
 
       const updatedRecord = {
         ...createdRecord,
-        values: { name: [{ value: 'Updated Test Company' }] },
+        values: { name: 'Updated Test Company' },
         validationMetadata: {
           warnings: ['Minor field mapping issue'],
           suggestions: ['Consider using official field names'],
@@ -127,14 +120,22 @@ describe('Core Operations Workflow Integration', () => {
 
       const searchResults = [createdRecord, updatedRecord];
 
-      mockHandlers.handleUniversalCreate.mockResolvedValue(createdRecord);
-      mockHandlers.handleUniversalUpdate.mockResolvedValue(updatedRecord);
-      mockHandlers.handleUniversalDelete.mockResolvedValue({
+      vi.mocked(mockHandlers.handleUniversalCreate).mockResolvedValue(
+        createdRecord
+      );
+      vi.mocked(mockHandlers.handleUniversalUpdate).mockResolvedValue(
+        updatedRecord
+      );
+      vi.mocked(mockHandlers.handleUniversalDelete).mockResolvedValue({
         success: true,
         record_id: recordId,
       });
-      mockHandlers.handleUniversalSearch.mockResolvedValue(searchResults);
-      mockHandlers.handleUniversalGetDetails.mockResolvedValue(createdRecord);
+      vi.mocked(mockHandlers.handleUniversalSearch).mockResolvedValue(
+        searchResults
+      );
+      vi.mocked(mockHandlers.handleUniversalGetDetails).mockResolvedValue(
+        createdRecord
+      );
 
       // 1. Create Record
       const createParams = {
@@ -203,7 +204,7 @@ describe('Core Operations Workflow Integration', () => {
       const recordData = {
         id: { record_id: 'company-123' },
         values: {
-          name: [{ value: 'Test Company' }],
+          name: 'Test Company',
           domains: [{ domain: 'test.com' }],
         },
       };
@@ -211,7 +212,7 @@ describe('Core Operations Workflow Integration', () => {
       // Test create result formatting
       const createFormatted = createRecordConfig.formatResult(
         recordData,
-        'companies'
+        UniversalResourceType.COMPANIES
       );
       expect(createFormatted).toContain(
         '✅ Successfully created company: Test Company (ID: company-123)'
@@ -228,7 +229,7 @@ describe('Core Operations Workflow Integration', () => {
 
       const updateFormatted = updateRecordConfig.formatResult(
         updateData,
-        'companies'
+        UniversalResourceType.COMPANIES
       );
       expect(updateFormatted).toContain(
         '⚠️  Updated company with warnings: Test Company (ID: company-123)'
@@ -239,7 +240,7 @@ describe('Core Operations Workflow Integration', () => {
       // Test delete result formatting
       const deleteFormatted = deleteRecordConfig.formatResult(
         { success: true, record_id: 'company-123' },
-        'companies'
+        UniversalResourceType.COMPANIES
       );
       expect(deleteFormatted).toBe(
         '✅ Successfully deleted company with ID: company-123'
@@ -248,7 +249,7 @@ describe('Core Operations Workflow Integration', () => {
       // Test search result formatting
       const searchFormatted = searchRecordsConfig.formatResult(
         [recordData],
-        'companies'
+        UniversalResourceType.COMPANIES
       );
       expect(searchFormatted).toContain('Found 1 companies:');
       expect(searchFormatted).toContain(
@@ -258,7 +259,7 @@ describe('Core Operations Workflow Integration', () => {
       // Test details result formatting
       const detailsFormatted = getRecordDetailsConfig.formatResult(
         recordData,
-        'companies'
+        UniversalResourceType.COMPANIES
       );
       expect(detailsFormatted).toContain('Company: Test Company');
       expect(detailsFormatted).toContain('ID: company-123');
@@ -267,7 +268,13 @@ describe('Core Operations Workflow Integration', () => {
   });
 
   describe('Resource Type Routing', () => {
-    const resourceTypes = ['companies', 'people', 'deals', 'tasks', 'notes'];
+    const resourceTypes = [
+      UniversalResourceType.COMPANIES,
+      UniversalResourceType.PEOPLE,
+      UniversalResourceType.DEALS,
+      UniversalResourceType.TASKS,
+      UniversalResourceType.NOTES,
+    ];
 
     it.each(resourceTypes)(
       'should route %s operations correctly',
@@ -277,17 +284,25 @@ describe('Core Operations Workflow Integration', () => {
 
         const mockRecord = {
           id: { record_id: recordId },
-          values: { name: [{ value: `Test ${resourceType}` }] },
+          values: { name: `Test ${resourceType}` },
         };
 
-        mockHandlers.handleUniversalCreate.mockResolvedValue(mockRecord);
-        mockHandlers.handleUniversalUpdate.mockResolvedValue(mockRecord);
-        mockHandlers.handleUniversalDelete.mockResolvedValue({
+        vi.mocked(mockHandlers.handleUniversalCreate).mockResolvedValue(
+          mockRecord
+        );
+        vi.mocked(mockHandlers.handleUniversalUpdate).mockResolvedValue(
+          mockRecord
+        );
+        vi.mocked(mockHandlers.handleUniversalDelete).mockResolvedValue({
           success: true,
           record_id: recordId,
         });
-        mockHandlers.handleUniversalSearch.mockResolvedValue([mockRecord]);
-        mockHandlers.handleUniversalGetDetails.mockResolvedValue(mockRecord);
+        vi.mocked(mockHandlers.handleUniversalSearch).mockResolvedValue([
+          mockRecord,
+        ]);
+        vi.mocked(mockHandlers.handleUniversalGetDetails).mockResolvedValue(
+          mockRecord
+        );
 
         // Test Create
         const createParams = {
@@ -348,11 +363,11 @@ describe('Core Operations Workflow Integration', () => {
 
       const dealRecord = {
         id: { record_id: 'deal-123' },
-        values: { name: [{ value: 'Test Deal' }] },
+        values: { name: 'Test Deal' },
       };
 
       const { UniversalUpdateService } = await import(
-        '../../../../src/services/UniversalUpdateService.js'
+        '@services/UniversalUpdateService.js'
       );
 
       vi.mocked(
@@ -366,11 +381,13 @@ describe('Core Operations Workflow Integration', () => {
         },
       });
 
-      mockHandlers.handleUniversalCreate.mockResolvedValue(dealRecord);
+      vi.mocked(mockHandlers.handleUniversalCreate).mockResolvedValue(
+        dealRecord
+      );
 
       // Test deal creation
       const createParams = {
-        resource_type: 'deals',
+        resource_type: UniversalResourceType.DEALS,
         record_data: dealData,
       };
 
@@ -379,7 +396,7 @@ describe('Core Operations Workflow Integration', () => {
 
       // Test deal update (should use enhanced validation)
       const updateParams = {
-        resource_type: 'deals',
+        resource_type: UniversalResourceType.DEALS,
         record_id: 'deal-123',
         record_data: { ...dealData, stage: 'proposal' },
       };
@@ -403,10 +420,10 @@ describe('Core Operations Workflow Integration', () => {
   describe('Error Handling Integration', () => {
     it('should propagate errors correctly through the workflow', async () => {
       const error = new Error('Integration test error');
-      mockHandlers.handleUniversalCreate.mockRejectedValue(error);
+      vi.mocked(mockHandlers.handleUniversalCreate).mockRejectedValue(error);
 
       const createParams = {
-        resource_type: 'companies',
+        resource_type: UniversalResourceType.COMPANIES,
         record_data: { name: 'Test' },
       };
 
@@ -443,13 +460,17 @@ describe('Core Operations Workflow Integration', () => {
       const createError = new Error('Create error');
       const updateError = new Error('Update error');
 
-      mockHandlers.handleUniversalCreate.mockRejectedValue(createError);
-      mockHandlers.handleUniversalUpdate.mockRejectedValue(updateError);
+      vi.mocked(mockHandlers.handleUniversalCreate).mockRejectedValue(
+        createError
+      );
+      vi.mocked(mockHandlers.handleUniversalUpdate).mockRejectedValue(
+        updateError
+      );
 
       // Test create error
       await expect(
         createRecordConfig.handler({
-          resource_type: 'companies',
+          resource_type: UniversalResourceType.COMPANIES,
           record_data: { name: 'Test' },
         })
       ).rejects.toSatisfy((err: unknown) => {
@@ -480,7 +501,7 @@ describe('Core Operations Workflow Integration', () => {
       // Test update error
       await expect(
         updateRecordConfig.handler({
-          resource_type: 'companies',
+          resource_type: UniversalResourceType.COMPANIES,
           record_id: 'company-123',
           record_data: { name: 'Updated' },
         })
@@ -514,17 +535,17 @@ describe('Core Operations Workflow Integration', () => {
   describe('Parameter Validation Integration', () => {
     it('should validate parameters before processing', async () => {
       const { validateUniversalToolParams } = await import(
-        '../../../../src/handlers/tool-configs/universal/schemas.js'
+        '@handlers/tool-configs/universal/schemas.js'
       );
 
       const createParams = {
-        resource_type: 'companies',
+        resource_type: UniversalResourceType.COMPANIES,
         record_data: { name: 'Test Company' },
       };
 
-      mockHandlers.handleUniversalCreate.mockResolvedValue({
+      vi.mocked(mockHandlers.handleUniversalCreate).mockResolvedValue({
         id: { record_id: 'company-123' },
-        values: { name: [{ value: 'Test Company' }] },
+        values: { name: 'Test Company' },
       });
 
       await createRecordConfig.handler(createParams);
@@ -537,20 +558,20 @@ describe('Core Operations Workflow Integration', () => {
 
     it('should validate cross-resource relationships', async () => {
       const { CrossResourceValidator } = await import(
-        '../../../../src/handlers/tool-configs/universal/schemas.js'
+        '@handlers/tool-configs/universal/schemas.js'
       );
 
       const createParams = {
-        resource_type: 'tasks',
+        resource_type: UniversalResourceType.TASKS,
         record_data: {
           title: 'Test Task',
           assignee: { record_id: 'person-123' },
         },
       };
 
-      mockHandlers.handleUniversalCreate.mockResolvedValue({
+      vi.mocked(mockHandlers.handleUniversalCreate).mockResolvedValue({
         id: { record_id: 'task-123' },
-        values: { title: [{ value: 'Test Task' }] },
+        values: { title: 'Test Task' },
       });
 
       await createRecordConfig.handler(createParams);

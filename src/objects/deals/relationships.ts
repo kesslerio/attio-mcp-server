@@ -1,10 +1,10 @@
 /**
  * Relationship-based queries for deals
  */
-import { AttioRecord } from '../../types/attio.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { validateNumericParam } from '../../utils/filters/index.js';
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { AttioRecord } from '@shared-types/attio.js';
+import { FilterValidationError } from '@errors/api-errors.js';
+import { validateNumericParam } from '@utils/filters/index.js';
+import { getLazyAttioClient } from '@api/lazy-client.js';
 
 /**
  * Search for deals associated with a specific company
@@ -56,6 +56,58 @@ export async function searchDealsByCompany(
     }
     throw new FilterValidationError(
       `Failed to search deals by company: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+/**
+ * Search for deals associated with a specific person
+ *
+ * @param personId - ID of the person to find deals for
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching deal records
+ */
+export async function searchDealsByPerson(
+  personId: string,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<AttioRecord[]> {
+  try {
+    // Validate personId
+    if (!personId || typeof personId !== 'string' || personId.trim() === '') {
+      throw new FilterValidationError('Person ID must be a non-empty string');
+    }
+
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+
+    const client = getLazyAttioClient();
+
+    // Query deals filtered by associated_people
+    const response = await client.post('/objects/deals/records/query', {
+      filter: {
+        associated_people: {
+          target_object: 'people',
+          target_record_id: personId,
+        },
+      },
+      limit: validatedLimit,
+      offset: validatedOffset,
+    });
+
+    const deals = response?.data?.data || [];
+    return Array.isArray(deals) ? deals : [];
+  } catch (error: unknown) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search deals by person: ${
         error instanceof Error ? error.message : String(error)
       }`
     );

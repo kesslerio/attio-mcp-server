@@ -9,6 +9,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(currentDir, '..', '..');
 
 const aliasDirectories: Record<string, string> = {
+  '@': 'src',
   '@src': 'src',
   '@api': 'src/api',
   '@config': 'src/config',

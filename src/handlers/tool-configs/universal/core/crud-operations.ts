@@ -29,7 +29,10 @@ import {
   ValidationMetadata,
 } from './utils.js';
 
-export const createRecordConfig: UniversalToolConfig = {
+export const createRecordConfig: UniversalToolConfig<
+  UniversalCreateParams,
+  AttioRecord
+> = {
   name: 'create-record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
@@ -67,10 +70,8 @@ export const createRecordConfig: UniversalToolConfig = {
       );
     }
   },
-  formatResult: (
-    record: AttioRecord,
-    resourceType?: UniversalResourceType
-  ): string => {
+  formatResult: (record: AttioRecord, ...args: unknown[]): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
     if (!record) {
       return 'Record creation failed';
     }
@@ -96,7 +97,10 @@ export const createRecordConfig: UniversalToolConfig = {
   },
 };
 
-export const updateRecordConfig: UniversalToolConfig = {
+export const updateRecordConfig: UniversalToolConfig<
+  UniversalUpdateParams,
+  EnhancedAttioRecord
+> = {
   name: 'update-record',
   handler: async (
     params: UniversalUpdateParams
@@ -164,10 +168,8 @@ export const updateRecordConfig: UniversalToolConfig = {
       );
     }
   },
-  formatResult: (
-    record: EnhancedAttioRecord,
-    resourceType?: UniversalResourceType
-  ): string => {
+  formatResult: (record: EnhancedAttioRecord, ...args: unknown[]): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
     if (!record) {
       return 'Record update failed';
     }
@@ -196,7 +198,10 @@ export const updateRecordConfig: UniversalToolConfig = {
   },
 };
 
-export const deleteRecordConfig: UniversalToolConfig = {
+export const deleteRecordConfig: UniversalToolConfig<
+  UniversalDeleteParams,
+  { success: boolean; record_id: string }
+> = {
   name: 'delete-record',
   handler: async (
     params: UniversalDeleteParams
@@ -217,8 +222,9 @@ export const deleteRecordConfig: UniversalToolConfig = {
   },
   formatResult: (
     result: { success: boolean; record_id: string },
-    resourceType?: UniversalResourceType
+    ...args: unknown[]
   ): string => {
+    const resourceType = args[0] as UniversalResourceType | undefined;
     if (!result.success) {
       return `❌ Failed to delete ${resourceType ? getSingularResourceType(resourceType) : 'record'} with ID: ${result.record_id}`;
     }

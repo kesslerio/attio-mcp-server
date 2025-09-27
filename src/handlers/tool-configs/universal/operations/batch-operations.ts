@@ -14,7 +14,10 @@ import { executeOperationsArray } from './operations-array.js';
 import { executeLegacyBatch } from './legacy-handlers.js';
 import type { JsonObject } from '../../../../types/attio.js';
 
-export const batchOperationsConfig: UniversalToolConfig = {
+export const batchOperationsConfig: UniversalToolConfig<
+  Record<string, unknown>,
+  Record<string, unknown> | Record<string, unknown>[]
+> = {
   name: 'batch-operations',
   handler: async (
     params: Record<string, unknown>
@@ -48,15 +51,17 @@ export const batchOperationsConfig: UniversalToolConfig = {
   },
   formatResult: (
     results: Record<string, unknown> | Record<string, unknown>[],
-    operationType?: BatchOperationType,
-    resourceType?: UniversalResourceType
-  ) =>
-    formatBatchResult(
+    ...args: unknown[]
+  ) => {
+    const operationType = args[0] as BatchOperationType | undefined;
+    const resourceType = args[1] as UniversalResourceType | undefined;
+    return formatBatchResult(
       results as
         | Record<string, unknown>
         | Record<string, unknown>[]
         | undefined,
       operationType,
       resourceType
-    ),
+    );
+  },
 };

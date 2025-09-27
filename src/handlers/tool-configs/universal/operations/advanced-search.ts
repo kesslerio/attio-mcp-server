@@ -21,7 +21,10 @@ import { formatResourceType } from '../shared-handlers.js';
  * Universal advanced search tool
  * Consolidates complex filtering across all resource types
  */
-export const advancedSearchConfig: UniversalToolConfig = {
+export const advancedSearchConfig: UniversalToolConfig<
+  AdvancedSearchParams,
+  AttioRecord[]
+> = {
   name: 'advanced-search',
   handler: async (params: AdvancedSearchParams): Promise<AttioRecord[]> => {
     try {
@@ -130,7 +133,8 @@ export const advancedSearchConfig: UniversalToolConfig = {
       throw ErrorService.createUniversalError('advanced search', ctx, error);
     }
   },
-  formatResult: (results: AttioRecord[], resourceType?: string) => {
+  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+    const resourceType = args[0] as string | undefined;
     const count = Array.isArray(results) ? results.length : 0;
     const typeName = resourceType
       ? formatResourceType(resourceType as UniversalResourceType)
