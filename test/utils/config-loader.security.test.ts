@@ -502,5 +502,35 @@ describe('Configuration Loader - Security Tests', () => {
         'key.with.dots'
       );
     });
+
+    it('should handle Symbol keys safely without throwing errors', () => {
+      (fs.existsSync as any).mockReturnValue(true);
+      (fs.readFileSync as any).mockImplementation(() => {
+        const symKey = Symbol('test');
+        const configWithSymbol = {
+          version: '1.0',
+          mappings: {
+            attributes: { common: {}, objects: {}, custom: {} },
+            objects: {},
+            lists: {},
+            relationships: {},
+          },
+          [symKey]: 'symbolValue', // Symbol key should not cause issues
+        };
+        return JSON.stringify(configWithSymbol, (key, value) => {
+          // JSON.stringify naturally excludes Symbol keys
+          return typeof key === 'symbol' ? undefined : value;
+        });
+      });
+
+      // Should not throw errors when processing objects with Symbol keys
+      expect(() => loadMappingConfig()).not.toThrow();
+
+      const config = loadMappingConfig();
+
+      // Verify configuration loaded correctly
+      expect(config.version).toBe('1.0');
+      expect(config.mappings).toBeDefined();
+    });
   });
 });

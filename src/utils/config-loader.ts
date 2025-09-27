@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createScopedLogger } from './logger.js';
+import { DANGEROUS_KEYS } from './security-constants.js';
 
 /**
  * Interface for mapping configuration
@@ -35,12 +36,6 @@ const CONFIG_PATHS = {
 };
 
 /**
- * Keys that pose a prototype pollution risk and must be filtered
- * These keys can modify the prototype chain and should never be used in object merging
- */
-const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
-
-/**
  * Validates that a key is safe for object property assignment
  * Prevents prototype pollution attacks by filtering dangerous keys
  *
@@ -48,8 +43,15 @@ const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
  * @returns True if the key is safe to use, false otherwise
  */
 function isSafeKey(key: string): boolean {
-  return !DANGEROUS_KEYS.includes(key) && !key.includes('.');
+  return (
+    !(DANGEROUS_KEYS as readonly string[]).includes(key) && !key.includes('.')
+  );
 }
+
+/**
+ * Type for mergeable objects that ensures type safety during configuration merging
+ */
+type MergeableObject = Record<string, unknown>;
 
 /**
  * Safely deep merges two objects, with values from the source object taking precedence
@@ -59,13 +61,19 @@ function isSafeKey(key: string): boolean {
  * @param source - The source object to merge in
  * @returns The merged object
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Recursive merge function needs any for flexible object structure handling
-function safeMerge(target: any, source: any): any {
+function safeMerge(
+  target: MergeableObject,
+  source: MergeableObject
+): MergeableObject {
   const result = { ...target };
 
   for (const key in source) {
     // Security: Skip dangerous keys that could cause prototype pollution
     if (!isSafeKey(key)) {
+      createScopedLogger('utils/config-loader', 'safeMerge').debug(
+        'Rejected dangerous key during merge',
+        { key, source: 'config-loader' }
+      );
       continue;
     }
 
@@ -81,10 +89,13 @@ function safeMerge(target: any, source: any): any {
           typeof result[key] === 'object' &&
           !Array.isArray(result[key])
         ) {
-          result[key] = safeMerge(result[key], source[key]);
+          result[key] = safeMerge(
+            result[key] as MergeableObject,
+            source[key] as MergeableObject
+          );
         } else {
           // Otherwise, safely copy the source value
-          result[key] = safeMerge({}, source[key]);
+          result[key] = safeMerge({}, source[key] as MergeableObject);
         }
       } else {
         // For non-objects, use the source value
@@ -158,13 +169,19 @@ export function loadMappingConfig(): MappingConfig {
   // Load and merge the default configuration
   const defaultConfig = loadJsonFile(CONFIG_PATHS.default);
   if (defaultConfig) {
-    config = safeMerge(config, defaultConfig);
+    config = safeMerge(
+      config as unknown as MergeableObject,
+      defaultConfig as unknown as MergeableObject
+    ) as unknown as MappingConfig;
   }
 
   // Load and merge the user configuration
   const userConfig = loadJsonFile(CONFIG_PATHS.user);
   if (userConfig) {
-    config = safeMerge(config, userConfig);
+    config = safeMerge(
+      config as unknown as MergeableObject,
+      userConfig as unknown as MergeableObject
+    ) as unknown as MappingConfig;
   }
 
   return config;
@@ -244,10 +261,13 @@ export async function updateMappingSection(
   // Update the target section with security validation
   if (merge && target[finalPart]) {
     // Use safe merging for existing sections
-    target[finalPart] = safeMerge(target[finalPart], mappings);
+    target[finalPart] = safeMerge(
+      target[finalPart] as MergeableObject,
+      mappings as MergeableObject
+    );
   } else {
     // For new sections, ensure the mappings object is safe
-    target[finalPart] = safeMerge({}, mappings);
+    target[finalPart] = safeMerge({}, mappings as MergeableObject);
   }
 
   // Write the updated config
