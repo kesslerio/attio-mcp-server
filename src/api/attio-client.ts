@@ -8,6 +8,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 import { debug, error, OperationType } from '../utils/logger.js';
+import { getContextApiKey } from './client-context.js';
 import {
   AttioAxiosError,
   AttioAttributeSchema,
@@ -360,7 +361,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     debug('AttioClient', 'Creating raw E2E client with http adapter');
 
     // Create a fresh client instance with no interceptors for E2E
-    const apiKey = process.env.ATTIO_API_KEY;
+    const apiKey = process.env.ATTIO_API_KEY || getContextApiKey();
     if (!apiKey) {
       throw new Error('ATTIO_API_KEY required for E2E mode');
     }
@@ -436,12 +437,18 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
 
   if (!apiInstance) {
     // Fallback: try to initialize from environment variable
-    const apiKey = process.env.ATTIO_API_KEY;
+    const apiKey = process.env.ATTIO_API_KEY || getContextApiKey();
     if (apiKey) {
-      debug('attio-client', 'Creating default client (auto-init from env)');
+      const apiKeySource = process.env.ATTIO_API_KEY
+        ? 'environment variable'
+        : 'context configuration';
       debug(
         'attio-client',
-        'API client not initialized, auto-initializing from environment variable',
+        `Creating default client (auto-init from ${apiKeySource})`
+      );
+      debug(
+        'attio-client',
+        `API client not initialized, auto-initializing from ${apiKeySource}`,
         undefined,
         'initialization',
         OperationType.SYSTEM

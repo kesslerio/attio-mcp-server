@@ -5,22 +5,25 @@
 
 import { AxiosInstance } from 'axios';
 import { getAttioClient } from './attio-client.js';
-
-let globalContext: Record<string, unknown> | null = null;
+import {
+  clearClientContext,
+  getClientContext,
+  setClientContext,
+} from './client-context.js';
 
 export function getLazyAttioClient(): AxiosInstance {
-  // Direct call since circular dependency is now resolved
+  // Direct call since circular dependency has been resolved elsewhere
   return getAttioClient();
 }
 
 export function setGlobalContext(context: Record<string, unknown>): void {
-  globalContext = { ...context };
+  setClientContext(context);
 }
 
 export function clearClientCache(): void {
-  globalContext = null;
+  clearClientContext();
 }
 
 export function getGlobalContext(): Record<string, unknown> | null {
-  return globalContext;
+  return getClientContext();
 }

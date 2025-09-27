@@ -4,6 +4,7 @@
  */
 
 import * as AttioClientModule from '../api/attio-client.js';
+import { getContextApiKey } from '../api/client-context.js';
 
 /**
  * Supported client factory method signatures
@@ -35,6 +36,7 @@ function hasFactoryMethod<K extends keyof AttioClientFactories>(
  */
 export function resolveAttioClient(): unknown {
   const mod = AttioClientModule as unknown;
+  const resolvedApiKey = process.env.ATTIO_API_KEY || getContextApiKey();
 
   // Try getAttioClient() first (no parameters needed)
   if (hasFactoryMethod(mod, 'getAttioClient')) {
@@ -42,13 +44,13 @@ export function resolveAttioClient(): unknown {
   }
 
   // Try createAttioClient(apiKey) if API key is available
-  if (hasFactoryMethod(mod, 'createAttioClient') && process.env.ATTIO_API_KEY) {
-    return mod.createAttioClient(process.env.ATTIO_API_KEY);
+  if (hasFactoryMethod(mod, 'createAttioClient') && resolvedApiKey) {
+    return mod.createAttioClient(resolvedApiKey);
   }
 
   // Try buildAttioClient({apiKey}) if API key is available
-  if (hasFactoryMethod(mod, 'buildAttioClient') && process.env.ATTIO_API_KEY) {
-    return mod.buildAttioClient({ apiKey: process.env.ATTIO_API_KEY });
+  if (hasFactoryMethod(mod, 'buildAttioClient') && resolvedApiKey) {
+    return mod.buildAttioClient({ apiKey: resolvedApiKey });
   }
 
   throw new Error('No available Attio client factory method found');
