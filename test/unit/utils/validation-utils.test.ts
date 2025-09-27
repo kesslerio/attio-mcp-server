@@ -19,6 +19,10 @@ const mockGet = vi.fn();
 vi.mock('../../../src/api/attio-client.js', () => ({
   getAttioClient: () => ({
     get: mockGet,
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    defaults: { headers: {} },
   }),
 }));
 

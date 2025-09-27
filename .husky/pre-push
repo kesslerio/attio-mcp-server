@@ -2,6 +2,20 @@
 [ "${CI:-}" = "true" ] && exit 0
 [ "${SKIP_PREPUSH:-}" = "1" ] && exit 0
 
+# Skip validation for branch deletion pushes
+while read local_ref local_sha remote_ref remote_sha; do
+  if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+    echo "🗑️  Branch deletion detected - skipping pre-push validation"
+    exit 0
+  fi
+done
+
+# Skip validation for force deletion pushes (git push origin --delete)
+if echo "$*" | grep -q "\-\-delete"; then
+  echo "🗑️  Branch deletion detected - skipping pre-push validation"
+  exit 0
+fi
+
 echo "🔍 Validating branch name..."
 ./build/validate_workflow.py --validate-branch || {
   echo "❌ Branch validation failed"

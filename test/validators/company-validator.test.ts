@@ -2,12 +2,16 @@
  * Tests for the company validator with attribute type validation
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { CompanyValidator } from '../../src/validators/company-validator.js';
-import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
-import { InvalidRequestError } from '../../src/errors/api-errors.js';
+import { CompanyValidator } from '@/validators/company-validator.js';
+import {
+  detectFieldType,
+  getAttributeTypeInfo,
+} from '@/api/attribute-types.js';
+import { InvalidRequestError } from '@/errors/api-errors.js';
+import { InvalidCompanyDataError } from '@/errors/company-errors.js';
 
 // Mock the getAttributeTypeInfo function
-vi.mock('../../src/api/attribute-types.js', () => ({
+vi.mock('@/api/attribute-types.js', () => ({
   getAttributeTypeInfo: vi.fn(),
   getFieldValidationRules: vi.fn(),
   detectFieldType: vi.fn(),
@@ -16,7 +20,9 @@ vi.mock('../../src/api/attribute-types.js', () => ({
 describe('Company Validator', () => {
   // Reset mocks before each test
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
+    vi.restoreAllMocks();
     CompanyValidator.clearFieldTypeCache();
   });
 
@@ -216,6 +222,65 @@ describe('Company Validator', () => {
           'invalid-boolean'
         )
       ).rejects.toThrow();
+    });
+  });
+
+  describe('LinkedIn validation integration', () => {
+    const stringAttributeMetadata = {
+      fieldType: 'string',
+      isArray: false,
+      isRequired: false,
+      isUnique: false,
+      attioType: 'text',
+      metadata: {},
+    };
+
+    it('validates linkedin_url in special validation flow', async () => {
+      (getAttributeTypeInfo as vi.Mock).mockResolvedValue(
+        stringAttributeMetadata
+      );
+      (detectFieldType as vi.Mock).mockResolvedValue('string');
+
+      await expect(
+        CompanyValidator.validateCreate({
+          name: 'Spoofed Corp',
+          linkedin_url: 'https://linkedin.com.fake-site.io/company/foo',
+        })
+      ).rejects.toThrow(InvalidCompanyDataError);
+    });
+
+    it('extracts domain correctly when linkedin_url is valid', async () => {
+      (getAttributeTypeInfo as vi.Mock).mockImplementation(
+        async (_objectSlug, attributeName: string) => {
+          if (attributeName === 'domains') {
+            return {
+              fieldType: 'array',
+              isArray: true,
+              isRequired: false,
+              isUnique: false,
+              attioType: 'text',
+              metadata: {},
+            };
+          }
+
+          return stringAttributeMetadata;
+        }
+      );
+      (detectFieldType as vi.Mock).mockImplementation(
+        async (_resource, attributeName: string) =>
+          attributeName === 'domains' ? 'array' : 'string'
+      );
+
+      const result = await CompanyValidator.validateCreate({
+        name: 'Valid Corp',
+        website: 'https://valid.example.com/about',
+        linkedin_url: 'https://www.linkedin.com/company/valid-corp',
+      });
+
+      expect(result.domains).toEqual(['valid.example.com']);
+      expect(result.linkedin_url).toBe(
+        'https://www.linkedin.com/company/valid-corp'
+      );
     });
   });
 });
