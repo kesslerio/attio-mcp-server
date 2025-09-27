@@ -58,10 +58,12 @@ if (missingVars.length > 0) {
   console.warn('[E2E Setup] Tests will be skipped unless these are set.');
 } else {
   console.error('[E2E Setup] ✅ All required environment variables loaded');
-  // Log partial API key for verification (safely)
+  // Log API key metadata without exposing the raw value
   const apiKey = process.env.ATTIO_API_KEY;
   if (apiKey) {
-    console.error(`[E2E Setup] API Key loaded: ${apiKey.substring(0, 10)}...`);
+    console.error(
+      `[E2E Setup] API key detected (length: ${apiKey.length}, value redacted)`
+    );
   }
 }
 

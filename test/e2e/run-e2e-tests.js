@@ -226,9 +226,10 @@ async function runVitest(pattern = 'all', options = {}) {
 
   // Debug: Verify API key is loaded
   if (process.env.ATTIO_API_KEY) {
+    const apiKeyLength = process.env.ATTIO_API_KEY.length;
     console.error(
       colorize(
-        `✓ API key loaded (${process.env.ATTIO_API_KEY.slice(0, 10)}...)`,
+        `✓ API key detected (length: ${apiKeyLength}, value redacted)`,
         'green'
       )
     );
