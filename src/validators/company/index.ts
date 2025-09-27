@@ -219,7 +219,10 @@ export class CompanyValidator {
       typeof processedValue === 'string'
     ) {
       const url = ensureSafeUrl(processedValue, 'LinkedIn URL');
-      if (!url.hostname.includes('linkedin.com')) {
+      if (
+        url.hostname !== 'linkedin.com' &&
+        !url.hostname.endsWith('.linkedin.com')
+      ) {
         throw new InvalidCompanyDataError(
           'LinkedIn URL must be a valid LinkedIn URL'
         );
