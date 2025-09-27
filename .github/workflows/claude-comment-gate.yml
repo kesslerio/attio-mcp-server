@@ -36,6 +36,13 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/workflows/claude/
+          sparse-checkout-cone-mode: false
+
       - name: Detect review command
         id: classify
         run: |
