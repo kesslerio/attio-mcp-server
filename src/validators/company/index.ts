@@ -27,6 +27,13 @@ import { processFieldValue } from '@/validators/company/field_detector.js';
 import { createScopedLogger } from '@/utils/logger.js';
 import { TypeCache } from '@/validators/company/type_cache.js';
 import { CachedTypeInfo } from '@/validators/company/types.js';
+import { LinkedInUrlValidator } from '@/validators/url/linkedin-validator.js';
+import { handleAttributeValidationError } from '@/validators/company/error-handler.js';
+
+const extractDomainLogger = createScopedLogger(
+  'CompanyValidator',
+  'extractDomainFromWebsite'
+);
 
 const SAFE_URL_PROTOCOLS = new Set(['http:', 'https:']);
 
@@ -96,18 +103,13 @@ export class CompanyValidator {
 
       if (extractedDomain) {
         const normalizedDomain = normalizeDomain(extractedDomain);
-
-        if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-          const log = createScopedLogger(
-            'CompanyValidator',
-            'extractDomainFromWebsite'
-          );
-          log.info('Auto-extracted domain from website', {
-            normalizedDomain,
-            website: attributes.website,
-          });
-        }
-
+        extractDomainLogger.debug('Auto-extracted domain from website', {
+          normalizedDomain,
+          website: attributes.website,
+          toolName: 'company-validator',
+          userId: 'n/a',
+          requestId: 'n/a',
+        });
         attributes.domains = [normalizedDomain];
         attributes._autoExtractedDomains = true;
       }
@@ -137,12 +139,7 @@ export class CompanyValidator {
         await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyCreateInput;
     } catch (error: unknown) {
-      if (error instanceof InvalidRequestError) {
-        throw error;
-      }
-      throw new InvalidCompanyDataError(
-        `Attribute validation failed: ${(error as Error).message}`
-      );
+      handleAttributeValidationError(error);
     }
   }
 
@@ -170,12 +167,7 @@ export class CompanyValidator {
         await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyUpdateInput;
     } catch (error: unknown) {
-      if (error instanceof InvalidRequestError) {
-        throw error;
-      }
-      throw new InvalidCompanyDataError(
-        `Attribute validation failed: ${(error as Error).message}`
-      );
+      handleAttributeValidationError(error);
     }
   }
 
@@ -224,6 +216,7 @@ export class CompanyValidator {
       processedValue &&
       typeof processedValue === 'string'
     ) {
+      LinkedInUrlValidator.validate(processedValue);
       const url = ensureSafeUrl(processedValue, 'LinkedIn URL');
       if (!isLinkedInHostname(url.hostname)) {
         throw new InvalidCompanyDataError(
@@ -239,12 +232,7 @@ export class CompanyValidator {
         await CompanyValidator.validateAttributeTypes(attributeObj);
       return validatedObj[attributeName];
     } catch (error: unknown) {
-      if (error instanceof InvalidRequestError) {
-        throw error;
-      }
-      throw new InvalidCompanyDataError(
-        `Attribute validation failed: ${(error as Error).message}`
-      );
+      handleAttributeValidationError(error);
     }
   }
 
@@ -345,6 +333,7 @@ export class CompanyValidator {
       attributes.linkedin_url &&
       typeof attributes.linkedin_url === 'string'
     ) {
+      LinkedInUrlValidator.validate(attributes.linkedin_url);
       const url = ensureSafeUrl(attributes.linkedin_url, 'LinkedIn URL');
       if (!isLinkedInHostname(url.hostname)) {
         throw new InvalidCompanyDataError(
