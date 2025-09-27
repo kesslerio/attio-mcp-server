@@ -8,19 +8,19 @@ import {
   TimeframeType,
   UniversalResourceType,
   RelativeTimeframe,
-} from '../types.js';
-import { AttioRecord } from '../../../../types/attio.js';
-import { safeExtractTimestamp } from '../../shared/type-utils.js';
+} from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@shared-types/attio.js';
+import { safeExtractTimestamp } from '@handlers/tool-configs/shared/type-utils.js';
 
-import { validateUniversalToolParams } from '../schemas.js';
-import { ErrorService } from '../../../../services/ErrorService.js';
-import { getTypedErrorMessage } from '../typed-error-handling.js';
+import { validateUniversalToolParams } from '@handlers/tool-configs/universal/schemas.js';
+import { ErrorService } from '@services/ErrorService.js';
 import {
   formatResourceType,
   handleUniversalSearch,
-} from '../shared-handlers.js';
-import { normalizeOperator } from '../../../../utils/AttioFilterOperators.js';
-import { mapFieldName } from '../../../../utils/AttioFieldMapper.js';
+} from '@handlers/tool-configs/universal/shared-handlers.js';
+import { getPluralResourceType } from '@handlers/tool-configs/universal/core/utils.js';
+import { normalizeOperator } from '@utils/AttioFilterOperators.js';
+import { mapFieldName } from '@utils/AttioFieldMapper.js';
 
 export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
@@ -53,7 +53,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       if (relative_range) {
         // Import the timeframe utility to convert relative ranges
         const { getRelativeTimeframeRange } = await import(
-          '../../../../utils/filters/timeframe-utils.js'
+          '@utils/filters/timeframe-utils.js'
         );
 
         try {
@@ -214,11 +214,16 @@ export const searchByTimeframeConfig: UniversalToolConfig<
     const timeframeName = timeframeType
       ? timeframeType.replace(/_/g, ' ')
       : 'timeframe';
+    const resourceCount = results.length;
     const resourceTypeName = resourceType
-      ? formatResourceType(resourceType)
-      : 'record';
+      ? resourceCount === 1
+        ? formatResourceType(resourceType)
+        : getPluralResourceType(resourceType)
+      : resourceCount === 1
+        ? 'record'
+        : 'records';
 
-    return `Found ${results.length} ${resourceTypeName}s by ${timeframeName}:\n${results
+    return `Found ${results.length} ${resourceTypeName} by ${timeframeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
         const values = record.values as Record<string, unknown>;
         const name =
