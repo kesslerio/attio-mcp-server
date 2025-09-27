@@ -5,12 +5,12 @@ import {
   TimeframeType,
   ContentSearchParams,
   TimeframeSearchParams,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
+} from '@handlers/tool-configs/universal/types.js';
 import {
   setupUnitTestMocks,
   cleanupMocks,
   getMockInstances,
-} from './helpers/index.js';
+} from '@test/handlers/tool-configs/universal/helpers/index.js';
 
 describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
   let searchByContentConfig: any;
@@ -21,7 +21,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
     // Import after mocks are set up
     const advancedOps = await import(
-      '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
+      '@handlers/tool-configs/universal/advanced-operations.js'
     );
     searchByContentConfig = advancedOps.searchByContentConfig;
     searchByTimeframeConfig = advancedOps.searchByTimeframeConfig;
@@ -142,7 +142,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         UniversalResourceType.COMPANIES
       );
 
-      expect(formatted).toContain('Found 1 companys with matching notes');
+      expect(formatted).toContain('Found 1 company with matching notes');
       expect(formatted).toContain('1. Company with Content (ID: comp-1)');
     });
 
@@ -299,7 +299,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         UniversalResourceType.PEOPLE
       );
 
-      expect(formatted).toContain('Found 1 persons by created');
+      expect(formatted).toContain('Found 1 person by created');
       expect(formatted).toContain(
         '1. Test Person (created: 12/1/2023) (ID: person-1)'
       );

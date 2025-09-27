@@ -7,14 +7,14 @@ import {
   ContentSearchParams,
   ContentSearchType,
   UniversalResourceType,
-} from '../types.js';
-import { AttioRecord, InteractionType } from '../../../../types/attio.js';
+} from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord, InteractionType } from '@shared-types/attio.js';
 
-import { validateUniversalToolParams } from '../schemas.js';
-import { UniversalSearchService } from '../../../../services/UniversalSearchService.js';
-import { ErrorService } from '../../../../services/ErrorService.js';
-import { getTypedErrorMessage } from '../typed-error-handling.js';
-import { formatResourceType } from '../shared-handlers.js';
+import { validateUniversalToolParams } from '@handlers/tool-configs/universal/schemas.js';
+import { UniversalSearchService } from '@services/UniversalSearchService.js';
+import { ErrorService } from '@services/ErrorService.js';
+import { getPluralResourceType } from '@handlers/tool-configs/universal/core/utils.js';
+import { formatResourceType } from '@handlers/tool-configs/universal/shared-handlers.js';
 
 export const searchByContentConfig: UniversalToolConfig<
   ContentSearchParams,
@@ -51,7 +51,7 @@ export const searchByContentConfig: UniversalToolConfig<
         // Support basic activity content for people via specialized handler mock
         if (resource_type === UniversalResourceType.PEOPLE) {
           const { searchPeopleByActivity } = await import(
-            '../../../../objects/people/search.js'
+            '@src/objects/people/search.js'
           );
           return await searchPeopleByActivity({
             dateRange: { preset: 'last_month' },
@@ -102,11 +102,16 @@ export const searchByContentConfig: UniversalToolConfig<
     }
 
     const contentTypeName = contentType ? contentType : 'content';
+    const resultCount = results.length;
     const resourceTypeName = resourceType
-      ? formatResourceType(resourceType)
-      : 'record';
+      ? resultCount === 1
+        ? formatResourceType(resourceType)
+        : getPluralResourceType(resourceType)
+      : resultCount === 1
+        ? 'record'
+        : 'records';
 
-    return `Found ${results.length} ${resourceTypeName}s with matching ${contentTypeName}:\n${results
+    return `Found ${results.length} ${resourceTypeName} with matching ${contentTypeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
         const values = record.values as Record<string, unknown>;
         const recordId = record.id as Record<string, unknown>;

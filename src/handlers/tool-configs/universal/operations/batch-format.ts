@@ -1,9 +1,12 @@
-import { BatchOperationType, UniversalResourceType } from '../types.js';
-import { formatResourceType } from '../shared-handlers.js';
+import {
+  BatchOperationType,
+  UniversalResourceType,
+} from '@handlers/tool-configs/universal/types.js';
+import { formatResourceType } from '@handlers/tool-configs/universal/shared-handlers.js';
 import {
   safeExtractRecordValues,
   safeExtractFirstValue,
-} from '../../shared/type-utils.js';
+} from '@handlers/tool-configs/shared/type-utils.js';
 import type { JsonObject } from '@shared-types/attio.js';
 import type { UniversalBatchSearchResult } from '@api/operations/batch.js';
 
@@ -94,7 +97,8 @@ function formatBatchSearchResults(
     summary += 'Successful searches:\n';
     successful.forEach((searchResult, index) => {
       const records = searchResult.result ?? [];
-      summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${records.length} ${resourceTypeName}s\n`;
+      const resourceLabel = pluralizeResource(resourceTypeName, records.length);
+      summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${records.length} ${resourceLabel}\n`;
 
       if (records.length > 0) {
         records.slice(0, 3).forEach((record: unknown, recordIndex: number) => {
