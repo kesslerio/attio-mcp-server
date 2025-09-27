@@ -100,6 +100,7 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
 - **Search Compatibility Surface**: The `search` and `fetch` tools remain available for OpenAI’s baseline MCP support. Set `ATTIO_MCP_TOOL_MODE=search` to expose only these read-only endpoints (plus health checks) when Developer Mode is unavailable.
 - **Default Behaviour**: With `ATTIO_MCP_TOOL_MODE` unset, the full universal tool set is exposed—matching Claude’s experience—while OpenAI users still see the compatibility wrappers.
+- **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
 - **User Documentation**: See the “ChatGPT Developer Mode” docs (coming soon) for a walkthrough of the approval flows and recommended tool descriptions.
 
 ### **Performance Considerations**

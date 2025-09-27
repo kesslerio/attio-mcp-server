@@ -216,8 +216,8 @@ export class CompanyValidator {
       processedValue &&
       typeof processedValue === 'string'
     ) {
-      LinkedInUrlValidator.validate(processedValue);
       const url = ensureSafeUrl(processedValue, 'LinkedIn URL');
+      LinkedInUrlValidator.validate(processedValue);
       if (!isLinkedInHostname(url.hostname)) {
         throw new InvalidCompanyDataError(
           'LinkedIn URL must be a valid LinkedIn URL'
@@ -333,8 +333,8 @@ export class CompanyValidator {
       attributes.linkedin_url &&
       typeof attributes.linkedin_url === 'string'
     ) {
-      LinkedInUrlValidator.validate(attributes.linkedin_url);
       const url = ensureSafeUrl(attributes.linkedin_url, 'LinkedIn URL');
+      LinkedInUrlValidator.validate(attributes.linkedin_url);
       if (!isLinkedInHostname(url.hostname)) {
         throw new InvalidCompanyDataError(
           'LinkedIn URL must be a valid LinkedIn URL'
