@@ -35,33 +35,56 @@ const CONFIG_PATHS = {
 };
 
 /**
- * Deep merges two objects, with values from the source object taking precedence
+ * Keys that pose a prototype pollution risk and must be filtered
+ * These keys can modify the prototype chain and should never be used in object merging
+ */
+const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+
+/**
+ * Validates that a key is safe for object property assignment
+ * Prevents prototype pollution attacks by filtering dangerous keys
+ *
+ * @param key - The property key to validate
+ * @returns True if the key is safe to use, false otherwise
+ */
+function isSafeKey(key: string): boolean {
+  return !DANGEROUS_KEYS.includes(key) && !key.includes('.');
+}
+
+/**
+ * Safely deep merges two objects, with values from the source object taking precedence
+ * Implements prototype pollution protection by filtering dangerous keys
  *
  * @param target - The target object
  * @param source - The source object to merge in
  * @returns The merged object
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Recursive merge function needs any for flexible object structure handling
-function deepMerge(target: any, source: any): any {
+function safeMerge(target: any, source: any): any {
   const result = { ...target };
 
   for (const key in source) {
+    // Security: Skip dangerous keys that could cause prototype pollution
+    if (!isSafeKey(key)) {
+      continue;
+    }
+
     if (Object.prototype.hasOwnProperty.call(source, key)) {
       if (
         source[key] &&
         typeof source[key] === 'object' &&
         !Array.isArray(source[key])
       ) {
-        // If both target and source have an object at this key, merge them
+        // If both target and source have an object at this key, merge them recursively
         if (
           result[key] &&
           typeof result[key] === 'object' &&
           !Array.isArray(result[key])
         ) {
-          result[key] = deepMerge(result[key], source[key]);
+          result[key] = safeMerge(result[key], source[key]);
         } else {
-          // Otherwise, just use the source value
-          result[key] = { ...source[key] };
+          // Otherwise, safely copy the source value
+          result[key] = safeMerge({}, source[key]);
         }
       } else {
         // For non-objects, use the source value
@@ -135,13 +158,13 @@ export function loadMappingConfig(): MappingConfig {
   // Load and merge the default configuration
   const defaultConfig = loadJsonFile(CONFIG_PATHS.default);
   if (defaultConfig) {
-    config = deepMerge(config, defaultConfig);
+    config = safeMerge(config, defaultConfig);
   }
 
   // Load and merge the user configuration
   const userConfig = loadJsonFile(CONFIG_PATHS.user);
   if (userConfig) {
-    config = deepMerge(config, userConfig);
+    config = safeMerge(config, userConfig);
   }
 
   return config;
@@ -199,6 +222,15 @@ export async function updateMappingSection(
   const sectionParts = section.split('.');
   let target = config.mappings;
 
+  // Security: Validate all section parts for prototype pollution safety
+  for (const part of sectionParts) {
+    if (!isSafeKey(part)) {
+      throw new Error(
+        `Invalid section key detected: ${part}. This key poses a security risk.`
+      );
+    }
+  }
+
   for (let i = 0; i < sectionParts.length - 1; i++) {
     const part = sectionParts[i];
     if (!target[part]) {
@@ -209,11 +241,13 @@ export async function updateMappingSection(
 
   const finalPart = sectionParts[sectionParts.length - 1];
 
-  // Update the target section
+  // Update the target section with security validation
   if (merge && target[finalPart]) {
-    target[finalPart] = { ...target[finalPart], ...mappings };
+    // Use safe merging for existing sections
+    target[finalPart] = safeMerge(target[finalPart], mappings);
   } else {
-    target[finalPart] = mappings;
+    // For new sections, ensure the mappings object is safe
+    target[finalPart] = safeMerge({}, mappings);
   }
 
   // Write the updated config
