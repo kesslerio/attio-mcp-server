@@ -2,16 +2,16 @@
  * Tests for the enhanced company validator with attribute type validation
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { CompanyValidator } from '../../src/validators/company-validator.js';
-import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
-import { InvalidRequestError } from '../../src/errors/api-errors.js';
+import { CompanyValidator } from '@/validators/company-validator.js';
+import { getAttributeTypeInfo } from '@/api/attribute-types.js';
+import { InvalidRequestError } from '@/errors/api-errors.js';
 import {
   MissingCompanyFieldError,
   InvalidCompanyDataError,
-} from '../../src/errors/company-errors.js';
+} from '@/errors/company-errors.js';
 
 // Mock the attribute type modules
-vi.mock('../../src/api/attribute-types.js', () => ({
+vi.mock('@/api/attribute-types.js', () => ({
   getAttributeTypeInfo: vi.fn(),
   getFieldValidationRules: vi.fn(),
   detectFieldType: vi.fn(),
@@ -19,6 +19,7 @@ vi.mock('../../src/api/attribute-types.js', () => ({
 
 describe('Enhanced Company Validator', () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
     CompanyValidator.clearFieldTypeCache();
   });
@@ -228,6 +229,7 @@ describe('Enhanced Company Validator', () => {
     });
 
     it('should throw MissingCompanyFieldError if name is missing', async () => {
+      const validateSpy = vi.spyOn(CompanyValidator, 'validateAttributeTypes');
       const attributes = {
         employees: '250',
         // Missing required name field
@@ -238,7 +240,7 @@ describe('Enhanced Company Validator', () => {
       );
 
       // Should not reach validateAttributeTypes since validation fails early
-      expect(CompanyValidator.validateAttributeTypes).not.toHaveBeenCalled();
+      expect(validateSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -283,6 +285,7 @@ describe('Enhanced Company Validator', () => {
     });
 
     it('should throw InvalidCompanyDataError if company ID is invalid', async () => {
+      const validateSpy = vi.spyOn(CompanyValidator, 'validateAttributeTypes');
       const attributes = {
         name: 'Updated Corp',
       };
@@ -293,7 +296,7 @@ describe('Enhanced Company Validator', () => {
       ).rejects.toThrow(InvalidCompanyDataError);
 
       // Should not reach validateAttributeTypes since validation fails early
-      expect(CompanyValidator.validateAttributeTypes).not.toHaveBeenCalled();
+      expect(validateSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -348,6 +351,60 @@ describe('Enhanced Company Validator', () => {
           'Test Value'
         )
       ).rejects.toThrow(InvalidCompanyDataError);
+    });
+
+    it('should reject LinkedIn URL attribute updates with deceptive hostnames', async () => {
+      await expect(
+        CompanyValidator.validateAttributeUpdate(
+          'comp_123456',
+          'linkedin_url',
+          'https://linkedin.com.attacker.com/company/example'
+        )
+      ).rejects.toThrow('LinkedIn URL must be a valid LinkedIn URL');
+    });
+  });
+
+  describe('performSpecialValidation', () => {
+    it('should reject website URLs that use javascript protocol', async () => {
+      await expect(
+        (CompanyValidator as any).performSpecialValidation({
+          website: 'javascript:alert(1)',
+        })
+      ).rejects.toThrow('Website must use http or https protocol');
+    });
+
+    it('should reject LinkedIn URLs that use data protocol', async () => {
+      await expect(
+        (CompanyValidator as any).performSpecialValidation({
+          linkedin_url:
+            'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
+        })
+      ).rejects.toThrow('LinkedIn URL must use http or https protocol');
+    });
+
+    it('should reject LinkedIn URLs with deceptive hostnames', async () => {
+      await expect(
+        (CompanyValidator as any).performSpecialValidation({
+          linkedin_url: 'https://linkedin.com.evil.com/company/example',
+        })
+      ).rejects.toThrow('LinkedIn URL must be a valid LinkedIn URL');
+    });
+
+    it('should allow LinkedIn subdomains', async () => {
+      await expect(
+        (CompanyValidator as any).performSpecialValidation({
+          linkedin_url: 'https://fr.linkedin.com/company/example',
+        })
+      ).resolves.toBeUndefined();
+    });
+
+    it('should allow standard https URLs', async () => {
+      await expect(
+        (CompanyValidator as any).performSpecialValidation({
+          website: 'https://example.com',
+          linkedin_url: 'https://www.linkedin.com/company/example',
+        })
+      ).resolves.toBeUndefined();
     });
   });
 });

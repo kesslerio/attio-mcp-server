@@ -6,30 +6,56 @@ import {
   MissingCompanyFieldError,
   InvalidCompanyFieldTypeError,
   InvalidCompanyDataError,
-} from '../../errors/company-errors.js';
+} from '@/errors/company-errors.js';
 import {
   CompanyCreateInput,
   CompanyUpdateInput,
-} from '../../types/company-types.js';
+} from '@/types/company-types.js';
 import {
   getAttributeTypeInfo,
   detectFieldType,
-} from '../../api/attribute-types.js';
-import { ResourceType } from '../../types/attio.js';
+} from '@/api/attribute-types.js';
+import { ResourceType } from '@/types/attio.js';
 import {
   validateAttributeValue,
   AttributeType,
-} from '../attribute-validator.js';
-import { InvalidRequestError } from '../../errors/api-errors.js';
-import { extractDomain, normalizeDomain } from '../../utils/domain-utils.js';
-import {
-  CompanyFieldValue,
-  ProcessedFieldValue,
-} from '../../types/tool-types.js';
-import { processFieldValue } from './field_detector.js';
-import { createScopedLogger } from '../../utils/logger.js';
-import { TypeCache } from './type_cache.js';
-import { CachedTypeInfo } from './types.js';
+} from '@/validators/attribute-validator.js';
+import { InvalidRequestError } from '@/errors/api-errors.js';
+import { extractDomain, normalizeDomain } from '@/utils/domain-utils.js';
+import { CompanyFieldValue, ProcessedFieldValue } from '@/types/tool-types.js';
+import { processFieldValue } from '@/validators/company/field_detector.js';
+import { createScopedLogger } from '@/utils/logger.js';
+import { TypeCache } from '@/validators/company/type_cache.js';
+import { CachedTypeInfo } from '@/validators/company/types.js';
+
+const SAFE_URL_PROTOCOLS = new Set(['http:', 'https:']);
+
+const LINKEDIN_HOST = 'linkedin.com';
+
+function isLinkedInHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return (
+    normalized === LINKEDIN_HOST || normalized.endsWith(`.${LINKEDIN_HOST}`)
+  );
+}
+
+function ensureSafeUrl(value: string, fieldLabel: string): URL {
+  let parsed: URL;
+
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new InvalidCompanyDataError(`${fieldLabel} must be a valid URL`);
+  }
+
+  if (!SAFE_URL_PROTOCOLS.has(parsed.protocol)) {
+    throw new InvalidCompanyDataError(
+      `${fieldLabel} must use http or https protocol`
+    );
+  }
+
+  return parsed;
+}
 
 export class CompanyValidator {
   /**
@@ -190,11 +216,7 @@ export class CompanyValidator {
       processedValue &&
       typeof processedValue === 'string'
     ) {
-      try {
-        new URL(processedValue);
-      } catch {
-        throw new InvalidCompanyDataError('Website must be a valid URL');
-      }
+      ensureSafeUrl(processedValue, 'Website');
     }
 
     if (
@@ -202,15 +224,11 @@ export class CompanyValidator {
       processedValue &&
       typeof processedValue === 'string'
     ) {
-      try {
-        const url = new URL(processedValue);
-        if (!url.hostname.includes('linkedin.com')) {
-          throw new InvalidCompanyDataError(
-            'LinkedIn URL must be a valid LinkedIn URL'
-          );
-        }
-      } catch {
-        throw new InvalidCompanyDataError('LinkedIn URL must be a valid URL');
+      const url = ensureSafeUrl(processedValue, 'LinkedIn URL');
+      if (!isLinkedInHostname(url.hostname)) {
+        throw new InvalidCompanyDataError(
+          'LinkedIn URL must be a valid LinkedIn URL'
+        );
       }
     }
 
@@ -320,26 +338,18 @@ export class CompanyValidator {
     }
 
     if (attributes.website && typeof attributes.website === 'string') {
-      try {
-        new URL(attributes.website);
-      } catch {
-        throw new InvalidCompanyDataError('Website must be a valid URL');
-      }
+      ensureSafeUrl(attributes.website, 'Website');
     }
 
     if (
       attributes.linkedin_url &&
       typeof attributes.linkedin_url === 'string'
     ) {
-      try {
-        const url = new URL(attributes.linkedin_url);
-        if (!url.hostname.includes('linkedin.com')) {
-          throw new InvalidCompanyDataError(
-            'LinkedIn URL must be a valid LinkedIn URL'
-          );
-        }
-      } catch {
-        throw new InvalidCompanyDataError('LinkedIn URL must be a valid URL');
+      const url = ensureSafeUrl(attributes.linkedin_url, 'LinkedIn URL');
+      if (!isLinkedInHostname(url.hostname)) {
+        throw new InvalidCompanyDataError(
+          'LinkedIn URL must be a valid LinkedIn URL'
+        );
       }
     }
 
