@@ -1,86 +1,117 @@
 /**
  * Type-safe client resolver for Attio API client factory methods
- * Handles multiple factory patterns without relying on any types
+ * Provides reliable fallbacks and rich diagnostics when resolution fails.
  */
 
+import { AxiosInstance } from 'axios';
 import * as AttioClientModule from '../api/attio-client.js';
 import { getContextApiKey } from '../api/client-context.js';
 
 /**
- * Supported client factory method signatures
+ * Supported factory method signatures exposed by attio-client module
  */
 interface AttioClientFactories {
-  getAttioClient?(): unknown;
-  createAttioClient?(apiKey: string): unknown;
-  buildAttioClient?(config: { apiKey: string }): unknown;
+  getAttioClient?(): AxiosInstance | unknown;
+  createAttioClient?(apiKey: string): AxiosInstance | unknown;
+  buildAttioClient?(config: { apiKey: string }): AxiosInstance | unknown;
+  [key: string]: unknown;
 }
 
 /**
- * Type guard to check if a module has a specific factory method
+ * Collects available method names on the mocked or real module so error
+ * messages can help the caller understand why resolution failed.
  */
-function hasFactoryMethod<K extends keyof AttioClientFactories>(
-  mod: unknown,
-  method: K
-): mod is Record<K, NonNullable<AttioClientFactories[K]>> {
-  return (
-    typeof mod === 'object' &&
-    mod !== null &&
-    method in mod &&
-    typeof (mod as Record<string, unknown>)[method] === 'function'
-  );
+function getAvailableMethodNames(mod: AttioClientFactories): string[] {
+  return Object.keys(mod).filter((key) => typeof mod[key] === 'function');
 }
 
 /**
- * Resolves an Attio client instance using available factory methods
- * Prioritizes: getAttioClient() > createAttioClient() > buildAttioClient()
+ * Guards that the resolved value behaves like an Axios instance. We keep the
+ * checks intentionally simple so tests can provide lightweight mocks.
  */
-export function resolveAttioClient(): unknown {
-  const mod = AttioClientModule as unknown;
+function assertAxiosInstance(
+  value: unknown,
+  source: string
+): asserts value is AxiosInstance {
+  const candidate = value as Record<string, unknown> | null | undefined;
+
+  const hasGetMethod =
+    !!candidate &&
+    typeof candidate === 'object' &&
+    typeof candidate.get === 'function';
+
+  const hasDefaults =
+    hasGetMethod &&
+    'defaults' in candidate &&
+    typeof candidate.defaults === 'object';
+
+  if (!hasGetMethod || !hasDefaults) {
+    throw new Error(`${source} returned invalid Axios client instance`);
+  }
+}
+
+/**
+ * Resolves an Attio client instance using the available factory methods.
+ * Prioritises getAttioClient() → createAttioClient() → buildAttioClient().
+ */
+export function resolveAttioClient(): AxiosInstance {
+  const mod = AttioClientModule as AttioClientFactories;
   const resolvedApiKey = process.env.ATTIO_API_KEY || getContextApiKey();
 
-  // Try getAttioClient() first (no parameters needed)
-  if (hasFactoryMethod(mod, 'getAttioClient')) {
-    return mod.getAttioClient();
+  if (typeof mod.getAttioClient === 'function') {
+    const client = mod.getAttioClient();
+    assertAxiosInstance(client, 'getAttioClient()');
+    return client;
   }
 
-  // Try createAttioClient(apiKey) if API key is available
-  if (hasFactoryMethod(mod, 'createAttioClient') && resolvedApiKey) {
-    return mod.createAttioClient(resolvedApiKey);
+  if (typeof mod.createAttioClient === 'function') {
+    if (!resolvedApiKey) {
+      throw new Error(
+        'No available Attio client factory method found. Available methods: createAttioClient. Has API key: false'
+      );
+    }
+    const client = mod.createAttioClient(resolvedApiKey);
+    assertAxiosInstance(client, 'createAttioClient()');
+    return client;
   }
 
-  // Try buildAttioClient({apiKey}) if API key is available
-  if (hasFactoryMethod(mod, 'buildAttioClient') && resolvedApiKey) {
-    return mod.buildAttioClient({ apiKey: resolvedApiKey });
+  if (typeof mod.buildAttioClient === 'function') {
+    if (!resolvedApiKey) {
+      throw new Error(
+        'No available Attio client factory method found. Available methods: buildAttioClient. Has API key: false'
+      );
+    }
+    const client = mod.buildAttioClient({ apiKey: resolvedApiKey });
+    assertAxiosInstance(client, 'buildAttioClient()');
+    return client;
   }
 
-  throw new Error('No available Attio client factory method found');
-}
-
-/**
- * Type guard to check if resolved client has the expected API methods
- */
-export function isAttioClient(
-  client: unknown
-): client is { get(path: string): Promise<unknown> } {
-  return (
-    typeof client === 'object' &&
-    client !== null &&
-    'get' in client &&
-    typeof (client as Record<string, unknown>).get === 'function'
+  const availableMethods = getAvailableMethodNames(mod);
+  throw new Error(
+    `No available Attio client factory method found. Available methods: ${
+      availableMethods.length > 0 ? availableMethods.join(', ') : 'none'
+    }. Has API key: ${Boolean(resolvedApiKey)}`
   );
 }
 
 /**
- * Safely resolves and validates an Attio client instance
+ * Checks whether an arbitrary value looks like an Attio Axios client.
  */
-export function getValidatedAttioClient(): {
-  get(path: string): Promise<unknown>;
-} {
-  const client = resolveAttioClient();
-
-  if (!isAttioClient(client)) {
-    throw new Error('Resolved client does not have expected API interface');
+export function isAttioClient(client: unknown): client is AxiosInstance {
+  try {
+    assertAxiosInstance(client, 'isAttioClient check');
+    return true;
+  } catch {
+    return false;
   }
+}
 
+/**
+ * Resolves and validates the client, guaranteeing callers receive a proper
+ * Axios instance or a descriptive error.
+ */
+export function getValidatedAttioClient(): AxiosInstance {
+  const client = resolveAttioClient();
+  assertAxiosInstance(client, 'getValidatedAttioClient()');
   return client;
 }
