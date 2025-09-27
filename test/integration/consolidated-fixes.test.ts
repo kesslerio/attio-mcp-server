@@ -22,14 +22,22 @@ import {
 } from '../../src/utils/validation/uuid-validation.js';
 
 // Helper function to get error message, checking for enhanced methods
-function getErrorMessage(error: any): string {
+function getErrorMessage(error: unknown): string {
   if (
-    error.getContextualMessage &&
-    typeof error.getContextualMessage === 'function'
+    error &&
+    typeof error === 'object' &&
+    'getContextualMessage' in error &&
+    typeof (error as { getContextualMessage?: unknown })
+      .getContextualMessage === 'function'
   ) {
-    return error.getContextualMessage();
+    return (
+      error as { getContextualMessage: () => string }
+    ).getContextualMessage();
   }
-  return error.message || error.toString();
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return String(error);
 }
 
 describe('Consolidated Fixes Integration Tests', () => {
