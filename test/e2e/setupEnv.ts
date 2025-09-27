@@ -5,6 +5,16 @@
  * Prevents the "↓ skipped" issue by failing fast with clear error messages.
  */
 
+import {
+  collectEnvironmentStatus,
+  DEFAULT_ENV_FILES,
+  loadEnvironmentFiles,
+  logSecretPresence,
+} from './utils/environment.js';
+import { createE2ELogger } from './utils/logger.js';
+
+const logger = createE2ELogger('E2E Setup');
+
 // Required environment variables for E2E tests
 const REQUIRED_ENV_VARS = ['ATTIO_API_KEY'] as const;
 
@@ -17,54 +27,65 @@ const OPTIONAL_ENV_VARS = [
   'E2E_SKIP_CLEANUP',
 ] as const;
 
+export class MissingEnvironmentVariablesError extends Error {
+  public readonly missingVariables: readonly string[];
+
+  constructor(missing: readonly string[]) {
+    super('Missing required environment variables');
+    this.missingVariables = missing;
+  }
+}
+
 /**
  * Validate environment variables and fail fast if any required ones are missing
  */
-function validateEnvironment(): void {
-  console.log('🔍 Validating E2E environment variables...');
+export function validateEnvironment(): {
+  missingOptional: readonly string[];
+  missingRequired: readonly string[];
+} {
+  logger.info('Validating E2E environment variables...');
 
-  // Check required variables
-  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+  const status = collectEnvironmentStatus(REQUIRED_ENV_VARS, OPTIONAL_ENV_VARS);
 
-  if (missing.length > 0) {
-    console.error('❌ Missing required environment variables:');
-    missing.forEach((key) => {
-      console.error(`   • ${key}`);
+  if (status.missingRequired.length > 0) {
+    logger.error('Missing required environment variables:');
+    status.missingRequired.forEach((key) => {
+      logger.error(`  • ${key}`);
     });
-    console.error('\n💡 Solutions:');
-    console.error('   • Copy .env.example to .env and add your API key');
-    console.error('   • Run: echo "ATTIO_API_KEY=your_key_here" >> .env');
-    console.error('   • Check that .env exists and contains the API key');
 
-    process.exit(1);
+    logger.info('Solutions:');
+    logger.info('  • Copy .env.example to .env and add your API key');
+    logger.info('  • Run: echo "ATTIO_API_KEY=your_key_here" >> .env');
+    logger.info('  • Check that .env exists and contains the API key');
+
+    throw new MissingEnvironmentVariablesError(status.missingRequired);
   }
 
-  // Log successful validation
-  console.log('✅ All required environment variables are present');
+  logger.success('All required environment variables are present');
 
-  // Check optional variables and warn if missing
-  const missingOptional = OPTIONAL_ENV_VARS.filter((key) => !process.env[key]);
-  if (missingOptional.length > 0) {
-    console.log(
-      '⚠️  Optional environment variables not set (will use defaults):'
+  if (status.missingOptional.length > 0) {
+    logger.warn(
+      'Optional environment variables not set (defaults will be used):'
     );
-    missingOptional.forEach((key) => {
-      console.log(`   • ${key}`);
+    status.missingOptional.forEach((key) => {
+      logger.warn(`  • ${key}`);
     });
   }
 
-  // Log loaded API key (redacted)
-  const apiKey = process.env.ATTIO_API_KEY!;
-  const redactedKey =
-    apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 4);
-  console.log(`🔑 API key loaded: ${redactedKey}`);
+  logSecretPresence({ key: 'ATTIO_API_KEY', logger });
+
+  return {
+    missingOptional: status.missingOptional,
+    missingRequired: status.missingRequired,
+  };
 }
 
 /**
  * Initialize environment for E2E tests
  */
 export function setupE2EEnvironment(): void {
-  // Validate all required environment variables
+  loadEnvironmentFiles({ files: DEFAULT_ENV_FILES, logger });
+
   validateEnvironment();
 
   // Set E2E-specific environment variables (defaults if not already set)
@@ -89,14 +110,20 @@ export function setupE2EEnvironment(): void {
   process.env.E2E_VERBOSE_LOGGING = process.env.E2E_VERBOSE_LOGGING || 'true';
   process.env.E2E_LOG_RESPONSES = process.env.E2E_LOG_RESPONSES || 'false';
 
-  console.log('🎯 E2E environment setup complete');
-  console.log(`   • Test prefix: ${process.env.E2E_TEST_PREFIX}`);
-  console.log(`   • Email domain: ${process.env.E2E_TEST_EMAIL_DOMAIN}`);
-  console.log(`   • Company domain: ${process.env.E2E_TEST_COMPANY_DOMAIN}`);
+  logger.success('E2E environment setup complete');
+  logger.info(`  • Test prefix: ${process.env.E2E_TEST_PREFIX}`);
+  logger.info(`  • Email domain: ${process.env.E2E_TEST_EMAIL_DOMAIN}`);
+  logger.info(`  • Company domain: ${process.env.E2E_TEST_COMPANY_DOMAIN}`);
 }
 
-// Auto-run validation when this module is imported
-setupE2EEnvironment();
+try {
+  setupE2EEnvironment();
+} catch (error) {
+  if (error instanceof MissingEnvironmentVariablesError) {
+    logger.error('E2E environment setup failed due to missing variables.');
+  } else if (error instanceof Error) {
+    logger.error(`E2E environment setup failed: ${error.message}`);
+  }
 
-// Export for explicit use if needed
-export { validateEnvironment };
+  throw error;
+}
