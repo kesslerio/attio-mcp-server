@@ -176,6 +176,7 @@ PR: `gh pr create -R kesslerio/attio-mcp-server -t "Type: Description" -b "Detai
 RULE: One feature per PR | WHEN: Creating PR | DO: Keep focused and small | ELSE: Review rejection
 RULE: PR target enforcement | WHEN: Creating any PR | DO: Target kesslerio/attio-mcp-server | ELSE: Wrong repository targeting
 RULE: Never mention hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include "cc hmk" or any hmk mention | ELSE: Unwanted notifications
+RULE: Delete branch after merge | WHEN: PR merged | DO: Delete feature branch immediately via GitHub UI or `git push origin --delete branch-name` | ELSE: Repository clutter
 
 ### ISSUE WORKFLOW [MANDATORY CHECKLIST]
 
@@ -188,6 +189,7 @@ RULE: Never mention hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include
 7. `git commit -m "Type: Description #issue-num"` - Reference issue
 8. `git push -u origin HEAD` - Push branch
 9. `gh pr create -R kesslerio/attio-mcp-server` - Create PR
+10. **After merge**: Delete branch via GitHub UI or `git push origin --delete branch-name`
 
 ### ISSUE CREATION
 

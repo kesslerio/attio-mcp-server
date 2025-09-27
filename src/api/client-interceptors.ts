@@ -9,7 +9,7 @@ import {
   AxiosError,
   InternalAxiosRequestConfig,
 } from 'axios';
-import { debug, error, OperationType } from '../utils/logger.js';
+import { debug, error, OperationType } from '@/utils/logger.js';
 
 export interface InterceptorOptions {
   prefix?: string;

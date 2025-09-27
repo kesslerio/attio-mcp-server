@@ -220,7 +220,10 @@ export class ApiResponseFactory {
  * Mock request factory for MCP tool testing
  */
 export class MockRequestFactory {
-  static createToolRequest(toolName: string, args: Record<string, any> = {}) {
+  static createToolRequest(
+    toolName: string,
+    args: Record<string, unknown> = {}
+  ) {
     return {
       method: 'tools/call',
       params: {

@@ -6,10 +6,10 @@ import {
   createErrorInterceptor,
   addDiagnosticInterceptors,
   configureStandardInterceptors,
-} from '../../dist/api/client-interceptors.js';
+} from '@/api/client-interceptors.js';
 
 // Mock the logger to avoid noise in tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('@/utils/logger.js', () => ({
   debug: vi.fn(),
   error: vi.fn(),
   OperationType: {

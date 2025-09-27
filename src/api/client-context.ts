@@ -11,15 +11,8 @@ let contextKey: object | null = null;
 let clientContext: Record<string, unknown> | null = null;
 
 // Cache for failed context getter attempts to avoid repeated exceptions
-const failedContextCache = new Set<string>();
-const FAILED_CONTEXT_CACHE_TTL = 5000; // 5 seconds
-
-/**
- * Clears the failed context cache after TTL expires
- */
-setTimeout(() => {
-  failedContextCache.clear();
-}, FAILED_CONTEXT_CACHE_TTL);
+const failedContextCache = new Map<string, NodeJS.Timeout>();
+const FAILED_CONTEXT_CACHE_TTL = 10000; // 10 seconds - increased for retry scenarios
 
 /**
  * Stores a shallow copy of the provided context so subsequent lookups can
@@ -27,15 +20,17 @@ setTimeout(() => {
  * Uses WeakMap for secure storage when possible.
  */
 export function setClientContext(context: Record<string, unknown>): void {
-  // Create a new key for WeakMap storage
-  contextKey = {};
+  // Reuse existing key if available to prevent memory accumulation
+  if (!contextKey) {
+    contextKey = {};
+  }
   contextStorage.set(contextKey, { ...context });
 
   // Also maintain legacy fallback storage
   clientContext = { ...context };
 
   // Clear failed context cache when new context is set
-  failedContextCache.clear();
+  clearFailedContextCache();
 }
 
 /**
@@ -47,7 +42,17 @@ export function clearClientContext(): void {
     contextKey = null;
   }
   clientContext = null;
-  failedContextCache.clear();
+  clearFailedContextCache();
+}
+
+/**
+ * Clears all failed context cache timers
+ */
+function clearFailedContextCache(): void {
+  for (const [key, timerId] of failedContextCache.entries()) {
+    clearTimeout(timerId);
+    failedContextCache.delete(key);
+  }
 }
 
 /**
@@ -62,6 +67,13 @@ export function getClientContext(): Record<string, unknown> | null {
 
   // Fallback to legacy storage
   return clientContext;
+}
+
+/**
+ * Gets the current context key for debugging/testing purposes
+ */
+export function getContextKey(): object | null {
+  return contextKey;
 }
 
 /**
@@ -95,12 +107,17 @@ export function getContextApiKey(): string | undefined {
       }
     } catch (error) {
       // Cache this failure to avoid repeated exceptions
-      failedContextCache.add(getApiKeyIdentifier);
+      // Clear existing timer if present to prevent duplicates
+      const existingTimer = failedContextCache.get(getApiKeyIdentifier);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
 
-      // Remove from cache after TTL
-      setTimeout(() => {
+      const timerId = setTimeout(() => {
         failedContextCache.delete(getApiKeyIdentifier);
       }, FAILED_CONTEXT_CACHE_TTL);
+
+      failedContextCache.set(getApiKeyIdentifier, timerId);
 
       // Ignore context getter errors; fall back to other strategies
     }
