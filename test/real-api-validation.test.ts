@@ -17,7 +17,7 @@ const SKIP_INTEGRATION =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
-  let performanceMonitor: any;
+  let performanceMonitor: ReturnType<typeof PerformanceMonitor.getInstance>;
 
   beforeAll(() => {
     performanceMonitor = PerformanceMonitor.getInstance();
@@ -32,7 +32,7 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
     it('should validate against real company attributes', async () => {
       // Pre-populate cache with real attributes
       const attributes = await SchemaPreValidator.getAttributes(
-        'companies' as any
+        'companies' as 'companies'
       );
 
       // Valid data that matches real schema
@@ -43,7 +43,7 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       };
 
       const validation = await SchemaPreValidator.validateRecordData(
-        'companies' as any,
+        'companies' as 'companies',
         validData
       );
       expect(validation.isValid).toBe(true);
@@ -58,7 +58,7 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
       };
 
       const validation = await SchemaPreValidator.validateRecordData(
-        'companies' as any,
+        'companies' as 'companies',
         invalidData
       );
       expect(validation.isValid).toBe(false);
@@ -117,7 +117,7 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
 
       for (const testCase of testCases) {
         const path = ResourceMapper.getResourcePath(
-          testCase.type as any,
+          testCase.type as string,
           testCase.id
         );
         expect(path).toBe(testCase.expected);
@@ -126,7 +126,7 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
 
     it('should handle custom object types correctly', () => {
       const customType = 'custom_crm_object';
-      const path = ResourceMapper.getResourcePath(customType as any, 'xyz');
+      const path = ResourceMapper.getResourcePath(customType as string, 'xyz');
       expect(path).toBe('/objects/custom_crm_object/xyz');
       expect(path).not.toContain('/objects/objects/');
     });
@@ -245,7 +245,7 @@ describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
 
       // Validate fields against real attributes
       const fieldValidation = await SchemaPreValidator.validateRecordData(
-        'companies' as any,
+        'companies' as 'companies',
         input.data
       );
       expect(fieldValidation.isValid).toBe(true);

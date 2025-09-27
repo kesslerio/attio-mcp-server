@@ -43,7 +43,8 @@ RULE: Path aliases over relative imports | WHEN: Editing any file | DO: Use `@/`
 **CI COMPREHENSIVE**: Full validation suite with branch protection
 
 RULE: Pre-commit fast feedback | WHEN: Committing | DO: Husky runs `npm run verify:staged` (prettier + eslint --fix on staged files) | ELSE: Commit blocked
-RULE: Pre-push safety check | WHEN: Pushing | DO: TypeScript validation + fast tests (generic pipeline; bypass with `SKIP_PREPUSH=1` for emergencies) | ELSE: Push blocked
+RULE: Pre-push safety check | WHEN: Pushing code | DO: TypeScript validation + fast tests (bypass with `SKIP_PREPUSH=1` for emergencies) | ELSE: Push blocked
+RULE: Skip tests for deletions | WHEN: Branch deletion pushes | DO: Bypass pre-push validation | ELSE: Unnecessary test execution
 RULE: CI full validation | WHEN: PR created | DO: Complete test suite + build + lint with ESLint ≤1030 warnings | ELSE: PR blocked
 **🚨 NEVER BYPASS RULE**: NEVER use `--no-verify` to bypass hooks except for genuine emergencies | WHEN: Errors occur | DO: Fix the errors, not bypass the check | ELSE: CI FAILURE and broken builds
 
@@ -176,6 +177,7 @@ PR: `gh pr create -R kesslerio/attio-mcp-server -t "Type: Description" -b "Detai
 RULE: One feature per PR | WHEN: Creating PR | DO: Keep focused and small | ELSE: Review rejection
 RULE: PR target enforcement | WHEN: Creating any PR | DO: Target kesslerio/attio-mcp-server | ELSE: Wrong repository targeting
 RULE: Never mention hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include "cc hmk" or any hmk mention | ELSE: Unwanted notifications
+RULE: Delete branch after merge | WHEN: PR merged | DO: Delete feature branch immediately via GitHub UI or `git push origin --delete branch-name` | ELSE: Repository clutter
 
 ### ISSUE WORKFLOW [MANDATORY CHECKLIST]
 
@@ -188,6 +190,7 @@ RULE: Never mention hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include
 7. `git commit -m "Type: Description #issue-num"` - Reference issue
 8. `git push -u origin HEAD` - Push branch
 9. `gh pr create -R kesslerio/attio-mcp-server` - Create PR
+10. **After merge**: Delete branch via GitHub UI or `git push origin --delete branch-name`
 
 ### ISSUE CREATION
 

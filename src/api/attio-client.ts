@@ -1,13 +1,10 @@
 /**
  * Attio API client and related utilities
  */
-import axios, {
-  AxiosInstance,
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from 'axios';
-import { debug, error, OperationType } from '../utils/logger.js';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+import { debug, error, OperationType } from '@/utils/logger.js';
+import { getContextApiKey, validateApiKey } from './client-context.js';
+import { configureStandardInterceptors } from './client-interceptors.js';
 import {
   AttioAxiosError,
   AttioAttributeSchema,
@@ -29,6 +26,36 @@ export const __MODULE_PATH__ = MODULE_FILE;
 
 export type AttioClient = AxiosInstance;
 
+/**
+ * Validates and throws standardized error for API key issues
+ * @param apiKey - The API key to validate
+ * @param source - Source of the API key for error context
+ * @throws {Error} With standardized error message for invalid API keys
+ */
+function validateAndThrowForApiKey(
+  apiKey: string | undefined | null,
+  source: string = 'provided'
+): asserts apiKey is string {
+  if (!apiKey || typeof apiKey !== 'string') {
+    throw new Error(
+      `Invalid API key: API key must be a non-empty string (source: ${source})`
+    );
+  }
+
+  if (!validateApiKey(apiKey)) {
+    throw new Error(
+      `Invalid API key format: API key contains invalid characters or whitespace (source: ${source})`
+    );
+  }
+
+  // Basic length validation - Attio API keys should be a reasonable length
+  if (apiKey.length < 10) {
+    throw new Error(
+      `Invalid API key: API key appears to be too short (source: ${source})`
+    );
+  }
+}
+
 // Global API client instance
 let apiInstance: AxiosInstance | null = null;
 
@@ -41,17 +68,19 @@ export function buildAttioClient(opts?: {
   baseURL?: string;
   timeoutMs?: number;
 }): AttioClient {
-  const apiKey = opts?.apiKey ?? process.env.ATTIO_API_KEY ?? '';
+  const apiKey =
+    opts?.apiKey ?? process.env.ATTIO_API_KEY ?? getContextApiKey() ?? '';
   const baseURL =
     opts?.baseURL ?? process.env.ATTIO_BASE_URL ?? 'https://api.attio.com/v2';
   const timeout = opts?.timeoutMs ?? 30000;
 
-  if (!apiKey) {
-    // Hard fail so E2E points to the real cause
-    throw new Error(
-      'ATTIO_API_KEY is missing; cannot build authenticated Attio client.'
-    );
-  }
+  // Use standardized validation
+  const apiKeySource = opts?.apiKey
+    ? 'opts parameter'
+    : process.env.ATTIO_API_KEY
+      ? 'environment variable'
+      : 'context configuration';
+  validateAndThrowForApiKey(apiKey, apiKeySource);
 
   const client = axios.create({ baseURL, timeout });
 
@@ -92,15 +121,8 @@ export function buildAttioClient(opts?: {
  * @returns Configured Axios instance
  */
 export function createAttioClient(apiKey: string): AxiosInstance {
-  // Validate API key format and presence
-  if (!apiKey || typeof apiKey !== 'string') {
-    throw new Error('Invalid API key: API key must be a non-empty string');
-  }
-
-  // Basic format validation - Attio API keys should be a reasonable length
-  if (apiKey.length < 10) {
-    throw new Error('Invalid API key: API key appears to be too short');
-  }
+  // Use standardized validation
+  validateAndThrowForApiKey(apiKey, 'parameter');
 
   // Log client initialization for debugging (without exposing sensitive data)
   debug(
@@ -139,90 +161,21 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     validateStatus: (s) => s >= 200 && s < 300, // don't swallow 4xx/5xx
   });
 
-  // TEMP DIAGNOSTICS (E2E only): show final URL + top-level shape
-  if (process.env.E2E_MODE === 'true') {
-    client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-      const redacted = { ...(config.headers || {}) };
-      if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
-      debug('attio-client', 'Request sent', {
-        baseURL: config.baseURL,
-        url: config.url,
-        method: config.method,
-        headers: redacted,
-      });
-      return config;
-    });
-    client.interceptors.response.use(
-      (res: AxiosResponse) => {
-        debug('attio-client', 'Response received', {
-          status: res.status,
-          url: res.config?.url,
-          keys:
-            res?.data && typeof res.data === 'object'
-              ? Object.keys(res.data)
-              : null,
-          rawType: typeof res.data,
-        });
-        return res;
-      },
-      (err: AxiosError) => {
-        const r = err?.response;
-        error(
-          'attio-client',
-          'HTTP request failed',
-          err as Error,
-          {
-            url: r?.config?.url,
-            status: r?.status,
-            method: r?.config?.method,
-          },
-          'http-request',
-          OperationType.API_CALL
-        );
-        return Promise.reject(err);
-      }
-    );
-  }
+  // Configure interceptors using the centralized module
+  const isE2EMode = process.env.E2E_MODE === 'true';
+  const interceptorPrefix = isE2EMode ? 'E2E' : '';
 
-  // Add unconditional diagnostics and passthrough error handling
-  debug('attio-client', 'Default client baseURL configured', { baseURL });
-
-  client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const redacted = { ...(config.headers || {}) };
-    if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
-    debug('attio-client', 'Request interceptor', {
-      baseURL: config.baseURL,
-      url: config.url,
-      method: config.method,
-      headers: redacted,
-    });
-    return config;
+  debug('attio-client', 'Configuring client interceptors', {
+    baseURL,
+    isE2EMode,
+    prefix: interceptorPrefix,
   });
 
-  client.interceptors.response.use(
-    (res: AxiosResponse) => {
-      debug('attio-client', 'Response interceptor', {
-        status: res.status,
-        url: res.config?.url,
-        topKeys:
-          res?.data && typeof res.data === 'object'
-            ? Object.keys(res.data)
-            : null,
-      });
-      return res;
-    },
-    (err: AxiosError) => {
-      const r = err?.response;
-      error('attio-client', 'HTTP response error', err as Error, {
-        url: r?.config?.url,
-        method: r?.config?.method,
-        status: r?.status,
-        serverData: r?.data,
-        requestPayload: r?.config?.data,
-      });
-      return Promise.reject(err); // PRESERVE axios error (don't wrap)
-    }
-  );
+  configureStandardInterceptors(client, {
+    prefix: interceptorPrefix,
+    enableDiagnostics: true,
+    enableErrorHandling: true,
+  });
 
   return client;
 }
@@ -360,10 +313,11 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     debug('AttioClient', 'Creating raw E2E client with http adapter');
 
     // Create a fresh client instance with no interceptors for E2E
-    const apiKey = process.env.ATTIO_API_KEY;
-    if (!apiKey) {
-      throw new Error('ATTIO_API_KEY required for E2E mode');
-    }
+    const apiKey = process.env.ATTIO_API_KEY || getContextApiKey();
+    const apiKeySource = process.env.ATTIO_API_KEY
+      ? 'environment variable'
+      : 'context configuration';
+    validateAndThrowForApiKey(apiKey, `${apiKeySource} (E2E mode)`);
 
     const baseURL = (
       process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
@@ -390,45 +344,16 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
       validateStatus: (s) => s >= 200 && s < 300, // don't swallow 4xx/5xx
     });
 
-    // Add diagnostics and passthrough error handling
-    debug('attio-client', 'E2E RAW client baseURL configured', { baseURL });
-
-    rawClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-      const redacted = { ...(config.headers || {}) };
-      if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
-      debug('attio-client', 'E2E Request sent', {
-        baseURL: config.baseURL,
-        url: config.url,
-        method: config.method,
-        headers: redacted,
-      });
-      return config;
+    // Configure E2E interceptors using centralized module
+    debug('attio-client', 'Configuring E2E raw client interceptors', {
+      baseURL,
     });
 
-    rawClient.interceptors.response.use(
-      (res: AxiosResponse) => {
-        debug('attio-client', 'E2E Response received', {
-          status: res.status,
-          url: res.config?.url,
-          topKeys:
-            res?.data && typeof res.data === 'object'
-              ? Object.keys(res.data)
-              : null,
-        });
-        return res;
-      },
-      (err: AxiosError) => {
-        const r = err?.response;
-        error('attio-client', 'E2E HTTP error', err as Error, {
-          url: r?.config?.url,
-          method: r?.config?.method,
-          status: r?.status,
-          serverData: r?.data,
-          requestPayload: r?.config?.data,
-        });
-        return Promise.reject(err); // PRESERVE axios error (don't wrap)
-      }
-    );
+    configureStandardInterceptors(rawClient, {
+      prefix: 'E2E-RAW',
+      enableDiagnostics: true,
+      enableErrorHandling: true,
+    });
 
     debug('AttioClient', 'Returning E2E raw client');
     return rawClient;
@@ -436,20 +361,32 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
 
   if (!apiInstance) {
     // Fallback: try to initialize from environment variable
-    const apiKey = process.env.ATTIO_API_KEY;
-    if (apiKey) {
-      debug('attio-client', 'Creating default client (auto-init from env)');
+    const apiKey = process.env.ATTIO_API_KEY || getContextApiKey();
+    const apiKeySource = process.env.ATTIO_API_KEY
+      ? 'environment variable'
+      : 'context configuration';
+
+    try {
+      validateAndThrowForApiKey(apiKey, apiKeySource);
       debug(
         'attio-client',
-        'API client not initialized, auto-initializing from environment variable',
+        `Creating default client (auto-init from ${apiKeySource})`
+      );
+      debug(
+        'attio-client',
+        `API client not initialized, auto-initializing from ${apiKeySource}`,
         undefined,
         'initialization',
         OperationType.SYSTEM
       );
       apiInstance = createAttioClient(apiKey);
-    } else {
+    } catch (validationError) {
+      const errorMessage =
+        validationError instanceof Error
+          ? validationError.message
+          : String(validationError);
       throw new Error(
-        'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'
+        `API client not initialized and no valid API key available. ${errorMessage} Call initializeAttioClient first or set ATTIO_API_KEY environment variable.`
       );
     }
   } else {
