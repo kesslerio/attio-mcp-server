@@ -47,9 +47,9 @@ export interface TestMockRequest {
 
 export function createMockApiClient(): MockApiClient {
   // in-memory fake DB for lists
-  const lists = new Map<string, any>();
+  const lists = new Map<string, Record<string, unknown>>();
 
-  const shapeList = (raw: any = {}) => {
+  const shapeList = (raw: Record<string, unknown> = {}) => {
     const list_id =
       typeof raw?.id?.list_id === 'string'
         ? raw.id.list_id
@@ -86,7 +86,7 @@ export function createMockApiClient(): MockApiClient {
         const listId = path.split('/v2/lists/')[1].split('?')[0];
         const found = lists.get(listId);
         if (!found) {
-          const err: any = new Error('Record not found');
+          const err = new Error('Record not found') as AxiosError;
           err.response = {
             status: 404,
             data: { error: { code: 'not_found' } },
@@ -128,7 +128,7 @@ export function createMockApiClient(): MockApiClient {
         const id = path.split('/')[2];
         const found = lists.get(id);
         if (!found) {
-          const err: any = new Error('Record not found');
+          const err = new Error('Record not found') as AxiosError;
           err.response = {
             status: 404,
             data: { error: { code: 'not_found' } },
@@ -296,7 +296,7 @@ export function createMockApiClient(): MockApiClient {
       return { status: 200, data: { data: {} } };
     }),
 
-    post: vi.fn(async (path: string, payload?: any) => {
+    post: vi.fn(async (path: string, payload?: Record<string, unknown>) => {
       // Handle company record creation
       if (path === '/v2/objects/companies/records') {
         const record_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -354,7 +354,7 @@ export function createMockApiClient(): MockApiClient {
       if (path.startsWith('/lists/')) {
         const id = path.split('/')[2];
         if (!lists.has(id)) {
-          const err: any = new Error('Record not found');
+          const err = new Error('Record not found') as AxiosError;
           err.response = {
             status: 404,
             data: { error: { code: 'not_found' } },

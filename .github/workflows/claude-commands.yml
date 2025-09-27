@@ -1,0 +1,122 @@
+name: Claude Commands
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, edited, assigned]
+
+concurrency:
+  group: claude-commands-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+
+jobs:
+  handle:
+    if: |
+      (
+        github.event_name == 'issue_comment' &&
+        contains(github.event.comment.body, '@claude')
+      ) || (
+        github.event_name == 'pull_request_review_comment' &&
+        contains(github.event.comment.body, '@claude')
+      ) || (
+        github.event_name == 'issues' && (
+          contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Classify command
+        id: classify
+        run: |
+          node scripts/workflows/claude/parse-command.mjs > classify.json
+          cat classify.json
+          should_run=$(jq -r '.shouldRun // false' classify.json)
+          command_type=$(jq -r '.command.type // ""' classify.json)
+          is_maintainer=$(jq -r '.isMaintainer // false' classify.json)
+          issue=$(jq -r '.issue // ""' classify.json)
+          is_pr=$(jq -r '.isPR // false' classify.json)
+          actor=$(jq -r '.actor // ""' classify.json)
+          association=$(jq -r '.association // ""' classify.json)
+          echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
+          echo "command_type=$command_type" >> "$GITHUB_OUTPUT"
+          echo "is_maintainer=$is_maintainer" >> "$GITHUB_OUTPUT"
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+          echo "is_pr=$is_pr" >> "$GITHUB_OUTPUT"
+          echo "actor=$actor" >> "$GITHUB_OUTPUT"
+          echo "association=$association" >> "$GITHUB_OUTPUT"
+        env:
+          CLAUDE_TRIGGER_PHRASE: '@claude'
+
+      - name: Skip non-command events
+        if: steps.classify.outputs.should_run != 'true'
+        run: echo 'No @claude command detected.'
+
+      - name: Skip review commands
+        if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.command_type == 'review'
+        run: echo 'Review command detected; handled by review workflow.'
+
+      - name: Enforce maintainer access
+        if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.command_type != 'review'
+        run: |
+          if [ "${{ steps.classify.outputs.is_maintainer }}" != "true" ]; then
+            echo '::notice::Only maintainers may trigger Claude automation.'
+            exit 1
+          fi
+
+      - name: Checkout repository
+        if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Command Handler
+        if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          track_progress: true
+          claude_args: >-
+            --model claude-sonnet-4-20250514
+            --max-turns 32
+            --allowedTools "Read,Edit,Write,Bash(git status),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git switch:*),Bash(git diff:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(npm run *),Bash(npm test),Bash(npm run test:*),Bash(npm run build),Bash(npm run lint:*),Bash(node *),Bash(npx *),Bash(rg *),Bash(fd *)"
+            --output-format stream-json
+          prompt: |
+            You are Claude acting via GitHub Actions for the Attio MCP repo.
+
+            ## Responsibilities
+            1. Respond to maintainer commands in PR or issue threads (non-review use cases).
+            2. Implement requested code changes when asked, using repo standards (see CLAUDE.md).
+            3. When pushing commits:
+               - Use conventional message format `Type: Subject #issue`.
+               - Run lint/tests when feasible; if skipped, explain why in the comment.
+            4. Prefer small, focused commits; avoid unrelated refactors unless instructed.
+
+            ## Constraints
+            - Work only within the repository checkout.
+            - Never expose secrets or tokens.
+            - Ask for clarification if the command lacks sufficient detail.
+            - Respect Single Responsibility Principle; keep changes scoped.
+
+            ## Reply Format
+            - Provide a concise status update.
+            - Include tests run (or skipped with rationale).
+            - If changes were pushed or a PR created, list the branch/PR URL.
+
+            Follow the maintainer's instruction from the triggering comment.
+
+      - name: Summarize skip
+        if: steps.classify.outputs.should_run != 'true'
+        run: echo 'Workflow exited without invoking Claude.'
