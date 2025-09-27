@@ -95,6 +95,13 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Legacy Tools**: Available via `DISABLE_UNIVERSAL_TOOLS=true` environment variable (deprecated)
 - **Lists API**: Fully functional with complete CRUD operations (contrary to some outdated documentation)
 
+### 🤝 **OpenAI MCP Compatibility**
+
+- **Search + Fetch Tools**: Exposes `search` and `fetch` endpoints required by OpenAI's MCP clients while internally reusing the universal Attio services (no duplicate logic).
+- **Record Identifier Format**: `search` returns IDs shaped as `<resource_type>:<record_id>` (e.g. `companies:company-123`). Pass that string directly to `fetch`.
+- **Result Payloads**: Both tools respond with OpenAI's expected JSON structure embedded in a single MCP text item so ChatGPT connectors can ingest responses without transformation.
+- **Full Tool Surface**: ChatGPT still sees the complete universal tool catalogue; use environment-based capability filters if you need to limit access to only the OpenAI wrappers.
+
 ### **Performance Considerations**
 
 - **Batch Operations**: Optimized with chunking, rate limiting, and error recovery
