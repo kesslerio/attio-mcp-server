@@ -61,9 +61,7 @@ if (missingVars.length > 0) {
   // Log API key metadata without exposing the raw value
   const apiKey = process.env.ATTIO_API_KEY;
   if (apiKey) {
-    console.error(
-      `[E2E Setup] API key detected (length: ${apiKey.length}, value redacted)`
-    );
+    console.error('[E2E Setup] API key detected (value redacted)');
   }
 }
 

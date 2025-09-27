@@ -54,9 +54,9 @@ function validateEnvironment(): void {
   }
 
   // Log loaded API key (redacted)
-  const apiKey = process.env.ATTIO_API_KEY!;
-  const lengthInfo = `length: ${apiKey.length}`;
-  console.log(`🔑 API key loaded (${lengthInfo}, value redacted)`);
+  if (process.env.ATTIO_API_KEY) {
+    console.log('🔑 API key loaded (value redacted)');
+  }
 }
 
 /**
