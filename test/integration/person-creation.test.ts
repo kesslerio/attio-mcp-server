@@ -3,11 +3,19 @@
  * Tests the complete flow including field formatting and API calls
  * Addresses issues #407, #408, #409
  */
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  afterEach,
+  type MockedObject,
+} from 'vitest';
 import { createPerson } from '../../src/objects/people-write.js';
 import { getAttioClient } from '../../src/api/attio-client.js';
 import { clearAttributeCache } from '../../src/api/attribute-types.js';
-import axios from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 
 // Mock the Attio client
 vi.mock('../../src/api/attio-client.js', () => ({
@@ -81,7 +89,7 @@ vi.mock('../../src/api/attribute-types.js', async () => {
 });
 
 describe('Person Creation Integration', () => {
-  let mockAxiosInstance: any;
+  let mockAxiosInstance: MockedObject<AxiosInstance>;
 
   beforeEach(() => {
     vi.clearAllMocks();

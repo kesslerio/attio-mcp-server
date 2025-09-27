@@ -21,7 +21,7 @@ const TEST_COMPANY_PREFIX = 'ValidationTest_';
 const generateUniqueName = () =>
   `${TEST_COMPANY_PREFIX}${Math.floor(Math.random() * 100000)}`;
 
-async function createTestCompany(attributes: Record<string, any>) {
+async function createTestCompany(attributes: Record<string, unknown>) {
   const companyData = { name: generateUniqueName(), ...attributes };
   const api = getAttioClient();
   const response = await api.post(
