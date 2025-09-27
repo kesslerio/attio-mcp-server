@@ -340,7 +340,8 @@ export class CompanyValidator {
       typeof attributes.linkedin_url === 'string'
     ) {
       const url = ensureSafeUrl(attributes.linkedin_url, 'LinkedIn URL');
-      if (!url.hostname.includes('linkedin.com')) {
+      const allowedLinkedinHosts = ['linkedin.com', 'www.linkedin.com'];
+      if (!allowedLinkedinHosts.includes(url.hostname)) {
         throw new InvalidCompanyDataError(
           'LinkedIn URL must be a valid LinkedIn URL'
         );
