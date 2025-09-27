@@ -31,6 +31,26 @@ import { createScopedLogger } from '../../utils/logger.js';
 import { TypeCache } from './type_cache.js';
 import { CachedTypeInfo } from './types.js';
 
+const SAFE_URL_PROTOCOLS = new Set(['http:', 'https:']);
+
+function ensureSafeUrl(value: string, fieldLabel: string): URL {
+  let parsed: URL;
+
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new InvalidCompanyDataError(`${fieldLabel} must be a valid URL`);
+  }
+
+  if (!SAFE_URL_PROTOCOLS.has(parsed.protocol)) {
+    throw new InvalidCompanyDataError(
+      `${fieldLabel} must use http or https protocol`
+    );
+  }
+
+  return parsed;
+}
+
 export class CompanyValidator {
   /**
    * Process all attributes in an object, converting values as needed
@@ -190,11 +210,7 @@ export class CompanyValidator {
       processedValue &&
       typeof processedValue === 'string'
     ) {
-      try {
-        new URL(processedValue);
-      } catch {
-        throw new InvalidCompanyDataError('Website must be a valid URL');
-      }
+      ensureSafeUrl(processedValue, 'Website');
     }
 
     if (
@@ -202,15 +218,11 @@ export class CompanyValidator {
       processedValue &&
       typeof processedValue === 'string'
     ) {
-      try {
-        const url = new URL(processedValue);
-        if (!url.hostname.includes('linkedin.com')) {
-          throw new InvalidCompanyDataError(
-            'LinkedIn URL must be a valid LinkedIn URL'
-          );
-        }
-      } catch {
-        throw new InvalidCompanyDataError('LinkedIn URL must be a valid URL');
+      const url = ensureSafeUrl(processedValue, 'LinkedIn URL');
+      if (!url.hostname.includes('linkedin.com')) {
+        throw new InvalidCompanyDataError(
+          'LinkedIn URL must be a valid LinkedIn URL'
+        );
       }
     }
 
@@ -320,26 +332,18 @@ export class CompanyValidator {
     }
 
     if (attributes.website && typeof attributes.website === 'string') {
-      try {
-        new URL(attributes.website);
-      } catch {
-        throw new InvalidCompanyDataError('Website must be a valid URL');
-      }
+      ensureSafeUrl(attributes.website, 'Website');
     }
 
     if (
       attributes.linkedin_url &&
       typeof attributes.linkedin_url === 'string'
     ) {
-      try {
-        const url = new URL(attributes.linkedin_url);
-        if (!url.hostname.includes('linkedin.com')) {
-          throw new InvalidCompanyDataError(
-            'LinkedIn URL must be a valid LinkedIn URL'
-          );
-        }
-      } catch {
-        throw new InvalidCompanyDataError('LinkedIn URL must be a valid URL');
+      const url = ensureSafeUrl(attributes.linkedin_url, 'LinkedIn URL');
+      if (!url.hostname.includes('linkedin.com')) {
+        throw new InvalidCompanyDataError(
+          'LinkedIn URL must be a valid LinkedIn URL'
+        );
       }
     }
 
