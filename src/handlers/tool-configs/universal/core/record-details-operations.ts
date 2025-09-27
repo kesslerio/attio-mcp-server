@@ -157,4 +157,8 @@ export const getRecordDetailsDefinition = {
   name: 'get-record-details',
   description: 'Get detailed information for any record type',
   inputSchema: getRecordDetailsSchema,
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
+  },
 };

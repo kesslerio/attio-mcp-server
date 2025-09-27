@@ -95,6 +95,13 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Legacy Tools**: Available via `DISABLE_UNIVERSAL_TOOLS=true` environment variable (deprecated)
 - **Lists API**: Fully functional with complete CRUD operations (contrary to some outdated documentation)
 
+### 🤝 **OpenAI MCP Compatibility**
+
+- **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
+- **Search Compatibility Surface**: The `search` and `fetch` tools remain available for OpenAI’s baseline MCP support. Set `ATTIO_MCP_TOOL_MODE=search` to expose only these read-only endpoints (plus health checks) when Developer Mode is unavailable.
+- **Default Behaviour**: With `ATTIO_MCP_TOOL_MODE` unset, the full universal tool set is exposed—matching Claude’s experience—while OpenAI users still see the compatibility wrappers.
+- **User Documentation**: See the “ChatGPT Developer Mode” docs (coming soon) for a walkthrough of the approval flows and recommended tool descriptions.
+
 ### **Performance Considerations**
 
 - **Batch Operations**: Optimized with chunking, rate limiting, and error recovery

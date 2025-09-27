@@ -4,6 +4,7 @@
 import { ResourceType } from '../../types/attio.js';
 import { ToolConfig } from '../tool-types.js';
 import { createScopedLogger } from '../../utils/logger.js';
+import { isToolAllowed } from '../../config/tool-mode.js';
 
 // Type for return values that can include special resource markers
 type ToolConfigResult = {
@@ -190,11 +191,14 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
           });
         }
 
-        return {
-          resourceType: resourceType as ResourceType,
-          toolConfig: config as ToolConfig,
-          toolType,
-        };
+        if (isToolAllowed(toolName)) {
+          return {
+            resourceType: resourceType as ResourceType,
+            toolConfig: config as ToolConfig,
+            toolType,
+          };
+        }
+        return undefined;
       }
     }
   }
@@ -208,11 +212,14 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
           log.info('Found universal tool', { toolName, toolType });
         }
 
-        return {
-          resourceType: 'UNIVERSAL' as const,
-          toolConfig: config as ToolConfig,
-          toolType,
-        };
+        if (isToolAllowed(toolName)) {
+          return {
+            resourceType: 'UNIVERSAL' as const,
+            toolConfig: config as ToolConfig,
+            toolType,
+          };
+        }
+        return undefined;
       }
     }
   }
@@ -226,11 +233,14 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
           log.info('Found general tool', { toolName, toolType });
         }
 
-        return {
-          resourceType: 'GENERAL' as const,
-          toolConfig: config as ToolConfig,
-          toolType,
-        };
+        if (isToolAllowed(toolName)) {
+          return {
+            resourceType: 'GENERAL' as const,
+            toolConfig: config as ToolConfig,
+            toolType,
+          };
+        }
+        return undefined;
       }
     }
   }

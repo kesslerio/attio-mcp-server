@@ -202,4 +202,8 @@ export const batchSearchToolDefinition = {
   description:
     'Perform batch search operations with multiple queries in parallel',
   inputSchema: batchSearchSchema,
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
+  },
 };

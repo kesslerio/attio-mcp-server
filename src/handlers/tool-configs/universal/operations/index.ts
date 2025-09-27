@@ -31,28 +31,48 @@ export const advancedOperationsToolDefinitions = {
     description:
       'Advanced search with complex filtering across all resource types',
     inputSchema: advancedSearchSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
   },
   'search-by-relationship': {
     name: 'search-by-relationship',
     description: 'Search records by their relationships to other entities',
     inputSchema: searchByRelationshipSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
   },
   'search-by-content': {
     name: 'search-by-content',
     description: 'Search within notes, activity, and interaction content',
     inputSchema: searchByContentSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
   },
   'search-by-timeframe': {
     name: 'search-by-timeframe',
     description:
       'Search records by temporal criteria (creation, modification, interaction dates)',
     inputSchema: searchByTimeframeSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
   },
   'batch-operations': {
     name: 'batch-operations',
     description:
       'Perform bulk operations (create, update, delete, get, search)',
     inputSchema: batchOperationsSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+    },
   },
 };
 

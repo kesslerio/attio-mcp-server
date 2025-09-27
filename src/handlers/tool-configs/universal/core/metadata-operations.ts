@@ -241,10 +241,18 @@ export const getAttributesDefinition = {
   description:
     'Get attributes for any resource type (companies, people, lists, records, tasks, deals, notes)',
   inputSchema: getAttributesSchema,
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
+  },
 };
 
 export const discoverAttributesDefinition = {
   name: 'discover-attributes',
   description: 'Discover available attributes for any resource type',
   inputSchema: discoverAttributesSchema,
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
+  },
 };

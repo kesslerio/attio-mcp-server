@@ -379,7 +379,9 @@ describe('Enhanced Company Validator', () => {
           linkedin_url:
             'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
         })
-      ).rejects.toThrow('LinkedIn URL must use http or https protocol');
+      ).rejects.toThrow(
+        'Invalid company data: LinkedIn URL must use http or https protocol'
+      );
     });
 
     it('should reject LinkedIn URLs with deceptive hostnames', async () => {

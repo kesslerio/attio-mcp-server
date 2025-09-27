@@ -13,6 +13,7 @@ import { ServerContext } from '../../server/createServer.js';
 import { setGlobalContext } from '../../api/lazy-client.js';
 
 // Import from modular components
+import { filterAllowedTools } from '../../config/tool-mode.js';
 import { TOOL_DEFINITIONS } from './registry.js';
 import { executeToolRequest } from './dispatcher.js';
 
@@ -154,8 +155,9 @@ export function registerToolHandlers(
       }
     }
 
+    const tools = filterAllowedTools(allTools);
     return {
-      tools: allTools,
+      tools,
     };
   });
 
