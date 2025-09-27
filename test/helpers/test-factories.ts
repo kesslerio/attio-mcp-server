@@ -10,9 +10,9 @@ export interface TestCompanyData {
     industry?: [{ value: string }];
     categories?: [{ value: string }];
     website?: [{ value: string }];
-    [key: string]: any;
+    [key: string]: [{ value: unknown }] | unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TestPersonData {
@@ -21,16 +21,16 @@ export interface TestPersonData {
     name?: [{ value: string }];
     email_addresses?: [{ value: string }];
     company?: [{ record_id: string }];
-    [key: string]: any;
+    [key: string]: [{ value: unknown }] | [{ record_id: string }] | unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TestListData {
   id?: { list_id: string };
   name?: string;
   parent_object?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
