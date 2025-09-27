@@ -29,16 +29,22 @@ if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
   }
 }
 
+// Define types for test globals
+interface TestGlobal {
+  setTestApiClient?: (client: unknown) => void;
+  clearTestApiClient?: () => void;
+}
+
 // Global test-specific client override mechanism
-let testSpecificClient: any = null;
+let testSpecificClient: unknown = null;
 
 // Utility function for tests to override the API client
-(globalThis as any).setTestApiClient = (client: any) => {
+(globalThis as TestGlobal).setTestApiClient = (client: unknown) => {
   testSpecificClient = client;
 };
 
 // Utility function for tests to clear overrides
-(globalThis as any).clearTestApiClient = () => {
+(globalThis as TestGlobal).clearTestApiClient = () => {
   testSpecificClient = null;
 };
 
@@ -78,7 +84,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people/search', async (importOriginal) => {
     const actual = await importOriginal();
     return {
-      ...(actual as any),
+      ...(actual as Record<string, unknown>),
       searchPeopleByEmail: vi.fn(async (email: string) => {
         // Mock behavior based on email for testing
         if (email === 'dup@example.com') {
@@ -106,7 +112,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people-write', async () => {
     const actual = await vi.importActual('../src/objects/people-write');
     return {
-      ...(actual as any),
+      ...(actual as Record<string, unknown>),
       searchPeopleByEmails: vi.fn(async (emails: string[]) => {
         // Mock batch email search for PersonValidator tests
         return emails.map((email) => ({
@@ -123,7 +129,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/companies/index', async (importOriginal) => {
     const actual = await importOriginal();
     return {
-      ...(actual as any),
+      ...(actual as Record<string, unknown>),
       searchCompanies: vi.fn(async () => []),
       searchCompaniesByName: vi.fn(async (name: string) => {
         // Mock behavior based on company name for testing
@@ -139,7 +145,9 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/search'
           );
-          return (actual as any).advancedSearchCompanies(...args);
+          return (actual as Record<string, unknown>).advancedSearchCompanies(
+            ...args
+          );
         }
         // Otherwise return mock
         return [];
@@ -151,7 +159,7 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
-          return (actual as any).getCompanyDetails(...args);
+          return (actual as Record<string, unknown>).getCompanyDetails(...args);
         }
         // Otherwise return mock
         return {};
@@ -162,7 +170,7 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
-          return (actual as any).createCompany(...args);
+          return (actual as Record<string, unknown>).createCompany(...args);
         }
         // Otherwise return mock
         return {};
@@ -173,7 +181,7 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
-          return (actual as any).updateCompany(...args);
+          return (actual as Record<string, unknown>).updateCompany(...args);
         }
         // Otherwise return mock
         return {};
@@ -185,9 +193,9 @@ if (process.env.E2E_MODE !== 'true') {
 
   // Global mock for companies search module - pass-through for validation
   vi.mock('../src/objects/companies/search', async (importOriginal) => {
-    const actual = await importOriginal<any>();
+    const actual = await importOriginal<Record<string, unknown>>();
     return {
-      ...(actual as any),
+      ...(actual as Record<string, unknown>),
       searchCompaniesByName: vi.fn(async (name: string) => {
         // Mock behavior based on company name for testing
         if (name === 'Test Company' || name === 'Existing Company') {
@@ -209,7 +217,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people/index', async (importOriginal) => {
     const actual = await importOriginal();
     return {
-      ...(actual as any),
+      ...(actual as Record<string, unknown>),
       searchPeople: vi.fn(async () => []),
       advancedSearchPeople: vi.fn(async (filters, options) => {
         // Mock that bypasses filter validation
@@ -245,7 +253,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   // Clear test-specific client override for clean test isolation
-  (globalThis as any).clearTestApiClient?.();
+  (globalThis as TestGlobal).clearTestApiClient?.();
 
   // Clear mock company state for clean test isolation
   clearMockCompanies();

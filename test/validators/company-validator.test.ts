@@ -16,6 +16,7 @@ vi.mock('../../src/api/attribute-types.js', () => ({
 describe('Company Validator', () => {
   // Reset mocks before each test
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
     CompanyValidator.clearFieldTypeCache();
   });
