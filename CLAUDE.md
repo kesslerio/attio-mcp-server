@@ -43,7 +43,8 @@ RULE: Path aliases over relative imports | WHEN: Editing any file | DO: Use `@/`
 **CI COMPREHENSIVE**: Full validation suite with branch protection
 
 RULE: Pre-commit fast feedback | WHEN: Committing | DO: Husky runs `npm run verify:staged` (prettier + eslint --fix on staged files) | ELSE: Commit blocked
-RULE: Pre-push safety check | WHEN: Pushing | DO: TypeScript validation + fast tests (generic pipeline; bypass with `SKIP_PREPUSH=1` for emergencies) | ELSE: Push blocked
+RULE: Pre-push safety check | WHEN: Pushing code | DO: TypeScript validation + fast tests (bypass with `SKIP_PREPUSH=1` for emergencies) | ELSE: Push blocked
+RULE: Skip tests for deletions | WHEN: Branch deletion pushes | DO: Bypass pre-push validation | ELSE: Unnecessary test execution
 RULE: CI full validation | WHEN: PR created | DO: Complete test suite + build + lint with ESLint ≤1030 warnings | ELSE: PR blocked
 **🚨 NEVER BYPASS RULE**: NEVER use `--no-verify` to bypass hooks except for genuine emergencies | WHEN: Errors occur | DO: Fix the errors, not bypass the check | ELSE: CI FAILURE and broken builds
 
