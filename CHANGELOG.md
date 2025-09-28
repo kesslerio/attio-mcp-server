@@ -9,6 +9,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Security
+
+### Deprecated
+
+## [1.0.0] - 2025-09-27
+
+**🎉 MAJOR MILESTONE RELEASE** - ChatGPT Developer Mode Integration & Universal Architecture
+
+This release represents a significant leap forward with 369 commits since v0.1.3, introducing ChatGPT compatibility, universal tools architecture, and comprehensive performance optimizations.
+
+### Added
+
+#### 🎯 ChatGPT Developer Mode Integration (#766) - OPENAI PLATFORM EXPANSION
+
+**Complete ChatGPT Pro/Plus/Business compatibility with intelligent approval flows and Smithery marketplace integration**
+
+- **OpenAI Developer Mode Support**:
+  - Full MCP safety annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) on all tools
+  - Automatic approval for read-only operations (search, get-details)
+  - Smart approval prompts for write operations (create, update, delete)
+  - Search-only compatibility mode via `ATTIO_MCP_TOOL_MODE=search` environment variable
+
+- **Smithery Marketplace Integration**:
+  - TypeScript runtime compatibility for seamless deployment
+  - OAuth configuration support for ChatGPT authentication
+  - Real-time playground testing with ngrok tunneling
+  - Comprehensive configuration schema with validation
+
+- **Cross-Platform Compatibility**:
+  - Unified tool experience across Claude Desktop and ChatGPT
+  - Consistent API behavior regardless of client platform
+  - Backward compatibility with existing Claude workflows
+  - Enhanced error messages tailored for approval flow context
+
+- **Production Impact**: Expands market reach to ChatGPT Pro/Plus users (~100M+ potential users) while maintaining Claude Desktop excellence
+
+#### 🏗️ Universal Tools Architecture Enhancements - PERFORMANCE & RELIABILITY
+
+**Mature implementation of the universal tools system with enterprise-grade optimizations and ChatGPT compatibility**
+
+- **Performance Optimizations**:
+  - 68% tool reduction achieved (40+ → 14 universal tools) with maintained functionality
+  - Enhanced routing efficiency with intelligent tool dispatch
+  - Memory optimization through streamlined tool definitions
+  - Reduced response latency through consolidated request handling
+
+- **Enhanced Error Handling & UX**:
+  - Comprehensive error categorization (USER_ERROR, SYSTEM_ERROR, API_ERROR)
+  - Field-specific guidance for common mistakes with actionable suggestions
+  - Intelligent validation with proactive field mapping assistance
+  - Context-aware error messages that guide users to solutions
+  - Enhanced deal field documentation and currency handling guidance
+
+- **Cross-Platform Reliability**:
+  - Universal tool compatibility across Claude Desktop and ChatGPT platforms
+  - Consistent response formats and error handling regardless of client
+  - Enhanced tool descriptions with MCP safety annotations for approval flows
+  - Backward compatibility maintained for all legacy tool names via intelligent routing
+
+#### 🛡️ Security Hardening & Vulnerability Remediation - PRODUCTION SECURITY
+
+**Comprehensive security audit and vulnerability remediation across the entire codebase**
+
+- **Dependency Security**:
+  - Updated form-data dependency from 4.0.1 to 4.0.4 for security patches
+  - Regular dependency vulnerability scanning with automated updates
+  - Prototype pollution vulnerability fixes in config-loader.ts (#751)
+  - Enhanced input validation to prevent injection attacks
+
+- **Code Security**:
+  - Comprehensive audit of insecure randomness usages (#754)
+  - LinkedIn validation security review findings addressed (#753)
+  - Company URL validation hardening implementation (#752)
+  - Semgrep security analysis integration with CI/CD pipeline
+
+- **Runtime Security**:
+  - Secure API key handling with no credentials logging
+  - Enhanced environment variable validation
+  - Secure configuration loading with proper sanitization
+  - Protection against unauthorized access patterns
+
 #### Comprehensive Bidirectional Relationship Support (#747) - ENHANCED CRM DATA INTEGRITY
 
 **Complete implementation of bidirectional company-person-deal relationships with automatic consistency validation**
@@ -288,6 +373,10 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.2.0...v1.0.0
+[0.2.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.3...v0.2.0
+[0.1.3]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/kesslerio/attio-mcp-server/releases/tag/v0.1.0
