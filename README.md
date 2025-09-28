@@ -7,13 +7,24 @@
 [![smithery badge](https://smithery.ai/badge/@kesslerio/attio-mcp-server)](https://smithery.ai/server/@kesslerio/attio-mcp-server)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kesslerio/attio-mcp-server)
 
-A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-native CRM. This server enables AI assistants like Claude to interact directly with your Attio data through natural language, providing seamless integration between conversational AI and your CRM workflows.
+A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.com/), providing **complete CRM surface coverage**. This server enables AI assistants like Claude and ChatGPT to interact directly with your entire Attio workspace through natural language—manage Deals, Tasks, Lists, People, Companies, Records, and Notes without falling back to raw API calls.
 
 ## 🎯 What is Attio MCP Server?
 
-Transform your CRM workflows with AI-powered automation. Instead of clicking through multiple screens, simply ask Claude to find prospects, update records, manage pipelines, and analyze your data using natural language commands.
+Transform your CRM workflows with AI-powered automation. Instead of clicking through multiple screens, simply ask Claude or ChatGPT to find prospects, update records, manage pipelines, and analyze your data using natural language commands.
+
+**🎉 v1.0.0 Milestone**: Complete Attio CRM surface coverage with full ChatGPT Developer Mode integration.
 
 > "Find all AI companies with 50+ employees that we haven't contacted in 30 days and add them to our Q1 outreach list"
+
+## 🚀 **NEW: ChatGPT Developer Mode Integration**
+
+**v1.0.0 introduces full ChatGPT compatibility!** ChatGPT Pro/Plus users can now access the entire Attio toolset through natural language via [Smithery marketplace](https://smithery.ai/server/@kesslerio/attio-mcp-server).
+
+- **🔐 Built-in Approval Flows**: MCP safety annotations auto-approve read operations, request approval for writes
+- **🌐 OAuth Integration**: Seamless authentication via `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
+- **💬 Natural Language CRM**: Manage your entire Attio workspace through conversational AI
+- **📖 Setup Guide**: See [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for complete configuration
 
 ## ✨ Core Features & Implementation Status
 
@@ -27,21 +38,19 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 
 ### 📊 **Feature Implementation Status**
 
-#### ✅ **Fully Implemented**
+#### ✅ **Complete CRM Surface Coverage**
 
 - **Companies**: Search, Create, Update, Delete, Advanced Search, Relationship Search
 - **People**: Search, Create, Update, Delete, Advanced Search, Relationship Search
+- **Deals**: Full CRUD operations with intelligent field mapping and stage validation
+- **Tasks**: Create, Update, Delete, Search with multi-assignee support
 - **Lists**: Full CRUD operations, filtering, advanced filtering, entry management
-- **Tasks**: Create, Update, Delete, Search with universal tools
-- **Records**: Universal CRUD operations across all resource types
 - **Notes**: Create and list operations for all record types
+- **Records**: Universal CRUD operations across all resource types
 - **Batch Operations**: Create, Update, Delete with chunking and error handling
-
-#### 🚧 **Partially Implemented**
-
-- **Content Search**: Basic implementation available, may not cover all content types
-- **Timeframe Filters**: Date range filtering implemented, some edge cases may exist
-- **Field Filtering**: Basic field selection available, may not support all attribute types
+- **Content Search**: Universal search capabilities across notes, tasks, and lists
+- **Relationship Navigation**: Bidirectional company↔person↔deal relationships
+- **Advanced Filtering**: Sophisticated query capabilities with intelligent field mapping
 
 ### 📊 **Company Management**
 
@@ -101,7 +110,7 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Search Compatibility Surface**: The `search` and `fetch` tools remain available for OpenAI’s baseline MCP support. Set `ATTIO_MCP_TOOL_MODE=search` to expose only these read-only endpoints (plus health checks) when Developer Mode is unavailable.
 - **Default Behaviour**: With `ATTIO_MCP_TOOL_MODE` unset, the full universal tool set is exposed—matching Claude’s experience—while OpenAI users still see the compatibility wrappers.
 - **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
-- **User Documentation**: See the “ChatGPT Developer Mode” docs (coming soon) for a walkthrough of the approval flows and recommended tool descriptions.
+- **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.
 
 ### **Performance Considerations**
 

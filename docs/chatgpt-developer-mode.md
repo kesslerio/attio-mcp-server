@@ -26,15 +26,45 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 ## 2. Enabling Developer Mode Access
 
+### Prerequisites for ChatGPT Integration
+
+**IMPORTANT**: ChatGPT Developer Mode requires deployment via **Smithery** for OAuth authentication. Direct server URLs are not supported.
+
+**New to Smithery?** Check out these helpful resources:
+
+- 📖 [Smithery Quick Start Guide](https://smithery.ai/docs/getting_started/quickstart_build)
+- 🛠️ [Our Smithery CLI Setup Guide](../deployment/smithery-cli-setup.md)
+- 🎮 [Live Demo: Smithery Playground](https://smithery.ai/server/@kesslerio/attio-mcp-server)
+
+### Setup Steps
+
 1. **Expose the full tool catalogue** (do _not_ set `ATTIO_MCP_TOOL_MODE`).
-2. Deploy the server (see the main README for deployment options).
-3. In ChatGPT:
+
+2. **Deploy the server** to Smithery (required for ChatGPT compatibility):
+
+   ```bash
+   # Development testing
+   npm run dev  # Opens Smithery Playground with ngrok tunnel
+
+   # Production deployment - already available at Smithery marketplace
+   ```
+
+3. **Configure ChatGPT**:
    - Open **Settings → Connectors → Advanced**.
    - Enable **Developer Mode**.
-   - Add the Attio MCP server URL.
-4. ChatGPT will automatically:
-   - Auto-approve tools with `readOnlyHint: true` (e.g. `search-records`, `get-record-details`).
-   - Prompt for approval on write tools (`create-record`, `update-record`) and destructive tools (`delete-record`).
+   - Add the **Attio MCP Server URL**: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
+     - This is the official ChatGPT endpoint with the required `/mcp` suffix
+     - Server marketplace page: https://smithery.ai/server/@kesslerio/attio-mcp-server
+   - **Do NOT use direct server URLs** - ChatGPT requires Smithery OAuth integration
+
+4. **OAuth Authentication**:
+   - ChatGPT will redirect to Smithery for OAuth authorization
+   - Grant permissions for the Attio MCP server
+   - Smithery handles token refresh and API key management automatically
+
+5. **Verification**:
+   - ChatGPT will automatically auto-approve tools with `readOnlyHint: true` (e.g. `search-records`, `get-record-details`)
+   - Prompt for approval on write tools (`create-record`, `update-record`) and destructive tools (`delete-record`)
 
 ### Approval messaging tips
 
@@ -78,12 +108,15 @@ Unset the variable (or set it to any value other than `search`) to restore the f
 
 ## 5. Troubleshooting
 
-| Symptom                                            | Likely Cause                                                                  | Fix                                                                |
-| -------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations |
-| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE=search`                                     | Unset the variable for full access                                 |
-| `search` returns no results                        | Ensure Attio API credentials are set and universal search works in Claude/CLI |
-| PR validation fails with missing Attio credentials | Expected if secrets are not available locally; see `README.md` testing notes  |
+| Symptom                                            | Likely Cause                                                                  | Fix                                                                                    |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations                     |
+| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE=search`                                     | Unset the variable for full access                                                     |
+| ChatGPT cannot connect to server                   | Using direct server URL instead of Smithery                                   | Use ChatGPT endpoint URL: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp` |
+| OAuth authentication fails                         | Smithery deployment not configured properly                                   | Ensure server is deployed via `npm run dev` or available at Smithery marketplace       |
+| Tools show "unauthorized" errors                   | API credentials not configured in Smithery                                    | Configure `ATTIO_API_KEY` and `ATTIO_WORKSPACE_ID` in Smithery dashboard               |
+| `search` returns no results                        | Ensure Attio API credentials are set and universal search works in Claude/CLI | Verify credentials in Smithery configuration                                           |
+| PR validation fails with missing Attio credentials | Expected if secrets are not available locally; see `README.md` testing notes  | Use Smithery for production deployments with proper credential management              |
 
 ---
 
