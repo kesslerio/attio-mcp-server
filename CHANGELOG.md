@@ -25,7 +25,7 @@ This milestone release transforms the MCP server from partial Attio coverage to 
 
 ### Added
 
-- **Complete CRM Resource Coverage** - Full support for all Attio resource types including lists and notes (previously limited to companies/people/tasks/deals)
+- **Complete CRM Resource Coverage** - Full support for all Attio resource types including deals, lists, people, companies, tasks and notes (previously limited to companies/people/lists)
 - **Advanced Relationship Navigation** - Walk complete pipeline hierarchies with bidirectional company↔person↔deal relationships (#747)
 - **Intelligent Field Mapping** - Smart field validation with synonym handling (value/value_in_cents, company_id/associated_company) and typo suggestions
 - **Multi-Assignee Task Support** (#684) - Enhanced task operations with richer metadata and assignment handling
@@ -58,7 +58,7 @@ This milestone release transforms the MCP server from partial Attio coverage to 
 - **Prototype Pollution** (#751) - Fixed config loader vulnerability
 - **Input Validation** (#752, #753) - Tightened LinkedIn and URL validation for secure data handling
 - **Credential Protection** (#42 series) - CodeQL-driven log scrubbing to protect Attio API credentials
-- **Injection Prevention** - Enhanced input validation across all Attio operations
+- **Injection Prevention** (#752, #753) - Enhanced input validation across all Attio operations
 
 ## [0.2.0] - 2025-08-04
 
