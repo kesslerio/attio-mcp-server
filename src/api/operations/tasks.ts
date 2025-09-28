@@ -2,7 +2,7 @@
  * Task operations for Attio
  */
 import { getLazyAttioClient } from '../../api/lazy-client.js';
-import * as AttioClientModule from '../../api/attio-client.js';
+import { getValidatedAttioClient } from '../../utils/client-resolver.js';
 import type { AxiosInstance } from 'axios';
 import {
   AttioTask,
@@ -505,29 +505,17 @@ export async function unlinkRecordFromTask(
  * In tests/offline, prefer the mocked getAttioClient if available.
  */
 function resolveAttioClient(): AxiosInstance {
-  const mod = AttioClientModule as typeof AttioClientModule & {
-    getAttioClient?: () => AxiosInstance;
-    createAttioClient?: (apiKey: string) => AxiosInstance;
-  };
-  // Always prefer explicit factory if present (enables Vitest mocks)
-  if (typeof mod.getAttioClient === 'function') {
-    return mod.getAttioClient();
-  }
   try {
-    return getLazyAttioClient();
-  } catch {
-    if (
-      typeof mod.createAttioClient === 'function' &&
-      process.env.ATTIO_API_KEY
-    ) {
-      return mod.createAttioClient(process.env.ATTIO_API_KEY);
+    // Use the unified client resolver which handles all factory methods
+    return getValidatedAttioClient();
+  } catch (error) {
+    // If resolver fails, try lazy client as fallback
+    try {
+      return getLazyAttioClient();
+    } catch {
+      throw new Error(
+        `Could not initialize Attio client: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
-    if (
-      typeof mod.buildAttioClient === 'function' &&
-      process.env.ATTIO_API_KEY
-    ) {
-      return mod.buildAttioClient({ apiKey: process.env.ATTIO_API_KEY });
-    }
-    throw new Error('Unable to resolve Attio API client');
   }
 }

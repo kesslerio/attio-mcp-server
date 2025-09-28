@@ -1,11 +1,12 @@
 /**
  * Type-safe client resolver for Attio API client factory methods
- * Provides reliable fallbacks and rich diagnostics when resolution fails.
+ * Updated to use unified createAttioClient interface with backward compatibility
  */
 
 import { AxiosInstance } from 'axios';
 import * as AttioClientModule from '../api/attio-client.js';
 import { getContextApiKey } from '../api/client-context.js';
+import { ClientConfig } from '../api/client-config.js';
 
 /**
  * Supported factory method signatures exposed by attio-client module
@@ -51,30 +52,47 @@ function assertAxiosInstance(
 }
 
 /**
- * Resolves an Attio client instance using the available factory methods.
- * Prioritises getAttioClient() → createAttioClient() → buildAttioClient().
+ * Resolves an Attio client instance using the unified interface.
+ * Prioritises createAttioClient(config) → createAttioClient(apiKey) → getAttioClient() → buildAttioClient().
  */
 export function resolveAttioClient(): AxiosInstance {
   const mod = AttioClientModule as AttioClientFactories;
   const resolvedApiKey = process.env.ATTIO_API_KEY || getContextApiKey();
 
+  // Try unified createAttioClient with config (new interface)
+  if (typeof mod.createAttioClient === 'function') {
+    try {
+      // First try with config object (new unified interface)
+      const config: ClientConfig = {};
+      const client = (
+        mod.createAttioClient as (config: ClientConfig) => AxiosInstance
+      )(config);
+      assertAxiosInstance(client, 'createAttioClient(config)');
+      return client;
+    } catch {
+      // If that fails and we have an API key, try legacy string signature
+      if (resolvedApiKey) {
+        try {
+          const client = (
+            mod.createAttioClient as (apiKey: string) => AxiosInstance
+          )(resolvedApiKey);
+          assertAxiosInstance(client, 'createAttioClient(apiKey)');
+          return client;
+        } catch {
+          // Continue to fallback methods
+        }
+      }
+    }
+  }
+
+  // Fallback to getAttioClient if createAttioClient fails
   if (typeof mod.getAttioClient === 'function') {
     const client = mod.getAttioClient();
     assertAxiosInstance(client, 'getAttioClient()');
     return client;
   }
 
-  if (typeof mod.createAttioClient === 'function') {
-    if (!resolvedApiKey) {
-      throw new Error(
-        'No available Attio client factory method found. Available methods: createAttioClient. Has API key: false'
-      );
-    }
-    const client = mod.createAttioClient(resolvedApiKey);
-    assertAxiosInstance(client, 'createAttioClient()');
-    return client;
-  }
-
+  // Last resort: buildAttioClient
   if (typeof mod.buildAttioClient === 'function') {
     if (!resolvedApiKey) {
       throw new Error(

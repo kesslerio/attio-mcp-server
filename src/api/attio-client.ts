@@ -1,17 +1,23 @@
 /**
  * Attio API client and related utilities
+ * Unified client factory with strategy pattern for different environments
  */
-import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { debug, error, OperationType } from '@/utils/logger.js';
 import { getContextApiKey, validateApiKey } from './client-context.js';
-import { configureStandardInterceptors } from './client-interceptors.js';
 import {
-  AttioAxiosError,
   AttioAttributeSchema,
   AttioSelectOption,
   AttioStatusOption,
-  isAttioErrorData,
 } from './types.js';
+import { configureStandardInterceptors } from './client-interceptors.js';
+import {
+  ClientConfig,
+  ClientMode,
+  EnvironmentModeHandler,
+} from './client-config.js';
+import { ClientStrategyFactory } from './client-strategies.js';
+import { ClientCache } from './client-cache.js';
 
 // Module identification for debugging (compatible with both ESM and CJS)
 const MODULE_FILE = 'attio-client';
@@ -56,11 +62,88 @@ function validateAndThrowForApiKey(
   }
 }
 
-// Global API client instance
+// LEGACY: Global API client instance - replaced by ClientCache
 let apiInstance: AxiosInstance | null = null;
 
 /**
- * Centralized authenticated Attio client builder
+ * BACKWARD COMPATIBILITY: Support old createAttioClient(apiKey) signature
+ *
+ * @param apiKey - The Attio API key (legacy signature)
+ * @returns Configured Axios instance
+ */
+export function createAttioClient(apiKey: string): AxiosInstance;
+/**
+ * UNIFIED CLIENT FACTORY: Support new createAttioClient(config) signature
+ *
+ * @param config - Client configuration options
+ * @returns Configured Axios instance
+ */
+export function createAttioClient(config?: ClientConfig): AxiosInstance;
+/**
+ * Implementation of overloaded createAttioClient function
+ */
+export function createAttioClient(
+  configOrApiKey: ClientConfig | string = {}
+): AxiosInstance {
+  // Handle legacy string API key parameter
+  if (typeof configOrApiKey === 'string') {
+    debug(
+      'attio-client',
+      'createAttioClient (LEGACY string signature) - redirecting to unified version'
+    );
+    return createLegacyAttioClient(configOrApiKey);
+  }
+
+  // Handle new config object parameter - this is the main implementation we defined above
+  const config = configOrApiKey as ClientConfig;
+
+  // Get API key from config, environment, or context
+  const apiKey =
+    config.apiKey ?? process.env.ATTIO_API_KEY ?? getContextApiKey() ?? '';
+
+  // Determine the source for better error messages
+  const apiKeySource = config.apiKey
+    ? 'config parameter'
+    : process.env.ATTIO_API_KEY
+      ? 'environment variable'
+      : 'context configuration';
+
+  // Validate API key using standardized validation
+  validateAndThrowForApiKey(apiKey, apiKeySource);
+
+  // Get environment-aware configuration
+  const environmentConfig = EnvironmentModeHandler.getClientConfig({
+    rawE2E: config.mode === ClientMode.E2E_RAW,
+  });
+
+  // Merge configurations: environment defaults < config parameter
+  const finalConfig: ClientConfig = {
+    ...environmentConfig,
+    ...config,
+    apiKey, // Always use the validated API key
+    interceptors: {
+      ...environmentConfig.interceptors,
+      ...config.interceptors,
+    },
+  };
+
+  debug('attio-client', 'Creating unified client', {
+    mode: finalConfig.mode,
+    hasApiKey: Boolean(apiKey),
+    apiKeySource,
+    bypassCache: finalConfig.bypassCache,
+    baseURL: finalConfig.baseURL,
+    timeout: finalConfig.timeout,
+  });
+
+  // Use strategy factory to create the appropriate client
+  return ClientStrategyFactory.createClient(finalConfig);
+}
+
+/**
+ * LEGACY: Centralized authenticated Attio client builder
+ *
+ * @deprecated Use createAttioClient() instead for unified interface
  * Guarantees proper Authorization header and fails fast if API key is missing
  */
 export function buildAttioClient(opts?: {
@@ -68,59 +151,38 @@ export function buildAttioClient(opts?: {
   baseURL?: string;
   timeoutMs?: number;
 }): AttioClient {
-  const apiKey =
-    opts?.apiKey ?? process.env.ATTIO_API_KEY ?? getContextApiKey() ?? '';
-  const baseURL =
-    opts?.baseURL ?? process.env.ATTIO_BASE_URL ?? 'https://api.attio.com/v2';
-  const timeout = opts?.timeoutMs ?? 30000;
+  // Convert legacy options to new config format
+  const config: ClientConfig = {
+    apiKey: opts?.apiKey,
+    baseURL: opts?.baseURL,
+    timeout: opts?.timeoutMs,
+    mode: ClientMode.PRODUCTION, // buildAttioClient was used for production
+  };
 
-  // Use standardized validation
-  const apiKeySource = opts?.apiKey
-    ? 'opts parameter'
-    : process.env.ATTIO_API_KEY
-      ? 'environment variable'
-      : 'context configuration';
-  validateAndThrowForApiKey(apiKey, apiKeySource);
-
-  const client = axios.create({ baseURL, timeout });
-
-  // IMPORTANT: Axios stores auth under headers.common
-  client.defaults.headers.common['Authorization'] = `Bearer ${apiKey}`;
-  client.defaults.headers.common['Accept'] = 'application/json';
-  client.defaults.headers.post['Content-Type'] = 'application/json';
-
-  // Response interceptor to attach serverData for error handling
-  client.interceptors.response.use(
-    (response: AxiosResponse) => response,
-    (error: AxiosError) => {
-      const data = error?.response?.data;
-      if (isAttioErrorData(data)) {
-        // Mirror serverData onto the error so wrappers can preserve it
-        const attioError = error as AttioAxiosError;
-        attioError.serverData = {
-          status_code: data.status_code ?? error.response?.status,
-          type: data.type,
-          code: data.code,
-          message: data.message,
-        };
-        return Promise.reject(attioError);
-      }
-      return Promise.reject(error);
+  debug(
+    'attio-client',
+    'buildAttioClient (LEGACY) - redirecting to unified createAttioClient',
+    {
+      hasApiKey: Boolean(opts?.apiKey),
+      baseURL: opts?.baseURL,
+      timeout: opts?.timeoutMs,
     }
   );
 
-  return client;
+  // Use the new unified client factory
+  return createAttioClient(config);
 }
 
 // Legacy getAttioClient exists below - it's already implemented
 
 /**
- * Creates and configures an Axios instance for the Attio API
+ * LEGACY: Creates and configures an Axios instance for the Attio API
  *
+ * @deprecated Use createAttioClient(config) instead for unified interface
  * @param apiKey - The Attio API key
  * @returns Configured Axios instance
  */
-export function createAttioClient(apiKey: string): AxiosInstance {
+export function createLegacyAttioClient(apiKey: string): AxiosInstance {
   // Use standardized validation
   validateAndThrowForApiKey(apiKey, 'parameter');
 
@@ -261,137 +323,88 @@ export async function getStatusOptions(
 /**
  * Initializes the global API client with the provided API key
  *
+ * @deprecated Use createAttioClient() with ClientCache instead
  * @param apiKey - The Attio API key
  */
 export function initializeAttioClient(apiKey: string): AxiosInstance {
-  apiInstance = createAttioClient(apiKey);
+  apiInstance = createAttioClient(apiKey); // This will use the legacy signature
+  ClientCache.setInstance(apiInstance);
   return apiInstance;
 }
 
 /**
- * Gets the global API client instance
+ * Gets the global API client instance - SIMPLIFIED using unified architecture
  *
- * @deprecated Use getLazyAttioClient from lazy-client.js instead for lazy initialization
+ * @deprecated Use createAttioClient() or getLazyAttioClient() instead
  * @returns The Axios instance for the Attio API
  * @throws If the API client hasn't been initialized and no API key is available
  */
 export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
-  const isE2E = process.env.E2E_MODE === 'true';
-  const useMocks =
-    process.env.USE_MOCK_DATA === 'true' || process.env.OFFLINE_MODE === 'true';
-  const forceReal = isE2E && !useMocks;
-
-  // Debug log the client mode selection
-  debug('attio-client', 'Client mode selection', {
-    isE2E,
-    useMocks,
-    forceReal,
+  debug('attio-client', 'getAttioClient (LEGACY) called', {
     rawE2E: opts?.rawE2E,
-    NODE_ENV: process.env.NODE_ENV,
+    hasCache: ClientCache.hasInstance(),
     E2E_MODE: process.env.E2E_MODE,
     USE_MOCK_DATA: process.env.USE_MOCK_DATA,
-    OFFLINE_MODE: process.env.OFFLINE_MODE,
-  });
-  debug('AttioClient', 'mode', {
-    isE2E,
-    useMocks,
-    forceReal,
-    rawE2E: opts?.rawE2E,
-    NODE_ENV: process.env.NODE_ENV,
   });
 
-  // If we need the raw E2E client, do NOT reuse any cached instance
-  if (forceReal || opts?.rawE2E) {
-    debug('AttioClient', 'E2E MODE: bypassing cache, creating fresh client');
-    apiInstance = null; // guarantee we don't return a stale client
-    debug('AttioClient', 'Creating raw E2E client', {
-      forceReal,
-      rawE2E: opts?.rawE2E,
-      isE2E,
-      useMocks,
-    });
-    debug('AttioClient', 'Creating raw E2E client with http adapter');
+  // Check if we should bypass cache and create fresh client
+  const shouldBypassCache =
+    EnvironmentModeHandler.shouldUseRealClient() || opts?.rawE2E;
 
-    // Create a fresh client instance with no interceptors for E2E
-    const apiKey = process.env.ATTIO_API_KEY || getContextApiKey();
-    const apiKeySource = process.env.ATTIO_API_KEY
-      ? 'environment variable'
-      : 'context configuration';
-    validateAndThrowForApiKey(apiKey, `${apiKeySource} (E2E mode)`);
+  if (shouldBypassCache) {
+    debug('attio-client', 'Bypassing cache - creating fresh client');
+    // Clear cache to ensure fresh client
+    ClientCache.clearInstance();
+    apiInstance = null;
 
-    const baseURL = (
-      process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
-    ).replace(/\/+$/, '');
+    // Determine mode based on rawE2E option
+    const mode = opts?.rawE2E
+      ? ClientMode.E2E_RAW
+      : EnvironmentModeHandler.determineMode();
 
-    const rawClient = axios.create({
-      baseURL,
-      timeout: 20000,
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      // do NOT transform the response; we want raw server JSON
-      transformResponse: [
-        (data) => {
-          try {
-            return JSON.parse(data);
-          } catch {
-            return data;
-          }
-        },
-      ],
-      validateStatus: (s) => s >= 200 && s < 300, // don't swallow 4xx/5xx
-    });
+    const config: ClientConfig = {
+      mode,
+      bypassCache: true,
+    };
 
-    // Configure E2E interceptors using centralized module
-    debug('attio-client', 'Configuring E2E raw client interceptors', {
-      baseURL,
-    });
-
-    configureStandardInterceptors(rawClient, {
-      prefix: 'E2E-RAW',
-      enableDiagnostics: true,
-      enableErrorHandling: true,
-    });
-
-    debug('AttioClient', 'Returning E2E raw client');
-    return rawClient;
+    const client = createAttioClient(config);
+    debug('attio-client', 'Returning fresh E2E client');
+    return client;
   }
 
-  if (!apiInstance) {
-    // Fallback: try to initialize from environment variable
-    const apiKey = process.env.ATTIO_API_KEY || getContextApiKey();
-    const apiKeySource = process.env.ATTIO_API_KEY
-      ? 'environment variable'
-      : 'context configuration';
-
-    try {
-      validateAndThrowForApiKey(apiKey, apiKeySource);
-      debug(
-        'attio-client',
-        `Creating default client (auto-init from ${apiKeySource})`
-      );
-      debug(
-        'attio-client',
-        `API client not initialized, auto-initializing from ${apiKeySource}`,
-        undefined,
-        'initialization',
-        OperationType.SYSTEM
-      );
-      apiInstance = createAttioClient(apiKey);
-    } catch (validationError) {
-      const errorMessage =
-        validationError instanceof Error
-          ? validationError.message
-          : String(validationError);
-      throw new Error(
-        `API client not initialized and no valid API key available. ${errorMessage} Call initializeAttioClient first or set ATTIO_API_KEY environment variable.`
-      );
-    }
-  } else {
-    debug('attio-client', 'Returning cached default client');
+  // Check cache first
+  const cachedClient = ClientCache.getInstance();
+  if (cachedClient) {
+    debug('attio-client', 'Returning cached client from ClientCache');
+    return cachedClient;
   }
 
-  return apiInstance;
+  // Check legacy cache
+  if (apiInstance) {
+    debug('attio-client', 'Returning cached client from legacy apiInstance');
+    return apiInstance;
+  }
+
+  // No cached client - create new one
+  debug('attio-client', 'No cached client found - creating new client');
+
+  try {
+    const config: ClientConfig = {}; // Use environment defaults
+    const client = createAttioClient(config);
+
+    // Cache the client in both new and legacy systems
+    ClientCache.setInstance(client);
+    apiInstance = client;
+
+    debug('attio-client', 'Created and cached new client');
+    return client;
+  } catch (validationError) {
+    const errorMessage =
+      validationError instanceof Error
+        ? validationError.message
+        : String(validationError);
+    throw new Error(
+      `API client not initialized and no valid API key available. ${errorMessage} Call initializeAttioClient first or set ATTIO_API_KEY environment variable.`
+    );
+  }
 }
