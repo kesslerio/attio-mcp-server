@@ -240,16 +240,28 @@ export const createRecordDefinition = {
   name: 'create-record',
   description: 'Create a new record of any supported type',
   inputSchema: createRecordSchema,
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+  },
 };
 
 export const updateRecordDefinition = {
   name: 'update-record',
   description: 'Update an existing record of any supported type',
   inputSchema: updateRecordSchema,
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+  },
 };
 
 export const deleteRecordDefinition = {
   name: 'delete-record',
   description: 'Delete a record of any supported type',
   inputSchema: deleteRecordSchema,
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+  },
 };

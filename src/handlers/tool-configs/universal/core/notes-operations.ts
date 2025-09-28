@@ -126,10 +126,18 @@ export const createNoteDefinition = {
   name: 'create-note',
   description: 'Create a note for any record type (companies, people, deals)',
   inputSchema: createNoteSchema,
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+  },
 };
 
 export const listNotesDefinition = {
   name: 'list-notes',
   description: 'Get notes for any record type (companies, people, deals)',
   inputSchema: listNotesSchema,
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
+  },
 };

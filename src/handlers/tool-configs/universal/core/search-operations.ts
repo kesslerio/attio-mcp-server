@@ -147,4 +147,8 @@ export const searchRecordsDefinition = {
   description:
     'Universal search across all resource types (companies, people, records, tasks)',
   inputSchema: searchRecordsSchema,
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
+  },
 };

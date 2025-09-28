@@ -22,6 +22,7 @@ import {
   batchSearchConfig,
   batchSearchToolDefinition,
 } from './batch-search.js';
+import { openAiToolConfigs, openAiToolDefinitions } from '../openai/index.js';
 
 /**
  * Simple no-auth health-check tool to support unauthenticated capability scanning
@@ -34,6 +35,10 @@ export const healthCheckToolDefinition = {
     type: 'object',
     properties: {},
     additionalProperties: true,
+  },
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
   },
 };
 
@@ -48,6 +53,10 @@ export const healthCheckAliasToolDefinition = {
     type: 'object',
     properties: {},
     additionalProperties: true,
+  },
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
   },
 };
 
@@ -120,6 +129,7 @@ export const universalToolConfigs = {
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   'batch-search': batchSearchConfig,
+  ...openAiToolConfigs,
 };
 
 /**
@@ -133,6 +143,7 @@ export const universalToolDefinitions = {
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   'batch-search': batchSearchToolDefinition,
+  ...openAiToolDefinitions,
 };
 
 /**

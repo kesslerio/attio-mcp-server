@@ -84,4 +84,8 @@ export const getDetailedInfoDefinition = {
   description:
     'Get specific types of detailed information (contact, business, social)',
   inputSchema: getDetailedInfoSchema,
+  annotations: {
+    readOnlyHint: true,
+    idempotentHint: true,
+  },
 };
