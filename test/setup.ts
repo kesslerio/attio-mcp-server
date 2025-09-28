@@ -69,10 +69,11 @@ vi.mock('../src/api/attio-client', async () => {
   };
 
   return {
-    // New API
-    buildAttioClient: vi.fn(() => getClientInstance()),
+    // Unified API
+    createAttioClient: vi.fn(() => getClientInstance()),
 
     // Legacy APIs kept for compatibility (return the same instance)
+    buildAttioClient: vi.fn(() => getClientInstance()),
     getAttioClient: vi.fn(() => getClientInstance()),
     initializeAttioClient: vi.fn(() => {}),
     isAttioClientInitialized: vi.fn(() => true),

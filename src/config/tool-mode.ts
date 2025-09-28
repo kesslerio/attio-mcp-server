@@ -8,12 +8,7 @@
 
 const SEARCH_ONLY_ENV_VALUE = 'search';
 
-const SEARCH_ONLY_TOOL_NAMES = new Set([
-  'search',
-  'fetch',
-  'aaa-health-check',
-  'health-check',
-]);
+const SEARCH_ONLY_TOOL_NAMES = new Set(['search', 'fetch', 'aaa-health-check']);
 
 /**
  * Returns true when the server should run in search-only compatibility mode.
