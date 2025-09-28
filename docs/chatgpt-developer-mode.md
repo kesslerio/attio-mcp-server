@@ -108,17 +108,6 @@ Unset the variable (or set it to any value other than `search`) to restore the f
 
 ## 5. Troubleshooting
 
-| Symptom                                            | Likely Cause                                                                  | Fix                                                                |
-| -------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations |
-| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE=search`                                     | Unset the variable for full access                                 |
-| `search` returns no results                        | Ensure Attio API credentials are set and universal search works in Claude/CLI |
-| PR validation fails with missing Attio credentials | Expected if secrets are not available locally; see `README.md` testing notes  |
-
----
-
-## 5. Troubleshooting
-
 | Symptom                                            | Likely Cause                                                                  | Fix                                                                                    |
 | -------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations                     |

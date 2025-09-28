@@ -19,143 +19,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2025-09-27
 
-**🎉 MAJOR MILESTONE RELEASE** - ChatGPT Developer Mode Integration & Universal Architecture
+🎉 **MAJOR RELEASE** - Complete Attio CRM Coverage + ChatGPT Integration
 
-This release represents a significant leap forward with 369 commits since v0.1.3, introducing ChatGPT compatibility, universal tools architecture, and comprehensive performance optimizations.
+This milestone release transforms the MCP server from partial Attio coverage to **complete CRM surface spanning**. Users can now manage their entire Attio workspace—Deals, Tasks, Lists, People, Companies, Records, and Notes—through natural language, without falling back to raw API calls.
 
 ### Added
 
-#### 🎯 ChatGPT Developer Mode Integration (#766) - OPENAI PLATFORM EXPANSION
-
-**Complete ChatGPT Pro/Plus/Business compatibility with intelligent approval flows and Smithery marketplace integration**
-
-- **OpenAI Developer Mode Support**:
-  - Full MCP safety annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) on all tools
-  - Automatic approval for read-only operations (search, get-details)
-  - Smart approval prompts for write operations (create, update, delete)
-  - Search-only compatibility mode via `ATTIO_MCP_TOOL_MODE=search` environment variable
-
-- **Smithery Marketplace Integration**:
-  - TypeScript runtime compatibility for seamless deployment
-  - OAuth configuration support for ChatGPT authentication
-  - Real-time playground testing with ngrok tunneling
-  - Comprehensive configuration schema with validation
-
-- **Cross-Platform Compatibility**:
-  - Unified tool experience across Claude Desktop and ChatGPT
-  - Consistent API behavior regardless of client platform
-  - Backward compatibility with existing Claude workflows
-  - Enhanced error messages tailored for approval flow context
-
-- **Production Impact**: Expands market reach to ChatGPT Pro/Plus users (~100M+ potential users) while maintaining Claude Desktop excellence
-
-#### 🏗️ Universal Tools Architecture Enhancements - PERFORMANCE & RELIABILITY
-
-**Mature implementation of the universal tools system with enterprise-grade optimizations and ChatGPT compatibility**
-
-- **Performance Optimizations**:
-  - 68% tool reduction achieved (40+ → 14 universal tools) with maintained functionality
-  - Enhanced routing efficiency with intelligent tool dispatch
-  - Memory optimization through streamlined tool definitions
-  - Reduced response latency through consolidated request handling
-
-- **Enhanced Error Handling & UX**:
-  - Comprehensive error categorization (USER_ERROR, SYSTEM_ERROR, API_ERROR)
-  - Field-specific guidance for common mistakes with actionable suggestions
-  - Intelligent validation with proactive field mapping assistance
-  - Context-aware error messages that guide users to solutions
-  - Enhanced deal field documentation and currency handling guidance
-
-- **Cross-Platform Reliability**:
-  - Universal tool compatibility across Claude Desktop and ChatGPT platforms
-  - Consistent response formats and error handling regardless of client
-  - Enhanced tool descriptions with MCP safety annotations for approval flows
-  - Backward compatibility maintained for all legacy tool names via intelligent routing
-
-#### 🛡️ Security Hardening & Vulnerability Remediation - PRODUCTION SECURITY
-
-**Comprehensive security audit and vulnerability remediation across the entire codebase**
-
-- **Dependency Security**:
-  - Updated form-data dependency from 4.0.1 to 4.0.4 for security patches
-  - Regular dependency vulnerability scanning with automated updates
-  - Prototype pollution vulnerability fixes in config-loader.ts (#751)
-  - Enhanced input validation to prevent injection attacks
-
-- **Code Security**:
-  - Comprehensive audit of insecure randomness usages (#754)
-  - LinkedIn validation security review findings addressed (#753)
-  - Company URL validation hardening implementation (#752)
-  - Semgrep security analysis integration with CI/CD pipeline
-
-- **Runtime Security**:
-  - Secure API key handling with no credentials logging
-  - Enhanced environment variable validation
-  - Secure configuration loading with proper sanitization
-  - Protection against unauthorized access patterns
-
-#### Comprehensive Bidirectional Relationship Support (#747) - ENHANCED CRM DATA INTEGRITY
-
-**Complete implementation of bidirectional company-person-deal relationships with automatic consistency validation**
-
-- **Enhanced Company-Person Relationships**:
-  - `link-person-to-company` now updates both company.team AND person.company fields bidirectionally
-  - `unlink-person-from-company` handles bidirectional unlinking with consistency repair
-  - Automatic detection and repair of relationship inconsistencies (orphaned relationships)
-  - Prevents conflicting company assignments with clear error messaging
-
-- **Deal Relationship Support**:
-  - Added `searchDealsByPerson` function for person-to-deals relationship queries
-  - Enhanced universal `search-by-relationship` tool with `PERSON_TO_DEALS` support
-  - Deal associations via universal `update-record` tool (associated_company, associated_people fields)
-
-- **Consistency Validation & Monitoring**:
-  - `get-person-companies` shows warnings for inconsistent relationships (⚠️ indicators)
-  - `get-company-team` validates bidirectional consistency with detailed warnings
-  - Real-time detection of orphaned relationships and data integrity issues
-
-- **Developer Experience**:
-  - 31 comprehensive unit tests covering all bidirectional scenarios and edge cases
-  - Enhanced tool descriptions reflect bidirectional behavior and consistency features
-  - Complete backward compatibility with existing relationship workflows
-
-- **Data Integrity Impact**: Eliminates relationship inconsistencies that previously required manual cleanup, ensuring CRM data reliability
+- **Complete CRM Resource Coverage** - Full support for all Attio resource types including lists and notes (previously limited to companies/people/tasks/deals)
+- **Advanced Relationship Navigation** - Walk complete pipeline hierarchies with bidirectional company↔person↔deal relationships (#747)
+- **Intelligent Field Mapping** - Smart field validation with synonym handling (value/value_in_cents, company_id/associated_company) and typo suggestions
+- **Multi-Assignee Task Support** (#684) - Enhanced task operations with richer metadata and assignment handling
+- **Content Search Across Resources** (#474, #507, #573) - Universal search capabilities across notes, tasks, and lists
+- **ChatGPT Developer Mode Integration** (#766) - Full Attio toolset access for ChatGPT Pro/Plus users via Smithery marketplace
+  - MCP safety annotations with built-in approval flows
+  - OAuth authentication via `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
+  - Natural language CRM management through conversational AI
+- **Advanced Search & Filtering** (#475, #578) - Sophisticated query capabilities with pagination and timeframe support
+- **List Management Parity** (#470, #499) - Lists now have feature parity with other Attio resources
 
 ### Changed
 
-#### Issue Management
-
-- Completed Issue #490 triage record: Architectural issues consolidation and closure following PR #480 completion
+- **Services Architecture** - Complete rebuild with dedicated create/update/search/delete/metadata services for improved maintainability
+- **Field Mapping System** (#529, #732, #483) - Rebuilt with deterministic normalization and intelligent field suggestions
+- **Error Handling** (#413, #728, #732) - Context-aware error messages with field-specific guidance and typo suggestions
+- **Test Infrastructure** - Comprehensive test pyramid with P0/P1/P2 suites covering all universal tool pathways
+- **Performance** - 68% tool reduction (40+ → 14 universal tools) with 89.7% speed improvement in response handling
+- **FormatResult Functions** - Guaranteed stable string output with zero environment branching for predictable behavior
 
 ### Fixed
 
-#### formatResult Architecture Refactoring (#483) - EXCEPTIONAL SUCCESS
+- **Data Integrity** - Bidirectional relationship consistency validation with automatic repair
+- **Field Validation** - Real-time detection of invalid field names with intelligent suggestions
+- **Test Data Contamination** (#581, #587) - Enhanced test data filters preventing production workspace pollution
+- **Cleanup Operations** - Automated scripts ensuring Attio workspaces stay clean after bulk operations
 
-**97.15/100 Production Readiness Score** - Complete elimination of dual-mode formatResult functions with exceptional performance improvements
+### Security
 
-- **Performance**: 89.7% speed improvement across all formatResult functions
-- **Memory**: 227KB memory usage reduction through optimized string templates
-- **Type Safety**: 100% TypeScript error resolution (42→0) and 59% ESLint warning reduction (957→395)
-- **Architecture**: Eliminated environment-dependent behavior, ensuring consistent `: string` return types
-- **Testing**: 295 regression tests added to prevent architectural violations
-- **Zero Breaking Changes**: Full backward compatibility maintained throughout refactoring
-- **Quality Metrics**: Security 95/100, Type Safety 98/100, Performance 98/100
-- Systematic 7-phase agent-driven development achieving enterprise-grade architecture
-
-- Fixed E2E test failures and achieved 100% test success rate (#480) - All E2E tests now passing (37/37 tests, 1 intentionally skipped)
-  - Implemented environment-based mock data injection system for clean test/production separation
-  - Created comprehensive mock data generation functions with proper Attio field format
-  - Fixed dual response format to support both `values` object and flattened field access
-  - Enhanced tool migration system for proper parameter mapping (link-record-to-task)
-  - Improved TypeScript type safety by replacing `any` with proper types
-  - Reduced lint warnings from 967 to 954 problems
-  - Established architectural pattern for sustainable test infrastructure
-
-- Fixed notes content field structure mismatch (#365) - Notes now correctly display content regardless of API response structure variations
-  - Added multi-field checking for content, title, and timestamp fields
-  - Added debug logging for development troubleshooting
-  - Handles variations: `note.content`, `note.data?.content`, `note.values?.content`, `note.text`, `note.body`
-  - Affects both company and person notes formatters
+- **Prototype Pollution** (#751) - Fixed config loader vulnerability
+- **Input Validation** (#752, #753) - Tightened LinkedIn and URL validation for secure data handling
+- **Credential Protection** (#42 series) - CodeQL-driven log scrubbing to protect Attio API credentials
+- **Injection Prevention** - Enhanced input validation across all Attio operations
 
 ## [0.2.0] - 2025-08-04
 
@@ -374,8 +277,7 @@ Users upgrading from v0.1.x should note:
 - Development and contribution guidelines
 
 [Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.2.0...v1.0.0
-[0.2.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.3...v0.2.0
+[1.0.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.3...v1.0.0
 [0.1.3]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.0...v0.1.1
