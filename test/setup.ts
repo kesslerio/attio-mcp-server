@@ -83,12 +83,27 @@ vi.mock('../src/api/attio-client', async () => {
     getAttributeSchema: vi.fn().mockResolvedValue([]),
     getSelectOptions: vi.fn().mockResolvedValue([]),
     getStatusOptions: vi.fn().mockResolvedValue([
-      { title: 'Interested', id: 'interested-id' },
-      { title: 'Qualified', id: 'qualified-id' },
-      { title: 'Demo', id: 'demo-id' },
-      { title: 'Negotiation', id: 'negotiation-id' },
-      { title: 'Won', id: 'won-id' },
-      { title: 'Lost', id: 'lost-id' },
+      {
+        title: 'Interested',
+        id: 'interested-id',
+        value: 'interested',
+        is_archived: false,
+      },
+      {
+        title: 'Qualified',
+        id: 'qualified-id',
+        value: 'qualified',
+        is_archived: false,
+      },
+      { title: 'Demo', id: 'demo-id', value: 'demo', is_archived: false },
+      {
+        title: 'Negotiation',
+        id: 'negotiation-id',
+        value: 'negotiation',
+        is_archived: false,
+      },
+      { title: 'Won', id: 'won-id', value: 'won', is_archived: false },
+      { title: 'Lost', id: 'lost-id', value: 'lost', is_archived: false },
     ]),
 
     // Module metadata
