@@ -3,9 +3,14 @@
  */
 
 import { randomUUID } from 'crypto';
-import { safeJsonStringify } from './json-serializer.js';
-import { safeGet } from '../types/error-types.js';
-import type { JsonObject } from '../types/attio.js';
+import { safeJsonStringify } from '@/utils/json-serializer.js';
+import type { JsonObject } from '@/types/attio.js';
+import {
+  sanitizeErrorDetail,
+  sanitizeLogMessage,
+  sanitizeLogPayload,
+  sanitizeMetadata,
+} from '@/utils/log-sanitizer.js';
 
 /**
  * Log level enum for controlling verbosity
@@ -168,6 +173,7 @@ function createLogMetadata(
   operationType?: OperationType,
   additionalMetadata?: JsonObject
 ): LogMetadata {
+  const sanitizedMetadata = sanitizeMetadata(additionalMetadata);
   return {
     timestamp: new Date().toISOString(),
     level,
@@ -178,7 +184,7 @@ function createLogMetadata(
     sessionId: globalContext.sessionId,
     requestId: globalContext.requestId,
     userId: globalContext.userId,
-    ...additionalMetadata,
+    ...(sanitizedMetadata || {}),
   };
 }
 
@@ -216,10 +222,14 @@ export function debug(
   operationType?: OperationType
 ): void {
   if (CURRENT_LOG_LEVEL <= LogLevel.DEBUG) {
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const sanitizedData = data
+      ? (sanitizeLogPayload(data) as JsonObject)
+      : undefined;
     const entry: LogEntry = {
-      message,
+      message: sanitizedMessage,
       metadata: createLogMetadata('DEBUG', module, operation, operationType),
-      ...(data ? { data } : {}),
+      ...(sanitizedData ? { data: sanitizedData } : {}),
     };
     outputLog(entry, console.error); // Use stderr instead of stdout to avoid interfering with MCP protocol
   }
@@ -242,10 +252,14 @@ export function info(
   operationType?: OperationType
 ): void {
   if (CURRENT_LOG_LEVEL <= LogLevel.INFO) {
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const sanitizedData = data
+      ? (sanitizeLogPayload(data) as JsonObject)
+      : undefined;
     const entry: LogEntry = {
-      message,
+      message: sanitizedMessage,
       metadata: createLogMetadata('INFO', module, operation, operationType),
-      ...(data ? { data } : {}),
+      ...(sanitizedData ? { data: sanitizedData } : {}),
     };
     outputLog(entry, console.error); // Use stderr instead of stdout to avoid interfering with MCP protocol
   }
@@ -268,10 +282,14 @@ export function warn(
   operationType?: OperationType
 ): void {
   if (CURRENT_LOG_LEVEL <= LogLevel.WARN) {
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const sanitizedData = data
+      ? (sanitizeLogPayload(data) as JsonObject)
+      : undefined;
     const entry: LogEntry = {
-      message,
+      message: sanitizedMessage,
       metadata: createLogMetadata('WARN', module, operation, operationType),
-      ...(data ? { data } : {}),
+      ...(sanitizedData ? { data: sanitizedData } : {}),
     };
     outputLog(entry, console.warn);
   }
@@ -296,33 +314,16 @@ export function error(
   operationType?: OperationType
 ): void {
   if (CURRENT_LOG_LEVEL <= LogLevel.ERROR) {
+    const sanitizedMessage = sanitizeLogMessage(message);
+    const sanitizedData = data
+      ? (sanitizeLogPayload(data) as JsonObject)
+      : undefined;
+    const sanitizedError = sanitizeErrorDetail(errorObj);
     const entry: LogEntry = {
-      message,
+      message: sanitizedMessage,
       metadata: createLogMetadata('ERROR', module, operation, operationType),
-      ...(data ? { data } : {}),
-      ...(errorObj
-        ? {
-            error:
-              errorObj instanceof Error
-                ? {
-                    message: errorObj.message,
-                    name: errorObj.name,
-                    stack: errorObj.stack,
-                    code: (errorObj as Error & { code?: string | number }).code,
-                  }
-                : typeof errorObj === 'object' && errorObj !== null
-                  ? {
-                      message:
-                        safeGet(errorObj, 'message') ||
-                        JSON.stringify(errorObj),
-                      name: safeGet(errorObj, 'name') || 'Unknown',
-                      stack: safeGet(errorObj, 'stack'),
-                      code: safeGet(errorObj, 'code'),
-                      ...(errorObj as object),
-                    }
-                  : { message: String(errorObj), name: 'Unknown' },
-          }
-        : {}),
+      ...(sanitizedData ? { data: sanitizedData } : {}),
+      ...(sanitizedError ? { error: sanitizedError } : {}),
     };
     outputLog(entry, console.error);
   }
@@ -476,60 +477,88 @@ export function fallbackStart(
 /**
  * Creates a scoped logger instance with pre-configured context
  */
+export class SecureLogger {
+  constructor(
+    private readonly module: string,
+    private readonly operation?: string,
+    private readonly operationType: OperationType = OperationType.SYSTEM
+  ) {}
+
+  debug(message: string, data?: JsonObject): void {
+    debug(this.module, message, data, this.operation, this.operationType);
+  }
+
+  info(message: string, data?: JsonObject): void {
+    info(this.module, message, data, this.operation, this.operationType);
+  }
+
+  warn(message: string, data?: JsonObject): void {
+    warn(this.module, message, data, this.operation, this.operationType);
+  }
+
+  error(message: string, errorObj?: unknown, data?: JsonObject): void {
+    error(
+      this.module,
+      message,
+      errorObj,
+      data,
+      this.operation,
+      this.operationType
+    );
+  }
+
+  operationStart(
+    op?: string,
+    opType?: OperationType,
+    params?: JsonObject
+  ): PerformanceTimer {
+    return operationStart(
+      this.module,
+      op || this.operation || 'unknown',
+      opType || this.operationType,
+      params
+    );
+  }
+
+  operationSuccess(
+    op?: string,
+    resultSummary?: JsonObject,
+    opType?: OperationType,
+    duration?: number
+  ): void {
+    operationSuccess(
+      this.module,
+      op || this.operation || 'unknown',
+      resultSummary,
+      opType || this.operationType,
+      duration
+    );
+  }
+
+  operationFailure(
+    op?: string,
+    errorObj?: unknown,
+    context?: JsonObject,
+    opType?: OperationType,
+    duration?: number
+  ): void {
+    operationFailure(
+      this.module,
+      op || this.operation || 'unknown',
+      errorObj,
+      context,
+      opType || this.operationType,
+      duration
+    );
+  }
+}
+
 export function createScopedLogger(
   module: string,
   operation?: string,
   operationType?: OperationType
 ) {
-  return {
-    debug: (message: string, data?: JsonObject) =>
-      debug(module, message, data, operation, operationType),
-    info: (message: string, data?: JsonObject) =>
-      info(module, message, data, operation, operationType),
-    warn: (message: string, data?: JsonObject) =>
-      warn(module, message, data, operation, operationType),
-    error: (message: string, errorObj?: unknown, data?: JsonObject) =>
-      error(module, message, errorObj, data, operation, operationType),
-    operationStart: (
-      op?: string,
-      opType?: OperationType,
-      params?: JsonObject
-    ) =>
-      operationStart(
-        module,
-        op || operation || 'unknown',
-        opType || operationType || OperationType.SYSTEM,
-        params
-      ),
-    operationSuccess: (
-      op?: string,
-      resultSummary?: JsonObject,
-      opType?: OperationType,
-      duration?: number
-    ) =>
-      operationSuccess(
-        module,
-        op || operation || 'unknown',
-        resultSummary,
-        opType || operationType || OperationType.SYSTEM,
-        duration
-      ),
-    operationFailure: (
-      op?: string,
-      errorObj?: unknown,
-      context?: JsonObject,
-      opType?: OperationType,
-      duration?: number
-    ) =>
-      operationFailure(
-        module,
-        op || operation || 'unknown',
-        errorObj,
-        context,
-        opType || operationType || OperationType.SYSTEM,
-        duration
-      ),
-  };
+  return new SecureLogger(module, operation, operationType);
 }
 
 /**
@@ -570,7 +599,17 @@ export async function withLogging<T>(
 
 export function safeMcpLog(message: string, ...args: unknown[]): void {
   // Always use console.error to avoid interfering with MCP protocol
-  console.error(`[MCP_SAFE_LOG] ${message}`, ...args);
+  const sanitizedMessage = sanitizeLogMessage(message);
+  const sanitizedArgs = args.map((arg) => {
+    if (typeof arg === 'string') {
+      return sanitizeLogMessage(arg);
+    }
+    if (typeof arg === 'object' && arg !== null) {
+      return sanitizeLogPayload(arg);
+    }
+    return arg;
+  });
+  console.error(`[MCP_SAFE_LOG] ${sanitizedMessage}`, ...sanitizedArgs);
 }
 
 export default {
@@ -587,6 +626,7 @@ export default {
   clearLogContext,
   generateCorrelationId,
   createScopedLogger,
+  SecureLogger,
   withLogging,
   safeMcpLog,
   PerformanceTimer,

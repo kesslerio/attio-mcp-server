@@ -133,7 +133,7 @@ describe('Structured Logging System', () => {
           }),
           data: { context: 'test' },
           error: expect.objectContaining({
-            message: 'Test error',
+            message: expect.any(String), // Error messages are now sanitized
             name: 'Error',
             stack: expect.any(String),
           }),
@@ -327,7 +327,7 @@ describe('Structured Logging System', () => {
             duration: '100ms',
           }),
           error: expect.objectContaining({
-            message: 'Operation failed',
+            message: expect.any(String), // Error messages are now sanitized
             name: 'Error',
             stack: expect.any(String),
           }),
