@@ -1,10 +1,23 @@
-name: 'CodeQL Security Scan'
+name: 'CodeQL (JS/TS, prod-focused)'
 
 on:
   push:
     branches: ['main']
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'src/**'
+      - 'package*.json'
+      - 'tsconfig*.json'
+      - '.github/workflows/codeql.yml'
+      - 'codeql-config.yml'
   schedule:
-    - cron: '30 7 * * 1' # Weekly Monday 7:30 AM UTC
+    - cron: '30 7 * * 1' # Weekly Monday 07:30 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
@@ -37,10 +50,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          config: |
-            paths-ignore:
-              - 'test/**'
-              - 'scripts/debug/**'
+          config-file: codeql-config.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
