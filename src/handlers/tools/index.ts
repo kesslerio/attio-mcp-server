@@ -13,8 +13,8 @@ import { ServerContext } from '../../server/createServer.js';
 import { setGlobalContext } from '../../api/lazy-client.js';
 
 // Import from modular components
-import { filterAllowedTools } from '../../config/tool-mode.js';
 import { TOOL_DEFINITIONS } from './registry.js';
+import { getToolsListPayload } from '@/utils/mcp-discovery.js';
 import { executeToolRequest } from './dispatcher.js';
 
 // Constants for configuration
@@ -140,22 +140,7 @@ export function registerToolHandlers(
 
   // Handler for listing available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    // Dynamically collect all available tool definitions
-    const allTools = [];
-
-    for (const toolDefs of Object.values(TOOL_DEFINITIONS)) {
-      if (toolDefs) {
-        if (Array.isArray(toolDefs)) {
-          // Legacy format: array of tool definitions
-          allTools.push(...toolDefs);
-        } else if (typeof toolDefs === 'object') {
-          // Universal format: object with tool definitions as values
-          allTools.push(...Object.values(toolDefs));
-        }
-      }
-    }
-
-    const tools = filterAllowedTools(allTools);
+    const { tools } = getToolsListPayload();
     return {
       tools,
     };
