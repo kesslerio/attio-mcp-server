@@ -556,11 +556,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     if (typeof error === 'object' && error !== null) {
       const obj = error as Record<string, unknown>;
       // If the object appears to be a config with apiKey or secrets, redact
-      if (
-        Object.keys(obj).some((k) =>
-          /api[_-]?key|secret|token/i.test(k)
-        )
-      ) {
+      if (Object.keys(obj).some((k) => /api[_-]?key|secret|token/i.test(k))) {
         return '[Redacted error object]';
       }
       // Safely extract common error properties without exposing sensitive data
@@ -568,9 +564,9 @@ export class EnhancedPerformanceTracker extends EventEmitter {
       const message = obj.message;
 
       // Redact known bad messages
-      if (typeof message === 'string' &&
-        (/api[_-]?key/i.test(message) ||
-          /secret|token/i.test(message))
+      if (
+        typeof message === 'string' &&
+        (/api[_-]?key/i.test(message) || /secret|token/i.test(message))
       ) {
         if (status) {
           return `${status}: [Redacted error message]`;
