@@ -541,8 +541,9 @@ export class ErrorEnhancer {
     }
 
     // Issue #415: Detect invalid select options
+    // Fixed: ReDoS vulnerability (Issue #106) - replaced greedy quantifiers
     const selectMatch = message.match(
-      /invalid value['\s]*([^']*)['\s]*for field['\s]*([^']*)/i
+      /invalid value\s*['"]?([^'"]+)['"]?\s*for field\s*['"]?([^'"]+)['"]?/i
     );
     if (selectMatch) {
       const [, value, field] = selectMatch;
