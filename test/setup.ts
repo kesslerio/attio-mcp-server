@@ -82,7 +82,14 @@ vi.mock('../src/api/attio-client', async () => {
     // API utility functions
     getAttributeSchema: vi.fn().mockResolvedValue([]),
     getSelectOptions: vi.fn().mockResolvedValue([]),
-    getStatusOptions: vi.fn().mockResolvedValue([]),
+    getStatusOptions: vi.fn().mockResolvedValue([
+      { title: 'Interested', id: 'interested-id' },
+      { title: 'Qualified', id: 'qualified-id' },
+      { title: 'Demo', id: 'demo-id' },
+      { title: 'Negotiation', id: 'negotiation-id' },
+      { title: 'Won', id: 'won-id' },
+      { title: 'Lost', id: 'lost-id' },
+    ]),
 
     // Module metadata
     __MODULE_PATH__: 'mocked-attio-client',
