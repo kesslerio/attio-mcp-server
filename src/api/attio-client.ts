@@ -66,19 +66,19 @@ function validateAndThrowForApiKey(
 let apiInstance: AxiosInstance | null = null;
 
 /**
- * BACKWARD COMPATIBILITY: Support old createAttioClient(apiKey) signature
- *
- * @param apiKey - The Attio API key (legacy signature)
- * @returns Configured Axios instance
- */
-export function createAttioClient(apiKey: string): AxiosInstance;
-/**
  * UNIFIED CLIENT FACTORY: Support new createAttioClient(config) signature
  *
  * @param config - Client configuration options
  * @returns Configured Axios instance
  */
 export function createAttioClient(config?: ClientConfig): AxiosInstance;
+/**
+ * BACKWARD COMPATIBILITY: Support old createAttioClient(apiKey) signature
+ *
+ * @param apiKey - The Attio API key (legacy signature)
+ * @returns Configured Axios instance
+ */
+export function createAttioClient(apiKey: string): AxiosInstance;
 /**
  * Implementation of overloaded createAttioClient function
  */

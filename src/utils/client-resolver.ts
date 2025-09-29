@@ -62,26 +62,24 @@ export function resolveAttioClient(): AxiosInstance {
   // Try unified createAttioClient with config (new interface)
   if (typeof mod.createAttioClient === 'function') {
     try {
-      // First try with config object (new unified interface)
-      const config: ClientConfig = {};
-      const client = (
-        mod.createAttioClient as (config: ClientConfig) => AxiosInstance
-      )(config);
-      assertAxiosInstance(client, 'createAttioClient(config)');
-      return client;
-    } catch {
-      // If that fails and we have an API key, try legacy string signature
+      // If we have an API key, prefer the legacy string signature for backward compatibility
       if (resolvedApiKey) {
-        try {
-          const client = (
-            mod.createAttioClient as (apiKey: string) => AxiosInstance
-          )(resolvedApiKey);
-          assertAxiosInstance(client, 'createAttioClient(apiKey)');
-          return client;
-        } catch {
-          // Continue to fallback methods
-        }
+        const client = (
+          mod.createAttioClient as (apiKey: string) => AxiosInstance
+        )(resolvedApiKey);
+        assertAxiosInstance(client, 'createAttioClient(apiKey)');
+        return client;
+      } else {
+        // Use config object (new unified interface)
+        const config: ClientConfig = {};
+        const client = (
+          mod.createAttioClient as (config: ClientConfig) => AxiosInstance
+        )(config);
+        assertAxiosInstance(client, 'createAttioClient(config)');
+        return client;
       }
+    } catch {
+      // Continue to fallback methods
     }
   }
 
