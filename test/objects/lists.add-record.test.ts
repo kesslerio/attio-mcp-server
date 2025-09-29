@@ -5,6 +5,7 @@
 import { expect, describe, it, beforeEach, vi } from 'vitest';
 import { addRecordToList } from '../../src/objects/lists.js';
 import * as attioClient from '../../src/api/attio-client.js';
+import * as lazyClient from '../../src/api/lazy-client.js';
 import * as apiOperations from '../../src/api/operations/lists.js';
 import { ResourceType } from '../../src/types/attio.js';
 
@@ -24,7 +25,7 @@ describe('addRecordToList Tests', () => {
       },
     });
 
-    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue({
       post: mockPost,
       get: vi.fn(),
       patch: vi.fn(),
@@ -75,7 +76,7 @@ describe('addRecordToList Tests', () => {
       },
     });
 
-    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue({
       post: mockPost,
       get: vi.fn(),
       patch: vi.fn(),
@@ -172,8 +173,8 @@ describe('addRecordToList Tests', () => {
     );
 
     // Verify API client was not called directly (fallback not used)
-    const mockGetAttioClient = vi.spyOn(attioClient, 'getAttioClient');
-    expect(mockGetAttioClient).not.toHaveBeenCalled();
+    const mockGetLazyAttioClient = vi.spyOn(lazyClient, 'getLazyAttioClient');
+    expect(mockGetLazyAttioClient).not.toHaveBeenCalled();
   });
 
   it('should provide detailed error messages for validation errors', async () => {
@@ -193,7 +194,7 @@ describe('addRecordToList Tests', () => {
       },
     });
 
-    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue({
       post: mockPost,
       get: vi.fn(),
       patch: vi.fn(),
