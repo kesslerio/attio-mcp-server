@@ -10,6 +10,7 @@ import {
   advancedSearchObject,
   ListEntryFilters,
 } from '../../api/operations/index.js';
+import { createLogger } from '@/utils/logger.js';
 import {
   ResourceType,
   Company,
@@ -83,7 +84,12 @@ export async function searchCompaniesByDomain(
     });
     return response?.data?.data || [];
   } catch (error: unknown) {
-    console.error(`Domain search failed for "${normalizedDomain}":`, error);
+    // Use structured logging with sanitized error information
+    const { error: logError } = createLogger('companies-search');
+    logError(`Domain search failed for domain`, error, {
+      domain: normalizedDomain,
+      operation: 'searchCompaniesByDomain',
+    });
     return [];
   }
 }

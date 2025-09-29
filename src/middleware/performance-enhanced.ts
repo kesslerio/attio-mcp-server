@@ -527,6 +527,44 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   }
 
   /**
+   * Sanitize error for logging to prevent sensitive information exposure
+   */
+  private sanitizeErrorForLogging(error: unknown): string {
+    if (!error) return 'Unknown error';
+
+    // If it's a string, return it as-is (should be safe)
+    if (typeof error === 'string') return error;
+
+    // If it's an Error object, use the message
+    if (error instanceof Error) {
+      return error.message || 'Error occurred';
+    }
+
+    // For objects, extract safe information
+    if (typeof error === 'object' && error !== null) {
+      const obj = error as Record<string, unknown>;
+      // Safely extract common error properties without exposing sensitive data
+      const status = obj.status || obj.statusCode;
+      const message = obj.message;
+
+      if (status && message) {
+        return `${status}: ${message}`;
+      }
+      if (status) {
+        return `HTTP ${status}`;
+      }
+      if (message) {
+        return String(message);
+      }
+
+      // Fallback for other objects - don't serialize the full object
+      return 'Request failed';
+    }
+
+    return 'Unknown error type';
+  }
+
+  /**
    * Log metrics in development
    */
   private logMetrics(metrics: EnhancedPerformanceMetrics): void {
@@ -547,7 +585,9 @@ export class EnhancedPerformanceTracker extends EventEmitter {
           0
         )}ms, MCP: ${metrics.timingSplit.mcpOverhead.toFixed(0)}ms]` +
         (metrics.cached ? ' 📦 CACHED' : '') +
-        (metrics.error ? ` ❌ ${metrics.error}` : '')
+        (metrics.error
+          ? ` ❌ ${this.sanitizeErrorForLogging(metrics.error)}`
+          : '')
     );
   }
 
