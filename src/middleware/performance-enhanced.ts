@@ -612,6 +612,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
           0
         )}ms, MCP: ${metrics.timingSplit.mcpOverhead.toFixed(0)}ms]` +
         (metrics.cached ? ' 📦 CACHED' : '') +
+        // codeql[js/clear-text-logging] - Error sanitized via sanitizeErrorForLogging()
         (metrics.error
           ? ` ❌ ${this.sanitizeErrorForLogging(metrics.error)}`
           : '')
