@@ -12,6 +12,17 @@ Security audit #771 identified that diagnostic logs occasionally included bearer
 - **Test harness protections** that wrap `console.*` during Vitest runs to guarantee redaction in fixture output.
 - **Debug script guardrails** that surface production-data warnings before any manual script execution.
 
+## CLI Console Usage Exception
+
+**Note**: Direct `console.*` usage remains in `src/cli.ts` for help/version output. This is an intentional exception as:
+
+- CLI output is user-facing documentation (--help, --version)
+- These outputs do not contain sensitive data
+- They are necessary for command-line interface functionality
+- Test harness sanitization does not apply to CLI help text
+
+All other console usage in `src/` directories must use structured logging via `logger.*` methods.
+
 ## Migration Checklist
 
 1. Import the scoped logger via `createScopedLogger` (returns a `SecureLogger` instance) instead of using `console` directly.

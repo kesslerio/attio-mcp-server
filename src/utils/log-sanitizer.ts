@@ -1,15 +1,60 @@
 import { sanitizeErrorMessage } from '@/utils/error-sanitizer.js';
 import type { JsonObject } from '@/types/attio.js';
 
-const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
-const PHONE_REGEX = /\+?\d[\d\s().-]{6,}\d/g;
-const TOKEN_REGEX = /(?:bearer\s+)?[A-Za-z0-9_\-]{24,}/gi;
-const BEARER_TOKEN_REGEX = /bearer\s+[^\s]+/gi;
-const SECRET_VALUE_REGEX =
-  /(api[-_]?key|secret|token|session|cookie|password|authorization)=([^&\s]+)/gi;
-const CREDIT_CARD_REGEX = /\b(?:\d[ -]*?){13,16}\b/g;
-const ISO_TIMESTAMP_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
-const SAFE_KEY_NAMES = new Set(['timestamp', 'duration']);
+/**
+ * Configuration for log sanitization behavior
+ */
+interface SanitizationConfig {
+  /** Maximum recursion depth for nested objects (prevents stack overflow) */
+  maxDepth: number;
+  /** Maximum string length before truncation */
+  maxStringLength: number;
+  /** Set of key names that are safe and should not be redacted */
+  safeKeys: Set<string>;
+  /** Regex patterns for detecting sensitive data */
+  patterns: {
+    email: RegExp;
+    phone: RegExp;
+    token: RegExp;
+    bearerToken: RegExp;
+    secretValue: RegExp;
+    creditCard: RegExp;
+    isoTimestamp: RegExp;
+  };
+  /** Patterns for sensitive key names */
+  sensitiveKeyPatterns: RegExp[];
+  /** Pattern for identifier keys */
+  identifierKeyPattern: RegExp;
+}
+
+/**
+ * Default sanitization configuration
+ * Can be extended for domain-specific secrets
+ */
+const SANITIZATION_CONFIG: SanitizationConfig = {
+  maxDepth: 20,
+  maxStringLength: 2000,
+  safeKeys: new Set(['timestamp', 'duration']),
+  patterns: {
+    email: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
+    phone: /\+?\d[\d\s().-]{6,}\d/g,
+    token: /(?:bearer\s+)?[A-Za-z0-9_\-]{24,}/gi,
+    bearerToken: /bearer\s+[^\s]+/gi,
+    secretValue:
+      /(api[-_]?key|secret|token|session|cookie|password|authorization)=([^&\s]+)/gi,
+    creditCard: /\b(?:\d[ -]*?){13,16}\b/g,
+    isoTimestamp: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/,
+  },
+  sensitiveKeyPatterns: [
+    /(api[-_]?key|token|secret|password|passphrase|credential|cookie|session)/i,
+    /(authorization|authHeader|authToken)/i,
+    /(refresh[-_]?token|access[-_]?token)/i,
+    /(email|e[-_]?mail)/i,
+    /(phone|telephone|mobile)/i,
+    /(address|street|city|postal|zip)/i,
+  ],
+  identifierKeyPattern: /(\b(id|uuid|slug)\b|_id$|^id_|[-_]id$)/i,
+};
 
 function stripDevInfo(message: string): string {
   const devInfoIndex = message.indexOf('\n[Dev Info:');
@@ -19,39 +64,38 @@ function stripDevInfo(message: string): string {
   return message.slice(0, devInfoIndex);
 }
 
-const SENSITIVE_KEY_PATTERNS = [
-  /(api[-_]?key|token|secret|password|passphrase|credential|cookie|session)/i,
-  /(authorization|authHeader|authToken)/i,
-  /(refresh[-_]?token|access[-_]?token)/i,
-  /(email|e[-_]?mail)/i,
-  /(phone|telephone|mobile)/i,
-  /(address|street|city|postal|zip)/i,
-];
-
-const IDENTIFIER_KEY_PATTERN = /(\b(id|uuid|slug)\b|_id$|^id_|[-_]id$)/i;
-
-const MAX_STRING_LENGTH = 2000;
-
 function redactString(value: string): string {
   let sanitized = value;
 
   sanitized = sanitized.replace(
-    SECRET_VALUE_REGEX,
+    SANITIZATION_CONFIG.patterns.secretValue,
     (_, key: string) => `${key}=[REDACTED]`
   );
-  sanitized = sanitized.replace(BEARER_TOKEN_REGEX, 'Bearer [TOKEN_REDACTED]');
-  sanitized = sanitized.replace(EMAIL_REGEX, '[EMAIL_REDACTED]');
-  sanitized = sanitized.replace(TOKEN_REGEX, (match) => {
+  sanitized = sanitized.replace(
+    SANITIZATION_CONFIG.patterns.bearerToken,
+    'Bearer [TOKEN_REDACTED]'
+  );
+  sanitized = sanitized.replace(
+    SANITIZATION_CONFIG.patterns.email,
+    '[EMAIL_REDACTED]'
+  );
+  sanitized = sanitized.replace(SANITIZATION_CONFIG.patterns.token, (match) => {
     if (match.length <= 6) return '[REDACTED]';
     return match.toLowerCase().startsWith('bearer ')
       ? 'Bearer [TOKEN_REDACTED]'
       : '[TOKEN_REDACTED]';
   });
-  sanitized = sanitized.replace(PHONE_REGEX, '[PHONE_REDACTED]');
-  sanitized = sanitized.replace(CREDIT_CARD_REGEX, '[CARD_REDACTED]');
+  sanitized = sanitized.replace(
+    SANITIZATION_CONFIG.patterns.phone,
+    '[PHONE_REDACTED]'
+  );
+  sanitized = sanitized.replace(
+    SANITIZATION_CONFIG.patterns.creditCard,
+    '[CARD_REDACTED]'
+  );
 
-  if (sanitized.length > MAX_STRING_LENGTH) {
-    return `${sanitized.slice(0, MAX_STRING_LENGTH)}…[TRUNCATED]`;
+  if (sanitized.length > SANITIZATION_CONFIG.maxStringLength) {
+    return `${sanitized.slice(0, SANITIZATION_CONFIG.maxStringLength)}…[TRUNCATED]`;
   }
 
   return sanitized;
@@ -59,15 +103,20 @@ function redactString(value: string): string {
 
 function shouldRedactKey(keyPath: string[]): boolean {
   const key = keyPath[keyPath.length - 1];
-  if (SAFE_KEY_NAMES.has(key)) {
+  if (SANITIZATION_CONFIG.safeKeys.has(key)) {
     return false;
   }
-  return SENSITIVE_KEY_PATTERNS.some((pattern) => pattern.test(key));
+  return SANITIZATION_CONFIG.sensitiveKeyPatterns.some((pattern) =>
+    pattern.test(key)
+  );
 }
 
 function shouldMaskIdentifier(keyPath: string[], value: string): boolean {
   const key = keyPath[keyPath.length - 1];
-  return IDENTIFIER_KEY_PATTERN.test(key) || /[A-F0-9\-]{16,}/i.test(value);
+  return (
+    SANITIZATION_CONFIG.identifierKeyPattern.test(key) ||
+    /[A-F0-9\-]{16,}/i.test(value)
+  );
 }
 
 export function maskIdentifier(value: string): string {
@@ -84,10 +133,14 @@ function sanitizePrimitive(value: unknown, keyPath: string[]): unknown {
   const key = keyPath[keyPath.length - 1];
 
   if (typeof value === 'string') {
-    if (key && SAFE_KEY_NAMES.has(key) && ISO_TIMESTAMP_REGEX.test(value)) {
+    if (
+      key &&
+      SANITIZATION_CONFIG.safeKeys.has(key) &&
+      SANITIZATION_CONFIG.patterns.isoTimestamp.test(value)
+    ) {
       return value;
     }
-    if (ISO_TIMESTAMP_REGEX.test(value)) {
+    if (SANITIZATION_CONFIG.patterns.isoTimestamp.test(value)) {
       return value;
     }
     const lowerKey = key?.toLowerCase() ?? '';
@@ -141,8 +194,14 @@ function isBinary(value: unknown): boolean {
 function sanitizeComplex(
   value: unknown,
   keyPath: string[],
-  seen: WeakMap<object, unknown>
+  seen: WeakMap<object, unknown>,
+  depth = 0
 ): unknown {
+  // Prevent stack overflow from deeply nested objects
+  if (depth > SANITIZATION_CONFIG.maxDepth) {
+    return '[DEPTH_LIMIT_EXCEEDED]';
+  }
+
   if (value === null || value === undefined) {
     return value;
   }
@@ -170,7 +229,7 @@ function sanitizeComplex(
 
   if (Array.isArray(value)) {
     return value.map((item, index) =>
-      sanitizeComplex(item, [...keyPath, String(index)], seen)
+      sanitizeComplex(item, [...keyPath, String(index)], seen, depth + 1)
     );
   }
 
@@ -184,7 +243,12 @@ function sanitizeComplex(
     seen.set(value as object, sanitizedObject);
 
     for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      sanitizedObject[key] = sanitizeComplex(val, [...keyPath, key], seen);
+      sanitizedObject[key] = sanitizeComplex(
+        val,
+        [...keyPath, key],
+        seen,
+        depth + 1
+      );
     }
 
     return sanitizedObject;
