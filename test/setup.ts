@@ -77,6 +77,15 @@ vi.mock('../src/api/attio-client', async () => {
     getAttioClient: vi.fn(() => getClientInstance()),
     initializeAttioClient: vi.fn(() => {}),
     isAttioClientInitialized: vi.fn(() => true),
+    createLegacyAttioClient: vi.fn(() => getClientInstance()),
+
+    // API utility functions
+    getAttributeSchema: vi.fn().mockResolvedValue([]),
+    getSelectOptions: vi.fn().mockResolvedValue([]),
+    getStatusOptions: vi.fn().mockResolvedValue([]),
+
+    // Module metadata
+    __MODULE_PATH__: 'mocked-attio-client',
   };
 });
 
