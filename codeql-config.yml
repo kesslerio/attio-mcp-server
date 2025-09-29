@@ -1,0 +1,31 @@
+# CodeQL Configuration
+# Keep default suite (high-confidence security rules).
+# For more aggressive scanning, consider adding:
+#   queries:
+#     - uses: security-extended
+
+paths:
+  - src/**
+
+paths-ignore:
+  # Test code
+  - test/**
+  - '**/*.spec.*'
+  - '**/*.test.*'
+  - test-results/**
+
+  # Debug & utility scripts
+  - scripts/**
+  - build/**
+
+  # Examples & fixtures
+  - docs/examples/**
+
+  # Build outputs
+  - '**/coverage/**'
+  - '**/dist/**'
+  - '**/build/**'
+  - '**/logs/**'
+
+  # Test support code in src (if any)
+  - src/test-support/**
