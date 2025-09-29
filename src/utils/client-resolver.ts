@@ -19,14 +19,6 @@ interface AttioClientFactories {
 }
 
 /**
- * Collects available method names on the mocked or real module so error
- * messages can help the caller understand why resolution failed.
- */
-function getAvailableMethodNames(mod: AttioClientFactories): string[] {
-  return Object.keys(mod).filter((key) => typeof mod[key] === 'function');
-}
-
-/**
  * Guards that the resolved value behaves like an Axios instance. We keep the
  * checks intentionally simple so tests can provide lightweight mocks.
  */
@@ -94,7 +86,7 @@ export function resolveAttioClient(): AxiosInstance {
   if (typeof mod.buildAttioClient === 'function') {
     if (!resolvedApiKey) {
       throw new Error(
-        'No available Attio client factory method found. Available methods: buildAttioClient. Has API key: false'
+        'Attio API key is required for client initialization. Please set ATTIO_API_KEY environment variable.'
       );
     }
     const client = mod.buildAttioClient({ apiKey: resolvedApiKey });
@@ -102,11 +94,8 @@ export function resolveAttioClient(): AxiosInstance {
     return client;
   }
 
-  const availableMethods = getAvailableMethodNames(mod);
   throw new Error(
-    `No available Attio client factory method found. Available methods: ${
-      availableMethods.length > 0 ? availableMethods.join(', ') : 'none'
-    }. Has API key: ${Boolean(resolvedApiKey)}`
+    'Failed to initialize Attio client. Please check your API configuration and ensure the client module is properly installed.'
   );
 }
 
