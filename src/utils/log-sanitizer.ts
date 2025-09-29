@@ -228,9 +228,19 @@ function sanitizeComplex(
   }
 
   if (Array.isArray(value)) {
-    return value.map((item, index) =>
-      sanitizeComplex(item, [...keyPath, String(index)], seen, depth + 1)
-    );
+    // Memoize arrays to handle circular references properly (Codex PR #778 feedback)
+    const existing = seen.get(value);
+    if (existing) {
+      return existing;
+    }
+    const sanitizedArray: unknown[] = [];
+    seen.set(value, sanitizedArray);
+    value.forEach((item, index) => {
+      sanitizedArray.push(
+        sanitizeComplex(item, [...keyPath, String(index)], seen, depth + 1)
+      );
+    });
+    return sanitizedArray;
   }
 
   if (typeof value === 'object') {
