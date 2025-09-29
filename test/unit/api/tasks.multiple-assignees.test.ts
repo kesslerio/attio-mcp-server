@@ -4,15 +4,26 @@ import { createTask, updateTask } from '../../../src/api/operations/tasks.js';
 // Mock the Attio client
 const mockPost = vi.fn();
 const mockPatch = vi.fn();
+const mockClient = {
+  post: mockPost,
+  patch: mockPatch,
+  defaults: {
+    baseURL: 'https://api.attio.com',
+    headers: { Authorization: 'Bearer test-token' },
+  },
+};
+
 vi.mock('../../../src/api/attio-client.js', () => ({
-  getAttioClient: () => ({
-    post: mockPost,
-    patch: mockPatch,
-    defaults: {
-      baseURL: 'https://api.attio.com',
-      headers: { Authorization: 'Bearer test-token' },
-    },
-  }),
+  getAttioClient: () => mockClient,
+  createAttioClient: () => mockClient,
+}));
+
+vi.mock('../../../src/api/lazy-client.js', () => ({
+  getLazyAttioClient: () => mockClient,
+}));
+
+vi.mock('../../../src/utils/client-resolver.js', () => ({
+  getValidatedAttioClient: () => mockClient,
 }));
 
 // Mock retry utility to avoid delays in tests

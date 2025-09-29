@@ -1,11 +1,12 @@
 /**
  * Type-safe client resolver for Attio API client factory methods
- * Provides reliable fallbacks and rich diagnostics when resolution fails.
+ * Updated to use unified createAttioClient interface with backward compatibility
  */
 
 import { AxiosInstance } from 'axios';
 import * as AttioClientModule from '../api/attio-client.js';
 import { getContextApiKey } from '../api/client-context.js';
+import { ClientConfig } from '../api/client-config.js';
 
 /**
  * Supported factory method signatures exposed by attio-client module
@@ -15,14 +16,6 @@ interface AttioClientFactories {
   createAttioClient?(apiKey: string): AxiosInstance | unknown;
   buildAttioClient?(config: { apiKey: string }): AxiosInstance | unknown;
   [key: string]: unknown;
-}
-
-/**
- * Collects available method names on the mocked or real module so error
- * messages can help the caller understand why resolution failed.
- */
-function getAvailableMethodNames(mod: AttioClientFactories): string[] {
-  return Object.keys(mod).filter((key) => typeof mod[key] === 'function');
 }
 
 /**
@@ -51,34 +44,49 @@ function assertAxiosInstance(
 }
 
 /**
- * Resolves an Attio client instance using the available factory methods.
- * Prioritises getAttioClient() → createAttioClient() → buildAttioClient().
+ * Resolves an Attio client instance using the unified interface.
+ * Prioritises createAttioClient(config) → createAttioClient(apiKey) → getAttioClient() → buildAttioClient().
  */
 export function resolveAttioClient(): AxiosInstance {
   const mod = AttioClientModule as AttioClientFactories;
   const resolvedApiKey = process.env.ATTIO_API_KEY || getContextApiKey();
 
+  // Try unified createAttioClient with config (new interface)
+  if (typeof mod.createAttioClient === 'function') {
+    try {
+      // If we have an API key, prefer the legacy string signature for backward compatibility
+      if (resolvedApiKey) {
+        const client = (
+          mod.createAttioClient as (apiKey: string) => AxiosInstance
+        )(resolvedApiKey);
+        assertAxiosInstance(client, 'createAttioClient(apiKey)');
+        return client;
+      } else {
+        // Use config object (new unified interface)
+        const config: ClientConfig = {};
+        const client = (
+          mod.createAttioClient as (config: ClientConfig) => AxiosInstance
+        )(config);
+        assertAxiosInstance(client, 'createAttioClient(config)');
+        return client;
+      }
+    } catch {
+      // Continue to fallback methods
+    }
+  }
+
+  // Fallback to getAttioClient if createAttioClient fails
   if (typeof mod.getAttioClient === 'function') {
     const client = mod.getAttioClient();
     assertAxiosInstance(client, 'getAttioClient()');
     return client;
   }
 
-  if (typeof mod.createAttioClient === 'function') {
-    if (!resolvedApiKey) {
-      throw new Error(
-        'No available Attio client factory method found. Available methods: createAttioClient. Has API key: false'
-      );
-    }
-    const client = mod.createAttioClient(resolvedApiKey);
-    assertAxiosInstance(client, 'createAttioClient()');
-    return client;
-  }
-
+  // Last resort: buildAttioClient
   if (typeof mod.buildAttioClient === 'function') {
     if (!resolvedApiKey) {
       throw new Error(
-        'No available Attio client factory method found. Available methods: buildAttioClient. Has API key: false'
+        'Attio API key is required for client initialization. Please set ATTIO_API_KEY environment variable.'
       );
     }
     const client = mod.buildAttioClient({ apiKey: resolvedApiKey });
@@ -86,11 +94,8 @@ export function resolveAttioClient(): AxiosInstance {
     return client;
   }
 
-  const availableMethods = getAvailableMethodNames(mod);
   throw new Error(
-    `No available Attio client factory method found. Available methods: ${
-      availableMethods.length > 0 ? availableMethods.join(', ') : 'none'
-    }. Has API key: ${Boolean(resolvedApiKey)}`
+    'Failed to initialize Attio client. Please check your API configuration and ensure the client module is properly installed.'
   );
 }
 

@@ -69,13 +69,45 @@ vi.mock('../src/api/attio-client', async () => {
   };
 
   return {
-    // New API
-    buildAttioClient: vi.fn(() => getClientInstance()),
+    // Unified API
+    createAttioClient: vi.fn(() => getClientInstance()),
 
     // Legacy APIs kept for compatibility (return the same instance)
+    buildAttioClient: vi.fn(() => getClientInstance()),
     getAttioClient: vi.fn(() => getClientInstance()),
     initializeAttioClient: vi.fn(() => {}),
     isAttioClientInitialized: vi.fn(() => true),
+    createLegacyAttioClient: vi.fn(() => getClientInstance()),
+
+    // API utility functions
+    getAttributeSchema: vi.fn().mockResolvedValue([]),
+    getSelectOptions: vi.fn().mockResolvedValue([]),
+    getStatusOptions: vi.fn().mockResolvedValue([
+      {
+        title: 'Interested',
+        id: 'interested-id',
+        value: 'interested',
+        is_archived: false,
+      },
+      {
+        title: 'Qualified',
+        id: 'qualified-id',
+        value: 'qualified',
+        is_archived: false,
+      },
+      { title: 'Demo', id: 'demo-id', value: 'demo', is_archived: false },
+      {
+        title: 'Negotiation',
+        id: 'negotiation-id',
+        value: 'negotiation',
+        is_archived: false,
+      },
+      { title: 'Won', id: 'won-id', value: 'won', is_archived: false },
+      { title: 'Lost', id: 'lost-id', value: 'lost', is_archived: false },
+    ]),
+
+    // Module metadata
+    __MODULE_PATH__: 'mocked-attio-client',
   };
 });
 

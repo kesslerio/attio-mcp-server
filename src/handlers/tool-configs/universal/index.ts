@@ -42,24 +42,6 @@ export const healthCheckToolDefinition = {
   },
 };
 
-/**
- * Backwards-compatible health-check alias for Smithery deployment validation
- * This ensures both 'health-check' and 'aaa-health-check' work identically.
- */
-export const healthCheckAliasToolDefinition = {
-  name: 'health-check',
-  description: 'Returns server status without requiring any credentials.',
-  inputSchema: {
-    type: 'object',
-    properties: {},
-    additionalProperties: true,
-  },
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
-  },
-};
-
 export const healthCheckConfig = {
   name: 'aaa-health-check',
   handler: async (params: { [key: string]: unknown }) => {
@@ -94,16 +76,6 @@ export const healthCheckConfig = {
   },
 };
 
-/**
- * Backwards-compatible health-check config alias for Smithery deployment
- * Uses the same handler as aaa-health-check but with the legacy name.
- */
-export const healthCheckAliasConfig = {
-  name: 'health-check',
-  handler: healthCheckConfig.handler,
-  formatResult: healthCheckConfig.formatResult,
-};
-
 // Re-export individual tool config objects for testing
 export {
   coreOperationsToolConfigs,
@@ -124,8 +96,6 @@ export * from './shared-handlers.js';
 export const universalToolConfigs = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckConfig,
-  // Backwards-compatible alias for Smithery deployment validation
-  'health-check': healthCheckAliasConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   'batch-search': batchSearchConfig,
@@ -138,8 +108,6 @@ export const universalToolConfigs = {
 export const universalToolDefinitions = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckToolDefinition,
-  // Backwards-compatible alias for Smithery deployment validation
-  'health-check': healthCheckAliasToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   'batch-search': batchSearchToolDefinition,

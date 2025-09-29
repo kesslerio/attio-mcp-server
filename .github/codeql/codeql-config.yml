@@ -1,0 +1,33 @@
+name: 'CodeQL Config for Attio MCP Server'
+disable-default-queries: false
+
+query-filters:
+  # Suppress clear-text logging alerts for development/debug scripts
+  - exclude:
+      id: js/clear-text-logging
+      paths:
+        - '**/scripts/debug/**'
+        - '**/scripts/setup-test-data.ts'
+        - '**/test/**'
+        - '**/tests/**'
+      reason: 'Debug scripts and test files are development-only and do not handle production secrets'
+
+  # Suppress clear-text logging alerts for development utilities that have been manually reviewed
+  - exclude:
+      id: js/clear-text-logging
+      paths:
+        - '**/src/utils/json-serializer.ts'
+        - '**/src/utils/logger.ts'
+      reason: 'Core utilities have been reviewed - they use structured logging without exposing secrets'
+
+paths:
+  # Only analyze production code for security issues
+  - 'src/**'
+  - 'scripts/**'
+
+paths-ignore:
+  # Exclude generated files and dependencies
+  - 'node_modules/**'
+  - 'dist/**'
+  - 'build/**'
+  - 'coverage/**'

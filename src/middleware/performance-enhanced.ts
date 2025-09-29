@@ -527,6 +527,71 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   }
 
   /**
+   * Sanitize error for logging to prevent sensitive information exposure
+   */
+  private sanitizeErrorForLogging(error: unknown): string {
+    if (!error) return 'Unknown error';
+
+    // If it's a string, avoid logging possibly sensitive details, always redact
+    if (typeof error === 'string') {
+      // Optionally: Try to check for obvious secrets, API key format, etc. For now, always redact
+      return '[Redacted error message]';
+    }
+
+    // If it's an Error object, use the message but check for likely sensitive value
+    if (error instanceof Error) {
+      // Very basic redaction: if the message looks like a config or API key, redact it
+      const msg = error.message || '';
+      if (
+        /api[_-]?key/i.test(msg) ||
+        /(Bearer|sk_[a-zA-Z0-9]{20,})/.test(msg) ||
+        /secret|token/i.test(msg)
+      ) {
+        return '[Redacted error message]';
+      }
+      return msg || 'Error occurred';
+    }
+
+    // For objects, extract safe information, but never log "apiKey" or secrets
+    if (typeof error === 'object' && error !== null) {
+      const obj = error as Record<string, unknown>;
+      // If the object appears to be a config with apiKey or secrets, redact
+      if (Object.keys(obj).some((k) => /api[_-]?key|secret|token/i.test(k))) {
+        return '[Redacted error object]';
+      }
+      // Safely extract common error properties without exposing sensitive data
+      const status = obj.status || obj.statusCode;
+      const message = obj.message;
+
+      // Redact known bad messages
+      if (
+        typeof message === 'string' &&
+        (/api[_-]?key/i.test(message) || /secret|token/i.test(message))
+      ) {
+        if (status) {
+          return `${status}: [Redacted error message]`;
+        }
+        return '[Redacted error message]';
+      }
+
+      if (status && message) {
+        return `${status}: ${message}`;
+      }
+      if (status) {
+        return `HTTP ${status}`;
+      }
+      if (message) {
+        return String(message);
+      }
+
+      // Fallback for other objects - don't serialize the full object
+      return 'Request failed';
+    }
+
+    return 'Unknown error type';
+  }
+
+  /**
    * Log metrics in development
    */
   private logMetrics(metrics: EnhancedPerformanceMetrics): void {
@@ -547,7 +612,9 @@ export class EnhancedPerformanceTracker extends EventEmitter {
           0
         )}ms, MCP: ${metrics.timingSplit.mcpOverhead.toFixed(0)}ms]` +
         (metrics.cached ? ' 📦 CACHED' : '') +
-        (metrics.error ? ` ❌ ${metrics.error}` : '')
+        (metrics.error
+          ? ` ❌ ${this.sanitizeErrorForLogging(metrics.error)}`
+          : '')
     );
   }
 

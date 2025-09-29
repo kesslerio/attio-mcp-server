@@ -11,6 +11,7 @@ import {
   RecordBatchUpdateParams,
 } from '../types/attio.js';
 import { CompanyFieldValue } from '../types/tool-types.js';
+import { createScopedLogger } from '@/utils/logger.js';
 import {
   executeBatchOperations,
   batchCreateRecords,
@@ -334,8 +335,14 @@ export async function batchUpdateCompanies(params: {
       }
     }
 
-    // For other errors, log and then rethrow
-    console.error('[batchUpdateCompanies] Error updating companies:', error);
+    // For other errors, log and then rethrow using structured logging
+    const logger = createScopedLogger(
+      'batch-companies',
+      'batchUpdateCompanies'
+    );
+    logger.error('Batch company update failed', error, {
+      updateCount: params.updates.length,
+    });
     throw error;
   }
 }

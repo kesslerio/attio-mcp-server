@@ -24,7 +24,13 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error('Cleanup failed:', e?.response?.data || e);
+  // Sanitize error to prevent sensitive information exposure
+  const sanitizedError =
+    e instanceof Error
+      ? e.message
+      : typeof e === 'object' && e?.response?.status
+        ? `HTTP ${e.response.status}: Request failed`
+        : 'Unknown error';
+  console.error('Cleanup failed:', sanitizedError);
   process.exit(1);
 });
-

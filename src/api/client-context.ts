@@ -105,7 +105,7 @@ export function getContextApiKey(): string | undefined {
       if (key && typeof key === 'string' && key.trim()) {
         return key;
       }
-    } catch (error) {
+    } catch {
       // Cache this failure to avoid repeated exceptions
       // Clear existing timer if present to prevent duplicates
       const existingTimer = failedContextCache.get(getApiKeyIdentifier);

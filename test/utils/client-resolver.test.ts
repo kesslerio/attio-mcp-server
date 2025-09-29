@@ -117,7 +117,7 @@ describe('Client Resolver', () => {
 
       const { resolveAttioClient } = await importResolver();
       expect(() => resolveAttioClient()).toThrow(
-        /No available Attio client factory method found/
+        /Failed to initialize Attio client/
       );
     });
 
@@ -127,15 +127,19 @@ describe('Client Resolver', () => {
       mockContextModule(undefined);
 
       const { resolveAttioClient } = await importResolver();
-      expect(() => resolveAttioClient()).toThrow(/Has API key: false/);
+      expect(() => resolveAttioClient()).toThrow(
+        /Failed to initialize Attio client/
+      );
     });
 
-    it('lists available methods in error message', async () => {
+    it('provides generic error message without exposing internal methods', async () => {
       mockAttioModule({ someOtherMethod: vi.fn() });
       mockContextModule(undefined);
 
       const { resolveAttioClient } = await importResolver();
-      expect(() => resolveAttioClient()).toThrow(/someOtherMethod/);
+      expect(() => resolveAttioClient()).toThrow(
+        /Failed to initialize Attio client/
+      );
     });
   });
 

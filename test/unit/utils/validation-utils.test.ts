@@ -17,7 +17,7 @@ import {
 // Mock the Attio client
 const mockGet = vi.fn();
 vi.mock('../../../src/api/attio-client.js', () => ({
-  getAttioClient: () => ({
+  createAttioClient: () => ({
     get: mockGet,
     post: vi.fn(),
     patch: vi.fn(),
