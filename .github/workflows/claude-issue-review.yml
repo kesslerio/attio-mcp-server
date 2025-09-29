@@ -165,7 +165,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           claude_args: >-
-            --model claude-sonnet-4-20250514
+            --model claude-4.5-sonnet
             --max-turns 28
             --allowed-tools Read
             --output-format stream-json

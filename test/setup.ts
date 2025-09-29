@@ -6,13 +6,17 @@ import { vi, beforeEach } from 'vitest';
 
 // Force predictable test environment semantics for sanitization logic
 process.env.NODE_ENV = 'test';
-import { createMockApiClient } from './types/test-types';
+import { createMockApiClient } from '@test/types/test-types.js';
 import {
   validateTestEnvironment,
   getDetailedErrorMessage,
-} from './utils/test-cleanup';
-import { clearMockCompanies } from '../src/utils/mock-state';
-import { clearAttributeCache } from '../src/api/attribute-types';
+} from '@test/utils/test-cleanup.js';
+import {
+  sanitizeLogMessage,
+  sanitizeLogPayload,
+} from '@/utils/log-sanitizer.js';
+import { clearMockCompanies } from '@/utils/mock-state.js';
+import { clearAttributeCache } from '@/api/attribute-types.js';
 
 // Validate environment for integration tests
 if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
@@ -27,6 +31,32 @@ if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
       'Integration tests will fail without proper environment setup.'
     );
   }
+}
+
+type ConsoleMethod = 'log' | 'info' | 'warn' | 'error' | 'debug';
+
+const consoleMethods: ConsoleMethod[] = [
+  'log',
+  'info',
+  'warn',
+  'error',
+  'debug',
+];
+
+for (const method of consoleMethods) {
+  const original = console[method];
+  console[method] = ((...args: unknown[]) => {
+    const sanitizedArgs = args.map((arg) => {
+      if (typeof arg === 'string') {
+        return sanitizeLogMessage(arg);
+      }
+      if (typeof arg === 'object' && arg !== null) {
+        return sanitizeLogPayload(arg);
+      }
+      return arg;
+    });
+    return original.apply(console, sanitizedArgs as []);
+  }) as (typeof console)[typeof method];
 }
 
 // Define types for test globals
