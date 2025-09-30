@@ -29,6 +29,26 @@ describe('parseQuery', () => {
     expect(result.phones).not.toContain('+102079460018');
   });
 
+  it('ignores short numeric fragments that are not phone numbers', () => {
+    const result = parseQuery('ref case 1-2-3-4 please');
+
+    expect(result.phones).toEqual([]);
+  });
+
+  it('ignores malformed email-like fragments', () => {
+    const result = parseQuery('reach me at foo@@example..com tomorrow');
+
+    expect(result.emails).toEqual([]);
+  });
+
+  it('extracts domains from URLs', () => {
+    const result = parseQuery(
+      'Visit https://sub.examplecorp.co.uk/contact for details'
+    );
+
+    expect(result.domains).toEqual(['sub.examplecorp.co.uk']);
+  });
+
   it('omits empty tokens for whitespace-only queries', () => {
     const result = parseQuery('   ');
 

@@ -18,6 +18,19 @@ const ATTRIBUTE_TO_PROPERTY_MAP: Record<string, string> = {
   domains: 'domain',
 };
 
+const TOKEN_STOPWORDS = new Set([
+  'and',
+  'the',
+  'with',
+  'for',
+  'from',
+  'company',
+  'inc',
+  'llc',
+  'co',
+]);
+const MAX_TOKENS = 25;
+
 function getCondition(
   matchType?: MatchType,
   fallback: 'contains' | 'equals' = 'contains'
@@ -78,10 +91,13 @@ export function buildPeopleQueryFilters(
 
   // Token-based name matching for multi-field queries
   // For people searches, also add tokens to email filter since they might be
-  // partial email addresses (e.g., "armaanaesthetics" in "armaanaesthetics@gmail.com")
+  // partial email addresses (e.g., "examplename" in "examplename@example.com")
   const hasStructuredEmail = parsed.emails.length > 0;
 
-  parsed.tokens.forEach((token) => {
+  parsed.tokens.slice(0, MAX_TOKENS).forEach((token) => {
+    if (TOKEN_STOPWORDS.has(token.toLowerCase())) {
+      return;
+    }
     addFilter(filters, seen, 'name', token, condition);
     // If token is long enough, and we didn't extract explicit emails,
     // also search email addresses (likely email local part)
@@ -126,7 +142,10 @@ export function buildCompanyQueryFilters(
   });
 
   // Token-based matching - add to both name and domains for broader search
-  parsed.tokens.forEach((token) => {
+  parsed.tokens.slice(0, MAX_TOKENS).forEach((token) => {
+    if (TOKEN_STOPWORDS.has(token.toLowerCase())) {
+      return;
+    }
     addFilter(filters, seen, 'name', token, condition);
     addFilter(filters, seen, 'domains', token, condition);
   });

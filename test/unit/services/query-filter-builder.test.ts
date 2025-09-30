@@ -71,6 +71,16 @@ describe('buildPeopleQueryFilters', () => {
     );
   });
 
+  it('skips stopwords when generating filters', () => {
+    const filters = buildPeopleQueryFilters(
+      'the Example Medical Group',
+      MatchType.PARTIAL
+    );
+
+    expect(findFilter(filters?.filters, 'name', 'the')).toBe(false);
+    expect(findFilter(filters?.filters, 'name', 'Example')).toBe(true);
+  });
+
   it('uses equals condition for exact match type', () => {
     const filters = buildPeopleQueryFilters(
       'john.doe@example.com',

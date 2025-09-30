@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-const nonDigitRegex = /\D+/g;
+const NON_DIGIT_PATTERN = /\D+/g;
+const EMAIL_PATTERN = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+const PHONE_CANDIDATE_PATTERN = /\+?\d[\d().\s-]{5,}\d/g;
+const DOMAIN_PATTERN = /\b(?:[a-zA-Z0-9][-a-zA-Z0-9]*\.)+[a-zA-Z]{2,}\b/g;
+
+const MIN_PHONE_DIGITS = 7;
+const MAX_PHONE_DIGITS = 15;
 
 const parsedQuerySchema = z.object({
   originalQuery: z.string(),
@@ -13,13 +19,8 @@ const parsedQuerySchema = z.object({
 
 export type ParsedQuery = z.infer<typeof parsedQuerySchema>;
 
-const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-const phoneCandidateRegex = /\+?[\d][\d().\s-]{5,}[\d]/g;
-// Matches standalone domains like "example.com" or "sub.example.co.uk"
-const domainRegex = /\b[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}\b/g;
-
 function extractEmails(query: string): { emails: string[]; remaining: string } {
-  const matches = query.match(emailRegex) || [];
+  const matches = query.match(EMAIL_PATTERN) || [];
   let remaining = query;
   matches.forEach((match) => {
     remaining = remaining.replace(match, ' ');
@@ -37,15 +38,18 @@ function looksLikeNorthAmericanNumber(digitsOnly: string) {
 }
 
 function extractPhones(query: string): { phones: string[]; remaining: string } {
-  const matches = query.match(phoneCandidateRegex) || [];
+  const matches = query.match(PHONE_CANDIDATE_PATTERN) || [];
   let remaining = query;
   const phoneVariants = new Set<string>();
 
   matches.forEach((match) => {
     remaining = remaining.replace(match, ' ');
 
-    const digitsOnly = match.replace(nonDigitRegex, '');
-    if (digitsOnly.length < 7 || digitsOnly.length > 15) {
+    const digitsOnly = match.replace(NON_DIGIT_PATTERN, '');
+    if (
+      digitsOnly.length < MIN_PHONE_DIGITS ||
+      digitsOnly.length > MAX_PHONE_DIGITS
+    ) {
       return;
     }
 
@@ -84,7 +88,7 @@ function extractDomains(
     .filter((domain): domain is string => Boolean(domain));
 
   // Extract standalone domains from query
-  const standaloneDomains = query.match(domainRegex) || [];
+  const standaloneDomains = query.match(DOMAIN_PATTERN) || [];
   let remaining = query;
   standaloneDomains.forEach((match) => {
     remaining = remaining.replace(match, ' ');

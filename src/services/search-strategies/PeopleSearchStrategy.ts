@@ -171,26 +171,18 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
       throw new Error('People search function not available');
     }
 
-    try {
-      const paginatedResult = await this.dependencies.paginatedSearchFunction(
-        { filters: [] },
-        { limit, offset }
-      );
-      return paginatedResult.results;
-    } catch (error: unknown) {
-      // If empty filters aren't supported, return empty array rather than failing
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const log = createScopedLogger(
-        'PeopleSearchStrategy',
-        'searchWithoutQuery'
-      );
-      log.warn(
-        'People search with empty filters failed, returning empty results',
-        { errorMessage }
-      );
-      return [];
-    }
+    return this.handleEmptyFilters(
+      async (filters, limitArg, offsetArg) => {
+        const paginatedResult = await this.dependencies
+          .paginatedSearchFunction!(filters, {
+          limit: limitArg,
+          offset: offsetArg,
+        });
+        return paginatedResult.results;
+      },
+      limit,
+      offset
+    );
   }
 
   /**
