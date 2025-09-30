@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-09-30
+
+### Added
+
+- Intelligent search query parsing for people and company resources (Issue #781).
+- Debug documentation for anonymized production placeholders used in diagnostic suites.
+
+### Changed
+
+- Updated `parseQuery` to support international phone formats and robust multi-level domain extraction.
+- Enhanced people/company search strategies to leverage parsed tokens, phone variants, and consistent empty-filter handling.
+- Swapped unit test fixtures/docs to anonymized examples (Alex Rivera / Example Medical Group / +1 555 010 4477).
+
+### Fixed
+
+- Eliminated redundant `$or` filters and US-only phone assumptions in query filter builders.
+- Hardened token processing to ignore stopwords and guard against large query inputs.
+
 ### Added
 
 ### Changed
