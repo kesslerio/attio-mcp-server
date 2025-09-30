@@ -13,6 +13,7 @@ import {
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { buildCompanyQueryFilters } from './query-filter-builder.js';
 
 /**
  * Search strategy for companies with advanced filtering and content search
@@ -119,11 +120,6 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
       throw new Error('Companies search function not available');
     }
 
-    // Auto-detect domain-like queries and search domains field specifically
-    if (this.looksLikeDomain(query)) {
-      return this.searchByDomain(query, limit, offset);
-    }
-
     // Handle different search types
     if (searchType === SearchType.CONTENT) {
       return this.searchByContent(
@@ -135,6 +131,24 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
         offset
       );
     } else {
+      const parsedFilters = buildCompanyQueryFilters(query, matchType);
+
+      if (
+        parsedFilters?.filters?.length &&
+        this.dependencies.advancedSearchFunction
+      ) {
+        return this.dependencies.advancedSearchFunction(
+          parsedFilters,
+          limit,
+          offset
+        );
+      }
+
+      // Auto-detect domain-like queries and search domains field specifically
+      if (this.looksLikeDomain(query)) {
+        return this.searchByDomain(query, limit, offset);
+      }
+
       return this.searchByName(query, matchType, limit, offset);
     }
   }

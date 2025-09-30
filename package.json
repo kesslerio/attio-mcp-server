@@ -47,6 +47,7 @@
     "test:watch:changed": "vitest --watch --changed",
     "test:single": "vitest --run",
     "test:debug": "vitest --reporter=verbose --no-coverage",
+    "test:debug:issue-781": "E2E_MODE=true vitest --config vitest.config.debug.ts --run --reporter=verbose --testTimeout=300000",
     "test:ci": "E2E_MODE=true vitest --run --reporter=verbose",
     "test:integration": "vitest --config configs/vitest/vitest.config.integration.ts --run",
     "test:integration:only": "vitest --config configs/vitest/vitest.config.integration.ts --run test/integration/",

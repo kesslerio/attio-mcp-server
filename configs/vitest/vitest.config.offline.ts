@@ -10,6 +10,7 @@ export default defineConfig({
       'test/integration/**',
       'test/manual/**',
       'test/e2e/**',
+      'test/mcp/**', // MCP tests hit real APIs via MCPTestClient
       'test/**/*.manual.*',
       'test/**/*real-api-integration*',
       'test/**/*claude-desktop-scenario*',
@@ -18,6 +19,8 @@ export default defineConfig({
       'test/handlers/tool-configs/universal/performance-*.test.ts',
       // Exclude performance tests from offline runs
       'test/performance/**/*.test.ts',
+      // Exclude debug/diagnostic suites from automated offline runs
+      'test/debug/**/*.test.ts',
     ],
     globals: true,
     testTimeout: 10000,

@@ -16,6 +16,8 @@ export type ParsedQuery = z.infer<typeof parsedQuerySchema>;
 const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
 const phoneRegex =
   /\+?\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
+// Matches standalone domains like "example.com" or "sub.example.co.uk"
+const domainRegex = /\b[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}\b/g;
 
 function extractEmails(query: string): { emails: string[]; remaining: string } {
   const matches = query.match(emailRegex) || [];
@@ -49,22 +51,52 @@ function extractPhones(query: string): { phones: string[]; remaining: string } {
   return { phones: Array.from(phoneVariants), remaining };
 }
 
-function extractDomains(emails: string[]): string[] {
-  return Array.from(
-    new Set(
-      emails
-        .map((email) => email.split('@')[1])
-        .filter((domain): domain is string => Boolean(domain))
-    )
-  );
+function extractDomains(
+  query: string,
+  emails: string[]
+): { domains: string[]; remaining: string } {
+  // Extract domains from emails
+  const domainsFromEmails = emails
+    .map((email) => email.split('@')[1])
+    .filter((domain): domain is string => Boolean(domain));
+
+  // Extract standalone domains from query
+  const standaloneDomains = query.match(domainRegex) || [];
+  let remaining = query;
+  standaloneDomains.forEach((match) => {
+    remaining = remaining.replace(match, ' ');
+  });
+
+  return {
+    domains: Array.from(
+      new Set([
+        ...domainsFromEmails,
+        ...standaloneDomains.map((d) => d.toLowerCase()),
+      ])
+    ),
+    remaining,
+  };
 }
 
 function tokenize(query: string): string[] {
+  const seen = new Set<string>();
+
   return query
     .split(/\s+/)
     .map((token) => token.trim())
-    .filter((token) => token.length > 0)
-    .map((token) => token.toLowerCase());
+    .filter((token) => {
+      if (!token) {
+        return false;
+      }
+
+      const normalized = token.toLowerCase();
+      if (seen.has(normalized)) {
+        return false;
+      }
+
+      seen.add(normalized);
+      return true;
+    });
 }
 
 export function parseQuery(query: string): ParsedQuery {
@@ -82,11 +114,15 @@ export function parseQuery(query: string): ParsedQuery {
 
   const emailResults = extractEmails(trimmed);
   const phoneResults = extractPhones(emailResults.remaining);
+  const domainResults = extractDomains(
+    phoneResults.remaining,
+    emailResults.emails
+  );
 
   const emails = emailResults.emails;
   const phones = phoneResults.phones;
-  const domains = extractDomains(emails);
-  const tokens = tokenize(phoneResults.remaining);
+  const domains = domainResults.domains;
+  const tokens = tokenize(domainResults.remaining);
 
   return parsedQuerySchema.parse({
     originalQuery: query,

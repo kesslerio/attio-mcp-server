@@ -107,13 +107,19 @@ describe('Content Search Functionality', () => {
 
       expect(advancedSearchCompanies).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: [
-            {
+          matchAny: true,
+          filters: expect.arrayContaining([
+            expect.objectContaining({
               attribute: { slug: 'name' },
               condition: 'contains',
               value: 'test',
-            },
-          ],
+            }),
+            expect.objectContaining({
+              attribute: { slug: 'domains' },
+              condition: 'contains',
+              value: 'test',
+            }),
+          ]),
         }),
         undefined,
         undefined

@@ -8,7 +8,7 @@ describe('parseQuery', () => {
 
     expect(result.emails).toEqual(['drbpatel24@gmail.com']);
     expect(result.domains).toEqual(['gmail.com']);
-    expect(result.tokens).toEqual(['bhavesh', 'patel']);
+    expect(result.tokens).toEqual(['Bhavesh', 'Patel']);
   });
 
   it('normalizes multiple phone number formats', () => {

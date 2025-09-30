@@ -37,8 +37,8 @@ describe('searchObject', () => {
     expect(filter.$or).toEqual(
       expect.arrayContaining([
         { email_addresses: { $contains: 'drbpatel24@gmail.com' } },
-        { name: { $contains: 'bhavesh' } },
-        { name: { $contains: 'patel' } },
+        { name: { $contains: 'Bhavesh' } },
+        { name: { $contains: 'Patel' } },
       ])
     );
   });
@@ -68,9 +68,9 @@ describe('searchObject', () => {
 
     expect(filter.$or).toEqual(
       expect.arrayContaining([
-        { name: { $contains: 'tite' } },
-        { name: { $contains: 'oregon' } },
-        { domains: { $contains: 'tite' } },
+        { name: { $contains: 'Tite' } },
+        { name: { $contains: 'Oregon' } },
+        { domains: { $contains: 'Tite' } },
       ])
     );
   });
