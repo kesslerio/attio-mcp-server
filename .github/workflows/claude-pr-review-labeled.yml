@@ -261,7 +261,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           claude_args: >-
-            --model claude-4.5-sonnet
+            --model claude-sonnet-4-5
             --max-turns ${{ steps.turns.outputs.sonnet_turns }}
             --allowed-tools Read,Glob,Grep
             --output-format stream-json
