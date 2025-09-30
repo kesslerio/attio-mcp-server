@@ -78,7 +78,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
             await new Promise((resolve) => setTimeout(resolve, index * 100));
           }
 
-          return advancedOperationsToolConfigs['batch-operations'].handler({
+          return advancedOperationsToolConfigs['records_batch'].handler({
             resource_type: UniversalResourceType.COMPANIES,
             operation_type: BatchOperationType.DELETE,
             record_ids: batch,
@@ -107,7 +107,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -145,7 +145,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -201,7 +201,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -256,7 +256,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -313,7 +313,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const batchStartTime = Date.now();
 
       const batchResult = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -361,7 +361,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.GET,
@@ -394,7 +394,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
         }));
 
       const createResult = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -414,7 +414,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const deleteResult = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.DELETE,
@@ -443,7 +443,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'advanced-search'
+        'records_search_advanced'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'Perf Test',
@@ -468,7 +468,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'advanced-search'
+        'records_search_advanced'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'Test',
@@ -493,7 +493,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'advanced-search'
+        'records_search_advanced'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'Perf Test',

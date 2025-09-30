@@ -59,7 +59,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
     vi.clearAllMocks();
   });
 
-  describe('batch-operations tool', () => {
+  describe('records_batch tool', () => {
     it('should handle batch create operations', async () => {
       const mockHandleUniversalCreate = vi.mocked(
         sharedHandlers.handleUniversalCreate

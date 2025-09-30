@@ -23,12 +23,14 @@ git --version
 ```
 
 If any prerequisites are missing:
+
 - **Node.js**: Install from [nodejs.org](https://nodejs.org/) or use [nvm](https://github.com/nvm-sh/nvm)
 - **Git**: Install from [git-scm.com](https://git-scm.com/)
 
 ## Step 1: Clone and Initial Setup
 
 ### Quick Start (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/kesslerio/attio-mcp-server.git
@@ -39,6 +41,7 @@ cd attio-mcp-server
 ```
 
 ### Manual Setup (Alternative)
+
 ```bash
 # Clone the repository
 git clone https://github.com/kesslerio/attio-mcp-server.git
@@ -52,6 +55,7 @@ npm run build
 ```
 
 ### Verification
+
 ```bash
 # Verify installation
 npm run check
@@ -72,20 +76,22 @@ ls dist/
    - Create or copy your API key
 
 2. **Configure environment**:
+
    ```bash
    # Create .env file from template
    cp .env.template .env
-   
+
    # Edit .env file
    echo "ATTIO_API_KEY=your_api_key_here" > .env
    ```
 
 3. **Verify API connection**:
+
    ```bash
    # Run offline tests first (no API required)
    npm run test:offline
    # Expected: All offline tests pass
-   
+
    # Test API connection (requires valid API key)
    npm run test:integration -- --run test/integration/real-api-integration.test.ts
    # Expected: Connection successful
@@ -94,6 +100,7 @@ ls dist/
 ## Step 3: Understanding the Codebase
 
 ### Project Structure
+
 ```
 attio-mcp-server/
 ├── src/                    # Source code
@@ -110,6 +117,7 @@ attio-mcp-server/
 ```
 
 ### Key Concepts
+
 - **MCP Tools**: Handlers that expose Attio functionality to LLMs
 - **Universal Tools**: Generic CRUD operations for any Attio object type
 - **Filters**: Advanced querying capabilities for Attio data
@@ -119,6 +127,7 @@ For detailed architecture, see [API Overview](api/api-overview.md).
 ## Step 4: Running Your First Test
 
 ### TDD Setup (Recommended for Development)
+
 ```bash
 # Set up Test-Driven Development environment
 ./scripts/setup-tdd.sh
@@ -130,6 +139,7 @@ For detailed architecture, see [API Overview](api/api-overview.md).
 ```
 
 ### Running Tests Manually
+
 ```bash
 # Run all offline tests (fast, no API)
 npm run test:offline
@@ -138,13 +148,14 @@ npm run test:offline
 npm test test/handlers/universal-tools.test.ts
 
 # Run tests matching pattern
-npm test -- -t "search-records"
+npm test -- -t "records.search"
 
 # Run with coverage
 npm run test:coverage:offline
 ```
 
 ### Test Categories
+
 - **Offline Tests**: Unit tests that don't require API access (fast)
 - **Integration Tests**: Tests that interact with real Attio API (slower)
 - **Performance Tests**: Benchmark and regression tests
@@ -154,7 +165,9 @@ See [Testing Guide](testing.md) for comprehensive testing documentation.
 ## Step 5: Making Your First Contribution
 
 ### 1. Create an Issue
+
 Before starting work, create or find an issue:
+
 ```bash
 # Search existing issues
 gh issue list --repo kesslerio/attio-mcp-server --search "your topic"
@@ -166,6 +179,7 @@ gh issue create --title "Type: Description" --body "Details"
 See [Issue Templates](examples/) for proper formatting.
 
 ### 2. Create a Feature Branch
+
 ```bash
 # Always start from main
 git checkout main
@@ -178,13 +192,16 @@ git checkout -b fix/issue-123-brief-description
 ```
 
 ### 3. Make Your Changes
+
 Follow these guidelines:
+
 - **Code Standards**: See [CLAUDE.md#code-standards](/CLAUDE.md#code-standards)
 - **TypeScript**: No `any` types, explicit error handling
 - **Testing**: Write tests for new functionality
 - **Formatting**: Use `npm run format` before committing
 
 ### 4. Validate Your Changes
+
 ```bash
 # Run the full validation pipeline (required before commit)
 npm run lint:check && npm run check:format && npm run build && npm run test:offline
@@ -194,6 +211,7 @@ npm run check
 ```
 
 ### 5. Commit and Push
+
 ```bash
 # Stage your changes
 git add .
@@ -207,6 +225,7 @@ git push -u origin HEAD
 ```
 
 ### 6. Create Pull Request
+
 ```bash
 # Create PR using GitHub CLI
 gh pr create -R kesslerio/attio-mcp-server \
@@ -221,6 +240,7 @@ See [PR Creation Guide](PR_CREATION_GUIDE.md) for detailed PR guidelines.
 ## Common Pitfalls and Troubleshooting
 
 ### Issue: Tests Failing Locally
+
 ```bash
 # Solution 1: Clear build artifacts
 npm run clean && npm run build
@@ -233,6 +253,7 @@ node --version  # Must be 18+
 ```
 
 ### Issue: API Key Not Working
+
 ```bash
 # Verify environment variable is set
 echo $ATTIO_API_KEY
@@ -242,6 +263,7 @@ npm run test:integration:real-api
 ```
 
 ### Issue: TypeScript Compilation Errors
+
 ```bash
 # Check for type errors
 npm run build
@@ -254,6 +276,7 @@ npm run lint:fix
 ```
 
 ### Issue: Git Hooks Not Running
+
 ```bash
 # Reinstall git hooks
 npm run setup-hooks
@@ -275,6 +298,7 @@ Now that you're set up, explore these resources:
 ## Quick Reference
 
 ### Essential Commands
+
 ```bash
 npm run build              # Compile TypeScript
 npm run test:offline       # Run unit tests (fast)
@@ -285,6 +309,7 @@ npm run lint:fix          # Fix linting issues
 ```
 
 ### Development Scripts
+
 ```bash
 ./scripts/quick-setup.sh   # Initial project setup
 ./scripts/setup-tdd.sh     # Set up TDD environment
@@ -314,4 +339,5 @@ Before considering yourself "onboarded", ensure you can:
 Congratulations! You're now ready to contribute to the Attio MCP Server project. 🎉
 
 ---
-*For development workflows, coding standards, and detailed policies, always refer to [CLAUDE.md](/CLAUDE.md) as the source of truth.*
+
+_For development workflows, coding standards, and detailed policies, always refer to [CLAUDE.md](/CLAUDE.md) as the source of truth._

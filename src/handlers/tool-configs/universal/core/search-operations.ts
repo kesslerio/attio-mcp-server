@@ -11,6 +11,7 @@ import {
 } from '../schemas.js';
 import { handleSearchError } from './error-utils.js';
 import { handleUniversalSearch } from '../shared-handlers.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
  * Universal search records tool configuration.
@@ -20,7 +21,7 @@ export const searchRecordsConfig: UniversalToolConfig<
   UniversalSearchParams,
   AttioRecord[]
 > = {
-  name: 'search-records',
+  name: 'records_search',
   handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
@@ -143,9 +144,13 @@ export const searchRecordsConfig: UniversalToolConfig<
 };
 
 export const searchRecordsDefinition = {
-  name: 'search-records',
-  description:
-    'Universal search across all resource types (companies, people, records, tasks)',
+  name: 'records_search',
+  description: formatToolDescription({
+    capability: 'Search across companies, people, tasks, and records',
+    boundaries: 'create or modify records',
+    constraints: 'Returns max 100 results (default: 10)',
+    recoveryHint: 'use records.discover_attributes to find searchable fields',
+  }),
   inputSchema: searchRecordsSchema,
   annotations: {
     readOnlyHint: true,

@@ -63,7 +63,7 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
    - Smithery handles token refresh and API key management automatically
 
 5. **Verification**:
-   - ChatGPT will automatically auto-approve tools with `readOnlyHint: true` (e.g. `search-records`, `get-record-details`)
+   - ChatGPT will automatically auto-approve tools with `readOnlyHint: true` (e.g. `records.search`, `records.get_details`)
    - Prompt for approval on write tools (`create-record`, `update-record`) and destructive tools (`delete-record`)
 
 ### Approval messaging tips

@@ -17,6 +17,7 @@ The formatResult architecture refactoring eliminated environment-dependent behav
 ### What Changed
 
 #### Before: Dual-Mode Anti-Pattern ❌
+
 ```typescript
 function formatResult(data: AttioRecord[]): string | object {
   // ANTI-PATTERN: Environment-dependent return types
@@ -28,13 +29,14 @@ function formatResult(data: AttioRecord[]): string | object {
 ```
 
 #### After: Consistent Architecture ✅
+
 ```typescript
 function formatResult(data: AttioRecord[]): string {
   // BEST PRACTICE: Always returns string
   if (!data || data.length === 0) {
     return 'No records found';
   }
-  return `Found ${data.length} records: ${data.map(r => r.values?.name?.[0]?.value || 'Unknown').join(', ')}`;
+  return `Found ${data.length} records: ${data.map((r) => r.values?.name?.[0]?.value || 'Unknown').join(', ')}`;
 }
 ```
 
@@ -42,21 +44,21 @@ function formatResult(data: AttioRecord[]): string {
 
 All 13 universal tools were updated with consistent formatResult contracts:
 
-| Tool | Old Behavior | New Behavior |
-|------|-------------|--------------|
-| `search-records` | Dual-mode (string/object) | Always string |
-| `get-record-details` | Dual-mode (string/object) | Always string |
-| `create-record` | Dual-mode (string/object) | Always string |
-| `update-record` | Dual-mode (string/object) | Always string |
-| `delete-record` | Dual-mode (string/object) | Always string |
-| `advanced-search` | Dual-mode (string/object) | Always string |
-| `batch-operations` | Dual-mode (string/object) | Always string |
-| `search-by-relationship` | Dual-mode (string/object) | Always string |
-| `search-by-content` | Dual-mode (string/object) | Always string |
-| `search-by-timeframe` | Dual-mode (string/object) | Always string |
-| `get-attributes` | Dual-mode (string/object) | Always string |
-| `discover-attributes` | Dual-mode (string/object) | Always string |
-| `get-detailed-info` | Dual-mode (string/object) | Always string |
+| Tool                             | Old Behavior              | New Behavior  |
+| -------------------------------- | ------------------------- | ------------- |
+| `records.search`                 | Dual-mode (string/object) | Always string |
+| `records.get_details`            | Dual-mode (string/object) | Always string |
+| `create-record`                  | Dual-mode (string/object) | Always string |
+| `update-record`                  | Dual-mode (string/object) | Always string |
+| `delete-record`                  | Dual-mode (string/object) | Always string |
+| `records.search_advanced`        | Dual-mode (string/object) | Always string |
+| `records.batch`                  | Dual-mode (string/object) | Always string |
+| `records.search_by_relationship` | Dual-mode (string/object) | Always string |
+| `records.search_by_content`      | Dual-mode (string/object) | Always string |
+| `records.search_by_timeframe`    | Dual-mode (string/object) | Always string |
+| `records.get_attributes`         | Dual-mode (string/object) | Always string |
+| `records.discover_attributes`    | Dual-mode (string/object) | Always string |
+| `records.get_info`               | Dual-mode (string/object) | Always string |
 
 ## For Future Developers
 
@@ -67,7 +69,7 @@ When creating new formatResult functions, follow this template:
 ```typescript
 /**
  * Format [resource] results for display
- * 
+ *
  * @param data - The data to format
  * @param options - Optional formatting parameters
  * @returns Always returns a formatted string
@@ -83,7 +85,7 @@ export function formatYourResults(
 
   // Normalize to array
   const records = Array.isArray(data) ? data : [data];
-  
+
   if (records.length === 0) {
     return `No ${options?.resourceType || 'records'} found`;
   }
@@ -102,6 +104,7 @@ export function formatYourResults(
 ### Type Safety Patterns
 
 #### ✅ Use Record<string, unknown> Instead of any
+
 ```typescript
 // BEST PRACTICE: Type-safe unknown
 function processData(data: Record<string, unknown>): string {
@@ -116,10 +119,11 @@ function processData(data: any): string {
 ```
 
 #### ✅ Consistent Return Type Annotations
+
 ```typescript
 // BEST PRACTICE: Explicit string return type
 export function formatResults(data: AttioRecord[]): string {
-  return data.map(r => r.values?.name?.[0]?.value).join(', ');
+  return data.map((r) => r.values?.name?.[0]?.value).join(', ');
 }
 
 // ANTI-PATTERN: Union return types
@@ -131,23 +135,25 @@ export function formatResults(data: AttioRecord[]): string | object {
 ### Performance Optimization Strategies
 
 #### 1. String Template Performance
+
 ```typescript
 // ✅ OPTIMIZED: Direct string templates
 function formatFast(records: AttioRecord[]): string {
-  return records
-    .map(r => r.values?.name?.[0]?.value || 'Unknown')
-    .join(', ');
+  return records.map((r) => r.values?.name?.[0]?.value || 'Unknown').join(', ');
 }
 
 // ❌ SLOWER: JSON.stringify for display
 function formatSlow(records: AttioRecord[]): string {
-  return JSON.stringify(records.map(r => ({
-    name: r.values?.name?.[0]?.value
-  })));
+  return JSON.stringify(
+    records.map((r) => ({
+      name: r.values?.name?.[0]?.value,
+    }))
+  );
 }
 ```
 
 #### 2. Memory Usage Optimization
+
 ```typescript
 // ✅ MEMORY EFFICIENT: Direct property access
 function formatEfficient(record: AttioRecord): string {
@@ -162,13 +168,14 @@ function formatWasteful(record: AttioRecord): string {
     name: record.values?.name?.[0]?.value || 'Unknown',
     id: record.id?.record_id || 'No ID',
     formatted: true,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
   return JSON.stringify(obj);
 }
 ```
 
 #### 3. ESLint Warning Reduction
+
 ```typescript
 // ✅ LINT-FRIENDLY: Explicit type checking
 function processValue(value: unknown): string {
@@ -196,14 +203,14 @@ describe('formatResult Consistency', () => {
   const mockRecord: AttioRecord = {
     id: { record_id: 'test-123' },
     values: {
-      name: [{ value: 'Test Record' }]
-    }
+      name: [{ value: 'Test Record' }],
+    },
   };
 
   test('always returns string regardless of environment', () => {
     // Test in all environments
     const result = formatYourResults([mockRecord]);
-    
+
     expect(typeof result).toBe('string');
     expect(result).toContain('Test Record');
     expect(result).toContain('test-123');
@@ -211,14 +218,14 @@ describe('formatResult Consistency', () => {
 
   test('handles empty data gracefully', () => {
     const result = formatYourResults([]);
-    
+
     expect(typeof result).toBe('string');
     expect(result).toContain('No');
   });
 
   test('handles undefined data gracefully', () => {
     const result = formatYourResults(undefined as any);
-    
+
     expect(typeof result).toBe('string');
     expect(result).toBe('No data available');
   });
@@ -231,14 +238,14 @@ describe('formatResult Consistency', () => {
 describe('formatResult Performance', () => {
   const largeDataset = Array.from({ length: 1000 }, (_, i) => ({
     id: { record_id: `test-${i}` },
-    values: { name: [{ value: `Record ${i}` }] }
+    values: { name: [{ value: `Record ${i}` }] },
   }));
 
   test('performs efficiently with large datasets', () => {
     const start = performance.now();
     const result = formatYourResults(largeDataset);
     const duration = performance.now() - start;
-    
+
     expect(typeof result).toBe('string');
     expect(duration).toBeLessThan(50); // Should complete in <50ms
   });
@@ -247,7 +254,7 @@ describe('formatResult Performance', () => {
     const initialMemory = process.memoryUsage().heapUsed;
     formatYourResults(largeDataset);
     const finalMemory = process.memoryUsage().heapUsed;
-    
+
     // Memory increase should be minimal for string formatting
     expect(finalMemory - initialMemory).toBeLessThan(1024 * 1024); // <1MB
   });
@@ -283,14 +290,14 @@ When reviewing formatResult changes:
 
 The formatResult refactoring achieved exceptional results:
 
-| Metric | Before | After | Achievement |
-|--------|--------|-------|-------------|
-| **Performance** | Baseline | +89.7% faster | 🎯 Exceptional |
-| **Memory Usage** | Baseline | -227KB | 🎯 Significant reduction |
-| **ESLint Warnings** | 957 | 395 | 🎯 59% reduction |
-| **TypeScript Errors** | 42 | 0 | 🎯 100% resolution |
-| **Unit Test Success** | 20/26 | 26/26 | 🎯 100% passing |
-| **Production Risk** | High | Zero | 🎯 Perfect safety |
+| Metric                | Before   | After         | Achievement              |
+| --------------------- | -------- | ------------- | ------------------------ |
+| **Performance**       | Baseline | +89.7% faster | 🎯 Exceptional           |
+| **Memory Usage**      | Baseline | -227KB        | 🎯 Significant reduction |
+| **ESLint Warnings**   | 957      | 395           | 🎯 59% reduction         |
+| **TypeScript Errors** | 42       | 0             | 🎯 100% resolution       |
+| **Unit Test Success** | 20/26    | 26/26         | 🎯 100% passing          |
+| **Production Risk**   | High     | Zero          | 🎯 Perfect safety        |
 
 ### Validation Commands
 
@@ -316,6 +323,7 @@ npm run check && npm test
 ### Common Issues
 
 #### 1. Return Type Inconsistency
+
 ```typescript
 // ❌ PROBLEM: Mixed return types
 function badFormat(data: any): string | object {
@@ -330,6 +338,7 @@ function goodFormat(data: AttioRecord[]): string {
 ```
 
 #### 2. Environment Detection Remnants
+
 ```typescript
 // ❌ PROBLEM: Environment-dependent behavior
 function badFormat(data: any): string {
@@ -346,19 +355,24 @@ function goodFormat(data: AttioRecord[]): string {
 ```
 
 #### 3. Performance Regressions
+
 ```typescript
 // ❌ PROBLEM: Expensive operations for display
 function slowFormat(data: AttioRecord[]): string {
-  return JSON.stringify(data.map(r => ({
-    ...r,
-    formatted: true,
-    timestamp: new Date()
-  })), null, 2);
+  return JSON.stringify(
+    data.map((r) => ({
+      ...r,
+      formatted: true,
+      timestamp: new Date(),
+    })),
+    null,
+    2
+  );
 }
 
 // ✅ SOLUTION: Lightweight formatting
 function fastFormat(data: AttioRecord[]): string {
-  return data.map(r => r.values?.name?.[0]?.value).join(', ');
+  return data.map((r) => r.values?.name?.[0]?.value).join(', ');
 }
 ```
 

@@ -9,12 +9,15 @@ The Attio MCP server has been **significantly improved** with universal tools th
 **New to universal tools?** Start here:
 
 ### [📖 Universal Tools Overview](./universal-tools/README.md)
+
 Complete introduction to the universal tools system with quick navigation and examples.
 
 ### [🔄 Migration Guide](./universal-tools/migration-guide.md)
+
 **Upgrading from individual tools?** This guide provides complete mappings for all 40+ deprecated tools to their universal equivalents.
 
 ### [📚 API Reference](./universal-tools/api-reference.md)
+
 Comprehensive reference for all 13 universal tools with detailed schemas and examples.
 
 ## 🎨 Benefits of Universal Tools
@@ -27,8 +30,9 @@ Comprehensive reference for all 13 universal tools with detailed schemas and exa
 ## 🛠 The 13 Universal Tools
 
 ### Core Operations (8 tools)
-- `search-records` - Universal search across all resource types
-- `get-record-details` - Get detailed information for any record
+
+- `records.search` - Universal search across all resource types
+- `records.get_details` - Get detailed information for any record
 - `create-record` - Create records of any supported type
 - `update-record` - Update existing records
 - `delete-record` - Delete records
@@ -37,6 +41,7 @@ Comprehensive reference for all 13 universal tools with detailed schemas and exa
 - `get-detailed-info` - Get specialized information (contact, business, social)
 
 ### Advanced Operations (5 tools)
+
 - `advanced-search` - Complex searches with sorting and advanced filtering
 - `search-by-relationship` - Cross-resource relationship searches
 - `search-by-content` - Content-based searches (notes, activity)
@@ -45,21 +50,21 @@ Comprehensive reference for all 13 universal tools with detailed schemas and exa
 
 ## 🔗 Quick Navigation
 
-| What you need | Go here |
-|---------------|---------|
+| What you need                    | Go here                                                 |
+| -------------------------------- | ------------------------------------------------------- |
 | **Overview and getting started** | [Universal Tools Overview](./universal-tools/README.md) |
-| **Migrate from old tools** | [Migration Guide](./universal-tools/migration-guide.md) |
-| **Complete API reference** | [API Reference](./universal-tools/api-reference.md) |
-| **Best practices and examples** | [User Guide](./universal-tools/user-guide.md) |
-| **Extend or customize** | [Developer Guide](./universal-tools/developer-guide.md) |
-| **Troubleshoot issues** | [Troubleshooting](./universal-tools/troubleshooting.md) |
+| **Migrate from old tools**       | [Migration Guide](./universal-tools/migration-guide.md) |
+| **Complete API reference**       | [API Reference](./universal-tools/api-reference.md)     |
+| **Best practices and examples**  | [User Guide](./universal-tools/user-guide.md)           |
+| **Extend or customize**          | [Developer Guide](./universal-tools/developer-guide.md) |
+| **Troubleshoot issues**          | [Troubleshooting](./universal-tools/troubleshooting.md) |
 
 ## ⚠️ Deprecated Individual Tools
 
 The following resource-specific tools have been consolidated into universal operations:
 
 - **Company tools** (27 tools) → Universal tools with `resource_type: 'companies'`
-- **People tools** (15 tools) → Universal tools with `resource_type: 'people'`  
+- **People tools** (15 tools) → Universal tools with `resource_type: 'people'`
 - **Task tools** (5 tools) → Universal tools with `resource_type: 'tasks'`
 
 **Need help migrating?** See the [Migration Guide](./universal-tools/migration-guide.md) for complete mappings and examples.
@@ -67,6 +72,7 @@ The following resource-specific tools have been consolidated into universal oper
 ## 💡 Example: Before vs After
 
 ### Before (deprecated)
+
 ```typescript
 // Separate tools for each resource type
 await client.callTool('search-companies', { query: 'tech' });
@@ -75,11 +81,21 @@ await client.callTool('create-task', { title: 'Follow up' });
 ```
 
 ### After (universal)
-```typescript  
+
+```typescript
 // Single tools with resource_type parameter
-await client.callTool('search-records', { resource_type: 'companies', query: 'tech' });
-await client.callTool('search-records', { resource_type: 'people', query: 'john' });
-await client.callTool('create-record', { resource_type: 'tasks', record_data: { title: 'Follow up' } });
+await client.callTool('records.search', {
+  resource_type: 'companies',
+  query: 'tech',
+});
+await client.callTool('records.search', {
+  resource_type: 'people',
+  query: 'john',
+});
+await client.callTool('create-record', {
+  resource_type: 'tasks',
+  record_data: { title: 'Follow up' },
+});
 ```
 
 ## 🎉 Get Started
@@ -88,4 +104,4 @@ Ready to use the universal tools? Start with the [Universal Tools Overview](./un
 
 ---
 
-*This documentation reflects the universal tools consolidation completed in Issue #352. All functionality from the previous individual tools is preserved and improved in the universal system.*
+_This documentation reflects the universal tools consolidation completed in Issue #352. All functionality from the previous individual tools is preserved and improved in the universal system._

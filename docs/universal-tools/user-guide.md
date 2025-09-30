@@ -15,15 +15,15 @@ await client.callTool('search-people', { query: 'john' });
 await client.callTool('search-tasks', { query: 'follow-up' });
 
 // NEW WAY: One tool with resource_type parameter and smarter parsing
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'companies',
   query: 'tech',
 });
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: 'alex.rivera@example.com',
 });
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'tasks',
   query: 'follow-up',
 });
@@ -45,26 +45,26 @@ await client.callTool('search-records', {
 
 ```typescript
 // Search for technology companies
-const techCompanies = await client.callTool('search-records', {
+const techCompanies = await client.callTool('records.search', {
   resource_type: 'companies',
   query: 'technology startup',
   limit: 25,
 });
 
 // Find a contact by name + email in a single query
-const contact = await client.callTool('search-records', {
+const contact = await client.callTool('records.search', {
   resource_type: 'people',
   query: 'Alex Rivera alex.rivera@example.com',
 });
 
 // Look up a contact by phone number (formatting normalized automatically)
-const phoneMatch = await client.callTool('search-records', {
+const phoneMatch = await client.callTool('records.search', {
   resource_type: 'people',
   query: '+1 (555) 010-4477',
 });
 
 // Get detailed company information
-const companyDetails = await client.callTool('get-record-details', {
+const companyDetails = await client.callTool('records.get_details', {
   resource_type: 'companies',
   record_id: 'comp_123',
 });
@@ -85,14 +85,14 @@ await client.callTool('update-record', {
 
 ```typescript
 // Find people at a specific company
-const companyPeople = await client.callTool('search-by-relationship', {
+const companyPeople = await client.callTool('records.search_by_relationship', {
   relationship_type: 'company_to_people',
   source_id: 'comp_123',
   limit: 50,
 });
 
 // Search for decision makers
-const decisionMakers = await client.callTool('advanced-search', {
+const decisionMakers = await client.callTool('records.search_advanced', {
   resource_type: 'people',
   filters: {
     and: [
@@ -123,7 +123,7 @@ await client.callTool('create-record', {
 
 ```typescript
 // Find recent leads
-const recentLeads = await client.callTool('search-by-timeframe', {
+const recentLeads = await client.callTool('records.search_by_timeframe', {
   resource_type: 'companies',
   timeframe_type: 'created',
   start_date: '2024-01-01T00:00:00Z',
@@ -131,14 +131,14 @@ const recentLeads = await client.callTool('search-by-timeframe', {
 });
 
 // Find companies with recent activity
-const activeCompanies = await client.callTool('search-by-timeframe', {
+const activeCompanies = await client.callTool('records.search_by_timeframe', {
   resource_type: 'companies',
   timeframe_type: 'last_interaction',
   start_date: '2024-01-15T00:00:00Z',
 });
 
 // Search notes for specific topics
-const demoRequests = await client.callTool('search-by-content', {
+const demoRequests = await client.callTool('records.search_by_content', {
   resource_type: 'companies',
   content_type: 'notes',
   search_query: 'demo request',
@@ -160,7 +160,7 @@ await client.callTool('create-record', {
 });
 
 // Find overdue tasks
-const overdueTasks = await client.callTool('search-by-timeframe', {
+const overdueTasks = await client.callTool('records.search_by_timeframe', {
   resource_type: 'tasks',
   timeframe_type: 'created',
   end_date: '2024-01-01T00:00:00Z',
@@ -173,7 +173,7 @@ const overdueTasks = await client.callTool('search-by-timeframe', {
 
 ```typescript
 // Batch search for market analysis
-const techCompanies = await client.callTool('batch-operations', {
+const techCompanies = await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'search',
   query: 'technology software',
@@ -181,14 +181,14 @@ const techCompanies = await client.callTool('batch-operations', {
 });
 
 // Get detailed info for multiple companies
-const companyDetails = await client.callTool('batch-operations', {
+const companyDetails = await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'get',
   record_ids: ['comp_123', 'comp_456', 'comp_789'],
 });
 
 // Batch update company statuses
-await client.callTool('batch-operations', {
+await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'update',
   records: [
@@ -203,7 +203,7 @@ await client.callTool('batch-operations', {
 
 ```typescript
 // Complex company search
-const qualifiedLeads = await client.callTool('advanced-search', {
+const qualifiedLeads = await client.callTool('records.search_advanced', {
   resource_type: 'companies',
   filters: {
     and: [
@@ -218,7 +218,7 @@ const qualifiedLeads = await client.callTool('advanced-search', {
 });
 
 // Find people with specific criteria
-const targetContacts = await client.callTool('advanced-search', {
+const targetContacts = await client.callTool('records.search_advanced', {
   resource_type: 'people',
   filters: {
     or: [
@@ -282,7 +282,7 @@ resource_type: 'tasks';
 
 ```typescript
 // ✅ Good: Use filters for precise results
-await client.callTool('advanced-search', {
+await client.callTool('records.search_advanced', {
   resource_type: 'companies',
   query: 'technology',
   filters: {
@@ -294,7 +294,7 @@ await client.callTool('advanced-search', {
 });
 
 // ❌ Poor: Overly broad search
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'companies',
   query: 'tech',
 });
@@ -316,7 +316,7 @@ await client.callTool('search-records', {
 
 ```typescript
 // ✅ Good: Batch operation for multiple records
-await client.callTool('batch-operations', {
+await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'get',
   record_ids: ['comp_1', 'comp_2', 'comp_3', 'comp_4', 'comp_5'],
@@ -324,7 +324,7 @@ await client.callTool('batch-operations', {
 
 // ❌ Poor: Multiple individual calls
 for (const id of companyIds) {
-  await client.callTool('get-record-details', {
+  await client.callTool('records.get_details', {
     resource_type: 'companies',
     record_id: id,
   });
@@ -339,7 +339,7 @@ const batchSize = 25;
 const batches = chunkArray(records, batchSize);
 
 for (const batch of batches) {
-  await client.callTool('batch-operations', {
+  await client.callTool('records.batch', {
     resource_type: 'companies',
     operation_type: 'create',
     records: batch,
@@ -347,7 +347,7 @@ for (const batch of batches) {
 }
 
 // ❌ Poor: Exceeds batch limits
-await client.callTool('batch-operations', {
+await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'create',
   records: arrayOf100Records, // Will fail
@@ -362,7 +362,7 @@ The universal tools now support natural language date expressions for more intui
 
 ```typescript
 // ✅ NEW: Natural language relative dates
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   filters: {
     and: [
@@ -419,21 +419,21 @@ await client.callTool('search-records', {
 
 ```typescript
 // ✅ Good: Valid presets and natural language
-await client.callTool('search-by-timeframe', {
+await client.callTool('records.search_by_timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   preset: 'this_month', // Standard preset
 });
 
 // ✅ Also good: Natural language expressions
-await client.callTool('search-by-timeframe', {
+await client.callTool('records.search_by_timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   preset: 'last 30 days', // Now supported!
 });
 
 // ❌ Poor: Invalid format
-await client.callTool('search-by-timeframe', {
+await client.callTool('records.search_by_timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   preset: 'thirty days ago', // Not recognized
@@ -446,7 +446,7 @@ await client.callTool('search-by-timeframe', {
 
 ```typescript
 try {
-  const results = await client.callTool('search-records', {
+  const results = await client.callTool('records.search', {
     resource_type: 'companies',
     query: searchTerm,
   });
@@ -489,7 +489,7 @@ function validateSearchParams(params) {
 
 // Use validation before API calls
 validateSearchParams(searchParams);
-const results = await client.callTool('search-records', searchParams);
+const results = await client.callTool('records.search', searchParams);
 ```
 
 ## Performance Optimization
@@ -596,14 +596,14 @@ Limit returned data to improve performance:
 
 ```typescript
 // ✅ Good: Only request needed fields
-await client.callTool('get-record-details', {
+await client.callTool('records.get_details', {
   resource_type: 'companies',
   record_id: 'comp_123',
   fields: ['name', 'website', 'industry', 'employee_count'],
 });
 
 // ❌ Poor: Returns all fields (slower)
-await client.callTool('get-record-details', {
+await client.callTool('records.get_details', {
   resource_type: 'companies',
   record_id: 'comp_123',
 });
@@ -620,7 +620,7 @@ async function loadAllResults(searchParams, maxResults = 1000) {
   const pageSize = 25;
 
   while (offset < maxResults) {
-    const results = await client.callTool('search-records', {
+    const results = await client.callTool('records.search', {
       ...searchParams,
       limit: pageSize,
       offset: offset,
@@ -651,7 +651,7 @@ async function getCachedCompanyDetails(companyId) {
     return cache.get(companyId);
   }
 
-  const details = await client.callTool('get-record-details', {
+  const details = await client.callTool('records.get_details', {
     resource_type: 'companies',
     record_id: companyId,
   });
@@ -699,7 +699,7 @@ async function processNewLead(leadData) {
 
 ```typescript
 async function syncCompanyData(externalCompanies) {
-  const existingCompanies = await client.callTool('batch-operations', {
+  const existingCompanies = await client.callTool('records.batch', {
     resource_type: 'companies',
     operation_type: 'search',
     query: 'all companies',
@@ -724,7 +724,7 @@ async function syncCompanyData(externalCompanies) {
 
   // Batch create new companies
   if (toCreate.length > 0) {
-    await client.callTool('batch-operations', {
+    await client.callTool('records.batch', {
       resource_type: 'companies',
       operation_type: 'create',
       records: toCreate,
@@ -733,7 +733,7 @@ async function syncCompanyData(externalCompanies) {
 
   // Batch update existing companies
   if (toUpdate.length > 0) {
-    await client.callTool('batch-operations', {
+    await client.callTool('records.batch', {
       resource_type: 'companies',
       operation_type: 'update',
       records: toUpdate,

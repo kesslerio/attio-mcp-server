@@ -78,7 +78,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
             await new Promise((resolve) => setTimeout(resolve, index * 100));
           }
 
-          return advancedOperationsToolConfigs['batch-operations'].handler({
+          return advancedOperationsToolConfigs['records_batch'].handler({
             resource_type: UniversalResourceType.COMPANIES,
             operation_type: BatchOperationType.DELETE,
             record_ids: batch,
@@ -107,7 +107,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -154,7 +154,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -212,7 +212,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
         }));
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -250,7 +250,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
 
       // Create and immediately delete to test cleanup
       const createResult = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
@@ -267,7 +267,7 @@ describe('Universal Tools Performance Tests - Resources', () => {
       }
 
       const deleteResult = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.DELETE,

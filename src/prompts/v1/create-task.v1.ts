@@ -99,7 +99,7 @@ export function buildCreateTaskMessages(
   const validated = CreateTaskArgs.parse(args);
 
   const targetResolution = validated.target
-    ? `\n1. Resolve target: If target="${validated.target}" starts with "search:", call \`records.query\` to find one record. If multiple matches, disambiguate.`
+    ? `\n1. Resolve target: If target="${validated.target}" starts with "search:", call \`records_query\` to find one record. If multiple matches, disambiguate.`
     : '';
 
   const dueDateParsing = validated.due_date

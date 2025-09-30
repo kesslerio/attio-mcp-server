@@ -5,10 +5,11 @@ import {
   type TiktokenModel,
 } from '@dqbd/tiktoken';
 
-const DEFAULT_MODEL = 'claude-3-7-sonnet-20250219';
+const DEFAULT_MODEL = 'claude-sonnet-4-5';
 const DEFAULT_ENCODING: TiktokenEncoding = 'cl100k_base';
 
 const MODEL_TO_ENCODING: Record<string, TiktokenEncoding> = {
+  'claude-sonnet-4-5': DEFAULT_ENCODING,
   'claude-3-7-sonnet-20250219': DEFAULT_ENCODING,
   'claude-3-5-sonnet-20240620': DEFAULT_ENCODING,
   'claude-3-opus-20240229': DEFAULT_ENCODING,

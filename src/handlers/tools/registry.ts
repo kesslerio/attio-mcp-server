@@ -5,6 +5,7 @@ import { ResourceType } from '../../types/attio.js';
 import { ToolConfig } from '../tool-types.js';
 import { createScopedLogger } from '../../utils/logger.js';
 import { isToolAllowed } from '../../config/tool-mode.js';
+import { resolveToolName } from '@/config/tool-aliases.js';
 
 // Type for return values that can include special resource markers
 type ToolConfigResult = {
@@ -129,6 +130,8 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
     log.debug(`Looking for tool: ${toolName}`);
   }
 
+  const { name: canonicalToolName } = resolveToolName(toolName);
+
   // Search in resource-specific tools first
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
@@ -142,7 +145,7 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
     // For debugging, log all available tools for a resource type
     if (debugMode) {
       const toolTypes = Object.keys(resourceConfig);
-      if (toolTypes.includes(toolName.replace(/-/g, ''))) {
+      if (toolTypes.includes(canonicalToolName.replace(/-/g, ''))) {
         log.info(
           'Tool might be found under a different name. Available tool types',
           { toolTypes }
@@ -155,11 +158,11 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
         'get-company-basic-info',
       ];
       if (
-        commonProblematicTools.includes(toolName) &&
+        commonProblematicTools.includes(canonicalToolName) &&
         resourceType === ResourceType.COMPANIES
       ) {
         const toolTypeKey =
-          toolName === 'discover-company-attributes'
+          canonicalToolName === 'discover-company-attributes'
             ? 'discoverAttributes'
             : 'basicInfo';
 
@@ -182,16 +185,16 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
     }
 
     for (const [toolType, config] of Object.entries(resourceConfig)) {
-      if (config && config.name === toolName) {
+      if (config && config.name === canonicalToolName) {
         if (debugMode) {
           log.info('Found tool in resource config', {
-            toolName,
+            toolName: canonicalToolName,
             toolType,
             resourceType,
           });
         }
 
-        if (isToolAllowed(toolName)) {
+        if (isToolAllowed(canonicalToolName)) {
           return {
             resourceType: resourceType as ResourceType,
             toolConfig: config as ToolConfig,
@@ -207,12 +210,15 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
   const universalConfig = TOOL_CONFIGS.UNIVERSAL;
   if (universalConfig) {
     for (const [toolType, config] of Object.entries(universalConfig)) {
-      if (config && config.name === toolName) {
+      if (config && config.name === canonicalToolName) {
         if (debugMode) {
-          log.info('Found universal tool', { toolName, toolType });
+          log.info('Found universal tool', {
+            toolName: canonicalToolName,
+            toolType,
+          });
         }
 
-        if (isToolAllowed(toolName)) {
+        if (isToolAllowed(canonicalToolName)) {
           return {
             resourceType: 'UNIVERSAL' as const,
             toolConfig: config as ToolConfig,
@@ -228,12 +234,15 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
   const generalConfig = TOOL_CONFIGS.GENERAL;
   if (generalConfig) {
     for (const [toolType, config] of Object.entries(generalConfig)) {
-      if (config && config.name === toolName) {
+      if (config && config.name === canonicalToolName) {
         if (debugMode) {
-          log.info('Found general tool', { toolName, toolType });
+          log.info('Found general tool', {
+            toolName: canonicalToolName,
+            toolType,
+          });
         }
 
-        if (isToolAllowed(toolName)) {
+        if (isToolAllowed(canonicalToolName)) {
           return {
             resourceType: 'GENERAL' as const,
             toolConfig: config as ToolConfig,
@@ -246,7 +255,7 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
   }
 
   if (debugMode) {
-    log.warn('Tool not found', { toolName });
+    log.warn('Tool not found', { toolName: canonicalToolName });
   }
 
   return undefined;

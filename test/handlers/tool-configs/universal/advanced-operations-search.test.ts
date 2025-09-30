@@ -30,7 +30,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
     cleanupMocks();
   });
 
-  describe('advanced-search tool', () => {
+  describe('records_search_advanced tool', () => {
     it('should perform advanced search successfully', async () => {
       const mockResults = [
         {
@@ -113,12 +113,12 @@ describe('Universal Advanced Operations - Search Tests', () => {
       };
 
       await expect(advancedSearchConfig.handler(params)).rejects.toThrow(
-        'Universal advanced search failed for resource type companies: Filter error'
+        'Universal records_search_advanced failed for resource type companies: Filter error'
       );
     });
   });
 
-  describe('search-by-relationship tool', () => {
+  describe('records_search_by_relationship tool', () => {
     it('should search company to people relationships', async () => {
       const mockResults = [
         {

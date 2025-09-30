@@ -47,6 +47,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 **Quality Gate**: 100% pass rate required
 
 #### TC-D01: Create Deal with Basic Fields
+
 - **Purpose**: Validate deal creation with required fields (name, stage, value)
 - **Method**: `create-record` tool with resource_type 'deals'
 - **Test Data**: Generated via `TestDataFactory.createDealData()`
@@ -57,12 +58,14 @@ vitest test/e2e/mcp/deal-operations/ --watch
   - `value` (also accepts: amount, deal_value, deal_amount, price, revenue)
 
 #### TC-D02: Get Deal Details by ID
+
 - **Purpose**: Validate deal record retrieval
-- **Method**: `get-record-details` tool with deal ID from TC-D01
+- **Method**: `records.get_details` tool with deal ID from TC-D01
 - **Validation**: MCP response contains deal information
 - **Dependencies**: Requires successful TC-D01 execution
 
 #### TC-D03: Update Deal Fields
+
 - **Purpose**: Validate deal field updates (stage and value)
 - **Method**: `update-record` tool with modified field values
 - **Test Data**: Generated via `TestDataFactory.createUpdateData('deals')`
@@ -70,6 +73,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 - **Dependencies**: Requires successful TC-D01 execution
 
 #### TC-D04: Delete Deal Record
+
 - **Purpose**: Validate deal deletion functionality
 - **Method**: `delete-record` tool with deal ID
 - **Validation**: MCP response confirms successful deletion
@@ -82,6 +86,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 **Quality Gate**: 100% pass rate required
 
 #### TC-D05: Move Deal Through Pipeline Stages
+
 - **Purpose**: Validate deal stage progression through pipeline
 - **Stages Tested**: Lead → Qualified → Proposal
 - **Method**: Sequential `update-record` calls with different stage values
@@ -89,6 +94,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 - **Validation**: Each stage update confirmed via MCP response
 
 #### TC-D06: Update Deal Value and Currency
+
 - **Purpose**: Validate deal value updates with different amounts
 - **Method**: Multiple `update-record` calls with varying values
 - **Test Values**: 25000, 50000, 100000
@@ -96,8 +102,9 @@ vitest test/e2e/mcp/deal-operations/ --watch
 - **Currency Handling**: Automatic USD assignment per workspace settings
 
 #### TC-D07: Search Deals by Stage/Status
+
 - **Purpose**: Validate deal search and filtering capabilities
-- **Method**: Create deals in different stages, then search using `search-records`
+- **Method**: Create deals in different stages, then search using `records.search`
 - **Search Parameters**: resource_type 'deals', query pattern, limit 10
 - **Validation**: Search returns relevant deal records
 
@@ -108,12 +115,14 @@ vitest test/e2e/mcp/deal-operations/ --watch
 **Quality Gate**: 100% pass rate required
 
 #### TC-D08: Associate Deal with Company
+
 - **Purpose**: Validate deal-company relationship creation
 - **Method**: Create company first, then create deal with `associated_company` field
 - **Field Mappings**: `associated_company` (also accepts: company, company_id, account, customer)
 - **Validation**: Deal creation with company association succeeds
 
 #### TC-D09: Associate Deal with People/Contacts
+
 - **Purpose**: Validate deal-person relationship creation
 - **Method**: Create person first, then create deal with `associated_people` field
 - **Field Mappings**: `associated_people` (also accepts: contact, contacts, primary_contact, people)
@@ -121,6 +130,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 - **Validation**: Deal creation with people association succeeds
 
 #### TC-D10: Search Deals by Associated Records
+
 - **Purpose**: Validate relationship-based deal discovery
 - **Method**: Create deal with both company and people associations, then search
 - **Search Strategy**: Use query pattern that matches created test data
@@ -131,6 +141,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 The test suite validates comprehensive field mapping support from `DEALS_FIELD_MAPPING`:
 
 ### Core Fields
+
 - **name**: Required field, accepts variations (title, deal_name, opportunity_name)
 - **stage**: Required field, accepts variations (status, deal_stage, pipeline_stage)
 - **value**: Currency field, accepts variations (amount, price, revenue)
@@ -139,7 +150,9 @@ The test suite validates comprehensive field mapping support from `DEALS_FIELD_M
 - **associated_people**: Array of record references to people
 
 ### Invalid Fields Handled
+
 Tests confirm proper rejection of invalid fields:
+
 - `description`, `notes` → Should be created separately
 - `close_date`, `probability` → Not built-in fields
 - `currency` → Handled automatically by Attio
@@ -147,12 +160,14 @@ Tests confirm proper rejection of invalid fields:
 ## Test Data Management
 
 ### Test Data Factory Methods
+
 - `TestDataFactory.createDealData(testCase)`: Basic deal with random stage and value
 - `TestDataFactory.createDealWithStage(testCase, stage)`: Deal with specific stage
 - `TestDataFactory.createDealPipelineStages()`: Returns array of valid stages
 - `TestDataFactory.createUpdateData('deals', testCase)`: Update payload for deals
 
 ### Cleanup Strategy
+
 - Automatic cleanup in `afterAll()` hooks
 - Failed records are tracked and cleaned up
 - Deletion errors are ignored to prevent test failures
@@ -161,6 +176,7 @@ Tests confirm proper rejection of invalid fields:
 ## MCP Response Format
 
 ### Expected Response Characteristics
+
 - **Format**: Text-based responses, not JSON
 - **Success Indicators**: Text confirmation messages
 - **ID Extraction**: Pattern `/\(ID:\s*([a-f0-9-]+)\)/i`
@@ -168,6 +184,7 @@ Tests confirm proper rejection of invalid fields:
 - **Field Echo**: Values not echoed back in responses
 
 ### Validation Patterns
+
 - **Creation**: Look for ID pattern and success text
 - **Updates**: Confirm update success messages
 - **Retrieval**: Validate record data presence
@@ -185,6 +202,7 @@ Tests confirm proper rejection of invalid fields:
 ## Integration with CI/CD
 
 ### Local Development
+
 ```bash
 # Quick deal test run
 npm run test:mcp:p1:deals
@@ -194,6 +212,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 ```
 
 ### Quality Gate Integration
+
 - Tests run locally (not in GitHub Actions CI/CD)
 - Real API credentials required via `ATTIO_API_KEY`
 - 100% pass rate enforced via quality gate validation
@@ -202,6 +221,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 ## Troubleshooting
 
 ### Common Issues
+
 1. **API Authentication**: Ensure `ATTIO_API_KEY` is set
 2. **Rate Limiting**: Tests include small delays between API calls
 3. **Test Data Conflicts**: Each test uses unique timestamps for isolation
@@ -209,6 +229,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 5. **Field Validation**: Invalid fields are rejected by universal field mapper
 
 ### Debug Commands
+
 ```bash
 # Verbose test output
 vitest run test/e2e/mcp/deal-operations/ --reporter=verbose
@@ -223,6 +244,7 @@ vitest test/e2e/mcp/deal-operations/deal-crud.mcp.test.ts --watch
 ## Success Metrics
 
 ### Target Outcomes
+
 - ✅ **100% Pass Rate**: All 10 tests must pass
 - ✅ **Field Mapping Coverage**: All core deal fields tested
 - ✅ **Pipeline Validation**: All major pipeline operations verified
@@ -230,6 +252,7 @@ vitest test/e2e/mcp/deal-operations/deal-crud.mcp.test.ts --watch
 - ✅ **MCP Protocol Compliance**: Text-based response handling confirmed
 
 ### Quality Indicators
+
 - Consistent test execution times
 - Clean test data isolation
 - Proper error handling and cleanup

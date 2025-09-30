@@ -38,7 +38,7 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
 
 ## Core Universal Tools (8 tools)
 
-### 1. search-records
+### 1. records.search
 
 **Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups.
 
@@ -64,32 +64,32 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
 
 ```typescript
 // Basic search for companies
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'companies',
   query: 'tech startup',
   limit: 20,
 });
 
 // Multi-field people lookup (name + email handled automatically)
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: 'Alex Rivera alex.rivera@example.com',
 });
 
 // Phone number search (normalizes formatting + country code)
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: '555-010-4477',
 });
 
 // Domain-aware company search (extracts domains from queries/emails)
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'companies',
   query: 'examplecorp.com',
 });
 
 // Content search across multiple fields
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'companies',
   query: 'artificial intelligence',
   search_type: 'content',
@@ -97,7 +97,7 @@ await client.callTool('search-records', {
 });
 
 // Search people with filters
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: 'john',
   filters: {
@@ -106,7 +106,7 @@ await client.callTool('search-records', {
 });
 
 // Partial match content search
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'companies',
   query: 'automat',
   search_type: 'content',
@@ -114,11 +114,11 @@ await client.callTool('search-records', {
 });
 ```
 
-### 2. get-record-details
+### 2. records.get_details
 
 **Description**: Get detailed information for any record type.
 
-**Consolidates**: `get-company-details`, `get-person-details`, `get-record-details`, `get-task-details`
+**Consolidates**: `get-company-details`, `get-person-details`, `records.get_details`, `get-task-details`
 
 **Schema**:
 
@@ -134,13 +134,13 @@ await client.callTool('search-records', {
 
 ```typescript
 // Get company details
-await client.callTool('get-record-details', {
+await client.callTool('records.get_details', {
   resource_type: 'companies',
   record_id: 'comp_123',
 });
 
 // Get person details with specific fields
-await client.callTool('get-record-details', {
+await client.callTool('records.get_details', {
   resource_type: 'people',
   record_id: 'person_456',
   fields: ['name', 'email', 'company'],
@@ -244,7 +244,7 @@ await client.callTool('delete-record', {
 });
 ```
 
-### 6. get-attributes
+### 6. records.get_attributes
 
 **Description**: Get attributes for any resource type.
 
@@ -265,19 +265,19 @@ await client.callTool('delete-record', {
 
 ```typescript
 // Get all company attributes
-await client.callTool('get-attributes', {
+await client.callTool('records.get_attributes', {
   resource_type: 'companies',
 });
 
 // Get specific record attributes
-await client.callTool('get-attributes', {
+await client.callTool('records.get_attributes', {
   resource_type: 'people',
   record_id: 'person_456',
   fields: ['name', 'email', 'company'],
 });
 ```
 
-### 7. discover-attributes
+### 7. records.discover_attributes
 
 **Description**: Discover available attributes for any resource type.
 
@@ -295,12 +295,12 @@ await client.callTool('get-attributes', {
 
 ```typescript
 // Discover company attributes
-await client.callTool('discover-attributes', {
+await client.callTool('records.discover_attributes', {
   resource_type: 'companies',
 });
 ```
 
-### 8. get-detailed-info
+### 8. records.get_info
 
 **Description**: Get specific types of detailed information (contact, business, social).
 
@@ -320,14 +320,14 @@ await client.callTool('discover-attributes', {
 
 ```typescript
 // Get company contact info
-await client.callTool('get-detailed-info', {
+await client.callTool('records.get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'contact',
 });
 
 // Get company business info
-await client.callTool('get-detailed-info', {
+await client.callTool('records.get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'business',
@@ -336,11 +336,11 @@ await client.callTool('get-detailed-info', {
 
 ## Advanced Universal Tools (5 tools)
 
-### 9. advanced-search
+### 9. records.search_advanced
 
 **Description**: Complex searches with sorting and advanced filtering.
 
-**Consolidates**: `advanced-search-companies`, `advanced-search-people`
+**Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 
 **Schema**:
 
@@ -360,7 +360,7 @@ await client.callTool('get-detailed-info', {
 
 ```typescript
 // Advanced company search with sorting
-await client.callTool('advanced-search', {
+await client.callTool('records.search_advanced', {
   resource_type: 'companies',
   query: 'technology',
   filters: {
@@ -374,7 +374,7 @@ await client.callTool('advanced-search', {
 });
 ```
 
-### 10. search-by-relationship
+### 10. records.search_by_relationship
 
 **Description**: Cross-resource relationship searches.
 
@@ -396,20 +396,20 @@ await client.callTool('advanced-search', {
 
 ```typescript
 // Find people at a company
-await client.callTool('search-by-relationship', {
+await client.callTool('records.search_by_relationship', {
   relationship_type: 'company_to_people',
   source_id: 'comp_123',
   limit: 50,
 });
 
 // Find companies associated with a person
-await client.callTool('search-by-relationship', {
+await client.callTool('records.search_by_relationship', {
   relationship_type: 'people_to_company',
   source_id: 'person_456',
 });
 ```
 
-### 11. search-by-content
+### 11. records.search_by_content
 
 **Description**: Content-based searches (notes, activity, interactions).
 
@@ -431,21 +431,21 @@ await client.callTool('search-by-relationship', {
 
 ```typescript
 // Search companies by notes
-await client.callTool('search-by-content', {
+await client.callTool('records.search_by_content', {
   resource_type: 'companies',
   content_type: 'notes',
   search_query: 'quarterly review',
 });
 
 // Search people by activity
-await client.callTool('search-by-content', {
+await client.callTool('records.search_by_content', {
   resource_type: 'people',
   content_type: 'activity',
   search_query: 'demo scheduled',
 });
 ```
 
-### 12. search-by-timeframe
+### 12. records.search_by_timeframe
 
 **Description**: Time-based searches with date ranges. Supports natural language date expressions (v0.2.1+).
 
@@ -475,7 +475,7 @@ await client.callTool('search-by-content', {
 
 ```typescript
 // Search people created in January 2024 (ISO format)
-await client.callTool('search-by-timeframe', {
+await client.callTool('records.search_by_timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   start_date: '2024-01-01T00:00:00Z',
@@ -483,21 +483,21 @@ await client.callTool('search-by-timeframe', {
 });
 
 // Search people created in the last 30 days (natural language)
-await client.callTool('search-by-timeframe', {
+await client.callTool('records.search_by_timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   preset: 'last 30 days',
 });
 
 // Search companies modified this month
-await client.callTool('search-by-timeframe', {
+await client.callTool('records.search_by_timeframe', {
   resource_type: 'companies',
   timeframe_type: 'modified',
   preset: 'this month',
 });
 
 // Search companies by last interaction using relative dates
-await client.callTool('search-by-timeframe', {
+await client.callTool('records.search_by_timeframe', {
   resource_type: 'companies',
   timeframe_type: 'last_interaction',
   start_date: 'last 7 days',
@@ -505,11 +505,11 @@ await client.callTool('search-by-timeframe', {
 });
 ```
 
-### 13. batch-operations
+### 13. records.batch
 
 **Description**: Bulk operations on multiple records.
 
-**Consolidates**: `batch-create-companies`, `batch-update-companies`, `batch-delete-companies`, `batch-search-companies`, `batch-get-company-details`, `batch-create-records`, `batch-update-records`
+**Consolidates**: `batch-create-companies`, `batch-update-companies`, `batch-delete-companies`, `records.search_batch-companies`, `batch-get-company-details`, `batch-create-records`, `batch-update-records`
 
 **Schema**:
 
@@ -529,7 +529,7 @@ await client.callTool('search-by-timeframe', {
 
 ```typescript
 // Batch create companies
-await client.callTool('batch-operations', {
+await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'create',
   records: [
@@ -539,14 +539,14 @@ await client.callTool('batch-operations', {
 });
 
 // Batch get company details
-await client.callTool('batch-operations', {
+await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'get',
   record_ids: ['comp_123', 'comp_456', 'comp_789'],
 });
 
 // Batch search companies
-await client.callTool('batch-operations', {
+await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'search',
   query: 'technology startup',
@@ -678,7 +678,7 @@ await client.callTool('create-record', {
 // Returns: Mock task with proper Attio field format
 
 // Special mock IDs trigger error scenarios
-await client.callTool('get-record-details', {
+await client.callTool('records.get_details', {
   resource_type: 'tasks',
   record_id: 'mock-error-not-found',
 });

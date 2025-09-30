@@ -21,6 +21,12 @@ export const getAttributesSchema = {
   },
   required: ['resource_type' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'companies',
+      categories: ['standard'],
+    },
+  ],
 };
 
 export const discoverAttributesSchema = {
@@ -35,4 +41,10 @@ export const discoverAttributesSchema = {
   },
   required: ['resource_type' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'people',
+      categories: ['custom'],
+    },
+  ],
 };

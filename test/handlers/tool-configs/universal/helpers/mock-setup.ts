@@ -172,7 +172,7 @@ export const mockSpecializedHandlers = () => {
 };
 
 /**
- * Mock notes module used by search-by-content
+ * Mock notes module used by records.search_by_content
  * Ensures listNotes returns a proper { data: AttioNote[] } shape
  */
 const mockNotesModule = () => {

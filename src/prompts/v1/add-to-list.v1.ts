@@ -60,7 +60,7 @@ export function buildAddToListMessages(
 Steps:
 1. Resolve records: Parse "${validated.records}" (comma-separated). For each:
    - If URL or ID: use directly
-   - If starts with "search:": call \`records.query\` to resolve
+   - If starts with "search:": call \`records_query\` to resolve
    If ambiguous, disambiguate with user.
 
 2. Resolve list: If "${validated.list}" is not a UUID, call \`lists.list\` to find list by name (exact match).

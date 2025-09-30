@@ -13,18 +13,19 @@ import {
   handleUniversalDiscoverAttributes,
   getSingularResourceType,
 } from '../shared-handlers.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const getAttributesConfig: UniversalToolConfig<
   UniversalAttributesParams,
   Record<string, unknown> | { error: string; success: boolean }
 > = {
-  name: 'get-attributes',
+  name: 'records_get_attributes',
   handler: async (
     params: UniversalAttributesParams
   ): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'get-attributes',
+        'records_get_attributes',
         params
       );
       return await handleUniversalGetAttributes(sanitizedParams);
@@ -110,7 +111,7 @@ export const discoverAttributesConfig: UniversalToolConfig<
   { resource_type: UniversalResourceType; categories?: string[] },
   Record<string, unknown> | { error: string; success: boolean }
 > = {
-  name: 'discover-attributes',
+  name: 'records_discover_attributes',
   handler: async (params: {
     resource_type: UniversalResourceType;
     categories?: string[];
@@ -119,7 +120,7 @@ export const discoverAttributesConfig: UniversalToolConfig<
   > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'discover-attributes',
+        'records_discover_attributes',
         params
       );
       return await handleUniversalDiscoverAttributes(
@@ -237,9 +238,14 @@ export const discoverAttributesConfig: UniversalToolConfig<
 };
 
 export const getAttributesDefinition = {
-  name: 'get-attributes',
-  description:
-    'Get attributes for any resource type (companies, people, lists, records, tasks, deals, notes)',
+  name: 'records_get_attributes',
+  description: formatToolDescription({
+    capability: 'Retrieve attribute metadata for a given resource type.',
+    boundaries: 'modify schema definitions or record data.',
+    constraints: 'Requires resource_type; optional categories narrows groups.',
+    recoveryHint:
+      'Use records.discover_attributes for grouped schema discovery.',
+  }),
   inputSchema: getAttributesSchema,
   annotations: {
     readOnlyHint: true,
@@ -248,8 +254,15 @@ export const getAttributesDefinition = {
 };
 
 export const discoverAttributesDefinition = {
-  name: 'discover-attributes',
-  description: 'Discover available attributes for any resource type',
+  name: 'records_discover_attributes',
+  description: formatToolDescription({
+    capability:
+      'Discover available attributes (standard/custom) for a resource.',
+    boundaries: 'alter schema or create fields.',
+    constraints: 'Requires resource_type; optional categories selects subsets.',
+    recoveryHint:
+      'Follow with records.get_attributes to inspect specific fields.',
+  }),
   inputSchema: discoverAttributesSchema,
   annotations: {
     readOnlyHint: true,

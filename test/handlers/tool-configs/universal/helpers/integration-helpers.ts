@@ -204,8 +204,8 @@ export class IntegrationTestDataManager {
         }
 
         // Use batch operations if available, fallback to individual deletes
-        if (toolConfigs['batch-operations']) {
-          return toolConfigs['batch-operations'].handler({
+        if (toolConfigs['records_batch']) {
+          return toolConfigs['records_batch'].handler({
             resource_type: resourceType,
             operation_type: BatchOperationType.DELETE,
             record_ids: batch,

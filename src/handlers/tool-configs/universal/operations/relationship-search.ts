@@ -39,11 +39,11 @@ export const searchByRelationshipConfig: UniversalToolConfig<
   RelationshipSearchParams,
   AttioRecord[]
 > = {
-  name: 'search-by-relationship',
+  name: 'records_search_by_relationship',
   handler: async (params: RelationshipSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'search-by-relationship',
+        'records_search_by_relationship',
         params
       );
 
@@ -76,7 +76,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
           throw new Error(
             `Task relationship search (${relationship_type}) is not currently available. ` +
               `This feature requires enhanced API filtering capabilities. ` +
-              `As a workaround, you can use the 'search-records' tool with resource_type='tasks' to find all tasks, ` +
+              `As a workaround, you can use the 'records_search' tool with resource_type='tasks' to find all tasks, ` +
               `then filter the results programmatically.`
           );
 
@@ -105,7 +105,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
       }
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'relationship search',
+        'records_search_by_relationship',
         params.relationship_type,
         error
       );

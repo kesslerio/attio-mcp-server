@@ -25,6 +25,12 @@ export const getDetailedInfoSchema = {
   },
   required: ['resource_type' as const, 'record_id' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'companies',
+      record_id: 'company_123456',
+    },
+  ],
 };
 
 export const advancedSearchSchema = {
@@ -69,6 +75,21 @@ Supported conditions: contains, equals, starts_with, ends_with, greater_than, le
   },
   required: ['resource_type' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'people',
+      filters: {
+        filters: [
+          {
+            attribute: { slug: 'email_addresses.email_address' },
+            condition: 'contains',
+            value: '@example.com',
+          },
+        ],
+      },
+      limit: 10,
+    },
+  ],
 };
 
 export const searchByRelationshipSchema = {
@@ -93,6 +114,14 @@ export const searchByRelationshipSchema = {
   },
   required: ['relationship_type' as const, 'source_id' as const],
   additionalProperties: false,
+  examples: [
+    {
+      relationship_type: RelationshipType.COMPANY_TO_PEOPLE,
+      source_id: 'company_123456',
+      target_resource_type: 'people',
+      limit: 5,
+    },
+  ],
 };
 
 export const searchByContentSchema = {
@@ -116,6 +145,14 @@ export const searchByContentSchema = {
     'search_query' as const,
   ],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'notes',
+      content_type: ContentSearchType.NOTES,
+      search_query: 'follow-up call',
+      limit: 3,
+    },
+  ],
 };
 
 export const searchByTimeframeSchema = {
@@ -141,6 +178,14 @@ export const searchByTimeframeSchema = {
   },
   required: ['resource_type' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'deals',
+      timeframe_type: TimeframeType.CREATED,
+      start_date: '2025-01-01',
+      end_date: '2025-01-31',
+    },
+  ],
 };
 
 export const batchOperationsSchema = {
@@ -189,4 +234,14 @@ export const batchOperationsSchema = {
   },
   required: ['resource_type' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'companies',
+      operation_type: BatchOperationType.CREATE,
+      records: [
+        { name: 'Example Ltd.', domain: 'example.com' },
+        { name: 'Sample Inc.', domain: 'sample.io' },
+      ],
+    },
+  ],
 };

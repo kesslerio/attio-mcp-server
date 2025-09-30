@@ -12,13 +12,14 @@ Claude can help you interact with company records in Attio through the MCP serve
 
 The MCP server provides enhanced filtering capabilities for company records through the **universal tools system**. Key tools for companies include:
 
-- **`search-records`** with `resource_type: 'companies'` - Replaces `search-companies`
-- **`advanced-search`** with `resource_type: 'companies'` - Complex filtering with multiple conditions
-- **`get-record-details`** with `resource_type: 'companies'` - Replaces `get-company-details`
+- **`records.search`** with `resource_type: 'companies'` - Replaces `search-companies`
+- **`records.search_advanced`** with `resource_type: 'companies'` - Complex filtering with multiple conditions
+- **`records.get_details`** with `resource_type: 'companies'` - Replaces `get-company-details`
 - **`create-record`** with `resource_type: 'companies'` - Replaces `create-company`
-- **`batch-operations`** with `resource_type: 'companies'` - Bulk company operations
+- **`records.batch`** with `resource_type: 'companies'` - Bulk company operations
 
 **Features:**
+
 - Complex filtering with multiple conditions
 - Logical operators (AND/OR)
 - All comparison operators (equals, contains, starts_with, etc.)
@@ -32,15 +33,17 @@ See the [Universal Tools API Reference](../universal-tools/api-reference.md) for
 You can ask Claude to search for companies using various criteria with both the direct API and universal tools:
 
 **Using Universal Tools (Recommended):**
+
 ```
-Find companies in the technology industry using search-records
+Find companies in the technology industry using records.search
 ```
 
 ```
-Search for companies with "software" in their name using advanced-search
+Search for companies with "software" in their name using records.search_advanced
 ```
 
 **Using Direct API:**
+
 ```
 Look up Microsoft in our CRM
 ```
@@ -50,15 +53,17 @@ Look up Microsoft in our CRM
 Once Claude has found a company, you can ask for specific details using either approach:
 
 **Using Universal Tools (Recommended):**
+
 ```
-Get company details using get-record-details for attio://companies/record_01abcdefghijklmnopqrstuv
+Get company details using records.get_details for attio://companies/record_01abcdefghijklmnopqrstuv
 ```
 
 ```
-Get company contact info using get-detailed-info for Acme Corporation
+Get company contact info using records.get_info for Acme Corporation
 ```
 
 **Using Direct API:**
+
 ```
 What's the website for Acme Corporation?
 ```
@@ -85,12 +90,14 @@ Here's an example of a complete workflow with Claude:
 4. **Create**: "Add a note that they're interested in our enterprise plan"
 
 ## Version Information
+
 - **API Version**: v2
 - **Last Updated**: 2023-07-10
 
 ## Required Scopes
 
 Companies operations require the following scopes:
+
 - `companies:read` - For reading company records
 - `companies:read-write` - For creating, updating, or deleting company records
 
@@ -106,14 +113,14 @@ Retrieves a list of companies with pagination support.
 
 #### Query Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| page      | number | Page number to retrieve (starting at 1) |
+| Parameter | Type   | Description                                    |
+| --------- | ------ | ---------------------------------------------- |
+| page      | number | Page number to retrieve (starting at 1)        |
 | pageSize  | number | Number of items per page (default 25, max 100) |
-| sort      | string | Field to sort by (e.g., 'name', 'created_at') |
-| order     | string | Sort order ('asc' or 'desc', default 'asc') |
-| query     | string | Full-text search query |
-| filter    | object | Filter criteria in JSON format |
+| sort      | string | Field to sort by (e.g., 'name', 'created_at')  |
+| order     | string | Sort order ('asc' or 'desc', default 'asc')    |
+| query     | string | Full-text search query                         |
+| filter    | object | Filter criteria in JSON format                 |
 
 #### Response
 
@@ -173,8 +180,8 @@ Retrieves a specific company by ID.
 
 #### Path Parameters
 
-| Parameter  | Type   | Description |
-|------------|--------|-------------|
+| Parameter  | Type   | Description                       |
+| ---------- | ------ | --------------------------------- |
 | company_id | string | The ID of the company to retrieve |
 
 #### Response
@@ -272,8 +279,8 @@ Updates an existing company record.
 
 #### Path Parameters
 
-| Parameter  | Type   | Description |
-|------------|--------|-------------|
+| Parameter  | Type   | Description                     |
+| ---------- | ------ | ------------------------------- |
 | company_id | string | The ID of the company to update |
 
 #### Request Body
@@ -305,8 +312,8 @@ Deletes a company record.
 
 #### Path Parameters
 
-| Parameter  | Type   | Description |
-|------------|--------|-------------|
+| Parameter  | Type   | Description                     |
+| ---------- | ------ | ------------------------------- |
 | company_id | string | The ID of the company to delete |
 
 #### Response
@@ -355,18 +362,18 @@ Returns a list of matching companies with pagination.
 
 Companies in Attio have the following standard attributes:
 
-| Attribute    | Data Type | Description |
-|--------------|-----------|-------------|
-| name         | text      | Company name (required) |
-| domain       | text      | Primary domain name |
-| description  | text      | Company description |
-| industry     | select    | Industry category |
+| Attribute    | Data Type | Description                        |
+| ------------ | --------- | ---------------------------------- |
+| name         | text      | Company name (required)            |
+| domain       | text      | Primary domain name                |
+| description  | text      | Company description                |
+| industry     | select    | Industry category                  |
 | size         | select    | Company size (number of employees) |
-| linkedin_url | url       | LinkedIn company page URL |
-| website      | url       | Company website URL |
-| location     | object    | Company headquarters location |
-| created_at   | date      | Record creation timestamp |
-| updated_at   | date      | Record last update timestamp |
+| linkedin_url | url       | LinkedIn company page URL          |
+| website      | url       | Company website URL                |
+| location     | object    | Company headquarters location      |
+| created_at   | date      | Record creation timestamp          |
+| updated_at   | date      | Record last update timestamp       |
 
 ## Example Usage
 
@@ -377,22 +384,26 @@ const axios = require('axios');
 
 async function findCompanyByDomain(domain) {
   try {
-    const response = await axios.post('https://api.attio.com/v2/companies/search', {
-      filters: [
-        {
-          attribute: "domain",
-          operator: "equals",
-          value: domain
-        }
-      ],
-      pageSize: 1
-    }, {
-      headers: {
-        'Authorization': 'Bearer YOUR_API_KEY',
-        'Content-Type': 'application/json'
+    const response = await axios.post(
+      'https://api.attio.com/v2/companies/search',
+      {
+        filters: [
+          {
+            attribute: 'domain',
+            operator: 'equals',
+            value: domain,
+          },
+        ],
+        pageSize: 1,
+      },
+      {
+        headers: {
+          Authorization: 'Bearer YOUR_API_KEY',
+          'Content-Type': 'application/json',
+        },
       }
-    });
-    
+    );
+
     return response.data.data[0] || null;
   } catch (error) {
     console.error('Error searching for company:', error);
@@ -401,7 +412,7 @@ async function findCompanyByDomain(domain) {
 }
 
 // Example usage
-findCompanyByDomain('acme.com').then(company => {
+findCompanyByDomain('acme.com').then((company) => {
   if (company) {
     console.log('Found company:', company.attributes.name.value);
   } else {
@@ -425,22 +436,26 @@ interface CompanyCreateParams {
 
 async function createCompany(params: CompanyCreateParams): Promise<Company> {
   const { name, domain, industry, website } = params;
-  
+
   try {
-    const response = await axios.post('https://api.attio.com/v2/companies', {
-      attributes: {
-        name: { value: name },
-        ...(domain && { domain: { value: domain } }),
-        ...(industry && { industry: { value: industry } }),
-        ...(website && { website: { value: website } })
+    const response = await axios.post(
+      'https://api.attio.com/v2/companies',
+      {
+        attributes: {
+          name: { value: name },
+          ...(domain && { domain: { value: domain } }),
+          ...(industry && { industry: { value: industry } }),
+          ...(website && { website: { value: website } }),
+        },
+      },
+      {
+        headers: {
+          Authorization: 'Bearer YOUR_API_KEY',
+          'Content-Type': 'application/json',
+        },
       }
-    }, {
-      headers: {
-        'Authorization': 'Bearer YOUR_API_KEY',
-        'Content-Type': 'application/json'
-      }
-    });
-    
+    );
+
     return response.data;
   } catch (error) {
     console.error('Error creating company:', error);
@@ -475,9 +490,9 @@ When testing the Companies API, you can use the test mode with the test API key:
 ```javascript
 // Headers for test mode
 const headers = {
-  'Authorization': 'Bearer YOUR_TEST_API_KEY',
+  Authorization: 'Bearer YOUR_TEST_API_KEY',
   'Content-Type': 'application/json',
-  'X-Attio-Mode': 'test'
+  'X-Attio-Mode': 'test',
 };
 ```
 
@@ -495,6 +510,7 @@ For new implementations, consider using the Universal Tools system which provide
 ### Quick Migration Examples
 
 **Old Way (Deprecated):**
+
 ```javascript
 // Multiple resource-specific tools
 await client.callTool('search-companies', { query: 'tech' });
@@ -503,14 +519,16 @@ await client.callTool('create-company', { record_data: {...} });
 ```
 
 **New Way (Universal Tools):**
+
 ```javascript
 // Single tools with resource_type parameter
-await client.callTool('search-records', { resource_type: 'companies', query: 'tech' });
-await client.callTool('get-record-details', { resource_type: 'companies', record_id: 'comp_123' });
+await client.callTool('records.search', { resource_type: 'companies', query: 'tech' });
+await client.callTool('records.get_details', { resource_type: 'companies', record_id: 'comp_123' });
 await client.callTool('create-record', { resource_type: 'companies', record_data: {...} });
 ```
 
 **See Also:**
+
 - [Universal Tools User Guide](../universal-tools/user-guide.md) - Complete usage examples
 - [Migration Guide](../universal-tools/migration-guide.md) - Step-by-step migration instructions
 - [API Reference](../universal-tools/api-reference.md) - Detailed schemas and parameters

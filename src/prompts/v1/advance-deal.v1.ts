@@ -70,7 +70,7 @@ export function buildAdvanceDealMessages(
   const instructions = `You are a CRM assistant. Advance deal "${validated.deal}" to stage "${validated.target_stage}".
 
 Steps:
-1. Resolve deal: If starts with "search:", call \`records.query\` to find one deal. If multiple matches, disambiguate.
+1. Resolve deal: If starts with "search:", call \`records_query\` to find one deal. If multiple matches, disambiguate.
 
 2. Call \`deals.update\` (or \`records.update\` for object='deals') with:
    - Record ID from step 1

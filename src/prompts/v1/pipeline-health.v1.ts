@@ -92,7 +92,7 @@ export function buildPipelineHealthMessages(
   const instructions = `Goal: Create a pipeline health snapshot for owner="${validated.owner}" over the last ${validated.timeframe}${segmentFilter}.
 
 Steps:
-1. Call \`deals.list\` or \`records.query\` for deals matching: owner="${validated.owner}", modified_date within ${validated.timeframe}${segmentFilter}
+1. Call \`deals.list\` or \`records_query\` for deals matching: owner="${validated.owner}", modified_date within ${validated.timeframe}${segmentFilter}
 
 2. Analyze and categorize deals:
    - Created: New deals in timeframe

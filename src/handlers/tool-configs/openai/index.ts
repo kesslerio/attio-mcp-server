@@ -137,7 +137,8 @@ export const openAiToolConfigs = {
 export const openAiToolDefinitions = {
   'openai-search': {
     name: 'search',
-    description: 'Search Attio data by query for OpenAI MCP clients.',
+    description:
+      'Simple search by query string across companies, people, lists, and tasks. For advanced filtering, date ranges, or relationships, use records.search instead.',
     inputSchema: searchInputSchema,
     annotations: {
       readOnlyHint: true,

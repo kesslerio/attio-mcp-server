@@ -266,7 +266,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  'batch-operations': (p) => {
+  records_batch: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',

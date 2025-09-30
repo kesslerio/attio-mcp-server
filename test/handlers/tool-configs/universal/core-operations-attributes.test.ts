@@ -31,7 +31,7 @@ describe('Universal Core Operations Attributes Tests', () => {
     cleanupMocks();
   });
 
-  describe('get-attributes tool', () => {
+  describe('records_get_attributes tool', () => {
     it('should get attributes successfully', async () => {
       const mockAttributes: any = [
         { name: 'name', type: 'string', required: true },
@@ -97,7 +97,7 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
   });
 
-  describe('discover-attributes tool', () => {
+  describe('records_discover_attributes tool', () => {
     it('should discover attributes successfully', async () => {
       const mockSchema = [
         { name: 'name', type: 'string', required: true },
@@ -142,7 +142,7 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
   });
 
-  describe('get-detailed-info tool', () => {
+  describe('records_get_info tool', () => {
     it('should get detailed info successfully', async () => {
       const mockInfo = {
         values: {
@@ -222,7 +222,7 @@ describe('Universal Core Operations Attributes Tests', () => {
   });
 
   describe('Task Display Formatting (Issue #472)', () => {
-    describe('search-records formatResult for tasks', () => {
+    describe('records_search formatResult for tasks', () => {
       it('should display task content when available', () => {
         const mockResults = [
           {
@@ -316,7 +316,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       });
     });
 
-    describe('get-record-details formatResult for tasks', () => {
+    describe('records_get_details formatResult for tasks', () => {
       it('should display task content when available', async () => {
         const mockRecord = {
           id: { record_id: 'task-1', task_id: 'task-1' },

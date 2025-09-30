@@ -19,6 +19,7 @@ export function shouldUseMockData(): boolean {
 ```
 
 **Key Features:**
+
 - Zero production impact when not in test mode
 - Multiple detection strategies for reliability
 - No test code imports in production files
@@ -28,62 +29,65 @@ export function shouldUseMockData(): boolean {
 The system provides comprehensive mock data generators for all resource types:
 
 ##### Task Mock Generation
+
 ```typescript
 export function createMockTaskRecord(overrides: Partial<any> = {}): any {
   const taskId = overrides.id?.task_id || `mock-task-${Date.now()}`;
   const content = overrides.content || 'E2E Test Task Content';
-  
+
   return {
     id: {
       record_id: taskId,
-      task_id: taskId,           // Issue #480 compatibility
-      workspace_id: 'mock-workspace-id'
+      task_id: taskId, // Issue #480 compatibility
+      workspace_id: 'mock-workspace-id',
     },
-    content: [{ value: content }],  // Proper Attio field format
-    title: [{ value: content }],     // Dual field support
+    content: [{ value: content }], // Proper Attio field format
+    title: [{ value: content }], // Dual field support
     status: [{ value: overrides.status || 'pending' }],
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 }
 ```
 
 ##### Company Mock Generation
+
 ```typescript
 export function createMockCompanyRecord(overrides: Partial<any> = {}): any {
   const companyId = overrides.id?.record_id || `mock-company-${Date.now()}`;
   const name = overrides.name || 'E2E Test Company';
-  
+
   return {
     id: {
       record_id: companyId,
       company_id: companyId,
-      workspace_id: 'mock-workspace-id'
+      workspace_id: 'mock-workspace-id',
     },
     name: [{ value: name }],
     domains: [{ value: 'e2e-test.com' }],
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 }
 ```
 
 ##### Person Mock Generation
+
 ```typescript
 export function createMockPersonRecord(overrides: Partial<any> = {}): any {
   const personId = overrides.id?.record_id || `mock-person-${Date.now()}`;
   const name = overrides.name || 'E2E Test Person';
-  
+
   return {
     id: {
       record_id: personId,
       person_id: personId,
-      workspace_id: 'mock-workspace-id'
+      workspace_id: 'mock-workspace-id',
     },
     name: [{ value: name }],
     email_addresses: [{ value: 'e2e.test@example.com' }],
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 }
 ```
@@ -119,9 +123,9 @@ if (shouldUseMockData()) {
   return formatResult(mockData, resourceType);
 }
 
-// In get-record-details handler
+// In records.get_details handler
 if (shouldUseMockData()) {
-  validateMockId(recordId);  // Enable error testing
+  validateMockId(recordId); // Enable error testing
   const mockData = getMockRecord(resourceType, recordId);
   return formatResult(mockData, resourceType);
 }
@@ -137,11 +141,11 @@ function formatResult(record: any, resourceType: string): any {
     // Dual format for test compatibility
     return {
       ...record,
-      values: record,  // Preserve nested structure
+      values: record, // Preserve nested structure
       // Also flatten fields for direct access
       content: record.content?.[0]?.value,
       title: record.title?.[0]?.value,
-      name: record.name?.[0]?.value
+      name: record.name?.[0]?.value,
     };
   }
   return record;
@@ -164,7 +168,7 @@ interface AttioFieldValue {
 interface AttioRecord {
   id: {
     record_id: string;
-    [resourceType + '_id']: string;  // e.g., task_id, company_id
+    [resourceType + '_id']: string; // e.g., task_id, company_id
     workspace_id: string;
   };
   // All fields use array format
@@ -201,25 +205,27 @@ npm run test:e2e
 To add mock support for a new resource type:
 
 1. Create mock generation function:
+
 ```typescript
 export function createMockNewResourceRecord(overrides: Partial<any> = {}): any {
   const resourceId = overrides.id?.record_id || `mock-resource-${Date.now()}`;
-  
+
   return {
     id: {
       record_id: resourceId,
       resource_id: resourceId,
-      workspace_id: 'mock-workspace-id'
+      workspace_id: 'mock-workspace-id',
     },
     // Add resource-specific fields in Attio format
     field_name: [{ value: overrides.field_name || 'default' }],
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 }
 ```
 
 2. Update the universal mock dispatcher:
+
 ```typescript
 function createMockRecord(resourceType: string, params: any): any {
   switch (resourceType) {
@@ -238,14 +244,14 @@ Use special mock IDs to trigger error conditions:
 // Test not found error
 const result = await getRecordDetails({
   recordId: 'mock-error-not-found',
-  resourceType: 'tasks'
+  resourceType: 'tasks',
 });
 // Expect: Error with "Record not found" message
 
 // Test unauthorized error
 const result = await getRecordDetails({
   recordId: 'mock-error-unauthorized',
-  resourceType: 'companies'
+  resourceType: 'companies',
 });
 // Expect: Error with "Unauthorized access" message
 ```
@@ -279,24 +285,26 @@ const result = await getRecordDetails({
 ## Migration from Previous Approaches
 
 ### Before (Production-Test Coupling)
+
 ```typescript
 // ❌ BAD: Test logic in production handler
 export function handleTaskOperation(params) {
   if (process.env.NODE_ENV === 'test') {
-    return { id: 'mock-id', content: 'mock' };  // Hardcoded mock
+    return { id: 'mock-id', content: 'mock' }; // Hardcoded mock
   }
   return realApiCall(params);
 }
 ```
 
 ### After (Clean Separation)
+
 ```typescript
 // ✅ GOOD: Environment-based injection
 import { shouldUseMockData, createMockTaskRecord } from './shared-handlers';
 
 export function handleTaskOperation(params) {
   if (shouldUseMockData()) {
-    return createMockTaskRecord(params);  // Structured mock
+    return createMockTaskRecord(params); // Structured mock
   }
   return realApiCall(params);
 }
@@ -307,16 +315,19 @@ export function handleTaskOperation(params) {
 ### Common Issues
 
 #### 1. Mock Data Not Being Used
+
 - Check `NODE_ENV` is set to 'test'
 - Verify `VITEST` environment variable is 'true'
 - Ensure test runner is configured correctly
 
 #### 2. Field Access Errors
+
 - Verify mock data includes all required fields
 - Check for proper Attio field format
 - Ensure dual format support is working
 
 #### 3. Type Errors
+
 - Mock functions use `any` type for flexibility
 - Cast to specific types in tests if needed
 - Use type guards for runtime validation

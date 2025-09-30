@@ -15,6 +15,7 @@ import {
   UniversalSearchParams,
   UniversalRecordDetailsParams,
 } from '../../../../src/handlers/tool-configs/universal/types.js';
+import { resolveToolName } from '../../../../src/config/tool-aliases.js';
 
 describe('Universal Core Operations Search Tests', () => {
   beforeEach(() => {
@@ -25,7 +26,7 @@ describe('Universal Core Operations Search Tests', () => {
     cleanupMocks();
   });
 
-  describe('search-records tool', () => {
+  describe('records_search tool', () => {
     it('should search companies successfully', async () => {
       const mockResults: any[] = [
         {
@@ -180,7 +181,7 @@ describe('Universal Core Operations Search Tests', () => {
     });
   });
 
-  describe('get-record-details tool', () => {
+  describe('records_get_details tool', () => {
     it('should get company details successfully', async () => {
       const mockRecord: any = {
         id: { record_id: 'comp-1' },
@@ -319,6 +320,14 @@ describe('Universal Core Operations Search Tests', () => {
       }
 
       expect(vi.mocked(handleUniversalGetDetails)).toHaveBeenCalledTimes(7);
+    });
+  });
+
+  describe('legacy alias compatibility', () => {
+    it('resolves search-records alias to records.search', () => {
+      const resolution = resolveToolName('search-records');
+      expect(resolution.name).toBe('records_search');
+      expect(resolution.alias?.alias).toBe('search-records');
     });
   });
 });
