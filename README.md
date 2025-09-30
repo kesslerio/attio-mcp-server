@@ -91,6 +91,64 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Data Export**: JSON serialization for integrations
 - **Real-time Updates**: Live data synchronization with Attio
 
+## 🎯 **Using Out-of-the-Box Prompts**
+
+**NEW in v0.3.0**: 10 pre-built MCP prompts for common Sales workflows. No setup required—just use them!
+
+### Available Prompts
+
+| Prompt               | Description                                     | Key Arguments                                    | Example                            |
+| -------------------- | ----------------------------------------------- | ------------------------------------------------ | ---------------------------------- |
+| `people_search.v1`   | Find people by title, company, territory        | `query`, `limit`, `format`                       | Find AE in fintech, SF             |
+| `company_search.v1`  | Query companies by domain, segment, plan        | `query`, `limit`, `format`                       | Find SaaS companies >100 employees |
+| `deal_search.v1`     | Filter deals by owner, stage, value, close date | `query`, `limit`, `format`                       | Find deals >$50k closing Q1        |
+| `log_activity.v1`    | Log calls/meetings/emails to records            | `target`, `type`, `summary`, `dry_run`           | Log call with Nina at Acme         |
+| `create_task.v1`     | Create tasks with natural language due dates    | `title`, `content`, `due_date`, `dry_run`        | Create task: Follow up tomorrow    |
+| `advance_deal.v1`    | Move deal to target stage with next action      | `deal`, `target_stage`, `create_task`, `dry_run` | Advance deal to "Proposal Sent"    |
+| `add_to_list.v1`     | Add records to a List by name or ID             | `records`, `list`, `dry_run`                     | Add 5 companies to Q1 Outreach     |
+| `qualify_lead.v1`    | Research lead with web + BANT/CHAMP scoring     | `target`, `framework`, `limit_web`, `dry_run`    | Qualify Acme Corp with BANT        |
+| `meeting_prep.v1`    | 360° prep: notes, tasks, deals, agenda          | `target`, `format`, `verbosity`                  | Prep for meeting with Acme CEO     |
+| `pipeline_health.v1` | Weekly snapshot: created/won/slipped + risks    | `owner`, `timeframe`, `segment`                  | Pipeline health for @me last 30d   |
+
+### Quick Examples
+
+```bash
+# Search for prospects
+"Use people_search.v1: Find Account Executives in San Francisco at fintech companies, limit 25"
+
+# Log activity
+"Use log_activity.v1: Log a call with Nina at Acme Corp, discussed Q1 pricing, create follow-up task"
+
+# Qualify a lead (with web research)
+"Use qualify_lead.v1: Qualify Acme Corp using BANT framework, dry run mode"
+
+# Meeting prep
+"Use meeting_prep.v1: Prepare for meeting with contact at Acme Corp"
+```
+
+### Universal Arguments
+
+**All read prompts** support:
+
+- `format`: `table` | `json` | `ids` (default: `table`)
+- `fields_preset`: `sales_short` | `full` (default: `sales_short`)
+- `verbosity`: `brief` | `normal` (default: `brief`)
+
+**All write prompts** support:
+
+- `dry_run`: `true` | `false` (default: `false`) - Preview changes without executing
+
+### Token Awareness Features
+
+Prompts include built-in token optimization:
+
+- **Budget Guards**: Prompts stay within token limits (people_search <500, qualify_lead <400)
+- **Dev Metadata**: Set `MCP_DEV_META=true` for token counts in responses
+- **Telemetry**: Set `PROMPT_TELEMETRY_ENABLED=true` for usage logging
+- **Configurable Limits**: Override with `MAX_PROMPT_TOKENS` environment variable
+
+For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/prompts/v1-catalog.md).
+
 ## ⚠️ **Known Limitations & Important Notes**
 
 ### **Current Limitations**
