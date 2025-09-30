@@ -91,9 +91,21 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Data Export**: JSON serialization for integrations
 - **Real-time Updates**: Live data synchronization with Attio
 
+### 💬 **Pre-Built Prompts** (10 Prompts)
+
+Intelligent shortcuts that help Claude work faster with your CRM data:
+
+- **Search & Find** (5): people_search, company_search, deal_search, meeting_prep, pipeline_health
+- **Take Actions** (4): log_activity, create_task, advance_deal, add_to_list with dry-run safety
+- **Research & Qualify** (1): qualify_lead with automated web research and BANT/CHAMP frameworks
+- **Token-efficient**: 300-700 tokens per prompt with consistent formatting
+- **Discoverable**: Claude automatically suggests relevant prompts for your tasks
+
+See [Using Out-of-the-Box Prompts](#-using-out-of-the-box-prompts) for detailed documentation and examples.
+
 ## 🎯 **Using Out-of-the-Box Prompts**
 
-**NEW in v0.3.0**: 10 pre-built MCP prompts for common Sales workflows. No setup required—just use them!
+**NEW**: 10 pre-built MCP prompts for common Sales workflows. No setup required—just use them!
 
 ### Available Prompts
 

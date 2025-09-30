@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **10 Pre-Built MCP Prompts for Common CRM Tasks** (#774) - Intelligent shortcuts that help Claude work faster and more efficiently with your Attio data
+  - **Search & Find** (5 prompts): `people_search.v1`, `company_search.v1`, `deal_search.v1`, `meeting_prep.v1`, `pipeline_health.v1`
+    - Natural language search with automatic formatting (table, JSON, or IDs)
+    - Meeting preparation summaries with recent activity context
+    - Pipeline analysis with bottleneck detection and conversion metrics
+  - **Take Actions** (4 prompts): `log_activity.v1`, `create_task.v1`, `advance_deal.v1`, `add_to_list.v1`
+    - Dry-run mode for safe preview before executing changes
+    - Consistent formatting across all write operations
+  - **Research & Qualify** (1 prompt): `qualify_lead.v1`
+    - Automated web research with BANT/CHAMP qualification frameworks
+    - Lead scoring and actionable recommendations
+  - **Key Features**:
+    - Token-efficient design (300-700 tokens per prompt)
+    - Server-side validation with helpful error messages
+    - Discoverable by Claude for smart suggestions
+    - Universal arguments for consistent behavior (format, fields_preset, verbosity)
+    - Optional telemetry and dev metadata modes for monitoring
+
 ## [1.1.0] - 2025-09-30
 
 ### Added
