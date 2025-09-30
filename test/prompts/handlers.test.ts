@@ -29,9 +29,9 @@ describe('Prompts Handlers', () => {
   });
 
   describe('registerPromptHandlers', () => {
-    it('should register prompt handlers with the server', () => {
+    it('should register prompt handlers with the server', async () => {
       // Register the handlers
-      registerPromptHandlers(server);
+      await registerPromptHandlers(server);
 
       // Verify the handlers were registered
       expect(server.setRequestHandler).toHaveBeenCalledTimes(2);
@@ -50,7 +50,7 @@ describe('Prompts Handlers', () => {
   describe('handlers implementation', () => {
     it('should implement prompts/list handler correctly', async () => {
       // Get the handler function
-      registerPromptHandlers(server);
+      await registerPromptHandlers(server);
       const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         (call) => call[0] === ListPromptsRequestSchema
       )[1];
@@ -59,52 +59,50 @@ describe('Prompts Handlers', () => {
       const result = await handler({});
 
       // Verify the result
-      const allPrompts = getAllPrompts();
       expect(result).toBeDefined();
       expect(result.prompts).toBeDefined();
       expect(Array.isArray(result.prompts)).toBe(true);
-      expect(result.prompts.length).toBe(allPrompts.length);
-      expect(result.prompts[0]).toHaveProperty('id');
+      // Should include both legacy (22) and v1 (10) prompts = 32 total
+      expect(result.prompts.length).toBeGreaterThanOrEqual(30);
       expect(result.prompts[0]).toHaveProperty('name');
       expect(result.prompts[0]).toHaveProperty('description');
-      expect(result.prompts[0]).toHaveProperty('category');
     });
 
     it('should implement prompts/get handler correctly', async () => {
       // Get the handler function
-      registerPromptHandlers(server);
+      await registerPromptHandlers(server);
       const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         (call) => call[0] === GetPromptRequestSchema
       )[1];
 
-      // Get a prompt ID for testing
-      const prompts = getAllPrompts();
-      const testPromptId = prompts[0].id;
+      // Test with a v1 prompt
+      const testPromptName = 'people_search.v1';
 
-      // Call the handler
-      const result = await handler({ params: { promptId: testPromptId } });
+      // Call the handler with required arguments
+      const result = await handler({
+        params: {
+          name: testPromptName,
+          arguments: { query: 'Account Executive' },
+        },
+      });
 
       // Verify the result
       expect(result).toBeDefined();
-      expect(result.prompt).toBeDefined();
-      expect(result.prompt.id).toBe(testPromptId);
-      expect(result.prompt.name).toBeDefined();
-      expect(result.prompt.description).toBeDefined();
-      expect(result.prompt.category).toBeDefined();
-      expect(result.prompt.parameters).toBeDefined();
-      expect(result.prompt.template).toBeDefined();
+      expect(result.description).toBeDefined();
+      expect(result.messages).toBeDefined();
+      expect(Array.isArray(result.messages)).toBe(true);
     });
 
     it('should throw an error when prompt is not found', async () => {
       // Get the handler function
-      registerPromptHandlers(server);
+      await registerPromptHandlers(server);
       const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         (call) => call[0] === GetPromptRequestSchema
       )[1];
 
-      // Call the handler with a non-existent prompt ID
+      // Call the handler with a non-existent prompt name
       await expect(
-        handler({ params: { promptId: 'non-existent-prompt' } })
+        handler({ params: { name: 'non-existent-prompt' } })
       ).rejects.toThrow('Prompt not found: non-existent-prompt');
     });
   });

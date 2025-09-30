@@ -440,53 +440,137 @@ export async function executePrompt(
  * required by the Model Context Protocol specification. These endpoints enable
  * Claude Desktop to discover and retrieve prompt templates from the server.
  *
+ * Supports both legacy Handlebars prompts and new v1 MCP-compliant prompts.
+ *
  * @param server - MCP server instance
+ * @param context - Optional server context
  * @example
  * ```typescript
  * const server = new Server();
  * registerPromptHandlers(server);
  * ```
  */
-export function registerPromptHandlers(
+export async function registerPromptHandlers(
   server: Server,
   context?: ServerContext
-): void {
+): Promise<void> {
   // Set the global context for lazy initialization if provided
   if (context) {
     setGlobalContext(context);
   }
+
+  // Import v1 prompts
+  const { getAllPromptsV1, getPromptV1ByName, isV1Prompt } = await import(
+    './v1/index.js'
+  );
+  const {
+    validateArguments,
+    checkTokenBudget,
+    createValidationError,
+    createBudgetExceededError,
+  } = await import('./v1/utils/validation.js');
+  const { calculatePromptTokens } = await import(
+    './v1/utils/token-metadata.js'
+  );
+  const { logPromptTelemetry, createTelemetryEvent } = await import(
+    './v1/utils/telemetry.js'
+  );
+  const { isDevMetaEnabled } = await import('./v1/constants.js');
+
   // Register handler for prompts/list endpoint
   server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    const legacyPrompts = getPromptsListPayload().prompts;
+    const v1Prompts = getAllPromptsV1().map((p) => ({
+      name: p.metadata.name,
+      description: p.metadata.description,
+      arguments: p.arguments.map((arg) => ({
+        name: arg.name,
+        description: arg.description,
+        required: arg.required,
+      })),
+    }));
+
     return {
-      prompts: getPromptsListPayload().prompts,
+      prompts: [...legacyPrompts, ...v1Prompts],
     };
   });
 
   // Register handler for prompts/get endpoint
   server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-    const promptId = request.params.promptId as string;
-    const prompt = getPromptById(promptId);
+    const promptName = request.params.name as string;
+    const args = (request.params.arguments || {}) as Record<string, unknown>;
+    const startTime = Date.now();
+
+    // Check if this is a v1 prompt
+    if (isV1Prompt(promptName)) {
+      const promptDef = getPromptV1ByName(promptName);
+
+      if (!promptDef) {
+        throw new Error(`Prompt not found: ${promptName}`);
+      }
+
+      // Validate arguments
+      const validation = validateArguments(args, promptDef.arguments);
+      if (!validation.success) {
+        const error = createValidationError(validation.errors);
+        throw new Error(error.message);
+      }
+
+      // Build messages
+      const messages = promptDef.buildMessages(validation.data);
+
+      // Check token budget
+      const budgetCheck = checkTokenBudget(promptName, messages);
+      if (!budgetCheck.withinBudget) {
+        const error = createBudgetExceededError(budgetCheck);
+        throw new Error(error.message);
+      }
+
+      // Calculate token metadata
+      const tokenMetadata = calculatePromptTokens(messages);
+
+      // Log telemetry
+      const telemetryEvent = createTelemetryEvent(
+        promptName,
+        tokenMetadata,
+        messages.length,
+        startTime,
+        false // budget not exceeded (already checked above)
+      );
+      logPromptTelemetry(telemetryEvent);
+
+      // Build response
+      const response: Record<string, unknown> = {
+        description: promptDef.metadata.description,
+        messages: messages,
+      };
+
+      // Add dev metadata if enabled
+      if (isDevMetaEnabled()) {
+        response._meta = tokenMetadata;
+      }
+
+      return response;
+    }
+
+    // Handle legacy Handlebars prompts
+    const prompt = getPromptById(promptName);
 
     if (!prompt) {
-      throw new Error(`Prompt not found: ${promptId}`);
+      throw new Error(`Prompt not found: ${promptName}`);
     }
 
     return {
-      prompt: {
-        id: prompt.id,
-        name: prompt.title, // Map title to name as required by MCP
-        description: prompt.description,
-        category: prompt.category,
-        parameters: prompt.parameters.map((param) => ({
-          name: param.name,
-          type: param.type,
-          description: param.description,
-          required: param.required,
-          default: param.default,
-          enum: param.enum,
-        })),
-        template: prompt.template,
-      },
+      description: prompt.description,
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: prompt.template,
+          },
+        },
+      ],
     };
   });
 }
