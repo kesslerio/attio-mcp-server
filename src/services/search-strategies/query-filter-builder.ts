@@ -65,16 +65,17 @@ export function buildPeopleQueryFilters(
   const parsed = parseQuery(trimmed);
   const filters: ListEntryFilter[] = [];
   const seen = new Set<string>();
+  const condition = getCondition(matchType);
 
   // Prioritize direct email and phone matches - these are most specific
   parsed.emails.forEach((email) => {
-    addFilter(filters, seen, 'email_addresses', email, 'contains');
+    addFilter(filters, seen, 'email_addresses', email, condition);
   });
 
   parsed.phones.forEach((phone) => {
     // Add both normalized and formatted variants for better matching
     const normalizedPhone = phone.replace(/\D+/g, '');
-    addFilter(filters, seen, 'phone_numbers', normalizedPhone, 'contains');
+    addFilter(filters, seen, 'phone_numbers', normalizedPhone, condition);
 
     // Also add +1 prefix for US numbers if not already present
     if (!phone.startsWith('+') && normalizedPhone.length === 10) {
@@ -83,7 +84,7 @@ export function buildPeopleQueryFilters(
         seen,
         'phone_numbers',
         `+1${normalizedPhone}`,
-        'contains'
+        condition
       );
     }
   });
@@ -92,16 +93,16 @@ export function buildPeopleQueryFilters(
   // For people searches, also add tokens to email filter since they might be
   // partial email addresses (e.g., "armaanaesthetics" in "armaanaesthetics@gmail.com")
   parsed.tokens.forEach((token) => {
-    addFilter(filters, seen, 'name', token, 'contains');
+    addFilter(filters, seen, 'name', token, condition);
     // If token is long enough, also search emails (likely email local part)
     if (token.length >= 5) {
-      addFilter(filters, seen, 'email_addresses', token, 'contains');
+      addFilter(filters, seen, 'email_addresses', token, condition);
     }
   });
 
   // If no structured data was found, search the raw query
   if (filters.length === 0) {
-    addFilter(filters, seen, 'name', trimmed, 'contains');
+    addFilter(filters, seen, 'name', trimmed, condition);
   }
 
   if (filters.length === 0) {
@@ -127,21 +128,22 @@ export function buildCompanyQueryFilters(
   const parsed = parseQuery(trimmed);
   const filters: ListEntryFilter[] = [];
   const seen = new Set<string>();
+  const condition = getCondition(matchType);
 
   // Domains extracted from emails - most specific
   parsed.domains.forEach((domain) => {
-    addFilter(filters, seen, 'domains', domain, 'contains');
+    addFilter(filters, seen, 'domains', domain, condition);
   });
 
   // Token-based matching - add to both name and domains for broader search
   parsed.tokens.forEach((token) => {
-    addFilter(filters, seen, 'name', token, 'contains');
-    addFilter(filters, seen, 'domains', token, 'contains');
+    addFilter(filters, seen, 'name', token, condition);
+    addFilter(filters, seen, 'domains', token, condition);
   });
 
   // If no structured data found, search raw query
   if (filters.length === 0) {
-    addFilter(filters, seen, 'name', trimmed, 'contains');
+    addFilter(filters, seen, 'name', trimmed, condition);
   }
 
   if (filters.length === 0) {

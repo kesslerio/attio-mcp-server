@@ -49,6 +49,31 @@ describe('buildPeopleQueryFilters', () => {
     );
   });
 
+  it('uses equals condition for exact match type', () => {
+    const filters = buildPeopleQueryFilters(
+      'john.doe@example.com',
+      MatchType.EXACT
+    );
+
+    expect(filters?.filters?.length).toBeGreaterThan(0);
+    const emailFilter = filters?.filters?.find(
+      (f) =>
+        f.attribute.slug === 'email_addresses' &&
+        f.value === 'john.doe@example.com'
+    );
+    expect(emailFilter?.condition).toBe('equals');
+  });
+
+  it('uses contains condition for partial match type (default)', () => {
+    const filters = buildPeopleQueryFilters('John Smith', MatchType.PARTIAL);
+
+    expect(filters?.filters?.length).toBeGreaterThan(0);
+    const nameFilter = filters?.filters?.find(
+      (f) => f.attribute.slug === 'name' && f.value === 'John'
+    );
+    expect(nameFilter?.condition).toBe('contains');
+  });
+
   it('returns null for empty queries', () => {
     expect(buildPeopleQueryFilters('   ', MatchType.PARTIAL)).toBeNull();
   });
@@ -78,6 +103,29 @@ describe('buildCompanyQueryFilters', () => {
     expect(
       findFilter(filters?.filters, 'domains', 'titemedicalaesthetics.com')
     ).toBe(true);
+  });
+
+  it('uses equals condition for exact match type', () => {
+    const filters = buildCompanyQueryFilters(
+      'Acme Corporation',
+      MatchType.EXACT
+    );
+
+    expect(filters?.filters?.length).toBeGreaterThan(0);
+    const nameFilter = filters?.filters?.find(
+      (f) => f.attribute.slug === 'name' && f.value === 'Acme'
+    );
+    expect(nameFilter?.condition).toBe('equals');
+  });
+
+  it('uses contains condition for partial match type (default)', () => {
+    const filters = buildCompanyQueryFilters('example.com', MatchType.PARTIAL);
+
+    expect(filters?.filters?.length).toBeGreaterThan(0);
+    const domainFilter = filters?.filters?.find(
+      (f) => f.attribute.slug === 'domains' && f.value === 'example.com'
+    );
+    expect(domainFilter?.condition).toBe('contains');
   });
 
   it('returns null for empty input', () => {
