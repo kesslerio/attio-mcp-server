@@ -22,6 +22,7 @@ The MCP server provides enhanced filtering capabilities for people records throu
 - **`search-by-timeframe`** - Time-based people searches
 
 **Features:**
+
 - Complex filtering with multiple conditions
 - Logical operators (AND/OR)
 - All comparison operators (equals, contains, starts_with, etc.)
@@ -35,6 +36,7 @@ See the [Universal Tools API Reference](../universal-tools/api-reference.md) for
 #### Searching for People
 
 **Using Universal Tools (Recommended):**
+
 ```
 Find contacts from XYZ Company using search-by-relationship
 ```
@@ -44,6 +46,7 @@ Look up people with the title "CEO" using advanced-search
 ```
 
 **Using Direct API:**
+
 ```
 Search for someone named Sarah
 ```
@@ -81,6 +84,7 @@ What notes do we have for Sarah Jones?
 ## Required Scopes
 
 Most people operations require the following scopes:
+
 - `record:read` - For reading people records
 - `record:read-write` - For creating, updating, or deleting people records
 - `object_configuration:read` - For accessing object configurations
@@ -98,14 +102,14 @@ Lists all people records.
 
 #### Query Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| page      | number | Page number to retrieve (starting at 1) |
-| pageSize  | number | Number of items per page (default 25, max 100) |
-| query     | string | Search query to filter people by name, email, etc. |
-| attributes| array  | List of attribute slugs to include in the response |
-| sort      | string | Attribute slug to sort by |
-| direction | string | Sort direction (asc or desc) |
+| Parameter  | Type   | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| page       | number | Page number to retrieve (starting at 1)            |
+| pageSize   | number | Number of items per page (default 25, max 100)     |
+| query      | string | Search query to filter people by name, email, etc. |
+| attributes | array  | List of attribute slugs to include in the response |
+| sort       | string | Attribute slug to sort by                          |
+| direction  | string | Sort direction (asc or desc)                       |
 
 #### Response
 
@@ -122,9 +126,11 @@ Lists all people records.
         "email": [{ "value": "jane@example.com" }],
         "phone": [{ "value": "+1 (555) 123-4567" }],
         "job_title": [{ "value": "CEO" }],
-        "company": [{
-          "value": { "record_id": "record_01defghijklmnopqrstuvwxy" }
-        }],
+        "company": [
+          {
+            "value": { "record_id": "record_01defghijklmnopqrstuvwxy" }
+          }
+        ],
         "linkedin_url": [{ "value": "https://linkedin.com/in/janesmith" }],
         "last_contacted": [{ "value": "2023-06-15T00:00:00.000Z" }]
       },
@@ -158,19 +164,23 @@ Searches for people records with advanced filtering options.
   },
   "limit": 20,
   "sorts": [
-    { "attribute": "last_interaction", "field": "interacted_at", "direction": "desc" }
+    {
+      "attribute": "last_interaction",
+      "field": "interacted_at",
+      "direction": "desc"
+    }
   ]
 }
 ```
 
-| Field           | Type     | Description | Required |
-|-----------------|----------|-------------|----------|
-| filter          | object   | Filter criteria for the search | No |
-| limit           | number   | Maximum number of results to return (default 25, max 100) | No |
-| offset          | number   | Number of records to skip (for pagination) | No |
-| sorts           | array    | Sorting criteria for the results | No |
+| Field  | Type   | Description                                               | Required |
+| ------ | ------ | --------------------------------------------------------- | -------- |
+| filter | object | Filter criteria for the search                            | No       |
+| limit  | number | Maximum number of results to return (default 25, max 100) | No       |
+| offset | number | Number of records to skip (for pagination)                | No       |
+| sorts  | array  | Sorting criteria for the results                          | No       |
 
-> **Important Note**: The API does not directly support filtering by `email` or `phone` attributes using the filter object. Attempting to use `email` or `phone` as attribute slugs will result in a 400 error with message "Unknown attribute slug: email". For email or phone searches, use a general name search and then filter the results client-side.
+> **Important Note**: The MCP server now normalizes queries for emails, phone numbers, and domains automatically. You can pass the raw text query (e.g., `"Alex Rivera alex.rivera@example.com"` or `"+1 (555) 010-4477"`) to `search-records` with `resource_type: 'people'` and the server will construct the proper Attio filters.
 
 #### Response Structure
 
@@ -196,23 +206,26 @@ The API returns person records with the following structure:
 
 Note that attributes like `email` and `phone` are arrays of objects with a `value` property, not direct string values.
 
-#### Client-side Filtering Example
-
-For email searches, you may need to implement client-side filtering:
+#### Smart Query Examples
 
 ```typescript
-// Get all people (with a higher limit) and filter client-side
-const response = await api.post("/objects/people/records/query", {
-  limit: 100 // Increased limit to get more potential matches
+// Search by name + email in a single query
+await client.callTool('search-records', {
+  resource_type: 'people',
+  query: 'Alex Rivera alex.rivera@example.com',
 });
 
-// Filter the results client-side by email
-const results = response.data.data || [];
-const filteredResults = results.filter(person => 
-  person.values?.email?.some(emailObj => 
-    emailObj.value?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-);
+// Search by phone number (all formatting handled automatically)
+await client.callTool('search-records', {
+  resource_type: 'people',
+  query: '+1 (555) 010-4477',
+});
+
+// Search by company domain (extracted from emails or raw domains)
+await client.callTool('search-records', {
+  resource_type: 'people',
+  query: 'examplecorp.com',
+});
 ```
 
 ### Create a Person
@@ -241,9 +254,9 @@ Creates a new person record.
 }
 ```
 
-| Field           | Type     | Description | Required |
-|-----------------|----------|-------------|----------|
-| attributes      | object   | The person attributes as key-value pairs | Yes |
+| Field      | Type   | Description                              | Required |
+| ---------- | ------ | ---------------------------------------- | -------- |
+| attributes | object | The person attributes as key-value pairs | Yes      |
 
 #### Response
 
@@ -259,15 +272,15 @@ Retrieves a specific person record.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                             |
+| --------- | ------ | --------------------------------------- |
 | record_id | string | The ID of the person record to retrieve |
 
 #### Query Parameters
 
-| Parameter  | Type   | Description |
-|------------|--------|-------------|
-| attributes | array  | List of attribute slugs to include in the response |
+| Parameter  | Type  | Description                                        |
+| ---------- | ----- | -------------------------------------------------- |
+| attributes | array | List of attribute slugs to include in the response |
 
 #### Response
 
@@ -283,8 +296,8 @@ Updates a specific person record.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                           |
+| --------- | ------ | ------------------------------------- |
 | record_id | string | The ID of the person record to update |
 
 #### Request Body
@@ -299,9 +312,9 @@ Updates a specific person record.
 }
 ```
 
-| Field           | Type     | Description |
-|-----------------|----------|-------------|
-| attributes      | object   | The person attributes to update as key-value pairs |
+| Field      | Type   | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| attributes | object | The person attributes to update as key-value pairs |
 
 #### Response
 
@@ -317,8 +330,8 @@ Deletes a specific person record.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                           |
+| --------- | ------ | ------------------------------------- |
 | record_id | string | The ID of the person record to delete |
 
 #### Response
@@ -356,10 +369,10 @@ Creates multiple person records in a single request.
 }
 ```
 
-| Field                | Type     | Description | Required |
-|----------------------|----------|-------------|----------|
-| records              | array    | Array of person record objects to create | Yes |
-| records[].attributes | object   | The person attributes as key-value pairs | Yes for each record |
+| Field                | Type   | Description                              | Required            |
+| -------------------- | ------ | ---------------------------------------- | ------------------- |
+| records              | array  | Array of person record objects to create | Yes                 |
+| records[].attributes | object | The person attributes as key-value pairs | Yes for each record |
 
 #### Response
 
@@ -396,11 +409,11 @@ Updates multiple person records in a single request.
 }
 ```
 
-| Field             | Type     | Description | Required |
-|-------------------|----------|-------------|----------|
-| records           | array    | Array of person record objects to update | Yes |
-| records[].id      | string   | The ID of the person record to update | Yes for each record |
-| records[].attributes | object | The attributes to update | Yes for each record |
+| Field                | Type   | Description                              | Required            |
+| -------------------- | ------ | ---------------------------------------- | ------------------- |
+| records              | array  | Array of person record objects to update | Yes                 |
+| records[].id         | string | The ID of the person record to update    | Yes for each record |
+| records[].attributes | object | The attributes to update                 | Yes for each record |
 
 #### Response
 
@@ -410,18 +423,18 @@ Returns an array of updated person records.
 
 The People object in Attio typically includes the following standard attributes:
 
-| Attribute       | Type       | Description |
-|-----------------|------------|-------------|
-| name            | text       | The person's full name |
-| email           | email      | The person's email address |
-| phone           | phone      | The person's phone number |
-| job_title       | text       | The person's job title |
-| company         | link       | Link to a company record |
-| linkedin_url    | url        | The person's LinkedIn profile URL |
-| twitter_url     | url        | The person's Twitter profile URL |
-| tags            | multi_select | Tags associated with the person |
-| last_contacted  | date       | Date when the person was last contacted |
-| notes           | text       | Additional notes about the person |
+| Attribute      | Type         | Description                             |
+| -------------- | ------------ | --------------------------------------- |
+| name           | text         | The person's full name                  |
+| email          | email        | The person's email address              |
+| phone          | phone        | The person's phone number               |
+| job_title      | text         | The person's job title                  |
+| company        | link         | Link to a company record                |
+| linkedin_url   | url          | The person's LinkedIn profile URL       |
+| twitter_url    | url          | The person's Twitter profile URL        |
+| tags           | multi_select | Tags associated with the person         |
+| last_contacted | date         | Date when the person was last contacted |
+| notes          | text         | Additional notes about the person       |
 
 Custom attributes may also be available depending on your workspace configuration.
 
@@ -437,8 +450,8 @@ Retrieves the company associated with a specific person.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                 |
+| --------- | ------ | --------------------------- |
 | record_id | string | The ID of the person record |
 
 #### Response
@@ -455,16 +468,16 @@ Retrieves a list of activities (interactions, tasks, notes) associated with a sp
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                 |
+| --------- | ------ | --------------------------- |
 | record_id | string | The ID of the person record |
 
 #### Query Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| page      | number | Page number to retrieve (starting at 1) |
-| pageSize  | number | Number of items per page (default 25, max 100) |
+| Parameter | Type   | Description                                             |
+| --------- | ------ | ------------------------------------------------------- |
+| page      | number | Page number to retrieve (starting at 1)                 |
+| pageSize  | number | Number of items per page (default 25, max 100)          |
 | type      | string | Filter by activity type (e.g., "note", "task", "email") |
 
 #### Response
@@ -480,24 +493,28 @@ const axios = require('axios');
 
 async function createPerson() {
   try {
-    const response = await axios.post('https://api.attio.com/v2/objects/people/records', {
-      attributes: {
-        name: "David Johnson",
-        email: "david@example.com",
-        phone: "+1 (555) 456-7890",
-        job_title: "Product Manager",
-        company: {
-          record_id: "record_01defghijklmnopqrstuvwxy"
+    const response = await axios.post(
+      'https://api.attio.com/v2/objects/people/records',
+      {
+        attributes: {
+          name: 'David Johnson',
+          email: 'david@example.com',
+          phone: '+1 (555) 456-7890',
+          job_title: 'Product Manager',
+          company: {
+            record_id: 'record_01defghijklmnopqrstuvwxy',
+          },
+          tags: ['prospect', 'product'],
         },
-        tags: ["prospect", "product"]
+      },
+      {
+        headers: {
+          Authorization: 'Bearer YOUR_API_KEY',
+          'Content-Type': 'application/json',
+        },
       }
-    }, {
-      headers: {
-        'Authorization': 'Bearer YOUR_API_KEY',
-        'Content-Type': 'application/json'
-      }
-    });
-    
+    );
+
     console.log(response.data);
   } catch (error) {
     console.error(error);
@@ -534,6 +551,7 @@ For new implementations, consider using the Universal Tools system which provide
 ### Quick Migration Examples
 
 **Old Way (Deprecated):**
+
 ```javascript
 // Multiple resource-specific tools
 await client.callTool('search-people', { query: 'CEO' });
@@ -542,17 +560,25 @@ await client.callTool('search-people-by-company', { company_id: 'comp_456' });
 ```
 
 **New Way (Universal Tools):**
+
 ```javascript
 // Single tools with resource_type parameter
-await client.callTool('search-records', { resource_type: 'people', query: 'CEO' });
-await client.callTool('get-record-details', { resource_type: 'people', record_id: 'person_123' });
-await client.callTool('search-by-relationship', { 
-  relationship_type: 'company_to_people', 
-  source_id: 'comp_456' 
+await client.callTool('search-records', {
+  resource_type: 'people',
+  query: 'CEO',
+});
+await client.callTool('get-record-details', {
+  resource_type: 'people',
+  record_id: 'person_123',
+});
+await client.callTool('search-by-relationship', {
+  relationship_type: 'company_to_people',
+  source_id: 'comp_456',
 });
 ```
 
 **See Also:**
+
 - [Universal Tools User Guide](../universal-tools/user-guide.md) - Complete usage examples
 - [Migration Guide](../universal-tools/migration-guide.md) - Step-by-step migration instructions
 - [API Reference](../universal-tools/api-reference.md) - Detailed schemas and parameters

@@ -3,22 +3,124 @@
  * Handles basic and advanced search functionality
  */
 
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@api/lazy-client.js';
+import { callWithRetry, RetryConfig } from '@api/operations/retry.js';
+import { ListEntryFilters } from '@api/operations/types.js';
+import { parseQuery } from '@api/operations/query-parser.js';
+import { FilterValidationError } from '@errors/api-errors.js';
+import { ErrorEnhancer } from '@errors/enhanced-api-errors.js';
+import { transformFiltersToApiFormat } from '@utils/record-utils.js';
 import {
   AttioRecord,
   ResourceType,
   AttioListResponse,
-} from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { ListEntryFilters } from './types.js';
-import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { ErrorEnhancer } from '../../errors/enhanced-api-errors.js';
+} from '@shared-types/attio.js';
 import {
   ApiError,
   SearchRequestBody,
   ListRequestBody,
-} from '../../types/api-operations.js';
+} from '@shared-types/api-operations.js';
+
+type FilterCondition = Record<string, unknown>;
+
+function createLegacyFilter(
+  objectType: ResourceType,
+  query: string
+): FilterCondition {
+  if (objectType === ResourceType.PEOPLE) {
+    return {
+      $or: [
+        { name: { $contains: query } },
+        { email_addresses: { $contains: query } },
+        { phone_numbers: { $contains: query } },
+      ],
+    };
+  }
+
+  return { name: { $contains: query } };
+}
+
+function addCondition(
+  collection: FilterCondition[],
+  seen: Set<string>,
+  condition: FilterCondition
+) {
+  const key = JSON.stringify(condition);
+  if (!seen.has(key)) {
+    seen.add(key);
+    collection.push(condition);
+  }
+}
+
+function buildSearchFilter(
+  objectType: ResourceType,
+  query: string
+): FilterCondition {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) {
+    return createLegacyFilter(objectType, query);
+  }
+
+  const parsed = parseQuery(trimmedQuery);
+  const conditions: FilterCondition[] = [];
+  const seen = new Set<string>();
+
+  parsed.emails.forEach((email) => {
+    addCondition(conditions, seen, {
+      email_addresses: { $contains: email },
+    });
+  });
+
+  parsed.phones.forEach((phone) => {
+    addCondition(conditions, seen, {
+      phone_numbers: { $contains: phone },
+    });
+  });
+
+  if (objectType === ResourceType.COMPANIES) {
+    parsed.domains.forEach((domain) => {
+      addCondition(conditions, seen, {
+        domains: { $contains: domain },
+      });
+    });
+  }
+
+  const tokenTargets = new Set<string>();
+  tokenTargets.add('name');
+
+  if (objectType === ResourceType.PEOPLE) {
+    tokenTargets.add('email_addresses');
+    tokenTargets.add('phone_numbers');
+  }
+
+  if (objectType === ResourceType.COMPANIES) {
+    tokenTargets.add('domains');
+  }
+
+  const uniqueTokens = Array.from(
+    new Set(parsed.tokens.filter((token) => token.length > 1))
+  );
+
+  uniqueTokens.forEach((token) => {
+    tokenTargets.forEach((field) => {
+      addCondition(conditions, seen, {
+        [field]: { $contains: token },
+      });
+    });
+  });
+
+  if (conditions.length === 0) {
+    return createLegacyFilter(objectType, trimmedQuery);
+  }
+
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+
+  return {
+    $or: conditions,
+  };
+}
 
 /**
  * Generic function to search any object type by name, email, or phone (when applicable)
@@ -36,24 +138,7 @@ export async function searchObject<T extends AttioRecord>(
   const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
-  // Use different search logic based on object type
-  let filter = {};
-
-  if (objectType === ResourceType.PEOPLE) {
-    // For people, search by name, email, or phone
-    filter = {
-      $or: [
-        { name: { $contains: query } },
-        { email_addresses: { $contains: query } },
-        { phone_numbers: { $contains: query } },
-      ],
-    };
-  } else {
-    // For other types (like companies), search by name only
-    filter = {
-      name: { $contains: query },
-    };
-  }
+  const filter = buildSearchFilter(objectType, query);
 
   return callWithRetry(async () => {
     try {

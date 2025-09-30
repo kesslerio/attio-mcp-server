@@ -11,11 +11,11 @@ All universal tools use the `resource_type` parameter to specify the target reso
 ```typescript
 enum UniversalResourceType {
   COMPANIES = 'companies',
-  PEOPLE = 'people', 
+  PEOPLE = 'people',
   RECORDS = 'records',
   TASKS = 'tasks',
   LISTS = 'lists',
-  NOTES = 'notes'
+  NOTES = 'notes',
 }
 ```
 
@@ -24,13 +24,14 @@ enum UniversalResourceType {
 **IMPORTANT**: All universal tools now use consistent `formatResult` functions that always return strings. This eliminates dual-mode behavior and improves performance by 89.7%.
 
 ### Consistent formatResult Contract
+
 ```typescript
 // All formatResult functions follow this pattern
 formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResourceType): string
 
 // Performance optimized with:
 // - No environment-dependent behavior
-// - Type-safe Record<string, unknown> patterns  
+// - Type-safe Record<string, unknown> patterns
 // - Memory-efficient string templates
 // - 59% ESLint warning reduction (957→395)
 ```
@@ -39,15 +40,16 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
 
 ### 1. search-records
 
-**Description**: Universal search across all resource types with flexible filtering.
+**Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups.
 
 **Consolidates**: `search-companies`, `search-people`, `list-records`, `list-tasks`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
-  query?: string,                    // Search query string
+  query?: string,                    // Smart query string (names, emails, phones, domains)
   filters?: object,                  // Advanced filter conditions
   search_type?: 'basic' | 'content', // Search type (default: 'basic')
   fields?: string[],                 // Fields to search (content search only)
@@ -59,12 +61,31 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
 ```
 
 **Examples**:
+
 ```typescript
 // Basic search for companies
 await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'tech startup',
-  limit: 20
+  limit: 20,
+});
+
+// Multi-field people lookup (name + email handled automatically)
+await client.callTool('search-records', {
+  resource_type: 'people',
+  query: 'Alex Rivera alex.rivera@example.com',
+});
+
+// Phone number search (normalizes formatting + country code)
+await client.callTool('search-records', {
+  resource_type: 'people',
+  query: '555-010-4477',
+});
+
+// Domain-aware company search (extracts domains from queries/emails)
+await client.callTool('search-records', {
+  resource_type: 'companies',
+  query: 'examplecorp.com',
 });
 
 // Content search across multiple fields
@@ -72,7 +93,7 @@ await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'artificial intelligence',
   search_type: 'content',
-  sort: 'relevance'
+  sort: 'relevance',
 });
 
 // Search people with filters
@@ -80,10 +101,8 @@ await client.callTool('search-records', {
   resource_type: 'people',
   query: 'john',
   filters: {
-    and: [
-      { attribute: 'industry', condition: 'equals', value: 'Technology' }
-    ]
-  }
+    and: [{ attribute: 'industry', condition: 'equals', value: 'Technology' }],
+  },
 });
 
 // Partial match content search
@@ -91,7 +110,7 @@ await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'automat',
   search_type: 'content',
-  match_type: 'partial'
+  match_type: 'partial',
 });
 ```
 
@@ -102,6 +121,7 @@ await client.callTool('search-records', {
 **Consolidates**: `get-company-details`, `get-person-details`, `get-record-details`, `get-task-details`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -111,18 +131,19 @@ await client.callTool('search-records', {
 ```
 
 **Examples**:
+
 ```typescript
 // Get company details
 await client.callTool('get-record-details', {
   resource_type: 'companies',
-  record_id: 'comp_123'
+  record_id: 'comp_123',
 });
 
 // Get person details with specific fields
 await client.callTool('get-record-details', {
   resource_type: 'people',
   record_id: 'person_456',
-  fields: ['name', 'email', 'company']
+  fields: ['name', 'email', 'company'],
 });
 ```
 
@@ -133,6 +154,7 @@ await client.callTool('get-record-details', {
 **Consolidates**: `create-company`, `create-person`, `create-record`, `create-task`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -142,6 +164,7 @@ await client.callTool('get-record-details', {
 ```
 
 **Examples**:
+
 ```typescript
 // Create company
 await client.callTool('create-record', {
@@ -149,8 +172,8 @@ await client.callTool('create-record', {
   record_data: {
     name: 'Acme Corp',
     website: 'https://acme.com',
-    industry: 'Technology'
-  }
+    industry: 'Technology',
+  },
 });
 
 // Create person
@@ -159,9 +182,9 @@ await client.callTool('create-record', {
   record_data: {
     name: 'John Doe',
     email: 'john@acme.com',
-    title: 'CEO'
+    title: 'CEO',
   },
-  return_details: true
+  return_details: true,
 });
 ```
 
@@ -172,6 +195,7 @@ await client.callTool('create-record', {
 **Consolidates**: `update-company`, `update-person`, `update-record`, `update-task`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -182,6 +206,7 @@ await client.callTool('create-record', {
 ```
 
 **Examples**:
+
 ```typescript
 // Update company
 await client.callTool('update-record', {
@@ -189,8 +214,8 @@ await client.callTool('update-record', {
   record_id: 'comp_123',
   record_data: {
     industry: 'Fintech',
-    employee_count: 50
-  }
+    employee_count: 50,
+  },
 });
 ```
 
@@ -201,6 +226,7 @@ await client.callTool('update-record', {
 **Consolidates**: `delete-company`, `delete-person`, `delete-record`, `delete-task`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -209,11 +235,12 @@ await client.callTool('update-record', {
 ```
 
 **Examples**:
+
 ```typescript
 // Delete company
 await client.callTool('delete-record', {
   resource_type: 'companies',
-  record_id: 'comp_123'
+  record_id: 'comp_123',
 });
 ```
 
@@ -224,6 +251,7 @@ await client.callTool('delete-record', {
 **Consolidates**: `get-company-attributes`, `get-person-attributes`, `get-record-attributes`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -234,17 +262,18 @@ await client.callTool('delete-record', {
 ```
 
 **Examples**:
+
 ```typescript
 // Get all company attributes
 await client.callTool('get-attributes', {
-  resource_type: 'companies'
+  resource_type: 'companies',
 });
 
 // Get specific record attributes
 await client.callTool('get-attributes', {
   resource_type: 'people',
   record_id: 'person_456',
-  fields: ['name', 'email', 'company']
+  fields: ['name', 'email', 'company'],
 });
 ```
 
@@ -255,17 +284,19 @@ await client.callTool('get-attributes', {
 **Consolidates**: `discover-company-attributes`, `discover-person-attributes`, `discover-record-attributes`
 
 **Schema**:
+
 ```typescript
 {
-  resource_type: 'companies' | 'people' | 'records' | 'tasks' // Required
+  resource_type: 'companies' | 'people' | 'records' | 'tasks'; // Required
 }
 ```
 
 **Examples**:
+
 ```typescript
 // Discover company attributes
 await client.callTool('discover-attributes', {
-  resource_type: 'companies'
+  resource_type: 'companies',
 });
 ```
 
@@ -276,6 +307,7 @@ await client.callTool('discover-attributes', {
 **Consolidates**: `get-company-basic-info`, `get-company-contact-info`, `get-company-business-info`, `get-company-social-info`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -285,19 +317,20 @@ await client.callTool('discover-attributes', {
 ```
 
 **Examples**:
+
 ```typescript
 // Get company contact info
 await client.callTool('get-detailed-info', {
   resource_type: 'companies',
   record_id: 'comp_123',
-  info_type: 'contact'
+  info_type: 'contact',
 });
 
 // Get company business info
 await client.callTool('get-detailed-info', {
   resource_type: 'companies',
   record_id: 'comp_123',
-  info_type: 'business'
+  info_type: 'business',
 });
 ```
 
@@ -310,6 +343,7 @@ await client.callTool('get-detailed-info', {
 **Consolidates**: `advanced-search-companies`, `advanced-search-people`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -323,6 +357,7 @@ await client.callTool('get-detailed-info', {
 ```
 
 **Examples**:
+
 ```typescript
 // Advanced company search with sorting
 await client.callTool('advanced-search', {
@@ -330,12 +365,12 @@ await client.callTool('advanced-search', {
   query: 'technology',
   filters: {
     and: [
-      { attribute: 'employee_count', condition: 'greater_than', value: 100 }
-    ]
+      { attribute: 'employee_count', condition: 'greater_than', value: 100 },
+    ],
   },
   sort_by: 'created_at',
   sort_order: 'desc',
-  limit: 25
+  limit: 25,
 });
 ```
 
@@ -346,6 +381,7 @@ await client.callTool('advanced-search', {
 **Consolidates**: `search-companies-by-people`, `search-people-by-company`
 
 **Schema**:
+
 ```typescript
 {
   relationship_type: 'company_to_people' | 'people_to_company' | 'person_to_tasks' | 'company_to_tasks', // Required
@@ -357,18 +393,19 @@ await client.callTool('advanced-search', {
 ```
 
 **Examples**:
+
 ```typescript
 // Find people at a company
 await client.callTool('search-by-relationship', {
   relationship_type: 'company_to_people',
   source_id: 'comp_123',
-  limit: 50
+  limit: 50,
 });
 
 // Find companies associated with a person
 await client.callTool('search-by-relationship', {
   relationship_type: 'people_to_company',
-  source_id: 'person_456'
+  source_id: 'person_456',
 });
 ```
 
@@ -379,6 +416,7 @@ await client.callTool('search-by-relationship', {
 **Consolidates**: `search-companies-by-notes`, `search-people-by-notes`, `search-people-by-activity`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -390,19 +428,20 @@ await client.callTool('search-by-relationship', {
 ```
 
 **Examples**:
+
 ```typescript
 // Search companies by notes
 await client.callTool('search-by-content', {
   resource_type: 'companies',
   content_type: 'notes',
-  search_query: 'quarterly review'
+  search_query: 'quarterly review',
 });
 
 // Search people by activity
 await client.callTool('search-by-content', {
   resource_type: 'people',
   content_type: 'activity',
-  search_query: 'demo scheduled'
+  search_query: 'demo scheduled',
 });
 ```
 
@@ -413,6 +452,7 @@ await client.callTool('search-by-content', {
 **Consolidates**: `search-people-by-creation-date`, `search-people-by-modification-date`, `search-people-by-last-interaction`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -426,32 +466,34 @@ await client.callTool('search-by-content', {
 ```
 
 **Supported Date Formats** (v0.2.1+):
+
 - ISO 8601: `'2024-01-01T00:00:00Z'`
 - Relative expressions: `'today'`, `'yesterday'`, `'this week'`, `'last week'`, `'this month'`, `'last month'`, `'this year'`, `'last year'`
 - Dynamic ranges: `'last N days'`, `'last N weeks'`, `'last N months'`
 
 **Examples**:
+
 ```typescript
 // Search people created in January 2024 (ISO format)
 await client.callTool('search-by-timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   start_date: '2024-01-01T00:00:00Z',
-  end_date: '2024-01-31T23:59:59Z'
+  end_date: '2024-01-31T23:59:59Z',
 });
 
 // Search people created in the last 30 days (natural language)
 await client.callTool('search-by-timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
-  preset: 'last 30 days'
+  preset: 'last 30 days',
 });
 
 // Search companies modified this month
 await client.callTool('search-by-timeframe', {
   resource_type: 'companies',
   timeframe_type: 'modified',
-  preset: 'this month'
+  preset: 'this month',
 });
 
 // Search companies by last interaction using relative dates
@@ -459,7 +501,7 @@ await client.callTool('search-by-timeframe', {
   resource_type: 'companies',
   timeframe_type: 'last_interaction',
   start_date: 'last 7 days',
-  end_date: 'today'
+  end_date: 'today',
 });
 ```
 
@@ -470,6 +512,7 @@ await client.callTool('search-by-timeframe', {
 **Consolidates**: `batch-create-companies`, `batch-update-companies`, `batch-delete-companies`, `batch-search-companies`, `batch-get-company-details`, `batch-create-records`, `batch-update-records`
 
 **Schema**:
+
 ```typescript
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
@@ -483,6 +526,7 @@ await client.callTool('search-by-timeframe', {
 ```
 
 **Examples**:
+
 ```typescript
 // Batch create companies
 await client.callTool('batch-operations', {
@@ -490,15 +534,15 @@ await client.callTool('batch-operations', {
   operation_type: 'create',
   records: [
     { name: 'Company A', website: 'https://companya.com' },
-    { name: 'Company B', website: 'https://companyb.com' }
-  ]
+    { name: 'Company B', website: 'https://companyb.com' },
+  ],
 });
 
 // Batch get company details
 await client.callTool('batch-operations', {
   resource_type: 'companies',
   operation_type: 'get',
-  record_ids: ['comp_123', 'comp_456', 'comp_789']
+  record_ids: ['comp_123', 'comp_456', 'comp_789'],
 });
 
 // Batch search companies
@@ -506,49 +550,71 @@ await client.callTool('batch-operations', {
   resource_type: 'companies',
   operation_type: 'search',
   query: 'technology startup',
-  limit: 50
+  limit: 50,
 });
 ```
 
 ## Parameter Validation Rules
 
 ### Required Parameters
+
 - All tools require `resource_type`
 - Record operations require `record_id`
 - Create/update operations require `record_data`
 - Content searches require non-empty `search_query`
 
 ### Date Operators ⚠️
+
 Use correct operators for date filtering:
 
 **✅ Correct**:
+
 ```typescript
-{ condition: 'after' }     // Instead of greater_than_or_equals
-{ condition: 'before' }    // Instead of less_than_or_equals
+{
+  condition: 'after';
+} // Instead of greater_than_or_equals
+{
+  condition: 'before';
+} // Instead of less_than_or_equals
 ```
 
 **❌ Incorrect**:
+
 ```typescript
-{ condition: 'greater_than_or_equals' }  // Will cause API errors
-{ condition: 'less_than_or_equals' }     // Will cause API errors
+{
+  condition: 'greater_than_or_equals';
+} // Will cause API errors
+{
+  condition: 'less_than_or_equals';
+} // Will cause API errors
 ```
 
 ### Valid Date Presets
+
 ```typescript
-'today', 'yesterday', 'this_week', 'last_week', 
-'this_month', 'last_month', 'this_quarter', 'last_quarter', 
-'this_year', 'last_year'
+('today',
+  'yesterday',
+  'this_week',
+  'last_week',
+  'this_month',
+  'last_month',
+  'this_quarter',
+  'last_quarter',
+  'this_year',
+  'last_year');
 
 // ❌ Invalid: 'last_30_days'
 ```
 
 ### Batch Operation Limits
+
 - Maximum 50 records per batch operation
 - Built-in rate limiting with 100ms delays
 - Maximum 5 concurrent requests
 - Error isolation - individual failures don't stop the batch
 
 ### Query Requirements
+
 - Search queries **cannot be empty strings**
 - Use meaningful search terms
 - Content searches require specific, non-generic queries
@@ -558,21 +624,25 @@ Use correct operators for date filtering:
 ### Common Error Types
 
 1. **Invalid Resource Type**
+
    ```
    Error: Invalid resource type: 'invalid_type'
    ```
 
 2. **Missing Required Parameters**
+
    ```
    Error: Missing required parameter: record_id
    ```
 
 3. **Invalid Date Operators**
+
    ```
    Error: Invalid operator: $greater_than_or_equals
    ```
 
 4. **Empty Query Strings**
+
    ```
    Error: Search query cannot be empty
    ```
@@ -583,6 +653,7 @@ Use correct operators for date filtering:
    ```
 
 ### Error Response Format
+
 ```typescript
 {
   error: string,           // Error message
@@ -602,14 +673,14 @@ When running in test environment (`NODE_ENV=test` or `VITEST=true`), the univers
 // Automatic mock data injection in test environment
 await client.callTool('create-record', {
   resource_type: 'tasks',
-  data: { content: 'Test task' }
+  data: { content: 'Test task' },
 });
 // Returns: Mock task with proper Attio field format
 
 // Special mock IDs trigger error scenarios
 await client.callTool('get-record-details', {
   resource_type: 'tasks',
-  record_id: 'mock-error-not-found'
+  record_id: 'mock-error-not-found',
 });
 // Returns: Error with "Record not found" message
 ```
@@ -647,21 +718,25 @@ Use special mock IDs to test error handling:
 ## Performance Guidelines
 
 ### Pagination
+
 - Use `limit` and `offset` for large result sets
 - Default limit is 10, maximum is 100
 - For batch operations, maximum limit is 50
 
 ### Batch Operations
+
 - Prefer batch operations for multiple records
 - Built-in rate limiting prevents API throttling
 - Error isolation ensures partial success handling
 
 ### Field Selection
+
 - Use `fields` parameter to limit returned data
 - Reduces response size and improves performance
 - Especially important for record details
 
 ### Filtering
+
 - Use `filters` for precise searches instead of broad queries
 - Combine multiple conditions with `and`/`or` operators
 - Date range filtering is optimized for performance

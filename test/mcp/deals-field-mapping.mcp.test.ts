@@ -193,54 +193,62 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
   // Issue #720: Test new enhanced field mappings
   describe('Enhanced field mappings (Issue #720)', () => {
-    it('should map "companies" to "associated_company"', async () => {
-      // Test the specific mapping mentioned in issue #720
-      const createResult = await client.callTool('create-record', {
-        resource_type: 'deals',
-        record_data: {
-          values: {
-            name: 'Companies Field Mapping Test',
-            stage: 'Qualified',
-            companies: 'test-company-id', // Should map to associated_company
+    it(
+      'should map "companies" to "associated_company"',
+      { timeout: 30000 },
+      async () => {
+        // Test the specific mapping mentioned in issue #720
+        const createResult = await client.callTool('create-record', {
+          resource_type: 'deals',
+          record_data: {
+            values: {
+              name: 'Companies Field Mapping Test',
+              stage: 'Qualified',
+              companies: 'test-company-id', // Should map to associated_company
+            },
           },
-        },
-      });
+        });
 
-      if (createResult.isError) {
-        const errorText = createResult.content?.[0]?.text || '';
-        // Should not fail due to field mapping of "companies"
-        expect(errorText).not.toMatch(/companies.*unknown/i);
-        expect(errorText).not.toMatch(/companies.*invalid/i);
-        expect(errorText).not.toMatch(/companies.*not.*found/i);
-        console.log('✅ Field mapping worked for "companies" field');
-      } else {
-        trackDealId(createResult);
-        console.log('✅ Deal created successfully using "companies" field!');
+        if (createResult.isError) {
+          const errorText = createResult.content?.[0]?.text || '';
+          // Should not fail due to field mapping of "companies"
+          expect(errorText).not.toMatch(/companies.*unknown/i);
+          expect(errorText).not.toMatch(/companies.*invalid/i);
+          expect(errorText).not.toMatch(/companies.*not.*found/i);
+          console.log('✅ Field mapping worked for "companies" field');
+        } else {
+          trackDealId(createResult);
+          console.log('✅ Deal created successfully using "companies" field!');
+        }
       }
-    });
+    );
 
-    it('should map plural organization variations correctly', async () => {
-      // Test other plural form mappings
-      const createResult = await client.callTool('create-record', {
-        resource_type: 'deals',
-        record_data: {
-          values: {
-            name: 'Organizations Field Mapping Test',
-            stage: 'Interested',
-            organizations: 'test-org-id', // Should map to associated_company
+    it(
+      'should map plural organization variations correctly',
+      { timeout: 30000 },
+      async () => {
+        // Test other plural form mappings
+        const createResult = await client.callTool('create-record', {
+          resource_type: 'deals',
+          record_data: {
+            values: {
+              name: 'Organizations Field Mapping Test',
+              stage: 'Interested',
+              organizations: 'test-org-id', // Should map to associated_company
+            },
           },
-        },
-      });
+        });
 
-      if (createResult.isError) {
-        const errorText = createResult.content?.[0]?.text || '';
-        // Should not fail due to field mapping of "organizations"
-        expect(errorText).not.toMatch(/organizations.*unknown/i);
-        expect(errorText).not.toMatch(/organizations.*invalid/i);
-      } else {
-        trackDealId(createResult);
+        if (createResult.isError) {
+          const errorText = createResult.content?.[0]?.text || '';
+          // Should not fail due to field mapping of "organizations"
+          expect(errorText).not.toMatch(/organizations.*unknown/i);
+          expect(errorText).not.toMatch(/organizations.*invalid/i);
+        } else {
+          trackDealId(createResult);
+        }
       }
-    });
+    );
 
     it('should map "clients" to "associated_company"', async () => {
       // Test client variations
