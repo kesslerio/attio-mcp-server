@@ -17,6 +17,7 @@ import {
 } from './templates/index.js';
 import { PromptTemplate, PromptExecutionRequest } from './types.js';
 import { createErrorResult } from './error-handler.js';
+import { getPromptsListPayload } from '@/utils/mcp-discovery.js';
 
 // Import Handlebars using ES module import
 // This avoids the "require is not defined in ES module scope" error
@@ -456,14 +457,8 @@ export function registerPromptHandlers(
   }
   // Register handler for prompts/list endpoint
   server.setRequestHandler(ListPromptsRequestSchema, async () => {
-    const prompts = getAllPrompts();
     return {
-      prompts: prompts.map((prompt) => ({
-        id: prompt.id,
-        name: prompt.title, // Map title to name as required by MCP
-        description: prompt.description,
-        category: prompt.category,
-      })),
+      prompts: getPromptsListPayload().prompts,
     };
   });
 

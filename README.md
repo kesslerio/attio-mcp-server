@@ -669,6 +669,7 @@ See the [Testing Guide](./docs/testing.md) and [E2E Troubleshooting Guide](./doc
 npm run build          # Build TypeScript
 npm run test           # Run all tests
 npm run test:offline   # Run tests without API calls
+npm run analyze:token-footprint # Generate baseline MCP token footprint report
 npm run lint           # Check code style
 npm run check          # Full quality check
 npm run setup:test-data # Create test data for integration tests
