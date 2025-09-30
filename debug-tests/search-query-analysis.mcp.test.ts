@@ -31,19 +31,19 @@ describe('Search Query Analysis - Issue #781', () => {
     notes: string;
   }> = [];
 
-  // Known test data from production logs
+  // Fake test data for search validation (no real PII)
   const KNOWN_PERSON = {
-    id: 'a63f2a17-d534-5ab7-9c74-6ab24bb29eb2',
-    name: 'Bhavesh Patel',
-    email: 'drbpatel24@gmail.com',
-    secondaryEmail: 'armaanaesthetics@gmail.com',
-    phone: '+15417605368',
+    id: 'test-person-id-12345',
+    name: 'John Smith',
+    email: 'john.smith@example.com',
+    secondaryEmail: 'jsmith@testcompany.com',
+    phone: '+15551234567',
   };
 
   const KNOWN_COMPANY = {
-    id: 'a4a7b1d4-d35d-5c44-bf08-b58711ca5939',
-    name: 'Tite Medical Aesthetics',
-    domain: 'titemedicalaesthetics.com',
+    id: 'test-company-id-67890',
+    name: 'Test Corporation Inc',
+    domain: 'testcorp.example',
   };
 
   const testCases: SearchTestCase[] = [
@@ -51,26 +51,24 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Multi-field: name + email',
       resourceType: 'people',
-      query: 'Bhavesh Patel drbpatel24@gmail.com',
-      expectedBehavior: 'Should find Bhavesh Patel by parsing name OR email',
+      query: 'John Smith john.smith@example.com',
+      expectedBehavior: 'Should find person by parsing name OR email',
       pattern: 'multi-field',
       shouldFind: true,
     },
     {
       name: 'Email only (baseline)',
       resourceType: 'people',
-      query: 'drbpatel24@gmail.com',
-      expectedBehavior:
-        'Should find Bhavesh Patel (baseline - currently works)',
+      query: 'john.smith@example.com',
+      expectedBehavior: 'Should find person (baseline - currently works)',
       pattern: 'single-field',
       shouldFind: true,
     },
     {
       name: 'Name only (baseline)',
       resourceType: 'people',
-      query: 'Bhavesh Patel',
-      expectedBehavior:
-        'Should find Bhavesh Patel (baseline - currently works)',
+      query: 'John Smith',
+      expectedBehavior: 'Should find person (baseline - currently works)',
       pattern: 'single-field',
       shouldFind: true,
     },
@@ -79,24 +77,24 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Partial email domain',
       resourceType: 'people',
-      query: 'armaanaesthetics',
-      expectedBehavior: 'Should find person with armaanaesthetics@gmail.com',
+      query: 'testcompany',
+      expectedBehavior: 'Should find person with testcompany email domain',
       pattern: 'partial-domain',
       shouldFind: true,
     },
     {
       name: 'Partial first name',
       resourceType: 'people',
-      query: 'Bhavesh',
-      expectedBehavior: 'Should find Bhavesh Patel',
+      query: 'John',
+      expectedBehavior: 'Should find John Smith',
       pattern: 'partial-name',
       shouldFind: true,
     },
     {
       name: 'Last name only',
       resourceType: 'people',
-      query: 'Patel',
-      expectedBehavior: 'Should find Bhavesh Patel',
+      query: 'Smith',
+      expectedBehavior: 'Should find John Smith',
       pattern: 'partial-name',
       shouldFind: true,
     },
@@ -105,7 +103,7 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Company name + location',
       resourceType: 'companies',
-      query: 'Tite Medical Aesthetics Oregon',
+      query: 'Test Corporation California',
       expectedBehavior: 'Should find company by removing location token',
       pattern: 'location-context',
       shouldFind: true,
@@ -113,7 +111,7 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Exact company name (baseline)',
       resourceType: 'companies',
-      query: 'Tite Medical Aesthetics',
+      query: 'Test Corporation Inc',
       expectedBehavior: 'Should find company (baseline - currently works)',
       pattern: 'single-field',
       shouldFind: true,
@@ -121,8 +119,8 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Partial company name',
       resourceType: 'companies',
-      query: 'Tite Medical',
-      expectedBehavior: 'Should find Tite Medical Aesthetics',
+      query: 'Test Corporation',
+      expectedBehavior: 'Should find Test Corporation Inc',
       pattern: 'partial-name',
       shouldFind: true,
     },
@@ -131,7 +129,7 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Domain without TLD',
       resourceType: 'companies',
-      query: 'titemedicalaesthetics',
+      query: 'testcorp',
       expectedBehavior: 'Should find company by domain',
       pattern: 'partial-domain',
       shouldFind: true,
@@ -139,7 +137,7 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Full domain',
       resourceType: 'companies',
-      query: 'titemedicalaesthetics.com',
+      query: 'testcorp.example',
       expectedBehavior: 'Should find company by full domain',
       pattern: 'domain',
       shouldFind: true,
@@ -149,24 +147,24 @@ describe('Search Query Analysis - Issue #781', () => {
     {
       name: 'Phone with +1 and formatting',
       resourceType: 'people',
-      query: '+15417605368',
-      expectedBehavior: 'Should find Bhavesh Patel',
+      query: '+15551234567',
+      expectedBehavior: 'Should find person by phone',
       pattern: 'phone-formatted',
       shouldFind: true,
     },
     {
       name: 'Phone without country code',
       resourceType: 'people',
-      query: '5417605368',
-      expectedBehavior: 'Should find Bhavesh Patel',
+      query: '5551234567',
+      expectedBehavior: 'Should find person by phone',
       pattern: 'phone-normalized',
       shouldFind: true,
     },
     {
       name: 'Phone with dashes',
       resourceType: 'people',
-      query: '541-760-5368',
-      expectedBehavior: 'Should find Bhavesh Patel',
+      query: '555-123-4567',
+      expectedBehavior: 'Should find person by phone',
       pattern: 'phone-formatted',
       shouldFind: true,
     },

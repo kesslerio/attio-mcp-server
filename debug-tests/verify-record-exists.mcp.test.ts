@@ -9,9 +9,9 @@ import { MCPTestClient } from 'mcp-test-client';
 describe('Verify Production Records Exist', () => {
   let client: MCPTestClient;
 
-  // Known IDs from production logs
-  const KNOWN_PERSON_ID = 'a63f2a17-d534-5ab7-9c74-6ab24bb29eb2';
-  const KNOWN_COMPANY_ID = 'a4a7b1d4-d35d-5c44-bf08-b58711ca5939';
+  // Fake test record IDs (no real data)
+  const KNOWN_PERSON_ID = 'test-person-id-12345';
+  const KNOWN_COMPANY_ID = 'test-company-id-67890';
 
   beforeAll(async () => {
     client = new MCPTestClient({
@@ -72,7 +72,7 @@ describe('Verify Production Records Exist', () => {
       'search-records',
       {
         resource_type: 'people',
-        query: 'drbpatel24@gmail.com',
+        query: 'john.smith@example.com',
         limit: 5,
       },
       (result) => {
@@ -93,7 +93,7 @@ describe('Verify Production Records Exist', () => {
       'search-records',
       {
         resource_type: 'companies',
-        query: 'Tite Medical Aesthetics',
+        query: 'Test Corporation Inc',
         limit: 5,
       },
       (result) => {
