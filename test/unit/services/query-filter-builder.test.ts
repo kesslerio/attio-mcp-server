@@ -24,27 +24,49 @@ const findFilter = (
 describe('buildPeopleQueryFilters', () => {
   it('creates email and token filters for multi-field queries', () => {
     const filters = buildPeopleQueryFilters(
-      'Bhavesh Patel drbpatel24@gmail.com',
+      'Alex Rivera alex.rivera@example.com',
       MatchType.PARTIAL
     );
 
     expect(filters?.matchAny).toBe(true);
     expect(filters?.filters?.length).toBeGreaterThan(0);
     expect(
-      findFilter(filters?.filters, 'email_addresses', 'drbpatel24@gmail.com')
+      findFilter(filters?.filters, 'email_addresses', 'alex.rivera@example.com')
     ).toBe(true);
-    expect(findFilter(filters?.filters, 'name', 'Bhavesh')).toBe(true);
-    expect(findFilter(filters?.filters, 'name', 'Patel')).toBe(true);
+    expect(findFilter(filters?.filters, 'name', 'Alex')).toBe(true);
+    expect(findFilter(filters?.filters, 'name', 'Rivera')).toBe(true);
   });
 
   it('normalizes phone numbers into multiple variants', () => {
-    const filters = buildPeopleQueryFilters('541-760-5368', MatchType.PARTIAL);
+    const filters = buildPeopleQueryFilters('555-010-4477', MatchType.PARTIAL);
 
     expect(filters?.filters?.length).toBeGreaterThan(0);
-    expect(findFilter(filters?.filters, 'phone_numbers', '5417605368')).toBe(
+    expect(findFilter(filters?.filters, 'phone_numbers', '5550104477')).toBe(
       true
     );
-    expect(findFilter(filters?.filters, 'phone_numbers', '+15417605368')).toBe(
+    expect(findFilter(filters?.filters, 'phone_numbers', '+15550104477')).toBe(
+      true
+    );
+  });
+
+  it('avoids redundant email token filters when emails are present', () => {
+    const filters = buildPeopleQueryFilters(
+      'Alex Rivera alex.rivera@example.com',
+      MatchType.PARTIAL
+    );
+
+    const emailTokens = filters?.filters?.filter(
+      (filter) =>
+        filter.attribute.slug === 'email_addresses' && filter.value === 'Alex'
+    );
+
+    expect(emailTokens).toEqual([]);
+  });
+
+  it('adds email token filters when no explicit email is provided', () => {
+    const filters = buildPeopleQueryFilters('examplecorp', MatchType.PARTIAL);
+
+    expect(findFilter(filters?.filters, 'email_addresses', 'examplecorp')).toBe(
       true
     );
   });
@@ -82,27 +104,27 @@ describe('buildPeopleQueryFilters', () => {
 describe('buildCompanyQueryFilters', () => {
   it('creates filters for name tokens and domains', () => {
     const filters = buildCompanyQueryFilters(
-      'Tite Medical Aesthetics Oregon',
+      'Example Medical Group Oregon',
       MatchType.PARTIAL
     );
 
     expect(filters?.matchAny).toBe(true);
     expect(filters?.filters?.length).toBeGreaterThan(0);
-    expect(findFilter(filters?.filters, 'name', 'Tite')).toBe(true);
+    expect(findFilter(filters?.filters, 'name', 'Example')).toBe(true);
     expect(findFilter(filters?.filters, 'name', 'Oregon')).toBe(true);
-    expect(findFilter(filters?.filters, 'domains', 'Tite')).toBe(true);
+    expect(findFilter(filters?.filters, 'domains', 'Example')).toBe(true);
   });
 
   it('handles domain-like queries', () => {
     const filters = buildCompanyQueryFilters(
-      'titemedicalaesthetics.com',
+      'examplecorp.com',
       MatchType.PARTIAL
     );
 
     expect(filters?.filters?.length).toBeGreaterThan(0);
-    expect(
-      findFilter(filters?.filters, 'domains', 'titemedicalaesthetics.com')
-    ).toBe(true);
+    expect(findFilter(filters?.filters, 'domains', 'examplecorp.com')).toBe(
+      true
+    );
   });
 
   it('uses equals condition for exact match type', () => {

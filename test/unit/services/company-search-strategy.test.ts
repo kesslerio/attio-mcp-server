@@ -12,7 +12,7 @@ describe('CompanySearchStrategy', () => {
     });
 
     await strategy.search({
-      query: 'Tite Medical Aesthetics Oregon',
+      query: 'Example Medical Group Oregon',
       match_type: MatchType.PARTIAL,
     });
 
@@ -23,7 +23,7 @@ describe('CompanySearchStrategy', () => {
       expect.arrayContaining([
         expect.objectContaining({
           attribute: { slug: 'name' },
-          value: 'Tite',
+          value: 'Example',
         }),
         expect.objectContaining({
           attribute: { slug: 'name' },

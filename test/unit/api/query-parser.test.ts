@@ -4,20 +4,29 @@ import { parseQuery } from '@api/operations/query-parser.js';
 
 describe('parseQuery', () => {
   it('extracts emails, domains, and tokens from complex queries', () => {
-    const result = parseQuery('Bhavesh Patel drbpatel24@gmail.com');
+    const result = parseQuery('Alex Rivera alex.rivera@example.com');
 
-    expect(result.emails).toEqual(['drbpatel24@gmail.com']);
-    expect(result.domains).toEqual(['gmail.com']);
-    expect(result.tokens).toEqual(['Bhavesh', 'Patel']);
+    expect(result.emails).toEqual(['alex.rivera@example.com']);
+    expect(result.domains).toEqual(['example.com']);
+    expect(result.tokens).toEqual(['Alex', 'Rivera']);
   });
 
   it('normalizes multiple phone number formats', () => {
-    const result = parseQuery('Call me at 541-760-5368 or +1 (541) 760-5368');
+    const result = parseQuery('Call me at 555-010-4477 or +1 (555) 010-4477');
 
     expect(result.phones).toEqual(
-      expect.arrayContaining(['+15417605368', '5417605368', '15417605368'])
+      expect.arrayContaining(['+15550104477', '5550104477'])
     );
     expect(new Set(result.phones).size).toBe(result.phones.length);
+  });
+
+  it('handles international numbers without forcing US prefixes', () => {
+    const result = parseQuery('Dial +44 20 7946 0018 or 020 7946 0018');
+
+    expect(result.phones).toEqual(
+      expect.arrayContaining(['+442079460018', '02079460018'])
+    );
+    expect(result.phones).not.toContain('+102079460018');
   });
 
   it('omits empty tokens for whitespace-only queries', () => {

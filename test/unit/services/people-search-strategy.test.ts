@@ -12,7 +12,7 @@ describe('PeopleSearchStrategy', () => {
     });
 
     await strategy.search({
-      query: 'Bhavesh Patel drbpatel24@gmail.com',
+      query: 'Alex Rivera alex.rivera@example.com',
       match_type: MatchType.PARTIAL,
     });
 
@@ -23,11 +23,11 @@ describe('PeopleSearchStrategy', () => {
       expect.arrayContaining([
         expect.objectContaining({
           attribute: { slug: 'email_addresses' },
-          value: 'drbpatel24@gmail.com',
+          value: 'alex.rivera@example.com',
         }),
         expect.objectContaining({
           attribute: { slug: 'name' },
-          value: 'Bhavesh',
+          value: 'Alex',
         }),
       ])
     );

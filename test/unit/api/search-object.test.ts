@@ -27,7 +27,7 @@ describe('searchObject', () => {
   it('builds multi-field filters for people queries', async () => {
     await searchObject(
       ResourceType.PEOPLE,
-      'Bhavesh Patel drbpatel24@gmail.com'
+      'Alex Rivera alex.rivera@example.com'
     );
 
     expect(postMock).toHaveBeenCalledTimes(1);
@@ -36,41 +36,38 @@ describe('searchObject', () => {
 
     expect(filter.$or).toEqual(
       expect.arrayContaining([
-        { email_addresses: { $contains: 'drbpatel24@gmail.com' } },
-        { name: { $contains: 'Bhavesh' } },
-        { name: { $contains: 'Patel' } },
+        { email_addresses: { $contains: 'alex.rivera@example.com' } },
+        { name: { $contains: 'Alex' } },
+        { name: { $contains: 'Rivera' } },
       ])
     );
   });
 
   it('includes normalized phone variants for people queries', async () => {
-    await searchObject(ResourceType.PEOPLE, '541-760-5368');
+    await searchObject(ResourceType.PEOPLE, '555-010-4477');
 
     const [, body] = postMock.mock.calls[0];
     const filter = body.filter;
 
     expect(filter.$or).toEqual(
       expect.arrayContaining([
-        { phone_numbers: { $contains: '+15417605368' } },
-        { phone_numbers: { $contains: '5417605368' } },
+        { phone_numbers: { $contains: '+15550104477' } },
+        { phone_numbers: { $contains: '5550104477' } },
       ])
     );
   });
 
   it('searches company domains and tokens for company queries', async () => {
-    await searchObject(
-      ResourceType.COMPANIES,
-      'Tite Medical Aesthetics Oregon'
-    );
+    await searchObject(ResourceType.COMPANIES, 'Example Medical Group Oregon');
 
     const [, body] = postMock.mock.calls[0];
     const filter = body.filter;
 
     expect(filter.$or).toEqual(
       expect.arrayContaining([
-        { name: { $contains: 'Tite' } },
+        { name: { $contains: 'Example' } },
         { name: { $contains: 'Oregon' } },
-        { domains: { $contains: 'Tite' } },
+        { domains: { $contains: 'Example' } },
       ])
     );
   });

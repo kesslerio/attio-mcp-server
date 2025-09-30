@@ -73,29 +73,19 @@ export function buildPeopleQueryFilters(
   });
 
   parsed.phones.forEach((phone) => {
-    // Add both normalized and formatted variants for better matching
-    const normalizedPhone = phone.replace(/\D+/g, '');
-    addFilter(filters, seen, 'phone_numbers', normalizedPhone, condition);
-
-    // Also add +1 prefix for US numbers if not already present
-    if (!phone.startsWith('+') && normalizedPhone.length === 10) {
-      addFilter(
-        filters,
-        seen,
-        'phone_numbers',
-        `+1${normalizedPhone}`,
-        condition
-      );
-    }
+    addFilter(filters, seen, 'phone_numbers', phone, condition);
   });
 
   // Token-based name matching for multi-field queries
   // For people searches, also add tokens to email filter since they might be
   // partial email addresses (e.g., "armaanaesthetics" in "armaanaesthetics@gmail.com")
+  const hasStructuredEmail = parsed.emails.length > 0;
+
   parsed.tokens.forEach((token) => {
     addFilter(filters, seen, 'name', token, condition);
-    // If token is long enough, also search emails (likely email local part)
-    if (token.length >= 5) {
+    // If token is long enough, and we didn't extract explicit emails,
+    // also search email addresses (likely email local part)
+    if (!hasStructuredEmail && token.length >= 5) {
       addFilter(filters, seen, 'email_addresses', token, condition);
     }
   });

@@ -39,10 +39,15 @@ E2E_MODE=true npx vitest run --config vitest.config.debug.ts debug-tests/search-
 
 ## Test Data
 
-Tests use known production records:
+Tests intentionally reference anonymized placeholder records that map to
+real IDs in the production workspace:
 
-- **Person**: Bhavesh Patel (ID: a63f2a17-d534-5ab7-9c74-6ab24bb29eb2)
-- **Company**: Tite Medical Aesthetics (ID: a4a7b1d4-d35d-5c44-bf08-b58711ca5939)
+- **Person**: Alex Rivera (ID: a63f2a17-d534-5ab7-9c74-6ab24bb29eb2)
+- **Company**: Example Medical Group (ID: a4a7b1d4-d35d-5c44-bf08-b58711ca5939)
+- **Phone**: +1 555 010 4477 (sanitized reference)
+
+> These labels exist solely for documentation/debugging. Never substitute
+> real customer data when expanding the suite.
 
 ## Why Separate?
 

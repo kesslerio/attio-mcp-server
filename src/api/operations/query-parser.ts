@@ -14,8 +14,7 @@ const parsedQuerySchema = z.object({
 export type ParsedQuery = z.infer<typeof parsedQuerySchema>;
 
 const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-const phoneRegex =
-  /\+?\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
+const phoneCandidateRegex = /\+?[\d][\d().\s-]{5,}[\d]/g;
 // Matches standalone domains like "example.com" or "sub.example.co.uk"
 const domainRegex = /\b[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}\b/g;
 
@@ -28,8 +27,17 @@ function extractEmails(query: string): { emails: string[]; remaining: string } {
   return { emails: matches.map((email) => email.toLowerCase()), remaining };
 }
 
+function looksLikeNorthAmericanNumber(digitsOnly: string) {
+  if (digitsOnly.length !== 10) {
+    return false;
+  }
+
+  const firstDigit = digitsOnly[0];
+  return firstDigit >= '2' && firstDigit <= '9';
+}
+
 function extractPhones(query: string): { phones: string[]; remaining: string } {
-  const matches = query.match(phoneRegex) || [];
+  const matches = query.match(phoneCandidateRegex) || [];
   let remaining = query;
   const phoneVariants = new Set<string>();
 
@@ -37,15 +45,30 @@ function extractPhones(query: string): { phones: string[]; remaining: string } {
     remaining = remaining.replace(match, ' ');
 
     const digitsOnly = match.replace(nonDigitRegex, '');
-    if (digitsOnly.length < 7) {
+    if (digitsOnly.length < 7 || digitsOnly.length > 15) {
       return;
     }
 
-    const withCountryCode =
-      digitsOnly.length === 10 ? `+1${digitsOnly}` : `+${digitsOnly}`;
+    const trimmed = match.trim();
+    const hasExplicitPlus = trimmed.startsWith('+');
 
-    phoneVariants.add(withCountryCode);
     phoneVariants.add(digitsOnly);
+
+    if (hasExplicitPlus || digitsOnly.length > 11) {
+      phoneVariants.add(`+${digitsOnly}`);
+    }
+
+    if (!hasExplicitPlus && looksLikeNorthAmericanNumber(digitsOnly)) {
+      phoneVariants.add(`+1${digitsOnly}`);
+    }
+
+    if (
+      !hasExplicitPlus &&
+      digitsOnly.length === 11 &&
+      digitsOnly.startsWith('1')
+    ) {
+      phoneVariants.add(`+${digitsOnly}`);
+    }
   });
 
   return { phones: Array.from(phoneVariants), remaining };
