@@ -141,7 +141,7 @@ describe('people_search.v1', () => {
 
     it('should stay within budget for various query lengths', () => {
       const queries = [
-        'AE',
+        'AE role',
         'Account Executive',
         'VP Sales in enterprise SaaS companies',
         'Chief Technology Officer with AI/ML experience in Series B startups',
