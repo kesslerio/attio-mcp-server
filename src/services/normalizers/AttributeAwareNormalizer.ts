@@ -12,29 +12,36 @@ function normalizePhoneNumbers(value: unknown): unknown {
   }
 
   return value.map((item) => {
-    // Handle object with wrong key: {phone_number: "+1..."} → {original_phone_number: "+1..."}
+    // Handle object with wrong key: {phone_number: "+1...", label: "work"} → {original_phone_number: "+1...", label: "work"}
     if (
       item &&
       typeof item === 'object' &&
       !Array.isArray(item) &&
       'phone_number' in item
     ) {
-      const phoneValue = (item as Record<string, unknown>).phone_number;
-      const normalized = toE164(phoneValue);
-      return { original_phone_number: normalized || phoneValue };
+      const itemObj = item as Record<string, unknown>;
+      const { phone_number, ...otherFields } = itemObj;
+      const normalized = toE164(phone_number);
+      return {
+        ...otherFields,
+        original_phone_number: normalized || phone_number,
+      };
     }
 
-    // Handle object with correct key: {original_phone_number: "+1..."}
+    // Handle object with correct key: {original_phone_number: "+1...", label: "work"}
     if (
       item &&
       typeof item === 'object' &&
       !Array.isArray(item) &&
       'original_phone_number' in item
     ) {
-      const phoneValue = (item as Record<string, unknown>)
-        .original_phone_number;
-      const normalized = toE164(phoneValue);
-      return { original_phone_number: normalized || phoneValue };
+      const itemObj = item as Record<string, unknown>;
+      const { original_phone_number, ...otherFields } = itemObj;
+      const normalized = toE164(original_phone_number);
+      return {
+        ...otherFields,
+        original_phone_number: normalized || original_phone_number,
+      };
     }
 
     // Handle direct string format

@@ -128,6 +128,87 @@ describe('Phone number normalization (Issue #798)', () => {
     });
   });
 
+  describe('Field preservation', () => {
+    it('should preserve label and type fields when transforming phone_number', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [
+          {
+            phone_number: '+1-555-0100',
+            label: 'work',
+            type: 'mobile',
+          },
+        ],
+      });
+
+      expect(result.phone_numbers).toHaveLength(1);
+      const phone = (result.phone_numbers as Record<string, unknown>[])[0];
+      expect(phone).toHaveProperty('original_phone_number');
+      expect(phone).toHaveProperty('label', 'work');
+      expect(phone).toHaveProperty('type', 'mobile');
+      expect(phone).not.toHaveProperty('phone_number');
+    });
+
+    it('should preserve label field when using original_phone_number', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [
+          {
+            original_phone_number: '+1-555-0100',
+            label: 'home',
+          },
+        ],
+      });
+
+      expect(result.phone_numbers).toHaveLength(1);
+      const phone = (result.phone_numbers as Record<string, unknown>[])[0];
+      expect(phone).toHaveProperty('original_phone_number');
+      expect(phone).toHaveProperty('label', 'home');
+    });
+
+    it('should preserve multiple custom fields', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [
+          {
+            phone_number: '+1-555-0100',
+            label: 'work',
+            type: 'mobile',
+            extension: '1234',
+            is_primary: true,
+          },
+        ],
+      });
+
+      expect(result.phone_numbers).toHaveLength(1);
+      const phone = (result.phone_numbers as Record<string, unknown>[])[0];
+      expect(phone).toHaveProperty('original_phone_number');
+      expect(phone).toHaveProperty('label', 'work');
+      expect(phone).toHaveProperty('type', 'mobile');
+      expect(phone).toHaveProperty('extension', '1234');
+      expect(phone).toHaveProperty('is_primary', true);
+      expect(phone).not.toHaveProperty('phone_number');
+    });
+
+    it('should preserve fields across multiple phone numbers', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [
+          { phone_number: '+1-555-0100', label: 'work' },
+          { phone_number: '+1-555-0199', label: 'home', type: 'landline' },
+        ],
+      });
+
+      expect(result.phone_numbers).toHaveLength(2);
+      const [phone1, phone2] = result.phone_numbers as Record<
+        string,
+        unknown
+      >[];
+
+      expect(phone1).toHaveProperty('label', 'work');
+      expect(phone1).not.toHaveProperty('type');
+
+      expect(phone2).toHaveProperty('label', 'home');
+      expect(phone2).toHaveProperty('type', 'landline');
+    });
+  });
+
   describe('Edge cases', () => {
     it('should handle empty phone numbers array', async () => {
       const result = await normalizeValues('people', {
