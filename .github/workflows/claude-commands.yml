@@ -268,14 +268,14 @@ jobs:
               return;
             }
 
-            const raw = fs.readFileSync(execFile, 'utf8');
+            const raw = fs.readFileSync(execFile, 'utf8').replace(/^\uFEFF/, '');
             const deltas = [];
 
             // Try to parse as JSON array first (claude-code-action format)
             let sessionLog;
             try {
               sessionLog = JSON.parse(raw);
-              core.info(`Parsed execution file as JSON array with ${Array.isArray(sessionLog) ? sessionLog.length : 0} entries`);
+              core.info(`✓ Parsed as JSON array with ${Array.isArray(sessionLog) ? sessionLog.length : 0} entries`);
             } catch (e) {
               core.warning('Failed to parse as JSON array, falling back to NDJSON parsing');
 
@@ -299,7 +299,7 @@ jobs:
                 }
               }
 
-              core.info(`NDJSON: Processed ${totalLines} lines, parsed ${parsedLines} objects, extracted ${deltas.length} text chunks`);
+              core.info(`✓ NDJSON: Processed ${totalLines} lines, parsed ${parsedLines} objects, extracted ${deltas.length} text chunks`);
               sessionLog = null;
             }
 
@@ -308,43 +308,28 @@ jobs:
               for (const entry of sessionLog) {
                 extractTextFromEntry(entry, deltas);
               }
-              core.info(`Extracted ${deltas.length} text chunks from ${sessionLog.length} session entries`);
+              core.info(`✓ Extracted ${deltas.length} text chunks from ${sessionLog.length} session entries`);
             }
 
-            // Helper function to extract text from an entry using all known formats
-            function extractTextFromEntry(entry, deltas) {
-              // Format 1: Streaming API content_block_delta
-              if (entry?.type === 'content_block_delta' && entry?.delta?.text) {
-                deltas.push(entry.delta.text);
-              }
-              // Format 2: Direct delta with text
-              else if (entry?.delta?.text) {
-                deltas.push(entry.delta.text);
-              }
-              // Format 3: Direct text field
-              else if (typeof entry?.text === 'string') {
-                deltas.push(entry.text);
-              }
-              // Format 4: Message with content array
-              else if (entry?.message?.content?.[0]?.text) {
-                deltas.push(entry.message.content[0].text);
-              }
-              // Format 5: Direct content array
-              else if (entry?.content?.[0]?.text) {
-                deltas.push(entry.content[0].text);
-              }
-              // Format 6: Claude Code session log with nested content
-              else if (entry?.message?.content && Array.isArray(entry.message.content)) {
-                for (const block of entry.message.content) {
-                  // Text blocks directly in content
-                  if (block?.type === 'text' && block?.text) {
-                    deltas.push(block.text);
-                  }
-                  // Tool results with nested text content
-                  else if (block?.type === 'tool_result' && block?.content && Array.isArray(block.content)) {
-                    for (const innerBlock of block.content) {
-                      if (innerBlock?.type === 'text' && innerBlock?.text) {
-                        deltas.push(innerBlock.text);
+            // Helper function to extract ALL text from an entry (non-lossy)
+            function extractTextFromEntry(entry, out) {
+              // Streaming deltas
+              if (entry?.type === 'content_block_delta' && entry?.delta?.text) out.push(entry.delta.text);
+              if (entry?.delta?.text) out.push(entry.delta.text);
+
+              // Simple text fields
+              if (typeof entry?.text === 'string') out.push(entry.text);
+
+              // Content arrays: handle both message.content and direct content
+              const content = entry?.message?.content ?? entry?.content;
+              if (Array.isArray(content)) {
+                for (const block of content) {
+                  if (block?.type === 'text' && typeof block.text === 'string') {
+                    out.push(block.text);
+                  } else if (block?.type === 'tool_result' && Array.isArray(block?.content)) {
+                    for (const inner of block.content) {
+                      if (inner?.type === 'text' && typeof inner.text === 'string') {
+                        out.push(inner.text);
                       }
                     }
                   }
@@ -352,7 +337,7 @@ jobs:
               }
             }
 
-            const response = deltas.join('').trim();
+            const response = deltas.join('\n').trim();
 
             if (!response) {
               core.warning('No response content found');
