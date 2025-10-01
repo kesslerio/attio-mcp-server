@@ -167,6 +167,16 @@ export class ErrorService {
       return 'API rate limit reached. Please wait a moment before retrying or reduce the frequency of requests.';
     }
 
+    // Phone number field format errors (Issue #798)
+    if (
+      lowerErrorMessage.includes('phone') &&
+      (lowerErrorMessage.includes('unrecognized key') ||
+        lowerErrorMessage.includes('phone_number') ||
+        lowerErrorMessage.includes('original_phone_number'))
+    ) {
+      return 'Phone numbers must use the key "original_phone_number", not "phone_number". Example: [{"original_phone_number": "+1-555-0100"}]. The system will auto-format to E.164 standard (+country code).';
+    }
+
     // Deal-specific suggestions
     if (resourceType === 'deals') {
       return this.getDealSpecificSuggestion(lowerErrorMessage);

@@ -362,6 +362,22 @@ export const ErrorTemplates = {
     ),
 
   /**
+   * Issue #798: Phone number format error template
+   */
+  PHONE_NUMBER_FORMAT_ERROR: (field: string, resourceType: string) =>
+    createEnhancedApiError(
+      `Invalid phone number format for field '${field}'`,
+      400,
+      `/objects/${resourceType}`,
+      'POST',
+      {
+        field,
+        resourceType,
+        documentationHint: `Phone numbers require 'original_phone_number' key, not 'phone_number'. Example: [{"original_phone_number": "+1-555-0100"}]. E.164 format (+country code) recommended. The system will auto-normalize most formats.`,
+      }
+    ),
+
+  /**
    * Generic enhanced error template
    */
   GENERIC: (

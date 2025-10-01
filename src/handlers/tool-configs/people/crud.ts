@@ -60,9 +60,14 @@ export const crudToolDefinitions = [
             },
             phone_numbers: {
               type: 'array',
-              items: { type: 'string' },
+              items: {
+                type: 'object',
+                properties: {
+                  original_phone_number: { type: 'string' },
+                },
+              },
               description:
-                'Phone number(s) - array of phone strings. For single phone, provide as single-item array.',
+                'Phone numbers in format [{"original_phone_number": "+1-555-0100"}]. E.164 format (+country code) recommended. System auto-normalizes most formats. Note: Use "original_phone_number" as the key, not "phone_number".',
             },
             job_title: { type: 'string', description: 'Job title' },
             company: { type: 'string', description: 'Company name' },
