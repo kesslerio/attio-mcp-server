@@ -113,6 +113,8 @@ jobs:
             core.setOutput('lines', String(totalLines));
             core.setOutput('base_sha', pr.base.sha);
             core.setOutput('base_ref', pr.base.ref);
+            core.setOutput('author_association', pr.author_association || 'NONE');
+            core.setOutput('author_login', pr.user?.login || 'unknown');
 
       - name: Calculate turn limits based on PR size
         id: turns
@@ -140,6 +142,23 @@ jobs:
           summary="🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns, Opus: $opus_cap turns"
           echo "$summary"
           echo "$summary" >> $GITHUB_STEP_SUMMARY
+
+      - name: Detect contributor status and prepare context
+        id: contributor_context
+        run: |
+          association="${{ steps.decide.outputs.author_association }}"
+          author="${{ steps.decide.outputs.author_login }}"
+
+          # Check if first-time contributor
+          if [[ "$association" == "FIRST_TIME_CONTRIBUTOR" || "$association" == "NONE" ]]; then
+            echo "is_first_time=true" >> $GITHUB_OUTPUT
+            echo "contributor_message=⭐ FIRST-TIME CONTRIBUTOR: Please be encouraging and provide detailed explanations for any suggestions. Welcome them to the project!" >> $GITHUB_OUTPUT
+          else
+            echo "is_first_time=false" >> $GITHUB_OUTPUT
+            echo "contributor_message=" >> $GITHUB_OUTPUT
+          fi
+
+          echo "📊 Contributor: ${author} (${association})" >> $GITHUB_STEP_SUMMARY
 
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
@@ -267,10 +286,10 @@ jobs:
             --output-format stream-json
           prompt: |
             IMPORTANT EXECUTION RULES
+            ${{ steps.contributor_context.outputs.contributor_message }}
             - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
             - By turn ${{ steps.turns.outputs.sonnet_cutoff }}, STOP using tools and write the final Markdown report.
-            - Always emit a single final report with sections:
-              Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
+            - Always emit a single final report with sections per the Categorized Feedback structure below.
             - End the report with the exact marker: END-OF-REPORT
             - Start the report with the heading `# PR Review Report`.
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
@@ -319,13 +338,42 @@ jobs:
             - Imports: node → external → internal; remove unused
             - Commits: conventional or repo override; keep #issue linkage
 
-            Output Markdown:
-            - **Summary**
-            - **Top Findings** (with code snippets/diffs)
-            - **Suggested Tests** (file + test name)
-            - **Quick Refactors** (incremental, SRP-aligned)
-            - **Perf/Sec Notes** (explicit quick wins)
-            - **Risk Level** with rationale
+            Output Markdown with Categorized Feedback:
+
+            ## Summary
+            Brief overview of changes and overall assessment.
+
+            ## ⚠️ CRITICAL Issues (Fix before merge)
+            Issues that MUST be addressed before merging:
+            - Security vulnerabilities or critical bugs
+            - Missing issue linkage (#XX required in PR description)
+            - Breaking functionality without migration path
+            - Simple fixes that don't expand scope
+
+            ## 📋 IMPORTANT Suggestions (Consider follow-up)
+            Good ideas that could become follow-up issues:
+            - Performance improvements requiring benchmarking/analysis
+            - Documentation enhancements not critical to current functionality
+            - Refactoring suggestions that don't affect core functionality
+            - Check if issues already exist before creating new ones
+
+            ## 💡 NICE-TO-HAVE (Optional improvements)
+            Minor improvements with unclear value:
+            - Style preferences already covered by linting
+            - Minor optimizations without clear performance data
+            - Features that may never be needed (YAGNI principle)
+
+            ## ❌ OVERENGINEERING Concerns (Reject)
+            Suggestions that add unnecessary complexity:
+            - Premature optimization without profiling data
+            - Over-abstraction for current use case
+            - Violates KISS (Keep It Simple, Stupid) principle
+
+            ## Suggested Tests
+            Specific test cases needed (file + test name).
+
+            ## Risk Level
+            Overall risk assessment with rationale (Low/Medium/High/Critical).
 
       - name: Claude Review (Opus)
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_ultra == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:ultra'))
@@ -342,10 +390,10 @@ jobs:
             --output-format stream-json
           prompt: |
             IMPORTANT EXECUTION RULES
+            ${{ steps.contributor_context.outputs.contributor_message }}
             - Do NOT run `npm install` or add dependencies; if tests/lint aren't available, skip them.
             - By turn ${{ steps.turns.outputs.opus_cutoff }}, STOP using tools and write the final Markdown report.
-            - Always emit a single final report with sections:
-              Summary • Top Findings • Suggested Tests • Quick Refactors • Perf/Sec Notes • Risk Level
+            - Always emit a single final report with sections per the Categorized Feedback structure below.
             - End the report with the exact marker: END-OF-REPORT
             - Start the report with the heading `# PR Review Report`.
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
@@ -394,13 +442,42 @@ jobs:
             - Imports: node → external → internal; remove unused
             - Commits: conventional or repo override; keep #issue linkage
 
-            Output Markdown:
-            - **Summary**
-            - **Top Findings** (with code snippets/diffs)
-            - **Suggested Tests** (file + test name)
-            - **Quick Refactors** (incremental, SRP-aligned)
-            - **Perf/Sec Notes** (explicit quick wins)
-            - **Risk Level** with rationale
+            Output Markdown with Categorized Feedback:
+
+            ## Summary
+            Brief overview of changes and overall assessment.
+
+            ## ⚠️ CRITICAL Issues (Fix before merge)
+            Issues that MUST be addressed before merging:
+            - Security vulnerabilities or critical bugs
+            - Missing issue linkage (#XX required in PR description)
+            - Breaking functionality without migration path
+            - Simple fixes that don't expand scope
+
+            ## 📋 IMPORTANT Suggestions (Consider follow-up)
+            Good ideas that could become follow-up issues:
+            - Performance improvements requiring benchmarking/analysis
+            - Documentation enhancements not critical to current functionality
+            - Refactoring suggestions that don't affect core functionality
+            - Check if issues already exist before creating new ones
+
+            ## 💡 NICE-TO-HAVE (Optional improvements)
+            Minor improvements with unclear value:
+            - Style preferences already covered by linting
+            - Minor optimizations without clear performance data
+            - Features that may never be needed (YAGNI principle)
+
+            ## ❌ OVERENGINEERING Concerns (Reject)
+            Suggestions that add unnecessary complexity:
+            - Premature optimization without profiling data
+            - Over-abstraction for current use case
+            - Violates KISS (Keep It Simple, Stupid) principle
+
+            ## Suggested Tests
+            Specific test cases needed (file + test name).
+
+            ## Risk Level
+            Overall risk assessment with rationale (Low/Medium/High/Critical).
 
             If mode is **ultra**, go deeper on security, performance, concurrency, error-handling, and propose minimal diffs.
 
