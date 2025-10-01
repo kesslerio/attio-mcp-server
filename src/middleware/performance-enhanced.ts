@@ -137,8 +137,11 @@ export class EnhancedPerformanceTracker extends EventEmitter {
       default: parseInt(process.env.PERF_BUDGET_DEFAULT || '3000', 10),
     };
 
-    // Set up cache cleanup interval (every 5 minutes)
-    setInterval(() => this.cleanupCache(), 5 * 60 * 1000);
+    // Only start cache cleanup interval when running as MCP server
+    // This prevents scripts from hanging when they import this module
+    if (process.env.MCP_SERVER_MODE === 'true') {
+      setInterval(() => this.cleanupCache(), 5 * 60 * 1000);
+    }
   }
 
   /**

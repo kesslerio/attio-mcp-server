@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-01T16:44:57.181Z",
+  "generatedAt": "2025-10-01T19:56:40.695Z",
   "toolCount": 33,
   "tools": [
     {
@@ -524,16 +524,22 @@
     },
     {
       "name": "get-workspace-member",
-      "description": "Get details of a specific workspace member",
+      "description": "Retrieve profile and access details for one workspace member. | Does not: update member information or change permissions. | Requires workspace_member_id from list/search results; read-only. | If errors occur: Use list-workspace-members to confirm the memberId before retrying.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "memberId": {
             "type": "string",
-            "description": "The workspace member ID"
+            "description": "Workspace member ID (UUID).",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           }
         },
-        "required": ["memberId"]
+        "required": ["memberId"],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true
       }
     },
     {
@@ -587,25 +593,37 @@
     },
     {
       "name": "list-workspace-members",
-      "description": "List all workspace members for task assignment",
+      "description": "List workspace members to plan assignments and access checks. | Does not: change access levels or invite new members; read-only. | Supports optional search, pagination (1-100 per page, default 25). | If errors occur: Use search-workspace-members for targeted lookups.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "page": {
-            "type": "number",
-            "description": "Page number for pagination",
-            "default": 1
+            "type": "integer",
+            "description": "Page number (1-indexed).",
+            "default": 1,
+            "minimum": 1,
+            "example": 1
           },
           "pageSize": {
-            "type": "number",
-            "description": "Number of results per page",
-            "default": 25
+            "type": "integer",
+            "description": "Number of results per page (max 100).",
+            "default": 25,
+            "minimum": 1,
+            "maximum": 100,
+            "example": 50
           },
           "search": {
             "type": "string",
-            "description": "Search by name or email"
+            "description": "Optional case-insensitive match on member name or email.",
+            "example": "Taylor",
+            "minLength": 1
           }
-        }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true
       }
     },
     {
@@ -1388,16 +1406,23 @@
     },
     {
       "name": "search-workspace-members",
-      "description": "Search workspace members by name, email, or role",
+      "description": "Search workspace members by name, email, or access role. | Does not: modify member profiles or permissions; lookup only. | Requires query string (minimum 2 characters). | If errors occur: If no results, list-workspace-members provides the full roster.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string",
-            "description": "Search query for name, email, or role"
+            "description": "Search term for member name, email address, or role.",
+            "minLength": 2,
+            "example": "operations lead"
           }
         },
-        "required": ["query"]
+        "required": ["query"],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true
       }
     },
     {

@@ -37,6 +37,9 @@ export default async function createServer({
     process.env.MCP_LOG_LEVEL = 'DEBUG';
   }
 
+  // Set server mode flag to enable background intervals (performance tracking, etc.)
+  process.env.MCP_SERVER_MODE = 'true';
+
   // Create the MCP server with a context that provides access to config
   // The API key is only checked when tools are actually invoked
   const server = await buildServer({
