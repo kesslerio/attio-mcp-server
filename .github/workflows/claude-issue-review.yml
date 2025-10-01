@@ -241,66 +241,76 @@ jobs:
               return;
             }
 
-            const raw = fs.readFileSync(path, 'utf8');
+            const raw = fs.readFileSync(path, 'utf8').replace(/^\uFEFF/, '');
             const chunks = [];
-            let totalLines = 0;
-            let parsedLines = 0;
 
-            // Parse NDJSON stream with enhanced format support
-            for (const line of raw.split(/\r?\n/)) {
-              const trimmed = line.trim();
-              if (!trimmed) continue;
-              totalLines++;
+            // Try to parse as JSON array first (claude-code-action format)
+            let sessionLog;
+            try {
+              sessionLog = JSON.parse(raw);
+              core.info(`✓ Parsed as JSON array with ${Array.isArray(sessionLog) ? sessionLog.length : 0} entries`);
+            } catch (e) {
+              core.warning('Failed to parse as JSON array, falling back to NDJSON parsing');
 
-              try {
-                const parsed = JSON.parse(trimmed);
-                parsedLines++;
+              // Fallback: Parse as NDJSON (newline-delimited JSON)
+              let totalLines = 0;
+              let parsedLines = 0;
 
-                // Format 1: Streaming API content_block_delta
-                if (parsed?.type === 'content_block_delta' && parsed?.delta?.text) {
-                  chunks.push(parsed.delta.text);
+              for (const line of raw.split(/\r?\n/)) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                totalLines++;
+
+                try {
+                  const parsed = JSON.parse(trimmed);
+                  parsedLines++;
+
+                  // Apply format checks to parsed line
+                  extractTextFromEntry(parsed, chunks);
+                } catch (e) {
+                  // Skip unparseable lines
                 }
-                // Format 2: Direct delta with text
-                else if (parsed?.delta?.text) {
-                  chunks.push(parsed.delta.text);
-                }
-                // Format 3: Direct text field
-                else if (typeof parsed?.text === 'string') {
-                  chunks.push(parsed.text);
-                }
-                // Format 4: Message with content array
-                else if (parsed?.message?.content?.[0]?.text) {
-                  chunks.push(parsed.message.content[0].text);
-                }
-                // Format 5: Direct content array
-                else if (parsed?.content?.[0]?.text) {
-                  chunks.push(parsed.content[0].text);
-                }
-                // Format 6: Claude Code session log with nested content
-                else if (parsed?.message?.content && Array.isArray(parsed.message.content)) {
-                  for (const block of parsed.message.content) {
-                    // Text blocks directly in content
-                    if (block?.type === 'text' && block?.text) {
-                      chunks.push(block.text);
-                    }
-                    // Tool results with nested text content
-                    else if (block?.type === 'tool_result' && block?.content && Array.isArray(block.content)) {
-                      for (const innerBlock of block.content) {
-                        if (innerBlock?.type === 'text' && innerBlock?.text) {
-                          chunks.push(innerBlock.text);
-                        }
+              }
+
+              core.info(`✓ NDJSON: Processed ${totalLines} lines, parsed ${parsedLines} objects, extracted ${chunks.length} text chunks`);
+              sessionLog = null;
+            }
+
+            // Process JSON array entries
+            if (Array.isArray(sessionLog)) {
+              for (const entry of sessionLog) {
+                extractTextFromEntry(entry, chunks);
+              }
+              core.info(`✓ Extracted ${chunks.length} text chunks from ${sessionLog.length} session entries`);
+            }
+
+            // Helper function to extract ALL text from an entry (non-lossy)
+            function extractTextFromEntry(entry, out) {
+              // Streaming deltas
+              if (entry?.type === 'content_block_delta' && entry?.delta?.text) out.push(entry.delta.text);
+              if (entry?.delta?.text) out.push(entry.delta.text);
+
+              // Simple text fields
+              if (typeof entry?.text === 'string') out.push(entry.text);
+
+              // Content arrays: handle both message.content and direct content
+              const content = entry?.message?.content ?? entry?.content;
+              if (Array.isArray(content)) {
+                for (const block of content) {
+                  if (block?.type === 'text' && typeof block.text === 'string') {
+                    out.push(block.text);
+                  } else if (block?.type === 'tool_result' && Array.isArray(block?.content)) {
+                    for (const inner of block.content) {
+                      if (inner?.type === 'text' && typeof inner.text === 'string') {
+                        out.push(inner.text);
                       }
                     }
                   }
                 }
-              } catch (e) {
-                // Skip unparseable lines
               }
             }
 
-            core.info(`Processed ${totalLines} lines, parsed ${parsedLines} JSON objects, extracted ${chunks.length} text chunks`);
-
-            let body = chunks.join('');
+            let body = chunks.join('\n');
             if (!body) {
               core.warning('No response content found, using raw file');
               body = raw;
@@ -367,21 +377,62 @@ jobs:
               const execFile = process.env.EXEC_FILE_ISSUE;
               if (execFile && fs.existsSync(execFile)) {
                 try {
-                  const raw = fs.readFileSync(execFile, 'utf8');
+                  const raw = fs.readFileSync(execFile, 'utf8').replace(/^\uFEFF/, '');
                   const chunks = [];
-                  for (const line of raw.split(/\r?\n/)) {
-                    const trimmed = line.trim();
-                    if (!trimmed) continue;
-                    try {
-                      const parsed = JSON.parse(trimmed);
-                      if (parsed?.delta?.text) {
-                        chunks.push(parsed.delta.text);
-                      } else if (typeof parsed?.text === 'string') {
-                        chunks.push(parsed.text);
+
+                  // Helper function to extract ALL text from an entry (non-lossy)
+                  function extractTextFromEntry(entry, out) {
+                    // Streaming deltas
+                    if (entry?.type === 'content_block_delta' && entry?.delta?.text) out.push(entry.delta.text);
+                    if (entry?.delta?.text) out.push(entry.delta.text);
+
+                    // Simple text fields
+                    if (typeof entry?.text === 'string') out.push(entry.text);
+
+                    // Content arrays: handle both message.content and direct content
+                    const content = entry?.message?.content ?? entry?.content;
+                    if (Array.isArray(content)) {
+                      for (const block of content) {
+                        if (block?.type === 'text' && typeof block.text === 'string') {
+                          out.push(block.text);
+                        } else if (block?.type === 'tool_result' && Array.isArray(block?.content)) {
+                          for (const inner of block.content) {
+                            if (inner?.type === 'text' && typeof inner.text === 'string') {
+                              out.push(inner.text);
+                            }
+                          }
+                        }
                       }
-                    } catch {}
+                    }
                   }
-                  body = chunks.join('').trim();
+
+                  // Try to parse as JSON array first (claude-code-action format)
+                  let sessionLog;
+                  try {
+                    sessionLog = JSON.parse(raw);
+                  } catch (e) {
+                    // Fallback: Parse as NDJSON (newline-delimited JSON)
+                    for (const line of raw.split(/\r?\n/)) {
+                      const trimmed = line.trim();
+                      if (!trimmed) continue;
+                      try {
+                        const parsed = JSON.parse(trimmed);
+                        extractTextFromEntry(parsed, chunks);
+                      } catch (e) {
+                        // Skip unparseable lines
+                      }
+                    }
+                    sessionLog = null;
+                  }
+
+                  // Process JSON array entries
+                  if (Array.isArray(sessionLog)) {
+                    for (const entry of sessionLog) {
+                      extractTextFromEntry(entry, chunks);
+                    }
+                  }
+
+                  body = chunks.join('\n').trim();
                 } catch (error) {
                   core.warning(`Failed to parse execution file: ${error.message}`);
                 }
