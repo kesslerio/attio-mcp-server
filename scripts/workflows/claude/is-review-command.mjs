@@ -48,8 +48,9 @@ function main() {
       rerun = true;
     }
   }
-  const isReview =
-    Boolean(tokens.length) && (mode || rerun || tokens.includes('review'));
+  const isReview = Boolean(
+    tokens.length && (mode || rerun || tokens.includes('review'))
+  );
   process.stdout.write(
     JSON.stringify({
       isReview,
