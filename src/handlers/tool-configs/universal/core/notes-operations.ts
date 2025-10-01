@@ -9,6 +9,7 @@ import {
   handleUniversalGetNotes,
 } from '../shared-handlers.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const createNoteConfig: UniversalToolConfig<
   Record<string, unknown>,
@@ -124,7 +125,13 @@ export const listNotesConfig: UniversalToolConfig<
 
 export const createNoteDefinition = {
   name: 'create-note',
-  description: 'Create a note for any record type (companies, people, deals)',
+  description: formatToolDescription({
+    capability: 'Create note for companies, people, or deals.',
+    boundaries: 'update or delete notes; creates only.',
+    requiresApproval: true,
+    constraints: 'Requires resource_type, record_id, title, content.',
+    recoveryHint: 'If record not found, use records_search first.',
+  }),
   inputSchema: createNoteSchema,
   annotations: {
     readOnlyHint: false,
@@ -134,7 +141,12 @@ export const createNoteDefinition = {
 
 export const listNotesDefinition = {
   name: 'list-notes',
-  description: 'Get notes for any record type (companies, people, deals)',
+  description: formatToolDescription({
+    capability: 'Retrieve notes for a record with timestamps.',
+    boundaries: 'create or modify notes; read-only.',
+    constraints: 'Requires resource_type, record_id; sorted by creation date.',
+    recoveryHint: 'If empty, verify record has notes with records_get_details.',
+  }),
   inputSchema: listNotesSchema,
   annotations: {
     readOnlyHint: true,

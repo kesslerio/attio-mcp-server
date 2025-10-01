@@ -23,6 +23,7 @@ import {
   GetListEntriesToolConfig,
   ListActionToolConfig,
 } from '../tool-types.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 // Lists tool configurations
 export const listsToolConfigs = {
@@ -188,23 +189,37 @@ export const listsToolConfigs = {
 export const listsToolDefinitions = [
   {
     name: 'get-lists',
-    description:
-      'Get all CRM lists from Attio (sales pipelines, lead stages, customer segments, etc.)',
+    description: formatToolDescription({
+      capability:
+        'Retrieve all CRM lists (sales pipelines, lead stages, customer segments).',
+      boundaries: 'create or modify lists, only reads existing lists.',
+      constraints: 'Returns all lists visible to the authenticated workspace.',
+      recoveryHint: 'Use get-list-details to inspect individual list schemas.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {},
+      additionalProperties: false,
     },
   },
   {
     name: 'get-record-list-memberships',
-    description:
-      'Find all CRM lists that a specific record (company, person, etc.) belongs to',
+    description: formatToolDescription({
+      capability:
+        'Find all lists containing a specific company or person record.',
+      boundaries: 'modify list memberships or retrieve list entries.',
+      constraints:
+        'Requires recordId; processes 5 lists in parallel by default (max 20).',
+      recoveryHint:
+        'If record not found, verify recordId with records_search first.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         recordId: {
           type: 'string',
           description: 'ID of the record to find in lists',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         objectType: {
           type: 'string',
@@ -227,61 +242,88 @@ export const listsToolDefinitions = [
         },
       },
       required: ['recordId'],
+      additionalProperties: false,
     },
   },
   {
     name: 'get-list-details',
-    description:
-      'Get details for a specific CRM list (pipeline stages, field configuration, etc.)',
+    description: formatToolDescription({
+      capability:
+        'Retrieve schema and configuration for a specific list (stages, fields, attributes).',
+      boundaries: 'modify list structure or retrieve list entries.',
+      constraints: 'Requires valid list UUID or slug; accepts both formats.',
+      recoveryHint:
+        'Use get-lists to discover available list IDs and slugs first.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list to get details for',
+          description: 'ID or slug of the list to get details for',
+          example: 'sales-pipeline',
         },
       },
       required: ['listId'],
+      additionalProperties: false,
     },
   },
   {
     name: 'get-list-entries',
-    description:
-      'Get entries for a specific CRM list (companies, people, etc. in sales pipelines)',
+    description: formatToolDescription({
+      capability:
+        'Retrieve all records in a list with pagination (companies, people in pipelines).',
+      boundaries: 'filter entries or modify list memberships.',
+      constraints:
+        'Requires list UUID (not slug); default limit 20, max per page varies by API.',
+      recoveryHint:
+        'Use filter-list-entries for attribute-based filtering instead.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list to get entries for',
+          description: 'UUID of the list to get entries for',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         limit: {
           type: 'number',
           description: 'Maximum number of entries to fetch (default: 20)',
+          example: 50,
         },
         offset: {
           type: 'number',
           description: 'Number of entries to skip for pagination (default: 0)',
+          example: 0,
         },
       },
       required: ['listId'],
+      additionalProperties: false,
     },
   },
   {
     name: 'filter-list-entries',
-    description:
-      'Filter entries in a CRM list by a specific attribute (e.g., stage, status)',
+    description: formatToolDescription({
+      capability: 'Filter list entries by single attribute condition.',
+      boundaries:
+        'combine conditions; use advanced-filter for multi-condition.',
+      constraints: 'Requires listId, attributeSlug, condition, value.',
+      recoveryHint: 'Use get-list-details for valid attribute slugs.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
           description: 'ID of the list to filter entries from',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         attributeSlug: {
           type: 'string',
           description:
             "Slug of the attribute to filter by (e.g., 'stage', 'status')",
+          example: 'stage',
         },
         condition: {
           type: 'string',
@@ -303,32 +345,42 @@ export const listsToolDefinitions = [
             'is_set',
             'is_not_set',
           ],
+          example: 'equals',
         },
         value: {
           description: 'Value to filter by (type depends on the attribute)',
+          example: 'Qualified',
         },
         limit: {
           type: 'number',
           description: 'Maximum number of entries to fetch (default: 20)',
+          example: 50,
         },
         offset: {
           type: 'number',
           description: 'Number of entries to skip for pagination (default: 0)',
+          example: 0,
         },
       },
       required: ['listId', 'attributeSlug', 'condition', 'value'],
+      additionalProperties: false,
     },
   },
   {
     name: 'advanced-filter-list-entries',
-    description:
-      'Filter entries in a CRM list with advanced multiple conditions (complex sales pipeline queries)',
+    description: formatToolDescription({
+      capability: 'Filter entries with multi-condition queries (AND/OR logic).',
+      boundaries: 'modify entries; read-only.',
+      constraints: 'Requires listId, filters array; matchAny for OR logic.',
+      recoveryHint: 'Use filter-list-entries for single conditions.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
           description: 'ID of the list to filter entries from',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         filters: {
           type: 'object',
@@ -397,77 +449,106 @@ export const listsToolDefinitions = [
         limit: {
           type: 'number',
           description: 'Maximum number of entries to fetch (default: 20)',
+          example: 50,
         },
         offset: {
           type: 'number',
           description: 'Number of entries to skip for pagination (default: 0)',
+          example: 0,
         },
       },
       required: ['listId', 'filters'],
+      additionalProperties: false,
     },
   },
   {
     name: 'add-record-to-list',
-    description:
-      'Add a company or person to a CRM list (sales pipeline, lead list, etc.)',
+    description: formatToolDescription({
+      capability: 'Add company or person to list with optional initial values.',
+      boundaries: 'create records; record must exist first.',
+      requiresApproval: true,
+      constraints: 'Requires list UUID, record UUID, object type.',
+      recoveryHint: 'If not found, create record first with create-record.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list to add the record to',
+          description: 'UUID of the list to add the record to',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         recordId: {
           type: 'string',
-          description: 'ID of the record to add to the list',
+          description: 'UUID of the record to add to the list',
+          example: '660e8400-e29b-41d4-a716-446655440001',
         },
         objectType: {
           type: 'string',
           description: 'Type of record (e.g., "companies", "people")',
           enum: ['companies', 'people'],
+          example: 'companies',
         },
         initialValues: {
           type: 'object',
           description:
             'Initial values for the list entry (e.g., {"stage": "Prospect"})',
+          example: { stage: 'Qualified' },
         },
       },
       required: ['listId', 'recordId', 'objectType'],
+      additionalProperties: false,
     },
   },
   {
     name: 'remove-record-from-list',
-    description:
-      'Remove a company or person from a CRM list (sales pipeline, lead list, etc.)',
+    description: formatToolDescription({
+      capability: 'Remove company or person from list (membership only).',
+      boundaries: 'delete underlying record; membership only.',
+      requiresApproval: true,
+      constraints: 'Requires list UUID, entry UUID (not record UUID).',
+      recoveryHint: 'Use get-list-entries to find entry UUID.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list to remove the record from',
+          description: 'UUID of the list to remove the entry from',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         entryId: {
           type: 'string',
-          description: 'ID of the list entry to remove',
+          description: 'UUID of the list entry to remove (not the record ID)',
+          example: '770e8400-e29b-41d4-a716-446655440002',
         },
       },
       required: ['listId', 'entryId'],
+      additionalProperties: false,
     },
   },
   {
     name: 'update-list-entry',
-    description:
-      "Update a list entry (e.g., change stage from 'Interested' to 'Demo Scheduling')",
+    description: formatToolDescription({
+      capability:
+        'Update list entry attributes (stage, status, custom fields).',
+      boundaries: 'update record attributes; use update-record for that.',
+      requiresApproval: true,
+      constraints: 'Requires list UUID, entry UUID, attributes object.',
+      recoveryHint: 'Use get-list-details for valid attributes and values.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list containing the entry',
+          description: 'UUID of the list containing the entry',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         entryId: {
           type: 'string',
-          description: 'ID of the list entry to update',
+          description: 'UUID of the list entry to update',
+          example: '770e8400-e29b-41d4-a716-446655440002',
         },
         attributes: {
           type: 'object',
@@ -477,35 +558,46 @@ export const listsToolDefinitions = [
               type: 'string',
               description:
                 "New stage value (e.g., 'Demo Scheduling', 'Interested', 'Won')",
+              example: 'Demo Scheduling',
             },
           },
           additionalProperties: true,
         },
       },
       required: ['listId', 'entryId', 'attributes'],
+      additionalProperties: false,
     },
   },
   {
     name: 'filter-list-entries-by-parent',
-    description:
-      'Filter CRM list entries based on parent record properties (find companies by industry, people by role, etc.)',
+    description: formatToolDescription({
+      capability:
+        'Filter entries by parent record attributes (industry, role).',
+      boundaries: 'search multiple lists or modify records.',
+      constraints:
+        'Requires listId, parentObjectType, parentAttributeSlug, condition, value.',
+      recoveryHint: 'Use records_discover_attributes for valid slugs.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list to filter entries from',
+          description: 'UUID of the list to filter entries from',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         parentObjectType: {
           type: 'string',
           description:
             'Type of the parent record (e.g., "companies", "people")',
           enum: ['companies', 'people'],
+          example: 'companies',
         },
         parentAttributeSlug: {
           type: 'string',
           description:
             'Attribute of the parent record to filter by (e.g., "name", "email_addresses", "categories")',
+          example: 'categories',
         },
         condition: {
           type: 'string',
@@ -527,17 +619,21 @@ export const listsToolDefinitions = [
             'is_set',
             'is_not_set',
           ],
+          example: 'contains',
         },
         value: {
           description: 'Value to filter by (type depends on the attribute)',
+          example: 'Technology',
         },
         limit: {
           type: 'number',
           description: 'Maximum number of entries to fetch (default: 20)',
+          example: 50,
         },
         offset: {
           type: 'number',
           description: 'Number of entries to skip for pagination (default: 0)',
+          example: 0,
         },
       },
       required: [
@@ -547,33 +643,45 @@ export const listsToolDefinitions = [
         'condition',
         'value',
       ],
+      additionalProperties: false,
     },
   },
   {
     name: 'filter-list-entries-by-parent-id',
-    description:
-      'Filter CRM list entries by parent record ID (find all lists containing a specific company or person)',
+    description: formatToolDescription({
+      capability: 'Filter entries by exact parent record UUID.',
+      boundaries: 'search multiple lists.',
+      constraints:
+        'Requires list UUID, record UUID; faster than attribute filtering.',
+      recoveryHint:
+        'Use get-record-list-memberships for workspace-wide search.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list to filter entries from',
+          description: 'UUID of the list to filter entries from',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
         recordId: {
           type: 'string',
-          description: 'ID of the parent record to filter by',
+          description: 'UUID of the parent record to filter by',
+          example: '660e8400-e29b-41d4-a716-446655440001',
         },
         limit: {
           type: 'number',
           description: 'Maximum number of entries to fetch (default: 20)',
+          example: 50,
         },
         offset: {
           type: 'number',
           description: 'Number of entries to skip for pagination (default: 0)',
+          example: 0,
         },
       },
       required: ['listId', 'recordId'],
+      additionalProperties: false,
     },
   },
 ];

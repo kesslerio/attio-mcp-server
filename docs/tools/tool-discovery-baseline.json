@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-09-30T23:11:36.862Z",
+  "generatedAt": "2025-10-01T16:44:57.181Z",
   "toolCount": 33,
   "tools": [
     {
@@ -17,34 +17,41 @@
     },
     {
       "name": "add-record-to-list",
-      "description": "Add a company or person to a CRM list (sales pipeline, lead list, etc.)",
+      "description": "Add company or person to list with optional initial values. | WRITE: requires approval | Does not: create records; record must exist first. | Requires list UUID, record UUID, object type. | If errors occur: If not found, create record first with create-record.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "initialValues": {
             "type": "object",
-            "description": "Initial values for the list entry (e.g., {\"stage\": \"Prospect\"})"
+            "description": "Initial values for the list entry (e.g., {\"stage\": \"Prospect\"})",
+            "example": {
+              "stage": "Qualified"
+            }
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list to add the record to"
+            "description": "UUID of the list to add the record to",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "objectType": {
             "type": "string",
             "description": "Type of record (e.g., \"companies\", \"people\")",
-            "enum": ["companies", "people"]
+            "enum": ["companies", "people"],
+            "example": "companies"
           },
           "recordId": {
             "type": "string",
-            "description": "ID of the record to add to the list"
+            "description": "UUID of the record to add to the list",
+            "example": "660e8400-e29b-41d4-a716-446655440001"
           }
         },
-        "required": ["listId", "recordId", "objectType"]
+        "required": ["listId", "recordId", "objectType"],
+        "additionalProperties": false
       }
     },
     {
       "name": "advanced-filter-list-entries",
-      "description": "Filter entries in a CRM list with advanced multiple conditions (complex sales pipeline queries)",
+      "description": "Filter entries with multi-condition queries (AND/OR logic). | Does not: modify entries; read-only. | Requires listId, filters array; matchAny for OR logic. | If errors occur: Use filter-list-entries for single conditions.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -109,23 +116,27 @@
           },
           "limit": {
             "type": "number",
-            "description": "Maximum number of entries to fetch (default: 20)"
+            "description": "Maximum number of entries to fetch (default: 20)",
+            "example": 50
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list to filter entries from"
+            "description": "ID of the list to filter entries from",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "offset": {
             "type": "number",
-            "description": "Number of entries to skip for pagination (default: 0)"
+            "description": "Number of entries to skip for pagination (default: 0)",
+            "example": 0
           }
         },
-        "required": ["listId", "filters"]
+        "required": ["listId", "filters"],
+        "additionalProperties": false
       }
     },
     {
       "name": "create-note",
-      "description": "Create a note for any record type (companies, people, deals)",
+      "description": "Create note for companies, people, or deals. | WRITE: requires approval | Does not: update or delete notes; creates only. | Requires resource_type, record_id, title, content. | If errors occur: If record not found, use records_search first.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -274,13 +285,14 @@
     },
     {
       "name": "filter-list-entries",
-      "description": "Filter entries in a CRM list by a specific attribute (e.g., stage, status)",
+      "description": "Filter list entries by single attribute condition. | Does not: combine conditions; use advanced-filter for multi-condition. | Requires listId, attributeSlug, condition, value. | If errors occur: Use get-list-details for valid attribute slugs.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "attributeSlug": {
             "type": "string",
-            "description": "Slug of the attribute to filter by (e.g., 'stage', 'status')"
+            "description": "Slug of the attribute to filter by (e.g., 'stage', 'status')",
+            "example": "stage"
           },
           "condition": {
             "type": "string",
@@ -300,30 +312,36 @@
               "is_not_empty",
               "is_set",
               "is_not_set"
-            ]
+            ],
+            "example": "equals"
           },
           "limit": {
             "type": "number",
-            "description": "Maximum number of entries to fetch (default: 20)"
+            "description": "Maximum number of entries to fetch (default: 20)",
+            "example": 50
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list to filter entries from"
+            "description": "ID of the list to filter entries from",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "offset": {
             "type": "number",
-            "description": "Number of entries to skip for pagination (default: 0)"
+            "description": "Number of entries to skip for pagination (default: 0)",
+            "example": 0
           },
           "value": {
-            "description": "Value to filter by (type depends on the attribute)"
+            "description": "Value to filter by (type depends on the attribute)",
+            "example": "Qualified"
           }
         },
-        "required": ["listId", "attributeSlug", "condition", "value"]
+        "required": ["listId", "attributeSlug", "condition", "value"],
+        "additionalProperties": false
       }
     },
     {
       "name": "filter-list-entries-by-parent",
-      "description": "Filter CRM list entries based on parent record properties (find companies by industry, people by role, etc.)",
+      "description": "Filter entries by parent record attributes (industry, role). | Does not: search multiple lists or modify records. | Requires listId, parentObjectType, parentAttributeSlug, condition, value. | If errors occur: Use records_discover_attributes for valid slugs.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -345,31 +363,38 @@
               "is_not_empty",
               "is_set",
               "is_not_set"
-            ]
+            ],
+            "example": "contains"
           },
           "limit": {
             "type": "number",
-            "description": "Maximum number of entries to fetch (default: 20)"
+            "description": "Maximum number of entries to fetch (default: 20)",
+            "example": 50
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list to filter entries from"
+            "description": "UUID of the list to filter entries from",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "offset": {
             "type": "number",
-            "description": "Number of entries to skip for pagination (default: 0)"
+            "description": "Number of entries to skip for pagination (default: 0)",
+            "example": 0
           },
           "parentAttributeSlug": {
             "type": "string",
-            "description": "Attribute of the parent record to filter by (e.g., \"name\", \"email_addresses\", \"categories\")"
+            "description": "Attribute of the parent record to filter by (e.g., \"name\", \"email_addresses\", \"categories\")",
+            "example": "categories"
           },
           "parentObjectType": {
             "type": "string",
             "description": "Type of the parent record (e.g., \"companies\", \"people\")",
-            "enum": ["companies", "people"]
+            "enum": ["companies", "people"],
+            "example": "companies"
           },
           "value": {
-            "description": "Value to filter by (type depends on the attribute)"
+            "description": "Value to filter by (type depends on the attribute)",
+            "example": "Technology"
           }
         },
         "required": [
@@ -378,82 +403,95 @@
           "parentAttributeSlug",
           "condition",
           "value"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     {
       "name": "filter-list-entries-by-parent-id",
-      "description": "Filter CRM list entries by parent record ID (find all lists containing a specific company or person)",
+      "description": "Filter entries by exact parent record UUID. | Does not: search multiple lists. | Requires list UUID, record UUID; faster than attribute filtering. | If errors occur: Use get-record-list-memberships for workspace-wide search.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "limit": {
             "type": "number",
-            "description": "Maximum number of entries to fetch (default: 20)"
+            "description": "Maximum number of entries to fetch (default: 20)",
+            "example": 50
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list to filter entries from"
+            "description": "UUID of the list to filter entries from",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "offset": {
             "type": "number",
-            "description": "Number of entries to skip for pagination (default: 0)"
+            "description": "Number of entries to skip for pagination (default: 0)",
+            "example": 0
           },
           "recordId": {
             "type": "string",
-            "description": "ID of the parent record to filter by"
+            "description": "UUID of the parent record to filter by",
+            "example": "660e8400-e29b-41d4-a716-446655440001"
           }
         },
-        "required": ["listId", "recordId"]
+        "required": ["listId", "recordId"],
+        "additionalProperties": false
       }
     },
     {
       "name": "get-list-details",
-      "description": "Get details for a specific CRM list (pipeline stages, field configuration, etc.)",
+      "description": "Retrieve schema and configuration for a specific list (stages, fields, attributes). | Does not: modify list structure or retrieve list entries. | Requires valid list UUID or slug; accepts both formats. | If errors occur: Use get-lists to discover available list IDs and slugs first.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "listId": {
             "type": "string",
-            "description": "ID of the list to get details for"
+            "description": "ID or slug of the list to get details for",
+            "example": "sales-pipeline"
           }
         },
-        "required": ["listId"]
+        "required": ["listId"],
+        "additionalProperties": false
       }
     },
     {
       "name": "get-list-entries",
-      "description": "Get entries for a specific CRM list (companies, people, etc. in sales pipelines)",
+      "description": "Retrieve all records in a list with pagination (companies, people in pipelines). | Does not: filter entries or modify list memberships. | Requires list UUID (not slug); default limit 20, max per page varies by API. | If errors occur: Use filter-list-entries for attribute-based filtering instead.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "limit": {
             "type": "number",
-            "description": "Maximum number of entries to fetch (default: 20)"
+            "description": "Maximum number of entries to fetch (default: 20)",
+            "example": 50
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list to get entries for"
+            "description": "UUID of the list to get entries for",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           },
           "offset": {
             "type": "number",
-            "description": "Number of entries to skip for pagination (default: 0)"
+            "description": "Number of entries to skip for pagination (default: 0)",
+            "example": 0
           }
         },
-        "required": ["listId"]
+        "required": ["listId"],
+        "additionalProperties": false
       }
     },
     {
       "name": "get-lists",
-      "description": "Get all CRM lists from Attio (sales pipelines, lead stages, customer segments, etc.)",
+      "description": "Retrieve all CRM lists (sales pipelines, lead stages, customer segments). | Does not: create or modify lists, only reads existing lists. | Returns all lists visible to the authenticated workspace. | If errors occur: Use get-list-details to inspect individual list schemas.",
       "inputSchema": {
         "type": "object",
-        "properties": {}
+        "properties": {},
+        "additionalProperties": false
       }
     },
     {
       "name": "get-record-list-memberships",
-      "description": "Find all CRM lists that a specific record (company, person, etc.) belongs to",
+      "description": "Find all lists containing a specific company or person record. | Does not: modify list memberships or retrieve list entries. | Requires recordId; processes 5 lists in parallel by default (max 20). | If errors occur: If record not found, verify recordId with records_search first.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -476,10 +514,12 @@
           },
           "recordId": {
             "type": "string",
-            "description": "ID of the record to find in lists"
+            "description": "ID of the record to find in lists",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           }
         },
-        "required": ["recordId"]
+        "required": ["recordId"],
+        "additionalProperties": false
       }
     },
     {
@@ -498,7 +538,7 @@
     },
     {
       "name": "list-notes",
-      "description": "Get notes for any record type (companies, people, deals)",
+      "description": "Retrieve notes for a record with timestamps. | Does not: create or modify notes; read-only. | Requires resource_type, record_id; sorted by creation date. | If errors occur: If empty, verify record has notes with records_get_details.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -569,7 +609,7 @@
       }
     },
     {
-      "name": "records.batch",
+      "name": "records_batch",
       "description": "Execute batched record operations (create/update/delete/get/search). | WRITE: requires approval | Does not: ignore approval guardrails; hosts may require confirmation. | operation_type must be specified; enforce per-operation limits. | If errors occur: Run records.search first to stage IDs or payloads for batching.",
       "inputSchema": {
         "type": "object",
@@ -667,7 +707,7 @@
       }
     },
     {
-      "name": "records.discover_attributes",
+      "name": "records_discover_attributes",
       "description": "Discover available attributes (standard/custom) for a resource. | Does not: alter schema or create fields. | Requires resource_type; optional categories selects subsets. | If errors occur: Follow with records.get_attributes to inspect specific fields.",
       "inputSchema": {
         "type": "object",
@@ -708,7 +748,7 @@
       }
     },
     {
-      "name": "records.get_attributes",
+      "name": "records_get_attributes",
       "description": "Retrieve attribute metadata for a given resource type. | Does not: modify schema definitions or record data. | Requires resource_type; optional categories narrows groups. | If errors occur: Use records.discover_attributes for grouped schema discovery.",
       "inputSchema": {
         "type": "object",
@@ -760,7 +800,7 @@
       }
     },
     {
-      "name": "records.get_details",
+      "name": "records_get_details",
       "description": "Fetch a single record with enriched attribute formatting. | Does not: search or filter result sets; use records.search* tools instead. | Requires resource_type and record_id; optional fields filter output. | If errors occur: Validate record IDs with records.search before retrying.",
       "inputSchema": {
         "type": "object",
@@ -806,7 +846,7 @@
       }
     },
     {
-      "name": "records.get_info",
+      "name": "records_get_info",
       "description": "Retrieve enriched info subsets (contact, business, social) for a record. | Does not: search lists of records or mutate data. | Requires resource_type, record_id, and info_type (contact|business|social). | If errors occur: Use records.get_details if you need the full record payload.",
       "inputSchema": {
         "type": "object",
@@ -844,7 +884,7 @@
       }
     },
     {
-      "name": "records.search",
+      "name": "records_search",
       "description": "Search across companies, people, tasks, and records | Does not: create or modify records | Returns max 100 results (default: 10) | If errors occur: use records.discover_attributes to find searchable fields",
       "inputSchema": {
         "type": "object",
@@ -974,7 +1014,7 @@
       }
     },
     {
-      "name": "records.search_advanced",
+      "name": "records_search_advanced",
       "description": "Run complex searches with nested filters across resource types. | Does not: mutate records; use records.update or records.delete. | Supports filter groups, scoring, pagination, and up to 100 items. | If errors occur: If filters fail, fetch valid attributes via records.discover_attributes.",
       "inputSchema": {
         "type": "object",
@@ -1051,7 +1091,7 @@
       }
     },
     {
-      "name": "records.search_batch",
+      "name": "records_search_batch",
       "description": "Execute multiple searches in parallel and return grouped results. | Does not: mutate or import data; use records.batch for write operations. | Provide queries array (1–10 items recommended) and resource_type. | If errors occur: If queries fail, retry individually using records.search.",
       "inputSchema": {
         "type": "object",
@@ -1105,7 +1145,7 @@
       }
     },
     {
-      "name": "records.search_by_content",
+      "name": "records_search_by_content",
       "description": "Search record content (notes, activity, communications). | Does not: modify note content or attachments. | Requires resource_type and content_query; optional fields array. | If errors occur: Narrow scope with fields or switch to records.search_advanced.",
       "inputSchema": {
         "type": "object",
@@ -1163,7 +1203,7 @@
       }
     },
     {
-      "name": "records.search_by_relationship",
+      "name": "records_search_by_relationship",
       "description": "Search records using relationship anchors (list, company, people). | Does not: modify memberships; use list tools for writes. | Requires resource_type and related resource identifier. | If errors occur: Use records.search to resolve IDs before calling.",
       "inputSchema": {
         "type": "object",
@@ -1232,7 +1272,7 @@
       }
     },
     {
-      "name": "records.search_by_timeframe",
+      "name": "records_search_by_timeframe",
       "description": "Filter records by creation, update, or interaction timeframes. | Does not: modify lifecycle state or scheduling follow-ups. | Requires resource_type; provide timeframe or explicit date boundaries. | If errors occur: Call records.search if timeframe filters are too restrictive.",
       "inputSchema": {
         "type": "object",
@@ -1297,20 +1337,23 @@
     },
     {
       "name": "remove-record-from-list",
-      "description": "Remove a company or person from a CRM list (sales pipeline, lead list, etc.)",
+      "description": "Remove company or person from list (membership only). | WRITE: requires approval | Does not: delete underlying record; membership only. | Requires list UUID, entry UUID (not record UUID). | If errors occur: Use get-list-entries to find entry UUID.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "entryId": {
             "type": "string",
-            "description": "ID of the list entry to remove"
+            "description": "UUID of the list entry to remove (not the record ID)",
+            "example": "770e8400-e29b-41d4-a716-446655440002"
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list to remove the record from"
+            "description": "UUID of the list to remove the entry from",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           }
         },
-        "required": ["listId", "entryId"]
+        "required": ["listId", "entryId"],
+        "additionalProperties": false
       }
     },
     {
@@ -1359,7 +1402,7 @@
     },
     {
       "name": "update-list-entry",
-      "description": "Update a list entry (e.g., change stage from 'Interested' to 'Demo Scheduling')",
+      "description": "Update list entry attributes (stage, status, custom fields). | WRITE: requires approval | Does not: update record attributes; use update-record for that. | Requires list UUID, entry UUID, attributes object. | If errors occur: Use get-list-details for valid attributes and values.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1369,21 +1412,25 @@
             "properties": {
               "stage": {
                 "type": "string",
-                "description": "New stage value (e.g., 'Demo Scheduling', 'Interested', 'Won')"
+                "description": "New stage value (e.g., 'Demo Scheduling', 'Interested', 'Won')",
+                "example": "Demo Scheduling"
               }
             },
             "additionalProperties": true
           },
           "entryId": {
             "type": "string",
-            "description": "ID of the list entry to update"
+            "description": "UUID of the list entry to update",
+            "example": "770e8400-e29b-41d4-a716-446655440002"
           },
           "listId": {
             "type": "string",
-            "description": "ID of the list containing the entry"
+            "description": "UUID of the list containing the entry",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           }
         },
-        "required": ["listId", "entryId", "attributes"]
+        "required": ["listId", "entryId", "attributes"],
+        "additionalProperties": false
       }
     },
     {
