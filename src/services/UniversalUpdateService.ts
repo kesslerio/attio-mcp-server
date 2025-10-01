@@ -353,12 +353,22 @@ export class UniversalUpdateService {
         }
 
         if (!verification.verified) {
-          // Add discrepancies as warnings for user visibility
-          validationResult.warnings.push(
-            ...verification.discrepancies.map(
-              (discrepancy) => `Field persistence issue: ${discrepancy}`
-            )
-          );
+          // Issue #798: Only log warnings in STRICT mode or for actual value mismatches
+          // Cosmetic format differences (e.g., {stage: "Demo"} vs {stage: {title: "Demo"}}) are suppressed
+          const shouldLogWarnings =
+            process.env.STRICT_FIELD_VALIDATION === 'true' ||
+            verification.discrepancies.some(
+              (d) => !d.includes('persistence mismatch')
+            );
+
+          if (shouldLogWarnings) {
+            // Add discrepancies as warnings for user visibility
+            validationResult.warnings.push(
+              ...verification.discrepancies.map(
+                (discrepancy) => `Field persistence issue: ${discrepancy}`
+              )
+            );
+          }
         }
       } catch (error: unknown) {
         const errorMessage =
