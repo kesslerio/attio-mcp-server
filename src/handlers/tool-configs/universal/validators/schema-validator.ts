@@ -75,7 +75,8 @@ export class InputSanitizer {
 type ToolValidator = (params: SanitizedObject) => SanitizedObject;
 
 const toolValidators: Record<string, ToolValidator> = {
-  'search-records': (p) => {
+  // Universal tools with underscore names (Issue #776 Phase 0)
+  records_search: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -89,7 +90,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  'get-record-details': (p) => {
+  records_get_details: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -110,6 +111,57 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
+  records_get_attributes: (p) => {
+    if (!p.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        {
+          field: 'resource_type',
+          suggestion: 'Specify which resource type to get attributes for',
+          example: `resource_type: 'companies' | 'people' | 'records' | 'tasks'`,
+        }
+      );
+    }
+    return p;
+  },
+  records_discover_attributes: (p) => {
+    if (!p.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        {
+          field: 'resource_type',
+          suggestion: 'Specify which resource type to discover attributes for',
+          example: `resource_type: 'companies' | 'people' | 'records' | 'tasks'`,
+        }
+      );
+    }
+    return p;
+  },
+  records_get_info: (p) => {
+    if (!p.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'companies'` }
+      );
+    }
+    if (!p.record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_id',
+          suggestion:
+            'Provide the unique identifier of the record to get info for',
+          example: `record_id: 'comp_abc123'`,
+        }
+      );
+    }
+    return p;
+  },
+  // Legacy CRUD tools (still using hyphenated names)
   'create-record': (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(

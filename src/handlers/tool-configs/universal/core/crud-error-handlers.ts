@@ -29,6 +29,42 @@ import { sanitizedLog } from './pii-sanitizer.js';
 const logger = createScopedLogger('crud-error-handlers');
 
 /**
+ * Extract Attio API validation errors from error response
+ * HOTFIX: Improve error messaging for relationship field failures
+ */
+const extractAttioValidationErrors = (error: unknown): string | null => {
+  try {
+    // Check for axios-style error response
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response &&
+      typeof error.response === 'object' &&
+      'data' in error.response
+    ) {
+      const data = (error.response as Record<string, unknown>).data;
+      if (data && typeof data === 'object' && 'validation_errors' in data) {
+        const validationErrors = (data as Record<string, unknown>)
+          .validation_errors;
+        if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+          return validationErrors
+            .map((err: Record<string, unknown>) => err.message || String(err))
+            .join('; ');
+        }
+      }
+      // Also check for main error message
+      if (data && typeof data === 'object' && 'message' in data) {
+        return String((data as Record<string, unknown>).message);
+      }
+    }
+  } catch {
+    // If extraction fails, return null and fall back to generic error handling
+  }
+  return null;
+};
+
+/**
  * Enhanced error context for CRUD operations
  */
 interface CrudErrorContext {
@@ -87,7 +123,11 @@ export const handleCreateError = async (
   }
 
   // Fallback to general create error handling
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const baseError = error instanceof Error ? error.message : String(error);
+  const apiErrors = extractAttioValidationErrors(error);
+  const errorMessage = apiErrors
+    ? `${baseError}. Details: ${apiErrors}`
+    : baseError;
   const errorResult = createErrorResult(
     `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${errorMessage}`,
     'create_error',

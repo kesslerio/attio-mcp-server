@@ -146,6 +146,18 @@ function convertDealAttributes(
               target_object: 'companies',
               target_record_id: legacyRef.record_id,
             };
+          } else if (
+            v &&
+            typeof v === 'object' &&
+            'target_record_id' in v &&
+            !('target_object' in v)
+          ) {
+            // HOTFIX: Add missing target_object to incomplete relationship reference
+            const incompleteRef = v as { target_record_id: string };
+            return {
+              target_object: 'companies',
+              target_record_id: incompleteRef.target_record_id,
+            };
           } else {
             return v; // Already in correct format or unknown format
           }
@@ -187,6 +199,18 @@ function convertDealAttributes(
             return {
               target_object: 'people',
               target_record_id: legacyRef.record_id,
+            };
+          } else if (
+            v &&
+            typeof v === 'object' &&
+            'target_record_id' in v &&
+            !('target_object' in v)
+          ) {
+            // HOTFIX: Add missing target_object to incomplete relationship reference
+            const incompleteRef = v as { target_record_id: string };
+            return {
+              target_object: 'people',
+              target_record_id: incompleteRef.target_record_id,
             };
           } else {
             return v; // Already in correct format or unknown format

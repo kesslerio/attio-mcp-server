@@ -25,7 +25,7 @@ export const searchRecordsConfig: UniversalToolConfig<
   handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'search-records',
+        'records_search',
         params
       );
       return await handleUniversalSearch(sanitizedParams);
