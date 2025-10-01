@@ -94,7 +94,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          track_progress: true
+          track_progress: false
           claude_args: >-
             --model claude-4.5-sonnet
             --max-turns 32
