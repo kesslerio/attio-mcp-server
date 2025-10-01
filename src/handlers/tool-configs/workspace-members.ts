@@ -5,6 +5,7 @@ import {
   getWorkspaceMember,
 } from '../../objects/workspace-members.js';
 import { ToolConfig } from '../tool-types.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const workspaceMembersToolConfigs = {
   listWorkspaceMembers: {
@@ -74,53 +75,100 @@ export const workspaceMembersToolConfigs = {
 export const workspaceMembersToolDefinitions = [
   {
     name: 'list-workspace-members',
-    description: 'List all workspace members for task assignment',
+    description: formatToolDescription({
+      capability:
+        'List workspace members to plan assignments and access checks.',
+      boundaries: 'change access levels or invite new members; read-only.',
+      constraints:
+        'Supports optional search, pagination (1-100 per page, default 25).',
+      recoveryHint: 'Use search-workspace-members for targeted lookups.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         search: {
           type: 'string',
-          description: 'Search by name or email',
+          description:
+            'Optional case-insensitive match on member name or email.',
+          example: 'Taylor',
+          minLength: 1,
         },
         page: {
-          type: 'number',
-          description: 'Page number for pagination',
+          type: 'integer',
+          description: 'Page number (1-indexed).',
           default: 1,
+          minimum: 1,
+          example: 1,
         },
         pageSize: {
-          type: 'number',
-          description: 'Number of results per page',
+          type: 'integer',
+          description: 'Number of results per page (max 100).',
           default: 25,
+          minimum: 1,
+          maximum: 100,
+          example: 50,
         },
       },
+      additionalProperties: false,
+    },
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
     },
   },
   {
     name: 'search-workspace-members',
-    description: 'Search workspace members by name, email, or role',
+    description: formatToolDescription({
+      capability: 'Search workspace members by name, email, or access role.',
+      boundaries: 'modify member profiles or permissions; lookup only.',
+      constraints: 'Requires query string (minimum 2 characters).',
+      recoveryHint:
+        'If no results, list-workspace-members provides the full roster.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          description: 'Search query for name, email, or role',
+          description: 'Search term for member name, email address, or role.',
+          minLength: 2,
+          example: 'operations lead',
         },
       },
       required: ['query'],
+      additionalProperties: false,
+    },
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
     },
   },
   {
     name: 'get-workspace-member',
-    description: 'Get details of a specific workspace member',
+    description: formatToolDescription({
+      capability:
+        'Retrieve profile and access details for one workspace member.',
+      boundaries: 'update member information or change permissions.',
+      constraints:
+        'Requires workspace_member_id from list/search results; read-only.',
+      recoveryHint:
+        'Use list-workspace-members to confirm the memberId before retrying.',
+    }),
     inputSchema: {
       type: 'object',
       properties: {
         memberId: {
           type: 'string',
-          description: 'The workspace member ID',
+          description: 'Workspace member ID (UUID).',
+          example: '550e8400-e29b-41d4-a716-446655440000',
         },
       },
       required: ['memberId'],
+      additionalProperties: false,
+    },
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
     },
   },
 ];
