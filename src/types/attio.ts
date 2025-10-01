@@ -44,6 +44,26 @@ export interface AttioRecordValues {
 }
 
 /**
+ * Identifier shape returned by Attio for note resources
+ */
+export interface AttioNoteIdentifier {
+  note_id?: string;
+  record_id?: string;
+  workspace_id?: string;
+  id?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Nested values payload used by Attio notes API (mirrors record value arrays)
+ */
+export interface AttioNoteValues {
+  title?: AttioFieldValue[];
+  content?: AttioFieldValue[];
+  [key: string]: unknown;
+}
+
+/**
  * Union type for fields that can be used as display names
  * Ordered by priority: name → full_name → title → content
  */
@@ -264,17 +284,20 @@ export interface BatchConfig {
  * Note record type
  */
 export interface AttioNote {
-  id: {
-    note_id: string;
-    [key: string]: unknown;
-  };
-  title: string;
-  content: string;
-  format: string;
-  parent_object: string;
-  parent_record_id: string;
-  created_at: string;
-  updated_at: string;
+  id?: AttioNoteIdentifier | string | null;
+  note_id?: string | null;
+  record_id?: string | null;
+  title?: string | null;
+  content?: string | null;
+  content_markdown?: string | null;
+  content_plaintext?: string | null;
+  format?: string | null;
+  parent_object?: string | null;
+  parent_record_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  timestamp?: string | null;
+  values?: AttioNoteValues | null;
   [key: string]: unknown; // Additional fields
 }
 
