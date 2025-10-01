@@ -87,6 +87,44 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch issue context
+        if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
+        id: context
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = '${{ steps.classify.outputs.issue }}';
+            if (!issueNumber) {
+              core.setOutput('issue_title', '');
+              core.setOutput('issue_body', '');
+              core.setOutput('comment_body', '');
+              return;
+            }
+
+            // Fetch issue details
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+
+            // Get the triggering comment
+            const commentId = context.payload.comment?.id;
+            let commentBody = '';
+            if (commentId) {
+              const { data: comment } = await github.rest.issues.getComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: commentId
+              });
+              commentBody = comment.body || '';
+            }
+
+            core.setOutput('issue_title', issue.title || '');
+            core.setOutput('issue_body', issue.body || '');
+            core.setOutput('comment_body', commentBody);
+            core.info(`Fetched context for issue #${issueNumber}: ${issue.title}`);
+
       - name: Claude Command Handler
         if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
         id: claude
@@ -103,26 +141,201 @@ jobs:
           prompt: |
             You are Claude acting via GitHub Actions for the Attio MCP repo.
 
-            ## Responsibilities
-            1. Respond to maintainer commands in PR or issue threads (non-review use cases).
-            2. Implement requested code changes when asked, using repo standards (see CLAUDE.md).
-            3. When pushing commits:
-               - Use conventional message format `Type: Subject #issue`.
-               - Run lint/tests when feasible; if skipped, explain why in the comment.
-            4. Prefer small, focused commits; avoid unrelated refactors unless instructed.
+            ## Context
+            - **Issue**: #${{ steps.classify.outputs.issue }}
+            - **Issue Title**: ${{ steps.context.outputs.issue_title }}
+            - **Triggering Command**: "${{ steps.context.outputs.comment_body }}"
 
-            ## Constraints
-            - Work only within the repository checkout.
-            - Never expose secrets or tokens.
-            - Ask for clarification if the command lacks sufficient detail.
-            - Respect Single Responsibility Principle; keep changes scoped.
+            **Full Issue Description**:
+            ${{ steps.context.outputs.issue_body }}
+
+            ## Task Routing
+            First, examine the triggering command to determine your mode:
+
+            - **ANALYSIS MODE** (vague/exploratory requests like "thoughts?", "help", "analyze this"):
+              Provide comprehensive issue analysis using the framework below
+
+            - **EXECUTION MODE** (specific instructions like "implement X", "fix Y", "refactor Z"):
+              Follow the maintainer's instructions precisely using repo standards
+
+            ## ANALYSIS MODE Framework
+            When the command is vague/exploratory, provide a comprehensive analysis structured as:
+
+            ### 1. Issue Quality Assessment
+            Evaluate these dimensions:
+            - **Problem Definition**: Is the actual problem/need clearly articulated? What's the underlying goal?
+            - **Requirements Clarity**: Are success criteria and constraints explicit? What's missing?
+            - **Scope Boundaries**: Is it clear what's in vs out of scope? Could scope creep occur?
+            - **Acceptance Criteria**: Does the issue define testable success conditions?
+
+            ### 2. Anti-Pattern Risk Detection
+            Watch for common engineering anti-patterns:
+            - **Infrastructure-without-implementation**: Building complex systems before validating the core use case
+            - **Symptom-driven development**: Treating symptoms rather than addressing root causes
+            - **Complexity escalation**: Adding architectural layers when simpler solutions exist
+            - **Premature optimization**: Optimizing before understanding actual bottlenecks
+
+            If you detect anti-patterns, explain *why* they're risky and suggest healthier alternatives.
+
+            ### 3. Implementation Strategy
+            Propose concrete approaches:
+            - **Technology/Library choices** with rationale
+            - **File structure** and module organization
+            - **Testing strategy** (what to test, how to test)
+            - **Migration path** if refactoring existing code
+            - **Integration points** with existing systems
+
+            ### 4. Educational Recommendations
+            Help the developer learn:
+            - Relevant documentation (official docs, CLAUDE.md sections)
+            - Similar solved problems in this codebase
+            - Best practices for this type of change
+            - Potential pitfalls and how to avoid them
+
+            ### 5. Actionable Next Steps
+            Provide numbered, concrete actions with rationale:
+            1. [Action] - Why this should be done first
+            2. [Action] - Dependencies and prerequisites
+            3. [Action] - Follow-up validation
+
+            Use a coaching tone that helps developers understand the "why" behind recommendations.
+
+            ## EXECUTION MODE Guidelines
+            When given specific instructions (e.g., "implement X", "fix Y", "refactor Z"):
+
+            ### Implementation Standards
+            - Follow repo standards defined in `CLAUDE.md`
+            - Use conventional commit format: `Type: Subject #issue-number`
+            - Respect Single Responsibility Principle (SRP)
+            - Keep changes focused and atomic
+
+            ### Quality Gates
+            - Run appropriate tests based on changes:
+              - `npm run test:offline` for unit tests (fast, no API calls)
+              - `npm run test:integration` for API integration tests (requires ATTIO_API_KEY)
+              - `npm run test:e2e` for end-to-end workflows
+            - Run lint/format: `npm run fix:all`
+            - Verify TypeScript: `npx tsc --noEmit`
+
+            ### Workflow
+            1. Read relevant code and documentation first
+            2. Implement the requested changes
+            3. Run appropriate quality gates
+            4. Commit with descriptive message
+            5. Report results (branch/PR URL, tests run, any issues)
+
+            ### Constraints
+            - Work only within the repository checkout
+            - Never expose secrets or tokens
+            - Ask for clarification if requirements are ambiguous
+            - If the task seems to violate anti-patterns (from Analysis Mode), flag this and suggest alternatives
 
             ## Reply Format
-            - Provide a concise status update.
-            - Include tests run (or skipped with rationale).
-            - If changes were pushed or a PR created, list the branch/PR URL.
 
-            Follow the maintainer's instruction from the triggering comment.
+            **For Analysis Mode**:
+            - Use the structured format above (5 sections)
+            - Be direct but coaching in tone
+            - Include specific file/function references when relevant
+            - End with clear, actionable next steps
+
+            **For Execution Mode**:
+            - Confirm what you're implementing before starting
+            - Report progress and test results
+            - If you pushed changes or created a PR, include the branch/PR URL
+            - Summarize what was done and any follow-up needed
+
+            **Universal Guidelines**:
+            - Be concise but thorough
+            - Reference specific code locations (file:line) when relevant
+            - If you need to ask clarifying questions, be specific about what information is missing
+            - Always consider whether the request might involve anti-patterns and flag concerns proactively
+
+      - name: Capture Claude response
+        if: always() && steps.claude.outcome != 'skipped' && steps.claude.outputs.execution_file != ''
+        id: capture
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+        with:
+          script: |
+            const fs = require('fs');
+            const execFile = process.env.EXEC_FILE;
+
+            if (!execFile || !fs.existsSync(execFile)) {
+              core.info('No execution file found');
+              return;
+            }
+
+            const raw = fs.readFileSync(execFile, 'utf8');
+            const deltas = [];
+
+            // Parse NDJSON stream
+            for (const line of raw.split(/\r?\n/)) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
+              try {
+                const parsed = JSON.parse(trimmed);
+                if (parsed?.delta?.text) {
+                  deltas.push(parsed.delta.text);
+                } else if (typeof parsed?.text === 'string') {
+                  deltas.push(parsed.text);
+                }
+              } catch {}
+            }
+
+            const response = deltas.join('').trim();
+
+            if (!response) {
+              core.warning('No response content found');
+              return;
+            }
+
+            core.exportVariable('CLAUDE_RESPONSE', response);
+            core.info(`Captured response (${response.length} chars)`);
+
+      - name: Post response to issue
+        if: always() && steps.capture.outcome == 'success' && env.CLAUDE_RESPONSE != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = Number('${{ steps.classify.outputs.issue }}');
+            const response = process.env.CLAUDE_RESPONSE;
+
+            if (!issueNumber || !response) {
+              core.info('No issue number or response to post');
+              return;
+            }
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            async function withRetries(fn, label, attempts = 3) {
+              for (let attempt = 1; attempt <= attempts; attempt++) {
+                try {
+                  return await fn();
+                } catch (error) {
+                  if (attempt === attempts) throw error;
+                  const delay = 1000 * attempt;
+                  core.warning(`Attempt ${attempt} failed. Retrying in ${delay}ms...`);
+                  await sleep(delay);
+                }
+              }
+            }
+
+            const marker = `<!-- claude-command-response -->`;
+            const body = `${marker}\n${response}`;
+
+            // Post the comment with retries
+            await withRetries(
+              () => github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: body
+              }),
+              'create comment'
+            );
+
+            core.info(`Posted response to issue #${issueNumber}`);
 
       - name: Summarize skip
         if: steps.classify.outputs.should_run != 'true'
