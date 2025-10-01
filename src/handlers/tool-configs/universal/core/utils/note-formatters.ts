@@ -26,7 +26,18 @@ const toNoteIdentifier = (id: unknown): AttioNoteIdentifier | undefined => {
   if (!id || typeof id !== 'object') {
     return undefined;
   }
-  return id as AttioNoteIdentifier;
+
+  const candidate = id as Record<string, unknown>;
+  const hasUsableField = ['note_id', 'record_id', 'id'].some((key) => {
+    const value = candidate[key];
+    return typeof value === 'string' && value.trim().length > 0;
+  });
+
+  if (!hasUsableField) {
+    return undefined;
+  }
+
+  return candidate as AttioNoteIdentifier;
 };
 
 const fromValuesArray = (
