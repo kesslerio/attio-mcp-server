@@ -266,11 +266,29 @@ MANUAL FALLBACK: `npm version` → `npm run build` → `npm test` → commit →
 
 RULE: Changelogs for humans | WHEN: Updating CHANGELOG.md | DO: Clear, user-focused descriptions | ELSE: Unusable change history
 
-**Format:** ISO date (YYYY-MM-DD) | Categories: Added, Changed, Fixed, Security, Deprecated, Removed | Version links at bottom | Issue refs as `#123` | Unreleased section at top
+**Format Requirements:**
+- Date: ISO 8601 (YYYY-MM-DD)
+- Categories: Added, Changed, Fixed, Security, Deprecated, Removed (in that order)
+- Version links: Add comparison URLs at bottom (`[1.1.0]: https://github.com/.../compare/v1.0.0...v1.1.0`)
+- Issue refs: Use `#123` format (not "Issue #123")
+- Unreleased section: Track upcoming changes at top
 
-**Quality:** Release summary for major/minor | No trailing periods | Group related changes | Link PRs `(#123)` | No duplicate headers
+**Entry Quality:**
+- Add release summary for major/minor versions (context paragraph)
+- No trailing periods on list items
+- No duplicate empty section headers
+- Group related changes under same category
+- Link PRs for traceability: `(#123)` or `(PR #123)`
 
-**Include:** User-facing changes, security updates, deprecations | **Exclude:** Internal refactors, routine dependency bumps, git SHAs
+**What to Include:**
+- User-facing changes (features, fixes, breaking changes)
+- Security updates (always separate category)
+- Deprecation warnings
+
+**What to Exclude:**
+- Internal refactors with no user impact
+- Dependency bumps (unless security-related)
+- Git commit references/SHAs
 
 ## MCP TOOL TESTING
 
