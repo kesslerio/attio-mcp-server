@@ -12,10 +12,15 @@ import {
   handleUniversalCreateNote,
   handleUniversalGetNotes,
 } from '../shared-handlers.js';
-import { ErrorService } from '../../../../services/ErrorService.js';
+import { ErrorService } from '@/services/ErrorService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { extractNoteFields } from './utils/note-formatters.js';
 import { isValidUUID } from '@/utils/validation/uuid-validation.js';
+import { createErrorResult } from '@/utils/error-handler.js';
+
+type McpErrorPayload = {
+  content?: Array<{ type: string; text?: string }>;
+};
 
 export const createNoteConfig: UniversalToolConfig<
   Record<string, unknown>,
@@ -57,15 +62,28 @@ export const createNoteConfig: UniversalToolConfig<
     }
   },
   formatResult: (note: Record<string, unknown>): string => {
-    if (!note) {
-      return 'No note created';
+    try {
+      if (!note) {
+        return 'No note created';
+      }
+
+      const { title, content, id } = extractNoteFields(note);
+
+      return `✅ Note created successfully: ${title} (ID: ${id})${
+        content ? `\n${content}` : ''
+      }`;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      const fallback = createErrorResult(
+        err,
+        'create-note#format',
+        'FORMAT'
+      ) as McpErrorPayload;
+      const message = fallback.content?.[0]?.text;
+      return typeof message === 'string'
+        ? message
+        : 'Error formatting note result';
     }
-
-    const { title, content, id } = extractNoteFields(note);
-
-    return `✅ Note created successfully: ${title} (ID: ${id})${
-      content ? `\n${content}` : ''
-    }`;
   },
 };
 
@@ -96,22 +114,35 @@ export const listNotesConfig: UniversalToolConfig<
     }
   },
   formatResult: (notes: Record<string, unknown>[]): string => {
-    const notesArray = Array.isArray(notes) ? notes : [];
+    try {
+      const notesArray = Array.isArray(notes) ? notes : [];
 
-    if (notesArray.length === 0) {
-      return 'Found 0 notes';
+      if (notesArray.length === 0) {
+        return 'Found 0 notes';
+      }
+
+      const formattedNotes = notesArray
+        .map((note, index) => {
+          const { title, timestamp, id, preview } = extractNoteFields(note);
+          return `${index + 1}. ${title} (${timestamp}) (ID: ${id})${
+            preview ? `\n   ${preview}` : ''
+          }`;
+        })
+        .join('\n\n');
+
+      return `Found ${notesArray.length} notes:\n${formattedNotes}`;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      const fallback = createErrorResult(
+        err,
+        'list-notes#format',
+        'FORMAT'
+      ) as McpErrorPayload;
+      const message = fallback.content?.[0]?.text;
+      return typeof message === 'string'
+        ? message
+        : 'Error formatting notes list';
     }
-
-    const formattedNotes = notesArray
-      .map((note, index) => {
-        const { title, timestamp, id, preview } = extractNoteFields(note);
-        return `${index + 1}. ${title} (${timestamp}) (ID: ${id})${
-          preview ? `\n   ${preview}` : ''
-        }`;
-      })
-      .join('\n\n');
-
-    return `Found ${notesArray.length} notes:\n${formattedNotes}`;
   },
 };
 

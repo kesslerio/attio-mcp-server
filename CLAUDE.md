@@ -17,6 +17,7 @@
 - **Mocks**: use `/test/utils/mock-factories/`; for tasks (Issue #480) include `content` + `title`, preserve `task_id`.
 - **Schema**: avoid top-level `oneOf/allOf/anyOf`; validate either/or in code.
 - **Universal errors**: universal tool handlers should throw `ErrorService.createUniversalError(...)` on failure rather than returning `{ isError: true }` payloads.
+- **Notes tools**: validate `record_id` with `isValidUUID` before hitting Attio and format responses via the shared `extractNoteFields` helper to normalize nested/flat shapes.
 - **Attio tests**: real API tests require `ATTIO_API_KEY`.
 
 ## Precedence & Compatibility (with System‑Wide CLAUDE.md)
