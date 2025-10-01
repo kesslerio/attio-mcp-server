@@ -7,53 +7,56 @@ import {
 import { ToolConfig } from '../tool-types.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
+const formatWorkspaceMemberSummary = (member: AttioWorkspaceMember): string => {
+  const name = [member.first_name, member.last_name].filter(Boolean).join(' ');
+  const displayName = name || 'Unknown';
+  const email = member.email_address || 'No email';
+  const access = member.access_level || 'unknown';
+
+  return `- ${displayName} (${email}) [${access}] - ID: ${member.id.workspace_member_id}`;
+};
+
+const formatWorkspaceMembersList = (
+  members: AttioWorkspaceMember[] | null | undefined,
+  descriptor: string,
+  emptyMessage: string
+): string => {
+  if (!members || members.length === 0) return emptyMessage;
+
+  const descriptorText = descriptor
+    ? `${descriptor} workspace members`
+    : 'workspace members';
+  return `Found ${members.length} ${descriptorText}:\n${members
+    .map(formatWorkspaceMemberSummary)
+    .join('\n')}`;
+};
+
 export const workspaceMembersToolConfigs = {
   listWorkspaceMembers: {
     name: 'list-workspace-members',
     handler: listWorkspaceMembers,
-    formatResult: (members: AttioWorkspaceMember[]) => {
-      if (!members || members.length === 0)
-        return 'No workspace members found.';
-
-      return `Found ${members.length} workspace members:\n${members
-        .map((member) => {
-          const name = [member.first_name, member.last_name]
-            .filter(Boolean)
-            .join(' ');
-          const displayName = name || 'Unknown';
-          const email = member.email_address || 'No email';
-          const access = member.access_level || 'unknown';
-          return `- ${displayName} (${email}) [${access}] - ID: ${member.id.workspace_member_id}`;
-        })
-        .join('\n')}`;
-    },
+    formatResult: (members: AttioWorkspaceMember[]) =>
+      formatWorkspaceMembersList(members, '', 'No workspace members found.'),
   } as ToolConfig,
 
   searchWorkspaceMembers: {
     name: 'search-workspace-members',
     handler: searchWorkspaceMembers,
-    formatResult: (members: AttioWorkspaceMember[]) => {
-      if (!members || members.length === 0)
-        return 'No matching workspace members found.';
-
-      return `Found ${members.length} matching workspace members:\n${members
-        .map((member) => {
-          const name = [member.first_name, member.last_name]
-            .filter(Boolean)
-            .join(' ');
-          const displayName = name || 'Unknown';
-          const email = member.email_address || 'No email';
-          const access = member.access_level || 'unknown';
-          return `- ${displayName} (${email}) [${access}] - ID: ${member.id.workspace_member_id}`;
-        })
-        .join('\n')}`;
-    },
+    formatResult: (members: AttioWorkspaceMember[]) =>
+      formatWorkspaceMembersList(
+        members,
+        'matching',
+        'No matching workspace members found.'
+      ),
   } as ToolConfig,
 
   getWorkspaceMember: {
     name: 'get-workspace-member',
     handler: getWorkspaceMember,
-    formatResult: (member: AttioWorkspaceMember) => {
+    formatResult: (member: AttioWorkspaceMember | null | undefined) => {
+      if (!member) {
+        return 'Workspace member not found.';
+      }
       const name = [member.first_name, member.last_name]
         .filter(Boolean)
         .join(' ');
