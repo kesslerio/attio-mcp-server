@@ -84,6 +84,9 @@ if (!isMain) {
     // Load environment and start server
     loadEnvFile();
 
+    // Set server mode flag to enable background intervals (performance tracking, etc.)
+    process.env.MCP_SERVER_MODE = 'true';
+
     // Dynamic imports to avoid loading modules during help/version
     const { StdioServerTransport } = await import(
       '@modelcontextprotocol/sdk/server/stdio.js'
