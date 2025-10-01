@@ -261,7 +261,34 @@ USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
 RULE: Use automated release | WHEN: Creating release | DO: Run `./scripts/release.sh` | ELSE: Manual error-prone process
 MANUAL FALLBACK: `npm version` → `npm run build` → `npm test` → commit → tag → `gh release create` → `npm publish`
-CHANGELOG: Follow Keep a Changelog format | Move Unreleased → versioned | Include: Added/Changed/Deprecated/Removed/Fixed/Security
+
+### CHANGELOG BEST PRACTICES (Keep a Changelog Standard)
+
+RULE: Changelogs for humans | WHEN: Updating CHANGELOG.md | DO: Clear, user-focused descriptions | ELSE: Unusable change history
+
+**Format Requirements:**
+- Date: ISO 8601 (YYYY-MM-DD)
+- Categories: Added, Changed, Fixed, Security, Deprecated, Removed (in that order)
+- Version links: Add comparison URLs at bottom (`[1.1.0]: https://github.com/.../compare/v1.0.0...v1.1.0`)
+- Issue refs: Use `#123` format (not "Issue #123")
+- Unreleased section: Track upcoming changes at top
+
+**Entry Quality:**
+- Add release summary for major/minor versions (context paragraph)
+- No trailing periods on list items
+- No duplicate empty section headers
+- Group related changes under same category
+- Link PRs for traceability: `(#123)` or `(PR #123)`
+
+**What to Include:**
+- User-facing changes (features, fixes, breaking changes)
+- Security updates (always separate category)
+- Deprecation warnings
+
+**What to Exclude:**
+- Internal refactors with no user impact
+- Dependency bumps (unless security-related)
+- Git commit references/SHAs
 
 ## MCP TOOL TESTING
 
