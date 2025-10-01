@@ -1,12 +1,14 @@
 /**
- * Integration tests for phone number normalization (Issue #798)
+ * Unit tests for phone number normalization (Issue #798)
  *
  * Tests the phone number structure transformation from user-friendly formats
  * to the Attio API expected format with automatic E.164 normalization.
+ *
+ * NOTE: These are pure unit tests that do NOT make API calls.
  */
 
 import { describe, it, expect } from 'vitest';
-import { normalizeValues } from '../../src/services/normalizers/AttributeAwareNormalizer.js';
+import { normalizeValues } from '../../../src/services/normalizers/AttributeAwareNormalizer.js';
 
 describe('Phone number normalization (Issue #798)', () => {
   describe('Structure transformation', () => {
@@ -67,7 +69,7 @@ describe('Phone number normalization (Issue #798)', () => {
   describe('E.164 normalization', () => {
     it('should normalize US phone format to E.164', async () => {
       const result = await normalizeValues('people', {
-        phone_numbers: [{ phone_number: '(555) 010-0100' }],
+        phone_numbers: [{ phone_number: '(212) 555-1234' }],
       });
 
       const phoneValue = (result.phone_numbers as Record<string, unknown>[])[0]
@@ -96,7 +98,7 @@ describe('Phone number normalization (Issue #798)', () => {
     });
 
     it('should preserve valid E.164 format', async () => {
-      const validE164 = '+15550100';
+      const validE164 = '+15551234567';
       const result = await normalizeValues('people', {
         phone_numbers: [{ original_phone_number: validE164 }],
       });
@@ -108,10 +110,10 @@ describe('Phone number normalization (Issue #798)', () => {
 
     it('should handle various common US phone formats', async () => {
       const formats = [
-        '+1-555-0100',
-        '(555) 010-0100',
-        '555.010.0100',
-        '+1 555 010 0100',
+        '+1-212-555-1234',
+        '(212) 555-1234',
+        '212.555.1234',
+        '+1 212 555 1234',
       ];
 
       for (const format of formats) {
@@ -125,6 +127,40 @@ describe('Phone number normalization (Issue #798)', () => {
         // All should normalize to E.164 format
         expect(phoneValue).toMatch(/^\+1\d{10}$/);
       }
+    });
+
+    // Additional international format tests (Codex suggestion)
+    it('should handle UK phone numbers with proper E.164 format', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [{ phone_number: '+44 20 7946 0958' }],
+      });
+
+      const phoneValue = (result.phone_numbers as Record<string, unknown>[])[0]
+        .original_phone_number as string;
+      expect(phoneValue).toMatch(/^\+44\d+$/);
+      expect(phoneValue).toContain('+44');
+    });
+
+    it('should handle Japan phone numbers with proper E.164 format', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [{ phone_number: '+81 3-1234-5678' }],
+      });
+
+      const phoneValue = (result.phone_numbers as Record<string, unknown>[])[0]
+        .original_phone_number as string;
+      expect(phoneValue).toMatch(/^\+81\d+$/);
+      expect(phoneValue).toContain('+81');
+    });
+
+    it('should handle Australia phone numbers with proper E.164 format', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [{ phone_number: '+61 2 9374 4000' }],
+      });
+
+      const phoneValue = (result.phone_numbers as Record<string, unknown>[])[0]
+        .original_phone_number as string;
+      expect(phoneValue).toMatch(/^\+61\d+$/);
+      expect(phoneValue).toContain('+61');
     });
   });
 
@@ -206,6 +242,29 @@ describe('Phone number normalization (Issue #798)', () => {
 
       expect(phone2).toHaveProperty('label', 'home');
       expect(phone2).toHaveProperty('type', 'landline');
+    });
+
+    // Edge case: field preservation with invalid phone format (Codex suggestion)
+    it('should preserve label and type even when phone format is invalid', async () => {
+      const result = await normalizeValues('people', {
+        phone_numbers: [
+          {
+            phone_number: 'invalid-phone-format',
+            label: 'work',
+            type: 'mobile',
+          },
+        ],
+      });
+
+      expect(result.phone_numbers).toHaveLength(1);
+      const phone = (result.phone_numbers as Record<string, unknown>[])[0];
+      expect(phone).toHaveProperty(
+        'original_phone_number',
+        'invalid-phone-format'
+      );
+      expect(phone).toHaveProperty('label', 'work');
+      expect(phone).toHaveProperty('type', 'mobile');
+      expect(phone).not.toHaveProperty('phone_number');
     });
   });
 
