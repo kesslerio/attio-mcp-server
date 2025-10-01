@@ -82,7 +82,7 @@ export function buildCompanySearchMessages(
 ): PromptMessage[] {
   const validated = CompanySearchArgs.parse(args);
 
-  const instructions = `Call \`records.query\` for object='companies' with filters derived from "${validated.query}".
+  const instructions = `Call \`records_query\` for object='companies' with filters derived from "${validated.query}".
 
 Output format=${validated.format}:
 - If table: Markdown table with columns: id, name, domain, industry, employee_count, region, owner (max ${validated.limit} rows)

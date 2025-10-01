@@ -51,7 +51,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
           recordId: 'invalid-uuid',
           resourceType: 'companies',
           httpStatus: 404,
-          documentationHint: 'Use search-records to find valid companies IDs.',
+          documentationHint: 'Use records.search to find valid companies IDs.',
         }
       );
 
@@ -328,7 +328,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       // Test error enhancement process
       const enhanced = ErrorEnhancer.ensureEnhanced(originalError, {
         resourceType: 'tasks',
-        operation: 'get-record-details',
+        operation: 'records_get_details',
       });
 
       // Should be enhanced

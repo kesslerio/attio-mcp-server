@@ -2,7 +2,7 @@
 
 The Batch Operations API allows you to perform multiple operations in a single request, optimizing API usage and reducing network overhead. Batch operations are fully implemented with automatic chunking, error recovery, and rate limiting protection.
 
-> **💡 Universal Tools Available**: The MCP server now provides a powerful [Universal Batch Tool](../universal-tools/user-guide.md#batch-operations) (`batch-operations`) that consolidates all batch operations across resource types. See the [Migration Guide](../universal-tools/migration-guide.md#batch-tools--universal-equivalents) for updating existing implementations.
+> **💡 Universal Tools Available**: The MCP server now provides a powerful [Universal Batch Tool](../universal-tools/user-guide.md#records.batch) (`records.batch`) that consolidates all batch operations across resource types. See the [Migration Guide](../universal-tools/migration-guide.md#batch-tools--universal-equivalents) for updating existing implementations.
 
 ## Key Benefits
 
@@ -17,18 +17,19 @@ All batch operations support the following configuration options:
 
 ```typescript
 interface BatchConfig {
-  maxBatchSize: number;     // Maximum number of operations in a single batch
+  maxBatchSize: number; // Maximum number of operations in a single batch
   continueOnError: boolean; // Whether to continue processing remaining items on error
   retryConfig?: RetryConfig; // Optional retry configuration for batch operations
 }
 ```
 
 Default configuration:
+
 ```typescript
 const DEFAULT_BATCH_CONFIG = {
   maxBatchSize: 10,
   continueOnError: true,
-  retryConfig: DEFAULT_RETRY_CONFIG
+  retryConfig: DEFAULT_RETRY_CONFIG,
 };
 ```
 
@@ -38,19 +39,19 @@ All batch operations return a standardized response format:
 
 ```typescript
 interface BatchResponse<R> {
-  results: BatchItemResult<R>[];  // Individual results for each request
+  results: BatchItemResult<R>[]; // Individual results for each request
   summary: {
-    total: number;    // Total number of operations attempted
+    total: number; // Total number of operations attempted
     succeeded: number; // Number of successful operations
-    failed: number;    // Number of failed operations
+    failed: number; // Number of failed operations
   };
 }
 
 interface BatchItemResult<R> {
-  id?: string;     // Optional ID matching the request ID if provided
+  id?: string; // Optional ID matching the request ID if provided
   success: boolean; // Whether this specific operation succeeded
-  data?: R;        // The result data if successful
-  error?: any;     // Error information if failed
+  data?: R; // The result data if successful
+  error?: any; // Error information if failed
 }
 ```
 
@@ -66,15 +67,20 @@ Search for multiple people in a single batch request.
 async function batchSearchPeople(
   queries: string[],
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Person[]>>
+): Promise<BatchResponse<Person[]>>;
 ```
 
 Example:
+
 ```typescript
 import { batchSearchPeople } from './objects/people';
 
 // Search for multiple people in one batch request
-const results = await batchSearchPeople(['John Doe', 'jane@example.com', '+1234567890']);
+const results = await batchSearchPeople([
+  'John Doe',
+  'jane@example.com',
+  '+1234567890',
+]);
 
 // Process results
 console.log(`Total searches: ${results.summary.total}`);
@@ -85,7 +91,7 @@ console.log(`Failed searches: ${results.summary.failed}`);
 results.results.forEach((result, index) => {
   if (result.success) {
     console.log(`Search ${index + 1} found ${result.data.length} people`);
-    result.data.forEach(person => {
+    result.data.forEach((person) => {
       console.log(`- ${person.values.name?.[0]?.value || 'Unnamed'}`);
     });
   } else {
@@ -102,18 +108,23 @@ Get details for multiple people in a single batch request.
 async function batchGetPeopleDetails(
   personIds: string[],
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Person>>
+): Promise<BatchResponse<Person>>;
 ```
 
 Example:
+
 ```typescript
 import { batchGetPeopleDetails } from './objects/people';
 
 // Get details for multiple people in one batch request
-const results = await batchGetPeopleDetails(['person123', 'person456', 'person789']);
+const results = await batchGetPeopleDetails([
+  'person123',
+  'person456',
+  'person789',
+]);
 
 // Process results
-results.results.forEach(result => {
+results.results.forEach((result) => {
   if (result.success) {
     const person = result.data;
     console.log(`Person: ${person.values.name?.[0]?.value || 'Unnamed'}`);
@@ -134,10 +145,11 @@ Search for multiple companies in a single batch request.
 async function batchSearchCompanies(
   queries: string[],
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Company[]>>
+): Promise<BatchResponse<Company[]>>;
 ```
 
 Example:
+
 ```typescript
 import { batchSearchCompanies } from './objects/companies';
 
@@ -148,7 +160,7 @@ const results = await batchSearchCompanies(['Acme Inc', 'Globex Corp']);
 results.results.forEach((result, index) => {
   if (result.success) {
     console.log(`Search ${index + 1} found ${result.data.length} companies`);
-    result.data.forEach(company => {
+    result.data.forEach((company) => {
       console.log(`- ${company.values.name?.[0]?.value || 'Unnamed'}`);
     });
   } else {
@@ -165,27 +177,30 @@ Get details for multiple companies in a single batch request.
 async function batchGetCompanyDetails(
   companyIdsOrUris: string[],
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Company>>
+): Promise<BatchResponse<Company>>;
 ```
 
 Example:
+
 ```typescript
 import { batchGetCompanyDetails } from './objects/companies';
 
 // Get details for multiple companies in one batch request
 // Supports both direct IDs and URI format
 const results = await batchGetCompanyDetails([
-  'company123', 
-  'attio://companies/company456', 
-  'company789'
+  'company123',
+  'attio://companies/company456',
+  'company789',
 ]);
 
 // Process results
-results.results.forEach(result => {
+results.results.forEach((result) => {
   if (result.success) {
     const company = result.data;
     console.log(`Company: ${company.values.name?.[0]?.value || 'Unnamed'}`);
-    console.log(`Website: ${company.values.website?.[0]?.value || 'No website'}`);
+    console.log(
+      `Website: ${company.values.website?.[0]?.value || 'No website'}`
+    );
   } else {
     console.log(`Failed to get company: ${result.error.message}`);
   }
@@ -202,10 +217,11 @@ Get details for multiple lists in a single batch request.
 async function batchGetListsDetails(
   listIds: string[],
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<AttioList>>
+): Promise<BatchResponse<AttioList>>;
 ```
 
 Example:
+
 ```typescript
 import { batchGetListsDetails } from './objects/lists';
 
@@ -213,7 +229,7 @@ import { batchGetListsDetails } from './objects/lists';
 const results = await batchGetListsDetails(['list123', 'list456', 'list789']);
 
 // Process results
-results.results.forEach(result => {
+results.results.forEach((result) => {
   if (result.success) {
     const list = result.data;
     console.log(`List: ${list.title}`);
@@ -233,10 +249,11 @@ Get entries for multiple lists in a single batch request.
 async function batchGetListsEntries(
   listConfigs: Array<{ listId: string; limit?: number; offset?: number }>,
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<AttioListEntry[]>>
+): Promise<BatchResponse<AttioListEntry[]>>;
 ```
 
 Example:
+
 ```typescript
 import { batchGetListsEntries } from './objects/lists';
 
@@ -244,15 +261,17 @@ import { batchGetListsEntries } from './objects/lists';
 const results = await batchGetListsEntries([
   { listId: 'list123', limit: 10 },
   { listId: 'list456', limit: 5, offset: 10 },
-  { listId: 'list789' }  // Uses default limit/offset
+  { listId: 'list789' }, // Uses default limit/offset
 ]);
 
 // Process results
 results.results.forEach((result, index) => {
   if (result.success) {
     console.log(`List ${index + 1} has ${result.data.length} entries`);
-    result.data.forEach(entry => {
-      console.log(`- Entry ID: ${entry.id.entry_id}, Record ID: ${entry.record_id}`);
+    result.data.forEach((entry) => {
+      console.log(
+        `- Entry ID: ${entry.id.entry_id}, Record ID: ${entry.record_id}`
+      );
     });
   } else {
     console.log(`Failed to get list entries: ${result.error.message}`);
@@ -269,14 +288,14 @@ By default, batch operations will continue processing all items even if some fai
 ```typescript
 // Continue on error (default)
 const results1 = await batchSearchPeople(['John', 'Jane', 'Invalid Query'], {
-  continueOnError: true
+  continueOnError: true,
 });
 // Will return results for John and Jane even if Invalid Query fails
 
 // Stop on first error
 try {
   const results2 = await batchSearchPeople(['John', 'Jane', 'Invalid Query'], {
-    continueOnError: false
+    continueOnError: false,
   });
 } catch (error) {
   console.error('Batch operation failed:', error.message);
@@ -304,8 +323,8 @@ const results = await batchGetCompanyDetails(companyIds, {
     initialDelay: 500,
     maxDelay: 5000,
     useExponentialBackoff: true,
-    retryableStatusCodes: [408, 429, 500, 502, 503, 504]
-  }
+    retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+  },
 });
 ```
 
@@ -330,5 +349,7 @@ results.results.forEach((result, index) => {
 });
 
 // Check overall success rate
-console.log(`Success rate: ${results.summary.succeeded / results.summary.total * 100}%`);
+console.log(
+  `Success rate: ${(results.summary.succeeded / results.summary.total) * 100}%`
+);
 ```

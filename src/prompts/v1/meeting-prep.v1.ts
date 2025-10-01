@@ -66,7 +66,7 @@ export function buildMeetingPrepMessages(
   const instructions = `Goal: Create a 360° meeting prep sheet for ${validated.target}.
 
 Steps:
-1. Resolve target: If starts with "search:", call \`records.query\` to find one Person or Company record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
+1. Resolve target: If starts with "search:", call \`records_query\` to find one Person or Company record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
 
 2. Gather context (call these in parallel):
    - \`notes.list\` for the record (last 5 notes)

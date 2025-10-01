@@ -105,7 +105,7 @@ describe('Enhanced Universal Error Handling', () => {
       };
 
       try {
-        validateUniversalToolParams('batch-operations', params);
+        validateUniversalToolParams('records_batch', params);
         expect.fail('Should have thrown validation error');
       } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);

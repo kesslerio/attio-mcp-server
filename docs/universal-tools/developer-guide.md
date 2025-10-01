@@ -99,6 +99,15 @@ formatResult: (data: any): string | object => {
 - **Type Safety**: 59% ESLint warning reduction (957→395)
 - **Quality**: 97.15/100 production readiness score
 
+## Quality Gates & Linting (Issue #776 Phase 0)
+
+- **Schema linter**: `npm run lint:tools` runs `scripts/tool-schema-lint.ts` against every tool definition.
+  - Default mode reports violations without failing; set `MCP_TOOL_LINT_MODE=strict` to enforce during CI or focused cleanup.
+  - Warnings highlight missing description boundaries or schema examples; drive these to zero as you touch each category.
+- **Discovery snapshot**: `scripts/generate-tools-snapshot.ts` produces `docs/tools/tool-discovery-baseline.json` for golden testing and regression review.
+  - Regenerate and commit the snapshot whenever tool metadata changes.
+- **Alias registry**: Use `src/config/tool-aliases.ts` when renaming tools; toggled by `MCP_DISABLE_TOOL_ALIASES=true` for rollback scenarios.
+
 ## Adding New Resource Types
 
 ### Step 1: Extend UniversalResourceType Enum
@@ -333,15 +342,15 @@ export const duplicateRecordConfig: UniversalToolConfig = {
 ```typescript
 // src/handlers/tool-configs/universal/core/index.ts
 export const coreOperationsToolConfigs = {
-  'search-records': searchRecordsConfig,
-  'get-record-details': getRecordDetailsConfig,
+  'records.search': searchRecordsConfig,
+  'records.get_details': getRecordDetailsConfig,
   'create-record': createRecordConfig,
   'update-record': updateRecordConfig,
   'delete-record': deleteRecordConfig,
   'duplicate-record': duplicateRecordConfig, // New tool
-  'get-attributes': getAttributesConfig,
-  'discover-attributes': discoverAttributesConfig,
-  'get-detailed-info': getDetailedInfoConfig,
+  'records.get_attributes': getAttributesConfig,
+  'records.discover_attributes': discoverAttributesConfig,
+  'records.get_info': getDetailedInfoConfig,
 };
 
 export const coreOperationsToolDefinitions = {
@@ -443,7 +452,7 @@ Example: Adding conditional batch operations:
 
 ```typescript
 export const conditionalBatchConfig: UniversalToolConfig = {
-  name: 'conditional-batch-operations',
+  name: 'conditional-records.batch',
   handler: async (params: {
     resource_type: UniversalResourceType;
     operation_type: BatchOperationType;
@@ -499,12 +508,12 @@ export const conditionalBatchConfig: UniversalToolConfig = {
 ### Unit Testing Universal Tools
 
 ```typescript
-// test/universal-tools/search-records.test.ts
+// test/universal-tools/records.search.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { searchRecordsConfig } from '../../src/handlers/tool-configs/universal/core/index.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
-describe('search-records universal tool', () => {
+describe('records.search universal tool', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -589,10 +598,12 @@ describe('Universal Tools Integration', () => {
     const recordId = createResult.id.record_id;
 
     // Read
-    const getResult = await universalToolConfigs['get-record-details'].handler({
-      resource_type: 'companies',
-      record_id: recordId,
-    });
+    const getResult = await universalToolConfigs['records.get_details'].handler(
+      {
+        resource_type: 'companies',
+        record_id: recordId,
+      }
+    );
 
     expect(getResult.values.name[0].value).toBe('Test Company');
 

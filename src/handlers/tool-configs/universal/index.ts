@@ -98,7 +98,7 @@ export const universalToolConfigs = {
   'aaa-health-check': healthCheckConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
-  'batch-search': batchSearchConfig,
+  records_search_batch: batchSearchConfig,
   ...openAiToolConfigs,
 };
 
@@ -110,7 +110,7 @@ export const universalToolDefinitions = {
   'aaa-health-check': healthCheckToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
-  'batch-search': batchSearchToolDefinition,
+  records_search_batch: batchSearchToolDefinition,
   ...openAiToolDefinitions,
 };
 
@@ -119,14 +119,14 @@ export const universalToolDefinitions = {
  * These consolidate the majority of CRUD and basic search operations
  */
 export const coreUniversalTools = [
-  'search-records',
-  'get-record-details',
+  'records_search',
+  'records_get_details',
   'create-record',
   'update-record',
   'delete-record',
-  'get-attributes',
-  'discover-attributes',
-  'get-detailed-info',
+  'records_get_attributes',
+  'records_discover_attributes',
+  'records_get_info',
 ];
 
 /**
@@ -134,12 +134,12 @@ export const coreUniversalTools = [
  * These provide sophisticated search and batch capabilities
  */
 export const advancedUniversalTools = [
-  'advanced-search',
-  'search-by-relationship',
-  'search-by-content',
-  'search-by-timeframe',
-  'batch-operations',
-  'batch-search',
+  'records_search_advanced',
+  'records_search_by_relationship',
+  'records_search_by_content',
+  'records_search_by_timeframe',
+  'records_batch',
+  'records_search_batch',
 ];
 
 /**
@@ -157,54 +157,54 @@ export const allUniversalTools = [
  */
 export const deprecatedToolMappings: Record<string, string> = {
   // Company tools → Universal equivalents
-  'search-companies': 'search-records',
-  'get-company-details': 'get-record-details',
+  'search-companies': 'records_search',
+  'get-company-details': 'records_get_details',
   'create-company': 'create-record',
   'update-company': 'update-record',
   'delete-company': 'delete-record',
-  'get-company-attributes': 'get-attributes',
-  'discover-company-attributes': 'discover-attributes',
-  'get-company-basic-info': 'get-detailed-info',
-  'get-company-contact-info': 'get-detailed-info',
-  'get-company-business-info': 'get-detailed-info',
-  'get-company-social-info': 'get-detailed-info',
-  'advanced-search-companies': 'advanced-search',
-  'search-companies-by-notes': 'search-by-content',
-  'search-companies-by-people': 'search-by-relationship',
+  'get-company-attributes': 'records_get_attributes',
+  'discover-company-attributes': 'records_discover_attributes',
+  'get-company-basic-info': 'records_get_info',
+  'get-company-contact-info': 'records_get_info',
+  'get-company-business-info': 'records_get_info',
+  'get-company-social-info': 'records_get_info',
+  'advanced-search-companies': 'records_search_advanced',
+  'search-companies-by-notes': 'records_search_by_content',
+  'search-companies-by-people': 'records_search_by_relationship',
 
   // People tools → Universal equivalents
-  'search-people': 'search-records',
-  'get-person-details': 'get-record-details',
+  'search-people': 'records_search',
+  'get-person-details': 'records_get_details',
   'create-person': 'create-record',
-  'advanced-search-people': 'advanced-search',
-  'search-people-by-company': 'search-by-relationship',
-  'search-people-by-activity': 'search-by-content',
-  'search-people-by-notes': 'search-by-content',
-  'search-people-by-creation-date': 'search-by-timeframe',
-  'search-people-by-modification-date': 'search-by-timeframe',
-  'search-people-by-last-interaction': 'search-by-timeframe',
+  'advanced-search-people': 'records_search_advanced',
+  'search-people-by-company': 'records_search_by_relationship',
+  'search-people-by-activity': 'records_search_by_content',
+  'search-people-by-notes': 'records_search_by_content',
+  'search-people-by-creation-date': 'records_search_by_timeframe',
+  'search-people-by-modification-date': 'records_search_by_timeframe',
+  'search-people-by-last-interaction': 'records_search_by_timeframe',
 
   // Record tools → Universal equivalents
   'create-record': 'create-record', // Already universal
-  'get-record': 'get-record-details',
+  'get-record': 'records_get_details',
   'update-record': 'update-record', // Already universal
   'delete-record': 'delete-record', // Already universal
-  'list-records': 'search-records',
-  'batch-create-records': 'batch-operations',
-  'batch-update-records': 'batch-operations',
+  'list-records': 'records_search',
+  'batch-create-records': 'records_batch',
+  'batch-update-records': 'records_batch',
 
   // Task tools → Universal equivalents
   'create-task': 'create-record',
   'update-task': 'update-record',
   'delete-task': 'delete-record',
-  'list-tasks': 'search-records',
+  'list-tasks': 'records_search',
 
   // Batch tools → Universal equivalent
-  'batch-create-companies': 'batch-operations',
-  'batch-update-companies': 'batch-operations',
-  'batch-delete-companies': 'batch-operations',
-  'batch-search-companies': 'batch-operations',
-  'batch-get-company-details': 'batch-operations',
+  'batch-create-companies': 'records_batch',
+  'batch-update-companies': 'records_batch',
+  'batch-delete-companies': 'records_batch',
+  'batch-search-companies': 'records_search_batch',
+  'batch-get-company-details': 'records_batch',
 };
 
 /**

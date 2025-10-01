@@ -103,10 +103,10 @@ describe('Universal Tools Advanced Integration Tests', () => {
   });
 
   describe('Advanced Operations Integration', () => {
-    describe('advanced-search tool', () => {
+    describe('records_search_advanced tool', () => {
       it('should perform advanced company search with complex filters', async () => {
         const result: any = await advancedOperationsToolConfigs[
-          'advanced-search'
+          'records_search_advanced'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           query: 'Universal Test',
@@ -130,7 +130,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
       it('should perform advanced people search', async () => {
         const result = (await advancedOperationsToolConfigs[
-          'advanced-search'
+          'records_search_advanced'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
           query: testPersonEmail,
@@ -142,13 +142,13 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
     });
 
-    describe('search-by-relationship tool', () => {
+    describe('records_search_by_relationship tool', () => {
       it('should search for people in companies', async () => {
         // This test assumes we have some company-people relationships
         // In a real scenario, you'd link the person to the company first
         try {
           const result: any = await advancedOperationsToolConfigs[
-            'search-by-relationship'
+            'records_search_by_relationship'
           ].handler({
             relationship_type: RelationshipType.COMPANY_TO_PEOPLE,
             source_id: createdCompanyId,
@@ -166,7 +166,9 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
       it('should handle unsupported task relationships gracefully', async () => {
         await expect(
-          advancedOperationsToolConfigs['search-by-relationship'].handler({
+          advancedOperationsToolConfigs[
+            'records_search_by_relationship'
+          ].handler({
             relationship_type: RelationshipType.PERSON_TO_TASKS,
             source_id: createdPersonId,
             target_resource_type: UniversalResourceType.TASKS,
@@ -177,12 +179,12 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
     });
 
-    describe('search-by-content tool', () => {
+    describe('records_search_by_content tool', () => {
       it('should search companies by notes content', async () => {
         // This test might not find results without notes, but tests the integration
         try {
           const result = (await advancedOperationsToolConfigs[
-            'search-by-content'
+            'records_search_by_content'
           ].handler({
             resource_type: UniversalResourceType.COMPANIES,
             content_type: ContentSearchType.NOTES,
@@ -199,10 +201,10 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should search people by notes content', async () => {
-        // Test people content search using the new search-records API
+        // Test people content search using the new records.search API
         try {
           const result = (await coreOperationsToolConfigs[
-            'search-records'
+            'records_search'
           ].handler({
             resource_type: UniversalResourceType.PEOPLE,
             query: 'engineer', // Common searchable term in people profiles
@@ -231,7 +233,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
       it('should handle unsupported interaction content search', async () => {
         await expect(
-          advancedOperationsToolConfigs['search-by-content'].handler({
+          advancedOperationsToolConfigs['records_search_by_content'].handler({
             resource_type: UniversalResourceType.COMPANIES,
             content_type: ContentSearchType.INTERACTIONS,
             search_query: 'test',
@@ -242,14 +244,14 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
     });
 
-    describe('search-by-timeframe tool', () => {
+    describe('records_search_by_timeframe tool', () => {
       it('should search people by creation date', async () => {
         const today = new Date();
         const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
         const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
         const result = (await advancedOperationsToolConfigs[
-          'search-by-timeframe'
+          'records_search_by_timeframe'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
           timeframe_type: TimeframeType.CREATED,
@@ -269,7 +271,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
       it('should handle unsupported timeframe for companies', async () => {
         await expect(
-          advancedOperationsToolConfigs['search-by-timeframe'].handler({
+          advancedOperationsToolConfigs['records_search_by_timeframe'].handler({
             resource_type: UniversalResourceType.COMPANIES,
             timeframe_type: TimeframeType.CREATED,
             start_date: new Date().toISOString(),
@@ -280,7 +282,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
     });
 
-    describe('batch-operations tool', () => {
+    describe('records_batch tool', () => {
       it('should perform batch create operations', async () => {
         const batchCompanies = [
           {
@@ -294,7 +296,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
         ];
 
         const result = (await advancedOperationsToolConfigs[
-          'batch-operations'
+          'records_batch'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           operation_type: BatchOperationType.CREATE,
@@ -321,7 +323,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
       it('should perform batch get operations', async () => {
         const result = await advancedOperationsToolConfigs[
-          'batch-operations'
+          'records_batch'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           operation_type: BatchOperationType.GET,
@@ -337,7 +339,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
       it('should perform batch search operations', async () => {
         const result = (await advancedOperationsToolConfigs[
-          'batch-operations'
+          'records_batch'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           operation_type: BatchOperationType.SEARCH,
@@ -356,7 +358,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
         const largeRecordArray = Array(51).fill({ name: 'Test Company' });
 
         await expect(
-          advancedOperationsToolConfigs['batch-operations'].handler({
+          advancedOperationsToolConfigs['records_batch'].handler({
             resource_type: UniversalResourceType.COMPANIES,
             operation_type: BatchOperationType.CREATE,
             records: largeRecordArray,
@@ -379,7 +381,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
         ];
 
         const result = (await advancedOperationsToolConfigs[
-          'batch-operations'
+          'records_batch'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           operation_type: BatchOperationType.CREATE,
@@ -412,7 +414,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
   describe('Error handling integration', () => {
     it('should handle non-existent record IDs gracefully', async () => {
       await expect(
-        coreOperationsToolConfigs['get-record-details'].handler({
+        coreOperationsToolConfigs['records_get_details'].handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: 'non-existent-id-12345',
         })
@@ -436,7 +438,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
       // This test would require mocking network conditions
       // For now, we just verify that large batch operations don't hang
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.SEARCH,
@@ -453,7 +455,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.SEARCH,
@@ -479,7 +481,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
       const startTime = Date.now();
 
       const result = (await advancedOperationsToolConfigs[
-        'batch-operations'
+        'records_batch'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,

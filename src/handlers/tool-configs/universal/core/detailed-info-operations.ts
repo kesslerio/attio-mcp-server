@@ -11,14 +11,15 @@ import {
   handleUniversalGetDetailedInfo,
   getSingularResourceType,
 } from '../shared-handlers.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const getDetailedInfoConfig: UniversalToolConfig<
   UniversalDetailedInfoParams,
   Record<string, unknown>
 > = {
-  name: 'get-detailed-info',
+  name: 'records_get_info',
   handler: async (params: UniversalDetailedInfoParams) => {
-    validateUniversalToolParams('get-detailed-info', params);
+    validateUniversalToolParams('records_get_info', params);
     return await handleUniversalGetDetailedInfo(params);
   },
   formatResult: (info: Record<string, unknown>, ...args: unknown[]): string => {
@@ -80,9 +81,16 @@ export const getDetailedInfoConfig: UniversalToolConfig<
 };
 
 export const getDetailedInfoDefinition = {
-  name: 'get-detailed-info',
-  description:
-    'Get specific types of detailed information (contact, business, social)',
+  name: 'records_get_info',
+  description: formatToolDescription({
+    capability:
+      'Retrieve enriched info subsets (contact, business, social) for a record.',
+    boundaries: 'search lists of records or mutate data.',
+    constraints:
+      'Requires resource_type, record_id, and info_type (contact|business|social).',
+    recoveryHint:
+      'Use records.get_details if you need the full record payload.',
+  }),
   inputSchema: getDetailedInfoSchema,
   annotations: {
     readOnlyHint: true,

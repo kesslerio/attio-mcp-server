@@ -145,7 +145,7 @@ describe('Universal Tools Core Integration Tests', () => {
     describe('get-record-details tool', () => {
       it('should get company details using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'get-record-details'
+          'records_get_details'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: createdCompanyId,
@@ -158,7 +158,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
       it('should get person details using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'get-record-details'
+          'records_get_details'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
           record_id: createdPersonId,
@@ -173,7 +173,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
       it('should get specific fields using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'get-record-details'
+          'records_get_details'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: createdCompanyId,
@@ -186,13 +186,13 @@ describe('Universal Tools Core Integration Tests', () => {
       });
     });
 
-    describe('search-records tool', () => {
+    describe('records_search tool', () => {
       it('should search companies using universal tool', async () => {
         // Give the API time to index the new company using helper
         await integrationUtils.waitForIndexing(2000);
 
         const result: any = await coreOperationsToolConfigs[
-          'search-records'
+          'records_search'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           query: testCompanyName,
@@ -214,7 +214,7 @@ describe('Universal Tools Core Integration Tests', () => {
         await integrationUtils.waitForIndexing(2000);
 
         const result = (await coreOperationsToolConfigs[
-          'search-records'
+          'records_search'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
           query: `Universal Test Person ${testIdentifiers.timestamp}`,
@@ -235,7 +235,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
       it('should handle search with filters', async () => {
         const result = (await coreOperationsToolConfigs[
-          'search-records'
+          'records_search'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           query: 'Universal Test',
@@ -297,7 +297,7 @@ describe('Universal Tools Core Integration Tests', () => {
     describe('get-attributes tool', () => {
       it('should get company attributes using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'get-attributes'
+          'records_get_attributes'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: createdCompanyId,
@@ -309,7 +309,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
       it('should get person attributes using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'get-attributes'
+          'records_get_attributes'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
           record_id: createdPersonId,
@@ -322,7 +322,7 @@ describe('Universal Tools Core Integration Tests', () => {
     describe('discover-attributes tool', () => {
       it('should discover company attributes using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'discover-attributes'
+          'records_discover_attributes'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
         });
@@ -333,7 +333,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
       it('should discover people attributes using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'discover-attributes'
+          'records_discover_attributes'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
         });
@@ -345,7 +345,7 @@ describe('Universal Tools Core Integration Tests', () => {
     describe('get-detailed-info tool', () => {
       it('should get company contact info using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'get-detailed-info'
+          'records_get_info'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: createdCompanyId,
@@ -357,7 +357,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
       it('should get company business info using universal tool', async () => {
         const result: any = await coreOperationsToolConfigs[
-          'get-detailed-info'
+          'records_get_info'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: createdCompanyId,
@@ -384,7 +384,7 @@ describe('Universal Tools Core Integration Tests', () => {
             ? 'Universal Test'
             : 'Universal Test Person';
         const searchResult = (await coreOperationsToolConfigs[
-          'search-records'
+          'records_search'
         ].handler({
           resource_type: resourceType,
           query,
@@ -396,7 +396,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
         // Test attribute discovery for each resource type
         const attributesResult: any = await coreOperationsToolConfigs[
-          'discover-attributes'
+          'records_discover_attributes'
         ].handler({
           resource_type: resourceType,
         });
@@ -407,7 +407,7 @@ describe('Universal Tools Core Integration Tests', () => {
 
     it('should format results consistently across resource types', async () => {
       const companyResult = (await coreOperationsToolConfigs[
-        'search-records'
+        'records_search'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         query: testCompanyName,
@@ -415,7 +415,7 @@ describe('Universal Tools Core Integration Tests', () => {
       })) as any[];
 
       const peopleResult = (await coreOperationsToolConfigs[
-        'search-records'
+        'records_search'
       ].handler({
         resource_type: UniversalResourceType.PEOPLE,
         query: testPersonEmail,

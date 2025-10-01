@@ -33,22 +33,24 @@ Claude uses these URIs to reference specific records when performing operations.
 Claude can interact with Attio using **25 fully implemented tools** provided by the MCP server:
 
 #### ✅ Universal Tools (14 tools) - Primary Interface
-- **`search-records`** - Universal search across companies, people, records, and tasks
-- **`get-record-details`** - Retrieve detailed information for any record type
-- **`create-record`** - Create new records across all resource types  
+
+- **`records.search`** - Universal search across companies, people, records, and tasks
+- **`records.get_details`** - Retrieve detailed information for any record type
+- **`create-record`** - Create new records across all resource types
 - **`update-record`** - Update existing records with validation
 - **`delete-record`** - Delete records across all resource types
-- **`get-attributes`** - Get attribute definitions for resource types
-- **`discover-attributes`** - Discover available attributes with examples
-- **`get-detailed-info`** - Get specific info types (basic, contact, business, social)
-- **`advanced-search`** - Complex filtering with multiple conditions
-- **`search-by-relationship`** - Cross-resource relationship searches
-- **`search-by-content`** - Content-based searches (notes, activity)
-- **`search-by-timeframe`** - Time-based searches with date ranges
-- **`batch-operations`** - Bulk operations for multiple records
-- **`batch-search`** - Bulk search operations
+- **`records.get_attributes`** - Get attribute definitions for resource types
+- **`records.discover_attributes`** - Discover available attributes with examples
+- **`records.get_info`** - Get specific info types (basic, contact, business, social)
+- **`records.search_advanced`** - Complex filtering with multiple conditions
+- **`records.search_by_relationship`** - Cross-resource relationship searches
+- **`records.search_by_content`** - Content-based searches (notes, activity)
+- **`records.search_by_timeframe`** - Time-based searches with date ranges
+- **`records.batch`** - Bulk operations for multiple records
+- **`records.search_batch`** - Bulk search operations
 
-#### ✅ Lists Tools (11 tools) - Specialized List Management  
+#### ✅ Lists Tools (11 tools) - Specialized List Management
+
 - **`get-lists`** - Get all CRM lists
 - **`get-list-details`** - Get specific list configuration
 - **`get-list-entries`** - Get entries from lists with pagination
@@ -62,6 +64,7 @@ Claude can interact with Attio using **25 fully implemented tools** provided by 
 - **`get-record-list-memberships`** - Find all lists containing a record
 
 #### ⚠️ Legacy Tools (Deprecated)
+
 Legacy resource-specific tools are deprecated but available with `DISABLE_UNIVERSAL_TOOLS=true`. Migration to Universal Tools is recommended for better performance and consistency.
 
 **Current Tools**: All 25 tools (14 Universal Tools + 11 Lists Tools) are fully implemented and tested.
@@ -77,6 +80,7 @@ The Attio MCP server provides multiple filtering methods:
 - **Relationship filtering**: Find records based on their relationships with other records
 
 For details, see:
+
 - [Advanced Filtering Guide](./advanced-filtering.md)
 - [Date and Numeric Filtering](./date-numeric-filtering.md)
 - [Activity and Historical Filtering](./activity-historical-filtering.md)
@@ -180,6 +184,7 @@ Error responses include a status code, error type, and error message:
 ```
 
 Common error status codes:
+
 - 400: Bad Request
 - 401: Unauthorized
 - 403: Forbidden

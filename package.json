@@ -35,6 +35,7 @@
     "lint:fix": "wireit",
     "format": "npx prettier --write --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
     "check:format": "npx prettier --check --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
+    "lint:tools": "tsx scripts/tool-schema-lint.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:offline": "SKIP_INTEGRATION_TESTS=true vitest --config configs/vitest/vitest.config.offline.ts",
@@ -294,11 +295,23 @@
       ],
       "output": []
     },
+    "lint:tools": {
+      "command": "tsx scripts/tool-schema-lint.ts",
+      "files": [
+        "src/handlers/tool-configs/**/*.ts",
+        "src/handlers/tools/**/*.ts",
+        "scripts/tool-schema-lint.ts",
+        "src/config/tool-aliases.ts",
+        "src/utils/mcp-discovery.ts"
+      ],
+      "output": []
+    },
     "check": {
       "dependencies": [
         "syncpack:check",
         "check:format",
         "lint:check",
+        "lint:tools",
         "typecheck"
       ]
     }

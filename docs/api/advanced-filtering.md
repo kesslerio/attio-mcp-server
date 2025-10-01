@@ -23,9 +23,10 @@ Advanced filters follow a consistent structure across all resources:
 
 ```typescript
 interface ListEntryFilters {
-  filters?: ListEntryFilter[];      // Array of individual filter conditions
-  matchAny?: boolean;               // When true, uses OR logic between conditions; when false/omitted, uses AND logic
-  filterGroups?: Array<{            // Optional groups for nested conditions
+  filters?: ListEntryFilter[]; // Array of individual filter conditions
+  matchAny?: boolean; // When true, uses OR logic between conditions; when false/omitted, uses AND logic
+  filterGroups?: Array<{
+    // Optional groups for nested conditions
     filters: ListEntryFilter[];
     matchAny?: boolean;
   }>;
@@ -33,11 +34,11 @@ interface ListEntryFilters {
 
 interface ListEntryFilter {
   attribute: {
-    slug: string;                   // Attribute name to filter on
+    slug: string; // Attribute name to filter on
   };
-  condition: string;                // Condition operator from FilterConditionType
-  value: any;                       // Value to compare against
-  logicalOperator?: 'and' | 'or';   // Optional operator to combine with next filter
+  condition: string; // Condition operator from FilterConditionType
+  value: any; // Value to compare against
+  logicalOperator?: 'and' | 'or'; // Optional operator to combine with next filter
 }
 ```
 
@@ -45,22 +46,22 @@ interface ListEntryFilter {
 
 All resources support the same set of filter conditions:
 
-| Condition | Description | Applicable Data Types |
-|-----------|-------------|------------------------|
-| equals | Exact match | All types |
-| not_equals | Not an exact match | All types |
-| contains | Contains the given string | Text, Email, URL |
-| not_contains | Does not contain the given string | Text, Email, URL |
-| starts_with | Starts with the given string | Text, Email, URL |
-| ends_with | Ends with the given string | Text, Email, URL |
-| greater_than | Greater than the given value | Number, Currency, Date |
-| less_than | Less than the given value | Number, Currency, Date |
-| greater_than_or_equals | Greater than or equal to value | Number, Currency, Date |
-| less_than_or_equals | Less than or equal to value | Number, Currency, Date |
-| is_empty | Value is empty | All types |
-| is_not_empty | Value is not empty | All types |
-| is_set | Attribute has a value | All types |
-| is_not_set | Attribute does not have a value | All types |
+| Condition              | Description                       | Applicable Data Types  |
+| ---------------------- | --------------------------------- | ---------------------- |
+| equals                 | Exact match                       | All types              |
+| not_equals             | Not an exact match                | All types              |
+| contains               | Contains the given string         | Text, Email, URL       |
+| not_contains           | Does not contain the given string | Text, Email, URL       |
+| starts_with            | Starts with the given string      | Text, Email, URL       |
+| ends_with              | Ends with the given string        | Text, Email, URL       |
+| greater_than           | Greater than the given value      | Number, Currency, Date |
+| less_than              | Less than the given value         | Number, Currency, Date |
+| greater_than_or_equals | Greater than or equal to value    | Number, Currency, Date |
+| less_than_or_equals    | Less than or equal to value       | Number, Currency, Date |
+| is_empty               | Value is empty                    | All types              |
+| is_not_empty           | Value is not empty                | All types              |
+| is_set                 | Attribute has a value             | All types              |
+| is_not_set             | Attribute does not have a value   | All types              |
 
 ## People Filtering
 
@@ -81,11 +82,14 @@ When filtering People records by email or phone:
 
 ```typescript
 // Basic filter by name
-const nameFilter = createNameFilter("John Smith", FilterConditionType.EQUALS);
+const nameFilter = createNameFilter('John Smith', FilterConditionType.EQUALS);
 const people = await advancedSearchPeople(nameFilter);
 
 // Filter by email domain (handled client-side)
-const emailFilter = createEmailFilter("gmail.com", FilterConditionType.CONTAINS);
+const emailFilter = createEmailFilter(
+  'gmail.com',
+  FilterConditionType.CONTAINS
+);
 const gmailUsers = await advancedSearchPeople(emailFilter);
 
 // Combined filter with AND logic
@@ -94,14 +98,14 @@ const filter = {
     {
       attribute: { slug: 'name' },
       condition: FilterConditionType.CONTAINS,
-      value: "Smith"
+      value: 'Smith',
     },
     {
       attribute: { slug: 'job_title' },
       condition: FilterConditionType.EQUALS,
-      value: "CEO"
-    }
-  ]
+      value: 'CEO',
+    },
+  ],
 };
 const results = await advancedSearchPeople(filter);
 ```
@@ -110,13 +114,16 @@ const results = await advancedSearchPeople(filter);
 
 ```typescript
 // Create a name filter
-const nameFilter = createNameFilter("John", FilterConditionType.CONTAINS);
+const nameFilter = createNameFilter('John', FilterConditionType.CONTAINS);
 
 // Create an email filter
-const emailFilter = createEmailFilter("john@example.com", FilterConditionType.EQUALS);
+const emailFilter = createEmailFilter(
+  'john@example.com',
+  FilterConditionType.EQUALS
+);
 
 // Create a phone filter
-const phoneFilter = createPhoneFilter("+1234", FilterConditionType.STARTS_WITH);
+const phoneFilter = createPhoneFilter('+1234', FilterConditionType.STARTS_WITH);
 ```
 
 ## Companies Filtering
@@ -127,11 +134,14 @@ Company filtering supports all standard attributes including name, website, indu
 
 ```typescript
 // Basic filter by company name
-const nameFilter = createNameFilter("Acme", FilterConditionType.CONTAINS);
+const nameFilter = createNameFilter('Acme', FilterConditionType.CONTAINS);
 const companies = await advancedSearchCompanies(nameFilter);
 
 // Filter by website domain
-const websiteFilter = createWebsiteFilter("acme.com", FilterConditionType.EQUALS);
+const websiteFilter = createWebsiteFilter(
+  'acme.com',
+  FilterConditionType.EQUALS
+);
 const acmeCompanies = await advancedSearchCompanies(websiteFilter);
 
 // Filter by industry with OR logic
@@ -140,15 +150,15 @@ const filter = {
     {
       attribute: { slug: 'industry' },
       condition: FilterConditionType.EQUALS,
-      value: "Technology"
+      value: 'Technology',
     },
     {
       attribute: { slug: 'industry' },
       condition: FilterConditionType.EQUALS,
-      value: "Software"
-    }
+      value: 'Software',
+    },
   ],
-  matchAny: true // OR logic
+  matchAny: true, // OR logic
 };
 const techCompanies = await advancedSearchCompanies(filter);
 ```
@@ -157,13 +167,19 @@ const techCompanies = await advancedSearchCompanies(filter);
 
 ```typescript
 // Create a name filter
-const nameFilter = createNameFilter("Acme", FilterConditionType.CONTAINS);
+const nameFilter = createNameFilter('Acme', FilterConditionType.CONTAINS);
 
 // Create a website filter
-const websiteFilter = createWebsiteFilter("acme.com", FilterConditionType.EQUALS);
+const websiteFilter = createWebsiteFilter(
+  'acme.com',
+  FilterConditionType.EQUALS
+);
 
 // Create an industry filter
-const industryFilter = createIndustryFilter("Technology", FilterConditionType.EQUALS);
+const industryFilter = createIndustryFilter(
+  'Technology',
+  FilterConditionType.EQUALS
+);
 ```
 
 ## Using with MCP Tools
@@ -173,7 +189,7 @@ For Claude interactions, advanced filtering is available through the following M
 ### People Filtering
 
 ```
-Use the advanced-search-people tool with filters:
+Use the records.search_advanced-people tool with filters:
 - name contains "Smith"
 - job_title equals "CEO"
 ```
@@ -181,7 +197,7 @@ Use the advanced-search-people tool with filters:
 ### Companies Filtering
 
 ```
-Use the advanced-search-companies tool with filters:
+Use the records.search_advanced-companies tool with filters:
 - industry equals "Technology" OR
 - annual_revenue greater_than 10000000
 ```
@@ -210,33 +226,33 @@ const complexFilter = {
         {
           attribute: { slug: 'industry' },
           condition: FilterConditionType.EQUALS,
-          value: "Technology"
+          value: 'Technology',
         },
         {
           attribute: { slug: 'annual_revenue' },
           condition: FilterConditionType.GREATER_THAN,
-          value: 10000000
-        }
+          value: 10000000,
+        },
       ],
-      matchAny: false // AND logic within this group
+      matchAny: false, // AND logic within this group
     },
     {
       filters: [
         {
           attribute: { slug: 'industry' },
           condition: FilterConditionType.EQUALS,
-          value: "Healthcare"
+          value: 'Healthcare',
         },
         {
           attribute: { slug: 'employee_count' },
           condition: FilterConditionType.GREATER_THAN,
-          value: 100
-        }
+          value: 100,
+        },
       ],
-      matchAny: false // AND logic within this group
-    }
+      matchAny: false, // AND logic within this group
+    },
   ],
-  matchAny: true // OR logic between groups
+  matchAny: true, // OR logic between groups
 };
 ```
 
@@ -252,19 +268,19 @@ const searchParams = {
   resource_type: 'companies',
   date_from: '2023-08-01T00:00:00Z',
   date_to: '2023-08-15T23:59:59Z',
-  date_field: 'created_at'  // Attribute to filter on
+  date_field: 'created_at', // Attribute to filter on
 };
 
 // Search people updated after a specific date
 const searchParams = {
   resource_type: 'people',
-  updated_after: '2023-08-01T00:00:00Z'  // Only records updated after this date
+  updated_after: '2023-08-01T00:00:00Z', // Only records updated after this date
 };
 
 // Search companies created before a specific date
 const searchParams = {
   resource_type: 'companies',
-  created_before: '2023-08-15T23:59:59Z'  // Only records created before this date
+  created_before: '2023-08-15T23:59:59Z', // Only records created before this date
 };
 ```
 
@@ -275,44 +291,44 @@ const searchParams = {
 const searchParams = {
   resource_type: 'companies',
   timeframe: 'last_7_days',
-  date_field: 'created_at'
+  date_field: 'created_at',
 };
 
 // Search people updated this month
 const searchParams = {
-  resource_type: 'people', 
+  resource_type: 'people',
   timeframe: 'this_month',
-  date_field: 'updated_at'
+  date_field: 'updated_at',
 };
 
 // Search companies created yesterday
 const searchParams = {
   resource_type: 'companies',
   timeframe: 'yesterday',
-  date_field: 'created_at'
+  date_field: 'created_at',
 };
 ```
 
 #### **Supported Relative Timeframes**
 
-| Timeframe | Description |
-|-----------|-------------|
-| `today` | Records from today (current date) |
-| `yesterday` | Records from yesterday |
-| `this_week` | Records from Monday of current week to now |
-| `last_week` | Records from Monday to Sunday of previous week |
-| `this_month` | Records from first day of current month to now |
-| `last_month` | Records from first to last day of previous month |
-| `last_7_days` | Records from 7 days ago to now |
-| `last_30_days` | Records from 30 days ago to now |
-| `last_90_days` | Records from 90 days ago to now |
+| Timeframe      | Description                                      |
+| -------------- | ------------------------------------------------ |
+| `today`        | Records from today (current date)                |
+| `yesterday`    | Records from yesterday                           |
+| `this_week`    | Records from Monday of current week to now       |
+| `last_week`    | Records from Monday to Sunday of previous week   |
+| `this_month`   | Records from first day of current month to now   |
+| `last_month`   | Records from first to last day of previous month |
+| `last_7_days`  | Records from 7 days ago to now                   |
+| `last_30_days` | Records from 30 days ago to now                  |
+| `last_90_days` | Records from 90 days ago to now                  |
 
 #### **Date Field Options**
 
-| Field | Description |
-|-------|-------------|
+| Field        | Description                           |
+| ------------ | ------------------------------------- |
 | `created_at` | When the record was created (default) |
-| `updated_at` | When the record was last updated |
+| `updated_at` | When the record was last updated      |
 
 #### **Combining with Other Filters**
 
@@ -325,12 +341,14 @@ const searchParams = {
   timeframe: 'last_30_days',
   date_field: 'created_at',
   filters: {
-    filters: [{
-      attribute: { slug: 'industry' },
-      condition: 'contains',
-      value: 'Technology'
-    }]
-  }
+    filters: [
+      {
+        attribute: { slug: 'industry' },
+        condition: 'contains',
+        value: 'Technology',
+      },
+    ],
+  },
 };
 
 // Search people by name and date range
@@ -339,7 +357,7 @@ const searchParams = {
   query: 'John Smith',
   date_from: '2023-01-01T00:00:00Z',
   date_to: '2023-12-31T23:59:59Z',
-  date_field: 'updated_at'
+  date_field: 'updated_at',
 };
 ```
 
@@ -370,37 +388,38 @@ const revenueFilter = {
     {
       attribute: { slug: 'annual_revenue' },
       condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
-      value: 1000000
+      value: 1000000,
     },
     {
       attribute: { slug: 'annual_revenue' },
       condition: FilterConditionType.LESS_THAN_OR_EQUALS,
-      value: 10000000
-    }
-  ]
+      value: 10000000,
+    },
+  ],
 };
 
 // Using the createNumericFilter helper function
 const revenueFilter = createNumericFilter('annual_revenue', {
   min: 1000000,
-  max: 10000000
+  max: 10000000,
 });
 
 // Companies with exactly 500 employees
 const exactEmployeeFilter = createNumericFilter('employee_count', {
-  equals: 500
+  equals: 500,
 });
 
 // Companies with at least 100 employees
 const minEmployeeFilter = createNumericFilter('employee_count', {
-  min: 100
+  min: 100,
 });
 
 // Companies with at most 1000 employees
 const maxEmployeeFilter = createNumericFilter('employee_count', {
-  max: 1000
+  max: 1000,
 });
 ```
+
 ```
 
 ## Related Documentation
@@ -409,3 +428,4 @@ const maxEmployeeFilter = createNumericFilter('employee_count', {
 - [Companies API](./companies-api.md) - For managing company records
 - [Lists API](./lists-api.md) - For managing lists and list entries
 - [Objects API](./objects-api.md) - For understanding object schemas
+```

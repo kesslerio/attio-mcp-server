@@ -92,7 +92,7 @@ export function buildLogActivityMessages(
   const instructions = `You are a CRM assistant. Log a ${validated.type} activity to "${validated.target}".
 
 Steps:
-1. Resolve target: If starts with "search:", call \`records.query\` to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
+1. Resolve target: If starts with "search:", call \`records_query\` to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
 
 2. Create activity note: Call \`notes.create\` (or appropriate write tool) with:
    - Type: ${validated.type}

@@ -99,7 +99,7 @@ describe('people_search.v1', () => {
       expect(messages).toHaveLength(1);
       expect(messages[0].role).toBe('user');
       expect(messages[0].content.type).toBe('text');
-      expect((messages[0].content as any).text).toContain('records.query');
+      expect((messages[0].content as any).text).toContain('records_query');
       expect((messages[0].content as any).text).toContain('AE in fintech');
       expect((messages[0].content as any).text).toContain('format=table');
     });

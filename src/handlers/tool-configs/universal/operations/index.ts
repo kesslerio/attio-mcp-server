@@ -8,6 +8,7 @@ import { searchByRelationshipConfig } from './relationship-search.js';
 import { searchByContentConfig } from './content-search.js';
 import { searchByTimeframeConfig } from './timeframe-search.js';
 import { batchOperationsConfig } from './batch-operations.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 import {
   advancedSearchSchema,
@@ -18,56 +19,91 @@ import {
 } from '../schemas.js';
 
 export const advancedOperationsToolConfigs = {
-  'advanced-search': advancedSearchConfig,
-  'search-by-relationship': searchByRelationshipConfig,
-  'search-by-content': searchByContentConfig,
-  'search-by-timeframe': searchByTimeframeConfig,
-  'batch-operations': batchOperationsConfig,
+  records_search_advanced: advancedSearchConfig,
+  records_search_by_relationship: searchByRelationshipConfig,
+  records_search_by_content: searchByContentConfig,
+  records_search_by_timeframe: searchByTimeframeConfig,
+  records_batch: batchOperationsConfig,
 };
 
 export const advancedOperationsToolDefinitions = {
-  'advanced-search': {
-    name: 'advanced-search',
-    description:
-      'Advanced search with complex filtering across all resource types',
+  records_search_advanced: {
+    name: 'records_search_advanced',
+    description: formatToolDescription({
+      capability:
+        'Run complex searches with nested filters across resource types.',
+      boundaries: 'mutate records; use records.update or records.delete.',
+      constraints:
+        'Supports filter groups, scoring, pagination, and up to 100 items.',
+      recoveryHint:
+        'If filters fail, fetch valid attributes via records.discover_attributes.',
+    }),
     inputSchema: advancedSearchSchema,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
     },
   },
-  'search-by-relationship': {
-    name: 'search-by-relationship',
-    description: 'Search records by their relationships to other entities',
+  records_search_by_relationship: {
+    name: 'records_search_by_relationship',
+    description: formatToolDescription({
+      capability:
+        'Search records using relationship anchors (list, company, people).',
+      boundaries: 'modify memberships; use list tools for writes.',
+      constraints: 'Requires resource_type and related resource identifier.',
+      recoveryHint: 'Use records.search to resolve IDs before calling.',
+    }),
     inputSchema: searchByRelationshipSchema,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
     },
   },
-  'search-by-content': {
-    name: 'search-by-content',
-    description: 'Search within notes, activity, and interaction content',
+  records_search_by_content: {
+    name: 'records_search_by_content',
+    description: formatToolDescription({
+      capability: 'Search record content (notes, activity, communications).',
+      boundaries: 'modify note content or attachments.',
+      constraints:
+        'Requires resource_type and content_query; optional fields array.',
+      recoveryHint:
+        'Narrow scope with fields or switch to records.search_advanced.',
+    }),
     inputSchema: searchByContentSchema,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
     },
   },
-  'search-by-timeframe': {
-    name: 'search-by-timeframe',
-    description:
-      'Search records by temporal criteria (creation, modification, interaction dates)',
+  records_search_by_timeframe: {
+    name: 'records_search_by_timeframe',
+    description: formatToolDescription({
+      capability:
+        'Filter records by creation, update, or interaction timeframes.',
+      boundaries: 'modify lifecycle state or scheduling follow-ups.',
+      constraints:
+        'Requires resource_type; provide timeframe or explicit date boundaries.',
+      recoveryHint:
+        'Call records.search if timeframe filters are too restrictive.',
+    }),
     inputSchema: searchByTimeframeSchema,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
     },
   },
-  'batch-operations': {
-    name: 'batch-operations',
-    description:
-      'Perform bulk operations (create, update, delete, get, search)',
+  records_batch: {
+    name: 'records_batch',
+    description: formatToolDescription({
+      capability:
+        'Execute batched record operations (create/update/delete/get/search).',
+      boundaries: 'ignore approval guardrails; hosts may require confirmation.',
+      requiresApproval: true,
+      constraints:
+        'operation_type must be specified; enforce per-operation limits.',
+      recoveryHint:
+        'Run records.search first to stage IDs or payloads for batching.',
+    }),
     inputSchema: batchOperationsSchema,
     annotations: {
       readOnlyHint: false,

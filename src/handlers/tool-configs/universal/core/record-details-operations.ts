@@ -14,18 +14,19 @@ import {
 } from '../shared-handlers.js';
 import { handleSearchError } from './error-utils.js';
 import { UniversalUtilityService } from '../../../../services/UniversalUtilityService.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const getRecordDetailsConfig: UniversalToolConfig<
   UniversalRecordDetailsParams,
   AttioRecord
 > = {
-  name: 'get-record-details',
+  name: 'records_get_details',
   handler: async (
     params: UniversalRecordDetailsParams
   ): Promise<AttioRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'get-record-details',
+        'records_get_details',
         params
       );
       return await handleUniversalGetDetails(sanitizedParams);
@@ -154,8 +155,15 @@ export const getRecordDetailsConfig: UniversalToolConfig<
 };
 
 export const getRecordDetailsDefinition = {
-  name: 'get-record-details',
-  description: 'Get detailed information for any record type',
+  name: 'records_get_details',
+  description: formatToolDescription({
+    capability: 'Fetch a single record with enriched attribute formatting.',
+    boundaries:
+      'search or filter result sets; use records.search* tools instead.',
+    constraints:
+      'Requires resource_type and record_id; optional fields filter output.',
+    recoveryHint: 'Validate record IDs with records.search before retrying.',
+  }),
   inputSchema: getRecordDetailsSchema,
   annotations: {
     readOnlyHint: true,

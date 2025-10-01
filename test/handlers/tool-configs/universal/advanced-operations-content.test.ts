@@ -31,7 +31,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
     cleanupMocks();
   });
 
-  describe('search-by-content tool', () => {
+  describe('records_search_by_content tool', () => {
     it('should search companies by notes content', async () => {
       const mockResults = [
         {
@@ -161,7 +161,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
     });
   });
 
-  describe('search-by-timeframe tool', () => {
+  describe('records_search_by_timeframe tool', () => {
     it('should search people by creation date', async () => {
       const mockResults = [
         {

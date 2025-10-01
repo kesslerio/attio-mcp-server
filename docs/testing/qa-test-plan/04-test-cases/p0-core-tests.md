@@ -11,9 +11,11 @@
 Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operations that form the foundation of the Attio MCP Server. These tests must achieve 100% success rate before proceeding to higher priority levels.
 
 ### Important: MCP Response Format
+
 **⚠️ KEY INSIGHT (Issue #612):** MCP tools return text-based responses, not JSON. When testing MCP tools:
+
 - Responses are plain text with success/error messages
-- IDs are returned in format: `(ID: uuid-here)` 
+- IDs are returned in format: `(ID: uuid-here)`
 - Field values are not preserved exactly in responses
 - Focus on success indicators and ID extraction, not field validation
 
@@ -25,6 +27,7 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 - [ ] Execution dashboard prepared (template in [Execution Process](../03-execution.md))
 
 ### Quick Resources
+
 - **Copy-Paste Commands:** [P0 Quick Commands](../07-reference/quick-commands.md#p0-core-test-commands)
 - **Tool Parameters:** [CRUD Tools Reference](../07-reference/tool-reference.md)
 - **Bug Reporting:** [Issue Templates](../06-bug-reporting.md) for failures
@@ -37,11 +40,13 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 **Objective:** Validate basic search capabilities across all resource types
 
 **Test Steps:**
-1. Execute basic search for companies: `mcp__attio__search-records resource_type="companies" query="QA Test" limit=5`
-2. Execute basic search for people: `mcp__attio__search-records resource_type="people" query="QA Tester" limit=5`
-3. Execute basic search for tasks: `mcp__attio__search-records resource_type="tasks" query="QA Test Task" limit=5`
+
+1. Execute basic search for companies: `mcp__attio__records.search resource_type="companies" query="QA Test" limit=5`
+2. Execute basic search for people: `mcp__attio__records.search resource_type="people" query="QA Tester" limit=5`
+3. Execute basic search for tasks: `mcp__attio__records.search resource_type="tasks" query="QA Test Task" limit=5`
 
 **Expected Results (MCP Format):**
+
 - Returns text-based search results for each resource type
 - Results include records with IDs in format: `(ID: uuid-here)`
 - Response format is consistent across resource types
@@ -59,11 +64,13 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 **Prerequisites:** Valid record IDs from TC-001 search results
 
 **Test Steps:**
-1. Get company details: `mcp__attio__get-record-details resource_type="companies" record_id="[ID_FROM_TC001]"`
-2. Get person details: `mcp__attio__get-record-details resource_type="people" record_id="[ID_FROM_TC001]"`
-3. Get task details: `mcp__attio__get-record-details resource_type="tasks" record_id="[ID_FROM_TC001]"`
+
+1. Get company details: `mcp__attio__records.get_details resource_type="companies" record_id="[ID_FROM_TC001]"`
+2. Get person details: `mcp__attio__records.get_details resource_type="people" record_id="[ID_FROM_TC001]"`
+3. Get task details: `mcp__attio__records.get_details resource_type="tasks" record_id="[ID_FROM_TC001]"`
 
 **Expected Results:**
+
 - Returns complete record details for valid IDs
 - Response includes all available fields and their values
 - Data structure matches resource type schema
@@ -78,7 +85,9 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 **Objective:** Validate ability to create new records across resource types
 
 **Test Steps:**
+
 1. Create test company:
+
    ```bash
    mcp__attio__create-record resource_type="companies" \
      record_data='{"name": "TC003 Test Company", "domains": ["tc003-test.com"], "description": "Test company"}'
@@ -86,6 +95,7 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
    ```
 
 2. Create test person:
+
    ```bash
    mcp__attio__create-record resource_type="people" \
      record_data='{"name": "TC003 Test Person", "email_addresses": ["tc003@test.com"]}'
@@ -99,6 +109,7 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
    ```
 
 **Expected Results (MCP Format):**
+
 - Returns text confirmation: "Successfully created [resource]"
 - ID returned in format: `(ID: uuid-here)` within the response text
 - New records appear in subsequent searches
@@ -115,33 +126,38 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 **Prerequisites:** Valid record IDs from TC-003 (created records)
 
 **Test Steps:**
+
 1. Update company description:
+
    ```bash
    mcp__attio__update-record resource_type="companies" record_id="[TC003_COMPANY_ID]" \
      record_data='{"description": "Updated by TC004"}'
    ```
 
 2. Update person job title:
+
    ```bash
    mcp__attio__update-record resource_type="people" record_id="[TC003_PERSON_ID]" \
      record_data='{"job_title": "TC004 Updated Title"}'
    ```
 
 3. Update task completion status:
+
    ```bash
    # CORRECT: Use supported task fields (per Issue #517 API research)
    mcp__attio__update-record resource_type="tasks" record_id="[TC003_TASK_ID]" \
      record_data='{"is_completed": false}'
-   
+
    # LEGACY/INCORRECT: "status" field not supported by Attio API
    # mcp__attio__update-record resource_type="tasks" record_id="[TC003_TASK_ID]" \
    #   record_data='{"status": "in_progress"}'
    ```
 
 **Expected Results:**
+
 - Successfully updates specified fields without affecting other data
 - Returns confirmation of update with modified field values
-- Changes persist when retrieved with get-record-details
+- Changes persist when retrieved with records.get_details
 - Proper validation prevents invalid field updates
 
 **Success Criteria:** All updates applied successfully with data persistence verified
@@ -157,12 +173,15 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 **Prerequisites:** Valid record IDs from TC-003 (records to be deleted)
 
 **Test Steps:**
+
 1. Delete test company:
+
    ```bash
    mcp__attio__delete-record resource_type="companies" record_id="[TC003_COMPANY_ID]"
    ```
 
 2. Delete test person:
+
    ```bash
    mcp__attio__delete-record resource_type="people" record_id="[TC003_PERSON_ID]"
    ```
@@ -173,6 +192,7 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
    ```
 
 **Expected Results:**
+
 - Successfully removes records from the system
 - Returns deletion confirmation
 - Deleted records no longer appear in search results
@@ -183,6 +203,7 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 ## Automated Test Execution
 
 ### Run Automated P0 Tests (Recommended)
+
 ```bash
 # Run all P0 tests automatically (takes ~30 seconds)
 npm run test:mcp:p0
@@ -191,6 +212,7 @@ npm run test:mcp:p0
 ```
 
 ### Manual Test Execution
+
 For manual testing or debugging, follow the test steps above using the MCP client.
 
 ## P0 Quality Gate Validation
@@ -198,7 +220,7 @@ For manual testing or debugging, follow the test steps above using the MCP clien
 Before proceeding to P1 tests, verify:
 
 - [ ] **TC-001** ✅ Search functionality working across all resource types
-- [ ] **TC-002** ✅ Record details retrieval working for all resource types  
+- [ ] **TC-002** ✅ Record details retrieval working for all resource types
 - [ ] **TC-003** ✅ Record creation working for all resource types
 - [ ] **TC-004** ✅ Record updates working for all resource types
 - [ ] **TC-005** ✅ Record deletion working for all resource types
@@ -210,6 +232,7 @@ Before proceeding to P1 tests, verify:
 ---
 
 **Related Documentation:**
+
 - [Next: P1 Essential Tests](./p1-essential-tests.md)
 - [Back: Test Cases Overview](./index.md)
 - [Reference: Quick Commands](../07-reference/quick-commands.md)

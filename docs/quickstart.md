@@ -14,16 +14,19 @@ Get up and running with the Attio MCP Server in under 5 minutes. This guide will
 Choose your preferred installation method:
 
 ### Option A: NPM (Recommended)
+
 ```bash
 npm install -g attio-mcp
 ```
 
 ### Option B: Smithery (Auto-configuration)
+
 ```bash
 npx -y @smithery/cli install @kesslerio/attio-mcp --client claude
 ```
 
 ### Option C: Manual Installation
+
 ```bash
 git clone https://github.com/kesslerio/attio-mcp-server.git
 cd attio-mcp-server
@@ -34,13 +37,16 @@ npm run build
 ## Step 2: Get Your API Credentials
 
 ### Find Your API Key
+
 1. Go to [Attio Settings → API](https://app.attio.com/settings/api)
 2. Click "Generate New API Key"
 3. Copy the 64-character API key (starts with `at_`)
 4. **Keep this safe** - you won't be able to see it again
 
 ### Find Your Workspace ID
+
 Your workspace ID is in your Attio URL:
+
 - URL: `https://app.attio.com/workspaces/YOUR_WORKSPACE_ID/dashboard`
 - Look for the string between `/workspaces/` and `/dashboard`
 
@@ -73,6 +79,7 @@ EOF
 ```
 
 **For Windows users:**
+
 ```powershell
 # Create .env file
 echo "ATTIO_API_KEY=your_64_character_api_key_here" > .env
@@ -93,11 +100,13 @@ echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVe
 ```
 
 **Expected Output (should include):**
+
 ```json
 {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},...}}
 ```
 
 **Alternative: Quick API Connection Test**
+
 ```bash
 # Quick test - discover your workspace attributes using the CLI tool
 attio-discover attributes --limit 3
@@ -105,7 +114,7 @@ attio-discover attributes --limit 3
 # Expected output:
 # ✅ Found 3 company attributes:
 # 1. Name (text)
-# 2. Website (url) 
+# 2. Website (url)
 # 3. Industry (select)
 ```
 
@@ -114,11 +123,13 @@ attio-discover attributes --limit 3
 Add the Attio MCP Server to your Claude Desktop configuration:
 
 ### Find Claude Desktop Config
+
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/claude/claude_desktop_config.json`
 
 ### Add Configuration
+
 Edit the file to include the Attio MCP server:
 
 ```json
@@ -146,11 +157,13 @@ Edit the file to include the Attio MCP server:
 ```
 
 **Expected Behavior:**
-- Claude should list available Attio MCP tools (search-records, get-record-details, etc.)
+
+- Claude should list available Attio MCP tools (records.search, records.get_details, etc.)
 - Claude should perform a search and return company results
 - You should see companies with "tech", "technology" or similar in their names
 
 **⚠️ Troubleshooting**: If Claude doesn't see the tools:
+
 1. Check Claude Desktop → Settings → Features → Model Context Protocol is enabled
 2. Completely restart Claude Desktop (quit and reopen)
 3. Verify config file syntax with: `python -m json.tool ~/Library/Application\ Support/Claude/claude_desktop_config.json`
@@ -164,11 +177,12 @@ Try this practical example:
 ```
 
 **Expected Output Format:**
+
 ```
 Found 3 companies created in the last 30 days:
 
 1. **Acme Tech Solutions**
-   - Website: https://acmetech.com  
+   - Website: https://acmetech.com
    - Industry: Software Development
    - Created: August 15, 2024
 
@@ -179,14 +193,16 @@ Found 3 companies created in the last 30 days:
 
 3. **CloudSync Corp**
    - Website: https://cloudsync.net
-   - Industry: Cloud Services  
+   - Industry: Cloud Services
    - Created: August 28, 2024
 ```
 
 ## Common Setup Issues & Solutions
 
 ### Issue: "Command not found: attio-mcp"
+
 **Solution**: NPM global install path issue or wrong package
+
 ```bash
 # Verify correct package is installed
 npm list -g attio-mcp
@@ -204,8 +220,10 @@ echo 'export PATH="$(npm config get prefix)/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Issue: "Invalid API Key" 
+### Issue: "Invalid API Key"
+
 **Solution**: Check API key format
+
 - Must be exactly 64 characters
 - Must start with `at_`
 - No spaces or extra characters
@@ -217,7 +235,9 @@ echo -n "$ATTIO_API_KEY" | wc -c
 ```
 
 ### Issue: "Workspace not found"
+
 **Solution**: Verify workspace ID
+
 ```bash
 # Test workspace access directly
 curl -H "Authorization: Bearer $ATTIO_API_KEY" \
@@ -225,24 +245,31 @@ curl -H "Authorization: Bearer $ATTIO_API_KEY" \
 ```
 
 ### Issue: Claude Desktop doesn't see the server
+
 **Solution**: Configuration path and restart
+
 1. Verify config file location is correct for your OS
 2. **Enable MCP in Claude**: Settings → Features → Model Context Protocol (toggle on)
-3. Completely quit Claude Desktop (not just close window)  
+3. Completely quit Claude Desktop (not just close window)
 4. Check for JSON syntax errors in config file:
+
 ```bash
 # Validate JSON syntax (Linux/Mac)
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
 ```
+
 5. Test MCP server starts manually:
+
 ```bash
 attio-mcp --version
 # Should output version number
 ```
 
 ### Issue: "Rate limit exceeded"
+
 **Solution**: Built-in rate limiting protection
 The server automatically handles Attio's rate limits (300 requests per minute). If you hit limits:
+
 - Wait 60 seconds before retrying
 - Use the `limit` parameter to reduce data volume
 - Consider using batch operations for bulk updates
@@ -252,19 +279,21 @@ The server automatically handles Attio's rate limits (300 requests per minute). 
 For optimal performance:
 
 1. **Use specific searches**: Instead of broad queries, be specific
+
    ```
    ❌ "Show me all companies"
    ✅ "Show me tech companies with 10-50 employees"
    ```
 
 2. **Limit results**: Always specify reasonable limits
+
    ```json
-   {"limit": 20}  // Good default
+   { "limit": 20 } // Good default
    ```
 
 3. **Use field selection**: Only fetch needed fields
    ```json
-   {"fields": ["name", "website", "industry"]}
+   { "fields": ["name", "website", "industry"] }
    ```
 
 ## What's Next?
@@ -281,21 +310,21 @@ Now that you're set up, explore these guides:
 
 Keep this handy for daily use:
 
-| Need to... | Claude Command Example |
-|------------|------------------------|
-| **Search companies** | "Find companies with 'AI' in the name" |
-| **Get company details** | "Show me details for company ID comp_12345" |
-| **Create a company** | "Create a new company called 'Acme Corp' with website acme.com" |
-| **Update a company** | "Update company comp_12345 to set industry to 'Technology'" |
-| **Find recent activity** | "Show me all companies created this week" |
-| **Complex search** | "Find tech companies with 50+ employees that we haven't contacted in 30 days" |
+| Need to...               | Claude Command Example                                                        |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| **Search companies**     | "Find companies with 'AI' in the name"                                        |
+| **Get company details**  | "Show me details for company ID comp_12345"                                   |
+| **Create a company**     | "Create a new company called 'Acme Corp' with website acme.com"               |
+| **Update a company**     | "Update company comp_12345 to set industry to 'Technology'"                   |
+| **Find recent activity** | "Show me all companies created this week"                                     |
+| **Complex search**       | "Find tech companies with 50+ employees that we haven't contacted in 30 days" |
 
 ## Support
 
 If you encounter issues:
 
 1. **Check the logs**: Look at Claude Desktop's developer console
-2. **Validate setup**: Run the test commands above  
+2. **Validate setup**: Run the test commands above
 3. **Review docs**: Check the [troubleshooting guide](error-handling-guide.md)
 4. **Report issues**: [GitHub Issues](https://github.com/kesslerio/attio-mcp-server/issues)
 

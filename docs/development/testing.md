@@ -8,6 +8,7 @@ This guide explains how to set up and run tests for the Attio MCP Server, includ
 ✅ **100% Integration Test Pass Rate Maintained** (15/15 tests passing)
 
 ### Recent Testing Improvements (January 2025 - Issue #480)
+
 - **E2E Test Success**: Resolved all E2E test failures with clean architectural approach
 - **Mock Data System**: Implemented environment-based mock injection without production coupling
 - **Dual Response Format**: Support for both `values` object structure and flattened field access
@@ -15,14 +16,16 @@ This guide explains how to set up and run tests for the Attio MCP Server, includ
 - **Clean Architecture**: Complete separation of test and production concerns
 
 ### Previous Improvements (August 2025)
+
 - **Critical Bug Fixes**: All P0 API failures resolved with robust error handling
-- **Enhanced Validation**: Complete email validation consistency between create/update operations  
+- **Enhanced Validation**: Complete email validation consistency between create/update operations
 - **Resource Mapping**: Fixed all resource type mappings and JSON response handling
 - **Tasks API Special Handling**: Implemented workaround for missing `/objects/tasks/attributes` endpoint
 - **Build Integration**: All TypeScript compilation errors resolved
 - **Error Handling**: Comprehensive error mocking and fallback patterns implemented
 
 ### Test Coverage
+
 - **E2E Tests**: 37/37 passing (100% pass rate) with mock data injection
 - **Integration Tests**: 15/15 passing (100% pass rate)
 - **Unit Tests**: All offline tests passing
@@ -120,12 +123,14 @@ npx vitest --config vitest.config.e2e.ts --run test/e2e/suites/universal-tools.e
 The E2E test framework underwent major improvements to achieve production-ready testing:
 
 #### ✅ **Critical Bug Fixes**
+
 - **MCP Response Format Consistency**: Fixed `isError: false` inclusion in successful responses
 - **Field Validation Resolution**: Corrected `record_data.values` structure validation
 - **Import Error Resolution**: Fixed test file imports that caused 97% test skip rate
 - **JSON Response Handling**: Enhanced parsing and validation of API responses
 
 #### 🚀 **New Testing Capabilities**
+
 - **Pagination Testing**: Comprehensive validation of `offset` parameter across universal tools
 - **Field Filtering**: Tests for `fields` parameter to validate selective data retrieval
 - **Tasks Integration**: Complete lifecycle testing for tasks resource type operations
@@ -165,33 +170,36 @@ E2EAssertions.expectValidBatchOperation(response, batchSize);
 
 Performance expectations are now enforced through automated testing:
 
-| Operation Type | Performance Budget | Validation Method |
-|---|---|---|
-| Search Operations | < 1000ms per API call | `expectOptimalPerformance(response, 1000)` |
-| CRUD Operations | < 1500ms per operation | `expectOptimalPerformance(response, 1500)` |
-| Batch Operations | < 3000ms for 10 records | `expectOptimalPerformance(response, 3000)` |
-| Field Filtering | < 500ms additional overhead | `expectFieldFiltering(response, fields)` |
-| Pagination | < 200ms additional per offset | `expectValidPagination(response, limit)` |
+| Operation Type    | Performance Budget            | Validation Method                          |
+| ----------------- | ----------------------------- | ------------------------------------------ |
+| Search Operations | < 1000ms per API call         | `expectOptimalPerformance(response, 1000)` |
+| CRUD Operations   | < 1500ms per operation        | `expectOptimalPerformance(response, 1500)` |
+| Batch Operations  | < 3000ms for 10 records       | `expectOptimalPerformance(response, 3000)` |
+| Field Filtering   | < 500ms additional overhead   | `expectFieldFiltering(response, fields)`   |
+| Pagination        | < 200ms additional per offset | `expectValidPagination(response, limit)`   |
 
 #### 🎯 **Comprehensive Test Coverage**
 
 The E2E framework covers all universal tools with real API integration:
 
 **Core Operations (8 tools)**:
-- `search-records` with pagination and filtering
-- `get-record-details` with field selection
+
+- `records.search` with pagination and filtering
+- `records.get_details` with field selection
 - `create-record`, `update-record`, `delete-record` with validation
-- `get-attributes`, `discover-attributes` with schema discovery
-- `get-detailed-info` with various info types
+- `records.get_attributes`, `records.discover_attributes` with schema discovery
+- `records.get_info` with various info types
 
 **Advanced Operations (5 tools)**:
-- `advanced-search` with complex filters
-- `search-by-relationship` with cross-resource queries
-- `search-by-content` with content-based searching
-- `search-by-timeframe` with temporal queries
-- `batch-operations` with bulk processing
+
+- `records.search_advanced` with complex filters
+- `records.search_by_relationship` with cross-resource queries
+- `records.search_by_content` with content-based searching
+- `records.search_by_timeframe` with temporal queries
+- `records.batch` with bulk processing
 
 **Enhanced Testing Features**:
+
 - Cross-resource compatibility (companies, people, tasks, lists)
 - Error handling and edge case validation
 - Performance regression testing
@@ -200,6 +208,7 @@ The E2E framework covers all universal tools with real API integration:
 ### Setting Up E2E Tests
 
 #### 1. **Environment Configuration**
+
 ```bash
 # Create .env file with API key (required)
 echo "ATTIO_API_KEY=your_64_character_api_key_here" > .env
@@ -210,6 +219,7 @@ echo "API key length: ${#ATTIO_API_KEY} (should be 64)"
 ```
 
 #### 2. **Test Data Setup**
+
 ```bash
 # Option A: Use existing records (update .env.test)
 cp test/e2e/config.template.json test/e2e/config.local.json
@@ -220,6 +230,7 @@ npm run setup:test-data
 ```
 
 #### 3. **Run E2E Tests**
+
 ```bash
 # Full E2E test suite (should show 51/51 passing)
 npm run e2e
@@ -236,6 +247,7 @@ npx vitest --config vitest.config.e2e.ts --run test/e2e/suites/universal-tools.e
 ### E2E Test Architecture
 
 #### **Test Organization**
+
 ```
 test/e2e/
 ├── suites/                    # Test suites by functionality
@@ -279,17 +291,19 @@ Integration tests need specific records in your workspace to test against. You h
 #### Option A: Use Existing Records
 
 1. Copy the test configuration template:
+
    ```bash
    cp .env.test.example .env.test
    ```
 
 2. Edit `.env.test` with IDs from your workspace:
+
    ```bash
    # Required test data
    TEST_COMPANY_ID=198abdd2-a0d9-4c95-93b6-29bc4154953a
    TEST_PERSON_ID=f3503402-85fc-41b6-9427-819d05e8813e
    TEST_LIST_ID=b352b506-5d1f-43b2-9623-dc2e31c751f7
-   
+
    # Optional test data
    TEST_DEAL_ID=93a7631d-8586-4471-ac56-881a6030a2ce
    ```
@@ -303,6 +317,7 @@ npm run setup:test-data
 ```
 
 This will:
+
 - Create test companies and people with identifiable names (prefixed with `E2E_TEST_`)
 - Find available lists in your workspace
 - Output the IDs to add to your `.env.test` file
@@ -317,10 +332,11 @@ To find IDs for existing records:
    - The ID is the part starting with `rec_`, `list_`, etc.
 
 2. **Via API Discovery**:
+
    ```bash
    # Build the project first
    npm run build
-   
+
    # Discover available resources
    npm run discover
    ```
@@ -369,16 +385,16 @@ npm test:watch:offline
 
 The following environment variables control test behavior:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ATTIO_API_KEY` | Your Attio API key | Required |
-| `SKIP_INTEGRATION_TESTS` | Skip all integration tests | `false` |
-| `TEST_COMPANY_ID` | ID of test company record | Required for integration tests |
-| `TEST_PERSON_ID` | ID of test person record | Required for integration tests |
-| `TEST_LIST_ID` | ID of test list | Required for list tests |
-| `SKIP_INCOMPLETE_TESTS` | Skip tests missing optional IDs | `true` |
-| `CLEANUP_TEST_DATA` | Clean up created test data | `true` |
-| `TEST_DATA_PREFIX` | Prefix for test data names | `E2E_TEST_` |
+| Variable                 | Description                     | Default                        |
+| ------------------------ | ------------------------------- | ------------------------------ |
+| `ATTIO_API_KEY`          | Your Attio API key              | Required                       |
+| `SKIP_INTEGRATION_TESTS` | Skip all integration tests      | `false`                        |
+| `TEST_COMPANY_ID`        | ID of test company record       | Required for integration tests |
+| `TEST_PERSON_ID`         | ID of test person record        | Required for integration tests |
+| `TEST_LIST_ID`           | ID of test list                 | Required for list tests        |
+| `SKIP_INCOMPLETE_TESTS`  | Skip tests missing optional IDs | `true`                         |
+| `CLEANUP_TEST_DATA`      | Clean up created test data      | `true`                         |
+| `TEST_DATA_PREFIX`       | Prefix for test data names      | `E2E_TEST_`                    |
 
 ### Test Configuration File Structure
 
@@ -416,6 +432,7 @@ TEST_DATA_PREFIX="E2E_TEST_"
 #### "No API key found"
 
 Ensure your `.env` file exists and contains:
+
 ```bash
 ATTIO_API_KEY=your_actual_api_key
 ```
@@ -429,12 +446,14 @@ ATTIO_API_KEY=your_actual_api_key
 #### "Record not found" errors
 
 The test records may have been deleted. Either:
+
 - Update `.env.test` with new IDs
 - Run `npm run setup:test-data` to create new test records
 
 #### Rate limiting errors
 
 The tests include retry logic, but if you see rate limiting:
+
 - Reduce the number of concurrent tests
 - Add delays between test runs
 - Use a dedicated test workspace
@@ -468,11 +487,11 @@ import { setupIntegrationTests } from '../helpers/integration-test-setup';
 
 describe('My Integration Test', () => {
   // Setup with configuration requirement
-  const setup = setupIntegrationTests({ 
+  const setup = setupIntegrationTests({
     requireTestConfig: true,
-    verbose: true 
+    verbose: true,
   });
-  
+
   if (setup.shouldSkip) {
     test.skip('Skipping - ' + setup.skipReason, () => {});
     return;
@@ -481,7 +500,7 @@ describe('My Integration Test', () => {
   test('should interact with API', async () => {
     // Use test configuration
     const { companyId, listId } = setup.testConfig!;
-    
+
     // Your test logic here
   });
 });
@@ -518,12 +537,12 @@ Create workspace-specific test suites by extending the base configuration:
 export const workspaceTestConfig = {
   customFields: {
     companies: ['industry', 'size'],
-    people: ['department', 'role']
+    people: ['department', 'role'],
   },
   lists: {
     prospecting: 'list_abc123',
-    customers: 'list_def456'
-  }
+    customers: 'list_def456',
+  },
 };
 ```
 
@@ -545,8 +564,8 @@ For unit tests that need to mock API responses:
 ```typescript
 vi.mock('../../src/api/attio-client', () => ({
   getAttioClient: vi.fn(() => ({
-    post: vi.fn().mockResolvedValue({ data: mockResponse })
-  }))
+    post: vi.fn().mockResolvedValue({ data: mockResponse }),
+  })),
 }));
 ```
 
@@ -576,18 +595,21 @@ For comprehensive E2E testing documentation, see:
 The E2E test infrastructure underwent major improvements to achieve production-ready testing:
 
 **Key Fixes**:
+
 - **MCP Response Format**: Fixed `isError: false` inclusion in successful responses (`src/handlers/tools/dispatcher/core.ts`)
-- **Field Validation**: Corrected `record_data.values` structure handling (`src/handlers/tool-configs/universal/shared-handlers.ts`)  
+- **Field Validation**: Corrected `record_data.values` structure handling (`src/handlers/tool-configs/universal/shared-handlers.ts`)
 - **Import Resolution**: Fixed test file imports that caused 97% test skip rate
 - **JSON Handling**: Enhanced response parsing and validation for large responses
 
 **New Capabilities**:
+
 - **7 Enhanced Assertions**: Specialized validation for pagination, field filtering, tasks, performance, and error handling
 - **Performance Budgets**: Automated enforcement of response time limits
 - **Cross-Resource Testing**: Consistent validation across companies, people, tasks, and lists
 - **Real API Integration**: Full end-to-end validation with live Attio workspace data
 
 **Performance Standards**:
+
 - Search Operations: < 1000ms (local) / < 3000ms (CI)
 - CRUD Operations: < 1500ms (local) / < 4000ms (CI)
 - Batch Operations: < 3000ms for 10 records (local) / < 8000ms (CI)
@@ -603,6 +625,7 @@ The Attio MCP Server implements a **dual performance testing strategy** to provi
 **Purpose**: Fast, reliable performance regression detection for daily CI validation
 
 **Key Characteristics**:
+
 - **Mock-Based**: Uses mock data for zero API dependencies
 - **Environment-Aware**: Automatic CI budget adjustment (2.5x multiplier)
 - **Fast Execution**: Sub-millisecond response times
@@ -610,6 +633,7 @@ The Attio MCP Server implements a **dual performance testing strategy** to provi
 - **Regression Detection**: Catches performance degradations in code logic
 
 **Usage**:
+
 ```bash
 # Local development (1x budgets)
 npm test test/performance/regression.test.ts
@@ -622,6 +646,7 @@ PERF_BUDGET_SEARCH=500 npm test test/performance/regression.test.ts
 ```
 
 **Performance Budgets (Regression)**:
+
 - **404 Responses**: 2000ms (local) / 5000ms (CI)
 - **Search Operations**: 3000ms (local) / 7500ms (CI)
 - **CRUD Operations**: 3000ms (local) / 7500ms (CI)
@@ -633,6 +658,7 @@ PERF_BUDGET_SEARCH=500 npm test test/performance/regression.test.ts
 **Purpose**: Real-world API performance measurement under load for benchmarking
 
 **Key Characteristics**:
+
 - **Real API Calls**: Measures actual API performance with ATTIO_API_KEY
 - **Load Testing**: Tests with 1, 10, 25, and 50 record batches
 - **Concurrency Testing**: Validates rate limiting and concurrent request handling
@@ -640,6 +666,7 @@ PERF_BUDGET_SEARCH=500 npm test test/performance/regression.test.ts
 - **Environment-Aware**: Sophisticated CI multipliers for accurate benchmarking
 
 **Usage**:
+
 ```bash
 # Requires API key and integration test config
 npm test --config vitest.config.integration.ts test/handlers/tool-configs/universal/performance.test.ts
@@ -649,6 +676,7 @@ ATTIO_API_KEY=your_key npx vitest --config vitest.config.integration.ts --run te
 ```
 
 **Performance Budgets (Universal)**:
+
 - **Single Record**: 5000ms (local) / 12500ms (CI)
 - **10 Records**: 15000ms (local) / 37500ms (CI)
 - **25 Records**: 30000ms (local) / 75000ms (CI)
@@ -665,10 +693,13 @@ const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 const CI_MULTIPLIER = isCI ? 2.5 : 1;
 
 // Dynamic budget calculation
-const searchBudget = Math.round(parseInt(process.env.PERF_BUDGET_SEARCH || '3000', 10) * CI_MULTIPLIER);
+const searchBudget = Math.round(
+  parseInt(process.env.PERF_BUDGET_SEARCH || '3000', 10) * CI_MULTIPLIER
+);
 ```
 
 **Environment Variables**:
+
 - `CI=true` or `GITHUB_ACTIONS=true`: Triggers CI mode
 - `PERF_BUDGET_*`: Override default budgets for specific operations
 - `ATTIO_API_KEY`: Required for universal tests (real API calls)
@@ -676,13 +707,15 @@ const searchBudget = Math.round(parseInt(process.env.PERF_BUDGET_SEARCH || '3000
 ### When to Use Each Test Type
 
 #### Use Regression Tests For:
+
 - ✅ Daily CI validation and continuous integration
-- ✅ Pull request validation and merge gates  
+- ✅ Pull request validation and merge gates
 - ✅ Rapid development feedback loops
 - ✅ Performance regression detection in business logic
 - ✅ Testing in environments without API access
 
 #### Use Universal Tests For:
+
 - ✅ Release validation and pre-deployment verification
 - ✅ API performance benchmarking and optimization
 - ✅ Load testing and scalability validation
@@ -700,12 +733,14 @@ test/
 ```
 
 **Regression Test Architecture**:
+
 - Mock-based API responses for consistent timing
 - Performance tracker integration for detailed metrics
 - Environment-aware budget configuration
 - Zero external dependencies
 
 **Universal Test Architecture**:
+
 - Real Attio API integration with authentication
 - Concurrent batch processing validation
 - Memory usage monitoring and leak detection
@@ -716,6 +751,7 @@ test/
 #### Common Issues & Solutions
 
 **Issue**: "Performance regression detected! One or more operations exceeded their performance budgets"
+
 ```bash
 # Check if running in correct environment
 echo "CI Detection: $CI, GitHub Actions: $GITHUB_ACTIONS"
@@ -728,14 +764,16 @@ npm test test/performance/regression.test.ts -- --reporter=verbose
 ```
 
 **Issue**: Universal tests fail with "Cannot find module @rollup/rollup-linux-x64-gnu"
+
 ```bash
 # Fix Rollup dependency issue (common in CI)
 rm -f package-lock.json
-rm -rf node_modules  
+rm -rf node_modules
 npm install
 ```
 
 **Issue**: Real API tests timeout or fail
+
 ```bash
 # Verify API key setup
 echo "API Key Length: ${#ATTIO_API_KEY}"  # Should be 64 characters
@@ -752,12 +790,14 @@ npm test test/handlers/tool-configs/universal/performance.test.ts -- --testTimeo
 The dual strategy is integrated into CI/CD pipelines:
 
 **CI Workflow** (`.github/workflows/performance-tests.yml`):
+
 - Runs regression tests for all PRs and main branch pushes
 - Uses environment-aware budgets automatically
 - Includes Rollup dependency fix for CI environments
 - Generates performance reports as artifacts
 
 **Performance Comparison**:
+
 - PR branch vs base branch performance analysis
 - Automated regression detection and alerts
 - Performance trend tracking over time

@@ -15,6 +15,7 @@ While the Attio API provides comprehensive functionality for most CRM operations
 **Status**: **FIXED** - Implemented special case handling with predefined task attribute metadata.
 
 **Solution Implemented**:
+
 ```typescript
 // Special handling for tasks attributes
 const TASKS_ATTRIBUTES = [
@@ -24,7 +25,7 @@ const TASKS_ATTRIBUTES = [
   { slug: 'assignee', type: 'person', name: 'Assignee' },
   { slug: 'linked_records', type: 'record', name: 'Linked Records' },
   { slug: 'created_at', type: 'date', name: 'Created At' },
-  { slug: 'updated_at', type: 'date', name: 'Updated At' }
+  { slug: 'updated_at', type: 'date', name: 'Updated At' },
 ];
 ```
 
@@ -33,10 +34,12 @@ const TASKS_ATTRIBUTES = [
 **Limitation**: The API does not support filtering tasks by linked records (people or companies).
 
 **Affected Operations**:
+
 - `PERSON_TO_TASKS` relationship search
 - `COMPANY_TO_TASKS` relationship search
 
 **Workaround**:
+
 ```typescript
 // Instead of direct filtering, retrieve all tasks and filter programmatically
 import { filterTasksByPerson, filterTasksByCompany } from './utils/workarounds';
@@ -56,11 +59,13 @@ const companyTasks = filterTasksByCompany(allTasks, companyId);
 **Limitation**: Native date filtering is only available for people records. Companies, records, and tasks do not support timeframe searches.
 
 **Affected Operations**:
+
 - Company creation/modification date filtering
 - Task date range queries
 - Custom record timeframe searches
 
 **Workaround**:
+
 ```typescript
 import { filterRecordsByDate } from './utils/workarounds';
 
@@ -81,10 +86,12 @@ const recentCompanies = filterRecordsByDate(
 **Limitation**: Limited ability to search interaction content directly through the API.
 
 **Affected Operations**:
+
 - Full-text search across interactions
 - Content-based interaction filtering
 
 **Workaround**:
+
 ```typescript
 import { searchRecordsContent } from './utils/workarounds';
 
@@ -138,7 +145,10 @@ for (const [companyId, companyTasks] of tasksByCompany) {
 For aggregation not provided by the API:
 
 ```typescript
-import { createRecordsSummary, getUniqueFieldValues } from './utils/workarounds';
+import {
+  createRecordsSummary,
+  getUniqueFieldValues,
+} from './utils/workarounds';
 
 // Get summary statistics
 const summary = createRecordsSummary(records, ['status', 'priority', 'owner']);
@@ -157,13 +167,13 @@ Since many workarounds require fetching all records, implement caching where pos
 class RecordCache {
   private cache = new Map();
   private ttl = 5 * 60 * 1000; // 5 minutes
-  
+
   async get(resourceType: string) {
     const cached = this.cache.get(resourceType);
     if (cached && Date.now() - cached.timestamp < this.ttl) {
       return cached.data;
     }
-    
+
     const data = await searchRecords({ resource_type: resourceType });
     this.cache.set(resourceType, { data, timestamp: Date.now() });
     return data;
@@ -179,16 +189,16 @@ For large datasets, implement progressive loading:
 async function* loadRecordsProgressive(resourceType: string, limit = 100) {
   let offset = 0;
   let hasMore = true;
-  
+
   while (hasMore) {
     const batch = await searchRecords({
       resource_type: resourceType,
       limit,
-      offset
+      offset,
     });
-    
+
     yield batch;
-    
+
     hasMore = batch.length === limit;
     offset += limit;
   }
@@ -202,9 +212,9 @@ Always provide clear error messages that guide users to workarounds:
 ```typescript
 throw new Error(
   `Task relationship search (${relationship_type}) is not currently available. ` +
-  `This feature requires enhanced API filtering capabilities. ` +
-  `As a workaround, you can use the 'search-records' tool with resource_type='tasks' ` +
-  `to find all tasks, then filter the results programmatically.`
+    `This feature requires enhanced API filtering capabilities. ` +
+    `As a workaround, you can use the 'records.search' tool with resource_type='tasks' ` +
+    `to find all tasks, then filter the results programmatically.`
 );
 ```
 
@@ -231,14 +241,15 @@ const personTasks = filterTasksByPerson(tasks, personId);
 const personTasks = await searchRecords({
   resource_type: 'tasks',
   filter: {
-    person_id: personId
-  }
+    person_id: personId,
+  },
 });
 ```
 
 ## Support
 
 For questions about these limitations or workarounds:
+
 1. Check the [official Attio API documentation](https://docs.attio.com/api)
 2. Review the workaround utilities in `/src/utils/workarounds.ts`
 3. See examples in the test files: `/test/utils/`
@@ -246,6 +257,7 @@ For questions about these limitations or workarounds:
 ## Contributing
 
 If you discover new limitations or develop effective workarounds:
+
 1. Document the limitation clearly
 2. Provide a tested workaround
 3. Submit a PR with tests

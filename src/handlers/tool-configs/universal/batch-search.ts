@@ -14,6 +14,7 @@ import { ErrorService } from '../../../services/ErrorService.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 import { validateBatchOperation } from '../../../utils/batch-validation.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 // Import enhanced batch API for optimized performance (Issue #471)
 import {
@@ -39,13 +40,13 @@ export interface BatchSearchParams {
  * Enhanced for Issue #471 with optimized batch API
  */
 export const batchSearchConfig = {
-  name: 'batch-search',
+  name: 'records_search_batch',
   handler: async (
     params: BatchSearchParams
   ): Promise<UniversalBatchSearchResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'batch-search',
+        'records_search_batch',
         params
       );
 
@@ -73,7 +74,7 @@ export const batchSearchConfig = {
       });
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'batch search',
+        'records_search_batch',
         params.resource_type,
         error
       );
@@ -192,15 +193,29 @@ export const batchSearchSchema = {
   },
   required: ['resource_type' as const, 'queries' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'companies',
+      queries: ['Acme', 'Globex'],
+      limit: 10,
+    },
+  ],
 };
 
 /**
  * Batch search tool definition for MCP protocol
  */
 export const batchSearchToolDefinition = {
-  name: 'batch-search',
-  description:
-    'Perform batch search operations with multiple queries in parallel',
+  name: 'records_search_batch',
+  description: formatToolDescription({
+    capability:
+      'Execute multiple searches in parallel and return grouped results.',
+    boundaries:
+      'mutate or import data; use records.batch for write operations.',
+    constraints:
+      'Provide queries array (1–10 items recommended) and resource_type.',
+    recoveryHint: 'If queries fail, retry individually using records.search.',
+  }),
   inputSchema: batchSearchSchema,
   annotations: {
     readOnlyHint: true,

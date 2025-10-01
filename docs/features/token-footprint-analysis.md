@@ -32,7 +32,7 @@ Context window impact:
   - 200k: 1.62%
 
 Top items:
-  - tool :: search-records :: 387 tokens (category: records) ⚠️
+  - tool :: records.search :: 387 tokens (category: records) ⚠️
   - prompt :: qualify_lead.v1 :: 312 tokens (category: qualification)
 
 Detailed reports:

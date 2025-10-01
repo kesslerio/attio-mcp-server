@@ -89,6 +89,13 @@ export const searchRecordsSchema = {
   },
   required: ['resource_type' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'people',
+      query: 'customer@example.com',
+      limit: 5,
+    },
+  ],
 };
 
 export const getRecordDetailsSchema = {
@@ -107,6 +114,13 @@ export const getRecordDetailsSchema = {
   },
   required: ['resource_type' as const, 'record_id' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'companies',
+      record_id: 'company_123456',
+      fields: ['name', 'domains'],
+    },
+  ],
 };
 
 export const createRecordSchema = {
@@ -126,6 +140,16 @@ export const createRecordSchema = {
   },
   required: ['resource_type' as const, 'record_data' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'people',
+      record_data: {
+        name: 'Taylor Swift',
+        email_addresses: [{ email_address: 'taylor@example.com' }],
+      },
+      return_details: true,
+    },
+  ],
 };
 
 export const updateRecordSchema = {
@@ -150,6 +174,16 @@ export const updateRecordSchema = {
     'record_data' as const,
   ],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'records',
+      record_id: 'record_987654',
+      record_data: {
+        status: 'Qualified',
+      },
+      return_details: false,
+    },
+  ],
 };
 
 export const deleteRecordSchema = {
@@ -160,4 +194,10 @@ export const deleteRecordSchema = {
   },
   required: ['resource_type' as const, 'record_id' as const],
   additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'tasks',
+      record_id: 'task_abc123',
+    },
+  ],
 };

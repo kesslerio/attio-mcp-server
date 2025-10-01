@@ -14,12 +14,12 @@ When searching for people by email or phone through the MCP server, Claude handl
 
 The MCP server provides enhanced filtering capabilities for people records through the **universal tools system**. Key tools for people include:
 
-- **`search-records`** with `resource_type: 'people'` - Replaces `search-people`
-- **`advanced-search`** with `resource_type: 'people'` - Complex filtering with multiple conditions
-- **`get-record-details`** with `resource_type: 'people'` - Replaces `get-person-details`
+- **`records.search`** with `resource_type: 'people'` - Replaces `search-people`
+- **`records.search_advanced`** with `resource_type: 'people'` - Complex filtering with multiple conditions
+- **`records.get_details`** with `resource_type: 'people'` - Replaces `get-person-details`
 - **`create-record`** with `resource_type: 'people'` - Replaces `create-person`
-- **`search-by-relationship`** - Find people by company relationships
-- **`search-by-timeframe`** - Time-based people searches
+- **`records.search_by_relationship`** - Find people by company relationships
+- **`records.search_by_timeframe`** - Time-based people searches
 
 **Features:**
 
@@ -38,11 +38,11 @@ See the [Universal Tools API Reference](../universal-tools/api-reference.md) for
 **Using Universal Tools (Recommended):**
 
 ```
-Find contacts from XYZ Company using search-by-relationship
+Find contacts from XYZ Company using records.search_by_relationship
 ```
 
 ```
-Look up people with the title "CEO" using advanced-search
+Look up people with the title "CEO" using records.search_advanced
 ```
 
 **Using Direct API:**
@@ -180,7 +180,7 @@ Searches for people records with advanced filtering options.
 | offset | number | Number of records to skip (for pagination)                | No       |
 | sorts  | array  | Sorting criteria for the results                          | No       |
 
-> **Important Note**: The MCP server now normalizes queries for emails, phone numbers, and domains automatically. You can pass the raw text query (e.g., `"Alex Rivera alex.rivera@example.com"` or `"+1 (555) 010-4477"`) to `search-records` with `resource_type: 'people'` and the server will construct the proper Attio filters.
+> **Important Note**: The MCP server now normalizes queries for emails, phone numbers, and domains automatically. You can pass the raw text query (e.g., `"Alex Rivera alex.rivera@example.com"` or `"+1 (555) 010-4477"`) to `records.search` with `resource_type: 'people'` and the server will construct the proper Attio filters.
 
 #### Response Structure
 
@@ -210,19 +210,19 @@ Note that attributes like `email` and `phone` are arrays of objects with a `valu
 
 ```typescript
 // Search by name + email in a single query
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: 'Alex Rivera alex.rivera@example.com',
 });
 
 // Search by phone number (all formatting handled automatically)
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: '+1 (555) 010-4477',
 });
 
 // Search by company domain (extracted from emails or raw domains)
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: 'examplecorp.com',
 });
@@ -563,15 +563,15 @@ await client.callTool('search-people-by-company', { company_id: 'comp_456' });
 
 ```javascript
 // Single tools with resource_type parameter
-await client.callTool('search-records', {
+await client.callTool('records.search', {
   resource_type: 'people',
   query: 'CEO',
 });
-await client.callTool('get-record-details', {
+await client.callTool('records.get_details', {
   resource_type: 'people',
   record_id: 'person_123',
 });
-await client.callTool('search-by-relationship', {
+await client.callTool('records.search_by_relationship', {
   relationship_type: 'company_to_people',
   source_id: 'comp_456',
 });

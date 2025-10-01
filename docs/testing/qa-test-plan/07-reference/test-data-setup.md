@@ -7,6 +7,7 @@
 ## Environment Verification
 
 ### Prerequisites Checklist
+
 - [ ] MCP server running and accessible
 - [ ] API key configured and valid
 - [ ] Network connectivity confirmed
@@ -16,7 +17,7 @@
 
 ```bash
 # Verify MCP server accessibility
-mcp__attio__search-records resource_type="companies" query="test" limit=1
+mcp__attio__records.search resource_type="companies" query="test" limit=1
 
 # Verify API key and permissions
 mcp__attio__get-attributes resource_type="companies"
@@ -26,6 +27,7 @@ mcp__attio__get-attributes resource_type="deals"
 ```
 
 **Expected Results:**
+
 - Search command returns valid response (even if empty)
 - Get-attributes commands return schema information
 - No authentication or permission errors
@@ -58,12 +60,12 @@ npm run cleanup:test-data:live
 
 Create the following test data for comprehensive testing:
 
-| Resource Type | Count | Naming Convention |
-|---------------|-------|------------------|
-| Companies | 3 | `QA Test Company [Alpha/Beta/Gamma] ${TEST_TIMESTAMP}` |
-| People | 3 | `[Alice/Bob/Carol] QA Tester ${TEST_TIMESTAMP}` |
-| Tasks | 2 | `QA Test Task [Alpha/Beta]` |  
-| Deals | 2 | `QA Test Deal [Alpha/Beta]` |
+| Resource Type | Count | Naming Convention                                      |
+| ------------- | ----- | ------------------------------------------------------ |
+| Companies     | 3     | `QA Test Company [Alpha/Beta/Gamma] ${TEST_TIMESTAMP}` |
+| People        | 3     | `[Alice/Bob/Carol] QA Tester ${TEST_TIMESTAMP}`        |
+| Tasks         | 2     | `QA Test Task [Alpha/Beta]`                            |
+| Deals         | 2     | `QA Test Deal [Alpha/Beta]`                            |
 
 ### Test Data Creation Commands
 
@@ -75,7 +77,7 @@ Always discover available fields before creating records:
 # Discover company fields
 mcp__attio__get-attributes resource_type="companies"
 
-# Discover people fields  
+# Discover people fields
 mcp__attio__get-attributes resource_type="people"
 
 # Discover task fields
@@ -97,7 +99,7 @@ mcp__attio__create-record resource_type="companies" \
     \"industry\": \"Technology\"
   }"
 
-# Company Beta - Finance  
+# Company Beta - Finance
 mcp__attio__create-record resource_type="companies" \
   record_data="{
     \"name\": \"QA Test Company Beta ${TEST_TIMESTAMP}\",
@@ -156,7 +158,7 @@ mcp__attio__create-record resource_type="tasks" \
     \"priority\": \"high\"
   }"
 
-# Task Beta - Medium Priority  
+# Task Beta - Medium Priority
 mcp__attio__create-record resource_type="tasks" \
   record_data="{
     \"title\": \"QA Test Task Beta\",
@@ -194,29 +196,35 @@ After creating test data, document the IDs for reference:
 # Test Data Manifest - [Date Created: YYYY-MM-DD HH:MM]
 
 ## Test Environment Details
+
 - **Test Timestamp:** ${TEST_TIMESTAMP}
 - **Created By:** [Agent/User Name]
 - **Environment:** [Test Environment Name]
 
 ## Company Records
+
 - **QA Test Company Alpha:** ID = [RECORD_ID_FROM_CREATION]
-- **QA Test Company Beta:** ID = [RECORD_ID_FROM_CREATION]  
+- **QA Test Company Beta:** ID = [RECORD_ID_FROM_CREATION]
 - **QA Test Company Gamma:** ID = [RECORD_ID_FROM_CREATION]
 
 ## People Records
+
 - **Alice QA Tester:** ID = [RECORD_ID_FROM_CREATION]
 - **Bob QA Validator:** ID = [RECORD_ID_FROM_CREATION]
 - **Carol QA Analyst:** ID = [RECORD_ID_FROM_CREATION]
 
 ## Task Records
+
 - **QA Test Task Alpha:** ID = [RECORD_ID_FROM_CREATION]
 - **QA Test Task Beta:** ID = [RECORD_ID_FROM_CREATION]
 
-## Deal Records  
+## Deal Records
+
 - **QA Test Deal Alpha:** ID = [RECORD_ID_FROM_CREATION]
 - **QA Test Deal Beta:** ID = [RECORD_ID_FROM_CREATION]
 
 ## Status
+
 - **Created:** [YYYY-MM-DD HH:MM]
 - **Status:** ACTIVE
 - **Cleanup Scheduled:** [Post-testing]
@@ -230,30 +238,34 @@ Verify all test data was created successfully:
 
 ```bash
 # Verify companies created
-mcp__attio__search-records resource_type="companies" query="QA Test Company" limit=10
+mcp__attio__records.search resource_type="companies" query="QA Test Company" limit=10
 
 # Verify people created
-mcp__attio__search-records resource_type="people" query="QA Tester" limit=10
+mcp__attio__records.search resource_type="people" query="QA Tester" limit=10
 
 # Verify tasks created
-mcp__attio__search-records resource_type="tasks" query="QA Test Task" limit=10
+mcp__attio__records.search resource_type="tasks" query="QA Test Task" limit=10
 
 # Verify deals created
-mcp__attio__search-records resource_type="deals" query="QA Test Deal" limit=10
+mcp__attio__records.search resource_type="deals" query="QA Test Deal" limit=10
 ```
 
 ### Common Issues & Solutions
 
 #### Issue: "Field not found" errors
+
 **Solution:** Re-run `get-attributes` and verify field names match exactly
 
 #### Issue: "Invalid format" errors
+
 **Solution:** Check data types and format requirements in schema
 
 #### Issue: "Duplicate domain" errors
+
 **Solution:** Verify TEST_TIMESTAMP is unique and domains don't conflict
 
 #### Issue: Rate limiting errors
+
 **Solution:** Add delays between record creation commands
 
 ### Environment Reset
@@ -274,6 +286,7 @@ sleep 10
 ---
 
 **Related Documentation:**
+
 - [Next: Quick Commands Reference](./quick-commands.md)
 - [Reference: Cleanup Utilities](./cleanup-utilities.md)
 - [Back: Reference Directory](./index.md)
