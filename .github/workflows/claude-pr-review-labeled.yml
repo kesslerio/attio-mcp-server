@@ -176,7 +176,7 @@ jobs:
           INPUT_BASE: ${{ steps.decide.outputs.base_sha || '' }}
           INPUT_HEAD: ${{ steps.decide.outputs.sha || '' }}
           OUTPUT_DIR: .github/claude-cache
-          RING1_MAX: 200
+          RING1_MAX: 600
 
       - name: Apply sparse checkout scope
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has == 'true' || github.event_name == 'workflow_dispatch')

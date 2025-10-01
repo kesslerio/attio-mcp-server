@@ -13,6 +13,10 @@ import {
 const RING1_MAX = Number(process.env.RING1_MAX || 200);
 const workspace = process.cwd();
 const runId = process.env.GITHUB_RUN_ID || `${Date.now()}`;
+const ALWAYS_INCLUDE = [
+  'tsconfig.json',
+  'src/handlers/tools/standards/index.ts',
+];
 
 function sanitizeRef(ref, fallback) {
   if (!ref) return fallback;
@@ -213,7 +217,20 @@ function main() {
     fallback = true;
   }
 
-  const ring1 = fallback ? [] : Array.from(ring1Set);
+  const extraContext = [];
+  for (const candidate of ALWAYS_INCLUDE) {
+    const safePath = ensureSafePath(candidate);
+    if (!safePath) continue;
+    if (!existsSync(safePath)) continue;
+    if (ring0.includes(safePath)) continue;
+    extraContext.push(safePath);
+  }
+
+  if (!fallback) {
+    for (const path of extraContext) ring1Set.add(path);
+  }
+
+  const ring1 = fallback ? extraContext : Array.from(ring1Set);
 
   ring0.sort();
   ring1.sort();
