@@ -264,16 +264,34 @@ export function normalizeNoteResponse(note: AttioNote): {
       )
     : [];
 
+  const idObject =
+    typeof note.id === 'object' && note.id !== null ? note.id : undefined;
+  const derivedRecordId =
+    (typeof note.id === 'string' ? note.id : undefined) ??
+    note.record_id ??
+    note.note_id ??
+    idObject?.record_id ??
+    idObject?.note_id ??
+    idObject?.id ??
+    'unknown';
+
+  const title = note.title ?? null;
+  const contentMarkdown = note.content_markdown ?? note.content ?? null;
+  const contentPlaintext = note.content_plaintext ?? note.content ?? null;
+  const parentObject = note.parent_object ?? 'notes';
+  const parentRecordId = note.parent_record_id ?? derivedRecordId;
+  const createdAt = note.created_at ?? note.timestamp ?? '';
+
   return {
-    id: { record_id: note.id.note_id },
+    id: { record_id: derivedRecordId },
     resource_type: 'notes',
     values: {
-      title: note.title,
-      content_markdown: note.content,
-      content_plaintext: note.content,
-      parent_object: note.parent_object,
-      parent_record_id: note.parent_record_id,
-      created_at: note.created_at,
+      title: title ?? undefined,
+      content_markdown: contentMarkdown ?? undefined,
+      content_plaintext: contentPlaintext ?? undefined,
+      parent_object: parentObject,
+      parent_record_id: parentRecordId,
+      created_at: createdAt,
       meeting_id:
         typeof meetingIdField === 'string' || meetingIdField === null
           ? meetingIdField
