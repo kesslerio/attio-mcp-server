@@ -314,63 +314,11 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
     });
   });
 
-  describe('Update Operations & Warning Suppression', () => {
-    it('should update person phone number without warnings for cosmetic changes', async () => {
-      const testName = 'phone_update_cosmetic_warning';
-      let passed = false;
-      let error: string | undefined;
-
-      try {
-        // First create a person
-        const createData = {
-          name: 'Phone Test Person 8',
-          email_addresses: ['phone.test8@example.com'],
-          phone_numbers: [
-            {
-              phone_number: '+1-212-555-4567',
-              label: 'work',
-            },
-          ],
-        };
-
-        const createResult = await testCase.executeToolCall('create-record', {
-          resource_type: 'people',
-          record_data: createData,
-        });
-
-        const recordId = QAAssertions.assertRecordCreated(
-          createResult,
-          'people'
-        );
-        testCase.trackRecord('people', recordId);
-
-        // Update with same phone in different format (should not generate semantic mismatch warning)
-        const updateData = {
-          phone_numbers: [
-            {
-              original_phone_number: '+12125554567', // E.164 format of same number
-              label: 'work',
-            },
-          ],
-        };
-
-        const updateResult = await testCase.executeToolCall('update-record', {
-          resource_type: 'people',
-          record_id: recordId,
-          record_data: updateData,
-        });
-
-        // Should succeed without errors
-        QAAssertions.assertRecordUpdated(updateResult, 'people', recordId);
-
-        passed = true;
-      } catch (e) {
-        error = e instanceof Error ? e.message : String(e);
-        throw e;
-      } finally {
-        results.push({ test: testName, passed, error });
-      }
-    });
+  describe('Update Operations', () => {
+    // NOTE: Direct phone_numbers array updates are not supported by Attio's API
+    // (requires fetching existing entries with IDs and updating by ID).
+    // Warning suppression for cosmetic changes is tested at the unit level
+    // in test/unit/normalizers/phone-number-normalization.test.ts
 
     it('should allow updating other fields while preserving phone structure', async () => {
       const testName = 'phone_update_preserve_structure';
