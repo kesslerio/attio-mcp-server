@@ -136,7 +136,7 @@ jobs:
           claude_args: >-
             --model claude-sonnet-4-5
             --max-turns 32
-            --allowedTools "Read,Edit,Write,Bash(git status),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git switch:*),Bash(git diff:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(npm run *),Bash(npm test),Bash(npm run test:*),Bash(npm run build),Bash(npm run lint:*),Bash(node *),Bash(npx *),Bash(rg *),Bash(fd *)"
+            --allowed-tools "Read,Edit,Write,Bash(git status),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git switch:*),Bash(git diff:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(npm run *),Bash(npm test),Bash(npm run test:*),Bash(npm run build),Bash(npm run lint:*),Bash(node *),Bash(npx *),Bash(rg *),Bash(fd *)"
             --output-format stream-json
           prompt: |
             You are Claude acting via GitHub Actions for the Attio MCP repo.
