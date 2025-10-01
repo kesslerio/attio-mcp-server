@@ -276,6 +276,23 @@ jobs:
                 else if (parsed?.content?.[0]?.text) {
                   chunks.push(parsed.content[0].text);
                 }
+                // Format 6: Claude Code session log with nested content
+                else if (parsed?.message?.content && Array.isArray(parsed.message.content)) {
+                  for (const block of parsed.message.content) {
+                    // Text blocks directly in content
+                    if (block?.type === 'text' && block?.text) {
+                      chunks.push(block.text);
+                    }
+                    // Tool results with nested text content
+                    else if (block?.type === 'tool_result' && block?.content && Array.isArray(block.content)) {
+                      for (const innerBlock of block.content) {
+                        if (innerBlock?.type === 'text' && innerBlock?.text) {
+                          chunks.push(innerBlock.text);
+                        }
+                      }
+                    }
+                  }
+                }
               } catch (e) {
                 // Skip unparseable lines
               }
