@@ -96,7 +96,7 @@ jobs:
           github_token: ${{ github.token }}
           track_progress: false
           claude_args: >-
-            --model claude-4.5-sonnet
+            --model claude-sonnet-4-5
             --max-turns 32
             --allowedTools "Read,Edit,Write,Bash(git status),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git switch:*),Bash(git diff:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(npm run *),Bash(npm test),Bash(npm run test:*),Bash(npm run build),Bash(npm run lint:*),Bash(node *),Bash(npx *),Bash(rg *),Bash(fd *)"
             --output-format stream-json
