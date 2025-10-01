@@ -261,7 +261,16 @@ USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
 RULE: Use automated release | WHEN: Creating release | DO: Run `./scripts/release.sh` | ELSE: Manual error-prone process
 MANUAL FALLBACK: `npm version` → `npm run build` → `npm test` → commit → tag → `gh release create` → `npm publish`
-CHANGELOG: Follow Keep a Changelog format | Move Unreleased → versioned | Include: Added/Changed/Deprecated/Removed/Fixed/Security
+
+### CHANGELOG BEST PRACTICES (Keep a Changelog Standard)
+
+RULE: Changelogs for humans | WHEN: Updating CHANGELOG.md | DO: Clear, user-focused descriptions | ELSE: Unusable change history
+
+**Format:** ISO date (YYYY-MM-DD) | Categories: Added, Changed, Fixed, Security, Deprecated, Removed | Version links at bottom | Issue refs as `#123` | Unreleased section at top
+
+**Quality:** Release summary for major/minor | No trailing periods | Group related changes | Link PRs `(#123)` | No duplicate headers
+
+**Include:** User-facing changes, security updates, deprecations | **Exclude:** Internal refactors, routine dependency bumps, git SHAs
 
 ## MCP TOOL TESTING
 

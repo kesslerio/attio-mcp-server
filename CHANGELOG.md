@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Security
+
+### Deprecated
+
+## [1.1.0] - 2025-10-01
+
+This release focuses on developer experience improvements with intelligent prompts, comprehensive tool standardization, and enhanced search capabilities.
+
+### Added
+
 - **10 Pre-Built MCP Prompts for Common CRM Tasks** (#774) - Intelligent shortcuts that help Claude work faster and more efficiently with your Attio data
   - **Search & Find** (5 prompts): `people_search.v1`, `company_search.v1`, `deal_search.v1`, `meeting_prep.v1`, `pipeline_health.v1`
     - Natural language search with automatic formatting (table, JSON, or IDs)
@@ -26,13 +40,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Discoverable by Claude for smart suggestions
     - Universal arguments for consistent behavior (format, fields_preset, verbosity)
     - Optional telemetry and dev metadata modes for monitoring
-
-## [1.1.0] - 2025-09-30
-
-### Added
-
-- Intelligent search query parsing for people and company resources (Issue #781).
-- Debug documentation for anonymized production placeholders used in diagnostic suites.
+- **Comprehensive Tool Standardization** (#776) - Complete audit and optimization of all 33 MCP tools
+  - **Phase 0+1** (PR #785): Infrastructure and core universal tools
+    - Fixed critical MCP naming compliance (`records.search` → `records_search`) across 89 files
+    - Created `formatToolDescription` template for consistent tool documentation
+    - Built schema linter with 300-character description limit and quality checks
+    - Token baseline established: 188 tokens/tool (60% better than industry average)
+    - Standardized 19 universal tools (search, create, update, delete, get-details, etc.)
+  - **Phase 2** (PR #792): List and note tools
+    - Standardized 11 list management tools with consistent patterns
+    - Standardized 2 note operation tools (create-note, list-notes)
+    - Added `additionalProperties: false` to all schemas for strict validation
+    - Enhanced with property-level examples throughout
+  - **Phase 3** (PR #796): Workspace member tools
+    - Standardized final 3 tools (list/search/get workspace members)
+    - Completed tool discovery snapshot baseline for regression prevention
+  - **Quality Improvements**:
+    - All tools follow verb-first naming with clear boundaries
+    - Enhanced JSON schemas with proper validation and examples
+    - Token-efficient descriptions optimized for LLM routing
+    - Automated quality gates prevent future regressions
+- Intelligent search query parsing for people and company resources (#781)
+- Debug documentation for anonymized production placeholders used in diagnostic suites
 
 ### Changed
 
@@ -42,18 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Eliminated redundant `$or` filters and US-only phone assumptions in query filter builders.
-- Hardened token processing to ignore stopwords and guard against large query inputs.
-
-### Added
-
-### Changed
-
-### Fixed
-
-### Security
-
-### Deprecated
+- Eliminated redundant `$or` filters and US-only phone assumptions in query filter builders
+- Hardened token processing to ignore stopwords and guard against large query inputs
 
 ## [1.0.0] - 2025-09-27
 
@@ -314,7 +333,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.3...v1.0.0
 [0.1.3]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.1...v0.1.2

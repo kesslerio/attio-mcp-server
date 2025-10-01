@@ -261,6 +261,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
             const execFile = process.env.EXEC_FILE;
 
             if (!execFile || !fs.existsSync(execFile)) {
@@ -269,75 +270,8 @@ jobs:
             }
 
             const raw = fs.readFileSync(execFile, 'utf8').replace(/^\uFEFF/, '');
-            const deltas = [];
-
-            // Try to parse as JSON array first (claude-code-action format)
-            let sessionLog;
-            try {
-              sessionLog = JSON.parse(raw);
-              core.info(`✓ Parsed as JSON array with ${Array.isArray(sessionLog) ? sessionLog.length : 0} entries`);
-            } catch (e) {
-              core.warning('Failed to parse as JSON array, falling back to NDJSON parsing');
-
-              // Fallback: Parse as NDJSON (newline-delimited JSON)
-              let totalLines = 0;
-              let parsedLines = 0;
-
-              for (const line of raw.split(/\r?\n/)) {
-                const trimmed = line.trim();
-                if (!trimmed) continue;
-                totalLines++;
-
-                try {
-                  const parsed = JSON.parse(trimmed);
-                  parsedLines++;
-
-                  // Apply format checks to parsed line
-                  extractTextFromEntry(parsed, deltas);
-                } catch (e) {
-                  // Skip unparseable lines
-                }
-              }
-
-              core.info(`✓ NDJSON: Processed ${totalLines} lines, parsed ${parsedLines} objects, extracted ${deltas.length} text chunks`);
-              sessionLog = null;
-            }
-
-            // Process JSON array entries
-            if (Array.isArray(sessionLog)) {
-              for (const entry of sessionLog) {
-                extractTextFromEntry(entry, deltas);
-              }
-              core.info(`✓ Extracted ${deltas.length} text chunks from ${sessionLog.length} session entries`);
-            }
-
-            // Helper function to extract ALL text from an entry (non-lossy)
-            function extractTextFromEntry(entry, out) {
-              // Streaming deltas
-              if (entry?.type === 'content_block_delta' && entry?.delta?.text) out.push(entry.delta.text);
-              if (entry?.delta?.text) out.push(entry.delta.text);
-
-              // Simple text fields
-              if (typeof entry?.text === 'string') out.push(entry.text);
-
-              // Content arrays: handle both message.content and direct content
-              const content = entry?.message?.content ?? entry?.content;
-              if (Array.isArray(content)) {
-                for (const block of content) {
-                  if (block?.type === 'text' && typeof block.text === 'string') {
-                    out.push(block.text);
-                  } else if (block?.type === 'tool_result' && Array.isArray(block?.content)) {
-                    for (const inner of block.content) {
-                      if (inner?.type === 'text' && typeof inner.text === 'string') {
-                        out.push(inner.text);
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-            const response = deltas.join('\n').trim();
+            const chunks = extractAllTextFromSession(raw);
+            const response = dedupeAdjacent(chunks).join('\n').trim();
 
             if (!response) {
               core.warning('No response content found');

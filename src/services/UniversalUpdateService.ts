@@ -353,12 +353,49 @@ export class UniversalUpdateService {
         }
 
         if (!verification.verified) {
-          // Add discrepancies as warnings for user visibility
-          validationResult.warnings.push(
-            ...verification.discrepancies.map(
-              (discrepancy) => `Field persistence issue: ${discrepancy}`
-            )
-          );
+          // Issue #798: Only log warnings in STRICT mode or for semantic value mismatches
+          // Cosmetic format differences (e.g., {stage: "Demo"} vs {stage: {title: "Demo"}}) are suppressed by default
+          const isStrictMode = process.env.STRICT_FIELD_VALIDATION === 'true';
+
+          if (isStrictMode) {
+            // STRICT mode: log all discrepancies
+            validationResult.warnings.push(
+              ...verification.discrepancies.map(
+                (discrepancy) => `Field persistence issue: ${discrepancy}`
+              )
+            );
+          } else {
+            // Non-STRICT mode: only log discrepancies that appear to be semantic value changes
+            // Filter out format-only mismatches by checking if both values contain similar semantic content
+            const semanticMismatches = verification.discrepancies.filter(
+              (d) => {
+                // Extract expected and actual from: Field "X" persistence mismatch: expected Y, got Z
+                const match = d.match(/expected (.+?), got (.+?)$/);
+                if (!match) return true; // Log if we can't parse (safety)
+
+                const [, expectedStr, actualStr] = match;
+                try {
+                  // If one is a string and the other is an object containing that string, it's cosmetic
+                  const isCosmetic =
+                    (expectedStr.includes('"') &&
+                      actualStr.includes(expectedStr.replace(/^"|"$/g, ''))) ||
+                    (actualStr.includes('"') &&
+                      expectedStr.includes(actualStr.replace(/^"|"$/g, '')));
+                  return !isCosmetic;
+                } catch {
+                  return true; // Log on parse errors (safety)
+                }
+              }
+            );
+
+            if (semanticMismatches.length > 0) {
+              validationResult.warnings.push(
+                ...semanticMismatches.map(
+                  (discrepancy) => `Field persistence issue: ${discrepancy}`
+                )
+              );
+            }
+          }
         }
       } catch (error: unknown) {
         const errorMessage =
