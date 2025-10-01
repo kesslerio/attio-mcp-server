@@ -87,6 +87,44 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch issue context
+        if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
+        id: context
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = '${{ steps.classify.outputs.issue }}';
+            if (!issueNumber) {
+              core.setOutput('issue_title', '');
+              core.setOutput('issue_body', '');
+              core.setOutput('comment_body', '');
+              return;
+            }
+
+            // Fetch issue details
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+
+            // Get the triggering comment
+            const commentId = context.payload.comment?.id;
+            let commentBody = '';
+            if (commentId) {
+              const { data: comment } = await github.rest.issues.getComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: commentId
+              });
+              commentBody = comment.body || '';
+            }
+
+            core.setOutput('issue_title', issue.title || '');
+            core.setOutput('issue_body', issue.body || '');
+            core.setOutput('comment_body', commentBody);
+            core.info(`Fetched context for issue #${issueNumber}: ${issue.title}`);
+
       - name: Claude Command Handler
         if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
         id: claude
@@ -103,26 +141,131 @@ jobs:
           prompt: |
             You are Claude acting via GitHub Actions for the Attio MCP repo.
 
-            ## Responsibilities
-            1. Respond to maintainer commands in PR or issue threads (non-review use cases).
-            2. Implement requested code changes when asked, using repo standards (see CLAUDE.md).
-            3. When pushing commits:
-               - Use conventional message format `Type: Subject #issue`.
-               - Run lint/tests when feasible; if skipped, explain why in the comment.
-            4. Prefer small, focused commits; avoid unrelated refactors unless instructed.
+            ## Context
+            You were triggered on issue #${{ steps.classify.outputs.issue }} with command: "${{ steps.context.outputs.comment_body }}"
+
+            **Issue Title:** ${{ steps.context.outputs.issue_title }}
+
+            **Issue Body:**
+            ${{ steps.context.outputs.issue_body }}
+
+            ## Your Task
+            When the triggering comment is vague (like "@claude thoughts?"), your default behavior should be to:
+            1. **Analyze the issue thoroughly** - Read the issue title, body, and any referenced code/files
+            2. **Provide constructive feedback** on:
+               - Missing information or unclear requirements
+               - Suggested improvements to issue structure
+               - Potential implementation approaches
+               - Related code areas that might need changes
+               - Acceptance criteria that should be added
+               - Priority/complexity assessment
+            3. **Ask clarifying questions** if the issue is ambiguous
+            4. **Propose actionable next steps** for the maintainer
+
+            When given a specific command (like "implement feature X" or "fix bug Y"):
+            - Follow the maintainer's instruction precisely
+            - Use repo standards (see CLAUDE.md)
+            - Use conventional commit format: `Type: Subject #issue`
+            - Run lint/tests when feasible
+            - Keep commits small and focused
 
             ## Constraints
-            - Work only within the repository checkout.
-            - Never expose secrets or tokens.
-            - Ask for clarification if the command lacks sufficient detail.
-            - Respect Single Responsibility Principle; keep changes scoped.
+            - Work only within the repository checkout
+            - Never expose secrets or tokens
+            - Ask for clarification if needed
+            - Respect Single Responsibility Principle
 
             ## Reply Format
-            - Provide a concise status update.
-            - Include tests run (or skipped with rationale).
-            - If changes were pushed or a PR created, list the branch/PR URL.
+            - Be direct and actionable
+            - Include tests run (or skipped with rationale) if coding
+            - If changes were pushed or a PR created, list the branch/PR URL
 
-            Follow the maintainer's instruction from the triggering comment.
+      - name: Capture Claude response
+        if: always() && steps.claude.outcome != 'skipped' && steps.claude.outputs.execution_file != ''
+        id: capture
+        uses: actions/github-script@v7
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+        with:
+          script: |
+            const fs = require('fs');
+            const execFile = process.env.EXEC_FILE;
+
+            if (!execFile || !fs.existsSync(execFile)) {
+              core.info('No execution file found');
+              return;
+            }
+
+            const raw = fs.readFileSync(execFile, 'utf8');
+            const deltas = [];
+
+            // Parse NDJSON stream
+            for (const line of raw.split(/\r?\n/)) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
+              try {
+                const parsed = JSON.parse(trimmed);
+                if (parsed?.delta?.text) {
+                  deltas.push(parsed.delta.text);
+                } else if (typeof parsed?.text === 'string') {
+                  deltas.push(parsed.text);
+                }
+              } catch {}
+            }
+
+            const response = deltas.join('').trim();
+
+            if (!response) {
+              core.warning('No response content found');
+              return;
+            }
+
+            core.exportVariable('CLAUDE_RESPONSE', response);
+            core.info(`Captured response (${response.length} chars)`);
+
+      - name: Post response to issue
+        if: always() && steps.capture.outcome == 'success' && env.CLAUDE_RESPONSE != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = Number('${{ steps.classify.outputs.issue }}');
+            const response = process.env.CLAUDE_RESPONSE;
+
+            if (!issueNumber || !response) {
+              core.info('No issue number or response to post');
+              return;
+            }
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            async function withRetries(fn, label, attempts = 3) {
+              for (let attempt = 1; attempt <= attempts; attempt++) {
+                try {
+                  return await fn();
+                } catch (error) {
+                  if (attempt === attempts) throw error;
+                  const delay = 1000 * attempt;
+                  core.warning(`Attempt ${attempt} failed. Retrying in ${delay}ms...`);
+                  await sleep(delay);
+                }
+              }
+            }
+
+            const marker = `<!-- claude-command-response -->`;
+            const body = `${marker}\n${response}`;
+
+            // Post the comment with retries
+            await withRetries(
+              () => github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: body
+              }),
+              'create comment'
+            );
+
+            core.info(`Posted response to issue #${issueNumber}`);
 
       - name: Summarize skip
         if: steps.classify.outputs.should_run != 'true'
