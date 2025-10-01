@@ -250,6 +250,8 @@ jobs:
             - If you need to ask clarifying questions, be specific about what information is missing
             - Always consider whether the request might involve anti-patterns and flag concerns proactively
 
+            **CRITICAL**: After completing your analysis or execution, output your complete response as markdown text in your final message. Do not end with tool calls - ensure your final message contains the full report/summary that should be posted to the issue.
+
       - name: Capture Claude response
         if: always() && steps.claude.outcome != 'skipped' && steps.claude.outputs.execution_file != ''
         id: capture
@@ -268,25 +270,52 @@ jobs:
 
             const raw = fs.readFileSync(execFile, 'utf8');
             const deltas = [];
+            let totalLines = 0;
+            let parsedLines = 0;
 
-            // Parse NDJSON stream
+            // Parse NDJSON stream with enhanced format support
             for (const line of raw.split(/\r?\n/)) {
               const trimmed = line.trim();
               if (!trimmed) continue;
+              totalLines++;
+
               try {
                 const parsed = JSON.parse(trimmed);
-                if (parsed?.delta?.text) {
+                parsedLines++;
+
+                // Format 1: Streaming API content_block_delta
+                if (parsed?.type === 'content_block_delta' && parsed?.delta?.text) {
                   deltas.push(parsed.delta.text);
-                } else if (typeof parsed?.text === 'string') {
+                }
+                // Format 2: Direct delta with text
+                else if (parsed?.delta?.text) {
+                  deltas.push(parsed.delta.text);
+                }
+                // Format 3: Direct text field
+                else if (typeof parsed?.text === 'string') {
                   deltas.push(parsed.text);
                 }
-              } catch {}
+                // Format 4: Message with content array
+                else if (parsed?.message?.content?.[0]?.text) {
+                  deltas.push(parsed.message.content[0].text);
+                }
+                // Format 5: Direct content array
+                else if (parsed?.content?.[0]?.text) {
+                  deltas.push(parsed.content[0].text);
+                }
+              } catch (e) {
+                // Skip unparseable lines
+              }
             }
+
+            core.info(`Processed ${totalLines} lines, parsed ${parsedLines} JSON objects, extracted ${deltas.length} text chunks`);
 
             const response = deltas.join('').trim();
 
             if (!response) {
               core.warning('No response content found');
+              core.warning(`First 500 chars of execution file:\n${raw.slice(0, 500)}`);
+              core.exportVariable('CLAUDE_RESPONSE_EMPTY', 'true');
               return;
             }
 
@@ -336,6 +365,44 @@ jobs:
             );
 
             core.info(`Posted response to issue #${issueNumber}`);
+
+      - name: Post diagnostic comment for empty response
+        if: always() && steps.claude.outcome == 'success' && env.CLAUDE_RESPONSE_EMPTY == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = Number('${{ steps.classify.outputs.issue }}');
+            if (!issueNumber) return;
+
+            const runUrl = `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            const triggerCommand = `${{ steps.context.outputs.comment_body }}`;
+
+            const lines = [
+              '<!-- claude-command-diagnostic -->',
+              '⚠️ **Claude Command Handler Issue**',
+              '',
+              'The workflow completed successfully but no response was captured from Claude. This usually means:',
+              '- Claude used all available turns on tool calls without generating a final text response',
+              '- The output format from claude-code-action was unexpected',
+              '',
+              '**Debug Information:**',
+              `- Workflow Run: ${runUrl}`,
+              `- Issue: #${issueNumber}`,
+              `- Triggering Command: "${triggerCommand}"`,
+              '',
+              'Please review the workflow logs for details. The response capture logic has been enhanced to handle multiple output formats, but further investigation may be needed.'
+            ];
+
+            const body = lines.join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: body
+            });
+
+            core.info(`Posted diagnostic comment to issue #${issueNumber}`);
 
       - name: Summarize skip
         if: steps.classify.outputs.should_run != 'true'
