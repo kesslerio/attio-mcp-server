@@ -8,24 +8,25 @@
 
 ## Summary
 
-- Inventoried seven integration suites under `test/integration` and captured their naming, gating flags, and describe titles to expose inconsistencies.
-- Compared integration conventions to the MCP E2E `TC-XXX` taxonomy that already drives reporting and QA dashboards.
-- Highlighted anti-patterns (mixed suffixes, inconsistent skip flags, unnumbered test cases, "E2E" phrasing inside integration suites) that make triage and coverage reporting harder.
-- Proposed an `IT-XXX` numbering scheme with aligned file names, describe blocks, and `it` titles plus supporting metadata to match E2E rigor while preserving integration scope.
-- Outlined a phased migration plan covering ID assignment, renames, documentation updates, and quality gate wiring.
+- Catalogued eight integration suites under `test/integration`, aligning their file locations, `describe` banners, and `it` case titles with the `IT-XXX` taxonomy.【F:test/integration/core/IT-001-batch-company-operations.integration.test.ts†L1-L117】【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L1-L198】
+- Standardized execution guards with the shared `shouldRunIntegrationTests()` helper (including dry-run support for deterministic suites).【F:test/utils/integration-guards.ts†L1-L35】【F:test/integration/services/IT-201-rate-limiting.integration.test.ts†L1-L55】
+- Updated documentation (`test/integration/README.md`, catalog, and this audit) to reflect the completed migration and provide authoritative ownership metadata.【F:test/integration/README.md†L1-L123】【F:docs/testing/integration-test-catalog.md†L1-L154】
+- Preserved the historical audit to document pre-migration gaps while capturing the resolved state for future QA reviews.
 
-## Current State Inventory
+> **Status Update (Phase 3 Complete)**: The tables below first document the post-migration layout. A legacy snapshot remains at the end of this file for historical reference. See the [Integration Test Catalog](./integration-test-catalog.md) for the canonical inventory.
 
-| Path                                                                     | File name pattern                      | Top-level `describe`                                                      | Execution gate                                                               | Notes                                                                                                                                                  |
-| ------------------------------------------------------------------------ | -------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `test/integration/batch-update-companies.integration.test.ts`            | Uses `.integration.test.ts` suffix     | `'Batch Company Operations - Integration'`                                | `shouldRunTests` wrapper around `ATTIO_API_KEY` and `SKIP_INTEGRATION_TESTS` | Mixes `beforeAll` guards and console warnings without numeric IDs.【F:test/integration/batch-update-companies.integration.test.ts†L1-L78】             |
-| `test/integration/rate-limiting.integration.test.ts`                     | `.integration.test.ts`                 | `'Integration: Rate limiting (deterministic)'`                            | No env guard (pure local)                                                    | Deterministic/unit-style test still labeled integration, lacks ID.【F:test/integration/rate-limiting.integration.test.ts†L1-L49】                      |
-| `test/integration/relationship-filters.test.ts`                          | Lacks `.integration` infix             | `'Relationship Filter Integration Tests'`                                 | `RUN_INTEGRATION_TESTS` must be `true` plus `ATTIO_API_KEY`                  | Only suite using `RUN_INTEGRATION_TESTS`, mixes `it`/`it.skip` toggles per block.【F:test/integration/relationship-filters.test.ts†L1-L111】           |
-| `test/integration/lists/add-record-to-list.integration.test.ts`          | Nested folder + `.integration.test.ts` | `'Add Record To List Integration (Universal Tools)'`                      | `SKIP_INTEGRATION_TESTS` or missing env; provides manual config message      | First-class docstring but no numeric naming, uses `test.skip` fallback stub.【F:test/integration/lists/add-record-to-list.integration.test.ts†L1-L75】 |
-| `test/integration/api/advanced-search.integration.test.ts`               | `.integration.test.ts`                 | `'Advanced Search API Tests'`                                             | `SKIP_TESTS` guard for `ATTIO_API_KEY`/`SKIP_INTEGRATION_TESTS`              | Nested describes lack numeric IDs and reuse general phrasing.【F:test/integration/api/advanced-search.integration.test.ts†L20-L68】                    |
-| `test/integration/api/advanced-search-validation.integration.test.ts`    | `.integration.test.ts`                 | `'Advanced Search Validation Tests'`                                      | `SKIP_TESTS` guard                                                           | Validation focus but same naming as API test; no numbering.【F:test/integration/api/advanced-search-validation.integration.test.ts†L20-L53】           |
-| `test/integration/api/attribute-validation-real-api.integration.test.ts` | `.integration.test.ts`                 | `describe.skipIf(SKIP_TESTS)('Attribute Validation with Real Attio API')` | `SKIP_TESTS` guard                                                           | Uses `describe.skipIf`, unique to this suite.【F:test/integration/api/attribute-validation-real-api.integration.test.ts†L53-L76】                      |
-| `test/integration/api/industry-categories-mapping.integration.test.ts`   | `.integration.test.ts`                 | `'Industry-Categories Mapping - E2E Tests'`                               | `SKIP_INTEGRATION_TESTS` plus feature flag                                   | Calls itself "E2E" despite location in integration folder.【F:test/integration/api/industry-categories-mapping.integration.test.ts†L1-L69】            |
+## Current State Inventory (Post-Migration)
+
+| Path                                                                              | Top-level `describe`                      | Execution gate                                                       | Notes                                                                                                                                                                                                   |
+| --------------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test/integration/core/IT-001-batch-company-operations.integration.test.ts`       | `'IT-001: Batch company operations'`      | `describe.skipIf(!shouldRunIntegrationTests())`                      | Seeds, updates, and cleans up companies via batch helpers to verify live API workflows.【F:test/integration/core/IT-001-batch-company-operations.integration.test.ts†L9-L117】                          |
+| `test/integration/api/IT-101-advanced-search-api.integration.test.ts`             | `'IT-101: Advanced search API'`           | `describe.skipIf(!shouldRunIntegrationTests())`                      | Exercises company search and generic search helpers across eight validation-focused cases.【F:test/integration/api/IT-101-advanced-search-api.integration.test.ts†L5-L156】                             |
+| `test/integration/api/IT-105-advanced-search-validation.integration.test.ts`      | `'IT-105: Advanced search validation'`    | `describe.skipIf(!shouldRunIntegrationTests())`                      | Concentrates on error handling for malformed filter payloads and missing metadata.【F:test/integration/api/IT-105-advanced-search-validation.integration.test.ts†L5-L101】                              |
+| `test/integration/api/IT-106-attribute-validation.integration.test.ts`            | `'IT-106: Attribute validation'`          | `describe.skipIf(!shouldRunIntegrationTests())`                      | Validates type coercion, attribute updates, and cleanup for company records against the live API.【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L5-L150】                     |
+| `test/integration/api/IT-107-industry-categories-mapping.integration.test.ts`     | `'IT-107: Industry categories mapping'`   | `describe.skipIf(!shouldRunIntegrationTests()                        |                                                                                                                                                                                                         | !industryMappingEnabled)` | Feature-flagged coverage ensuring industry category mappings populate list-backed fields on create.【F:test/integration/api/IT-107-industry-categories-mapping.integration.test.ts†L5-L69】 |
+| `test/integration/services/IT-201-rate-limiting.integration.test.ts`              | `'IT-201: Rate limiting (deterministic)'` | `describe.skipIf(!shouldRunIntegrationTests({ allowDryRun: true }))` | Deterministic stress test that exhausts the rate limiter without requiring live credentials.【F:test/integration/services/IT-201-rate-limiting.integration.test.ts†L1-L55】                             |
+| `test/integration/advanced/IT-301-relationship-filters.integration.test.ts`       | `'IT-301: Relationship filters'`          | `describe.skipIf(!shouldRunIntegrationTests())`                      | Covers six relationship-filter scenarios for people and companies, mirroring production queries.【F:test/integration/advanced/IT-301-relationship-filters.integration.test.ts†L8-L136】                 |
+| `test/integration/advanced/IT-302-list-membership-operations.integration.test.ts` | `'IT-302: List membership operations'`    | `describe.skipIf(!shouldRunIntegrationTests())`                      | Validates universal tool-driven list membership workflows, including configuration guards and error paths.【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L8-L198】 |
 
 ## Comparison to MCP E2E Naming
 
@@ -33,14 +34,19 @@
 - Multi-case suites split IDs for each `it` block (`TC-D01` through `TC-D04`) while keeping a combined `describe` banner for roll-up reporting.【F:test/e2e/mcp/deal-operations/deal-crud.mcp.test.ts†L24-L89】
 - The README enumerates every MCP test case with the `TC-XXX` prefix, reinforcing the taxonomy in documentation and tooling.【F:test/e2e/mcp/README.md†L10-L56】
 
-## Identified Inconsistencies & Anti-Patterns
+## Resolved Inconsistencies & Improvements
 
-- **File suffix drift:** one suite omits `.integration`, others mix nested folders without a consistent slug order.【F:test/integration/relationship-filters.test.ts†L1-L30】
-- **Describe labels lack IDs:** none of the integration suites expose machine-friendly IDs (no `IT-###`), making dashboards or selective runs harder compared to E2E counterparts.【F:test/integration/api/advanced-search.integration.test.ts†L20-L48】【F:test/e2e/mcp/core-operations/search-records.mcp.test.ts†L1-L44】
-- **Mixed skip environment variables:** files use `shouldRunTests`, `SKIP_TESTS`, `SKIP_INTEGRATION_TESTS`, and `RUN_INTEGRATION_TESTS`, increasing confusion when toggling suites locally or in CI.【F:test/integration/relationship-filters.test.ts†L24-L41】【F:test/integration/batch-update-companies.integration.test.ts†L23-L55】
-- **Terminology mismatch:** `industry-categories-mapping.integration.test.ts` self-identifies as "E2E" despite living in `integration`, blurring scope boundaries.【F:test/integration/api/industry-categories-mapping.integration.test.ts†L1-L23】
-- **Per-test skip toggles:** some suites wrap each `it` in ternaries instead of using scoped `describe.skip`, creating uneven reporting when tests are disabled.【F:test/integration/relationship-filters.test.ts†L38-L75】
-- **No shared index of integration IDs:** unlike E2E README, there is no canonical list mapping integration coverage to business capabilities.
+- **IT-XXX naming applied:** All suites use consistent ID-prefixed file paths and `describe` titles, ensuring dashboards can group coverage without manual mapping.【F:test/integration/core/IT-001-batch-company-operations.integration.test.ts†L1-L117】【F:test/integration/api/IT-101-advanced-search-api.integration.test.ts†L15-L155】
+- **Shared execution guard:** Each suite imports `shouldRunIntegrationTests()` (with optional `allowDryRun`) to centralize environment gating.【F:test/utils/integration-guards.ts†L1-L35】【F:test/integration/services/IT-201-rate-limiting.integration.test.ts†L1-L55】
+- **Feature flag clarity:** Tests with additional prerequisites document them inline using scoped skip logic instead of ad hoc environment variables.【F:test/integration/api/IT-107-industry-categories-mapping.integration.test.ts†L14-L69】【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L60-L198】
+- **Documentation alignment:** The README and catalog enumerate suites with matching IDs for QA traceability.【F:test/integration/README.md†L13-L118】【F:docs/testing/integration-test-catalog.md†L12-L153】
+
+## Legacy Snapshot (Pre-Migration)
+
+- Mixed naming patterns (`.integration.test.ts`, missing infix, nested folders) and inconsistent skip flags (`shouldRunTests`, `SKIP_TESTS`, `RUN_INTEGRATION_TESTS`) complicated selective runs.
+- Some suites self-identified as "E2E" despite living in `test/integration`, causing scope confusion.
+- Individual test IDs were absent, preventing dashboards from tracking integration coverage per capability.
+- These findings are retained for historical context; see issue #810 for the original audit results.
 
 ## Recommendations
 
@@ -64,7 +70,7 @@
  * Requires ATTIO_API_KEY and skips automatically when SKIP_INTEGRATION_TESTS=true.
  */
 import { describe, it, expect } from 'vitest';
-import { shouldRunIntegrationTests } from '../utils/integration-guards';
+import { shouldRunIntegrationTests } from '@test/utils/integration-guards.js';
 
 const runTests = shouldRunIntegrationTests();
 
