@@ -1,5 +1,11 @@
 # Integration Test Naming Audit
 
+> **📚 Quick Links:**
+>
+> - **[Integration Test Catalog](./integration-test-catalog.md)** - Complete IT-XXX test inventory and mapping
+> - **[Integration Test README](../../test/integration/README.md)** - Naming conventions and quick start guide
+> - **[Testing Guide](./testing.md)** - IT-XXX vs TC-XXX taxonomy explained
+
 ## Summary
 
 - Inventoried seven integration suites under `test/integration` and captured their naming, gating flags, and describe titles to expose inconsistencies.
