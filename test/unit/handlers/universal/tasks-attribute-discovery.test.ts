@@ -77,7 +77,7 @@ describe('Tasks Attribute Discovery Fix - Issue #417', () => {
     expect(result.mappings['description']).toBe('content');
     expect(result.mappings['assignee']).toBe('assignee_id');
     expect(result.mappings['due']).toBe('due_date');
-    expect(result.mappings['record']).toBe('record_id');
+    expect(result.mappings['record']).toBe('linked_records');
   });
 
   it('should provide helpful field descriptions for task attributes', async () => {
