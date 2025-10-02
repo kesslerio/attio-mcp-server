@@ -64,7 +64,7 @@ const TASK_MAPPING_SYNONYMS: Record<string, string> = {
   description: 'content',
   assignee: 'assignee_id',
   due: 'due_date',
-  record: 'record_id',
+  record: 'linked_records',
 };
 
 export function buildTaskMetadata(

@@ -86,7 +86,7 @@ export class DefaultMetadataDiscoveryService
         objectSlug,
       };
     } catch (error: unknown) {
-      this.errorService.toStructuredError('records', error);
+      throw this.errorService.toStructuredError('records', error);
     }
   }
 
@@ -195,7 +195,7 @@ export class DefaultMetadataDiscoveryService
         resource_type: resourceType,
       };
     } catch (error: unknown) {
-      this.errorService.toStructuredError(resourceType, error);
+      throw this.errorService.toStructuredError(resourceType, error);
     }
   }
 }
