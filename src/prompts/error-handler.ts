@@ -2,6 +2,7 @@
  * Error handling utilities for the prompts module
  */
 import { ErrorType, formatErrorResponse } from '@/utils/error-handler.js';
+import sanitizeHtml from 'sanitize-html';
 import { createScopedLogger, OperationType } from '@/utils/logger.js';
 import { sanitizeErrorMessage } from '@/utils/error-sanitizer.js';
 
@@ -23,8 +24,14 @@ const SAFE_ERROR_MESSAGES: Record<number, string> = {
 const DEFAULT_ERROR_MESSAGE = 'Unable to process the prompt request.';
 
 function stripDangerousContent(value: string): string {
-  return value
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '[blocked_script]')
+  // Use sanitize-html to robustly remove all scripts and event handlers
+  const sanitized = sanitizeHtml(value, {
+    allowedTags: false,  // Remove all HTML tags, or set to [] to allow plain text only
+    allowedAttributes: false,  // Remove all attributes
+    disallowedTagsMode: 'discard',
+  });
+  // Optionally, also apply further replacements as in original
+  return sanitized
     .replace(/javascript:/gi, '')
     .replace(/data:text\/html/gi, '')
     .replace(/\son[a-z]+\s*=\s*/gi, ' ');
