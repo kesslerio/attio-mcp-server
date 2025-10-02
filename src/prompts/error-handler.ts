@@ -30,10 +30,9 @@ function stripDangerousContent(value: string): string {
     allowedAttributes: false, // Remove all attributes
     disallowedTagsMode: 'discard',
   });
-  // Optionally, also apply further replacements as in original
+  // Remove dangerous URL schemes (javascript:, data:, vbscript:, file:, etc.)
   return sanitized
-    .replace(/javascript:/gi, '')
-    .replace(/data:text\/html/gi, '')
+    .replace(/\b(javascript|data|vbscript|file):/gi, '[URL_REMOVED]:')
     .replace(/\son[a-z]+\s*=\s*/gi, ' ');
 }
 

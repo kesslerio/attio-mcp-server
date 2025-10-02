@@ -77,6 +77,27 @@ describe('createErrorResult security hardening', () => {
     expect(JSON.stringify(result)).not.toContain('javascript:alert');
   });
 
+  it('removes vbscript and file protocol handlers', () => {
+    const testCases = [
+      '<a href="vbscript:msgbox(1)">VBScript</a>',
+      '<a href="file:///etc/passwd">File</a>',
+    ];
+
+    testCases.forEach((maliciousMessage) => {
+      const result = createErrorResult(
+        new Error('Synthetic failure'),
+        maliciousMessage,
+        400,
+        TOOL_METADATA
+      );
+
+      // Dangerous URL schemes should be removed/stripped
+      expect(JSON.stringify(result)).not.toContain('vbscript:');
+      expect(JSON.stringify(result)).not.toContain('file:///');
+      expect(JSON.stringify(result)).not.toContain('file:/');
+    });
+  });
+
   it('handles nested XSS payloads', () => {
     const maliciousMessage =
       '<div><span><script>alert("nested")</script></span></div>';
