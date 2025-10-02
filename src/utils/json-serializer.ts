@@ -287,7 +287,7 @@ export function sanitizeMcpResponse(response: unknown): unknown {
     // Create safe copy with MCP-specific options optimized for Attio responses
     return createSafeCopy(response, {
       maxStringLength: 40000, // 40KB for response content - reasonable limit
-      includeStackTraces: process.env.NODE_ENV === 'development',
+      includeStackTraces: false,
     });
   } catch (error: unknown) {
     // Provide a valid fallback response if sanitization fails

@@ -344,7 +344,7 @@ export function formatErrorResponse(
       // Use createSafeCopy which handles circular references and non-serializable values
       safeDetails = JSON.parse(
         safeJsonStringify(details, {
-          includeStackTraces: process.env.NODE_ENV === 'development',
+          includeStackTraces: false,
         })
       );
     } catch (err) {

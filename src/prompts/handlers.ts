@@ -151,12 +151,15 @@ export async function listPrompts(req: Request, res: Response): Promise<void> {
       data: prompts,
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to list prompts');
-    const errorResult = createErrorResult(
-      errorObj,
-      error instanceof Error ? error.message : 'Unknown error',
-      500
-    );
+    const clientMessage = 'Unable to list prompts at this time.';
+    const errorObj = new Error(clientMessage);
+    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
+      logError: error,
+      logContext: {
+        endpoint: 'listPrompts',
+        category: req.query.category,
+      },
+    });
     res.status(Number(errorResult.error.code)).json(errorResult);
   }
 }
@@ -179,12 +182,14 @@ export async function listPromptCategories(
       data: categories,
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to list prompt categories');
-    const errorResult = createErrorResult(
-      errorObj,
-      error instanceof Error ? error.message : 'Unknown error',
-      500
-    );
+    const clientMessage = 'Unable to list prompt categories at this time.';
+    const errorObj = new Error(clientMessage);
+    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
+      logError: error,
+      logContext: {
+        endpoint: 'listPromptCategories',
+      },
+    });
     res.status(Number(errorResult.error.code)).json(errorResult);
   }
 }
@@ -219,12 +224,15 @@ export async function getPromptDetails(
       data: prompt,
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to get prompt details');
-    const errorResult = createErrorResult(
-      errorObj,
-      error instanceof Error ? error.message : 'Unknown error',
-      500
-    );
+    const clientMessage = 'Unable to retrieve prompt details at this time.';
+    const errorObj = new Error(clientMessage);
+    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
+      logError: error,
+      logContext: {
+        endpoint: 'getPromptDetails',
+        promptId,
+      },
+    });
     res.status(Number(errorResult.error.code)).json(errorResult);
   }
 }
@@ -352,7 +360,13 @@ export async function executePrompt(
       const errorResult = createErrorResult(
         errorObj,
         `No prompt found with ID: ${promptId}`,
-        404
+        404,
+        {
+          logContext: {
+            endpoint: 'executePrompt',
+            promptId,
+          },
+        }
       );
       res.status(Number(errorResult.error.code)).json(errorResult);
       return;
@@ -367,7 +381,13 @@ export async function executePrompt(
       const errorResult = createErrorResult(
         errorObj,
         validation.errors.join(', '),
-        400
+        400,
+        {
+          logContext: {
+            endpoint: 'executePrompt',
+            promptId,
+          },
+        }
       );
       res.status(Number(errorResult.error.code)).json(errorResult);
       return;
@@ -391,7 +411,14 @@ export async function executePrompt(
               ? compileError.message
               : 'Unknown error'
           }`,
-          500
+          500,
+          {
+            logError: compileError,
+            logContext: {
+              endpoint: 'executePrompt',
+              promptId,
+            },
+          }
         );
         res.status(Number(errorResult.error.code)).json(errorResult);
         return;
@@ -409,7 +436,14 @@ export async function executePrompt(
         `Template rendering error for prompt ${promptId}: ${
           renderError instanceof Error ? renderError.message : 'Unknown error'
         }`,
-        500
+        500,
+        {
+          logError: renderError,
+          logContext: {
+            endpoint: 'executePrompt',
+            promptId,
+          },
+        }
       );
       res.status(Number(errorResult.error.code)).json(errorResult);
       return;
@@ -423,12 +457,15 @@ export async function executePrompt(
       },
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to execute prompt');
-    const errorResult = createErrorResult(
-      errorObj,
-      error instanceof Error ? error.message : 'Unknown error',
-      500
-    );
+    const clientMessage = 'Unable to execute prompt at this time.';
+    const errorObj = new Error(clientMessage);
+    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
+      logError: error,
+      logContext: {
+        endpoint: 'executePrompt',
+        promptId,
+      },
+    });
     res.status(Number(errorResult.error.code)).json(errorResult);
   }
 }
