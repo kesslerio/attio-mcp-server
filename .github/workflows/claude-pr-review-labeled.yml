@@ -208,6 +208,7 @@ jobs:
           RING0_JSON_PATH="$SCOPE_DIR/ring0.json"
           RING1_JSON_PATH="$SCOPE_DIR/ring1.json"
           SUMMARY_PATH="$SCOPE_DIR/scope-summary.json"
+          DELETIONS_PATH="$SCOPE_DIR/DELETIONS.md"
 
           if [ ! -f "$SUMMARY_PATH" ]; then
             echo "scope-summary.json missing; skipping sparse checkout"
@@ -224,13 +225,22 @@ jobs:
           printf 'RING1_JSON=%s\n' "$ring1_json" >> "$GITHUB_ENV"
           printf 'RING_SCOPE_FALLBACK=%s\n' "$fallback" >> "$GITHUB_ENV"
 
+          # Check for deletions summary
+          if [ -f "$DELETIONS_PATH" ]; then
+            printf 'HAS_DELETIONS=true\n' >> "$GITHUB_ENV"
+            printf 'DELETIONS_SUMMARY_PATH=%s\n' "$DELETIONS_PATH" >> "$GITHUB_ENV"
+          else
+            printf 'HAS_DELETIONS=false\n' >> "$GITHUB_ENV"
+          fi
+
           ring0_count=$(jq -r '.ring0Count' "$SUMMARY_PATH")
           ring1_count=$(jq -r '.ring1Count' "$SUMMARY_PATH")
+          deletions_count=$(jq -r '.deletionsCount // 0' "$SUMMARY_PATH")
           base_ref=$(jq -r '.baseRef // empty' "$SUMMARY_PATH")
           head_ref=$(jq -r '.headRef // empty' "$SUMMARY_PATH")
 
           {
-            echo "📂 Claude scope: Ring 0 = ${ring0_count}, Ring 1 = ${ring1_count}, fallback=${fallback}";
+            echo "📂 Claude scope: Ring 0 = ${ring0_count}, Ring 1 = ${ring1_count}, Deletions = ${deletions_count}, fallback=${fallback}";
             if [ -n "$base_ref" ] || [ -n "$head_ref" ]; then
               echo "Base: ${base_ref:-unknown} → Head: ${head_ref:-unknown}";
             fi
@@ -316,6 +326,18 @@ jobs:
 
             Context files (Ring 1 JSON):
             ${{ env.RING1_JSON }}
+
+            ${{ env.HAS_DELETIONS == 'true' && format('
+            DELETIONS SUMMARY:
+            This PR includes file deletions. Review the deletions summary at:
+            {0}
+
+            When reviewing deletions:
+            1. Verify deletions are intentional and justified
+            2. Ensure no critical functionality is lost
+            3. Check that coverage gaps are tracked
+            4. Confirm related docs/tests are updated
+            ', env.DELETIONS_SUMMARY_PATH) || '' }}
 
             Perform a PR review with full working tree access.
 
@@ -420,6 +442,18 @@ jobs:
 
             Context files (Ring 1 JSON):
             ${{ env.RING1_JSON }}
+
+            ${{ env.HAS_DELETIONS == 'true' && format('
+            DELETIONS SUMMARY:
+            This PR includes file deletions. Review the deletions summary at:
+            {0}
+
+            When reviewing deletions:
+            1. Verify deletions are intentional and justified
+            2. Ensure no critical functionality is lost
+            3. Check that coverage gaps are tracked
+            4. Confirm related docs/tests are updated
+            ', env.DELETIONS_SUMMARY_PATH) || '' }}
 
             Perform a PR review with full working tree access.
 
