@@ -11,6 +11,7 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import { EdgeCaseTestBase } from '../shared/edge-case-test-base';
 import { TestDataFactory } from '../shared/test-data-factory';
+import { P2_QUALITY_GATE_PASS_RATE } from '../shared/test-constants';
 
 class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
   constructor() {
@@ -279,9 +280,9 @@ describe('TC-EC05: Special Character Handling Edge Cases', () => {
       )}%)`
     );
 
-    if (summary.total > 0 && summary.passRate < 75) {
+    if (summary.total > 0 && summary.passRate < P2_QUALITY_GATE_PASS_RATE) {
       console.warn(
-        `⚠️ TC-EC05 below P2 threshold: ${summary.passRate.toFixed(1)}% (required: 75%)`
+        `⚠️ TC-EC05 below P2 threshold: ${summary.passRate.toFixed(1)}% (required: ${P2_QUALITY_GATE_PASS_RATE}%)`
       );
     }
   }, 60000);
