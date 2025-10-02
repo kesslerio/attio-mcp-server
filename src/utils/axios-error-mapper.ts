@@ -114,6 +114,7 @@ export interface StructuredHttpError {
       path?: string;
       code?: string;
       message: string;
+      fieldType?: string;
     }>;
     suggestion?: string;
     attio?: {
