@@ -136,6 +136,7 @@ export function createInvalidUUIDError(
     operation,
     {
       field: 'record_id',
+      fieldType: 'uuid',
       resourceType,
       documentationHint:
         validation.suggestion ||
