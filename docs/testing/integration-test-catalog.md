@@ -12,6 +12,8 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 ## 🎯 IT-XXX Taxonomy
 
+> **Note on ID Sequences**: Gaps in test IDs (e.g., IT-102–IT-104) are intentional and reserved for future tests within that category. This maintains organized ID ranges while allowing test suite growth without renumbering.
+
 ### IT-001–IT-099: Core Object CRUD Operations
 
 | ID         | Title                    | File Path                                                  | Environment                   | Owner    | Status       |
