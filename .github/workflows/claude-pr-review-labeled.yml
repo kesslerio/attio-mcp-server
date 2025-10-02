@@ -225,10 +225,16 @@ jobs:
           printf 'RING1_JSON=%s\n' "$ring1_json" >> "$GITHUB_ENV"
           printf 'RING_SCOPE_FALLBACK=%s\n' "$fallback" >> "$GITHUB_ENV"
 
-          # Check for deletions summary
+          # Check for deletions summary and read content BEFORE sparse checkout
           if [ -f "$DELETIONS_PATH" ]; then
             printf 'HAS_DELETIONS=true\n' >> "$GITHUB_ENV"
-            printf 'DELETIONS_SUMMARY_PATH=%s\n' "$DELETIONS_PATH" >> "$GITHUB_ENV"
+
+            # Read deletions content and store in env (multiline safe)
+            {
+              echo 'DELETIONS_CONTENT<<DELETIONS_EOF'
+              cat "$DELETIONS_PATH"
+              echo 'DELETIONS_EOF'
+            } >> "$GITHUB_ENV"
           else
             printf 'HAS_DELETIONS=false\n' >> "$GITHUB_ENV"
           fi
@@ -328,16 +334,8 @@ jobs:
             ${{ env.RING1_JSON }}
 
             ${{ env.HAS_DELETIONS == 'true' && format('
-            DELETIONS SUMMARY:
-            This PR includes file deletions. Review the deletions summary at:
             {0}
-
-            When reviewing deletions:
-            1. Verify deletions are intentional and justified
-            2. Ensure no critical functionality is lost
-            3. Check that coverage gaps are tracked
-            4. Confirm related docs/tests are updated
-            ', env.DELETIONS_SUMMARY_PATH) || '' }}
+            ', env.DELETIONS_CONTENT) || '' }}
 
             Perform a PR review with full working tree access.
 
@@ -444,16 +442,8 @@ jobs:
             ${{ env.RING1_JSON }}
 
             ${{ env.HAS_DELETIONS == 'true' && format('
-            DELETIONS SUMMARY:
-            This PR includes file deletions. Review the deletions summary at:
             {0}
-
-            When reviewing deletions:
-            1. Verify deletions are intentional and justified
-            2. Ensure no critical functionality is lost
-            3. Check that coverage gaps are tracked
-            4. Confirm related docs/tests are updated
-            ', env.DELETIONS_SUMMARY_PATH) || '' }}
+            ', env.DELETIONS_CONTENT) || '' }}
 
             Perform a PR review with full working tree access.
 
