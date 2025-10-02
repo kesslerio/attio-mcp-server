@@ -174,8 +174,36 @@ jobs:
         run: |
           PR_NUM="${{ steps.resolve.outputs.pr }}"
 
-          # Fetch PR metadata using gh CLI with error handling
-          if PR_DATA=$(gh pr view "$PR_NUM" --repo "${{ github.repository }}" --json title,body,labels,closingIssuesReferences 2>/dev/null); then
+          # Fetch PR metadata with retry logic (handle transient network errors)
+          PR_DATA=""
+          RETRY_COUNT=0
+          MAX_RETRIES=3
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if PR_DATA=$(gh pr view "$PR_NUM" --repo "${{ github.repository }}" --json title,body,labels,closingIssuesReferences 2>&1); then
+              break  # Success
+            else
+              EXIT_CODE=$?
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+
+              # Check if error is transient (network/API) vs permanent (not found)
+              if echo "$PR_DATA" | grep -qi "could not resolve to a PullRequest\|not found"; then
+                echo "⚠️ PR #$PR_NUM not found (permanent error), skipping retries" >> $GITHUB_STEP_SUMMARY
+                PR_DATA=""
+                break
+              elif [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                BACKOFF=$((2 ** RETRY_COUNT))  # Exponential backoff: 2, 4, 8 seconds
+                echo "⚠️ Transient error fetching PR metadata (attempt $RETRY_COUNT/$MAX_RETRIES), retrying in ${BACKOFF}s..." >> $GITHUB_STEP_SUMMARY
+                sleep $BACKOFF
+              else
+                echo "❌ Failed to fetch PR metadata after $MAX_RETRIES attempts" >> $GITHUB_STEP_SUMMARY
+                PR_DATA=""
+              fi
+            fi
+          done
+
+          # Process PR data if successfully fetched
+          if [ -n "$PR_DATA" ] && echo "$PR_DATA" | jq -e . >/dev/null 2>&1; then
             # Extract title (always present)
             PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // "Untitled PR"')
             echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
@@ -186,12 +214,13 @@ jobs:
               PR_BODY="${PR_BODY:0:4000}... (truncated)"
             fi
 
-            # Store body using heredoc (safe for multiline content)
+            # Store body using heredoc with dynamic delimiter (prevents collision)
+            DELIMITER="PR_BODY_EOF_${{ github.run_id }}"
             {
-              echo 'pr_body<<PR_BODY_EOF'
+              echo "pr_body<<${DELIMITER}"
               echo "$PR_BODY"
               printf '\n'  # Ensure newline before delimiter
-              echo 'PR_BODY_EOF'
+              echo "${DELIMITER}"
             } >> "$GITHUB_OUTPUT"
 
             # Extract linked issues (closing/fixes references)
@@ -281,12 +310,13 @@ jobs:
           if [ -f "$DELETIONS_PATH" ]; then
             printf 'HAS_DELETIONS=true\n' >> "$GITHUB_ENV"
 
-            # Read deletions content and store in env (multiline safe)
+            # Read deletions content with dynamic delimiter (prevents collision)
+            DELIMITER="DELETIONS_EOF_${{ github.run_id }}"
             {
-              echo 'DELETIONS_CONTENT<<DELETIONS_EOF'
+              echo "DELETIONS_CONTENT<<${DELIMITER}"
               cat "$DELETIONS_PATH"
               printf '\n'  # Ensure newline before delimiter (heredoc safety)
-              echo 'DELETIONS_EOF'
+              echo "${DELIMITER}"
             } >> "$GITHUB_ENV"
           else
             printf 'HAS_DELETIONS=false\n' >> "$GITHUB_ENV"
@@ -313,14 +343,11 @@ jobs:
             exit 0
           fi
 
-          # Prepare sparse checkout patterns (include limited defaults for workflow internals)
+          # Prepare sparse checkout patterns (optimized with jq deduplication)
           tmpfile=$(mktemp)
-          {
-            echo '/.github/**'
-            echo '/scripts/claude/**'
-            jq -r '.[]' "$RING0_JSON_PATH"
-            jq -r '.[]' "$RING1_JSON_PATH"
-          } | sed '/^\s*$/d' | sort -u > "$tmpfile"
+          jq -rs --argjson static '["/.github/**", "/scripts/claude/**"]' \
+            '$static + add | unique | .[]' \
+            "$RING0_JSON_PATH" "$RING1_JSON_PATH" > "$tmpfile"
 
           if [ ! -s "$tmpfile" ]; then
             echo "No scope paths detected; skipping sparse checkout"
