@@ -308,7 +308,7 @@ jobs:
       - name: Claude Review (Sonnet)
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_review == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:review'))
         id: claude_sonnet
-        timeout-minutes: ${{ steps.turns.outputs.sonnet_timeout }}
+        timeout-minutes: ${{ fromJSON(steps.turns.outputs.sonnet_timeout) }}
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -418,7 +418,7 @@ jobs:
       - name: Claude Review (Opus)
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_ultra == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:ultra'))
         id: claude_opus
-        timeout-minutes: ${{ steps.turns.outputs.opus_timeout }}
+        timeout-minutes: ${{ fromJSON(steps.turns.outputs.opus_timeout) }}
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -535,7 +535,66 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
+
+            // Inline extract-text.js functions (require() doesn't work in GitHub Actions)
+            function extractTextFromEntry(entry, out, state = { sawStream: false }) {
+              if (entry?.type === 'content_block_delta' && entry?.delta?.text) {
+                state.sawStream = true;
+                out.push(entry.delta.text);
+              }
+              if (entry?.delta?.text) {
+                state.sawStream = true;
+                out.push(entry.delta.text);
+              }
+              if (typeof entry?.text === 'string') out.push(entry.text);
+              const content = entry?.message?.content ?? entry?.content;
+              if (Array.isArray(content)) {
+                for (const block of content) {
+                  if (block?.type === 'text' && typeof block.text === 'string') {
+                    if (!state.sawStream) out.push(block.text);
+                  } else if (block?.type === 'tool_result' && Array.isArray(block?.content)) {
+                    for (const inner of block.content) {
+                      if (inner?.type === 'text' && typeof inner.text === 'string') {
+                        out.push(inner.text);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            function extractAllTextFromSession(raw) {
+              const chunks = [];
+              const state = { sawStream: false };
+              let sessionLog;
+              try {
+                sessionLog = JSON.parse(raw);
+              } catch {
+                for (const line of raw.split(/\r?\n/)) {
+                  const trimmed = line.trim();
+                  if (!trimmed) continue;
+                  try {
+                    const parsed = JSON.parse(trimmed);
+                    extractTextFromEntry(parsed, chunks, state);
+                  } catch {}
+                }
+                return chunks;
+              }
+              if (Array.isArray(sessionLog)) {
+                for (const entry of sessionLog) {
+                  extractTextFromEntry(entry, chunks, state);
+                }
+              }
+              return chunks;
+            }
+
+            function dedupeAdjacent(arr) {
+              const out = [];
+              for (const s of arr) {
+                if (!out.length || out[out.length - 1] !== s) out.push(s);
+              }
+              return out;
+            }
 
             const execFile = process.env.EXEC_FILE;
             if (!execFile || !fs.existsSync(execFile)) {
@@ -595,7 +654,66 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
+
+            // Inline extract-text.js functions (require() doesn't work in GitHub Actions)
+            function extractTextFromEntry(entry, out, state = { sawStream: false }) {
+              if (entry?.type === 'content_block_delta' && entry?.delta?.text) {
+                state.sawStream = true;
+                out.push(entry.delta.text);
+              }
+              if (entry?.delta?.text) {
+                state.sawStream = true;
+                out.push(entry.delta.text);
+              }
+              if (typeof entry?.text === 'string') out.push(entry.text);
+              const content = entry?.message?.content ?? entry?.content;
+              if (Array.isArray(content)) {
+                for (const block of content) {
+                  if (block?.type === 'text' && typeof block.text === 'string') {
+                    if (!state.sawStream) out.push(block.text);
+                  } else if (block?.type === 'tool_result' && Array.isArray(block?.content)) {
+                    for (const inner of block.content) {
+                      if (inner?.type === 'text' && typeof inner.text === 'string') {
+                        out.push(inner.text);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            function extractAllTextFromSession(raw) {
+              const chunks = [];
+              const state = { sawStream: false };
+              let sessionLog;
+              try {
+                sessionLog = JSON.parse(raw);
+              } catch {
+                for (const line of raw.split(/\r?\n/)) {
+                  const trimmed = line.trim();
+                  if (!trimmed) continue;
+                  try {
+                    const parsed = JSON.parse(trimmed);
+                    extractTextFromEntry(parsed, chunks, state);
+                  } catch {}
+                }
+                return chunks;
+              }
+              if (Array.isArray(sessionLog)) {
+                for (const entry of sessionLog) {
+                  extractTextFromEntry(entry, chunks, state);
+                }
+              }
+              return chunks;
+            }
+
+            function dedupeAdjacent(arr) {
+              const out = [];
+              for (const s of arr) {
+                if (!out.length || out[out.length - 1] !== s) out.push(s);
+              }
+              return out;
+            }
 
             const execFile = process.env.EXEC_FILE;
             if (!execFile || !fs.existsSync(execFile)) {
@@ -734,7 +852,66 @@ jobs:
             let body = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
 
             if (!body) {
-              const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
+              // Inline extract-text.js functions (require() doesn't work in GitHub Actions)
+              function extractTextFromEntry(entry, out, state = { sawStream: false }) {
+                if (entry?.type === 'content_block_delta' && entry?.delta?.text) {
+                  state.sawStream = true;
+                  out.push(entry.delta.text);
+                }
+                if (entry?.delta?.text) {
+                  state.sawStream = true;
+                  out.push(entry.delta.text);
+                }
+                if (typeof entry?.text === 'string') out.push(entry.text);
+                const content = entry?.message?.content ?? entry?.content;
+                if (Array.isArray(content)) {
+                  for (const block of content) {
+                    if (block?.type === 'text' && typeof block.text === 'string') {
+                      if (!state.sawStream) out.push(block.text);
+                    } else if (block?.type === 'tool_result' && Array.isArray(block?.content)) {
+                      for (const inner of block.content) {
+                        if (inner?.type === 'text' && typeof inner.text === 'string') {
+                          out.push(inner.text);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+
+              function extractAllTextFromSession(raw) {
+                const chunks = [];
+                const state = { sawStream: false };
+                let sessionLog;
+                try {
+                  sessionLog = JSON.parse(raw);
+                } catch {
+                  for (const line of raw.split(/\r?\n/)) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    try {
+                      const parsed = JSON.parse(trimmed);
+                      extractTextFromEntry(parsed, chunks, state);
+                    } catch {}
+                  }
+                  return chunks;
+                }
+                if (Array.isArray(sessionLog)) {
+                  for (const entry of sessionLog) {
+                    extractTextFromEntry(entry, chunks, state);
+                  }
+                }
+                return chunks;
+              }
+
+              function dedupeAdjacent(arr) {
+                const out = [];
+                for (const s of arr) {
+                  if (!out.length || out[out.length - 1] !== s) out.push(s);
+                }
+                return out;
+              }
+
               const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
               if (execFile && fs.existsSync(execFile)) {
                 try {
