@@ -2,6 +2,45 @@
 
 This document describes the error handling system implemented in the Attio MCP server.
 
+## Enhanced Error Context Metadata
+
+Enhanced API errors automatically capture field-specific metadata when the server can resolve it from Attio's attribute catalog. Every enhanced error context now includes:
+
+- `fieldType` – a human-readable type hint such as `phone_number`, `email`, or `select`
+- `fieldMetadata` – the Attio attribute configuration snapshot that was used to determine the field type
+
+```typescript
+throw ErrorService.createFieldError({
+  field: 'status',
+  message: 'Invalid status value',
+  resourceType: 'tasks',
+  operation: 'update',
+  attributeMetadataIndex,
+});
+```
+
+The resulting error context contains both the type and metadata, enabling richer troubleshooting messages and downstream tooling:
+
+```json
+{
+  "field": "status",
+  "fieldType": "select",
+  "fieldMetadata": {
+    "api_slug": "status",
+    "field_type": "select",
+    "options": ["new", "active", "completed"]
+  }
+}
+```
+
+When a field type is resolved, the error service emits a structured debug log to aid incident triage:
+
+```
+DEBUG ErrorService field-context {"field":"status","fieldType":"select","resourceType":"tasks","operation":"update"}
+```
+
+These additions make it easier to audit failed requests and reconcile validation errors with the exact Attio configuration that triggered them.
+
 ## Filter Validation Error Categories
 
 As of version 0.0.2, the server implements a more granular categorization system for filter validation errors. This allows for more targeted error handling and better user feedback.
@@ -666,6 +705,33 @@ it('should preserve field type metadata when enhancing errors', () => {
   expect(enhanced.getContextualMessage()).toContain("type 'select'");
 });
 ```
+
+#### ErrorService Helpers
+
+Utility methods in `ErrorService` now hydrate error context directly from attribute discovery metadata:
+
+```typescript
+const attributeMetadataIndex = buildAttributeMetadataIndex(attributes);
+
+throw ErrorService.createFieldError({
+  field: 'status',
+  message: 'Invalid status value',
+  resourceType: 'tasks',
+  operation: 'update',
+  attributeMetadataIndex,
+});
+
+throw ErrorService.createValidationError({
+  message: 'Priority must be numeric',
+  resourceType: 'tasks',
+  operation: 'update',
+  field: 'priority',
+  attributeMetadataIndex,
+  documentationHint: 'Use numeric values between 1-5',
+});
+```
+
+Both helpers log a `field-context` debug entry showing the resolved `fieldType`, making it visible in structured logs for debugging.
 
 #### Common Field Types
 
