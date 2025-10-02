@@ -278,6 +278,7 @@ function main() {
       '2. No critical functionality is lost without replacement',
       '3. Coverage gaps are tracked or mitigated',
       '4. Related documentation/tests are updated accordingly',
+      '', // Ensure file ends with newline for heredoc safety
     ].join('\n');
     writeFileSync(deletionsSummaryPath, deletionContent);
   }
