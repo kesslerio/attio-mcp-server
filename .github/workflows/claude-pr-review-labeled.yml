@@ -133,13 +133,22 @@ jobs:
           sonnet_cutoff=$((sonnet_cap - 10))
           opus_cutoff=$((opus_cap - 12))
 
+          # Calculate dynamic timeouts (turn_count * 20 seconds, minimum 10 minutes)
+          # Formula: max(10, ceil(turns * 20 / 60)) minutes
+          sonnet_timeout_calc=$(( (sonnet_cap * 20 + 59) / 60 ))
+          opus_timeout_calc=$(( (opus_cap * 20 + 59) / 60 ))
+          sonnet_timeout=$(( sonnet_timeout_calc > 10 ? sonnet_timeout_calc : 10 ))
+          opus_timeout=$(( opus_timeout_calc > 10 ? opus_timeout_calc : 10 ))
+
           echo "sonnet_turns=$sonnet_cap" >> $GITHUB_OUTPUT
           echo "opus_turns=$opus_cap" >> $GITHUB_OUTPUT
           echo "sonnet_cutoff=$sonnet_cutoff" >> $GITHUB_OUTPUT
           echo "opus_cutoff=$opus_cutoff" >> $GITHUB_OUTPUT
+          echo "sonnet_timeout=$sonnet_timeout" >> $GITHUB_OUTPUT
+          echo "opus_timeout=$opus_timeout" >> $GITHUB_OUTPUT
 
           # Summary for maintainers in both logs and step summary
-          summary="🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns, Opus: $opus_cap turns"
+          summary="🎯 PR size: $lines lines, $files files → Sonnet: $sonnet_cap turns (${sonnet_timeout}m timeout), Opus: $opus_cap turns (${opus_timeout}m timeout)"
           echo "$summary"
           echo "$summary" >> $GITHUB_STEP_SUMMARY
 
@@ -225,10 +234,17 @@ jobs:
           printf 'RING1_JSON=%s\n' "$ring1_json" >> "$GITHUB_ENV"
           printf 'RING_SCOPE_FALLBACK=%s\n' "$fallback" >> "$GITHUB_ENV"
 
-          # Check for deletions summary
+          # Check for deletions summary and read content BEFORE sparse checkout
           if [ -f "$DELETIONS_PATH" ]; then
             printf 'HAS_DELETIONS=true\n' >> "$GITHUB_ENV"
-            printf 'DELETIONS_SUMMARY_PATH=%s\n' "$DELETIONS_PATH" >> "$GITHUB_ENV"
+
+            # Read deletions content and store in env (multiline safe)
+            {
+              echo 'DELETIONS_CONTENT<<DELETIONS_EOF'
+              cat "$DELETIONS_PATH"
+              printf '\n'  # Ensure newline before delimiter (heredoc safety)
+              echo 'DELETIONS_EOF'
+            } >> "$GITHUB_ENV"
           else
             printf 'HAS_DELETIONS=false\n' >> "$GITHUB_ENV"
           fi
@@ -245,6 +261,14 @@ jobs:
               echo "Base: ${base_ref:-unknown} → Head: ${head_ref:-unknown}";
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          # Skip sparse checkout for trivial PRs (optimization for <3 files)
+          total_files=$((ring0_count + ring1_count))
+          if [ "$total_files" -lt 3 ]; then
+            echo "⚡ Trivial PR ($total_files files) - skipping sparse checkout for faster CI"
+            echo "⚡ Trivial PR ($total_files files) - skipping sparse checkout for faster CI" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
 
           # Prepare sparse checkout patterns (include limited defaults for workflow internals)
           tmpfile=$(mktemp)
@@ -284,7 +308,7 @@ jobs:
       - name: Claude Review (Sonnet)
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_review == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:review'))
         id: claude_sonnet
-        timeout-minutes: 12
+        timeout-minutes: ${{ steps.turns.outputs.sonnet_timeout }}
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -313,8 +337,10 @@ jobs:
             - Ring 0: Files changed in the PR (JSON supplied separately); findings must cite Ring 0 paths only.
             - Ring 1: Neighbor/test/import context only. Use Ring 1 to reason, never as independent findings.
             - Ignore absolute/tsconfig-path imports. Stay within the sparse checkout tree.
+            - Fallback mode (current: ${{ env.RING_SCOPE_FALLBACK }}):
+              * true = Ring 1 expansion failed/exceeded limit. Work with Ring 0 + standards only.
+              * false = Full Ring 0 + Ring 1 context available.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
-            - Current fallback flag: ${{ env.RING_SCOPE_FALLBACK }}
 
             PATH RESOLUTION RULES
             - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
@@ -328,16 +354,8 @@ jobs:
             ${{ env.RING1_JSON }}
 
             ${{ env.HAS_DELETIONS == 'true' && format('
-            DELETIONS SUMMARY:
-            This PR includes file deletions. Review the deletions summary at:
             {0}
-
-            When reviewing deletions:
-            1. Verify deletions are intentional and justified
-            2. Ensure no critical functionality is lost
-            3. Check that coverage gaps are tracked
-            4. Confirm related docs/tests are updated
-            ', env.DELETIONS_SUMMARY_PATH) || '' }}
+            ', env.DELETIONS_CONTENT) || '' }}
 
             Perform a PR review with full working tree access.
 
@@ -400,7 +418,7 @@ jobs:
       - name: Claude Review (Opus)
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_ultra == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:ultra'))
         id: claude_opus
-        timeout-minutes: 15
+        timeout-minutes: ${{ steps.turns.outputs.opus_timeout }}
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -429,8 +447,10 @@ jobs:
             - Ring 0: Files changed in the PR (JSON supplied separately); findings must cite Ring 0 paths only.
             - Ring 1: Neighbor/test/import context only. Use Ring 1 to reason, never as independent findings.
             - Ignore absolute/tsconfig-path imports. Stay within the sparse checkout tree.
+            - Fallback mode (current: ${{ env.RING_SCOPE_FALLBACK }}):
+              * true = Ring 1 expansion failed/exceeded limit. Work with Ring 0 + standards only.
+              * false = Full Ring 0 + Ring 1 context available.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
-            - Current fallback flag: ${{ env.RING_SCOPE_FALLBACK }}
 
             PATH RESOLUTION RULES
             - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
@@ -444,16 +464,8 @@ jobs:
             ${{ env.RING1_JSON }}
 
             ${{ env.HAS_DELETIONS == 'true' && format('
-            DELETIONS SUMMARY:
-            This PR includes file deletions. Review the deletions summary at:
             {0}
-
-            When reviewing deletions:
-            1. Verify deletions are intentional and justified
-            2. Ensure no critical functionality is lost
-            3. Check that coverage gaps are tracked
-            4. Confirm related docs/tests are updated
-            ', env.DELETIONS_SUMMARY_PATH) || '' }}
+            ', env.DELETIONS_CONTENT) || '' }}
 
             Perform a PR review with full working tree access.
 
@@ -523,6 +535,8 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
+
             const execFile = process.env.EXEC_FILE;
             if (!execFile || !fs.existsSync(execFile)) {
               core.info('No Sonnet execution file to parse.');
@@ -530,50 +544,21 @@ jobs:
             }
 
             const raw = fs.readFileSync(execFile, 'utf8');
-            const deltas = [];
-            for (const line of raw.split(/\r?\n/)) {
-              const trimmed = line.trim();
-              if (!trimmed) continue;
-              try {
-                const parsed = JSON.parse(trimmed);
-                if (parsed?.delta?.text) {
-                  deltas.push(parsed.delta.text);
-                } else if (typeof parsed?.text === 'string') {
-                  deltas.push(parsed.text);
-                }
-              } catch {}
-            }
+            const chunks = extractAllTextFromSession(raw);
+            let review = dedupeAdjacent(chunks).join('');
 
-            let review = deltas.join('');
             // Normalize newline before header for consistent parsing
+            // WHY: Streaming JSON format quirk - header may appear without preceding newline,
+            // making regex matching unreliable. This ensures consistent "# PR Review Report" detection.
             const idx = review.search(/#[ \t]*PR Review Report\b/i);
             if (idx > 0 && review[idx - 1] !== '\n') {
               review = review.slice(0, idx) + '\n' + review.slice(idx);
             }
 
-            if (!review) {
-              const regex = /"text"\s*:\s*"((?:\\.|[^"\r\n])*)"/g;
-              const pieces = [];
-              let match;
-              while ((match = regex.exec(raw)) !== null) {
-                const text = match[1]
-                  .replace(/\\n/g, '\n')
-                  .replace(/\\"/g, '"')
-                  .replace(/\\\\/g, '\\');
-                pieces.push(text);
-              }
-              review = pieces.join('');
-              // Also normalize for fallback regex extraction
-              const fallbackIdx = review.search(/#[ \t]*PR Review Report\b/i);
-              if (fallbackIdx > 0 && review[fallbackIdx - 1] !== '\n') {
-                review = review.slice(0, fallbackIdx) + '\n' + review.slice(fallbackIdx);
-              }
-            }
-
             const trimReport = (input) => {
               if (!input) return '';
               // Find the first markdown header with "PR Review Report" anywhere in the string
-              const m = input.match(/#[ \t]*PR Review Report\b/i); // no newline required
+              const m = input.match(/#[ \t]*PR Review Report\b/i);
               if (m && typeof m.index === 'number') input = input.slice(m.index);
 
               // Fallback: if a hash exists before any newline but no match above, still cut to first '#'
@@ -610,6 +595,8 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
+
             const execFile = process.env.EXEC_FILE;
             if (!execFile || !fs.existsSync(execFile)) {
               core.info('No Opus execution file to parse.');
@@ -617,50 +604,21 @@ jobs:
             }
 
             const raw = fs.readFileSync(execFile, 'utf8');
-            const deltas = [];
-            for (const line of raw.split(/\r?\n/)) {
-              const trimmed = line.trim();
-              if (!trimmed) continue;
-              try {
-                const parsed = JSON.parse(trimmed);
-                if (parsed?.delta?.text) {
-                  deltas.push(parsed.delta.text);
-                } else if (typeof parsed?.text === 'string') {
-                  deltas.push(parsed.text);
-                }
-              } catch {}
-            }
+            const chunks = extractAllTextFromSession(raw);
+            let review = dedupeAdjacent(chunks).join('');
 
-            let review = deltas.join('');
             // Normalize newline before header for consistent parsing
+            // WHY: Streaming JSON format quirk - header may appear without preceding newline,
+            // making regex matching unreliable. This ensures consistent "# PR Review Report" detection.
             const idx = review.search(/#[ \t]*PR Review Report\b/i);
             if (idx > 0 && review[idx - 1] !== '\n') {
               review = review.slice(0, idx) + '\n' + review.slice(idx);
             }
 
-            if (!review) {
-              const regex = /"text"\s*:\s*"((?:\\.|[^"\r\n])*)"/g;
-              const pieces = [];
-              let match;
-              while ((match = regex.exec(raw)) !== null) {
-                const text = match[1]
-                  .replace(/\\n/g, '\n')
-                  .replace(/\\"/g, '"')
-                  .replace(/\\\\/g, '\\');
-                pieces.push(text);
-              }
-              review = pieces.join('');
-              // Also normalize for fallback regex extraction
-              const fallbackIdx = review.search(/#[ \t]*PR Review Report\b/i);
-              if (fallbackIdx > 0 && review[fallbackIdx - 1] !== '\n') {
-                review = review.slice(0, fallbackIdx) + '\n' + review.slice(fallbackIdx);
-              }
-            }
-
             const trimReport = (input) => {
               if (!input) return '';
               // Find the first markdown header with "PR Review Report" anywhere in the string
-              const m = input.match(/#[ \t]*PR Review Report\b/i); // no newline required
+              const m = input.match(/#[ \t]*PR Review Report\b/i);
               if (m && typeof m.index === 'number') input = input.slice(m.index);
 
               // Fallback: if a hash exists before any newline but no match above, still cut to first '#'
@@ -775,55 +733,18 @@ jobs:
             // Prefer the deeper Opus pass if both exist
             let body = (process.env.RESULT_OPUS || process.env.RESULT_SONNET || '').trim();
 
-            // Robust extractor: handles delta.text, text nodes, arrays, messages, etc.
-            function extractText(node, out) {
-              if (!node) return;
-              if (Array.isArray(node)) { node.forEach(n => extractText(n, out)); return; }
-              if (typeof node === 'object') {
-                // Anthropic stream deltas - prefer this over plain text
-                if (node.delta && typeof node.delta.text === 'string') {
-                  out.push(node.delta.text);
-                  // Don't process plain text if we found delta.text to avoid duplication
-                } else {
-                  // Plain text nodes (only if no delta.text was found)
-                  if (node.type === 'text' && typeof node.text === 'string') out.push(node.text);
-                  // Generic: capture any string-valued "text" (only if no delta)
-                  else if (Object.prototype.hasOwnProperty.call(node, 'text') && typeof node.text === 'string') out.push(node.text);
-                }
-
-                // Recurse into nested structures (but skip delta to avoid double-processing)
-                for (const k of ['content','turns','messages','data','message']) {
-                  if (node[k] !== undefined) extractText(node[k], out);
-                }
-                // Only recurse into delta if it doesn't have text (to avoid reprocessing delta.text)
-                if (node.delta && !node.delta.text) extractText(node.delta, out);
-              }
-            }
-
             if (!body) {
+              const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
               const execFile = process.env.EXEC_FILE_SONNET || process.env.EXEC_FILE_OPUS;
               if (execFile && fs.existsSync(execFile)) {
                 try {
-                  const raw = fs.readFileSync(execFile, 'utf8').trim();
-                  const chunks = [];
+                  const raw = fs.readFileSync(execFile, 'utf8');
+                  const chunks = extractAllTextFromSession(raw);
+                  body = dedupeAdjacent(chunks).join('').trim();
 
-                  // First try NDJSON (stream JSON)
-                  for (const line of raw.split(/\r?\n/)) {
-                    const s = line.trim();
-                    if (!s) continue;
-                    try {
-                      extractText(JSON.parse(s), chunks);
-                    } catch {}
-                  }
-
-                  // Fallback: single JSON blob
-                  if (!chunks.length) {
-                    try { extractText(JSON.parse(raw), chunks); } catch {}
-                  }
-
-                  // Join deltas without injecting extra newlines
-                  body = chunks.join('').trim();
                   // Normalize newline before header for consistent parsing
+                  // WHY: Streaming JSON format quirk - header may appear without preceding newline,
+                  // making regex matching unreliable. This ensures consistent "# PR Review Report" detection.
                   const fallbackIdx = body.search(/#[ \t]*PR Review Report\b/i);
                   if (fallbackIdx > 0 && body[fallbackIdx - 1] !== '\n') {
                     body = body.slice(0, fallbackIdx) + '\n' + body.slice(fallbackIdx);
