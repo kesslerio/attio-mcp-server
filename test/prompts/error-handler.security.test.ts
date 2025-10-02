@@ -179,4 +179,32 @@ describe('createErrorResult security hardening', () => {
     expect(detailString.includes('< 100')).toBe(false);
     expect(detailString.includes('> 0')).toBe(false);
   });
+
+  it('handles empty error messages gracefully', () => {
+    const result = createErrorResult(new Error(), '', 400, TOOL_METADATA);
+
+    expect(result.error.message).toBe(
+      'Invalid prompt request. Please review the provided parameters.'
+    );
+    expect(result.error.code).toBe(400);
+    expect(result.isError).toBe(true);
+    // Should have sanitized detail even with empty message
+    expect(result.error.details?.sanitizedDetail).toBeDefined();
+  });
+
+  it('handles whitespace-only error messages gracefully', () => {
+    const result = createErrorResult(
+      new Error(),
+      '   \n\t  ',
+      500,
+      TOOL_METADATA
+    );
+
+    expect(result.error.message).toBe(
+      'An internal error occurred while processing the prompt.'
+    );
+    expect(result.error.code).toBe(500);
+    // Whitespace should be preserved in sanitized detail
+    expect(result.error.details?.sanitizedDetail).toBeDefined();
+  });
 });

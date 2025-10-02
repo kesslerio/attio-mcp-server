@@ -51,7 +51,7 @@ class TemplateCache {
    */
   constructor(options: Partial<TemplateCacheOptions> = {}) {
     this.options = {
-      maxSize: 100, // Default max cache size
+      maxSize: 100, // Sized for typical production load (50-100 unique prompts with parameter variations)
       ...options,
     };
   }
