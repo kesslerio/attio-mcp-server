@@ -57,10 +57,13 @@ export async function executeOperationsArray(
               throw new Error('Record ID is required for update operation');
             }
 
+            // Remove id field from record_data to avoid sending it as an attribute update
+            const { id, ...updateData } = recordData;
+
             const result = await handleUniversalUpdate({
               resource_type: resourceType,
               record_id: recordId,
-              record_data: recordData,
+              record_data: updateData as JsonObject,
               return_details: true,
             });
 
