@@ -27,7 +27,7 @@ test/integration/<domain>/IT-XXX-<slug>.integration.test.ts
  * Skips automatically when SKIP_INTEGRATION_TESTS=true
  */
 import { describe, it, expect } from 'vitest';
-import { shouldRunIntegrationTests } from '../utils/integration-guards';
+import { shouldRunIntegrationTests } from '@test/utils/integration-guards.js';
 
 const runTests = shouldRunIntegrationTests();
 
@@ -77,20 +77,20 @@ npm run test:integration -- --reporter=verbose
 
 ## 📊 Current Test Inventory
 
-> **Note**: Tests are currently in migration to the IT-XXX naming convention. See [Integration Test Catalog](../../docs/testing/integration-test-catalog.md) for the complete mapping.
+The migration to IT-XXX naming is complete. Refer to the [Integration Test Catalog](../../docs/testing/integration-test-catalog.md) for the authoritative index.
 
-### Active Suites (Legacy Naming)
+### Active Suites
 
-| Current File                                            | Proposed IT-XXX | Description                            | Status            |
-| ------------------------------------------------------- | --------------- | -------------------------------------- | ----------------- |
-| `batch-update-companies.integration.test.ts`            | IT-001          | Batch company CRUD operations          | ⏳ Pending rename |
-| `rate-limiting.integration.test.ts`                     | IT-201          | Rate limiting behavior (deterministic) | ⏳ Pending rename |
-| `relationship-filters.test.ts`                          | IT-301          | Relationship filter validation         | ⏳ Pending rename |
-| `lists/add-record-to-list.integration.test.ts`          | IT-302          | List membership operations             | ⏳ Pending rename |
-| `api/advanced-search.integration.test.ts`               | IT-101          | Advanced search API                    | ⏳ Pending rename |
-| `api/advanced-search-validation.integration.test.ts`    | IT-105          | Advanced search validation             | ⏳ Pending rename |
-| `api/attribute-validation-real-api.integration.test.ts` | IT-106          | Attribute validation with live API     | ⏳ Pending rename |
-| `api/industry-categories-mapping.integration.test.ts`   | IT-107          | Industry-categories field mapping      | ⏳ Pending rename |
+| IT ID  | File Path                                                                         | Description                                    |
+| ------ | --------------------------------------------------------------------------------- | ---------------------------------------------- |
+| IT-001 | `test/integration/core/IT-001-batch-company-operations.integration.test.ts`       | Batch company CRUD operations                  |
+| IT-101 | `test/integration/api/IT-101-advanced-search-api.integration.test.ts`             | Advanced search API coverage                   |
+| IT-105 | `test/integration/api/IT-105-advanced-search-validation.integration.test.ts`      | Advanced search validation edge cases          |
+| IT-106 | `test/integration/api/IT-106-attribute-validation.integration.test.ts`            | Attribute validation with live API             |
+| IT-107 | `test/integration/api/IT-107-industry-categories-mapping.integration.test.ts`     | Industry categories field mapping              |
+| IT-201 | `test/integration/services/IT-201-rate-limiting.integration.test.ts`              | Rate limiting behavior (deterministic)         |
+| IT-301 | `test/integration/advanced/IT-301-relationship-filters.integration.test.ts`       | Relationship filter validation                 |
+| IT-302 | `test/integration/advanced/IT-302-list-membership-operations.integration.test.ts` | List membership operations via universal tools |
 
 ## 🔄 Integration vs E2E Tests
 
@@ -112,12 +112,4 @@ npm run test:integration -- --reporter=verbose
 
 ## 🚧 Migration Status
 
-The integration test suite is currently migrating to the IT-XXX naming convention to improve:
-
-- **Discoverability**: Consistent numbering aligned with E2E tests
-- **Reporting**: Better dashboard integration and coverage tracking
-- **Maintenance**: Clear scope boundaries and test organization
-
-**Migration tracked in**: Issue #834 - Integration test naming migration
-
-For migration details and implementation plan, see [Integration Test Naming Audit](../../docs/testing/integration-test-naming-audit.md).
+Migration to the IT-XXX convention is **complete**. Future integration suites should follow the documented naming and guard patterns by default.
