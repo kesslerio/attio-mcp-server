@@ -383,6 +383,7 @@ export class ErrorService {
         path?: string;
         code?: string;
         message: string;
+        fieldType?: string;
       }>;
     };
     suggestion?: string;
@@ -403,6 +404,7 @@ export class ErrorService {
         path?: string;
         code?: string;
         message: string;
+        fieldType?: string;
       }> = []
     ): string => {
       if (!validationErrors.length) return '';
@@ -413,7 +415,8 @@ export class ErrorService {
           : v.path
             ? `Path "${v.path}"`
             : 'Field';
-        return `- ${fieldName}: ${v.message}`;
+        const fieldType = v.fieldType ? ` (type: ${v.fieldType})` : '';
+        return `- ${fieldName}${fieldType}: ${v.message}`;
       });
 
       const suffix =
@@ -434,6 +437,7 @@ export class ErrorService {
       path?: string;
       code?: string;
       message: string;
+      fieldType?: string;
     }> => {
       if (!Array.isArray(rawErrors)) return [];
 
@@ -445,6 +449,8 @@ export class ErrorService {
           code?: string;
           message?: string;
           error?: string;
+          field_type?: string;
+          expected_type?: string;
         };
         return {
           field: errorObj.field || errorObj.attribute_slug,
@@ -455,6 +461,7 @@ export class ErrorService {
           message: String(
             errorObj.message || errorObj.error || 'Unknown error'
           ),
+          fieldType: errorObj.field_type || errorObj.expected_type,
         };
       });
     };
@@ -468,6 +475,7 @@ export class ErrorService {
         path?: string;
         code?: string;
         message: string;
+        fieldType?: string;
       }>;
     } => {
       try {

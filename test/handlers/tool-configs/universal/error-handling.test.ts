@@ -63,6 +63,28 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       expect(message).toContain('Record not found');
     });
 
+    it('should surface field type information in contextual messages', () => {
+      expect(typeof EnhancedApiError.prototype.getContextualMessage).toBe(
+        'function'
+      );
+      const enhancedError = new EnhancedApiError(
+        'Invalid status value',
+        400,
+        '/objects/companies',
+        'POST',
+        {
+          field: 'status',
+          fieldType: 'select',
+          validValues: ['new', 'active'],
+        }
+      );
+
+      const message = enhancedError.getContextualMessage();
+
+      expect(message).toContain("type 'select'");
+      expect(message).toContain('Valid options for');
+    });
+
     it('should extract message from AttioApiError using message property (CRITICAL FIX)', () => {
       const attioError = new AttioApiError(
         'API request failed',
@@ -277,6 +299,20 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
 
       expect(result.message).toBe('An error occurred');
       expect(result.statusCode).toBe(500);
+    });
+
+    it('should preserve field type metadata when enhancing generic errors', () => {
+      const result = ErrorEnhancer.ensureEnhanced(
+        new Error('Validation failed'),
+        {
+          field: 'status',
+          fieldType: 'select',
+          validValues: ['open', 'won'],
+        }
+      );
+
+      expect(result.context?.fieldType).toBe('select');
+      expect(result.getContextualMessage()).toContain("type 'select'");
     });
   });
 
