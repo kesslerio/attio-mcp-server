@@ -163,7 +163,7 @@ export async function listPrompts(req: Request, res: Response): Promise<void> {
         },
       }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -195,7 +195,7 @@ export async function listPromptCategories(
         context: {},
       }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -224,7 +224,7 @@ export async function getPromptDetails(
           context: { promptId },
         }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -245,7 +245,7 @@ export async function getPromptDetails(
         },
       }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -374,7 +374,7 @@ export async function executePrompt(
         `No prompt found with ID: ${promptId}`,
         404
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -396,7 +396,7 @@ export async function executePrompt(
           },
         }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -427,7 +427,7 @@ export async function executePrompt(
             },
           }
         );
-        res.status(Number(errorResult.error.code)).json(errorResult);
+        res.status(errorResult.error.code).json(errorResult);
         return;
       }
     }
@@ -452,7 +452,7 @@ export async function executePrompt(
           },
         }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -477,7 +477,7 @@ export async function executePrompt(
         },
       }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 

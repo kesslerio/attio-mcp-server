@@ -26,8 +26,8 @@ const DEFAULT_ERROR_MESSAGE = 'Unable to process the prompt request.';
 function stripDangerousContent(value: string): string {
   // Use sanitize-html to robustly remove all scripts and event handlers
   const sanitized = sanitizeHtml(value, {
-    allowedTags: false,  // Remove all HTML tags, or set to [] to allow plain text only
-    allowedAttributes: false,  // Remove all attributes
+    allowedTags: false, // Remove all HTML tags, or set to [] to allow plain text only
+    allowedAttributes: false, // Remove all attributes
     disallowedTagsMode: 'discard',
   });
   // Optionally, also apply further replacements as in original
@@ -54,10 +54,10 @@ export interface PromptErrorOptions {
   context?: Record<string, unknown>;
 }
 
-// Extend the error response type to allow string codes for Express
+// Error response type for prompts (consistent with base error handler)
 interface PromptErrorResponse {
   error: {
-    code: string | number;
+    code: number;
     message: string;
     type: ErrorType;
     details?: Record<string, unknown> | null;
@@ -141,12 +141,12 @@ export function createErrorResult(
     errorDetails
   ) as PromptErrorResponse;
 
-  // Create a new response object with our extended type
+  // Create a new response object with sanitized content
   const response: PromptErrorResponse = {
     ...baseResponse,
     error: {
       ...baseResponse.error,
-      code: String(statusCode), // Convert to string for Express
+      code: statusCode, // Keep as number for Express res.status()
       message: safeClientMessage,
     },
     content: baseResponse.content.map((entry) =>

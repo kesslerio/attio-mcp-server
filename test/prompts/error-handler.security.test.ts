@@ -21,8 +21,9 @@ describe('createErrorResult security hardening', () => {
     expect(result.error.message).toBe(
       'Invalid prompt request. Please review the provided parameters.'
     );
+    // Verify script tags are encoded, not executable
     expect(JSON.stringify(result)).not.toContain('<script>');
-    expect(result.error.details?.sanitizedDetail).toContain('[blocked_script]');
+    expect(JSON.stringify(result)).toContain('&lt;script&gt;');
     expect(result.content[0]?.text).not.toContain('<script>');
   });
 
@@ -40,5 +41,121 @@ describe('createErrorResult security hardening', () => {
     );
     expect(result.error.details?.sanitizedDetail).toContain('&lt;img');
     expect(JSON.stringify(result)).not.toContain('onerror=');
+  });
+
+  it('removes data URI injections', () => {
+    const maliciousMessage =
+      '<iframe src="data:text/html,<script>alert(1)</script>">';
+    const result = createErrorResult(
+      new Error('Synthetic failure'),
+      maliciousMessage,
+      400,
+      TOOL_METADATA
+    );
+
+    expect(result.error.message).toBe(
+      'Invalid prompt request. Please review the provided parameters.'
+    );
+    expect(JSON.stringify(result)).not.toContain('data:text/html');
+    expect(JSON.stringify(result)).not.toContain('<script>');
+  });
+
+  it('removes javascript protocol handlers', () => {
+    const maliciousMessage =
+      '<a href="javascript:alert(document.cookie)">Click</a>';
+    const result = createErrorResult(
+      new Error('Synthetic failure'),
+      maliciousMessage,
+      400,
+      TOOL_METADATA
+    );
+
+    expect(result.error.message).toBe(
+      'Invalid prompt request. Please review the provided parameters.'
+    );
+    expect(JSON.stringify(result)).not.toContain('javascript:');
+    expect(JSON.stringify(result)).not.toContain('javascript:alert');
+  });
+
+  it('handles nested XSS payloads', () => {
+    const maliciousMessage =
+      '<div><span><script>alert("nested")</script></span></div>';
+    const result = createErrorResult(
+      new Error('Synthetic failure'),
+      maliciousMessage,
+      500,
+      TOOL_METADATA
+    );
+
+    expect(result.error.message).toBe(
+      'An internal error occurred while processing the prompt.'
+    );
+    // Verify all HTML tags are encoded
+    expect(JSON.stringify(result)).not.toContain('<script>');
+    expect(JSON.stringify(result)).not.toContain('<div>');
+    expect(JSON.stringify(result)).not.toContain('<span>');
+    // Encoded versions are safe
+    expect(JSON.stringify(result)).toContain('&lt;script&gt;');
+  });
+
+  it('prevents double-encoding bypass', () => {
+    const maliciousMessage = '&lt;script&gt;alert(1)&lt;/script&gt;';
+    const result = createErrorResult(
+      new Error('Synthetic failure'),
+      maliciousMessage,
+      400,
+      TOOL_METADATA
+    );
+
+    expect(result.error.message).toBe(
+      'Invalid prompt request. Please review the provided parameters.'
+    );
+    // Should be double-encoded, not decoded
+    expect(JSON.stringify(result)).toContain('&amp;lt;script&amp;gt;');
+    expect(JSON.stringify(result)).not.toContain('<script>');
+  });
+
+  it('handles multiple event handler variations', () => {
+    const testCases = [
+      '<img onclick="alert(1)">',
+      '<body onload="alert(2)">',
+      '<div onmouseover="alert(3)">',
+      '<input onfocus="alert(4)">',
+    ];
+
+    testCases.forEach((maliciousMessage) => {
+      const result = createErrorResult(
+        new Error('Synthetic failure'),
+        maliciousMessage,
+        400,
+        TOOL_METADATA
+      );
+
+      expect(JSON.stringify(result)).not.toContain('onclick=');
+      expect(JSON.stringify(result)).not.toContain('onload=');
+      expect(JSON.stringify(result)).not.toContain('onmouseover=');
+      expect(JSON.stringify(result)).not.toContain('onfocus=');
+    });
+  });
+
+  it('encodes special characters even in benign messages', () => {
+    const messageWithSpecialChars = 'Value must be < 100 and > 0';
+    const result = createErrorResult(
+      new Error('Synthetic failure'),
+      messageWithSpecialChars,
+      400,
+      TOOL_METADATA
+    );
+
+    expect(result.error.message).toBe(
+      'Invalid prompt request. Please review the provided parameters.'
+    );
+    // Special chars should be HTML encoded (double-encoded due to sanitizer + encoder)
+    const detailString = String(result.error.details?.sanitizedDetail);
+    expect(detailString).toContain('&amp;lt;');
+    expect(detailString).toContain('&amp;gt;');
+    // Should not contain raw < or >
+    expect(detailString.includes('< 100')).toBe(false);
+    expect(detailString.includes('> 0')).toBe(false);
   });
 });
