@@ -604,6 +604,11 @@ Comprehensive documentation is available in the [docs directory](./docs):
 - [Claude Desktop Configuration](./docs/claude-desktop-config.md)
 - [Troubleshooting Guide](./TROUBLESHOOTING.md)
 
+### **Configuration**
+
+- [Warning Filter Configuration](./docs/configuration/warning-filters.md) - Understanding cosmetic vs semantic mismatches, ESLint budgets, and suppression strategies
+- [Field Verification Configuration](./docs/configuration/field-verification.md) - Field persistence verification and validation settings
+
 ### **API Reference**
 
 📋 **Implementation Status**: These docs describe the Attio API endpoints. For MCP tool usage, refer to universal tools documentation above.
