@@ -22,6 +22,75 @@ The warning filter system balances transparency about risky updates with a finit
 
 > ℹ️ `ENABLE_ENHANCED_VALIDATION` controls pre-update checks but does not change the warning filters directly. Review [Field Verification Configuration](./field-verification.md) for deeper examples.
 
+## Warning Examples: Cosmetic vs Semantic Mismatches
+
+Understanding the difference between cosmetic and semantic mismatches helps you decide when to investigate warnings versus when to safely ignore them.
+
+### Cosmetic Mismatches (Filtered by Default)
+
+These warnings are **suppressed** unless `STRICT_FIELD_VALIDATION=true`. They represent formatting differences without semantic content changes:
+
+**Example 1: Quote-only differences**
+
+```
+Field "name" persistence mismatch: expected "Acme Corp", got Acme Corp
+```
+
+_Same content, only quote formatting differs—safe to ignore._
+
+**Example 2: Object expansion**
+
+```
+Field "stage" persistence mismatch: expected "Demo", got {"title":"Demo","id":"abc123"}
+```
+
+_Attio expanded the value into an object wrapper—content is preserved._
+
+**Example 3: Metadata addition**
+
+```
+Field "company" persistence mismatch: expected "Acme Corp", got {"name":"Acme Corp","id":"xyz789","created_at":"2024-01-01"}
+```
+
+_Attio added metadata fields—original value is intact._
+
+### Semantic Mismatches (Always Logged)
+
+These warnings indicate **actual content differences** and are always surfaced because they may signal data loss or transformation issues:
+
+**Example 1: Value changes**
+
+```
+Field "name" persistence mismatch: expected "Acme Corp", got "Acme Inc"
+```
+
+_Content differs—investigate why the name changed._
+
+**Example 2: Data truncation**
+
+```
+Field "description" persistence mismatch: expected "Long description text...", got "Long description te"
+```
+
+_Value was truncated—may indicate field length limits._
+
+**Example 3: Type coercion**
+
+```
+Field "employee_count" persistence mismatch: expected 150, got "150"
+```
+
+_Type changed from number to string—may affect filtering._
+
+### Debugging Workflow
+
+When you encounter a warning:
+
+1. **Check if it's cosmetic**: Look for quote differences, object wrappers, or metadata additions
+2. **Enable strict mode** if unsure: `STRICT_FIELD_VALIDATION=true` to see all discrepancies
+3. **Compare semantically**: Does the core value match, or is data actually changing?
+4. **Investigate semantic mismatches**: These may indicate API bugs, schema drift, or field validation issues
+
 ## ESLint Warning Budget
 
 - **Global ceiling:** CI fails any pipeline that ends with more than 1,030 ESLint warnings across source and test suites.【F:AGENTS.md†L41-L54】

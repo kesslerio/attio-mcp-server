@@ -5,6 +5,7 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 ## Quick Navigation
 
 ### 🚀 New User Journey
+
 1. **[Getting Started](getting-started.md)** - Installation and basic configuration
 2. **[User Guide](user-guide.md)** - Common workflows and examples
 3. **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
@@ -12,8 +13,9 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 ### 🏗️ Architecture & Implementation Guides
 
 #### 🎯 PR #483: formatResult Architecture Refactoring (EXCEPTIONAL SUCCESS)
+
 - **[Architecture Decision Record](./architecture/adr-formatresult-refactoring.md)** - Complete ADR for 97.15/100 production readiness
-- **[Performance Report](./performance/formatresult-performance-report.md)** - 89.7% speed improvement documentation  
+- **[Performance Report](./performance/formatresult-performance-report.md)** - 89.7% speed improvement documentation
 - **[formatResult Optimization Guide](./performance/formatResult-optimization.md)** - Practical optimization techniques and patterns
 - **[Mock Factory Pattern](./architecture/mock-factory-pattern.md)** - Clean test/production separation architecture
 - **[Production-Test Separation](./testing/production-test-separation.md)** - Complete architectural separation guide
@@ -21,7 +23,8 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 - **[Performance Optimization Strategies](./performance/optimization-strategies.md)** - Reusable optimization techniques
 - **[Anti-Pattern Prevention](./development/anti-patterns.md)** - Prevent architecture regressions
 
-#### 🧪 Issue #480: E2E Test Infrastructure  
+#### 🧪 Issue #480: E2E Test Infrastructure
+
 - **[Issue #480 Implementation](./implementations/issue-480-e2e-test-mock-data-alignment.md)** - Complete E2E test failures resolution with mock factory architecture
 - **[Test Infrastructure Architecture](./development/test-infrastructure-architecture.md)** - Mock factory pattern and clean separation principles
 - **[E2E Test Troubleshooting](./development/e2e-test-troubleshooting.md)** - Systematic debugging for test failures
@@ -29,15 +32,23 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 ### 📖 Main Documentation Sections
 
 #### 🔧 API & Usage
+
 - **[Universal Tools API](universal-tools/api-reference.md)** - Complete API reference for all 13 tools
 - **[Filtering & Search Guide](api/filtering-and-search.md)** - Advanced filtering and search capabilities
 - **[Error Handling](api/error-handling.md)** - Error handling and recovery
 
-#### 🚀 Deployment & Operations  
+#### ⚙️ Configuration
+
+- **[Warning Filter Configuration](configuration/warning-filters.md)** - Understanding cosmetic vs semantic mismatches, ESLint budgets, and suppression strategies
+- **[Field Verification Configuration](configuration/field-verification.md)** - Field persistence verification and validation settings
+
+#### 🚀 Deployment & Operations
+
 - **[Deployment Guide](deployment/README.md)** - Docker, security, and production deployment
 - **[Security Configuration](deployment/security.md)** - Security best practices
 
 #### 👨‍💻 Development & Contributing
+
 - **[Development Guide](development/README.md)** - Contributing, testing, and extending
 - **[Contributing Guidelines](development/contributing.md)** - How to contribute to the project
 - **[Testing Guide](development/testing.md)** - Testing framework and practices with Issue #480 improvements
@@ -49,11 +60,13 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 **Production Readiness Score**: **97.15/100** - Enterprise-grade quality achieved
 
 #### Performance Improvements
+
 - **Speed**: 89.7% faster formatResult execution across all universal tools
 - **Memory**: 227KB memory usage reduction through optimized string templates
 - **Quality**: 59% ESLint warning reduction (957→395) with 100% TypeScript error resolution
 
 #### Architecture Excellence
+
 - **Zero Breaking Changes**: Complete backward compatibility maintained
 - **Type Safety**: Consistent `: string` return types for all formatResult functions
 - **Anti-Pattern Elimination**: Removed dual-mode environment-dependent behavior
@@ -64,12 +77,14 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 **Achievement Summary**: Successfully resolved critical E2E test failures with architectural improvements.
 
 #### Key Improvements
+
 - **76% E2E Success Rate**: From ~17+ failures to 29/38 tests passing
-- **Mock Factory Architecture**: Clean separation of test and production concerns  
+- **Mock Factory Architecture**: Clean separation of test and production concerns
 - **Production Safety**: Zero test code contamination in production bundles
 - **Compatibility Layer**: Issue #480 dual field support for backward compatibility
 
 #### Architectural Patterns Established
+
 - **Mock Factory Pattern**: `/test/utils/mock-factories/` architecture with consistent interfaces
 - **Environment Detection**: Multi-strategy test environment validation
 - **Type Safety**: Full TypeScript support with proper interfaces
@@ -80,21 +95,25 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 Here are some examples of how to use the Attio MCP Server with Claude:
 
 ### Finding Companies
+
 ```
 Find all technology companies in the CRM
 ```
 
 ### Managing Contacts
+
 ```
 Add a note to John Smith that we discussed the proposal on May 15th
 ```
 
 ### Working with Lists
+
 ```
 Add ABC Corp to our "Hot Leads" list with priority high and stage set to "Discovery Call"
 ```
 
 ### Complex Queries
+
 ```
 Find all healthcare companies in San Francisco that have more than 100 employees and were added to CRM in the last 3 months
 ```

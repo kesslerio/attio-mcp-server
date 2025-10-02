@@ -147,6 +147,7 @@ A: Investigate if:
 
 See also:
 
+- [Warning Filter Configuration](./warning-filters.md) - Understanding cosmetic vs semantic mismatches, ESLint budgets, and suppression strategies
 - [Environment Variables](../configuration.md#environment-variables) - All available env vars
 - [Common Update Patterns](../examples/common-update-patterns.md) - Examples of typical updates
 - [Error Handling](../error-handling.md) - Understanding error messages
