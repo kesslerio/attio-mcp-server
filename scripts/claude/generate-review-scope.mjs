@@ -73,15 +73,25 @@ function listRing0(baseRef, headRef) {
   const diffRange = `${safeBase}...${safeHead}`;
   const output = runGit(['diff', '--name-status', diffRange]);
   const files = [];
+  const deletions = [];
   for (const line of output.split('\n')) {
     if (!line) continue;
     const [status, file] = line.split('\t');
     if (!file) continue;
-    if (status === 'D') continue; // skip deletions
     const safePath = ensureSafePath(file);
-    if (safePath) files.push(safePath);
+    if (!safePath) continue;
+
+    if (status === 'D') {
+      // Track deletions separately (can't read content but should review rationale)
+      deletions.push(safePath);
+    } else {
+      files.push(safePath);
+    }
   }
-  return Array.from(new Set(files));
+  return {
+    files: Array.from(new Set(files)),
+    deletions: Array.from(new Set(deletions)),
+  };
 }
 
 const RELATIVE_IMPORT_RE = /import\s+[^;]*?from\s+['\"](\.{1,2}\/.+?)['\"]/g;
@@ -192,8 +202,11 @@ function main() {
 
   let fallback = false;
   let ring0 = [];
+  let deletions = [];
   try {
-    ring0 = listRing0(baseRef, headRef);
+    const result = listRing0(baseRef, headRef);
+    ring0 = result.files;
+    deletions = result.deletions;
   } catch (error) {
     console.error('[scope] Failed to list Ring 0:', error.message);
     fallback = true;
@@ -234,6 +247,7 @@ function main() {
 
   ring0.sort();
   ring1.sort();
+  deletions.sort();
 
   const baseOutput =
     ensureSafePath(process.env.OUTPUT_DIR || '.github/claude-cache') ||
@@ -241,14 +255,37 @@ function main() {
   const outputDir =
     ensureSafePath(join(baseOutput, runId)) || `${baseOutput}/${runId}`;
   mkdirSync(outputDir, { recursive: true });
+
+  // Write standard ring files
   const ring0Path = join(outputDir, 'ring0.json');
   const ring1Path = join(outputDir, 'ring1.json');
   writeFileSync(ring0Path, JSON.stringify(ring0, null, 2) + '\n');
   writeFileSync(ring1Path, JSON.stringify(ring1, null, 2) + '\n');
 
+  // Write deletions summary if there are any deletions
+  let deletionsSummaryPath = null;
+  if (deletions.length > 0) {
+    deletionsSummaryPath = join(outputDir, 'DELETIONS.md');
+    const deletionContent = [
+      '# Deleted Files in This PR',
+      '',
+      `This PR deletes ${deletions.length} file(s):`,
+      '',
+      ...deletions.map((f) => `- \`${f}\``),
+      '',
+      '**Review Focus:** Verify that:',
+      '1. Deletions are intentional and justified in the PR description',
+      '2. No critical functionality is lost without replacement',
+      '3. Coverage gaps are tracked or mitigated',
+      '4. Related documentation/tests are updated accordingly',
+    ].join('\n');
+    writeFileSync(deletionsSummaryPath, deletionContent);
+  }
+
   const summary = {
     ring0Count: ring0.length,
     ring1Count: ring1.length,
+    deletionsCount: deletions.length,
     fallback,
     baseRef,
     headRef,
@@ -262,10 +299,15 @@ function main() {
     ring0.length,
     'ring1:',
     ring1.length,
+    'deletions:',
+    deletions.length,
     'fallback:',
     fallback ? 'yes' : 'no'
   );
   console.info(`[scope] output: ${outputDir}`);
+  if (deletionsSummaryPath) {
+    console.info(`[scope] deletions summary: ${deletionsSummaryPath}`);
+  }
 }
 
 main();
