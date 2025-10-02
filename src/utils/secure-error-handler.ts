@@ -8,13 +8,15 @@
 import {
   sanitizeErrorMessage,
   createSanitizedError,
-} from './error-sanitizer.js';
-import { error as logError, OperationType } from './logger.js';
+} from '@/utils/error-sanitizer.js';
+import { error as logError, OperationType } from '@/utils/logger.js';
 import {
   getErrorMessage,
   ensureError,
   getErrorStatus,
-} from './error-utilities.js';
+} from '@/utils/error-utilities.js';
+import { sanitizeMcpResponse } from '@/utils/json-serializer.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 const DEFAULT_STATUS_CODE = 500;
 
@@ -113,6 +115,28 @@ const mapStatusToErrorType = (statusCode: number): string => {
   return 'internal_error';
 };
 
+const ERROR_SUGGESTIONS: Record<string, string> = {
+  authentication_error: 'Verify the configured Attio credentials and retry.',
+  authorization_error:
+    'Confirm the workspace permissions allow this tool operation.',
+  validation_error: 'Review the tool arguments for missing or invalid fields.',
+  not_found: 'Check the provided identifiers or search filters and try again.',
+  rate_limit: 'Wait a few seconds before retrying the request.',
+  server_error:
+    'Retry shortly. If the problem persists please contact support with the reference ID.',
+  internal_error:
+    'Retry the request. Contact support with the reference ID if it continues.',
+  retry_exhausted:
+    'The upstream service kept failing. Retry later or reach out to support with the reference ID.',
+  batch_error:
+    'Some items failed in the batch. Inspect the provided reference ID for details.',
+  sanitized_error:
+    'Retry the request. Contact support with the reference ID if it recurs.',
+};
+
+const DEFAULT_SUGGESTION =
+  'Retry the request later. If it continues to fail contact support with the reference ID.';
+
 /**
  * Error context for enhanced error handling
  */
@@ -123,6 +147,7 @@ export interface ErrorContext {
   recordId?: string;
   userId?: string;
   correlationId?: string;
+  requestId?: string;
   [key: string]: unknown;
 }
 
@@ -162,6 +187,10 @@ export class SecureApiError extends Error {
       operation: context.operation,
       resourceType: context.resourceType,
       timestamp: new Date().toISOString(),
+      ...(context.correlationId
+        ? { correlationId: context.correlationId }
+        : {}),
+      ...(context.requestId ? { requestId: context.requestId } : {}),
     };
 
     // Maintain proper prototype chain
@@ -252,7 +281,20 @@ export interface SecureErrorResponse {
     type: string;
     statusCode?: number;
     suggestion?: string;
+    correlationId?: string;
+    requestId?: string;
   };
+}
+
+export interface SecureErrorResponseOptions extends Partial<ErrorContext> {
+  suggestion?: string;
+  errorType?: string;
+}
+
+export interface SecureToolErrorOptions extends SecureErrorResponseOptions {
+  fallbackMessage?: string;
+  includeReferenceInMessage?: boolean;
+  clientMessage?: string;
 }
 
 /**
@@ -277,16 +319,26 @@ export interface SecureErrorResponse {
  */
 export function createSecureErrorResponse(
   error: unknown,
-  context?: Partial<ErrorContext>
+  context: SecureErrorResponseOptions = {}
 ): SecureErrorResponse {
+  const resolveSuggestion = (type: string): string =>
+    context.suggestion ?? ERROR_SUGGESTIONS[type] ?? DEFAULT_SUGGESTION;
+
   // If it's already a SecureApiError, use its safe data
   if (error instanceof SecureApiError) {
+    const correlationId = context.correlationId ?? error.context.correlationId;
+    const requestId = context.requestId ?? error.context.requestId;
+    const errorType = context.errorType ?? error.errorType;
+
     return {
       success: false,
       error: {
         message: error.message,
-        type: error.errorType,
+        type: errorType,
         statusCode: error.statusCode,
+        suggestion: resolveSuggestion(errorType),
+        ...(correlationId ? { correlationId } : {}),
+        ...(requestId ? { requestId } : {}),
       },
     };
   }
@@ -296,20 +348,97 @@ export function createSecureErrorResponse(
     error as Error | string | Record<string, unknown>,
     resolveStatusCode(error, undefined),
     {
-      module: context?.module || 'unknown',
-      operation: context?.operation || 'unknown',
+      module: context.module || 'unknown',
+      operation: context.operation || 'unknown',
       includeContext: true,
+      safeMetadata: {
+        ...(context.resourceType ? { resourceType: context.resourceType } : {}),
+        ...(context.correlationId
+          ? { correlationId: context.correlationId }
+          : {}),
+      },
     }
   );
+
+  const correlationId = context.correlationId;
+  const requestId = context.requestId;
+  const errorType = context.errorType ?? sanitized.type;
 
   return {
     success: false,
     error: {
       message: sanitized.message,
-      type: sanitized.type,
+      type: errorType,
       statusCode: sanitized.statusCode,
+      suggestion: resolveSuggestion(errorType),
+      ...(correlationId ? { correlationId } : {}),
+      ...(requestId ? { requestId } : {}),
     },
   };
+}
+
+export function createSecureToolErrorResult(
+  error: unknown,
+  options: SecureToolErrorOptions = {}
+): CallToolResult {
+  const {
+    correlationId,
+    requestId,
+    fallbackMessage = 'Tool execution failed',
+    includeReferenceInMessage = true,
+    clientMessage,
+    ...context
+  } = options;
+
+  const secureResponse = createSecureErrorResponse(error, {
+    ...context,
+    correlationId,
+    requestId,
+  });
+
+  const baseMessage =
+    clientMessage ?? secureResponse.error.message ?? fallbackMessage;
+  const referenceLine =
+    includeReferenceInMessage && correlationId
+      ? `\nReference ID: ${correlationId}`
+      : '';
+  const guidanceLine = secureResponse.error.suggestion
+    ? `\nNext steps: ${secureResponse.error.suggestion}`
+    : '';
+
+  const errorPayload: Record<string, unknown> = {
+    type: secureResponse.error.type,
+    message: baseMessage,
+  };
+
+  if (secureResponse.error.statusCode) {
+    errorPayload.code = secureResponse.error.statusCode;
+  }
+
+  if (secureResponse.error.suggestion) {
+    errorPayload.suggestion = secureResponse.error.suggestion;
+  }
+
+  if (correlationId) {
+    errorPayload.correlationId = correlationId;
+  }
+
+  if (requestId) {
+    errorPayload.requestId = requestId;
+  }
+
+  const contentMessage = `${baseMessage}${referenceLine}${guidanceLine}`.trim();
+
+  return sanitizeMcpResponse({
+    content: [
+      {
+        type: 'text',
+        text: contentMessage,
+      },
+    ],
+    isError: true,
+    error: errorPayload,
+  });
 }
 
 /**
@@ -623,6 +752,7 @@ export default {
   SecureApiError,
   withSecureErrorHandling,
   createSecureErrorResponse,
+  createSecureToolErrorResult,
   BatchErrorHandler,
   retryWithSecureErrors,
   SecureCircuitBreaker,
