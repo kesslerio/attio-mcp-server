@@ -13,7 +13,14 @@ test/e2e/mcp/
 │   ├── record-details.mcp.test.ts    # TC-002: Get record details by ID
 │   ├── create-records.mcp.test.ts    # TC-003: Record creation
 │   ├── update-records.mcp.test.ts    # TC-004: Record modification
-│   └── delete-records.mcp.test.ts    # TC-005: Record deletion
+│   ├── delete-records.mcp.test.ts    # TC-005: Record deletion
+│   └── metadata-operations.mcp.test.ts # TC-CO07: Metadata & detailed info coverage
+├── advanced-operations/       # P1/P2 Advanced scenarios (80% pass target)
+│   ├── batch-operations.mcp.test.ts           # TC-AO01: Universal batch workflows
+│   ├── advanced-search.mcp.test.ts            # TC-AO02: Complex search & discovery
+│   ├── cross-object-relationships.mcp.test.ts # TC-AO03: Relationship traversal
+│   ├── workflow-automation.mcp.test.ts        # TC-AO05: Automation triggers
+│   └── performance-edge-cases.mcp.test.ts     # TC-AO07: Stress/regression guardrails
 ├── shared/                    # Shared test infrastructure
 │   ├── mcp-test-base.ts      # Base MCP test class with common utilities
 │   ├── qa-assertions.ts      # QA-specific assertion helpers
@@ -36,24 +43,21 @@ test/e2e/mcp/
 
 **Quality Gate:** If ANY P0 test fails, the system is NOT ready for testing and deployment is BLOCKED.
 
-### P1 Essential Tests (80% Pass Required) - *To be implemented*
+### P1 Essential Tests (80% Pass Required)
 
-**Purpose:** Validate schema operations and advanced search capabilities.
+**Purpose:** Validate schema discovery, metadata access, and complex search capabilities using live data. Tests must keep the pass rate above 80% before moving to higher-risk scenarios.
 
-- TC-006: Get Attributes - Schema information retrieval
-- TC-007: Discover Attributes - Dynamic schema discovery
-- TC-008: Get Detailed Info - Specific information types
-- TC-009: Advanced Search - Complex search operations
+- **TC-CO07:** Metadata & Detailed Info Operations – exercises `records_get_attributes`, `records_discover_attributes`, and `records_get_info` across companies, people, tasks, and deals.
+- **TC-N03:** Note Search Operations – validates content search and filtering coverage for notes.
 
-### P2 Advanced Tests (50% Pass Target) - *To be implemented*
+### P2 Advanced Tests (50% Pass Target)
 
-**Purpose:** Validate advanced features and batch operations.
+**Purpose:** Validate high-volume workflows and advanced search dimensions that build on P1 confidence.
 
-- TC-010: Search by Relationship
-- TC-011: Search by Content
-- TC-012: Search by Timeframe
-- TC-013: Batch Operations
-- TC-019: Batch Search
+- **TC-AO01:** Batch Operations Validation – universal batch create/get/search, limits, partial failures, and performance.
+- **TC-AO02:** Advanced Search Operations – complex filters, relationship traversal, content search, and timeframe filtering.
+- **TC-AO03:** Cross-Object Relationship Operations – bi-directional relationship lookups for deals, people, and companies.
+- **TC-AO05:** Workflow Automation – automation orchestration scenarios (see file for specifics).
 
 ## Running the Tests
 
