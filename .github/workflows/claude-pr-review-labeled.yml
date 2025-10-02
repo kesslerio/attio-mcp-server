@@ -242,6 +242,7 @@ jobs:
             {
               echo 'DELETIONS_CONTENT<<DELETIONS_EOF'
               cat "$DELETIONS_PATH"
+              printf '\n'  # Ensure newline before delimiter (heredoc safety)
               echo 'DELETIONS_EOF'
             } >> "$GITHUB_ENV"
           else
