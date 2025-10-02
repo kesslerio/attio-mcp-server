@@ -19,6 +19,8 @@ export interface EnhancedApiErrorContext {
   field?: string;
   /** Type information for the problematic field */
   fieldType?: string;
+  /** Attio field configuration snapshot for deep diagnostics */
+  fieldMetadata?: unknown;
   /** Valid values for select fields */
   validValues?: string[];
   /** Suggested field names for typos */

@@ -184,5 +184,34 @@ describe('ErrorService.createUniversalError', () => {
       expect(mapped.details?.validation_errors?.[0]?.fieldType).toBe('select');
       expect(mapped.message).toContain('type: select');
     });
+
+    it('preserves field metadata when creating enhanced errors', () => {
+      const fieldMetadata = {
+        slug: 'priority',
+        type: 'select',
+        options: ['low', 'medium', 'high'],
+      };
+
+      const original = new EnhancedApiError(
+        'Invalid priority value',
+        400,
+        '/api/test',
+        'POST',
+        {
+          field: 'priority',
+          fieldType: 'select',
+          fieldMetadata,
+        }
+      );
+
+      const result = ErrorService.createUniversalError(
+        'update',
+        'tasks',
+        original
+      ) as EnhancedApiError;
+
+      expect(result.context?.fieldMetadata).toBe(fieldMetadata);
+      expect(result.context?.fieldType).toBe('select');
+    });
   });
 });

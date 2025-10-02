@@ -314,6 +314,32 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       expect(result.context?.fieldType).toBe('select');
       expect(result.getContextualMessage()).toContain("type 'select'");
     });
+
+    it('should preserve field metadata for deep diagnostics', () => {
+      const fieldConfig = {
+        slug: 'custom_field',
+        type: 'text',
+        max_length: 255,
+        required: true,
+      };
+
+      const result = ErrorEnhancer.ensureEnhanced(
+        new Error('Validation failed'),
+        {
+          field: 'custom_field',
+          fieldType: 'text',
+          fieldMetadata: fieldConfig,
+        }
+      );
+
+      expect(result.context?.fieldMetadata).toBe(fieldConfig);
+      expect(result.context?.fieldType).toBe('text');
+
+      // Verify fieldMetadata can be accessed for debugging
+      const metadata = result.context?.fieldMetadata as Record<string, unknown>;
+      expect(metadata?.max_length).toBe(255);
+      expect(metadata?.required).toBe(true);
+    });
   });
 
   describe('Real-world error handling scenarios', () => {
