@@ -169,6 +169,49 @@ jobs:
 
           echo "📊 Contributor: ${author} (${association})" >> $GITHUB_STEP_SUMMARY
 
+      - name: Extract PR Context for Review
+        id: pr_context
+        run: |
+          PR_NUM="${{ steps.resolve.outputs.pr }}"
+
+          # Fetch PR metadata using gh CLI with error handling
+          if PR_DATA=$(gh pr view "$PR_NUM" --repo "${{ github.repository }}" --json title,body,labels,closingIssuesReferences 2>/dev/null); then
+            # Extract title (always present)
+            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // "Untitled PR"')
+            echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+
+            # Extract body with truncation if needed (max 4000 chars for prompt efficiency)
+            PR_BODY=$(echo "$PR_DATA" | jq -r '.body // "No description provided"')
+            if [ ${#PR_BODY} -gt 4000 ]; then
+              PR_BODY="${PR_BODY:0:4000}... (truncated)"
+            fi
+
+            # Store body using heredoc (safe for multiline content)
+            {
+              echo 'pr_body<<PR_BODY_EOF'
+              echo "$PR_BODY"
+              printf '\n'  # Ensure newline before delimiter
+              echo 'PR_BODY_EOF'
+            } >> "$GITHUB_OUTPUT"
+
+            # Extract linked issues (closing/fixes references)
+            ISSUE_REFS=$(echo "$PR_DATA" | jq -r '[.closingIssuesReferences[]? | "#\(.number)"] | join(", ") | if . == "" then "None" else . end')
+            echo "issue_refs=$ISSUE_REFS" >> $GITHUB_OUTPUT
+
+            # Extract labels
+            LABELS=$(echo "$PR_DATA" | jq -r '[.labels[]? | .name] | join(", ") | if . == "" then "None" else . end')
+            echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+            echo "✅ PR Context extracted: $PR_TITLE" >> $GITHUB_STEP_SUMMARY
+          else
+            # Fallback if PR metadata fetch fails
+            echo "⚠️ Failed to fetch PR metadata, review will proceed without context" >> $GITHUB_STEP_SUMMARY
+            echo "pr_title=Unknown PR (metadata unavailable)" >> $GITHUB_OUTPUT
+            echo "pr_body=Unable to fetch PR description. The review will proceed with file changes only." >> $GITHUB_OUTPUT
+            echo "issue_refs=None" >> $GITHUB_OUTPUT
+            echo "labels=None" >> $GITHUB_OUTPUT
+          fi
+
       # Fork PRs won't have repo secrets -> comment guidance and skip
       - name: Handle forks (no secrets in PR context)
         if: steps.decide.outputs.internal != 'true'
@@ -333,6 +376,62 @@ jobs:
             - If a command/build/test is needed, SKIP it and write the report instead.
             - If you can't find a symbol after 3 tool calls, stop tool use and write the report.
 
+            PR CONTEXT
+            Title: ${{ steps.pr_context.outputs.pr_title }}
+
+            Description:
+            ${{ steps.pr_context.outputs.pr_body }}
+
+            Linked Issues: ${{ steps.pr_context.outputs.issue_refs }}
+            Labels: ${{ steps.pr_context.outputs.labels }}
+
+            REVIEW CALIBRATION (adjust review approach based on PR intent)
+
+            1. **Detect PR Type from Title/Body:**
+               - If title/body contains "redundant", "cleanup", "remove", "delete" AND provides justification:
+                 * This is intentional tech debt reduction
+                 * Focus: Verify claims are accurate (coverage exists elsewhere, tests pass)
+                 * Tone: Trust developer intent, validate execution
+                 * Risk: Base on justification quality, not deletion count
+                 * Example: If PR says "removes redundant tests, coverage tracked in #123-#125" → verify those issues exist and describe coverage
+
+               - If title/body contains "refactor", "reorganize", "restructure":
+                 * This is code improvement without behavior change
+                 * Focus: Verify no behavior changes, test coverage maintained
+                 * Tone: Constructive, focus on maintainability gains
+                 * Risk: MEDIUM unless breaking changes detected
+
+               - If title/body contains "feat:", "feature:", "add", "implement":
+                 * This is new functionality
+                 * Focus: Apply full code quality standards (SRP, size limits, test coverage)
+                 * Tone: Thorough review with actionable feedback
+                 * Risk: Base on complexity and test coverage
+
+               - If title/body contains "fix:", "bug:", "hotfix:":
+                 * This is bug fix
+                 * Focus: Root cause addressed, regression test exists
+                 * Tone: Verify fix quality and prevent recurrence
+                 * Risk: Base on criticality and test coverage
+
+               - If title/body contains "docs:", "chore:", "ci:":
+                 * This is maintenance/documentation
+                 * Focus: Accuracy, clarity, completeness
+                 * Tone: Light review, focus on value-add
+                 * Risk: LOW unless impacting critical workflows
+
+            2. **Risk Calibration Rules:**
+               - If PR explicitly justifies deletions with coverage tracking (e.g., "tracked in #X, #Y") → Risk should be LOW-MEDIUM, not HIGH
+               - If PR deletes code without justification or coverage plan → Risk should be HIGH
+               - If PR adds complex features without tests → Risk should be HIGH
+               - If PR refactors with full test suite → Risk should be LOW-MEDIUM
+               - Always cite specific evidence from PR description when assessing risk
+
+            3. **What NOT to Do:**
+               - Don't raise alarms for intentional, justified changes
+               - Don't demand explanations already provided in PR description
+               - Don't assign HIGH risk to cleanup PRs with proper coverage tracking
+               - Don't ignore red flags in feature PRs just because they're additive
+
             SCOPE RULES
             - Ring 0: Files changed in the PR (JSON supplied separately); findings must cite Ring 0 paths only.
             - Ring 1: Neighbor/test/import context only. Use Ring 1 to reason, never as independent findings.
@@ -442,6 +541,62 @@ jobs:
             - Use only: Read, Glob, Grep. Do NOT use Bash, Web*, NotebookEdit, or TodoWrite.
             - If a command/build/test is needed, SKIP it and write the report instead.
             - If you can't find a symbol after 3 tool calls, stop tool use and write the report.
+
+            PR CONTEXT
+            Title: ${{ steps.pr_context.outputs.pr_title }}
+
+            Description:
+            ${{ steps.pr_context.outputs.pr_body }}
+
+            Linked Issues: ${{ steps.pr_context.outputs.issue_refs }}
+            Labels: ${{ steps.pr_context.outputs.labels }}
+
+            REVIEW CALIBRATION (adjust review approach based on PR intent)
+
+            1. **Detect PR Type from Title/Body:**
+               - If title/body contains "redundant", "cleanup", "remove", "delete" AND provides justification:
+                 * This is intentional tech debt reduction
+                 * Focus: Verify claims are accurate (coverage exists elsewhere, tests pass)
+                 * Tone: Trust developer intent, validate execution
+                 * Risk: Base on justification quality, not deletion count
+                 * Example: If PR says "removes redundant tests, coverage tracked in #123-#125" → verify those issues exist and describe coverage
+
+               - If title/body contains "refactor", "reorganize", "restructure":
+                 * This is code improvement without behavior change
+                 * Focus: Verify no behavior changes, test coverage maintained
+                 * Tone: Constructive, focus on maintainability gains
+                 * Risk: MEDIUM unless breaking changes detected
+
+               - If title/body contains "feat:", "feature:", "add", "implement":
+                 * This is new functionality
+                 * Focus: Apply full code quality standards (SRP, size limits, test coverage)
+                 * Tone: Thorough review with actionable feedback
+                 * Risk: Base on complexity and test coverage
+
+               - If title/body contains "fix:", "bug:", "hotfix:":
+                 * This is bug fix
+                 * Focus: Root cause addressed, regression test exists
+                 * Tone: Verify fix quality and prevent recurrence
+                 * Risk: Base on criticality and test coverage
+
+               - If title/body contains "docs:", "chore:", "ci:":
+                 * This is maintenance/documentation
+                 * Focus: Accuracy, clarity, completeness
+                 * Tone: Light review, focus on value-add
+                 * Risk: LOW unless impacting critical workflows
+
+            2. **Risk Calibration Rules:**
+               - If PR explicitly justifies deletions with coverage tracking (e.g., "tracked in #X, #Y") → Risk should be LOW-MEDIUM, not HIGH
+               - If PR deletes code without justification or coverage plan → Risk should be HIGH
+               - If PR adds complex features without tests → Risk should be HIGH
+               - If PR refactors with full test suite → Risk should be LOW-MEDIUM
+               - Always cite specific evidence from PR description when assessing risk
+
+            3. **What NOT to Do:**
+               - Don't raise alarms for intentional, justified changes
+               - Don't demand explanations already provided in PR description
+               - Don't assign HIGH risk to cleanup PRs with proper coverage tracking
+               - Don't ignore red flags in feature PRs just because they're additive
 
             SCOPE RULES
             - Ring 0: Files changed in the PR (JSON supplied separately); findings must cite Ring 0 paths only.
