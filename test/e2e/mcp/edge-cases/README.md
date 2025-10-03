@@ -101,6 +101,23 @@ Tests system resilience, error recovery, and graceful degradation:
 - Data consistency preservation
 - System stability validation
 
+### 5. Special Character Handling Tests (`special-characters.mcp.test.ts`)
+
+**Test Count**: 3 preservation and consistency tests
+**Quality Gate**: 75% pass rate (P2 requirement)
+
+Ensures Issue #473 regressions remain fixed by validating special characters throughout MCP flows:
+
+- **Quote & Apostrophe Preservation**: Confirms create → read → update cycles keep single, double, and nested quotes intact
+- **HTML/XML Entity Handling**: Verifies entities (`&amp;`, `&lt;`, `&nbsp;`), markup, and script content remain literal
+- **Cross-Resource Consistency**: Checks companies, people, and tasks process Unicode, emoji, and entities uniformly
+
+**Key Features**:
+
+- JSON payload parsing with resilient value extraction helpers
+- Coverage for HTML entities and Unicode text (emoji, international characters)
+- Cross-resource verification to guard against formatter regressions
+
 ## Shared Utilities
 
 ### `shared/edge-case-test-base.ts`

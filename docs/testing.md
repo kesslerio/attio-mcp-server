@@ -7,14 +7,16 @@ This guide explains how to set up and run tests for the Attio MCP Server, includ
 ✅ **100% Integration Test Pass Rate Achieved** (15/15 tests passing)
 
 ### Recent Testing Improvements (August 2025)
+
 - **Critical Bug Fixes**: All P0 API failures resolved with robust error handling
-- **Enhanced Validation**: Complete email validation consistency between create/update operations  
+- **Enhanced Validation**: Complete email validation consistency between create/update operations
 - **Resource Mapping**: Fixed all resource type mappings and JSON response handling
 - **Tasks API Special Handling**: Implemented workaround for missing `/objects/tasks/attributes` endpoint
 - **Build Integration**: All TypeScript compilation errors resolved
 - **Error Handling**: Comprehensive error mocking and fallback patterns implemented
 
 ### Test Coverage
+
 - **Integration Tests**: 15/15 passing (100% pass rate)
 - **Unit Tests**: All offline tests passing
 - **E2E Tests**: Comprehensive error handling and API contract validation
@@ -67,9 +69,13 @@ npm test:watch
 npm test:offline
 ```
 
-### Integration Tests
+### Integration Tests (IT-XXX)
 
-Integration tests make real API calls to verify that the MCP tools work correctly with your Attio workspace.
+Integration tests make real API calls to verify individual API operations, edge cases, and platform services against the live Attio API.
+
+**ID Prefix:** `IT-XXX` (Integration Test)
+**Location:** `test/integration/`
+**Focus:** API operations, validation, error handling
 
 ```bash
 # Run all integration tests
@@ -81,6 +87,45 @@ npm run test:integration -- test/integration/lists/add-record-to-list.integratio
 # Run integration tests in watch mode
 npm run test:integration:watch
 ```
+
+**Documentation:**
+
+- [Integration Test Catalog](./testing/integration-test-catalog.md) - Complete IT-XXX test inventory
+- [Integration README](../test/integration/README.md) - Naming conventions and quick start
+
+### E2E Tests (TC-XXX)
+
+End-to-end tests validate complete user workflows through the MCP protocol, testing the full integration chain from client tools to Attio API.
+
+**ID Prefix:** `TC-XXX` (Test Case)
+**Location:** `test/e2e/`
+**Focus:** Complete workflows, user scenarios, MCP tool orchestration
+
+```bash
+# Run all E2E tests
+npm run test:e2e
+
+# Run MCP protocol tests
+npm run test:e2e:mcp
+
+# Run with diagnostics
+npm run e2e:diagnose
+```
+
+**Documentation:**
+
+- [MCP E2E Test Catalog](../test/e2e/mcp/README.md) - Complete TC-XXX test inventory
+- [E2E Test Guide](../test/e2e/README.md) - Configuration and setup
+
+### Test Taxonomy: IT-XXX vs TC-XXX
+
+| Aspect          | Integration (IT-XXX)                  | E2E (TC-XXX)                                    |
+| --------------- | ------------------------------------- | ----------------------------------------------- |
+| **Scope**       | Individual API operations             | Complete workflows                              |
+| **Protocol**    | Direct Attio API                      | MCP → Attio API                                 |
+| **Numbering**   | IT-001, IT-105, IT-201...             | TC-001, TC-L01, TC-D01...                       |
+| **Examples**    | Rate limiting, batch CRUD, validation | Search workflow, deal creation, list management |
+| **Run Command** | `npm run test:integration`            | `npm run test:e2e`                              |
 
 ## Setting Up Integration Tests
 
@@ -99,17 +144,19 @@ Integration tests need specific records in your workspace to test against. You h
 #### Option A: Use Existing Records
 
 1. Copy the test configuration template:
+
    ```bash
    cp .env.test.example .env.test
    ```
 
 2. Edit `.env.test` with IDs from your workspace:
+
    ```bash
    # Required test data
    TEST_COMPANY_ID=198abdd2-a0d9-4c95-93b6-29bc4154953a
    TEST_PERSON_ID=f3503402-85fc-41b6-9427-819d05e8813e
    TEST_LIST_ID=b352b506-5d1f-43b2-9623-dc2e31c751f7
-   
+
    # Optional test data
    TEST_DEAL_ID=93a7631d-8586-4471-ac56-881a6030a2ce
    ```
@@ -123,6 +170,7 @@ npm run setup:test-data
 ```
 
 This will:
+
 - Create test companies and people with identifiable names (prefixed with `E2E_TEST_`)
 - Find available lists in your workspace
 - Output the IDs to add to your `.env.test` file
@@ -137,10 +185,11 @@ To find IDs for existing records:
    - The ID is the part starting with `rec_`, `list_`, etc.
 
 2. **Via API Discovery**:
+
    ```bash
    # Build the project first
    npm run build
-   
+
    # Discover available resources
    npm run discover
    ```
@@ -189,16 +238,16 @@ npm test:watch:offline
 
 The following environment variables control test behavior:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ATTIO_API_KEY` | Your Attio API key | Required |
-| `SKIP_INTEGRATION_TESTS` | Skip all integration tests | `false` |
-| `TEST_COMPANY_ID` | ID of test company record | Required for integration tests |
-| `TEST_PERSON_ID` | ID of test person record | Required for integration tests |
-| `TEST_LIST_ID` | ID of test list | Required for list tests |
-| `SKIP_INCOMPLETE_TESTS` | Skip tests missing optional IDs | `true` |
-| `CLEANUP_TEST_DATA` | Clean up created test data | `true` |
-| `TEST_DATA_PREFIX` | Prefix for test data names | `E2E_TEST_` |
+| Variable                 | Description                     | Default                        |
+| ------------------------ | ------------------------------- | ------------------------------ |
+| `ATTIO_API_KEY`          | Your Attio API key              | Required                       |
+| `SKIP_INTEGRATION_TESTS` | Skip all integration tests      | `false`                        |
+| `TEST_COMPANY_ID`        | ID of test company record       | Required for integration tests |
+| `TEST_PERSON_ID`         | ID of test person record        | Required for integration tests |
+| `TEST_LIST_ID`           | ID of test list                 | Required for list tests        |
+| `SKIP_INCOMPLETE_TESTS`  | Skip tests missing optional IDs | `true`                         |
+| `CLEANUP_TEST_DATA`      | Clean up created test data      | `true`                         |
+| `TEST_DATA_PREFIX`       | Prefix for test data names      | `E2E_TEST_`                    |
 
 ### Test Configuration File Structure
 
@@ -236,6 +285,7 @@ TEST_DATA_PREFIX="E2E_TEST_"
 #### "No API key found"
 
 Ensure your `.env` file exists and contains:
+
 ```bash
 ATTIO_API_KEY=your_actual_api_key
 ```
@@ -249,12 +299,14 @@ ATTIO_API_KEY=your_actual_api_key
 #### "Record not found" errors
 
 The test records may have been deleted. Either:
+
 - Update `.env.test` with new IDs
 - Run `npm run setup:test-data` to create new test records
 
 #### Rate limiting errors
 
 The tests include retry logic, but if you see rate limiting:
+
 - Reduce the number of concurrent tests
 - Add delays between test runs
 - Use a dedicated test workspace
@@ -288,11 +340,11 @@ import { setupIntegrationTests } from '../helpers/integration-test-setup';
 
 describe('My Integration Test', () => {
   // Setup with configuration requirement
-  const setup = setupIntegrationTests({ 
+  const setup = setupIntegrationTests({
     requireTestConfig: true,
-    verbose: true 
+    verbose: true,
   });
-  
+
   if (setup.shouldSkip) {
     test.skip('Skipping - ' + setup.skipReason, () => {});
     return;
@@ -301,7 +353,7 @@ describe('My Integration Test', () => {
   test('should interact with API', async () => {
     // Use test configuration
     const { companyId, listId } = setup.testConfig!;
-    
+
     // Your test logic here
   });
 });
@@ -338,12 +390,12 @@ Create workspace-specific test suites by extending the base configuration:
 export const workspaceTestConfig = {
   customFields: {
     companies: ['industry', 'size'],
-    people: ['department', 'role']
+    people: ['department', 'role'],
   },
   lists: {
     prospecting: 'list_abc123',
-    customers: 'list_def456'
-  }
+    customers: 'list_def456',
+  },
 };
 ```
 
@@ -365,8 +417,8 @@ For unit tests that need to mock API responses:
 ```typescript
 vi.mock('../../src/api/attio-client', () => ({
   getAttioClient: vi.fn(() => ({
-    post: vi.fn().mockResolvedValue({ data: mockResponse })
-  }))
+    post: vi.fn().mockResolvedValue({ data: mockResponse }),
+  })),
 }));
 ```
 

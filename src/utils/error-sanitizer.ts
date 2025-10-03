@@ -20,6 +20,9 @@ enum SensitiveInfoType {
   URL_WITH_PARAMS = 'url_with_params',
   EMAIL_ADDRESS = 'email_address',
   IP_ADDRESS = 'ip_address',
+  HTML_TAGS = 'html_tags',
+  JAVASCRIPT_CODE = 'javascript_code',
+  NETWORK_INFO = 'network_info',
 }
 
 /**
@@ -27,7 +30,7 @@ enum SensitiveInfoType {
  */
 const SENSITIVE_PATTERNS: Record<SensitiveInfoType, RegExp> = {
   [SensitiveInfoType.FILE_PATH]:
-    /([A-Z]:)?[/\\](?:Users|home|var|opt|etc|tmp|src|app)[/\\][^\s"']+/gi,
+    /(file:\/\/|([A-Z]:)?[/\\](?:Users|home|var|opt|etc|tmp|src|app)[/\\])[^\s"']+/gi,
   [SensitiveInfoType.API_KEY]:
     /(?:(?:api[\s_-]*key)|token|bearer|authorization|secret|password|passwd|pwd)[\s:=]*["']?[a-zA-Z0-9\-_]{20,}["']?/gi,
   [SensitiveInfoType.INTERNAL_ID]:
@@ -41,6 +44,11 @@ const SENSITIVE_PATTERNS: Record<SensitiveInfoType, RegExp> = {
   [SensitiveInfoType.EMAIL_ADDRESS]:
     /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi,
   [SensitiveInfoType.IP_ADDRESS]: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/gi,
+  [SensitiveInfoType.HTML_TAGS]: /<[^>]*>/gi,
+  [SensitiveInfoType.JAVASCRIPT_CODE]:
+    /(javascript:|alert\(|console\.|eval\(|setTimeout\(|setInterval\()[^"'\s]*/gi,
+  [SensitiveInfoType.NETWORK_INFO]:
+    /\b(localhost|127\.0\.0\.1|0\.0\.0\.0|host=[^\s]+|port=\d+|user=[^\s]+)\b/gi,
 };
 
 /**
@@ -270,6 +278,18 @@ export function sanitizeErrorMessage(
   // Remove sensitive patterns
   let sanitized = originalMessage;
 
+  // Remove HTML tags first to prevent XSS (Issue #836)
+  sanitized = sanitized.replace(
+    SENSITIVE_PATTERNS[SensitiveInfoType.HTML_TAGS],
+    ''
+  );
+
+  // Remove JavaScript code (Issue #836)
+  sanitized = sanitized.replace(
+    SENSITIVE_PATTERNS[SensitiveInfoType.JAVASCRIPT_CODE],
+    '[JS_REDACTED]'
+  );
+
   // Remove file paths
   sanitized = sanitized.replace(
     SENSITIVE_PATTERNS[SensitiveInfoType.FILE_PATH],
@@ -310,6 +330,12 @@ export function sanitizeErrorMessage(
   sanitized = sanitized.replace(
     SENSITIVE_PATTERNS[SensitiveInfoType.IP_ADDRESS],
     '[IP_REDACTED]'
+  );
+
+  // Remove network information (localhost, hosts, ports, users)
+  sanitized = sanitized.replace(
+    SENSITIVE_PATTERNS[SensitiveInfoType.NETWORK_INFO],
+    '[NETWORK_REDACTED]'
   );
 
   // Get user-friendly message based on error classification
@@ -360,14 +386,30 @@ export function createSanitizedError(
   options: SanitizationOptions = {}
 ): SanitizedError {
   const sanitizedMessage = sanitizeErrorMessage(error, options);
-  const errorType = classifyError(
+
+  // First try to classify by message content
+  const messageBasedType = classifyError(
     error instanceof Error ? error.message : String(error)
   );
+
+  // If we have a status code and message classification returned 'default',
+  // derive type from status code instead (more reliable)
+  let errorType = messageBasedType;
+  const finalStatusCode = statusCode ?? inferStatusCode(messageBasedType);
+
+  if (statusCode && messageBasedType === 'default') {
+    errorType = inferTypeFromStatusCode(statusCode);
+  }
+
+  // Map 'default' to 'sanitized_error' for consistency with secure-error-handler
+  if (errorType === 'default') {
+    errorType = 'sanitized_error';
+  }
 
   return {
     message: sanitizedMessage,
     type: errorType,
-    statusCode: statusCode || inferStatusCode(errorType),
+    statusCode: finalStatusCode,
     safeMetadata: options.safeMetadata,
   };
 }
@@ -406,6 +448,23 @@ function inferStatusCode(errorType: string): number {
     default:
       return 500;
   }
+}
+
+/**
+ * Infer error type from HTTP status code
+ * Returns types consistent with secure-error-handler conventions (e.g., authentication_error)
+ */
+function inferTypeFromStatusCode(statusCode: number): string {
+  if (statusCode === 400) return 'validation_error';
+  if (statusCode === 401) return 'authentication_error';
+  if (statusCode === 403) return 'authorization_error';
+  if (statusCode === 404) return 'not_found';
+  if (statusCode === 408) return 'timeout';
+  if (statusCode === 409) return 'duplicate';
+  if (statusCode === 429) return 'rate_limit';
+  if (statusCode === 503) return 'service_unavailable';
+  if (statusCode >= 500) return 'server_error';
+  return 'sanitized_error';
 }
 
 /**

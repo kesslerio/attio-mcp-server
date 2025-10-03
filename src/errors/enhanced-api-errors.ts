@@ -14,9 +14,13 @@ import { isValidUUID } from '../utils/validation/uuid-validation.js';
 /**
  * Enhanced error context interface providing rich information for better UX
  */
-export interface ErrorContext {
+export interface EnhancedApiErrorContext {
   /** Field name that caused the error */
   field?: string;
+  /** Type information for the problematic field */
+  fieldType?: string;
+  /** Attio field configuration snapshot for deep diagnostics */
+  fieldMetadata?: unknown;
   /** Valid values for select fields */
   validValues?: string[];
   /** Suggested field names for typos */
@@ -41,6 +45,9 @@ export interface ErrorContext {
   serverData?: Record<string, unknown>;
 }
 
+/** @deprecated Use EnhancedApiErrorContext instead */
+export type ErrorContext = EnhancedApiErrorContext;
+
 /**
  * Enhanced API Error class that provides contextual error messages
  *
@@ -53,10 +60,11 @@ export class EnhancedApiError extends AttioApiError {
     statusCode: number,
     endpoint: string,
     method: string,
-    public readonly context?: ErrorContext
+    public readonly context?: EnhancedApiErrorContext
   ) {
     super(message, statusCode, endpoint, method);
     this.name = 'EnhancedApiError';
+    Object.setPrototypeOf(this, EnhancedApiError.prototype);
   }
 
   /**
@@ -143,6 +151,10 @@ export class EnhancedApiError extends AttioApiError {
    */
   private getFieldValidationMessage(): string {
     let msg = '';
+
+    if (this.context?.field && this.context.fieldType) {
+      msg += ` Field '${this.context.field}' expects values of type '${this.context.fieldType}'.`;
+    }
 
     // Enhanced select field validation errors
     if (this.context?.validValues?.length) {
@@ -242,7 +254,7 @@ export function createEnhancedApiError(
   statusCode: number,
   endpoint: string,
   method: string,
-  context?: Partial<ErrorContext>
+  context?: Partial<EnhancedApiErrorContext>
 ): EnhancedApiError {
   return new EnhancedApiError(message, statusCode, endpoint, method, context);
 }
@@ -269,6 +281,7 @@ export const ErrorTemplates = {
       'POST',
       {
         field,
+        fieldType: 'select',
         validValues: validOptions,
         resourceType,
         documentationHint: `Use get-attributes${
@@ -339,6 +352,7 @@ export const ErrorTemplates = {
       'GET',
       {
         field: 'record_id',
+        fieldType: 'uuid',
         resourceType,
         documentationHint: `Expected UUID format (e.g., 'a1b2c3d4-e5f6-7890-abcd-ef1234567890').`,
       }
@@ -355,6 +369,7 @@ export const ErrorTemplates = {
       'POST',
       {
         field: originalField,
+        fieldType: 'string',
         suggestedFields: [correctField],
         resourceType: 'tasks',
         documentationHint: `For tasks, use "${correctField}" instead of "${originalField}". Valid task fields: content, status, due_date, assignee_id, record_id.`,
@@ -372,6 +387,7 @@ export const ErrorTemplates = {
       'POST',
       {
         field,
+        fieldType: 'phone_number',
         resourceType,
         documentationHint: `Phone numbers require 'original_phone_number' key, not 'phone_number'. Example: [{"original_phone_number": "+1-555-0100"}]. E.164 format (+country code) recommended. The system will auto-normalize most formats.`,
       }
@@ -385,7 +401,7 @@ export const ErrorTemplates = {
     statusCode: number,
     endpoint: string,
     method: string,
-    context?: Partial<ErrorContext>
+    context?: Partial<EnhancedApiErrorContext>
   ) => createEnhancedApiError(message, statusCode, endpoint, method, context),
 };
 
@@ -398,7 +414,7 @@ export class ErrorEnhancer {
    */
   static enhance(
     error: Error | AttioApiError,
-    context?: Partial<ErrorContext>
+    context?: Partial<EnhancedApiErrorContext>
   ): EnhancedApiError {
     if (error instanceof EnhancedApiError) {
       return error; // Already enhanced
@@ -471,7 +487,7 @@ export class ErrorEnhancer {
           method?: string;
         }
       | unknown,
-    defaultContext?: Partial<ErrorContext>
+    defaultContext?: Partial<EnhancedApiErrorContext>
   ): EnhancedApiError {
     if (error instanceof EnhancedApiError) {
       return error;

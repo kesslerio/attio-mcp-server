@@ -2,7 +2,7 @@
  * Enhanced logging utilities for tool execution using structured logging
  */
 
-import { ToolErrorContext } from '../../../types/tool-types.js';
+import { ToolErrorContext } from '@/types/tool-types.js';
 import {
   error,
   warn,
@@ -10,8 +10,9 @@ import {
   OperationType,
   setLogContext,
   generateCorrelationId,
+  getLogContext,
   PerformanceTimer,
-} from '../../../utils/logger.js';
+} from '@/utils/logger.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
 type RawCallToolRequest = CallToolRequest & {
@@ -24,7 +25,8 @@ type RawCallToolRequest = CallToolRequest & {
  * Initialize tool execution context with correlation ID
  */
 export function initializeToolContext(toolName: string): string {
-  const correlationId = generateCorrelationId();
+  const { correlationId: existingCorrelationId } = getLogContext();
+  const correlationId = existingCorrelationId ?? generateCorrelationId();
   setLogContext({
     correlationId,
     operation: toolName,

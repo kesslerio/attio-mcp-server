@@ -23,18 +23,19 @@ const errorWithCircular = {
   message: 'API Error',
   details: {
     original: originalError, // Contains circular reference
-    context: { request: req, response: res } // Circular through event listeners
-  }
+    context: { request: req, response: res }, // Circular through event listeners
+  },
 };
 
 // Problem 2: Type assumptions
-if (error.details.includes('parameter')) { // TypeError: error.details.includes is not a function
+if (error.details.includes('parameter')) {
+  // TypeError: error.details.includes is not a function
   // error.details was an object, not a string
 }
 
 // Problem 3: MCP serialization failure
 return {
-  error: errorWithCircular // Fails JSON-RPC serialization
+  error: errorWithCircular, // Fails JSON-RPC serialization
 };
 ```
 
@@ -47,14 +48,14 @@ The solution implements a multi-layered approach to safe JSON serialization:
 ```typescript
 // src/utils/json-serializer.ts
 export function safeJsonStringify(
-  obj: any, 
-  options: { 
-    includeStackTraces?: boolean; 
-    indent?: number 
+  obj: any,
+  options: {
+    includeStackTraces?: boolean;
+    indent?: number;
   } = {}
 ): string {
   const seen = new WeakSet();
-  
+
   const replacer = (key: string, value: any) => {
     // Handle circular references
     if (typeof value === 'object' && value !== null) {
@@ -63,7 +64,7 @@ export function safeJsonStringify(
       }
       seen.add(value);
     }
-    
+
     // Handle non-serializable values
     if (typeof value === 'function') {
       return '[Function]';
@@ -72,13 +73,13 @@ export function safeJsonStringify(
       return {
         name: value.name,
         message: value.message,
-        stack: options.includeStackTraces ? value.stack : undefined
+        stack: options.includeStackTraces ? value.stack : undefined,
       };
     }
-    
+
     return value;
   };
-  
+
   try {
     return JSON.stringify(obj, replacer, options.indent);
   } catch (error) {
@@ -86,7 +87,7 @@ export function safeJsonStringify(
     return JSON.stringify({
       error: 'Serialization failed',
       originalType: typeof obj,
-      message: error instanceof Error ? error.message : String(error)
+      message: error instanceof Error ? error.message : String(error),
     });
   }
 }
@@ -98,16 +99,20 @@ The error handler now safely processes error details:
 
 ```typescript
 // src/utils/error-handler.ts
-export function formatErrorResponse(error: Error, type: ErrorType, details?: any) {
+export function formatErrorResponse(
+  error: Error,
+  type: ErrorType,
+  details?: any
+) {
   // Safe details handling prevents circular reference issues
   let safeDetails: any = null;
-  
+
   if (details) {
     try {
       // Use safe stringification with development stack traces
       safeDetails = JSON.parse(
         safeJsonStringify(details, {
-          includeStackTraces: process.env.NODE_ENV === 'development',
+          includeStackTraces: false,
         })
       );
     } catch (err) {
@@ -123,7 +128,7 @@ export function formatErrorResponse(error: Error, type: ErrorType, details?: any
       };
     }
   }
-  
+
   const errorResponse = {
     content: [
       {
@@ -143,7 +148,7 @@ export function formatErrorResponse(error: Error, type: ErrorType, details?: any
       details: safeDetails,
     },
   };
-  
+
   // Final sanitization for MCP compatibility
   return sanitizeMcpResponse(errorResponse);
 }
@@ -155,12 +160,18 @@ Enhanced error message processing with type safety:
 
 ```typescript
 // src/utils/error-handler.ts - createApiError function
-export function createApiError(status: number, path: string, method: string, responseData: any = {}) {
+export function createApiError(
+  status: number,
+  path: string,
+  method: string,
+  responseData: any = {}
+) {
   // Safe string conversion for pattern matching
-  const detailsString = typeof responseData?.error?.details === 'string'
-    ? responseData.error.details
-    : JSON.stringify(responseData?.error?.details || '');
-  
+  const detailsString =
+    typeof responseData?.error?.details === 'string'
+      ? responseData.error.details
+      : JSON.stringify(responseData?.error?.details || '');
+
   // Pattern detection with safe string operations
   if (
     defaultMessage.includes('parameter') ||
@@ -170,7 +181,7 @@ export function createApiError(status: number, path: string, method: string, res
     errorType = ErrorType.PARAMETER_ERROR;
     message = `Parameter Error: ${defaultMessage}`;
   }
-  
+
   // Additional pattern matching for different error types
   else if (
     defaultMessage.includes('format') ||
@@ -221,6 +232,7 @@ export function sanitizeMcpResponse(response: any): any {
 Before and after examples of error details processing:
 
 **Before (Problematic)**:
+
 ```typescript
 // This could cause TypeError if details is an object
 if (error.details.includes('parameter')) {
@@ -230,17 +242,19 @@ if (error.details.includes('parameter')) {
 // This could cause circular reference errors
 const errorResponse = {
   error: {
-    details: complexObjectWithCircularRefs // Serialization fails
-  }
+    details: complexObjectWithCircularRefs, // Serialization fails
+  },
 };
 ```
 
 **After (Fixed)**:
+
 ```typescript
 // Safe type conversion
-const detailsString = typeof responseData?.error?.details === 'string'
-  ? responseData.error.details
-  : JSON.stringify(responseData?.error?.details || '');
+const detailsString =
+  typeof responseData?.error?.details === 'string'
+    ? responseData.error.details
+    : JSON.stringify(responseData?.error?.details || '');
 
 if (detailsString.includes('parameter')) {
   errorType = ErrorType.PARAMETER_ERROR;
@@ -249,8 +263,8 @@ if (detailsString.includes('parameter')) {
 // Safe serialization
 const errorResponse = {
   error: {
-    details: safeJsonStringify(complexObject) // Always serializable
-  }
+    details: safeJsonStringify(complexObject), // Always serializable
+  },
 };
 ```
 
@@ -266,7 +280,7 @@ obj.self = obj; // Circular reference
 // Scenario 2: Request/Response cycles
 const error = {
   request: req,
-  response: res // res.request === req, creating cycle
+  response: res, // res.request === req, creating cycle
 };
 
 // Scenario 3: Error chains
@@ -282,26 +296,14 @@ All these scenarios are now handled safely by the `safeJsonStringify` function.
 The serialization system adapts to different environments:
 
 ```typescript
-// Development: Include full error details and stack traces
-if (process.env.NODE_ENV === 'development') {
-  safeDetails = JSON.parse(
-    safeJsonStringify(details, {
-      includeStackTraces: true,
-      indent: 2
-    })
-  );
-}
-
-// Production: Minimal error details
-else {
-  safeDetails = JSON.parse(
-    safeJsonStringify({
-      message: details.message,
-      type: details.type,
-      code: details.code
-    })
-  );
-}
+// Stack traces are never serialized to clients; logging captures full detail instead
+safeDetails = JSON.parse(
+  safeJsonStringify({
+    message: details.message,
+    type: details.type,
+    code: details.code,
+  })
+);
 ```
 
 ## Testing Improvements
@@ -314,28 +316,28 @@ describe('JSON Serialization Safety', () => {
   test('should handle circular references without throwing', () => {
     const circular = { name: 'test' };
     circular.self = circular;
-    
+
     const result = safeJsonStringify(circular);
     expect(result).toContain('[Circular Reference]');
     expect(() => JSON.parse(result)).not.toThrow();
   });
-  
+
   test('should handle complex error objects', () => {
     const complexError = {
       message: 'Test error',
       stack: new Error().stack,
       details: {
-        nested: { deep: { circular: null } }
-      }
+        nested: { deep: { circular: null } },
+      },
     };
     complexError.details.nested.deep.circular = complexError;
-    
+
     const result = formatErrorResponse(
-      new Error('test'), 
-      ErrorType.API_ERROR, 
+      new Error('test'),
+      ErrorType.API_ERROR,
       complexError
     );
-    
+
     expect(result.error.details).toBeDefined();
     expect(typeof result.error.details).toBe('object');
   });
@@ -353,14 +355,14 @@ describe('Enhanced Error Patterns', () => {
         data: {
           error: {
             message: 'Invalid parameter: company_id',
-            details: { parameter: 'company_id', expected: 'UUID' }
-          }
-        }
-      }
+            details: { parameter: 'company_id', expected: 'UUID' },
+          },
+        },
+      },
     };
-    
+
     const result = createErrorResult(mockError, '/test', 'POST');
-    
+
     // Original message preserved
     expect(result.error.message).toContain('Invalid parameter: company_id');
     // Enhanced with type
@@ -413,21 +415,23 @@ console.timeEnd('safe-stringify'); // ~8ms (60% overhead but guaranteed success)
 ### Updating Existing Error Handling
 
 1. **Replace Direct JSON.stringify**:
+
    ```typescript
    // Before
    const errorDetails = JSON.stringify(error);
-   
+
    // After
    const errorDetails = safeJsonStringify(error, {
-     includeStackTraces: process.env.NODE_ENV === 'development'
+     includeStackTraces: false,
    });
    ```
 
 2. **Update Type Assumptions**:
+
    ```typescript
    // Before
    if (error.details.includes('parameter')) {
-   
+
    // After
    const detailsString = typeof error.details === 'string'
      ? error.details
@@ -436,10 +440,11 @@ console.timeEnd('safe-stringify'); // ~8ms (60% overhead but guaranteed success)
    ```
 
 3. **Use Safe Error Creation**:
+
    ```typescript
    // Before
    throw new Error(`Error: ${JSON.stringify(details)}`);
-   
+
    // After
    return createErrorResult(
      new Error('Error occurred'),
@@ -452,10 +457,11 @@ console.timeEnd('safe-stringify'); // ~8ms (60% overhead but guaranteed success)
 ### Test Updates
 
 1. **Use Flexible Assertions**:
+
    ```typescript
    // Before
    expect(error.message).toBe('Parameter error');
-   
+
    // After
    expect(error.message).toMatch(/Parameter Error:.*parameter/);
    ```
@@ -464,7 +470,7 @@ console.timeEnd('safe-stringify'); // ~8ms (60% overhead but guaranteed success)
    ```typescript
    test('error serialization', () => {
      const result = createErrorWithComplexDetails();
-     
+
      // Should not throw during serialization
      expect(() => JSON.stringify(result)).not.toThrow();
    });
@@ -511,17 +517,19 @@ console.timeEnd('safe-stringify'); // ~8ms (60% overhead but guaranteed success)
 ### Common Issues
 
 1. **Serialization Still Failing**:
+
    ```typescript
    // Debug the object structure
    console.log('Object type:', typeof obj);
    console.log('Object keys:', Object.keys(obj));
-   
+
    // Test with simplified version
    const simplified = { message: obj.message, type: obj.type };
    const result = safeJsonStringify(simplified);
    ```
 
 2. **Error Context Lost**:
+
    ```typescript
    // Check if original error is preserved
    console.log('Original:', originalError);
@@ -530,11 +538,12 @@ console.timeEnd('safe-stringify'); // ~8ms (60% overhead but guaranteed success)
    ```
 
 3. **MCP Communication Issues**:
+
    ```typescript
    // Verify MCP compatibility
    const response = createErrorResponse();
    const sanitized = sanitizeMcpResponse(response);
-   
+
    // Test serialization
    const serialized = JSON.stringify(sanitized);
    const parsed = JSON.parse(serialized);

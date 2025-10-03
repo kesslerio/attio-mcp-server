@@ -6,12 +6,13 @@ The metadata subsystem now uses a dedicated module under `src/services/metadata/
 
 ## Service Breakdown
 
-- **MetadataDiscoveryService** – orchestrates Attio schema discovery, category filtering, cache integration, and instrumentation.
+- **MetadataDiscoveryService** – orchestrates Attio schema discovery, category filtering, and delegates caching/metrics to the shared `DiscoveryRunner` helper.
 - **MetadataCacheService** – wraps the shared `CachingService` for TTL-aware attribute caching keyed by resource/object slug.
 - **MetadataTransformService** – normalises Attio response shapes, builds title → slug mappings, and applies category filtering without mutating callers.
 - **MetadataMetricsService** – records discovery timings, cache hit ratios, and exposes aggregated metrics for diagnostics.
 - **MetadataRecordService** – fetches record-level attributes with structured error handling and logging scopes.
 - **MetadataErrorService** – converts Attio failures into MCP-safe error payloads and consistent exceptions.
+- **Task metadata utilities** – `task-metadata.ts` centralises static task attribute definitions and synonym mappings for reuse across services and tests.
 
 ## Dependency Injection
 

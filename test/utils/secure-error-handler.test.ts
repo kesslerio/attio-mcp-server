@@ -7,22 +7,24 @@ import {
   SecureApiError,
   withSecureErrorHandling,
   createSecureErrorResponse,
+  createSecureToolErrorResult,
   BatchErrorHandler,
   retryWithSecureErrors,
   SecureCircuitBreaker,
-} from '../../src/utils/secure-error-handler.js';
-import type { ErrorContext } from '../../src/utils/secure-error-handler.js';
+} from '@/utils/secure-error-handler.js';
+import type { ErrorContext } from '@/utils/secure-error-handler.js';
 
 // Mock the logger
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('@/utils/logger.js', () => ({
   error: vi.fn(),
   OperationType: {
     API_CALL: 'api_call',
   },
+  clearLogContext: vi.fn(),
 }));
 
 // Mock the error utilities
-vi.mock('../../src/utils/error-utilities.js', () => ({
+vi.mock('@/utils/error-utilities.js', () => ({
   getErrorMessage: vi.fn((error: unknown, fallback?: string) => {
     if (error instanceof Error) return error.message;
     if (typeof error === 'string') return error;
@@ -36,7 +38,7 @@ vi.mock('../../src/utils/error-utilities.js', () => ({
 }));
 
 // Mock the error sanitizer
-vi.mock('../../src/utils/error-sanitizer.js', () => ({
+vi.mock('@/utils/error-sanitizer.js', () => ({
   sanitizeErrorMessage: vi.fn((message: string) => `Sanitized: ${message}`),
   createSanitizedError: vi.fn((error: unknown) => ({
     message: 'Sanitized error message',
@@ -66,7 +68,7 @@ describe('SecureApiError', () => {
     expect(error.statusCode).toBe(400);
     expect(error.errorType).toBe('validation_error');
     expect(error.context).toEqual(mockContext);
-    expect(error.safeMetadata).toEqual({
+    expect(error.safeMetadata).toMatchObject({
       operation: 'test-operation',
       resourceType: 'test-resource',
       timestamp: expect.any(String),
@@ -145,6 +147,7 @@ describe('createSecureErrorResponse', () => {
         message: 'Sanitized: Test error',
         type: 'validation_error',
         statusCode: 400,
+        suggestion: 'Review the tool arguments for missing or invalid fields.',
       },
     });
   });
@@ -158,8 +161,37 @@ describe('createSecureErrorResponse', () => {
         message: 'Sanitized error message',
         type: 'sanitized_error',
         statusCode: 500,
+        suggestion:
+          'Retry the request. Contact support with the reference ID if it recurs.',
       },
     });
+  });
+});
+
+describe('createSecureToolErrorResult', () => {
+  it('should include correlation metadata and guidance', () => {
+    const result = createSecureToolErrorResult(new Error('Tool failed'), {
+      module: 'test-module',
+      operation: 'test-operation',
+      correlationId: 'corr-123',
+      requestId: 'req-456',
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.error).toMatchObject({
+      type: 'sanitized_error',
+      message: 'Sanitized error message',
+      code: 500,
+      correlationId: 'corr-123',
+      requestId: 'req-456',
+      suggestion:
+        'Retry the request. Contact support with the reference ID if it recurs.',
+    });
+    expect(result.content[0]).toMatchObject({
+      type: 'text',
+      text: expect.stringContaining('Reference ID: corr-123'),
+    });
+    expect(result.content[0].text).toContain('Next steps:');
   });
 });
 

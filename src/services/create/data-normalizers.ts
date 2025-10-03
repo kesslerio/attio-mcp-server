@@ -178,7 +178,23 @@ export function normalizePersonValues(input: JsonObject): JsonObject {
     ];
   }
 
-  // 3) Optional professional info
+  // 3) Company reference: normalize UUID string to proper record reference format
+  if (input.company) {
+    if (typeof input.company === 'string') {
+      // UUID string → record reference object (NOT array - company is single-value)
+      filteredPersonData.company = {
+        target_record_id: input.company,
+        target_object: 'companies',
+      };
+    } else if (Array.isArray(input.company)) {
+      // If already array, take first element
+      filteredPersonData.company = input.company[0] || input.company;
+    } else if (typeof input.company === 'object') {
+      filteredPersonData.company = input.company;
+    }
+  }
+
+  // 4) Optional professional info
   if (typeof input.title === 'string') {
     filteredPersonData.title = input.title;
   }

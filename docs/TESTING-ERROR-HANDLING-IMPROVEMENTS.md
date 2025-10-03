@@ -43,6 +43,7 @@ The Attio MCP Server has undergone significant improvements to address critical 
 ### 1. Enhanced Error Handling System
 
 **Files Updated**:
+
 - `/src/utils/error-handler.ts`
 - `/src/utils/json-serializer.ts`
 - `/docs/api/error-handling.md`
@@ -50,30 +51,38 @@ The Attio MCP Server has undergone significant improvements to address critical 
 **Key Improvements**:
 
 #### Original Message Preservation
+
 ```typescript
 // Before: Lost context
 throw new Error('Parameter error');
 
 // After: Enhanced with preserved context
-const detailsString = typeof responseData?.error?.details === 'string'
-  ? responseData.error.details
-  : JSON.stringify(responseData?.error?.details || '');
+const detailsString =
+  typeof responseData?.error?.details === 'string'
+    ? responseData.error.details
+    : JSON.stringify(responseData?.error?.details || '');
 
-if (defaultMessage.includes('parameter') || detailsString.includes('parameter')) {
+if (
+  defaultMessage.includes('parameter') ||
+  detailsString.includes('parameter')
+) {
   errorType = ErrorType.PARAMETER_ERROR;
   message = `Parameter Error: ${defaultMessage}`; // Original message preserved
 }
 ```
 
 #### JSON Serialization Safety
+
 ```typescript
 // Safe details handling prevents circular reference issues
 let safeDetails: any = null;
 if (details) {
   try {
-    safeDetails = JSON.parse(safeJsonStringify(details, {
-      includeStackTraces: process.env.NODE_ENV === 'development',
-    }));
+    safeDetails = JSON.parse(
+      safeJsonStringify(details, {
+        includeStackTraces: false,
+      })
+    );
   } catch (err) {
     // Ultimate fallback prevents serialization failures
     safeDetails = {
@@ -88,6 +97,7 @@ if (details) {
 ### 2. Test Environment & Mock System
 
 **Files Created/Updated**:
+
 - `/test/setup.ts`
 - `/test/e2e/fixtures/`
 - `/docs/development/test-environment-setup.md`
@@ -95,6 +105,7 @@ if (details) {
 **Key Features**:
 
 #### Environment Detection
+
 ```typescript
 // Automatic environment detection
 const isTestEnv = process.env.NODE_ENV === 'test';
@@ -111,6 +122,7 @@ if (isTestEnv && !isE2EMode) {
 ```
 
 #### Mock Data Structures
+
 ```typescript
 // Complete API response structure matching
 const mockCompany = {
@@ -118,32 +130,34 @@ const mockCompany = {
   values: {
     name: [{ value: 'Test Company' }],
     domain: [{ value: 'test.com' }],
-    industry: [{ value: 'Technology' }]
-  }
+    industry: [{ value: 'Technology' }],
+  },
 };
 ```
 
 ### 3. UUID Format Standardization
 
 **Standard Test UUIDs**:
+
 ```typescript
 const standardTestUUIDs = {
   company: '00000000-0000-0000-0000-000000000000',
   person: '11111111-1111-1111-1111-111111111111',
   task: '22222222-2222-2222-2222-222222222222',
   list: '33333333-3333-3333-3333-333333333333',
-  note: '44444444-4444-4444-4444-444444444444'
+  note: '44444444-4444-4444-4444-444444444444',
 };
 ```
 
 **Usage in Tests**:
+
 ```typescript
 // ✅ Correct: Valid UUID format for 404 testing
 test('should return 404 for non-existent company', async () => {
   const result = await getCompanyDetails({
-    record_id: '00000000-0000-0000-0000-000000000000' // Valid UUID, doesn't exist
+    record_id: '00000000-0000-0000-0000-000000000000', // Valid UUID, doesn't exist
   });
-  
+
   expect(result.error).toContain('Company not found');
 });
 ```
@@ -151,15 +165,16 @@ test('should return 404 for non-existent company', async () => {
 ### 4. Flexible Error Pattern Matching
 
 **Enhanced Test Assertions**:
+
 ```typescript
 // ✅ Flexible pattern matching for enhanced errors
 test('should handle parameter errors with enhanced messages', async () => {
   const result = await callApiFunction(invalidParams);
-  
+
   expect(result.error).toEqual(
     expect.objectContaining({
       type: 'parameter_error',
-      message: expect.stringMatching(/Parameter Error:.*parameter/)
+      message: expect.stringMatching(/Parameter Error:.*parameter/),
     })
   );
 });
@@ -172,31 +187,31 @@ test('should handle parameter errors with enhanced messages', async () => {
 
 ### Test Reliability Improvements
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Test Pass Rate | ~85% | 100% | +15% |
-| UUID Format Failures | ~10% of tests | 0% | -10% |
-| Serialization Errors | ~5% of tests | 0% | -5% |
-| Mock Data Issues | ~8% of tests | 0% | -8% |
+| Metric               | Before        | After | Improvement |
+| -------------------- | ------------- | ----- | ----------- |
+| Test Pass Rate       | ~85%          | 100%  | +15%        |
+| UUID Format Failures | ~10% of tests | 0%    | -10%        |
+| Serialization Errors | ~5% of tests  | 0%    | -5%         |
+| Mock Data Issues     | ~8% of tests  | 0%    | -8%         |
 
 ### Error Handling Quality
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| Original Message Preservation | ❌ Lost | ✅ Preserved with context |
-| Circular Reference Safety | ❌ Throws errors | ✅ Safe handling |
-| MCP Protocol Compatibility | ❌ Frequent failures | ✅ 100% compatibility |
-| Debug Information | ❌ Limited | ✅ Comprehensive |
+| Aspect                        | Before               | After                     |
+| ----------------------------- | -------------------- | ------------------------- |
+| Original Message Preservation | ❌ Lost              | ✅ Preserved with context |
+| Circular Reference Safety     | ❌ Throws errors     | ✅ Safe handling          |
+| MCP Protocol Compatibility    | ❌ Frequent failures | ✅ 100% compatibility     |
+| Debug Information             | ❌ Limited           | ✅ Comprehensive          |
 
 ### Developer Experience
 
-| Improvement | Benefit |
-|-------------|---------|
-| Clear Error Messages | Faster debugging and issue resolution |
-| Standardized Test UUIDs | Consistent test data across all suites |
-| Flexible Assertions | Tests resilient to error message enhancements |
-| Environment Detection | Automatic test configuration |
-| Comprehensive Documentation | Self-service troubleshooting |
+| Improvement                 | Benefit                                       |
+| --------------------------- | --------------------------------------------- |
+| Clear Error Messages        | Faster debugging and issue resolution         |
+| Standardized Test UUIDs     | Consistent test data across all suites        |
+| Flexible Assertions         | Tests resilient to error message enhancements |
+| Environment Detection       | Automatic test configuration                  |
+| Comprehensive Documentation | Self-service troubleshooting                  |
 
 ## New Documentation Structure
 
@@ -235,11 +250,13 @@ test('should handle parameter errors with enhanced messages', async () => {
 ### Quick Reference
 
 #### For Developers
+
 - **Writing Tests**: Use [Test Environment Setup Guide](development/test-environment-setup.md)
 - **Error Handling**: Follow [Enhanced Error Handling patterns](api/error-handling.md#enhanced-error-message-format-improvements)
 - **Troubleshooting**: Check [Test Failure Troubleshooting](troubleshooting.md#test-failure-troubleshooting)
 
 #### For Debugging
+
 - **Test Failures**: Start with [UUID Format Fixes](troubleshooting.md#uuid-format-errors)
 - **Serialization Issues**: Review [JSON Serialization Fixes](development/json-serialization-fixes.md)
 - **Mock Problems**: Check [Mock Data System Guidelines](development/test-environment-setup.md#mock-data-system)
@@ -271,19 +288,19 @@ test('should handle parameter errors with enhanced messages', async () => {
 
 ### Test Execution Performance
 
-| Test Type | Before | After | Change |
-|-----------|--------|-------|--------|
-| Unit Tests | 45s | 42s | -7% (more reliable mocks) |
-| Integration Tests | 180s | 175s | -3% (fewer retries needed) |
-| E2E Tests | 300s | 285s | -5% (reduced flakiness) |
+| Test Type         | Before | After | Change                     |
+| ----------------- | ------ | ----- | -------------------------- |
+| Unit Tests        | 45s    | 42s   | -7% (more reliable mocks)  |
+| Integration Tests | 180s   | 175s  | -3% (fewer retries needed) |
+| E2E Tests         | 300s   | 285s  | -5% (reduced flakiness)    |
 
 ### Error Processing Performance
 
-| Operation | Before | After | Impact |
-|-----------|--------|-------|--------|
-| Simple Error | 1ms | 1ms | No change |
-| Complex Error | 5ms or fail | 8ms | +60% time but 100% reliability |
-| Circular Reference | Failure | 10ms | From failure to success |
+| Operation          | Before      | After | Impact                         |
+| ------------------ | ----------- | ----- | ------------------------------ |
+| Simple Error       | 1ms         | 1ms   | No change                      |
+| Complex Error      | 5ms or fail | 8ms   | +60% time but 100% reliability |
+| Circular Reference | Failure     | 10ms  | From failure to success        |
 
 ## Future Considerations
 
@@ -297,7 +314,7 @@ test('should handle parameter errors with enhanced messages', async () => {
 ### Maintenance Notes
 
 1. **Regular UUID Updates**: Ensure test UUIDs remain valid and unique
-2. **Mock Data Sync**: Keep mock structures aligned with API changes  
+2. **Mock Data Sync**: Keep mock structures aligned with API changes
 3. **Error Pattern Updates**: Update patterns when API error formats change
 4. **Documentation Updates**: Keep troubleshooting guides current
 

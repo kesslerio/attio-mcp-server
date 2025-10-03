@@ -164,6 +164,8 @@ export function hasErrorResponse(error: unknown): error is {
     status?: number;
     data?: {
       validation_errors?: Array<{
+        field?: string;
+        field_type?: string;
         path?: string[];
         message?: string;
       }>;

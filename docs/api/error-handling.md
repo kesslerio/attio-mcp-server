@@ -6,13 +6,13 @@ This document describes the error handling system implemented in the Attio MCP s
 
 As of version 0.0.2, the server implements a more granular categorization system for filter validation errors. This allows for more targeted error handling and better user feedback.
 
-| Category | Description | Example Error |
-|----------|-------------|---------------|
-| `STRUCTURE` | Basic structure issues with filters | Missing filters array, filters not an array |
-| `ATTRIBUTE` | Issues with attribute specification | Missing attribute object, missing attribute.slug |
-| `CONDITION` | Issues with filter conditions | Invalid condition value, unsupported condition |
-| `VALUE` | Issues with filter values | Invalid value type, incompatible value for condition |
-| `TRANSFORMATION` | Issues transforming filters to API format | API format transformation errors |
+| Category         | Description                               | Example Error                                        |
+| ---------------- | ----------------------------------------- | ---------------------------------------------------- |
+| `STRUCTURE`      | Basic structure issues with filters       | Missing filters array, filters not an array          |
+| `ATTRIBUTE`      | Issues with attribute specification       | Missing attribute object, missing attribute.slug     |
+| `CONDITION`      | Issues with filter conditions             | Invalid condition value, unsupported condition       |
+| `VALUE`          | Issues with filter values                 | Invalid value type, incompatible value for condition |
+| `TRANSFORMATION` | Issues transforming filters to API format | API format transformation errors                     |
 
 ### Working with Filter Error Categories
 
@@ -25,28 +25,31 @@ try {
   if (error instanceof FilterValidationError) {
     switch (error.category) {
       case FilterErrorCategory.STRUCTURE:
-        console.error("Basic filter structure issue:", error.message);
+        console.error('Basic filter structure issue:', error.message);
         // Show basic filter structure examples
         break;
       case FilterErrorCategory.ATTRIBUTE:
-        console.error("Issue with filter attributes:", error.message);
+        console.error('Issue with filter attributes:', error.message);
         // Show attribute examples
         break;
       case FilterErrorCategory.CONDITION:
-        console.error("Issue with filter conditions:", error.message);
+        console.error('Issue with filter conditions:', error.message);
         // Show condition examples
         break;
       case FilterErrorCategory.VALUE:
-        console.error("Issue with filter values:", error.message);
+        console.error('Issue with filter values:', error.message);
         // Show value format examples
         break;
       case FilterErrorCategory.TRANSFORMATION:
-        console.error("Issue transforming filters to API format:", error.message);
+        console.error(
+          'Issue transforming filters to API format:',
+          error.message
+        );
         // Show transformation examples
         break;
     }
   } else {
-    console.error("Other error:", error.message);
+    console.error('Other error:', error.message);
   }
 }
 ```
@@ -58,7 +61,7 @@ try {
 ```
 Filter object is required but was undefined or null
 
-Example of valid filter structure: 
+Example of valid filter structure:
 {
   "filters": [
     {
@@ -75,7 +78,7 @@ Example of valid filter structure:
 ```
 Invalid filter structure at index 0: missing attribute.slug
 
-Example of valid filter structure: 
+Example of valid filter structure:
 {
   "filters": [
     {
@@ -90,10 +93,10 @@ Example of valid filter structure:
 #### Condition Error
 
 ```
-Invalid filter structure at index 0: invalid condition 'not_valid'. 
+Invalid filter structure at index 0: invalid condition 'not_valid'.
 Valid conditions are: equals, contains, starts_with, ends_with, greater_than, less_than, is_empty, is_not_empty
 
-Example of valid filter structure: 
+Example of valid filter structure:
 {
   "filters": [
     {
@@ -145,6 +148,7 @@ Claude implements several strategies to recover from errors:
 **User**: "Update the contact information for john@nonexistentcompany.com"
 
 **Claude**: "I wasn't able to find a contact with the email john@nonexistentcompany.com. Would you like me to:
+
 1. Search for contacts named John instead
 2. Create a new contact with this email address
 3. Check if there might be a different email address for this contact"
@@ -201,8 +205,8 @@ const personSchema = {
     firstName: { type: 'string', minLength: 1 },
     lastName: { type: 'string' },
     email: { type: 'string', format: 'email' },
-    age: { type: 'number', minimum: 0 }
-  }
+    age: { type: 'number', minimum: 0 },
+  },
 };
 
 // Validate input against schema
@@ -230,7 +234,7 @@ const result = await callWithRetry(
   {
     maxRetries: 3,
     initialDelay: 1000,
-    maxDelay: 10000
+    maxDelay: 10000,
   }
 );
 ```
@@ -243,7 +247,7 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   initialDelay: 1000, // 1 second
   maxDelay: 10000, // 10 seconds
   useExponentialBackoff: true,
-  retryableStatusCodes: [408, 429, 500, 502, 503, 504]
+  retryableStatusCodes: [408, 429, 500, 502, 503, 504],
 };
 ```
 
@@ -303,13 +307,11 @@ try {
   // Operation that might fail
 } catch (error) {
   if (error.response?.status === 404) {
-    return createErrorResult(
-      ErrorType.NOT_FOUND_ERROR,
-      'Resource not found',
-      { resourceId: id }
-    );
+    return createErrorResult(ErrorType.NOT_FOUND_ERROR, 'Resource not found', {
+      resourceId: id,
+    });
   }
-  
+
   // Generic error handling
   return createErrorResult(
     ErrorType.UNKNOWN_ERROR,
@@ -335,7 +337,7 @@ async function fetchUserData(userId) {
     },
     {
       maxRetries: 5,
-      retryableStatusCodes: [429, 503]
+      retryableStatusCodes: [429, 503],
     }
   );
 }
@@ -354,15 +356,15 @@ function processUserData(userData) {
     required: ['name', 'email'],
     properties: {
       name: { type: 'string', minLength: 1 },
-      email: { type: 'string', format: 'email' }
-    }
+      email: { type: 'string', format: 'email' },
+    },
   };
-  
+
   const { valid, errors } = validateInput(userData, schema);
   if (!valid) {
     throw new Error(`Invalid user data: ${JSON.stringify(errors)}`);
   }
-  
+
   // Process validated data
 }
 ```
@@ -414,7 +416,9 @@ import axios from 'axios';
 
 async function fetchSomeData(id: string): Promise<any> {
   try {
-    const response = await axios.get(`https://api.attio.com/v2/some-endpoint/${id}`);
+    const response = await axios.get(
+      `https://api.attio.com/v2/some-endpoint/${id}`
+    );
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -422,7 +426,9 @@ async function fetchSomeData(id: string): Promise<any> {
       if (error.response.status === 404) {
         throw new Error(`Resource with ID ${id} not found.`);
       } else if (error.response.status === 400) {
-        throw new Error(`Bad request for resource ${id}: ${error.response.data.message}`);
+        throw new Error(
+          `Bad request for resource ${id}: ${error.response.data.message}`
+        );
       }
     }
     // PROBLEM: Generic fallback, losing all specific API error info.
@@ -439,7 +445,9 @@ import axios from 'axios';
 
 async function fetchSomeData(id: string): Promise<any> {
   try {
-    const response = await axios.get(`https://api.attio.com/v2/some-endpoint/${id}`);
+    const response = await axios.get(
+      `https://api.attio.com/v2/some-endpoint/${id}`
+    );
     return response.data;
   } catch (error) {
     // BEST PRACTICE: Re-throw the original error (or a minimally wrapped one if necessary,
@@ -478,7 +486,7 @@ By consistently re-throwing original API errors, the application can leverage ce
 The company attributes module has been updated with improved error handling to address issues when using the `get-company-attributes` tool. Key improvements include:
 
 1. **Try/Catch Blocks in Core Logic**
-   - Added structured `try/catch` blocks in the `getCompanyAttributes` function 
+   - Added structured `try/catch` blocks in the `getCompanyAttributes` function
    - Implemented consistent error logging using the `logAttributeError` helper
    - Enhanced error messages with additional context (company ID, attribute name)
 
@@ -493,3 +501,182 @@ The company attributes module has been updated with improved error handling to a
    - Implemented robust error propagation with context preservation
 
 These improvements ensure that the `get-company-attributes` tool now provides clear, actionable error messages rather than generic "[object Object]" errors, making it much easier to troubleshoot issues when working with company attributes.
+
+### Field Type Metadata in Enhanced Errors (Issue #808)
+
+The error handling system now preserves field type and metadata information throughout the error flow, enabling better diagnostics and contextual error messages.
+
+#### Field Type in Error Context
+
+The `EnhancedApiErrorContext` interface now includes `fieldType` and `fieldMetadata` properties:
+
+```typescript
+interface EnhancedApiErrorContext {
+  field?: string;
+  fieldType?: string; // e.g., "phone_number", "email", "select"
+  fieldMetadata?: unknown; // Attio field config snapshot
+  validValues?: string[];
+  // ...other context fields
+}
+```
+
+#### Benefits
+
+**Better Debugging**: Knowing the field type helps distinguish between different error scenarios:
+
+- **Validation logic issue**: Our code has a bug
+- **Field type mismatch**: User provided wrong format
+- **API schema change**: Attio changed field requirements
+
+**Contextual Error Messages**: Errors now surface field type information automatically:
+
+```typescript
+// Error with field type context
+const error = new EnhancedApiError(
+  'Invalid status value',
+  400,
+  '/objects/companies',
+  'POST',
+  {
+    field: 'status',
+    fieldType: 'select',
+    validValues: ['new', 'active', 'won'],
+  }
+);
+
+// Contextual message includes type information:
+// "Field 'status' expects values of type 'select'.
+//  Valid options for 'status' are: [new, active, won]."
+```
+
+#### Field Type Preservation
+
+Field types are preserved throughout the error flow:
+
+1. **Error Templates**: Predefined templates set appropriate field types
+
+```typescript
+ErrorTemplates.INVALID_SELECT_OPTION(
+  'status',
+  'invalid',
+  ['new', 'active'],
+  'companies'
+);
+// Sets fieldType: 'select'
+
+ErrorTemplates.INVALID_UUID_FORMAT('not-a-uuid', 'companies');
+// Sets fieldType: 'uuid'
+
+ErrorTemplates.PHONE_NUMBER_FORMAT_ERROR('phone', 'people');
+// Sets fieldType: 'phone_number'
+```
+
+2. **Axios Error Mapping**: Field types extracted from API validation errors
+
+```typescript
+// API response includes field_type or expected_type
+{
+  validation_errors: [
+    {
+      field: 'status',
+      field_type: 'select',
+      message: 'Invalid option provided',
+    },
+  ];
+}
+
+// ErrorService.fromAxios() preserves this as fieldType
+const mapped = ErrorService.fromAxios(axiosError);
+// mapped.details.validation_errors[0].fieldType === 'select'
+```
+
+3. **Error Enhancement**: Field type context preserved when enhancing errors
+
+```typescript
+const enhanced = ErrorEnhancer.ensureEnhanced(new Error('Validation failed'), {
+  field: 'status',
+  fieldType: 'select',
+  validValues: ['open', 'won'],
+});
+
+// enhanced.context.fieldType === 'select'
+// enhanced.getContextualMessage() includes type information
+```
+
+#### Using Field Metadata
+
+The `fieldMetadata` property can store the complete Attio field configuration for deep diagnostics:
+
+```typescript
+const error = new EnhancedApiError(
+  'Validation failed',
+  400,
+  '/objects/companies',
+  'POST',
+  {
+    field: 'custom_field',
+    fieldType: 'text',
+    fieldMetadata: {
+      slug: 'custom_field',
+      type: 'text',
+      max_length: 255,
+      required: true,
+      // ...full field config from Attio
+    },
+  }
+);
+
+// Access field configuration for debugging
+if (error.context?.fieldMetadata) {
+  const config = error.context.fieldMetadata as Record<string, unknown>;
+  console.log('Field max length:', config.max_length);
+  console.log('Field required:', config.required);
+}
+```
+
+#### Validation Error Formatting
+
+Validation errors now include field type in formatted messages:
+
+```typescript
+// ErrorService.fromAxios() formats validation errors with type info:
+// "- Field "status" (type: select): Invalid option provided"
+// "- Field "record_id" (type: uuid): Must be valid UUID format"
+```
+
+#### Testing Field Type Preservation
+
+Tests verify field type metadata flows correctly:
+
+```typescript
+it('should preserve field type metadata when enhancing errors', () => {
+  const enhanced = new EnhancedApiError(
+    'Invalid value',
+    400,
+    '/api/test',
+    'POST',
+    {
+      field: 'status',
+      fieldType: 'select',
+      validValues: ['new', 'active'],
+    }
+  );
+
+  expect(enhanced.context?.fieldType).toBe('select');
+  expect(enhanced.getContextualMessage()).toContain("type 'select'");
+});
+```
+
+#### Common Field Types
+
+| Field Type     | Description            | Example Error Template             |
+| -------------- | ---------------------- | ---------------------------------- |
+| `select`       | Select/dropdown fields | `INVALID_SELECT_OPTION`            |
+| `uuid`         | UUID identifier fields | `INVALID_UUID_FORMAT`              |
+| `phone_number` | Phone number fields    | `PHONE_NUMBER_FORMAT_ERROR`        |
+| `email`        | Email address fields   | Generic with `fieldType: 'email'`  |
+| `text`         | Text/string fields     | `TASK_FIELD_MAPPING`               |
+| `number`       | Numeric fields         | Generic with `fieldType: 'number'` |
+| `date`         | Date/datetime fields   | Generic with `fieldType: 'date'`   |
+
+**Related**: PR #829 implementation, Issue #808 enhancement request

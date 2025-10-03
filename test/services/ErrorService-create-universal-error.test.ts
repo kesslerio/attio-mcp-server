@@ -52,6 +52,30 @@ describe('ErrorService.createUniversalError', () => {
     expect(result).toBe(original);
   });
 
+  it('preserves enhanced context field type metadata', () => {
+    const original = new EnhancedApiError(
+      'Invalid status value',
+      400,
+      '/api/test',
+      'POST',
+      {
+        field: 'status',
+        fieldType: 'select',
+        validValues: ['new', 'active'],
+      }
+    );
+
+    const result = ErrorService.createUniversalError(
+      'update',
+      'people',
+      original
+    ) as EnhancedApiError;
+
+    expect(result).toBe(original);
+    expect(result.context?.fieldType).toBe('select');
+    expect(result.getContextualMessage()).toContain("type 'select'");
+  });
+
   it('extracts message from Error objects', () => {
     const original = new Error('Test error message');
     const result = ErrorService.createUniversalError(
@@ -137,5 +161,57 @@ describe('ErrorService.createUniversalError', () => {
       original
     ) as UniversalValidationError;
     expect(result.cause).toBe(original);
+  });
+
+  describe('fromAxios', () => {
+    it('preserves field type metadata within validation errors', () => {
+      const mapped = ErrorService.fromAxios({
+        response: {
+          status: 400,
+          data: {
+            message: 'Invalid status value',
+            validation_errors: [
+              {
+                field: 'status',
+                message: 'Invalid option provided',
+                field_type: 'select',
+              },
+            ],
+          },
+        },
+      } as any);
+
+      expect(mapped.details?.validation_errors?.[0]?.fieldType).toBe('select');
+      expect(mapped.message).toContain('type: select');
+    });
+
+    it('preserves field metadata when creating enhanced errors', () => {
+      const fieldMetadata = {
+        slug: 'priority',
+        type: 'select',
+        options: ['low', 'medium', 'high'],
+      };
+
+      const original = new EnhancedApiError(
+        'Invalid priority value',
+        400,
+        '/api/test',
+        'POST',
+        {
+          field: 'priority',
+          fieldType: 'select',
+          fieldMetadata,
+        }
+      );
+
+      const result = ErrorService.createUniversalError(
+        'update',
+        'tasks',
+        original
+      ) as EnhancedApiError;
+
+      expect(result.context?.fieldMetadata).toBe(fieldMetadata);
+      expect(result.context?.fieldType).toBe('select');
+    });
   });
 });
