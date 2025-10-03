@@ -34,6 +34,7 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
   getFieldSuggestions: vi.fn(),
 }));
 import { validateResourceType } from '../../src/handlers/tool-configs/universal/field-mapper.js';
+import { buildAttributeMetadataIndex } from '../../src/services/utils/attribute-metadata.js';
 
 describe('ErrorService.createUniversalError', () => {
   beforeEach(() => {
@@ -241,6 +242,43 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   describe('field error utilities', () => {
+    it('hydrates field context from attribute discovery metadata', () => {
+      const attributes = [
+        {
+          api_slug: 'custom_status',
+          field_type: 'select',
+          title: 'Custom Status',
+          config: {
+            select: {
+              options: [
+                { id: 'new', title: 'New', value: 'new' },
+                { id: 'active', title: 'Active', value: 'active' },
+              ],
+            },
+          },
+        },
+      ];
+
+      const attributeMetadataIndex = buildAttributeMetadataIndex(attributes);
+
+      const error = ErrorService.createFieldError({
+        field: 'Custom Status',
+        message: 'Invalid status value',
+        resourceType: 'tasks',
+        operation: 'update',
+        attributeMetadataIndex,
+      }) as EnhancedApiError;
+
+      expect(error.context?.fieldType).toBe('select');
+      expect(error.context?.fieldMetadata).toMatchObject({
+        api_slug: 'custom_status',
+        field_type: 'select',
+      });
+      expect(error.getContextualMessage()).toContain(
+        "Field 'Custom Status' expects values of type 'select'"
+      );
+    });
+
     it('creates enhanced field error with metadata-derived field type', () => {
       const attributeMetadataIndex = {
         status: { api_slug: 'status', type: 'select' },

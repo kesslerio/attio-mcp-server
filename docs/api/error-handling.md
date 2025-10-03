@@ -41,6 +41,15 @@ DEBUG ErrorService field-context {"field":"status","fieldType":"select","resourc
 
 These additions make it easier to audit failed requests and reconcile validation errors with the exact Attio configuration that triggered them.
 
+### Creating Errors with Field Metadata
+
+Prefer the ErrorService helpers when you need field-aware diagnostics:
+
+- `ErrorService.createFieldError({ ... })` for field-specific validation failures
+- `ErrorService.createValidationError({ ... })` for broader validation errors with optional field context
+
+Both helpers automatically hydrate `fieldType` and `fieldMetadata` from attribute discovery results. See [ErrorService Helpers](#errorservice-helpers) for usage details and logging behavior.
+
 ## Filter Validation Error Categories
 
 As of version 0.0.2, the server implements a more granular categorization system for filter validation errors. This allows for more targeted error handling and better user feedback.

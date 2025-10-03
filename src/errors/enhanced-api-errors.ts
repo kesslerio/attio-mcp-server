@@ -20,7 +20,10 @@ export interface EnhancedApiErrorContext {
   field?: string;
   /** Type information for the problematic field */
   fieldType?: string;
-  /** Attio field configuration snapshot for deep diagnostics */
+  /**
+   * Attio field configuration snapshot for deep diagnostics.
+   * @remarks Commonly includes api_slug, field_type, title, and config.select options.
+   */
   fieldMetadata?: AttributeMetadata;
   /** Valid values for select fields */
   validValues?: string[];

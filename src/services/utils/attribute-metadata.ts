@@ -29,13 +29,22 @@ function addKey(
   key: string,
   metadata: AttributeMetadata
 ): void {
-  const normalized = normalizeKey(key);
-  if (!normalized) return;
+  const variants = createLookupKeys(key);
+  variants.forEach((variant) => {
+    index[variant] = metadata;
+  });
+}
 
-  index[normalized] = metadata;
-  // Also map underscored variations to support space-separated titles
+function createLookupKeys(key: string): string[] {
+  const normalized = normalizeKey(key);
+  if (!normalized) return [];
+
   const underscored = normalized.replace(/[\s.-]+/g, '_');
-  index[underscored] = metadata;
+  if (underscored === normalized) {
+    return [normalized];
+  }
+
+  return [normalized, underscored];
 }
 
 export function buildAttributeMetadataIndex(
@@ -69,14 +78,11 @@ export function findAttributeMetadata(
     return undefined;
   }
 
-  const normalized = normalizeKey(field);
-  if (normalized in index) {
-    return index[normalized];
-  }
-
-  const underscored = normalized.replace(/[\s.-]+/g, '_');
-  if (underscored in index) {
-    return index[underscored];
+  const variants = createLookupKeys(field);
+  for (const variant of variants) {
+    if (variant in index) {
+      return index[variant];
+    }
   }
 
   return undefined;
