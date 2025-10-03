@@ -1,5 +1,5 @@
 /**
- * TC-AO01: Batch Operations Validation
+ * TCAO01: Batch Operations Validation
  * P1 Advanced Test - Validates universal batch tooling across create, get, search, and failure paths.
  *
  * Coverage:
@@ -15,13 +15,21 @@ import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
 import type { TestResult } from '../shared/quality-gates';
 
+const SMALL_BATCH_SIZE = 3;
+const MAX_BATCH_SIZE = 100;
+const MAX_BATCH_OVERFLOW = MAX_BATCH_SIZE + 1;
+const BOUNDARY_SEED_COUNT = 10;
+const PERFORMANCE_SEED_COUNT = 5;
+const PERFORMANCE_SAMPLE_SIZE = 50;
+const PERFORMANCE_BUDGET_MS = 5000;
+
 class BatchOperationsTest extends MCPTestBase {
   constructor() {
     super('TCAO01');
   }
 }
 
-describe('TC-AO01: Batch Operations Validation', () => {
+describe('TCAO01: Batch Operations Validation', () => {
   const testCase = new BatchOperationsTest();
   const results: TestResult[] = [];
 
@@ -41,7 +49,7 @@ describe('TC-AO01: Batch Operations Validation', () => {
     const totalCount = results.length;
     const passRate = totalCount > 0 ? (passedCount / totalCount) * 100 : 0;
     console.log(
-      `\nTC-AO01 Results: ${passedCount}/${totalCount} passed (${passRate.toFixed(1)}%)`
+      `\nTCAO01 Results: ${passedCount}/${totalCount} passed (${passRate.toFixed(1)}%)`
     );
 
     if (passRate < 80) {
@@ -57,11 +65,13 @@ describe('TC-AO01: Batch Operations Validation', () => {
     let error: string | undefined;
 
     try {
-      const companySpecs = Array.from({ length: 3 }, (_, index) =>
-        TestDataFactory.createCompanyData(`TCAO01_create_${index}`)
+      const companySpecs = Array.from(
+        { length: SMALL_BATCH_SIZE },
+        (_, index) =>
+          TestDataFactory.createCompanyData(`TCAO01_create_${index}`)
       );
 
-      const createResult = await testCase.executeToolCall('records_batch', {
+      const createResult = await testCase.executeToolCall('batch-operations', {
         resource_type: 'companies',
         operations: companySpecs.map((payload) => ({
           operation: 'create',
@@ -94,7 +104,7 @@ describe('TC-AO01: Batch Operations Validation', () => {
 
       expect(createdCompanyIds.length).toBe(companySpecs.length);
 
-      const getResult = await testCase.executeToolCall('records_batch', {
+      const getResult = await testCase.executeToolCall('batch-operations', {
         resource_type: 'companies',
         operation_type: 'get',
         record_ids: createdCompanyIds,
@@ -108,16 +118,125 @@ describe('TC-AO01: Batch Operations Validation', () => {
       }
 
       const searchQueries = companySpecs.map((spec) => spec.name.split(' ')[0]);
-      const searchResult = await testCase.executeToolCall('records_batch', {
+      const searchResult = await testCase.executeToolCall('batch-operations', {
         resource_type: 'companies',
         operation_type: 'search',
         queries: searchQueries,
-        limit: 3,
+        limit: SMALL_BATCH_SIZE,
       });
 
       const searchText = testCase.extractTextContent(searchResult);
       expect(searchText).toContain('Batch search completed');
       expect(searchText).toContain('Successful searches');
+
+      passed = true;
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      results.push({ test: testName, passed, error });
+    }
+  });
+
+  it('should update multiple companies via batch operations array', async () => {
+    const testName = 'batch_update_companies';
+    let passed = false;
+    let error: string | undefined;
+
+    try {
+      const seedRecords: Array<{ id: string; name: string }> = [];
+      for (let index = 0; index < SMALL_BATCH_SIZE; index += 1) {
+        const companyData = TestDataFactory.createCompanyData(
+          `TCAO01_update_${index}`
+        );
+        const createResult = await testCase.executeToolCall('create-record', {
+          resource_type: 'companies',
+          record_data: companyData,
+        });
+
+        const companyId = QAAssertions.assertRecordCreated(
+          createResult,
+          'companies'
+        );
+        testCase.trackRecord('companies', companyId);
+        seedRecords.push({ id: companyId, name: companyData.name });
+      }
+
+      const updateResult = await testCase.executeToolCall('batch-operations', {
+        resource_type: 'companies',
+        operations: seedRecords.map((record, index) => ({
+          operation: 'update',
+          record_data: {
+            id: record.id,
+            description: `Updated via batch operation ${index + 1}`,
+          },
+        })),
+      });
+
+      QAAssertions.assertBatchOperationSuccess(
+        updateResult,
+        'update',
+        seedRecords.length
+      );
+
+      for (let index = 0; index < seedRecords.length; index += 1) {
+        const record = seedRecords[index];
+        const details = await testCase.executeToolCall('get-record-details', {
+          resource_type: 'companies',
+          record_id: record.id,
+        });
+
+        const detailsText = testCase.extractTextContent(details);
+        expect(detailsText).toContain(
+          `Updated via batch operation ${index + 1}`
+        );
+      }
+
+      passed = true;
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      results.push({ test: testName, passed, error });
+    }
+  });
+
+  it('should handle the maximum batch size without errors', async () => {
+    const testName = 'batch_size_limit_boundary';
+    let passed = false;
+    let error: string | undefined;
+
+    try {
+      const seedCompanies: string[] = [];
+      for (let index = 0; index < BOUNDARY_SEED_COUNT; index += 1) {
+        const companyData = TestDataFactory.createCompanyData(
+          `TCAO01_boundary_seed_${index}`
+        );
+        const createResult = await testCase.executeToolCall('create-record', {
+          resource_type: 'companies',
+          record_data: companyData,
+        });
+        const companyId = QAAssertions.assertRecordCreated(
+          createResult,
+          'companies'
+        );
+        testCase.trackRecord('companies', companyId);
+        seedCompanies.push(companyId);
+      }
+
+      const recordIds = Array.from(
+        { length: MAX_BATCH_SIZE },
+        (_, index) => seedCompanies[index % seedCompanies.length]
+      );
+
+      const result = await testCase.executeToolCall('batch-operations', {
+        resource_type: 'companies',
+        operation_type: 'get',
+        record_ids: recordIds,
+        limit: recordIds.length,
+      });
+
+      QAAssertions.assertBatchOperationSuccess(result, 'get', MAX_BATCH_SIZE);
 
       passed = true;
     } catch (e) {
@@ -134,12 +253,13 @@ describe('TC-AO01: Batch Operations Validation', () => {
     let error: string | undefined;
 
     try {
-      const oversizedPayload = Array.from({ length: 101 }, (_, index) =>
-        TestDataFactory.createCompanyData(`TCAO01_limit_${index}`)
+      const oversizedPayload = Array.from(
+        { length: MAX_BATCH_OVERFLOW },
+        (_, index) => TestDataFactory.createCompanyData(`TCAO01_limit_${index}`)
       );
 
       await expect(
-        testCase.executeToolCall('records_batch', {
+        testCase.executeToolCall('batch-operations', {
           resource_type: 'companies',
           operation_type: 'create',
           records: oversizedPayload,
@@ -166,7 +286,7 @@ describe('TC-AO01: Batch Operations Validation', () => {
       );
       const invalidCompany = { description: 'Missing required name field' };
 
-      const result = await testCase.executeToolCall('records_batch', {
+      const result = await testCase.executeToolCall('batch-operations', {
         resource_type: 'companies',
         operations: [
           {
@@ -213,7 +333,7 @@ describe('TC-AO01: Batch Operations Validation', () => {
 
     try {
       const seedCompanies: string[] = [];
-      for (let index = 0; index < 5; index += 1) {
+      for (let index = 0; index < PERFORMANCE_SEED_COUNT; index += 1) {
         const companyData = TestDataFactory.createCompanyData(
           `TCAO01_perf_seed_${index}`
         );
@@ -230,12 +350,12 @@ describe('TC-AO01: Batch Operations Validation', () => {
       }
 
       const recordIds = Array.from(
-        { length: 50 },
+        { length: PERFORMANCE_SAMPLE_SIZE },
         (_, index) => seedCompanies[index % seedCompanies.length]
       );
 
       const start = Date.now();
-      const result = await testCase.executeToolCall('records_batch', {
+      const result = await testCase.executeToolCall('batch-operations', {
         resource_type: 'companies',
         operation_type: 'get',
         record_ids: recordIds,
@@ -245,7 +365,7 @@ describe('TC-AO01: Batch Operations Validation', () => {
 
       const text = testCase.extractTextContent(result);
       expect(text).toContain('Batch get completed');
-      expect(durationMs).toBeLessThan(5000);
+      expect(durationMs).toBeLessThan(PERFORMANCE_BUDGET_MS);
 
       passed = true;
     } catch (e) {

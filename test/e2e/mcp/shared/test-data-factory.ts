@@ -3,12 +3,12 @@
  * Generates consistent test data for MCP QA test suite
  */
 
-import type { 
-  CompanyCreateData, 
-  PersonCreateData, 
-  TaskCreateData, 
+import type {
+  CompanyCreateData,
+  PersonCreateData,
+  TaskCreateData,
   NoteCreateData,
-  DealCreateData
+  DealCreateData,
 } from './types.js';
 
 export class TestDataFactory {
@@ -30,7 +30,7 @@ export class TestDataFactory {
     return {
       name: `${testCase} Test Company ${uniqueId}`,
       domains: [`${testCase.toLowerCase()}-test-${this.testRunId}.com`],
-      description: `Created by MCP test suite for ${testCase}`
+      description: `Created by MCP test suite for ${testCase}`,
       // Note: size and industry fields removed as they don't exist in Attio workspace
     };
   }
@@ -42,9 +42,12 @@ export class TestDataFactory {
     const uniqueId = this.generateTestId(testCase, 'person');
     return {
       name: `${testCase} Test Person ${uniqueId}`,
-      email_addresses: [`${testCase.toLowerCase()}.test.${this.testRunId}@example.com`],
+      email_addresses: [
+        `${testCase.toLowerCase()}.test.${this.testRunId}@example.com`,
+      ],
       job_title: `${testCase} QA Tester`,
-      phone_numbers: ['+1-555-0100']
+      // Use NANP test prefix to satisfy validation without leaking real numbers
+      phone_numbers: ['+1-555-0100'],
     };
   }
 
@@ -57,7 +60,7 @@ export class TestDataFactory {
       title: `${testCase} Test Task ${uniqueId}`,
       content: `Task created by MCP test suite for ${testCase}`,
       is_completed: false,
-      deadline_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+      deadline_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
     };
   }
 
@@ -69,13 +72,13 @@ export class TestDataFactory {
     const data: NoteCreateData = {
       title: `${testCase} Test Note ${uniqueId}`,
       content: `Note created by MCP test suite for ${testCase}`,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
-    
+
     if (parentId) {
       data.parent_object = parentId;
     }
-    
+
     return data;
   }
 
@@ -86,7 +89,7 @@ export class TestDataFactory {
     const uniqueId = this.generateTestId(testCase, 'list');
     return {
       name: `${testCase} Test List ${uniqueId}`,
-      description: `List created by MCP test suite for ${testCase}`
+      description: `List created by MCP test suite for ${testCase}`,
     };
   }
 
@@ -98,13 +101,13 @@ export class TestDataFactory {
     // Use environment-configurable stages with fallback to known valid stages
     const stages = this.getValidDealStages();
     const values = [10000, 25000, 50000, 75000, 100000];
-    
+
     return {
       name: `${testCase} Test Deal ${uniqueId}`,
       stage: stages[Math.floor(Math.random() * stages.length)],
       value: values[Math.floor(Math.random() * values.length)],
       // Add owner field to satisfy required field requirement (email format required)
-      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com'
+      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com',
     };
   }
 
@@ -117,7 +120,10 @@ export class TestDataFactory {
       try {
         return JSON.parse(envStages);
       } catch (error) {
-        console.warn('Invalid ATTIO_VALID_DEAL_STAGES JSON format, using default stages:', error);
+        console.warn(
+          'Invalid ATTIO_VALID_DEAL_STAGES JSON format, using default stages:',
+          error
+        );
       }
     }
     // Fallback to known valid stages in this Attio workspace
@@ -133,11 +139,21 @@ export class TestDataFactory {
       try {
         return JSON.parse(envPipelineStages);
       } catch (error) {
-        console.warn('Invalid ATTIO_DEAL_PIPELINE_STAGES JSON format, using default pipeline:', error);
+        console.warn(
+          'Invalid ATTIO_DEAL_PIPELINE_STAGES JSON format, using default pipeline:',
+          error
+        );
       }
     }
     // Fallback to full pipeline stages that exist in this Attio workspace
-    return ['Interested', 'Qualified', 'In Progress', 'Negotiation', 'Closed Won', 'Closed Lost'];
+    return [
+      'Interested',
+      'Qualified',
+      'In Progress',
+      'Negotiation',
+      'Closed Won',
+      'Closed Lost',
+    ];
   }
 
   /**
@@ -146,54 +162,62 @@ export class TestDataFactory {
   static createDealWithStage(testCase: string, stage: string): DealCreateData {
     const uniqueId = this.generateTestId(testCase, 'deal');
     const values = [10000, 25000, 50000, 75000, 100000];
-    
+
     return {
       name: `${testCase} Deal ${stage} ${uniqueId}`,
       stage: stage,
       value: values[Math.floor(Math.random() * values.length)],
       // Add owner field to satisfy required field requirement (email format required)
-      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com'
+      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com',
     };
   }
 
   /**
    * Generate update data for a resource
    */
-  static createUpdateData(resourceType: string, testCase: string): Record<string, unknown> {
+  static createUpdateData(
+    resourceType: string,
+    testCase: string
+  ): Record<string, unknown> {
     const timestamp = new Date().toISOString();
-    
+
     switch (resourceType) {
       case 'companies':
         return {
-          description: `Updated by ${testCase} at ${timestamp}`
+          description: `Updated by ${testCase} at ${timestamp}`,
           // Note: size field removed as it doesn't exist in Attio workspace
         };
-        
+
       case 'people':
         return {
           job_title: `${testCase} Updated Title`,
-          phone_numbers: ['+1-555-0200']
+          phone_numbers: ['+1-555-0200'],
         };
-        
+
       case 'tasks':
         // Note: Task updates are limited per Issue #517
         return {
           is_completed: true,
-          deadline_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days from now
+          deadline_at: new Date(
+            Date.now() + 14 * 24 * 60 * 60 * 1000
+          ).toISOString(), // 14 days from now
         };
-        
+
       case 'deals':
         const validStages = this.getValidDealStages();
         // Use last stage as a typical progression target, or fallback
-        const targetStage = validStages.length > 1 ? validStages[validStages.length - 1] : 'Negotiation';
+        const targetStage =
+          validStages.length > 1
+            ? validStages[validStages.length - 1]
+            : 'Negotiation';
         return {
           stage: targetStage,
-          value: 50000
+          value: 50000,
         };
-        
+
       default:
         return {
-          description: `Updated by ${testCase} at ${timestamp}`
+          description: `Updated by ${testCase} at ${timestamp}`,
         };
     }
   }
@@ -248,11 +272,10 @@ export class TestDataFactory {
     const company = this.createCompanyData(testCase);
     const person = this.createPersonData(testCase);
     const task = this.createTaskData(testCase);
-    
+
     // Add relationships (structure depends on Attio API)
     return { company, person, task };
   }
-
 
   /**
    * Create list entry test data
@@ -262,7 +285,7 @@ export class TestDataFactory {
     return {
       rating: Math.floor(Math.random() * 5) + 1,
       notes: `Entry for ${testCase} - ${timestamp}`,
-      status: 'active'
+      status: 'active',
     };
   }
 
@@ -273,7 +296,7 @@ export class TestDataFactory {
     return {
       attribute: 'name',
       operator: 'contains',
-      value: testCase
+      value: testCase,
     };
   }
 
@@ -287,15 +310,15 @@ export class TestDataFactory {
           {
             attribute: 'created_at',
             operator: 'greater_than',
-            value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // Last 7 days
+            value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // Last 7 days
           },
           {
             attribute: 'name',
-            operator: 'contains', 
-            value: testCase
-          }
-        ]
-      }
+            operator: 'contains',
+            value: testCase,
+          },
+        ],
+      },
     };
   }
 }

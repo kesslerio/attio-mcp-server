@@ -195,23 +195,45 @@ export class QAAssertions {
     operationType: string,
     expectedCount: number
   ): void {
-    expect(result.isError).toBeFalsy();
+    expect(result?.isError ?? false).toBeFalsy();
 
     const text = this.extractText(result);
-
-    // Parse the batch result to check summary
-    const summaryMatch = text.match(/"summary":\s*\{[^}]+\}/);
-    if (summaryMatch) {
-      const summaryText = summaryMatch[0];
-      const failedMatch = summaryText.match(/"failed":\s*(\d+)/);
-      if (failedMatch) {
-        const failedCount = parseInt(failedMatch[1], 10);
-        expect(failedCount).toBe(0);
-      }
+    if (!text || !text.trim()) {
+      throw new Error(
+        `ASSERTION FAILURE: Empty batch operation response for '${operationType}'`
+      );
     }
 
-    // Should not contain error messages (not just the word "error" in JSON keys)
-    expect(text).not.toMatch(/error[^"]*:/i);
+    const normalizedText = text.toLowerCase();
+    expect(normalizedText).not.toContain('error:');
+    expect(normalizedText).not.toContain('exception');
+
+    const summaryMatch = text.match(
+      /Batch\s+([a-z-\s]+)\s+completed:\s+(\d+)\s+successful,\s+(\d+)\s+failed/i
+    );
+
+    if (!summaryMatch) {
+      throw new Error(
+        `ASSERTION FAILURE: Missing batch summary for '${operationType}'.\nResponse: ${text}`
+      );
+    }
+
+    const [, , successCountRaw, failedCountRaw] = summaryMatch;
+    const successCount = Number.parseInt(successCountRaw, 10);
+    const failedCount = Number.parseInt(failedCountRaw, 10);
+
+    if (Number.isNaN(successCount) || Number.isNaN(failedCount)) {
+      throw new Error(
+        `ASSERTION FAILURE: Unable to parse batch summary counts.\nResponse: ${text}`
+      );
+    }
+
+    expect(successCount).toBe(expectedCount);
+    expect(failedCount).toBe(0);
+
+    // Guard against hidden failure payloads in JSON fallbacks
+    expect(text).not.toMatch(/"failed"\s*:\s*(?:[1-9][0-9]*)/);
+    expect(text).not.toMatch(/Failed\s+(operations|searches):\s*\n\s*\d+/i);
   }
 
   /**
