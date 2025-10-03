@@ -7,16 +7,16 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { ServerContext } from '../server/createServer.js';
-import { setGlobalContext } from '../api/lazy-client.js';
+import { ServerContext } from '@/server/createServer.js';
+import { setGlobalContext } from '@/api/lazy-client.js';
 import {
   getAllPrompts,
   getPromptById,
   getPromptsByCategory,
   getAllCategories,
-} from './templates/index.js';
-import { PromptTemplate, PromptExecutionRequest } from './types.js';
-import { createErrorResult } from './error-handler.js';
+} from '@/prompts/templates/index.js';
+import { PromptTemplate, PromptExecutionRequest } from '@/prompts/types.js';
+import { createErrorResult } from '@/prompts/error-handler.js';
 import { getPromptsListPayload } from '@/utils/mcp-discovery.js';
 
 // Import Handlebars using ES module import
@@ -51,7 +51,7 @@ class TemplateCache {
    */
   constructor(options: Partial<TemplateCacheOptions> = {}) {
     this.options = {
-      maxSize: 100, // Default max cache size
+      maxSize: 100, // Sized for typical production load (50-100 unique prompts with parameter variations)
       ...options,
     };
   }
@@ -155,9 +155,15 @@ export async function listPrompts(req: Request, res: Response): Promise<void> {
     const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
-      500
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.list'),
+        context: {
+          category: req.query.category,
+        },
+      }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -183,9 +189,13 @@ export async function listPromptCategories(
     const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
-      500
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.categories'),
+        context: {},
+      }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -208,9 +218,13 @@ export async function getPromptDetails(
       const errorResult = createErrorResult(
         errorObj,
         `No prompt found with ID: ${promptId}`,
-        404
+        404,
+        {
+          ...getRequestMetadata(req, 'prompts.get'),
+          context: { promptId },
+        }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -223,9 +237,15 @@ export async function getPromptDetails(
     const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
-      500
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.get'),
+        context: {
+          promptId: req.params.id,
+        },
+      }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -354,7 +374,7 @@ export async function executePrompt(
         `No prompt found with ID: ${promptId}`,
         404
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -367,9 +387,16 @@ export async function executePrompt(
       const errorResult = createErrorResult(
         errorObj,
         validation.errors.join(', '),
-        400
+        400,
+        {
+          ...getRequestMetadata(req, 'prompts.execute'),
+          context: {
+            promptId,
+            validationErrors: validation.errors,
+          },
+        }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -391,9 +418,16 @@ export async function executePrompt(
               ? compileError.message
               : 'Unknown error'
           }`,
-          500
+          500,
+          {
+            ...getRequestMetadata(req, 'prompts.execute'),
+            context: {
+              promptId,
+              stage: 'compile',
+            },
+          }
         );
-        res.status(Number(errorResult.error.code)).json(errorResult);
+        res.status(errorResult.error.code).json(errorResult);
         return;
       }
     }
@@ -409,9 +443,16 @@ export async function executePrompt(
         `Template rendering error for prompt ${promptId}: ${
           renderError instanceof Error ? renderError.message : 'Unknown error'
         }`,
-        500
+        500,
+        {
+          ...getRequestMetadata(req, 'prompts.execute'),
+          context: {
+            promptId,
+            stage: 'render',
+          },
+        }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -427,9 +468,16 @@ export async function executePrompt(
     const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
-      500
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.execute'),
+        context: {
+          promptId: req.params.id,
+          stage: 'unhandled',
+        },
+      }
     );
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -573,4 +621,17 @@ export async function registerPromptHandlers(
       ],
     };
   });
+}
+function getRequestMetadata(req: Request, toolName: string) {
+  const requestId =
+    req.header('x-request-id') ||
+    req.header('x-correlation-id') ||
+    req.header('x-amzn-trace-id');
+  const userId = req.header('x-attio-user-id') || req.header('x-user-id');
+
+  return {
+    toolName,
+    requestId: requestId ?? 'unknown',
+    userId: userId ?? 'unknown',
+  };
 }

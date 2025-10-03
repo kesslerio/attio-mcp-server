@@ -112,6 +112,9 @@ This milestone release transforms the MCP server from partial Attio coverage to 
 
 ### Security
 
+- **XSS Prevention in Prompt Error Responses** (#836, #840) - Fixed code scanning alert #121: Replaced regex-based HTML sanitization with `sanitize-html` library
+  - Comprehensive URL scheme filtering (javascript:, data:, vbscript:, file:)
+  - Added security test suite with 11 test cases covering XSS, protocol injection, double-encoding, and edge cases
 - **Prototype Pollution** (#751) - Fixed config loader vulnerability
 - **Input Validation** (#752, #753) - Tightened LinkedIn and URL validation for secure data handling
 - **Credential Protection** (#42 series) - CodeQL-driven log scrubbing to protect Attio API credentials
