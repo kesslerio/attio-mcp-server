@@ -8,14 +8,21 @@ import {
   CallToolRequest,
   CallToolResult,
 } from '@modelcontextprotocol/sdk/types.js';
-import { warn } from '../../utils/logger.js';
-import { ServerContext } from '../../server/createServer.js';
-import { setGlobalContext } from '../../api/lazy-client.js';
+import {
+  warn,
+  clearLogContext,
+  getLogContext,
+  OperationType,
+} from '@/utils/logger.js';
+import { ServerContext } from '@/server/createServer.js';
+import { setGlobalContext } from '@/api/lazy-client.js';
 
 // Import from modular components
-import { TOOL_DEFINITIONS } from './registry.js';
+import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
 import { getToolsListPayload } from '@/utils/mcp-discovery.js';
-import { executeToolRequest } from './dispatcher.js';
+import { executeToolRequest } from '@/handlers/tools/dispatcher.js';
+import { initializeToolContext } from '@/handlers/tools/dispatcher/logging.js';
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 
 // Constants for configuration
 const DEBUG_ENV_VAR = 'MCP_DEBUG_REQUESTS';
@@ -150,33 +157,55 @@ export function registerToolHandlers(
   server.setRequestHandler(
     CallToolRequestSchema,
     async (request): Promise<CallToolResult> => {
+      const toolName =
+        typeof request.params?.name === 'string'
+          ? request.params.name
+          : 'unknown_tool';
+      const correlationId = initializeToolContext(toolName);
+
       try {
         // Normalize request to handle missing arguments wrapper (Issue #344)
         // Cast is safe because we're handling the protocol mismatch
         const normalizedRequest = normalizeToolRequest(
           request as CallToolRequest | LooseCallToolRequest
         );
-        return (await executeToolRequest(normalizedRequest)) as CallToolResult;
+        const result = (await executeToolRequest(
+          normalizedRequest
+        )) as CallToolResult;
+        return result;
       } catch (error: unknown) {
-        // Handle normalization errors
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'Unknown normalization error';
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Error normalizing tool request: ${errorMessage}`,
-            },
-          ],
-          isError: true,
-          error: {
-            code: 400,
-            message: errorMessage,
-            type: 'normalization_error',
+        warn(
+          'tool:normalization',
+          'Tool request failed before execution',
+          {
+            tool: toolName,
+            correlationId,
+            errorMessage:
+              error instanceof Error ? error.message : String(error),
           },
-        };
+          'call_tool',
+          OperationType.TOOL_EXECUTION
+        );
+
+        const { requestId, userId } = getLogContext();
+        return createSecureToolErrorResult(error, {
+          module: 'handlers.tools',
+          operation: `callTool:${toolName}`,
+          resourceType: toolName,
+          correlationId,
+          requestId,
+          userId,
+          errorType: 'normalization_error',
+          clientMessage:
+            error instanceof Error
+              ? error.message
+              : 'Tool request normalization failed',
+          fallbackMessage: 'Tool request normalization failed',
+          suggestion:
+            'Ensure the MCP request includes a tool name and wraps arguments inside the "arguments" object.',
+        });
+      } finally {
+        clearLogContext();
       }
     }
   );
