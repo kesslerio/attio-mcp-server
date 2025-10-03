@@ -1,4 +1,7 @@
-export type AttributeMetadata = Record<string, unknown>;
+import type { AttioAttributeMetadata } from '@/api/attribute-types.js';
+
+export type AttributeMetadata = AttioAttributeMetadata &
+  Record<string, unknown>;
 export type AttributeMetadataIndex = Record<string, AttributeMetadata>;
 
 const ATTRIBUTE_KEY_CANDIDATES = [
@@ -8,6 +11,13 @@ const ATTRIBUTE_KEY_CANDIDATES = [
   'title',
   'name',
   'label',
+];
+
+const FIELD_TYPE_CANDIDATES = [
+  'field_type',
+  'attribute_type',
+  'type',
+  'input_type',
 ];
 
 function normalizeKey(key: string): string {
@@ -67,6 +77,34 @@ export function findAttributeMetadata(
   const underscored = normalized.replace(/[\s.-]+/g, '_');
   if (underscored in index) {
     return index[underscored];
+  }
+
+  return undefined;
+}
+
+export function resolveFieldType(
+  metadata?: AttributeMetadata
+): string | undefined {
+  if (!metadata) return undefined;
+
+  const directType = FIELD_TYPE_CANDIDATES.find((candidate) => {
+    const value = metadata[candidate];
+    return typeof value === 'string' && value.trim().length > 0;
+  });
+
+  if (directType) {
+    return String(metadata[directType]).trim();
+  }
+
+  const configType = metadata?.config as Record<string, unknown> | undefined;
+  if (configType && typeof configType === 'object') {
+    const nestedType = FIELD_TYPE_CANDIDATES.find((candidate) => {
+      const value = configType[candidate];
+      return typeof value === 'string' && value.trim().length > 0;
+    });
+    if (nestedType) {
+      return String(configType[nestedType]).trim();
+    }
   }
 
   return undefined;
