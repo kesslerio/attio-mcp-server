@@ -8,21 +8,54 @@
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import {
   validateResourceType,
   getFieldSuggestions,
-} from '../handlers/tool-configs/universal/field-mapper.js';
+} from '@/handlers/tool-configs/universal/field-mapper.js';
 import type {
   AxiosErrorLike,
   ValidationErrorContext,
-} from '../types/service-types.js';
+} from '@/types/service-types.js';
+import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
+import {
+  findAttributeMetadata,
+  resolveFieldType,
+  type AttributeMetadataIndex,
+} from '@/services/utils/attribute-metadata.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
+
+interface BaseAttributeErrorOptions {
+  message: string;
+  resourceType: string;
+  operation: string;
+  attributeMetadataIndex?: AttributeMetadataIndex;
+  documentationHint?: string;
+  retryable?: boolean;
+  statusCode?: number;
+  endpoint?: string;
+  httpMethod?: string;
+}
+
+interface FieldErrorOptions extends BaseAttributeErrorOptions {
+  field: string;
+}
+
+interface ValidationErrorOptions extends BaseAttributeErrorOptions {
+  field?: string;
+}
 
 /**
  * ErrorService provides centralized error handling and suggestion functionality
  */
 export class ErrorService {
+  private static fieldContextLogger = createScopedLogger(
+    'ErrorService',
+    'field-context',
+    OperationType.DATA_PROCESSING
+  );
+
   /**
    * Enhanced error handling utility for universal operations
    *
@@ -592,5 +625,149 @@ export class ErrorService {
           attio: attioData,
         };
     }
+  }
+
+  static createFieldError(options: FieldErrorOptions): EnhancedApiError {
+    const {
+      field,
+      message,
+      resourceType,
+      operation,
+      attributeMetadataIndex,
+      documentationHint,
+      retryable,
+      statusCode = 422,
+      endpoint,
+      httpMethod,
+    } = options;
+
+    const { fieldMetadata, fieldType } = this.resolveAttributeContext(
+      field,
+      attributeMetadataIndex
+    );
+
+    if (field && (fieldMetadata || fieldType)) {
+      this.fieldContextLogger.debug('Resolved field type for error context', {
+        field,
+        fieldType,
+        resourceType,
+        operation,
+      });
+    }
+
+    return new EnhancedApiError(
+      message,
+      statusCode,
+      endpoint ?? this.buildEndpoint(resourceType),
+      httpMethod ?? this.inferHttpMethod(operation),
+      {
+        field,
+        resourceType,
+        operation,
+        fieldType,
+        fieldMetadata,
+        documentationHint,
+        retryable,
+        httpStatus: statusCode,
+      }
+    );
+  }
+
+  static createValidationError(
+    options: ValidationErrorOptions
+  ): EnhancedApiError {
+    const {
+      field,
+      message,
+      resourceType,
+      operation,
+      attributeMetadataIndex,
+      documentationHint,
+      retryable,
+      statusCode = 422,
+      endpoint,
+      httpMethod,
+    } = options;
+
+    const { fieldMetadata, fieldType } = this.resolveAttributeContext(
+      field,
+      attributeMetadataIndex
+    );
+
+    if (field && (fieldMetadata || fieldType)) {
+      this.fieldContextLogger.debug('Resolved field type for error context', {
+        field,
+        fieldType,
+        resourceType,
+        operation,
+      });
+    }
+
+    return new EnhancedApiError(
+      message,
+      statusCode,
+      endpoint ?? this.buildEndpoint(resourceType),
+      httpMethod ?? this.inferHttpMethod(operation),
+      {
+        field,
+        resourceType,
+        operation,
+        fieldType,
+        fieldMetadata,
+        documentationHint,
+        retryable,
+        httpStatus: statusCode,
+      }
+    );
+  }
+
+  private static resolveAttributeContext(
+    field?: string,
+    attributeMetadataIndex?: AttributeMetadataIndex
+  ): {
+    fieldMetadata?: ReturnType<typeof findAttributeMetadata>;
+    fieldType?: string;
+  } {
+    if (!field) {
+      return {};
+    }
+
+    const metadata = findAttributeMetadata(field, attributeMetadataIndex);
+    const fieldType = resolveFieldType(metadata);
+    return {
+      fieldMetadata: metadata,
+      fieldType,
+    };
+  }
+
+  private static inferHttpMethod(operation: string): string {
+    const normalized = operation?.toLowerCase() ?? '';
+
+    if (['get', 'read', 'fetch', 'list'].includes(normalized)) {
+      return 'GET';
+    }
+
+    if (['update', 'patch', 'edit'].includes(normalized)) {
+      return 'PATCH';
+    }
+
+    if (['delete', 'remove'].includes(normalized)) {
+      return 'DELETE';
+    }
+
+    if (['search', 'query'].includes(normalized)) {
+      return 'POST';
+    }
+
+    return 'POST';
+  }
+
+  private static buildEndpoint(resourceType: string): string {
+    const normalized = resourceType?.trim();
+    if (!normalized) {
+      return '/objects/unknown';
+    }
+
+    return `/objects/${normalized}`;
   }
 }

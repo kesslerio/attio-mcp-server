@@ -8,8 +8,9 @@
  * - Issue #417: Task-specific error guidance and field mapping help
  */
 
-import { AttioApiError } from './api-errors.js';
-import { isValidUUID } from '../utils/validation/uuid-validation.js';
+import { AttioApiError } from '@errors/api-errors.js';
+import type { AttributeMetadata } from '@services/utils/attribute-metadata.js';
+import { isValidUUID } from '@utils/validation/uuid-validation.js';
 
 /**
  * Enhanced error context interface providing rich information for better UX
@@ -19,8 +20,11 @@ export interface EnhancedApiErrorContext {
   field?: string;
   /** Type information for the problematic field */
   fieldType?: string;
-  /** Attio field configuration snapshot for deep diagnostics */
-  fieldMetadata?: unknown;
+  /**
+   * Attio field configuration snapshot for deep diagnostics.
+   * @remarks Commonly includes api_slug, field_type, title, and config.select options.
+   */
+  fieldMetadata?: AttributeMetadata;
   /** Valid values for select fields */
   validValues?: string[];
   /** Suggested field names for typos */
