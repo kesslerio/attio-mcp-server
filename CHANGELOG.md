@@ -62,17 +62,27 @@ This release focuses on developer experience improvements with intelligent promp
     - Automated quality gates prevent future regressions
 - Intelligent search query parsing for people and company resources (#781)
 - Debug documentation for anonymized production placeholders used in diagnostic suites
+- **Phone Number UX Improvements** (#798) - Comprehensive enhancements for phone number handling
+  - Inline tool help with phone format examples and E.164 normalization guidance
+  - Common update patterns documentation (`docs/examples/common-update-patterns.md`)
+  - Field verification configuration guide (`docs/configuration/field-verification.md`)
+  - Enhanced error messages for phone number validation with format examples
+  - Pre-update field validation with automatic normalization
 
 ### Changed
 
 - Updated `parseQuery` to support international phone formats and robust multi-level domain extraction.
 - Enhanced people/company search strategies to leverage parsed tokens, phone variants, and consistent empty-filter handling.
 - Swapped unit test fixtures/docs to anonymized examples (Alex Rivera / Example Medical Group / +1 555 010 4477).
+- **Phone number normalization** - Automatic transformation from user-friendly `phone_number` to Attio's `original_phone_number` format
+- **Field preservation during normalization** - Additional fields (label, type, extension, is_primary) are now preserved when normalizing phone numbers
+- **Warning suppression for cosmetic mismatches** - Update verification now filters out cosmetic formatting differences (e.g., `"Demo"` vs `Demo`)
 
 ### Fixed
 
 - Eliminated redundant `$or` filters and US-only phone assumptions in query filter builders
 - Hardened token processing to ignore stopwords and guard against large query inputs
+- Phone number field key confusion - users can now use `phone_number` (user-friendly) which auto-converts to `original_phone_number` (Attio API format)
 
 ## [1.0.0] - 2025-09-27
 
