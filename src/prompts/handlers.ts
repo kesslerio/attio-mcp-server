@@ -7,16 +7,16 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { ServerContext } from '../server/createServer.js';
-import { setGlobalContext } from '../api/lazy-client.js';
+import { ServerContext } from '@/server/createServer.js';
+import { setGlobalContext } from '@/api/lazy-client.js';
 import {
   getAllPrompts,
   getPromptById,
   getPromptsByCategory,
   getAllCategories,
-} from './templates/index.js';
-import { PromptTemplate, PromptExecutionRequest } from './types.js';
-import { createErrorResult } from './error-handler.js';
+} from '@/prompts/templates/index.js';
+import { PromptTemplate, PromptExecutionRequest } from '@/prompts/types.js';
+import { createErrorResult } from '@/prompts/error-handler.js';
 import { getPromptsListPayload } from '@/utils/mcp-discovery.js';
 
 // Import Handlebars using ES module import
@@ -51,7 +51,7 @@ class TemplateCache {
    */
   constructor(options: Partial<TemplateCacheOptions> = {}) {
     this.options = {
-      maxSize: 100, // Default max cache size
+      maxSize: 100, // Sized for typical production load (50-100 unique prompts with parameter variations)
       ...options,
     };
   }
@@ -151,16 +151,19 @@ export async function listPrompts(req: Request, res: Response): Promise<void> {
       data: prompts,
     });
   } catch (error: unknown) {
-    const clientMessage = 'Unable to list prompts at this time.';
-    const errorObj = new Error(clientMessage);
-    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
-      logError: error,
-      logContext: {
-        endpoint: 'listPrompts',
-        category: req.query.category,
-      },
-    });
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    const errorObj = new Error('Failed to list prompts');
+    const errorResult = createErrorResult(
+      errorObj,
+      error instanceof Error ? error.message : 'Unknown error',
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.list'),
+        context: {
+          category: req.query.category,
+        },
+      }
+    );
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -182,15 +185,17 @@ export async function listPromptCategories(
       data: categories,
     });
   } catch (error: unknown) {
-    const clientMessage = 'Unable to list prompt categories at this time.';
-    const errorObj = new Error(clientMessage);
-    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
-      logError: error,
-      logContext: {
-        endpoint: 'listPromptCategories',
-      },
-    });
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    const errorObj = new Error('Failed to list prompt categories');
+    const errorResult = createErrorResult(
+      errorObj,
+      error instanceof Error ? error.message : 'Unknown error',
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.categories'),
+        context: {},
+      }
+    );
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -214,9 +219,13 @@ export async function getPromptDetails(
       const errorResult = createErrorResult(
         errorObj,
         `No prompt found with ID: ${promptId}`,
-        404
+        404,
+        {
+          ...getRequestMetadata(req, 'prompts.get'),
+          context: { promptId },
+        }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -225,16 +234,17 @@ export async function getPromptDetails(
       data: prompt,
     });
   } catch (error: unknown) {
-    const clientMessage = 'Unable to retrieve prompt details at this time.';
-    const errorObj = new Error(clientMessage);
-    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
-      logError: error,
-      logContext: {
-        endpoint: 'getPromptDetails',
-        promptId,
-      },
-    });
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    const errorObj = new Error('Failed to get prompt details');
+    const errorResult = createErrorResult(
+      errorObj,
+      error instanceof Error ? error.message : 'Unknown error',
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.get'),
+        context: { promptId },
+      }
+    );
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -362,15 +372,9 @@ export async function executePrompt(
       const errorResult = createErrorResult(
         errorObj,
         `No prompt found with ID: ${promptId}`,
-        404,
-        {
-          logContext: {
-            endpoint: 'executePrompt',
-            promptId,
-          },
-        }
+        404
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -385,13 +389,14 @@ export async function executePrompt(
         validation.errors.join(', '),
         400,
         {
-          logContext: {
-            endpoint: 'executePrompt',
+          ...getRequestMetadata(req, 'prompts.execute'),
+          context: {
             promptId,
+            validationErrors: validation.errors,
           },
         }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -415,14 +420,14 @@ export async function executePrompt(
           }`,
           500,
           {
-            logError: compileError,
-            logContext: {
-              endpoint: 'executePrompt',
+            ...getRequestMetadata(req, 'prompts.execute'),
+            context: {
               promptId,
+              stage: 'compile',
             },
           }
         );
-        res.status(Number(errorResult.error.code)).json(errorResult);
+        res.status(errorResult.error.code).json(errorResult);
         return;
       }
     }
@@ -440,14 +445,14 @@ export async function executePrompt(
         }`,
         500,
         {
-          logError: renderError,
-          logContext: {
-            endpoint: 'executePrompt',
+          ...getRequestMetadata(req, 'prompts.execute'),
+          context: {
             promptId,
+            stage: 'render',
           },
         }
       );
-      res.status(Number(errorResult.error.code)).json(errorResult);
+      res.status(errorResult.error.code).json(errorResult);
       return;
     }
 
@@ -459,16 +464,20 @@ export async function executePrompt(
       },
     });
   } catch (error: unknown) {
-    const clientMessage = 'Unable to execute prompt at this time.';
-    const errorObj = new Error(clientMessage);
-    const errorResult = createErrorResult(errorObj, clientMessage, 500, {
-      logError: error,
-      logContext: {
-        endpoint: 'executePrompt',
-        promptId,
-      },
-    });
-    res.status(Number(errorResult.error.code)).json(errorResult);
+    const errorObj = new Error('Failed to execute prompt');
+    const errorResult = createErrorResult(
+      errorObj,
+      error instanceof Error ? error.message : 'Unknown error',
+      500,
+      {
+        ...getRequestMetadata(req, 'prompts.execute'),
+        context: {
+          promptId,
+          stage: 'unhandled',
+        },
+      }
+    );
+    res.status(errorResult.error.code).json(errorResult);
   }
 }
 
@@ -612,4 +621,17 @@ export async function registerPromptHandlers(
       ],
     };
   });
+}
+function getRequestMetadata(req: Request, toolName: string) {
+  const requestId =
+    req.header('x-request-id') ||
+    req.header('x-correlation-id') ||
+    req.header('x-amzn-trace-id');
+  const userId = req.header('x-attio-user-id') || req.header('x-user-id');
+
+  return {
+    toolName,
+    requestId: requestId ?? 'unknown',
+    userId: userId ?? 'unknown',
+  };
 }

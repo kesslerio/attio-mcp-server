@@ -36,12 +36,11 @@ describe('prompts/error-handler', () => {
 
     expect(serialized).not.toContain('Sensitive stack trace');
     expect(result.error.details).toBeDefined();
-    const requestId = result.error.details?.requestId;
-    expect(typeof requestId).toBe('string');
-    if (typeof requestId === 'string') {
-      expect(requestId).toHaveLength(36);
-    }
-    expect(result.error.message).toBe('Safe message');
+    const sanitizedDetail = result.error.details?.sanitizedDetail;
+    expect(typeof sanitizedDetail).toBe('string');
+    expect(result.error.message).toBe(
+      'An internal error occurred while processing the prompt.'
+    );
   });
 
   it('serializes circular context without throwing', () => {
