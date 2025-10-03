@@ -209,8 +209,9 @@ export async function getPromptDetails(
   req: Request,
   res: Response
 ): Promise<void> {
+  const promptId = req.params.id;
+
   try {
-    const promptId = req.params.id;
     const prompt = getPromptById(promptId);
 
     if (!prompt) {
@@ -240,9 +241,7 @@ export async function getPromptDetails(
       500,
       {
         ...getRequestMetadata(req, 'prompts.get'),
-        context: {
-          promptId: req.params.id,
-        },
+        context: { promptId },
       }
     );
     res.status(errorResult.error.code).json(errorResult);
@@ -363,8 +362,9 @@ export async function executePrompt(
   req: Request,
   res: Response
 ): Promise<void> {
+  const promptId = req.params.id;
+
   try {
-    const promptId = req.params.id;
     const prompt = getPromptById(promptId);
 
     if (!prompt) {
@@ -472,7 +472,7 @@ export async function executePrompt(
       {
         ...getRequestMetadata(req, 'prompts.execute'),
         context: {
-          promptId: req.params.id,
+          promptId,
           stage: 'unhandled',
         },
       }
