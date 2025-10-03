@@ -264,4 +264,57 @@ describe('Secure Error Handler - Integration Tests (No Mocks)', () => {
       expect(result.content[0].text).toContain('Next steps:');
     });
   });
+
+  describe('Error Type Consistency', () => {
+    it('should produce consistent error types across response and tool result', () => {
+      const error = { statusCode: 401, message: 'Unauthorized' };
+      const context: ErrorContext = {
+        module: 'test-module',
+        operation: 'test-operation',
+        correlationId: 'test-corr-id',
+        requestId: 'test-req-id',
+      };
+
+      const response = createSecureErrorResponse(error, context);
+      const toolResult = createSecureToolErrorResult(error, context);
+
+      // Both should have the same error type
+      expect(response.error.type).toBe(
+        (toolResult.error as Record<string, unknown>).type
+      );
+
+      // Status codes should match (note: toolResult uses 'code' property)
+      expect(response.error.statusCode).toBe(
+        (toolResult.error as Record<string, unknown>).code
+      );
+
+      // Both should have correlation IDs
+      expect(response.error.correlationId).toBe('test-corr-id');
+      expect((toolResult.error as Record<string, unknown>).correlationId).toBe(
+        'test-corr-id'
+      );
+    });
+
+    it('should maintain consistency for various error types', () => {
+      const testCases = [
+        { statusCode: 400, expectedType: 'validation_error' },
+        { statusCode: 401, expectedType: 'authentication_error' },
+        { statusCode: 403, expectedType: 'authorization_error' },
+        { statusCode: 404, expectedType: 'not_found' },
+        { statusCode: 429, expectedType: 'rate_limit' },
+        { statusCode: 500, expectedType: 'server_error' },
+      ];
+
+      testCases.forEach(({ statusCode, expectedType }) => {
+        const error = { statusCode, message: 'Test error' };
+        const response = createSecureErrorResponse(error, mockContext);
+        const toolResult = createSecureToolErrorResult(error, mockContext);
+
+        expect(response.error.type).toBe(expectedType);
+        expect((toolResult.error as Record<string, unknown>).type).toBe(
+          expectedType
+        );
+      });
+    });
+  });
 });
