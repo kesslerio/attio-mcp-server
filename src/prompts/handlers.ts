@@ -204,8 +204,9 @@ export async function getPromptDetails(
   req: Request,
   res: Response
 ): Promise<void> {
+  const promptId = req.params.id;
+
   try {
-    const promptId = req.params.id;
     const prompt = getPromptById(promptId);
 
     if (!prompt) {
@@ -351,8 +352,9 @@ export async function executePrompt(
   req: Request,
   res: Response
 ): Promise<void> {
+  const promptId = req.params.id;
+
   try {
-    const promptId = req.params.id;
     const prompt = getPromptById(promptId);
 
     if (!prompt) {

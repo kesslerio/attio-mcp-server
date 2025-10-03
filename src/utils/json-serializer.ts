@@ -5,13 +5,68 @@
  * Uses fast-safe-stringify for improved performance and reliability
  *
  * IMPORTANT MCP PROTOCOL WARNING:
- * Never use console.error() in this file or any MCP-related code.
- * Always use console.error() or logger.safeMcpLog() instead.
+ * Never use console.log() in this file or any MCP-related code.
+ * Always route diagnostics through the structured logger or safe MCP logging helpers.
  * Using console.log will break the MCP protocol, as it writes to stdout
  * which is used for client-server communication.
  */
 // Support both CJS and ESM default export shapes for fast-safe-stringify
 import * as fastSafeStringifyNs from 'fast-safe-stringify';
+
+type ScopedLogger = {
+  warn: (message: string, data?: Record<string, unknown>) => void;
+  error: (
+    message: string,
+    errorObj?: unknown,
+    data?: Record<string, unknown>
+  ) => void;
+};
+
+let serializerLoggerPromise: Promise<ScopedLogger> | null = null;
+let safeCopyLoggerPromise: Promise<ScopedLogger> | null = null;
+
+const noopLogger: ScopedLogger = {
+  warn: () => {
+    // intentionally noop when logging is unavailable
+  },
+  error: () => {
+    // intentionally noop when logging is unavailable
+  },
+};
+
+function getSerializationLogger(
+  operation: 'safeJsonStringify' | 'createSafeCopy'
+): Promise<ScopedLogger> {
+  if (operation === 'safeJsonStringify') {
+    if (!serializerLoggerPromise) {
+      serializerLoggerPromise = import('./logger.js')
+        .then(
+          (module) =>
+            module.createScopedLogger(
+              'utils.json-serializer',
+              'safeJsonStringify',
+              module.OperationType.SYSTEM
+            ) as ScopedLogger
+        )
+        .catch(() => noopLogger);
+    }
+    return serializerLoggerPromise;
+  }
+
+  if (!safeCopyLoggerPromise) {
+    safeCopyLoggerPromise = import('./logger.js')
+      .then(
+        (module) =>
+          module.createScopedLogger(
+            'utils.json-serializer',
+            'createSafeCopy',
+            module.OperationType.SYSTEM
+          ) as ScopedLogger
+      )
+      .catch(() => noopLogger);
+  }
+  return safeCopyLoggerPromise;
+}
 
 type FastSafeStringifyFn = (
   value: unknown,
@@ -121,23 +176,41 @@ export function safeJsonStringify(
     // Performance monitoring and logging
     const duration = performance.now() - startTime;
     if (duration > 100) {
-      console.error(
-        `[safeJsonStringify] Slow serialization detected: ${duration.toFixed(
-          2
-        )}ms for ${typeof obj} (${result.length} chars)`
-      );
+      const durationMs = Math.round(duration * 100) / 100;
+      void getSerializationLogger('safeJsonStringify')
+        .then((logger) =>
+          logger.warn(
+            `Slow serialization detected: ${durationMs}ms for ${typeof obj}`,
+            {
+              durationMs,
+              serializedLength: result.length,
+            }
+          )
+        )
+        .catch(() => {
+          // Logger unavailable; nothing else to do in non-critical path
+        });
     }
 
     return result;
   } catch (error: unknown) {
     // Enhanced error context
     const duration = performance.now() - startTime;
-    console.error(
-      `[safeJsonStringify] Serialization failed after ${duration.toFixed(
-        2
-      )}ms for ${typeof obj}:`,
-      error
-    );
+    const durationMs = Math.round(duration * 100) / 100;
+    void getSerializationLogger('safeJsonStringify')
+      .then((logger) =>
+        logger.error(
+          `Serialization failed after ${durationMs}ms for ${typeof obj}`,
+          error,
+          {
+            durationMs,
+            valueType: typeof obj,
+          }
+        )
+      )
+      .catch(() => {
+        // Logger unavailable; nothing else to do in non-critical path
+      });
 
     // Use fast-safe-stringify directly for the error fallback
     return fastSafeStringify(
@@ -242,10 +315,16 @@ export function createSafeCopy(
     // Parse it back to create the safe copy
     return JSON.parse(jsonString);
   } catch (error: unknown) {
-    console.error(
-      '[createSafeCopy] Failed to create safe copy:',
-      error instanceof Error ? error.message : String(error)
-    );
+    void getSerializationLogger('createSafeCopy')
+      .then((logger) =>
+        logger.error('Failed to create safe copy', error, {
+          message: error instanceof Error ? error.message : String(error),
+          originalType: typeof obj,
+        })
+      )
+      .catch(() => {
+        // Logger unavailable; nothing else to do in non-critical path
+      });
 
     // Return a structured error object
     return {

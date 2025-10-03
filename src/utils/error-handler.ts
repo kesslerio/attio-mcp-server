@@ -168,7 +168,7 @@ export function createApiError(
       const detailsString =
         typeof errorDetails === 'string'
           ? errorDetails
-          : JSON.stringify(errorDetails || '');
+          : safeJsonStringify(errorDetails ?? '', { indent: 0 });
 
       if (
         defaultMessage.includes('parameter') ||
