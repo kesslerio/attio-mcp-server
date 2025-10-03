@@ -2,7 +2,7 @@
  * Core dispatcher module - main tool execution dispatcher with modular operation handlers
  */
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { ResourceType } from '../../../types/attio.js';
+import { ResourceType } from '@/types/attio.js';
 
 // Import utilities
 import {
@@ -11,17 +11,22 @@ import {
   logToolSuccess,
   logToolError,
   logToolConfigError,
-} from './logging.js';
+} from '@/handlers/tools/dispatcher/logging.js';
 
 // Import tool configurations
-import { findToolConfig } from '../registry.js';
+import { findToolConfig } from '@/handlers/tools/registry.js';
 
 // Type for format result function that may accept additional parameters
 type FormatResultFunction =
   | ((results: unknown) => string)
   | ((results: unknown, resourceType?: unknown, infoType?: unknown) => string);
-import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
-import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
+import {
+  PerformanceTimer,
+  OperationType,
+  getLogContext,
+} from '@/utils/logger.js';
+import { sanitizeMcpResponse } from '@/utils/json-serializer.js';
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 
 // Import operation handlers
 import {
@@ -30,14 +35,14 @@ import {
   handleSearchByPhone,
   handleSearchByDomain,
   handleSmartSearch,
-} from './operations/search.js';
-import { handleAdvancedSearch } from './operations/advanced-search.js';
-import { handleDetailsOperation } from './operations/details.js';
+} from '@/handlers/tools/dispatcher/operations/search.js';
+import { handleAdvancedSearch } from '@/handlers/tools/dispatcher/operations/advanced-search.js';
+import { handleDetailsOperation } from '@/handlers/tools/dispatcher/operations/details.js';
 import {
   handleNotesOperation,
   handleCreateNoteOperation,
-} from './operations/notes.js';
-import { handleGetListsOperation } from './operations/lists.js';
+} from '@/handlers/tools/dispatcher/operations/notes.js';
+import { handleGetListsOperation } from '@/handlers/tools/dispatcher/operations/lists.js';
 
 // Import CRUD operation handlers
 import {
@@ -45,7 +50,7 @@ import {
   handleUpdateOperation,
   handleUpdateAttributeOperation,
   handleDeleteOperation,
-} from './operations/crud.js';
+} from '@/handlers/tools/dispatcher/operations/crud.js';
 
 // Import List operation handlers (additional operations from emergency fix)
 import {
@@ -59,7 +64,7 @@ import {
   handleFilterListEntriesByParentOperation,
   handleFilterListEntriesByParentIdOperation,
   handleGetRecordListMembershipsOperation,
-} from './operations/lists.js';
+} from '@/handlers/tools/dispatcher/operations/lists.js';
 
 // Import Batch operation handlers
 import {
@@ -68,19 +73,19 @@ import {
   handleBatchDeleteOperation,
   handleBatchSearchOperation,
   handleBatchGetDetailsOperation,
-} from './operations/batch.js';
+} from '@/handlers/tools/dispatcher/operations/batch.js';
 
 // Import Record operation handlers
 import {
   handleListOperation,
   handleGetOperation,
-} from './operations/records.js';
+} from '@/handlers/tools/dispatcher/operations/records.js';
 import {
   handleInfoOperation,
   handleFieldsOperation,
   handleGetAttributesOperation,
   handleDiscoverAttributesOperation,
-} from './misc-operations.js';
+} from '@/handlers/tools/dispatcher/misc-operations.js';
 
 // Import tool type definitions
 import {
@@ -91,13 +96,13 @@ import {
   NotesToolConfig,
   CreateNoteToolConfig,
   GetListsToolConfig,
-} from '../../tool-types.js';
+} from '@/handlers/tool-types.js';
 
 /**
  * Normalize error messages by stripping tool execution prefixes
  * This improves test compatibility and error message clarity
  */
-import { normalizeToolMsg, canonicalizeResourceType } from './utils.js';
+import { canonicalizeResourceType } from '@/handlers/tools/dispatcher/utils.js';
 
 /**
  * Execute a tool request and return formatted results
@@ -460,26 +465,14 @@ export async function executeToolRequest(request: CallToolRequest) {
       finalTimer,
       errorDetails
     );
-
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-          ? error
-          : 'Unknown error';
-
-    // Create properly formatted MCP response with detailed error information
-    const normalizedMessage = normalizeToolMsg(errorMessage);
-    const errorResponse = {
-      content: [
-        {
-          type: 'text',
-          text: normalizedMessage,
-        },
-      ],
-      isError: true,
-    };
-
-    return sanitizeMcpResponse(errorResponse);
+    const { correlationId, requestId, userId } = getLogContext();
+    return createSecureToolErrorResult(error, {
+      module: 'handlers.tools.dispatcher',
+      operation: `execute:${toolName}`,
+      resourceType: toolType,
+      correlationId,
+      requestId,
+      userId,
+    });
   }
 }

@@ -21,10 +21,12 @@ describe('createErrorResult security hardening', () => {
     expect(result.error.message).toBe(
       'Invalid prompt request. Please review the provided parameters.'
     );
-    // Verify script tags are encoded, not executable
+    // Verify script tags are completely removed (not just encoded) - Issue #836
     expect(JSON.stringify(result)).not.toContain('<script>');
-    expect(JSON.stringify(result)).toContain('&lt;script&gt;');
+    expect(JSON.stringify(result)).not.toContain('</script>');
     expect(result.content[0]?.text).not.toContain('<script>');
+    // Verify alert() is also sanitized
+    expect(JSON.stringify(result)).toContain('[JS_REDACTED]');
   });
 
   it('encodes common HTML event handler injections', () => {
@@ -39,8 +41,12 @@ describe('createErrorResult security hardening', () => {
     expect(result.error.message).toBe(
       'An internal error occurred while processing the prompt.'
     );
-    expect(result.error.details?.sanitizedDetail).toContain('&lt;img');
+    // HTML tags and event handlers are completely removed - Issue #836
+    expect(JSON.stringify(result)).not.toContain('<img');
     expect(JSON.stringify(result)).not.toContain('onerror=');
+    expect(JSON.stringify(result)).not.toContain('alert(');
+    // The entire malicious payload is sanitized away
+    expect(JSON.stringify(result)).not.toContain('XSS');
   });
 
   it('removes data URI injections', () => {
@@ -111,12 +117,17 @@ describe('createErrorResult security hardening', () => {
     expect(result.error.message).toBe(
       'An internal error occurred while processing the prompt.'
     );
-    // Verify all HTML tags are encoded
+    // Verify all HTML tags are completely removed - Issue #836
     expect(JSON.stringify(result)).not.toContain('<script>');
     expect(JSON.stringify(result)).not.toContain('<div>');
     expect(JSON.stringify(result)).not.toContain('<span>');
-    // Encoded versions are safe
-    expect(JSON.stringify(result)).toContain('&lt;script&gt;');
+    expect(JSON.stringify(result)).not.toContain('</script>');
+    expect(JSON.stringify(result)).not.toContain('</div>');
+    expect(JSON.stringify(result)).not.toContain('</span>');
+    // Verify JavaScript execution patterns are removed/redacted
+    expect(JSON.stringify(result)).toContain('[JS_REDACTED]');
+    // Text content may remain, but executable patterns are neutralized
+    expect(JSON.stringify(result)).not.toContain('alert("nested")');
   });
 
   it('prevents double-encoding bypass', () => {
@@ -159,7 +170,7 @@ describe('createErrorResult security hardening', () => {
     });
   });
 
-  it('encodes special characters even in benign messages', () => {
+  it('sanitizes comparison operators to prevent HTML tag confusion', () => {
     const messageWithSpecialChars = 'Value must be < 100 and > 0';
     const result = createErrorResult(
       new Error('Synthetic failure'),
@@ -171,13 +182,13 @@ describe('createErrorResult security hardening', () => {
     expect(result.error.message).toBe(
       'Invalid prompt request. Please review the provided parameters.'
     );
-    // Special chars should be HTML encoded (double-encoded due to sanitizer + encoder)
+    // Comparison operators are removed to prevent potential HTML tag confusion - Issue #836
+    // This is overly cautious but prioritizes security over message clarity
     const detailString = String(result.error.details?.sanitizedDetail);
-    expect(detailString).toContain('&amp;lt;');
-    expect(detailString).toContain('&amp;gt;');
-    // Should not contain raw < or >
-    expect(detailString.includes('< 100')).toBe(false);
-    expect(detailString.includes('> 0')).toBe(false);
+    expect(detailString).not.toContain('< 100');
+    expect(detailString).not.toContain('> 0');
+    // The sanitized message should still be present
+    expect(detailString).toContain('Value must be');
   });
 
   it('handles empty error messages gracefully', () => {
