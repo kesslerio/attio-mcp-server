@@ -429,16 +429,18 @@ export function createSecureToolErrorResult(
 
   const contentMessage = `${baseMessage}${referenceLine}${guidanceLine}`.trim();
 
-  return sanitizeMcpResponse({
+  const result: CallToolResult = {
     content: [
       {
-        type: 'text',
+        type: 'text' as const,
         text: contentMessage,
       },
     ],
     isError: true,
-    error: errorPayload,
-  });
+    error: errorPayload as Record<string, unknown>,
+  };
+
+  return sanitizeMcpResponse(result) as CallToolResult;
 }
 
 /**
@@ -570,12 +572,15 @@ export async function retryWithSecureErrors<T>(
 
       // Check if we should retry
       if (attempt < maxRetries && shouldRetry(error)) {
-        // Log retry attempt (internally only)
-        if (process.env.NODE_ENV === 'development') {
-          console.error(
-            `Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`
-          );
-        }
+        // Log retry attempt using structured logging
+        logError(
+          'retry',
+          `Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`,
+          { attempt: attempt + 1, maxRetries, delay },
+          undefined,
+          'retryWithSecureErrors',
+          OperationType.API_CALL
+        );
 
         // Wait before retrying
         await new Promise((resolve) => setTimeout(resolve, delay));
