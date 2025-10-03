@@ -2,6 +2,26 @@
  * Split: ErrorService.createUniversalError tests
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+const { createScopedLoggerMock, mockFieldContextLogger } = vi.hoisted(() => {
+  const logger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  };
+
+  return {
+    createScopedLoggerMock: vi.fn(() => logger),
+    mockFieldContextLogger: logger,
+  };
+});
+
+vi.mock('../../src/utils/logger.js', () => ({
+  createScopedLogger: createScopedLoggerMock,
+  OperationType: { DATA_PROCESSING: 'data_processing' },
+}));
+
 import { ErrorService } from '../../src/services/ErrorService.js';
 import {
   UniversalValidationError,
@@ -14,10 +34,16 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
   getFieldSuggestions: vi.fn(),
 }));
 import { validateResourceType } from '../../src/handlers/tool-configs/universal/field-mapper.js';
+import { buildAttributeMetadataIndex } from '../../src/services/utils/attribute-metadata.js';
 
 describe('ErrorService.createUniversalError', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    createScopedLoggerMock.mockClear();
+    mockFieldContextLogger.debug.mockClear();
+    mockFieldContextLogger.info.mockClear();
+    mockFieldContextLogger.warn.mockClear();
+    mockFieldContextLogger.error.mockClear();
     vi.mocked(validateResourceType).mockReturnValue({
       valid: true,
       suggestion: undefined,
@@ -212,6 +238,111 @@ describe('ErrorService.createUniversalError', () => {
 
       expect(result.context?.fieldMetadata).toBe(fieldMetadata);
       expect(result.context?.fieldType).toBe('select');
+    });
+  });
+
+  describe('field error utilities', () => {
+    it('hydrates field context from attribute discovery metadata', () => {
+      const attributes = [
+        {
+          api_slug: 'custom_status',
+          field_type: 'select',
+          title: 'Custom Status',
+          config: {
+            select: {
+              options: [
+                { id: 'new', title: 'New', value: 'new' },
+                { id: 'active', title: 'Active', value: 'active' },
+              ],
+            },
+          },
+        },
+      ];
+
+      const attributeMetadataIndex = buildAttributeMetadataIndex(attributes);
+
+      const error = ErrorService.createFieldError({
+        field: 'Custom Status',
+        message: 'Invalid status value',
+        resourceType: 'tasks',
+        operation: 'update',
+        attributeMetadataIndex,
+      }) as EnhancedApiError;
+
+      expect(error.context?.fieldType).toBe('select');
+      expect(error.context?.fieldMetadata).toMatchObject({
+        api_slug: 'custom_status',
+        field_type: 'select',
+      });
+      expect(error.getContextualMessage()).toContain(
+        "Field 'Custom Status' expects values of type 'select'"
+      );
+    });
+
+    it('creates enhanced field error with metadata-derived field type', () => {
+      const attributeMetadataIndex = {
+        status: { api_slug: 'status', type: 'select' },
+      } as Record<string, Record<string, unknown>>;
+
+      const error = ErrorService.createFieldError({
+        field: 'status',
+        message: 'Invalid status value',
+        resourceType: 'tasks',
+        operation: 'update',
+        attributeMetadataIndex,
+      }) as EnhancedApiError;
+
+      expect(error).toBeInstanceOf(EnhancedApiError);
+      expect(error.context?.fieldType).toBe('select');
+      expect(error.context?.fieldMetadata).toBe(attributeMetadataIndex.status);
+    });
+
+    it('logs resolved field type for downstream debugging', () => {
+      const attributeMetadataIndex = {
+        status: { api_slug: 'status', field_type: 'select' },
+      } as Record<string, Record<string, unknown>>;
+
+      ErrorService.createFieldError({
+        field: 'status',
+        message: 'Invalid status value',
+        resourceType: 'tasks',
+        operation: 'update',
+        attributeMetadataIndex,
+      });
+
+      expect(mockFieldContextLogger.debug).toHaveBeenCalledWith(
+        'Resolved field type for error context',
+        expect.objectContaining({
+          field: 'status',
+          fieldType: 'select',
+          resourceType: 'tasks',
+          operation: 'update',
+        })
+      );
+    });
+
+    it('creates validation error with metadata context', () => {
+      const attributeMetadataIndex = {
+        priority: { api_slug: 'priority', attribute_type: 'number' },
+      } as Record<string, Record<string, unknown>>;
+
+      const error = ErrorService.createValidationError({
+        message: 'Priority must be numeric',
+        resourceType: 'tasks',
+        operation: 'update',
+        field: 'priority',
+        attributeMetadataIndex,
+        documentationHint: 'Use numeric values between 1-5',
+        retryable: false,
+      }) as EnhancedApiError;
+
+      expect(error).toBeInstanceOf(EnhancedApiError);
+      expect(error.context?.fieldType).toBe('number');
+      expect(error.context?.fieldMetadata).toBe(
+        attributeMetadataIndex.priority
+      );
+      expect(error.context?.retryable).toBe(false);
+      expect(error.context?.documentationHint).toContain('numeric');
     });
   });
 });
