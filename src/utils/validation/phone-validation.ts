@@ -224,3 +224,7 @@ export function toE164OrNull(
   const parsed = safeParse(sanitized, resolvedCountry);
   return parsed && parsed.isValid() ? parsed.number : null;
 }
+
+export function toE164(value: unknown, defaultCountry?: string): string | null {
+  return toE164OrNull(value, defaultCountry);
+}

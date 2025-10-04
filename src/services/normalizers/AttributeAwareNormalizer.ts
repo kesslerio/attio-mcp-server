@@ -176,7 +176,8 @@ export async function normalizeValues(
         : `${headline} ${formattedIssues[0]}`;
 
     throw new UniversalValidationError(details, ErrorType.USER_ERROR, {
-      field: phoneIssues[0]?.fieldPath,
+      field:
+        phoneIssues.length === 1 ? phoneIssues[0]?.fieldPath : 'phone_numbers',
       suggestion:
         'Provide phone numbers in E.164 format, for example +15551234567.',
       example: '+15551234567',
