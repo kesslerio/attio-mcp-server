@@ -85,6 +85,14 @@ export abstract class MCPTestBase {
   }
 
   /**
+   * Temporary compatibility helper for legacy suites that still call the old
+   * task-specific tracker. Normalizes to the generic trackRecord implementation.
+   */
+  public trackTaskForCleanup(id: string | null | undefined): void {
+    this.trackRecord('tasks', id);
+  }
+
+  /**
    * Delete all tracked records using the universal delete tool.
    * Always best-effort: failures are logged but do not throw to keep tests from cascading.
    */
@@ -216,12 +224,39 @@ export abstract class MCPTestBase {
    * Parse JSON from result text content
    */
   protected parseJsonFromResult(result: CallToolResult): unknown {
-    const text = this.extractTextContent(result);
-    try {
-      return JSON.parse(text);
-    } catch (error) {
-      throw new Error(`Failed to parse JSON from result: ${text}`);
+    const structured = this.extractJsonContent(result);
+    if (structured !== null && structured !== undefined) {
+      return structured;
     }
+
+    const text = this.extractTextContent(result);
+    const candidates: string[] = [];
+    const trimmed = text.trim();
+
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      candidates.push(trimmed);
+    } else {
+      const braceIndex = trimmed.indexOf('{');
+      const bracketIndex = trimmed.indexOf('[');
+      const validIndexes = [braceIndex, bracketIndex].filter(
+        (index) => index >= 0
+      );
+      if (validIndexes.length > 0) {
+        const startIndex = Math.min(...validIndexes);
+        candidates.push(trimmed.slice(startIndex));
+      }
+    }
+
+    for (const candidate of candidates) {
+      try {
+        return JSON.parse(candidate);
+      } catch (error) {
+        // Try the next candidate if parsing fails.
+        continue;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -247,6 +282,61 @@ export abstract class MCPTestBase {
       const match = text.match(pattern);
       if (match && match[1]) {
         return match[1];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract all UUID-looking record identifiers from a block of text. Useful
+   * when search responses return multiple records.
+   */
+  protected extractRecordIdsFromText(text: string): string[] {
+    const matches = text.match(
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi
+    );
+
+    if (!matches) {
+      return [];
+    }
+
+    const unique = new Set(matches.map((id) => id.toLowerCase()));
+    return Array.from(unique);
+  }
+
+  /**
+   * Extract structured JSON content if the MCP response returned JSON payloads
+   * in addition to (or instead of) plain text.
+   */
+  private extractJsonContent(result: CallToolResult): unknown {
+    if (!result.content) {
+      return null;
+    }
+
+    for (const part of result.content) {
+      if (!part || typeof part !== 'object') {
+        continue;
+      }
+
+      const type = 'type' in part ? String(part.type).toLowerCase() : '';
+
+      if (type.includes('json')) {
+        if ('data' in part && part.data !== undefined) {
+          return part.data as unknown;
+        }
+
+        if ('json' in part && part.json !== undefined) {
+          return part.json as unknown;
+        }
+
+        if ('text' in part && typeof part.text === 'string') {
+          try {
+            return JSON.parse(part.text);
+          } catch (error) {
+            // If parsing fails, continue checking other content blocks.
+          }
+        }
       }
     }
 
