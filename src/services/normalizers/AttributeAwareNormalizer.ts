@@ -71,9 +71,22 @@ function normalizePhoneNumbers(
   issues: PhoneValidationIssue[]
 ): unknown {
   if (!Array.isArray(value)) {
-    // Handle single phone number string
-    const normalized = normalizeSinglePhoneValue(value, fieldPath, issues);
-    return normalized ?? value;
+    if (typeof value === 'string') {
+      const normalized = normalizeSinglePhoneValue(value, fieldPath, issues);
+      return normalized ?? value;
+    }
+
+    if (value && typeof value === 'object') {
+      // Normalize single phone object; reuse array flow for consistency
+      const result = normalizePhoneNumbers([value], fieldPath, issues);
+      const firstItem = Array.isArray(result)
+        ? (result as Record<string, unknown>[])[0]
+        : result;
+      return firstItem ?? value;
+    }
+
+    // Non-string scalars (booleans, numbers) previously bypassed normalization; keep passthrough
+    return value;
   }
 
   return value.map((item) => {
@@ -127,7 +140,7 @@ function normalizePhoneNumbers(
       return { original_phone_number: normalized || item };
     }
 
-    // Pass through other formats unchanged
+    // Pass through other formats unchanged (e.g., booleans)
     return item;
   });
 }
