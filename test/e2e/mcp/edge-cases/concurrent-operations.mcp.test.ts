@@ -7,15 +7,22 @@
  * under simultaneous load to ensure data consistency and error handling.
  */
 
-import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import {
+  describe,
+  it,
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  expect,
+} from 'vitest';
 import {
   EdgeCaseTestBase,
   type EdgeCaseTestResult,
   type ConcurrencyTestConfig,
 } from '../shared/edge-case-test-base';
-import { EdgeCaseAssertions } from '../shared/edge-case-assertions';
-import { ErrorScenarios } from '../shared/error-scenarios';
 import { TestDataFactory } from '../shared/test-data-factory';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 class ConcurrentOperationsTest extends EdgeCaseTestBase {
   private validCompanyId: string | null = null;
@@ -31,6 +38,11 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
    * Setup test data for concurrency testing
    */
   async setupConcurrencyTestData(): Promise<void> {
+    this.validCompanyId = null;
+    this.validListId = null;
+    this.testCompanyIds = [];
+    this.testPersonIds = [];
+
     try {
       // Create test companies for concurrent operations (reduced from 10 to 3)
       for (let i = 0; i < 3; i++) {
@@ -47,7 +59,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
             this.extractTextContent(companyResult)
           );
           if (id) {
-            TestDataFactory.trackRecord('companies', id);
+            this.trackRecord('companies', id);
             this.testCompanyIds.push(id);
             if (i === 0) this.validCompanyId = id;
           }
@@ -69,7 +81,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
             this.extractTextContent(personResult)
           );
           if (id) {
-            TestDataFactory.trackRecord('people', id);
+            this.trackRecord('people', id);
             this.testPersonIds.push(id);
           }
         }
@@ -150,6 +162,85 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
       },
     };
   };
+
+  async executeConcurrencyTest(
+    testName: string,
+    toolName: string,
+    paramsGenerator: () => Record<string, unknown>,
+    config: ConcurrencyTestConfig
+  ): Promise<EdgeCaseTestResult> {
+    this.startTestTiming();
+    let passed = false;
+    let error: string | undefined;
+    const paramsHistory: Record<string, unknown>[] = [];
+
+    try {
+      const promises: Promise<CallToolResult>[] = [];
+
+      for (let i = 0; i < config.concurrentCalls; i++) {
+        if (config.delayBetweenCalls > 0 && i > 0) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, config.delayBetweenCalls)
+          );
+        }
+
+        const params = paramsGenerator();
+        paramsHistory.push(params);
+        promises.push(this.executeToolCall(toolName, params));
+      }
+
+      const results = await Promise.allSettled(promises);
+
+      if (toolName === 'create-record') {
+        results.forEach((settled, index) => {
+          if (settled.status === 'fulfilled' && !settled.value.isError) {
+            const responseText = this.extractTextContent(settled.value);
+            const recordId = this.extractRecordId(responseText);
+            const params = paramsHistory[index];
+            const resourceType =
+              params && typeof params['resource_type'] === 'string'
+                ? (params['resource_type'] as string)
+                : undefined;
+
+            if (recordId && resourceType) {
+              this.trackRecord(resourceType, recordId);
+            }
+          }
+        });
+      }
+
+      const successes = results.filter(
+        (r) => r.status === 'fulfilled' && !r.value.isError
+      ).length;
+      const failures = results.filter(
+        (r) =>
+          r.status === 'rejected' ||
+          (r.status === 'fulfilled' && r.value.isError)
+      ).length;
+
+      const successesMatch = successes >= config.expectedSuccesses;
+      const failuresAcceptable = failures <= config.expectedFailures;
+
+      passed = successesMatch && failuresAcceptable;
+
+      if (!passed) {
+        error = `Concurrency test failed: ${successes}/${config.expectedSuccesses} successes, ${failures}/${config.expectedFailures} failures`;
+      }
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    }
+
+    const result: EdgeCaseTestResult = {
+      test: testName,
+      passed,
+      error,
+      executionTime: this.endTestTiming(),
+      expectedBehavior: 'graceful_handling',
+    };
+
+    this.results.push(result);
+    return result;
+  }
 }
 
 describe('TC-EC03: Concurrent Operations Edge Cases', () => {
@@ -157,8 +248,15 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
   beforeAll(async () => {
     await testCase.setup();
-    await testCase.setupConcurrencyTestData();
   }, 60000);
+
+  beforeEach(async () => {
+    await testCase.setupConcurrencyTestData();
+  });
+
+  afterEach(async () => {
+    await testCase.cleanupTestData();
+  });
 
   afterAll(async () => {
     await testCase.cleanupTestData();
@@ -609,6 +707,15 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     );
 
     const workflowResults = await Promise.allSettled(complexWorkflowPromises);
+
+    const createResult = workflowResults[0];
+    if (createResult?.status === 'fulfilled' && !createResult.value.isError) {
+      const createText = testCase.extractTextContent(createResult.value);
+      const createdRecordId = testCase.extractRecordId(createText);
+      if (createdRecordId) {
+        testCase.trackRecord('companies', createdRecordId);
+      }
+    }
 
     // Analyze complex workflow results - use graceful handling approach
     expect(workflowResults.length).toBeGreaterThan(0);
