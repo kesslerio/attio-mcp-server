@@ -9,21 +9,25 @@ This directory contains comprehensive development documentation for the Attio MC
 - **[TDD Guide](tdd-guide.md)** - Test-driven development approach
 - **[Extending MCP](extending-mcp.md)** - How to extend MCP functionality
 - **[Refactoring Guidelines](refactoring-guidelines.md)** - Best practices for refactoring
+- **[Phone Validation Helpers](phone-validation.md)** - Canonical normalization + error handling patterns
 
 ## Quick Start for Developers
 
 1. **Fork and Clone**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/attio-mcp-server.git
    cd attio-mcp-server
    ```
 
 2. **Setup Development Environment**
+
    ```bash
    ./scripts/setup-dev-env.sh
    ```
 
 3. **Run Tests**
+
    ```bash
    npm test
    ```
