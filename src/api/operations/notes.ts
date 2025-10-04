@@ -3,14 +3,14 @@
  * Handles note creation and retrieval
  */
 
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   AttioNote,
   ResourceType,
   AttioListResponse,
   AttioSingleResponse,
-} from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
+} from '@/types/attio.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
 
 /**
  * Generic function to get notes for a specific record
@@ -45,6 +45,7 @@ export async function getObjectNotes(
  * @param recordId - ID of the parent record
  * @param noteTitle - Title of the note
  * @param noteText - Content of the note
+ * @param format - Content format ('plaintext' | 'markdown'), defaults to 'plaintext'
  * @param retryConfig - Optional retry configuration
  * @returns Created note
  */
@@ -53,6 +54,7 @@ export async function createObjectNote(
   recordId: string,
   noteTitle: string,
   noteText: string,
+  format: 'plaintext' | 'markdown' = 'plaintext',
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioNote> {
   const api = getLazyAttioClient();
@@ -61,7 +63,7 @@ export async function createObjectNote(
   return callWithRetry(async () => {
     const response = await api.post<AttioSingleResponse<AttioNote>>(path, {
       data: {
-        format: 'plaintext',
+        format,
         parent_object: objectType,
         parent_record_id: recordId,
         title: `[AI] ${noteTitle}`,

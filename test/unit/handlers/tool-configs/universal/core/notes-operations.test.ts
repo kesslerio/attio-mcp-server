@@ -159,6 +159,25 @@ describe('createNoteConfig.handler', () => {
 
     await expect(createNoteConfig.handler({})).resolves.toEqual(upstreamResult);
   });
+
+  it('passes markdown format through to the upstream handler', async () => {
+    const sanitizedParams: UniversalCreateNoteParams = {
+      resource_type: 'notes',
+      record_id: '123e4567-e89b-12d3-a456-426614174000',
+      title: 'Markdown Title',
+      content: '# Heading',
+      format: 'markdown',
+    };
+
+    const upstreamResult = { id: { record_id: 'note-2' } };
+
+    vi.mocked(validateUniversalToolParams).mockReturnValueOnce(sanitizedParams);
+    mockIsValidUUID.mockReturnValue(true);
+    mockHandleUniversalCreateNote.mockResolvedValueOnce(upstreamResult);
+
+    await expect(createNoteConfig.handler({})).resolves.toEqual(upstreamResult);
+    expect(mockHandleUniversalCreateNote).toHaveBeenCalledWith(sanitizedParams);
+  });
 });
 
 describe('listNotesConfig.handler', () => {
