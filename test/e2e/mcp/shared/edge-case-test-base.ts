@@ -258,6 +258,9 @@ export abstract class EdgeCaseTestBase extends MCPTestBase {
 
   /**
    * Generate invalid data patterns for testing
+   *
+   * ⚠️  WARNING: This method intentionally creates malformed/invalid data for error-path testing.
+   * DO NOT use this data for normal test scenarios. Use TestDataFactory for valid test data.
    */
   protected generateInvalidData(): Record<string, unknown>[] {
     return [
