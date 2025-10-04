@@ -50,12 +50,14 @@ export interface DealCreateData {
 }
 
 // More granular deal-specific types
-export type DealStage = 
-  | 'Interested' 
-  | 'Qualified' 
-  | 'In Progress' 
-  | 'Negotiation' 
-  | 'Closed Won' 
+export type DealStage =
+  | 'Lead'
+  | 'Interested'
+  | 'Qualified'
+  | 'Proposal'
+  | 'In Progress'
+  | 'Negotiation'
+  | 'Closed Won'
   | 'Closed Lost'
   | string; // Allow custom stages
 
@@ -104,7 +106,7 @@ export enum ResourceType {
   NOTES = 'notes',
   LISTS = 'lists',
   DEALS = 'deals',
-  RECORDS = 'records'
+  RECORDS = 'records',
 }
 
 // MCP Response type (text-based)
