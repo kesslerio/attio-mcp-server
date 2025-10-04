@@ -9,12 +9,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { normalizeValues } from '../../../src/services/normalizers/AttributeAwareNormalizer.js';
+import { UniversalValidationError } from '../../../src/handlers/tool-configs/universal/errors/validation-errors.js';
 
 describe('Phone number normalization (Issue #798)', () => {
   describe('Structure transformation', () => {
     it('should transform phone_number to original_phone_number', async () => {
       const result = await normalizeValues('people', {
-        phone_numbers: [{ phone_number: '+1-555-0100' }],
+        phone_numbers: [{ phone_number: '+1-202-555-0134' }],
       });
 
       expect(result.phone_numbers).toHaveLength(1);
@@ -28,7 +29,7 @@ describe('Phone number normalization (Issue #798)', () => {
 
     it('should preserve already-correct original_phone_number format', async () => {
       const result = await normalizeValues('people', {
-        phone_numbers: [{ original_phone_number: '+1-555-0100' }],
+        phone_numbers: [{ original_phone_number: '+12025550134' }],
       });
 
       expect(result.phone_numbers).toHaveLength(1);
@@ -40,8 +41,8 @@ describe('Phone number normalization (Issue #798)', () => {
     it('should handle multiple phone numbers with mixed formats', async () => {
       const result = await normalizeValues('people', {
         phone_numbers: [
-          { phone_number: '+1-555-0100' },
-          { original_phone_number: '+1-555-0199' },
+          { phone_number: '+1-202-555-0134' },
+          { original_phone_number: '+12025550134' },
         ],
       });
 
@@ -56,7 +57,7 @@ describe('Phone number normalization (Issue #798)', () => {
 
     it('should convert string phone numbers to object format', async () => {
       const result = await normalizeValues('people', {
-        phone_numbers: ['+1-555-0100'],
+        phone_numbers: ['+1 202 555 0134'],
       });
 
       expect(result.phone_numbers).toHaveLength(1);
@@ -69,7 +70,7 @@ describe('Phone number normalization (Issue #798)', () => {
   describe('E.164 normalization', () => {
     it('should normalize US phone format to E.164', async () => {
       const result = await normalizeValues('people', {
-        phone_numbers: [{ phone_number: '(212) 555-1234' }],
+        phone_numbers: [{ phone_number: '(202) 555-0134' }],
       });
 
       const phoneValue = (result.phone_numbers as Record<string, unknown>[])[0]
@@ -80,9 +81,9 @@ describe('Phone number normalization (Issue #798)', () => {
 
     it('should handle international phone numbers', async () => {
       const testCases = [
-        { input: '+44-20-5555-0100', countryCode: '+44' }, // UK
-        { input: '+81-3-5555-0100', countryCode: '+81' }, // Japan
-        { input: '+61-2-5555-0100', countryCode: '+61' }, // Australia
+        { input: '+44 20 7946 0958', countryCode: '+44' }, // UK
+        { input: '+81 3-1234-5678', countryCode: '+81' }, // Japan
+        { input: '+61 2 9374 4000', countryCode: '+61' }, // Australia
       ];
 
       for (const testCase of testCases) {
@@ -98,7 +99,7 @@ describe('Phone number normalization (Issue #798)', () => {
     });
 
     it('should preserve valid E.164 format', async () => {
-      const validE164 = '+15551234567';
+      const validE164 = '+12025550134';
       const result = await normalizeValues('people', {
         phone_numbers: [{ original_phone_number: validE164 }],
       });
@@ -110,10 +111,10 @@ describe('Phone number normalization (Issue #798)', () => {
 
     it('should handle various common US phone formats', async () => {
       const formats = [
-        '+1-212-555-1234',
-        '(212) 555-1234',
-        '212.555.1234',
-        '+1 212 555 1234',
+        '+1-202-555-0134',
+        '(202) 555-0134',
+        '202.555.0134',
+        '+1 202 555 0134',
       ];
 
       for (const format of formats) {
@@ -169,7 +170,7 @@ describe('Phone number normalization (Issue #798)', () => {
       const result = await normalizeValues('people', {
         phone_numbers: [
           {
-            phone_number: '+1-555-0100',
+            phone_number: '+1-202-555-0134',
             label: 'work',
             type: 'mobile',
           },
@@ -188,7 +189,7 @@ describe('Phone number normalization (Issue #798)', () => {
       const result = await normalizeValues('people', {
         phone_numbers: [
           {
-            original_phone_number: '+1-555-0100',
+            original_phone_number: '+12025550134',
             label: 'home',
           },
         ],
@@ -204,7 +205,7 @@ describe('Phone number normalization (Issue #798)', () => {
       const result = await normalizeValues('people', {
         phone_numbers: [
           {
-            phone_number: '+1-555-0100',
+            phone_number: '+1-202-555-0134',
             label: 'work',
             type: 'mobile',
             extension: '1234',
@@ -226,8 +227,8 @@ describe('Phone number normalization (Issue #798)', () => {
     it('should preserve fields across multiple phone numbers', async () => {
       const result = await normalizeValues('people', {
         phone_numbers: [
-          { phone_number: '+1-555-0100', label: 'work' },
-          { phone_number: '+1-555-0199', label: 'home', type: 'landline' },
+          { phone_number: '+1 202 555 0134', label: 'work' },
+          { phone_number: '+1 415 555 2671', label: 'home', type: 'landline' },
         ],
       });
 
@@ -244,27 +245,18 @@ describe('Phone number normalization (Issue #798)', () => {
       expect(phone2).toHaveProperty('type', 'landline');
     });
 
-    // Edge case: field preservation with invalid phone format (Codex suggestion)
-    it('should preserve label and type even when phone format is invalid', async () => {
-      const result = await normalizeValues('people', {
-        phone_numbers: [
-          {
-            phone_number: 'invalid-phone-format',
-            label: 'work',
-            type: 'mobile',
-          },
-        ],
-      });
-
-      expect(result.phone_numbers).toHaveLength(1);
-      const phone = (result.phone_numbers as Record<string, unknown>[])[0];
-      expect(phone).toHaveProperty(
-        'original_phone_number',
-        'invalid-phone-format'
-      );
-      expect(phone).toHaveProperty('label', 'work');
-      expect(phone).toHaveProperty('type', 'mobile');
-      expect(phone).not.toHaveProperty('phone_number');
+    it('should throw when phone format is invalid, preserving structured error', async () => {
+      await expect(
+        normalizeValues('people', {
+          phone_numbers: [
+            {
+              phone_number: 'invalid-phone-format',
+              label: 'work',
+              type: 'mobile',
+            },
+          ],
+        })
+      ).rejects.toBeInstanceOf(UniversalValidationError);
     });
   });
 
@@ -281,33 +273,27 @@ describe('Phone number normalization (Issue #798)', () => {
       const result = await normalizeValues('people', {
         name: 'Jane Doe',
         email_addresses: ['jane.doe@example.com'],
-        phone_numbers: [{ phone_number: '+1-555-0100' }],
+        phone_numbers: [{ phone_number: '+1 202 555 0134' }],
       });
 
       expect(result.name).toBe('Jane Doe');
       expect(result.email_addresses).toEqual(['jane.doe@example.com']);
     });
 
-    it('should handle invalid phone format gracefully', async () => {
-      const result = await normalizeValues('people', {
-        phone_numbers: [{ phone_number: 'invalid' }],
-      });
-
-      // Should still transform structure even if format invalid
-      expect(
-        (result.phone_numbers as Record<string, unknown>[])[0]
-      ).toHaveProperty('original_phone_number');
+    it('should reject invalid phone format inputs', async () => {
+      await expect(
+        normalizeValues('people', {
+          phone_numbers: [{ phone_number: 'invalid' }],
+        })
+      ).rejects.toBeInstanceOf(UniversalValidationError);
     });
 
-    it('should handle null/undefined phone values', async () => {
-      const result = await normalizeValues('people', {
-        phone_numbers: [{ phone_number: null }],
-      });
-
-      expect(result.phone_numbers).toHaveLength(1);
-      expect(
-        (result.phone_numbers as Record<string, unknown>[])[0]
-      ).toHaveProperty('original_phone_number');
+    it('should reject null/undefined phone values', async () => {
+      await expect(
+        normalizeValues('people', {
+          phone_numbers: [{ phone_number: null }],
+        })
+      ).rejects.toBeInstanceOf(UniversalValidationError);
     });
   });
 
@@ -315,8 +301,8 @@ describe('Phone number normalization (Issue #798)', () => {
     it('should not break existing correct formats', async () => {
       const correctFormat = {
         phone_numbers: [
-          { original_phone_number: '+1-555-0100' },
-          { original_phone_number: '+1-555-0199' },
+          { original_phone_number: '+12025550134' },
+          { original_phone_number: '+14155552671' },
         ],
       };
 
@@ -334,12 +320,38 @@ describe('Phone number normalization (Issue #798)', () => {
     it('should handle mixed resource types without affecting non-phone fields', async () => {
       const result = await normalizeValues('companies', {
         name: 'Acme Corp',
-        primary_phone: '+1-555-0150', // Company phone field
+        primary_phone: '+1 415 555 2671', // Company phone field
       });
 
       expect(result.name).toBe('Acme Corp');
       // Phone field should be normalized but structure check depends on field name
       expect(result.primary_phone).toBeDefined();
+    });
+  });
+
+  describe('Validation errors', () => {
+    it('should throw when a phone number is too short', async () => {
+      await expect(
+        normalizeValues('people', {
+          phone_numbers: ['+1 202 555'],
+        })
+      ).rejects.toBeInstanceOf(UniversalValidationError);
+    });
+
+    it('should throw when phone number contains invalid characters', async () => {
+      await expect(
+        normalizeValues('people', {
+          phone_numbers: [{ phone_number: 'INVALID-PHONE' }],
+        })
+      ).rejects.toBeInstanceOf(UniversalValidationError);
+    });
+
+    it('should throw when non-string phone number is provided', async () => {
+      await expect(
+        normalizeValues('people', {
+          phone_numbers: [{ phone_number: 12345 }],
+        })
+      ).rejects.toBeInstanceOf(UniversalValidationError);
     });
   });
 });
