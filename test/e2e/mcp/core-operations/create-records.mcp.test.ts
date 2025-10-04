@@ -188,7 +188,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       // Extract and track for cleanup
       const recordId = testCase.extractRecordId(text);
       if (recordId) {
-        createdRecords.push({ type: 'companies', id: recordId });
+        testCase.trackRecord('companies', recordId);
       }
 
       passed = true;
@@ -225,7 +225,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       );
 
       if (recordId) {
-        createdRecords.push({ type: 'companies', id: recordId });
+        testCase.trackRecord('companies', recordId);
 
         // Wait a moment for indexing (if needed)
         await new Promise((resolve) => setTimeout(resolve, 1000));
