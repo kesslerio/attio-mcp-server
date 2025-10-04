@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Structured phone validation helpers (`validatePhoneNumber`, `isValidPhoneNumber`, `isPossiblePhoneNumber`) with actionable `PhoneValidationError` metadata (#837)
 - CLI auto-configures `libphonenumber-js` to use the `min` metadata bundle; server runtime exposes `PHONE_METADATA_SOURCE` for diagnostics (#837)
+  - Phone normalization failures now include aggregated issue counts and newline-delimited details for easier parsing (#837)
 
 ### Changed
 
