@@ -22,6 +22,7 @@ export const createNoteSchema = {
       type: 'string' as const,
       enum: ['plaintext', 'markdown'],
       description: 'Content format (default: plaintext)',
+      // Note: Default value 'plaintext' is enforced in src/api/operations/notes.ts:57
       default: 'plaintext',
     },
   },

@@ -29,6 +29,7 @@ This release focuses on developer experience improvements with intelligent promp
 
 ### Added
 
+- **Markdown Note Support** (#854) - `create-note` tool now supports markdown formatting via optional `format` parameter ('plaintext' | 'markdown')
 - **10 Pre-Built MCP Prompts for Common CRM Tasks** (#774) - Intelligent shortcuts that help Claude work faster and more efficiently with your Attio data
   - **Search & Find** (5 prompts): `people_search.v1`, `company_search.v1`, `deal_search.v1`, `meeting_prep.v1`, `pipeline_health.v1`
     - Natural language search with automatic formatting (table, JSON, or IDs)
