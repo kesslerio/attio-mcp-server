@@ -22,6 +22,12 @@ describe('phone validation utilities', () => {
     expect(result.error?.code).toBe('TOO_SHORT');
   });
 
+  it('applies default country when missing country code', () => {
+    const result = validatePhoneNumber('2025550134');
+    expect(result.valid).toBe(true);
+    expect(result.e164).toBe('+12025550134');
+  });
+
   it('returns metadata source indicator', () => {
     expect(['default', 'min']).toContain(PHONE_METADATA_SOURCE);
   });

@@ -49,6 +49,13 @@ This behaviour applies to arrays, scalar fields (e.g. `primary_phone`), and obje
 - CLI processes set `ATTIO_PHONE_METADATA=min` automatically, reducing the shipped bundle to the `min` metadata build (~67 kB).
 - You can override via environment variable before module load if a custom build requires a different dataset.
 
+### Custom Metadata Example
+
+```bash
+# Use the full metadata set for a diagnostic worker
+ATTIO_PHONE_METADATA=default node dist/worker.js
+```
+
 Use `PHONE_METADATA_SOURCE` from `@/utils/validation/phone-validation.js` in diagnostics to confirm which metadata bundle loaded at runtime.
 
 ## Testing Guidelines

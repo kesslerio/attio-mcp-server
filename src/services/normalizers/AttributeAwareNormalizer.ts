@@ -150,7 +150,6 @@ export async function normalizeValues(
   values: Record<string, unknown>,
   _attributes?: string[]
 ) {
-  void _attributes;
   const out: Record<string, unknown> = { ...values };
   const phoneIssues: PhoneValidationIssue[] = [];
   for (const [k, v] of Object.entries(values)) {
@@ -161,24 +160,28 @@ export async function normalizeValues(
   }
 
   if (phoneIssues.length > 0) {
-    const details = phoneIssues
-      .map((issue) => {
-        const sanitizedInput = issue.error.input.trim() || 'empty input';
-        return `${issue.fieldPath}: ${issue.error.message} (received "${sanitizedInput}")`;
-      })
-      .join(' ');
+    const formattedIssues = phoneIssues.map((issue) => {
+      const sanitizedInput = issue.error.input.trim() || 'empty input';
+      return `${issue.fieldPath}: ${issue.error.message} (received "${sanitizedInput}")`;
+    });
 
-    throw new UniversalValidationError(
-      `Phone number validation failed: ${details}`,
-      ErrorType.USER_ERROR,
-      {
-        field: phoneIssues[0]?.fieldPath,
-        suggestion:
-          'Provide phone numbers in E.164 format, for example +15551234567.',
-        example: '+15551234567',
-        cause: phoneIssues[0]?.error,
-      }
-    );
+    const headline =
+      phoneIssues.length > 1
+        ? `Phone number validation failed (${phoneIssues.length} issues):`
+        : 'Phone number validation failed:';
+
+    const details =
+      phoneIssues.length > 1
+        ? `${headline}\n${formattedIssues.join('\n')}`
+        : `${headline} ${formattedIssues[0]}`;
+
+    throw new UniversalValidationError(details, ErrorType.USER_ERROR, {
+      field: phoneIssues[0]?.fieldPath,
+      suggestion:
+        'Provide phone numbers in E.164 format, for example +15551234567.',
+      example: '+15551234567',
+      cause: phoneIssues[0]?.error,
+    });
   }
 
   return out;
