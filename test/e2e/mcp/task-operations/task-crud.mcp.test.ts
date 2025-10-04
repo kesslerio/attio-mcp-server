@@ -156,7 +156,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       const taskId = testSuite.extractRecordId(responseText);
       expect(taskId).toBeTruthy();
 
-      testSuite.trackTaskForCleanup(taskId!);
+      testSuite.trackRecord('tasks', taskId!);
 
       console.log(`✅ Created full-featured task with ID: ${taskId}`);
     });
