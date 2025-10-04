@@ -120,8 +120,8 @@ describe('MCP P1 Task CRUD Operations', () => {
         expect(responseText).toMatch(
           /Created task|Successfully created task|task/i
         );
-        console.log(
-          `✅ Created minimal task - ID extraction failed but creation succeeded`
+        console.warn(
+          `⚠️  Created minimal task but ID extraction failed - SKIPPING CLEANUP TRACKING. Manual cleanup may be required.`
         );
         return; // Skip cleanup tracking if we can't get the ID
       }
@@ -326,9 +326,6 @@ describe('MCP P1 Task CRUD Operations', () => {
         responseText.includes('validation');
       expect(hasError).toBe(true);
       expect(responseText).toMatch(/not found|invalid|error|validation|uuid/i);
-
-      // Always pass since we're testing graceful handling - any response is valid
-      expect(true).toBeTruthy();
 
       console.log(`✅ Handled non-existent task deletion gracefully`);
     });
