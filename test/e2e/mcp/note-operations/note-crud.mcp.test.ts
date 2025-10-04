@@ -120,7 +120,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
   });
 
   afterEach(async () => {
-    await testCase.cleanupTestData();
+    await testCase.cleanupNotes();
   });
 
   afterAll(async () => {
@@ -340,6 +340,55 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         noteData.title,
         'Person notes listing'
       );
+
+      passed = true;
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+      console.error(`${testName} failed:`, error);
+    }
+
+    results.push({ testName, passed, error });
+    expect(passed).toBe(true);
+  });
+
+  it('should create a note with markdown format', async () => {
+    const testName = 'create_markdown_note';
+    let passed = false;
+    let error: string | undefined;
+
+    try {
+      if (!testCase.testCompanyId) {
+        throw new Error('Test company not available');
+      }
+
+      const markdownContent =
+        '# Meeting Notes\n\n## Key Points\n- Point 1\n- Point 2\n\n**Action Items:**\n1. Follow up\n2. Review';
+      const result = await testCase.executeToolCall('create-note', {
+        resource_type: 'companies',
+        record_id: testCase.testCompanyId,
+        title: 'TCN01_Markdown',
+        content: markdownContent,
+        format: 'markdown',
+      });
+
+      TestUtilities.assertOperationSuccess(
+        result,
+        'Create markdown note',
+        'Note created successfully'
+      );
+      TestUtilities.assertContains(
+        result,
+        'TCN01_Markdown',
+        'Markdown note creation'
+      );
+
+      // Extract note ID for cleanup
+      const noteId = TestUtilities.extractRecordId(
+        TestUtilities.getResponseText(result)
+      );
+      if (noteId) {
+        testCase.trackNote(noteId);
+      }
 
       passed = true;
     } catch (err) {
