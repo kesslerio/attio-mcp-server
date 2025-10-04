@@ -13,6 +13,43 @@ import { TestDataFactory } from '../shared/test-data-factory.js';
 import { taskFixtures } from '../../fixtures/tasks.js';
 import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
+const UUID_PATTERN =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+function collectRecordIdsFromPayload(payload: unknown): string[] {
+  const ids = new Set<string>();
+
+  const visit = (value: unknown): void => {
+    if (!value) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      for (const match of value.matchAll(UUID_PATTERN)) {
+        ids.add(match[0]);
+      }
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        visit(item);
+      }
+      return;
+    }
+
+    if (typeof value === 'object') {
+      for (const nested of Object.values(value as Record<string, unknown>)) {
+        visit(nested);
+      }
+    }
+  };
+
+  visit(payload);
+
+  return Array.from(ids);
+}
+
 /**
  * Task CRUD Operations Test Suite
  * Implements comprehensive testing for basic task operations with automatic cleanup
@@ -156,7 +193,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       const taskId = testSuite.extractRecordId(responseText);
       expect(taskId).toBeTruthy();
 
-      testSuite.trackTaskForCleanup(taskId!);
+      testSuite.trackRecord('tasks', taskId!);
 
       console.log(`✅ Created full-featured task with ID: ${taskId}`);
     });
@@ -177,8 +214,14 @@ describe('MCP P1 Task CRUD Operations', () => {
       expect(result.isError).toBeFalsy();
 
       const responseText = testSuite.extractTextContent(result);
-      // Search may return multiple tasks, verify search functionality works
-      expect(responseText).toMatch(/Found \d+ tasks|task|Follow up/);
+      const structuredPayload = testSuite.parseJsonFromResult(result);
+      const structuredIds = collectRecordIdsFromPayload(structuredPayload);
+      const responseIds =
+        structuredIds.length > 0
+          ? structuredIds
+          : testSuite.extractRecordIdsFromText(responseText);
+
+      expect(responseIds).toContain(taskId);
 
       console.log(`✅ Successfully retrieved task ${taskId}`);
     });
@@ -200,9 +243,14 @@ describe('MCP P1 Task CRUD Operations', () => {
       expect(result.isError).toBeFalsy();
 
       const responseText = testSuite.extractTextContent(result);
+      const structuredPayload = testSuite.parseJsonFromResult(result);
+      const structuredIds = collectRecordIdsFromPayload(structuredPayload);
+      const responseIds =
+        structuredIds.length > 0
+          ? structuredIds
+          : testSuite.extractRecordIdsFromText(responseText);
 
-      // Should find tasks (search functionality works)
-      expect(responseText).toMatch(/Found \d+ tasks|No tasks found/);
+      expect(responseIds.length).toBeGreaterThanOrEqual(taskIds.length);
 
       console.log(
         `✅ Successfully listed tasks including: ${taskIds.join(', ')}`

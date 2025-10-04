@@ -127,7 +127,7 @@ export class TestDataFactory {
       }
     }
     // Fallback to known valid stages in this Attio workspace
-    return ['Interested', 'Qualified', 'In Progress'];
+    return ['Lead', 'Qualified', 'Proposal', 'Negotiation'];
   }
 
   /**
@@ -147,9 +147,9 @@ export class TestDataFactory {
     }
     // Fallback to full pipeline stages that exist in this Attio workspace
     return [
-      'Interested',
+      'Lead',
       'Qualified',
-      'In Progress',
+      'Proposal',
       'Negotiation',
       'Closed Won',
       'Closed Lost',

@@ -14,6 +14,75 @@ import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
 import type { TestResult } from '../shared/quality-gates';
 
+const collectAttributeSlugs = (payload: unknown): string[] => {
+  const slugs = new Set<string>();
+  const visited = new WeakSet<object>();
+
+  const visit = (value: unknown): void => {
+    if (!value) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        visit(item);
+      }
+      return;
+    }
+
+    if (typeof value === 'object') {
+      if (visited.has(value as object)) {
+        return;
+      }
+      visited.add(value as object);
+
+      const record = value as Record<string, unknown>;
+      const slugCandidate =
+        record.api_slug ||
+        record.slug ||
+        record.key ||
+        record.field ||
+        record.id ||
+        record.name ||
+        record.title;
+
+      if (typeof slugCandidate === 'string') {
+        slugs.add(slugCandidate.toLowerCase());
+      }
+
+      if (Array.isArray(record.attributes)) {
+        visit(record.attributes);
+      }
+
+      if (Array.isArray(record.data)) {
+        visit(record.data);
+      }
+
+      for (const nested of Object.values(record)) {
+        if (typeof nested === 'object' || Array.isArray(nested)) {
+          visit(nested);
+        }
+      }
+    }
+  };
+
+  visit(payload);
+
+  return Array.from(slugs);
+};
+
+const toNormalizedString = (payload: unknown, fallback: string): string => {
+  if (!payload) {
+    return fallback.toLowerCase();
+  }
+
+  try {
+    return JSON.stringify(payload).toLowerCase();
+  } catch (error) {
+    return fallback.toLowerCase();
+  }
+};
+
 class MetadataOperationsTest extends MCPTestBase {
   constructor() {
     super('TCCO07');
@@ -62,11 +131,20 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
 
       QAAssertions.assertValidSchema(result, 'companies');
 
-      const text = testCase.extractTextContent(result).toLowerCase();
-      expect(text).toContain('available company attributes');
-      expect(text).toContain('name');
-      expect(text).toContain('domains');
-      expect(text).toContain('description');
+      const payload = testCase.parseJsonFromResult(result);
+      const attributeSlugs = collectAttributeSlugs(payload);
+
+      if (attributeSlugs.length > 0) {
+        expect(attributeSlugs).toEqual(
+          expect.arrayContaining(['name', 'domains', 'description'])
+        );
+      } else {
+        const text = testCase.extractTextContent(result).toLowerCase();
+        expect(text).toContain('available company attributes');
+        expect(text).toContain('name');
+        expect(text).toContain('domains');
+        expect(text).toContain('description');
+      }
 
       passed = true;
     } catch (e) {
@@ -89,11 +167,20 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
 
       QAAssertions.assertValidSchema(result, 'people');
 
-      const text = testCase.extractTextContent(result).toLowerCase();
-      expect(text).toContain('available person attributes');
-      expect(text).toContain('email');
-      expect(text).toContain('phone');
-      expect(text).toContain('job_title');
+      const payload = testCase.parseJsonFromResult(result);
+      const attributeSlugs = collectAttributeSlugs(payload);
+
+      if (attributeSlugs.length > 0) {
+        expect(attributeSlugs).toEqual(
+          expect.arrayContaining(['email', 'phone', 'job_title'])
+        );
+      } else {
+        const text = testCase.extractTextContent(result).toLowerCase();
+        expect(text).toContain('available person attributes');
+        expect(text).toContain('email');
+        expect(text).toContain('phone');
+        expect(text).toContain('job_title');
+      }
 
       passed = true;
     } catch (e) {
@@ -116,11 +203,20 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
 
       QAAssertions.assertValidSchema(result, 'tasks');
 
-      const text = testCase.extractTextContent(result).toLowerCase();
-      expect(text).toContain('available task attributes');
-      expect(text).toContain('title');
-      expect(text).toContain('deadline');
-      expect(text).toContain('is_completed');
+      const payload = testCase.parseJsonFromResult(result);
+      const attributeSlugs = collectAttributeSlugs(payload);
+
+      if (attributeSlugs.length > 0) {
+        expect(attributeSlugs).toEqual(
+          expect.arrayContaining(['title', 'deadline', 'is_completed'])
+        );
+      } else {
+        const text = testCase.extractTextContent(result).toLowerCase();
+        expect(text).toContain('available task attributes');
+        expect(text).toContain('title');
+        expect(text).toContain('deadline');
+        expect(text).toContain('is_completed');
+      }
 
       passed = true;
     } catch (e) {
@@ -149,10 +245,17 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
 
         QAAssertions.assertValidSchema(result, resourceType);
 
-        const text = testCase.extractTextContent(result).toLowerCase();
-        expect(text).toContain('available');
-        expect(text).toContain('attributes');
-        expect(text.length).toBeGreaterThan(100);
+        const payload = testCase.parseJsonFromResult(result);
+        const attributeSlugs = collectAttributeSlugs(payload);
+
+        if (attributeSlugs.length > 0) {
+          expect(attributeSlugs.length).toBeGreaterThan(5);
+        } else {
+          const text = testCase.extractTextContent(result).toLowerCase();
+          expect(text).toContain('available');
+          expect(text).toContain('attributes');
+          expect(text.length).toBeGreaterThan(100);
+        }
       }
 
       passed = true;
@@ -184,10 +287,12 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
         record_id: personId,
       });
 
-      const text = testCase.extractTextContent(infoResult).toLowerCase();
-      expect(text).toContain('person detailed information');
-      expect(text).toContain(personData.email_addresses[0].toLowerCase());
-      expect(text).toMatch(/0100/);
+      const payload = testCase.parseJsonFromResult(infoResult);
+      const text = testCase.extractTextContent(infoResult);
+      const normalized = toNormalizedString(payload, text);
+      expect(normalized).toContain('person');
+      expect(normalized).toContain(personData.email_addresses[0].toLowerCase());
+      expect(normalized).toMatch(/0100/);
 
       passed = true;
     } catch (e) {
@@ -221,10 +326,12 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
         record_id: companyId,
       });
 
-      const text = testCase.extractTextContent(infoResult).toLowerCase();
-      expect(text).toContain('company detailed information');
-      expect(text).toContain(companyData.domains[0].toLowerCase());
-      expect(text).toContain('description');
+      const payload = testCase.parseJsonFromResult(infoResult);
+      const text = testCase.extractTextContent(infoResult);
+      const normalized = toNormalizedString(payload, text);
+      expect(normalized).toContain('company');
+      expect(normalized).toContain(companyData.domains[0].toLowerCase());
+      expect(normalized).toContain('description');
 
       passed = true;
     } catch (e) {

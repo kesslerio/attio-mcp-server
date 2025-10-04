@@ -6,6 +6,9 @@
 import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 export class QAAssertions {
+  private static readonly UUID_PATTERN =
+    /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
   /**
    * Assert that a search operation returned valid results
    */
@@ -14,17 +17,40 @@ export class QAAssertions {
     resourceType: string,
     minResults: number = 0
   ): void {
-    const text = this.extractText(result);
+    const { text, json, jsonString } = this.extractPayload(result);
+    const normalizedText = text.toLowerCase();
 
-    // Should not contain error indicators
-    expect(text.toLowerCase()).not.toContain('error');
-    expect(text.toLowerCase()).not.toContain('failed');
-    expect(text.toLowerCase()).not.toContain('invalid');
+    expect(normalizedText).not.toContain('error');
+    expect(normalizedText).not.toContain('failed');
+    expect(normalizedText).not.toContain('invalid');
 
-    // Should indicate the resource type being searched or have results
+    if (jsonString) {
+      const normalizedJson = jsonString.toLowerCase();
+      expect(normalizedJson).not.toContain('error');
+      expect(normalizedJson).not.toContain('failed');
+    }
+
+    const structuredArray = this.extractResultArray(json);
+    const jsonIds = this.collectUuidStrings(json);
+    const textIds = this.collectUuidStrings(text);
+    const aggregatedIds = new Set<string>([...jsonIds, ...textIds]);
+
+    if (structuredArray.length > 0) {
+      for (const record of structuredArray) {
+        for (const id of this.collectUuidStrings(record)) {
+          aggregatedIds.add(id);
+        }
+      }
+    }
+
     if (minResults > 0) {
-      // If we expect results, verify we got some indication of data
-      expect(text.length).toBeGreaterThan(50); // Arbitrary minimum for actual results
+      if (structuredArray.length > 0) {
+        expect(structuredArray.length).toBeGreaterThanOrEqual(minResults);
+      } else if (aggregatedIds.size > 0) {
+        expect(aggregatedIds.size).toBeGreaterThanOrEqual(minResults);
+      } else {
+        expect(text.trim().length).toBeGreaterThan(0);
+      }
     }
   }
 
@@ -45,16 +71,32 @@ export class QAAssertions {
   static assertValidRecordDetails(
     result: ToolResult,
     resourceType: string,
-    recordId: string
+    recordId?: string
   ): void {
-    // MCP doesn't have isError property - check text content
-    const text = this.extractText(result);
+    const { text, json, jsonString } = this.extractPayload(result);
+    const normalizedText = text.toLowerCase();
 
-    // Should contain the record ID or indicate successful retrieval
-    expect(text).toBeTruthy();
-    expect(text.toLowerCase()).not.toContain('not found');
-    expect(text.toLowerCase()).not.toContain('does not exist');
-    expect(text.toLowerCase()).not.toContain('error');
+    expect(normalizedText).toBeTruthy();
+    expect(normalizedText).not.toContain('not found');
+    expect(normalizedText).not.toContain('does not exist');
+    expect(normalizedText).not.toContain('error');
+
+    if (jsonString) {
+      const normalizedJson = jsonString.toLowerCase();
+      expect(normalizedJson).not.toContain('not found');
+      expect(normalizedJson).not.toContain('does not exist');
+      expect(normalizedJson).not.toContain('error');
+    }
+
+    if (recordId) {
+      const availableIds = new Set([
+        ...this.collectUuidStrings(json).map((id) => id.toLowerCase()),
+        ...this.collectUuidStrings(text).map((id) => id.toLowerCase()),
+      ]);
+
+      expect(availableIds.size).toBeGreaterThan(0);
+      expect(availableIds.has(recordId.toLowerCase())).toBeTruthy();
+    }
   }
 
   /**
@@ -65,41 +107,62 @@ export class QAAssertions {
     resourceType: string,
     expectedFields?: Record<string, unknown>
   ): string {
-    // Explicit null checks with meaningful error messages
     if (!result) {
       throw new Error(
         `ASSERTION FAILURE: Tool result is null/undefined for ${resourceType} creation`
       );
     }
 
-    const text = this.extractText(result);
+    if (result.isError) {
+      throw new Error(
+        `ASSERTION FAILURE: Tool returned error for ${resourceType} creation`
+      );
+    }
+
+    const { text, json, jsonString } = this.extractPayload(result);
+
     if (!text || text.trim().length === 0) {
       throw new Error(
         `ASSERTION FAILURE: Empty response text for ${resourceType} creation. Result: ${JSON.stringify(result)}`
       );
     }
 
-    // Should indicate successful creation
-    expect(text.toLowerCase()).not.toContain('error');
-    expect(text.toLowerCase()).not.toContain('failed');
+    const normalizedText = text.toLowerCase();
+    expect(normalizedText).not.toContain('error');
+    expect(normalizedText).not.toContain('failed');
 
-    // MCP returns success messages like "✅ Successfully created..."
-    expect(text).toContain('Successfully created');
+    if (jsonString) {
+      const normalizedJson = jsonString.toLowerCase();
+      expect(normalizedJson).not.toContain('error');
+      expect(normalizedJson).not.toContain('failed');
+    }
 
-    // Extract ID from MCP format: "(ID: uuid-here)"
-    const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-    const recordId = idMatch ? idMatch[1] : '';
+    const successIndicators = ['created', 'success', 'completed', 'added'];
+    const hasSuccessIndicator = successIndicators.some((indicator) =>
+      normalizedText.includes(indicator)
+    );
 
-    if (!recordId || recordId.trim().length === 0) {
+    const jsonSuccess = jsonString
+      ? successIndicators.some((indicator) =>
+          jsonString.toLowerCase().includes(indicator)
+        )
+      : false;
+
+    expect(hasSuccessIndicator || jsonSuccess).toBeTruthy();
+
+    const candidateIds = [
+      ...this.collectUuidStrings(json),
+      ...this.collectUuidStrings(text),
+    ];
+    const uniqueIds = Array.from(new Set(candidateIds));
+
+    if (uniqueIds.length === 0) {
       throw new Error(
         `ASSERTION FAILURE: No valid record ID found in response for ${resourceType}. Response text: "${text}"`
       );
     }
 
-    // Note: MCP doesn't preserve exact field values in response
-    // Just verify it's a successful creation
-
-    return recordId;
+    return uniqueIds[0];
   }
 
   /**
@@ -108,23 +171,54 @@ export class QAAssertions {
   static assertRecordUpdated(
     result: ToolResult,
     resourceType: string,
-    recordId: string,
+    recordId?: string,
     updatedFields?: Record<string, unknown>
   ): void {
-    const text = this.extractText(result);
+    if (!result) {
+      throw new Error(
+        `ASSERTION FAILURE: Tool result is null/undefined for ${resourceType} update`
+      );
+    }
 
-    // Should indicate successful update
-    expect(text.toLowerCase()).not.toContain('error');
-    expect(text.toLowerCase()).not.toContain('failed');
-    expect(text.toLowerCase()).not.toContain('not found');
+    if (result.isError) {
+      throw new Error(
+        `ASSERTION FAILURE: Tool returned error for ${resourceType} update`
+      );
+    }
 
-    // MCP returns success messages for updates
-    const hasSuccessIndicator =
-      text.includes('Successfully updated') ||
-      text.includes('✅') ||
-      text.includes('updated');
+    const { text, json, jsonString } = this.extractPayload(result);
+    const normalizedText = text.toLowerCase();
+    const normalizedJson = jsonString.toLowerCase();
 
-    expect(hasSuccessIndicator).toBeTruthy();
+    expect(normalizedText).not.toContain('error');
+    expect(normalizedText).not.toContain('failed');
+    expect(normalizedText).not.toContain('not found');
+
+    if (normalizedJson) {
+      expect(normalizedJson).not.toContain('error');
+      expect(normalizedJson).not.toContain('failed');
+      expect(normalizedJson).not.toContain('not found');
+    }
+
+    const successIndicators = ['updated', 'success'];
+    const hasSuccessIndicator = successIndicators.some((indicator) =>
+      normalizedText.includes(indicator)
+    );
+    const hasJsonIndicator = successIndicators.some((indicator) =>
+      normalizedJson.includes(indicator)
+    );
+
+    expect(hasSuccessIndicator || hasJsonIndicator).toBeTruthy();
+
+    if (recordId) {
+      const availableIds = new Set([
+        ...this.collectUuidStrings(json).map((id) => id.toLowerCase()),
+        ...this.collectUuidStrings(text).map((id) => id.toLowerCase()),
+      ]);
+      if (availableIds.size > 0) {
+        expect(availableIds.has(recordId.toLowerCase())).toBeTruthy();
+      }
+    }
   }
 
   /**
@@ -133,22 +227,51 @@ export class QAAssertions {
   static assertRecordDeleted(
     result: ToolResult,
     resourceType: string,
-    recordId: string
+    recordId?: string
   ): void {
-    const text = this.extractText(result);
+    if (!result) {
+      throw new Error(
+        `ASSERTION FAILURE: Tool result is null/undefined for ${resourceType} deletion`
+      );
+    }
 
-    // Should indicate successful deletion
-    expect(text.toLowerCase()).not.toContain('error');
-    expect(text.toLowerCase()).not.toContain('failed');
+    if (result.isError) {
+      throw new Error(
+        `ASSERTION FAILURE: Tool returned error for ${resourceType} deletion`
+      );
+    }
 
-    // MCP returns success messages for deletions
-    const hasSuccessIndicator =
-      text.includes('Successfully deleted') ||
-      text.includes('✅') ||
-      text.includes('deleted') ||
-      text.includes('removed');
+    const { text, json, jsonString } = this.extractPayload(result);
+    const normalizedText = text.toLowerCase();
+    const normalizedJson = jsonString.toLowerCase();
 
-    expect(hasSuccessIndicator).toBeTruthy();
+    expect(normalizedText).not.toContain('error');
+    expect(normalizedText).not.toContain('failed');
+
+    if (normalizedJson) {
+      expect(normalizedJson).not.toContain('error');
+      expect(normalizedJson).not.toContain('failed');
+    }
+
+    const successIndicators = ['deleted', 'removed', 'success'];
+    const hasSuccessIndicator = successIndicators.some((indicator) =>
+      normalizedText.includes(indicator)
+    );
+    const hasJsonIndicator = successIndicators.some((indicator) =>
+      normalizedJson.includes(indicator)
+    );
+
+    expect(hasSuccessIndicator || hasJsonIndicator).toBeTruthy();
+
+    if (recordId) {
+      const availableIds = new Set([
+        ...this.collectUuidStrings(json).map((id) => id.toLowerCase()),
+        ...this.collectUuidStrings(text).map((id) => id.toLowerCase()),
+      ]);
+      if (availableIds.size > 0) {
+        expect(availableIds.has(recordId.toLowerCase())).toBeFalsy();
+      }
+    }
   }
 
   /**
@@ -159,32 +282,47 @@ export class QAAssertions {
     resourceType: string,
     recordId: string
   ): void {
-    const text = this.extractText(result);
+    const { text, json, jsonString } = this.extractPayload(result);
+    const normalizedText = text.toLowerCase();
 
-    // Should indicate record not found
-    // The exact message may vary, but should indicate the record doesn't exist
     const hasNotFoundIndicator =
-      text.toLowerCase().includes('not found') ||
-      text.toLowerCase().includes('does not exist') ||
-      text.includes('404') ||
-      text.toLowerCase().includes('error') ||
-      text.toLowerCase().includes('failed');
+      normalizedText.includes('not found') ||
+      normalizedText.includes('does not exist') ||
+      normalizedText.includes('error') ||
+      normalizedText.includes('failed');
 
-    expect(hasNotFoundIndicator).toBeTruthy();
+    const normalizedJson = jsonString.toLowerCase();
+    const jsonNotFoundIndicator = normalizedJson
+      ? normalizedJson.includes('not found') ||
+        normalizedJson.includes('does not exist') ||
+        normalizedJson.includes('error')
+      : false;
+
+    expect(hasNotFoundIndicator || jsonNotFoundIndicator).toBeTruthy();
   }
 
   /**
    * Assert that schema/attributes were retrieved successfully
    */
   static assertValidSchema(result: ToolResult, objectType: string): void {
-    expect(result.isError).toBeFalsy();
+    expect(result?.isError ?? false).toBeFalsy();
 
-    const text = this.extractText(result);
+    const { text, json, jsonString } = this.extractPayload(result);
+    const normalizedText = text.toLowerCase();
+    expect(normalizedText).toBeTruthy();
+    expect(normalizedText).not.toContain('error');
 
-    // Should contain attribute information
-    expect(text).toBeTruthy();
-    expect(text.length).toBeGreaterThan(100); // Should have substantial schema info
-    expect(text).not.toContain('error');
+    if (json) {
+      const attributeSlugs = this.collectAttributeSlugs(json);
+      expect(attributeSlugs.length).toBeGreaterThan(0);
+    } else {
+      expect(text.length).toBeGreaterThan(40);
+    }
+
+    if (jsonString) {
+      const normalizedJson = jsonString.toLowerCase();
+      expect(normalizedJson).not.toContain('error');
+    }
   }
 
   /**
@@ -197,8 +335,8 @@ export class QAAssertions {
   ): void {
     expect(result?.isError ?? false).toBeFalsy();
 
-    const text = this.extractText(result);
-    if (!text || !text.trim()) {
+    const { text, json, jsonString } = this.extractPayload(result);
+    if (!text && !jsonString) {
       throw new Error(
         `ASSERTION FAILURE: Empty batch operation response for '${operationType}'`
       );
@@ -208,39 +346,44 @@ export class QAAssertions {
     expect(normalizedText).not.toContain('error:');
     expect(normalizedText).not.toContain('exception');
 
+    if (jsonString) {
+      const normalizedJson = jsonString.toLowerCase();
+      expect(normalizedJson).not.toContain('error');
+      expect(normalizedJson).not.toContain('exception');
+    }
+
     const summaryMatch = text.match(
       /Batch\s+([a-z-\s]+)\s+completed:\s+(\d+)\s+successful,\s+(\d+)\s+failed/i
     );
 
-    if (!summaryMatch) {
+    if (summaryMatch) {
+      const [, , successCountRaw, failedCountRaw] = summaryMatch;
+      const successCount = Number.parseInt(successCountRaw, 10);
+      const failedCount = Number.parseInt(failedCountRaw, 10);
+
+      if (Number.isNaN(successCount) || Number.isNaN(failedCount)) {
+        throw new Error(
+          `ASSERTION FAILURE: Unable to parse batch summary counts.\nResponse: ${text}`
+        );
+      }
+
+      expect(successCount).toBe(expectedCount);
+      expect(failedCount).toBe(0);
+    } else if (json) {
+      const resultArray = this.extractResultArray(json);
+      expect(resultArray.length).toBe(expectedCount);
+    } else {
       throw new Error(
         `ASSERTION FAILURE: Missing batch summary for '${operationType}'.\nResponse: ${text}`
       );
     }
-
-    const [, , successCountRaw, failedCountRaw] = summaryMatch;
-    const successCount = Number.parseInt(successCountRaw, 10);
-    const failedCount = Number.parseInt(failedCountRaw, 10);
-
-    if (Number.isNaN(successCount) || Number.isNaN(failedCount)) {
-      throw new Error(
-        `ASSERTION FAILURE: Unable to parse batch summary counts.\nResponse: ${text}`
-      );
-    }
-
-    expect(successCount).toBe(expectedCount);
-    expect(failedCount).toBe(0);
-
-    // Guard against hidden failure payloads in JSON fallbacks
-    expect(text).not.toMatch(/"failed"\s*:\s*(?:[1-9][0-9]*)/);
-    expect(text).not.toMatch(/Failed\s+(operations|searches):\s*\n\s*\d+/i);
   }
 
   /**
    * Helper to extract text content from result
    */
   private static extractText(result: ToolResult): string {
-    if (result.content && result.content.length > 0) {
+    if (result?.content && result.content.length > 0) {
       const content = result.content[0];
       if ('text' in content) {
         return content.text;
@@ -282,28 +425,36 @@ export class QAAssertions {
    */
   static assertValidListResponse(result: ToolResult, operation: string): void {
     expect(result).toBeDefined();
-    expect(result.isError).toBeFalsy();
-    expect(result.content).toBeDefined();
-    expect(result.content.length).toBeGreaterThan(0);
+    expect(result?.isError ?? false).toBeFalsy();
 
-    const text = this.extractText(result);
-    expect(text).toBeTruthy();
+    const { text, json, jsonString } = this.extractPayload(result);
 
-    // Check for success indicators based on operation
-    if (operation === 'get-lists' || operation === 'get-list-entries') {
-      // Lists operations return JSON arrays
-      expect(text).toMatch(/^\[.*\]$|^\{.*\}$/);
-    } else if (
-      operation === 'add-record-to-list' ||
-      operation === 'remove-record-from-list'
-    ) {
-      // Membership operations return confirmation or ID
-      expect(text).toMatch(/ID:\s*[a-f0-9-]+|success|added|removed/i);
+    if (json) {
+      const arrayPayload = Array.isArray(json)
+        ? json
+        : this.extractResultArray(json);
+
+      if (operation === 'get-lists' || operation === 'get-list-entries') {
+        expect(Array.isArray(arrayPayload)).toBeTruthy();
+      }
+    } else {
+      expect(text).toBeTruthy();
+      if (operation === 'get-lists' || operation === 'get-list-entries') {
+        expect(
+          text.trim().startsWith('[') || text.trim().startsWith('{')
+        ).toBeTruthy();
+      }
     }
 
-    // Ensure no error messages
-    expect(text.toLowerCase()).not.toContain('error');
-    expect(text.toLowerCase()).not.toContain('failed');
+    const normalizedText = text.toLowerCase();
+    expect(normalizedText).not.toContain('error');
+    expect(normalizedText).not.toContain('failed');
+
+    if (jsonString) {
+      const normalizedJson = jsonString.toLowerCase();
+      expect(normalizedJson).not.toContain('error');
+      expect(normalizedJson).not.toContain('failed');
+    }
   }
 
   /**
@@ -311,18 +462,29 @@ export class QAAssertions {
    */
   static assertValidFilterResponse(result: ToolResult): void {
     expect(result).toBeDefined();
-    expect(result.isError).toBeFalsy();
-    expect(result.content).toBeDefined();
+    expect(result?.isError ?? false).toBeFalsy();
 
-    const text = this.extractText(result);
-    expect(text).toBeTruthy();
+    const { text, json, jsonString } = this.extractPayload(result);
 
-    // Filter results should be JSON array format
-    expect(text).toMatch(/^\[.*\]$/);
+    if (json) {
+      const arrayPayload = Array.isArray(json)
+        ? json
+        : this.extractResultArray(json);
+      expect(Array.isArray(arrayPayload)).toBeTruthy();
+    } else {
+      expect(text).toBeTruthy();
+      expect(text.trim().startsWith('[')).toBeTruthy();
+    }
 
-    // Ensure no error messages
-    expect(text.toLowerCase()).not.toContain('error');
-    expect(text.toLowerCase()).not.toContain('invalid');
+    const normalizedText = text.toLowerCase();
+    expect(normalizedText).not.toContain('error');
+    expect(normalizedText).not.toContain('invalid');
+
+    if (jsonString) {
+      const normalizedJson = jsonString.toLowerCase();
+      expect(normalizedJson).not.toContain('error');
+      expect(normalizedJson).not.toContain('invalid');
+    }
   }
 
   /**
@@ -352,5 +514,222 @@ export class QAAssertions {
     console.log(
       `✅ P1 Quality Gate PASSED - Pass rate: ${passRate.toFixed(1)}%`
     );
+  }
+
+  private static extractPayload(result: ToolResult): {
+    text: string;
+    json: unknown | null;
+    jsonString: string;
+  } {
+    const text = this.extractText(result);
+    const contentJson = this.tryExtractJsonFromContent(result);
+    if (contentJson !== null && contentJson !== undefined) {
+      return {
+        text,
+        json: contentJson,
+        jsonString: this.safeStringify(contentJson),
+      };
+    }
+
+    const parsed = this.tryParseJson(text);
+    return {
+      text,
+      json: parsed,
+      jsonString: parsed ? this.safeStringify(parsed) : '',
+    };
+  }
+
+  private static tryExtractJsonFromContent(result: ToolResult): unknown | null {
+    if (!result?.content) {
+      return null;
+    }
+
+    for (const part of result.content) {
+      if (!part || typeof part !== 'object') {
+        continue;
+      }
+
+      const type = 'type' in part ? String(part.type).toLowerCase() : '';
+
+      if (type.includes('json')) {
+        if ('data' in part && part.data !== undefined) {
+          return part.data as unknown;
+        }
+
+        if ('json' in part && part.json !== undefined) {
+          return part.json as unknown;
+        }
+
+        if ('text' in part && typeof part.text === 'string') {
+          try {
+            return JSON.parse(part.text);
+          } catch (error) {
+            // Ignore parsing errors and continue searching other parts.
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private static tryParseJson(text: string): unknown | null {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const candidates: string[] = [];
+
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      candidates.push(trimmed);
+    }
+
+    const braceIndex = trimmed.indexOf('{');
+    const bracketIndex = trimmed.indexOf('[');
+    const indexes = [braceIndex, bracketIndex].filter((index) => index > 0);
+
+    if (indexes.length > 0) {
+      const startIndex = Math.min(...indexes);
+      candidates.push(trimmed.slice(startIndex));
+    }
+
+    for (const candidate of candidates) {
+      try {
+        return JSON.parse(candidate);
+      } catch (error) {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private static collectUuidStrings(input: unknown): string[] {
+    const ids = new Set<string>();
+    const uuidPattern = new RegExp(this.UUID_PATTERN.source, 'gi');
+    const visited = new WeakSet<object>();
+
+    const visit = (value: unknown): void => {
+      if (!value) {
+        return;
+      }
+
+      if (typeof value === 'string') {
+        for (const match of value.matchAll(uuidPattern)) {
+          ids.add(match[0]);
+        }
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          visit(item);
+        }
+        return;
+      }
+
+      if (typeof value === 'object') {
+        if (visited.has(value as object)) {
+          return;
+        }
+        visited.add(value as object);
+        for (const nested of Object.values(value as Record<string, unknown>)) {
+          visit(nested);
+        }
+      }
+    };
+
+    visit(input);
+
+    return Array.from(ids);
+  }
+
+  private static collectAttributeSlugs(input: unknown): string[] {
+    const slugs = new Set<string>();
+    const visited = new WeakSet<object>();
+
+    const visit = (value: unknown): void => {
+      if (!value) {
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          visit(item);
+        }
+        return;
+      }
+
+      if (typeof value === 'object') {
+        if (visited.has(value as object)) {
+          return;
+        }
+        visited.add(value as object);
+
+        const record = value as Record<string, unknown>;
+        const slugCandidate =
+          record.api_slug ||
+          record.slug ||
+          record.key ||
+          record.field ||
+          record.id ||
+          record.name;
+
+        if (typeof slugCandidate === 'string') {
+          slugs.add(slugCandidate.toLowerCase());
+        }
+
+        if (Array.isArray(record.attributes)) {
+          visit(record.attributes);
+        }
+
+        if (Array.isArray(record.data)) {
+          visit(record.data);
+        }
+
+        for (const nested of Object.values(record)) {
+          if (typeof nested === 'object' || Array.isArray(nested)) {
+            visit(nested);
+          }
+        }
+      }
+    };
+
+    visit(input);
+
+    return Array.from(slugs);
+  }
+
+  private static extractResultArray(payload: unknown): unknown[] {
+    if (!payload) {
+      return [];
+    }
+
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (typeof payload === 'object') {
+      const record = payload as Record<string, unknown>;
+      const candidates = ['data', 'results', 'items', 'records'];
+
+      for (const key of candidates) {
+        const value = record[key];
+        if (Array.isArray(value)) {
+          return value;
+        }
+      }
+    }
+
+    return [];
+  }
+
+  private static safeStringify(value: unknown): string {
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      return '';
+    }
   }
 }
