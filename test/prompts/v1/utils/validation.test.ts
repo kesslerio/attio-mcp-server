@@ -11,7 +11,7 @@ import { PromptMessage } from '@/prompts/v1/types.js';
 
 describe('Token Budget Validation', () => {
   describe('checkTokenBudget', () => {
-    it('should pass when exactly at budget limit', () => {
+    it('should pass when exactly at budget limit', async () => {
       // Create a message that's approximately 500 tokens
       // Rough estimate: 1 token ≈ 4 characters for English text
       const text = 'a'.repeat(2000); // ~500 tokens
@@ -25,7 +25,7 @@ describe('Token Budget Validation', () => {
         },
       ];
 
-      const result = checkTokenBudget('people_search.v1', messages);
+      const result = await checkTokenBudget('people_search.v1', messages);
 
       // Should be within budget (people_search.v1 has 500 token limit)
       expect(result.withinBudget).toBe(true);
@@ -33,7 +33,7 @@ describe('Token Budget Validation', () => {
       expect(result.exceededBy).toBeUndefined();
     });
 
-    it('should fail when exceeding budget limit', () => {
+    it('should fail when exceeding budget limit', async () => {
       // Create a message that definitely exceeds 500 tokens
       // Using varied text to avoid compression in tokenization
       const longText = Array.from(
@@ -52,7 +52,7 @@ describe('Token Budget Validation', () => {
         },
       ];
 
-      const result = checkTokenBudget('people_search.v1', messages);
+      const result = await checkTokenBudget('people_search.v1', messages);
 
       expect(result.withinBudget).toBe(false);
       expect(result.budgetLimit).toBe(500);
@@ -60,7 +60,7 @@ describe('Token Budget Validation', () => {
       expect(result.estimatedTokens).toBeGreaterThan(500);
     });
 
-    it('should return proper budget limit for different prompts', () => {
+    it('should return proper budget limit for different prompts', async () => {
       const messages: PromptMessage[] = [
         {
           role: 'user',
@@ -72,13 +72,13 @@ describe('Token Budget Validation', () => {
       ];
 
       // Test different prompt budgets
-      const searchResult = checkTokenBudget('people_search.v1', messages);
+      const searchResult = await checkTokenBudget('people_search.v1', messages);
       expect(searchResult.budgetLimit).toBe(500);
 
-      const qualifyResult = checkTokenBudget('qualify_lead.v1', messages);
+      const qualifyResult = await checkTokenBudget('qualify_lead.v1', messages);
       expect(qualifyResult.budgetLimit).toBe(400);
 
-      const logResult = checkTokenBudget('log_activity.v1', messages);
+      const logResult = await checkTokenBudget('log_activity.v1', messages);
       expect(logResult.budgetLimit).toBe(300);
     });
   });

@@ -18,6 +18,19 @@ import {
 import { PromptTemplate, PromptExecutionRequest } from '@/prompts/types.js';
 import { createErrorResult } from '@/prompts/error-handler.js';
 import { getPromptsListPayload } from '@/utils/mcp-discovery.js';
+import { getAllPromptsV1, getPromptV1ByName, isV1Prompt } from './v1/index.js';
+import {
+  validateArguments,
+  checkTokenBudget,
+  createValidationError,
+  createBudgetExceededError,
+} from './v1/utils/validation.js';
+import { calculatePromptTokens } from './v1/utils/token-metadata.js';
+import {
+  logPromptTelemetry,
+  createTelemetryEvent,
+} from './v1/utils/telemetry.js';
+import { isDevMetaEnabled } from './v1/constants.js';
 
 // Import Handlebars using ES module import
 // This avoids the "require is not defined in ES module scope" error
@@ -498,32 +511,14 @@ export async function executePrompt(
  * registerPromptHandlers(server);
  * ```
  */
-export async function registerPromptHandlers(
+export function registerPromptHandlers(
   server: Server,
   context?: ServerContext
-): Promise<void> {
+): void {
   // Set the global context for lazy initialization if provided
   if (context) {
     setGlobalContext(context);
   }
-
-  // Import v1 prompts
-  const { getAllPromptsV1, getPromptV1ByName, isV1Prompt } = await import(
-    './v1/index.js'
-  );
-  const {
-    validateArguments,
-    checkTokenBudget,
-    createValidationError,
-    createBudgetExceededError,
-  } = await import('./v1/utils/validation.js');
-  const { calculatePromptTokens } = await import(
-    './v1/utils/token-metadata.js'
-  );
-  const { logPromptTelemetry, createTelemetryEvent } = await import(
-    './v1/utils/telemetry.js'
-  );
-  const { isDevMetaEnabled } = await import('./v1/constants.js');
 
   // Register handler for prompts/list endpoint
   server.setRequestHandler(ListPromptsRequestSchema, async () => {
@@ -568,14 +563,14 @@ export async function registerPromptHandlers(
       const messages = promptDef.buildMessages(validation.data);
 
       // Check token budget
-      const budgetCheck = checkTokenBudget(promptName, messages);
+      const budgetCheck = await checkTokenBudget(promptName, messages);
       if (!budgetCheck.withinBudget) {
         const error = createBudgetExceededError(budgetCheck);
         throw new Error(error.message);
       }
 
       // Calculate token metadata
-      const tokenMetadata = calculatePromptTokens(messages);
+      const tokenMetadata = await calculatePromptTokens(messages);
 
       // Log telemetry
       const telemetryEvent = createTelemetryEvent(
