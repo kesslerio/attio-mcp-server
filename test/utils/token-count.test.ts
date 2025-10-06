@@ -14,22 +14,22 @@ afterEach(() => {
 });
 
 describe('token-count utilities', () => {
-  it('counts tokens for simple strings deterministically', () => {
-    expect(countTokens('')).toBe(0);
-    expect(countTokens('Hello world')).toBe(2);
-    expect(countTokens('Attio MCP server')).toBe(4);
+  it('counts tokens for simple strings deterministically', async () => {
+    expect(await countTokens('')).toBe(0);
+    expect(await countTokens('Hello world')).toBe(2);
+    expect(await countTokens('Attio MCP server')).toBe(4);
   });
 
-  it('counts JSON structures using serialization', () => {
+  it('counts JSON structures using serialization', async () => {
     const payload = { foo: 'bar', count: 3 };
-    const expected = countTokens(JSON.stringify(payload));
-    expect(countJsonTokens(payload)).toBe(expected);
+    const expected = await countTokens(JSON.stringify(payload));
+    expect(await countJsonTokens(payload)).toBe(expected);
   });
 
-  it('counts joined strings consistently', () => {
+  it('counts joined strings consistently', async () => {
     const values = ['alpha', 'beta', 'gamma'];
-    const direct = countTokens(values.join('\n'));
-    expect(countStrings(values)).toBe(direct);
+    const direct = await countTokens(values.join('\n'));
+    expect(await countStrings(values)).toBe(direct);
   });
 
   it('honors COUNT_MODEL_DEFAULT environment override', () => {

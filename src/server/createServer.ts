@@ -44,7 +44,7 @@ export const configSchema = z.object({
  * @param context - Optional context for configuration (used by Smithery)
  * @returns Configured MCP server instance
  */
-export async function createServer(context?: ServerContext) {
+export function createServer(context?: ServerContext) {
   const startTime = Date.now();
   createScopedLogger('mcp.init', 'createServer').info(
     'Server creation started'
@@ -85,7 +85,7 @@ export async function createServer(context?: ServerContext) {
   createScopedLogger('mcp.init', 'createServer').info('Registering handlers');
   registerResourceHandlers(mcpServer, ctx);
   registerToolHandlers(mcpServer, ctx);
-  await registerPromptHandlers(mcpServer, ctx);
+  registerPromptHandlers(mcpServer, ctx);
 
   const duration = Date.now() - startTime;
   createScopedLogger('mcp.init', 'createServer').info('Server created', {
