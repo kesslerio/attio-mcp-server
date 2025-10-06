@@ -568,14 +568,14 @@ export async function registerPromptHandlers(
       const messages = promptDef.buildMessages(validation.data);
 
       // Check token budget
-      const budgetCheck = checkTokenBudget(promptName, messages);
+      const budgetCheck = await checkTokenBudget(promptName, messages);
       if (!budgetCheck.withinBudget) {
         const error = createBudgetExceededError(budgetCheck);
         throw new Error(error.message);
       }
 
       // Calculate token metadata
-      const tokenMetadata = calculatePromptTokens(messages);
+      const tokenMetadata = await calculatePromptTokens(messages);
 
       // Log telemetry
       const telemetryEvent = createTelemetryEvent(

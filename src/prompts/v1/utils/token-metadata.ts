@@ -16,11 +16,11 @@ import { PromptMessage, TokenMetadata, EmbeddedResource } from '../types.js';
  * @param model - Optional model name for token counting
  * @returns Token metadata with counts and method info
  */
-export function calculatePromptTokens(
+export async function calculatePromptTokens(
   messages: PromptMessage[],
   resources?: EmbeddedResource[],
   model?: string
-): TokenMetadata {
+): Promise<TokenMetadata> {
   let totalTokens = 0;
   let totalChars = 0;
   let totalResourceBytes = 0;
@@ -30,7 +30,7 @@ export function calculatePromptTokens(
     if (message.content.type === 'text') {
       const text = message.content.text;
       totalChars += text.length;
-      totalTokens += countTokens(text, model);
+      totalTokens += await countTokens(text, model);
     } else if (message.content.type === 'image') {
       // Images are counted by data length (base64 encoded)
       const dataSize = message.content.data.length;
@@ -40,7 +40,7 @@ export function calculatePromptTokens(
     } else if (message.content.type === 'resource') {
       const resourceText = message.content.resource.text || '';
       totalChars += resourceText.length;
-      totalTokens += countTokens(resourceText, model);
+      totalTokens += await countTokens(resourceText, model);
     }
   }
 
@@ -50,7 +50,7 @@ export function calculatePromptTokens(
       const resourceText = resource.resource.text || '';
       const resourceBytes = Buffer.byteLength(resourceText, 'utf8');
       totalResourceBytes += resourceBytes;
-      totalTokens += countTokens(resourceText, model);
+      totalTokens += await countTokens(resourceText, model);
     }
   }
 
@@ -72,7 +72,10 @@ export function calculatePromptTokens(
  * @param model - Optional model name
  * @returns Token count
  */
-export function estimateTextTokens(text: string, model?: string): number {
+export async function estimateTextTokens(
+  text: string,
+  model?: string
+): Promise<number> {
   return countTokens(text, model);
 }
 
@@ -84,12 +87,12 @@ export function estimateTextTokens(text: string, model?: string): number {
  * @param model - Optional model name
  * @returns Whether messages are within budget
  */
-export function isWithinTokenBudget(
+export async function isWithinTokenBudget(
   messages: PromptMessage[],
   budget: number,
   model?: string
-): boolean {
-  const metadata = calculatePromptTokens(messages, undefined, model);
+): Promise<boolean> {
+  const metadata = await calculatePromptTokens(messages, undefined, model);
   return metadata.estimated_tokens <= budget;
 }
 
