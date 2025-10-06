@@ -1,7 +1,7 @@
 {
   "name": "attio-mcp",
   "version": "1.1.0",
-  "description": "A Model Context Protocol server that connects Attio to LLMs",
+  "description": "AI-powered access to Attio CRM. Manage contacts, companies, deals, tasks, and notes. Search records, update pipelines, and automate workflows for sales and GTM teams.",
   "main": "dist/smithery.js",
   "module": "src/smithery.ts",
   "type": "module",

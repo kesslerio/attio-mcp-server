@@ -1,14 +1,15 @@
-name: Attio MCP
-description: Connect Attio CRM to MCP clients
-keywords: [attio, crm, contacts, companies, deals]
+name: Attio
+description: AI-powered access to Attio CRM. Manage contacts, companies, deals, tasks, and notes. Search records, update pipelines, and automate workflows for sales and GTM teams.
+keywords:
+  [attio, crm, contacts, companies, deals, sales, pipeline, gtm, tasks, notes]
 
-runtime: "typescript"
+runtime: 'typescript'
 
 startCommand:
   type: http
 
 # Empty example config so scans never block on secrets
 exampleConfig:
-  ATTIO_API_KEY: ""
-  ATTIO_WORKSPACE_ID: ""
+  ATTIO_API_KEY: ''
+  ATTIO_WORKSPACE_ID: ''
   debug: false
