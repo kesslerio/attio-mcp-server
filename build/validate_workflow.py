@@ -154,7 +154,7 @@ def validate_branch_name_text(name: str) -> bool:
     Allowed:
       - protected branches: main, master, develop, staging, production
       - type/TICKET[-slug]
-          where type ∈ {feature, fix, hotfix, chore, docs, documentation, refactor, test, ci, perf, build, release}
+          where type ∈ {feature, fix, hotfix, chore, docs, documentation, refactor, test, ci, perf, build, release, codex, claude}
           and TICKET ∈ {issue-<n>, <JIRAKEY>-<n>, <n>}
           slug is optional and may contain [a-z0-9._-]
     """
@@ -168,7 +168,7 @@ def validate_branch_name_text(name: str) -> bool:
         return False
 
     allowed_types = (
-        "feature|fix|hotfix|chore|docs|documentation|refactor|test|ci|perf|build|release"
+        "feature|fix|hotfix|chore|docs|documentation|refactor|test|ci|perf|build|release|codex|claude"
     )
     pattern = re.compile(
         rf"^(?:{allowed_types})/(?:issue-\d+|[A-Z][A-Z0-9]+-\d+|\d+)(?:-[a-z0-9._-]+)*$"
@@ -179,7 +179,7 @@ def validate_branch_name_text(name: str) -> bool:
 
     print_error(
         "Invalid branch name. Expected 'type/TICKET[-slug]' where type is one of "
-        "feature, fix, hotfix, chore, docs, documentation, refactor, test, ci, perf, build, release "
+        "feature, fix, hotfix, chore, docs, documentation, refactor, test, ci, perf, build, release, codex, claude "
         "and TICKET is issue-<n> / ABC-<n> / <n>."
     )
 
