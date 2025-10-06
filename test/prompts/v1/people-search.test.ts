@@ -128,18 +128,18 @@ describe('people_search.v1', () => {
   });
 
   describe('token budget compliance', () => {
-    it('should stay within 500 token budget for default args', () => {
+    it('should stay within 500 token budget for default args', async () => {
       const args = {
         query: 'Account Executives in San Francisco at fintech companies',
       };
 
       const messages = buildPeopleSearchMessages(args);
-      const tokenMetadata = calculatePromptTokens(messages);
+      const tokenMetadata = await calculatePromptTokens(messages);
 
       expect(tokenMetadata.estimated_tokens).toBeLessThanOrEqual(500);
     });
 
-    it('should stay within budget for various query lengths', () => {
+    it('should stay within budget for various query lengths', async () => {
       const queries = [
         'AE role',
         'Account Executive',
@@ -149,7 +149,7 @@ describe('people_search.v1', () => {
 
       for (const query of queries) {
         const messages = buildPeopleSearchMessages({ query });
-        const tokenMetadata = calculatePromptTokens(messages);
+        const tokenMetadata = await calculatePromptTokens(messages);
 
         expect(tokenMetadata.estimated_tokens).toBeLessThanOrEqual(500);
       }

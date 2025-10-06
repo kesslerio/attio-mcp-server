@@ -94,13 +94,13 @@ export function validateArguments(
  * @param model - Optional model name for token counting
  * @returns Budget check result
  */
-export function checkTokenBudget(
+export async function checkTokenBudget(
   promptName: string,
   messages: PromptMessage[],
   model?: string
-): BudgetCheckResult {
+): Promise<BudgetCheckResult> {
   const budgetLimit = getPromptTokenBudget(promptName);
-  const metadata = calculatePromptTokens(messages, undefined, model);
+  const metadata = await calculatePromptTokens(messages, undefined, model);
   const estimatedTokens = metadata.estimated_tokens;
 
   const withinBudget = estimatedTokens <= budgetLimit;

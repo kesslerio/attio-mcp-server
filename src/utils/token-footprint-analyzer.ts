@@ -109,20 +109,23 @@ function mapToolsToCategories(
   }));
 }
 
-function analyzeTools(
+async function analyzeTools(
   toolsPayload: ToolsListPayload,
   heavyThreshold: number,
   model: string
-): SectionBreakdown {
+): Promise<SectionBreakdown> {
   const categoryIndex = buildToolCategoryIndex();
   const categorised = mapToolsToCategories(toolsPayload.tools, categoryIndex);
 
   const categoryMap: Record<string, { tokens: number; items: string[] }> = {};
   const items: TokenFootprintItem[] = [];
-  const payloadTokens = countJsonTokens({ tools: toolsPayload.tools }, model);
+  const payloadTokens = await countJsonTokens(
+    { tools: toolsPayload.tools },
+    model
+  );
 
   for (const entry of categorised) {
-    const tokens = countJsonTokens(entry.tool, model);
+    const tokens = await countJsonTokens(entry.tool, model);
     const category = entry.category;
 
     if (!categoryMap[category]) {
@@ -151,20 +154,20 @@ function analyzeTools(
   };
 }
 
-function analyzePrompts(
+async function analyzePrompts(
   promptsPayload: PromptsListPayload,
   heavyThreshold: number,
   model: string
-): SectionBreakdown {
+): Promise<SectionBreakdown> {
   const categoryMap: Record<string, { tokens: number; items: string[] }> = {};
   const items: TokenFootprintItem[] = [];
-  const payloadTokens = countJsonTokens(
+  const payloadTokens = await countJsonTokens(
     { prompts: promptsPayload.prompts },
     model
   );
 
   for (const prompt of promptsPayload.prompts) {
-    const tokens = countJsonTokens(prompt, model);
+    const tokens = await countJsonTokens(prompt, model);
     const category = resolveCategoryKey(prompt.category);
 
     if (!categoryMap[category]) {
@@ -218,9 +221,9 @@ function selectTopItems(
   return items.slice(0, topN);
 }
 
-export function analyzeBaselineTokenFootprint(
+export async function analyzeBaselineTokenFootprint(
   options: AnalyzeOptions = {}
-): TokenFootprintReport {
+): Promise<TokenFootprintReport> {
   const model = options.model || getCountModel();
   const heavyThreshold = options.heavyThreshold ?? DEFAULT_THRESHOLD;
   const topN = options.topN ?? DEFAULT_TOP_N;
@@ -228,8 +231,8 @@ export function analyzeBaselineTokenFootprint(
   const toolsPayload = options.toolsPayload ?? getToolsListPayload();
   const promptsPayload = options.promptsPayload ?? getPromptsListPayload();
 
-  const tools = analyzeTools(toolsPayload, heavyThreshold, model);
-  const prompts = analyzePrompts(promptsPayload, heavyThreshold, model);
+  const tools = await analyzeTools(toolsPayload, heavyThreshold, model);
+  const prompts = await analyzePrompts(promptsPayload, heavyThreshold, model);
 
   const totalTokens = tools.totalTokens + prompts.totalTokens;
 
@@ -371,10 +374,10 @@ export function formatConsoleSummary(
 }
 
 // Helper exposed for unit testing with fixtures
-export function buildPromptSummary(
+export async function buildPromptSummary(
   prompts: PromptSummary[],
   heavyThreshold: number,
   model: string
-): SectionBreakdown {
+): Promise<SectionBreakdown> {
   return analyzePrompts({ prompts }, heavyThreshold, model);
 }

@@ -66,16 +66,18 @@ afterEach(() => {
 });
 
 describe('token footprint analyzer', () => {
-  it('analyzes baseline payloads with deterministic totals', () => {
-    const report = analyzeBaselineTokenFootprint({
+  it('analyzes baseline payloads with deterministic totals', async () => {
+    const report = await analyzeBaselineTokenFootprint({
       toolsPayload: FIXTURE_TOOLS,
       promptsPayload: FIXTURE_PROMPTS,
       heavyThreshold: 10,
       topN: 3,
     });
 
-    const expectedToolsTokens = countJsonTokens({ tools: FIXTURE_TOOLS.tools });
-    const expectedPromptsTokens = countJsonTokens({
+    const expectedToolsTokens = await countJsonTokens({
+      tools: FIXTURE_TOOLS.tools,
+    });
+    const expectedPromptsTokens = await countJsonTokens({
       prompts: FIXTURE_PROMPTS.prompts,
     });
 
@@ -97,8 +99,8 @@ describe('token footprint analyzer', () => {
     expect(report.heaviestItems.length).toBeLessThanOrEqual(3);
   });
 
-  it('renders markdown with key sections', () => {
-    const report = analyzeBaselineTokenFootprint({
+  it('renders markdown with key sections', async () => {
+    const report = await analyzeBaselineTokenFootprint({
       toolsPayload: FIXTURE_TOOLS,
       promptsPayload: FIXTURE_PROMPTS,
       heavyThreshold: 10,
@@ -112,12 +114,12 @@ describe('token footprint analyzer', () => {
     expect(markdown).toContain('| Category | Tokens | Prompt Count |');
   });
 
-  it('writes reports to disk and outputs console summary', () => {
+  it('writes reports to disk and outputs console summary', async () => {
     const tmpDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'token-footprint-test-')
     );
 
-    const report = analyzeBaselineTokenFootprint({
+    const report = await analyzeBaselineTokenFootprint({
       toolsPayload: FIXTURE_TOOLS,
       promptsPayload: FIXTURE_PROMPTS,
     });

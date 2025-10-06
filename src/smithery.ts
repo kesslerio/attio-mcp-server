@@ -27,7 +27,7 @@ export const configSchema = z.object({
  * @param config - User-provided configuration (validated against configSchema)
  * @returns The MCP server instance
  */
-export default async function createServer({
+export default function createServer({
   config,
 }: {
   config: z.infer<typeof configSchema>;
@@ -42,7 +42,7 @@ export default async function createServer({
 
   // Create the MCP server with a context that provides access to config
   // The API key is only checked when tools are actually invoked
-  const server = await buildServer({
+  const server = buildServer({
     getApiKey: () => config?.ATTIO_API_KEY || process.env.ATTIO_API_KEY,
     getWorkspaceId: () =>
       config?.ATTIO_WORKSPACE_ID || process.env.ATTIO_WORKSPACE_ID,

@@ -1,18 +1,16 @@
 import type { CountryCode, ParseError, PhoneNumber } from 'libphonenumber-js';
+import * as libFull from 'libphonenumber-js';
+import * as libMin from 'libphonenumber-js/min';
 
 export const PHONE_METADATA_SOURCE =
   process.env.ATTIO_PHONE_METADATA === 'min' ? 'min' : 'default';
-
-const libModule = await (PHONE_METADATA_SOURCE === 'min'
-  ? import('libphonenumber-js/min')
-  : import('libphonenumber-js'));
 
 const {
   parsePhoneNumberFromString,
   isValidPhoneNumber: libIsValidPhoneNumber,
   isPossiblePhoneNumber: libIsPossiblePhoneNumber,
   validatePhoneNumberLength,
-} = libModule as typeof import('libphonenumber-js');
+} = PHONE_METADATA_SOURCE === 'min' ? libMin : libFull;
 
 const DEFAULT_COUNTRY = (process.env.DEFAULT_PHONE_COUNTRY ||
   'US') as CountryCode;

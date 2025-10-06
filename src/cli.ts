@@ -104,7 +104,7 @@ if (!isMain) {
     try {
       // Create the configured MCP server
       console.error('[mcp:cli] Creating server instance');
-      const mcpServer = await createServer();
+      const mcpServer = createServer();
 
       // Handle EPIPE errors gracefully (broken pipe during shutdown)
       process.stdout.on('error', (error: NodeJS.ErrnoException) => {
