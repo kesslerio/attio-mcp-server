@@ -1,8 +1,8 @@
-import { UniversalResourceType } from '../types.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import {
   paginationProperties,
   resourceTypeProperty,
-} from './common/properties.js';
+} from '@/handlers/tool-configs/universal/schemas/common/properties.js';
 
 export const createNoteSchema = {
   type: 'object' as const,
@@ -18,6 +18,13 @@ export const createNoteSchema = {
     },
     title: { type: 'string' as const, description: 'Title of the note' },
     content: { type: 'string' as const, description: 'Content of the note' },
+    format: {
+      type: 'string' as const,
+      enum: ['plaintext', 'markdown'],
+      description: 'Content format (default: plaintext)',
+      // Note: Default value 'plaintext' is enforced in src/api/operations/notes.ts:57
+      default: 'plaintext',
+    },
   },
   required: [
     'resource_type' as const,

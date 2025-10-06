@@ -2,19 +2,19 @@ import {
   UniversalToolConfig,
   UniversalCreateNoteParams,
   UniversalGetNotesParams,
-} from '../types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 import {
   createNoteSchema,
   listNotesSchema,
   validateUniversalToolParams,
-} from '../schemas.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
 import {
   handleUniversalCreateNote,
   handleUniversalGetNotes,
-} from '../shared-handlers.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
-import { extractNoteFields } from './utils/note-formatters.js';
+import { extractNoteFields } from '@/handlers/tool-configs/universal/core/utils/note-formatters.js';
 import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import { createErrorResult } from '@/utils/error-handler.js';
 
@@ -149,10 +149,12 @@ export const listNotesConfig: UniversalToolConfig<
 export const createNoteDefinition = {
   name: 'create-note',
   description: formatToolDescription({
-    capability: 'Create note for companies, people, or deals.',
+    capability:
+      'Create note for companies, people, or deals with optional markdown formatting.',
     boundaries: 'update or delete notes; creates only.',
     requiresApproval: true,
-    constraints: 'Requires resource_type, record_id, title, content.',
+    constraints:
+      'Requires resource_type, record_id, title, content. Optional format (plaintext or markdown).',
     recoveryHint: 'If record not found, use records_search first.',
   }),
   inputSchema: createNoteSchema,
