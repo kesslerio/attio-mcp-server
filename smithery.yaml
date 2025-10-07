@@ -8,8 +8,19 @@ runtime: 'typescript'
 startCommand:
   type: http
 
-# Empty example config so scans never block on secrets
+# Configuration for Smithery deployment
+#
+# ATTIO_MCP_TOOL_MODE: Controls which tools are exposed to ChatGPT
+#   - "full" (default): All 33 universal tools (requires ChatGPT Developer Mode or ChatGPT Pro+)
+#   - "search": Only search, fetch, and health-check tools (for non-Developer Mode users)
+#
+# ⚠️ IMPORTANT: Choose based on your ChatGPT plan
+#   ✅ ChatGPT Pro/Team/Enterprise/Edu with Developer Mode enabled: Use "full"
+#   ⚠️ ChatGPT without Developer Mode: Use "search" (ChatGPT silently ignores non-search tools)
+#
+# See docs/chatgpt-developer-mode.md for detailed tool mode explanation
 exampleConfig:
   ATTIO_API_KEY: ''
   ATTIO_WORKSPACE_ID: ''
+  ATTIO_MCP_TOOL_MODE: 'full' # Options: "full" | "search"
   debug: false
