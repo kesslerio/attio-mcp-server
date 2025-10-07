@@ -17,6 +17,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.1.1] - 2025-10-06
+
+### Added
+
+- **Configurable Tool Mode for ChatGPT Integration** (#869) - User-controllable tool exposure via `ATTIO_MCP_TOOL_MODE` configuration
+  - `'full'` mode (default): All 33 universal tools for ChatGPT Pro/Team/Enterprise/Edu with Developer Mode enabled
+  - `'search'` mode: Only search, fetch, and health-check tools for ChatGPT accounts without Developer Mode
+  - Prevents misleading UX where ChatGPT shows all tools but only executes search/fetch
+  - See `docs/architecture/tool-modes.md` for comprehensive implementation details
+
+### Changed
+
+- **Default Tool Mode** - Smithery deployments now explicitly default to 'full' mode instead of search-only
+- **Enhanced ChatGPT Documentation** - Improved `docs/chatgpt-developer-mode.md` with tool mode configuration guidance and troubleshooting
+
+### Fixed
+
+- **ChatGPT Tool Discovery** (#869) - Fixed issue where ChatGPT only saw 'search' and 'fetch' tools after v1.1.0
+  - Root cause: Smithery deployments defaulted to search-only mode
+  - Solution: Made tool mode explicitly configurable with 'full' as default
+- **MCP Health Check Response Format** - Fixed health check tool to return 'text' type instead of 'json' for proper MCP SDK validation
+
 ## [1.1.0] - 2025-10-06
 
 This release enhances developer experience with intelligent prompts, comprehensive tool standardization, and strengthens enterprise readiness with security hardening and validation improvements.
@@ -374,7 +396,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.2.0...v1.0.0
 [0.2.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.2...v0.2.0

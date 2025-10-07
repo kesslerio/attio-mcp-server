@@ -66,7 +66,7 @@ export function createServer(context?: ServerContext) {
   const mcpServer = new Server(
     {
       name: 'attio-mcp-server',
-      version: '1.1.0',
+      version: '1.1.1',
     },
     {
       capabilities: {

@@ -7,34 +7,125 @@ This document provides solutions for common issues you might encounter when work
 The following critical issues have been **RESOLVED** and should no longer affect users:
 
 ### ✅ P0 Critical API Failures (BUG-003, BUG-004, BUG-010)
+
 **Issue**: API responses failing due to inconsistent data structure handling  
 **Status**: **FIXED** - Implemented robust fallback pattern: `response?.data?.data || response?.data || []`  
 **Impact**: 100% integration test pass rate achieved
 
 ### ✅ Build Compilation Errors
+
 **Issue**: Missing enhanced-validation module causing TypeScript compilation failures  
 **Status**: **FIXED** - Created placeholder module with proper exports  
 **Impact**: All builds now successful
 
-### ✅ E2E Test Implementation Bugs  
+### ✅ E2E Test Implementation Bugs
+
 **Issue**: JSON truncation, resource mappings, and email validation failures  
 **Status**: **FIXED** - Comprehensive test fixes with proper mocking and error handling  
 **Impact**: All 15 integration tests now passing
 
 ### ✅ Field Parameter Filtering (BUG-002, BUG-009)
+
 **Issue**: Tasks API failing due to missing `/objects/tasks/attributes` endpoint  
 **Status**: **FIXED** - Implemented special case with predefined task attribute metadata  
 **Impact**: Tasks API now fully functional
 
 ### ✅ Email Validation Consistency (BUG-006)
+
 **Issue**: Inconsistent email validation between create and update operations  
 **Status**: **FIXED** - Unified validation logic with consistent batch processing  
 **Impact**: Reliable person creation and updates
 
 ### ✅ Pagination System Issues (BUG-001)
-**Issue**: Tasks pagination not working as expected  
-**Status**: **DOCUMENTED** - Added in-memory handling workaround  
+
+**Issue**: Tasks pagination not working as expected
+**Status**: **DOCUMENTED** - Added in-memory handling workaround
 **Impact**: Tasks retrieval now reliable with proper documentation
+
+## ChatGPT Tool Mode Issues
+
+### ChatGPT Only Sees 'search' and 'fetch' Tools (Issue #869)
+
+**Problem:** After deploying to Smithery, ChatGPT only shows 3 tools (`search`, `fetch`, `aaa-health-check`) instead of all 33 universal tools.
+
+**Root Cause:** Server running in search-only mode instead of full mode.
+
+**Solution (v1.1.1+):**
+
+1. Check your Smithery configuration (`smithery.yaml` or Smithery dashboard)
+2. Ensure `ATTIO_MCP_TOOL_MODE` is set to `'full'` (or unset):
+   ```yaml
+   exampleConfig:
+     ATTIO_API_KEY: 'your-key'
+     ATTIO_WORKSPACE_ID: 'your-workspace-id'
+     ATTIO_MCP_TOOL_MODE: 'full' # ← Must be 'full' for ChatGPT Developer Mode
+   ```
+3. Redeploy to Smithery
+4. Reconnect in ChatGPT
+
+**Verification:**
+
+- Ask ChatGPT: "List all available Attio tools"
+- Should see ~33 tools if Developer Mode is enabled
+
+**See Also:** [Tool Modes Architecture Guide](./docs/architecture/tool-modes.md)
+
+### ChatGPT Shows All Tools But Only Uses Search/Fetch
+
+**Problem:** ChatGPT displays all 33 tools in the tool list, but only calls `search` and `fetch` tools when you ask it to perform actions.
+
+**Root Cause:** ChatGPT Developer Mode is **not enabled** in your ChatGPT settings, despite the server running in full mode.
+
+**Solution:**
+
+**Option 1 - Enable Developer Mode (Recommended):**
+
+1. Open ChatGPT Settings → Connectors → Advanced
+2. Enable **Developer Mode**
+3. Reconnect to the Attio MCP server
+4. All 33 tools will now be executable
+
+**Option 2 - Switch to Search-Only Mode:**
+If you don't have ChatGPT Pro/Team/Enterprise/Edu or cannot enable Developer Mode:
+
+1. Update Smithery configuration to match your ChatGPT capabilities:
+   ```yaml
+   exampleConfig:
+     ATTIO_MCP_TOOL_MODE: 'search' # ← For non-Developer Mode users
+   ```
+2. Redeploy to Smithery
+3. ChatGPT will now only show 3 tools (preventing misleading UX)
+
+**Why This Happens:** Without Developer Mode, ChatGPT silently filters tool execution client-side. The server can expose all tools, but ChatGPT will only execute `search` and `fetch`. Setting `ATTIO_MCP_TOOL_MODE: 'search'` prevents this confusion by only showing executable tools.
+
+### Which Tool Mode Should I Use?
+
+**Use `'full'` mode when:**
+
+- ✅ You have ChatGPT Pro/Team/Enterprise/Edu subscription
+- ✅ Developer Mode is enabled in ChatGPT settings
+- ✅ You want full CRM management capabilities (create, update, delete records)
+
+**Use `'search'` mode when:**
+
+- ✅ You have ChatGPT without Developer Mode
+- ✅ You only need read-only access (contact/company lookups)
+- ✅ You want to avoid seeing tools that won't execute
+
+**Configuration:**
+
+```yaml
+# smithery.yaml or Smithery dashboard
+exampleConfig:
+  ATTIO_MCP_TOOL_MODE: 'full'   # All 33 tools (requires Developer Mode)
+  # OR
+  ATTIO_MCP_TOOL_MODE: 'search' # Only search/fetch/health-check
+```
+
+**See Also:**
+
+- [ChatGPT Developer Mode Integration Guide](./docs/chatgpt-developer-mode.md)
+- [Tool Modes Architecture Documentation](./docs/architecture/tool-modes.md)
 
 ## Docker Deployment Issues
 
@@ -43,6 +134,7 @@ The following critical issues have been **RESOLVED** and should no longer affect
 **Problem:** Docker container health check fails with `unhealthy` status.
 
 **Solution:**
+
 - Check if the server is running and listening on port 3000 inside the container:
   ```bash
   docker exec -it attio-mcp-server sh -c "ps aux | grep node"
@@ -66,6 +158,7 @@ The following critical issues have been **RESOLVED** and should no longer affect
 **Problem:** The server fails to start with "ATTIO_API_KEY environment variable not found" error.
 
 **Solution:**
+
 - Ensure your .env file contains the ATTIO_API_KEY variable:
   ```bash
   echo "ATTIO_API_KEY=your_api_key_here" > .env
@@ -81,6 +174,7 @@ The following critical issues have been **RESOLVED** and should no longer affect
 **Problem:** The container fails to start with "port is already allocated" error.
 
 **Solution:**
+
 - Check if another process is using port 3000:
   ```bash
   lsof -i :3000
@@ -96,12 +190,14 @@ The following critical issues have been **RESOLVED** and should no longer affect
 
 **Problem:** Errors like `All declarations of 'data' must have identical modifiers` or `Subsequent property declarations must have the same type` in `src/types/attio.ts`.
 
-**Solution:** 
+**Solution:**
+
 - Check for duplicate interface declarations in the `src/types/attio.ts` file.
 - Specifically look for repeated declarations of `AttioListResponse<T>`, `AttioSingleResponse<T>`, `Person`, and `Company` interfaces.
 - Merge the properties from duplicate interfaces into a single definition, ensuring property types are consistent.
 
 **Example Fix:**
+
 ```typescript
 // Before: Multiple conflicting definitions
 export interface AttioListResponse<T> {
@@ -132,6 +228,7 @@ export interface AttioListResponse<T> {
 **Problem:** Tests fail with errors about missing properties on error response objects.
 
 **Solution:**
+
 - Ensure the `AttioApiError` class in `src/utils/error-handler.ts` has all required properties:
   - `status`: HTTP status code
   - `detail`: Error details
@@ -140,6 +237,7 @@ export interface AttioListResponse<T> {
   - `responseData`: Raw API response data
 
 **Example Implementation:**
+
 ```typescript
 export class AttioApiError extends Error {
   status: number;
@@ -148,7 +246,14 @@ export class AttioApiError extends Error {
   method: string;
   responseData: any;
 
-  constructor(message: string, status: number, detail: string, path: string, method: string, responseData: any = {}) {
+  constructor(
+    message: string,
+    status: number,
+    detail: string,
+    path: string,
+    method: string,
+    responseData: any = {}
+  ) {
     super(message);
     this.name = 'AttioApiError';
     this.status = status;
@@ -165,6 +270,7 @@ export class AttioApiError extends Error {
 **Problem:** Tests fail with errors about missing `formatResourceUri` function.
 
 **Solution:**
+
 - Implement the `formatResourceUri` function in `src/utils/uri-parser.ts`:
 
 ```typescript
@@ -195,6 +301,7 @@ export function formatResourceUri(type: ResourceType, id: string): string {
 **Problem:** Issues with pushing to the correct remote or creating PRs.
 
 **Solution:**
+
 - Use `git remote -v` to check your current remote configuration.
 - Ensure your primary remote (usually named "origin") points to your fork.
 - Use the correct repository URL with GitHub CLI commands:
@@ -207,6 +314,7 @@ export function formatResourceUri(type: ResourceType, id: string): string {
 **Problem:** Unable to create PRs due to branch history issues.
 
 **Solution:**
+
 - Create a new branch from the main branch:
   ```bash
   git checkout main
@@ -221,7 +329,7 @@ export function formatResourceUri(type: ResourceType, id: string): string {
 **Symptoms:**
 
 - The client application (e.g., Claude.app, a web browser console) reports errors like `SyntaxError: Unexpected token ... is not valid JSON`, `JSON.parse: unexpected character at line 1 column 1 of the JSON data`, or similar.
-- These errors often appear to happen *before* an expected API response or error is fully processed by the client.
+- These errors often appear to happen _before_ an expected API response or error is fully processed by the client.
 - The snippets of "invalid JSON" shown in the error message might look like parts of server-side log messages, stack traces, or other non-JSON text.
 
 **Cause:**
@@ -236,32 +344,32 @@ try {
   // ... some operation ...
   const result = await someAsyncOperation();
   // This log might break the client if it's part of the response stream
-  console.log("Operation successful, result object:", result); 
+  console.log('Operation successful, result object:', result);
   res.json({ data: result });
 } catch (error) {
   // These logs are very likely to break the JSON response if not handled carefully
-  console.error("An error occurred:", error);
-  console.error("Error stack:", error.stack);
+  console.error('An error occurred:', error);
+  console.error('Error stack:', error.stack);
   // Even if you send a JSON error response, the console logs might have already been sent
-  res.status(500).json({ error: "Internal server error" }); 
+  res.status(500).json({ error: 'Internal server error' });
 }
 ```
 
 **Solution:**
 
 1.  **Identify and Remove/Comment Out Offending Logs:**
-    *   Carefully review the server-side code paths that handle the requests leading to the JSON parsing errors.
-    *   Temporarily comment out or remove `console.log`, `console.error`, and similar statements, especially those that print complex objects or multi-line strings (like stack traces).
-    *   Pay close attention to error handling blocks (`catch` clauses) and middleware.
+    - Carefully review the server-side code paths that handle the requests leading to the JSON parsing errors.
+    - Temporarily comment out or remove `console.log`, `console.error`, and similar statements, especially those that print complex objects or multi-line strings (like stack traces).
+    - Pay close attention to error handling blocks (`catch` clauses) and middleware.
 
 2.  **Use a Proper Server-Side Logging Mechanism:**
-    *   Instead of logging directly to `console.log` in a way that might interfere with the HTTP response, use a dedicated logging library (e.g., Winston, Pino, Bunyan) that writes to files, a logging service, or the console in a controlled manner, separate from the response stream.
-    *   Ensure your application framework (e.g., Express.js) is configured so that only the intended JSON response is written to the HTTP response body.
+    - Instead of logging directly to `console.log` in a way that might interfere with the HTTP response, use a dedicated logging library (e.g., Winston, Pino, Bunyan) that writes to files, a logging service, or the console in a controlled manner, separate from the response stream.
+    - Ensure your application framework (e.g., Express.js) is configured so that only the intended JSON response is written to the HTTP response body.
 
 3.  **Isolate Debugging:**
-    *   If you must use `console.log` for quick debugging, ensure it's done in a context where it won't be mixed with client responses (e.g., in standalone scripts, unit tests, or very early in the request lifecycle before any response headers/body are sent, and remove them afterward).
+    - If you must use `console.log` for quick debugging, ensure it's done in a context where it won't be mixed with client responses (e.g., in standalone scripts, unit tests, or very early in the request lifecycle before any response headers/body are sent, and remove them afterward).
 
-**Key Takeaway:** The data stream for a JSON API response must contain *only* valid JSON. Any extraneous text, including server-side debug logs, will likely cause parsing failures on the client.
+**Key Takeaway:** The data stream for a JSON API response must contain _only_ valid JSON. Any extraneous text, including server-side debug logs, will likely cause parsing failures on the client.
 
 ## Claude Desktop App Crashes
 
@@ -270,6 +378,7 @@ try {
 **Problem:** Claude Desktop app crashes when receiving large company details with JSON responses containing thousands of lines.
 
 **Symptoms:**
+
 - App crashes specifically when calling `get-company-details`
 - Large JSON responses with multiple nested attributes
 - Response includes data anomalies (e.g., typos like "typpe" instead of "type")
@@ -278,6 +387,7 @@ try {
 The `get-company-details` tool was returning raw JSON with thousands of lines, which can overwhelm Claude Desktop's processing capabilities, especially when the JSON contains errors or unusual data.
 
 **Solution:**
+
 1. **Use the Improved get-company-details Tool:**
    - The `get-company-details` tool now returns a formatted summary instead of raw JSON
    - Shows key fields like name, website, industry, location, etc.
@@ -294,6 +404,7 @@ The `get-company-details` tool was returning raw JSON with thousands of lines, w
    - No risk of crashes from large data volumes
 
 **Example Usage:**
+
 ```bash
 # Get a human-readable summary
 get-company-details --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
@@ -309,10 +420,12 @@ get-company-attributes --companyId "49b11210-df4c-5246-9eda-2add14964eb4" --attr
 ```
 
 **Prevention:**
+
 - Always use the formatted `get-company-details` for general queries
 - Use `get-company-json` for a safe JSON summary
 - Use `get-company-attributes` when you need specific field values
 - Never attempt to retrieve the full raw JSON for companies with extensive data
+
 ## MCP Server Crash Prevention for Claude Desktop
 
 ### The Problem
@@ -326,6 +439,7 @@ We've implemented field selection and server-side filtering to limit response si
 ### Field Selection Implementation
 
 **How It Works:**
+
 1. The Attio API does not support field selection natively through query parameters
 2. We implemented server-side filtering that:
    - Fetches all company data from Attio
@@ -334,20 +448,27 @@ We've implemented field selection and server-side filtering to limit response si
    - Always includes the company name for context
 
 **Using Field Selection:**
+
 ```javascript
 // Request specific fields only
-const result = await getCompanyFields(companyId, ['name', 'services', 'products']);
+const result = await getCompanyFields(companyId, [
+  'name',
+  'services',
+  'products',
+]);
 ```
 
 ### Tools by Data Volume
 
 #### ⚠️ High Risk - Full Data
+
 **Tool**: `get-company-json`  
 **Data**: Returns all raw JSON data  
 **When to use**: When you need complete access to all fields and underlying data structure  
-**Crash risk**: HIGH - May crash with companies having many fields  
+**Crash risk**: HIGH - May crash with companies having many fields
 
 #### ✅ Field Selection - Custom Data
+
 **Tool**: `get-company-fields`  
 **Data**: Returns only the specific fields you request  
 **When to use**: When you need specific fields and want to minimize data transfer  
@@ -355,38 +476,33 @@ const result = await getCompanyFields(companyId, ['name', 'services', 'products'
 **Example**: `get-company-fields` with `fields: ["name", "services", "products"]`
 
 #### ✅ Recommended - Limited Data
+
 These tools return formatted, limited data and should NOT crash Claude Desktop:
 
 1. **get-company-details**
    - Returns: Basic formatted summary
    - Use for: General company overview
    - Crash risk: LOW
-   
 2. **get-company-basic-info**
    - Returns: Essential fields only (name, industry, location, etc.)
    - Use for: Quick company lookups
    - Crash risk: VERY LOW
-   
 3. **get-company-contact-info**
    - Returns: Contact-related fields
    - Use for: Finding contact information
    - Crash risk: VERY LOW
-   
 4. **get-company-business-info**
    - Returns: Business data (revenue, employees, categories)
    - Use for: Business analysis
    - Crash risk: VERY LOW
-   
 5. **get-company-social-info**
    - Returns: Social media and online presence
    - Use for: Social media research
    - Crash risk: VERY LOW
-   
 6. **get-company-custom-fields**
    - Returns: Only custom field values
    - Use for: Accessing user-defined fields
    - Crash risk: LOW
-   
 7. **discover-company-attributes**
    - Returns: List of available fields without values
    - Use for: Understanding data structure
@@ -402,8 +518,9 @@ These tools return formatted, limited data and should NOT crash Claude Desktop:
 ### Debugging Tips
 
 If Claude Desktop continues to crash:
+
 1. Check the MCP server logs for the actual response size
 2. Try fetching fewer fields at once
 3. Use the specialized tools that return pre-filtered data
 4. Report the issue with the specific company ID and field count for investigation
-EOF < /dev/null
+   EOF < /dev/null

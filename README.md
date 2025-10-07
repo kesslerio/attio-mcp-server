@@ -4,52 +4,96 @@
 [![npm version](https://badge.fury.io/js/attio-mcp.svg)](https://badge.fury.io/js/attio-mcp)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
 [![GitHub Release](https://img.shields.io/github/v/release/kesslerio/attio-mcp-server)](https://github.com/kesslerio/attio-mcp-server/releases)
-[![smithery badge](https://smithery.ai/badge/@kesslerio/attio-mcp-server)](https://smithery.ai/server/@kesslerio/attio-mcp-server)
+[![smithery badge](https://smithery.ai/badge/@kesslerio/attio-mcp-server)](https://smithery.ai/server/@kesslerio/attio-mcp-server) **← Start using with ChatGPT or Claude (no installation)**
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kesslerio/attio-mcp-server)
 
-A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.com/), providing **complete CRM surface coverage**. This server enables AI assistants like Claude and ChatGPT to interact directly with your entire Attio workspace through natural language—manage Deals, Tasks, Lists, People, Companies, Records, and Notes without falling back to raw API calls.
+Connect ChatGPT and Claude directly to your Attio CRM. Manage deals, enrich leads with web research, update records, create tasks, and build targeted lists—all through natural conversation. Complete coverage of Companies, People, Deals, Tasks, Lists, Notes, and Records with full CRUD operations.
 
-## 🎯 What is Attio MCP Server?
+## 🚀 Transform Your CRM Workflow with AI
 
-Transform your CRM workflows with AI-powered automation. Instead of clicking through multiple screens, simply ask Claude or ChatGPT to find prospects, update records, manage pipelines, and analyze your data using natural language commands.
+Stop clicking through screens. Stop manual data entry. **Work with your CRM through natural conversation.**
 
-**🎉 v1.0.0 Milestone**: Complete Attio CRM surface coverage with full ChatGPT Developer Mode integration.
+### What You Can Do
 
-> "Find all AI companies with 50+ employees that we haven't contacted in 30 days and add them to our Q1 outreach list"
+**After Every Sales Call:**
 
-## 🚀 **NEW: ChatGPT Developer Mode Integration**
+```
+"Add notes from my Acme demo: discussed pricing for Enterprise plan,
+concerns about implementation timeline. Move deal to Proposal stage.
+Create follow-up task for tomorrow to send custom pricing deck."
+```
 
-**v1.0.0 introduces full ChatGPT compatibility!** ChatGPT Pro/Plus users can now access the entire Attio toolset through natural language via [Smithery marketplace](https://smithery.ai/server/@kesslerio/attio-mcp-server).
+→ **Done in 10 seconds** (vs 20 minutes of clicking and typing)
 
-- **🔐 Built-in Approval Flows**: MCP safety annotations auto-approve read operations, request approval for writes
-- **🌐 OAuth Integration**: Seamless authentication via `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
-- **💬 Natural Language CRM**: Manage your entire Attio workspace through conversational AI
-- **📖 Setup Guide**: See [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for complete configuration
+**Instant Lead Enrichment:**
+
+```
+"Research and score these 10 new signups. Find their company info,
+employee count, and industry. Add the qualified B2B companies
+with 50+ employees to my Q1 Outreach list."
+```
+
+→ **Done in minutes** (vs hours of manual Google/LinkedIn research)
+
+**Pre-Meeting Prep:**
+
+```
+"I have a call with Acme Corp in 5 minutes. Give me the full context:
+past conversations, deal history, open tasks, and key contacts."
+```
+
+→ **Instant brief** (vs hunting through notes and deal records)
+
+**Complex Searches Made Simple:**
+
+```
+"Find all AI companies with 50+ employees in our pipeline that we
+haven't contacted in 30 days, then add them to my Re-engagement list."
+```
+
+→ **Natural language** replaces complex filter building
+
+### How to Access
+
+- **🌐 Smithery (Recommended)**: Use remotely via ChatGPT or Claude - [one-click setup](https://smithery.ai/server/@kesslerio/attio-mcp-server), zero deployment
+- **💻 Local Installation**: Run on your machine with Claude Desktop - see [Installation](#-installation)
+
+**Why Smithery?** No software to install. Works with your existing ChatGPT Pro/Plus or Claude subscription. Start using it today.
+
+## 🌐 **Remote Access via Smithery**
+
+**No installation required.** Connect Attio to ChatGPT or Claude through Smithery's hosted service:
+
+- **✅ Works with ChatGPT Pro/Plus** - Access your entire Attio workspace through natural language
+- **✅ Works with Claude** - Use with Claude Desktop or Claude.ai
+- **✅ Zero Setup** - One-click connection at [smithery.ai/server/@kesslerio/attio-mcp-server](https://smithery.ai/server/@kesslerio/attio-mcp-server)
+- **🔐 Built-in Approval Flows** - MCP safety annotations auto-approve reads, request approval for writes
+- **📖 Setup Guide** - See [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for OAuth configuration
+
+**Or install locally** for use with Claude Desktop (see [Installation](#-installation) below).
 
 ## ✨ Core Features & Implementation Status
 
-### 🎯 **Universal Tools Architecture** (14 Tools)
+### 🎯 **Universal Tools Architecture** (33 Tools)
 
-**68% Tool Reduction**: Consolidated 40+ resource-specific tools into 14 universal operations for consistent, powerful CRM management.
+Consolidated 70+ resource-specific tools into 33 streamlined operations (19 universal + specialized tools for lists, notes, tasks) for consistent, powerful CRM management.
 
-- **High Performance**: 89.7% speed improvement with 227KB memory reduction (PR #483)
-- **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
+- **Token-Efficient**: Lightweight MCP footprint (~3.2K tokens baseline) means more context available for your actual work
 - **Clean Architecture**: Complete production-test separation with mock factory pattern
 
 ### 📊 **Feature Implementation Status**
 
 #### ✅ **Complete CRM Surface Coverage**
 
-- **Companies**: Search, Create, Update, Delete, Advanced Search, Relationship Search
-- **People**: Search, Create, Update, Delete, Advanced Search, Relationship Search
-- **Deals**: Full CRUD operations with intelligent field mapping and stage validation
-- **Tasks**: Create, Update, Delete, Search with multi-assignee support
-- **Lists**: Full CRUD operations, filtering, advanced filtering, entry management
-- **Notes**: Create and list operations for all record types
-- **Records**: Universal CRUD operations across all resource types
-- **Batch Operations**: Create, Update, Delete with chunking and error handling
-- **Content Search**: Universal search capabilities across notes, tasks, and lists
-- **Relationship Navigation**: Bidirectional company↔person↔deal relationships
+Full CRUD operations across all Attio resources:
+
+- **Companies & People**: Search, Create, Update, Delete, Advanced Search, Relationship Navigation
+- **Deals**: Pipeline management with intelligent field mapping and stage validation
+- **Tasks**: Multi-assignee support with record linking
+- **Lists**: Advanced filtering, entry management, smart segmentation
+- **Notes**: Create and list across all record types
+- **Records**: Universal operations across any resource type
+- **Batch Operations**: Process hundreds of records with chunking and error handling
 - **Advanced Filtering**: Sophisticated query capabilities with intelligent field mapping
 
 ### 📊 **Company Management**
@@ -170,17 +214,41 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 
 ### **API Compatibility**
 
-- **Universal Tools**: Primary interface (14 tools) - recommended for all new integrations
+- **Universal Tools**: Primary interface (33 tools: 19 universal + 14 specialized) - recommended for all integrations
 - **Legacy Tools**: Available via `DISABLE_UNIVERSAL_TOOLS=true` environment variable (deprecated)
-- **Lists API**: Fully functional with complete CRUD operations (contrary to some outdated documentation)
 
-### 🤝 **OpenAI MCP Compatibility**
+### 🤝 **ChatGPT Integration with Configurable Tool Mode**
 
-- **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
-- **Search Compatibility Surface**: The `search` and `fetch` tools remain available for OpenAI's baseline MCP support. Set `ATTIO_MCP_TOOL_MODE=search` to expose only these read-only endpoints (plus `aaa-health-check`) when Developer Mode is unavailable.
-- **Default Behaviour**: With `ATTIO_MCP_TOOL_MODE` unset, the full universal tool set is exposed—matching Claude’s experience—while OpenAI users still see the compatibility wrappers.
-- **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
-- **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.
+**NEW in v1.1.1**: Configurable tool exposure via `ATTIO_MCP_TOOL_MODE` for optimal ChatGPT integration.
+
+#### **Full Mode (Default)** - For ChatGPT Developer Mode Users
+
+- **Configuration**: `ATTIO_MCP_TOOL_MODE: 'full'` (or unset)
+- **Requirements**: ChatGPT Pro/Team/Enterprise/Edu with Developer Mode enabled
+- **Features**: All 33 universal tools with MCP safety annotations
+  - Auto-approval for read operations (`records_search`, `get-list-details`, etc.)
+  - Approval prompts for write operations (`create-record`, `update-record`, etc.)
+  - Full CRM management through natural conversation
+
+#### **Search-Only Mode** - For ChatGPT Non-Developer Mode Users
+
+- **Configuration**: `ATTIO_MCP_TOOL_MODE: 'search'`
+- **Requirements**: Any ChatGPT account (no Developer Mode needed)
+- **Features**: Limited to 3 tools (`search`, `fetch`, `aaa-health-check`)
+- **Why**: Prevents misleading UX where ChatGPT shows all tools but only executes search/fetch
+- **Use Case**: Read-only Attio access for basic contact/company lookups
+
+#### **Quick Setup**
+
+```yaml
+# Smithery configuration (smithery.yaml)
+exampleConfig:
+  ATTIO_API_KEY: 'your-key'
+  ATTIO_WORKSPACE_ID: 'your-workspace-id'
+  ATTIO_MCP_TOOL_MODE: 'full' # or 'search'
+```
+
+**Need Help?** See [ChatGPT Developer Mode Integration Guide](./docs/chatgpt-developer-mode.md) for complete setup instructions, troubleshooting, and OAuth configuration.
 
 ### **Performance Considerations**
 
@@ -352,6 +420,56 @@ Every advanced search follows this proven pattern that's been battle-tested acro
 4. ✅ Double-check your JSON structure matches the examples above
 
 **💬 Pro Tip**: Start with simple single-filter searches, then build complexity once you're comfortable with the structure.
+
+## 📋 **Field Mapping Quick Reference**
+
+**Need to work with custom fields?** The MCP server uses intelligent field mapping to translate between natural language and Attio's API field names.
+
+### **Key Concepts**
+
+- **Synonym Handling**: Use `company_id` or `associated_company` interchangeably for deals
+- **Special Characters**: Fields with spaces/special chars are automatically normalized (e.g., `"Lead Score"` → `lead_score`)
+- **Category Validation**: Domain/category fields validate against your workspace configuration
+- **Phone Normalization**: User-friendly `phone_number` auto-converts to Attio's `original_phone_number` format
+
+### **Common Field Mappings**
+
+| User-Friendly Name | Attio API Field         | Resource Type      |
+| ------------------ | ----------------------- | ------------------ |
+| `company_id`       | `associated_company`    | Deals              |
+| `deal_value`       | `value`                 | Deals              |
+| `deal_stage`       | `stage`                 | Deals              |
+| `phone_number`     | `original_phone_number` | People             |
+| `Lead Score`       | `lead_score`            | Companies (custom) |
+
+### **Documentation Resources**
+
+- 📖 **[Field Mapping Improvements Guide](./docs/api/field-mapping-improvements.md)** - Comprehensive 550+ line reference covering:
+  - Field mapping categories (company, person, deal, task)
+  - Synonym handling and special character processing
+  - Response normalization and category validation
+- 📖 **[Field Validation Rules](./docs/api/field-validation-rules.md)** - Type mappings and validation constraints
+- 📖 **[Field Verification Configuration](./docs/configuration/field-verification.md)** - Environment variables and strict mode settings
+- 📖 **[Installation Field Configuration](https://github.com/kesslerio/attio-mcp-server#3--critical-configure-field-mappings)** - Quick setup guide for workspace-specific fields
+
+### **Quick Example: Custom Field Configuration**
+
+```json
+{
+  "mappings": {
+    "attributes": {
+      "objects": {
+        "companies": {
+          "Lead Score": "lead_score",
+          "B2B Segment": "b2b_segment"
+        }
+      }
+    }
+  }
+}
+```
+
+**See Also**: [Common Update Patterns](./docs/examples/common-update-patterns.md) for phone number handling and other field update examples.
 
 ## 🏆 Latest Updates - Critical Issues Resolved
 
@@ -543,7 +661,48 @@ Deal stages are specific to your workspace. Check your Attio workspace settings 
 }
 ```
 
-## 🌟 Example Use Cases
+## 🌟 Real-World Use Cases
+
+### **Automated Post-Call Workflow**
+
+Instead of spending 20 minutes after every call updating your CRM:
+
+```
+"I just finished a demo with Acme Corp. Contact was Sarah Chen, VP of Sales.
+They're interested in our Enterprise plan for their 200-person team. Main concern
+is data migration from Salesforce. Timeline: want to decide by end of Q1.
+Next step: I'll send a custom migration plan by Friday.
+
+Please: add these notes to the Acme deal, move it to 'Proposal' stage, create
+a follow-up task for Thursday to send migration plan, and add Sarah as a contact."
+```
+
+→ Your CRM is updated instantly while you move to your next call.
+
+### **AI-Powered Lead Scoring**
+
+10 signups came in overnight. Instead of spending your morning researching each one:
+
+```
+"Score these 10 new leads from last night's signups. For each: look up company info,
+employee count, industry, and recent funding. Prioritize B2B SaaS companies with
+50+ employees. Add the top 3 to my 'Hot Leads - March' list and create
+outreach tasks for Monday."
+```
+
+→ Wake up to a prioritized, researched list ready for outreach.
+
+### **Intelligent Meeting Prep**
+
+5 minutes before an important call:
+
+```
+"I have a meeting with Acme Corp in 5 minutes. Give me the full context:
+What's our relationship history? What deals are open? What did we discuss
+last time? Any open tasks or concerns?"
+```
+
+→ Walk into every meeting fully prepared, every time.
 
 ### **For Sales Teams**
 
@@ -569,14 +728,6 @@ Deal stages are specific to your workspace. Check your Attio workspace settings 
 "Show me all enterprise customers with upcoming renewal dates in Q1"
 "Create tasks for check-ins with accounts that haven't been contacted in 60 days"
 "Find all customers who mentioned pricing concerns in recent notes"
-```
-
-### **For Data Operations**
-
-```
-"Update all companies with missing industry data based on their domains"
-"Export all contacts added this quarter to CSV"
-"Merge duplicate company records for Acme Corporation"
 ```
 
 ## 🔐 Security & Privacy

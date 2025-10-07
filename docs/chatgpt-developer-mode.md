@@ -3,7 +3,7 @@
 This guide explains how to expose the Attio MCP server to ChatGPT users in two configurations:
 
 1. **Full Developer Mode** – Pro/Plus accounts with the Developer Mode beta enabled can access the entire Attio toolset, including write operations, with built-in approval flows.
-2. **Search-Only Compatibility** – For accounts without Developer Mode, expose a minimal `search`/`fetch` surface that mirrors OpenAI’s baseline MCP requirements.
+2. **Search-Only Compatibility** – For ChatGPT accounts without Developer Mode, expose a minimal `search`/`fetch` surface that mirrors OpenAI's baseline MCP requirements.
 
 The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) on every tool definition so ChatGPT can make informed approval decisions.
 
@@ -11,10 +11,10 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 ## 1. Requirements
 
-| Scenario       | Requirements                                                                                               |
-| -------------- | ---------------------------------------------------------------------------------------------------------- |
-| Developer Mode | ChatGPT Pro/Plus subscription, browser access, _Settings → Connectors → Advanced → Developer Mode_ enabled |
-| Search Only    | Any ChatGPT account that supports custom connectors                                                        |
+| Scenario       | Requirements                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Developer Mode | ChatGPT Pro/Team/Enterprise/Edu subscription, browser access, _Settings → Connectors → Advanced → Developer Mode_ enabled |
+| Search Only    | Any ChatGPT account without Developer Mode that supports custom connectors                                                |
 
 ### Server prerequisites
 
@@ -89,7 +89,7 @@ When this flag is present the server will only advertise:
 | `fetch`                           | Retrieves the full record payload for a search result ID                                                 |
 | `health-check`/`aaa-health-check` | Simple readiness probes                                                                                  |
 
-All other tools are filtered out at registry time and ignored by the dispatcher. This is ideal for accounts without Developer Mode or for a constrained roll-out.
+All other tools are filtered out at registry time and ignored by the dispatcher. This is ideal for ChatGPT accounts without Developer Mode or for a constrained roll-out.
 
 Unset the variable (or set it to any value other than `search`) to restore the full tool catalogue.
 
@@ -108,16 +108,17 @@ Unset the variable (or set it to any value other than `search`) to restore the f
 
 ## 5. Troubleshooting
 
-| Symptom                                            | Likely Cause                                                                  | Fix                                                                                    |
-| -------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations                     |
-| **ChatGPT only sees 'search' and 'fetch' tools**   | **Server running in search-only mode (Issue #869)**                           | **Redeploy to Smithery - fixed in v1.1.1+ with explicit full-mode default**            |
-| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE=search`                                     | Unset the variable for full access                                                     |
-| ChatGPT cannot connect to server                   | Using direct server URL instead of Smithery                                   | Use ChatGPT endpoint URL: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp` |
-| OAuth authentication fails                         | Smithery deployment not configured properly                                   | Ensure server is deployed via `npm run dev` or available at Smithery marketplace       |
-| Tools show "unauthorized" errors                   | API credentials not configured in Smithery                                    | Configure `ATTIO_API_KEY` and `ATTIO_WORKSPACE_ID` in Smithery dashboard               |
-| `search` returns no results                        | Ensure Attio API credentials are set and universal search works in Claude/CLI | Verify credentials in Smithery configuration                                           |
-| PR validation fails with missing Attio credentials | Expected if secrets are not available locally; see `README.md` testing notes  | Use Smithery for production deployments with proper credential management              |
+| Symptom                                            | Likely Cause                                                                  | Fix                                                                                                                                      |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations                                                                       |
+| **ChatGPT only sees 'search' and 'fetch' tools**   | **Server running in search-only mode (Issue #869)**                           | **Redeploy to Smithery - fixed in v1.1.1+ with explicit full-mode default**. Set `ATTIO_MCP_TOOL_MODE: 'full'` in Smithery configuration |
+| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE=search` for non-Developer Mode              | For Developer Mode: set `ATTIO_MCP_TOOL_MODE: 'full'` in Smithery configuration                                                          |
+| ChatGPT shows all tools but only uses search/fetch | ChatGPT Developer Mode not enabled                                            | Enable Developer Mode in ChatGPT settings or set `ATTIO_MCP_TOOL_MODE: 'search'` to match capabilities                                   |
+| ChatGPT cannot connect to server                   | Using direct server URL instead of Smithery                                   | Use ChatGPT endpoint URL: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`                                                   |
+| OAuth authentication fails                         | Smithery deployment not configured properly                                   | Ensure server is deployed via `npm run dev` or available at Smithery marketplace                                                         |
+| Tools show "unauthorized" errors                   | API credentials not configured in Smithery                                    | Configure `ATTIO_API_KEY` and `ATTIO_WORKSPACE_ID` in Smithery dashboard                                                                 |
+| `search` returns no results                        | Ensure Attio API credentials are set and universal search works in Claude/CLI | Verify credentials in Smithery configuration                                                                                             |
+| PR validation fails with missing Attio credentials | Expected if secrets are not available locally; see `README.md` testing notes  | Use Smithery for production deployments with proper credential management                                                                |
 
 ---
 
