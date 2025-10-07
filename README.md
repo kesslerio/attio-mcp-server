@@ -378,10 +378,10 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for detailed solutions to these r
 
 ### Installing via Smithery
 
-To install Attio CRM Integration Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server):
+To install Attio CRM Integration Server automatically via [Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server):
 
 ```bash
-npx -y @smithery/cli install @kesslerio/attio-mcp-server --client claude
+npx -y @smithery/cli install @kesslerio/attio-mcp-server
 ```
 
 ### Option 1: NPM (Recommended)
