@@ -18,6 +18,13 @@ export const configSchema = z.object({
     .string()
     .describe('Optional Attio workspace ID')
     .optional(),
+  ATTIO_MCP_TOOL_MODE: z
+    .enum(['full', 'search'])
+    .default('full')
+    .describe(
+      'Tool mode: "full" (all 33 tools, requires ChatGPT Developer Mode) or "search" (only search/fetch/health-check for non-Developer Mode users)'
+    )
+    .optional(),
   debug: z.boolean().default(false).describe('Enable debug logging').optional(),
 });
 
@@ -40,22 +47,15 @@ export default function createServer({
   // Set server mode flag to enable background intervals (performance tracking, etc.)
   process.env.MCP_SERVER_MODE = 'true';
 
-  // CRITICAL: Ensure full tool mode by default (expose all 33 tools, not just search/fetch)
-  // This prevents Smithery or other deployment platforms from defaulting to search-only mode.
-  //
-  // Context: The ATTIO_MCP_TOOL_MODE environment variable controls tool filtering:
-  //   - Unset/empty (default): Full mode with all 33 universal tools
-  //   - "search": Search-only mode with just 'search', 'fetch', 'aaa-health-check'
-  //
-  // Issue #869: ChatGPT was only seeing search/fetch tools because the env var
-  // was somehow being set to 'search' during Smithery deployment. This guard
-  // ensures we always default to full mode unless explicitly configured otherwise.
-  //
-  // See: src/config/tool-mode.ts for the filtering logic
-  // See: docs/chatgpt-developer-mode.md for ChatGPT integration details
-  if (!process.env.ATTIO_MCP_TOOL_MODE) {
-    // Empty/unset = full mode with all universal tools
+  // CRITICAL: Apply user-configured tool mode or default to full mode (Issue #869)
+  // See: docs/architecture/tool-modes.md for implementation details
+  const toolMode = config?.ATTIO_MCP_TOOL_MODE || 'full';
+  if (toolMode === 'full') {
+    // Full mode: Delete env var to expose all 33 universal tools
     delete process.env.ATTIO_MCP_TOOL_MODE;
+  } else {
+    // Search-only mode: Set env var to restrict to search/fetch/health-check
+    process.env.ATTIO_MCP_TOOL_MODE = 'search';
   }
 
   // Create the MCP server with a context that provides access to config
