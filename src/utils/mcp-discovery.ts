@@ -3,6 +3,33 @@ import { filterAllowedTools } from '@/config/tool-mode.js';
 import { getAllPrompts } from '@/prompts/templates/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
+type ToolWithAnnotations = Tool & {
+  annotations?: Record<string, unknown>;
+};
+
+const WRITE_TOOL_PATTERN =
+  /(create|update|delete|remove|add|batch|commit|write)/i;
+
+function ensureAnnotations(tool: Tool): Tool {
+  const typedTool = tool as ToolWithAnnotations;
+  const annotations: Record<string, unknown> = {
+    ...(typedTool.annotations ?? {}),
+  };
+
+  if (annotations.readOnlyHint === undefined) {
+    annotations.readOnlyHint = !WRITE_TOOL_PATTERN.test(tool.name);
+  }
+
+  if (annotations.openWorldHint === undefined) {
+    annotations.openWorldHint = true;
+  }
+
+  return {
+    ...tool,
+    annotations,
+  } as Tool;
+}
+
 export interface ToolsListPayload {
   tools: Tool[];
 }
@@ -36,7 +63,8 @@ function flattenToolDefinitions(): Tool[] {
     }
   }
 
-  return filterAllowedTools(allTools) as Tool[];
+  const allowed = filterAllowedTools(allTools) as Tool[];
+  return allowed.map((tool) => ensureAnnotations(tool));
 }
 
 export function getToolsListPayload(): ToolsListPayload {
