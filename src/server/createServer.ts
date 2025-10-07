@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { registerResourceHandlers } from '../handlers/resources.js';
 import { registerToolHandlers } from '../handlers/tools/index.js';
 import { registerPromptHandlers } from '../prompts/handlers.js';
+import { registerAttioWidget } from '@/ui/attio-widget.js';
 import { setGlobalContext } from '../api/lazy-client.js';
 
 /**
@@ -86,6 +87,7 @@ export function createServer(context?: ServerContext) {
   registerResourceHandlers(mcpServer, ctx);
   registerToolHandlers(mcpServer, ctx);
   registerPromptHandlers(mcpServer, ctx);
+  registerAttioWidget(mcpServer);
 
   const duration = Date.now() - startTime;
   createScopedLogger('mcp.init', 'createServer').info('Server created', {
