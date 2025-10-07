@@ -23,6 +23,7 @@ import {
   batchSearchToolDefinition,
 } from './batch-search.js';
 import { openAiToolConfigs, openAiToolDefinitions } from '../openai/index.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
  * Simple no-auth health-check tool to support unauthenticated capability scanning
@@ -30,7 +31,15 @@ import { openAiToolConfigs, openAiToolDefinitions } from '../openai/index.js';
  */
 export const healthCheckToolDefinition = {
   name: 'aaa-health-check',
-  description: 'Returns server status without requiring any credentials.',
+  description: formatToolDescription({
+    capability:
+      'Run a lightweight health probe that echoes deployment metadata.',
+    boundaries: 'query Attio APIs, mutate data, or require credentials.',
+    constraints:
+      'Accepts optional echo text; returns JSON payload as text for MCP clients.',
+    recoveryHint:
+      'If unavailable, review Smithery sandbox logs or restart the server process.',
+  }),
   inputSchema: {
     type: 'object',
     properties: {},

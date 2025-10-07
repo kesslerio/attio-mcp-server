@@ -28,6 +28,7 @@ import {
   formatValidationDetails,
   ValidationMetadata,
 } from './utils.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const createRecordConfig: UniversalToolConfig<
   UniversalCreateParams,
@@ -238,7 +239,16 @@ export const deleteRecordConfig: UniversalToolConfig<
 
 export const createRecordDefinition = {
   name: 'create-record',
-  description: 'Create a new record of any supported type',
+  description: formatToolDescription({
+    capability: 'Create new Attio records (companies, people, deals, tasks).',
+    boundaries:
+      'update existing records, attach files, or bypass required fields.',
+    constraints:
+      'Requires resource_type/objectSlug plus attributes map that matches records_discover_attributes output.',
+    requiresApproval: true,
+    recoveryHint:
+      'If validation fails, call records_discover_attributes to confirm required fields and enums.',
+  }),
   inputSchema: createRecordSchema,
   annotations: {
     readOnlyHint: false,
@@ -248,7 +258,16 @@ export const createRecordDefinition = {
 
 export const updateRecordDefinition = {
   name: 'update-record',
-  description: 'Update an existing record of any supported type',
+  description: formatToolDescription({
+    capability:
+      'Update existing Attio record fields across all supported resource types.',
+    boundaries: 'create new records, delete data, or manage list memberships.',
+    constraints:
+      'Requires record_id and attributes payload; supports partial updates with schema validation.',
+    requiresApproval: true,
+    recoveryHint:
+      'Call records_get_details first to inspect the latest values before editing.',
+  }),
   inputSchema: updateRecordSchema,
   annotations: {
     readOnlyHint: false,
@@ -258,7 +277,17 @@ export const updateRecordDefinition = {
 
 export const deleteRecordDefinition = {
   name: 'delete-record',
-  description: 'Delete a record of any supported type',
+  description: formatToolDescription({
+    capability:
+      'Delete an Attio record from its object (company, person, deal, task).',
+    boundaries:
+      'cascade delete related data or clean up list memberships automatically.',
+    constraints:
+      'Requires record_id and resource_type; operation is irreversible once confirmed.',
+    requiresApproval: true,
+    recoveryHint:
+      'If uncertain, fetch with records_get_details to confirm the target before deletion.',
+  }),
   inputSchema: deleteRecordSchema,
   annotations: {
     readOnlyHint: false,
