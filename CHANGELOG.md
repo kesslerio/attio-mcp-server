@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **records_search relevance** (#885) - Added client-side scoring with uFuzzy and LRU caching so exact domain/name/email matches rank first while repeated queries stay within the 3 s budget.
+
 ### Security
 
 ### Deprecated
