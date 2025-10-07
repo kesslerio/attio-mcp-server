@@ -38,7 +38,7 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 ### Setup Steps
 
-1. **Expose the full tool catalogue** (do _not_ set `ATTIO_MCP_TOOL_MODE`).
+1. **Expose the full tool catalogue** - Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration. The server exposes all 33 tools by default.
 
 2. **Deploy the server** to Smithery (required for ChatGPT compatibility):
 
@@ -75,13 +75,9 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 ## 3. Search-Only Compatibility Mode
 
-Set the environment variable:
+For accounts without Developer Mode, configure `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery dashboard settings.
 
-```bash
-export ATTIO_MCP_TOOL_MODE=search
-```
-
-When this flag is present the server will only advertise:
+When this mode is active, the server will only advertise:
 
 | Tool                              | Behaviour                                                                                                |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -111,8 +107,8 @@ Unset the variable (or set it to any value other than `search`) to restore the f
 | Symptom                                            | Likely Cause                                                                  | Fix                                                                                    |
 | -------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations                     |
-| **ChatGPT only sees 'search' and 'fetch' tools**   | **Server running in search-only mode (Issue #869)**                           | **Redeploy to Smithery - fixed in v1.1.1+ with explicit full-mode default**            |
-| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE=search`                                     | Unset the variable for full access                                                     |
+| **ChatGPT only sees 'search' and 'fetch' tools**   | **`ATTIO_MCP_TOOL_MODE` set in Smithery config (Issue #869)**                 | **Remove `ATTIO_MCP_TOOL_MODE` from Smithery configuration - server defaults to full mode** |
+| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery config               | Remove the configuration field - do NOT set it for full access                         |
 | ChatGPT cannot connect to server                   | Using direct server URL instead of Smithery                                   | Use ChatGPT endpoint URL: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp` |
 | OAuth authentication fails                         | Smithery deployment not configured properly                                   | Ensure server is deployed via `npm run dev` or available at Smithery marketplace       |
 | Tools show "unauthorized" errors                   | API credentials not configured in Smithery                                    | Configure `ATTIO_API_KEY` and `ATTIO_WORKSPACE_ID` in Smithery dashboard               |
