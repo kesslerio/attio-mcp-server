@@ -20,7 +20,6 @@ export const configSchema = z.object({
     .optional(),
   ATTIO_MCP_TOOL_MODE: z
     .enum(['full', 'search'])
-    .default('full')
     .describe(
       'Tool mode: "full" (all 33 tools, requires ChatGPT Developer Mode) or "search" (only search/fetch/health-check for non-Developer Mode users)'
     )
@@ -47,15 +46,17 @@ export default function createServer({
   // Set server mode flag to enable background intervals (performance tracking, etc.)
   process.env.MCP_SERVER_MODE = 'true';
 
-  // CRITICAL: Apply user-configured tool mode or default to full mode (Issue #869)
-  // See: docs/architecture/tool-modes.md for implementation details
-  const toolMode = config?.ATTIO_MCP_TOOL_MODE || 'full';
-  if (toolMode === 'full') {
-    // Full mode: Delete env var to expose all 33 universal tools
+  // CRITICAL: Tool mode configuration (Issue #869 final fix)
+  // Do NOT set environment variables - Smithery manages them at container level
+  // If user didn't provide ATTIO_MCP_TOOL_MODE, ensure env var is not set
+  // This allows isSearchOnlyMode() to return false (full tool access)
+  if (!config?.ATTIO_MCP_TOOL_MODE) {
     delete process.env.ATTIO_MCP_TOOL_MODE;
-  } else {
-    // Search-only mode: Set env var to restrict to search/fetch/health-check
+  } else if (config.ATTIO_MCP_TOOL_MODE === 'search') {
     process.env.ATTIO_MCP_TOOL_MODE = 'search';
+  } else {
+    // User explicitly set 'full' mode
+    delete process.env.ATTIO_MCP_TOOL_MODE;
   }
 
   // Create the MCP server with a context that provides access to config
