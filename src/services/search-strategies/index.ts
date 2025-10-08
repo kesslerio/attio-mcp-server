@@ -12,5 +12,6 @@ export type {
 export { BaseSearchStrategy } from './BaseSearchStrategy.js';
 export { CompanySearchStrategy } from './CompanySearchStrategy.js';
 export { PeopleSearchStrategy } from './PeopleSearchStrategy.js';
+export { DealSearchStrategy } from './DealSearchStrategy.js';
 export { TaskSearchStrategy } from './TaskSearchStrategy.js';
 export { ListSearchStrategy } from './ListSearchStrategy.js';

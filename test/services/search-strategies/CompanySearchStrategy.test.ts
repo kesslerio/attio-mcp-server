@@ -4,6 +4,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+
+// Mock searchObject before importing CompanySearchStrategy
+vi.mock('../../../src/api/operations/search.js', () => ({
+  searchObject: vi.fn(),
+}));
+
 import { CompanySearchStrategy } from '../../../src/services/search-strategies/CompanySearchStrategy.js';
 import {
   SearchType,
@@ -14,6 +20,7 @@ import {
 import { AttioRecord } from '../../../src/types/attio.js';
 import { StrategyDependencies } from '../../../src/services/search-strategies/interfaces.js';
 import { FilterValidationError } from '../../../src/errors/api-errors.js';
+import { searchObject } from '../../../src/api/operations/search.js';
 
 describe('CompanySearchStrategy', () => {
   let strategy: CompanySearchStrategy;
@@ -87,7 +94,8 @@ describe('CompanySearchStrategy', () => {
     });
 
     it('should handle search with query', async () => {
-      mockAdvancedSearchFunction.mockResolvedValue([mockCompanyRecord]);
+      // Basic queries (no search_type) now route through searchObject()
+      vi.mocked(searchObject).mockResolvedValue([mockCompanyRecord]);
 
       const results = await strategy.search({
         query: 'test company',
@@ -96,12 +104,7 @@ describe('CompanySearchStrategy', () => {
       });
 
       expect(results).toEqual([mockCompanyRecord]);
-      // Name query turns into name filter
-      expect(mockAdvancedSearchFunction).toHaveBeenCalledWith(
-        expect.objectContaining({ filters: expect.any(Array) }),
-        10,
-        0
-      );
+      expect(searchObject).toHaveBeenCalled();
     });
 
     it('should handle missing advanced search function', async () => {

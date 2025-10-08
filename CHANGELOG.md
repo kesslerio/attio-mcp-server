@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **records_search relevance** (#885) - Added client-side scoring with uFuzzy and LRU caching so exact domain/name/email matches rank first while repeated queries stay within the 3 s budget.
+- **Deal search fast path optimization** (#885) - Extended fast path optimization to deals with 72-80% performance improvement
+  - Sequential candidate execution: exact match ($eq) → substring match ($contains)
+  - LRU caching with 5-minute TTL delivers 8ms cached responses (99.9% faster than ~2.8s cold searches)
+  - Created `DealSearchStrategy` following same pattern as companies/people
+  - Removed obsolete `searchDeals()` and `queryDealRecords()` methods (100+ lines)
+  - Fixed original bug where deals only supported exact name matches
+
 ### Security
 
 ### Deprecated

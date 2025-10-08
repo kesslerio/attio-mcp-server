@@ -150,19 +150,36 @@ export class QAAssertions {
 
     expect(hasSuccessIndicator || jsonSuccess).toBeTruthy();
 
-    const candidateIds = [
+    const candidateIds: string[] = [];
+
+    const canonicalId = this.tryExtractCanonicalRecordId(json);
+    if (canonicalId) {
+      candidateIds.push(canonicalId);
+    }
+
+    const textId = this.tryExtractRecordIdFromText(text);
+    if (textId && !candidateIds.includes(textId)) {
+      candidateIds.push(textId);
+    }
+
+    const uuidCandidates = [
       ...this.collectUuidStrings(json),
       ...this.collectUuidStrings(text),
     ];
-    const uniqueIds = Array.from(new Set(candidateIds));
 
-    if (uniqueIds.length === 0) {
+    for (const uuid of uuidCandidates) {
+      if (!candidateIds.includes(uuid)) {
+        candidateIds.push(uuid);
+      }
+    }
+
+    if (candidateIds.length === 0) {
       throw new Error(
         `ASSERTION FAILURE: No valid record ID found in response for ${resourceType}. Response text: "${text}"`
       );
     }
 
-    return uniqueIds[0];
+    return candidateIds[0];
   }
 
   /**
@@ -643,6 +660,115 @@ export class QAAssertions {
     visit(input);
 
     return Array.from(ids);
+  }
+
+  private static tryExtractCanonicalRecordId(payload: unknown): string | null {
+    if (!payload) {
+      return null;
+    }
+
+    const visited = new WeakSet<object>();
+
+    const search = (value: unknown): string | null => {
+      if (!value) {
+        return null;
+      }
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const result = search(item);
+          if (result) {
+            return result;
+          }
+        }
+        return null;
+      }
+
+      if (typeof value === 'object') {
+        const record = value as Record<string, unknown>;
+
+        if (visited.has(record)) {
+          return null;
+        }
+        visited.add(record);
+
+        if (QAAssertions.isRecordEnvelope(record)) {
+          const recordId = QAAssertions.extractRecordIdFromIdField(record.id);
+          if (recordId) {
+            return recordId;
+          }
+        }
+
+        if (typeof record.record_id === 'string') {
+          return record.record_id;
+        }
+
+        if ('data' in record) {
+          const nested = search(record.data);
+          if (nested) {
+            return nested;
+          }
+        }
+
+        for (const nested of Object.values(record)) {
+          const result = search(nested);
+          if (result) {
+            return result;
+          }
+        }
+      }
+
+      return null;
+    };
+
+    return search(payload);
+  }
+
+  private static isRecordEnvelope(value: Record<string, unknown>): boolean {
+    return (
+      value !== null &&
+      'id' in value &&
+      typeof value.id !== 'undefined' &&
+      'values' in value &&
+      typeof value.values !== 'undefined'
+    );
+  }
+
+  private static extractRecordIdFromIdField(idField: unknown): string | null {
+    if (!idField) {
+      return null;
+    }
+
+    if (typeof idField === 'string') {
+      return idField;
+    }
+
+    if (
+      typeof idField === 'object' &&
+      idField !== null &&
+      'record_id' in (idField as Record<string, unknown>)
+    ) {
+      const candidate = (idField as Record<string, unknown>).record_id;
+      if (typeof candidate === 'string') {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private static tryExtractRecordIdFromText(text: string): string | null {
+    if (!text) {
+      return null;
+    }
+
+    const match = text.match(/ID:\s*([^\s)]+)/i);
+    if (!match) {
+      return null;
+    }
+
+    const extracted = match[1]?.trim();
+    return extracted || null;
   }
 
   private static collectAttributeSlugs(input: unknown): string[] {

@@ -19,9 +19,21 @@ vi.mock('@api/operations/retry.js', () => ({
 }));
 
 describe('searchObject', () => {
+  let originalScoringEnv: string | undefined;
+
   beforeEach(() => {
+    originalScoringEnv = process.env.ENABLE_SEARCH_SCORING;
+    process.env.ENABLE_SEARCH_SCORING = 'false';
     postMock.mockClear();
     postMock.mockResolvedValue({ data: { data: [] } });
+  });
+
+  afterEach(() => {
+    if (originalScoringEnv === undefined) {
+      delete process.env.ENABLE_SEARCH_SCORING;
+    } else {
+      process.env.ENABLE_SEARCH_SCORING = originalScoringEnv;
+    }
   });
 
   it('builds multi-field filters for people queries', async () => {
@@ -30,8 +42,8 @@ describe('searchObject', () => {
       'Alex Rivera alex.rivera@example.com'
     );
 
-    expect(postMock).toHaveBeenCalledTimes(1);
-    const [, body] = postMock.mock.calls[0];
+    expect(postMock).toHaveBeenCalled();
+    const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
     expect(filter.$or).toEqual(
@@ -46,7 +58,7 @@ describe('searchObject', () => {
   it('includes normalized phone variants for people queries', async () => {
     await searchObject(ResourceType.PEOPLE, '555-010-4477');
 
-    const [, body] = postMock.mock.calls[0];
+    const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
     expect(filter.$or).toEqual(
@@ -60,7 +72,7 @@ describe('searchObject', () => {
   it('searches company domains and tokens for company queries', async () => {
     await searchObject(ResourceType.COMPANIES, 'Example Medical Group Oregon');
 
-    const [, body] = postMock.mock.calls[0];
+    const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
     expect(filter.$or).toEqual(
@@ -75,8 +87,70 @@ describe('searchObject', () => {
   it('falls back to legacy filter when parsing yields nothing', async () => {
     await searchObject(ResourceType.COMPANIES, '   ');
 
-    const [, body] = postMock.mock.calls[0];
+    const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
 
     expect(body.filter).toEqual({ name: { $contains: '   ' } });
+  });
+
+  describe('Issue #885 regression coverage', () => {
+    it('prioritizes exact domain matches', async () => {
+      process.env.ENABLE_SEARCH_SCORING = 'true';
+      postMock.mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              id: { record_id: '1' },
+              values: {
+                name: 'Springfield Clinic',
+                domains: ['springfieldclinic.com'],
+              },
+            },
+            {
+              id: { record_id: '2' },
+              values: {
+                name: 'Olive Branch Clinic',
+                domains: ['olivebranchclinic.org'],
+              },
+            },
+          ],
+        },
+      });
+
+      const results = (await searchObject(
+        ResourceType.COMPANIES,
+        'olivebranchclinic.org'
+      )) as Array<{ values: { name: string; domains: string[] } }>;
+
+      expect(results[0].values.domains).toEqual(['olivebranchclinic.org']);
+    });
+
+    it('prioritizes exact name matches over partial token matches', async () => {
+      process.env.ENABLE_SEARCH_SCORING = 'true';
+      postMock.mockResolvedValueOnce({
+        data: {
+          data: [
+            {
+              id: { record_id: '1' },
+              values: { name: 'Connor Young' },
+            },
+            {
+              id: { record_id: '2' },
+              values: { name: 'Francine Young' },
+            },
+            {
+              id: { record_id: '3' },
+              values: { name: 'Teara Young' },
+            },
+          ],
+        },
+      });
+
+      const results = (await searchObject(
+        ResourceType.PEOPLE,
+        'Teara Young'
+      )) as Array<{ values: { name: string } }>;
+
+      expect(results[0].values.name).toBe('Teara Young');
+    });
   });
 });

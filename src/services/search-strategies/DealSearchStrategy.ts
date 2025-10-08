@@ -1,6 +1,6 @@
 /**
- * Company search strategy implementation
- * Issue #574: Extract company search logic from UniversalSearchService
+ * Deal search strategy implementation
+ * Issue #885: Add deals support to fast path optimization
  */
 
 import { AttioRecord } from '../../types/attio.js';
@@ -13,18 +13,17 @@ import {
 import { BaseSearchStrategy } from './BaseSearchStrategy.js';
 import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
-import { buildCompanyQueryFilters } from './query-filter-builder.js';
 
 /**
- * Search strategy for companies with advanced filtering and content search
+ * Search strategy for deals with fast path optimization
  */
-export class CompanySearchStrategy extends BaseSearchStrategy {
+export class DealSearchStrategy extends BaseSearchStrategy {
   constructor(dependencies: StrategyDependencies) {
     super(dependencies);
   }
 
   getResourceType(): string {
-    return UniversalResourceType.COMPANIES;
+    return UniversalResourceType.DEALS;
   }
 
   supportsAdvancedFiltering(): boolean {
@@ -77,7 +76,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
   }
 
   /**
-   * Search companies using advanced filters
+   * Search deals using advanced filters
    */
   private async searchWithFilters(
     filters: Record<string, unknown>,
@@ -85,11 +84,11 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     offset?: number
   ): Promise<AttioRecord[]> {
     if (!this.dependencies.advancedSearchFunction) {
-      throw new Error('Companies advanced search function not available');
+      throw new Error('Deals advanced search function not available');
     }
 
     try {
-      // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
+      // FilterValidationError will bubble up naturally from searchFn
       return await this.dependencies.advancedSearchFunction(
         filters,
         limit,
@@ -105,7 +104,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
   }
 
   /**
-   * Search companies with a text query
+   * Search deals with a text query
    */
   private async searchWithQuery(
     query: string,
@@ -117,7 +116,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     offset?: number
   ): Promise<AttioRecord[]> {
     if (!this.dependencies.advancedSearchFunction) {
-      throw new Error('Companies search function not available');
+      throw new Error('Deals search function not available');
     }
 
     // Handle different search types
@@ -140,7 +139,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
       const start = offset || 0;
       const effectiveLimit = limit ? start + limit : undefined;
 
-      const results = await searchObject(ResourceType.COMPANIES, query, {
+      const results = await searchObject(ResourceType.DEALS, query, {
         limit: effectiveLimit,
       });
 
@@ -151,14 +150,14 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
   }
 
   /**
-   * Search companies without any query or filters
+   * Search deals without any query or filters
    */
   private async searchWithoutQuery(
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
     if (!this.dependencies.advancedSearchFunction) {
-      throw new Error('Companies search function not available');
+      throw new Error('Deals search function not available');
     }
 
     return this.handleEmptyFilters(
@@ -169,36 +168,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
   }
 
   /**
-   * Search companies by domain
-   */
-  private async searchByDomain(
-    query: string,
-    limit?: number,
-    offset?: number
-  ): Promise<AttioRecord[]> {
-    const domainFilters = {
-      filters: [
-        {
-          attribute: { slug: 'domains' },
-          condition: 'contains',
-          value: query,
-        },
-      ],
-    };
-
-    if (!this.dependencies.advancedSearchFunction) {
-      throw new Error('Companies search function not available');
-    }
-
-    return await this.dependencies.advancedSearchFunction(
-      domainFilters,
-      limit,
-      offset
-    );
-  }
-
-  /**
-   * Search companies by content across multiple fields
+   * Search deals by content across multiple fields
    */
   private async searchByContent(
     query: string,
@@ -208,11 +178,9 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    // Default content fields for companies
+    // Default content fields for deals
     const searchFields =
-      fields && fields.length > 0
-        ? fields
-        : ['name', 'description', 'notes', 'domains'];
+      fields && fields.length > 0 ? fields : ['name', 'notes'];
 
     const contentFilters = this.createContentFilters(
       query,
@@ -221,7 +189,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     );
 
     if (!this.dependencies.advancedSearchFunction) {
-      throw new Error('Companies search function not available');
+      throw new Error('Deals search function not available');
     }
 
     const results = await this.dependencies.advancedSearchFunction(
@@ -235,7 +203,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
   }
 
   /**
-   * Search companies by name only
+   * Search deals by name only
    */
   private async searchByName(
     query: string,
@@ -246,7 +214,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     const nameFilters = this.createNameFilters(query, matchType);
 
     if (!this.dependencies.advancedSearchFunction) {
-      throw new Error('Companies search function not available');
+      throw new Error('Deals search function not available');
     }
 
     return await this.dependencies.advancedSearchFunction(

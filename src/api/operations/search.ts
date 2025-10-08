@@ -6,7 +6,7 @@
 import { getLazyAttioClient } from '@api/lazy-client.js';
 import { callWithRetry, RetryConfig } from '@api/operations/retry.js';
 import { ListEntryFilters } from '@api/operations/types.js';
-import { parseQuery } from '@api/operations/query-parser.js';
+import { parseQuery, ParsedQuery } from '@api/operations/query-parser.js';
 import { FilterValidationError } from '@errors/api-errors.js';
 import { ErrorEnhancer } from '@errors/enhanced-api-errors.js';
 import { transformFiltersToApiFormat } from '@utils/record-utils.js';
@@ -20,8 +20,325 @@ import {
   SearchRequestBody,
   ListRequestBody,
 } from '@shared-types/api-operations.js';
+import { LRUCache } from 'lru-cache';
+import { scoreAndRank } from '../../services/search-utilities/SearchScorer.js';
+import { createScopedLogger } from '../../utils/logger.js';
+
+const logger = createScopedLogger('api.operations', 'search');
 
 type FilterCondition = Record<string, unknown>;
+
+type FastPathKind = 'domain' | 'email' | 'phone' | 'name';
+type FastPathStrategy = 'eq' | 'contains';
+
+interface FastPathCandidate {
+  filter: FilterCondition;
+  kind: FastPathKind;
+  strategy: FastPathStrategy;
+  value: string;
+}
+
+const ENABLE_SEARCH_SCORING = process.env.ENABLE_SEARCH_SCORING !== 'false';
+const SEARCH_CACHE_TTL_MS = Number.parseInt(
+  process.env.SEARCH_CACHE_TTL_MS ?? `${5 * 60 * 1000}`,
+  10
+);
+const SEARCH_CACHE_MAX = Number.parseInt(
+  process.env.SEARCH_CACHE_MAX ?? '500',
+  10
+);
+const SEARCH_FETCH_MULTIPLIER = Number.parseInt(
+  process.env.SEARCH_FETCH_MULTIPLIER ?? '5',
+  10
+);
+const SEARCH_FETCH_MIN = Number.parseInt(
+  process.env.SEARCH_FETCH_MIN ?? '50',
+  10
+);
+const SEARCH_FAST_PATH_LIMIT = Number.parseInt(
+  process.env.SEARCH_FAST_PATH_LIMIT ?? '5',
+  10
+);
+const DEFAULT_FETCH_LIMIT = Number.parseInt(
+  process.env.SEARCH_DEFAULT_LIMIT ?? '20',
+  10
+);
+
+const searchCache = new LRUCache<string, AttioRecord[]>({
+  max: Number.isFinite(SEARCH_CACHE_MAX) ? SEARCH_CACHE_MAX : 500,
+  ttl: Number.isFinite(SEARCH_CACHE_TTL_MS)
+    ? SEARCH_CACHE_TTL_MS
+    : 5 * 60 * 1000,
+});
+
+function getCacheKey(
+  objectType: ResourceType,
+  query: string,
+  limit: number
+): string {
+  return `${objectType}:${limit}:${query.toLowerCase()}`;
+}
+
+function normalizeDomainValue(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .trim();
+}
+
+function normalizePlainValue(value: string): string {
+  return value.toLowerCase().trim();
+}
+
+function extractStringsFromField(
+  fieldValue: unknown,
+  keys: string[] = []
+): string[] {
+  const results: string[] = [];
+
+  const pushString = (candidate: unknown) => {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      results.push(candidate);
+    }
+  };
+
+  if (!fieldValue) {
+    return results;
+  }
+
+  if (typeof fieldValue === 'string') {
+    pushString(fieldValue);
+    return results;
+  }
+
+  if (Array.isArray(fieldValue)) {
+    fieldValue.forEach((item) => {
+      if (typeof item === 'string') {
+        pushString(item);
+      } else if (item && typeof item === 'object') {
+        keys.forEach((key) => {
+          pushString((item as Record<string, unknown>)[key]);
+        });
+      }
+    });
+    return results;
+  }
+
+  if (fieldValue && typeof fieldValue === 'object') {
+    keys.forEach((key) => {
+      pushString((fieldValue as Record<string, unknown>)[key]);
+    });
+  }
+
+  return results;
+}
+
+function extractNormalizedName(record: AttioRecord): string {
+  const values = (record?.values ?? {}) as Record<string, unknown>;
+  const candidates: unknown[] = [];
+
+  if ('name' in values) {
+    candidates.push(values.name);
+  }
+  if ('full_name' in values) {
+    candidates.push(values.full_name);
+  }
+  if ('title' in values) {
+    candidates.push(values.title);
+  }
+
+  const normalizeCandidate = (candidate: unknown): string | null => {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return normalizePlainValue(candidate);
+    }
+
+    if (Array.isArray(candidate)) {
+      for (const item of candidate) {
+        const normalized = normalizeCandidate(item);
+        if (normalized) {
+          return normalized;
+        }
+      }
+    }
+
+    if (candidate && typeof candidate === 'object') {
+      const obj = candidate as Record<string, unknown>;
+      const nested = obj.full_name ?? obj.formatted ?? obj.value ?? obj.name;
+      if (typeof nested === 'string' && nested.trim()) {
+        return normalizePlainValue(nested);
+      }
+    }
+
+    return null;
+  };
+
+  for (const candidate of candidates) {
+    const normalized = normalizeCandidate(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return '';
+}
+
+/**
+ * Build fast-path candidates for structured queries.
+ *
+ * Issue #885: Attio API supports $eq operator (verified 2025-10-07)
+ * Supported operators: $eq, $contains, $starts_with, $ends_with, $not_empty
+ * NOT supported: $equals, $in
+ *
+ * @see scripts/test-attio-operators.mjs for operator verification tests
+ */
+function buildFastPathCandidates(
+  objectType: ResourceType,
+  parsed: ParsedQuery,
+  originalQuery: string
+): FastPathCandidate[] {
+  const candidates: FastPathCandidate[] = [];
+  const trimmedQuery = originalQuery.trim();
+
+  if (objectType === ResourceType.COMPANIES && parsed.domains.length === 1) {
+    const normalizedDomain = normalizeDomainValue(parsed.domains[0]);
+    candidates.push({
+      filter: { domains: { $eq: normalizedDomain } },
+      kind: 'domain',
+      strategy: 'eq',
+      value: normalizedDomain,
+    });
+    candidates.push({
+      filter: { domains: { $contains: normalizedDomain } },
+      kind: 'domain',
+      strategy: 'contains',
+      value: normalizedDomain,
+    });
+  }
+
+  if (parsed.emails.length === 1) {
+    const emailValue = parsed.emails[0].toLowerCase();
+    candidates.push({
+      filter: { email_addresses: { $eq: emailValue } },
+      kind: 'email',
+      strategy: 'eq',
+      value: emailValue,
+    });
+    candidates.push({
+      filter: { email_addresses: { $contains: emailValue } },
+      kind: 'email',
+      strategy: 'contains',
+      value: emailValue,
+    });
+  }
+
+  // Try all phone variants as fast path candidates (parser creates normalized forms)
+  if (parsed.phones.length > 0) {
+    parsed.phones.forEach((phoneValue) => {
+      candidates.push({
+        filter: { phone_numbers: { $eq: phoneValue } },
+        kind: 'phone',
+        strategy: 'eq',
+        value: phoneValue,
+      });
+    });
+  }
+
+  const hasStructuredQuery =
+    parsed.domains.length > 0 ||
+    parsed.emails.length > 0 ||
+    parsed.phones.length > 0;
+
+  if (
+    trimmedQuery &&
+    !hasStructuredQuery &&
+    (objectType === ResourceType.COMPANIES ||
+      objectType === ResourceType.PEOPLE ||
+      objectType === ResourceType.DEALS)
+  ) {
+    const normalizedName = normalizePlainValue(trimmedQuery);
+    candidates.push({
+      filter: { name: { $eq: trimmedQuery } },
+      kind: 'name',
+      strategy: 'eq',
+      value: normalizedName,
+    });
+    candidates.push({
+      filter: { name: { $contains: trimmedQuery } },
+      kind: 'name',
+      strategy: 'contains',
+      value: normalizedName,
+    });
+  }
+
+  return candidates;
+}
+
+function recordMatchesFastPath(
+  record: AttioRecord,
+  candidate: FastPathCandidate
+): boolean {
+  const values = (record?.values ?? {}) as Record<string, unknown>;
+
+  switch (candidate.kind) {
+    case 'domain': {
+      const domains = extractStringsFromField(values.domains, [
+        'domain',
+        'value',
+      ]).map(normalizeDomainValue);
+      if (candidate.strategy === 'eq') {
+        return domains.includes(candidate.value);
+      }
+      return domains.some((domain) => domain.includes(candidate.value));
+    }
+    case 'email': {
+      const emails = extractStringsFromField(values.email_addresses, [
+        'email_address',
+        'value',
+      ]).map(normalizePlainValue);
+      if (candidate.strategy === 'eq') {
+        return emails.includes(candidate.value);
+      }
+      return emails.some((email) => email.includes(candidate.value));
+    }
+    case 'phone': {
+      const phones = extractStringsFromField(values.phone_numbers, [
+        'phone_number', // Main normalized field
+        'original_phone_number', // Original input
+        'number', // Legacy fallback
+        'normalized', // Legacy fallback
+        'value', // Legacy fallback
+      ]);
+      const normalizedSet = new Set<string>();
+      phones.forEach((phone) => {
+        normalizedSet.add(phone);
+        normalizedSet.add(phone.replace(/\s+/g, ''));
+        // Also try with/without leading +
+        if (phone.startsWith('+')) {
+          normalizedSet.add(phone.substring(1));
+        } else {
+          normalizedSet.add(`+${phone}`);
+        }
+      });
+      return (
+        normalizedSet.has(candidate.value) ||
+        normalizedSet.has(candidate.value.replace(/\s+/g, ''))
+      );
+    }
+    case 'name': {
+      const recordName = extractNormalizedName(record);
+      if (!recordName) {
+        return false;
+      }
+      if (candidate.strategy === 'eq') {
+        return recordName === candidate.value;
+      }
+      return recordName.includes(candidate.value);
+    }
+    default:
+      return false;
+  }
+}
 
 function createLegacyFilter(
   objectType: ResourceType,
@@ -54,14 +371,15 @@ function addCondition(
 
 function buildSearchFilter(
   objectType: ResourceType,
-  query: string
+  query: string,
+  parsedOverride?: ParsedQuery
 ): FilterCondition {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) {
     return createLegacyFilter(objectType, query);
   }
 
-  const parsed = parseQuery(trimmedQuery);
+  const parsed = parsedOverride ?? parseQuery(trimmedQuery);
   const conditions: FilterCondition[] = [];
   const seen = new Set<string>();
 
@@ -127,32 +445,173 @@ function buildSearchFilter(
  *
  * @param objectType - The type of object to search (people or companies)
  * @param query - Search query string
- * @param retryConfig - Optional retry configuration
+ * @param options - Optional search options (limit, retryConfig)
  * @returns Array of matching records
  */
 export async function searchObject<T extends AttioRecord>(
   objectType: ResourceType,
   query: string,
-  retryConfig?: Partial<RetryConfig>
+  options?: { limit?: number; retryConfig?: Partial<RetryConfig> }
 ): Promise<T[]> {
+  const retryConfig = options?.retryConfig;
   const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
-  const filter = buildSearchFilter(objectType, query);
+  const trimmedQuery = query.trim();
+  const scoringEnabled = ENABLE_SEARCH_SCORING && trimmedQuery.length > 0;
+  // Use caller's limit if provided, otherwise fall back to default
+  const requestedLimit = options?.limit;
+  const baseLimit =
+    requestedLimit !== undefined && requestedLimit > 0
+      ? requestedLimit
+      : Number.isFinite(DEFAULT_FETCH_LIMIT) && DEFAULT_FETCH_LIMIT > 0
+        ? DEFAULT_FETCH_LIMIT
+        : 20;
+  const multiplier =
+    Number.isFinite(SEARCH_FETCH_MULTIPLIER) && SEARCH_FETCH_MULTIPLIER > 0
+      ? SEARCH_FETCH_MULTIPLIER
+      : 5;
+  const minimumFetch =
+    Number.isFinite(SEARCH_FETCH_MIN) && SEARCH_FETCH_MIN > 0
+      ? SEARCH_FETCH_MIN
+      : 50;
+  const fastPathLimit =
+    Number.isFinite(SEARCH_FAST_PATH_LIMIT) && SEARCH_FAST_PATH_LIMIT > 0
+      ? Math.max(baseLimit, SEARCH_FAST_PATH_LIMIT)
+      : baseLimit;
+
+  const parsedQuery = trimmedQuery ? parseQuery(trimmedQuery) : null;
+  const cacheKey =
+    scoringEnabled && trimmedQuery
+      ? getCacheKey(objectType, trimmedQuery, baseLimit)
+      : null;
+
+  if (scoringEnabled && cacheKey) {
+    const cached = searchCache.get(cacheKey);
+    if (cached) {
+      return cached as unknown as T[];
+    }
+  }
+
+  if (scoringEnabled && parsedQuery) {
+    const fastCandidates = buildFastPathCandidates(
+      objectType,
+      parsedQuery,
+      trimmedQuery
+    );
+
+    for (const candidate of fastCandidates) {
+      const candidateLimit =
+        candidate.kind === 'name' && candidate.strategy === 'contains'
+          ? Math.min(100, Math.max(minimumFetch, baseLimit * multiplier))
+          : candidate.kind === 'name' && candidate.strategy === 'eq'
+            ? baseLimit
+            : fastPathLimit;
+
+      logger.debug('[FastPath] Trying candidate', {
+        kind: candidate.kind,
+        strategy: candidate.strategy,
+        filter: candidate.filter,
+        limit: candidateLimit,
+      });
+
+      try {
+        const fastResponse = await callWithRetry(async () => {
+          return api.post<AttioListResponse<T>>(path, {
+            filter: candidate.filter,
+            limit: candidateLimit,
+          });
+        }, retryConfig);
+
+        const fastData = Array.isArray(fastResponse?.data?.data)
+          ? (fastResponse?.data?.data as AttioRecord[])
+          : [];
+
+        logger.debug('[FastPath] Received results', {
+          count: fastData.length,
+        });
+
+        if (!fastData.length) {
+          logger.debug('[FastPath] No results for candidate');
+          continue;
+        }
+
+        const hasMatch = fastData.some((record) =>
+          recordMatchesFastPath(record, candidate)
+        );
+
+        if (!hasMatch) {
+          logger.debug('[FastPath] Validation failed', {
+            candidateKind: candidate.kind,
+            candidateStrategy: candidate.strategy,
+            candidateValue: candidate.value,
+            resultCount: fastData.length,
+          });
+          continue;
+        }
+
+        logger.debug('[FastPath] Validation passed, ranking');
+
+        const rankedFast = scoreAndRank(
+          trimmedQuery,
+          fastData,
+          parsedQuery
+        ) as AttioRecord[];
+        const truncatedFast = rankedFast.slice(0, baseLimit);
+
+        if (cacheKey) {
+          searchCache.set(cacheKey, truncatedFast);
+        }
+
+        return truncatedFast as unknown as T[];
+      } catch (error) {
+        logger.debug('[FastPath] Error executing candidate', {
+          kind: candidate.kind,
+          strategy: candidate.strategy,
+          filter: candidate.filter,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        void error; // Non-fatal fast-path failure; fall back to next candidate
+      }
+    }
+  }
+
+  const filter = buildSearchFilter(objectType, query, parsedQuery ?? undefined);
+  const fetchLimit = scoringEnabled
+    ? Math.max(minimumFetch, baseLimit * multiplier)
+    : baseLimit;
 
   return callWithRetry(async () => {
     try {
       const response = await api.post<AttioListResponse<T>>(path, {
         filter,
+        limit: fetchLimit,
       });
-      return response?.data?.data || [];
+      const rawData = response?.data?.data;
+      const data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
+
+      if (!scoringEnabled || data.length <= 1) {
+        const truncated = data.slice(0, baseLimit);
+        return truncated as unknown as T[];
+      }
+
+      const ranked = scoreAndRank(
+        trimmedQuery,
+        data,
+        parsedQuery ?? undefined
+      ) as AttioRecord[];
+      const truncated = ranked.slice(0, baseLimit);
+
+      if (cacheKey) {
+        searchCache.set(cacheKey, truncated);
+      }
+
+      return truncated as unknown as T[];
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      // Handle 404 errors with custom message
       if (apiError.response && apiError.response.status === 404) {
         throw new Error(`No ${objectType} found matching '${query}'`);
       }
-      // Let upstream handlers create specific, rich error objects from the original Axios error.
       throw error;
     }
   }, retryConfig);

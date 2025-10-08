@@ -608,6 +608,7 @@ Comprehensive documentation is available in the [docs directory](./docs):
 
 - [Warning Filter Configuration](./docs/configuration/warning-filters.md) - Understanding cosmetic vs semantic mismatches, ESLint budgets, and suppression strategies
 - [Field Verification Configuration](./docs/configuration/field-verification.md) - Field persistence verification and validation settings
+- [Search Scoring Configuration](./docs/configuration/search-scoring.md) - Environment variables for relevance scoring, caching, and operator validation
 
 ### **API Reference**
 

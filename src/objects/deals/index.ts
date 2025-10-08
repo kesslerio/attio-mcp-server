@@ -9,6 +9,9 @@ export { getDealNotes, createDealNote } from './notes.js';
 // Relationship-based queries
 export { searchDealsByCompany, searchDealsByPerson } from './relationships.js';
 
+// Search operations
+export { advancedSearchDeals } from './search.js';
+
 // Export attribute operations and field validation
 export {
   isStandardDealField,
