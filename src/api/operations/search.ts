@@ -369,88 +369,6 @@ function addCondition(
   }
 }
 
-/**
- * Builds a fallback OR filter for when AND filter returns no results
- * Uses OR logic across all tokens to maximize recall
- */
-function buildFallbackORFilter(
-  objectType: ResourceType,
-  query: string,
-  parsed: ParsedQuery | undefined
-): FilterCondition {
-  if (!parsed) {
-    return createLegacyFilter(objectType, query);
-  }
-
-  const conditions: FilterCondition[] = [];
-  const seen = new Set<string>();
-
-  // Add email conditions
-  parsed.emails.forEach((email) => {
-    if (objectType === ResourceType.PEOPLE) {
-      addCondition(conditions, seen, {
-        email_addresses: { $contains: email },
-      });
-    }
-  });
-
-  // Add phone conditions
-  parsed.phones.forEach((phone) => {
-    if (objectType === ResourceType.PEOPLE) {
-      addCondition(conditions, seen, {
-        phone_numbers: { $contains: phone },
-      });
-    }
-  });
-
-  // Add domain conditions
-  parsed.domains.forEach((domain) => {
-    if (objectType === ResourceType.COMPANIES) {
-      addCondition(conditions, seen, {
-        domains: { $contains: domain },
-      });
-    }
-  });
-
-  // Add token conditions with OR logic (each token individually)
-  const tokenTargets = new Set<string>();
-  tokenTargets.add('name');
-
-  if (objectType === ResourceType.PEOPLE) {
-    tokenTargets.add('email_addresses');
-    tokenTargets.add('phone_numbers');
-  }
-
-  if (objectType === ResourceType.COMPANIES) {
-    tokenTargets.add('domains');
-  }
-
-  const uniqueTokens = Array.from(
-    new Set(parsed.tokens.filter((token) => token.length > 1))
-  );
-
-  // OR logic: each token creates separate conditions
-  uniqueTokens.forEach((token) => {
-    tokenTargets.forEach((field) => {
-      addCondition(conditions, seen, {
-        [field]: { $contains: token },
-      });
-    });
-  });
-
-  if (conditions.length === 0) {
-    return createLegacyFilter(objectType, query);
-  }
-
-  if (conditions.length === 1) {
-    return conditions[0];
-  }
-
-  return {
-    $or: conditions,
-  };
-}
-
 function buildSearchFilter(
   objectType: ResourceType,
   query: string,
@@ -501,28 +419,51 @@ function buildSearchFilter(
     new Set(parsed.tokens.filter((token) => token.length > 1))
   );
 
-  // Hybrid AND/OR search strategy (#885 + Elite Styles fix):
-  // 1. For multi-token queries (2+ tokens), try AND logic first for precision
-  // 2. If AND returns 0 results, searchObject will retry with OR logic for recall
-  // This balances precision (exact multi-word matches) with recall (partial matches across fields)
+  // AND-of-OR search strategy (#885 fix):
+  // For each token, allow it to match ANY field (name OR domains OR email/phone)
+  // But ALL tokens must match SOMEWHERE
+  // This provides precision (all tokens required) + cross-field flexibility (name + domain tokens)
+  //
+  // Example: "Elite Styles Beauty Mindful Program"
+  // - "Elite" can match name OR domains
+  // - "Styles" can match name OR domains
+  // - "Mindful" can match name OR domains (will match domain mindfulbeautyprogram.com)
+  // - etc.
+  //
+  // Result: Company "Elite Styles And Beauty" (mindfulbeautyprogram.com) matches because:
+  // - "Elite" matches name ✓
+  // - "Styles" matches name ✓
+  // - "Beauty" matches name ✓
+  // - "Mindful" matches domain ✓
+  // - "Program" matches domain ✓
   if (uniqueTokens.length > 0) {
-    tokenTargets.forEach((field) => {
-      const fieldConditions = uniqueTokens.map((token) => ({
-        [field]: { $contains: token },
-      }));
-
-      if (fieldConditions.length === 1) {
-        // Single token: simple contains (no change)
-        addCondition(conditions, seen, fieldConditions[0]);
-      } else {
-        // Multiple tokens: ALL must match within this field
-        // This provides precision for queries like "John Smith" (must have John AND Smith in name)
-        // But may miss results where tokens span fields (e.g., name + domain)
+    if (uniqueTokens.length === 1) {
+      // Single token: create OR condition across all relevant fields
+      const token = uniqueTokens[0];
+      tokenTargets.forEach((field) => {
         addCondition(conditions, seen, {
-          $and: fieldConditions,
+          [field]: { $contains: token },
         });
-      }
-    });
+      });
+    } else {
+      // Multiple tokens: each token must match at least one field (AND of ORs)
+      const tokenAndConditions = uniqueTokens.map((token) => {
+        const tokenFieldConditions: FilterCondition[] = [];
+        tokenTargets.forEach((field) => {
+          tokenFieldConditions.push({
+            [field]: { $contains: token },
+          });
+        });
+        return {
+          $or: tokenFieldConditions,
+        };
+      });
+
+      // Combine all token conditions with AND
+      addCondition(conditions, seen, {
+        $and: tokenAndConditions,
+      });
+    }
   }
 
   if (conditions.length === 0) {
@@ -674,13 +615,6 @@ export async function searchObject<T extends AttioRecord>(
     }
   }
 
-  // Hybrid AND/OR search strategy:
-  // 1. Try AND logic first (precise multi-token matching)
-  // 2. If results < 3, fall back to OR logic (broader recall)
-  const FALLBACK_THRESHOLD = 3;
-  const hasMultipleTokens =
-    parsedQuery && parsedQuery.tokens.filter((t) => t.length > 1).length > 1;
-
   const filter = buildSearchFilter(objectType, query, parsedQuery ?? undefined);
   const fetchLimit = scoringEnabled
     ? Math.max(minimumFetch, baseLimit * multiplier)
@@ -688,40 +622,12 @@ export async function searchObject<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     try {
-      let response = await api.post<AttioListResponse<T>>(path, {
+      const response = await api.post<AttioListResponse<T>>(path, {
         filter,
         limit: fetchLimit,
       });
-      let rawData = response?.data?.data;
-      let data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
-
-      // If AND logic returned too few results for multi-token queries, try OR logic
-      if (
-        hasMultipleTokens &&
-        data.length < FALLBACK_THRESHOLD &&
-        data.length < baseLimit
-      ) {
-        logger.debug('[Fallback] AND search insufficient, trying OR', {
-          andResults: data.length,
-          threshold: FALLBACK_THRESHOLD,
-        });
-
-        const fallbackFilter = buildFallbackORFilter(
-          objectType,
-          query,
-          parsedQuery ?? undefined
-        );
-        response = await api.post<AttioListResponse<T>>(path, {
-          filter: fallbackFilter,
-          limit: fetchLimit,
-        });
-        rawData = response?.data?.data;
-        data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
-
-        logger.debug('[Fallback] OR search complete', {
-          orResults: data.length,
-        });
-      }
+      const rawData = response?.data?.data;
+      const data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
 
       if (!scoringEnabled || data.length <= 1) {
         const truncated = data.slice(0, baseLimit);

@@ -46,20 +46,28 @@ describe('searchObject', () => {
     const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
-    // Email is extracted separately
+    // Email is extracted separately as exact match
     expect(filter.$or).toEqual(
       expect.arrayContaining([
         { email_addresses: { $contains: 'alex.rivera@example.com' } },
       ])
     );
 
-    // Hybrid logic: When AND returns 0 results (mocked), falls back to OR
-    // Fallback OR includes individual token conditions
+    // AND-of-OR: Multi-token "Alex Rivera" creates AND of (token matches any field)
+    // Structure: $and: [{$or: [name:"Alex", email:"Alex", phone:"Alex"]}, {$or: [name:"Rivera", ...]}]
     expect(filter.$or).toEqual(
-      expect.arrayContaining([{ name: { $contains: 'Alex' } }])
-    );
-    expect(filter.$or).toEqual(
-      expect.arrayContaining([{ name: { $contains: 'Rivera' } }])
+      expect.arrayContaining([
+        {
+          $and: expect.arrayContaining([
+            {
+              $or: expect.arrayContaining([{ name: { $contains: 'Alex' } }]),
+            },
+            {
+              $or: expect.arrayContaining([{ name: { $contains: 'Rivera' } }]),
+            },
+          ]),
+        },
+      ])
     );
   });
 
@@ -83,19 +91,37 @@ describe('searchObject', () => {
     const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
-    // Hybrid logic: When AND returns 0 results (mocked), falls back to OR
-    // Fallback OR includes individual token conditions for name and domains
-    expect(filter.$or).toEqual(
-      expect.arrayContaining([{ name: { $contains: 'Example' } }])
-    );
-
-    expect(filter.$or).toEqual(
-      expect.arrayContaining([{ name: { $contains: 'Medical' } }])
-    );
-
-    expect(filter.$or).toEqual(
-      expect.arrayContaining([{ domains: { $contains: 'Example' } }])
-    );
+    // AND-of-OR: Each token must match (name OR domains)
+    // Structure: $and: [{$or: [name:"Example", domains:"Example"]}, {$or: [name:"Medical", domains:"Medical"]}, ...]
+    // This allows cross-field matching while requiring all tokens
+    expect(filter).toEqual({
+      $and: expect.arrayContaining([
+        {
+          $or: expect.arrayContaining([
+            { name: { $contains: 'Example' } },
+            { domains: { $contains: 'Example' } },
+          ]),
+        },
+        {
+          $or: expect.arrayContaining([
+            { name: { $contains: 'Medical' } },
+            { domains: { $contains: 'Medical' } },
+          ]),
+        },
+        {
+          $or: expect.arrayContaining([
+            { name: { $contains: 'Group' } },
+            { domains: { $contains: 'Group' } },
+          ]),
+        },
+        {
+          $or: expect.arrayContaining([
+            { name: { $contains: 'Oregon' } },
+            { domains: { $contains: 'Oregon' } },
+          ]),
+        },
+      ]),
+    });
   });
 
   it('falls back to legacy filter when parsing yields nothing', async () => {
