@@ -704,7 +704,8 @@ export async function searchObject<T extends AttioRecord>(
       // OR-only fallback when AND-of-OR returns zero results (#885 recall fix)
       // This handles over-constrained queries like "Beauty Glow Aesthetics Frisco"
       // where some tokens don't exist but the record should still match
-      if (data.length === 0 && parsedQuery && scoringEnabled) {
+      // Runs regardless of scoring state - scoring only affects ranking, not recall
+      if (data.length === 0 && parsedQuery) {
         logger.debug('[Fallback] Zero results from AND-of-OR, trying OR-only', {
           query: trimmedQuery,
           objectType,

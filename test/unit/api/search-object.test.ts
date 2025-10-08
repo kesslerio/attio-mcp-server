@@ -338,6 +338,11 @@ describe('searchObject', () => {
         // Should make 3 calls (2 fast-path + main, no fallback)
         expect(postMock).toHaveBeenCalledTimes(3);
       });
+
+      // Note: Fallback independence from scoring is enforced by code (line 708)
+      // ENABLE_SEARCH_SCORING is a module-level constant, so runtime env changes
+      // in tests don't affect it. The code removal of `&& scoringEnabled` ensures
+      // fallback works regardless of scoring state.
     });
   });
 });
