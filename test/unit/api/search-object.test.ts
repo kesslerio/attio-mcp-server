@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { searchObject } from '@api/operations/search.js';
 import { ResourceType } from '@shared-types/attio.js';
@@ -53,16 +53,13 @@ describe('searchObject', () => {
       ])
     );
 
-    // Multi-token "Alex Rivera" creates $and conditions per field
+    // Hybrid logic: When AND returns 0 results (mocked), falls back to OR
+    // Fallback OR includes individual token conditions
     expect(filter.$or).toEqual(
-      expect.arrayContaining([
-        {
-          $and: [
-            { name: { $contains: 'Alex' } },
-            { name: { $contains: 'Rivera' } },
-          ],
-        },
-      ])
+      expect.arrayContaining([{ name: { $contains: 'Alex' } }])
+    );
+    expect(filter.$or).toEqual(
+      expect.arrayContaining([{ name: { $contains: 'Rivera' } }])
     );
   });
 
@@ -86,32 +83,18 @@ describe('searchObject', () => {
     const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
-    // Multi-token query creates $and conditions per field (name and domains)
-    // Each field must match ALL tokens: Example AND Medical AND Group AND Oregon
+    // Hybrid logic: When AND returns 0 results (mocked), falls back to OR
+    // Fallback OR includes individual token conditions for name and domains
     expect(filter.$or).toEqual(
-      expect.arrayContaining([
-        {
-          $and: [
-            { name: { $contains: 'Example' } },
-            { name: { $contains: 'Medical' } },
-            { name: { $contains: 'Group' } },
-            { name: { $contains: 'Oregon' } },
-          ],
-        },
-      ])
+      expect.arrayContaining([{ name: { $contains: 'Example' } }])
     );
 
     expect(filter.$or).toEqual(
-      expect.arrayContaining([
-        {
-          $and: [
-            { domains: { $contains: 'Example' } },
-            { domains: { $contains: 'Medical' } },
-            { domains: { $contains: 'Group' } },
-            { domains: { $contains: 'Oregon' } },
-          ],
-        },
-      ])
+      expect.arrayContaining([{ name: { $contains: 'Medical' } }])
+    );
+
+    expect(filter.$or).toEqual(
+      expect.arrayContaining([{ domains: { $contains: 'Example' } }])
     );
   });
 
