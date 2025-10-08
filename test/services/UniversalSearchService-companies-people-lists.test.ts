@@ -34,6 +34,9 @@ vi.mock('../../src/services/create/index.js', () => ({
 vi.mock('../../src/services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: { convertListToRecord: vi.fn() },
 }));
+vi.mock('../../src/api/operations/search.js', () => ({
+  searchObject: vi.fn(),
+}));
 
 import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
@@ -43,6 +46,7 @@ import { advancedSearchPeople } from '../../src/objects/people/index.js';
 import { searchLists } from '../../src/objects/lists.js';
 import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
 import { shouldUseMockData } from '../../src/services/create/index.js';
+import { searchObject } from '../../src/api/operations/search.js';
 
 describe('UniversalSearchService', () => {
   beforeEach(() => {
@@ -59,14 +63,15 @@ describe('UniversalSearchService', () => {
           values: { name: 'Test Company' },
         } as any,
       ];
-      vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults as any);
+      // Basic queries now route through searchObject()
+      vi.mocked(searchObject).mockResolvedValue(mockResults as any);
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test',
         limit: 10,
         offset: 0,
       });
-      expect(advancedSearchCompanies).toHaveBeenCalled();
+      expect(searchObject).toHaveBeenCalled();
       expect(result).toEqual(mockResults);
     });
 
@@ -100,14 +105,13 @@ describe('UniversalSearchService', () => {
       const mockResults: AttioRecord[] = [
         { id: { record_id: 'person_1' }, values: { name: 'Jane' } } as any,
       ];
-      vi.mocked(advancedSearchPeople).mockResolvedValue({
-        results: mockResults,
-      } as any);
+      // Basic queries now route through searchObject()
+      vi.mocked(searchObject).mockResolvedValue(mockResults as any);
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.PEOPLE,
         query: 'Jane',
       });
-      expect(advancedSearchPeople).toHaveBeenCalled();
+      expect(searchObject).toHaveBeenCalled();
       expect(result).toEqual(mockResults);
     });
 

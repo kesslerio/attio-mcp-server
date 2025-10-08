@@ -32,7 +32,7 @@ const SCORE_WEIGHTS = {
   tokenInEmail: 40,
   fuzzyBase: 240,
   fuzzyStep: 24,
-};
+} as const;
 
 function normalizeString(value: string): string {
   return value.toLowerCase().trim();

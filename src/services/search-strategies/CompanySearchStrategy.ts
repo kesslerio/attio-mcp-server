@@ -136,10 +136,15 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
       const { searchObject } = await import('../../api/operations/search.js');
       const { ResourceType } = await import('../../types/attio.js');
 
-      const results = await searchObject(ResourceType.COMPANIES, query);
-
-      // Apply limit and offset
+      // Calculate total records needed: offset + limit
       const start = offset || 0;
+      const effectiveLimit = limit ? start + limit : undefined;
+
+      const results = await searchObject(ResourceType.COMPANIES, query, {
+        limit: effectiveLimit,
+      });
+
+      // Apply offset to slice the results
       const end = limit ? start + limit : undefined;
       return results.slice(start, end);
     }

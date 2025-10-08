@@ -18,13 +18,17 @@ All values are parsed as integers. Invalid or non-positive values fall back to t
 
 ## Operator Verification
 
-Run `scripts/test-attio-operators.mjs` to confirm which Attio operators are supported by your workspace. The script prints a compatibility matrix (Issue #885 verified that `$eq`, `$contains`, `$starts_with`, `$ends_with`, and `$not_empty` are available; `$equals` and `$in` are not).
+To verify which Attio operators are supported by your workspace, run:
 
 ```bash
-npm run tsx scripts/test-attio-operators.mjs
+npm run test:attio-operators
 ```
 
-Ensure `ATTIO_API_KEY` is set in your environment before running the script.
+This executes `scripts/test-attio-operators.mjs` which prints a compatibility matrix showing which operators work with your Attio API version. Issue #885 verified that `$eq`, `$contains`, `$starts_with`, `$ends_with`, and `$not_empty` are available; `$equals` and `$in` are not supported.
+
+See `scripts/test-attio-operators.mjs` for implementation details.
+
+**Requirements**: Ensure `ATTIO_API_KEY` is set in your environment before running the script.
 
 ## Operational Tips
 

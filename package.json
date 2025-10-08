@@ -76,6 +76,7 @@
     "perf:monitor": "node scripts/performance-monitor.cjs",
     "perf:report": "npm run test:performance -- --reporter=json > performance-results.json",
     "perf:budgets": "node scripts/check-performance-budgets.cjs",
+    "test:attio-operators": "tsx scripts/test-attio-operators.mjs",
     "check:offline": "tsc --project configs/tsconfig/tsconfig.offline.json --noEmit",
     "analyze:token-footprint": "tsx scripts/analyze-token-footprint.ts",
     "migrate-config": "node scripts/migrate-user-config.js",

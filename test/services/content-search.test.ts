@@ -75,10 +75,15 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
   },
 }));
 
+vi.mock('../../src/api/operations/search.js', () => ({
+  searchObject: vi.fn(),
+}));
+
 import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
 import { advancedSearchPeople } from '../../src/objects/people/index.js';
 import { listTasks } from '../../src/objects/tasks.js';
 import { searchLists } from '../../src/objects/lists.js';
+import { searchObject } from '../../src/api/operations/search.js';
 
 describe('Content Search Functionality', () => {
   beforeEach(() => {
@@ -98,32 +103,15 @@ describe('Content Search Functionality', () => {
         } as AttioRecord,
       ];
 
-      vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
+      // Basic queries (no search_type) now route through searchObject()
+      vi.mocked(searchObject).mockResolvedValue(mockResults);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test',
       });
 
-      expect(advancedSearchCompanies).toHaveBeenCalledWith(
-        expect.objectContaining({
-          matchAny: true,
-          filters: expect.arrayContaining([
-            expect.objectContaining({
-              attribute: { slug: 'name' },
-              condition: 'contains',
-              value: 'test',
-            }),
-            expect.objectContaining({
-              attribute: { slug: 'domains' },
-              condition: 'contains',
-              value: 'test',
-            }),
-          ]),
-        }),
-        undefined,
-        undefined
-      );
+      expect(searchObject).toHaveBeenCalled();
       expect(result).toEqual(mockResults);
     });
 

@@ -444,23 +444,28 @@ function buildSearchFilter(
  *
  * @param objectType - The type of object to search (people or companies)
  * @param query - Search query string
- * @param retryConfig - Optional retry configuration
+ * @param options - Optional search options (limit, retryConfig)
  * @returns Array of matching records
  */
 export async function searchObject<T extends AttioRecord>(
   objectType: ResourceType,
   query: string,
-  retryConfig?: Partial<RetryConfig>
+  options?: { limit?: number; retryConfig?: Partial<RetryConfig> }
 ): Promise<T[]> {
+  const retryConfig = options?.retryConfig;
   const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
   const trimmedQuery = query.trim();
   const scoringEnabled = ENABLE_SEARCH_SCORING && trimmedQuery.length > 0;
+  // Use caller's limit if provided, otherwise fall back to default
+  const requestedLimit = options?.limit;
   const baseLimit =
-    Number.isFinite(DEFAULT_FETCH_LIMIT) && DEFAULT_FETCH_LIMIT > 0
-      ? DEFAULT_FETCH_LIMIT
-      : 20;
+    requestedLimit !== undefined && requestedLimit > 0
+      ? requestedLimit
+      : Number.isFinite(DEFAULT_FETCH_LIMIT) && DEFAULT_FETCH_LIMIT > 0
+        ? DEFAULT_FETCH_LIMIT
+        : 20;
   const multiplier =
     Number.isFinite(SEARCH_FETCH_MULTIPLIER) && SEARCH_FETCH_MULTIPLIER > 0
       ? SEARCH_FETCH_MULTIPLIER
