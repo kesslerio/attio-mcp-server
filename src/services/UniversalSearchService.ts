@@ -85,6 +85,7 @@ import {
   DealSearchStrategy,
   TaskSearchStrategy,
   ListSearchStrategy,
+  NoteSearchStrategy,
   StrategyDependencies,
 } from './search-strategies/index.js';
 import { SearchUtilities } from './search-utilities/SearchUtilities.js';
@@ -160,6 +161,12 @@ export class UniversalSearchService {
       getFieldValue: SearchUtilities.getFieldValue.bind(SearchUtilities),
     };
 
+    const noteDependencies: StrategyDependencies = {
+      noteFunction: (query?: Record<string, unknown>) => listNotes(query || {}),
+      rankByRelevance: SearchUtilities.rankByRelevance.bind(SearchUtilities),
+      getFieldValue: SearchUtilities.getFieldValue.bind(SearchUtilities),
+    };
+
     // Initialize strategies
     this.strategies.set(
       UniversalResourceType.COMPANIES,
@@ -180,6 +187,10 @@ export class UniversalSearchService {
     this.strategies.set(
       UniversalResourceType.TASKS,
       new TaskSearchStrategy(taskDependencies)
+    );
+    this.strategies.set(
+      UniversalResourceType.NOTES,
+      new NoteSearchStrategy(noteDependencies)
     );
   }
 
@@ -491,20 +502,10 @@ export class UniversalSearchService {
       });
     }
 
-    // Fallback for resources without strategies (RECORDS, NOTES)
+    // Fallback for resources without strategies (RECORDS only)
     switch (resource_type) {
       case UniversalResourceType.RECORDS:
         return this.searchRecords_ObjectType(limit, offset, filters);
-
-      case UniversalResourceType.NOTES:
-        return this.searchNotes(
-          perfId,
-          apiStart,
-          query,
-          filters,
-          limit,
-          offset
-        );
 
       default:
         throw new Error(
@@ -540,94 +541,6 @@ export class UniversalSearchService {
       pageSize: limit,
       page: Math.floor((offset || 0) / (limit || 10)) + 1,
     });
-  }
-
-  /**
-   * Search notes with filtering and pagination
-   */
-  private static async searchNotes(
-    perfId: string,
-    apiStart: number,
-    query?: string,
-    filters?: Record<string, unknown>,
-    limit?: number,
-    offset?: number
-  ): Promise<AttioRecord[]> {
-    try {
-      // Build query parameters for Attio Notes API
-      const queryParams: Record<string, unknown> = {};
-
-      // Apply filters (mapped from universal filter names)
-      if (filters) {
-        if (filters.parent_object || filters.linked_record_type) {
-          queryParams.parent_object =
-            filters.parent_object || filters.linked_record_type;
-        }
-        if (filters.parent_record_id || filters.linked_record_id) {
-          queryParams.parent_record_id =
-            filters.parent_record_id || filters.linked_record_id;
-        }
-      }
-
-      // Add pagination parameters
-      if (limit) queryParams.limit = limit;
-      if (offset) queryParams.offset = offset;
-
-      // Call Notes API
-      const response = await listNotes(queryParams);
-      const notes = response.data || [];
-
-      // Log performance metrics
-      enhancedPerformanceTracker.markTiming(
-        perfId,
-        'attioApi',
-        performance.now() - apiStart
-      );
-
-      // Normalize notes to AttioRecord format
-      const normalizedNotes = notes.map((note) =>
-        normalizeNoteResponse(note)
-      ) as AttioRecord[];
-
-      // Apply query-based filtering if query provided
-      let results = normalizedNotes;
-      if (query && query.trim()) {
-        const queryLower = query.toLowerCase().trim();
-        results = normalizedNotes.filter((record) => {
-          const title = record.values?.title?.toString()?.toLowerCase() || '';
-          const contentMarkdown =
-            record.values?.content_markdown?.toString()?.toLowerCase() || '';
-          const contentPlaintext =
-            record.values?.content_plaintext?.toString()?.toLowerCase() || '';
-
-          return (
-            title.includes(queryLower) ||
-            contentMarkdown.includes(queryLower) ||
-            contentPlaintext.includes(queryLower)
-          );
-        });
-      }
-
-      enhancedPerformanceTracker.markTiming(
-        perfId,
-        'serialization',
-        performance.now() - apiStart
-      );
-
-      return results;
-    } catch (error: unknown) {
-      createScopedLogger(
-        'UniversalSearchService',
-        'searchNotes',
-        OperationType.API_CALL
-      ).error('Failed to search notes', error);
-      enhancedPerformanceTracker.markTiming(
-        perfId,
-        'other',
-        performance.now() - apiStart
-      );
-      return [];
-    }
   }
 
   // Query API methods remain unchanged

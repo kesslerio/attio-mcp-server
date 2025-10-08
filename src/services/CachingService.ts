@@ -53,6 +53,11 @@ interface CacheStats {
     misses: number;
     entries: number;
   };
+  notes: {
+    hits: number;
+    misses: number;
+    entries: number;
+  };
   attributes: {
     hits: number;
     misses: number;
@@ -72,6 +77,9 @@ export class CachingService {
   // Simple in-memory cache for tasks pagination performance optimization
   private static tasksCache = new Map<string, CacheEntry>();
 
+  // Simple in-memory cache for notes pagination performance optimization
+  private static notesCache = new Map<string, CacheEntry>();
+
   // Attribute discovery cache for performance optimization
   private static attributesCache = new Map<string, AttributeCacheEntry>();
 
@@ -81,6 +89,7 @@ export class CachingService {
   // Cache statistics for monitoring
   private static stats: CacheStats = {
     tasks: { hits: 0, misses: 0, entries: 0 },
+    notes: { hits: 0, misses: 0, entries: 0 },
     attributes: { hits: 0, misses: 0, entries: 0 },
     notFound: { hits: 0, misses: 0, entries: 0 },
   };
@@ -346,16 +355,26 @@ export class CachingService {
   }
 
   /**
+   * Clear all notes cache entries
+   */
+  static clearNotesCache(): void {
+    this.notesCache.clear();
+    this.stats.notes = { hits: 0, misses: 0, entries: 0 };
+  }
+
+  /**
    * Clear all cache entries
    */
   static clearAllCache(): void {
     this.clearTasksCache();
+    this.clearNotesCache();
     this.clearAttributesCache();
     this.clearNotFoundCache();
 
     // Reset stats
     this.stats = {
       tasks: { hits: 0, misses: 0, entries: 0 },
+      notes: { hits: 0, misses: 0, entries: 0 },
       attributes: { hits: 0, misses: 0, entries: 0 },
       notFound: { hits: 0, misses: 0, entries: 0 },
     };
@@ -515,8 +534,11 @@ export class CachingService {
     totalEntries: number;
     tasksCacheSize: number;
     tasksCacheEntries: string[];
+    notesCacheSize: number;
+    notesCacheEntries: string[];
     cacheEfficiency: {
       tasks: number;
+      notes: number;
       attributes: number;
       notFound: number;
       overall: number;
@@ -524,11 +546,13 @@ export class CachingService {
   } {
     const totalHits =
       this.stats.tasks.hits +
+      this.stats.notes.hits +
       this.stats.attributes.hits +
       this.stats.notFound.hits;
     const totalRequests =
       totalHits +
       this.stats.tasks.misses +
+      this.stats.notes.misses +
       this.stats.attributes.misses +
       this.stats.notFound.misses;
 
@@ -536,15 +560,23 @@ export class CachingService {
       ...this.stats,
       totalEntries:
         this.tasksCache.size +
+        this.notesCache.size +
         this.attributesCache.size +
         this.notFoundCache.size,
       tasksCacheSize: this.tasksCache.size,
       tasksCacheEntries: Array.from(this.tasksCache.keys()),
+      notesCacheSize: this.notesCache.size,
+      notesCacheEntries: Array.from(this.notesCache.keys()),
       cacheEfficiency: {
         tasks:
           this.stats.tasks.hits + this.stats.tasks.misses > 0
             ? this.stats.tasks.hits /
               (this.stats.tasks.hits + this.stats.tasks.misses)
+            : 0,
+        notes:
+          this.stats.notes.hits + this.stats.notes.misses > 0
+            ? this.stats.notes.hits /
+              (this.stats.notes.hits + this.stats.notes.misses)
             : 0,
         attributes:
           this.stats.attributes.hits + this.stats.attributes.misses > 0
@@ -590,6 +622,103 @@ export class CachingService {
 
     // Cache the fresh data
     this.setCachedTasks(cacheKey, freshData);
+
+    return { data: freshData, fromCache: false };
+  }
+
+  /**
+   * Get cached notes with automatic TTL management
+   */
+  static getCachedNotes(
+    cacheKey: string,
+    ttl: number = DEFAULT_TASKS_CACHE_TTL
+  ): AttioRecord[] | null {
+    const entry = this.notesCache.get(cacheKey);
+    if (!entry) {
+      this.stats.notes.misses++;
+      return null;
+    }
+
+    const now = Date.now();
+    if (now - entry.timestamp > ttl) {
+      this.notesCache.delete(cacheKey);
+      this.stats.notes.misses++;
+      return null;
+    }
+
+    this.stats.notes.hits++;
+    return entry.data;
+  }
+
+  /**
+   * Set cached notes with timestamp
+   */
+  static setCachedNotes(cacheKey: string, data: AttioRecord[]): void {
+    // Enforce maximum cache size
+    if (this.notesCache.size >= MAX_CACHE_ENTRIES) {
+      const firstKey = this.notesCache.keys().next().value;
+      if (firstKey) {
+        this.notesCache.delete(firstKey);
+      }
+    }
+
+    this.notesCache.set(cacheKey, {
+      data,
+      timestamp: Date.now(),
+    });
+
+    this.stats.notes.entries = this.notesCache.size;
+  }
+
+  /**
+   * Generate cache key for notes list
+   */
+  static getNotesListCacheKey(): string {
+    return 'notes:list:all';
+  }
+
+  /**
+   * Clear expired notes cache entries
+   */
+  static clearExpiredNotesCache(ttl: number = DEFAULT_TASKS_CACHE_TTL): void {
+    const now = Date.now();
+    for (const [key, entry] of this.notesCache.entries()) {
+      if (now - entry.timestamp > ttl) {
+        this.notesCache.delete(key);
+      }
+    }
+    this.stats.notes.entries = this.notesCache.size;
+  }
+
+  /**
+   * Manage note caching with automatic data loading
+   *
+   * This method encapsulates the common pattern of:
+   * 1. Check cache for valid data
+   * 2. Load data if cache miss
+   * 3. Cache the loaded data
+   *
+   * @param dataLoader - Function to load data when cache miss occurs
+   * @param cacheKey - Cache key (default: standard notes list key)
+   * @param ttl - Time to live in milliseconds
+   * @returns Cached or freshly loaded data
+   */
+  static async getOrLoadNotes(
+    dataLoader: () => Promise<AttioRecord[]>,
+    cacheKey: string = this.getNotesListCacheKey(),
+    ttl: number = DEFAULT_TASKS_CACHE_TTL
+  ): Promise<{ data: AttioRecord[]; fromCache: boolean }> {
+    // Check cache first
+    const cachedNotes = this.getCachedNotes(cacheKey, ttl);
+    if (cachedNotes) {
+      return { data: cachedNotes, fromCache: true };
+    }
+
+    // Load fresh data
+    const freshData = await dataLoader();
+
+    // Cache the fresh data
+    this.setCachedNotes(cacheKey, freshData);
 
     return { data: freshData, fromCache: false };
   }

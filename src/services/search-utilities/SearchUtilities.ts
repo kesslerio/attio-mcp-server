@@ -204,6 +204,30 @@ export class SearchUtilities {
   }
 
   /**
+   * Helper method to extract field value from a note record for content search
+   * Issue #888: Support notes search by title and content
+   */
+  static getNoteFieldValue(note: AttioRecord, field: string): string {
+    const values = note.values as Record<string, unknown>;
+    if (!values) return '';
+
+    const fieldValue = values[field];
+
+    // Handle different field value structures for notes
+    if (typeof fieldValue === 'string') {
+      return fieldValue;
+    } else if (
+      fieldValue &&
+      typeof fieldValue === 'object' &&
+      'value' in fieldValue
+    ) {
+      return String((fieldValue as { value: unknown }).value || '');
+    }
+
+    return '';
+  }
+
+  /**
    * Create date filter from timeframe parameters
    */
   static createDateFilter(
