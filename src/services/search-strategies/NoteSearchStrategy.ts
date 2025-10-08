@@ -36,6 +36,9 @@ import { enhancedPerformanceTracker } from '../../middleware/performance-enhance
 import { CachingService } from '../CachingService.js';
 import { UniversalUtilityService } from '../UniversalUtilityService.js';
 
+// Performance warning threshold for large note datasets
+const NOTES_PERFORMANCE_WARNING_THRESHOLD = 2000;
+
 /**
  * Search strategy for notes with performance optimization, caching, and content search support
  *
@@ -166,13 +169,18 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
       }
     };
 
-    const { data: notes, fromCache } =
-      await CachingService.getOrLoadNotes(loadNotesData);
+    // Generate cache key based on parent filters to prevent collisions
+    const cacheKey = CachingService.getNotesListCacheKey(filters);
+    const { data: notes, fromCache } = await CachingService.getOrLoadNotes(
+      loadNotesData,
+      cacheKey
+    );
 
     // Performance warning for large datasets
-    if (!fromCache && notes.length > 500) {
+    if (!fromCache && notes.length > NOTES_PERFORMANCE_WARNING_THRESHOLD) {
       log.warn('PERFORMANCE WARNING: Large notes load', {
         noteCount: notes.length,
+        threshold: NOTES_PERFORMANCE_WARNING_THRESHOLD,
         recommendation:
           'Consider requesting Attio API pagination support for notes endpoint.',
       });
@@ -299,11 +307,12 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
       note.content ??
       '') as string;
 
-    return {
+    // Return properly typed record satisfying AttioRecord interface
+    const record: AttioRecord = {
       id: {
         record_id: noteId,
         note_id: noteId,
-      },
+      } as AttioRecord['id'],
       values: {
         title: note.title || '',
         content_markdown: contentMarkdown,
@@ -313,6 +322,8 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         created_at: note.created_at || '',
         created_by_actor: note.created_by_actor,
       },
-    } as unknown as AttioRecord;
+    };
+
+    return record;
   }
 }

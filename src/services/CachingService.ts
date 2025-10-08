@@ -632,18 +632,18 @@ export class CachingService {
   static getCachedNotes(
     cacheKey: string,
     ttl: number = DEFAULT_TASKS_CACHE_TTL
-  ): AttioRecord[] | null {
+  ): AttioRecord[] | undefined {
     const entry = this.notesCache.get(cacheKey);
     if (!entry) {
       this.stats.notes.misses++;
-      return null;
+      return undefined;
     }
 
     const now = Date.now();
     if (now - entry.timestamp > ttl) {
       this.notesCache.delete(cacheKey);
       this.stats.notes.misses++;
-      return null;
+      return undefined;
     }
 
     this.stats.notes.hits++;
@@ -672,9 +672,12 @@ export class CachingService {
 
   /**
    * Generate cache key for notes list
+   * Includes parent filter context to prevent cache collisions between different parent records
    */
-  static getNotesListCacheKey(): string {
-    return 'notes:list:all';
+  static getNotesListCacheKey(filters?: Record<string, unknown>): string {
+    const parentObject = filters?.parent_object || 'all';
+    const parentRecordId = filters?.parent_record_id || 'all';
+    return `notes:list:${parentObject}:${parentRecordId}`;
   }
 
   /**
