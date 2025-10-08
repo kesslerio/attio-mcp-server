@@ -672,7 +672,17 @@ export class CachingService {
 
   /**
    * Generate cache key for notes list
-   * Includes parent filter context to prevent cache collisions between different parent records
+   * Includes parent filter context to prevent cache collisions between different parent records.
+   *
+   * IMPORTANT: Unlike tasks (which use static 'tasks_list_all' key), notes MUST use
+   * context-specific keys because Attio API requires parent filters to return any notes.
+   * Without parent context in the cache key, we'd incorrectly return cached notes
+   * from one parent when searching another parent's notes.
+   *
+   * Examples:
+   * - Workspace-wide: 'notes:list:all:all'
+   * - Company-specific: 'notes:list:companies:abc-123'
+   * - Deal-specific: 'notes:list:deals:xyz-789'
    */
   static getNotesListCacheKey(filters?: Record<string, unknown>): string {
     const parentObject = filters?.parent_object || 'all';

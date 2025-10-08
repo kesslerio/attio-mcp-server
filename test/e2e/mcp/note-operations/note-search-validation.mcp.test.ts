@@ -467,4 +467,44 @@ describe('TC-N04: Note Search Validation - Issue #888 Fix', () => {
     results.push({ testName, passed, error });
     expect(passed).toBe(true);
   });
+
+  it('should search note content when parent filter provided (working path)', async () => {
+    const testName = 'content_search_with_parent_filters';
+    let passed = false;
+    let error: string | undefined;
+
+    try {
+      if (!testCase.testCompanyId) {
+        throw new Error('Test company not available');
+      }
+
+      // This is the WORKING path - content search WITH parent filters
+      const result = await testCase.executeToolCall('records_search', {
+        resource_type: 'notes',
+        query: 'comprehensive strategy', // From note content
+        filters: {
+          parent_object: 'companies',
+          parent_record_id: testCase.testCompanyId,
+        },
+        limit: 10,
+      });
+
+      expect(result.isError).toBeFalsy();
+
+      const text = result.content?.[0]?.text || '';
+      expect(text).toBeTruthy();
+
+      // Should find the note since parent filters are provided
+      // The note contains "comprehensive strategy document"
+      expect(text.toLowerCase()).toContain('complete pre-demo');
+
+      passed = true;
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+      console.error(`${testName} failed:`, error);
+    }
+
+    results.push({ testName, passed, error });
+    expect(passed).toBe(true);
+  });
 });
