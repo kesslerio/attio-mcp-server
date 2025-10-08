@@ -1,6 +1,21 @@
 /**
  * Note search strategy implementation
  * Issue #888: Fix notes search - notes cannot be found by title/content
+ *
+ * **IMPORTANT API LIMITATION**:
+ * The Attio Notes API /v2/notes endpoint returns an empty array when called without filters.
+ * Testing with curl confirmed: GET /v2/notes returns {"data": []}
+ * The API requires parent_object and/or parent_record_id filters to return any notes.
+ *
+ * **What Works**:
+ * - list-notes tool with parent record filtering (e.g., list all notes on a company)
+ * - Content search within notes for a specific parent record
+ *
+ * **What Doesn't Work**:
+ * - Workspace-wide note search without parent filters
+ * - Global search like "find all notes containing 'demo'" across all records
+ *
+ * Recommendation: Request Attio to add workspace-wide notes endpoint or search capability.
  */
 
 import { AttioRecord, AttioNote } from '../../types/attio.js';
@@ -275,20 +290,14 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
     const noteId =
       typeof note.id === 'string' ? note.id : note.id?.note_id || '';
 
-    // Handle content field which can be string or object with markdown/plaintext
-    let contentMarkdown = '';
-    let contentPlaintext = '';
-    if (typeof note.content === 'string') {
-      contentMarkdown = note.content;
-      contentPlaintext = note.content;
-    } else if (note.content && typeof note.content === 'object') {
-      const contentObj = note.content as {
-        markdown?: string;
-        plaintext?: string;
-      };
-      contentMarkdown = contentObj.markdown || '';
-      contentPlaintext = contentObj.plaintext || '';
-    }
+    // Extract content fields - API returns content_markdown, content_plaintext, or content
+    // Match the normalization logic from src/objects/notes.ts:normalizeNoteResponse
+    const contentMarkdown = (note.content_markdown ??
+      note.content ??
+      '') as string;
+    const contentPlaintext = (note.content_plaintext ??
+      note.content ??
+      '') as string;
 
     return {
       id: {
