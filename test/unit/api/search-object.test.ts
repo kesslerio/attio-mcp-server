@@ -25,7 +25,12 @@ describe('searchObject', () => {
     originalScoringEnv = process.env.ENABLE_SEARCH_SCORING;
     process.env.ENABLE_SEARCH_SCORING = 'false';
     postMock.mockClear();
-    postMock.mockResolvedValue({ data: { data: [] } });
+    // Default: return non-empty results to avoid triggering fallback in filter structure tests
+    postMock.mockResolvedValue({
+      data: {
+        data: [{ id: { record_id: 'mock' }, values: { name: 'Mock' } }],
+      },
+    });
   });
 
   afterEach(() => {
@@ -265,6 +270,73 @@ describe('searchObject', () => {
             },
           ])
         );
+      });
+    });
+
+    describe('OR fallback for zero results (recall fix)', () => {
+      it('triggers OR fallback when AND-of-OR returns zero results', async () => {
+        // Enable scoring to test fallback logic
+        process.env.ENABLE_SEARCH_SCORING = 'true';
+        postMock.mockClear();
+
+        // Fast-path candidate 1 (name eq): no match
+        postMock.mockResolvedValueOnce({ data: { data: [] } });
+        // Fast-path candidate 2 (name contains): no match
+        postMock.mockResolvedValueOnce({ data: { data: [] } });
+        // Main query (AND-of-OR): returns 0 results
+        postMock.mockResolvedValueOnce({ data: { data: [] } });
+        // Fallback query (OR-only): returns results
+        postMock.mockResolvedValueOnce({
+          data: {
+            data: [
+              {
+                id: { record_id: '1' },
+                values: {
+                  name: 'Beauty Glow Aesthetics',
+                  domains: [],
+                },
+              },
+            ],
+          },
+        });
+
+        const results = (await searchObject(
+          ResourceType.COMPANIES,
+          'Beauty Glow Aesthetics Frisco'
+        )) as Array<{ values: { name: string } }>;
+
+        // Should have made 4 calls (2 fast-path + AND-of-OR + OR fallback)
+        expect(postMock).toHaveBeenCalledTimes(4);
+
+        // Should return fallback results
+        expect(results.length).toBeGreaterThan(0);
+        expect(results[0].values.name).toBe('Beauty Glow Aesthetics');
+      });
+
+      it('does not trigger fallback when AND-of-OR succeeds', async () => {
+        process.env.ENABLE_SEARCH_SCORING = 'true';
+        postMock.mockClear();
+
+        // Fast-path candidate 1 (name eq): no match
+        postMock.mockResolvedValueOnce({ data: { data: [] } });
+        // Fast-path candidate 2 (name contains): no match
+        postMock.mockResolvedValueOnce({ data: { data: [] } });
+        // Main query returns results (no fallback needed)
+        postMock.mockResolvedValueOnce({
+          data: {
+            data: [
+              {
+                id: { record_id: '1' },
+                values: { name: 'Elite Styles And Beauty' },
+              },
+            ],
+          },
+        });
+
+        await searchObject(ResourceType.COMPANIES, 'Elite Styles Beauty');
+
+        // Should make 3 calls (2 fast-path + main, no fallback)
+        expect(postMock).toHaveBeenCalledTimes(3);
       });
     });
   });

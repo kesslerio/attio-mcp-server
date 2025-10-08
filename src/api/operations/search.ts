@@ -480,6 +480,78 @@ function buildSearchFilter(
 }
 
 /**
+ * Build OR-only fallback filter for when AND-of-OR returns zero results
+ * Uses the same parsed structure but allows ANY token to match (no AND requirement)
+ */
+function buildORFallbackFilter(
+  objectType: ResourceType,
+  parsed: ParsedQuery
+): FilterCondition {
+  const conditions: FilterCondition[] = [];
+  const seen = new Set<string>();
+
+  // Include all structured fields as before
+  parsed.emails.forEach((email) => {
+    addCondition(conditions, seen, {
+      email_addresses: { $contains: email },
+    });
+  });
+
+  parsed.phones.forEach((phone) => {
+    addCondition(conditions, seen, {
+      phone_numbers: { $contains: phone },
+    });
+  });
+
+  if (objectType === ResourceType.COMPANIES) {
+    parsed.domains.forEach((domain) => {
+      addCondition(conditions, seen, {
+        domains: { $contains: domain },
+      });
+    });
+  }
+
+  const tokenTargets = new Set<string>();
+  tokenTargets.add('name');
+
+  if (objectType === ResourceType.PEOPLE) {
+    tokenTargets.add('email_addresses');
+    tokenTargets.add('phone_numbers');
+  }
+
+  if (objectType === ResourceType.COMPANIES) {
+    tokenTargets.add('domains');
+  }
+
+  const uniqueTokens = Array.from(
+    new Set(parsed.tokens.filter((token) => token.length > 1))
+  );
+
+  // OR-only fallback: each token can match any field (no AND requirement)
+  // This provides maximum recall when the stricter AND-of-OR filter returns zero results
+  uniqueTokens.forEach((token) => {
+    tokenTargets.forEach((field) => {
+      addCondition(conditions, seen, {
+        [field]: { $contains: token },
+      });
+    });
+  });
+
+  if (conditions.length === 0) {
+    // Shouldn't happen, but return safe fallback
+    return { name: { $contains: parsed.tokens.join(' ') } };
+  }
+
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+
+  return {
+    $or: conditions,
+  };
+}
+
+/**
  * Generic function to search any object type by name, email, or phone (when applicable)
  *
  * @param objectType - The type of object to search (people or companies)
@@ -627,7 +699,31 @@ export async function searchObject<T extends AttioRecord>(
         limit: fetchLimit,
       });
       const rawData = response?.data?.data;
-      const data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
+      let data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
+
+      // OR-only fallback when AND-of-OR returns zero results (#885 recall fix)
+      // This handles over-constrained queries like "Beauty Glow Aesthetics Frisco"
+      // where some tokens don't exist but the record should still match
+      if (data.length === 0 && parsedQuery && scoringEnabled) {
+        logger.debug('[Fallback] Zero results from AND-of-OR, trying OR-only', {
+          query: trimmedQuery,
+          objectType,
+        });
+
+        const fallbackFilter = buildORFallbackFilter(objectType, parsedQuery);
+        const fallbackResponse = await api.post<AttioListResponse<T>>(path, {
+          filter: fallbackFilter,
+          limit: fetchLimit,
+        });
+        const fallbackRawData = fallbackResponse?.data?.data;
+        data = Array.isArray(fallbackRawData)
+          ? (fallbackRawData as AttioRecord[])
+          : [];
+
+        logger.debug('[Fallback] OR-only results', {
+          count: data.length,
+        });
+      }
 
       if (!scoringEnabled || data.length <= 1) {
         const truncated = data.slice(0, baseLimit);
