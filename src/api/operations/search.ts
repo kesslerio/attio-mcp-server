@@ -419,6 +419,116 @@ function buildSearchFilter(
     new Set(parsed.tokens.filter((token) => token.length > 1))
   );
 
+  // AND-of-OR search strategy (#885 fix):
+  // For each token, allow it to match ANY field (name OR domains OR email/phone)
+  // But ALL tokens must match SOMEWHERE
+  // This provides precision (all tokens required) + cross-field flexibility (name + domain tokens)
+  //
+  // Example: "Elite Styles Beauty Mindful Program"
+  // - "Elite" can match name OR domains
+  // - "Styles" can match name OR domains
+  // - "Mindful" can match name OR domains (will match domain mindfulbeautyprogram.com)
+  // - etc.
+  //
+  // Result: Company "Elite Styles And Beauty" (mindfulbeautyprogram.com) matches because:
+  // - "Elite" matches name ✓
+  // - "Styles" matches name ✓
+  // - "Beauty" matches name ✓
+  // - "Mindful" matches domain ✓
+  // - "Program" matches domain ✓
+  if (uniqueTokens.length > 0) {
+    if (uniqueTokens.length === 1) {
+      // Single token: create OR condition across all relevant fields
+      const token = uniqueTokens[0];
+      tokenTargets.forEach((field) => {
+        addCondition(conditions, seen, {
+          [field]: { $contains: token },
+        });
+      });
+    } else {
+      // Multiple tokens: each token must match at least one field (AND of ORs)
+      const tokenAndConditions = uniqueTokens.map((token) => {
+        const tokenFieldConditions: FilterCondition[] = [];
+        tokenTargets.forEach((field) => {
+          tokenFieldConditions.push({
+            [field]: { $contains: token },
+          });
+        });
+        return {
+          $or: tokenFieldConditions,
+        };
+      });
+
+      // Combine all token conditions with AND
+      addCondition(conditions, seen, {
+        $and: tokenAndConditions,
+      });
+    }
+  }
+
+  if (conditions.length === 0) {
+    return createLegacyFilter(objectType, trimmedQuery);
+  }
+
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+
+  return {
+    $or: conditions,
+  };
+}
+
+/**
+ * Build OR-only fallback filter for when AND-of-OR returns zero results
+ * Uses the same parsed structure but allows ANY token to match (no AND requirement)
+ */
+function buildORFallbackFilter(
+  objectType: ResourceType,
+  parsed: ParsedQuery
+): FilterCondition {
+  const conditions: FilterCondition[] = [];
+  const seen = new Set<string>();
+
+  // Include all structured fields as before
+  parsed.emails.forEach((email) => {
+    addCondition(conditions, seen, {
+      email_addresses: { $contains: email },
+    });
+  });
+
+  parsed.phones.forEach((phone) => {
+    addCondition(conditions, seen, {
+      phone_numbers: { $contains: phone },
+    });
+  });
+
+  if (objectType === ResourceType.COMPANIES) {
+    parsed.domains.forEach((domain) => {
+      addCondition(conditions, seen, {
+        domains: { $contains: domain },
+      });
+    });
+  }
+
+  const tokenTargets = new Set<string>();
+  tokenTargets.add('name');
+
+  if (objectType === ResourceType.PEOPLE) {
+    tokenTargets.add('email_addresses');
+    tokenTargets.add('phone_numbers');
+  }
+
+  if (objectType === ResourceType.COMPANIES) {
+    tokenTargets.add('domains');
+  }
+
+  const uniqueTokens = Array.from(
+    new Set(parsed.tokens.filter((token) => token.length > 1))
+  );
+
+  // OR-only fallback: each token can match any field (no AND requirement)
+  // This provides maximum recall when the stricter AND-of-OR filter returns zero results
   uniqueTokens.forEach((token) => {
     tokenTargets.forEach((field) => {
       addCondition(conditions, seen, {
@@ -428,7 +538,8 @@ function buildSearchFilter(
   });
 
   if (conditions.length === 0) {
-    return createLegacyFilter(objectType, trimmedQuery);
+    // Shouldn't happen, but return safe fallback
+    return { name: { $contains: parsed.tokens.join(' ') } };
   }
 
   if (conditions.length === 1) {
@@ -588,7 +699,32 @@ export async function searchObject<T extends AttioRecord>(
         limit: fetchLimit,
       });
       const rawData = response?.data?.data;
-      const data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
+      let data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
+
+      // OR-only fallback when AND-of-OR returns zero results (#885 recall fix)
+      // This handles over-constrained queries like "Beauty Glow Aesthetics Frisco"
+      // where some tokens don't exist but the record should still match
+      // Runs regardless of scoring state - scoring only affects ranking, not recall
+      if (data.length === 0 && parsedQuery) {
+        logger.debug('[Fallback] Zero results from AND-of-OR, trying OR-only', {
+          query: trimmedQuery,
+          objectType,
+        });
+
+        const fallbackFilter = buildORFallbackFilter(objectType, parsedQuery);
+        const fallbackResponse = await api.post<AttioListResponse<T>>(path, {
+          filter: fallbackFilter,
+          limit: fetchLimit,
+        });
+        const fallbackRawData = fallbackResponse?.data?.data;
+        data = Array.isArray(fallbackRawData)
+          ? (fallbackRawData as AttioRecord[])
+          : [];
+
+        logger.debug('[Fallback] OR-only results', {
+          count: data.length,
+        });
+      }
 
       if (!scoringEnabled || data.length <= 1) {
         const truncated = data.slice(0, baseLimit);

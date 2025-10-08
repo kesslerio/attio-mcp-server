@@ -13,7 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **records_search relevance** (#885) - Added client-side scoring with uFuzzy and LRU caching so exact domain/name/email matches rank first while repeated queries stay within the 3 s budget.
+### Security
+
+### Deprecated
+
+## [1.1.2] - 2025-10-08
+
+### Fixed
+
+- **Multi-token search query logic** - Fixed fallback search to require ALL tokens in multi-word queries instead of ANY token
+  - **Problem**: Multi-word searches (e.g., "Alpha Beta Company") returned 100+ records matching ANY token ("Alpha" OR "Beta" OR "Company"), pushing exact matches out of results
+  - **Solution**: Multi-token queries now use AND-of-OR structure - each token must match somewhere (in name OR domains), but all tokens must match (cross-field flexibility with precision)
+  - **Result**: Multi-word name searches now return exact matches in top results instead of being buried at position #101+
+  - Single-token queries unchanged (still use simple `$contains`)
+  - This improves precision for company/people searches with multi-word names
+- **records_search relevance** (#885) - Added client-side scoring with uFuzzy and LRU caching so exact domain/name/email matches rank first while repeated queries stay within the 3 s budget
 - **Deal search fast path optimization** (#885) - Extended fast path optimization to deals with 72-80% performance improvement
   - Sequential candidate execution: exact match ($eq) → substring match ($contains)
   - LRU caching with 5-minute TTL delivers 8ms cached responses (99.9% faster than ~2.8s cold searches)
@@ -28,24 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - This prevents searching across all notes in a workspace
   - **What Works**: `list-notes` tool with parent record filtering (e.g., list all notes on a specific company)
   - **What Doesn't Work**: Global note search without parent filters (e.g., "find all notes containing 'demo'")
-  - **Workaround**: Use `list-notes` with explicit parent filters to search within a specific record's notes:
-    ```javascript
-    // Instead of: search all notes for "demo" (returns 0 results)
-    // Use: list notes for specific company/deal, then filter by content
-    await mcp.call('list-notes', {
-      resource_type: 'companies',
-      record_id: 'company-uuid-here',
-    });
-    // Client-side content filtering automatically applied if query provided
-    ```
+  - **Workaround**: Use `list-notes` with explicit parent filters to search within a specific record's notes
   - Implemented client-side filtering for title/content when parent filters are provided
   - Added smart caching (30s TTL) with parent-aware cache keys to prevent cross-contamination
   - Removed obsolete `searchNotes()` fallback method (85 lines)
   - **Recommendation**: Request Attio to add workspace-wide notes endpoint or search capability
-
-### Security
-
-### Deprecated
 
 ## [1.1.0] - 2025-10-06
 
