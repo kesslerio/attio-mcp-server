@@ -20,6 +20,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created `DealSearchStrategy` following same pattern as companies/people
   - Removed obsolete `searchDeals()` and `queryDealRecords()` methods (100+ lines)
   - Fixed original bug where deals only supported exact name matches
+- **Notes search functionality - Partial fix with API limitation** (#888)
+  - Created `NoteSearchStrategy` following established search strategy pattern
+  - **API Limitation Discovered**: Attio Notes API `/v2/notes` endpoint returns empty array when called without filters
+    - Confirmed via direct API testing: `GET /v2/notes` returns `{"data": []}`
+    - API requires `parent_object` and/or `parent_record_id` filters to return notes
+    - This prevents searching across all notes in a workspace
+  - **What Works**: `list-notes` tool with parent record filtering (e.g., list all notes on a specific company)
+  - **What Doesn't Work**: Global note search without parent filters (e.g., "find all notes containing 'demo'")
+  - **Workaround**: Use `list-notes` with explicit parent filters to search within a specific record's notes:
+    ```javascript
+    // Instead of: search all notes for "demo" (returns 0 results)
+    // Use: list notes for specific company/deal, then filter by content
+    await mcp.call('list-notes', {
+      resource_type: 'companies',
+      record_id: 'company-uuid-here',
+    });
+    // Client-side content filtering automatically applied if query provided
+    ```
+  - Implemented client-side filtering for title/content when parent filters are provided
+  - Added smart caching (30s TTL) with parent-aware cache keys to prevent cross-contamination
+  - Removed obsolete `searchNotes()` fallback method (85 lines)
+  - **Recommendation**: Request Attio to add workspace-wide notes endpoint or search capability
 
 ### Security
 

@@ -15,3 +15,4 @@ export { PeopleSearchStrategy } from './PeopleSearchStrategy.js';
 export { DealSearchStrategy } from './DealSearchStrategy.js';
 export { TaskSearchStrategy } from './TaskSearchStrategy.js';
 export { ListSearchStrategy } from './ListSearchStrategy.js';
+export { NoteSearchStrategy } from './NoteSearchStrategy.js';

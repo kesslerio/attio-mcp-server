@@ -89,6 +89,9 @@ export interface StrategyDependencies {
     page?: number,
     pageSize?: number
   ) => Promise<AttioTask[]>;
+  noteFunction?: (
+    query?: Record<string, unknown>
+  ) => Promise<{ data: unknown[]; meta?: { next_cursor?: string } }>;
 
   // Utility functions
   createDateFilter?: (
