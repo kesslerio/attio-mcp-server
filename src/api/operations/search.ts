@@ -419,13 +419,26 @@ function buildSearchFilter(
     new Set(parsed.tokens.filter((token) => token.length > 1))
   );
 
-  uniqueTokens.forEach((token) => {
+  // For multi-token queries, require ALL tokens to match within the same field
+  // This prevents "Beauty Glow" from matching random companies with "Beauty" OR "Glow"
+  // Instead: name must contain "Beauty" AND "Glow", or domains must contain both
+  if (uniqueTokens.length > 0) {
     tokenTargets.forEach((field) => {
-      addCondition(conditions, seen, {
+      const fieldConditions = uniqueTokens.map((token) => ({
         [field]: { $contains: token },
-      });
+      }));
+
+      if (fieldConditions.length === 1) {
+        // Single token: simple contains
+        addCondition(conditions, seen, fieldConditions[0]);
+      } else {
+        // Multiple tokens: ALL must match within this field
+        addCondition(conditions, seen, {
+          $and: fieldConditions,
+        });
+      }
     });
-  });
+  }
 
   if (conditions.length === 0) {
     return createLegacyFilter(objectType, trimmedQuery);

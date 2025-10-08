@@ -46,11 +46,22 @@ describe('searchObject', () => {
     const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
+    // Email is extracted separately
     expect(filter.$or).toEqual(
       expect.arrayContaining([
         { email_addresses: { $contains: 'alex.rivera@example.com' } },
-        { name: { $contains: 'Alex' } },
-        { name: { $contains: 'Rivera' } },
+      ])
+    );
+
+    // Multi-token "Alex Rivera" creates $and conditions per field
+    expect(filter.$or).toEqual(
+      expect.arrayContaining([
+        {
+          $and: [
+            { name: { $contains: 'Alex' } },
+            { name: { $contains: 'Rivera' } },
+          ],
+        },
       ])
     );
   });
@@ -75,11 +86,31 @@ describe('searchObject', () => {
     const [, body] = postMock.mock.calls[postMock.mock.calls.length - 1];
     const filter = body.filter;
 
+    // Multi-token query creates $and conditions per field (name and domains)
+    // Each field must match ALL tokens: Example AND Medical AND Group AND Oregon
     expect(filter.$or).toEqual(
       expect.arrayContaining([
-        { name: { $contains: 'Example' } },
-        { name: { $contains: 'Oregon' } },
-        { domains: { $contains: 'Example' } },
+        {
+          $and: [
+            { name: { $contains: 'Example' } },
+            { name: { $contains: 'Medical' } },
+            { name: { $contains: 'Group' } },
+            { name: { $contains: 'Oregon' } },
+          ],
+        },
+      ])
+    );
+
+    expect(filter.$or).toEqual(
+      expect.arrayContaining([
+        {
+          $and: [
+            { domains: { $contains: 'Example' } },
+            { domains: { $contains: 'Medical' } },
+            { domains: { $contains: 'Group' } },
+            { domains: { $contains: 'Oregon' } },
+          ],
+        },
       ])
     );
   });
