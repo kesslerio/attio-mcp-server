@@ -253,7 +253,8 @@ function buildFastPathCandidates(
     trimmedQuery &&
     !hasStructuredQuery &&
     (objectType === ResourceType.COMPANIES ||
-      objectType === ResourceType.PEOPLE)
+      objectType === ResourceType.PEOPLE ||
+      objectType === ResourceType.DEALS)
   ) {
     const normalizedName = normalizePlainValue(trimmedQuery);
     candidates.push({
