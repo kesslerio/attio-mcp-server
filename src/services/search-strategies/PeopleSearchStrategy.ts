@@ -135,28 +135,17 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
         offset
       );
     } else {
-      const parsedFilters = buildPeopleQueryFilters(query, matchType);
+      // For simple text queries without special fields/filters,
+      // use searchObject which includes fast path optimization
+      const { searchObject } = await import('../../api/operations/search.js');
+      const { ResourceType } = await import('../../types/attio.js');
 
-      if (
-        parsedFilters?.filters?.length &&
-        this.dependencies.paginatedSearchFunction
-      ) {
-        const paginatedResult = await this.dependencies.paginatedSearchFunction(
-          parsedFilters,
-          {
-            limit,
-            offset,
-          }
-        );
-        return paginatedResult.results;
-      }
+      const results = await searchObject(ResourceType.PEOPLE, query);
 
-      // Auto-detect email-like queries and search email field specifically
-      if (this.looksLikeEmail(query)) {
-        return this.searchByEmail(query, limit, offset);
-      }
-
-      return this.searchByNameAndEmail(query, matchType, limit, offset);
+      // Apply limit and offset
+      const start = offset || 0;
+      const end = limit ? start + limit : undefined;
+      return results.slice(start, end);
     }
   }
 

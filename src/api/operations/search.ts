@@ -22,6 +22,9 @@ import {
 } from '@shared-types/api-operations.js';
 import { LRUCache } from 'lru-cache';
 import { scoreAndRank } from '../../services/search-utilities/SearchScorer.js';
+import { createScopedLogger } from '../../utils/logger.js';
+
+const logger = createScopedLogger('api.operations', 'search');
 
 type FilterCondition = Record<string, unknown>;
 
@@ -229,13 +232,15 @@ function buildFastPathCandidates(
     });
   }
 
-  if (parsed.phones.length === 1) {
-    const phoneValue = parsed.phones[0];
-    candidates.push({
-      filter: { phone_numbers: { $eq: phoneValue } },
-      kind: 'phone',
-      strategy: 'eq',
-      value: phoneValue,
+  // Try all phone variants as fast path candidates (parser creates normalized forms)
+  if (parsed.phones.length > 0) {
+    parsed.phones.forEach((phoneValue) => {
+      candidates.push({
+        filter: { phone_numbers: { $eq: phoneValue } },
+        kind: 'phone',
+        strategy: 'eq',
+        value: phoneValue,
+      });
     });
   }
 
@@ -297,14 +302,22 @@ function recordMatchesFastPath(
     }
     case 'phone': {
       const phones = extractStringsFromField(values.phone_numbers, [
-        'number',
-        'normalized',
-        'value',
+        'phone_number', // Main normalized field
+        'original_phone_number', // Original input
+        'number', // Legacy fallback
+        'normalized', // Legacy fallback
+        'value', // Legacy fallback
       ]);
       const normalizedSet = new Set<string>();
       phones.forEach((phone) => {
         normalizedSet.add(phone);
         normalizedSet.add(phone.replace(/\s+/g, ''));
+        // Also try with/without leading +
+        if (phone.startsWith('+')) {
+          normalizedSet.add(phone.substring(1));
+        } else {
+          normalizedSet.add(`+${phone}`);
+        }
       });
       return (
         normalizedSet.has(candidate.value) ||
@@ -482,11 +495,25 @@ export async function searchObject<T extends AttioRecord>(
     );
 
     for (const candidate of fastCandidates) {
+      const candidateLimit =
+        candidate.kind === 'name' && candidate.strategy === 'contains'
+          ? Math.min(100, Math.max(minimumFetch, baseLimit * multiplier))
+          : candidate.kind === 'name' && candidate.strategy === 'eq'
+            ? baseLimit
+            : fastPathLimit;
+
+      logger.debug('[FastPath] Trying candidate', {
+        kind: candidate.kind,
+        strategy: candidate.strategy,
+        filter: candidate.filter,
+        limit: candidateLimit,
+      });
+
       try {
         const fastResponse = await callWithRetry(async () => {
           return api.post<AttioListResponse<T>>(path, {
             filter: candidate.filter,
-            limit: fastPathLimit,
+            limit: candidateLimit,
           });
         }, retryConfig);
 
@@ -494,7 +521,12 @@ export async function searchObject<T extends AttioRecord>(
           ? (fastResponse?.data?.data as AttioRecord[])
           : [];
 
+        logger.debug('[FastPath] Received results', {
+          count: fastData.length,
+        });
+
         if (!fastData.length) {
+          logger.debug('[FastPath] No results for candidate');
           continue;
         }
 
@@ -503,8 +535,16 @@ export async function searchObject<T extends AttioRecord>(
         );
 
         if (!hasMatch) {
+          logger.debug('[FastPath] Validation failed', {
+            candidateKind: candidate.kind,
+            candidateStrategy: candidate.strategy,
+            candidateValue: candidate.value,
+            resultCount: fastData.length,
+          });
           continue;
         }
+
+        logger.debug('[FastPath] Validation passed, ranking');
 
         const rankedFast = scoreAndRank(
           trimmedQuery,
@@ -519,6 +559,12 @@ export async function searchObject<T extends AttioRecord>(
 
         return truncatedFast as unknown as T[];
       } catch (error) {
+        logger.debug('[FastPath] Error executing candidate', {
+          kind: candidate.kind,
+          strategy: candidate.strategy,
+          filter: candidate.filter,
+          error: error instanceof Error ? error.message : String(error),
+        });
         void error; // Non-fatal fast-path failure; fall back to next candidate
       }
     }
