@@ -4,15 +4,15 @@ Search scoring powers the `records_search` tool with client-side relevance ranki
 
 ## Environment Variables
 
-| Variable                  | Default              | Description                                                                                                                       |
-| ------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `ENABLE_SEARCH_SCORING`   | `true`               | Toggle the scoring and caching layer. Set to `false` to fall back to Attio API ordering.                                          |
-| `SEARCH_DEFAULT_LIMIT`    | `20`                 | Number of results returned to callers. Must be a positive integer.                                                                |
-| `SEARCH_FETCH_MULTIPLIER` | `5`                  | Multiplier used when scoring is enabled to fetch a larger candidate set before ranking.                                           |
-| `SEARCH_FETCH_MIN`        | `50`                 | Minimum number of candidates fetched when scoring is enabled.                                                                     |
-| `SEARCH_FAST_PATH_LIMIT`  | `5`                  | Minimum batch size for the exact-match fast path. The implementation automatically bumps this to at least `SEARCH_DEFAULT_LIMIT`. |
-| `SEARCH_CACHE_TTL_MS`     | `300000` (5 minutes) | TTL for cached search results in milliseconds.                                                                                    |
-| `SEARCH_CACHE_MAX`        | `500`                | Maximum number of cached search entries stored in memory.                                                                         |
+| Variable                  | Default              | Description                                                                                                                                                                                                                    |
+| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ENABLE_SEARCH_SCORING`   | `true`               | Toggle the scoring and caching layer. Set to `false` to fall back to Attio API ordering.                                                                                                                                       |
+| `SEARCH_DEFAULT_LIMIT`    | `20`                 | Number of results returned to callers. Must be a positive integer.                                                                                                                                                             |
+| `SEARCH_FETCH_MULTIPLIER` | `5`                  | Multiplier used when scoring is enabled to fetch a larger candidate set before ranking. Chosen based on testing: 5x provides optimal balance between relevance (more candidates to score) and performance (API response time). |
+| `SEARCH_FETCH_MIN`        | `50`                 | Minimum number of candidates fetched when scoring is enabled.                                                                                                                                                                  |
+| `SEARCH_FAST_PATH_LIMIT`  | `5`                  | Minimum batch size for the exact-match fast path. The implementation automatically bumps this to at least `SEARCH_DEFAULT_LIMIT`.                                                                                              |
+| `SEARCH_CACHE_TTL_MS`     | `300000` (5 minutes) | TTL for cached search results in milliseconds.                                                                                                                                                                                 |
+| `SEARCH_CACHE_MAX`        | `500`                | Maximum number of cached search entries stored in memory.                                                                                                                                                                      |
 
 All values are parsed as integers. Invalid or non-positive values fall back to the defaults listed above.
 

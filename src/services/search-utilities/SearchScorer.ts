@@ -19,19 +19,35 @@ interface RankedRecord<T extends AttioRecord> {
   info: RecordInfo;
 }
 
+/**
+ * Score weights for search relevance ranking
+ *
+ * Hierarchy (descending):
+ * 1. Exact matches (1200-900) - Highest confidence signals
+ * 2. Prefix matches (350) - Strong relevance indicators
+ * 3. Multi-token matches (250) - All query terms present
+ * 4. Fuzzy matches (240 base) - Typo tolerance
+ * 5. Single token matches (40-90) - Partial relevance
+ *
+ * Rationale:
+ * - Domain > Email > Phone > Name: Domains are most discriminative (unique per company)
+ * - Exact > Prefix > Fuzzy > Token: Match precision determines confidence
+ * - 79% ratio (email/domain): Email nearly as strong as domain for identity
+ * - 20% ratio (partial/exact): Partial matches indicate relevance but lower confidence
+ */
 const SCORE_WEIGHTS = {
-  domainExact: 1200,
-  domainPartial: 250,
-  emailExact: 950,
-  phoneExact: 900,
-  nameExact: 600,
-  namePrefix: 350,
-  allTokensInName: 250,
-  tokenInName: 90,
-  tokenInDomain: 70,
-  tokenInEmail: 40,
-  fuzzyBase: 240,
-  fuzzyStep: 24,
+  domainExact: 1200, // Highest - exact domain match is strongest identity signal
+  domainPartial: 250, // 20% of exact - partial domain match (e.g., "acme" in "acme-corp.com")
+  emailExact: 950, // 79% of domain - email nearly as strong as domain for person identity
+  phoneExact: 900, // 75% of domain - phone is strong but less unique than domain/email
+  nameExact: 600, // 50% of domain - names have more collisions than domains
+  namePrefix: 350, // 29% of exact - "John" matching "John Smith" is strong signal
+  allTokensInName: 250, // All query tokens present - multi-word match confidence
+  tokenInName: 90, // Single token in name - weak signal (e.g., "Smith" is common)
+  tokenInDomain: 70, // Single token in domain - slightly weaker than name
+  tokenInEmail: 40, // Single token in email - weakest signal (high noise)
+  fuzzyBase: 240, // Base score for fuzzy matches (typo tolerance)
+  fuzzyStep: 24, // Penalty per character difference in fuzzy match (10% of base)
 } as const;
 
 function normalizeString(value: string): string {
