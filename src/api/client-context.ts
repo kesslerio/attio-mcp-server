@@ -20,6 +20,21 @@ const FAILED_CONTEXT_CACHE_TTL = 10000; // 10 seconds - increased for retry scen
  * Uses WeakMap for secure storage when possible.
  */
 export function setClientContext(context: Record<string, unknown>): void {
+  // Debug logging for Issue #891: Track context storage
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    const typedContext = context as {
+      getApiKey?: () => string | undefined;
+      ATTIO_API_KEY?: string;
+    };
+    console.error('[client-context:set] Storing context:', {
+      hasContext: Boolean(context),
+      contextKeys: Object.keys(context),
+      hasGetApiKeyFunction: typeof typedContext.getApiKey === 'function',
+      hasDirectApiKey: Boolean(typedContext.ATTIO_API_KEY),
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   // Reuse existing key if available to prevent memory accumulation
   if (!contextKey) {
     contextKey = {};
@@ -87,6 +102,9 @@ export function getContextKey(): object | null {
 export function getContextApiKey(): string | undefined {
   const context = getClientContext();
   if (!context) {
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.error('[client-context:getApiKey] No context available');
+    }
     return undefined;
   }
 
@@ -99,13 +117,35 @@ export function getContextApiKey(): string | undefined {
   const getApiKeyIdentifier = 'getApiKey';
   const shouldSkipGetter = failedContextCache.has(getApiKeyIdentifier);
 
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    console.error('[client-context:getApiKey] Attempting API key resolution:', {
+      hasContext: Boolean(context),
+      hasGetApiKeyFunction: typeof typedContext.getApiKey === 'function',
+      shouldSkipGetter,
+      hasDirectApiKey: Boolean(typedContext.ATTIO_API_KEY),
+      directKeyLength: typedContext.ATTIO_API_KEY?.length || 0,
+    });
+  }
+
   if (typeof typedContext.getApiKey === 'function' && !shouldSkipGetter) {
     try {
       const key = typedContext.getApiKey();
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.error('[client-context:getApiKey] Function call result:', {
+          resolved: Boolean(key),
+          keyLength: key?.length || 0,
+        });
+      }
       if (key && typeof key === 'string' && key.trim()) {
         return key;
       }
-    } catch {
+    } catch (error) {
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.error(
+          '[client-context:getApiKey] Function call failed:',
+          error
+        );
+      }
       // Cache this failure to avoid repeated exceptions
       // Clear existing timer if present to prevent duplicates
       const existingTimer = failedContextCache.get(getApiKeyIdentifier);
@@ -128,7 +168,14 @@ export function getContextApiKey(): string | undefined {
     typeof typedContext.ATTIO_API_KEY === 'string' &&
     typedContext.ATTIO_API_KEY.trim()
   ) {
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.error('[client-context:getApiKey] Using direct property access');
+    }
     return typedContext.ATTIO_API_KEY;
+  }
+
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    console.error('[client-context:getApiKey] No API key found in context');
   }
 
   return undefined;

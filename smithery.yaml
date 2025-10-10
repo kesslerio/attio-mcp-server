@@ -7,6 +7,24 @@ runtime: 'typescript'
 
 startCommand:
   type: http
+  # Explicit config schema for Smithery hosted deployments (Issue #891)
+  # This ensures config parameters from UI are properly passed to the server
+  configSchema:
+    type: object
+    properties:
+      ATTIO_API_KEY:
+        type: string
+        description: Your Attio API key (required for all tools except health-check)
+      ATTIO_WORKSPACE_ID:
+        type: string
+        description: Optional Attio workspace ID for workspace-specific operations
+      ATTIO_MCP_TOOL_MODE:
+        type: string
+        enum: ['full', 'search']
+        description: 'Tool mode: "full" (all 33 tools) or "search" (search/fetch/health-check only)'
+      debug:
+        type: boolean
+        description: Enable debug logging to stderr for troubleshooting
 
 # Configuration for Smithery deployment
 # Empty example config so scans never block on secrets
