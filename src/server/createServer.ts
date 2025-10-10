@@ -46,9 +46,8 @@ export const configSchema = z.object({
  */
 export function createServer(context?: ServerContext) {
   const startTime = Date.now();
-  createScopedLogger('mcp.init', 'createServer').info(
-    'Server creation started'
-  );
+  const logger = createScopedLogger('mcp.init', 'createServer');
+  logger.info('Server creation started');
 
   // For backward compatibility: if no context provided (STDIO mode),
   // create one that reads from environment variables
@@ -57,9 +56,25 @@ export function createServer(context?: ServerContext) {
     getWorkspaceId: () => process.env.ATTIO_WORKSPACE_ID,
   };
 
+  // Debug logging for Issue #891: Track context setup
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    const typedContext = ctx as {
+      getApiKey?: () => string | undefined;
+      getWorkspaceId?: () => string | undefined;
+    };
+    console.error('[createServer:init] Context configuration:', {
+      hasContext: Boolean(context),
+      contextKeys: context ? Object.keys(context) : [],
+      hasGetApiKey: typeof typedContext.getApiKey === 'function',
+      hasGetWorkspaceId: typeof typedContext.getWorkspaceId === 'function',
+      mode: context ? 'smithery' : 'stdio',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   // Set the global context so lazy client can access it
   setGlobalContext(ctx);
-  createScopedLogger('mcp.init', 'createServer').info('Global context set');
+  logger.info('Global context set');
 
   // Create MCP server with proper capabilities declaration
   // Note: No API key validation here - it's checked when tools are invoked
@@ -82,14 +97,26 @@ export function createServer(context?: ServerContext) {
 
   // Register all handlers with the context
   // The handlers will use the context to get API key when needed
-  createScopedLogger('mcp.init', 'createServer').info('Registering handlers');
+  logger.info('Registering handlers');
   registerResourceHandlers(mcpServer, ctx);
   registerToolHandlers(mcpServer, ctx);
   registerPromptHandlers(mcpServer, ctx);
 
   const duration = Date.now() - startTime;
-  createScopedLogger('mcp.init', 'createServer').info('Server created', {
+  logger.info('Server created', {
     durationMs: duration,
   });
+
+  // Final debug summary for Issue #891
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    console.error('[createServer:complete] Server initialization complete:', {
+      duration: `${duration}ms`,
+      serverVersion: '1.1.2',
+      capabilities: ['resources', 'tools', 'prompts'],
+      hasContext: Boolean(context),
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   return mcpServer;
 }

@@ -49,19 +49,50 @@ function assertAxiosInstance(
  */
 export function resolveAttioClient(): AxiosInstance {
   const mod = AttioClientModule as AttioClientFactories;
-  const resolvedApiKey = process.env.ATTIO_API_KEY || getContextApiKey();
+  const contextApiKey = getContextApiKey();
+  const envApiKey = process.env.ATTIO_API_KEY;
+  const resolvedApiKey = envApiKey || contextApiKey;
+
+  // Debug logging for Issue #891: Track API key resolution
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    console.error('[client-resolver:resolve] API key resolution:', {
+      hasEnvApiKey: Boolean(envApiKey),
+      envKeyLength: envApiKey?.length || 0,
+      hasContextApiKey: Boolean(contextApiKey),
+      contextKeyLength: contextApiKey?.length || 0,
+      resolved: Boolean(resolvedApiKey),
+      resolvedKeyLength: resolvedApiKey?.length || 0,
+      source:
+        resolvedApiKey === envApiKey
+          ? 'env'
+          : resolvedApiKey === contextApiKey
+            ? 'context'
+            : 'none',
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   // Try unified createAttioClient with config (new interface)
   if (typeof mod.createAttioClient === 'function') {
     try {
       // If we have an API key, prefer the legacy string signature for backward compatibility
       if (resolvedApiKey) {
+        if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+          console.error(
+            '[client-resolver:resolve] Creating client with API key'
+          );
+        }
         const client = (
           mod.createAttioClient as (apiKey: string) => AxiosInstance
         )(resolvedApiKey);
         assertAxiosInstance(client, 'createAttioClient(apiKey)');
         return client;
       } else {
+        if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+          console.error(
+            '[client-resolver:resolve] Creating client without API key (will fail on first request)'
+          );
+        }
         // Use config object (new unified interface)
         const config: ClientConfig = {};
         const client = (
@@ -70,7 +101,13 @@ export function resolveAttioClient(): AxiosInstance {
         assertAxiosInstance(client, 'createAttioClient(config)');
         return client;
       }
-    } catch {
+    } catch (error) {
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.error(
+          '[client-resolver:resolve] createAttioClient failed:',
+          error
+        );
+      }
       // Continue to fallback methods
     }
   }

@@ -24,6 +24,10 @@ import {
 } from './batch-search.js';
 import { openAiToolConfigs, openAiToolDefinitions } from '../openai/index.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import {
+  smitheryDiagnosticsToolDefinition,
+  smitheryDiagnosticsConfig,
+} from './smithery-diagnostics.js';
 
 /**
  * Simple no-auth health-check tool to support unauthenticated capability scanning
@@ -119,6 +123,7 @@ export * from './shared-handlers.js';
 export const universalToolConfigs = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckConfig,
+  'smithery-debug-config': smitheryDiagnosticsConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   records_search_batch: batchSearchConfig,
@@ -131,6 +136,7 @@ export const universalToolConfigs = {
 export const universalToolDefinitions = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckToolDefinition,
+  'smithery-debug-config': smitheryDiagnosticsToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   records_search_batch: batchSearchToolDefinition,

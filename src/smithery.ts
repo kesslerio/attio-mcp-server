@@ -38,9 +38,29 @@ export default function createServer({
 }: {
   config: z.infer<typeof configSchema>;
 }) {
-  // Enable debug logging if requested
-  if (config?.debug) {
+  // Enable debug logging if requested (Issue #891: MCP_LOG_LEVEL support)
+  // Check both config.debug and existing MCP_LOG_LEVEL environment variable
+  if (config?.debug || process.env.MCP_LOG_LEVEL === 'DEBUG') {
     process.env.MCP_LOG_LEVEL = 'DEBUG';
+  }
+
+  // Debug logging for Issue #891: Track config propagation in Smithery hosted environment
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    console.error('[smithery:init] Config received:', {
+      hasConfig: Boolean(config),
+      configKeys: config ? Object.keys(config) : [],
+      hasApiKeyInConfig: Boolean(config?.ATTIO_API_KEY),
+      apiKeyLength: config?.ATTIO_API_KEY?.length || 0,
+      hasWorkspaceId: Boolean(config?.ATTIO_WORKSPACE_ID),
+      hasEnvApiKey: Boolean(process.env.ATTIO_API_KEY),
+      envApiKeyLength: process.env.ATTIO_API_KEY?.length || 0,
+      toolMode:
+        config?.ATTIO_MCP_TOOL_MODE ||
+        process.env.ATTIO_MCP_TOOL_MODE ||
+        'full',
+      debug: config?.debug || false,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   // Set server mode flag to enable background intervals (performance tracking, etc.)
@@ -62,10 +82,25 @@ export default function createServer({
   // Create the MCP server with a context that provides access to config
   // The API key is only checked when tools are actually invoked
   const server = buildServer({
-    getApiKey: () => config?.ATTIO_API_KEY || process.env.ATTIO_API_KEY,
+    getApiKey: () => {
+      const apiKey = config?.ATTIO_API_KEY || process.env.ATTIO_API_KEY;
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG' || config?.debug) {
+        console.error('[smithery:getApiKey] API key resolution:', {
+          fromConfig: Boolean(config?.ATTIO_API_KEY),
+          fromEnv: Boolean(process.env.ATTIO_API_KEY),
+          resolved: Boolean(apiKey),
+          keyLength: apiKey?.length || 0,
+        });
+      }
+      return apiKey;
+    },
     getWorkspaceId: () =>
       config?.ATTIO_WORKSPACE_ID || process.env.ATTIO_WORKSPACE_ID,
   });
+
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG' || config?.debug) {
+    console.error('[smithery:init] Server created successfully');
+  }
 
   // Return the raw server instance - Smithery handles the transport
   return server;
