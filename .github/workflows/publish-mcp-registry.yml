@@ -61,8 +61,9 @@ jobs:
 
       - name: Validate server.json
         run: |
+          curl -s -o /tmp/server.schema.json https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json
           npx ajv-cli validate \
-            -s https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json \
+            -s /tmp/server.schema.json \
             -d server.json \
             --strict=false
 
