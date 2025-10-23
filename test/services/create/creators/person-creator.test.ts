@@ -401,6 +401,8 @@ describe('PersonCreator Email Retry Logic', () => {
         job_title: 'Software Engineer',
       };
 
+      // Note: This test uses mocked normalizer, so it catches the PersonCreator validation
+      // The normalizer validation is tested separately in data-normalizers.test.ts
       await expect(
         personCreator.create(personData, mockContext)
       ).rejects.toThrow('missing required parameter: name');

@@ -181,8 +181,12 @@ export function normalizePersonValues(input: JsonObject): JsonObject {
           full_name: `${first} ${last}`,
         },
       ];
+    } else {
+      // If no name and no email, throw explicit validation error
+      throw new Error(
+        'missing required parameter: name (cannot be derived from email_addresses when email is also missing)'
+      );
     }
-    // If no name and no email, validation will fail in PersonCreator
   }
 
   // 3) Company reference: normalize UUID string to proper record reference format
