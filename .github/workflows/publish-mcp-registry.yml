@@ -55,24 +55,23 @@ jobs:
           node-version: '20'
 
       - name: Install MCP Publisher CLI
-        run: npm install -g @modelcontextprotocol/publisher
-
-      - name: Authenticate with GitHub
-        run: mcp-publisher login --github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.2.3/mcp-publisher_1.2.3_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz
+          chmod +x mcp-publisher
 
       - name: Validate server.json
         run: |
+          curl -s -o /tmp/server.schema.json https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json
           npx ajv-cli validate \
-            -s https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json \
+            -s /tmp/server.schema.json \
             -d server.json \
             --strict=false
 
+      - name: Authenticate with GitHub OIDC
+        run: ./mcp-publisher login github-oidc
+
       - name: Publish to MCP Registry
-        run: mcp-publisher publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mcp-publisher publish
 
       - name: Verify publication
         run: |

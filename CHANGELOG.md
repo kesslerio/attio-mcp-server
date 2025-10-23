@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Person creation now supports optional email addresses** (#895) - Removed unnecessary validation requiring `email_addresses` for person records
+  - **Problem**: MCP server enforced `email_addresses` as required when Attio API only requires `name`
+  - **Solution**: Updated `PersonCreator` to validate only `name` field (actual API requirement)
+  - **Result**: Users can now create person records without email addresses (e.g., contacts without digital presence)
+  - Updated data normalizer to handle cases where neither name nor email is provided
+  - Added comprehensive unit tests for person creation without email
+  - Updated E2E fixtures to include truly minimal person (name only)
+  - Modified `PersonMockFactory` to support optional email addresses
+
 ### Security
 
 ### Deprecated

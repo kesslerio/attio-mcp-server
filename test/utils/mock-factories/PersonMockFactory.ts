@@ -73,6 +73,37 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
   }
 
   /**
+   * Builds email addresses array from overrides or default
+   * @private
+   */
+  private static buildEmailAddresses(
+    overrides: MockPersonOptions,
+    defaultEmail: string
+  ): Array<AttioValue> | undefined {
+    // Not specified in overrides - use default generated email
+    if (!('email_addresses' in overrides)) {
+      return [this.wrapValue(defaultEmail)];
+    }
+
+    // Explicitly set to null - omit email addresses
+    if (overrides.email_addresses === null) {
+      return undefined;
+    }
+
+    // Array of emails
+    if (Array.isArray(overrides.email_addresses)) {
+      return overrides.email_addresses.map((email) => this.wrapValue(email));
+    }
+
+    // Single string email
+    if (typeof overrides.email_addresses === 'string') {
+      return [this.wrapValue(overrides.email_addresses)];
+    }
+
+    return undefined;
+  }
+
+  /**
    * Creates a mock person AttioRecord with realistic data
    *
    * @param overrides - Optional overrides for specific fields
@@ -104,9 +135,11 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
       values: {
         // Name handling - support both string and structured formats
         name: this.wrapValue(fullName),
-        email_addresses: Array.isArray(overrides.email_addresses)
-          ? overrides.email_addresses.map((email) => this.wrapValue(email))
-          : [this.wrapValue(overrides.email_addresses || email)],
+        // Email addresses are now optional (Issue #895)
+        // Use helper method for clarity
+        ...(this.buildEmailAddresses(overrides, email)
+          ? { email_addresses: this.buildEmailAddresses(overrides, email) }
+          : {}),
         phone_numbers: Array.isArray(overrides.phone_numbers)
           ? overrides.phone_numbers.map((phone) => this.wrapValue(phone))
           : overrides.phone_numbers

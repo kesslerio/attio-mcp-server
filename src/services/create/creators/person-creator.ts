@@ -44,11 +44,13 @@ export class PersonCreator extends BaseCreator {
   ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
     const normalizedPerson = this.normalizeInput(input);
-    this.assertRequiredArray(
-      normalizedPerson,
-      'email_addresses',
-      'missing required parameter: email_addresses'
-    );
+
+    // Validate that at least a name is provided (per Attio API spec: only 'name' is required)
+    // Reference: https://docs.attio.com/docs/standard-objects/standard-objects-people
+    // The Attio People API requires only 'name' field; email_addresses is optional
+    if (!normalizedPerson.name) {
+      throw new Error('missing required parameter: name');
+    }
 
     context.debug(this.constructor.name, '🔍 EXACT API PAYLOAD', {
       url: this.endpoint,

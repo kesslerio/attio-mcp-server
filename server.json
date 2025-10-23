@@ -3,18 +3,18 @@
   "name": "io.github.kesslerio/attio-mcp-server",
   "description": "AI-powered Attio CRM access. Manage contacts, companies, deals, tasks, notes and workflows.",
   "title": "Attio MCP Server",
-  "websiteUrl": "https://github.com/kesslerio/attio-mcp-server",
+  "websiteUrl": "https://kesslerio.github.io/attio-mcp-server",
   "repository": {
     "url": "https://github.com/kesslerio/attio-mcp-server",
     "source": "github"
   },
-  "version": "1.1.2",
+  "version": "1.1.8",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "attio-mcp",
-      "version": "1.1.2",
+      "version": "1.1.8",
       "transport": {
         "type": "stdio"
       },

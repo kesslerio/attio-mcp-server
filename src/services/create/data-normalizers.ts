@@ -158,24 +158,35 @@ export function normalizePersonValues(input: JsonObject): JsonObject {
   }
 
   if (!filteredPersonData.name) {
-    // Derive a safe name from email local part
-    const emailAddresses = filteredPersonData.email_addresses as string[];
-    const firstEmail = emailAddresses[0] || '';
-    const local =
-      typeof firstEmail === 'string' ? firstEmail.split('@')[0] : 'Test Person';
-    const parts = local
-      .replace(/[^a-zA-Z]+/g, ' ')
-      .trim()
-      .split(/\s+/);
-    const first = parts[0] || 'Test';
-    const last = parts.slice(1).join(' ') || 'User';
-    filteredPersonData.name = [
-      {
-        first_name: first,
-        last_name: last,
-        full_name: `${first} ${last}`,
-      },
-    ];
+    // Only derive name from email if email exists
+    const emailAddresses = filteredPersonData.email_addresses as
+      | string[]
+      | undefined;
+    if (emailAddresses && emailAddresses.length > 0) {
+      const firstEmail = emailAddresses[0];
+      const local =
+        typeof firstEmail === 'string'
+          ? firstEmail.split('@')[0]
+          : 'Test Person';
+      const parts = local
+        .replace(/[^a-zA-Z]+/g, ' ')
+        .trim()
+        .split(/\s+/);
+      const first = parts[0] || 'Test';
+      const last = parts.slice(1).join(' ') || 'User';
+      filteredPersonData.name = [
+        {
+          first_name: first,
+          last_name: last,
+          full_name: `${first} ${last}`,
+        },
+      ];
+    } else {
+      // If no name and no email, throw explicit validation error
+      throw new Error(
+        'missing required parameter: name (cannot be derived from email_addresses when email is also missing)'
+      );
+    }
   }
 
   // 3) Company reference: normalize UUID string to proper record reference format
