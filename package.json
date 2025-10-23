@@ -1,6 +1,6 @@
 {
   "name": "attio-mcp",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "description": "AI-powered access to Attio CRM. Manage contacts, companies, deals, tasks, and notes. Search records, update pipelines, and automate workflows for sales and GTM teams.",
   "mcpName": "io.github.kesslerio/attio-mcp-server",
   "main": "dist/smithery.js",
@@ -36,7 +36,7 @@
     "lint:fix": "wireit",
     "format": "npx prettier --write --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
     "check:format": "npx prettier --check --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
-    "lint:tools": "tsx scripts/tool-schema-lint.ts",
+    "lint:tools": "wireit",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:offline": "SKIP_INTEGRATION_TESTS=true vitest --config configs/vitest/vitest.config.offline.ts",
