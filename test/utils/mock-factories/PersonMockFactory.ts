@@ -104,9 +104,22 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
       values: {
         // Name handling - support both string and structured formats
         name: this.wrapValue(fullName),
-        email_addresses: Array.isArray(overrides.email_addresses)
-          ? overrides.email_addresses.map((email) => this.wrapValue(email))
-          : [this.wrapValue(overrides.email_addresses || email)],
+        // Email addresses are now optional (Issue #895)
+        // Only include if not explicitly excluded in overrides
+        ...(!('email_addresses' in overrides) ||
+        overrides.email_addresses !== null
+          ? {
+              email_addresses: Array.isArray(overrides.email_addresses)
+                ? overrides.email_addresses.map((email) =>
+                    this.wrapValue(email)
+                  )
+                : typeof overrides.email_addresses === 'string'
+                  ? [this.wrapValue(overrides.email_addresses)]
+                  : !('email_addresses' in overrides)
+                    ? [this.wrapValue(email)] // Default generated email
+                    : undefined,
+            }
+          : {}),
         phone_numbers: Array.isArray(overrides.phone_numbers)
           ? overrides.phone_numbers.map((phone) => this.wrapValue(phone))
           : overrides.phone_numbers

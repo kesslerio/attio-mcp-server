@@ -329,11 +329,18 @@ export const personScenarios = {
  */
 export const edgeCasePeople = {
   /**
-   * Minimal valid person
+   * Minimal valid person (name only, no email) - Issue #895
    */
   minimal: (): E2ETestPerson => ({
     name: 'E2E Minimal Person',
-    email_addresses: ['minimal@e2e-test.example.com'],
+  }),
+
+  /**
+   * Person with email (formerly minimal)
+   */
+  withEmail: (): E2ETestPerson => ({
+    name: 'E2E Person With Email',
+    email_addresses: ['person-with-email@e2e-test.example.com'],
   }),
 
   /**

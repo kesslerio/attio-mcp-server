@@ -44,11 +44,11 @@ export class PersonCreator extends BaseCreator {
   ): Promise<AttioRecord> {
     this.assertClientHasAuth(context);
     const normalizedPerson = this.normalizeInput(input);
-    this.assertRequiredArray(
-      normalizedPerson,
-      'email_addresses',
-      'missing required parameter: email_addresses'
-    );
+
+    // Validate that at least a name is provided
+    if (!normalizedPerson.name) {
+      throw new Error('missing required parameter: name');
+    }
 
     context.debug(this.constructor.name, '🔍 EXACT API PAYLOAD', {
       url: this.endpoint,

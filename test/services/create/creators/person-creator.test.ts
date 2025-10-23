@@ -56,6 +56,11 @@ describe('PersonCreator Email Retry Logic', () => {
     mockContext = {
       client: {
         post: vi.fn(),
+        defaults: {
+          headers: {
+            Authorization: 'Bearer test-token',
+          },
+        },
       },
       debug: vi.fn(),
     } as any;
@@ -322,6 +327,123 @@ describe('PersonCreator Email Retry Logic', () => {
       await expect(createWithRetry(mockContext, personData)).rejects.toBe(
         retryError
       );
+    });
+  });
+
+  describe('Person Creation Without Email (Issue #895)', () => {
+    test('should create person with name only (no email)', async () => {
+      const mockResponse = {
+        data: {
+          data: {
+            id: { record_id: 'test-id-no-email' },
+            values: {
+              name: [
+                { first_name: 'John', last_name: 'Doe', full_name: 'John Doe' },
+              ],
+            },
+          },
+        },
+      };
+      const postMock = mockContext.client.post as MockedFunction<any>;
+      postMock.mockResolvedValueOnce(mockResponse);
+
+      const personData = {
+        name: 'John Doe',
+      };
+
+      const result = await personCreator.create(personData, mockContext);
+
+      expect(postMock).toHaveBeenCalledTimes(1);
+      // Verify that the name is present and email is not present
+      const callArgs = postMock.mock.calls[0][1];
+      expect(callArgs.data.values).toHaveProperty('name');
+      expect(callArgs.data.values.name).toBe('John Doe'); // Mock returns input as-is
+      expect(callArgs.data.values).not.toHaveProperty('email_addresses');
+      expect(result).toBeDefined();
+    });
+
+    test('should create person with name object (no email)', async () => {
+      const mockResponse = {
+        data: {
+          data: {
+            id: { record_id: 'test-id-no-email-2' },
+            values: {
+              name: [
+                {
+                  first_name: 'Jane',
+                  last_name: 'Smith',
+                  full_name: 'Jane Smith',
+                },
+              ],
+            },
+          },
+        },
+      };
+      const postMock = mockContext.client.post as MockedFunction<any>;
+      postMock.mockResolvedValueOnce(mockResponse);
+
+      const personData = {
+        name: {
+          first_name: 'Jane',
+          last_name: 'Smith',
+          full_name: 'Jane Smith',
+        },
+      };
+
+      const result = await personCreator.create(personData, mockContext);
+
+      expect(postMock).toHaveBeenCalledTimes(1);
+      expect(result).toBeDefined();
+    });
+
+    test('should fail when neither name nor email is provided', async () => {
+      const personData = {
+        job_title: 'Software Engineer',
+      };
+
+      await expect(
+        personCreator.create(personData, mockContext)
+      ).rejects.toThrow('missing required parameter: name');
+    });
+
+    test('should create person with name and optional fields (no email)', async () => {
+      const mockResponse = {
+        data: {
+          data: {
+            id: { record_id: 'test-id-no-email-3' },
+            values: {
+              name: [
+                {
+                  first_name: 'Bob',
+                  last_name: 'Wilson',
+                  full_name: 'Bob Wilson',
+                },
+              ],
+              job_title: 'Product Manager',
+              phone_numbers: ['+1-555-1234'],
+            },
+          },
+        },
+      };
+      const postMock = mockContext.client.post as MockedFunction<any>;
+      postMock.mockResolvedValueOnce(mockResponse);
+
+      const personData = {
+        name: 'Bob Wilson',
+        job_title: 'Product Manager',
+        phone_numbers: ['+1-555-1234'],
+      };
+
+      const result = await personCreator.create(personData, mockContext);
+
+      expect(postMock).toHaveBeenCalledTimes(1);
+      const callArgs = postMock.mock.calls[0][1];
+      expect(callArgs.data.values).not.toHaveProperty('email_addresses');
+      expect(callArgs.data.values).toHaveProperty(
+        'job_title',
+        'Product Manager'
+      );
+      expect(result).toBeDefined();
     });
   });
 });
