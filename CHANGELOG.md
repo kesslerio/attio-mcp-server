@@ -17,10 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
-## [1.1.9] - 2025-10-23
+## [1.1.10] - 2025-10-23
 
 ### Fixed
 
+- **Release pipeline wireit configuration** (#898) - Fixed build configuration blocking NPM releases
+  - **Problem**: `lint:tools` script used direct command instead of wireit, causing Release Pipeline validation failures
+  - **Solution**: Updated package.json to use `"lint:tools": "wireit"` as required by wireit configuration
+  - **Result**: Release Pipeline can now complete successfully and publish to NPM
 - **Person creation now supports optional email addresses** (#895) - Removed unnecessary validation requiring `email_addresses` for person records
   - **Problem**: MCP server enforced `email_addresses` as required when Attio API only requires `name`
   - **Solution**: Updated `PersonCreator` to validate only `name` field (actual API requirement)
