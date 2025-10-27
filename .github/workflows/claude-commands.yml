@@ -98,6 +98,8 @@ jobs:
               core.setOutput('issue_title', '');
               core.setOutput('issue_body', '');
               core.setOutput('comment_body', '');
+              core.setOutput('recent_comments', '');
+              core.setOutput('previous_analysis', '');
               return;
             }
 
@@ -120,10 +122,51 @@ jobs:
               commentBody = comment.body || '';
             }
 
+            // Fetch all comments for context
+            const { data: allComments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100
+            });
+
+            // Find most recent Claude response (for follow-up context)
+            const claudeResponses = allComments
+              .filter(c => c.body.includes('<!-- claude-command-response -->'))
+              .reverse(); // Most recent first
+
+            const previousAnalysis = claudeResponses.length > 0
+              ? claudeResponses[0].body.replace('<!-- claude-command-response -->\n', '').slice(0, 8000)
+              : '';
+
+            // Get recent user comments (last 5, excluding triggering comment and bot comments)
+            const recentComments = allComments
+              .filter(c => c.id !== commentId) // Exclude triggering comment
+              .filter(c => c.user.type !== 'Bot') // Exclude bot comments
+              .filter(c => !c.body.includes('<!-- claude-command-response -->')) // Exclude previous Claude responses
+              .slice(-5) // Get last 5 user comments
+              .map(c => ({
+                author: c.user.login,
+                created_at: c.created_at,
+                body: c.body.slice(0, 2000) // Limit each comment to 2000 chars
+              }));
+
+            const recentCommentsFormatted = recentComments.length > 0
+              ? recentComments.map(c =>
+                  `**@${c.author}** (${new Date(c.created_at).toISOString().split('T')[0]}):\n${c.body}\n`
+                ).join('\n---\n\n')
+              : '';
+
             core.setOutput('issue_title', issue.title || '');
             core.setOutput('issue_body', issue.body || '');
             core.setOutput('comment_body', commentBody);
+            core.setOutput('recent_comments', recentCommentsFormatted);
+            core.setOutput('previous_analysis', previousAnalysis);
             core.info(`Fetched context for issue #${issueNumber}: ${issue.title}`);
+            core.info(`Included ${recentComments.length} recent comments for context`);
+            if (previousAnalysis) {
+              core.info(`Found previous Claude analysis (${previousAnalysis.length} chars) - this is a follow-up`);
+            }
 
       - name: Claude Command Handler
         if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
@@ -141,6 +184,14 @@ jobs:
           prompt: |
             You are Claude acting via GitHub Actions for the Attio MCP repo.
 
+            🚨 **CRITICAL EXECUTION CONSTRAINTS** 🚨
+            - You have 32 turns MAX before workflow terminates
+            - **BY TURN 20**: STOP using tools and start writing your final response
+            - **BY TURN 25**: You MUST have completed your full markdown report
+            - If you hit turn 32 without outputting a complete response, it will be lost
+            - Your FINAL message must contain the complete analysis/report in markdown format
+            - Do NOT end with tool calls - the last message MUST be pure markdown text
+
             ## Context
             - **Issue**: #${{ steps.classify.outputs.issue }}
             - **Issue Title**: ${{ steps.context.outputs.issue_title }}
@@ -148,6 +199,20 @@ jobs:
 
             **Full Issue Description**:
             ${{ steps.context.outputs.issue_body }}
+
+            **Recent Discussion** (last 5 user comments for context):
+            ${{ steps.context.outputs.recent_comments || 'No recent comments' }}
+
+            **Previous Claude Analysis** (if this is a follow-up):
+            ${{ steps.context.outputs.previous_analysis || 'No previous analysis - this is the first request on this issue' }}
+
+            **Follow-Up Instructions**:
+            - If "Previous Claude Analysis" exists, this is a FOLLOW-UP request
+            - Build on your previous analysis, don't repeat it
+            - Reference your previous recommendations when relevant
+            - Acknowledge if user comments since your last analysis provide new context
+            - If user asks a clarifying question, answer directly without repeating full framework
+            - **Note**: Issue body may have been edited since your previous analysis - if you notice discrepancies, acknowledge the updates and adjust recommendations accordingly
 
             ## Task Routing
             First, examine the triggering command to determine your mode:
@@ -158,99 +223,96 @@ jobs:
             - **EXECUTION MODE** (specific instructions like "implement X", "fix Y", "refactor Z"):
               Follow the maintainer's instructions precisely using repo standards
 
+            ## Exploration Philosophy: "Good Enough" > "Exhaustive"
+
+            **CRITICAL MINDSET SHIFT**: Synthesis is more valuable than exhaustive exploration.
+
+            **Analysis Mode Guidelines:**
+            - Read 1-3 KEY files (issue description, CLAUDE.md, one example file)
+            - You don't need to read the entire codebase
+            - Representative sampling beats exhaustive analysis
+            - After 8-10 tool calls, STOP and synthesize what you've learned
+            - Write sections progressively as you learn (don't wait until the end)
+
+            **Execution Mode Guidelines:**
+            - Focus on directly relevant files only (not the entire project)
+            - 12-15 tool calls for implementation + testing should be sufficient
+            - If you need more context, make educated assumptions and document them
+            - Leave time for quality gates and final summary
+
+            **Remember**: A well-reasoned analysis from limited context is better than hitting turn limits with no output.
+
             ## ANALYSIS MODE Framework
-            When the command is vague/exploratory, provide a comprehensive analysis structured as:
+            Provide analysis structured in these 5 sections:
 
-            ### 1. Issue Quality Assessment
-            Evaluate these dimensions:
-            - **Problem Definition**: Is the actual problem/need clearly articulated? What's the underlying goal?
-            - **Requirements Clarity**: Are success criteria and constraints explicit? What's missing?
-            - **Scope Boundaries**: Is it clear what's in vs out of scope? Could scope creep occur?
-            - **Acceptance Criteria**: Does the issue define testable success conditions?
+            **1. Issue Quality Assessment**
+            - Problem definition clarity and underlying goals
+            - Requirements completeness and acceptance criteria
+            - Scope boundaries and potential scope creep risks
 
-            ### 2. Anti-Pattern Risk Detection
-            Watch for common engineering anti-patterns:
-            - **Infrastructure-without-implementation**: Building complex systems before validating the core use case
-            - **Symptom-driven development**: Treating symptoms rather than addressing root causes
-            - **Complexity escalation**: Adding architectural layers when simpler solutions exist
-            - **Premature optimization**: Optimizing before understanding actual bottlenecks
+            **2. Anti-Pattern Risk Detection**
+            - Infrastructure-without-validation, symptom-driven development, complexity escalation, premature optimization
+            - Explain WHY risky + suggest healthier alternatives
 
-            If you detect anti-patterns, explain *why* they're risky and suggest healthier alternatives.
+            **3. Implementation Strategy**
+            - Concrete technical approach (technology/library choices with rationale)
+            - File structure, testing strategy, migration path, integration points
 
-            ### 3. Implementation Strategy
-            Propose concrete approaches:
-            - **Technology/Library choices** with rationale
-            - **File structure** and module organization
-            - **Testing strategy** (what to test, how to test)
-            - **Migration path** if refactoring existing code
-            - **Integration points** with existing systems
+            **4. Educational Recommendations**
+            - Relevant docs (official docs, CLAUDE.md sections)
+            - Similar solved problems in codebase
+            - Common pitfalls and validation techniques
 
-            ### 4. Educational Recommendations
-            Help the developer learn:
-            - Relevant documentation (official docs, CLAUDE.md sections)
-            - Similar solved problems in this codebase
-            - Best practices for this type of change
-            - Potential pitfalls and how to avoid them
+            **5. Actionable Next Steps**
+            - Numbered, concrete actions with rationale and dependencies
 
-            ### 5. Actionable Next Steps
-            Provide numbered, concrete actions with rationale:
-            1. [Action] - Why this should be done first
-            2. [Action] - Dependencies and prerequisites
-            3. [Action] - Follow-up validation
-
-            Use a coaching tone that helps developers understand the "why" behind recommendations.
+            Keep analysis concise but insightful. Use a coaching tone explaining the "why" behind recommendations.
 
             ## EXECUTION MODE Guidelines
-            When given specific instructions (e.g., "implement X", "fix Y", "refactor Z"):
+            Follow repo standards from `CLAUDE.md`.
 
-            ### Implementation Standards
-            - Follow repo standards defined in `CLAUDE.md`
-            - Use conventional commit format: `Type: Subject #issue-number`
-            - Respect Single Responsibility Principle (SRP)
-            - Keep changes focused and atomic
+            **Implementation Standards:**
+            - Conventional commit format: `Type: Subject #issue-number`
+            - Single Responsibility Principle (SRP)
+            - Focused, atomic changes
 
-            ### Quality Gates
-            - Run appropriate tests based on changes:
+            **Quality Gates:**
+            - Run appropriate tests:
               - `npm run test:offline` for unit tests (fast, no API calls)
               - `npm run test:integration` for API integration tests (requires ATTIO_API_KEY)
               - `npm run test:e2e` for end-to-end workflows
             - Run lint/format: `npm run fix:all`
             - Verify TypeScript: `npx tsc --noEmit`
 
-            ### Workflow
-            1. Read relevant code and documentation first
-            2. Implement the requested changes
-            3. Run appropriate quality gates
-            4. Commit with descriptive message
-            5. Report results (branch/PR URL, tests run, any issues)
+            **Workflow:**
+            1. Read relevant code + CLAUDE.md first
+            2. Implement changes following standards
+            3. Run quality gates
+            4. Commit with conventional format linking issue
+            5. Report results (branch/PR URL, tests, any issues)
 
-            ### Constraints
-            - Work only within the repository checkout
+            **Constraints:**
             - Never expose secrets or tokens
-            - Ask for clarification if requirements are ambiguous
-            - If the task seems to violate anti-patterns (from Analysis Mode), flag this and suggest alternatives
+            - Ask for clarification if ambiguous
+            - Flag anti-pattern risks proactively
 
             ## Reply Format
 
-            **For Analysis Mode**:
-            - Use the structured format above (5 sections)
-            - Be direct but coaching in tone
-            - Include specific file/function references when relevant
-            - End with clear, actionable next steps
+            **Analysis Mode**: Use 5-section structure above. Be concise, coaching tone, reference files (file:line), end with actionable steps.
 
-            **For Execution Mode**:
-            - Confirm what you're implementing before starting
-            - Report progress and test results
-            - If you pushed changes or created a PR, include the branch/PR URL
-            - Summarize what was done and any follow-up needed
+            **Execution Mode**: Confirm task → implement → run quality gates → report results (branch/PR URL, tests, issues).
 
-            **Universal Guidelines**:
-            - Be concise but thorough
-            - Reference specific code locations (file:line) when relevant
-            - If you need to ask clarifying questions, be specific about what information is missing
-            - Always consider whether the request might involve anti-patterns and flag concerns proactively
+            **Always**: Be concise but thorough, reference code locations, flag anti-pattern risks.
 
-            **CRITICAL**: After completing your analysis or execution, output your complete response as markdown text in your final message. Do not end with tool calls - ensure your final message contains the full report/summary that should be posted to the issue.
+            ---
+
+            🚨 **FINAL REMINDER: OUTPUT YOUR COMPLETE RESPONSE** 🚨
+
+            - Your LAST message MUST contain the full markdown report/analysis
+            - Do NOT end with tool calls - the workflow will capture ONLY your final text message
+            - Remember: 32 turn limit, stop tools by turn 20, finish report by turn 25
+            - If you hit the turn limit without a complete response, the comment will be incomplete/lost
+            - Synthesis > exhaustive exploration - write progressively, don't wait until the end
 
       - name: Capture Claude response
         if: always() && steps.claude.outcome != 'skipped' && steps.claude.outputs.execution_file != ''
