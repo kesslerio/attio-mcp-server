@@ -157,15 +157,52 @@ jobs:
                 ).join('\n---\n\n')
               : '';
 
+            // Parse issue body for related issues (e.g., #42, #100)
+            const issueRefPattern = /#(\d+)/g;
+            const referencedIssueNumbers = [...(issue.body || '').matchAll(issueRefPattern)]
+              .map(match => parseInt(match[1]))
+              .filter(num => num !== parseInt(issueNumber)) // Exclude self-reference
+              .slice(0, 3); // Limit to first 3 related issues
+
+            // Fetch related issues (title, state, first 500 chars of body)
+            const relatedIssues = [];
+            for (const relatedNum of referencedIssueNumbers) {
+              try {
+                const { data: relatedIssue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: relatedNum
+                });
+                relatedIssues.push({
+                  number: relatedNum,
+                  title: relatedIssue.title,
+                  state: relatedIssue.state,
+                  body: (relatedIssue.body || '').slice(0, 500) // Limit to 500 chars
+                });
+              } catch (error) {
+                core.warning(`Failed to fetch related issue #${relatedNum}: ${error.message}`);
+              }
+            }
+
+            const relatedIssuesFormatted = relatedIssues.length > 0
+              ? relatedIssues.map(ri =>
+                  `**#${ri.number}** (${ri.state}): ${ri.title}\n${ri.body}${ri.body.length >= 500 ? '...' : ''}`
+                ).join('\n\n---\n\n')
+              : '';
+
             core.setOutput('issue_title', issue.title || '');
             core.setOutput('issue_body', issue.body || '');
             core.setOutput('comment_body', commentBody);
             core.setOutput('recent_comments', recentCommentsFormatted);
             core.setOutput('previous_analysis', previousAnalysis);
+            core.setOutput('related_issues', relatedIssuesFormatted);
             core.info(`Fetched context for issue #${issueNumber}: ${issue.title}`);
             core.info(`Included ${recentComments.length} recent comments for context`);
             if (previousAnalysis) {
               core.info(`Found previous Claude analysis (${previousAnalysis.length} chars) - this is a follow-up`);
+            }
+            if (relatedIssues.length > 0) {
+              core.info(`Found ${relatedIssues.length} related issue(s): ${relatedIssues.map(ri => `#${ri.number}`).join(', ')}`);
             }
 
       - name: Claude Command Handler
@@ -202,6 +239,9 @@ jobs:
 
             **Recent Discussion** (last 5 user comments for context):
             ${{ steps.context.outputs.recent_comments || 'No recent comments' }}
+
+            **Related Issues** (referenced in issue body):
+            ${{ steps.context.outputs.related_issues || 'No related issues referenced' }}
 
             **Previous Claude Analysis** (if this is a follow-up):
             ${{ steps.context.outputs.previous_analysis || 'No previous analysis - this is the first request on this issue' }}
