@@ -67,7 +67,7 @@ describe('List-Specific Attribute Detection', () => {
 
 describe('List Entry Filter Transformation', () => {
   describe('transformFiltersToApiFormat with list entry context', () => {
-    it('should use direct field access for list-specific attributes', () => {
+    it('should use direct field access for list-specific attributes', async () => {
       const filters = {
         filters: [
           {
@@ -78,7 +78,7 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
+      const result = await transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -89,7 +89,7 @@ describe('List Entry Filter Transformation', () => {
       });
     });
 
-    it('should use record.values path for parent record attributes', () => {
+    it('should use record.values path for parent record attributes', async () => {
       const filters = {
         filters: [
           {
@@ -100,7 +100,7 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
+      const result = await transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -111,7 +111,7 @@ describe('List Entry Filter Transformation', () => {
       });
     });
 
-    it('should handle multiple list-specific attributes with AND logic', () => {
+    it('should handle multiple list-specific attributes with AND logic', async () => {
       const filters = {
         filters: [
           {
@@ -128,7 +128,7 @@ describe('List Entry Filter Transformation', () => {
         matchAny: false,
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
+      const result = await transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -142,7 +142,7 @@ describe('List Entry Filter Transformation', () => {
       });
     });
 
-    it('should handle OR logic with list-specific attributes', () => {
+    it('should handle OR logic with list-specific attributes', async () => {
       const filters = {
         filters: [
           {
@@ -159,7 +159,7 @@ describe('List Entry Filter Transformation', () => {
         matchAny: true,
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
+      const result = await transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -168,7 +168,7 @@ describe('List Entry Filter Transformation', () => {
       });
     });
 
-    it('should handle mixed filters with both list and parent attributes', () => {
+    it('should handle mixed filters with both list and parent attributes', async () => {
       const filters = {
         filters: [
           {
@@ -185,7 +185,7 @@ describe('List Entry Filter Transformation', () => {
         matchAny: false,
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
+      const result = await transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -199,7 +199,7 @@ describe('List Entry Filter Transformation', () => {
       });
     });
 
-    it('should handle UUID attribute filters', () => {
+    it('should handle UUID attribute filters', async () => {
       const filters = {
         filters: [
           {
@@ -210,7 +210,7 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
+      const result = await transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -221,7 +221,7 @@ describe('List Entry Filter Transformation', () => {
       });
     });
 
-    it('should handle empty value conditions correctly', () => {
+    it('should handle empty value conditions correctly', async () => {
       const filters = {
         filters: [
           {
@@ -232,7 +232,7 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
+      const result = await transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -245,7 +245,7 @@ describe('List Entry Filter Transformation', () => {
   });
 
   describe('transformFiltersToApiFormat without list entry context', () => {
-    it('should use standard field access for all attributes', () => {
+    it('should use standard field access for all attributes', async () => {
       const filters = {
         filters: [
           {
@@ -261,7 +261,7 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, false);
+      const result = await transformFiltersToApiFormat(filters, true, false);
 
       expect(result).toEqual({
         filter: {
@@ -278,7 +278,7 @@ describe('List Entry Filter Transformation', () => {
 });
 
 describe('Edge Cases', () => {
-  it('should handle attributes with special characters', () => {
+  it('should handle attributes with special characters', async () => {
     const filters = {
       filters: [
         {
@@ -289,7 +289,7 @@ describe('Edge Cases', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filters, true, true);
+    const result = await transformFiltersToApiFormat(filters, true, true);
 
     expect(result).toEqual({
       filter: {
@@ -306,7 +306,7 @@ describe('Edge Cases', () => {
     expect(isListSpecificAttribute('stage')).toBe(true);
   });
 
-  it('should handle complex OR conditions with mixed attributes', () => {
+  it('should handle complex OR conditions with mixed attributes', async () => {
     const filters = {
       filters: [
         {
@@ -328,7 +328,7 @@ describe('Edge Cases', () => {
       matchAny: true,
     };
 
-    const result = transformFiltersToApiFormat(filters, true, true);
+    const result = await transformFiltersToApiFormat(filters, true, true);
 
     expect(result).toEqual({
       filter: {

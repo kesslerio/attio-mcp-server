@@ -33,17 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Updated `transformFiltersToApiFormat` to be async and accept `resourceType` parameter
     - Added reference attribute handling in both AND and OR filter structures
     - Supports both UUID-based filtering (`record_id` field) and name-based filtering (`name` field)
-    - Workspace members use `email` field for filtering
+    - Workspace members use `email` field for filtering with validation
     - **Slug-based fallback**: When resourceType is unavailable (e.g., list entries), falls back to known reference slugs (owner, assignee, company, person, etc.)
-    - **Array validation**: Rejects array values for reference attributes with clear error message
+    - **Array validation**: Rejects array values for reference attributes with `FilterValidationError` (VALUE category)
+    - **Email validation**: Validates email format for workspace-member and assignee_id attributes
   - **Result**:
     - Can now filter deals by owner: `{"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}`
     - Can filter by UUID: `{"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-here"}]}`
     - Works with combined filters: stage + owner, multiple reference attributes
     - Works in list-entry context without resourceType (uses slug-based detection)
-    - Comprehensive test coverage: 14 unit tests covering UUID/name/email filtering, slug fallback, array validation
+    - Comprehensive test coverage: 21 unit tests covering UUID/name/email filtering, email validation, slug fallback, array validation, and additional reference types
   - Updated documentation in `core-schemas.ts` with reference attribute examples
   - Updated `search.ts` and `lists.ts` to pass resource type to filter transformer
+  - Fixed async compatibility in `list-attribute-filtering.test.ts` (10 tests updated)
 
 ### Security
 

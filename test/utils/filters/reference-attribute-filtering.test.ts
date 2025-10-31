@@ -7,6 +7,10 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { transformFiltersToApiFormat } from '@/utils/filters/translators.js';
 import * as attributeTypes from '@/api/attribute-types.js';
+import {
+  FilterValidationError,
+  FilterErrorCategory,
+} from '@/errors/api-errors.js';
 
 // Mock the attribute metadata module
 vi.mock('@/api/attribute-types.js', () => ({
@@ -666,7 +670,200 @@ describe('Reference Attribute Filtering', () => {
 
       await expect(() =>
         transformFiltersToApiFormat(filter, true, false, 'deals')
+      ).rejects.toThrow(FilterValidationError);
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, 'deals')
       ).rejects.toThrow(/Array values are not supported/);
+    });
+  });
+
+  describe('Email validation for workspace-member fields', () => {
+    test('should validate email format for workspace_member attribute', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'workspace_member' },
+            condition: 'equals' as const,
+            value: 'not-an-email', // Invalid email
+          },
+        ],
+      };
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, 'tasks')
+      ).rejects.toThrow(FilterValidationError);
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, 'tasks')
+      ).rejects.toThrow(/Invalid email format/);
+    });
+
+    test('should accept valid email for workspace_member attribute', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'workspace_member' },
+            condition: 'equals' as const,
+            value: 'user@example.com',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'tasks'
+      );
+
+      expect(result).toEqual({
+        filter: {
+          workspace_member: {
+            email: {
+              $eq: 'user@example.com',
+            },
+          },
+        },
+      });
+    });
+
+    test('should validate email format for assignee_id attribute', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'assignee_id' },
+            condition: 'equals' as const,
+            value: 'invalid@',
+          },
+        ],
+      };
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, 'tasks')
+      ).rejects.toThrow(FilterValidationError);
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, 'tasks')
+      ).rejects.toThrow(/Invalid email format/);
+    });
+  });
+
+  describe('Additional reference types in list-entry context', () => {
+    test('should handle assignee in list entries without resourceType', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'assignee' },
+            condition: 'equals' as const,
+            value: 'Jane Doe',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      expect(result).toEqual({
+        filter: {
+          assignee: {
+            name: {
+              $eq: 'Jane Doe',
+            },
+          },
+        },
+      });
+    });
+
+    test('should handle company in list entries without resourceType', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'company' },
+            condition: 'equals' as const,
+            value: 'Tech Corp',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      expect(result).toEqual({
+        filter: {
+          company: {
+            name: {
+              $eq: 'Tech Corp',
+            },
+          },
+        },
+      });
+    });
+
+    test('should handle person in list entries without resourceType', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'person' },
+            condition: 'equals' as const,
+            value: 'John Smith',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      expect(result).toEqual({
+        filter: {
+          person: {
+            name: {
+              $eq: 'John Smith',
+            },
+          },
+        },
+      });
+    });
+
+    test('should handle primary_contact with UUID in list entries', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'primary_contact' },
+            condition: 'equals' as const,
+            value: '550e8400-e29b-41d4-a716-446655440000',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      expect(result).toEqual({
+        filter: {
+          primary_contact: {
+            record_id: {
+              $eq: '550e8400-e29b-41d4-a716-446655440000',
+            },
+          },
+        },
+      });
     });
   });
 });

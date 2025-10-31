@@ -7,6 +7,10 @@
  */
 
 import { getAttributeTypeInfo } from '@/api/attribute-types.js';
+import {
+  FilterValidationError,
+  FilterErrorCategory,
+} from '@/errors/api-errors.js';
 
 /**
  * Attio attribute types that require reference field nesting
@@ -30,6 +34,11 @@ const REFERENCE_FIELD_MAPPING: Record<string, string> = {
  */
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Basic email pattern for validation
+ */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Known reference attribute slugs that commonly require nested field specification
@@ -76,14 +85,15 @@ export async function isReferenceAttribute(
  *
  * @param value - The filter value (can be UUID or name)
  * @returns The field name to use ('record_id' or 'name')
- * @throws Error if value is an array (not supported for reference attributes with equals)
+ * @throws FilterValidationError if value is an array (not supported for reference attributes with equals)
  */
 export function determineReferenceField(value: unknown): string {
   // Arrays are not supported for reference attribute filtering with equals
   if (Array.isArray(value)) {
-    throw new Error(
+    throw new FilterValidationError(
       'Array values are not supported for reference attribute filtering. ' +
-        'Use a single UUID or name value.'
+        'Use a single UUID or name value.',
+      FilterErrorCategory.VALUE
     );
   }
 
@@ -102,6 +112,7 @@ export function determineReferenceField(value: unknown): string {
  * @param attributeSlug - The attribute slug
  * @param value - The filter value
  * @returns The field name to use for filtering
+ * @throws FilterValidationError if email validation fails for workspace-member fields
  */
 export async function getReferenceFieldForAttribute(
   resourceType: string | undefined,
@@ -110,6 +121,13 @@ export async function getReferenceFieldForAttribute(
 ): Promise<string> {
   // Special case: workspace_member always uses email regardless of value format
   if (attributeSlug === 'workspace_member' || attributeSlug === 'assignee_id') {
+    // Validate email format
+    if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
+      throw new FilterValidationError(
+        `Invalid email format for ${attributeSlug}: "${value}". Expected valid email address.`,
+        FilterErrorCategory.VALUE
+      );
+    }
     return 'email';
   }
 
@@ -121,14 +139,28 @@ export async function getReferenceFieldForAttribute(
   try {
     const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
 
-    // Check for attribute-specific mapping
+    // Check for attribute-specific mapping (workspace-member type)
     if (REFERENCE_FIELD_MAPPING[typeInfo.attioType]) {
-      return REFERENCE_FIELD_MAPPING[typeInfo.attioType];
+      const field = REFERENCE_FIELD_MAPPING[typeInfo.attioType];
+      // Validate email if this is an email field
+      if (field === 'email') {
+        if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
+          throw new FilterValidationError(
+            `Invalid email format for ${attributeSlug}: "${value}". Expected valid email address.`,
+            FilterErrorCategory.VALUE
+          );
+        }
+      }
+      return field;
     }
 
     // Fall back to UUID vs name detection
     return determineReferenceField(value);
-  } catch {
+  } catch (error) {
+    // Re-throw FilterValidationError
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
     // Default to heuristic detection if metadata lookup fails
     return determineReferenceField(value);
   }
