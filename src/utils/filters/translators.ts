@@ -39,6 +39,10 @@ import {
 } from './validation-utils.js';
 import { isListSpecificAttribute } from './utils.js';
 import { createScopedLogger, OperationType } from '../logger.js';
+import {
+  isReferenceAttribute,
+  getReferenceFieldForAttribute,
+} from './reference-attribute-helper.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -104,11 +108,12 @@ import { createScopedLogger, OperationType } from '../logger.js';
  *   ]
  * };
  */
-export function transformFiltersToApiFormat(
+export async function transformFiltersToApiFormat(
   filters: ListEntryFilters | undefined,
   validateConditions: boolean = true,
-  isListEntryContext: boolean = false
-): { filter?: AttioApiFilter } {
+  isListEntryContext: boolean = false,
+  resourceType?: string
+): Promise<{ filter?: AttioApiFilter }> {
   // Handle undefined/null filters gracefully
   if (!filters) {
     return {};
@@ -165,18 +170,20 @@ export function transformFiltersToApiFormat(
 
   // For OR logic, we need a completely different structure with filter objects in an array
   if (useOrLogic) {
-    return createOrFilterStructure(
+    return await createOrFilterStructure(
       validatedFilters.filters,
       validateConditions,
-      isListEntryContext
+      isListEntryContext,
+      resourceType
     );
   }
 
   // Standard AND logic
-  return createAndFilterStructure(
+  return await createAndFilterStructure(
     validatedFilters.filters,
     validateConditions,
-    isListEntryContext
+    isListEntryContext,
+    resourceType
   );
 }
 
@@ -302,14 +309,17 @@ export function transformFiltersToQueryApiFormat(
  *
  * @param filters - Array of filters to combine with OR logic
  * @param validateConditions - Whether to validate condition types
+ * @param isListEntryContext - Whether this is a list entry context
+ * @param resourceType - The resource type for attribute metadata lookup
  * @returns Filter object with $or structure
  * @throws FilterValidationError for invalid filter structures or when all filters are invalid
  */
-function createOrFilterStructure(
+async function createOrFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
-  isListEntryContext: boolean = false
-): { filter?: AttioApiFilter } {
+  isListEntryContext: boolean = false,
+  resourceType?: string
+): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
     'createOrFilterStructure',
@@ -345,11 +355,13 @@ function createOrFilterStructure(
     );
   }
 
-  // Process valid filters
-  filters.forEach((filter, index) => {
+  // Process valid filters - use for loop instead of forEach to support await
+  for (let index = 0; index < filters.length; index++) {
+    const filter = filters[index];
+
     // Skip if this filter was found invalid
     if (invalidFilters.some((invalid) => invalid.index === index)) {
-      return;
+      continue;
     }
 
     // Debug log each filter
@@ -379,7 +391,7 @@ function createOrFilterStructure(
 
       // List-specific attributes use direct field access
       const operator =
-        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
+        filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
       condition[slug] = {
         [operator]: filter.value,
       };
@@ -397,24 +409,56 @@ function createOrFilterStructure(
     } else {
       // Standard operator handling for normal fields
       const operator =
-        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
+        filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+
+      // Check if this is a reference attribute that needs nested field specification
+      const isReference =
+        resourceType && (await isReferenceAttribute(resourceType, slug));
 
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
-        condition[`record.values.${slug}`] = {
-          [operator]: filter.value,
-        };
+        if (isReference) {
+          // Reference attributes need nested field specification
+          const refField = await getReferenceFieldForAttribute(
+            resourceType!,
+            slug,
+            filter.value
+          );
+          condition[`record.values.${slug}`] = {
+            [refField]: {
+              [operator]: filter.value,
+            },
+          };
+        } else {
+          condition[`record.values.${slug}`] = {
+            [operator]: filter.value,
+          };
+        }
       } else {
         // Standard field access for non-list contexts
-        condition[slug] = {
-          [operator]: filter.value,
-        };
+        if (isReference) {
+          // Reference attributes need nested field specification
+          const refField = await getReferenceFieldForAttribute(
+            resourceType!,
+            slug,
+            filter.value
+          );
+          condition[slug] = {
+            [refField]: {
+              [operator]: filter.value,
+            },
+          };
+        } else {
+          condition[slug] = {
+            [operator]: filter.value,
+          };
+        }
       }
     }
 
     // Add to the OR conditions array
     orConditions.push(condition);
-  });
+  }
 
   // Return the $or structure with valid conditions
   if (orConditions.length > 0) {
@@ -432,14 +476,17 @@ function createOrFilterStructure(
  *
  * @param filters - Array of filters to combine with AND logic
  * @param validateConditions - Whether to validate condition types
+ * @param isListEntryContext - Whether this is a list entry context
+ * @param resourceType - The resource type for attribute metadata lookup
  * @returns Filter object with standard AND structure
  * @throws FilterValidationError for invalid filter structures or when all filters are invalid
  */
-function createAndFilterStructure(
+async function createAndFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
-  isListEntryContext: boolean = false
-): { filter?: AttioApiFilter } {
+  isListEntryContext: boolean = false,
+  resourceType?: string
+): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
     'createAndFilterStructure',
@@ -477,11 +524,13 @@ function createAndFilterStructure(
     );
   }
 
-  // Process valid filters by merging into single object
-  filters.forEach((filter, index) => {
+  // Process valid filters by merging into single object - use for loop to support await
+  for (let index = 0; index < filters.length; index++) {
+    const filter = filters[index];
+
     // Skip if this filter was found invalid
     if (invalidFilters.some((invalid) => invalid.index === index)) {
-      return;
+      continue;
     }
 
     // Debug log each filter
@@ -496,7 +545,7 @@ function createAndFilterStructure(
 
     const { slug } = filter.attribute;
     const operator =
-      filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
+      filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
 
     // Build condition object in Attio's expected format
     let fieldPath: string;
@@ -512,19 +561,38 @@ function createAndFilterStructure(
       fieldPath = slug;
     }
 
+    // Check if this is a reference attribute that needs nested field specification
+    const isReference =
+      resourceType && (await isReferenceAttribute(resourceType, slug));
+
     // Merge condition directly into the main object (AND logic)
-    mergedConditions[fieldPath] = {
-      [operator]: filter.value,
-    };
+    if (isReference) {
+      // Reference attributes need nested field specification
+      const refField = await getReferenceFieldForAttribute(
+        resourceType!,
+        slug,
+        filter.value
+      );
+      mergedConditions[fieldPath] = {
+        [refField]: {
+          [operator]: filter.value,
+        },
+      };
+    } else {
+      mergedConditions[fieldPath] = {
+        [operator]: filter.value,
+      };
+    }
 
     if (process.env.NODE_ENV === 'development') {
       log.debug('Added AND condition', {
         fieldPath,
         operator,
         value: filter.value,
+        isReference,
       });
     }
-  });
+  }
 
   // Return merged conditions if we have any
   if (Object.keys(mergedConditions).length === 0) {

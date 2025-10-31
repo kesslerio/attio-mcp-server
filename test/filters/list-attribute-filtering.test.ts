@@ -83,7 +83,7 @@ describe('List Entry Filter Transformation', () => {
       expect(result).toEqual({
         filter: {
           stage: {
-            $equals: 'Contacted',
+            $eq: 'Contacted',
           },
         },
       });
@@ -133,10 +133,10 @@ describe('List Entry Filter Transformation', () => {
       expect(result).toEqual({
         filter: {
           stage: {
-            $equals: 'Contacted',
+            $eq: 'Contacted',
           },
           priority: {
-            $equals: 'High',
+            $eq: 'High',
           },
         },
       });
@@ -163,10 +163,7 @@ describe('List Entry Filter Transformation', () => {
 
       expect(result).toEqual({
         filter: {
-          $or: [
-            { stage: { $equals: 'Contacted' } },
-            { stage: { $equals: 'Demo' } },
-          ],
+          $or: [{ stage: { $eq: 'Contacted' } }, { stage: { $eq: 'Demo' } }],
         },
       });
     });
@@ -193,7 +190,7 @@ describe('List Entry Filter Transformation', () => {
       expect(result).toEqual({
         filter: {
           stage: {
-            $equals: 'Contacted',
+            $eq: 'Contacted',
           },
           'record.values.name': {
             $contains: 'Tech',
@@ -218,7 +215,7 @@ describe('List Entry Filter Transformation', () => {
       expect(result).toEqual({
         filter: {
           '2e9b7337-7ffa-4c28-8496-d0aff1b186db': {
-            $equals: 'Active',
+            $eq: 'Active',
           },
         },
       });
@@ -269,7 +266,7 @@ describe('List Entry Filter Transformation', () => {
       expect(result).toEqual({
         filter: {
           stage: {
-            $equals: 'Active',
+            $eq: 'Active',
           },
           name: {
             $contains: 'Inc',
@@ -336,8 +333,8 @@ describe('Edge Cases', () => {
     expect(result).toEqual({
       filter: {
         $or: [
-          { stage: { $equals: 'Contacted' } },
-          { priority: { $equals: 'High' } },
+          { stage: { $eq: 'Contacted' } },
+          { priority: { $eq: 'High' } },
           { 'record.values.name': { $contains: 'Corp' } },
         ],
       },

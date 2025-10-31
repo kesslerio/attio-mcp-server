@@ -24,7 +24,7 @@ describe('transformFiltersToApiFormat', () => {
     expect(result).toEqual({
       filter: {
         stage: {
-          $equals: 'discovery',
+          $eq: 'discovery',
         },
       },
     });
@@ -63,7 +63,7 @@ describe('transformFiltersToApiFormat', () => {
     expect(result).toEqual({
       filter: {
         stage: {
-          $equals: 'discovery',
+          $eq: 'discovery',
         },
         value: {
           $gt: 10000,
@@ -94,10 +94,7 @@ describe('transformFiltersToApiFormat', () => {
 
     expect(result).toEqual({
       filter: {
-        $or: [
-          { stage: { $equals: 'discovery' } },
-          { stage: { $equals: 'proposal' } },
-        ],
+        $or: [{ stage: { $eq: 'discovery' } }, { stage: { $eq: 'proposal' } }],
       },
     });
   });

@@ -110,7 +110,7 @@ export async function getListEntries(
   const safeOffset = typeof offset === 'number' ? offset : undefined;
 
   // Create request body with parameters and filters
-  const createRequestBody = () => {
+  const createRequestBody = async () => {
     // Start with base parameters
     const body: SearchRequestBody = {
       expand: ['record'],
@@ -121,7 +121,13 @@ export async function getListEntries(
     try {
       // Use our shared utility to transform filters to API format
       // Pass isListEntryContext=true since we're filtering list entries
-      const filterObject = transformFiltersToApiFormat(filters, true, true);
+      // Note: resourceType is undefined for list entries as they can contain mixed record types
+      const filterObject = await transformFiltersToApiFormat(
+        filters,
+        true,
+        true,
+        undefined
+      );
 
       // Add filter to body if it exists
       if (filterObject.filter) {
@@ -188,7 +194,7 @@ export async function getListEntries(
   // Call primary endpoint directly (Option A simplification)
   return callWithRetry(async () => {
     const path = `/lists/${listId}/entries/query`;
-    const requestBody = createRequestBody();
+    const requestBody = await createRequestBody();
 
     logOperation('Primary endpoint attempt', {
       path,

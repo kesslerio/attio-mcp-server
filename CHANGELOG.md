@@ -9,9 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Deal filtering documentation** (#904) - Enhanced `records_search` tool discoverability with deal-specific examples
+  - Added "deals" to `records_search` tool description (was missing from capability list)
+  - Documented `filters` parameter structure with format examples and deal-specific use cases
+  - Added schema examples for filtering deals by stage, owner, and value (single and multi-condition)
+  - Improves LLM's ability to discover and correctly use deal filtering capabilities
+
 ### Changed
 
 ### Fixed
+
+- **Critical: Filter transformation bug** (#904) - Fixed `condition: "equals"` incorrectly mapping to `$equals` instead of Attio's required `$eq` operator
+  - **Problem**: Filter transformer converted `equals` condition to `$equals` operator, but Attio API requires `$eq` (verified in search.ts:189-191)
+  - **Impact**: ALL resource types affected (companies, people, deals, tasks, records) - filtering with `equals` condition failed with "Invalid operator: $equals" error
+  - **Solution**: Updated 3 locations in `src/utils/filters/translators.ts` (lines 382, 400, 499) to generate `$eq` instead of `$equals`
+  - **Result**: Filtering now works correctly for all resource types with `equals` condition
+  - Updated test suites to expect correct `$eq` operator
+- **Reference attribute filtering support** (#904 Phase 2) - Added support for filtering by reference attributes (owner, assignee, company, person)
+  - **Problem**: Reference attributes require nested field specification in Attio API filter syntax - filtering by owner/assignee failed with "Filter cannot omit field for Attribute" error
+  - **Impact**: Filtering deals by owner, tasks by assignee, and other reference attributes was broken
+  - **Solution**:
+    - Created `reference-attribute-helper.ts` with attribute type detection and field determination logic
+    - Updated `transformFiltersToApiFormat` to be async and accept `resourceType` parameter
+    - Added reference attribute handling in both AND and OR filter structures
+    - Supports both UUID-based filtering (`record_id` field) and name-based filtering (`name` field)
+    - Workspace members use `email` field for filtering
+  - **Result**:
+    - Can now filter deals by owner: `{"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}`
+    - Can filter by UUID: `{"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-here"}]}`
+    - Works with combined filters: stage + owner, multiple reference attributes
+    - Comprehensive test coverage including unit tests and integration tests
+  - Updated documentation in `core-schemas.ts` with reference attribute examples
+  - Updated `search.ts` and `lists.ts` to pass resource type to filter transformer
 
 ### Security
 

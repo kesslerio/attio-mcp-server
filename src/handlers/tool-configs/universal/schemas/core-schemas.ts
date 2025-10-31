@@ -10,7 +10,28 @@ export const searchRecordsSchema = {
     query: { type: 'string' as const, description: 'Search query string' },
     filters: {
       type: 'object' as const,
-      description: 'Advanced filter conditions',
+      description:
+        'Advanced filter conditions with nested array structure.\n\n' +
+        'Required format:\n' +
+        '{\n' +
+        '  "filters": [\n' +
+        '    {\n' +
+        '      "attribute": {"slug": "field_name"}, \n' +
+        '      "condition": "operator", \n' +
+        '      "value": "search_value"\n' +
+        '    }\n' +
+        '  ]\n' +
+        '}\n\n' +
+        'Simple attribute filtering:\n' +
+        '- By stage: {"filters": [{"attribute": {"slug": "stage"}, "condition": "equals", "value": "Demo"}]}\n' +
+        '- By value: {"filters": [{"attribute": {"slug": "value"}, "condition": "greater_than", "value": 5000}]}\n\n' +
+        'Reference attribute filtering (owner, assignee, company, person):\n' +
+        '- By UUID: {"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-here"}]}\n' +
+        '- By name: {"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}\n\n' +
+        'Combined filters:\n' +
+        '- Stage + Owner: {"filters": [{"attribute": {"slug": "stage"}, "condition": "equals", "value": "Demo"}, {"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-or-name"}]}\n' +
+        '- OR logic: {"filters": [...], "matchAny": true}\n\n' +
+        'Supported conditions: equals, contains, starts_with, ends_with, greater_than, less_than, is_empty, is_not_empty',
       additionalProperties: true,
     },
     search_type: {
@@ -94,6 +115,37 @@ export const searchRecordsSchema = {
       resource_type: 'people',
       query: 'customer@example.com',
       limit: 5,
+    },
+    {
+      resource_type: 'deals',
+      filters: {
+        filters: [
+          {
+            attribute: { slug: 'stage' },
+            condition: 'equals',
+            value: 'Demo',
+          },
+        ],
+      },
+      limit: 20,
+    },
+    {
+      resource_type: 'deals',
+      filters: {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals',
+            value: 'user_id_here',
+          },
+          {
+            attribute: { slug: 'value' },
+            condition: 'greater_than',
+            value: 10000,
+          },
+        ],
+      },
+      limit: 50,
     },
   ],
 };
