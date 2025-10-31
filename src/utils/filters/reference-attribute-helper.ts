@@ -25,11 +25,11 @@ const REFERENCE_TYPES = [
  * Field to use for specific attribute types that require fixed field names
  * Only include types that ALWAYS use the same field regardless of value
  *
- * CRITICAL: actor-reference and workspace-member both reference workspace members
- * and MUST use email field for filtering (not name or record_id)
+ * NOTE: actor-reference fields (like deals.owner) can accept either email OR UUID
+ * depending on the value format, so we use heuristic detection instead of forcing email.
+ * Only workspace-member typed fields must use email.
  */
 const REFERENCE_FIELD_MAPPING: Record<string, string> = {
-  'actor-reference': 'email', // actor references are workspace members - use email
   'workspace-member': 'email', // workspace members always filter by email
 };
 
@@ -60,17 +60,10 @@ const KNOWN_REFERENCE_SLUGS = new Set([
 ]);
 
 /**
- * Slugs that reference workspace members (actor-reference type)
- * These always use email field regardless of value format
+ * Slugs that ALWAYS require email field (workspace-member type)
+ * Note: actor-reference slugs like 'owner', 'assignee' use flexible detection (UUID vs email vs name)
  */
-const WORKSPACE_MEMBER_SLUGS = new Set([
-  'owner',
-  'assignee',
-  'created_by',
-  'modified_by',
-  'workspace_member',
-  'assignee_id',
-]);
+const WORKSPACE_MEMBER_SLUGS = new Set(['workspace_member', 'assignee_id']);
 
 /**
  * Check if an attribute is a reference type that requires nested field specification
@@ -154,7 +147,7 @@ export async function getReferenceFieldForAttribute(
     try {
       const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
 
-      // Check for attribute-specific mapping (actor-reference, workspace-member types)
+      // Check for attribute-specific mapping (only workspace-member type requires fixed email)
       if (REFERENCE_FIELD_MAPPING[typeInfo.attioType]) {
         const field = REFERENCE_FIELD_MAPPING[typeInfo.attioType];
         // Validate email if this is an email field
@@ -167,6 +160,15 @@ export async function getReferenceFieldForAttribute(
           }
         }
         return field;
+      }
+
+      // Actor-reference fields (e.g., owner) can accept email OR UUID - use heuristic detection
+      if (typeInfo.attioType === 'actor-reference') {
+        if (typeof value === 'string' && EMAIL_PATTERN.test(value)) {
+          return 'email';
+        }
+        // If it's a UUID, use record_id; otherwise use name
+        return determineReferenceField(value);
       }
 
       // Fall back to UUID vs name detection for record-reference types

@@ -168,6 +168,54 @@ describe('Reference Attribute Filtering', () => {
         },
       });
     });
+
+    test('should transform owner (actor-reference) with name to name field', async () => {
+      // Mock owner as an actor-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'string',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'actor-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'deals',
+            attribute_id: 'owner',
+          },
+          api_slug: 'owner',
+          title: 'Owner',
+          type: 'actor-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: 'Martin Kessler',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'deals'
+      );
+
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            name: {
+              $eq: 'Martin Kessler',
+            },
+          },
+        },
+      });
+    });
   });
 
   describe('Workspace member reference filtering', () => {
@@ -504,27 +552,36 @@ describe('Reference Attribute Filtering', () => {
   });
 
   describe('Slug-based fallback (no resourceType)', () => {
-    test('should require email for workspace member slugs (owner)', async () => {
+    test('should accept name for owner slug and use name field', async () => {
       const filter = {
         filters: [
           {
             attribute: { slug: 'owner' },
             condition: 'equals' as const,
-            value: 'Martin Kessler', // Invalid - workspace member slugs require email
+            value: 'Martin Kessler', // Now allowed: fallback uses name
           },
         ],
       };
 
-      await expect(() =>
-        transformFiltersToApiFormat(filter, true, false, undefined)
-      ).rejects.toThrow(FilterValidationError);
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
 
-      await expect(() =>
-        transformFiltersToApiFormat(filter, true, false, undefined)
-      ).rejects.toThrow(/Invalid email format.*owner/);
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            name: {
+              $eq: 'Martin Kessler',
+            },
+          },
+        },
+      });
     });
 
-    test('should accept email for workspace member slugs (owner)', async () => {
+    test('should accept email for owner slug and use email field', async () => {
       const filter = {
         filters: [
           {
