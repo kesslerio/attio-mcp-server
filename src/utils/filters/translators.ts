@@ -417,17 +417,32 @@ async function createOrFilterStructure(
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
         if (isReference) {
-          // Reference attributes need nested field specification
-          const refField = await getReferenceFieldForAttribute(
-            resourceType,
-            slug,
-            filter.value
-          );
-          condition[`record.values.${slug}`] = {
-            [refField]: {
-              [operator]: filter.value,
-            },
-          };
+          // Check if this is an actor-reference type (requires special structure)
+          const typeInfo = resourceType
+            ? await import('./reference-attribute-helper.js').then((m) =>
+                m.getAttributeTypeInfo(resourceType, slug).catch(() => null)
+              )
+            : null;
+
+          if (typeInfo?.attioType === 'actor-reference') {
+            // Actor-reference uses direct property matching (no operator nesting)
+            condition[`record.values.${slug}`] = {
+              referenced_actor_type: 'workspace-member',
+              referenced_actor_id: filter.value,
+            };
+          } else {
+            // Record-reference uses standard nested field specification
+            const refField = await getReferenceFieldForAttribute(
+              resourceType,
+              slug,
+              filter.value
+            );
+            condition[`record.values.${slug}`] = {
+              [refField]: {
+                [operator]: filter.value,
+              },
+            };
+          }
         } else {
           condition[`record.values.${slug}`] = {
             [operator]: filter.value,
@@ -436,17 +451,33 @@ async function createOrFilterStructure(
       } else {
         // Standard field access for non-list contexts
         if (isReference) {
-          // Reference attributes need nested field specification
-          const refField = await getReferenceFieldForAttribute(
-            resourceType,
-            slug,
-            filter.value
-          );
-          condition[slug] = {
-            [refField]: {
-              [operator]: filter.value,
-            },
-          };
+          // Check if this is an actor-reference type (requires special structure)
+          const typeInfo = resourceType
+            ? await import('./reference-attribute-helper.js').then((m) =>
+                m.getAttributeTypeInfo(resourceType, slug).catch(() => null)
+              )
+            : null;
+
+          if (typeInfo?.attioType === 'actor-reference') {
+            // Actor-reference uses direct property matching (no operator nesting)
+            // Per Attio API docs: {owner: {referenced_actor_type: "workspace-member", referenced_actor_id: "uuid"}}
+            condition[slug] = {
+              referenced_actor_type: 'workspace-member', // Actor references are always workspace members
+              referenced_actor_id: filter.value, // Value must be UUID
+            };
+          } else {
+            // Record-reference and other types use standard nested field specification
+            const refField = await getReferenceFieldForAttribute(
+              resourceType,
+              slug,
+              filter.value
+            );
+            condition[slug] = {
+              [refField]: {
+                [operator]: filter.value,
+              },
+            };
+          }
         } else {
           condition[slug] = {
             [operator]: filter.value,
@@ -565,17 +596,32 @@ async function createAndFilterStructure(
 
     // Merge condition directly into the main object (AND logic)
     if (isReference) {
-      // Reference attributes need nested field specification
-      const refField = await getReferenceFieldForAttribute(
-        resourceType,
-        slug,
-        filter.value
-      );
-      mergedConditions[fieldPath] = {
-        [refField]: {
-          [operator]: filter.value,
-        },
-      };
+      // Check if this is an actor-reference type (requires special structure)
+      const typeInfo = resourceType
+        ? await import('./reference-attribute-helper.js').then((m) =>
+            m.getAttributeTypeInfo(resourceType, slug).catch(() => null)
+          )
+        : null;
+
+      if (typeInfo?.attioType === 'actor-reference') {
+        // Actor-reference uses direct property matching (no operator nesting)
+        mergedConditions[fieldPath] = {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: filter.value,
+        };
+      } else {
+        // Record-reference uses standard nested field specification
+        const refField = await getReferenceFieldForAttribute(
+          resourceType,
+          slug,
+          filter.value
+        );
+        mergedConditions[fieldPath] = {
+          [refField]: {
+            [operator]: filter.value,
+          },
+        };
+      }
     } else {
       mergedConditions[fieldPath] = {
         [operator]: filter.value,

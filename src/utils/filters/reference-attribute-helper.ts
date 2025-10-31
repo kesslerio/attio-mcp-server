@@ -12,6 +12,9 @@ import {
   FilterErrorCategory,
 } from '@/errors/api-errors.js';
 
+// Re-export getAttributeTypeInfo for use in translators
+export { getAttributeTypeInfo };
+
 /**
  * Attio attribute types that require reference field nesting
  */
@@ -91,13 +94,17 @@ export async function isReferenceAttribute(
 }
 
 /**
- * Determine which field to use for a reference attribute based on the value
+ * Determine which field to use for a reference attribute based on the value and type
  *
  * @param value - The filter value (can be UUID or name)
- * @returns The field name to use ('record_id' or 'name')
+ * @param attioType - The Attio attribute type (optional)
+ * @returns The field name to use ('record_id', 'name', or 'referenced_actor_id' for actor-reference)
  * @throws FilterValidationError if value is an array (not supported for reference attributes with equals)
  */
-export function determineReferenceField(value: unknown): string {
+export function determineReferenceField(
+  value: unknown,
+  attioType?: string
+): string {
   // Arrays are not supported for reference attribute filtering with equals
   if (Array.isArray(value)) {
     throw new FilterValidationError(
@@ -105,6 +112,11 @@ export function determineReferenceField(value: unknown): string {
         'Use a single UUID or name value.',
       FilterErrorCategory.VALUE
     );
+  }
+
+  // Actor-reference attributes use referenced_actor_id (always UUID)
+  if (attioType === 'actor-reference') {
+    return 'referenced_actor_id';
   }
 
   // If value is UUID, use record_id field
@@ -162,17 +174,22 @@ export async function getReferenceFieldForAttribute(
         return field;
       }
 
-      // Actor-reference fields (e.g., owner) can accept email OR UUID - use heuristic detection
+      // Actor-reference fields (e.g., owner) use referenced_actor_id field
+      // Per Attio API docs: actor-reference requires referenced_actor_type and referenced_actor_id
       if (typeInfo.attioType === 'actor-reference') {
-        if (typeof value === 'string' && EMAIL_PATTERN.test(value)) {
-          return 'email';
+        // Value must be a UUID (workspace member ID)
+        if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
+          throw new FilterValidationError(
+            `Actor-reference attribute "${attributeSlug}" requires a UUID value (workspace member ID). Got: "${value}". ` +
+              `Use the workspace member's ID, not their name or email.`,
+            FilterErrorCategory.VALUE
+          );
         }
-        // If it's a UUID, use record_id; otherwise use name
-        return determineReferenceField(value);
+        return 'referenced_actor_id';
       }
 
       // Fall back to UUID vs name detection for record-reference types
-      return determineReferenceField(value);
+      return determineReferenceField(value, typeInfo.attioType);
     } catch (error) {
       // Re-throw FilterValidationError
       if (error instanceof FilterValidationError) {
@@ -195,6 +212,7 @@ export async function getReferenceFieldForAttribute(
     return 'email';
   }
 
-  // For other reference slugs, use heuristic detection (UUID vs name)
+  // For other reference slugs (when metadata unavailable), use heuristic detection (UUID vs name)
+  // Note: Cannot determine if it's actor-reference without metadata, so we use basic heuristic
   return determineReferenceField(value);
 }

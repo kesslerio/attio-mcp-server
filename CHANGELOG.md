@@ -25,22 +25,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Solution**: Updated 3 locations in `src/utils/filters/translators.ts` (lines 382, 400, 499) to generate `$eq` instead of `$equals`
   - **Result**: Filtering now works correctly for all resource types with `equals` condition
   - Updated test suites to expect correct `$eq` operator
-- **CRITICAL FIX: Reference attribute filtering** (#904 Phase 2) - Fixed actor-reference attributes to use email field instead of name
-  - **Production Issue**: API rejected filters with error "Invalid field 'name' for attribute of type 'actor-reference'" when filtering by owner/assignee
-  - **Root Cause**: `actor-reference` type attributes (owner, assignee, created_by, modified_by) reference workspace members and MUST use `email` field, not `name` field
-  - **Impact**: ALL filtering by workspace members was broken - owner filters, assignee filters, etc. returned 400 errors
-  - **Solution**:
-    - Added `actor-reference` to REFERENCE_FIELD_MAPPING to always use `email` field
-    - Created WORKSPACE_MEMBER_SLUGS set for slug-based detection (owner, assignee, created_by, modified_by, workspace_member, assignee_id)
-    - Enforces email format validation for all workspace member attributes
-    - `record-reference` type (company, person) continues to support UUID (`record_id`) and name (`name`) fields
-  - **Breaking Change**: Users must now provide email addresses (not names) when filtering by owner/assignee
+- **CRITICAL FIX: Actor-reference filtering** (#904 Phase 2) - Fixed actor-reference attributes to use correct Attio API filter structure
+  - **Production Issue**: API rejected all filters for actor-reference attributes (owner, assignee, created_by, modified_by):
+    - `{"owner": {"name": {"$eq": "..."}}}` → "Invalid field 'name' for attribute of type 'actor-reference'"
+    - `{"owner": {"email": {"$eq": "..."}}}` → "Invalid field 'email' for attribute of type 'actor-reference'"
+    - `{"owner": {"record_id": {"$eq": "..."}}}` → "Invalid field 'record_id' for attribute of type 'actor-reference'"
+  - **Root Cause**: Actor-reference attributes require a completely different filter structure per Attio API documentation
+  - **Impact**: ALL filtering by owner, assignee, created_by, modified_by was completely broken
+  - **Solution** (discovered via Context7 API documentation search):
+    - Actor-reference attributes use direct property matching, not operator nesting
+    - **Correct structure**: `{owner: {referenced_actor_type: "workspace-member", referenced_actor_id: "uuid"}}`
+    - **NOT**: `{owner: {name: {$eq: "..."}}}` or `{owner: {email: {$eq: "..."}}}` or `{owner: {record_id: {$eq: "..."}}}`
+    - Updated filter translator to detect actor-reference types and build special structure
+    - Applied to both AND and OR logic, and list-entry contexts
+    - Value must be workspace member UUID, not name or email
   - **Result**:
-    - **BEFORE (broken)**: `{"owner": {"name": {"$eq": "Martin Kessler"}}}` → 400 error
-    - **AFTER (working)**: `{"owner": {"email": {"$eq": "martin@example.com"}}}` → success
-    - All 146 filter tests passing
-  - Updated 21 comprehensive tests to reflect email requirement for workspace member attributes
-  - Enhanced error messages to guide users: "Workspace member attributes (owner, assignee, etc.) require email addresses"
+    - **BEFORE**: `{"owner": {"name": {"$eq": "Martin Kessler"}}}` → 400 error "Invalid field 'name'"
+    - **AFTER**: `{"owner": {"referenced_actor_type": "workspace-member", "referenced_actor_id": "uuid"}}` → ✅ SUCCESS
+    - E2E test passed 100% (TC-AO03)
+    - All filter tests passing
+  - **Breaking Change**: Users must provide workspace member UUID (not name or email) for owner/assignee filters
+  - Enhanced error messages to guide users when invalid value types provided
 
 ### Security
 
