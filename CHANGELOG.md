@@ -25,27 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Solution**: Updated 3 locations in `src/utils/filters/translators.ts` (lines 382, 400, 499) to generate `$eq` instead of `$equals`
   - **Result**: Filtering now works correctly for all resource types with `equals` condition
   - Updated test suites to expect correct `$eq` operator
-- **Reference attribute filtering support** (#904 Phase 2) - Added support for filtering by reference attributes (owner, assignee, company, person)
-  - **Problem**: Reference attributes require nested field specification in Attio API filter syntax - filtering by owner/assignee failed with "Filter cannot omit field for Attribute" error
-  - **Impact**: Filtering deals by owner, tasks by assignee, and other reference attributes was broken
+- **CRITICAL FIX: Reference attribute filtering** (#904 Phase 2) - Fixed actor-reference attributes to use email field instead of name
+  - **Production Issue**: API rejected filters with error "Invalid field 'name' for attribute of type 'actor-reference'" when filtering by owner/assignee
+  - **Root Cause**: `actor-reference` type attributes (owner, assignee, created_by, modified_by) reference workspace members and MUST use `email` field, not `name` field
+  - **Impact**: ALL filtering by workspace members was broken - owner filters, assignee filters, etc. returned 400 errors
   - **Solution**:
-    - Created `reference-attribute-helper.ts` with attribute type detection and field determination logic
-    - Updated `transformFiltersToApiFormat` to be async and accept `resourceType` parameter
-    - Added reference attribute handling in both AND and OR filter structures
-    - Supports both UUID-based filtering (`record_id` field) and name-based filtering (`name` field)
-    - Workspace members use `email` field for filtering with validation
-    - **Slug-based fallback**: When resourceType is unavailable (e.g., list entries), falls back to known reference slugs (owner, assignee, company, person, etc.)
-    - **Array validation**: Rejects array values for reference attributes with `FilterValidationError` (VALUE category)
-    - **Email validation**: Validates email format for workspace-member and assignee_id attributes
+    - Added `actor-reference` to REFERENCE_FIELD_MAPPING to always use `email` field
+    - Created WORKSPACE_MEMBER_SLUGS set for slug-based detection (owner, assignee, created_by, modified_by, workspace_member, assignee_id)
+    - Enforces email format validation for all workspace member attributes
+    - `record-reference` type (company, person) continues to support UUID (`record_id`) and name (`name`) fields
+  - **Breaking Change**: Users must now provide email addresses (not names) when filtering by owner/assignee
   - **Result**:
-    - Can now filter deals by owner: `{"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}`
-    - Can filter by UUID: `{"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-here"}]}`
-    - Works with combined filters: stage + owner, multiple reference attributes
-    - Works in list-entry context without resourceType (uses slug-based detection)
-    - Comprehensive test coverage: 21 unit tests covering UUID/name/email filtering, email validation, slug fallback, array validation, and additional reference types
-  - Updated documentation in `core-schemas.ts` with reference attribute examples
-  - Updated `search.ts` and `lists.ts` to pass resource type to filter transformer
-  - Fixed async compatibility in `list-attribute-filtering.test.ts` (10 tests updated)
+    - **BEFORE (broken)**: `{"owner": {"name": {"$eq": "Martin Kessler"}}}` → 400 error
+    - **AFTER (working)**: `{"owner": {"email": {"$eq": "martin@example.com"}}}` → success
+    - All 146 filter tests passing
+  - Updated 21 comprehensive tests to reflect email requirement for workspace member attributes
+  - Enhanced error messages to guide users: "Workspace member attributes (owner, assignee, etc.) require email addresses"
 
 ### Security
 

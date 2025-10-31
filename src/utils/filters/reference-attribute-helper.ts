@@ -24,8 +24,12 @@ const REFERENCE_TYPES = [
 /**
  * Field to use for specific attribute types that require fixed field names
  * Only include types that ALWAYS use the same field regardless of value
+ *
+ * CRITICAL: actor-reference and workspace-member both reference workspace members
+ * and MUST use email field for filtering (not name or record_id)
  */
 const REFERENCE_FIELD_MAPPING: Record<string, string> = {
+  'actor-reference': 'email', // actor references are workspace members - use email
   'workspace-member': 'email', // workspace members always filter by email
 };
 
@@ -53,6 +57,19 @@ const KNOWN_REFERENCE_SLUGS = new Set([
   'workspace_member',
   'created_by',
   'modified_by',
+]);
+
+/**
+ * Slugs that reference workspace members (actor-reference type)
+ * These always use email field regardless of value format
+ */
+const WORKSPACE_MEMBER_SLUGS = new Set([
+  'owner',
+  'assignee',
+  'created_by',
+  'modified_by',
+  'workspace_member',
+  'assignee_id',
 ]);
 
 /**
@@ -119,7 +136,8 @@ export async function getReferenceFieldForAttribute(
   attributeSlug: string,
   value: unknown
 ): Promise<string> {
-  // Special case: workspace_member always uses email regardless of value format
+  // Special case: workspace_member and assignee_id slugs ALWAYS use email
+  // regardless of metadata availability
   if (attributeSlug === 'workspace_member' || attributeSlug === 'assignee_id') {
     // Validate email format
     if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
@@ -131,37 +149,50 @@ export async function getReferenceFieldForAttribute(
     return 'email';
   }
 
-  // If resourceType is unavailable, use heuristic detection
-  if (!resourceType) {
-    return determineReferenceField(value);
-  }
+  // If resourceType is available, use metadata to determine field
+  if (resourceType) {
+    try {
+      const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
 
-  try {
-    const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
-
-    // Check for attribute-specific mapping (workspace-member type)
-    if (REFERENCE_FIELD_MAPPING[typeInfo.attioType]) {
-      const field = REFERENCE_FIELD_MAPPING[typeInfo.attioType];
-      // Validate email if this is an email field
-      if (field === 'email') {
-        if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
-          throw new FilterValidationError(
-            `Invalid email format for ${attributeSlug}: "${value}". Expected valid email address.`,
-            FilterErrorCategory.VALUE
-          );
+      // Check for attribute-specific mapping (actor-reference, workspace-member types)
+      if (REFERENCE_FIELD_MAPPING[typeInfo.attioType]) {
+        const field = REFERENCE_FIELD_MAPPING[typeInfo.attioType];
+        // Validate email if this is an email field
+        if (field === 'email') {
+          if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
+            throw new FilterValidationError(
+              `Invalid email format for ${attributeSlug}: "${value}". Expected valid email address.`,
+              FilterErrorCategory.VALUE
+            );
+          }
         }
+        return field;
       }
-      return field;
-    }
 
-    // Fall back to UUID vs name detection
-    return determineReferenceField(value);
-  } catch (error) {
-    // Re-throw FilterValidationError
-    if (error instanceof FilterValidationError) {
-      throw error;
+      // Fall back to UUID vs name detection for record-reference types
+      return determineReferenceField(value);
+    } catch (error) {
+      // Re-throw FilterValidationError
+      if (error instanceof FilterValidationError) {
+        throw error;
+      }
+      // Fall through to slug-based detection if metadata lookup fails
     }
-    // Default to heuristic detection if metadata lookup fails
-    return determineReferenceField(value);
   }
+
+  // ResourceType unavailable or metadata lookup failed - use slug-based detection
+  // Check if this is a known workspace member slug (requires email field)
+  if (WORKSPACE_MEMBER_SLUGS.has(attributeSlug)) {
+    // Validate email format
+    if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
+      throw new FilterValidationError(
+        `Invalid email format for ${attributeSlug}: "${value}". Expected valid email address. Workspace member attributes (owner, assignee, etc.) require email addresses.`,
+        FilterErrorCategory.VALUE
+      );
+    }
+    return 'email';
+  }
+
+  // For other reference slugs, use heuristic detection (UUID vs name)
+  return determineReferenceField(value);
 }

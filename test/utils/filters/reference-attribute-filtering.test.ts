@@ -71,8 +71,8 @@ describe('Reference Attribute Filtering', () => {
       });
     });
 
-    test('should transform assignee filter with UUID to record_id field', async () => {
-      // Mock assignee as an actor-reference type
+    test('should transform assignee filter with email to email field', async () => {
+      // Mock assignee as an actor-reference type (workspace member reference)
       vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
         fieldType: 'string',
         isArray: false,
@@ -96,7 +96,7 @@ describe('Reference Attribute Filtering', () => {
           {
             attribute: { slug: 'assignee' },
             condition: 'equals' as const,
-            value: '650e8400-e29b-41d4-a716-446655440001',
+            value: 'user@example.com',
           },
         ],
       };
@@ -111,8 +111,8 @@ describe('Reference Attribute Filtering', () => {
       expect(result).toEqual({
         filter: {
           assignee: {
-            record_id: {
-              $eq: '650e8400-e29b-41d4-a716-446655440001',
+            email: {
+              $eq: 'user@example.com',
             },
           },
         },
@@ -121,56 +121,8 @@ describe('Reference Attribute Filtering', () => {
   });
 
   describe('Name-based reference filtering', () => {
-    test('should transform owner filter with name to name field', async () => {
-      // Mock owner as a record-reference type
-      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
-        fieldType: 'object',
-        isArray: false,
-        isRequired: false,
-        isUnique: false,
-        attioType: 'record-reference',
-        metadata: {
-          id: {
-            workspace_id: 'test',
-            object_id: 'deals',
-            attribute_id: 'owner',
-          },
-          api_slug: 'owner',
-          title: 'Owner',
-          type: 'record-reference',
-        },
-      });
-
-      const filter = {
-        filters: [
-          {
-            attribute: { slug: 'owner' },
-            condition: 'equals' as const,
-            value: 'Martin Kessler',
-          },
-        ],
-      };
-
-      const result = await transformFiltersToApiFormat(
-        filter,
-        true,
-        false,
-        'deals'
-      );
-
-      expect(result).toEqual({
-        filter: {
-          owner: {
-            name: {
-              $eq: 'Martin Kessler',
-            },
-          },
-        },
-      });
-    });
-
     test('should transform company filter with name to name field', async () => {
-      // Mock company as a record-reference type
+      // Mock company as a record-reference type (can use name field)
       vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
         fieldType: 'object',
         isArray: false,
@@ -297,7 +249,7 @@ describe('Reference Attribute Filtering', () => {
               isArray: false,
               isRequired: false,
               isUnique: false,
-              attioType: 'record-reference',
+              attioType: 'actor-reference', // owner is workspace member reference
               metadata: {
                 id: {
                   workspace_id: 'test',
@@ -306,7 +258,7 @@ describe('Reference Attribute Filtering', () => {
                 },
                 api_slug: 'owner',
                 title: 'Owner',
-                type: 'record-reference',
+                type: 'actor-reference',
               },
             };
           }
@@ -324,7 +276,7 @@ describe('Reference Attribute Filtering', () => {
           {
             attribute: { slug: 'owner' },
             condition: 'equals' as const,
-            value: 'Martin Kessler',
+            value: 'martin@example.com', // Must use email for actor-reference
           },
         ],
       };
@@ -342,8 +294,9 @@ describe('Reference Attribute Filtering', () => {
             $eq: 'Demo',
           },
           owner: {
-            name: {
-              $eq: 'Martin Kessler',
+            email: {
+              // actor-reference uses email field
+              $eq: 'martin@example.com',
             },
           },
         },
@@ -551,42 +504,33 @@ describe('Reference Attribute Filtering', () => {
   });
 
   describe('Slug-based fallback (no resourceType)', () => {
-    test('should detect known reference slugs without resourceType', async () => {
+    test('should require email for workspace member slugs (owner)', async () => {
       const filter = {
         filters: [
           {
             attribute: { slug: 'owner' },
             condition: 'equals' as const,
-            value: 'Martin Kessler',
+            value: 'Martin Kessler', // Invalid - workspace member slugs require email
           },
         ],
       };
 
-      const result = await transformFiltersToApiFormat(
-        filter,
-        true,
-        false,
-        undefined // No resource type - triggers slug-based fallback
-      );
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, undefined)
+      ).rejects.toThrow(FilterValidationError);
 
-      expect(result).toEqual({
-        filter: {
-          owner: {
-            name: {
-              $eq: 'Martin Kessler',
-            },
-          },
-        },
-      });
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, undefined)
+      ).rejects.toThrow(/Invalid email format.*owner/);
     });
 
-    test('should handle UUID with slug-based fallback', async () => {
+    test('should accept email for workspace member slugs (owner)', async () => {
       const filter = {
         filters: [
           {
-            attribute: { slug: 'assignee' },
+            attribute: { slug: 'owner' },
             condition: 'equals' as const,
-            value: '550e8400-e29b-41d4-a716-446655440000',
+            value: 'martin@example.com',
           },
         ],
       };
@@ -600,13 +544,33 @@ describe('Reference Attribute Filtering', () => {
 
       expect(result).toEqual({
         filter: {
-          assignee: {
-            record_id: {
-              $eq: '550e8400-e29b-41d4-a716-446655440000',
+          owner: {
+            email: {
+              $eq: 'martin@example.com',
             },
           },
         },
       });
+    });
+
+    test('should require email for workspace member slugs (assignee)', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'assignee' },
+            condition: 'equals' as const,
+            value: '550e8400-e29b-41d4-a716-446655440000', // Invalid - not email
+          },
+        ],
+      };
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, undefined)
+      ).rejects.toThrow(FilterValidationError);
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, undefined)
+      ).rejects.toThrow(/Invalid email format.*assignee/);
     });
 
     test('should not apply reference handling to non-reference slugs', async () => {
@@ -756,7 +720,7 @@ describe('Reference Attribute Filtering', () => {
           {
             attribute: { slug: 'assignee' },
             condition: 'equals' as const,
-            value: 'Jane Doe',
+            value: 'jane@example.com', // assignee is workspace member - requires email
           },
         ],
       };
@@ -771,8 +735,9 @@ describe('Reference Attribute Filtering', () => {
       expect(result).toEqual({
         filter: {
           assignee: {
-            name: {
-              $eq: 'Jane Doe',
+            email: {
+              // workspace member slug uses email field
+              $eq: 'jane@example.com',
             },
           },
         },
