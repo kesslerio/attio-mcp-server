@@ -32,22 +32,42 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
+ * Known reference attribute slugs that commonly require nested field specification
+ * Used as fallback when resourceType is unavailable (e.g., list entries)
+ */
+const KNOWN_REFERENCE_SLUGS = new Set([
+  'owner',
+  'assignee',
+  'company',
+  'person',
+  'primary_contact',
+  'workspace_member',
+  'created_by',
+  'modified_by',
+]);
+
+/**
  * Check if an attribute is a reference type that requires nested field specification
  *
- * @param resourceType - The resource type (e.g., 'deals', 'companies')
+ * @param resourceType - The resource type (e.g., 'deals', 'companies'), or undefined for slug-based fallback
  * @param attributeSlug - The attribute slug (e.g., 'owner', 'assignee')
  * @returns True if the attribute is a reference type
  */
 export async function isReferenceAttribute(
-  resourceType: string,
+  resourceType: string | undefined,
   attributeSlug: string
 ): Promise<boolean> {
+  // If resourceType is unavailable (e.g., list entries), use slug-based fallback
+  if (!resourceType) {
+    return KNOWN_REFERENCE_SLUGS.has(attributeSlug);
+  }
+
   try {
     const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
     return REFERENCE_TYPES.includes(typeInfo.attioType);
   } catch {
-    // If we can't determine the type, assume it's not a reference
-    return false;
+    // If metadata lookup fails, fall back to slug-based detection
+    return KNOWN_REFERENCE_SLUGS.has(attributeSlug);
   }
 }
 
@@ -56,8 +76,17 @@ export async function isReferenceAttribute(
  *
  * @param value - The filter value (can be UUID or name)
  * @returns The field name to use ('record_id' or 'name')
+ * @throws Error if value is an array (not supported for reference attributes with equals)
  */
 export function determineReferenceField(value: unknown): string {
+  // Arrays are not supported for reference attribute filtering with equals
+  if (Array.isArray(value)) {
+    throw new Error(
+      'Array values are not supported for reference attribute filtering. ' +
+        'Use a single UUID or name value.'
+    );
+  }
+
   // If value is UUID, use record_id field
   if (typeof value === 'string' && UUID_PATTERN.test(value)) {
     return 'record_id';
@@ -69,16 +98,26 @@ export function determineReferenceField(value: unknown): string {
 /**
  * Get the appropriate reference field for an attribute, considering type-specific mappings
  *
- * @param resourceType - The resource type
+ * @param resourceType - The resource type, or undefined for slug-based fallback
  * @param attributeSlug - The attribute slug
  * @param value - The filter value
  * @returns The field name to use for filtering
  */
 export async function getReferenceFieldForAttribute(
-  resourceType: string,
+  resourceType: string | undefined,
   attributeSlug: string,
   value: unknown
 ): Promise<string> {
+  // Special case: workspace_member always uses email regardless of value format
+  if (attributeSlug === 'workspace_member' || attributeSlug === 'assignee_id') {
+    return 'email';
+  }
+
+  // If resourceType is unavailable, use heuristic detection
+  if (!resourceType) {
+    return determineReferenceField(value);
+  }
+
   try {
     const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
 
@@ -90,7 +129,7 @@ export async function getReferenceFieldForAttribute(
     // Fall back to UUID vs name detection
     return determineReferenceField(value);
   } catch {
-    // Default to name-based filtering if we can't determine the type
+    // Default to heuristic detection if metadata lookup fails
     return determineReferenceField(value);
   }
 }

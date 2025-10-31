@@ -545,4 +545,128 @@ describe('Reference Attribute Filtering', () => {
       });
     });
   });
+
+  describe('Slug-based fallback (no resourceType)', () => {
+    test('should detect known reference slugs without resourceType', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: 'Martin Kessler',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined // No resource type - triggers slug-based fallback
+      );
+
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            name: {
+              $eq: 'Martin Kessler',
+            },
+          },
+        },
+      });
+    });
+
+    test('should handle UUID with slug-based fallback', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'assignee' },
+            condition: 'equals' as const,
+            value: '550e8400-e29b-41d4-a716-446655440000',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      expect(result).toEqual({
+        filter: {
+          assignee: {
+            record_id: {
+              $eq: '550e8400-e29b-41d4-a716-446655440000',
+            },
+          },
+        },
+      });
+    });
+
+    test('should not apply reference handling to non-reference slugs', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'stage' },
+            condition: 'equals' as const,
+            value: 'Demo',
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      expect(result).toEqual({
+        filter: {
+          stage: {
+            $eq: 'Demo',
+          },
+        },
+      });
+    });
+  });
+
+  describe('Array value validation', () => {
+    test('should reject array values for reference attributes', async () => {
+      // Mock as record-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'object',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'record-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'deals',
+            attribute_id: 'owner',
+          },
+          api_slug: 'owner',
+          title: 'Owner',
+          type: 'record-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: ['User A', 'User B'], // Array value - should be rejected
+          },
+        ],
+      };
+
+      await expect(() =>
+        transformFiltersToApiFormat(filter, true, false, 'deals')
+      ).rejects.toThrow(/Array values are not supported/);
+    });
+  });
 });

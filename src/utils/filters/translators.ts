@@ -412,15 +412,14 @@ async function createOrFilterStructure(
         filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
 
       // Check if this is a reference attribute that needs nested field specification
-      const isReference =
-        resourceType && (await isReferenceAttribute(resourceType, slug));
+      const isReference = await isReferenceAttribute(resourceType, slug);
 
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
         if (isReference) {
           // Reference attributes need nested field specification
           const refField = await getReferenceFieldForAttribute(
-            resourceType!,
+            resourceType,
             slug,
             filter.value
           );
@@ -439,7 +438,7 @@ async function createOrFilterStructure(
         if (isReference) {
           // Reference attributes need nested field specification
           const refField = await getReferenceFieldForAttribute(
-            resourceType!,
+            resourceType,
             slug,
             filter.value
           );
@@ -562,14 +561,13 @@ async function createAndFilterStructure(
     }
 
     // Check if this is a reference attribute that needs nested field specification
-    const isReference =
-      resourceType && (await isReferenceAttribute(resourceType, slug));
+    const isReference = await isReferenceAttribute(resourceType, slug);
 
     // Merge condition directly into the main object (AND logic)
     if (isReference) {
       // Reference attributes need nested field specification
       const refField = await getReferenceFieldForAttribute(
-        resourceType!,
+        resourceType,
         slug,
         filter.value
       );
