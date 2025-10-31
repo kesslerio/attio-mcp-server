@@ -54,6 +54,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const KNOWN_REFERENCE_SLUGS = new Set([
   'owner',
   'assignee',
+  'assignee_id', // workspace-member type that requires email field
   'company',
   'person',
   'primary_contact',

@@ -71,7 +71,7 @@ describe('Reference Attribute Filtering', () => {
       });
     });
 
-    test('should transform assignee filter with email to email field', async () => {
+    test('should transform assignee filter with UUID for actor-reference', async () => {
       // Mock assignee as an actor-reference type (workspace member reference)
       vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
         fieldType: 'string',
@@ -96,7 +96,7 @@ describe('Reference Attribute Filtering', () => {
           {
             attribute: { slug: 'assignee' },
             condition: 'equals' as const,
-            value: 'user@example.com',
+            value: '550e8400-e29b-41d4-a716-446655440000', // Actor-reference requires UUID
           },
         ],
       };
@@ -108,12 +108,12 @@ describe('Reference Attribute Filtering', () => {
         'tasks'
       );
 
+      // Actor-reference uses direct property matching (no operator nesting)
       expect(result).toEqual({
         filter: {
           assignee: {
-            email: {
-              $eq: 'user@example.com',
-            },
+            referenced_actor_type: 'workspace-member',
+            referenced_actor_id: '550e8400-e29b-41d4-a716-446655440000',
           },
         },
       });
@@ -169,7 +169,7 @@ describe('Reference Attribute Filtering', () => {
       });
     });
 
-    test('should transform owner (actor-reference) with name to name field', async () => {
+    test('should transform owner (actor-reference) with UUID', async () => {
       // Mock owner as an actor-reference type
       vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
         fieldType: 'string',
@@ -194,7 +194,7 @@ describe('Reference Attribute Filtering', () => {
           {
             attribute: { slug: 'owner' },
             condition: 'equals' as const,
-            value: 'Martin Kessler',
+            value: '550e8400-e29b-41d4-a716-446655440000', // Actor-reference requires UUID
           },
         ],
       };
@@ -206,12 +206,12 @@ describe('Reference Attribute Filtering', () => {
         'deals'
       );
 
+      // Actor-reference uses direct property matching (no operator nesting)
       expect(result).toEqual({
         filter: {
           owner: {
-            name: {
-              $eq: 'Martin Kessler',
-            },
+            referenced_actor_type: 'workspace-member',
+            referenced_actor_id: '550e8400-e29b-41d4-a716-446655440000',
           },
         },
       });
@@ -324,7 +324,7 @@ describe('Reference Attribute Filtering', () => {
           {
             attribute: { slug: 'owner' },
             condition: 'equals' as const,
-            value: 'martin@example.com', // Must use email for actor-reference
+            value: '550e8400-e29b-41d4-a716-446655440000', // Actor-reference requires UUID
           },
         ],
       };
@@ -342,10 +342,9 @@ describe('Reference Attribute Filtering', () => {
             $eq: 'Demo',
           },
           owner: {
-            email: {
-              // actor-reference uses email field
-              $eq: 'martin@example.com',
-            },
+            // Actor-reference uses direct property matching (no operator nesting)
+            referenced_actor_type: 'workspace-member',
+            referenced_actor_id: '550e8400-e29b-41d4-a716-446655440000',
           },
         },
       });
@@ -581,7 +580,9 @@ describe('Reference Attribute Filtering', () => {
       });
     });
 
-    test('should accept email for owner slug and use email field', async () => {
+    test('should use name field for owner slug with email value (no resourceType)', async () => {
+      // Without resourceType, can't detect actor-reference type
+      // Falls back to heuristic: non-UUID values use name field
       const filter = {
         filters: [
           {
@@ -602,7 +603,8 @@ describe('Reference Attribute Filtering', () => {
       expect(result).toEqual({
         filter: {
           owner: {
-            email: {
+            name: {
+              // Heuristic fallback: non-UUID values use name field
               $eq: 'martin@example.com',
             },
           },
@@ -610,11 +612,12 @@ describe('Reference Attribute Filtering', () => {
       });
     });
 
-    test('should require email for workspace member slugs (assignee)', async () => {
+    test('should require email for workspace member slugs (assignee_id)', async () => {
+      // assignee_id is a workspace-member slug that ALWAYS requires email
       const filter = {
         filters: [
           {
-            attribute: { slug: 'assignee' },
+            attribute: { slug: 'assignee_id' },
             condition: 'equals' as const,
             value: '550e8400-e29b-41d4-a716-446655440000', // Invalid - not email
           },
@@ -627,7 +630,7 @@ describe('Reference Attribute Filtering', () => {
 
       await expect(() =>
         transformFiltersToApiFormat(filter, true, false, undefined)
-      ).rejects.toThrow(/Invalid email format.*assignee/);
+      ).rejects.toThrow(/Invalid email format.*assignee_id/);
     });
 
     test('should not apply reference handling to non-reference slugs', async () => {
@@ -772,12 +775,14 @@ describe('Reference Attribute Filtering', () => {
 
   describe('Additional reference types in list-entry context', () => {
     test('should handle assignee in list entries without resourceType', async () => {
+      // Without resourceType, assignee slug uses heuristic detection
+      // (assignee_id would require email, but assignee uses heuristic)
       const filter = {
         filters: [
           {
             attribute: { slug: 'assignee' },
             condition: 'equals' as const,
-            value: 'jane@example.com', // assignee is workspace member - requires email
+            value: 'jane@example.com',
           },
         ],
       };
@@ -792,8 +797,8 @@ describe('Reference Attribute Filtering', () => {
       expect(result).toEqual({
         filter: {
           assignee: {
-            email: {
-              // workspace member slug uses email field
+            name: {
+              // Heuristic fallback: non-UUID values use name field
               $eq: 'jane@example.com',
             },
           },

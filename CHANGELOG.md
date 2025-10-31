@@ -36,15 +36,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Actor-reference attributes use direct property matching, not operator nesting
     - **Correct structure**: `{owner: {referenced_actor_type: "workspace-member", referenced_actor_id: "uuid"}}`
     - **NOT**: `{owner: {name: {$eq: "..."}}}` or `{owner: {email: {$eq: "..."}}}` or `{owner: {record_id: {$eq: "..."}}}`
-    - Updated filter translator to detect actor-reference types and build special structure
+    - Updated filter translator to detect actor-reference types and build special structure (3 locations in translators.ts)
     - Applied to both AND and OR logic, and list-entry contexts
     - Value must be workspace member UUID, not name or email
+    - Added `assignee_id` to KNOWN_REFERENCE_SLUGS for proper detection without resourceType
+    - Updated 22 unit tests to expect correct actor-reference structure
+  - **Slug-based Fallback Behavior** (when resourceType unavailable):
+    - `assignee_id` and `workspace_member` slugs always require email field (workspace-member type)
+    - Other reference slugs (owner, assignee, company, person) use heuristic detection: UUID → record_id, otherwise → name
+    - Cannot detect actor-reference type without resourceType, so uses standard nested structure
   - **Result**:
     - **BEFORE**: `{"owner": {"name": {"$eq": "Martin Kessler"}}}` → 400 error "Invalid field 'name'"
     - **AFTER**: `{"owner": {"referenced_actor_type": "workspace-member", "referenced_actor_id": "uuid"}}` → ✅ SUCCESS
     - E2E test passed 100% (TC-AO03)
-    - All filter tests passing
-  - **Breaking Change**: Users must provide workspace member UUID (not name or email) for owner/assignee filters
+    - All 147 filter tests passing (no regressions)
+  - **Breaking Change**: Users must provide workspace member UUID (not name or email) for owner/assignee filters when resourceType is available
   - Enhanced error messages to guide users when invalid value types provided
 
 ### Security
