@@ -4,7 +4,7 @@ export const resourceTypeProperty = {
   type: 'string' as const,
   enum: Object.values(UniversalResourceType),
   description:
-    'Type of resource to operate on (companies, people, lists, records, tasks)',
+    'Type of resource to operate on (companies, people, deals, tasks, lists, records, notes)',
 };
 
 export const paginationProperties = {

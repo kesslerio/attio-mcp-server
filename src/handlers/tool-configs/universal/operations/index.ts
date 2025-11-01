@@ -31,10 +31,10 @@ export const advancedOperationsToolDefinitions = {
     name: 'records_search_advanced',
     description: formatToolDescription({
       capability:
-        'Run complex searches with nested filters across resource types.',
+        'Search companies, people, deals, or tasks with complex nested filters (e.g., find deals by owner+stage, companies by industry+location).',
       boundaries: 'mutate records; use records.update or records.delete.',
       constraints:
-        'Supports filter groups, scoring, pagination, and up to 100 items.',
+        'Supports filter groups, scoring, pagination, and up to 100 items. Requires resource_type parameter.',
       recoveryHint:
         'If filters fail, fetch valid attributes via records.discover_attributes.',
     }),
