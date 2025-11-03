@@ -11,6 +11,7 @@ import {
   FilterValidationError,
   FilterErrorCategory,
 } from '@/errors/api-errors.js';
+import { warn } from '@/utils/logger.js';
 
 // Re-export getAttributeTypeInfo for use in translators
 export { getAttributeTypeInfo };
@@ -107,8 +108,18 @@ export async function isReferenceAttribute(
     }
 
     return REFERENCE_TYPES.includes(typeInfo.attioType);
-  } catch {
+  } catch (error) {
     // If metadata lookup fails, fall back to slug-based detection
+    warn(
+      'filters/reference-attribute-helper',
+      `Metadata lookup failed for ${resourceType}.${attributeSlug}, using slug-based fallback`,
+      {
+        resourceType,
+        attributeSlug,
+        reason: 'metadata_lookup_failed',
+        error: error instanceof Error ? error.message : String(error),
+      }
+    );
     return KNOWN_REFERENCE_SLUGS.has(attributeSlug);
   }
 }
@@ -238,6 +249,16 @@ export async function getReferenceFieldForAttribute(
         throw error;
       }
       // Fall through to slug-based detection if metadata lookup fails
+      warn(
+        'filters/reference-attribute-helper',
+        `Metadata lookup failed in getReferenceFieldForAttribute for ${resourceType}.${attributeSlug}, using slug-based fallback`,
+        {
+          resourceType,
+          attributeSlug,
+          reason: 'metadata_lookup_failed',
+          error: error instanceof Error ? error.message : String(error),
+        }
+      );
     }
   }
 

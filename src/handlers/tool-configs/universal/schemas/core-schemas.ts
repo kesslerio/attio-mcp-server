@@ -27,11 +27,24 @@ export const searchRecordsSchema = {
         '- By value: {"filters": [{"attribute": {"slug": "value"}, "condition": "greater_than", "value": 5000}]}\n\n' +
         'Reference attribute filtering (owner, assignee, company, person):\n' +
         '- By UUID: {"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-here"}]}\n' +
-        '- By name: {"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}\n\n' +
+        '- By name: {"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}\n' +
+        '- By email: {"filters": [{"attribute": {"slug": "owner"}, "condition": "equals", "value": "user@example.com"}]}\n\n' +
+        'Numeric comparisons:\n' +
+        '- Greater than: {"filters": [{"attribute": {"slug": "value"}, "condition": "greater_than", "value": 50000}]}\n' +
+        '- Less than or equal: {"filters": [{"attribute": {"slug": "employees"}, "condition": "less_than_or_equals", "value": 100}]}\n' +
+        '- Between (combine filters): {"filters": [{"attribute": {"slug": "value"}, "condition": "greater_than", "value": 10000}, {"attribute": {"slug": "value"}, "condition": "less_than", "value": 100000}]}\n\n' +
+        'Empty value conditions:\n' +
+        '- Check if empty: {"filters": [{"attribute": {"slug": "notes"}, "condition": "is_empty", "value": true}]}\n' +
+        '- Check if not empty: {"filters": [{"attribute": {"slug": "description"}, "condition": "is_not_empty", "value": true}]}\n\n' +
+        'String operations:\n' +
+        '- Contains: {"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Tech"}]}\n' +
+        '- Starts with: {"filters": [{"attribute": {"slug": "domain"}, "condition": "starts_with", "value": "www"}]}\n' +
+        '- Ends with: {"filters": [{"attribute": {"slug": "email"}, "condition": "ends_with", "value": "@gmail.com"}]}\n\n' +
         'Combined filters:\n' +
         '- Stage + Owner: {"filters": [{"attribute": {"slug": "stage"}, "condition": "equals", "value": "Demo"}, {"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-or-name"}]}\n' +
-        '- OR logic: {"filters": [...], "matchAny": true}\n\n' +
-        'Supported conditions: equals, contains, starts_with, ends_with, greater_than, less_than, is_empty, is_not_empty',
+        '- OR logic: {"filters": [...], "matchAny": true}\n' +
+        '- Complex: {"filters": [{"attribute": {"slug": "stage"}, "condition": "equals", "value": "Qualified"}, {"attribute": {"slug": "value"}, "condition": "greater_than", "value": 25000}, {"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}\n\n' +
+        'Supported conditions: equals, contains, starts_with, ends_with, greater_than, greater_than_or_equals, less_than, less_than_or_equals, is_empty, is_not_empty',
       additionalProperties: true,
     },
     search_type: {
