@@ -28,6 +28,8 @@ import {
   FilterConditionType,
   FIELD_SPECIAL_HANDLING,
 } from './types.js';
+import { validateSelectOrStatusValue } from './value-validators.js';
+import { getAttributeTypeInfo } from '../../api/attribute-types.js';
 import { validateFilterStructure } from './validators.js';
 import { UnknownObject } from '../types/common.js';
 import {
@@ -108,6 +110,44 @@ import {
  *   ]
  * };
  */
+
+/**
+ * Validates select/status field values against allowed options
+ * Uses per-call memoization to avoid repeated lookups
+ *
+ * @param resourceType - Object type (e.g., 'deals', 'companies')
+ * @param filters - Array of filters to validate
+ * @throws FilterValidationError if any value is invalid
+ */
+async function validateFilterValues(
+  resourceType: string,
+  filters: ListEntryFilter[]
+): Promise<void> {
+  // Per-call cache for options (keyed by "${resourceType}:${slug}")
+  const optionsCache = new Map<string, unknown[]>();
+
+  for (const filter of filters) {
+    const { slug } = filter.attribute;
+
+    // Get attribute type info
+    const typeInfo = await getAttributeTypeInfo(resourceType, slug);
+
+    // Only validate select/status attributes
+    if (typeInfo.attioType === 'select' || typeInfo.attioType === 'status') {
+      await validateSelectOrStatusValue(
+        resourceType,
+        slug,
+        filter.value,
+        filter.condition,
+        optionsCache as Map<
+          string,
+          { id: string; title: string; value?: string; is_archived?: boolean }[]
+        >
+      );
+    }
+  }
+}
+
 export async function transformFiltersToApiFormat(
   filters: ListEntryFilters | undefined,
   validateConditions: boolean = true,
@@ -138,6 +178,12 @@ export async function transformFiltersToApiFormat(
       // dev-only: skip logging to avoid top-level await in non-async function
       return {};
     }
+
+    // Validate select/status field values if resourceType is available
+    // Skip validation for list entries (resourceType undefined)
+    if (resourceType) {
+      await validateFilterValues(resourceType, validatedFilters.filters);
+    }
   } catch (error: unknown) {
     // Check if this is a FilterValidationError
     if (error instanceof FilterValidationError) {
@@ -146,6 +192,14 @@ export async function transformFiltersToApiFormat(
         validateConditions &&
         (error.message.includes('Invalid condition') ||
           error.message.includes('Invalid filter condition'))
+      ) {
+        throw error;
+      }
+
+      // For value validation errors (invalid stage/select values), always re-throw
+      if (
+        error.message.includes('Invalid value') &&
+        error.message.includes('Valid options are')
       ) {
         throw error;
       }
@@ -417,26 +471,22 @@ async function createOrFilterStructure(
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
         if (isReference) {
-          // Check if this is an actor-reference type (requires special structure)
-          const typeInfo = resourceType
-            ? await import('./reference-attribute-helper.js').then((m) =>
-                m.getAttributeTypeInfo(resourceType, slug).catch(() => null)
-              )
-            : null;
+          // Get the appropriate field for this reference type (email/name/UUID)
+          const refField = await getReferenceFieldForAttribute(
+            resourceType,
+            slug,
+            filter.value
+          );
 
-          if (typeInfo?.attioType === 'actor-reference') {
-            // Actor-reference uses direct property matching (no operator nesting)
+          // Actor-reference with UUID uses special structure (no operator nesting)
+          // Email/name use standard nested field specification
+          if (refField === 'referenced_actor_id') {
             condition[`record.values.${slug}`] = {
               referenced_actor_type: 'workspace-member',
               referenced_actor_id: filter.value,
             };
           } else {
-            // Record-reference uses standard nested field specification
-            const refField = await getReferenceFieldForAttribute(
-              resourceType,
-              slug,
-              filter.value
-            );
+            // Standard nested field specification for email/name/record_id
             condition[`record.values.${slug}`] = {
               [refField]: {
                 [operator]: filter.value,
@@ -451,27 +501,22 @@ async function createOrFilterStructure(
       } else {
         // Standard field access for non-list contexts
         if (isReference) {
-          // Check if this is an actor-reference type (requires special structure)
-          const typeInfo = resourceType
-            ? await import('./reference-attribute-helper.js').then((m) =>
-                m.getAttributeTypeInfo(resourceType, slug).catch(() => null)
-              )
-            : null;
+          // Get the appropriate field for this reference type (email/name/UUID)
+          const refField = await getReferenceFieldForAttribute(
+            resourceType,
+            slug,
+            filter.value
+          );
 
-          if (typeInfo?.attioType === 'actor-reference') {
-            // Actor-reference uses direct property matching (no operator nesting)
-            // Per Attio API docs: {owner: {referenced_actor_type: "workspace-member", referenced_actor_id: "uuid"}}
+          // Actor-reference with UUID uses special structure (no operator nesting)
+          // Email/name use standard nested field specification
+          if (refField === 'referenced_actor_id') {
             condition[slug] = {
-              referenced_actor_type: 'workspace-member', // Actor references are always workspace members
-              referenced_actor_id: filter.value, // Value must be UUID
+              referenced_actor_type: 'workspace-member',
+              referenced_actor_id: filter.value,
             };
           } else {
-            // Record-reference and other types use standard nested field specification
-            const refField = await getReferenceFieldForAttribute(
-              resourceType,
-              slug,
-              filter.value
-            );
+            // Standard nested field specification for email/name/record_id
             condition[slug] = {
               [refField]: {
                 [operator]: filter.value,
@@ -596,26 +641,22 @@ async function createAndFilterStructure(
 
     // Merge condition directly into the main object (AND logic)
     if (isReference) {
-      // Check if this is an actor-reference type (requires special structure)
-      const typeInfo = resourceType
-        ? await import('./reference-attribute-helper.js').then((m) =>
-            m.getAttributeTypeInfo(resourceType, slug).catch(() => null)
-          )
-        : null;
+      // Get the appropriate field for this reference type (email/name/UUID)
+      const refField = await getReferenceFieldForAttribute(
+        resourceType,
+        slug,
+        filter.value
+      );
 
-      if (typeInfo?.attioType === 'actor-reference') {
-        // Actor-reference uses direct property matching (no operator nesting)
+      // Actor-reference with UUID uses special structure (no operator nesting)
+      // Email/name use standard nested field specification
+      if (refField === 'referenced_actor_id') {
         mergedConditions[fieldPath] = {
           referenced_actor_type: 'workspace-member',
           referenced_actor_id: filter.value,
         };
       } else {
-        // Record-reference uses standard nested field specification
-        const refField = await getReferenceFieldForAttribute(
-          resourceType,
-          slug,
-          filter.value
-        );
+        // Standard nested field specification for email/name/record_id
         mergedConditions[fieldPath] = {
           [refField]: {
             [operator]: filter.value,

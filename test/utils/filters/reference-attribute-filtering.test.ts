@@ -216,6 +216,104 @@ describe('Reference Attribute Filtering', () => {
         },
       });
     });
+
+    test('should transform owner (actor-reference) with email', async () => {
+      // Mock owner as an actor-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'string',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'actor-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'deals',
+            attribute_id: 'owner',
+          },
+          api_slug: 'owner',
+          title: 'Owner',
+          type: 'actor-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: 'martin@example.com', // Email value
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'deals'
+      );
+
+      // Actor-reference with email uses nested field specification
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            email: {
+              $eq: 'martin@example.com',
+            },
+          },
+        },
+      });
+    });
+
+    test('should transform owner (actor-reference) with name', async () => {
+      // Mock owner as an actor-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'string',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'actor-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'deals',
+            attribute_id: 'owner',
+          },
+          api_slug: 'owner',
+          title: 'Owner',
+          type: 'actor-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: 'Martin Kessler', // Name value
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'deals'
+      );
+
+      // Actor-reference with name uses nested field specification
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            name: {
+              $eq: 'Martin Kessler',
+            },
+          },
+        },
+      });
+    });
   });
 
   describe('Workspace member reference filtering', () => {
@@ -289,6 +387,24 @@ describe('Reference Attribute Filtering', () => {
                 api_slug: 'stage',
                 title: 'Stage',
                 type: 'select',
+                config: {
+                  select: {
+                    options: [
+                      {
+                        id: '1',
+                        title: 'Demo',
+                        value: 'demo',
+                        is_archived: false,
+                      },
+                      {
+                        id: '2',
+                        title: 'Negotiation',
+                        value: 'negotiation',
+                        is_archived: false,
+                      },
+                    ],
+                  },
+                },
               },
             };
           } else if (attributeSlug === 'owner') {
@@ -431,6 +547,13 @@ describe('Reference Attribute Filtering', () => {
           api_slug: 'stage',
           title: 'Stage',
           type: 'select',
+          config: {
+            select: {
+              options: [
+                { id: '1', title: 'Demo', value: 'demo', is_archived: false },
+              ],
+            },
+          },
         },
       });
 

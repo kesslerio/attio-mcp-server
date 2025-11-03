@@ -175,18 +175,27 @@ export async function getReferenceFieldForAttribute(
         return field;
       }
 
-      // Actor-reference fields (e.g., owner) use referenced_actor_id field
-      // Per Attio API docs: actor-reference requires referenced_actor_type and referenced_actor_id
+      // Actor-reference fields (e.g., owner, assignee) support flexible filtering:
+      // - Email address → filter by email field
+      // - UUID (workspace member ID) → filter by referenced_actor_id (requires referenced_actor_type)
+      // - Name (plain text) → filter by name field
       if (typeInfo.attioType === 'actor-reference') {
-        // Value must be a UUID (workspace member ID)
-        if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
+        if (typeof value !== 'string') {
           throw new FilterValidationError(
-            `Actor-reference attribute "${attributeSlug}" requires a UUID value (workspace member ID). Got: "${value}". ` +
-              `Use the workspace member's ID, not their name or email.`,
+            `Actor-reference attribute "${attributeSlug}" requires a string value (email, name, or UUID). Got: ${typeof value}`,
             FilterErrorCategory.VALUE
           );
         }
-        return 'referenced_actor_id';
+
+        // Detect value type and return appropriate field
+        if (EMAIL_PATTERN.test(value)) {
+          return 'email';
+        } else if (UUID_PATTERN.test(value)) {
+          return 'referenced_actor_id';
+        } else {
+          // Plain text name
+          return 'name';
+        }
       }
 
       // Fall back to UUID vs name detection for record-reference types
