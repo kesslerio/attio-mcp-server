@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+### Added
+
+### Changed
+
+### Fixed
+
+### Security
+
+### Deprecated
+
+## [1.2.0] - 2025-11-03
+
+This release introduces intelligent workspace member auto-resolution for actor-reference filtering, enabling natural filtering syntax with emails and names instead of requiring manual UUID lookups. The update includes critical fixes for filter transformation, client initialization, and exact matching behavior.
+
+### Breaking Changes
+
 - **Array equals operator rejected for reference attributes** (#904 Phase 2) - Arrays with `equals` operator (e.g., `{owner: {$eq: ["uuid1", "uuid2"]}}`) now throw `FilterValidationError`. This addresses PR feedback [HIGH] issue where translator allowed arrays to pass through generating invalid `$eq: [...]` structure. Use 'in' operator instead (coming soon) or filter by single value.
 
 - **Mixed-type arrays rejected in reference filters** (#904) - Arrays combining UUIDs and names (e.g., `["uuid-123", "John Doe"]`) now throw `FilterValidationError`. This prevents silent failures where UUIDs would never match when using the `name` field. Use separate filters or ensure all array elements are the same type.
@@ -502,7 +518,9 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.10...v1.2.0
+[1.1.10]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.0...v1.1.10
 [1.1.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.2.0...v1.0.0
 [0.2.0]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.2...v0.2.0
