@@ -70,15 +70,26 @@ const KNOWN_REFERENCE_SLUGS = new Set([
 const WORKSPACE_MEMBER_SLUGS = new Set(['workspace_member', 'assignee_id']);
 
 /**
+ * Per-request cache for attribute type info to avoid repeated lookups
+ * Key format: `${resourceType}:${attributeSlug}`
+ */
+export type AttributeTypeCache = Map<
+  string,
+  Awaited<ReturnType<typeof getAttributeTypeInfo>>
+>;
+
+/**
  * Check if an attribute is a reference type that requires nested field specification
  *
  * @param resourceType - The resource type (e.g., 'deals', 'companies'), or undefined for slug-based fallback
  * @param attributeSlug - The attribute slug (e.g., 'owner', 'assignee')
+ * @param cache - Optional per-request cache to avoid repeated getAttributeTypeInfo calls
  * @returns True if the attribute is a reference type
  */
 export async function isReferenceAttribute(
   resourceType: string | undefined,
-  attributeSlug: string
+  attributeSlug: string,
+  cache?: AttributeTypeCache
 ): Promise<boolean> {
   // If resourceType is unavailable (e.g., list entries), use slug-based fallback
   if (!resourceType) {
@@ -86,7 +97,15 @@ export async function isReferenceAttribute(
   }
 
   try {
-    const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
+    // Check cache first
+    const cacheKey = `${resourceType}:${attributeSlug}`;
+    let typeInfo = cache?.get(cacheKey);
+
+    if (!typeInfo) {
+      typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
+      cache?.set(cacheKey, typeInfo);
+    }
+
     return REFERENCE_TYPES.includes(typeInfo.attioType);
   } catch {
     // If metadata lookup fails, fall back to slug-based detection
@@ -134,13 +153,15 @@ export function determineReferenceField(
  * @param resourceType - The resource type, or undefined for slug-based fallback
  * @param attributeSlug - The attribute slug
  * @param value - The filter value
+ * @param cache - Optional per-request cache to avoid repeated getAttributeTypeInfo calls
  * @returns The field name to use for filtering
  * @throws FilterValidationError if email validation fails for workspace-member fields
  */
 export async function getReferenceFieldForAttribute(
   resourceType: string | undefined,
   attributeSlug: string,
-  value: unknown
+  value: unknown,
+  cache?: AttributeTypeCache
 ): Promise<string> {
   // Special case: workspace_member and assignee_id slugs ALWAYS use email
   // regardless of metadata availability
@@ -158,7 +179,14 @@ export async function getReferenceFieldForAttribute(
   // If resourceType is available, use metadata to determine field
   if (resourceType) {
     try {
-      const typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
+      // Check cache first
+      const cacheKey = `${resourceType}:${attributeSlug}`;
+      let typeInfo = cache?.get(cacheKey);
+
+      if (!typeInfo) {
+        typeInfo = await getAttributeTypeInfo(resourceType, attributeSlug);
+        cache?.set(cacheKey, typeInfo);
+      }
 
       // Check for attribute-specific mapping (only workspace-member type requires fixed email)
       if (REFERENCE_FIELD_MAPPING[typeInfo.attioType]) {

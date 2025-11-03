@@ -44,6 +44,7 @@ import { createScopedLogger, OperationType } from '../logger.js';
 import {
   isReferenceAttribute,
   getReferenceFieldForAttribute,
+  type AttributeTypeCache,
 } from './reference-attribute-helper.js';
 
 /**
@@ -216,6 +217,10 @@ export async function transformFiltersToApiFormat(
   // Re-validate for the actual processing (this should not throw since we already validated)
   const validatedFilters = validateFilters(filters, validateConditions);
 
+  // Create per-request cache for attribute type info lookups
+  // This avoids repeated getAttributeTypeInfo calls for the same attribute within a single transformation
+  const attributeTypeCache: AttributeTypeCache = new Map();
+
   // Determine if we need to use the $or operator based on matchAny
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
   const useOrLogic = validatedFilters.matchAny === true;
@@ -228,7 +233,8 @@ export async function transformFiltersToApiFormat(
       validatedFilters.filters,
       validateConditions,
       isListEntryContext,
-      resourceType
+      resourceType,
+      attributeTypeCache
     );
   }
 
@@ -237,7 +243,8 @@ export async function transformFiltersToApiFormat(
     validatedFilters.filters,
     validateConditions,
     isListEntryContext,
-    resourceType
+    resourceType,
+    attributeTypeCache
   );
 }
 
@@ -372,7 +379,8 @@ async function createOrFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
   isListEntryContext: boolean = false,
-  resourceType?: string
+  resourceType?: string,
+  attributeTypeCache?: AttributeTypeCache
 ): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
@@ -466,7 +474,11 @@ async function createOrFilterStructure(
         filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
 
       // Check if this is a reference attribute that needs nested field specification
-      const isReference = await isReferenceAttribute(resourceType, slug);
+      const isReference = await isReferenceAttribute(
+        resourceType,
+        slug,
+        attributeTypeCache
+      );
 
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
@@ -475,7 +487,8 @@ async function createOrFilterStructure(
           const refField = await getReferenceFieldForAttribute(
             resourceType,
             slug,
-            filter.value
+            filter.value,
+            attributeTypeCache
           );
 
           // Actor-reference with UUID uses special structure (no operator nesting)
@@ -505,7 +518,8 @@ async function createOrFilterStructure(
           const refField = await getReferenceFieldForAttribute(
             resourceType,
             slug,
-            filter.value
+            filter.value,
+            attributeTypeCache
           );
 
           // Actor-reference with UUID uses special structure (no operator nesting)
@@ -560,7 +574,8 @@ async function createAndFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
   isListEntryContext: boolean = false,
-  resourceType?: string
+  resourceType?: string,
+  attributeTypeCache?: AttributeTypeCache
 ): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
@@ -637,7 +652,11 @@ async function createAndFilterStructure(
     }
 
     // Check if this is a reference attribute that needs nested field specification
-    const isReference = await isReferenceAttribute(resourceType, slug);
+    const isReference = await isReferenceAttribute(
+      resourceType,
+      slug,
+      attributeTypeCache
+    );
 
     // Merge condition directly into the main object (AND logic)
     if (isReference) {
@@ -645,7 +664,8 @@ async function createAndFilterStructure(
       const refField = await getReferenceFieldForAttribute(
         resourceType,
         slug,
-        filter.value
+        filter.value,
+        attributeTypeCache
       );
 
       // Actor-reference with UUID uses special structure (no operator nesting)
