@@ -416,6 +416,24 @@ export async function executeToolRequest(request: CallToolRequest) {
         resourceType
       );
 
+      // Handle workspace member operations (Issue #684)
+    } else if (
+      toolType === 'listWorkspaceMembers' ||
+      toolType === 'searchWorkspaceMembers' ||
+      toolType === 'getWorkspaceMember'
+    ) {
+      // Workspace member tools have simple handlers with formatResult
+      const rawResult = await (toolConfig as ToolConfig).handler(
+        request.params.arguments as unknown as Record<string, unknown>
+      );
+      const formattedResult =
+        toolConfig.formatResult?.(rawResult) ||
+        JSON.stringify(rawResult, null, 2);
+      result = {
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false,
+      };
+
       // Handle generic record operations
     } else if (toolType === 'list') {
       result = await handleListOperation(request, toolConfig as ToolConfig);
