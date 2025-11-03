@@ -8,7 +8,7 @@ import { FilterValidationError } from '../../src/errors/api-errors';
 
 describe('transformFiltersToApiFormat', () => {
   // Test basic filter transformation
-  test('transforms a single filter condition correctly', () => {
+  test('transforms a single filter condition correctly', async () => {
     const filter = {
       filters: [
         {
@@ -19,30 +19,30 @@ describe('transformFiltersToApiFormat', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filter);
+    const result = await transformFiltersToApiFormat(filter);
 
     expect(result).toEqual({
       filter: {
         stage: {
-          $equals: 'discovery',
+          $eq: 'discovery',
         },
       },
     });
   });
 
   // Test empty filters
-  test('returns empty object for undefined filters', () => {
-    const result = transformFiltersToApiFormat(undefined);
+  test('returns empty object for undefined filters', async () => {
+    const result = await transformFiltersToApiFormat(undefined);
     expect(result).toEqual({});
   });
 
-  test('returns empty object for empty filters array', () => {
-    const result = transformFiltersToApiFormat({ filters: [] });
+  test('returns empty object for empty filters array', async () => {
+    const result = await transformFiltersToApiFormat({ filters: [] });
     expect(result).toEqual({});
   });
 
   // Test AND logic (default behavior)
-  test('creates AND logic for multiple filters by default', () => {
+  test('creates AND logic for multiple filters by default', async () => {
     const filter = {
       filters: [
         {
@@ -58,12 +58,12 @@ describe('transformFiltersToApiFormat', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filter);
+    const result = await transformFiltersToApiFormat(filter);
 
     expect(result).toEqual({
       filter: {
         stage: {
-          $equals: 'discovery',
+          $eq: 'discovery',
         },
         value: {
           $gt: 10000,
@@ -73,7 +73,7 @@ describe('transformFiltersToApiFormat', () => {
   });
 
   // Test OR logic
-  test('creates OR logic when matchAny is true', () => {
+  test('creates OR logic when matchAny is true', async () => {
     const filter = {
       filters: [
         {
@@ -90,20 +90,17 @@ describe('transformFiltersToApiFormat', () => {
       matchAny: true,
     };
 
-    const result = transformFiltersToApiFormat(filter);
+    const result = await transformFiltersToApiFormat(filter);
 
     expect(result).toEqual({
       filter: {
-        $or: [
-          { stage: { $equals: 'discovery' } },
-          { stage: { $equals: 'proposal' } },
-        ],
+        $or: [{ stage: { $eq: 'discovery' } }, { stage: { $eq: 'proposal' } }],
       },
     });
   });
 
   // Test different filter condition types
-  test('supports various filter condition types', () => {
+  test('supports various filter condition types', async () => {
     const filter = {
       filters: [
         {
@@ -124,7 +121,7 @@ describe('transformFiltersToApiFormat', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filter);
+    const result = await transformFiltersToApiFormat(filter);
 
     expect(result).toEqual({
       filter: {
@@ -142,7 +139,7 @@ describe('transformFiltersToApiFormat', () => {
   });
 
   // Test error cases
-  test('throws FilterValidationError for invalid filter condition', () => {
+  test('throws FilterValidationError for invalid filter condition', async () => {
     const filter = {
       filters: [
         {
@@ -153,12 +150,12 @@ describe('transformFiltersToApiFormat', () => {
       ],
     };
 
-    expect(() => transformFiltersToApiFormat(filter)).toThrow(
+    await expect(() => transformFiltersToApiFormat(filter)).rejects.toThrow(
       FilterValidationError
     );
   });
 
-  test('skips filters with missing attribute slug', () => {
+  test('skips filters with missing attribute slug', async () => {
     const filter = {
       filters: [
         {
@@ -169,11 +166,11 @@ describe('transformFiltersToApiFormat', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filter);
+    const result = await transformFiltersToApiFormat(filter);
     expect(result).toEqual({});
   });
 
-  test('skips filters with missing condition', () => {
+  test('skips filters with missing condition', async () => {
     const filter = {
       filters: [
         {
@@ -184,12 +181,12 @@ describe('transformFiltersToApiFormat', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filter);
+    const result = await transformFiltersToApiFormat(filter);
     expect(result).toEqual({});
   });
 
   // Test validation bypassing
-  test('skips condition validation when validateConditions is false', () => {
+  test('skips condition validation when validateConditions is false', async () => {
     const filter = {
       filters: [
         {
@@ -200,7 +197,7 @@ describe('transformFiltersToApiFormat', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filter, false);
+    const result = await transformFiltersToApiFormat(filter, false);
 
     expect(result).toEqual({
       filter: {

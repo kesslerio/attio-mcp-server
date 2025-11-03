@@ -146,7 +146,7 @@ export const searchRecordsConfig: UniversalToolConfig<
 export const searchRecordsDefinition = {
   name: 'records_search',
   description: formatToolDescription({
-    capability: 'Search across companies, people, tasks, and records',
+    capability: 'Search across companies, people, deals, tasks, and records',
     boundaries: 'create or modify records',
     constraints: 'Returns max 100 results (default: 10)',
     recoveryHint: 'use records.discover_attributes to find searchable fields',

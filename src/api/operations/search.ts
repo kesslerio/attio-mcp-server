@@ -817,7 +817,12 @@ export async function advancedSearchObject<T extends AttioRecord>(
       }
 
       // Use our shared utility to transform filters to API format
-      const filterObject = transformFiltersToApiFormat(filters, true);
+      const filterObject = await transformFiltersToApiFormat(
+        filters,
+        true,
+        false,
+        objectType
+      );
 
       // Add filter to body if it exists
       if (filterObject.filter) {

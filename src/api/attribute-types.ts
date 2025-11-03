@@ -4,6 +4,7 @@
 import { getLazyAttioClient } from '../api/lazy-client.js';
 import { parsePersonalName } from '../utils/personal-name-parser.js';
 import { debug, error } from '../utils/logger.js';
+import { TTLCache } from '../utils/ttl-cache.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -52,9 +53,17 @@ export interface AttioAttributeMetadata {
 }
 
 /**
- * Cache for attribute metadata to avoid repeated API calls
+ * Workspace-level cache for attribute metadata with TTL
+ * Reduces API calls while preventing stale data (15-minute expiration)
+ * Per PR #905 performance optimization
  */
-const attributeCache = new Map<string, Map<string, AttioAttributeMetadata>>();
+const attributeCache = new TTLCache<
+  string,
+  Map<string, AttioAttributeMetadata>
+>(
+  15 * 60 * 1000, // 15 minutes TTL
+  5 * 60 * 1000 // 5 minutes cleanup interval
+);
 
 /**
  * Fetches and caches attribute metadata for a specific object type

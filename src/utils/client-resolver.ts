@@ -39,22 +39,55 @@ function assertAxiosInstance(
     typeof candidate.defaults === 'object';
 
   if (!hasGetMethod || !hasDefaults) {
-    throw new Error(`${source} returned invalid Axios client instance`);
+    // Enhanced diagnostic information
+    const diagnostics = {
+      valueType: typeof value,
+      isNull: value === null,
+      isUndefined: value === undefined,
+      isObject: typeof value === 'object' && value !== null,
+      hasGetMethod,
+      hasDefaults,
+      hasDefaultsProperty:
+        candidate && typeof candidate === 'object' && 'defaults' in candidate,
+      defaultsType:
+        candidate && typeof candidate === 'object' && 'defaults' in candidate
+          ? typeof candidate.defaults
+          : 'N/A',
+      availableProperties:
+        candidate && typeof candidate === 'object'
+          ? Object.keys(candidate).slice(0, 10)
+          : [],
+    };
+
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.error(
+        `[client-resolver:assertAxiosInstance] Validation failed for ${source}:`,
+        diagnostics
+      );
+    }
+
+    throw new Error(
+      `${source} returned invalid Axios client instance (hasGetMethod=${hasGetMethod}, hasDefaults=${hasDefaults})`
+    );
   }
 }
 
 /**
  * Resolves an Attio client instance using the unified interface.
- * Prioritises createAttioClient(config) → createAttioClient(apiKey) → getAttioClient() → buildAttioClient().
+ * Uses getAttioClient() which handles caching, environment detection, and strategy pattern.
+ *
+ * This simplification fixes Issue #904 client initialization validation failures by using
+ * the proven getAttioClient() code path instead of attempting multiple factory methods.
  */
 export function resolveAttioClient(): AxiosInstance {
   const mod = AttioClientModule as AttioClientFactories;
-  const contextApiKey = getContextApiKey();
-  const envApiKey = process.env.ATTIO_API_KEY;
-  const resolvedApiKey = envApiKey || contextApiKey;
 
-  // Debug logging for Issue #891: Track API key resolution
+  // Debug logging for API key resolution (informational only)
   if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    const contextApiKey = getContextApiKey();
+    const envApiKey = process.env.ATTIO_API_KEY;
+    const resolvedApiKey = envApiKey || contextApiKey;
+
     console.error('[client-resolver:resolve] API key resolution:', {
       hasEnvApiKey: Boolean(envApiKey),
       envKeyLength: envApiKey?.length || 0,
@@ -72,35 +105,35 @@ export function resolveAttioClient(): AxiosInstance {
     });
   }
 
-  // Try unified createAttioClient with config (new interface)
+  // Use getAttioClient() - it handles all the complexity:
+  // - Caching (ClientCache and legacy apiInstance)
+  // - Environment detection (E2E, test, production modes)
+  // - Strategy pattern (ProductionClientStrategy, E2EClientStrategy, etc.)
+  // - API key resolution (env, context, config)
+  // This is the proven code path used throughout the codebase
+  if (typeof mod.getAttioClient === 'function') {
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.error('[client-resolver:resolve] Using getAttioClient()');
+    }
+    const client = mod.getAttioClient();
+    assertAxiosInstance(client, 'getAttioClient()');
+    return client;
+  }
+
+  // Fallback to createAttioClient with config object
   if (typeof mod.createAttioClient === 'function') {
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.error(
+        '[client-resolver:resolve] Fallback to createAttioClient(config)'
+      );
+    }
     try {
-      // If we have an API key, prefer the legacy string signature for backward compatibility
-      if (resolvedApiKey) {
-        if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-          console.error(
-            '[client-resolver:resolve] Creating client with API key'
-          );
-        }
-        const client = (
-          mod.createAttioClient as (apiKey: string) => AxiosInstance
-        )(resolvedApiKey);
-        assertAxiosInstance(client, 'createAttioClient(apiKey)');
-        return client;
-      } else {
-        if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-          console.error(
-            '[client-resolver:resolve] Creating client without API key (will fail on first request)'
-          );
-        }
-        // Use config object (new unified interface)
-        const config: ClientConfig = {};
-        const client = (
-          mod.createAttioClient as (config: ClientConfig) => AxiosInstance
-        )(config);
-        assertAxiosInstance(client, 'createAttioClient(config)');
-        return client;
-      }
+      const config: ClientConfig = {};
+      const client = (
+        mod.createAttioClient as (config: ClientConfig) => AxiosInstance
+      )(config);
+      assertAxiosInstance(client, 'createAttioClient(config)');
+      return client;
     } catch (error) {
       if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
         console.error(
@@ -108,23 +141,24 @@ export function resolveAttioClient(): AxiosInstance {
           error
         );
       }
-      // Continue to fallback methods
+      // Continue to last resort
     }
-  }
-
-  // Fallback to getAttioClient if createAttioClient fails
-  if (typeof mod.getAttioClient === 'function') {
-    const client = mod.getAttioClient();
-    assertAxiosInstance(client, 'getAttioClient()');
-    return client;
   }
 
   // Last resort: buildAttioClient
   if (typeof mod.buildAttioClient === 'function') {
+    const contextApiKey = getContextApiKey();
+    const envApiKey = process.env.ATTIO_API_KEY;
+    const resolvedApiKey = envApiKey || contextApiKey;
+
     if (!resolvedApiKey) {
       throw new Error(
         'Attio API key is required for client initialization. Please set ATTIO_API_KEY environment variable.'
       );
+    }
+
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.error('[client-resolver:resolve] Last resort: buildAttioClient');
     }
     const client = mod.buildAttioClient({ apiKey: resolvedApiKey });
     assertAxiosInstance(client, 'buildAttioClient()');

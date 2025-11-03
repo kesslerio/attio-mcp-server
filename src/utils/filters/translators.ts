@@ -28,6 +28,8 @@ import {
   FilterConditionType,
   FIELD_SPECIAL_HANDLING,
 } from './types.js';
+import { validateSelectOrStatusValue } from './value-validators.js';
+import { getAttributeTypeInfo } from '../../api/attribute-types.js';
 import { validateFilterStructure } from './validators.js';
 import { UnknownObject } from '../types/common.js';
 import {
@@ -39,6 +41,19 @@ import {
 } from './validation-utils.js';
 import { isListSpecificAttribute } from './utils.js';
 import { createScopedLogger, OperationType } from '../logger.js';
+import {
+  isReferenceAttribute,
+  getReferenceFieldForAttribute,
+  type AttributeTypeCache,
+  KNOWN_ACTOR_REFERENCE_SLUGS,
+  EMAIL_PATTERN,
+  UUID_PATTERN,
+} from './reference-attribute-helper.js';
+import {
+  resolveWorkspaceMemberUUID,
+  createWorkspaceMemberCache,
+  type WorkspaceMemberCache,
+} from '../../services/workspace-member-resolver.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -104,11 +119,50 @@ import { createScopedLogger, OperationType } from '../logger.js';
  *   ]
  * };
  */
-export function transformFiltersToApiFormat(
+
+/**
+ * Validates select/status field values against allowed options
+ * Uses per-call memoization to avoid repeated lookups
+ *
+ * @param resourceType - Object type (e.g., 'deals', 'companies')
+ * @param filters - Array of filters to validate
+ * @throws FilterValidationError if any value is invalid
+ */
+async function validateFilterValues(
+  resourceType: string,
+  filters: ListEntryFilter[]
+): Promise<void> {
+  // Per-call cache for options (keyed by "${resourceType}:${slug}")
+  const optionsCache = new Map<string, unknown[]>();
+
+  for (const filter of filters) {
+    const { slug } = filter.attribute;
+
+    // Get attribute type info
+    const typeInfo = await getAttributeTypeInfo(resourceType, slug);
+
+    // Only validate select/status attributes
+    if (typeInfo.attioType === 'select' || typeInfo.attioType === 'status') {
+      await validateSelectOrStatusValue(
+        resourceType,
+        slug,
+        filter.value,
+        filter.condition,
+        optionsCache as Map<
+          string,
+          { id: string; title: string; value?: string; is_archived?: boolean }[]
+        >
+      );
+    }
+  }
+}
+
+export async function transformFiltersToApiFormat(
   filters: ListEntryFilters | undefined,
   validateConditions: boolean = true,
-  isListEntryContext: boolean = false
-): { filter?: AttioApiFilter } {
+  isListEntryContext: boolean = false,
+  resourceType?: string
+): Promise<{ filter?: AttioApiFilter }> {
   // Handle undefined/null filters gracefully
   if (!filters) {
     return {};
@@ -133,6 +187,12 @@ export function transformFiltersToApiFormat(
       // dev-only: skip logging to avoid top-level await in non-async function
       return {};
     }
+
+    // Validate select/status field values if resourceType is available
+    // Skip validation for list entries (resourceType undefined)
+    if (resourceType) {
+      await validateFilterValues(resourceType, validatedFilters.filters);
+    }
   } catch (error: unknown) {
     // Check if this is a FilterValidationError
     if (error instanceof FilterValidationError) {
@@ -141,6 +201,14 @@ export function transformFiltersToApiFormat(
         validateConditions &&
         (error.message.includes('Invalid condition') ||
           error.message.includes('Invalid filter condition'))
+      ) {
+        throw error;
+      }
+
+      // For value validation errors (invalid stage/select values), always re-throw
+      if (
+        error.message.includes('Invalid value') &&
+        error.message.includes('Valid options are')
       ) {
         throw error;
       }
@@ -157,6 +225,14 @@ export function transformFiltersToApiFormat(
   // Re-validate for the actual processing (this should not throw since we already validated)
   const validatedFilters = validateFilters(filters, validateConditions);
 
+  // Create per-request cache for attribute type info lookups
+  // This avoids repeated getAttributeTypeInfo calls for the same attribute within a single transformation
+  const attributeTypeCache: AttributeTypeCache = new Map();
+
+  // Create per-request cache for workspace member UUID resolution (PR #904 Phase 2)
+  // This avoids repeated API calls when the same email/name appears in multiple filters
+  const memberCache: WorkspaceMemberCache = createWorkspaceMemberCache();
+
   // Determine if we need to use the $or operator based on matchAny
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
   const useOrLogic = validatedFilters.matchAny === true;
@@ -165,18 +241,24 @@ export function transformFiltersToApiFormat(
 
   // For OR logic, we need a completely different structure with filter objects in an array
   if (useOrLogic) {
-    return createOrFilterStructure(
+    return await createOrFilterStructure(
       validatedFilters.filters,
       validateConditions,
-      isListEntryContext
+      isListEntryContext,
+      resourceType,
+      attributeTypeCache,
+      memberCache
     );
   }
 
   // Standard AND logic
-  return createAndFilterStructure(
+  return await createAndFilterStructure(
     validatedFilters.filters,
     validateConditions,
-    isListEntryContext
+    isListEntryContext,
+    resourceType,
+    attributeTypeCache,
+    memberCache
   );
 }
 
@@ -302,14 +384,19 @@ export function transformFiltersToQueryApiFormat(
  *
  * @param filters - Array of filters to combine with OR logic
  * @param validateConditions - Whether to validate condition types
+ * @param isListEntryContext - Whether this is a list entry context
+ * @param resourceType - The resource type for attribute metadata lookup
  * @returns Filter object with $or structure
  * @throws FilterValidationError for invalid filter structures or when all filters are invalid
  */
-function createOrFilterStructure(
+async function createOrFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
-  isListEntryContext: boolean = false
-): { filter?: AttioApiFilter } {
+  isListEntryContext: boolean = false,
+  resourceType?: string,
+  attributeTypeCache?: AttributeTypeCache,
+  memberCache?: WorkspaceMemberCache
+): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
     'createOrFilterStructure',
@@ -345,11 +432,13 @@ function createOrFilterStructure(
     );
   }
 
-  // Process valid filters
-  filters.forEach((filter, index) => {
+  // Process valid filters - use for loop instead of forEach to support await
+  for (let index = 0; index < filters.length; index++) {
+    const filter = filters[index];
+
     // Skip if this filter was found invalid
     if (invalidFilters.some((invalid) => invalid.index === index)) {
-      return;
+      continue;
     }
 
     // Debug log each filter
@@ -379,7 +468,7 @@ function createOrFilterStructure(
 
       // List-specific attributes use direct field access
       const operator =
-        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
+        filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
       condition[slug] = {
         [operator]: filter.value,
       };
@@ -397,24 +486,126 @@ function createOrFilterStructure(
     } else {
       // Standard operator handling for normal fields
       const operator =
-        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
+        filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+
+      // Check if this is a reference attribute that needs nested field specification
+      const isReference = await isReferenceAttribute(
+        resourceType,
+        slug,
+        attributeTypeCache
+      );
+
+      // Auto-resolve actor-reference email/name values to UUIDs (PR #904 Phase 2)
+      // This enables natural filtering syntax like owner="martin@shapescale.com"
+      // Attio's API requires UUIDs for actor-references, not emails/names
+      if (
+        isReference &&
+        KNOWN_ACTOR_REFERENCE_SLUGS.has(slug) &&
+        typeof filter.value === 'string' &&
+        !UUID_PATTERN.test(filter.value)
+      ) {
+        // Value is email or name - resolve to UUID
+        try {
+          const resolvedUUID = await resolveWorkspaceMemberUUID(
+            filter.value,
+            memberCache
+          );
+          log.debug('Auto-resolved actor-reference value to UUID (OR logic)', {
+            attribute: slug,
+            originalValue: filter.value,
+            resolvedUUID,
+          });
+          // Update filter value in place
+          filter.value = resolvedUUID;
+        } catch (error) {
+          // Resolution failed - let it propagate as FilterValidationError
+          throw error;
+        }
+      }
+
+      // Validate that arrays aren't used with 'equals' operator on reference attributes (PR #904 Phase 2)
+      // Attio API expects $in/$not_in for array values, not $eq
+      // This addresses PR feedback [HIGH] issue
+      if (
+        isReference &&
+        filter.condition === 'equals' &&
+        Array.isArray(filter.value)
+      ) {
+        throw new FilterValidationError(
+          `Arrays not supported with 'equals' operator for reference attribute "${slug}". ` +
+            `Use 'in' operator instead (coming soon) or filter by single value.`,
+          FilterErrorCategory.VALUE
+        );
+      }
 
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
-        condition[`record.values.${slug}`] = {
-          [operator]: filter.value,
-        };
+        if (isReference) {
+          // Get the appropriate field for this reference type (email/name/UUID)
+          const refField = await getReferenceFieldForAttribute(
+            resourceType,
+            slug,
+            filter.value,
+            attributeTypeCache
+          );
+
+          // Actor-reference with UUID uses special structure (no operator nesting)
+          // Email/name use standard nested field specification
+          if (refField === 'referenced_actor_id') {
+            condition[`record.values.${slug}`] = {
+              referenced_actor_type: 'workspace-member',
+              referenced_actor_id: filter.value,
+            };
+          } else {
+            // Standard nested field specification for email/name/record_id
+            condition[`record.values.${slug}`] = {
+              [refField]: {
+                [operator]: filter.value,
+              },
+            };
+          }
+        } else {
+          condition[`record.values.${slug}`] = {
+            [operator]: filter.value,
+          };
+        }
       } else {
         // Standard field access for non-list contexts
-        condition[slug] = {
-          [operator]: filter.value,
-        };
+        if (isReference) {
+          // Get the appropriate field for this reference type (email/name/UUID)
+          const refField = await getReferenceFieldForAttribute(
+            resourceType,
+            slug,
+            filter.value,
+            attributeTypeCache
+          );
+
+          // Actor-reference with UUID uses special structure (no operator nesting)
+          // Email/name use standard nested field specification
+          if (refField === 'referenced_actor_id') {
+            condition[slug] = {
+              referenced_actor_type: 'workspace-member',
+              referenced_actor_id: filter.value,
+            };
+          } else {
+            // Standard nested field specification for email/name/record_id
+            condition[slug] = {
+              [refField]: {
+                [operator]: filter.value,
+              },
+            };
+          }
+        } else {
+          condition[slug] = {
+            [operator]: filter.value,
+          };
+        }
       }
     }
 
     // Add to the OR conditions array
     orConditions.push(condition);
-  });
+  }
 
   // Return the $or structure with valid conditions
   if (orConditions.length > 0) {
@@ -432,14 +623,19 @@ function createOrFilterStructure(
  *
  * @param filters - Array of filters to combine with AND logic
  * @param validateConditions - Whether to validate condition types
+ * @param isListEntryContext - Whether this is a list entry context
+ * @param resourceType - The resource type for attribute metadata lookup
  * @returns Filter object with standard AND structure
  * @throws FilterValidationError for invalid filter structures or when all filters are invalid
  */
-function createAndFilterStructure(
+async function createAndFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
-  isListEntryContext: boolean = false
-): { filter?: AttioApiFilter } {
+  isListEntryContext: boolean = false,
+  resourceType?: string,
+  attributeTypeCache?: AttributeTypeCache,
+  memberCache?: WorkspaceMemberCache
+): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
     'createAndFilterStructure',
@@ -477,11 +673,13 @@ function createAndFilterStructure(
     );
   }
 
-  // Process valid filters by merging into single object
-  filters.forEach((filter, index) => {
+  // Process valid filters by merging into single object - use for loop to support await
+  for (let index = 0; index < filters.length; index++) {
+    const filter = filters[index];
+
     // Skip if this filter was found invalid
     if (invalidFilters.some((invalid) => invalid.index === index)) {
-      return;
+      continue;
     }
 
     // Debug log each filter
@@ -496,7 +694,7 @@ function createAndFilterStructure(
 
     const { slug } = filter.attribute;
     const operator =
-      filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
+      filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
 
     // Build condition object in Attio's expected format
     let fieldPath: string;
@@ -512,19 +710,96 @@ function createAndFilterStructure(
       fieldPath = slug;
     }
 
+    // Check if this is a reference attribute that needs nested field specification
+    const isReference = await isReferenceAttribute(
+      resourceType,
+      slug,
+      attributeTypeCache
+    );
+
+    // Auto-resolve actor-reference email/name values to UUIDs (PR #904 Phase 2)
+    // This enables natural filtering syntax like owner="martin@shapescale.com"
+    // Attio's API requires UUIDs for actor-references, not emails/names
+    if (
+      isReference &&
+      KNOWN_ACTOR_REFERENCE_SLUGS.has(slug) &&
+      typeof filter.value === 'string' &&
+      !UUID_PATTERN.test(filter.value)
+    ) {
+      // Value is email or name - resolve to UUID
+      try {
+        const resolvedUUID = await resolveWorkspaceMemberUUID(
+          filter.value,
+          memberCache
+        );
+        log.debug('Auto-resolved actor-reference value to UUID', {
+          attribute: slug,
+          originalValue: filter.value,
+          resolvedUUID,
+        });
+        // Update filter value in place
+        filter.value = resolvedUUID;
+      } catch (error) {
+        // Resolution failed - let it propagate as FilterValidationError
+        throw error;
+      }
+    }
+
+    // Validate that arrays aren't used with 'equals' operator on reference attributes (PR #904 Phase 2)
+    // Attio API expects $in/$not_in for array values, not $eq
+    // This addresses PR feedback [HIGH] issue
+    if (
+      isReference &&
+      filter.condition === 'equals' &&
+      Array.isArray(filter.value)
+    ) {
+      throw new FilterValidationError(
+        `Arrays not supported with 'equals' operator for reference attribute "${slug}". ` +
+          `Use 'in' operator instead (coming soon) or filter by single value.`,
+        FilterErrorCategory.VALUE
+      );
+    }
+
     // Merge condition directly into the main object (AND logic)
-    mergedConditions[fieldPath] = {
-      [operator]: filter.value,
-    };
+    if (isReference) {
+      // Get the appropriate field for this reference type (email/name/UUID)
+      const refField = await getReferenceFieldForAttribute(
+        resourceType,
+        slug,
+        filter.value,
+        attributeTypeCache
+      );
+
+      // Actor-reference with UUID uses special structure (no operator nesting)
+      // Email/name use standard nested field specification
+      if (refField === 'referenced_actor_id') {
+        mergedConditions[fieldPath] = {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: filter.value,
+        };
+      } else {
+        // Standard nested field specification for email/name/record_id
+        mergedConditions[fieldPath] = {
+          [refField]: {
+            [operator]: filter.value,
+          },
+        };
+      }
+    } else {
+      mergedConditions[fieldPath] = {
+        [operator]: filter.value,
+      };
+    }
 
     if (process.env.NODE_ENV === 'development') {
       log.debug('Added AND condition', {
         fieldPath,
         operator,
         value: filter.value,
+        isReference,
       });
     }
-  });
+  }
 
   // Return merged conditions if we have any
   if (Object.keys(mergedConditions).length === 0) {
@@ -538,7 +813,7 @@ function createAndFilterStructure(
  * Converts a single filter operator to API format
  *
  * @param operator - The operator to convert (e.g., 'equals', 'contains')
- * @returns The operator in API format (e.g., '$equals', '$contains')
+ * @returns The operator in API format (e.g., '$eq', '$contains')
  */
 export function convertOperatorToApiFormat(operator: string): string {
   // Ensure the operator starts with $ for Attio API format
