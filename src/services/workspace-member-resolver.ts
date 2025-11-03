@@ -86,9 +86,10 @@ export async function resolveWorkspaceMemberUUID(
     );
   }
 
-  // Post-filter for exact email matches
-  // Attio's search API does fuzzy matching, so we need to filter for exact email matches
+  // Post-filter for exact matches
+  // Attio's search API does fuzzy matching, so we need to filter for exact matches
   if (EMAIL_PATTERN.test(emailOrName)) {
+    // Email-based filtering
     const normalizedEmail = emailOrName.toLowerCase().trim();
     const exactMatches = members.filter(
       (m) => m.email_address?.toLowerCase() === normalizedEmail
@@ -96,6 +97,27 @@ export async function resolveWorkspaceMemberUUID(
 
     if (exactMatches.length > 0) {
       logger.debug('Filtered to exact email matches', {
+        input: emailOrName,
+        totalResults: members.length,
+        exactMatches: exactMatches.length,
+      });
+      members = exactMatches;
+    }
+  } else {
+    // Name-based filtering - match against full name
+    // Normalize the input name for comparison
+    const normalizedInput = emailOrName.toLowerCase().trim();
+
+    const exactMatches = members.filter((m) => {
+      // Build full name from first and last name
+      const fullName = `${m.first_name || ''} ${m.last_name || ''}`
+        .trim()
+        .toLowerCase();
+      return fullName === normalizedInput;
+    });
+
+    if (exactMatches.length > 0) {
+      logger.debug('Filtered to exact name matches', {
         input: emailOrName,
         totalResults: members.length,
         exactMatches: exactMatches.length,
