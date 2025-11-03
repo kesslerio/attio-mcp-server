@@ -45,7 +45,15 @@ import {
   isReferenceAttribute,
   getReferenceFieldForAttribute,
   type AttributeTypeCache,
+  KNOWN_ACTOR_REFERENCE_SLUGS,
+  EMAIL_PATTERN,
+  UUID_PATTERN,
 } from './reference-attribute-helper.js';
+import {
+  resolveWorkspaceMemberUUID,
+  createWorkspaceMemberCache,
+  type WorkspaceMemberCache,
+} from '../../services/workspace-member-resolver.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -221,6 +229,10 @@ export async function transformFiltersToApiFormat(
   // This avoids repeated getAttributeTypeInfo calls for the same attribute within a single transformation
   const attributeTypeCache: AttributeTypeCache = new Map();
 
+  // Create per-request cache for workspace member UUID resolution (PR #904 Phase 2)
+  // This avoids repeated API calls when the same email/name appears in multiple filters
+  const memberCache: WorkspaceMemberCache = createWorkspaceMemberCache();
+
   // Determine if we need to use the $or operator based on matchAny
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
   const useOrLogic = validatedFilters.matchAny === true;
@@ -234,7 +246,8 @@ export async function transformFiltersToApiFormat(
       validateConditions,
       isListEntryContext,
       resourceType,
-      attributeTypeCache
+      attributeTypeCache,
+      memberCache
     );
   }
 
@@ -244,7 +257,8 @@ export async function transformFiltersToApiFormat(
     validateConditions,
     isListEntryContext,
     resourceType,
-    attributeTypeCache
+    attributeTypeCache,
+    memberCache
   );
 }
 
@@ -380,7 +394,8 @@ async function createOrFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false,
   resourceType?: string,
-  attributeTypeCache?: AttributeTypeCache
+  attributeTypeCache?: AttributeTypeCache,
+  memberCache?: WorkspaceMemberCache
 ): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
@@ -480,6 +495,49 @@ async function createOrFilterStructure(
         attributeTypeCache
       );
 
+      // Auto-resolve actor-reference email/name values to UUIDs (PR #904 Phase 2)
+      // This enables natural filtering syntax like owner="martin@shapescale.com"
+      // Attio's API requires UUIDs for actor-references, not emails/names
+      if (
+        isReference &&
+        KNOWN_ACTOR_REFERENCE_SLUGS.has(slug) &&
+        typeof filter.value === 'string' &&
+        !UUID_PATTERN.test(filter.value)
+      ) {
+        // Value is email or name - resolve to UUID
+        try {
+          const resolvedUUID = await resolveWorkspaceMemberUUID(
+            filter.value,
+            memberCache
+          );
+          log.debug('Auto-resolved actor-reference value to UUID (OR logic)', {
+            attribute: slug,
+            originalValue: filter.value,
+            resolvedUUID,
+          });
+          // Update filter value in place
+          filter.value = resolvedUUID;
+        } catch (error) {
+          // Resolution failed - let it propagate as FilterValidationError
+          throw error;
+        }
+      }
+
+      // Validate that arrays aren't used with 'equals' operator on reference attributes (PR #904 Phase 2)
+      // Attio API expects $in/$not_in for array values, not $eq
+      // This addresses PR feedback [HIGH] issue
+      if (
+        isReference &&
+        filter.condition === 'equals' &&
+        Array.isArray(filter.value)
+      ) {
+        throw new FilterValidationError(
+          `Arrays not supported with 'equals' operator for reference attribute "${slug}". ` +
+            `Use 'in' operator instead (coming soon) or filter by single value.`,
+          FilterErrorCategory.VALUE
+        );
+      }
+
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
         if (isReference) {
@@ -575,7 +633,8 @@ async function createAndFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false,
   resourceType?: string,
-  attributeTypeCache?: AttributeTypeCache
+  attributeTypeCache?: AttributeTypeCache,
+  memberCache?: WorkspaceMemberCache
 ): Promise<{ filter?: AttioApiFilter }> {
   const log = createScopedLogger(
     'filters.translators',
@@ -657,6 +716,49 @@ async function createAndFilterStructure(
       slug,
       attributeTypeCache
     );
+
+    // Auto-resolve actor-reference email/name values to UUIDs (PR #904 Phase 2)
+    // This enables natural filtering syntax like owner="martin@shapescale.com"
+    // Attio's API requires UUIDs for actor-references, not emails/names
+    if (
+      isReference &&
+      KNOWN_ACTOR_REFERENCE_SLUGS.has(slug) &&
+      typeof filter.value === 'string' &&
+      !UUID_PATTERN.test(filter.value)
+    ) {
+      // Value is email or name - resolve to UUID
+      try {
+        const resolvedUUID = await resolveWorkspaceMemberUUID(
+          filter.value,
+          memberCache
+        );
+        log.debug('Auto-resolved actor-reference value to UUID', {
+          attribute: slug,
+          originalValue: filter.value,
+          resolvedUUID,
+        });
+        // Update filter value in place
+        filter.value = resolvedUUID;
+      } catch (error) {
+        // Resolution failed - let it propagate as FilterValidationError
+        throw error;
+      }
+    }
+
+    // Validate that arrays aren't used with 'equals' operator on reference attributes (PR #904 Phase 2)
+    // Attio API expects $in/$not_in for array values, not $eq
+    // This addresses PR feedback [HIGH] issue
+    if (
+      isReference &&
+      filter.condition === 'equals' &&
+      Array.isArray(filter.value)
+    ) {
+      throw new FilterValidationError(
+        `Arrays not supported with 'equals' operator for reference attribute "${slug}". ` +
+          `Use 'in' operator instead (coming soon) or filter by single value.`,
+        FilterErrorCategory.VALUE
+      );
+    }
 
     // Merge condition directly into the main object (AND logic)
     if (isReference) {

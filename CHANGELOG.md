@@ -9,11 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- **Actor-reference filtering requires workspace member UUID** (#904) - Owner/assignee filters now require workspace member UUID when `resourceType` is available. Previously accepted name/email values will now fail validation. Use `referenced_actor_id` field with UUID values. When resourceType is unavailable (e.g., list entries), heuristic detection still works (UUID → record_id, name/email → name/email field).
+- **Array equals operator rejected for reference attributes** (#904 Phase 2) - Arrays with `equals` operator (e.g., `{owner: {$eq: ["uuid1", "uuid2"]}}`) now throw `FilterValidationError`. This addresses PR feedback [HIGH] issue where translator allowed arrays to pass through generating invalid `$eq: [...]` structure. Use 'in' operator instead (coming soon) or filter by single value.
 
 - **Mixed-type arrays rejected in reference filters** (#904) - Arrays combining UUIDs and names (e.g., `["uuid-123", "John Doe"]`) now throw `FilterValidationError`. This prevents silent failures where UUIDs would never match when using the `name` field. Use separate filters or ensure all array elements are the same type.
 
 ### Added
+
+- **Auto-resolution of workspace member emails/names to UUIDs** (#904 Phase 2) - Owner/assignee filters now transparently convert email addresses and names to workspace member UUIDs
+  - **Problem**: Attio API requires workspace member UUIDs for actor-reference filters, but users naturally want to filter by email or name
+  - **Solution**: Automatically resolve email/name values to UUIDs via workspace members search API before building filter structure
+  - **User Experience**:
+    - **BEFORE**: User must manually search workspace members by email, extract UUID, then use UUID in filter
+    - **AFTER**: User filters by email/name directly (e.g., `owner="martin@shapescale.com"`), auto-resolved to UUID transparently
+  - **Features**:
+    - Per-request caching prevents duplicate API calls for same email/name within single filter transformation
+    - Clear error messages when member not found or multiple matches (with member list)
+    - Works in both AND and OR filter logic, and with/without resourceType (slug-based fallback)
+    - Comprehensive unit test coverage (14 resolver tests + 7 integration tests)
+  - **Result**: Natural filtering syntax like `owner="martin@shapescale.com"` just works, no manual UUID lookup required
 
 - **Deal filtering documentation** (#904) - Enhanced `records_search` tool discoverability with deal-specific examples
   - Added "deals" to `records_search` tool description (was missing from capability list)

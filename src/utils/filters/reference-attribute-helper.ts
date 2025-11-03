@@ -39,8 +39,9 @@ const REFERENCE_FIELD_MAPPING: Record<string, string> = {
 
 /**
  * UUID v4 pattern for detecting UUID values
+ * Exported for use in filter translators (PR #904 Phase 2)
  */
-const UUID_PATTERN =
+export const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
@@ -54,8 +55,9 @@ const UUID_PATTERN =
  * Pattern validates: non-whitespace + @ + non-whitespace + . + non-whitespace
  * Accepts: user@example.com, test@local.dev, admin@co.uk
  * Rejects: missing @, missing domain, whitespace, no TLD
+ * Exported for use in filter translators (PR #904 Phase 2)
  */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Known reference attribute slugs that commonly require nested field specification
@@ -83,8 +85,9 @@ const WORKSPACE_MEMBER_SLUGS = new Set(['workspace_member', 'assignee_id']);
  * Known actor-reference slugs that require special handling in list entry context
  * When resourceType is unavailable, these slugs with UUID values must use referenced_actor_id
  * (not record_id) to generate correct actor-reference filter structure
+ * Exported for use in filter translators (PR #904 Phase 2)
  */
-const KNOWN_ACTOR_REFERENCE_SLUGS = new Set([
+export const KNOWN_ACTOR_REFERENCE_SLUGS = new Set([
   'owner',
   'assignee',
   'created_by',
