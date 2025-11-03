@@ -116,30 +116,34 @@ export async function isReferenceAttribute(
 /**
  * Determine which field to use for a reference attribute based on the value and type
  *
- * @param value - The filter value (can be UUID or name)
+ * @param value - The filter value (can be UUID, name, or array of UUIDs/names for in/not_in operators)
  * @param attioType - The Attio attribute type (optional)
  * @returns The field name to use ('record_id', 'name', or 'referenced_actor_id' for actor-reference)
- * @throws FilterValidationError if value is an array (not supported for reference attributes with equals)
  */
 export function determineReferenceField(
   value: unknown,
   attioType?: string
 ): string {
-  // Arrays are not supported for reference attribute filtering with equals
-  if (Array.isArray(value)) {
-    throw new FilterValidationError(
-      'Array values are not supported for reference attribute filtering. ' +
-        'Use a single UUID or name value.',
-      FilterErrorCategory.VALUE
-    );
-  }
-
   // Actor-reference attributes use referenced_actor_id (always UUID)
   if (attioType === 'actor-reference') {
     return 'referenced_actor_id';
   }
 
-  // If value is UUID, use record_id field
+  // Handle array values (for in/not_in operators)
+  if (Array.isArray(value)) {
+    // Empty arrays default to name field
+    if (value.length === 0) {
+      return 'name';
+    }
+
+    // Check if all elements are UUID strings
+    const allUUIDs = value.every(
+      (v) => typeof v === 'string' && UUID_PATTERN.test(v)
+    );
+    return allUUIDs ? 'record_id' : 'name';
+  }
+
+  // Handle single values
   if (typeof value === 'string' && UUID_PATTERN.test(value)) {
     return 'record_id';
   }

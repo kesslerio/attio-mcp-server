@@ -784,8 +784,14 @@ describe('Reference Attribute Filtering', () => {
     });
   });
 
-  describe('Array value validation', () => {
-    test('should reject array values for reference attributes', async () => {
+  describe('Array value handling (preparatory for in/not_in operators)', () => {
+    test('should handle array values for reference attributes', async () => {
+      // NOTE: This test validates array handling in determineReferenceField(),
+      // which is preparatory work for when 'in'/'not_in' operators are added
+      // to FilterConditionType enum (Issue #904 P1 review comment).
+      // Currently, arrays shouldn't reach this code path in production since
+      // 'in'/'not_in' are not exposed in the MCP interface yet.
+
       // Mock as record-reference type
       vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
         fieldType: 'object',
@@ -810,18 +816,29 @@ describe('Reference Attribute Filtering', () => {
           {
             attribute: { slug: 'owner' },
             condition: 'equals' as const,
-            value: ['User A', 'User B'], // Array value - should be rejected
+            value: ['User A', 'User B'], // Array value (for future in/not_in support)
           },
         ],
       };
 
-      await expect(() =>
-        transformFiltersToApiFormat(filter, true, false, 'deals')
-      ).rejects.toThrow(FilterValidationError);
+      // Array handling is now supported - detects if all elements are UUIDs
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'deals'
+      );
 
-      await expect(() =>
-        transformFiltersToApiFormat(filter, true, false, 'deals')
-      ).rejects.toThrow(/Array values are not supported/);
+      // Should use name field since elements are not UUIDs
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            name: {
+              $eq: ['User A', 'User B'],
+            },
+          },
+        },
+      });
     });
   });
 
@@ -1010,6 +1027,268 @@ describe('Reference Attribute Filtering', () => {
           primary_contact: {
             record_id: {
               $eq: '550e8400-e29b-41d4-a716-446655440000',
+            },
+          },
+        },
+      });
+    });
+  });
+
+  // NOTE: These tests are skipped because 'in'/'not_in' operators are not yet
+  // exposed in the FilterConditionType enum. They will be enabled when Issue #904
+  // adds support for these operators in the MCP interface.
+  describe.skip('Array-valued reference filtering (in/not_in operators - FUTURE)', () => {
+    test('should transform company reference with array of UUIDs to record_id field', async () => {
+      // Mock company as a record-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'object',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'record-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'people',
+            attribute_id: 'company',
+          },
+          api_slug: 'company',
+          title: 'Company',
+          type: 'record-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'company' },
+            condition: 'in' as const,
+            value: [
+              '550e8400-e29b-41d4-a716-446655440000',
+              '660e8400-e29b-41d4-a716-446655440001',
+            ],
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'people'
+      );
+
+      expect(result).toEqual({
+        filter: {
+          company: {
+            record_id: {
+              $in: [
+                '550e8400-e29b-41d4-a716-446655440000',
+                '660e8400-e29b-41d4-a716-446655440001',
+              ],
+            },
+          },
+        },
+      });
+    });
+
+    test('should transform company reference with array of names to name field', async () => {
+      // Mock company as a record-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'object',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'record-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'people',
+            attribute_id: 'company',
+          },
+          api_slug: 'company',
+          title: 'Company',
+          type: 'record-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'company' },
+            condition: 'in' as const,
+            value: ['Tech Corp', 'Acme Inc', 'Global Systems'],
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'people'
+      );
+
+      expect(result).toEqual({
+        filter: {
+          company: {
+            name: {
+              $in: ['Tech Corp', 'Acme Inc', 'Global Systems'],
+            },
+          },
+        },
+      });
+    });
+
+    test('should transform company reference with mixed array (contains non-UUID) to name field', async () => {
+      // Mock company as a record-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'object',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'record-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'people',
+            attribute_id: 'company',
+          },
+          api_slug: 'company',
+          title: 'Company',
+          type: 'record-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'company' },
+            condition: 'in' as const,
+            value: [
+              '550e8400-e29b-41d4-a716-446655440000', // UUID
+              'Tech Corp', // Name
+            ],
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'people'
+      );
+
+      // Mixed array should use name field (not all UUIDs)
+      expect(result).toEqual({
+        filter: {
+          company: {
+            name: {
+              $in: ['550e8400-e29b-41d4-a716-446655440000', 'Tech Corp'],
+            },
+          },
+        },
+      });
+    });
+
+    test('should handle empty array by defaulting to name field', async () => {
+      // Mock company as a record-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'object',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'record-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'people',
+            attribute_id: 'company',
+          },
+          api_slug: 'company',
+          title: 'Company',
+          type: 'record-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'company' },
+            condition: 'in' as const,
+            value: [],
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'people'
+      );
+
+      // Empty array defaults to name field
+      expect(result).toEqual({
+        filter: {
+          company: {
+            name: {
+              $in: [],
+            },
+          },
+        },
+      });
+    });
+
+    test('should transform person reference with array of UUIDs using not_in operator', async () => {
+      // Mock person as a record-reference type
+      vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
+        fieldType: 'object',
+        isArray: false,
+        isRequired: false,
+        isUnique: false,
+        attioType: 'record-reference',
+        metadata: {
+          id: {
+            workspace_id: 'test',
+            object_id: 'tasks',
+            attribute_id: 'person',
+          },
+          api_slug: 'person',
+          title: 'Person',
+          type: 'record-reference',
+        },
+      });
+
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'person' },
+            condition: 'not_in' as const,
+            value: [
+              '770e8400-e29b-41d4-a716-446655440002',
+              '880e8400-e29b-41d4-a716-446655440003',
+            ],
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        'tasks'
+      );
+
+      expect(result).toEqual({
+        filter: {
+          person: {
+            record_id: {
+              $not_in: [
+                '770e8400-e29b-41d4-a716-446655440002',
+                '880e8400-e29b-41d4-a716-446655440003',
+              ],
             },
           },
         },
