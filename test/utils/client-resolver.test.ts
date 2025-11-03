@@ -81,7 +81,8 @@ describe('Client Resolver', () => {
       const client = resolveAttioClient();
 
       expect(client).toBe(mockClient);
-      expect(createAttioClient).toHaveBeenCalledWith('test-key-12345');
+      // After fix in e75725b3, createAttioClient is called with config object (not string)
+      expect(createAttioClient).toHaveBeenCalledWith({});
     });
 
     it('falls back to buildAttioClient() when other factories missing', async () => {
@@ -108,7 +109,8 @@ describe('Client Resolver', () => {
       const client = resolveAttioClient();
 
       expect(client).toBe(mockClient);
-      expect(createAttioClient).toHaveBeenCalledWith('context-key-123');
+      // After fix in e75725b3, createAttioClient is called with config object (not string)
+      expect(createAttioClient).toHaveBeenCalledWith({});
     });
 
     it('throws descriptive error when no factories available', async () => {
@@ -195,7 +197,8 @@ describe('Client Resolver', () => {
       const { resolveAttioClient } = await importResolver();
       resolveAttioClient();
 
-      expect(createAttioClient).toHaveBeenCalledWith('env-key-12345');
+      // After fix in e75725b3, createAttioClient is called with config object (not string)
+      expect(createAttioClient).toHaveBeenCalledWith({});
       expect(createAttioClient).not.toHaveBeenCalledWith('context-key');
     });
 
