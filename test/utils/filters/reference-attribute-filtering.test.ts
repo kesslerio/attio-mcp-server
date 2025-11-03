@@ -1140,7 +1140,7 @@ describe('Reference Attribute Filtering', () => {
       });
     });
 
-    test('should transform company reference with mixed array (contains non-UUID) to name field', async () => {
+    test('should reject mixed array (UUID + name) with validation error', async () => {
       // Mock company as a record-reference type
       vi.mocked(attributeTypes.getAttributeTypeInfo).mockResolvedValue({
         fieldType: 'object',
@@ -1173,23 +1173,14 @@ describe('Reference Attribute Filtering', () => {
         ],
       };
 
-      const result = await transformFiltersToApiFormat(
-        filter,
-        true,
-        false,
-        'people'
-      );
+      // Mixed arrays should throw validation error (prevents silent failures)
+      await expect(
+        transformFiltersToApiFormat(filter, true, false, 'people')
+      ).rejects.toThrow(FilterValidationError);
 
-      // Mixed array should use name field (not all UUIDs)
-      expect(result).toEqual({
-        filter: {
-          company: {
-            name: {
-              $in: ['550e8400-e29b-41d4-a716-446655440000', 'Tech Corp'],
-            },
-          },
-        },
-      });
+      await expect(
+        transformFiltersToApiFormat(filter, true, false, 'people')
+      ).rejects.toThrow(/Mixed UUID and non-UUID values not supported/);
     });
 
     test('should handle empty array by defaulting to name field', async () => {

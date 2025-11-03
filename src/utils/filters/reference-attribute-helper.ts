@@ -44,7 +44,16 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
- * Basic email pattern for validation
+ * Email pattern for workspace member validation
+ *
+ * Uses permissive pattern to handle edge cases:
+ * - Test environments may use simplified emails (e.g., test@local.dev)
+ * - Some valid domains have short TLDs or special characters
+ * - Attio API performs canonical validation, so false positives fail fast
+ *
+ * Pattern validates: non-whitespace + @ + non-whitespace + . + non-whitespace
+ * Accepts: user@example.com, test@local.dev, admin@co.uk
+ * Rejects: missing @, missing domain, whitespace, no TLD
  */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -151,6 +160,19 @@ export function determineReferenceField(
     const allUUIDs = value.every(
       (v) => typeof v === 'string' && UUID_PATTERN.test(v)
     );
+    const allNonUUIDs = value.every(
+      (v) => typeof v === 'string' && !UUID_PATTERN.test(v)
+    );
+
+    // Reject mixed-type arrays (some UUIDs, some names)
+    if (!allUUIDs && !allNonUUIDs) {
+      throw new FilterValidationError(
+        `Mixed UUID and non-UUID values not supported in array filters. ` +
+          `Received array with both types. Use separate filters or ensure all values are the same type.`,
+        FilterErrorCategory.VALUE
+      );
+    }
+
     return allUUIDs ? 'record_id' : 'name';
   }
 

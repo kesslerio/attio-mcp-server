@@ -711,7 +711,7 @@ async function createAndFilterStructure(
  * Converts a single filter operator to API format
  *
  * @param operator - The operator to convert (e.g., 'equals', 'contains')
- * @returns The operator in API format (e.g., '$equals', '$contains')
+ * @returns The operator in API format (e.g., '$eq', '$contains')
  */
 export function convertOperatorToApiFormat(operator: string): string {
   // Ensure the operator starts with $ for Attio API format

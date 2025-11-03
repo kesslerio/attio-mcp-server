@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **Actor-reference filtering requires workspace member UUID** (#904) - Owner/assignee filters now require workspace member UUID when `resourceType` is available. Previously accepted name/email values will now fail validation. Use `referenced_actor_id` field with UUID values. When resourceType is unavailable (e.g., list entries), heuristic detection still works (UUID → record_id, name/email → name/email field).
+
+- **Mixed-type arrays rejected in reference filters** (#904) - Arrays combining UUIDs and names (e.g., `["uuid-123", "John Doe"]`) now throw `FilterValidationError`. This prevents silent failures where UUIDs would never match when using the `name` field. Use separate filters or ensure all array elements are the same type.
+
 ### Added
 
 - **Deal filtering documentation** (#904) - Enhanced `records_search` tool discoverability with deal-specific examples
@@ -50,8 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **AFTER**: `{"owner": {"referenced_actor_type": "workspace-member", "referenced_actor_id": "uuid"}}` → ✅ SUCCESS
     - E2E test passed 100% (TC-AO03)
     - All 147 filter tests passing (no regressions)
-  - **Breaking Change**: Users must provide workspace member UUID (not name or email) for owner/assignee filters when resourceType is available
   - Enhanced error messages to guide users when invalid value types provided
+  - See "Breaking Changes" section above for migration guidance
 
 ### Security
 
