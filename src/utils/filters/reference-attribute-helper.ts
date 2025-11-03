@@ -80,6 +80,18 @@ const KNOWN_REFERENCE_SLUGS = new Set([
 const WORKSPACE_MEMBER_SLUGS = new Set(['workspace_member', 'assignee_id']);
 
 /**
+ * Known actor-reference slugs that require special handling in list entry context
+ * When resourceType is unavailable, these slugs with UUID values must use referenced_actor_id
+ * (not record_id) to generate correct actor-reference filter structure
+ */
+const KNOWN_ACTOR_REFERENCE_SLUGS = new Set([
+  'owner',
+  'assignee',
+  'created_by',
+  'modified_by',
+]);
+
+/**
  * Per-request cache for attribute type info to avoid repeated lookups
  * Key format: `${resourceType}:${attributeSlug}`
  */
@@ -297,7 +309,29 @@ export async function getReferenceFieldForAttribute(
     return 'email';
   }
 
-  // For other reference slugs (when metadata unavailable), use heuristic detection (UUID vs name)
-  // Note: Cannot determine if it's actor-reference without metadata, so we use basic heuristic
+  // Special handling for known actor-reference slugs (owner, assignee, created_by, modified_by)
+  // When resourceType unavailable (e.g., list entries), we can't query metadata but can use slug patterns
+  if (KNOWN_ACTOR_REFERENCE_SLUGS.has(attributeSlug)) {
+    // Actor-reference attributes support email, UUID, or name filtering
+    if (typeof value !== 'string') {
+      throw new FilterValidationError(
+        `Actor-reference attribute "${attributeSlug}" requires a string value (email, name, or UUID). Got: ${typeof value}`,
+        FilterErrorCategory.VALUE
+      );
+    }
+
+    // Detect value type and return appropriate field
+    if (EMAIL_PATTERN.test(value)) {
+      return 'email';
+    } else if (UUID_PATTERN.test(value)) {
+      // UUID values must use referenced_actor_id for actor-reference structure
+      return 'referenced_actor_id';
+    } else {
+      // Plain text name
+      return 'name';
+    }
+  }
+
+  // For other reference slugs (company, person, etc.), use basic heuristic detection (UUID vs name)
   return determineReferenceField(value);
 }

@@ -726,8 +726,8 @@ describe('Reference Attribute Filtering', () => {
       expect(result).toEqual({
         filter: {
           owner: {
-            name: {
-              // Heuristic fallback: non-UUID values use name field
+            email: {
+              // P1 Fix: Email detection now works in fallback (was incorrectly using name field)
               $eq: 'martin@example.com',
             },
           },
@@ -937,8 +937,8 @@ describe('Reference Attribute Filtering', () => {
       expect(result).toEqual({
         filter: {
           assignee: {
-            name: {
-              // Heuristic fallback: non-UUID values use name field
+            email: {
+              // P1 Fix: Email detection now works in fallback (was incorrectly using name field)
               $eq: 'jane@example.com',
             },
           },
@@ -1027,6 +1027,127 @@ describe('Reference Attribute Filtering', () => {
           primary_contact: {
             record_id: {
               $eq: '550e8400-e29b-41d4-a716-446655440000',
+            },
+          },
+        },
+      });
+    });
+
+    // P1 Fix: Actor-reference slugs with UUID in list entry context
+    test('should handle owner with UUID in list entries using actor-reference structure', async () => {
+      // When resourceType unavailable (list entries), owner with UUID should use
+      // referenced_actor_id field (not record_id) to generate correct actor-reference structure
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: '770e8400-e29b-41d4-a716-446655440002', // workspace member UUID
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined // resourceType unavailable → slug-based fallback
+      );
+
+      // Should generate actor-reference structure, not record_id structure
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            referenced_actor_type: 'workspace-member',
+            referenced_actor_id: '770e8400-e29b-41d4-a716-446655440002',
+          },
+        },
+      });
+    });
+
+    test('should handle assignee with UUID in list entries using actor-reference structure', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'assignee' },
+            condition: 'equals' as const,
+            value: '880e8400-e29b-41d4-a716-446655440003', // workspace member UUID
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined // resourceType unavailable → slug-based fallback
+      );
+
+      // Should generate actor-reference structure
+      expect(result).toEqual({
+        filter: {
+          assignee: {
+            referenced_actor_type: 'workspace-member',
+            referenced_actor_id: '880e8400-e29b-41d4-a716-446655440003',
+          },
+        },
+      });
+    });
+
+    test('should handle owner with email in list entries', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: 'user@example.com', // email value
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      // Email values use email field (not referenced_actor_id)
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            email: {
+              $eq: 'user@example.com',
+            },
+          },
+        },
+      });
+    });
+
+    test('should handle owner with name in list entries', async () => {
+      const filter = {
+        filters: [
+          {
+            attribute: { slug: 'owner' },
+            condition: 'equals' as const,
+            value: 'John Doe', // plain text name
+          },
+        ],
+      };
+
+      const result = await transformFiltersToApiFormat(
+        filter,
+        true,
+        false,
+        undefined
+      );
+
+      // Name values use name field
+      expect(result).toEqual({
+        filter: {
+          owner: {
+            name: {
+              $eq: 'John Doe',
             },
           },
         },
