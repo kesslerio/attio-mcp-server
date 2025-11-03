@@ -20,13 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Solution**: Automatically resolve email/name values to UUIDs via workspace members search API before building filter structure
   - **User Experience**:
     - **BEFORE**: User must manually search workspace members by email, extract UUID, then use UUID in filter
-    - **AFTER**: User filters by email/name directly (e.g., `owner="martin@shapescale.com"`), auto-resolved to UUID transparently
+    - **AFTER**: User filters by email/name directly (e.g., `owner="martin@shapescale.com"` or `owner="Martin Kessler"`), auto-resolved to UUID transparently
+  - **Input Flexibility**:
+    - **User Input**: Accepts UUID, email address, or full name
+    - **API Payload**: Always uses `referenced_actor_id` (workspace member UUID) after resolution
+    - **Examples**: `owner="uuid-123"` OR `owner="martin@shapescale.com"` OR `owner="Martin Kessler"` all work
   - **Features**:
     - Per-request caching prevents duplicate API calls for same email/name within single filter transformation
+    - Exact matching: Post-filters Attio's fuzzy search results to ensure exact email/name matches only
     - Clear error messages when member not found or multiple matches (with member list)
     - Works in both AND and OR filter logic, and with/without resourceType (slug-based fallback)
     - Comprehensive unit test coverage (14 resolver tests + 7 integration tests)
-  - **Result**: Natural filtering syntax like `owner="martin@shapescale.com"` just works, no manual UUID lookup required
+  - **Result**: Natural filtering syntax like `owner="martin@shapescale.com"` or `owner="Martin Kessler"` just works, no manual UUID lookup required
 
 - **Deal filtering documentation** (#904) - Enhanced `records_search` tool discoverability with deal-specific examples
   - Added "deals" to `records_search` tool description (was missing from capability list)
@@ -38,12 +43,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Auto-resolution: Exact email matching** (#904 Phase 2) - Fixed auto-resolver returning "ambiguous match" errors for exact email searches
-  - **Problem**: Attio `/workspace_members?search=` API does fuzzy matching, returning all members from same domain (e.g., searching `martin@shapescale.com` returned all 5 `@shapescale.com` members)
-  - **Impact**: Auto-resolution threw "Ambiguous workspace member" errors even for exact email addresses
-  - **Solution**: Added post-filtering logic to extract exact email matches from fuzzy search results
-  - **Result**: `owner="martin@shapescale.com"` now correctly resolves to single member, not ambiguous match error
-  - Added unit test covering fuzzy result filtering scenario
+- **Auto-resolution: Exact email and name matching** (#904 Phase 2) - Fixed auto-resolver returning "ambiguous match" errors for exact email/name searches
+  - **Problem**: Attio `/workspace_members?search=` API does fuzzy matching, returning all members from same domain or with similar names
+    - Email search: `martin@shapescale.com` returned all 5 `@shapescale.com` members
+    - Name search: `Martin Kessler` returned all 5 workspace members (extreme fuzzy matching)
+  - **Impact**: Auto-resolution threw "Ambiguous workspace member" errors even for exact email addresses and unique names
+  - **Solution**: Added post-filtering logic to extract exact matches from fuzzy search results
+    - Email filtering: Exact case-insensitive email match (e.g., `martin@shapescale.com`)
+    - Name filtering: Exact case-insensitive full name match constructed from `first_name + last_name` (e.g., `Martin Kessler`)
+  - **Result**: `owner="martin@shapescale.com"` and `owner="Martin Kessler"` now correctly resolve to single member, not ambiguous match error
+  - Added unit tests covering both email and name fuzzy result filtering scenarios
+
+- **Client initialization validation failures** (#904 Phase 2) - Eliminated repeated client validation errors in logs
+  - **Problem**: `resolveAttioClient()` attempted `createAttioClient(apiKey)` first, which failed `assertAxiosInstance` validation, then fell back to `getAttioClient()` which succeeded
+  - **Impact**: Repeated errors in logs (`createAttioClient failed: returned invalid Axios client instance`) despite API calls working correctly via cached client fallback
+  - **Solution**: Reordered resolution priority to use `getAttioClient()` first (proven code path handling caching, environment detection, and strategy pattern)
+  - **Result**: Clean logs with no validation failures, immediate success on first attempt, uses battle-tested code path from rest of codebase
 
 - **Critical: Filter transformation bug** (#904) - Fixed `condition: "equals"` incorrectly mapping to `$equals` instead of Attio's required `$eq` operator
   - **Problem**: Filter transformer converted `equals` condition to `$equals` operator, but Attio API requires `$eq` (verified in search.ts:189-191)
@@ -60,11 +75,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: ALL filtering by owner, assignee, created_by, modified_by was completely broken
   - **Solution** (discovered via Context7 API documentation search):
     - Actor-reference attributes use direct property matching, not operator nesting
-    - **Correct structure**: `{owner: {referenced_actor_type: "workspace-member", referenced_actor_id: "uuid"}}`
+    - **API Payload Structure**: `{owner: {referenced_actor_type: "workspace-member", referenced_actor_id: "uuid"}}`
     - **NOT**: `{owner: {name: {$eq: "..."}}}` or `{owner: {email: {$eq: "..."}}}` or `{owner: {record_id: {$eq: "..."}}}`
     - Updated filter translator to detect actor-reference types and build special structure (3 locations in translators.ts)
     - Applied to both AND and OR logic, and list-entry contexts
-    - Value must be workspace member UUID, not name or email
+    - **User Input Flexibility** (with auto-resolution): Users can provide UUID, email address, or full name - all are automatically resolved to workspace member UUID before building API payload
     - Added `assignee_id` to KNOWN_REFERENCE_SLUGS for proper detection without resourceType
     - Updated 22 unit tests to expect correct actor-reference structure
   - **Slug-based Fallback Behavior** (when resourceType unavailable):
@@ -72,12 +87,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Other reference slugs (owner, assignee, company, person) use heuristic detection: UUID → record_id, otherwise → name
     - Cannot detect actor-reference type without resourceType, so uses standard nested structure
   - **Result**:
-    - **BEFORE**: `{"owner": {"name": {"$eq": "Martin Kessler"}}}` → 400 error "Invalid field 'name'"
-    - **AFTER**: `{"owner": {"referenced_actor_type": "workspace-member", "referenced_actor_id": "uuid"}}` → ✅ SUCCESS
+    - **User Input**: `owner="Martin Kessler"` OR `owner="martin@shapescale.com"` OR `owner="uuid-123"`
+    - **API Payload**: `{"owner": {"referenced_actor_type": "workspace-member", "referenced_actor_id": "d28a35f1-..."}}` → ✅ SUCCESS
     - E2E test passed 100% (TC-AO03)
     - All 147 filter tests passing (no regressions)
   - Enhanced error messages to guide users when invalid value types provided
-  - See "Breaking Changes" section above for migration guidance
 
 ### Security
 

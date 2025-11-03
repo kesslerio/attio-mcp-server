@@ -64,23 +64,23 @@ describe('TC-AO03: Owner (actor-reference) filtering by name', () => {
     }
   });
 
-  it('should find a deal by owner NAME and unique deal token', async () => {
-    const testName = 'owner_actor_reference_by_name';
+  it('should find a deal by owner UUID and unique deal token', async () => {
+    const testName = 'owner_actor_reference_by_uuid';
     let passed = false;
     let error: string | undefined;
 
-    if (!OWNER_NAME) {
+    if (!OWNER_ID) {
       console.warn(
-        'Skipping TC-AO03: ATTIO_DEFAULT_DEAL_OWNER_NAME is not set; cannot validate name-based owner filtering.'
+        'Skipping TC-AO03 UUID test: WORKSPACE_MEMBER_ID is not set; cannot validate UUID-based owner filtering.'
       );
       return; // Skip gracefully without failing the suite
     }
 
     try {
       // Create a unique deal. TestDataFactory sets owner via email (env or default), which is fine for creation.
-      const uniqueToken = TestDataFactory.generateTestId('TCAO03');
+      const uniqueToken = TestDataFactory.generateTestId('TCAO03-UUID');
       const dealData = TestDataFactory.createDealData('TCAO03');
-      dealData.name = `TCAO03 Owner Name Filter ${uniqueToken}`;
+      dealData.name = `TCAO03 Owner UUID Filter ${uniqueToken}`;
 
       const createResult = await testCase.executeToolCall('create-record', {
         resource_type: 'deals',
@@ -121,6 +121,142 @@ describe('TC-AO03: Owner (actor-reference) filtering by name', () => {
       // No errors should appear in response
       expect(text.toLowerCase()).not.toContain('error');
       expect(text.toLowerCase()).not.toContain('invalid');
+
+      passed = true;
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      results.push({ test: testName, passed, error });
+    }
+  });
+
+  it('should find a deal by owner EMAIL (auto-resolution) and unique deal token', async () => {
+    const testName = 'owner_actor_reference_by_email';
+    let passed = false;
+    let error: string | undefined;
+
+    if (!OWNER_EMAIL) {
+      console.warn(
+        'Skipping TC-AO03 EMAIL test: ATTIO_DEFAULT_DEAL_OWNER is not set; cannot validate email-based owner filtering with auto-resolution.'
+      );
+      return; // Skip gracefully without failing the suite
+    }
+
+    try {
+      // Create a unique deal
+      const uniqueToken = TestDataFactory.generateTestId('TCAO03-EMAIL');
+      const dealData = TestDataFactory.createDealData('TCAO03');
+      dealData.name = `TCAO03 Owner Email Filter ${uniqueToken}`;
+
+      const createResult = await testCase.executeToolCall('create-record', {
+        resource_type: 'deals',
+        record_data: dealData,
+      });
+
+      const dealId = QAAssertions.assertRecordCreated(createResult, 'deals');
+      testCase.trackRecord('deals', dealId);
+
+      // Search using owner EMAIL - should auto-resolve to UUID
+      const searchResult = await testCase.executeToolCall(
+        'records_search_advanced',
+        {
+          resource_type: 'deals',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'owner' },
+                condition: 'equals',
+                value: OWNER_EMAIL, // Email auto-resolves to workspace member UUID
+              },
+              {
+                attribute: { slug: 'name' },
+                condition: 'contains',
+                value: uniqueToken,
+              },
+            ],
+          },
+          limit: 5,
+        }
+      );
+
+      // Validate successful search and presence of our created deal
+      const text = testCase.extractTextContent(searchResult);
+      expect(text).toContain('Advanced search found');
+      expect(text).toMatch(/deals?/i);
+      expect(text).toMatch(new RegExp(uniqueToken));
+      // No errors should appear in response
+      expect(text.toLowerCase()).not.toContain('error');
+      expect(text.toLowerCase()).not.toContain('invalid');
+      expect(text.toLowerCase()).not.toContain('ambiguous');
+
+      passed = true;
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      results.push({ test: testName, passed, error });
+    }
+  });
+
+  it('should find a deal by owner NAME (auto-resolution) and unique deal token', async () => {
+    const testName = 'owner_actor_reference_by_name';
+    let passed = false;
+    let error: string | undefined;
+
+    if (!OWNER_NAME) {
+      console.warn(
+        'Skipping TC-AO03 NAME test: ATTIO_DEFAULT_DEAL_OWNER_NAME is not set; cannot validate name-based owner filtering with auto-resolution.'
+      );
+      return; // Skip gracefully without failing the suite
+    }
+
+    try {
+      // Create a unique deal
+      const uniqueToken = TestDataFactory.generateTestId('TCAO03-NAME');
+      const dealData = TestDataFactory.createDealData('TCAO03');
+      dealData.name = `TCAO03 Owner Name Filter ${uniqueToken}`;
+
+      const createResult = await testCase.executeToolCall('create-record', {
+        resource_type: 'deals',
+        record_data: dealData,
+      });
+
+      const dealId = QAAssertions.assertRecordCreated(createResult, 'deals');
+      testCase.trackRecord('deals', dealId);
+
+      // Search using owner full NAME - should auto-resolve to UUID
+      const searchResult = await testCase.executeToolCall(
+        'records_search_advanced',
+        {
+          resource_type: 'deals',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'owner' },
+                condition: 'equals',
+                value: OWNER_NAME, // Full name auto-resolves to workspace member UUID
+              },
+              {
+                attribute: { slug: 'name' },
+                condition: 'contains',
+                value: uniqueToken,
+              },
+            ],
+          },
+          limit: 5,
+        }
+      );
+
+      // Validate successful search and presence of our created deal
+      const text = testCase.extractTextContent(searchResult);
+      expect(text).toContain('Advanced search found');
+      expect(text).toMatch(/deals?/i);
+      expect(text).toMatch(new RegExp(uniqueToken));
+      // No errors should appear in response
+      expect(text.toLowerCase()).not.toContain('error');
+      expect(text.toLowerCase()).not.toContain('invalid');
+      expect(text.toLowerCase()).not.toContain('ambiguous');
 
       passed = true;
     } catch (e) {
