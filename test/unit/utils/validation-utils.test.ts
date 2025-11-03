@@ -16,14 +16,16 @@ import {
 
 // Mock the Attio client
 const mockGet = vi.fn();
+const mockClient = {
+  get: mockGet,
+  post: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+  defaults: { headers: {} },
+};
 vi.mock('../../../src/api/attio-client.js', () => ({
-  createAttioClient: () => ({
-    get: mockGet,
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-    defaults: { headers: {} },
-  }),
+  getAttioClient: () => mockClient,
+  createAttioClient: () => mockClient,
 }));
 
 describe('validation-utils', () => {
