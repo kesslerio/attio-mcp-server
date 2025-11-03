@@ -38,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Auto-resolution: Exact email matching** (#904 Phase 2) - Fixed auto-resolver returning "ambiguous match" errors for exact email searches
+  - **Problem**: Attio `/workspace_members?search=` API does fuzzy matching, returning all members from same domain (e.g., searching `martin@shapescale.com` returned all 5 `@shapescale.com` members)
+  - **Impact**: Auto-resolution threw "Ambiguous workspace member" errors even for exact email addresses
+  - **Solution**: Added post-filtering logic to extract exact email matches from fuzzy search results
+  - **Result**: `owner="martin@shapescale.com"` now correctly resolves to single member, not ambiguous match error
+  - Added unit test covering fuzzy result filtering scenario
+
 - **Critical: Filter transformation bug** (#904) - Fixed `condition: "equals"` incorrectly mapping to `$equals` instead of Attio's required `$eq` operator
   - **Problem**: Filter transformer converted `equals` condition to `$equals` operator, but Attio API requires `$eq` (verified in search.ts:189-191)
   - **Impact**: ALL resource types affected (companies, people, deals, tasks, records) - filtering with `equals` condition failed with "Invalid operator: $equals" error

@@ -17,6 +17,7 @@ import {
   FilterErrorCategory,
 } from '../errors/api-errors.js';
 import { createScopedLogger } from '../utils/logger.js';
+import { EMAIL_PATTERN } from '../utils/filters/reference-attribute-helper.js';
 
 const logger = createScopedLogger('workspace-member-resolver');
 
@@ -83,6 +84,24 @@ export async function resolveWorkspaceMemberUUID(
       }`,
       FilterErrorCategory.VALUE
     );
+  }
+
+  // Post-filter for exact email matches
+  // Attio's search API does fuzzy matching, so we need to filter for exact email matches
+  if (EMAIL_PATTERN.test(emailOrName)) {
+    const normalizedEmail = emailOrName.toLowerCase().trim();
+    const exactMatches = members.filter(
+      (m) => m.email_address?.toLowerCase() === normalizedEmail
+    );
+
+    if (exactMatches.length > 0) {
+      logger.debug('Filtered to exact email matches', {
+        input: emailOrName,
+        totalResults: members.length,
+        exactMatches: exactMatches.length,
+      });
+      members = exactMatches;
+    }
   }
 
   // Handle resolution results

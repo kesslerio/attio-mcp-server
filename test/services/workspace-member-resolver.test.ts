@@ -99,6 +99,82 @@ describe('Workspace Member Resolver Service', () => {
 
         expect(uuid).toBe('test-uuid-123');
       });
+
+      test('should filter fuzzy search results to exact email match', async () => {
+        // Simulate Attio API returning all members with same domain
+        const mockMembers: AttioWorkspaceMember[] = [
+          {
+            id: {
+              workspace_member_id: '4ad85b41-bbe6-4ae7-a4cc-4c1ca0b53cbc',
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+            },
+            email_address: 'alex@shapescale.com',
+            first_name: 'Alex',
+            last_name: 'Wayenberg',
+            access_level: 'suspended',
+            avatar_url: null,
+            created_at: '2023-01-01T00:00:00.000Z',
+          },
+          {
+            id: {
+              workspace_member_id: '61678ae0-3049-43b6-97fe-aea91e4254e5',
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+            },
+            email_address: 'lilla@shapescale.com',
+            first_name: 'Lilla',
+            last_name: 'Laczo',
+            access_level: 'admin',
+            avatar_url: null,
+            created_at: '2023-01-01T00:00:00.000Z',
+          },
+          {
+            id: {
+              workspace_member_id: 'd28a35f1-5788-49f9-a320-6c8c353147d8',
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+            },
+            email_address: 'martin@shapescale.com',
+            first_name: 'Martin',
+            last_name: 'Kessler',
+            access_level: 'admin',
+            avatar_url: null,
+            created_at: '2023-01-01T00:00:00.000Z',
+          },
+          {
+            id: {
+              workspace_member_id: '7c1f9f3a-a404-44d9-8359-1e8f0ab760e6',
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+            },
+            email_address: 'xavier@shapescale.com',
+            first_name: 'Xavier',
+            last_name: 'Ducourneau',
+            access_level: 'admin',
+            avatar_url: null,
+            created_at: '2023-01-01T00:00:00.000Z',
+          },
+          {
+            id: {
+              workspace_member_id: 'ae9339e1-2eea-4d85-af9e-c6206fe78fee',
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+            },
+            email_address: 'kate@shapescale.com',
+            first_name: 'Kate',
+            last_name: 'Wayenberg',
+            access_level: 'admin',
+            avatar_url: null,
+            created_at: '2023-01-01T00:00:00.000Z',
+          },
+        ];
+
+        vi.mocked(searchWorkspaceMembers).mockResolvedValue(mockMembers);
+
+        // Should filter to exact email match
+        const uuid = await resolveWorkspaceMemberUUID('martin@shapescale.com');
+
+        expect(uuid).toBe('d28a35f1-5788-49f9-a320-6c8c353147d8');
+        expect(searchWorkspaceMembers).toHaveBeenCalledWith(
+          'martin@shapescale.com'
+        );
+      });
     });
 
     describe('Cache Behavior', () => {
