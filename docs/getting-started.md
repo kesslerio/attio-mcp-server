@@ -15,11 +15,13 @@ Before you begin, ensure you have the following:
 
 ### Option 1: Install from npm (Recommended for Users)
 
+> ⚠️ **Note**: The npm package name is `attio-mcp` (not `attio-mcp-server`)
+
 ```bash
-npm install -g attio-mcp-server
+npm install -g attio-mcp
 ```
 
-This makes the `attio-mcp-server` command available globally.
+This makes the `attio-mcp` command available globally.
 
 ### Option 2: Clone Repository (Recommended for Development)
 
@@ -50,6 +52,7 @@ The server requires the following environment variables:
 - `ATTIO_WORKSPACE_ID` (optional): Your Attio workspace ID
 
 **Optional Deal Configuration**:
+
 - `ATTIO_DEFAULT_DEAL_OWNER` (optional): Default owner email address for new deals (e.g., "user@company.com")
 - `ATTIO_DEFAULT_DEAL_STAGE` (optional): Default stage for new deals (e.g., "Interested")
 - `ATTIO_DEFAULT_CURRENCY` (optional): Default currency for deal values (e.g., "USD")
@@ -73,7 +76,7 @@ Or pass them as environment variables when running the server.
 ### Option 1: Using npx (if installed globally)
 
 ```bash
-attio-mcp-server
+attio-mcp
 ```
 
 ### Option 2: From cloned repository
@@ -113,6 +116,7 @@ For developers contributing to the project, we provide a comprehensive setup scr
 ```
 
 The setup script will:
+
 - ✅ Check and validate Node.js version (>=18.0.0)
 - ✅ Install npm dependencies
 - ✅ Set up git hooks (Husky) for pre-commit validation
@@ -125,6 +129,7 @@ The setup script will:
 - ✅ Provide clear feedback and next steps
 
 For a minimal setup (e.g., in CI/CD):
+
 ```bash
 ./scripts/setup-dev-env.sh --skip-tdd --skip-ide --skip-hooks
 ```
@@ -138,7 +143,7 @@ To use the Attio MCP Server with Claude Desktop, add the following to your Claud
   "mcpServers": {
     "attio": {
       "command": "npx",
-      "args": ["attio-mcp-server"],
+      "args": ["attio-mcp"],
       "env": {
         "ATTIO_API_KEY": "YOUR_ATTIO_API_KEY"
       }
@@ -165,7 +170,7 @@ You can customize the behavior via environment variables in your `.env` file:
 # Disable auto-discovery (default: true)
 ATTIO_AUTO_DISCOVERY=false
 
-# Disable discovery on startup (default: true)  
+# Disable discovery on startup (default: true)
 ATTIO_DISCOVERY_ON_STARTUP=false
 
 # Set update interval in minutes (default: 60)
@@ -195,6 +200,7 @@ To verify that the server is running correctly:
 4. Claude should respond with data from your Attio instance
 
 The server will automatically discover attributes on startup. Check the logs for:
+
 ```
 Starting automatic attribute discovery...
 Discovered X attributes for companies
@@ -202,6 +208,7 @@ Automatic attribute discovery completed successfully
 ```
 
 If discovery fails, it won't prevent the server from starting. You can:
+
 - Check logs for error details
 - Run manual discovery: `npm run discover:all-attributes:robust`
 - See [CLI Troubleshooting](./cli/README.md#troubleshooting) for more help

@@ -14,8 +14,10 @@ This guide explains how to integrate the Attio MCP server with Claude to enable 
 
 ### 1. Install the Attio MCP Server
 
+> ⚠️ **Note**: The npm package name is `attio-mcp` (not `attio-mcp-server`)
+
 ```sh
-npm install attio-mcp-server
+npm install attio-mcp
 ```
 
 ### 2. Configure Environment Variables
@@ -35,7 +37,7 @@ Add the following configuration to Claude Desktop:
   "mcpServers": {
     "attio": {
       "command": "npx",
-      "args": ["attio-mcp-server"],
+      "args": ["attio-mcp"],
       "env": {
         "ATTIO_API_KEY": "YOUR_ATTIO_API_KEY"
       }
@@ -87,11 +89,13 @@ Show me the most recent companies in our CRM
 If you prefer to run the MCP server in Docker:
 
 1. Pull the image:
+
    ```sh
    docker pull attio-mcp-server:latest
    ```
 
 2. Run the container:
+
    ```sh
    docker run -p 3000:3000 \
      -e ATTIO_API_KEY=your_api_key_here \

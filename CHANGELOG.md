@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Clarified npm package name confusion** (#903) - Updated all documentation to clearly indicate correct package name
+  - **Problem**: GitHub repository is named `attio-mcp-server`, but npm package is named `attio-mcp` (renamed in June 2025)
+  - **Old package**: `attio-mcp-server@0.0.2` (abandoned, February 2025) - only 4 legacy tools
+  - **Current package**: `attio-mcp@1.2.0` (actively maintained) - 34 universal tools
+  - **Impact**: Users installing `npm install attio-mcp-server` got outdated v0.0.2 instead of current v1.2.0
+  - **Solution**: Added prominent warnings in README and documentation about correct package name
+  - **Note**: Old package owned by different npm user, cannot be deprecated by maintainers
+  - **Result**: Clear installation instructions prevent users from installing wrong package
+
 ### Fixed
 
 ### Security
