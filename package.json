@@ -202,7 +202,7 @@
     "handlebars": "^4.7.8",
     "libphonenumber-js": "^1.12.16",
     "lru-cache": "^11.2.2",
-    "ora": "^7.0.1",
+    "ora": "^9.0.0",
     "safe-stable-stringify": "^2.5.0",
     "sanitize-html": "^2.17.0",
     "user": "^0.0.0",
