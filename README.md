@@ -376,7 +376,13 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for detailed solutions to these r
 
 ## 🚀 Installation
 
-### Installing via Smithery
+> ⚠️ **IMPORTANT: Correct Package Name**
+>
+> The npm package name is **`attio-mcp`** (not `attio-mcp-server`).
+> The GitHub repository is named `attio-mcp-server`, but the npm package was renamed to `attio-mcp` in June 2025.
+> Installing `attio-mcp-server` will give you an outdated v0.0.2 release with only 4 legacy tools.
+
+### Installing via Smithery (Recommended)
 
 To install Attio CRM Integration Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server):
 
@@ -384,14 +390,14 @@ To install Attio CRM Integration Server for Claude Desktop automatically via [Sm
 npx -y @smithery/cli install @kesslerio/attio-mcp-server --client claude
 ```
 
-### Option 1: NPM (Recommended)
+### Option 1: NPM
 
 ```bash
 # Global installation for CLI usage
-npm install -g attio-mcp-server
+npm install -g attio-mcp
 
 # Or local installation for project integration
-npm install attio-mcp-server
+npm install attio-mcp
 ```
 
 ### Option 2: One-Command Script Installation
@@ -433,10 +439,10 @@ export ATTIO_DEFAULT_CURRENCY="USD"                    # Default currency for de
 
 ```bash
 # Test the MCP server
-attio-mcp-server --help
+attio-mcp --help
 
 # Discover your Attio workspace attributes
-attio-mcp-server discover attributes
+attio-discover attributes
 ```
 
 ### 3. 🎯 **CRITICAL: Configure Field Mappings**
@@ -530,7 +536,7 @@ Deal stages are specific to your workspace. Check your Attio workspace settings 
 {
   "mcpServers": {
     "attio-mcp": {
-      "command": "attio-mcp-server",
+      "command": "attio-mcp",
       "env": {
         "ATTIO_API_KEY": "your_api_key_here",
         "ATTIO_WORKSPACE_ID": "your_workspace_id_here",
@@ -783,5 +789,5 @@ This project is licensed under the **Apache License 2.0** - see the [LICENSE](LI
 **Ready to transform your CRM workflow?** Install Attio MCP Server today and experience the future of CRM automation with AI!
 
 ```bash
-npm install -g attio-mcp-server
+npm install -g attio-mcp
 ```
