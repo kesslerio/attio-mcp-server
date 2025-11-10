@@ -17,8 +17,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- CRITICAL: Only run CLI logic when executed as main program ---
-const isMain =
-  fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '');
+// Resolve symlinks to handle npm global installs correctly
+const currentFile = fileURLToPath(import.meta.url);
+const argvFile = process.argv[1] ? fs.realpathSync(process.argv[1]) : '';
+const isMain = currentFile === argvFile;
 
 if (!isMain) {
   // If someone imports this file, do nothing.
