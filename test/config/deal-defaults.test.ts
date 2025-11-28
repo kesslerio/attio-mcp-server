@@ -203,6 +203,19 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(validation.suggestions[0]).toContain('deal_value → value');
       expect(validation.suggestions[0]).toContain('deal_stage → stage');
     });
+
+    it('should convert deal_owner to owner in the data structure', () => {
+      const input = {
+        deal_owner: 'user@example.com',
+        name: 'Test Deal',
+      };
+
+      const result = applyDealDefaults(input);
+
+      // Verify deal_owner was converted to owner (Attio accepts email directly)
+      expect(result.owner).toBe('user@example.com');
+      expect(result.deal_owner).toBeUndefined();
+    });
   });
 
   describe('Issue #705: Deal Stage Empty List Fix', () => {
