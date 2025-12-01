@@ -88,8 +88,7 @@ export function createServer(context?: ServerContext) {
         resources: {},
         tools: {},
         prompts: {
-          list: {},
-          get: {},
+          listChanged: true,
         },
       },
     }

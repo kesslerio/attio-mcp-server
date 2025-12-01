@@ -1,6 +1,6 @@
 {
   "name": "attio-mcp",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "AI-powered access to Attio CRM. Manage contacts, companies, deals, tasks, and notes. Search records, update pipelines, and automate workflows for sales and GTM teams.",
   "mcpName": "io.github.kesslerio/attio-mcp-server",
   "main": "dist/smithery.js",
@@ -194,6 +194,7 @@
     "@leeoniya/ufuzzy": "^1.0.14",
     "@modelcontextprotocol/sdk": "^1.4.1",
     "@smithery/sdk": "^1.6.6",
+    "axios": "^1.12.0",
     "chalk": "^5.3.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
@@ -228,7 +229,6 @@
     "@typescript-eslint/parser": "^8.42.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
-    "axios": "^1.12.0",
     "dotenv-cli": "^10.0.0",
     "eslint": "^9.33.0",
     "eslint-formatter-compact": "^8.40.0",

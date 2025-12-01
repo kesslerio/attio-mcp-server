@@ -180,7 +180,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
   });
 
   describe('Input Validation', () => {
-    it('should validate deal input and provide helpful suggestions', () => {
+    it('should validate deal input and provide helpful suggestions for field aliases', () => {
       const input = {
         company_id: 'comp123',
         deal_name: 'My Deal',
@@ -191,18 +191,30 @@ describe('Deal Defaults - PR #389 Fix', () => {
       const validation = validateDealInput(input);
 
       expect(validation.isValid).toBe(true); // Input is valid but has suggestions for improvement
-      expect(validation.suggestions).toContain(
-        'Use "associated_company" instead of "company_id" for linking to companies'
+      // Field aliases are now consolidated into a single message indicating auto-conversion
+      expect(validation.suggestions.length).toBeGreaterThan(0);
+      expect(validation.suggestions[0]).toMatch(
+        /Field aliases auto-converted:/
       );
-      expect(validation.suggestions).toContain(
-        'Use "name" instead of "deal_name" for deal title'
+      expect(validation.suggestions[0]).toContain(
+        'company_id → associated_company'
       );
-      expect(validation.suggestions).toContain(
-        'Use "value" instead of "deal_value" for deal amount'
-      );
-      expect(validation.suggestions).toContain(
-        'Use "stage" instead of "deal_stage" for deal status'
-      );
+      expect(validation.suggestions[0]).toContain('deal_name → name');
+      expect(validation.suggestions[0]).toContain('deal_value → value');
+      expect(validation.suggestions[0]).toContain('deal_stage → stage');
+    });
+
+    it('should convert deal_owner to owner in the data structure', () => {
+      const input = {
+        deal_owner: 'user@example.com',
+        name: 'Test Deal',
+      };
+
+      const result = applyDealDefaults(input);
+
+      // Verify deal_owner was converted to owner (Attio accepts email directly)
+      expect(result.owner).toBe('user@example.com');
+      expect(result.deal_owner).toBeUndefined();
     });
   });
 
