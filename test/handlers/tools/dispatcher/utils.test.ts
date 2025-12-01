@@ -138,8 +138,10 @@ describe('Dispatcher Utils', () => {
           },
         });
 
-        // Note: Custom objects are stored lowercase in config, so
-        // the input "FUNDS" lowercase becomes "funds" which matches
+        // Custom objects are stored lowercase in config, so
+        // uppercase/mixed-case input is lowercased and matched
+        expect(canonicalizeResourceType('FUNDS')).toBe('funds');
+        expect(canonicalizeResourceType('Funds')).toBe('funds');
         expect(canonicalizeResourceType('funds')).toBe('funds');
       });
 

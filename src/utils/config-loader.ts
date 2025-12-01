@@ -35,6 +35,20 @@ const CONFIG_PATHS = {
 };
 
 /**
+ * Cached mapping configuration to avoid repeated disk I/O
+ * @see loadMappingConfig() is called on every tool request via canonicalizeResourceType()
+ */
+let cachedConfig: MappingConfig | null = null;
+
+/**
+ * Invalidates the cached mapping configuration
+ * Call this when the config files are updated (e.g., after attio-discover)
+ */
+export function invalidateMappingConfigCache(): void {
+  cachedConfig = null;
+}
+
+/**
  * Validates that a key is safe for object property assignment
  * Prevents prototype pollution attacks by filtering dangerous keys
  *
@@ -198,10 +212,16 @@ function loadJsonFile(filePath: string): any {
 
 /**
  * Loads and merges the mapping configuration from default and user files
+ * Uses caching to avoid repeated disk I/O on hot paths
  *
  * @returns The merged mapping configuration
  */
 export function loadMappingConfig(): MappingConfig {
+  // Return cached config if available
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
   // Start with empty configuration
   let config = createEmptyConfig();
 
@@ -229,6 +249,8 @@ export function loadMappingConfig(): MappingConfig {
     }
   }
 
+  // Cache the result for subsequent calls
+  cachedConfig = config;
   return config;
 }
 
@@ -258,6 +280,9 @@ export async function writeMappingConfig(
     // Write the file
     const content = JSON.stringify(config, null, 2);
     await fs.promises.writeFile(filePath, content, 'utf8');
+
+    // Invalidate cache so next read picks up changes
+    invalidateMappingConfigCache();
   } catch (error: unknown) {
     throw new Error(`Failed to write config file ${filePath}: ${error}`);
   }

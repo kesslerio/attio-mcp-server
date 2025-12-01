@@ -34,15 +34,14 @@ const STANDARD_RESOURCE_TYPES = [
 export function canonicalizeResourceType(rt: unknown): string {
   const value = String(rt ?? '').toLowerCase();
 
-  // Standard types always available
-  const standardTypes: string[] = [...STANDARD_RESOURCE_TYPES];
-
   // Load custom objects from mapping config (e.g., "funds", "investment_opportunities")
   const config = loadMappingConfig();
   const customObjects = Object.keys(config.mappings?.attributes?.objects || {});
 
   // Merge standard + custom (deduplicated)
-  const validTypes = [...new Set([...standardTypes, ...customObjects])];
+  const validTypes = [
+    ...new Set([...STANDARD_RESOURCE_TYPES, ...customObjects]),
+  ];
 
   if (!validTypes.includes(value)) {
     throw new Error(
