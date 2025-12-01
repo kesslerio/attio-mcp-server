@@ -13,6 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+
+### Security
+
+### Deprecated
+
+## [1.2.2] - 2025-12-01
+
+### Fixed
+
+- **Critical: Added axios to production dependencies** (#917, #919) - Package failed on startup with `ERR_MODULE_NOT_FOUND` because axios was incorrectly placed in devDependencies instead of dependencies. This caused 100% failure rate for all users installing via npm.
+
+- **CLI binary symlink resolution** (#916, #920) - `attio-mcp --help` and `--version` now work correctly when installed via npm global. The `isMain` check now resolves symlinks before path comparison, handling npm's symlink-based binary wrappers.
+
+## [1.2.1] - 2025-11-28
+
+### Changed
+
 - **Clarified npm package name confusion** (#903) - Updated all documentation to clearly indicate correct package name
   - **Problem**: GitHub repository is named `attio-mcp-server`, but npm package is named `attio-mcp` (renamed in June 2025)
   - **Old package**: `attio-mcp-server@0.0.2` (abandoned, February 2025) - only 4 legacy tools
