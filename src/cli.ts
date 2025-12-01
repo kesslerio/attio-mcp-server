@@ -17,8 +17,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- CRITICAL: Only run CLI logic when executed as main program ---
-const isMain =
-  fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '');
+// Resolve symlinks to handle npm global installs correctly (e.g., /usr/local/bin/attio-mcp -> dist/cli.js)
+// Use try-catch since argv[1] may not be a valid file path (e.g., node -e "...")
+const currentFile = fileURLToPath(import.meta.url);
+let argvFile = '';
+try {
+  if (process.argv[1]) {
+    argvFile = fs.realpathSync(process.argv[1]);
+  }
+} catch {
+  // Fall back to string resolution if realpathSync fails (file doesn't exist, etc.)
+  argvFile = process.argv[1] ? path.resolve(process.argv[1]) : '';
+}
+const isMain = currentFile === argvFile;
 
 if (!isMain) {
   // If someone imports this file, do nothing.
