@@ -101,26 +101,31 @@ export function getDealDefaults(): DealDefaults {
 }
 
 /**
+ * Deal field name aliases for common variations
+ * Maps user-friendly field names to Attio API expected names
+ */
+const DEAL_FIELD_ALIASES: Record<string, string> = {
+  deal_name: 'name',
+  deal_value: 'value',
+  deal_stage: 'stage',
+  deal_owner: 'owner',
+  company_id: 'associated_company',
+  company: 'associated_company',
+};
+
+/**
  * Apply field name conversions for legacy compatibility
- * Handles company_id → associated_company, deal_name → name
+ * Handles company_id → associated_company, deal_name → name, deal_owner → owner, etc.
  */
 function applyFieldNameConversions(
   dealData: Record<string, unknown>
 ): Record<string, unknown> {
-  // Handle company field name conversion (company_id → associated_company)
-  if (dealData.company_id && !dealData.associated_company) {
-    dealData.associated_company = dealData.company_id;
-    delete dealData.company_id;
-  }
-  if (dealData.company && !dealData.associated_company) {
-    dealData.associated_company = dealData.company;
-    delete dealData.company;
-  }
-
-  // Handle deal name field name conversion
-  if (dealData.deal_name && !dealData.name) {
-    dealData.name = dealData.deal_name;
-    delete dealData.deal_name;
+  // Apply generic field aliases
+  for (const [alias, canonical] of Object.entries(DEAL_FIELD_ALIASES)) {
+    if (dealData[alias] !== undefined && dealData[canonical] === undefined) {
+      dealData[canonical] = dealData[alias];
+      delete dealData[alias];
+    }
   }
 
   // Ensure name is properly formatted as array (if it's not already)
@@ -244,6 +249,9 @@ export function applyDealDefaults(
 /**
  * Input validation helper for deal data
  * Provides immediate feedback on common mistakes before API calls
+ *
+ * Note: Field aliases (deal_name, deal_value, deal_stage, deal_owner, company_id, company)
+ * are automatically converted by applyFieldNameConversions(), so we note them but don't error.
  */
 export function validateDealInput(recordData: Record<string, unknown>): {
   isValid: boolean;
@@ -255,29 +263,17 @@ export function validateDealInput(recordData: Record<string, unknown>): {
   const warnings: string[] = [];
   const suggestions: string[] = [];
 
-  // Check for common field name mistakes
-  if (recordData.company_id) {
+  // Note field aliases that will be auto-converted (informational only)
+  const aliasedFields: string[] = [];
+  for (const alias of Object.keys(DEAL_FIELD_ALIASES)) {
+    if (recordData[alias] !== undefined) {
+      aliasedFields.push(`${alias} → ${DEAL_FIELD_ALIASES[alias]}`);
+    }
+  }
+  if (aliasedFields.length > 0) {
     suggestions.push(
-      'Use "associated_company" instead of "company_id" for linking to companies'
+      `Field aliases auto-converted: ${aliasedFields.join(', ')}`
     );
-  }
-
-  if (recordData.company) {
-    suggestions.push(
-      'Use "associated_company" instead of "company" for linking to companies'
-    );
-  }
-
-  if (recordData.deal_stage) {
-    suggestions.push('Use "stage" instead of "deal_stage" for deal status');
-  }
-
-  if (recordData.deal_value) {
-    suggestions.push('Use "value" instead of "deal_value" for deal amount');
-  }
-
-  if (recordData.deal_name) {
-    suggestions.push('Use "name" instead of "deal_name" for deal title');
   }
 
   // Check value format
@@ -538,16 +534,18 @@ export async function validateDealStage(
     const availableStagesText =
       availableStages.length > 0
         ? availableStages.join(', ')
-        : 'Unable to fetch available stages from API';
+        : 'Unable to fetch available stages. Use records_discover_attributes(resource_type: "deals") to see your workspace stages.';
 
     // Get suggestions for the invalid stage
     const stageSuggestions = getStageSuggestions(stage, availableStages);
 
-    // Build warning message with suggestions
-    let warningMessage = `Deal stage "${stage}" not found. Updated to default "${defaults.stage}".`;
+    // Build warning message with suggestions and discovery guidance
+    let warningMessage = `Deal stage "${stage}" not found in workspace.`;
     if (stageSuggestions.length > 0) {
       warningMessage += ` Did you mean "${stageSuggestions[0]}"?`;
     }
+    warningMessage += ` Falling back to default "${defaults.stage}".`;
+    warningMessage += ` Tip: Use records_discover_attributes(resource_type: "deals") to see all available stages for your workspace.`;
 
     const result: DealStageValidationResult = {
       validatedStage: defaults.stage,
