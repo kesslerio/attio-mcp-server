@@ -133,7 +133,28 @@ Update company address and website:
 
 **Note**: Unlike people, companies don't have a standard `phone_numbers` attribute in Attio. Phone numbers for companies are stored in **custom attributes** that vary by workspace.
 
-Check your workspace's company attributes using `records_discover_attributes` to find your phone field name.
+#### Setup Workflow
+
+1. **Create the attribute in Attio** (one-time setup):
+   - Go to your Attio workspace → Companies → Settings → Attributes
+   - Click "Add attribute" → Select "Phone number" type
+   - Name it (e.g., "Company Phone", "Main Phone", "Office Phone")
+   - See [Attio Help: Create and manage attributes](https://attio.com/help/reference/managing-your-data/attributes/create-manage-attributes)
+
+2. **Find your attribute's API slug**:
+
+   ```json
+   {
+     "tool": "records_discover_attributes",
+     "resource_type": "companies"
+   }
+   ```
+
+   Look for your phone field (e.g., `company_phone`, `main_phone`)
+
+3. **Use it via MCP** - no additional mapping needed!
+
+#### Example Usage
 
 ```json
 {
@@ -152,7 +173,9 @@ Check your workspace's company attributes using `records_discover_attributes` to
 - `main_phone`
 - `office_phone`
 
-The phone normalizer automatically validates and normalizes any field containing "phone" in the name to E.164 format.
+#### Automatic Normalization
+
+The phone normalizer **automatically** validates and normalizes any field containing "phone" in the name to E.164 format. No configuration or mapping required - just use the field's `api_slug` and the MCP server handles the rest.
 
 ### Update Company Size and Revenue
 
