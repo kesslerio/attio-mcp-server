@@ -36,7 +36,7 @@ yargs(hideBin(process.argv))
         .option('output', {
           alias: 'f',
           description: 'Output file path',
-          default: 'config/mappings/user.json',
+          default: 'configs/runtime/mappings/user.json',
           type: 'string',
         })
         .option('reset', {

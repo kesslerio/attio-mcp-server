@@ -221,7 +221,7 @@ export async function discoverAttributes(
     // Write the updated config
     spinner.start(
       `Writing configuration to ${chalk.cyan(
-        argv.output || 'config/mappings/user.json'
+        argv.output || 'configs/runtime/mappings/user.json'
       )}...`
     );
     await writeMappingConfig(config, argv.output);

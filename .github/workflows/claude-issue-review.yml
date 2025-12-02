@@ -199,7 +199,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           claude_args: >-
-            --model claude-opus-4-1-20250805
+            --model claude-opus-4-5-20251101
             --max-turns 36
             --allowed-tools Read
             --output-format stream-json
