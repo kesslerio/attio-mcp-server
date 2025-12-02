@@ -8,6 +8,7 @@ import {
   loadMappingConfig,
   writeMappingConfig,
   updateMappingSection,
+  invalidateMappingConfigCache,
   MappingConfig,
 } from '../../src/utils/config-loader';
 
@@ -45,6 +46,8 @@ describe('Configuration Loader', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
+    // Invalidate cache to ensure fresh config loading for each test
+    invalidateMappingConfigCache();
   });
 
   describe('loadMappingConfig', () => {
