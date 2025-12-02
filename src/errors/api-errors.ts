@@ -57,24 +57,49 @@ export class AttioApiError extends Error {
 
 /**
  * Error for authentication issues (401)
+ *
+ * Supports both API key and OAuth access token authentication (Issue #928).
+ * Provides helpful guidance for OAuth token expiration scenarios.
  */
 export class AuthenticationError extends AttioApiError {
+  /** Helpful message for OAuth token expiration scenarios */
+  public readonly oauthHint: string;
+
   constructor(
     message: string = 'Authentication failed. Please check your credentials.',
     endpoint: string,
     method: string,
     details?: Record<string, unknown>
   ) {
-    // Sanitize the message to avoid exposing API key format
-    const sanitizedMessage = message.replace(
-      /api[_-]?key[\s:=]*["']?[a-zA-Z0-9_-]{20,}["']?/gi,
-      '[CREDENTIAL_REDACTED]'
-    );
+    // Sanitize the message to avoid exposing API key/token format
+    const sanitizedMessage = message
+      .replace(
+        /api[_-]?key[\s:=]*["']?[a-zA-Z0-9_-]{20,}["']?/gi,
+        '[CREDENTIAL_REDACTED]'
+      )
+      .replace(
+        /access[_-]?token[\s:=]*["']?[a-zA-Z0-9_-]{20,}["']?/gi,
+        '[TOKEN_REDACTED]'
+      );
+
     super(sanitizedMessage, 401, endpoint, method, details);
     this.name = 'AuthenticationError';
 
+    // Helpful message for OAuth users (Issue #928)
+    this.oauthHint =
+      'If using an OAuth access token, it may have expired. ' +
+      'Run `npm run oauth:refresh` to obtain a new token, or check your ATTIO_API_KEY/ATTIO_ACCESS_TOKEN configuration.';
+
     // This line is needed to properly capture the stack trace
     Object.setPrototypeOf(this, AuthenticationError.prototype);
+  }
+
+  /**
+   * Get a formatted representation with OAuth guidance
+   */
+  override toFormattedString(): string {
+    const baseMessage = super.toFormattedString();
+    return `${baseMessage}\n\nTip: ${this.oauthHint}`;
   }
 }
 

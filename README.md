@@ -420,13 +420,31 @@ npm run build
 ### Prerequisites
 
 - Node.js (v18 or higher)
-- Attio API Key ([Get one here](https://app.attio.com/settings/api))
+- Attio API Key ([Get one here](https://app.attio.com/settings/api)) **or** OAuth access token
 - Attio Workspace ID
+
+### 🔐 Authentication Options
+
+The server supports two authentication methods—both use the same Bearer token scheme:
+
+| Method                    | Environment Variable | Best For                             |
+| ------------------------- | -------------------- | ------------------------------------ |
+| **API Key** (recommended) | `ATTIO_API_KEY`      | Long-term integrations, personal use |
+| **OAuth Access Token**    | `ATTIO_ACCESS_TOKEN` | OAuth integrations, third-party apps |
+
+> **Note:** If both are set, `ATTIO_API_KEY` takes precedence.
+>
+> **OAuth Users:** For detailed setup including PKCE flow and token refresh, see [OAuth Authentication Guide](./docs/guides/oauth-authentication.md).
 
 ### 1. Set Environment Variables
 
 ```bash
+# Option 1: API Key (recommended for most users)
 export ATTIO_API_KEY="your_api_key_here"
+
+# Option 2: OAuth Access Token (for OAuth integrations)
+# export ATTIO_ACCESS_TOKEN="your_oauth_access_token_here"
+
 export ATTIO_WORKSPACE_ID="your_workspace_id_here"
 
 # Optional: Deal defaults configuration
