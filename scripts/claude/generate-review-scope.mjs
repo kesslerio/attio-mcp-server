@@ -104,6 +104,7 @@ function captureUnifiedDiff(diffRange, maxChars = 15000) {
     let diff = runGit(['diff', '--unified=3', diffRange]);
 
     // Escape triple backticks to prevent Markdown fencing issues
+    // Renders as \`\`\` inside the ```diff``` block, preserving visual intent without breaking fence
     diff = diff.replace(/```/g, '\\`\\`\\`');
 
     if (diff.length > maxChars) {
