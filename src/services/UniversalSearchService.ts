@@ -583,10 +583,22 @@ export class UniversalSearchService {
       hasFilters: !!filters,
     });
 
-    return await listObjectRecords(objectSlug, {
-      pageSize: limit,
-      page: Math.floor((offset || 0) / (limit || 10)) + 1,
-    });
+    // Custom objects require POST to /objects/{slug}/records/query
+    // The GET endpoint (/objects/{slug}/records) returns 404 for custom objects
+    const api = getLazyAttioClient();
+    const path = `/objects/${objectSlug}/records/query`;
+
+    const requestBody: Record<string, unknown> = {
+      limit: limit || 20,
+    };
+
+    // Add offset if provided
+    if (offset && offset > 0) {
+      requestBody.offset = offset;
+    }
+
+    const response = await api.post(path, requestBody);
+    return Array.isArray(response?.data?.data) ? response.data.data : [];
   }
 
   // Query API methods remain unchanged
