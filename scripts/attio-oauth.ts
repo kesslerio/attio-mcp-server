@@ -168,6 +168,13 @@ async function setupOAuth(): Promise<void> {
     process.exit(1);
   }
 
+  // Get client secret
+  const clientSecret = await prompt('Enter your Attio OAuth Client Secret: ');
+  if (!clientSecret) {
+    console.error('❌ Client Secret is required');
+    process.exit(1);
+  }
+
   // Generate PKCE values
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
@@ -247,6 +254,7 @@ async function setupOAuth(): Promise<void> {
     const tokenData = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: clientId,
+      client_secret: clientSecret,
       code,
       redirect_uri: redirectUri,
       code_verifier: codeVerifier,
@@ -325,6 +333,13 @@ async function refreshOAuth(): Promise<void> {
     process.exit(1);
   }
 
+  // Get client secret
+  const clientSecret = await prompt('Enter your Attio OAuth Client Secret: ');
+  if (!clientSecret) {
+    console.error('❌ Client Secret is required');
+    process.exit(1);
+  }
+
   // Get refresh token
   let refreshToken = loadRefreshToken();
   if (!refreshToken) {
@@ -343,6 +358,7 @@ async function refreshOAuth(): Promise<void> {
   const tokenData = new URLSearchParams({
     grant_type: 'refresh_token',
     client_id: clientId,
+    client_secret: clientSecret,
     refresh_token: refreshToken,
   }).toString();
 
