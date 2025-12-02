@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import {
   loadMappingConfig,
   updateMappingSection,
+  invalidateMappingConfigCache,
   MappingConfig,
 } from '../../src/utils/config-loader';
 
@@ -44,6 +45,8 @@ describe('Configuration Loader - Security Tests', () => {
   beforeEach(() => {
     // Reset mocks and clear any prototype pollution
     vi.clearAllMocks();
+    // Invalidate cache to ensure fresh config loading for each test
+    invalidateMappingConfigCache();
 
     // Ensure clean Object prototype (defensive cleanup)
     if ('polluted' in Object.prototype) {
