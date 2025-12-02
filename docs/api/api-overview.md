@@ -100,8 +100,8 @@ Authorization: Bearer your_api_key_here
 
 For multi-workspace applications, Attio supports OAuth 2.0:
 
-- **Authorization Endpoint**: `https://auth.attio.com/oauth/authorize`
-- **Token Endpoint**: `https://auth.attio.com/oauth/token`
+- **Authorization Endpoint**: `https://app.attio.com/authorize`
+- **Token Endpoint**: `https://app.attio.com/oauth/token`
 
 Required scopes vary by endpoint and are documented in the reference documentation.
 

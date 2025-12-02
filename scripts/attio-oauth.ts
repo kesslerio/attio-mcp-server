@@ -21,8 +21,8 @@ import * as url from 'url';
 import * as readline from 'readline';
 
 // Configuration
-const ATTIO_AUTH_URL = 'https://auth.attio.com/oauth/authorize';
-const ATTIO_TOKEN_URL = 'https://auth.attio.com/oauth/token';
+const ATTIO_AUTH_URL = 'https://app.attio.com/authorize';
+const ATTIO_TOKEN_URL = 'https://app.attio.com/oauth/token';
 const CALLBACK_PORT = 3456;
 const CALLBACK_PATH = '/callback';
 const ENV_FILE = '.env.local';

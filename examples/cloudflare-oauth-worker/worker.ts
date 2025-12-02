@@ -187,7 +187,7 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
   }
 
   // Build Attio authorization URL
-  const attioAuthUrl = new URL('https://auth.attio.com/oauth/authorize');
+  const attioAuthUrl = new URL('https://app.attio.com/authorize');
   attioAuthUrl.searchParams.set('client_id', env.ATTIO_CLIENT_ID);
   attioAuthUrl.searchParams.set(
     'redirect_uri',
@@ -238,7 +238,7 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   }
 
   // Exchange code for tokens
-  const tokenResponse = await fetch('https://auth.attio.com/oauth/token', {
+  const tokenResponse = await fetch('https://app.attio.com/oauth/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -408,7 +408,7 @@ async function handleToken(
   }
 
   // Forward to Attio
-  const response = await fetch('https://auth.attio.com/oauth/token', {
+  const response = await fetch('https://app.attio.com/oauth/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

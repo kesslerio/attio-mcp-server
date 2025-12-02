@@ -38,13 +38,13 @@ Follow Attio's OAuth tutorial to get an access token:
 **Authorization URL:**
 
 ```
-https://auth.attio.com/oauth/authorize
+https://app.attio.com/authorize
 ```
 
 **Token URL:**
 
 ```
-https://auth.attio.com/oauth/token
+https://app.attio.com/oauth/token
 ```
 
 **Required Scopes:**
@@ -140,7 +140,7 @@ Attio OAuth access tokens expire after a set period (typically 1 hour). When a t
 To refresh an expired token:
 
 ```bash
-curl -X POST https://auth.attio.com/oauth/token \
+curl -X POST https://app.attio.com/oauth/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=refresh_token" \
   -d "refresh_token=YOUR_REFRESH_TOKEN" \
