@@ -98,15 +98,22 @@ export function createAttioClient(
   const config = configOrApiKey as ClientConfig;
 
   // Get API key from config, environment, or context
+  // Supports both API keys and OAuth access tokens (Issue #928)
   const apiKey =
-    config.apiKey ?? process.env.ATTIO_API_KEY ?? getContextApiKey() ?? '';
+    config.apiKey ??
+    process.env.ATTIO_API_KEY ??
+    process.env.ATTIO_ACCESS_TOKEN ??
+    getContextApiKey() ??
+    '';
 
   // Determine the source for better error messages
   const apiKeySource = config.apiKey
     ? 'config parameter'
     : process.env.ATTIO_API_KEY
-      ? 'environment variable'
-      : 'context configuration';
+      ? 'ATTIO_API_KEY environment variable'
+      : process.env.ATTIO_ACCESS_TOKEN
+        ? 'ATTIO_ACCESS_TOKEN environment variable'
+        : 'context configuration';
 
   // Validate API key using standardized validation
   validateAndThrowForApiKey(apiKey, apiKeySource);
@@ -404,7 +411,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
         ? validationError.message
         : String(validationError);
     throw new Error(
-      `API client not initialized and no valid API key available. ${errorMessage} Call initializeAttioClient first or set ATTIO_API_KEY environment variable.`
+      `API client not initialized and no valid API key or access token available. ${errorMessage} Call initializeAttioClient first or set ATTIO_API_KEY (or ATTIO_ACCESS_TOKEN for OAuth) environment variable.`
     );
   }
 }
