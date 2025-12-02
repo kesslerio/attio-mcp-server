@@ -67,10 +67,7 @@ function ensureSafePath(filePath) {
   return rel;
 }
 
-function listRing0(baseRef, headRef) {
-  const safeBase = sanitizeRef(baseRef, 'origin/main');
-  const safeHead = sanitizeRef(headRef, 'HEAD');
-  const diffRange = `${safeBase}...${safeHead}`;
+function listRing0(diffRange) {
   const output = runGit(['diff', '--name-status', diffRange]);
   const files = [];
   const deletions = [];
@@ -95,21 +92,20 @@ function listRing0(baseRef, headRef) {
 }
 
 /**
- * Captures the unified diff between base and head refs.
+ * Captures the unified diff for the given diff range.
  * This provides the actual line-by-line changes for more focused review.
  *
- * @param {string} baseRef - The base git ref (e.g., 'origin/main')
- * @param {string} headRef - The head git ref (e.g., 'HEAD')
+ * @param {string} diffRange - The git diff range (e.g., 'origin/main...HEAD')
  * @param {number} maxChars - Maximum characters to return (default 15000)
  * @returns {string} The unified diff content, truncated if necessary
  */
-function captureUnifiedDiff(baseRef, headRef, maxChars = 15000) {
-  const safeBase = sanitizeRef(baseRef, 'origin/main');
-  const safeHead = sanitizeRef(headRef, 'HEAD');
-  const diffRange = `${safeBase}...${safeHead}`;
-
+function captureUnifiedDiff(diffRange, maxChars = 15000) {
   try {
-    const diff = runGit(['diff', '--unified=3', diffRange]);
+    let diff = runGit(['diff', '--unified=3', diffRange]);
+
+    // Escape triple backticks to prevent Markdown fencing issues
+    diff = diff.replace(/```/g, '\\`\\`\\`');
+
     if (diff.length > maxChars) {
       return (
         diff.slice(0, maxChars) +
@@ -229,11 +225,14 @@ function main() {
     'HEAD'
   );
 
+  // Compute diffRange once for both listRing0 and captureUnifiedDiff
+  const diffRange = `${baseRef}...${headRef}`;
+
   let fallback = false;
   let ring0 = [];
   let deletions = [];
   try {
-    const result = listRing0(baseRef, headRef);
+    const result = listRing0(diffRange);
     ring0 = result.files;
     deletions = result.deletions;
   } catch (error) {
@@ -316,7 +315,7 @@ function main() {
   let hasDiff = false;
   let diffPath = null;
   if (!fallback) {
-    const unifiedDiff = captureUnifiedDiff(baseRef, headRef);
+    const unifiedDiff = captureUnifiedDiff(diffRange);
     if (unifiedDiff) {
       diffPath = join(outputDir, 'diff.txt');
       writeFileSync(diffPath, unifiedDiff + '\n');
