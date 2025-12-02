@@ -129,6 +129,54 @@ Update company address and website:
 }
 ```
 
+### Update Company Phone Number (Custom Field)
+
+**Note**: Unlike people, companies don't have a standard `phone_numbers` attribute in Attio. Phone numbers for companies are stored in **custom attributes** that vary by workspace.
+
+#### Setup Workflow
+
+1. **Create the attribute in Attio** (one-time setup):
+   - Go to your Attio workspace → Companies → Settings → Attributes
+   - Click "Add attribute" → Select "Phone number" type
+   - Name it (e.g., "Company Phone", "Main Phone", "Office Phone")
+   - See [Attio Help: Create and manage attributes](https://attio.com/help/reference/managing-your-data/attributes/create-manage-attributes)
+
+2. **Find your attribute's API slug**:
+
+   ```json
+   {
+     "tool": "records_discover_attributes",
+     "resource_type": "companies"
+   }
+   ```
+
+   Look for your phone field (e.g., `company_phone`, `main_phone`)
+
+3. **Use it via MCP** - no additional mapping needed!
+
+#### Example Usage
+
+```json
+{
+  "resource_type": "companies",
+  "record_id": "company-uuid-here",
+  "values": {
+    "company_phone": "+1-800-555-0100"
+  }
+}
+```
+
+**Common custom phone field names:**
+
+- `company_phone`
+- `phone`
+- `main_phone`
+- `office_phone`
+
+#### Automatic Normalization
+
+The phone normalizer **automatically** validates and normalizes any field containing "phone" in the name to E.164 format. No configuration or mapping required - just use the field's `api_slug` and the MCP server handles the rest.
+
 ### Update Company Size and Revenue
 
 Update headcount and revenue information:
@@ -275,7 +323,19 @@ Change task assignee:
 
 ## Common Mistakes & Solutions
 
-### ❌ Wrong Phone Number Format
+### Phone Number Format
+
+Both formats now work - the normalizer auto-transforms `phone_number` to `original_phone_number`:
+
+**✅ Preferred (Attio native format):**
+
+```json
+{
+  "phone_numbers": [{ "original_phone_number": "+1-555-0100" }]
+}
+```
+
+**✅ Also works (auto-transformed):**
 
 ```json
 {
@@ -283,13 +343,7 @@ Change task assignee:
 }
 ```
 
-### ✅ Correct Phone Number Format
-
-```json
-{
-  "phone_numbers": [{ "original_phone_number": "+1-555-0100" }]
-}
-```
+Both formats are validated against E.164 standard and normalized automatically.
 
 ---
 
