@@ -67,10 +67,7 @@ function ensureSafePath(filePath) {
   return rel;
 }
 
-function listRing0(baseRef, headRef) {
-  const safeBase = sanitizeRef(baseRef, 'origin/main');
-  const safeHead = sanitizeRef(headRef, 'HEAD');
-  const diffRange = `${safeBase}...${safeHead}`;
+function listRing0(diffRange) {
   const output = runGit(['diff', '--name-status', diffRange]);
   const files = [];
   const deletions = [];
@@ -92,6 +89,35 @@ function listRing0(baseRef, headRef) {
     files: Array.from(new Set(files)),
     deletions: Array.from(new Set(deletions)),
   };
+}
+
+/**
+ * Captures the unified diff for the given diff range.
+ * This provides the actual line-by-line changes for more focused review.
+ *
+ * @param {string} diffRange - The git diff range (e.g., 'origin/main...HEAD')
+ * @param {number} maxChars - Maximum characters to return (default 15000)
+ * @returns {string} The unified diff content, truncated if necessary
+ */
+function captureUnifiedDiff(diffRange, maxChars = 15000) {
+  try {
+    let diff = runGit(['diff', '--unified=3', diffRange]);
+
+    // Escape triple backticks to prevent Markdown fencing issues
+    // Renders as \`\`\` inside the ```diff``` block, preserving visual intent without breaking fence
+    diff = diff.replace(/```/g, '\\`\\`\\`');
+
+    if (diff.length > maxChars) {
+      return (
+        diff.slice(0, maxChars) +
+        `\n... [diff truncated at ${maxChars} chars - ${diff.length - maxChars} chars omitted]`
+      );
+    }
+    return diff;
+  } catch (error) {
+    console.warn('[scope] Failed to capture unified diff:', error.message);
+    return '';
+  }
 }
 
 const RELATIVE_IMPORT_RE = /import\s+[^;]*?from\s+['\"](\.{1,2}\/.+?)['\"]/g;
@@ -200,11 +226,14 @@ function main() {
     'HEAD'
   );
 
+  // Compute diffRange once for both listRing0 and captureUnifiedDiff
+  const diffRange = `${baseRef}...${headRef}`;
+
   let fallback = false;
   let ring0 = [];
   let deletions = [];
   try {
-    const result = listRing0(baseRef, headRef);
+    const result = listRing0(diffRange);
     ring0 = result.files;
     deletions = result.deletions;
   } catch (error) {
@@ -283,10 +312,23 @@ function main() {
     writeFileSync(deletionsSummaryPath, deletionContent);
   }
 
+  // Capture and write unified diff for line-level review scope
+  let hasDiff = false;
+  let diffPath = null;
+  if (!fallback) {
+    const unifiedDiff = captureUnifiedDiff(diffRange);
+    if (unifiedDiff) {
+      diffPath = join(outputDir, 'diff.txt');
+      writeFileSync(diffPath, unifiedDiff + '\n');
+      hasDiff = true;
+    }
+  }
+
   const summary = {
     ring0Count: ring0.length,
     ring1Count: ring1.length,
     deletionsCount: deletions.length,
+    hasDiff,
     fallback,
     baseRef,
     headRef,
@@ -302,12 +344,17 @@ function main() {
     ring1.length,
     'deletions:',
     deletions.length,
+    'diff:',
+    hasDiff ? 'yes' : 'no',
     'fallback:',
     fallback ? 'yes' : 'no'
   );
   console.info(`[scope] output: ${outputDir}`);
   if (deletionsSummaryPath) {
     console.info(`[scope] deletions summary: ${deletionsSummaryPath}`);
+  }
+  if (diffPath) {
+    console.info(`[scope] unified diff: ${diffPath}`);
   }
 }
 

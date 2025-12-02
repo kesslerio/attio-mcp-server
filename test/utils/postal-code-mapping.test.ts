@@ -74,11 +74,6 @@ describe('Postal Code Field Mapping - Issue #219', () => {
       expect(postalCodeResult).toBe('postal_code');
       expect(postalCodeDisplayResult).toBe('postal_code'); // Display name normalized to slug
       expect(zipResult).toBe('ZIP');
-
-      console.log('Default mapping results:');
-      console.log('postal_code ->', postalCodeResult);
-      console.log('Postal Code ->', postalCodeDisplayResult);
-      console.log('ZIP ->', zipResult);
     });
 
     it('should not map to non-existent "zip" slug if that causes the API error', () => {

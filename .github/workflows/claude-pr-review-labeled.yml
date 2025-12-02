@@ -375,6 +375,28 @@ jobs:
           git sparse-checkout list || true
           rm -f "$tmpfile"
 
+      - name: Load unified diff for review scope
+        if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has == 'true' || github.event_name == 'workflow_dispatch')
+        id: load_diff
+        run: |
+          SCOPE_DIR=".github/claude-cache/${{ github.run_id }}"
+          DIFF_PATH="$SCOPE_DIR/diff.txt"
+
+          if [ -f "$DIFF_PATH" ]; then
+            DELIMITER="DIFF_EOF_${{ github.run_id }}"
+            {
+              echo "PR_DIFF<<${DELIMITER}"
+              cat "$DIFF_PATH"
+              printf '\n'
+              echo "${DELIMITER}"
+            } >> "$GITHUB_ENV"
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Loaded unified diff for line-level review scope" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ No unified diff available (fallback mode or generation failed)" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Claude Review (Sonnet)
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has_review == 'true' || (github.event_name == 'workflow_dispatch' && steps.resolve.outputs.label == 'claude:review'))
         id: claude_sonnet
@@ -482,6 +504,21 @@ jobs:
             ${{ env.HAS_DELETIONS == 'true' && format('
             {0}
             ', env.DELETIONS_CONTENT) || '' }}
+
+            ${{ env.PR_DIFF && format('
+            ACTUAL CHANGES (unified diff):
+            ```diff
+            {0}
+            ```
+
+            CRITICAL SCOPE RULE FOR REVIEW:
+            - Lines starting with + are ADDITIONS - these are the NEW code you MUST review
+            - Lines starting with - are DELETIONS - verify removal is safe
+            - Lines WITHOUT +/- prefix are CONTEXT ONLY - do NOT flag issues in unchanged lines
+            - When flagging an issue, you MUST cite the specific + or - line from the diff
+            - Pre-existing code is NOT part of this review unless directly affected by changes
+            - If an issue exists in surrounding context but was NOT changed in this PR, do NOT report it
+            ', env.PR_DIFF) || '' }}
 
             Perform a PR review with full working tree access.
 
@@ -648,6 +685,21 @@ jobs:
             ${{ env.HAS_DELETIONS == 'true' && format('
             {0}
             ', env.DELETIONS_CONTENT) || '' }}
+
+            ${{ env.PR_DIFF && format('
+            ACTUAL CHANGES (unified diff):
+            ```diff
+            {0}
+            ```
+
+            CRITICAL SCOPE RULE FOR REVIEW:
+            - Lines starting with + are ADDITIONS - these are the NEW code you MUST review
+            - Lines starting with - are DELETIONS - verify removal is safe
+            - Lines WITHOUT +/- prefix are CONTEXT ONLY - do NOT flag issues in unchanged lines
+            - When flagging an issue, you MUST cite the specific + or - line from the diff
+            - Pre-existing code is NOT part of this review unless directly affected by changes
+            - If an issue exists in surrounding context but was NOT changed in this PR, do NOT report it
+            ', env.PR_DIFF) || '' }}
 
             Perform a PR review with full working tree access.
 
