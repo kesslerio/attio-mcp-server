@@ -270,13 +270,16 @@ async function setupOAuth(): Promise<void> {
       const tokens = JSON.parse(response.body);
 
       // Success page
-      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(`
         <!DOCTYPE html>
         <html>
-          <head><title>Attio OAuth Success</title></head>
+          <head>
+            <meta charset="UTF-8">
+            <title>Attio OAuth Success</title>
+          </head>
           <body style="font-family: system-ui; text-align: center; padding: 50px;">
-            <h1>✅ Authentication Successful!</h1>
+            <h1>&#x2705; Authentication Successful!</h1>
             <p>You can close this window and return to the terminal.</p>
           </body>
         </html>

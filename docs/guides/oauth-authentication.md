@@ -31,9 +31,20 @@ Both methods use the same Bearer token authentication scheme—the server treats
 
 ## Quick Start with OAuth
 
-### 1. Obtain an OAuth Access Token
+### 1. Create an OAuth App
 
-Follow Attio's OAuth tutorial to get an access token:
+1. Go to the [Attio Developer Portal](https://build.attio.com/)
+2. Create a new OAuth application
+3. Configure your app:
+   - **Redirect URI**: `http://localhost:3456/callback` (for local development)
+   - **Permissions**: Select read, write, or read+write based on your needs
+4. Copy your **Client ID** and **Client Secret**
+
+> **Note:** Apps can be "shared privately" with specific users without needing to publish publicly.
+
+### 2. Obtain an OAuth Access Token
+
+Use the following endpoints:
 
 **Authorization URL:**
 
@@ -54,7 +65,7 @@ https://app.attio.com/oauth/token
 - `user_management:read` - Read workspace members
 - `object:read` - Read object schemas
 
-### 2. Configure the MCP Server
+### 3. Configure the MCP Server
 
 Set the OAuth access token as an environment variable:
 
@@ -82,7 +93,7 @@ Or in your Claude Desktop configuration:
 }
 ```
 
-### 3. For Smithery Users
+### 4. For Smithery Users
 
 When configuring via [Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server), you can use either:
 
@@ -121,9 +132,9 @@ The script will:
 
 **Prerequisites for local OAuth:**
 
-- Register an OAuth app in Attio
+- Create an OAuth app at [build.attio.com](https://build.attio.com/)
 - Set redirect URI to `http://localhost:3456/callback`
-- Have your Client ID ready
+- Have your **Client ID** and **Client Secret** ready
 
 ## Token Lifecycle
 
@@ -144,7 +155,8 @@ curl -X POST https://app.attio.com/oauth/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=refresh_token" \
   -d "refresh_token=YOUR_REFRESH_TOKEN" \
-  -d "client_id=YOUR_CLIENT_ID"
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET"
 ```
 
 Or use the helper:
