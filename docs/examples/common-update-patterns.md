@@ -129,6 +129,31 @@ Update company address and website:
 }
 ```
 
+### Update Company Phone Number (Custom Field)
+
+**Note**: Unlike people, companies don't have a standard `phone_numbers` attribute in Attio. Phone numbers for companies are stored in **custom attributes** that vary by workspace.
+
+Check your workspace's company attributes using `records_discover_attributes` to find your phone field name.
+
+```json
+{
+  "resource_type": "companies",
+  "record_id": "company-uuid-here",
+  "values": {
+    "company_phone": "+1-800-555-0100"
+  }
+}
+```
+
+**Common custom phone field names:**
+
+- `company_phone`
+- `phone`
+- `main_phone`
+- `office_phone`
+
+The phone normalizer automatically validates and normalizes any field containing "phone" in the name to E.164 format.
+
 ### Update Company Size and Revenue
 
 Update headcount and revenue information:
@@ -275,7 +300,19 @@ Change task assignee:
 
 ## Common Mistakes & Solutions
 
-### ❌ Wrong Phone Number Format
+### Phone Number Format
+
+Both formats now work - the normalizer auto-transforms `phone_number` to `original_phone_number`:
+
+**✅ Preferred (Attio native format):**
+
+```json
+{
+  "phone_numbers": [{ "original_phone_number": "+1-555-0100" }]
+}
+```
+
+**✅ Also works (auto-transformed):**
 
 ```json
 {
@@ -283,13 +320,7 @@ Change task assignee:
 }
 ```
 
-### ✅ Correct Phone Number Format
-
-```json
-{
-  "phone_numbers": [{ "original_phone_number": "+1-555-0100" }]
-}
-```
+Both formats are validated against E.164 standard and normalized automatically.
 
 ---
 
