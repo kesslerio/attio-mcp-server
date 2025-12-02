@@ -19,6 +19,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.3.0] - 2025-12-02
+
+OAuth access token support - enables delegated authentication for third-party integrations and Claude Desktop users who prefer OAuth over API keys.
+
+### Added
+
+- **OAuth access token support** (#928) - New `ATTIO_ACCESS_TOKEN` environment variable as alternative to `ATTIO_API_KEY`
+  - Both authentication methods use identical Bearer token auth under the hood
+  - Resolution order: `ATTIO_API_KEY` (config) → `ATTIO_ACCESS_TOKEN` (config) → `ATTIO_API_KEY` (env) → `ATTIO_ACCESS_TOKEN` (env)
+
+- **Local OAuth helper script** (#928) - Interactive PKCE flow for obtaining tokens without hosted infrastructure
+  - Run `npm run oauth:setup` to complete OAuth authorization flow
+  - Run `npm run oauth:refresh` to refresh expired tokens
+  - Tokens saved to `.env.local` for easy configuration
+
+- **Cloudflare Worker OAuth template** (#928) - Self-hostable OAuth broker for teams
+  - Full OAuth 2.1 + PKCE implementation at `examples/cloudflare-oauth-worker/`
+  - OAuth discovery endpoint, CORS support for Claude.ai
+  - Deploy with `wrangler deploy`
+
+- **OAuth documentation** (#928) - Comprehensive guide at `docs/guides/oauth-authentication.md`
+  - Step-by-step OAuth app creation at build.attio.com
+  - Token lifecycle and refresh guidance
+  - Claude Desktop and Smithery configuration examples
+
+### Changed
+
+- **Improved 401 error messages** (#928) - Now includes OAuth-specific guidance for token expiration
+
 ## [1.2.2] - 2025-12-01
 
 ### Fixed
