@@ -94,6 +94,35 @@ function listRing0(baseRef, headRef) {
   };
 }
 
+/**
+ * Captures the unified diff between base and head refs.
+ * This provides the actual line-by-line changes for more focused review.
+ *
+ * @param {string} baseRef - The base git ref (e.g., 'origin/main')
+ * @param {string} headRef - The head git ref (e.g., 'HEAD')
+ * @param {number} maxChars - Maximum characters to return (default 15000)
+ * @returns {string} The unified diff content, truncated if necessary
+ */
+function captureUnifiedDiff(baseRef, headRef, maxChars = 15000) {
+  const safeBase = sanitizeRef(baseRef, 'origin/main');
+  const safeHead = sanitizeRef(headRef, 'HEAD');
+  const diffRange = `${safeBase}...${safeHead}`;
+
+  try {
+    const diff = runGit(['diff', '--unified=3', diffRange]);
+    if (diff.length > maxChars) {
+      return (
+        diff.slice(0, maxChars) +
+        `\n... [diff truncated at ${maxChars} chars - ${diff.length - maxChars} chars omitted]`
+      );
+    }
+    return diff;
+  } catch (error) {
+    console.warn('[scope] Failed to capture unified diff:', error.message);
+    return '';
+  }
+}
+
 const RELATIVE_IMPORT_RE = /import\s+[^;]*?from\s+['\"](\.{1,2}\/.+?)['\"]/g;
 const EXPORT_IMPORT_RE = /export\s+[^;]*?from\s+['\"](\.{1,2}\/[^'\"]+)['\"]/g;
 const REQUIRE_RE = /require\(\s*['\"](\.{1,2}\/[^'\"]+)['\"]\s*\)/g;
@@ -283,10 +312,23 @@ function main() {
     writeFileSync(deletionsSummaryPath, deletionContent);
   }
 
+  // Capture and write unified diff for line-level review scope
+  let hasDiff = false;
+  let diffPath = null;
+  if (!fallback) {
+    const unifiedDiff = captureUnifiedDiff(baseRef, headRef);
+    if (unifiedDiff) {
+      diffPath = join(outputDir, 'diff.txt');
+      writeFileSync(diffPath, unifiedDiff + '\n');
+      hasDiff = true;
+    }
+  }
+
   const summary = {
     ring0Count: ring0.length,
     ring1Count: ring1.length,
     deletionsCount: deletions.length,
+    hasDiff,
     fallback,
     baseRef,
     headRef,
@@ -302,12 +344,17 @@ function main() {
     ring1.length,
     'deletions:',
     deletions.length,
+    'diff:',
+    hasDiff ? 'yes' : 'no',
     'fallback:',
     fallback ? 'yes' : 'no'
   );
   console.info(`[scope] output: ${outputDir}`);
   if (deletionsSummaryPath) {
     console.info(`[scope] deletions summary: ${deletionsSummaryPath}`);
+  }
+  if (diffPath) {
+    console.info(`[scope] unified diff: ${diffPath}`);
   }
 }
 
