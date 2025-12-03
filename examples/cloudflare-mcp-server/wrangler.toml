@@ -25,27 +25,26 @@ port = 8787
 # Create with: wrangler kv:namespace create "TOKEN_STORE"
 [[kv_namespaces]]
 binding = "TOKEN_STORE"
-id = "YOUR_KV_NAMESPACE_ID"  # Replace after running create command
-preview_id = "YOUR_PREVIEW_KV_ID"  # Optional: for local dev
+id = "e728aadab16e4b2f8cde4770fdba6b25"
 
 # Durable Objects for MCP session state (optional, for advanced features)
 # [[durable_objects.bindings]]
 # name = "MCP_SESSIONS"
 # class_name = "McpSession"
 
-# Production environment
+# Production environment (uses same KV for now)
 [env.production]
 name = "attio-mcp-server"
 [[env.production.kv_namespaces]]
 binding = "TOKEN_STORE"
-id = "YOUR_PRODUCTION_KV_ID"
+id = "e728aadab16e4b2f8cde4770fdba6b25"
 
-# Staging environment
+# Staging environment (create separate KV for staging if needed)
 [env.staging]
 name = "attio-mcp-server-staging"
 [[env.staging.kv_namespaces]]
 binding = "TOKEN_STORE"
-id = "YOUR_STAGING_KV_ID"
+id = "e728aadab16e4b2f8cde4770fdba6b25"
 
 # Custom domain (optional)
 # [routes]
@@ -59,3 +58,18 @@ command = "npm run build"
 # Assets (for potential static files like docs)
 # [site]
 # bucket = "./public"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
