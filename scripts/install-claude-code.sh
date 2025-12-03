@@ -93,6 +93,17 @@ install_attio_mcp() {
     fi
 }
 
+# Validate API key format (security: prevent injection)
+validate_api_key() {
+    local key="$1"
+    # Only allow alphanumeric characters, underscores, and hyphens
+    if [[ ! "$key" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        log_error "Invalid API key format. API keys should only contain letters, numbers, underscores, and hyphens."
+        return 1
+    fi
+    return 0
+}
+
 # Get API key from user
 get_api_key() {
     if [ -n "$ATTIO_API_KEY" ]; then
@@ -107,8 +118,13 @@ get_api_key() {
     read -p "Enter your Attio API key (or press Enter to skip): " user_api_key
 
     if [ -n "$user_api_key" ]; then
-        ATTIO_API_KEY="$user_api_key"
-        log_success "API key saved for this session"
+        if validate_api_key "$user_api_key"; then
+            ATTIO_API_KEY="$user_api_key"
+            log_success "API key saved for this session"
+        else
+            log_warning "Using placeholder. Please update with a valid API key."
+            ATTIO_API_KEY="YOUR_ATTIO_API_KEY_HERE"
+        fi
     else
         log_warning "No API key provided. You'll need to set ATTIO_API_KEY later."
         ATTIO_API_KEY="YOUR_ATTIO_API_KEY_HERE"
