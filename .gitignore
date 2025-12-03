@@ -62,6 +62,10 @@ eslint.json
 logs/
 logs.backup/
 
+# Cloudflare Worker config (contains user-specific KV namespace IDs)
+examples/cloudflare-mcp-server/wrangler.toml
+examples/cloudflare-mcp-server/.wrangler/
+
 # Other
 .qodo
 .vscode

@@ -586,16 +586,16 @@ export async function handleListNotes(
   try {
     const { resource_type, record_id, limit = 10, offset = 0 } = params;
 
-    const response = await client.post<AttioApiResponse<AttioNote[]>>(
-      '/v2/notes/query',
-      {
-        filter: {
-          parent_object: resource_type,
-          parent_record_id: record_id,
-        },
-        limit,
-        offset,
-      }
+    // Notes API uses GET with query params, not POST
+    const queryParams = new URLSearchParams({
+      parent_object: resource_type,
+      parent_record_id: record_id,
+      limit: String(limit),
+      offset: String(offset),
+    });
+
+    const response = await client.get<AttioApiResponse<AttioNote[]>>(
+      `/v2/notes?${queryParams.toString()}`
     );
 
     const notes = response.data.data;
