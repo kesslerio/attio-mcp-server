@@ -1,5 +1,5 @@
 # Cloudflare Worker configuration for Attio Remote MCP Server
-# Extends the OAuth broker with full MCP protocol support
+# Copy this file to wrangler.toml and fill in your own values
 # See: https://developers.cloudflare.com/workers/configuration/
 
 name = "attio-mcp-server"
@@ -23,28 +23,29 @@ port = 8787
 
 # KV namespace for encrypted token storage
 # Create with: wrangler kv:namespace create "TOKEN_STORE"
+# Then replace the id below with your own KV namespace ID
 [[kv_namespaces]]
 binding = "TOKEN_STORE"
-id = "e728aadab16e4b2f8cde4770fdba6b25"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
 
 # Durable Objects for MCP session state (optional, for advanced features)
 # [[durable_objects.bindings]]
 # name = "MCP_SESSIONS"
 # class_name = "McpSession"
 
-# Production environment (uses same KV for now)
+# Production environment
 [env.production]
 name = "attio-mcp-server"
 [[env.production.kv_namespaces]]
 binding = "TOKEN_STORE"
-id = "e728aadab16e4b2f8cde4770fdba6b25"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
 
 # Staging environment (create separate KV for staging if needed)
 [env.staging]
 name = "attio-mcp-server-staging"
 [[env.staging.kv_namespaces]]
 binding = "TOKEN_STORE"
-id = "e728aadab16e4b2f8cde4770fdba6b25"
+id = "YOUR_STAGING_KV_NAMESPACE_ID_HERE"
 
 # Custom domain (optional)
 # [routes]
@@ -59,6 +60,7 @@ command = "npm run build"
 # [site]
 # bucket = "./public"
 
+# Observability (optional - for debugging)
 [observability]
 enabled = false
 head_sampling_rate = 1
@@ -66,10 +68,9 @@ head_sampling_rate = 1
 [observability.logs]
 enabled = true
 head_sampling_rate = 1
-persist = true
 invocation_logs = true
 
-[observability.traces]
-enabled = true
-persist = true
-head_sampling_rate = 1
+# Note: traces and persist may show warnings but are useful for debugging
+# [observability.traces]
+# enabled = true
+# head_sampling_rate = 1

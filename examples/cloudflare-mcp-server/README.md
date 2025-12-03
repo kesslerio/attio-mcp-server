@@ -44,6 +44,9 @@ cd examples/cloudflare-mcp-server
 
 # Install dependencies
 npm install
+
+# Copy example config
+cp wrangler.toml.example wrangler.toml
 ```
 
 ### 4. Create KV Namespace (REQUIRED)
