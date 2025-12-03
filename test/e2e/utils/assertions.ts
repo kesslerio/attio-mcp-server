@@ -111,6 +111,51 @@ class ApiContractTracker {
   }
 }
 
+// ============================================================================
+// formatResult String Pattern Parsers
+// ============================================================================
+// These helpers extract structured data from human-readable formatResult outputs.
+// Per CLAUDE.md #483, formatResult returns strings (not JSON) for user readability.
+// These parsers allow E2E tests to validate create/list operations without
+// requiring JSON responses.
+//
+// IMPORTANT: These synthetic shapes are MINIMAL and TEST-ONLY.
+// They intentionally don't mirror the full Attio API response structure.
+// If real API shapes change, tests should fail on the JSON parsing path,
+// not silently pass via these fallback patterns.
+// ============================================================================
+
+/**
+ * Parse a formatted "Note created successfully" string
+ * @example "✅ Note created successfully: Meeting Notes (ID: abc-123)"
+ */
+function parseFormattedNoteString(
+  text: string
+): { title: string; id: string } | null {
+  const match = /Note created successfully:\s*(.+?)\s*\(ID:\s*([^\)]+)\)/i.exec(
+    text
+  );
+  if (!match) return null;
+  return { title: match[1], id: match[2] };
+}
+
+/**
+ * Parse a formatted "Successfully created <resource>" string
+ * @example "✅ Successfully created company: Acme Corp (ID: abc-123)"
+ */
+function parseFormattedCreateRecordString(
+  text: string
+): { resourceType: string; name: string; id: string } | null {
+  const match =
+    /Successfully created (\w+):\s*(.+?)\s*\(ID:\s*([a-f0-9-]+)\)/i.exec(text);
+  if (!match) return null;
+  return {
+    resourceType: match[1].toLowerCase(),
+    name: match[2],
+    id: match[3],
+  };
+}
+
 /**
  * MCP Tool Response Interface
  */
@@ -465,20 +510,16 @@ export class E2EAssertions {
       }
 
       // Pattern 1: "✅ Note created successfully: <title> (ID: <id>)..."
-      const createNoteMatch =
-        /Note created successfully:\s*(.+?)\s*\(ID:\s*([^\)]+)\)/i.exec(text);
-      if (createNoteMatch) {
-        const title = createNoteMatch[1];
-        const id = createNoteMatch[2];
-
+      const noteResult = parseFormattedNoteString(text);
+      if (noteResult) {
         ApiContractTracker.logFallback(
           'string_extraction',
-          `Extracted note data from formatted string. Title: ${title}, ID: ${id}`
+          `Extracted note data from formatted string. Title: ${noteResult.title}, ID: ${noteResult.id}`
         );
 
         return {
-          id: { note_id: id, record_id: id },
-          title,
+          id: { note_id: noteResult.id, record_id: noteResult.id },
+          title: noteResult.title,
           content: '',
           format: 'markdown',
         } as unknown as McpResponseData;
@@ -486,33 +527,27 @@ export class E2EAssertions {
 
       // Pattern 2 (list-notes) is handled at the top of this block before JSON parsing
 
-      // Pattern 3: "✅ Successfully created company: Name (ID: uuid)" or similar create-record messages
-      const createRecordMatch =
-        /Successfully created (\w+):\s*(.+?)\s*\(ID:\s*([a-f0-9-]+)\)/i.exec(
-          text
-        );
-      if (createRecordMatch) {
-        const resourceType = createRecordMatch[1].toLowerCase();
-        const name = createRecordMatch[2];
-        const id = createRecordMatch[3];
+      // Pattern 3: "✅ Successfully created company: Name (ID: uuid)" or similar
+      // NOTE: This returns a MINIMAL, TEST-ONLY synthetic shape.
+      // See parseFormattedCreateRecordString documentation for details.
+      const recordResult = parseFormattedCreateRecordString(text);
+      if (recordResult) {
+        const { resourceType, name, id } = recordResult;
 
         ApiContractTracker.logFallback(
           'string_extraction',
           `Extracted ${resourceType} data from formatted string. Name: ${name}, ID: ${id}`
         );
 
-        // Return structure that matches Attio API response format for test compatibility
         return {
           id: {
             record_id: id,
             object_id: resourceType === 'company' ? 'companies' : resourceType,
-            // Include task_id for task resources
             ...(resourceType === 'task' ? { task_id: id } : {}),
           },
           values: {
             name: [{ value: name }],
           },
-          // Include top-level name for backwards compatibility
           name,
           type: resourceType,
         } as unknown as McpResponseData;
