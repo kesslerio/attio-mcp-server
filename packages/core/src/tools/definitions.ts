@@ -121,7 +121,11 @@ export const searchRecordsDefinition: ToolDefinition = {
     capability: 'Search across companies, people, deals, tasks, and lists',
     boundaries: 'create or modify records',
     constraints:
-      'Returns max 100 results (default: 10). Filter conditions for actor-reference fields (like owner) require actor IDs, not names. Use records_discover_attributes to check field types before filtering.',
+      'Returns max 100 results (default: 10). ' +
+      'Filter operators: eq/equals, ne, gt, gte, lt, lte, contains, starts_with, ends_with. ' +
+      'Status fields (stage) only support "eq"; ' +
+      'actor-reference fields (owner) require actor IDs. ' +
+      'Use records_discover_attributes to check field types.',
     recoveryHint:
       'use records_discover_attributes to find searchable fields and their types',
   }),

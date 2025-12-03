@@ -292,8 +292,78 @@ const ACTOR_REFERENCE_FIELDS = new Set([
 ]);
 
 /**
+ * Known status field slugs that only support equality operators.
+ * Status fields (pipeline stages, statuses) cannot use $contains, $starts_with, etc.
+ * They only support: $eq
+ */
+const STATUS_FIELDS = new Set([
+  'stage',
+  'status',
+  'deal_stage',
+  'pipeline_stage',
+]);
+
+/**
+ * Map common operator aliases to Attio API operators.
+ * Users may use "equals" but Attio expects "$eq".
+ */
+const OPERATOR_ALIASES: Record<string, string> = {
+  // Equality aliases
+  equals: 'eq',
+  is: 'eq',
+  equal: 'eq',
+
+  // Inequality aliases
+  not_equals: 'ne',
+  not_equal: 'ne',
+  neq: 'ne',
+  isnt: 'ne',
+
+  // Comparison aliases
+  greater_than: 'gt',
+  greater: 'gt',
+  less_than: 'lt',
+  less: 'lt',
+  greater_than_or_equals: 'gte',
+  greater_or_equal: 'gte',
+  less_than_or_equals: 'lte',
+  less_or_equal: 'lte',
+
+  // Text aliases
+  includes: 'contains',
+  has: 'contains',
+  like: 'contains',
+
+  // Empty/exists aliases
+  is_empty: 'empty',
+  is_not_empty: 'not_empty',
+  has_value: 'not_empty',
+};
+
+/**
+ * Normalize an operator to Attio's expected format.
+ * - Strips leading $ if present
+ * - Maps common aliases to valid operators
+ */
+function normalizeOperator(condition: string): string {
+  // Strip leading $ if present (user may have included it)
+  let normalized = condition.startsWith('$') ? condition.slice(1) : condition;
+
+  // Convert to lowercase for consistent matching
+  normalized = normalized.toLowerCase();
+
+  // Check if this is an alias that needs mapping
+  if (OPERATOR_ALIASES[normalized]) {
+    normalized = OPERATOR_ALIASES[normalized];
+  }
+
+  return normalized;
+}
+
+/**
  * Transform a filter condition to Attio's expected format.
- * Handles special cases for actor-reference fields.
+ * Handles special cases for actor-reference fields and status fields.
+ * Normalizes operator aliases (equals→eq, is→eq, $eq→eq, etc.)
  */
 function transformFilterCondition(
   slug: string,
@@ -312,9 +382,22 @@ function transformFilterCondition(
     };
   }
 
-  // Standard filter format for other fields
+  // Normalize the operator (strip $, map aliases like equals→eq)
+  const normalizedOp = normalizeOperator(condition);
+
+  // Check if this is a status field with invalid operator
+  if (STATUS_FIELDS.has(slug) && normalizedOp !== 'eq') {
+    // Throw with helpful message - will be caught and returned as tool error
+    throw new Error(
+      `Status field "${slug}" only supports equality operators (eq/equals). ` +
+        `Use condition: "eq" with exact stage value. ` +
+        `Got: "${condition}"`
+    );
+  }
+
+  // Standard filter format with normalized operator
   return {
-    [slug]: { [`$${condition}`]: value },
+    [slug]: { [`$${normalizedOp}`]: value },
   };
 }
 
@@ -363,14 +446,25 @@ export async function handleSearchRecords(
     if (filters?.filters && filters.filters.length > 0) {
       // Convert our filter format to Attio's format
       // Special handling for actor-reference fields (owner, created_by, assigned_to, etc.)
-      const attioFilters = filters.filters.map((f) =>
-        transformFilterCondition(f.attribute.slug, f.condition, f.value)
-      );
+      // and status fields (stage, status) that only support equality operators
+      try {
+        const attioFilters = filters.filters.map((f) =>
+          transformFilterCondition(f.attribute.slug, f.condition, f.value)
+        );
 
-      if (filters.matchAny) {
-        body.filter = { $or: attioFilters };
-      } else {
-        body.filter = { $and: attioFilters };
+        if (filters.matchAny) {
+          body.filter = { $or: attioFilters };
+        } else {
+          body.filter = { $and: attioFilters };
+        }
+      } catch (validationError) {
+        // Return validation error as tool result before hitting API
+        return errorResult(
+          validationError instanceof Error
+            ? validationError.message
+            : 'Filter validation error',
+          { hint: 'Use records_discover_attributes to check field types' }
+        );
       }
     }
 
