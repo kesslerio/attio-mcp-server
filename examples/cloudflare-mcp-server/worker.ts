@@ -76,12 +76,12 @@ function normalizeUrl(url: string): string {
   return url.replace(/\/+$/, '');
 }
 
-// Known MCP client OAuth callbacks (pre-approved for security)
-const KNOWN_MCP_CLIENTS = [
-  'https://claude.ai', // Claude.ai
-  'https://www.claude.ai',
-  'https://chatgpt.com', // ChatGPT
-  'https://chat.openai.com', // ChatGPT legacy
+// Known MCP client hostnames (exact match required)
+const KNOWN_MCP_CLIENT_HOSTS = [
+  'claude.ai', // Claude.ai
+  'www.claude.ai',
+  'chatgpt.com', // ChatGPT
+  'chat.openai.com', // ChatGPT legacy
 ];
 
 /**
@@ -96,23 +96,39 @@ function isAllowedRedirectUri(uri: string, env: Env): boolean {
 
   try {
     const parsed = new URL(uri);
-    const origin = `${parsed.protocol}//${parsed.host}`;
+    const { hostname, pathname } = parsed;
 
-    // Allow known MCP clients
-    if (KNOWN_MCP_CLIENTS.some((known) => origin.startsWith(known))) {
+    // Allow known MCP clients (exact hostname match)
+    if (KNOWN_MCP_CLIENT_HOSTS.includes(hostname)) {
       return true;
     }
 
     // Allow localhost for development
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return true;
     }
 
     // Check custom allowlist if configured
     if (env.ALLOWED_REDIRECT_URIS) {
       const allowed = env.ALLOWED_REDIRECT_URIS.split(',').map((u) => u.trim());
-      if (allowed.includes(uri) || allowed.some((a) => origin.startsWith(a))) {
-        return true;
+      for (const entry of allowed) {
+        if (!entry) continue;
+
+        try {
+          const allowedParsed = new URL(entry);
+          // Exact hostname match; if allowlist entry includes a path, enforce prefix match
+          if (
+            hostname === allowedParsed.hostname &&
+            pathname.startsWith(allowedParsed.pathname || '/')
+          ) {
+            return true;
+          }
+        } catch {
+          // Allowlist entry might be a bare hostname
+          if (hostname === entry) {
+            return true;
+          }
+        }
       }
     }
   } catch {
