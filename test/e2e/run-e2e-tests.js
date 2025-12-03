@@ -16,7 +16,7 @@ import {
   loadEnvironmentFiles,
   logSecretPresence,
 } from './utils/environment.js';
-import { createE2ELogger } from './utils/logger.js';
+import { createE2ELogger } from './utils/env-logger.js';
 import {
   resolveTestPattern,
   listAvailablePatterns,

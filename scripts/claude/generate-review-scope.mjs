@@ -315,13 +315,11 @@ function main() {
   // Capture and write unified diff for line-level review scope
   let hasDiff = false;
   let diffPath = null;
-  if (!fallback) {
-    const unifiedDiff = captureUnifiedDiff(diffRange);
-    if (unifiedDiff) {
-      diffPath = join(outputDir, 'diff.txt');
-      writeFileSync(diffPath, unifiedDiff + '\n');
-      hasDiff = true;
-    }
+  const unifiedDiff = captureUnifiedDiff(diffRange);
+  if (unifiedDiff) {
+    diffPath = join(outputDir, 'diff.txt');
+    writeFileSync(diffPath, unifiedDiff + '\n');
+    hasDiff = true;
   }
 
   const summary = {

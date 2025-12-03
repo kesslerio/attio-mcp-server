@@ -23,7 +23,7 @@ import {
   logSecretPresence,
   DEFAULT_ENV_FILES,
 } from './utils/environment.js';
-import { createE2ELogger } from './utils/logger.js';
+import { createE2ELogger } from './utils/env-logger.js';
 
 const logger = createE2ELogger('E2E Setup');
 
