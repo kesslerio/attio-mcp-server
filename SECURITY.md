@@ -49,15 +49,15 @@ Used for delegated authentication via Smithery or Cloudflare Worker deployments.
 
 When creating an Attio API key or OAuth application, ensure it has the appropriate scopes:
 
-| Attio API Scope  | Required For                                                     |
-| ---------------- | ---------------------------------------------------------------- |
-| `record:read`    | search-records, get-record-details, list-notes, get-list-entries |
-| `record:write`   | create-record, update-record, create-note, create-task           |
-| `record:delete`  | delete-record                                                    |
-| `object:read`    | get-attributes, discover-attributes, get-lists                   |
-| `list:read`      | get-list-details, filter-list-entries                            |
-| `list:write`     | add-record-to-list, update-list-entry, remove-record-from-list   |
-| `workspace:read` | list-workspace-members, get-workspace-member                     |
+| Attio API Scope  | Required For                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| `record:read`    | search-records, records_search, get-record-details, records_get_details, list-notes, get-list-entries |
+| `record:write`   | create-record, update-record, create-note, create-task                                                |
+| `record:delete`  | delete-record                                                                                         |
+| `object:read`    | get-attributes, discover-attributes, records_discover_attributes, get-lists                           |
+| `list:read`      | get-list-details, filter-list-entries, advanced-filter-list-entries                                   |
+| `list:write`     | add-record-to-list, update-list-entry, remove-record-from-list                                        |
+| `workspace:read` | list-workspace-members, search-workspace-members, get-workspace-member                                |
 
 **Principle of Least Privilege:** Only grant the scopes your use case requires.
 

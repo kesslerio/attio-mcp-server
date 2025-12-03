@@ -35,7 +35,7 @@ LABEL org.opencontainers.image.url="https://github.com/kesslerio/attio-mcp-serve
 LABEL org.opencontainers.image.source="https://github.com/kesslerio/attio-mcp-server"
 LABEL org.opencontainers.image.documentation="https://github.com/kesslerio/attio-mcp-server/blob/main/README.md"
 LABEL org.opencontainers.image.vendor="kesslerio"
-LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # MCP-specific labels for tooling discovery
 LABEL mcp.server.name="attio-mcp"
@@ -65,7 +65,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
             process.exit(res.statusCode === 200 ? 0 : 1); \
         }); \
         req.on('error', () => process.exit(1)); \
-        req.setTimeout(5000, () => { req.destroy(); process.exit(1); });"
+        req.setTimeout(8000, () => { req.destroy(); process.exit(1); });"
 
 # Expose the HTTP server port
 EXPOSE 3000
