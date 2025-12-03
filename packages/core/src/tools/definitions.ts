@@ -28,14 +28,22 @@ export interface ToolDefinition {
 
 /**
  * Standard resource type description for tool schemas.
- * These are valid Attio object slugs that can be queried via the records API.
- * Note: 'notes' and 'workspace_members' are NOT valid object types - they have separate APIs.
+ *
+ * These are valid Attio object slugs that can be queried via /v2/objects/{slug}/records/query.
+ *
+ * NOTE: The following use SEPARATE APIs and are NOT supported by records_search:
+ * - tasks: Use /v2/tasks endpoint (dedicated tasks API)
+ * - notes: Use create-note/list-notes tools (notes are attached to records)
+ * - workspace_members: Use /v2/workspace_members endpoint
+ *
+ * The main Attio MCP server handles these separately; this core package currently
+ * routes all types through the objects API, so only object types work correctly.
  */
 const RESOURCE_TYPE_SCHEMA = {
   type: 'string',
   description:
-    'Type of Attio object to operate on. Valid types: companies, people, deals, tasks, lists. Custom objects may also work if configured in your Attio workspace.',
-  enum: ['companies', 'people', 'deals', 'tasks', 'lists'],
+    'Type of Attio object to query. Standard objects: companies, people, deals, users, workspaces. Custom objects may also work if defined in your workspace. Note: tasks and workspace_members use separate APIs and are not supported by this tool.',
+  enum: ['companies', 'people', 'deals', 'users', 'workspaces'],
 };
 
 /**

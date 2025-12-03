@@ -162,10 +162,8 @@ function getObjectSlug(resourceType: string): string {
     companies: 'companies',
     people: 'people',
     deals: 'deals',
-    tasks: 'tasks',
-    records: 'records',
-    notes: 'notes',
-    workspace_members: 'workspace-members',
+    users: 'users',
+    workspaces: 'workspaces',
   };
   return mapping[resourceType] || resourceType;
 }
