@@ -20,6 +20,8 @@ This Cloudflare Worker provides OAuth 2.1 endpoints that:
 
 ## Quick Start
 
+> **Note:** This guide uses the Wrangler CLI for deployment. If you're using the Cloudflare dashboard web UI, select **"Start with Hello World!"**, then replace the generated code with the contents of `worker.ts` and configure secrets via Settings → Variables.
+
 ### 1. Create Attio OAuth App
 
 1. Go to [Attio Developer Settings](https://app.attio.com/settings/developers)
