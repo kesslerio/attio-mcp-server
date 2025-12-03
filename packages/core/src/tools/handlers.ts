@@ -279,6 +279,10 @@ function buildSearchFilter(
 
 /**
  * Search records handler
+ * Routes to appropriate API based on resource type:
+ * - tasks: /v2/tasks (GET with query params)
+ * - workspace_members: /v2/workspace_members (GET)
+ * - objects: /v2/objects/{slug}/records/query (POST)
  */
 export async function handleSearchRecords(
   client: HttpClient,
@@ -292,9 +296,20 @@ export async function handleSearchRecords(
 ): Promise<ToolResult> {
   try {
     const { resource_type, query, filters, limit = 10, offset = 0 } = params;
+
+    // Special routing for tasks - uses /v2/tasks endpoint
+    if (resource_type === 'tasks') {
+      return await handleSearchTasks(client, { query, limit, offset });
+    }
+
+    // Special routing for workspace_members - uses /v2/workspace_members endpoint
+    if (resource_type === 'workspace_members') {
+      return await handleListWorkspaceMembers(client);
+    }
+
     const objectSlug = getObjectSlug(resource_type);
 
-    // Build request body
+    // Build request body for objects API
     const body: Record<string, unknown> = {
       limit,
       offset,
@@ -327,6 +342,88 @@ export async function handleSearchRecords(
     const { message, details } = extractErrorInfo(error);
     return errorResult(message || 'Search failed', details);
   }
+}
+
+/**
+ * Search tasks using dedicated /v2/tasks endpoint
+ */
+async function handleSearchTasks(
+  client: HttpClient,
+  params: { query?: string; limit?: number; offset?: number }
+): Promise<ToolResult> {
+  const { limit = 10, offset = 0 } = params;
+
+  // Tasks API uses GET with query params
+  const queryParams = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+
+  const response = await client.get<{
+    data: Array<{
+      id: { task_id: string };
+      content_plaintext?: string;
+      deadline_at?: string;
+      is_completed?: boolean;
+      assignees?: Array<{ referenced_actor_id: string }>;
+      created_at?: string;
+    }>;
+  }>(`/v2/tasks?${queryParams.toString()}`);
+
+  const tasks = response.data.data || [];
+
+  if (tasks.length === 0) {
+    return successResult('No tasks found');
+  }
+
+  const lines = [`Found ${tasks.length} tasks:`];
+  for (const task of tasks) {
+    const status = task.is_completed ? '✓' : '○';
+    const content = task.content_plaintext || 'No content';
+    const deadline = task.deadline_at
+      ? ` (due: ${task.deadline_at.split('T')[0]})`
+      : '';
+    lines.push(`${status} ${content}${deadline} (ID: ${task.id.task_id})`);
+  }
+
+  return successResult(lines.join('\n'));
+}
+
+/**
+ * List workspace members using dedicated /v2/workspace_members endpoint
+ */
+async function handleListWorkspaceMembers(
+  client: HttpClient
+): Promise<ToolResult> {
+  const response = await client.get<{
+    data: Array<{
+      id: { workspace_member_id: string };
+      first_name?: string;
+      last_name?: string;
+      email_address?: string;
+      access_level?: string;
+    }>;
+  }>('/v2/workspace_members');
+
+  const members = response.data.data || [];
+
+  if (members.length === 0) {
+    return successResult('No workspace members found');
+  }
+
+  const lines = [`Found ${members.length} workspace members:`];
+  for (const member of members) {
+    const name =
+      [member.first_name, member.last_name].filter(Boolean).join(' ') ||
+      'Unknown';
+    const email = member.email_address ? ` (${member.email_address})` : '';
+    const role = member.access_level ? ` - ${member.access_level}` : '';
+    lines.push(
+      `- ${name}${email}${role} (ID: ${member.id.workspace_member_id})`
+    );
+  }
+
+  return successResult(lines.join('\n'));
 }
 
 /**

@@ -118,6 +118,7 @@ export function createMcpHandler(config: {
 
   /**
    * Handle MCP tools/list request
+   * Includes annotations for ChatGPT to distinguish read vs write tools
    */
   function handleToolsList(): unknown {
     const definitions = registry.getDefinitions();
@@ -126,6 +127,8 @@ export function createMcpHandler(config: {
         name: def.name,
         description: def.description,
         inputSchema: def.inputSchema,
+        // Include annotations if defined (for readOnlyHint, etc.)
+        ...(def.annotations && { annotations: def.annotations }),
       })),
     };
   }
