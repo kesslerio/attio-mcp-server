@@ -5,7 +5,7 @@
  * MCP server implementation (stdio, HTTP, Cloudflare Workers, etc.)
  */
 
-// Types imported for future use and documentation
+// Note: Commented out imports kept for documentation purposes
 // import type { ResourceType, ToolResult } from '../types/index.js';
 
 /**
@@ -27,22 +27,15 @@ export interface ToolDefinition {
 }
 
 /**
- * Standard resource type description for tool schemas
+ * Standard resource type description for tool schemas.
+ * These are valid Attio object slugs that can be queried via the records API.
+ * Note: 'notes' and 'workspace_members' are NOT valid object types - they have separate APIs.
  */
 const RESOURCE_TYPE_SCHEMA = {
   type: 'string',
   description:
-    'Type of resource to operate on. Standard types: companies, people, deals, tasks, lists, records, notes. Custom objects are also supported.',
-  enum: [
-    'companies',
-    'people',
-    'deals',
-    'tasks',
-    'lists',
-    'records',
-    'notes',
-    'workspace_members',
-  ],
+    'Type of Attio object to operate on. Valid types: companies, people, deals, tasks, lists. Custom objects may also work if configured in your Attio workspace.',
+  enum: ['companies', 'people', 'deals', 'tasks', 'lists'],
 };
 
 /**
@@ -112,11 +105,16 @@ export const healthCheckDefinition: ToolDefinition = {
 export const searchRecordsDefinition: ToolDefinition = {
   name: 'records_search',
   description: formatDescription({
-    capability: 'Search across companies, people, deals, tasks, and records',
+    capability: 'Search across companies, people, deals, tasks, and lists',
     boundaries: 'create or modify records',
-    constraints: 'Returns max 100 results (default: 10)',
-    recoveryHint: 'use records_discover_attributes to find searchable fields',
+    constraints:
+      'Returns max 100 results (default: 10). Filter conditions for actor-reference fields (like owner) require actor IDs, not names. Use records_discover_attributes to check field types before filtering.',
+    recoveryHint:
+      'use records_discover_attributes to find searchable fields and their types',
   }),
+  annotations: {
+    readOnlyHint: true,
+  },
   inputSchema: {
     type: 'object',
     properties: {
@@ -184,6 +182,9 @@ export const getRecordDetailsDefinition: ToolDefinition = {
       },
     },
     required: ['resource_type', 'record_id'],
+  },
+  annotations: {
+    readOnlyHint: true,
   },
 };
 
@@ -292,11 +293,12 @@ export const discoverAttributesDefinition: ToolDefinition = {
   name: 'records_discover_attributes',
   description: formatDescription({
     capability:
-      'Discover available attributes (standard/custom) for a resource',
+      'Discover available attributes (standard/custom) for a resource, including their types',
     boundaries: 'alter schema or create fields',
-    constraints: 'Requires resource_type; optional categories selects subsets',
+    constraints:
+      'Requires resource_type; optional categories selects subsets. Returns attribute types like text, select, actor-reference, record-reference, etc. Actor-reference fields (e.g., owner) require special filter handling.',
     recoveryHint:
-      'Follow with records_get_attributes to inspect specific fields',
+      'Use this tool first to understand attribute types before filtering',
   }),
   inputSchema: {
     type: 'object',
@@ -310,6 +312,9 @@ export const discoverAttributesDefinition: ToolDefinition = {
       },
     },
     required: ['resource_type'],
+  },
+  annotations: {
+    readOnlyHint: true,
   },
 };
 
@@ -383,6 +388,9 @@ export const listNotesDefinition: ToolDefinition = {
       ...PAGINATION_SCHEMA,
     },
     required: ['resource_type', 'record_id'],
+  },
+  annotations: {
+    readOnlyHint: true,
   },
 };
 
