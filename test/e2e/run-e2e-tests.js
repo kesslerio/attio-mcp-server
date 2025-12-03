@@ -30,6 +30,7 @@ const CONFIG = {
     'E2E_TEST_COMPANY_DOMAIN',
   ],
   configFiles: ['test/e2e/config.local.json', 'test/e2e/config.template.json'],
+  vitestConfigPath: 'configs/vitest/vitest.config.e2e.ts',
 };
 
 const logger = createE2ELogger('E2E Runner');
@@ -230,7 +231,7 @@ function printSolutionGuidance(details) {
 
 function buildVitestArguments(patternKey, options) {
   const resolvedPattern = resolveTestPattern(patternKey);
-  const args = ['run', '--config', 'vitest.config.e2e.ts'];
+  const args = ['run', '--config', CONFIG.vitestConfigPath];
 
   if (patternKey && patternKey !== 'all') {
     args.push(resolvedPattern);
