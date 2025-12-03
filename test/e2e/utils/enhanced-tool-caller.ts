@@ -53,6 +53,62 @@ export interface ToolCallResult {
   isError?: boolean;
 }
 
+function captureDebugResult(
+  toolName: string,
+  params: ToolParameters,
+  result: CallToolResult
+) {
+  if (process.env.MCP_DEBUG_CAPTURE !== 'true') {
+    return;
+  }
+
+  try {
+     
+    console.error(
+      JSON.stringify(
+        {
+          type: 'MCP_DEBUG_RESULT',
+          toolName,
+          params,
+          result,
+        },
+        null,
+        2
+      )
+    );
+  } catch {
+    // Ignore serialization errors
+  }
+}
+
+function captureDebugResult(
+  toolName: string,
+  params: ToolParameters,
+  result: CallToolResult
+) {
+  if (process.env.MCP_DEBUG_CAPTURE !== 'true') {
+    return;
+  }
+
+  try {
+     
+    console.error(
+      JSON.stringify(
+        {
+          type: 'MCP_DEBUG_RESULT',
+          toolName,
+          params,
+          result,
+        },
+        null,
+        2
+      )
+    );
+  } catch (error) {
+    // Ignore serialization errors
+  }
+}
+
 /**
  * Preprocess parameters to handle special cases like URI-to-record_id extraction
  */
@@ -178,6 +234,7 @@ export async function callToolWithEnhancements(
 
     // Step 3: Transform response if needed
     const finalResponse = transformResponse(originalToolName, response);
+    captureDebugResult(actualToolName, actualParams, finalResponse as any);
 
     // Step 4: Log the tool call
     const timing = {
