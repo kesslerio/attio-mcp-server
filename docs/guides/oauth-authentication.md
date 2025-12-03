@@ -218,4 +218,4 @@ This usually means:
 
 ## Self-Hosted OAuth Broker
 
-For teams that need a managed OAuth flow without handling tokens manually, see the [Cloudflare Worker OAuth template](../../examples/cloudflare-oauth-worker/README.md) for a self-hostable OAuth broker.
+For teams that need a managed OAuth flow without handling tokens manually, see the [Cloudflare Worker MCP Server](../../examples/cloudflare-mcp-server/README.md) for a self-hostable remote MCP server with OAuth.
