@@ -1,20 +1,26 @@
 /**
- * Cloudflare Worker OAuth Broker for Attio MCP Server
+ * Cloudflare Worker Remote MCP Server for Attio
  *
- * This worker provides OAuth 2.1 endpoints for Attio authentication,
- * enabling MCP clients like Claude Desktop to authenticate via OAuth
- * without requiring users to manually manage tokens.
+ * A full MCP server that works with Claude.ai and ChatGPT,
+ * providing OAuth authentication and tool execution.
  *
  * Endpoints:
  * - GET  /.well-known/oauth-authorization-server - OAuth discovery
+ * - GET  /.well-known/oauth-protected-resource - Protected resource metadata (ChatGPT)
+ * - HEAD / - Protocol version check (Claude.ai)
  * - GET  /oauth/authorize - Redirect to Attio OAuth
  * - GET  /oauth/callback - Handle Attio callback
  * - POST /oauth/token - Token exchange/refresh
  * - POST /oauth/register - Dynamic client registration (RFC 7591)
+ * - POST /mcp - MCP JSON-RPC endpoint
  * - GET  /health - Health check
  *
  * @see https://docs.attio.com/rest-api/tutorials/connect-an-app-through-oauth
+ * @see https://modelcontextprotocol.io/docs/develop/connect-remote-servers
  */
+
+import { createTokenStorage, type StoredToken } from './src/token-storage.js';
+import { createMcpHandler } from './src/mcp-handler.js';
 
 export interface Env {
   // Attio OAuth credentials
@@ -24,7 +30,13 @@ export interface Env {
   // Worker configuration
   WORKER_URL: string; // e.g., https://your-worker.your-subdomain.workers.dev
 
-  // Optional: KV namespace for session storage
+  // Token encryption key (32-byte hex string)
+  TOKEN_ENCRYPTION_KEY: string;
+
+  // KV namespace for token storage
+  TOKEN_STORE: KVNamespace;
+
+  // Optional: Legacy session storage
   OAUTH_SESSIONS?: KVNamespace;
 }
 
@@ -38,13 +50,6 @@ function base64URLEncode(buffer: ArrayBuffer): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
-async function generateCodeChallenge(verifier: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return base64URLEncode(hash);
-}
-
 function generateRandomString(length: number): string {
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
@@ -55,13 +60,14 @@ function generateRandomString(length: number): string {
 function corsHeaders(origin?: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, MCP-Protocol-Version',
     'Access-Control-Max-Age': '86400',
   };
 }
 
-// OAuth discovery metadata
+// OAuth discovery metadata (RFC 8414)
 function getOAuthMetadata(workerUrl: string): object {
   return {
     issuer: workerUrl,
@@ -81,6 +87,20 @@ function getOAuthMetadata(workerUrl: string): object {
   };
 }
 
+// Protected resource metadata (for ChatGPT)
+function getProtectedResourceMetadata(workerUrl: string): object {
+  return {
+    resource: workerUrl,
+    authorization_servers: [workerUrl],
+    scopes_supported: [
+      'record_permission:read',
+      'record_permission:read_write',
+      'user_management:read',
+      'object:read',
+    ],
+  };
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -94,11 +114,25 @@ export default {
       });
     }
 
+    // Handle HEAD request for protocol version (Claude.ai)
+    if (request.method === 'HEAD' && url.pathname === '/') {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          'MCP-Protocol-Version': '2024-11-05',
+          ...corsHeaders(origin),
+        },
+      });
+    }
+
     try {
       // Route handling
       switch (url.pathname) {
         case '/.well-known/oauth-authorization-server':
           return handleDiscovery(env, origin);
+
+        case '/.well-known/oauth-protected-resource':
+          return handleProtectedResource(env, origin);
 
         case '/oauth/authorize':
           return handleAuthorize(request, env);
@@ -111,6 +145,9 @@ export default {
 
         case '/oauth/register':
           return handleRegister(request, env, origin);
+
+        case '/mcp':
+          return handleMcp(request, env);
 
         case '/health':
         case '/ping':
@@ -147,6 +184,18 @@ export default {
 // Handler: OAuth discovery
 function handleDiscovery(env: Env, origin?: string): Response {
   const metadata = getOAuthMetadata(env.WORKER_URL);
+  return new Response(JSON.stringify(metadata, null, 2), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders(origin),
+    },
+  });
+}
+
+// Handler: Protected resource metadata (ChatGPT)
+function handleProtectedResource(env: Env, origin?: string): Response {
+  const metadata = getProtectedResourceMetadata(env.WORKER_URL);
   return new Response(JSON.stringify(metadata, null, 2), {
     status: 200,
     headers: {
@@ -274,9 +323,31 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     );
   }
 
-  const tokens = await tokenResponse.json();
+  const tokens = (await tokenResponse.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+    token_type?: string;
+  };
 
-  // Success page with token display
+  // Store tokens in encrypted KV storage
+  if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY && state) {
+    const tokenStorage = createTokenStorage({
+      kv: env.TOKEN_STORE,
+      encryptionKey: env.TOKEN_ENCRYPTION_KEY,
+    });
+
+    const storedToken: StoredToken = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresAt: Math.floor(Date.now() / 1000) + (tokens.expires_in || 3600),
+      tokenType: tokens.token_type || 'Bearer',
+    };
+
+    await tokenStorage.storeToken(state, storedToken);
+  }
+
+  // Success page with token display and MCP instructions
   return new Response(
     `
     <!DOCTYPE html>
@@ -284,38 +355,57 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
       <head>
         <title>Authentication Successful</title>
         <style>
-          body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
-          .token-box { background: #f5f5f5; padding: 15px; border-radius: 8px; word-break: break-all; margin: 10px 0; }
+          body { font-family: system-ui; max-width: 700px; margin: 50px auto; padding: 20px; }
+          .token-box { background: #f5f5f5; padding: 15px; border-radius: 8px; word-break: break-all; margin: 10px 0; font-family: monospace; font-size: 12px; }
           .copy-btn { background: #0066cc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
           .copy-btn:hover { background: #0052a3; }
+          .section { margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+          h3 { margin-top: 0; }
+          pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; overflow-x: auto; }
         </style>
       </head>
       <body>
         <h1>Authentication Successful!</h1>
-        <p>Your Attio OAuth tokens have been generated.</p>
+        <p>Your Attio OAuth tokens have been generated and stored.</p>
 
-        <h3>Access Token</h3>
-        <div class="token-box" id="access-token">${(tokens as { access_token: string }).access_token}</div>
-        <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('access-token').textContent)">Copy Access Token</button>
+        <div class="section">
+          <h3>For Claude.ai</h3>
+          <p>Add this server in Claude Settings > Connectors:</p>
+          <pre>Server URL: ${env.WORKER_URL}/mcp</pre>
+        </div>
 
-        ${
-          (tokens as { refresh_token?: string }).refresh_token
-            ? `
-        <h3>Refresh Token</h3>
-        <div class="token-box" id="refresh-token">${(tokens as { refresh_token: string }).refresh_token}</div>
-        <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('refresh-token').textContent)">Copy Refresh Token</button>
-        `
-            : ''
-        }
+        <div class="section">
+          <h3>For ChatGPT</h3>
+          <p>Add as an MCP connector in Developer Mode with:</p>
+          <pre>Server URL: ${env.WORKER_URL}</pre>
+        </div>
 
-        <h3>Usage</h3>
-        <p>Set the access token in your environment:</p>
-        <pre style="background: #f5f5f5; padding: 15px; border-radius: 8px;">export ATTIO_ACCESS_TOKEN="${(tokens as { access_token: string }).access_token.substring(0, 20)}..."</pre>
+        <div class="section">
+          <h3>For Local Development</h3>
+          <p>Use these tokens directly:</p>
 
-        <p>Or in your .env file:</p>
-        <pre style="background: #f5f5f5; padding: 15px; border-radius: 8px;">ATTIO_ACCESS_TOKEN=${(tokens as { access_token: string }).access_token.substring(0, 20)}...</pre>
+          <h4>Access Token</h4>
+          <div class="token-box" id="access-token">${tokens.access_token}</div>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('access-token').textContent)">Copy Access Token</button>
 
-        <p style="margin-top: 30px; color: #666;">Expires in: ${(tokens as { expires_in?: number }).expires_in || 3600} seconds</p>
+          ${
+            tokens.refresh_token
+              ? `
+          <h4>Refresh Token</h4>
+          <div class="token-box" id="refresh-token">${tokens.refresh_token}</div>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('refresh-token').textContent)">Copy Refresh Token</button>
+          `
+              : ''
+          }
+
+          <h4>Environment Variable</h4>
+          <pre>export ATTIO_ACCESS_TOKEN="${tokens.access_token.substring(0, 20)}..."</pre>
+        </div>
+
+        <p style="margin-top: 30px; color: #666;">
+          Expires in: ${tokens.expires_in || 3600} seconds
+          ${state ? ` | Session: ${state.substring(0, 8)}...` : ''}
+        </p>
       </body>
     </html>
   `,
@@ -448,12 +538,11 @@ async function handleRegister(
   };
 
   // Generate a client ID for this registration
-  // In a production system, you'd store this in KV/database
   const clientId = `mcp_${generateRandomString(16)}`;
 
   const response = {
     client_id: clientId,
-    client_secret: env.ATTIO_CLIENT_SECRET, // Use the shared secret
+    client_secret: env.ATTIO_CLIENT_SECRET,
     client_name: body.client_name || 'MCP Client',
     redirect_uris: body.redirect_uris || [`${env.WORKER_URL}/oauth/callback`],
     grant_types: body.grant_types || ['authorization_code', 'refresh_token'],
@@ -470,6 +559,56 @@ async function handleRegister(
   });
 }
 
+// Handler: MCP endpoint
+async function handleMcp(request: Request, env: Env): Promise<Response> {
+  // Extract authorization token
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return new Response(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32600,
+          message: 'Missing or invalid Authorization header',
+        },
+      }),
+      {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'WWW-Authenticate': 'Bearer',
+        },
+      }
+    );
+  }
+
+  const token = authHeader.substring(7); // Remove "Bearer "
+
+  // Check if this is a session token (stored in KV) or direct Attio token
+  let attioToken = token;
+
+  if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY) {
+    const tokenStorage = createTokenStorage({
+      kv: env.TOKEN_STORE,
+      encryptionKey: env.TOKEN_ENCRYPTION_KEY,
+    });
+
+    const storedToken = await tokenStorage.getToken(token);
+    if (storedToken) {
+      attioToken = storedToken.accessToken;
+    }
+  }
+
+  // Create MCP handler with the token
+  const mcpHandler = createMcpHandler({
+    attioToken,
+    registryConfig: { mode: 'full' },
+  });
+
+  return mcpHandler.handleHttpRequest(request);
+}
+
 // Handler: Health check
 function handleHealth(env: Env, origin?: string): Response {
   return new Response(
@@ -479,6 +618,15 @@ function handleHealth(env: Env, origin?: string): Response {
       worker_url: env.WORKER_URL,
       has_client_id: Boolean(env.ATTIO_CLIENT_ID),
       has_client_secret: Boolean(env.ATTIO_CLIENT_SECRET),
+      has_token_storage: Boolean(env.TOKEN_STORE),
+      has_encryption_key: Boolean(env.TOKEN_ENCRYPTION_KEY),
+      endpoints: {
+        oauth_discovery: '/.well-known/oauth-authorization-server',
+        protected_resource: '/.well-known/oauth-protected-resource',
+        authorize: '/oauth/authorize',
+        token: '/oauth/token',
+        mcp: '/mcp',
+      },
     }),
     {
       status: 200,

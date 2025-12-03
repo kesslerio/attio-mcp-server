@@ -1,0 +1,36 @@
+{
+  "name": "attio-mcp-server-cloudflare",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker Remote MCP Server for Attio CRM - works with Claude.ai and ChatGPT",
+  "type": "module",
+  "main": "worker.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "tail": "wrangler tail",
+    "kv:create": "wrangler kv:namespace create TOKEN_STORE",
+    "kv:create:preview": "wrangler kv:namespace create TOKEN_STORE --preview",
+    "secret:set": "echo 'Run: wrangler secret put ATTIO_CLIENT_ID && wrangler secret put ATTIO_CLIENT_SECRET && wrangler secret put WORKER_URL && wrangler secret put TOKEN_ENCRYPTION_KEY'"
+  },
+  "dependencies": {
+    "@attio-mcp/core": "workspace:*",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^3.91.0"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.4.1"
+  },
+  "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    }
+  }
+}
