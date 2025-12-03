@@ -395,11 +395,19 @@ export function createMcpHandler(config: {
         headers: responseHeaders,
       });
     } catch (error) {
+      // Log parse errors with context for debugging
+      console.error(
+        'MCP request parse error:',
+        error instanceof Error ? error.message : error
+      );
       return new Response(
         JSON.stringify({
           jsonrpc: '2.0',
           id: null,
-          error: { code: ErrorCodes.ParseError, message: 'Parse error' },
+          error: {
+            code: ErrorCodes.ParseError,
+            message: 'Parse error: invalid JSON-RPC request body',
+          },
         }),
         {
           status: 400,

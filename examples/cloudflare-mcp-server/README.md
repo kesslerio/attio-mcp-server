@@ -180,16 +180,18 @@ If you see "error code: 1042", check the [Troubleshooting](#troubleshooting) sec
 
 ## Endpoints
 
-| Endpoint                                  | Method | Description                  |
-| ----------------------------------------- | ------ | ---------------------------- |
-| `/mcp`                                    | POST   | MCP JSON-RPC endpoint        |
-| `/.well-known/oauth-authorization-server` | GET    | OAuth discovery (Claude.ai)  |
-| `/.well-known/oauth-protected-resource`   | GET    | Protected resource (ChatGPT) |
-| `/oauth/authorize`                        | GET    | Start OAuth flow             |
-| `/oauth/callback`                         | GET    | OAuth callback               |
-| `/oauth/token`                            | POST   | Token exchange/refresh       |
-| `/oauth/register`                         | POST   | Dynamic client registration  |
-| `/health`                                 | GET    | Health check                 |
+| Endpoint                                  | Method | Description                                      |
+| ----------------------------------------- | ------ | ------------------------------------------------ |
+| `/mcp`                                    | POST   | MCP JSON-RPC endpoint                            |
+| `/.well-known/oauth-authorization-server` | GET    | OAuth discovery (Claude.ai)                      |
+| `/.well-known/oauth-protected-resource`   | GET    | Protected resource (ChatGPT)                     |
+| `/oauth/authorize`                        | GET    | Start OAuth flow                                 |
+| `/oauth/callback`                         | GET    | OAuth callback                                   |
+| `/oauth/token`                            | POST   | Token exchange/refresh                           |
+| `/oauth/register`                         | POST   | Dynamic client registration (disabled, see note) |
+| `/health`, `/ping`                        | GET    | Health check                                     |
+
+> **Note**: `/oauth/register` is disabled for security. MCP clients authenticate through our OAuth proxy without needing the Attio client secret.
 
 ## Security
 

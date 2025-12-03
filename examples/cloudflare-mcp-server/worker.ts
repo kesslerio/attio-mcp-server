@@ -11,9 +11,9 @@
  * - GET  /oauth/authorize - Redirect to Attio OAuth
  * - GET  /oauth/callback - Handle Attio callback
  * - POST /oauth/token - Token exchange/refresh
- * - POST /oauth/register - Dynamic client registration (RFC 7591)
+ * - POST /oauth/register - Dynamic client registration (disabled for security)
  * - POST /mcp - MCP JSON-RPC endpoint
- * - GET  /health - Health check
+ * - GET  /health, /ping - Health check
  *
  * @see https://docs.attio.com/rest-api/tutorials/connect-an-app-through-oauth
  * @see https://modelcontextprotocol.io/docs/develop/connect-remote-servers
@@ -70,6 +70,14 @@ function corsHeaders(origin?: string): Record<string, string> {
 // Normalize URL by removing trailing slashes
 function normalizeUrl(url: string): string {
   return url.replace(/\/+$/, '');
+}
+
+// Validate state parameter format
+// Supports both PKCE standard (32-128 chars) and base64-encoded JSON payload
+function isValidStateParam(state: string): boolean {
+  // Basic format: alphanumeric with URL-safe base64 chars, reasonable length
+  // Max ~500 chars for base64-encoded JSON with reasonable payload
+  return /^[A-Za-z0-9_-]{32,500}$/.test(state);
 }
 
 // OAuth discovery metadata (RFC 8414)
@@ -224,18 +232,33 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
   const scope =
     url.searchParams.get('scope') ||
     'record_permission:read record_permission:read_write user_management:read object:read';
-  const state = url.searchParams.get('state') || generateRandomString(32);
+  const originalState =
+    url.searchParams.get('state') || generateRandomString(32);
   const codeChallenge = url.searchParams.get('code_challenge');
   const codeChallengeMethod =
     url.searchParams.get('code_challenge_method') || 'S256';
 
-  // Store state and PKCE info in KV for callback
-  // Use TOKEN_STORE as primary storage (always available)
+  // Encode redirect_uri in state to ensure it survives the OAuth round-trip
+  // This is more robust than relying on KV storage timing
+  const statePayload = JSON.stringify({
+    originalState,
+    redirectUri,
+    codeChallenge,
+    codeChallengeMethod,
+    clientId,
+  });
+  const state = btoa(statePayload)
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  // Also store in KV as backup (for PKCE verification later)
   const sessionData = {
     redirectUri,
     codeChallenge,
     codeChallengeMethod,
     clientId,
+    originalState,
   };
 
   await env.TOKEN_STORE.put(
@@ -278,6 +301,15 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
 
+  // Validate state parameter format before using in KV operations
+  if (state && !isValidStateParam(state)) {
+    console.warn(
+      'Invalid state parameter format received:',
+      state.substring(0, 8) + '...'
+    );
+    return new Response('Invalid state parameter format', { status: 400 });
+  }
+
   if (error) {
     return new Response(
       `
@@ -318,8 +350,12 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   });
 
   if (!tokenResponse.ok) {
-    const errorData = await tokenResponse.text();
-    console.error('Token exchange failed:', errorData);
+    // SECURITY: Only log status, not response body (may contain OAuth secrets)
+    console.error(
+      'Token exchange failed:',
+      tokenResponse.status,
+      tokenResponse.statusText
+    );
     return new Response(
       `
       <!DOCTYPE html>
@@ -349,53 +385,91 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   // Generate an authorization code for the client
   const authCode = generateRandomString(32);
 
-  // Store tokens in encrypted KV storage, keyed by the auth code
-  if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY) {
-    const tokenStorage = createTokenStorage({
-      kv: env.TOKEN_STORE,
-      encryptionKey: env.TOKEN_ENCRYPTION_KEY,
-    });
-
-    const storedToken: StoredToken = {
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      expiresAt: Math.floor(Date.now() / 1000) + (tokens.expires_in || 3600),
-      tokenType: tokens.token_type || 'Bearer',
-    };
-
-    // Store with auth code as key (for token exchange)
-    await tokenStorage.storeToken(authCode, storedToken);
-
-    // Also store with state for backward compatibility
-    if (state) {
-      await tokenStorage.storeToken(state, storedToken);
-    }
+  // CRITICAL: Fail early if storage config is missing (don't silently discard tokens)
+  if (!env.TOKEN_STORE || !env.TOKEN_ENCRYPTION_KEY) {
+    console.error(
+      'Missing TOKEN_STORE or TOKEN_ENCRYPTION_KEY - cannot store tokens'
+    );
+    return new Response(
+      `
+      <!DOCTYPE html>
+      <html>
+        <head><title>Configuration Error</title></head>
+        <body style="font-family: system-ui; text-align: center; padding: 50px;">
+          <h1>Configuration Error</h1>
+          <p>Server is misconfigured. TOKEN_STORE or TOKEN_ENCRYPTION_KEY is missing.</p>
+          <p>Contact the server administrator.</p>
+        </body>
+      </html>
+    `,
+      {
+        status: 500,
+        headers: { 'Content-Type': 'text/html' },
+      }
+    );
   }
 
-  // Check if we have a client redirect_uri to return to
-  let clientRedirectUri: string | null = null;
+  // Store tokens in encrypted KV storage, keyed by the auth code
+  const tokenStorage = createTokenStorage({
+    kv: env.TOKEN_STORE,
+    encryptionKey: env.TOKEN_ENCRYPTION_KEY,
+  });
+
+  const storedToken: StoredToken = {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    expiresAt: Math.floor(Date.now() / 1000) + (tokens.expires_in || 3600),
+    tokenType: tokens.token_type || 'Bearer',
+  };
+
+  // Store with auth code as key (for token exchange)
+  await tokenStorage.storeToken(authCode, storedToken);
+
+  // Also store with state for backward compatibility
   if (state) {
-    const sessionDataStr = await env.TOKEN_STORE.get(`session:${state}`);
-    if (sessionDataStr) {
-      try {
-        const sessionData = JSON.parse(sessionDataStr) as {
-          redirectUri?: string;
-        };
-        clientRedirectUri = sessionData.redirectUri || null;
-      } catch {
-        // Ignore parse errors
+    await tokenStorage.storeToken(state, storedToken);
+  }
+
+  // Extract redirect_uri from encoded state (primary method)
+  // Fall back to KV lookup if state decoding fails
+  let clientRedirectUri: string | null = null;
+  let originalState: string | null = null;
+
+  if (state) {
+    // Try to decode state (base64url encoded JSON)
+    try {
+      const paddedState = state.replace(/-/g, '+').replace(/_/g, '/');
+      const statePayload = JSON.parse(atob(paddedState));
+      clientRedirectUri = statePayload.redirectUri || null;
+      originalState = statePayload.originalState || null;
+    } catch {
+      // State wasn't encoded, try KV lookup as fallback
+      const sessionDataStr = await env.TOKEN_STORE.get(`session:${state}`);
+      if (sessionDataStr) {
+        try {
+          const sessionData = JSON.parse(sessionDataStr) as {
+            redirectUri?: string;
+            originalState?: string;
+          };
+          clientRedirectUri = sessionData.redirectUri || null;
+          originalState = sessionData.originalState || null;
+        } catch {
+          // Ignore parse errors
+        }
       }
-      // Clean up session data
-      await env.TOKEN_STORE.delete(`session:${state}`);
     }
+
+    // Clean up session data
+    await env.TOKEN_STORE.delete(`session:${state}`);
   }
 
   // If we have a client redirect_uri, redirect back to the client with the auth code
   if (clientRedirectUri && clientRedirectUri !== `${baseUrl}/oauth/callback`) {
     const redirectUrl = new URL(clientRedirectUri);
     redirectUrl.searchParams.set('code', authCode);
-    if (state) {
-      redirectUrl.searchParams.set('state', state);
+    // Use original state (not our encoded version) when redirecting to client
+    if (originalState) {
+      redirectUrl.searchParams.set('state', originalState);
     }
     return Response.redirect(redirectUrl.toString(), 302);
   }

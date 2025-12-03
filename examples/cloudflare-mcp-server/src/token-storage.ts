@@ -16,6 +16,16 @@ export interface StoredToken {
 }
 
 /**
+ * Token retrieval result with explicit error reasons
+ */
+export type TokenResult =
+  | { ok: true; token: StoredToken }
+  | {
+      ok: false;
+      reason: 'not_found' | 'expired' | 'decrypt_failed' | 'corrupted';
+    };
+
+/**
  * Encrypted token envelope
  */
 interface EncryptedEnvelope {
@@ -140,32 +150,49 @@ export function createTokenStorage(config: TokenStorageConfig) {
     },
 
     /**
-     * Retrieve a token for a user
+     * Retrieve a token for a user with explicit error reasons
      */
-    async getToken(userId: string): Promise<StoredToken | null> {
+    async getTokenResult(userId: string): Promise<TokenResult> {
       const data = await kv.get(`token:${userId}`);
       if (!data) {
-        return null;
+        return { ok: false, reason: 'not_found' };
+      }
+
+      let envelope: EncryptedEnvelope;
+      try {
+        envelope = JSON.parse(data) as EncryptedEnvelope;
+      } catch {
+        console.error(
+          'Failed to parse token envelope for:',
+          userId.substring(0, 8) + '...'
+        );
+        await kv.delete(`token:${userId}`);
+        return { ok: false, reason: 'corrupted' };
       }
 
       try {
-        const envelope = JSON.parse(data) as EncryptedEnvelope;
         const token = await decryptToken(envelope, encryptionKey);
 
         // Check if token is expired
         if (token.expiresAt < Date.now() / 1000) {
-          // Token expired, delete it
           await kv.delete(`token:${userId}`);
-          return null;
+          return { ok: false, reason: 'expired' };
         }
 
-        return token;
+        return { ok: true, token };
       } catch (error) {
         console.error('Failed to decrypt token:', error);
-        // Delete corrupted token
         await kv.delete(`token:${userId}`);
-        return null;
+        return { ok: false, reason: 'decrypt_failed' };
       }
+    },
+
+    /**
+     * Retrieve a token for a user (convenience method, returns null on any error)
+     */
+    async getToken(userId: string): Promise<StoredToken | null> {
+      const result = await this.getTokenResult(userId);
+      return result.ok ? result.token : null;
     },
 
     /**
