@@ -4,17 +4,18 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  createMCPClient,
+  buildMCPClientConfig,
+  type MCPClientAdapter,
+} from '../../mcp/shared/mcp-client.js';
 
 describe('Timeframe Search Parameter Usage Demo', () => {
-  let client: MCPTestClient;
+  let client: MCPClientAdapter;
 
   beforeAll(async () => {
-    client = new MCPTestClient({
-      serverCommand: 'node',
-      serverArgs: ['./dist/index.js'],
-    });
+    client = createMCPClient(buildMCPClientConfig());
     await client.init();
   });
 
@@ -32,7 +33,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
           resource_type: 'people',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             '❌ WRONG Usage - timeframe + date_field:',
             JSON.stringify(result, null, 2)
@@ -59,7 +60,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
           resource_type: 'people',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             '❌ WRONG Usage - this_week + date_field:',
             JSON.stringify(result, null, 2)
@@ -87,7 +88,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
           timeframe: 'last_7_days',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             '✅ CORRECT Usage - timeframe + timeframe_attribute:',
             JSON.stringify(result, null, 2)
@@ -118,7 +119,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
           timeframe: 'this_week',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             '✅ CORRECT Usage - this_week + timeframe_attribute:',
             JSON.stringify(result, null, 2)

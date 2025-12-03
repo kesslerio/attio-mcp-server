@@ -4,18 +4,18 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  createMCPClient,
+  buildMCPClientConfig,
+  type MCPClientAdapter,
+} from '../../mcp/shared/mcp-client.js';
 
 describe('Comprehensive Timeframe Search MCP Validation', () => {
-  let client: MCPTestClient;
+  let client: MCPClientAdapter;
 
   beforeAll(async () => {
-    // Point to our built MCP server
-    client = new MCPTestClient({
-      serverCommand: 'node',
-      serverArgs: ['./dist/index.js'],
-    });
+    client = createMCPClient(buildMCPClientConfig());
     await client.init();
   });
 
@@ -36,7 +36,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           date_operator: 'between',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 5 - Specific date range:',
             JSON.stringify(result, null, 2)
@@ -65,7 +65,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           date_operator: 'greater_than',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 6 - Single start date:',
             JSON.stringify(result, null, 2)
@@ -93,7 +93,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           date_operator: 'less_than',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 7 - Single end date:',
             JSON.stringify(result, null, 2)
@@ -123,7 +123,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           date_operator: 'greater_than',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 8 - Invalid date format:',
             JSON.stringify(result, null, 2)
@@ -158,7 +158,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           date_operator: 'between',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 9 - Backwards date range:',
             JSON.stringify(result, null, 2)
@@ -186,7 +186,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           timeframe: 'yesterday',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 10 - Missing date field:',
             JSON.stringify(result, null, 2)
@@ -215,7 +215,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           end_date: '2024-12-31T23:59:59Z',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 11 - Timeframe override:',
             JSON.stringify(result, null, 2)
@@ -244,7 +244,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           timeframe: 'last_7_days',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 12 - Created at field:',
             JSON.stringify(result, null, 2)
@@ -264,7 +264,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           timeframe: 'last_30_days',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 13 - Updated at field:',
             JSON.stringify(result, null, 2)
@@ -284,7 +284,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           timeframe: 'this_month',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 14 - Last interaction field:',
             JSON.stringify(result, null, 2)
@@ -304,7 +304,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           timeframe: 'yesterday',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 15 - Custom date field:',
             JSON.stringify(result, null, 2)
@@ -336,7 +336,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           date_operator: 'between',
           limit: 100,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 16 - Large date range:',
             JSON.stringify(result, null, 2)
@@ -363,7 +363,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           timeframe: 'today',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 17 - Recent narrow range:',
             JSON.stringify(result, null, 2)
@@ -384,7 +384,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           limit: 20,
           offset: 40,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 18 - With pagination:',
             JSON.stringify(result, null, 2)
@@ -407,7 +407,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           query: 'tech',
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 19 - Timeframe + text search:',
             JSON.stringify(result, null, 2)
@@ -436,7 +436,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           },
           limit: 10,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 20 - Timeframe + filters:',
             JSON.stringify(result, null, 2)
@@ -457,7 +457,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
           query: 'john',
           limit: 50,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Test 21 - Complex combined search:',
             JSON.stringify(result, null, 2)

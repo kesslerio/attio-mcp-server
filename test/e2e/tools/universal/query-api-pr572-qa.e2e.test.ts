@@ -10,17 +10,18 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  createMCPClient,
+  buildMCPClientConfig,
+  type MCPClientAdapter,
+} from '../../mcp/shared/mcp-client.js';
 
 describe('PR #572 Query API QA - MCP Tool Integration', () => {
-  let client: MCPTestClient;
+  let client: MCPClientAdapter;
 
   beforeAll(async () => {
-    client = new MCPTestClient({
-      serverCommand: 'node',
-      serverArgs: ['./dist/index.js'],
-    });
+    client = createMCPClient(buildMCPClientConfig());
     await client.init();
   });
 
@@ -42,7 +43,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           limit: 5,
           content_fields: ['name', 'email'], // This triggers Query API path
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const duration = performance.now() - start;
 
           // Should complete within reasonable time (increased for real API calls)
@@ -76,7 +77,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['name'], // Triggers new Query API
           limit: 3,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
@@ -107,7 +108,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['name', 'description'], // This triggers Query API
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const duration = performance.now() - start;
 
           // Should complete within reasonable time
@@ -139,7 +140,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['name', 'email'], // Multiple content fields
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
@@ -172,7 +173,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['name'], // This should trigger Query API path
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const duration = performance.now() - start;
 
           // Should complete within reasonable time (increased for real API calls)
@@ -206,7 +207,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['title'], // Triggers Query API
           limit: 3,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
@@ -236,7 +237,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           limit: 5,
           // No content_fields - should use legacy approach
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
@@ -258,7 +259,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['name'], // This should trigger Query API
           limit: 3,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           // Should return a response using Query API
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
@@ -280,7 +281,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           query: 'test',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           // Should return a response (error or graceful handling)
           expect(result.content).toBeDefined();
           expect(result.content[0].type).toBe('text');
@@ -309,7 +310,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
           content_fields: ['name'],
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const duration = performance.now() - start;
 
           // Should complete within reasonable time for real API calls
