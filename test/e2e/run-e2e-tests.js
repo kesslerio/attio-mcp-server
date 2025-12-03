@@ -138,6 +138,27 @@ function gatherEnvironmentDetails() {
     info.push(`Node.js version: ${nodeVersion}`);
   }
 
+  const mcpMode = (process.env.MCP_TEST_MODE || 'local').toLowerCase();
+  info.push(`MCP_TEST_MODE=${mcpMode}`);
+
+  if (mcpMode === 'remote') {
+    if (process.env.MCP_REMOTE_ENDPOINT) {
+      info.push('MCP_REMOTE_ENDPOINT is set');
+    } else {
+      issues.push(
+        'MCP_REMOTE_ENDPOINT is required when MCP_TEST_MODE=remote (e.g., https://your-worker.workers.dev/mcp)'
+      );
+    }
+
+    if (process.env.MCP_REMOTE_AUTH_TOKEN) {
+      info.push('MCP_REMOTE_AUTH_TOKEN is set (masked)');
+    } else {
+      warnings.push(
+        'MCP_REMOTE_AUTH_TOKEN not set; remote MCP server must allow unauthenticated requests'
+      );
+    }
+  }
+
   return { envStatus, configFile, info, warnings, issues };
 }
 
