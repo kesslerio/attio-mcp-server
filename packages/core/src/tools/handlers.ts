@@ -28,11 +28,43 @@ function successResult(text: string): ToolResult {
 /**
  * Create an error tool result
  */
-function errorResult(message: string): ToolResult {
+function errorResult(message: string, details?: unknown): ToolResult {
+  let text = `Error: ${message}`;
+  if (details) {
+    text += `\n\nDetails: ${JSON.stringify(details, null, 2)}`;
+  }
   return {
-    content: [{ type: 'text', text: `Error: ${message}` }],
+    content: [{ type: 'text', text }],
     isError: true,
   };
+}
+
+/**
+ * Extract error message from various error shapes
+ */
+function extractErrorInfo(error: unknown): {
+  message: string;
+  details?: unknown;
+} {
+  // HttpError from our client: { status, message, details }
+  if (error && typeof error === 'object' && 'message' in error) {
+    const err = error as {
+      message: string;
+      details?: unknown;
+      status?: number;
+    };
+    return {
+      message: err.status ? `[${err.status}] ${err.message}` : err.message,
+      details: err.details,
+    };
+  }
+
+  // Standard Error
+  if (error instanceof Error) {
+    return { message: error.message };
+  }
+
+  return { message: 'Unknown error' };
 }
 
 /**
@@ -139,6 +171,64 @@ function getObjectSlug(resourceType: string): string {
 }
 
 /**
+ * Special field types that require specific value structures
+ */
+const SPECIAL_FIELD_FORMATS: Record<string, string> = {
+  domains: 'domain',
+  email_addresses: 'email_address',
+  phone_numbers: 'original_phone_number',
+};
+
+/**
+ * Transform user-provided record data into Attio's expected format
+ *
+ * Attio requires:
+ * 1. All values wrapped in a `values` object
+ * 2. Each field value as an array: [{value: "..."}] or [{domain: "..."}] etc.
+ */
+function transformRecordData(
+  recordData: Record<string, unknown>
+): Record<string, unknown> {
+  const values: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(recordData)) {
+    if (value === undefined || value === null) continue;
+
+    // If value is already in Attio array format [{...}], pass through
+    if (
+      Array.isArray(value) &&
+      value.length > 0 &&
+      typeof value[0] === 'object'
+    ) {
+      values[key] = value;
+      continue;
+    }
+
+    // Check if this is a special field type
+    const specialKey = SPECIAL_FIELD_FORMATS[key];
+    if (specialKey) {
+      // Handle array of simple values (e.g., multiple domains)
+      if (Array.isArray(value)) {
+        values[key] = value.map((v) => ({ [specialKey]: String(v) }));
+      } else {
+        values[key] = [{ [specialKey]: String(value) }];
+      }
+      continue;
+    }
+
+    // Standard field: wrap in [{value: ...}]
+    if (Array.isArray(value)) {
+      // Array of simple values
+      values[key] = value.map((v) => ({ value: v }));
+    } else {
+      values[key] = [{ value }];
+    }
+  }
+
+  return { values };
+}
+
+/**
  * Health check handler - no API calls required
  */
 export async function handleHealthCheck(params: {
@@ -165,6 +255,31 @@ export async function handleHealthCheck(params: {
 }
 
 /**
+ * Build search filter based on resource type
+ * Different objects have different name field structures
+ */
+function buildSearchFilter(
+  resourceType: string,
+  query: string
+): Record<string, unknown> {
+  // For people, 'name' is a personal-name type with 'full_name' sub-property
+  if (resourceType === 'people') {
+    return {
+      $or: [
+        { name: { full_name: { $contains: query } } },
+        { email_addresses: { email_address: { $contains: query } } },
+      ],
+    };
+  }
+
+  // For companies and other objects, 'name' is a plain text field
+  // Use shorthand filter which does contains match
+  return {
+    name: { $contains: query },
+  };
+}
+
+/**
  * Search records handler
  */
 export async function handleSearchRecords(
@@ -188,19 +303,13 @@ export async function handleSearchRecords(
     };
 
     if (query) {
-      body.filter = {
-        $or: [
-          { name: { $contains: query } },
-          { full_name: { $contains: query } },
-        ],
-      };
+      body.filter = buildSearchFilter(resource_type, query);
     }
 
     if (filters?.filters && filters.filters.length > 0) {
       // Convert our filter format to Attio's format
       const attioFilters = filters.filters.map((f) => ({
-        attribute: f.attribute.slug,
-        [f.condition]: f.value,
+        [f.attribute.slug]: { [f.condition]: f.value },
       }));
 
       if (filters.matchAny) {
@@ -217,8 +326,8 @@ export async function handleSearchRecords(
 
     return successResult(formatRecordList(response.data.data, resource_type));
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Search failed';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Search failed', details);
   }
 }
 
@@ -245,9 +354,8 @@ export async function handleGetRecordDetails(
       formatRecordDetails(response.data.data, resource_type)
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to get record';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Failed to get record', details);
   }
 }
 
@@ -266,13 +374,8 @@ export async function handleCreateRecord(
     const { resource_type, record_data, return_details = true } = params;
     const objectSlug = getObjectSlug(resource_type);
 
-    // Transform record_data to Attio's expected format
-    const data: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(record_data)) {
-      if (value !== undefined && value !== null) {
-        data[key] = value;
-      }
-    }
+    // Transform record_data to Attio's expected format with values wrapper
+    const data = transformRecordData(record_data);
 
     const response = await client.post<AttioApiResponse<AttioRecord>>(
       `/v2/objects/${objectSlug}/records`,
@@ -290,9 +393,8 @@ export async function handleCreateRecord(
 
     return successResult(`Created ${resource_type} record with ID: ${id}`);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to create record';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Failed to create record', details);
   }
 }
 
@@ -317,13 +419,8 @@ export async function handleUpdateRecord(
     } = params;
     const objectSlug = getObjectSlug(resource_type);
 
-    // Transform record_data to Attio's expected format
-    const data: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(record_data)) {
-      if (value !== undefined && value !== null) {
-        data[key] = value;
-      }
-    }
+    // Transform record_data to Attio's expected format with values wrapper
+    const data = transformRecordData(record_data);
 
     const response = await client.patch<AttioApiResponse<AttioRecord>>(
       `/v2/objects/${objectSlug}/records/${record_id}`,
@@ -342,9 +439,8 @@ export async function handleUpdateRecord(
       `Updated ${resource_type} record with ID: ${record_id}`
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to update record';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Failed to update record', details);
   }
 }
 
@@ -368,9 +464,8 @@ export async function handleDeleteRecord(
       `Deleted ${resource_type} record with ID: ${record_id}`
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to delete record';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Failed to delete record', details);
   }
 }
 
@@ -424,9 +519,8 @@ export async function handleDiscoverAttributes(
       `Attributes for ${resource_type}:\n${lines.join('\n')}`
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to discover attributes';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Failed to discover attributes', details);
   }
 }
 
@@ -455,11 +549,13 @@ export async function handleCreateNote(
     const response = await client.post<AttioApiResponse<AttioNote>>(
       '/v2/notes',
       {
-        parent_object: resource_type,
-        parent_record_id: record_id,
-        title,
-        content_plaintext: content,
-        format,
+        data: {
+          parent_object: resource_type,
+          parent_record_id: record_id,
+          title,
+          format,
+          content, // API expects 'content', not 'content_plaintext'
+        },
       }
     );
 
@@ -470,9 +566,8 @@ export async function handleCreateNote(
       `Created note "${title}" (ID: ${noteId}) on ${resource_type} ${record_id}`
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to create note';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Failed to create note', details);
   }
 }
 
@@ -520,9 +615,8 @@ export async function handleListNotes(
       `Notes for ${resource_type} ${record_id}:\n${lines.join('\n')}`
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to list notes';
-    return errorResult(message);
+    const { message, details } = extractErrorInfo(error);
+    return errorResult(message || 'Failed to list notes', details);
   }
 }
 

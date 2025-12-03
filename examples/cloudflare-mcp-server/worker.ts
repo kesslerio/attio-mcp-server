@@ -67,13 +67,19 @@ function corsHeaders(origin?: string): Record<string, string> {
   };
 }
 
+// Normalize URL by removing trailing slashes
+function normalizeUrl(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
 // OAuth discovery metadata (RFC 8414)
 function getOAuthMetadata(workerUrl: string): object {
+  const baseUrl = normalizeUrl(workerUrl);
   return {
-    issuer: workerUrl,
-    authorization_endpoint: `${workerUrl}/oauth/authorize`,
-    token_endpoint: `${workerUrl}/oauth/token`,
-    registration_endpoint: `${workerUrl}/oauth/register`,
+    issuer: `${baseUrl}/`,
+    authorization_endpoint: `${baseUrl}/oauth/authorize`,
+    token_endpoint: `${baseUrl}/oauth/token`,
+    registration_endpoint: `${baseUrl}/oauth/register`,
     scopes_supported: [
       'record_permission:read',
       'record_permission:read_write',
@@ -89,9 +95,10 @@ function getOAuthMetadata(workerUrl: string): object {
 
 // Protected resource metadata (for ChatGPT)
 function getProtectedResourceMetadata(workerUrl: string): object {
+  const baseUrl = normalizeUrl(workerUrl);
   return {
-    resource: workerUrl,
-    authorization_servers: [workerUrl],
+    resource: baseUrl,
+    authorization_servers: [baseUrl],
     scopes_supported: [
       'record_permission:read',
       'record_permission:read_write',
@@ -208,11 +215,12 @@ function handleProtectedResource(env: Env, origin?: string): Response {
 // Handler: Authorize redirect
 async function handleAuthorize(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
+  const baseUrl = normalizeUrl(env.WORKER_URL);
 
   // Get parameters from query string
   const clientId = url.searchParams.get('client_id') || env.ATTIO_CLIENT_ID;
   const redirectUri =
-    url.searchParams.get('redirect_uri') || `${env.WORKER_URL}/oauth/callback`;
+    url.searchParams.get('redirect_uri') || `${baseUrl}/oauth/callback`;
   const scope =
     url.searchParams.get('scope') ||
     'record_permission:read record_permission:read_write user_management:read object:read';
@@ -221,27 +229,34 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
   const codeChallengeMethod =
     url.searchParams.get('code_challenge_method') || 'S256';
 
-  // Store state and PKCE info in KV if available
+  // Store state and PKCE info in KV for callback
+  // Use TOKEN_STORE as primary storage (always available)
+  const sessionData = {
+    redirectUri,
+    codeChallenge,
+    codeChallengeMethod,
+    clientId,
+  };
+
+  await env.TOKEN_STORE.put(
+    `session:${state}`,
+    JSON.stringify(sessionData),
+    { expirationTtl: 600 } // 10 minutes
+  );
+
+  // Also store in OAUTH_SESSIONS if available (legacy support)
   if (env.OAUTH_SESSIONS && codeChallenge) {
     await env.OAUTH_SESSIONS.put(
       `state:${state}`,
-      JSON.stringify({
-        redirectUri,
-        codeChallenge,
-        codeChallengeMethod,
-        clientId,
-      }),
-      { expirationTtl: 600 } // 10 minutes
+      JSON.stringify(sessionData),
+      { expirationTtl: 600 }
     );
   }
 
   // Build Attio authorization URL
   const attioAuthUrl = new URL('https://app.attio.com/authorize');
   attioAuthUrl.searchParams.set('client_id', env.ATTIO_CLIENT_ID);
-  attioAuthUrl.searchParams.set(
-    'redirect_uri',
-    `${env.WORKER_URL}/oauth/callback`
-  );
+  attioAuthUrl.searchParams.set('redirect_uri', `${baseUrl}/oauth/callback`);
   attioAuthUrl.searchParams.set('response_type', 'code');
   attioAuthUrl.searchParams.set('scope', scope);
   attioAuthUrl.searchParams.set('state', state);
@@ -258,6 +273,7 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
 // Handler: OAuth callback from Attio
 async function handleCallback(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
+  const baseUrl = normalizeUrl(env.WORKER_URL);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
@@ -297,7 +313,7 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
       client_id: env.ATTIO_CLIENT_ID,
       client_secret: env.ATTIO_CLIENT_SECRET,
       code,
-      redirect_uri: `${env.WORKER_URL}/oauth/callback`,
+      redirect_uri: `${baseUrl}/oauth/callback`,
     }).toString(),
   });
 
@@ -330,8 +346,11 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     token_type?: string;
   };
 
-  // Store tokens in encrypted KV storage
-  if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY && state) {
+  // Generate an authorization code for the client
+  const authCode = generateRandomString(32);
+
+  // Store tokens in encrypted KV storage, keyed by the auth code
+  if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY) {
     const tokenStorage = createTokenStorage({
       kv: env.TOKEN_STORE,
       encryptionKey: env.TOKEN_ENCRYPTION_KEY,
@@ -344,10 +363,44 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
       tokenType: tokens.token_type || 'Bearer',
     };
 
-    await tokenStorage.storeToken(state, storedToken);
+    // Store with auth code as key (for token exchange)
+    await tokenStorage.storeToken(authCode, storedToken);
+
+    // Also store with state for backward compatibility
+    if (state) {
+      await tokenStorage.storeToken(state, storedToken);
+    }
   }
 
-  // Success page with token display and MCP instructions
+  // Check if we have a client redirect_uri to return to
+  let clientRedirectUri: string | null = null;
+  if (state) {
+    const sessionDataStr = await env.TOKEN_STORE.get(`session:${state}`);
+    if (sessionDataStr) {
+      try {
+        const sessionData = JSON.parse(sessionDataStr) as {
+          redirectUri?: string;
+        };
+        clientRedirectUri = sessionData.redirectUri || null;
+      } catch {
+        // Ignore parse errors
+      }
+      // Clean up session data
+      await env.TOKEN_STORE.delete(`session:${state}`);
+    }
+  }
+
+  // If we have a client redirect_uri, redirect back to the client with the auth code
+  if (clientRedirectUri && clientRedirectUri !== `${baseUrl}/oauth/callback`) {
+    const redirectUrl = new URL(clientRedirectUri);
+    redirectUrl.searchParams.set('code', authCode);
+    if (state) {
+      redirectUrl.searchParams.set('state', state);
+    }
+    return Response.redirect(redirectUrl.toString(), 302);
+  }
+
+  // Fallback: Success page with token display and MCP instructions
   return new Response(
     `
     <!DOCTYPE html>
@@ -441,8 +494,66 @@ async function handleToken(
   }
 
   const grantType = params.get('grant_type');
+  const baseUrl = normalizeUrl(env.WORKER_URL);
 
-  // Build token request to Attio
+  // For authorization_code grant, first check if we have stored tokens for this code
+  if (grantType === 'authorization_code' || !grantType) {
+    const code = params.get('code');
+    if (!code) {
+      return new Response(
+        JSON.stringify({
+          error: 'invalid_request',
+          error_description: 'Missing code',
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders(origin),
+          },
+        }
+      );
+    }
+
+    // Check if this is one of our generated auth codes
+    if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY) {
+      const tokenStorage = createTokenStorage({
+        kv: env.TOKEN_STORE,
+        encryptionKey: env.TOKEN_ENCRYPTION_KEY,
+      });
+
+      const storedToken = await tokenStorage.getToken(code);
+      if (storedToken) {
+        // Return the stored tokens
+        const response = {
+          access_token: storedToken.accessToken,
+          token_type: storedToken.tokenType || 'Bearer',
+          expires_in: Math.max(
+            0,
+            storedToken.expiresAt - Math.floor(Date.now() / 1000)
+          ),
+          ...(storedToken.refreshToken && {
+            refresh_token: storedToken.refreshToken,
+          }),
+        };
+
+        // Delete the auth code after use (one-time use)
+        await tokenStorage.deleteToken(code);
+
+        return new Response(JSON.stringify(response), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders(origin),
+          },
+        });
+      }
+    }
+
+    // Not our code, fall through to forward to Attio
+  }
+
+  // Build token request to Attio (for refresh_token or direct Attio codes)
   const tokenParams = new URLSearchParams({
     grant_type: grantType || 'authorization_code',
     client_id: params.get('client_id') || env.ATTIO_CLIENT_ID,
@@ -469,25 +580,12 @@ async function handleToken(
     tokenParams.set('refresh_token', refreshToken);
   } else {
     const code = params.get('code');
-    if (!code) {
-      return new Response(
-        JSON.stringify({
-          error: 'invalid_request',
-          error_description: 'Missing code',
-        }),
-        {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders(origin),
-          },
-        }
-      );
+    if (code) {
+      tokenParams.set('code', code);
     }
-    tokenParams.set('code', code);
     tokenParams.set(
       'redirect_uri',
-      params.get('redirect_uri') || `${env.WORKER_URL}/oauth/callback`
+      params.get('redirect_uri') || `${baseUrl}/oauth/callback`
     );
 
     // PKCE code_verifier
@@ -540,11 +638,12 @@ async function handleRegister(
   // Generate a client ID for this registration
   const clientId = `mcp_${generateRandomString(16)}`;
 
+  const baseUrl = normalizeUrl(env.WORKER_URL);
   const response = {
     client_id: clientId,
     client_secret: env.ATTIO_CLIENT_SECRET,
     client_name: body.client_name || 'MCP Client',
-    redirect_uris: body.redirect_uris || [`${env.WORKER_URL}/oauth/callback`],
+    redirect_uris: body.redirect_uris || [`${baseUrl}/oauth/callback`],
     grant_types: body.grant_types || ['authorization_code', 'refresh_token'],
     response_types: body.response_types || ['code'],
     token_endpoint_auth_method: 'client_secret_post',
