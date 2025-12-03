@@ -19,6 +19,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.3.5] - 2025-12-02
+
+**Self-host your own remote MCP server** - Use Attio from Claude.ai, ChatGPT, or any remote MCP client without relying on third-party platforms.
+
+This release addresses [Issue #928](https://github.com/kesslerio/attio-mcp-server/issues/928) by providing a **free, self-hosted alternative to Smithery** for remote OAuth MCP deployment. Deploy once to Cloudflare Workers (free tier) and access your Attio data from anywhere.
+
+### Why This Matters
+
+- **No third-party dependencies** - Your credentials stay on infrastructure you control
+- **Works with any remote MCP client** - Claude.ai, ChatGPT, custom integrations
+- **Completely free** - Cloudflare Workers free tier is more than sufficient
+- **Global edge deployment** - Low latency from anywhere in the world
+
+### Added
+
+- **Self-hosted Remote MCP Server** ([docs](https://github.com/kesslerio/attio-mcp-server/tree/main/examples/cloudflare-mcp-server))
+  - Full MCP protocol over HTTP - all 40+ Attio tools work remotely
+  - OAuth 2.1 with PKCE for secure authentication
+  - Encrypted token storage in Cloudflare Workers KV
+  - Dynamic client registration for Claude.ai and ChatGPT
+  - One-time deploy, works forever
+
+- **`@attio-mcp/core` package** - Edge-compatible core library for custom deployments
+
+### Security
+
+- **OAuth security hardening**
+  - Exact hostname validation prevents redirect attacks
+  - One-time authorization codes (deleted after use)
+  - Session token separation from auth codes
+
 ## [1.3.0] - 2025-12-02
 
 OAuth access token support - enables delegated authentication for third-party integrations and Claude Desktop users who prefer OAuth over API keys.
