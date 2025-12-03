@@ -1,0 +1,76 @@
+# Cloudflare Worker configuration for Attio Remote MCP Server
+# Copy this file to wrangler.toml and fill in your own values
+# See: https://developers.cloudflare.com/workers/configuration/
+
+name = "attio-mcp-server"
+main = "worker.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Development settings
+[dev]
+port = 8787
+
+# Environment variables (set via CLI or dashboard, NOT in this file)
+# wrangler secret put ATTIO_CLIENT_ID
+# wrangler secret put ATTIO_CLIENT_SECRET
+# wrangler secret put WORKER_URL
+# wrangler secret put TOKEN_ENCRYPTION_KEY  # 32-byte hex key for AES-256
+
+# Vars that can be in config (non-sensitive)
+[vars]
+# WORKER_URL will be set as a secret for production
+
+# KV namespace for encrypted token storage
+# Create with: wrangler kv:namespace create "TOKEN_STORE"
+# Then replace the id below with your own KV namespace ID
+[[kv_namespaces]]
+binding = "TOKEN_STORE"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
+
+# Durable Objects for MCP session state (optional, for advanced features)
+# [[durable_objects.bindings]]
+# name = "MCP_SESSIONS"
+# class_name = "McpSession"
+
+# Production environment
+[env.production]
+name = "attio-mcp-server"
+[[env.production.kv_namespaces]]
+binding = "TOKEN_STORE"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
+
+# Staging environment (create separate KV for staging if needed)
+[env.staging]
+name = "attio-mcp-server-staging"
+[[env.staging.kv_namespaces]]
+binding = "TOKEN_STORE"
+id = "YOUR_STAGING_KV_NAMESPACE_ID_HERE"
+
+# Custom domain (optional)
+# [routes]
+# pattern = "mcp.yourdomain.com/*"
+# zone_name = "yourdomain.com"
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Assets (for potential static files like docs)
+# [site]
+# bucket = "./public"
+
+# Observability (optional - for debugging)
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+# Note: traces and persist may show warnings but are useful for debugging
+# [observability.traces]
+# enabled = true
+# head_sampling_rate = 1
