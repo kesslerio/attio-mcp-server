@@ -74,7 +74,7 @@ Creates a custom HTTP client with specified configuration.
 ```typescript
 interface HttpClientConfig {
   baseUrl: string;
-  authorization?: string;
+  authorization: string; // Required for Attio API calls
   timeout?: number;
   headers?: Record<string, string>;
 }
@@ -106,17 +106,17 @@ Returns all available tool definitions.
 
 ## Available Tools
 
-| Tool                          | Description                                   |
-| ----------------------------- | --------------------------------------------- |
-| `health-check`                | Check API connectivity                        |
-| `records_search`              | Search records by type and query              |
-| `records_get_details`         | Get detailed record information               |
-| `create-record`               | Create a new record                           |
-| `update-record`               | Update an existing record                     |
-| `delete-record`               | Delete a record                               |
-| `records_discover_attributes` | List available attributes for a resource type |
-| `create-note`                 | Create a note on a record                     |
-| `list-notes`                  | List notes for a record                       |
+| Tool                          | Description                                                   |
+| ----------------------------- | ------------------------------------------------------------- |
+| `aaa-health-check`            | Check API connectivity (aaa- prefix for alphabetical sorting) |
+| `records_search`              | Search records by type and query                              |
+| `records_get_details`         | Get detailed record information                               |
+| `create-record`               | Create a new record                                           |
+| `update-record`               | Update an existing record                                     |
+| `delete-record`               | Delete a record                                               |
+| `records_discover_attributes` | List available attributes for a resource type                 |
+| `create-note`                 | Create a note on a record                                     |
+| `list-notes`                  | List notes for a record                                       |
 
 ## Edge Compatibility
 

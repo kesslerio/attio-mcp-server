@@ -79,7 +79,8 @@ function getOAuthMetadata(workerUrl: string): object {
     issuer: `${baseUrl}/`,
     authorization_endpoint: `${baseUrl}/oauth/authorize`,
     token_endpoint: `${baseUrl}/oauth/token`,
-    registration_endpoint: `${baseUrl}/oauth/register`,
+    // Note: registration_endpoint removed - dynamic client registration not supported
+    // to avoid exposing ATTIO_CLIENT_SECRET to arbitrary clients
     scopes_supported: [
       'record_permission:read',
       'record_permission:read_write',
@@ -616,46 +617,27 @@ async function handleToken(
 }
 
 // Handler: Dynamic client registration (RFC 7591)
+// SECURITY: Disabled to prevent exposing ATTIO_CLIENT_SECRET to arbitrary clients.
+// MCP clients should be configured manually with the worker's client_id.
 async function handleRegister(
-  request: Request,
-  env: Env,
+  _request: Request,
+  _env: Env,
   origin?: string
 ): Promise<Response> {
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', {
-      status: 405,
-      headers: corsHeaders(origin),
-    });
-  }
-
-  const body = (await request.json()) as {
-    redirect_uris?: string[];
-    client_name?: string;
-    grant_types?: string[];
-    response_types?: string[];
-  };
-
-  // Generate a client ID for this registration
-  const clientId = `mcp_${generateRandomString(16)}`;
-
-  const baseUrl = normalizeUrl(env.WORKER_URL);
-  const response = {
-    client_id: clientId,
-    client_secret: env.ATTIO_CLIENT_SECRET,
-    client_name: body.client_name || 'MCP Client',
-    redirect_uris: body.redirect_uris || [`${baseUrl}/oauth/callback`],
-    grant_types: body.grant_types || ['authorization_code', 'refresh_token'],
-    response_types: body.response_types || ['code'],
-    token_endpoint_auth_method: 'client_secret_post',
-  };
-
-  return new Response(JSON.stringify(response), {
-    status: 201,
-    headers: {
-      'Content-Type': 'application/json',
-      ...corsHeaders(origin),
-    },
-  });
+  return new Response(
+    JSON.stringify({
+      error: 'not_implemented',
+      error_description:
+        'Dynamic client registration is not supported. Configure MCP clients manually using the worker URL.',
+    }),
+    {
+      status: 501,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders(origin),
+      },
+    }
+  );
 }
 
 // Handler: MCP endpoint

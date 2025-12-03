@@ -168,7 +168,7 @@ If you see "error code: 1042", check the [Troubleshooting](#troubleshooting) sec
 
 | Tool                          | Description                            |
 | ----------------------------- | -------------------------------------- |
-| `health-check`                | Verify server connectivity             |
+| `aaa-health-check`            | Verify server connectivity             |
 | `records_search`              | Search companies, people, deals, tasks |
 | `records_get_details`         | Get full record details                |
 | `create-record`               | Create new records                     |

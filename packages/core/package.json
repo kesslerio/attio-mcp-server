@@ -35,9 +35,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "zod": "^3.23.8"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.4.1"
   },
