@@ -146,7 +146,13 @@ export interface AttioApiResponse<T> {
  * Tool execution result for MCP
  */
 export interface ToolResult {
-  content: Array<{ type: 'text'; text: string }>;
+  content: Array<
+    | { type: 'text'; text: string }
+    | {
+        type: 'json';
+        data: unknown;
+      }
+  >;
   isError: boolean;
 }
 

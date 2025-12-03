@@ -194,10 +194,27 @@ export async function executeToolRequest(request: CallToolRequest) {
         formattedResult = JSON.stringify(rawResult, null, 2);
       }
 
-      result = {
-        content: [{ type: 'text', text: formattedResult }],
-        isError: false,
-      };
+      // If structuredOutput is defined, return dual content for programmatic parsing
+      // content[0]: JSON string for parsing, content[1]: human-readable text
+      if (toolConfig.structuredOutput) {
+        const resourceTypeArg = args?.resource_type as string | undefined;
+        const structured = toolConfig.structuredOutput(
+          rawResult,
+          resourceTypeArg
+        );
+        result = {
+          content: [
+            { type: 'text', text: JSON.stringify(structured) },
+            { type: 'text', text: formattedResult },
+          ],
+          isError: false,
+        };
+      } else {
+        result = {
+          content: [{ type: 'text', text: formattedResult }],
+          isError: false,
+        };
+      }
     } else if (resourceType === 'GENERAL') {
       // For general tools, use the tool's own handler directly
       const args = request.params.arguments as Record<string, unknown>;

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import { aliasEntries } from './configs/vitest/aliases.ts';
+import { aliasEntries } from './aliases.ts';
 
 /**
  * Vitest config for debug/diagnostic tests

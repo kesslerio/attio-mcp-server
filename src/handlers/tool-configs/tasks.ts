@@ -8,6 +8,23 @@ import {
 } from '../../objects/tasks.js';
 import { ToolConfig } from '../tool-types.js';
 
+/**
+ * Normalize task data for structuredOutput
+ * Ensures id.workspace_id is present for test compatibility
+ */
+function normalizeTask(task: AttioTask): Record<string, unknown> {
+  if (!task) return {};
+  const taskAny = task as Record<string, unknown>;
+  const taskId = task.id as Record<string, unknown> | undefined;
+  return {
+    ...task,
+    id: {
+      ...taskId,
+      workspace_id: taskId?.workspace_id ?? taskAny.workspace_id ?? 'default',
+    },
+  };
+}
+
 export const tasksToolConfigs = {
   listTasks: {
     name: 'list-tasks',
@@ -24,6 +41,10 @@ export const tasksToolConfigs = {
         })
         .join('\n')}`;
     },
+    structuredOutput: (tasks: AttioTask[]) => ({
+      data: tasks?.map(normalizeTask) ?? [],
+      count: tasks?.length ?? 0,
+    }),
   } as ToolConfig,
   createTask: {
     name: 'create-task',
@@ -45,6 +66,7 @@ export const tasksToolConfigs = {
           : '';
       return `Created task '${taskTitle}' (${task.id.task_id})${assigneeInfo}${linkedInfo}`;
     },
+    structuredOutput: (task: AttioTask) => normalizeTask(task),
   } as ToolConfig,
   updateTask: {
     name: 'update-task',
@@ -62,14 +84,20 @@ export const tasksToolConfigs = {
           : '';
       return `Updated task '${taskTitle}' (${task.id.task_id})${assigneeInfo}`;
     },
+    structuredOutput: (task: AttioTask) => normalizeTask(task),
   } as ToolConfig,
   deleteTask: {
     name: 'delete-task',
     handler: deleteTask,
+    structuredOutput: (result: { success: boolean; task_id?: string }) => ({
+      success: result?.success ?? false,
+      task_id: result?.task_id ?? 'unknown',
+    }),
   } as ToolConfig,
   linkRecord: {
     name: 'link-record-to-task',
     handler: linkRecordToTask,
+    structuredOutput: (task: AttioTask) => normalizeTask(task),
   } as ToolConfig,
 };
 

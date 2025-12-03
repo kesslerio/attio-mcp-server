@@ -17,6 +17,19 @@ export interface ToolConfig {
   handler: any; // Keep as any for compatibility with existing tool configs
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatResult?: (results: any) => string;
+  /**
+   * Optional function to return normalized structured data alongside text.
+   * When defined, dispatcher returns dual content:
+   * - content[0]: JSON.stringify(structuredOutput result) - for programmatic parsing
+   * - content[1]: formatResult text - for human readability
+   * This enables tests and clients to receive structured JSON without breaking
+   * the existing string-only formatResult contract.
+   */
+
+  structuredOutput?: (
+    results: any,
+    resourceType?: string
+  ) => Record<string, unknown>;
 }
 
 // Search tool configuration

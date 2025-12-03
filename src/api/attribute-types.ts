@@ -57,13 +57,24 @@ export interface AttioAttributeMetadata {
  * Reduces API calls while preventing stale data (15-minute expiration)
  * Per PR #905 performance optimization
  */
-const attributeCache = new TTLCache<
+let attributeCache: TTLCache<
   string,
   Map<string, AttioAttributeMetadata>
->(
-  15 * 60 * 1000, // 15 minutes TTL
-  5 * 60 * 1000 // 5 minutes cleanup interval
-);
+> | null = null;
+
+function getAttributeCache(): TTLCache<
+  string,
+  Map<string, AttioAttributeMetadata>
+> {
+  if (!attributeCache) {
+    attributeCache = new TTLCache(
+      15 * 60 * 1000, // 15 minutes TTL
+      5 * 60 * 1000 // 5 minutes cleanup interval
+    );
+  }
+
+  return attributeCache;
+}
 
 /**
  * Fetches and caches attribute metadata for a specific object type
@@ -74,9 +85,10 @@ const attributeCache = new TTLCache<
 export async function getObjectAttributeMetadata(
   objectSlug: string
 ): Promise<Map<string, AttioAttributeMetadata>> {
+  const cache = getAttributeCache();
   // Check cache first
-  if (attributeCache.has(objectSlug)) {
-    return attributeCache.get(objectSlug)!;
+  if (cache.has(objectSlug)) {
+    return cache.get(objectSlug)!;
   }
 
   try {
@@ -84,7 +96,7 @@ export async function getObjectAttributeMetadata(
     if (objectSlug === 'tasks') {
       // Tasks have predefined fields, not dynamic attributes
       const taskMetadata = createTaskAttributeMetadata();
-      attributeCache.set(objectSlug, taskMetadata);
+      cache.set(objectSlug, taskMetadata);
       return taskMetadata;
     }
 
@@ -128,7 +140,7 @@ export async function getObjectAttributeMetadata(
     });
 
     // Cache the result
-    attributeCache.set(objectSlug, metadataMap);
+    cache.set(objectSlug, metadataMap);
 
     return metadataMap;
   } catch (err: unknown) {
@@ -341,10 +353,11 @@ export async function getAttributeTypeInfo(
  * @param objectSlug - Optional object type to clear (clears all if not provided)
  */
 export function clearAttributeCache(objectSlug?: string): void {
+  const cache = getAttributeCache();
   if (objectSlug) {
-    attributeCache.delete(objectSlug);
+    cache.delete(objectSlug);
   } else {
-    attributeCache.clear();
+    cache.clear();
   }
 }
 

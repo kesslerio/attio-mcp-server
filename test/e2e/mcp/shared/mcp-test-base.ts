@@ -3,9 +3,13 @@
  * Provides common setup, teardown, and utilities for MCP protocol testing
  */
 
-import { MCPTestClient } from 'mcp-test-client';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { TestDataFactory } from './test-data-factory.js';
+import {
+  buildMCPClientConfig,
+  createMCPClient,
+  type MCPClientAdapter,
+} from './mcp-client.js';
 
 export interface MCPTestConfig {
   serverCommand?: string;
@@ -14,7 +18,7 @@ export interface MCPTestConfig {
 }
 
 export abstract class MCPTestBase {
-  protected client: MCPTestClient;
+  protected client: MCPClientAdapter;
   protected testPrefix: string;
   private lastApiCall: number = 0;
   // Make rate limiting configurable for CI environments (Issue #649 feedback)
@@ -47,11 +51,12 @@ export abstract class MCPTestBase {
    * Initialize MCP test client
    */
   async setup(config: MCPTestConfig = {}): Promise<void> {
-    this.client = new MCPTestClient({
-      serverCommand: config.serverCommand || 'node',
-      serverArgs: config.serverArgs || ['./dist/cli.js'],
+    const clientConfig = buildMCPClientConfig({
+      serverCommand: config.serverCommand,
+      serverArgs: config.serverArgs,
     });
 
+    this.client = createMCPClient(clientConfig);
     await this.client.init();
   }
 

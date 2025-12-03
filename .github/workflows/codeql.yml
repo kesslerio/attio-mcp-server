@@ -10,7 +10,7 @@ on:
       - 'package*.json'
       - 'tsconfig*.json'
       - '.github/workflows/codeql.yml'
-      - 'codeql-config.yml'
+      - '.github/codeql-config.yml'
   schedule:
     - cron: '30 7 * * 1' # Weekly Monday 07:30 UTC
   workflow_dispatch:
@@ -50,7 +50,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          config-file: codeql-config.yml
+          config-file: .github/codeql-config.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

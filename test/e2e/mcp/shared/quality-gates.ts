@@ -30,9 +30,9 @@ export class QualityGates {
    */
   static validateP0Results(results: TestResult[]): QualityGateResult {
     const totalCount = results.length;
-    const passedTests = results.filter(r => r.passed);
+    const passedTests = results.filter((r) => r.passed);
     const passCount = passedTests.length;
-    const failedTests = results.filter(r => !r.passed);
+    const failedTests = results.filter((r) => !r.passed);
     const passRate = (passCount / totalCount) * 100;
 
     if (passCount !== totalCount) {
@@ -45,8 +45,10 @@ export class QualityGates {
           total: totalCount,
           passed: passCount,
           failed: failedTests.length,
-          failedTests: failedTests.map(t => `${t.test}${t.error ? `: ${t.error}` : ''}`)
-        }
+          failedTests: failedTests.map(
+            (t) => `${t.test}${t.error ? `: ${t.error}` : ''}`
+          ),
+        },
       };
     }
 
@@ -58,8 +60,8 @@ export class QualityGates {
       details: {
         total: totalCount,
         passed: passCount,
-        failed: 0
-      }
+        failed: 0,
+      },
     };
   }
 
@@ -69,9 +71,9 @@ export class QualityGates {
    */
   static validateP1Results(results: TestResult[]): QualityGateResult {
     const totalCount = results.length;
-    const passedTests = results.filter(r => r.passed);
+    const passedTests = results.filter((r) => r.passed);
     const passCount = passedTests.length;
-    const failedTests = results.filter(r => !r.passed);
+    const failedTests = results.filter((r) => !r.passed);
     const passRate = (passCount / totalCount) * 100;
     const requiredPassRate = 80;
 
@@ -85,8 +87,10 @@ export class QualityGates {
           total: totalCount,
           passed: passCount,
           failed: failedTests.length,
-          failedTests: failedTests.map(t => `${t.test}${t.error ? `: ${t.error}` : ''}`)
-        }
+          failedTests: failedTests.map(
+            (t) => `${t.test}${t.error ? `: ${t.error}` : ''}`
+          ),
+        },
       };
     }
 
@@ -99,8 +103,9 @@ export class QualityGates {
         total: totalCount,
         passed: passCount,
         failed: failedTests.length,
-        failedTests: failedTests.length > 0 ? failedTests.map(t => t.test) : undefined
-      }
+        failedTests:
+          failedTests.length > 0 ? failedTests.map((t) => t.test) : undefined,
+      },
     };
   }
 
@@ -110,9 +115,9 @@ export class QualityGates {
    */
   static validateP2Results(results: TestResult[]): QualityGateResult {
     const totalCount = results.length;
-    const passedTests = results.filter(r => r.passed);
+    const passedTests = results.filter((r) => r.passed);
     const passCount = passedTests.length;
-    const failedTests = results.filter(r => !r.passed);
+    const failedTests = results.filter((r) => !r.passed);
     const passRate = (passCount / totalCount) * 100;
     const targetPassRate = 50;
 
@@ -129,8 +134,9 @@ export class QualityGates {
         total: totalCount,
         passed: passCount,
         failed: failedTests.length,
-        failedTests: failedTests.length > 0 ? failedTests.map(t => t.test) : undefined
-      }
+        failedTests:
+          failedTests.length > 0 ? failedTests.map((t) => t.test) : undefined,
+      },
     };
   }
 
@@ -145,7 +151,7 @@ export class QualityGates {
     const lines: string[] = [
       '\n' + '='.repeat(60),
       'MCP TEST SUITE QUALITY GATE SUMMARY',
-      '='.repeat(60)
+      '='.repeat(60),
     ];
 
     if (p0Results) {
@@ -155,10 +161,10 @@ export class QualityGates {
         `  Pass Rate: ${p0Results.passRate.toFixed(1)}%`,
         `  ${p0Results.details?.passed}/${p0Results.details?.total} tests passed`
       );
-      
+
       if (!p0Results.passed && p0Results.details?.failedTests) {
         lines.push('  Failed Tests:');
-        p0Results.details.failedTests.forEach(test => {
+        p0Results.details.failedTests.forEach((test) => {
           lines.push(`    - ${test}`);
         });
       }
@@ -171,10 +177,10 @@ export class QualityGates {
         `  Pass Rate: ${p1Results.passRate.toFixed(1)}%`,
         `  ${p1Results.details?.passed}/${p1Results.details?.total} tests passed`
       );
-      
+
       if (!p1Results.passed && p1Results.details?.failedTests) {
         lines.push('  Failed Tests:');
-        p1Results.details.failedTests.forEach(test => {
+        p1Results.details.failedTests.forEach((test) => {
           lines.push(`    - ${test}`);
         });
       }
@@ -190,12 +196,13 @@ export class QualityGates {
     }
 
     // Overall deployment decision
-    const canDeploy = (!p0Results || p0Results.passed) && (!p1Results || p1Results.passed);
-    
+    const canDeploy =
+      (!p0Results || p0Results.passed) && (!p1Results || p1Results.passed);
+
     lines.push(
       '\n' + '-'.repeat(60),
       'DEPLOYMENT DECISION:',
-      canDeploy 
+      canDeploy
         ? '✅ READY FOR DEPLOYMENT - All quality gates passed'
         : '❌ DEPLOYMENT BLOCKED - Quality gate failures detected',
       '='.repeat(60) + '\n'
@@ -211,6 +218,8 @@ export class QualityGates {
     p0Results?: QualityGateResult,
     p1Results?: QualityGateResult
   ): boolean {
-    return (p0Results?.blockDeployment === true) || (p1Results?.blockDeployment === true);
+    return (
+      p0Results?.blockDeployment === true || p1Results?.blockDeployment === true
+    );
   }
 }

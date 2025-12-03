@@ -141,6 +141,15 @@ export const searchRecordsConfig: UniversalToolConfig<
 
     return `Found ${recordsArray.length} ${typeName}:\n${formattedResults}`;
   },
+  structuredOutput: (
+    results: AttioRecord[] | { data: AttioRecord[] }
+  ): Record<string, unknown> => {
+    // Return the raw records array for JSON parsing
+    const recordsArray = Array.isArray(results)
+      ? results
+      : (results?.data ?? []);
+    return { data: recordsArray, count: recordsArray.length };
+  },
 };
 
 export const searchRecordsDefinition = {
