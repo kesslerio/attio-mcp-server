@@ -66,7 +66,7 @@ OAuth access token support - enables delegated authentication for third-party in
   - Tokens saved to `.env.local` for easy configuration
 
 - **Cloudflare Worker OAuth template** (#928) - Self-hostable OAuth broker for teams
-  - Full OAuth 2.1 + PKCE implementation at `examples/cloudflare-oauth-worker/`
+  - Full OAuth 2.1 + PKCE implementation at `examples/cloudflare-mcp-server/`
   - OAuth discovery endpoint, CORS support for Claude.ai
   - Deploy with `wrangler deploy`
 
