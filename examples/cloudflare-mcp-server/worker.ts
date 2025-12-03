@@ -38,6 +38,10 @@ export interface Env {
 
   // Optional: Legacy session storage
   OAUTH_SESSIONS?: KVNamespace;
+
+  // Optional: Additional allowed redirect URIs (comma-separated)
+  // Known MCP clients (Claude.ai, ChatGPT) and localhost are pre-approved
+  ALLOWED_REDIRECT_URIS?: string;
 }
 
 // PKCE helpers
@@ -70,6 +74,52 @@ function corsHeaders(origin?: string): Record<string, string> {
 // Normalize URL by removing trailing slashes
 function normalizeUrl(url: string): string {
   return url.replace(/\/+$/, '');
+}
+
+// Known MCP client OAuth callbacks (pre-approved for security)
+const KNOWN_MCP_CLIENTS = [
+  'https://claude.ai', // Claude.ai
+  'https://www.claude.ai',
+  'https://chatgpt.com', // ChatGPT
+  'https://chat.openai.com', // ChatGPT legacy
+];
+
+/**
+ * Validate redirect_uri against allowlist to prevent open redirect attacks.
+ * Pre-approves known MCP clients (Claude.ai, ChatGPT) and localhost for development.
+ */
+function isAllowedRedirectUri(uri: string, env: Env): boolean {
+  const baseUrl = normalizeUrl(env.WORKER_URL);
+
+  // Always allow our own callback
+  if (uri === `${baseUrl}/oauth/callback`) return true;
+
+  try {
+    const parsed = new URL(uri);
+    const origin = `${parsed.protocol}//${parsed.host}`;
+
+    // Allow known MCP clients
+    if (KNOWN_MCP_CLIENTS.some((known) => origin.startsWith(known))) {
+      return true;
+    }
+
+    // Allow localhost for development
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      return true;
+    }
+
+    // Check custom allowlist if configured
+    if (env.ALLOWED_REDIRECT_URIS) {
+      const allowed = env.ALLOWED_REDIRECT_URIS.split(',').map((u) => u.trim());
+      if (allowed.includes(uri) || allowed.some((a) => origin.startsWith(a))) {
+        return true;
+      }
+    }
+  } catch {
+    return false; // Invalid URL
+  }
+
+  return false;
 }
 
 // Validate state parameter format
@@ -231,6 +281,26 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
   const clientId = url.searchParams.get('client_id') || env.ATTIO_CLIENT_ID;
   const redirectUri =
     url.searchParams.get('redirect_uri') || `${baseUrl}/oauth/callback`;
+
+  // SECURITY: Validate redirect_uri against allowlist to prevent open redirect attacks
+  if (!isAllowedRedirectUri(redirectUri, env)) {
+    console.warn(
+      'Rejected unauthorized redirect_uri:',
+      redirectUri.substring(0, 50) + '...'
+    );
+    return new Response(
+      JSON.stringify({
+        error: 'invalid_request',
+        error_description:
+          'redirect_uri is not in the allowlist. Only known MCP clients (Claude.ai, ChatGPT), localhost, and explicitly configured URIs are allowed.',
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
   const scope =
     url.searchParams.get('scope') ||
     'record_permission:read record_permission:read_write user_management:read object:read';
@@ -424,18 +494,14 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     tokenType: tokens.token_type || 'Bearer',
   };
 
-  // Store with auth code as key (for token exchange)
+  // SECURITY: Store with auth: prefix - only valid at /oauth/token endpoint
+  // Auth codes are one-time use and cannot be used directly at /mcp
   console.log(
-    '[OAuth Callback] Storing token with authCode:',
+    '[OAuth Callback] Storing token with auth code:',
     authCode.substring(0, 8) + '...'
   );
-  await tokenStorage.storeToken(authCode, storedToken);
-  console.log('[OAuth Callback] Token stored successfully');
-
-  // Also store with state for backward compatibility
-  if (state) {
-    await tokenStorage.storeToken(state, storedToken);
-  }
+  await tokenStorage.storeToken(`auth:${authCode}`, storedToken);
+  console.log('[OAuth Callback] Token stored with auth: prefix');
 
   // Extract redirect_uri from encoded state (primary method)
   // Fall back to KV lookup if state decoding fails
@@ -596,7 +662,7 @@ async function handleToken(
       );
     }
 
-    // Check if this is one of our generated auth codes
+    // Check if this is one of our generated auth codes (with auth: prefix)
     if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY) {
       const tokenStorage = createTokenStorage({
         kv: env.TOKEN_STORE,
@@ -604,16 +670,36 @@ async function handleToken(
       });
 
       console.log(
-        '[Token Exchange] Looking up code:',
+        '[Token Exchange] Looking up auth code:',
         code.substring(0, 8) + '...'
       );
-      const storedToken = await tokenStorage.getToken(code);
-      console.log('[Token Exchange] Found token:', storedToken ? 'yes' : 'no');
+
+      // SECURITY: Look up with auth: prefix (auth codes only valid here)
+      const storedToken = await tokenStorage.getToken(`auth:${code}`);
+      console.log(
+        '[Token Exchange] Found auth code:',
+        storedToken ? 'yes' : 'no'
+      );
+
       if (storedToken) {
-        // Return the stored tokens
+        // SECURITY: Delete auth code immediately (one-time use)
+        await tokenStorage.deleteToken(`auth:${code}`);
+        console.log('[Token Exchange] Auth code deleted (one-time use)');
+
+        // SECURITY: Generate a separate session token for MCP access
+        // This session token is what the client uses at /mcp endpoint
+        const sessionToken = generateRandomString(32);
+        await tokenStorage.storeToken(`session:${sessionToken}`, storedToken);
+        console.log(
+          '[Token Exchange] Session token created:',
+          sessionToken.substring(0, 8) + '...'
+        );
+
+        // Return session token (not the raw Attio token)
+        // Client uses this session token as Bearer token for /mcp
         const response = {
-          access_token: storedToken.accessToken,
-          token_type: storedToken.tokenType || 'Bearer',
+          access_token: sessionToken,
+          token_type: 'Bearer',
           expires_in: Math.max(
             0,
             storedToken.expiresAt - Math.floor(Date.now() / 1000)
@@ -622,9 +708,6 @@ async function handleToken(
             refresh_token: storedToken.refreshToken,
           }),
         };
-
-        // Delete the auth code after use (one-time use)
-        await tokenStorage.deleteToken(code);
 
         return new Response(JSON.stringify(response), {
           status: 200,
@@ -775,7 +858,8 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
 
   const token = authHeader.substring(7); // Remove "Bearer "
 
-  // Check if this is a session token (stored in KV) or direct Attio token
+  // SECURITY: Only accept session tokens (issued after token exchange)
+  // Auth codes (auth: prefix) are NOT valid here - must go through /oauth/token first
   let attioToken = token;
 
   if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY) {
@@ -784,7 +868,29 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
       encryptionKey: env.TOKEN_ENCRYPTION_KEY,
     });
 
-    const storedToken = await tokenStorage.getToken(token);
+    // Try session token first (new secure method)
+    let storedToken = await tokenStorage.getToken(`session:${token}`);
+
+    // Backward compatibility: try legacy token format (deprecated)
+    if (!storedToken) {
+      storedToken = await tokenStorage.getToken(`token:${token}`);
+      if (storedToken) {
+        console.warn(
+          '[MCP] DEPRECATED: Legacy token format used. Will be removed in future version.'
+        );
+      }
+    }
+
+    // Also check for direct token (for users with raw Attio tokens)
+    if (!storedToken) {
+      storedToken = await tokenStorage.getToken(token);
+      if (storedToken) {
+        console.warn(
+          '[MCP] DEPRECATED: Unprefixed token format used. Will be removed in future version.'
+        );
+      }
+    }
+
     if (storedToken) {
       attioToken = storedToken.accessToken;
     }
