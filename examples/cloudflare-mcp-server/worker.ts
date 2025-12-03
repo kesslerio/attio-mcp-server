@@ -79,8 +79,7 @@ function getOAuthMetadata(workerUrl: string): object {
     issuer: `${baseUrl}/`,
     authorization_endpoint: `${baseUrl}/oauth/authorize`,
     token_endpoint: `${baseUrl}/oauth/token`,
-    // Note: registration_endpoint removed - dynamic client registration not supported
-    // to avoid exposing ATTIO_CLIENT_SECRET to arbitrary clients
+    registration_endpoint: `${baseUrl}/oauth/register`,
     scopes_supported: [
       'record_permission:read',
       'record_permission:read_write',
@@ -617,27 +616,51 @@ async function handleToken(
 }
 
 // Handler: Dynamic client registration (RFC 7591)
-// SECURITY: Disabled to prevent exposing ATTIO_CLIENT_SECRET to arbitrary clients.
-// MCP clients should be configured manually with the worker's client_id.
+// Generates a unique client_id for each MCP client (Claude, ChatGPT, etc.)
+// SECURITY: Does NOT expose ATTIO_CLIENT_SECRET - we handle OAuth internally
 async function handleRegister(
-  _request: Request,
-  _env: Env,
+  request: Request,
+  env: Env,
   origin?: string
 ): Promise<Response> {
-  return new Response(
-    JSON.stringify({
-      error: 'not_implemented',
-      error_description:
-        'Dynamic client registration is not supported. Configure MCP clients manually using the worker URL.',
-    }),
-    {
-      status: 501,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders(origin),
-      },
-    }
-  );
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', {
+      status: 405,
+      headers: corsHeaders(origin),
+    });
+  }
+
+  const body = (await request.json()) as {
+    redirect_uris?: string[];
+    client_name?: string;
+    grant_types?: string[];
+    response_types?: string[];
+  };
+
+  // Generate a unique client ID for this MCP client
+  const clientId = `mcp_${generateRandomString(16)}`;
+  const baseUrl = normalizeUrl(env.WORKER_URL);
+
+  // Return client registration response
+  // NOTE: We don't expose the real ATTIO_CLIENT_SECRET
+  // Instead, we act as an OAuth proxy - the MCP client authenticates with us,
+  // and we use our ATTIO_CLIENT_SECRET internally to talk to Attio
+  const response = {
+    client_id: clientId,
+    client_name: body.client_name || 'MCP Client',
+    redirect_uris: body.redirect_uris || [`${baseUrl}/oauth/callback`],
+    grant_types: body.grant_types || ['authorization_code', 'refresh_token'],
+    response_types: body.response_types || ['code'],
+    token_endpoint_auth_method: 'none', // Public client - no secret needed
+  };
+
+  return new Response(JSON.stringify(response), {
+    status: 201,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders(origin),
+    },
+  });
 }
 
 // Handler: MCP endpoint
