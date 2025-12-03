@@ -15,7 +15,6 @@ function createMockClient(): HttpClient {
     get: vi.fn().mockRejectedValue(new Error('Should not be called')),
     post: vi.fn().mockRejectedValue(new Error('Should not be called')),
     patch: vi.fn().mockRejectedValue(new Error('Should not be called')),
-    put: vi.fn().mockRejectedValue(new Error('Should not be called')),
     delete: vi.fn().mockRejectedValue(new Error('Should not be called')),
   };
 }

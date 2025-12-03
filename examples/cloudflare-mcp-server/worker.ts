@@ -785,8 +785,9 @@ async function handleToken(
 }
 
 // Handler: Dynamic client registration (RFC 7591)
-// Generates a unique client_id for each MCP client (Claude, ChatGPT, etc.)
-// SECURITY: Does NOT expose ATTIO_CLIENT_SECRET - we handle OAuth internally
+// Required for Claude Desktop and Claude.ai OAuth integration
+// We act as OAuth proxy - MCP clients authenticate with us,
+// and we use ATTIO_CLIENT_SECRET internally to talk to Attio
 async function handleRegister(
   request: Request,
   env: Env,
@@ -810,10 +811,6 @@ async function handleRegister(
   const clientId = `mcp_${generateRandomString(16)}`;
   const baseUrl = normalizeUrl(env.WORKER_URL);
 
-  // Return client registration response
-  // NOTE: We don't expose the real ATTIO_CLIENT_SECRET
-  // Instead, we act as an OAuth proxy - the MCP client authenticates with us,
-  // and we use our ATTIO_CLIENT_SECRET internally to talk to Attio
   const response = {
     client_id: clientId,
     client_name: body.client_name || 'MCP Client',
