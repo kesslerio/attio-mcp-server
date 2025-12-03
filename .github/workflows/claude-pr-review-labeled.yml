@@ -350,7 +350,7 @@ jobs:
 
           # Prepare sparse checkout patterns (optimized with jq deduplication)
           tmpfile=$(mktemp)
-          jq -rs --argjson static '["/.github/**", "/scripts/claude/**"]' \
+          jq -rs --argjson static '["/.github/**", "/scripts/claude/**", "/configs/**"]' \
             '$static + add | unique | .[]' \
             "$RING0_JSON_PATH" "$RING1_JSON_PATH" > "$tmpfile"
 
@@ -494,6 +494,15 @@ jobs:
               * true = Ring 1 expansion failed/exceeded limit. Work with Ring 0 + standards only.
               * false = Full Ring 0 + Ring 1 context available.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
+
+            SPARSE CHECKOUT LIMITATIONS (CRITICAL):
+            - This review runs in a sparse checkout environment
+            - Only Ring 0 files, Ring 1 files, /.github/**, /scripts/claude/**, and /configs/** are available
+            - If Glob/Read returns "no files found" for paths outside these scopes:
+              * DO NOT report as "missing files" - they likely exist but aren't checked out
+              * State: "could not verify - outside sparse checkout scope"
+              * Or skip verification and focus on Ring 0 changes only
+            - Never claim files are missing based solely on Glob "no files found" results
 
             PATH RESOLUTION RULES
             - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
@@ -675,6 +684,15 @@ jobs:
               * true = Ring 1 expansion failed/exceeded limit. Work with Ring 0 + standards only.
               * false = Full Ring 0 + Ring 1 context available.
             - If Ring 1 is unavailable, work with Ring 0 alone rather than expanding scope.
+
+            SPARSE CHECKOUT LIMITATIONS (CRITICAL):
+            - This review runs in a sparse checkout environment
+            - Only Ring 0 files, Ring 1 files, /.github/**, /scripts/claude/**, and /configs/** are available
+            - If Glob/Read returns "no files found" for paths outside these scopes:
+              * DO NOT report as "missing files" - they likely exist but aren't checked out
+              * State: "could not verify - outside sparse checkout scope"
+              * Or skip verification and focus on Ring 0 changes only
+            - Never claim files are missing based solely on Glob "no files found" results
 
             PATH RESOLUTION RULES
             - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
