@@ -24,13 +24,10 @@ This Cloudflare Worker provides OAuth 2.1 endpoints that:
 
 ### 1. Create Attio OAuth App
 
-1. Go to [Attio Developer Settings](https://app.attio.com/settings/developers)
+1. Go to [Attio Developer Portal](https://build.attio.com/)
 2. Create a new OAuth application
-3. Set the redirect URI to your Worker URL:
-   ```
-   https://attio-oauth-broker.your-subdomain.workers.dev/oauth/callback
-   ```
-4. Note your **Client ID** and **Client Secret**
+3. Note your **Client ID** and **Client Secret**
+4. Leave the redirect URI empty for now (we'll set it after deployment)
 
 ### 2. Install Wrangler CLI
 
@@ -45,11 +42,11 @@ wrangler login
 # From the attio-mcp-server repo
 cd examples/cloudflare-oauth-worker
 
-# Install dependencies (if any)
+# Install dependencies
 npm install
 ```
 
-### 4. Set Secrets
+### 4. Set Initial Secrets
 
 ```bash
 # Set your Attio OAuth credentials
@@ -58,9 +55,6 @@ wrangler secret put ATTIO_CLIENT_ID
 
 wrangler secret put ATTIO_CLIENT_SECRET
 # Enter your Client Secret when prompted
-
-wrangler secret put WORKER_URL
-# Enter: https://attio-oauth-broker.your-subdomain.workers.dev
 ```
 
 ### 5. Deploy
@@ -69,7 +63,23 @@ wrangler secret put WORKER_URL
 wrangler deploy
 ```
 
-Your OAuth broker is now live at `https://attio-oauth-broker.your-subdomain.workers.dev`
+Note the URL returned (e.g., `https://attio-oauth-broker.<your-subdomain>.workers.dev`)
+
+### 6. Complete Configuration
+
+```bash
+# Set the Worker URL secret
+wrangler secret put WORKER_URL
+# Enter the URL from step 5: https://attio-oauth-broker.<your-subdomain>.workers.dev
+```
+
+Then go back to your Attio OAuth app and set the redirect URI:
+
+```
+https://attio-oauth-broker.<your-subdomain>.workers.dev/oauth/callback
+```
+
+Your OAuth broker is now live!
 
 ## Usage
 
