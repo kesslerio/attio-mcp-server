@@ -162,6 +162,8 @@ export default {
           return handleRegister(request, env, origin);
 
         case '/mcp':
+        case '/':
+          // Claude Desktop hits root path for MCP, so we serve MCP at both / and /mcp
           return handleMcp(request, env);
 
         case '/health':
@@ -423,7 +425,12 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   };
 
   // Store with auth code as key (for token exchange)
+  console.log(
+    '[OAuth Callback] Storing token with authCode:',
+    authCode.substring(0, 8) + '...'
+  );
   await tokenStorage.storeToken(authCode, storedToken);
+  console.log('[OAuth Callback] Token stored successfully');
 
   // Also store with state for backward compatibility
   if (state) {
@@ -596,7 +603,12 @@ async function handleToken(
         encryptionKey: env.TOKEN_ENCRYPTION_KEY,
       });
 
+      console.log(
+        '[Token Exchange] Looking up code:',
+        code.substring(0, 8) + '...'
+      );
       const storedToken = await tokenStorage.getToken(code);
+      console.log('[Token Exchange] Found token:', storedToken ? 'yes' : 'no');
       if (storedToken) {
         // Return the stored tokens
         const response = {
