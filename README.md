@@ -382,15 +382,214 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for detailed solutions to these r
 > The GitHub repository is named `attio-mcp-server`, but the npm package was renamed to `attio-mcp` in June 2025.
 > Installing `attio-mcp-server` will give you an outdated v0.0.2 release with only 4 legacy tools.
 
-### Installing via Smithery (Recommended)
+### Client Compatibility
 
-To install Attio CRM Integration Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server):
+| Client             | Smithery (Tier 1) | Local Install (Tier 2-3) | Cloudflare Worker (Tier 4) |
+| ------------------ | ----------------- | ------------------------ | -------------------------- |
+| Claude Desktop     | ✅ Recommended    | ✅ Full support          | ✅ Full support            |
+| Claude Web         | ✅ Recommended    | N/A                      | ✅ Full support            |
+| ChatGPT (Pro/Plus) | ✅ Required       | N/A                      | ✅ Full support            |
+| Cursor IDE         | ✅ Supported      | ✅ Full support          | ✅ Full support            |
+| Claude Code (CLI)  | Partial           | ✅ Recommended           | Partial                    |
+
+**Choose your installation method:**
+
+- **Most users**: Use [Tier 1 (Smithery)](#tier-1-smithery-one-click---recommended) - zero local config required
+- **Local control**: Use [Tier 2 (Shell Installers)](#tier-2-shell-installers) - one command, automatic setup
+- **Power users**: Use [Tier 3 (Manual)](#tier-3-manual-configuration) - full control over configuration
+- **Teams/Enterprise**: Use [Tier 4 (Cloudflare Worker)](#tier-4-cloudflare-worker-remote-deployment) - self-hosted, multi-user OAuth
+
+---
+
+### Tier 1: Smithery (One-Click) - Recommended
+
+> **Best for**: Claude Desktop, Claude Web, ChatGPT, Cursor - zero local installation required.
+
+[Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server) handles OAuth, hosting, and configuration automatically.
+
+#### Claude Desktop via Smithery
 
 ```bash
 npx -y @smithery/cli install @kesslerio/attio-mcp-server --client claude
 ```
 
-### Option 1: NPM
+#### Cursor IDE via Smithery
+
+```bash
+npx -y @smithery/cli install @kesslerio/attio-mcp-server --client cursor
+```
+
+#### ChatGPT Developer Mode
+
+ChatGPT requires Smithery for OAuth authentication. Direct server URLs are not supported.
+
+1. Enable Developer Mode: **Settings → Connectors → Advanced → Developer Mode**
+2. Add MCP Server URL: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
+3. Complete OAuth authorization when prompted
+
+See [ChatGPT Developer Mode Guide](./docs/chatgpt-developer-mode.md) for detailed setup instructions.
+
+#### Claude Web
+
+1. Go to [Claude.ai](https://claude.ai) Settings → Connectors
+2. Add new MCP connector
+3. Select "Attio CRM" from Smithery marketplace
+4. Authorize with your Attio account
+
+---
+
+### Tier 2: Shell Installers
+
+> **Best for**: Developers who prefer local installations with automatic configuration.
+
+One-command scripts that install `attio-mcp` and configure your client automatically.
+
+#### Claude Desktop
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kesslerio/attio-mcp-server/main/scripts/install-claude-desktop.sh | bash
+```
+
+#### Cursor IDE
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kesslerio/attio-mcp-server/main/scripts/install-cursor.sh | bash
+```
+
+#### Claude Code (CLI)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kesslerio/attio-mcp-server/main/scripts/install-claude-code.sh | bash
+```
+
+These scripts will:
+
+- Install `attio-mcp` npm package globally (if needed)
+- Backup existing configuration files
+- Prompt for your Attio API key
+- Configure the MCP server for your client
+- Print next steps and restart instructions
+
+---
+
+### Tier 3: Manual Configuration
+
+> **Best for**: Power users who prefer full control or use unsupported clients.
+
+<details>
+<summary><strong>Claude Desktop Manual Setup</strong></summary>
+
+#### Step 1: Install attio-mcp
+
+```bash
+npm install -g attio-mcp
+```
+
+#### Step 2: Find your config file
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+#### Step 3: Add configuration
+
+```json
+{
+  "mcpServers": {
+    "attio-mcp": {
+      "command": "attio-mcp",
+      "env": {
+        "ATTIO_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+#### Step 4: Restart Claude Desktop completely (quit and reopen)
+
+</details>
+
+<details>
+<summary><strong>Cursor IDE Manual Setup</strong></summary>
+
+#### Step 1: Install attio-mcp
+
+```bash
+npm install -g attio-mcp
+```
+
+#### Step 2: Edit config file
+
+Location: `~/.cursor/mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "attio-mcp": {
+      "command": "attio-mcp",
+      "env": {
+        "ATTIO_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+#### Step 3: Restart Cursor
+
+</details>
+
+<details>
+<summary><strong>Claude Code (CLI) Manual Setup</strong></summary>
+
+#### Option A: Using Claude CLI command (recommended)
+
+```bash
+echo '{"command":"attio-mcp","env":{"ATTIO_API_KEY":"your_key_here"}}' | claude mcp add-json attio-mcp --stdin -s user
+```
+
+#### Option B: Manual config edit
+
+Edit `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "attio-mcp": {
+      "command": "attio-mcp",
+      "env": {
+        "ATTIO_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Building from Source</strong></summary>
+
+For development or custom deployments:
+
+```bash
+git clone https://github.com/kesslerio/attio-mcp-server.git
+cd attio-mcp-server
+npm install
+npm run build
+```
+
+Run directly:
+
+```bash
+ATTIO_API_KEY=your_key node dist/index.js
+```
+
+</details>
+
+<details>
+<summary><strong>NPM Global Install</strong></summary>
 
 ```bash
 # Global installation for CLI usage
@@ -400,20 +599,61 @@ npm install -g attio-mcp
 npm install attio-mcp
 ```
 
-### Option 2: One-Command Script Installation
+</details>
+
+---
+
+### Tier 4: Cloudflare Worker (Remote Deployment)
+
+> **Best for**: Teams needing centralized OAuth, multi-user access, mobile access, or running MCP without local installation.
+
+Deploy your own Attio MCP server on Cloudflare Workers with full OAuth 2.1 support.
+
+**Mobile Access**: With a remote MCP server, you can use Attio tools from:
+
+- ChatGPT mobile app (iOS/Android)
+- Claude mobile app (iOS/Android)
+- Any browser on any device
+
+#### Smithery vs. Cloudflare Worker
+
+| Feature           | Smithery  | Cloudflare Worker |
+| ----------------- | --------- | ----------------- |
+| Setup complexity  | Very Low  | Medium            |
+| OAuth built-in    | ✅        | ✅                |
+| Mobile app access | ✅        | ✅                |
+| Multi-user access | ❌        | ✅                |
+| Custom domain     | ❌        | ✅                |
+| Self-hosted       | ❌        | ✅                |
+| Team deployments  | Limited   | ✅ Full           |
+| Cost              | Free tier | Free tier         |
+
+#### Quick Deploy
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kesslerio/attio-mcp-server/main/install.sh | bash
-```
-
-### Option 3: Manual Installation
-
-```bash
-git clone https://github.com/kesslerio/attio-mcp-server.git
-cd attio-mcp-server
+cd examples/cloudflare-mcp-server
 npm install
-npm run build
+wrangler kv:namespace create "TOKEN_STORE"
+# Update wrangler.toml with the KV namespace ID
+wrangler secret put ATTIO_CLIENT_ID
+wrangler secret put ATTIO_CLIENT_SECRET
+wrangler secret put TOKEN_ENCRYPTION_KEY
+wrangler deploy
 ```
+
+#### Client Configuration
+
+After deployment, configure your client with your Worker URL:
+
+- **Claude.ai**: Settings → Connectors → Add your Worker URL
+- **ChatGPT**: Settings → Connectors → Developer Mode → Add Worker URL
+
+See [Cloudflare Worker Deployment Guide](./examples/cloudflare-mcp-server/README.md) for:
+
+- Complete OAuth 2.1 setup with Attio
+- Token encryption configuration
+- Production deployment checklist
+- Troubleshooting guide
 
 ## ⚡ Quick Start
 

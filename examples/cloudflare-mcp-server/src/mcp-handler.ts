@@ -5,11 +5,9 @@
  * Compatible with Claude.ai and ChatGPT MCP connectors
  */
 
-import {
-  createAttioClient,
-  createToolRegistry,
-  type ToolRegistryConfig,
-} from '@attio-mcp/core';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { getToolsListPayload } from '../../../dist/utils/mcp-discovery.js';
+import { executeToolRequest } from '../../../dist/handlers/tools/dispatcher.js';
 
 /**
  * MCP JSON-RPC request structure
@@ -84,15 +82,8 @@ const ErrorCodes = {
 /**
  * Create an MCP protocol handler
  */
-export function createMcpHandler(config: {
-  attioToken: string;
-  registryConfig?: ToolRegistryConfig;
-}) {
-  const { attioToken, registryConfig } = config;
-
-  // Create Attio client and tool registry
-  const client = createAttioClient(attioToken);
-  const registry = createToolRegistry(registryConfig);
+export function createMcpHandler(config: { attioToken: string }) {
+  const { attioToken } = config;
 
   // Session ID for this handler instance
   let sessionId: string | null = null;
@@ -121,16 +112,8 @@ export function createMcpHandler(config: {
    * Includes annotations for ChatGPT to distinguish read vs write tools
    */
   function handleToolsList(): unknown {
-    const definitions = registry.getDefinitions();
-    return {
-      tools: definitions.map((def) => ({
-        name: def.name,
-        description: def.description,
-        inputSchema: def.inputSchema,
-        // Include annotations if defined (for readOnlyHint, etc.)
-        ...(def.annotations && { annotations: def.annotations }),
-      })),
-    };
+    const { tools } = getToolsListPayload();
+    return { tools };
   }
 
   /**
@@ -166,12 +149,34 @@ export function createMcpHandler(config: {
       };
     }
 
-    const result = await registry.executeTool(client, name, args || {});
+    // Inject per-request token for dispatcher
+    const previousToken = process.env.ATTIO_API_KEY;
+    process.env.ATTIO_API_KEY = attioToken;
 
-    return {
-      content: result.content,
-      isError: result.isError,
-    };
+    try {
+      const request: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name,
+          arguments: args || {},
+        },
+      };
+
+      const result = await executeToolRequest(request);
+
+      // Return dispatcher result directly - structuredOutput handles normalization
+      return {
+        content: (result as any).content,
+        isError: (result as any).isError,
+        error: (result as any).error,
+      };
+    } finally {
+      if (previousToken === undefined) {
+        delete process.env.ATTIO_API_KEY;
+      } else {
+        process.env.ATTIO_API_KEY = previousToken;
+      }
+    }
   }
 
   /**

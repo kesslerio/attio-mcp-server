@@ -152,6 +152,28 @@ export const getRecordDetailsConfig: UniversalToolConfig<
 
     return details.trim();
   },
+  structuredOutput: (
+    record: AttioRecord,
+    resourceType?: string
+  ): Record<string, unknown> => {
+    if (!record) return {};
+
+    const result: Record<string, unknown> = { ...record };
+
+    // Normalize company name to string for consistency
+    if (resourceType === 'companies' && record.values) {
+      const values = record.values as Record<string, unknown>;
+      const nameArray = values.name;
+      if (Array.isArray(nameArray) && nameArray[0]?.value) {
+        result.values = {
+          ...values,
+          name: nameArray[0].value,
+        };
+      }
+    }
+
+    return result;
+  },
 };
 
 export const getRecordDetailsDefinition = {

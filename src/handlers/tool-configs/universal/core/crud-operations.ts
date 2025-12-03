@@ -30,6 +30,47 @@ import {
 } from './utils.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
+/**
+ * Normalize record data for structured output
+ * - Companies: values.name → string (from array)
+ * - Tasks: id.workspace_id must exist
+ */
+function normalizeRecordForOutput(
+  record: AttioRecord,
+  resourceType?: string
+): Record<string, unknown> {
+  if (!record) return {};
+
+  const result: Record<string, unknown> = { ...record };
+
+  // Normalize company name to string
+  if (resourceType === 'companies' && record.values) {
+    const values = record.values as Record<string, unknown>;
+    const nameArray = values.name;
+    if (Array.isArray(nameArray) && nameArray[0]?.value) {
+      result.values = {
+        ...values,
+        name: nameArray[0].value,
+      };
+    }
+  }
+
+  // Ensure tasks have workspace_id on id object
+  if (resourceType === 'tasks') {
+    const id = record.id as Record<string, unknown> | undefined;
+    const workspaceId =
+      id?.workspace_id ||
+      (record as Record<string, unknown>).workspace_id ||
+      'default';
+    result.id = {
+      ...id,
+      workspace_id: workspaceId,
+    };
+  }
+
+  return result;
+}
+
 export const createRecordConfig: UniversalToolConfig<
   UniversalCreateParams,
   AttioRecord
@@ -95,6 +136,12 @@ export const createRecordConfig: UniversalToolConfig<
     );
 
     return `✅ Successfully created ${resourceTypeName}: ${displayName} (ID: ${id})`;
+  },
+  structuredOutput: (
+    record: AttioRecord,
+    resourceType?: string
+  ): Record<string, unknown> => {
+    return normalizeRecordForOutput(record, resourceType);
   },
 };
 
@@ -196,6 +243,12 @@ export const updateRecordConfig: UniversalToolConfig<
       : `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
 
     return `${baseMessage}${formatValidationDetails(metadata)}`;
+  },
+  structuredOutput: (
+    record: EnhancedAttioRecord,
+    resourceType?: string
+  ): Record<string, unknown> => {
+    return normalizeRecordForOutput(record as AttioRecord, resourceType);
   },
 };
 

@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   attio-mcp-server:
@@ -11,10 +11,38 @@ services:
       - '3000:3000'
     environment:
       - ATTIO_API_KEY=${ATTIO_API_KEY}
+      - NODE_ENV=production
+
+    # Security hardening
+    user: '1001:1001' # Non-root user (matches Dockerfile mcp user)
+    read_only: true # Read-only root filesystem
+    tmpfs:
+      - /tmp # Writable temp directory
+    security_opt:
+      - no-new-privileges:true # Prevent privilege escalation
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    # Health check (uses node, no curl dependency)
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
+
     restart: unless-stopped

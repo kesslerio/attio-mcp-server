@@ -385,6 +385,25 @@ Note: When asserting IDs, use the resource-aware helper `E2EAssertions.expectRes
 - `E2E_SKIP_TASK_TESTS=true` - Skip task tests
 - `E2E_SKIP_CUSTOM_OBJECT_TESTS=true` - Skip custom object tests
 
+### Remote MCP Targets (Cloudflare Worker, etc.)
+
+- `MCP_TEST_MODE=remote` - Hit a remote MCP endpoint instead of spawning `./dist/cli.js`
+- `MCP_REMOTE_ENDPOINT` - Full MCP endpoint URL (e.g., `https://your-worker.workers.dev/mcp`)
+- `MCP_REMOTE_AUTH_TOKEN` - Optional bearer token for the remote MCP server
+
+Usage:
+
+```bash
+# Local (default)
+npm run test:e2e -- --pattern smoke-test-suite
+
+# Remote
+MCP_TEST_MODE=remote \
+MCP_REMOTE_ENDPOINT=https://your-worker.workers.dev/mcp \
+MCP_REMOTE_AUTH_TOKEN=example-token \
+npm run test:e2e -- --pattern smoke-test-suite
+```
+
 ## 🧪 Writing E2E Tests
 
 ### Basic Test Structure

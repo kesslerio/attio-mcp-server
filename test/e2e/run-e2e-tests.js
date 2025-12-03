@@ -30,6 +30,7 @@ const CONFIG = {
     'E2E_TEST_COMPANY_DOMAIN',
   ],
   configFiles: ['test/e2e/config.local.json', 'test/e2e/config.template.json'],
+  vitestConfigPath: 'configs/vitest/vitest.config.e2e.ts',
 };
 
 const logger = createE2ELogger('E2E Runner');
@@ -138,6 +139,27 @@ function gatherEnvironmentDetails() {
     info.push(`Node.js version: ${nodeVersion}`);
   }
 
+  const mcpMode = (process.env.MCP_TEST_MODE || 'local').toLowerCase();
+  info.push(`MCP_TEST_MODE=${mcpMode}`);
+
+  if (mcpMode === 'remote') {
+    if (process.env.MCP_REMOTE_ENDPOINT) {
+      info.push('MCP_REMOTE_ENDPOINT is set');
+    } else {
+      issues.push(
+        'MCP_REMOTE_ENDPOINT is required when MCP_TEST_MODE=remote (e.g., https://your-worker.workers.dev/mcp)'
+      );
+    }
+
+    if (process.env.MCP_REMOTE_AUTH_TOKEN) {
+      info.push('MCP_REMOTE_AUTH_TOKEN is set (masked)');
+    } else {
+      warnings.push(
+        'MCP_REMOTE_AUTH_TOKEN not set; remote MCP server must allow unauthenticated requests'
+      );
+    }
+  }
+
   return { envStatus, configFile, info, warnings, issues };
 }
 
@@ -209,7 +231,7 @@ function printSolutionGuidance(details) {
 
 function buildVitestArguments(patternKey, options) {
   const resolvedPattern = resolveTestPattern(patternKey);
-  const args = ['run', '--config', 'vitest.config.e2e.ts'];
+  const args = ['run', '--config', CONFIG.vitestConfigPath];
 
   if (patternKey && patternKey !== 'all') {
     args.push(resolvedPattern);

@@ -26,6 +26,31 @@ function successResult(text: string): ToolResult {
 }
 
 /**
+ * Create a structured tool result that includes both JSON data and a human-readable summary.
+ */
+function structuredResult(data: unknown, summaryText?: string): ToolResult {
+  const fallbackText =
+    summaryText ??
+    (typeof data === 'string'
+      ? data
+      : (() => {
+          try {
+            return JSON.stringify(data, null, 2);
+          } catch {
+            return String(data);
+          }
+        })());
+
+  return {
+    content: [
+      { type: 'json', data },
+      { type: 'text', text: fallbackText },
+    ],
+    isError: false,
+  };
+}
+
+/**
  * Create an error tool result
  */
 function errorResult(message: string, details?: unknown): ToolResult {
@@ -473,7 +498,9 @@ export async function handleSearchRecords(
       body
     );
 
-    return successResult(formatRecordList(response.data.data, resource_type));
+    const records = response.data.data || [];
+    const summary = formatRecordList(records, resource_type);
+    return structuredResult(records, summary);
   } catch (error) {
     const { message, details } = extractErrorInfo(error);
     return errorResult(message || 'Search failed', details);
@@ -509,11 +536,19 @@ async function handleSearchTasks(
   const tasks = response.data.data || [];
 
   if (tasks.length === 0) {
-    return successResult('No tasks found');
+    return structuredResult([], 'No tasks found');
   }
 
+  const normalizedTasks = tasks.map((task) => ({
+    ...task,
+    id: {
+      ...task.id,
+      workspace_id: (task as any).id?.workspace_id ?? 'unknown',
+    },
+  }));
+
   const lines = [`Found ${tasks.length} tasks:`];
-  for (const task of tasks) {
+  for (const task of normalizedTasks) {
     const status = task.is_completed ? '✓' : '○';
     const content = task.content_plaintext || 'No content';
     const deadline = task.deadline_at
@@ -522,7 +557,7 @@ async function handleSearchTasks(
     lines.push(`${status} ${content}${deadline} (ID: ${task.id.task_id})`);
   }
 
-  return successResult(lines.join('\n'));
+  return structuredResult(normalizedTasks, lines.join('\n'));
 }
 
 /**
@@ -544,7 +579,7 @@ async function handleListWorkspaceMembers(
   const members = response.data.data || [];
 
   if (members.length === 0) {
-    return successResult('No workspace members found');
+    return structuredResult([], 'No workspace members found');
   }
 
   const lines = [`Found ${members.length} workspace members:`];
@@ -559,7 +594,7 @@ async function handleListWorkspaceMembers(
     );
   }
 
-  return successResult(lines.join('\n'));
+  return structuredResult(members, lines.join('\n'));
 }
 
 /**
@@ -581,9 +616,8 @@ export async function handleGetRecordDetails(
       `/v2/objects/${objectSlug}/records/${record_id}`
     );
 
-    return successResult(
-      formatRecordDetails(response.data.data, resource_type)
-    );
+    const record = response.data.data;
+    return structuredResult(record, formatRecordDetails(record, resource_type));
   } catch (error) {
     const { message, details } = extractErrorInfo(error);
     return errorResult(message || 'Failed to get record', details);
@@ -617,12 +651,16 @@ export async function handleCreateRecord(
     const id = record.id?.record_id || 'unknown';
 
     if (return_details) {
-      return successResult(
+      return structuredResult(
+        record,
         `Created ${resource_type} record:\n${formatRecordDetails(record, resource_type)}`
       );
     }
 
-    return successResult(`Created ${resource_type} record with ID: ${id}`);
+    return structuredResult(
+      record,
+      `Created ${resource_type} record with ID: ${id}`
+    );
   } catch (error) {
     const { message, details } = extractErrorInfo(error);
     return errorResult(message || 'Failed to create record', details);
@@ -661,12 +699,14 @@ export async function handleUpdateRecord(
     const record = response.data.data;
 
     if (return_details) {
-      return successResult(
+      return structuredResult(
+        record,
         `Updated ${resource_type} record:\n${formatRecordDetails(record, resource_type)}`
       );
     }
 
-    return successResult(
+    return structuredResult(
+      record,
       `Updated ${resource_type} record with ID: ${record_id}`
     );
   } catch (error) {
@@ -691,7 +731,8 @@ export async function handleDeleteRecord(
 
     await client.delete(`/v2/objects/${objectSlug}/records/${record_id}`);
 
-    return successResult(
+    return structuredResult(
+      { record_id },
       `Deleted ${resource_type} record with ID: ${record_id}`
     );
   } catch (error) {
@@ -738,7 +779,7 @@ export async function handleDiscoverAttributes(
     }
 
     if (attributes.length === 0) {
-      return successResult(`No attributes found for ${resource_type}`);
+      return structuredResult([], `No attributes found for ${resource_type}`);
     }
 
     const lines = attributes.map((attr) => {
@@ -746,7 +787,8 @@ export async function handleDiscoverAttributes(
       return `- ${attr.api_slug}: ${attr.type}${required} - ${attr.title}`;
     });
 
-    return successResult(
+    return structuredResult(
+      attributes,
       `Attributes for ${resource_type}:\n${lines.join('\n')}`
     );
   } catch (error) {
@@ -793,7 +835,8 @@ export async function handleCreateNote(
     const note = response.data.data;
     const noteId = note.id?.note_id || 'unknown';
 
-    return successResult(
+    return structuredResult(
+      note,
       `Created note "${title}" (ID: ${noteId}) on ${resource_type} ${record_id}`
     );
   } catch (error) {
@@ -832,7 +875,10 @@ export async function handleListNotes(
     const notes = response.data.data;
 
     if (!notes || notes.length === 0) {
-      return successResult(`No notes found for ${resource_type} ${record_id}`);
+      return structuredResult(
+        [],
+        `No notes found for ${resource_type} ${record_id}`
+      );
     }
 
     const lines = notes.map((note) => {
@@ -842,7 +888,8 @@ export async function handleListNotes(
       return `- ${title} (ID: ${noteId})\n  ${preview}${preview.length >= 100 ? '...' : ''}`;
     });
 
-    return successResult(
+    return structuredResult(
+      notes,
       `Notes for ${resource_type} ${record_id}:\n${lines.join('\n')}`
     );
   } catch (error) {
