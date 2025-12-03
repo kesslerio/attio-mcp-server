@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { createE2ELogger } from './logger.js';
+import { createE2ELogger } from './env-logger.js';
 
 export const DEFAULT_ENV_FILES = ['.env', '.env.e2e', '.env.local'];
 
