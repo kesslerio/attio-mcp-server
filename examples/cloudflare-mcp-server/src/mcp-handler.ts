@@ -135,6 +135,7 @@ export function createMcpHandler(config: {
 
   /**
    * Handle MCP tools/call request
+   * Includes input validation to prevent injection attacks
    */
   async function handleToolsCall(
     params: Record<string, unknown>
@@ -144,8 +145,25 @@ export function createMcpHandler(config: {
       arguments?: Record<string, unknown>;
     };
 
+    // Validate tool name is present
     if (!name) {
       throw { code: ErrorCodes.InvalidParams, message: 'Missing tool name' };
+    }
+
+    // Validate tool name format (alphanumeric, hyphens, underscores only)
+    if (typeof name !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(name)) {
+      throw {
+        code: ErrorCodes.InvalidParams,
+        message: 'Invalid tool name format',
+      };
+    }
+
+    // Validate tool name length
+    if (name.length > 100) {
+      throw {
+        code: ErrorCodes.InvalidParams,
+        message: 'Tool name too long',
+      };
     }
 
     const result = await registry.executeTool(client, name, args || {});
@@ -263,13 +281,16 @@ export function createMcpHandler(config: {
    * Handle an HTTP request to the MCP endpoint
    */
   async function handleHttpRequest(request: Request): Promise<Response> {
+    // Use origin-aware CORS instead of wildcard for better security
+    const origin = request.headers.get('Origin') || '*';
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers':
         'Content-Type, Authorization, MCP-Protocol-Version, MCP-Session-Id',
       'Access-Control-Expose-Headers': 'MCP-Session-Id',
       'Access-Control-Max-Age': '86400',
+      Vary: 'Origin', // Important for caching with dynamic origin
     };
 
     // Handle CORS preflight

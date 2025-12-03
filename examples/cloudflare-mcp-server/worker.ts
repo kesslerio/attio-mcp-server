@@ -436,24 +436,24 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
 
         <div class="section">
           <h3>For Local Development</h3>
-          <p>Use these tokens directly:</p>
+          <p>Your tokens have been securely stored. For security, only previews are shown below.</p>
 
-          <h4>Access Token</h4>
-          <div class="token-box" id="access-token">${tokens.access_token}</div>
-          <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('access-token').textContent)">Copy Access Token</button>
+          <h4>Access Token (Preview)</h4>
+          <div class="token-box">${tokens.access_token.substring(0, 12)}...${tokens.access_token.slice(-8)}</div>
+          <p style="font-size: 12px; color: #666;">Token stored securely in KV. Use the server URL above to authenticate.</p>
 
           ${
             tokens.refresh_token
               ? `
-          <h4>Refresh Token</h4>
-          <div class="token-box" id="refresh-token">${tokens.refresh_token}</div>
-          <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('refresh-token').textContent)">Copy Refresh Token</button>
+          <h4>Refresh Token (Preview)</h4>
+          <div class="token-box">${tokens.refresh_token.substring(0, 12)}...${tokens.refresh_token.slice(-8)}</div>
           `
               : ''
           }
 
-          <h4>Environment Variable</h4>
-          <pre>export ATTIO_ACCESS_TOKEN="${tokens.access_token.substring(0, 20)}..."</pre>
+          <h4>Token Info</h4>
+          <pre>Expires in: ${tokens.expires_in || 3600} seconds
+Token length: ${tokens.access_token.length} chars</pre>
         </div>
 
         <p style="margin-top: 30px; color: #666;">

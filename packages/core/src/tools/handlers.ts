@@ -278,6 +278,47 @@ function buildSearchFilter(
 }
 
 /**
+ * Known actor-reference field slugs that require special filter format.
+ * Actor-reference fields cannot use standard operators like $eq.
+ * Instead, they require: { referenced_actor_type: "workspace-member", referenced_actor_id: "..." }
+ */
+const ACTOR_REFERENCE_FIELDS = new Set([
+  'owner',
+  'created_by',
+  'assigned_to',
+  'assignee',
+  'created_by_actor',
+  'updated_by',
+]);
+
+/**
+ * Transform a filter condition to Attio's expected format.
+ * Handles special cases for actor-reference fields.
+ */
+function transformFilterCondition(
+  slug: string,
+  condition: string,
+  value: unknown
+): Record<string, unknown> {
+  // Check if this is an actor-reference field
+  if (ACTOR_REFERENCE_FIELDS.has(slug)) {
+    // Actor-reference fields require a special format
+    // They don't support $eq - instead use the direct object format
+    return {
+      [slug]: {
+        referenced_actor_type: 'workspace-member',
+        referenced_actor_id: String(value),
+      },
+    };
+  }
+
+  // Standard filter format for other fields
+  return {
+    [slug]: { [`$${condition}`]: value },
+  };
+}
+
+/**
  * Search records handler
  * Routes to appropriate API based on resource type:
  * - tasks: /v2/tasks (GET with query params)
@@ -321,9 +362,10 @@ export async function handleSearchRecords(
 
     if (filters?.filters && filters.filters.length > 0) {
       // Convert our filter format to Attio's format
-      const attioFilters = filters.filters.map((f) => ({
-        [f.attribute.slug]: { [f.condition]: f.value },
-      }));
+      // Special handling for actor-reference fields (owner, created_by, assigned_to, etc.)
+      const attioFilters = filters.filters.map((f) =>
+        transformFilterCondition(f.attribute.slug, f.condition, f.value)
+      );
 
       if (filters.matchAny) {
         body.filter = { $or: attioFilters };
