@@ -11,7 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Client-specific install scripts** - One-command installers for each MCP client
+  - `scripts/install-claude-desktop.sh` - Auto-configure Claude Desktop
+  - `scripts/install-cursor.sh` - Auto-configure Cursor IDE
+  - `scripts/install-claude-code.sh` - Auto-configure Claude Code CLI
+  - Scripts backup existing config, install `attio-mcp` globally, and prompt for API key
+
+- **README installation overhaul** - 4-tier installation hierarchy with client compatibility matrix
+  - Tier 1: Smithery (one-click) for Claude Desktop, ChatGPT, Claude Web, Cursor
+  - Tier 2: Shell installers for local control
+  - Tier 3: Manual configuration with collapsible per-client guides
+  - Tier 4: Cloudflare Worker for teams and enterprise
+
 ### Changed
+
+- **README Installation section** - Expanded from 40 lines to ~270 lines with clearer guidance
 
 ### Fixed
 
