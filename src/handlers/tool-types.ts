@@ -25,7 +25,7 @@ export interface ToolConfig {
    * This enables tests and clients to receive structured JSON without breaking
    * the existing string-only formatResult contract.
    */
-   
+
   structuredOutput?: (
     results: any,
     resourceType?: string
