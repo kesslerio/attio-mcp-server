@@ -63,35 +63,6 @@ function captureDebugResult(
   }
 
   try {
-     
-    console.error(
-      JSON.stringify(
-        {
-          type: 'MCP_DEBUG_RESULT',
-          toolName,
-          params,
-          result,
-        },
-        null,
-        2
-      )
-    );
-  } catch {
-    // Ignore serialization errors
-  }
-}
-
-function captureDebugResult(
-  toolName: string,
-  params: ToolParameters,
-  result: CallToolResult
-) {
-  if (process.env.MCP_DEBUG_CAPTURE !== 'true') {
-    return;
-  }
-
-  try {
-     
     console.error(
       JSON.stringify(
         {
