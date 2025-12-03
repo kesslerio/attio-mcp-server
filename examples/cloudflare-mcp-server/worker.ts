@@ -912,7 +912,6 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
   // Create MCP handler with the token
   const mcpHandler = createMcpHandler({
     attioToken,
-    registryConfig: { mode: 'full' },
   });
 
   return mcpHandler.handleHttpRequest(request);

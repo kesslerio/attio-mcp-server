@@ -85,6 +85,24 @@ export const createNoteConfig: UniversalToolConfig<
         : 'Error formatting note result';
     }
   },
+  structuredOutput: (
+    note: Record<string, unknown>
+  ): Record<string, unknown> => {
+    if (!note) return {};
+
+    // Normalize content fields to top-level, but preserve original id object
+    const { title, content } = extractNoteFields(note);
+    return {
+      ...note,
+      // Keep original id (object) - don't replace with extracted string
+      title: title || note.title,
+      content:
+        content ||
+        note.content ||
+        note.content_markdown ||
+        note.content_plaintext,
+    };
+  },
 };
 
 export const listNotesConfig: UniversalToolConfig<
