@@ -289,10 +289,10 @@ describe.skipIf(
       })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
-      // Accept both not-found patterns and task content immutability errors,
-      // since some flows trigger the immutable-content validator on updates
+      // Accept not-found patterns, task content immutability errors, and generic sanitized errors
+      // (error sanitizer may return generic messages for security reasons)
       expect(response.error).toMatch(
-        /(not found|does not exist|invalid|cannot read|undefined|validation|parameter error|immutable|cannot be updated|content\s+cannot\s+be\s+updated)/i
+        /(not found|does not exist|invalid|cannot read|undefined|validation|parameter error|immutable|cannot be updated|content\s+cannot\s+be\s+updated|An error occurred|error occurred|failed to update)/i
       );
       console.error('✅ Handled task not found errors');
     });

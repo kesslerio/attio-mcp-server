@@ -450,6 +450,7 @@ export class E2EAssertions {
         return [] as unknown as McpResponseData;
       }
 
+      // First try JSON parsing
       try {
         const parsedData = JSON.parse(text);
 
@@ -458,63 +459,78 @@ export class E2EAssertions {
         }
 
         return parsedData;
-      } catch (error: unknown) {
-        // In strict mode, throw error for JSON parse failures
-        // In debug mode, continue with fallback logic
-        ApiContractTracker.throwOrWarn(
-          'json_parse_failure',
-          `Failed to parse JSON response. Text length: ${text.length}, Preview: ${text.substring(0, 100)}...`
-        );
+      } catch {
+        // JSON parsing failed - try pattern extraction before throwing
+        // This handles formatResult outputs which return human-readable strings per CLAUDE.md #483
+      }
 
-        // If we reach here, we're in debug/fallback mode
-        // Heuristic: handle formatted strings from certain tools (e.g., create-note, list-notes)
+      // Pattern 1: "✅ Note created successfully: <title> (ID: <id>)..."
+      const createNoteMatch =
+        /Note created successfully:\s*(.+?)\s*\(ID:\s*([^\)]+)\)/i.exec(text);
+      if (createNoteMatch) {
+        const title = createNoteMatch[1];
+        const id = createNoteMatch[2];
 
-        // Pattern 1: "✅ Note created successfully: <title> (ID: <id>)..."
-        const createNoteMatch =
-          /Note created successfully:\s*(.+?)\s*\(ID:\s*([^\)]+)\)/i.exec(text);
-        if (createNoteMatch) {
-          const title = createNoteMatch[1];
-          const id = createNoteMatch[2];
-
-          // Log string extraction fallback (only logs in debug mode)
-          ApiContractTracker.logFallback(
-            'string_extraction',
-            `Extracted note data from formatted string. Title: ${title}, ID: ${id}`
-          );
-
-          return {
-            id: { note_id: id, record_id: id },
-            title,
-            content: '',
-            format: 'markdown',
-          } as unknown as McpResponseData;
-        }
-
-        // Pattern 2: "Found 0 notes" or "Found X notes:\n1. title (timestamp) (ID: xxx)..."
-        const listNotesMatch = /^Found (\d+) notes/i.exec(text);
-        if (listNotesMatch) {
-          const count = parseInt(listNotesMatch[1], 10);
-
-          // Log string extraction fallback (only logs in debug mode)
-          ApiContractTracker.logFallback(
-            'string_extraction',
-            `Detected list-notes format with ${count} notes. Returning empty array for compatibility.`
-          );
-
-          // For list-notes, return an empty array to satisfy test expectations
-          // The actual data validation should be done differently for list operations
-          return [] as unknown as McpResponseData;
-        }
-
-        // Log when returning raw text as fallback (only logs in debug mode)
         ApiContractTracker.logFallback(
           'string_extraction',
-          `No extraction pattern matched. Returning raw text as fallback. Length: ${text.length}`
+          `Extracted note data from formatted string. Title: ${title}, ID: ${id}`
         );
 
-        // Otherwise, return raw text to preserve debug behavior
-        return text as unknown as McpResponseData;
+        return {
+          id: { note_id: id, record_id: id },
+          title,
+          content: '',
+          format: 'markdown',
+        } as unknown as McpResponseData;
       }
+
+      // Pattern 2 (list-notes) is handled at the top of this block before JSON parsing
+
+      // Pattern 3: "✅ Successfully created company: Name (ID: uuid)" or similar create-record messages
+      const createRecordMatch =
+        /Successfully created (\w+):\s*(.+?)\s*\(ID:\s*([a-f0-9-]+)\)/i.exec(
+          text
+        );
+      if (createRecordMatch) {
+        const resourceType = createRecordMatch[1].toLowerCase();
+        const name = createRecordMatch[2];
+        const id = createRecordMatch[3];
+
+        ApiContractTracker.logFallback(
+          'string_extraction',
+          `Extracted ${resourceType} data from formatted string. Name: ${name}, ID: ${id}`
+        );
+
+        // Return structure that matches Attio API response format for test compatibility
+        return {
+          id: {
+            record_id: id,
+            object_id: resourceType === 'company' ? 'companies' : resourceType,
+            // Include task_id for task resources
+            ...(resourceType === 'task' ? { task_id: id } : {}),
+          },
+          values: {
+            name: [{ value: name }],
+          },
+          // Include top-level name for backwards compatibility
+          name,
+          type: resourceType,
+        } as unknown as McpResponseData;
+      }
+
+      // No patterns matched - throw in strict mode, return raw text in debug mode
+      ApiContractTracker.throwOrWarn(
+        'json_parse_failure',
+        `Failed to parse JSON and no extraction patterns matched. Text length: ${text.length}, Preview: ${text.substring(0, 100)}...`
+      );
+
+      // If we reach here, we're in debug mode - return raw text as fallback
+      ApiContractTracker.logFallback(
+        'string_extraction',
+        `No extraction pattern matched. Returning raw text as fallback. Length: ${text.length}`
+      );
+
+      return text as unknown as McpResponseData;
     }
 
     return undefined;

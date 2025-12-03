@@ -171,6 +171,8 @@ jobs:
 
       - name: Extract PR Context for Review
         id: pr_context
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           PR_NUM="${{ steps.resolve.outputs.pr }}"
 
@@ -189,14 +191,17 @@ jobs:
               # Check if error is transient (network/API) vs permanent (not found)
               if echo "$PR_DATA" | grep -qi "could not resolve to a PullRequest\|not found"; then
                 echo "⚠️ PR #$PR_NUM not found (permanent error), skipping retries" >> $GITHUB_STEP_SUMMARY
+                echo "gh pr view failed (permanent): $PR_DATA" >&2
                 PR_DATA=""
                 break
               elif [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
                 BACKOFF=$((2 ** RETRY_COUNT))  # Exponential backoff: 2, 4, 8 seconds
                 echo "⚠️ Transient error fetching PR metadata (attempt $RETRY_COUNT/$MAX_RETRIES), retrying in ${BACKOFF}s..." >> $GITHUB_STEP_SUMMARY
+                echo "gh pr view failed (attempt $RETRY_COUNT): exit $EXIT_CODE, output: $PR_DATA" >&2
                 sleep $BACKOFF
               else
                 echo "❌ Failed to fetch PR metadata after $MAX_RETRIES attempts" >> $GITHUB_STEP_SUMMARY
+                echo "gh pr view failed after retries: exit $EXIT_CODE, output: $PR_DATA" >&2
                 PR_DATA=""
               fi
             fi
