@@ -47,7 +47,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
       // Create test companies for concurrent operations (reduced from 10 to 3)
       for (let i = 0; i < 3; i++) {
         const companyData = TestDataFactory.createCompanyData(
-          `TC_EC03_Company_${i}`
+          `TC_EC03_Company_${i}_${Date.now()}`
         );
         const companyResult = await this.executeToolCall('create-record', {
           resource_type: 'companies',
@@ -55,9 +55,14 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
         });
 
         if (!companyResult.isError) {
-          const id = this.extractRecordId(
-            this.extractTextContent(companyResult)
-          );
+          const id =
+            this.extractRecordId(this.extractTextContent(companyResult)) ||
+            (
+              this.parseJsonFromResult(companyResult) as {
+                id?: { record_id?: string };
+              } | null
+            )?.id?.record_id ||
+            null;
           if (id) {
             this.trackRecord('companies', id);
             this.testCompanyIds.push(id);
