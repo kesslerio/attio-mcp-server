@@ -4,18 +4,18 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  createMCPClient,
+  buildMCPClientConfig,
+  type MCPClientAdapter,
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 describe('Timeframe Search MCP Tool Validation', () => {
-  let client: MCPTestClient;
+  let client: MCPClientAdapter;
 
   beforeAll(async () => {
-    // Point to our built MCP server
-    client = new MCPTestClient({
-      serverCommand: 'node',
-      serverArgs: ['./dist/index.js'],
-    });
+    client = createMCPClient(buildMCPClientConfig());
     await client.init();
   });
 
@@ -44,7 +44,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           timeframe: 'yesterday',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Yesterday companies result:',
             JSON.stringify(result, null, 2)
@@ -77,7 +77,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           timeframe: 'last_7_days',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Last 7 days people result:',
             JSON.stringify(result, null, 2)
@@ -110,7 +110,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           date_operator: 'between',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Custom date range tasks result:',
             JSON.stringify(result, null, 2)
@@ -142,7 +142,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           date_operator: 'greater_than',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Greater than comparison result:',
             JSON.stringify(result, null, 2)
@@ -173,7 +173,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           date_operator: 'less_than',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Less than comparison result:',
             JSON.stringify(result, null, 2)
@@ -206,14 +206,14 @@ describe('Timeframe Search MCP Tool Validation', () => {
           date_operator: 'greater_than',
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Invalid date format result:',
             JSON.stringify(result, null, 2)
           );
 
           // Should either handle gracefully or provide clear error
-          if (result.isError) {
+          if (result.isError && result.content?.length) {
             expect(result.content[0]).toHaveProperty('text');
             if ('text' in result.content[0]) {
               // Should not be the old API structure errors
@@ -238,7 +238,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           // Missing timeframe_attribute, dates, etc.
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'Missing parameters result:',
             JSON.stringify(result, null, 2)
@@ -269,7 +269,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           timeframe: 'last_30_days',
           limit: 3,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             'API structure validation result:',
             JSON.stringify(result, null, 2)

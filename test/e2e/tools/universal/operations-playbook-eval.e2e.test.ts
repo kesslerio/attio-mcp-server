@@ -16,29 +16,30 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
+import {
+  createMCPClient,
+  buildMCPClientConfig,
+  type MCPClientAdapter,
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 interface PlaybookTestResult {
   success: boolean;
   prompt: string;
   expectedOutcome: string;
-  actualResult?: ToolResult;
+  actualResult?: CallToolResult;
   error?: string;
   duration: number;
 }
 
 describe('Operations Playbook Validation Suite', () => {
-  let client: MCPTestClient;
+  let client: MCPClientAdapter;
   const testResults: PlaybookTestResult[] = [];
 
   beforeAll(async () => {
-    client = new MCPTestClient({
-      serverCommand: 'node',
-      serverArgs: ['./dist/index.js'],
-    });
+    client = createMCPClient(buildMCPClientConfig());
     await client.init();
   });
 
@@ -427,12 +428,12 @@ describe('Operations Playbook Validation Suite', () => {
       console.log(`🎯 Expected outcome: ${expectedOutcome}`);
       console.log(`🔧 Using tool: ${toolName}`);
 
-      let result: ToolResult | null = null;
+      let result: CallToolResult | null = null;
 
       await client.assertToolCall(
         toolName,
         toolParams,
-        (toolResult: ToolResult) => {
+        (toolResult: CallToolResult) => {
           result = toolResult;
           const endTime = performance.now();
           const duration = endTime - startTime;
@@ -573,6 +574,13 @@ describe('Operations Playbook Validation Suite', () => {
   }
 
   async function createSingleGitHubIssue(failures: PlaybookTestResult[]) {
+    if (process.env.SKIP_GITHUB_ISSUE_CREATION === 'true') {
+      console.log(
+        '⏭️  Skipping GitHub issue creation (SKIP_GITHUB_ISSUE_CREATION=true)'
+      );
+      return;
+    }
+
     const title = `Operations Playbook Validation: ${failures.length} Examples Failed`;
     const timestamp = new Date().toISOString();
 

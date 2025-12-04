@@ -12,17 +12,18 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestClient } from 'mcp-test-client';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  createMCPClient,
+  buildMCPClientConfig,
+  type MCPClientAdapter,
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 describe('Issue #579: Advanced Search Filter QA Tests', () => {
-  let client: MCPTestClient;
+  let client: MCPClientAdapter;
 
   beforeAll(async () => {
-    client = new MCPTestClient({
-      serverCommand: 'node',
-      serverArgs: ['./dist/index.js'],
-    });
+    client = createMCPClient(buildMCPClientConfig());
     await client.init();
   });
 
@@ -49,7 +50,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           },
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
@@ -105,7 +106,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           resource_type: 'people',
           limit: 1,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           console.log(
             '🔍 Personal Name Structure Test:',
             JSON.stringify(result, null, 2)
@@ -143,7 +144,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
             ],
           },
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
@@ -195,7 +196,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
             ],
           },
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
@@ -236,7 +237,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
             ],
           },
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
@@ -283,7 +284,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           },
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
@@ -330,7 +331,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
           },
           limit: 5,
         },
-        (result: ToolResult) => {
+        (result: CallToolResult) => {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
