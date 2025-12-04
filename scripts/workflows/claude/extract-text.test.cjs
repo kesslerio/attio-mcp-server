@@ -1,11 +1,15 @@
 /**
- * Unit tests for extract-text.js
+ * Unit tests for extract-text.cjs
  * Tests the extraction of final assistant responses from Claude execution files
+ *
+ * Run: node scripts/workflows/claude/extract-text.test.cjs
+ * Or:  npm run test:extract-text
  */
 
 const {
   extractAllTextFromSession,
   dedupeAdjacent,
+  extractStreamingDeltas,
 } = require('./extract-text.cjs');
 
 // Test: Should extract final response (message without tool_use)
@@ -163,11 +167,94 @@ function testDedupeAdjacent() {
   console.log('PASS: testDedupeAdjacent');
 }
 
+// Test: Streaming delta fallback (--output-format stream-json)
+function testStreamingDeltas() {
+  // Simulate streaming output with content_block_delta events
+  const session = JSON.stringify([
+    { type: 'content_block_start', content_block: { type: 'text', text: '' } },
+    {
+      type: 'content_block_delta',
+      delta: { type: 'text_delta', text: 'Hello ' },
+    },
+    {
+      type: 'content_block_delta',
+      delta: { type: 'text_delta', text: 'world!' },
+    },
+    { type: 'content_block_stop' },
+  ]);
+
+  const result = extractAllTextFromSession(session);
+
+  if (result.length !== 1 || result[0] !== 'Hello world!') {
+    console.error('FAIL: testStreamingDeltas');
+    console.error('Expected:', ['Hello world!']);
+    console.error('Got:', result);
+    process.exit(1);
+  }
+  console.log('PASS: testStreamingDeltas');
+}
+
+// Test: extractStreamingDeltas directly
+function testExtractStreamingDeltasDirect() {
+  const entries = [
+    {
+      type: 'content_block_delta',
+      delta: { type: 'text_delta', text: 'Part 1 ' },
+    },
+    { type: 'content_block_delta', delta: { type: 'tool_use', name: 'Read' } }, // should be ignored
+    {
+      type: 'content_block_delta',
+      delta: { type: 'text_delta', text: 'Part 2' },
+    },
+  ];
+
+  const result = extractStreamingDeltas(entries);
+
+  if (result !== 'Part 1 Part 2') {
+    console.error('FAIL: testExtractStreamingDeltasDirect');
+    console.error('Expected: "Part 1 Part 2"');
+    console.error('Got:', result);
+    process.exit(1);
+  }
+  console.log('PASS: testExtractStreamingDeltasDirect');
+}
+
+// Test: Assistant messages take priority over streaming deltas
+function testAssistantMessagePriority() {
+  // Session with both streaming deltas AND a final assistant message
+  // The assistant message should be preferred
+  const session = JSON.stringify([
+    {
+      type: 'content_block_delta',
+      delta: { type: 'text_delta', text: 'Streaming...' },
+    },
+    {
+      message: {
+        role: 'assistant',
+        content: [{ type: 'text', text: 'Final message from assistant' }],
+      },
+    },
+  ]);
+
+  const result = extractAllTextFromSession(session);
+
+  if (result.length !== 1 || result[0] !== 'Final message from assistant') {
+    console.error('FAIL: testAssistantMessagePriority');
+    console.error('Expected:', ['Final message from assistant']);
+    console.error('Got:', result);
+    process.exit(1);
+  }
+  console.log('PASS: testAssistantMessagePriority');
+}
+
 // Run all tests
-console.log('Running extract-text.js tests...\n');
+console.log('Running extract-text.cjs tests...\n');
 testFinalResponse();
 testFallbackToLastText();
 testEmptyResponse();
 testNdjsonFormat();
 testDedupeAdjacent();
+testStreamingDeltas();
+testExtractStreamingDeltasDirect();
+testAssistantMessagePriority();
 console.log('\nAll tests passed!');

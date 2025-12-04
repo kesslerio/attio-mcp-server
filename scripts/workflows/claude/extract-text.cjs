@@ -3,6 +3,13 @@
  *
  * Handles both JSON array format (pretty-printed) and NDJSON fallback.
  * Extracts ONLY the final assistant response, not intermediate tool-call chatter.
+ *
+ * Strategy:
+ * 1. Try to find last assistant message WITHOUT tool_use blocks (final response)
+ * 2. Fall back to last assistant message WITH text (even if has tool_use)
+ * 3. Fall back to streaming deltas if no complete messages found
+ *
+ * @module extract-text
  */
 
 /**
@@ -47,10 +54,15 @@ function isAssistantMessage(entry) {
 }
 
 /**
- * Extract all text from a Claude session log
- * Priority: Last assistant message without tool_use > Last assistant message with text
+ * Extract all text from a Claude session log.
+ *
+ * Priority:
+ * 1. Last assistant message without tool_use (final response)
+ * 2. Last assistant message with text (even with tool_use)
+ * 3. Streaming deltas (content_block_delta) as fallback
+ *
  * @param {string} raw - Raw file content (with BOM already stripped)
- * @returns {string[]} - Array of text chunks
+ * @returns {string[]} - Array with 0 or 1 text chunks (single final response by design)
  */
 function extractAllTextFromSession(raw) {
   let sessionLog;
@@ -96,7 +108,35 @@ function extractAllTextFromSession(raw) {
 
   // Prefer the last final response (no tool_use), otherwise use last any response
   const result = lastFinalResponse || lastAnyResponse;
-  return result ? [result] : [];
+  if (result) return [result];
+
+  // Fallback: If no complete assistant messages, try streaming deltas
+  // This handles edge cases where --output-format stream-json only has deltas
+  const streamingText = extractStreamingDeltas(entries);
+  return streamingText ? [streamingText] : [];
+}
+
+/**
+ * Extract text from streaming delta events (fallback for stream-json output)
+ * @param {object[]} entries - Session log entries
+ * @returns {string|null} - Concatenated streaming text or null
+ */
+function extractStreamingDeltas(entries) {
+  const deltaTexts = [];
+
+  for (const entry of entries) {
+    // Handle content_block_delta events from streaming output
+    if (
+      entry?.type === 'content_block_delta' &&
+      entry?.delta?.type === 'text_delta'
+    ) {
+      if (typeof entry.delta.text === 'string') {
+        deltaTexts.push(entry.delta.text);
+      }
+    }
+  }
+
+  return deltaTexts.length > 0 ? deltaTexts.join('') : null;
 }
 
 /**
@@ -112,4 +152,8 @@ function dedupeAdjacent(arr) {
   return out;
 }
 
-module.exports = { extractAllTextFromSession, dedupeAdjacent };
+module.exports = {
+  extractAllTextFromSession,
+  dedupeAdjacent,
+  extractStreamingDeltas,
+};
