@@ -38,4 +38,9 @@ fi || {
   exit 1
 }
 
+# Reminder: Check if CHANGELOG was updated (warning only)
+if ! git diff origin/main...HEAD --name-only 2>/dev/null | grep -q "CHANGELOG.md"; then
+  echo "⚠️  CHANGELOG.md not updated - remember to add entry before PR merge (if user-facing)"
+fi
+
 echo "✅ Pre-push validation complete"
