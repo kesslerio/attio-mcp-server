@@ -64,7 +64,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -92,7 +92,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -120,7 +120,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -155,7 +155,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       // If it throws, that's also acceptable validation behavior
       passed = true;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -196,7 +196,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -248,7 +248,7 @@ describe('TC-003: Create Records - Data Creation', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });
