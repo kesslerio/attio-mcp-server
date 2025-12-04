@@ -1044,6 +1044,14 @@ This comprehensive troubleshooting guide provides systematic approaches to ident
 
 ## Remote Mode Troubleshooting
 
+> **Prerequisites**: Set these environment variables before running commands in this section:
+>
+> - `MCP_REMOTE_ENDPOINT` - Your worker URL (e.g., `https://attio-mcp.workers.dev/mcp`)
+> - `MCP_REMOTE_AUTH_TOKEN` - OAuth token from authorization flow
+> - `ATTIO_API_KEY` - Your Attio API key (for validation)
+>
+> See [Remote Deployment Guide](../guides/remote-deployment.md) for setup instructions.
+
 When running E2E tests against remote MCP endpoints (Smithery deployments or self-hosted Cloudflare Workers), different debugging approaches are required compared to local testing.
 
 ### Environment Setup for Remote Testing

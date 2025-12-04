@@ -29,6 +29,23 @@ export interface ShellTestOptions {
 }
 
 /**
+ * Type guard for exec error objects from child_process
+ */
+interface ExecError {
+  stdout?: Buffer | string;
+  stderr?: Buffer | string;
+  status?: number;
+}
+
+function isExecError(error: unknown): error is ExecError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    ('stdout' in error || 'stderr' in error || 'status' in error)
+  );
+}
+
+/**
  * Execute a bash command and return structured result
  */
 export function execBash(
@@ -47,15 +64,18 @@ export function execBash(
     const stdout = execSync(command, execOptions) as string;
     return { stdout: stdout.trim(), stderr: '', exitCode: 0 };
   } catch (error: unknown) {
-    const execError = error as {
-      stdout?: Buffer | string;
-      stderr?: Buffer | string;
-      status?: number;
-    };
+    if (isExecError(error)) {
+      return {
+        stdout: error.stdout?.toString().trim() || '',
+        stderr: error.stderr?.toString().trim() || '',
+        exitCode: error.status || 1,
+      };
+    }
+    // Unknown error type - return generic failure
     return {
-      stdout: execError.stdout?.toString().trim() || '',
-      stderr: execError.stderr?.toString().trim() || '',
-      exitCode: execError.status || 1,
+      stdout: '',
+      stderr: error instanceof Error ? error.message : String(error),
+      exitCode: 1,
     };
   }
 }
@@ -141,7 +161,25 @@ export function readJsonConfig(filePath: string): Record<string, unknown> {
 }
 
 /**
- * Check if a backup file was created (matches pattern like filename.backup.YYYYMMDD_HHMMSS)
+ * Find a backup file matching the expected naming pattern.
+ *
+ * Searches for files matching: `{originalFilename}.backup.YYYYMMDD_HHMMSS`
+ * where YYYYMMDD_HHMMSS is a timestamp (e.g., `20251203_143022`).
+ *
+ * @param dirPath - Directory to search in
+ * @param originalFilename - Original filename to find backup for
+ * @returns Full path to the first matching backup file, or null if none found
+ *
+ * @remarks
+ * If multiple backup files exist, returns the first match found during
+ * directory enumeration (not necessarily the most recent). For chronological
+ * ordering, sort the results by filename or mtime externally.
+ *
+ * @example
+ * ```typescript
+ * const backup = findBackupFile('/tmp/test', 'config.json');
+ * // Returns: '/tmp/test/config.json.backup.20251203_143022' or null
+ * ```
  */
 export function findBackupFile(
   dirPath: string,
