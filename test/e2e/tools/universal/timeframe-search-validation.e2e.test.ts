@@ -9,7 +9,7 @@ import {
   createMCPClient,
   buildMCPClientConfig,
   type MCPClientAdapter,
-} from '../../mcp/shared/mcp-client.js';
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 describe('Timeframe Search MCP Tool Validation', () => {
   let client: MCPClientAdapter;
@@ -213,7 +213,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
           );
 
           // Should either handle gracefully or provide clear error
-          if (result.isError) {
+          if (result.isError && result.content?.length) {
             expect(result.content[0]).toHaveProperty('text');
             if ('text' in result.content[0]) {
               // Should not be the old API structure errors

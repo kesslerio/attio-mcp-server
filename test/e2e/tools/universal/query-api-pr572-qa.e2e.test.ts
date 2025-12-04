@@ -6,7 +6,7 @@
  * - TC-011: Search by Content
  * - TC-012: Search by Timeframe
  *
- * Uses mcp-test-client to validate MCP tool integration works correctly.
+ * Uses shared MCP client infrastructure to validate MCP tool integration works correctly.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -15,7 +15,7 @@ import {
   createMCPClient,
   buildMCPClientConfig,
   type MCPClientAdapter,
-} from '../../mcp/shared/mcp-client.js';
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 describe('PR #572 Query API QA - MCP Tool Integration', () => {
   let client: MCPClientAdapter;
@@ -80,6 +80,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
         (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
+          expect(result.content?.length).toBeGreaterThan(0);
           expect(result.content[0].type).toBe('text');
 
           const responseText = result.content[0].text;
@@ -116,6 +117,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
           // Should return a response
           expect(result.content).toBeDefined();
+          expect(result.content?.length).toBeGreaterThan(0);
           expect(result.content[0].type).toBe('text');
 
           const responseText = result.content[0].text;
@@ -143,6 +145,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
         (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
+          expect(result.content?.length).toBeGreaterThan(0);
           expect(result.content[0].type).toBe('text');
 
           const responseText = result.content[0].text;
@@ -181,6 +184,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
           // Should return a response
           expect(result.content).toBeDefined();
+          expect(result.content?.length).toBeGreaterThan(0);
           expect(result.content[0].type).toBe('text');
 
           const responseText = result.content[0].text;
@@ -210,6 +214,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
         (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
+          expect(result.content?.length).toBeGreaterThan(0);
           expect(result.content[0].type).toBe('text');
 
           const responseText = result.content[0].text;
@@ -240,6 +245,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
         (result: CallToolResult) => {
           // Should return a response
           expect(result.content).toBeDefined();
+          expect(result.content?.length).toBeGreaterThan(0);
           expect(result.content[0].type).toBe('text');
 
           const responseText = result.content[0].text;

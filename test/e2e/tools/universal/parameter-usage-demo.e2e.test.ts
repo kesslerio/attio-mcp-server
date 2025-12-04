@@ -9,7 +9,7 @@ import {
   createMCPClient,
   buildMCPClientConfig,
   type MCPClientAdapter,
-} from '../../mcp/shared/mcp-client.js';
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 describe('Timeframe Search Parameter Usage Demo', () => {
   let client: MCPClientAdapter;

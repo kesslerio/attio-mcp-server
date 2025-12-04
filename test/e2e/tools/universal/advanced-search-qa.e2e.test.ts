@@ -17,7 +17,7 @@ import {
   createMCPClient,
   buildMCPClientConfig,
   type MCPClientAdapter,
-} from '../../mcp/shared/mcp-client.js';
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 describe('Issue #579: Advanced Search Filter QA Tests', () => {
   let client: MCPClientAdapter;

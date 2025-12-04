@@ -16,7 +16,7 @@ import {
   createMCPClient,
   buildMCPClientConfig,
   type MCPClientAdapter,
-} from '../../mcp/shared/mcp-client.js';
+} from '@test/e2e/mcp/shared/mcp-client.js';
 
 interface PlaybookTestResult {
   success: boolean;
@@ -465,6 +465,13 @@ describe('Sales Playbook Validation Suite', () => {
   }
 
   async function createSingleGitHubIssue(failures: PlaybookTestResult[]) {
+    if (process.env.SKIP_GITHUB_ISSUE_CREATION === 'true') {
+      console.log(
+        '⏭️  Skipping GitHub issue creation (SKIP_GITHUB_ISSUE_CREATION=true)'
+      );
+      return;
+    }
+
     const title = `Sales Playbook Validation: ${failures.length} Examples Failed`;
     const timestamp = new Date().toISOString();
 
