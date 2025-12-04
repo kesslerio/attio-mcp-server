@@ -117,18 +117,13 @@ describe('MCP P1 Task CRUD Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Created task|Successfully created task/);
-
-      // Extract and validate task ID
-      const taskId = testSuite.extractRecordId(responseText);
-      expect(taskId).toBeTruthy();
-      expect(taskId).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+      const { id } = testSuite.parseRecordResult(result);
+      expect(id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
 
       // Track for cleanup
-      testSuite.trackRecord('tasks', taskId!);
+      testSuite.trackRecord('tasks', id);
 
-      console.log(`✅ Created task with ID: ${taskId}`);
+      console.log(`✅ Created task with ID: ${id}`);
     });
 
     it('should create a task with minimal required fields', async () => {
@@ -147,25 +142,10 @@ describe('MCP P1 Task CRUD Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      console.log(`DEBUG: Minimal task response: ${responseText}`);
-      const taskId = testSuite.extractRecordId(responseText);
-
-      // Handle case where extractRecordId might fail due to response format
-      if (!taskId) {
-        // Try alternative extraction methods or check if response indicates success
-        expect(responseText).toMatch(
-          /Created task|Successfully created task|task/i
-        );
-        console.warn(
-          `⚠️  Created minimal task but ID extraction failed - SKIPPING CLEANUP TRACKING. Manual cleanup may be required.`
-        );
-        return; // Skip cleanup tracking if we can't get the ID
-      }
-
-      expect(taskId).toBeTruthy();
-      testSuite.trackRecord('tasks', taskId!);
-      console.log(`✅ Created minimal task with ID: ${taskId}`);
+      const { id } = testSuite.parseRecordResult(result);
+      expect(id).toMatch(/^[a-f0-9-]{36}$/);
+      testSuite.trackRecord('tasks', id);
+      console.log(`✅ Created minimal task with ID: ${id}`);
     });
 
     it('should create a task with all optional fields', async () => {
