@@ -146,7 +146,13 @@ export abstract class MCPTestBase {
     return (
       normalized.includes('not found') ||
       normalized.includes('already deleted') ||
-      normalized.includes('does not exist')
+      normalized.includes('does not exist') ||
+      normalized.includes('404') ||
+      normalized.includes('400') ||
+      normalized.includes('uniqueness') ||
+      normalized.includes('conflict') ||
+      normalized.includes('duplicate') ||
+      normalized.includes('cannot delete')
     );
   }
 

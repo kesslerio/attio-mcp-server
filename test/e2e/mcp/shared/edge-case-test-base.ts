@@ -331,25 +331,62 @@ export abstract class EdgeCaseTestBase extends MCPTestBase {
 
   /**
    * Clean up test data created during edge case testing
+   * Tolerates expected errors like 404 (already deleted) and 400 (uniqueness conflicts)
    */
   async cleanupTestData(): Promise<void> {
     const trackedRecords = TestDataFactory.getTrackedRecords();
+    if (trackedRecords.length === 0) {
+      return;
+    }
+
     console.log(`🧹 Cleaning up ${trackedRecords.length} tracked records...`);
 
     for (const record of trackedRecords) {
       try {
-        await this.executeToolCall('delete-record', {
+        const result = await this.executeToolCall('delete-record', {
           resource_type: record.type,
           record_id: record.id,
         });
-        console.log(`✅ Deleted ${record.type}: ${record.id}`);
+
+        const text = this.extractTextContent(result);
+        if (result.isError && !this.isExpectedCleanupError(text)) {
+          console.warn(
+            `⚠️ Cleanup issue for ${record.type} ${record.id}: ${text}`
+          );
+        } else {
+          console.log(`✅ Deleted ${record.type}: ${record.id}`);
+        }
       } catch (error) {
-        console.warn(`⚠️ Failed to delete ${record.type}: ${record.id}`, error);
+        // Tolerate cleanup errors during concurrent operations
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        if (!this.isExpectedCleanupError(errorMsg)) {
+          console.warn(
+            `⚠️ Failed to delete ${record.type}: ${record.id}`,
+            error
+          );
+        }
       }
     }
 
     // Clear the tracking array after attempting deletion
     TestDataFactory.clearTrackedRecords();
+  }
+
+  /**
+   * Check if an error during cleanup is expected and can be ignored
+   */
+  private isExpectedCleanupError(errorText: string): boolean {
+    const normalized = errorText.toLowerCase();
+    return (
+      normalized.includes('not found') ||
+      normalized.includes('already deleted') ||
+      normalized.includes('does not exist') ||
+      normalized.includes('404') ||
+      normalized.includes('400') ||
+      normalized.includes('uniqueness') ||
+      normalized.includes('conflict') ||
+      normalized.includes('duplicate')
+    );
   }
 
   /**
