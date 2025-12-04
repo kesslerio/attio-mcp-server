@@ -203,3 +203,19 @@ export interface HttpError {
   code?: string;
   details?: unknown;
 }
+
+/**
+ * Phone validation configuration
+ */
+export interface PhoneConfig {
+  /** Default country code for numbers without international prefix (e.g., 'US', 'GB') */
+  defaultCountry?: string;
+}
+
+/**
+ * Configuration passed to tool handlers
+ */
+export interface ToolHandlerConfig {
+  /** Phone validation configuration */
+  phone?: PhoneConfig;
+}
