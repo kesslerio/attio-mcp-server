@@ -7,7 +7,7 @@
  * @see Issue #958 - Install Script Test Suite
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { existsSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import {
@@ -30,6 +30,25 @@ const CURSOR_SCRIPT = join(SCRIPTS_DIR, 'install-cursor.sh');
 const CLAUDE_CODE_SCRIPT = join(SCRIPTS_DIR, 'install-claude-code.sh');
 
 describe('Install Scripts', () => {
+  // Validate all required scripts exist before running tests
+  beforeAll(() => {
+    const scripts = [
+      { path: CLAUDE_DESKTOP_SCRIPT, name: 'install-claude-desktop.sh' },
+      { path: CURSOR_SCRIPT, name: 'install-cursor.sh' },
+      { path: CLAUDE_CODE_SCRIPT, name: 'install-claude-code.sh' },
+    ];
+
+    for (const script of scripts) {
+      if (!existsSync(script.path)) {
+        throw new Error(
+          `Required install script not found: ${script.name}\n` +
+            `Expected at: ${script.path}\n` +
+            `Ensure scripts/ directory contains all install scripts.`
+        );
+      }
+    }
+  });
+
   describe('Script Validation', () => {
     it('should have valid bash syntax for install-claude-desktop.sh', () => {
       const result = validateBashSyntax(CLAUDE_DESKTOP_SCRIPT);

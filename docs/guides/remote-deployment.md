@@ -184,6 +184,14 @@ If deploying to Cloudflare Workers:
 - [ ] Attio OAuth app redirect URI updated to match worker URL
 - [ ] Health endpoint returns all `true` values
 
+**Wrangler Prerequisites:**
+
+Before running wrangler commands, ensure:
+
+- `wrangler login` completed successfully (run `wrangler whoami` to verify)
+- Your Cloudflare account has Workers enabled (free tier is sufficient)
+- For multiple Cloudflare accounts, use `--account-id <ID>` flag with each command
+
 **Validation Commands:**
 
 ```bash
@@ -260,6 +268,12 @@ Document and test your rollback strategy:
 ### Health Check Monitoring Setup
 
 Example monitoring configurations:
+
+> **Note on Costs**: Some monitoring services have costs beyond free tier limits. Check pricing for your expected request volume before production deployment:
+>
+> - **Datadog**: Free tier limited; paid plans start at ~$15/host/month
+> - **UptimeRobot**: Free tier allows 50 monitors with 5-minute intervals
+> - **Prometheus + Grafana Cloud**: Free tier available; self-hosted has infrastructure costs
 
 **Datadog:**
 
