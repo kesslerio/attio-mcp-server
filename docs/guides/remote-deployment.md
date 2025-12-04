@@ -135,29 +135,164 @@ secrets:
 
 ## Pre-Deployment Checklist
 
-Before going to production:
+Complete ALL sections before going to production.
 
-### Security
+### Security (Required)
 
 - [ ] TLS certificate configured (required for remote access)
 - [ ] Credentials stored in secrets manager (not env files or git)
 - [ ] Rate limits configured for expected load
 - [ ] Non-root user running the container
 - [ ] Read-only filesystem enabled
+- [ ] Token encryption key generated (32-byte hex)
+- [ ] OAuth redirect URIs verified exact match
+- [ ] CORS origins explicitly configured (no wildcards in production)
+- [ ] Security headers configured (CSP, HSTS, X-Frame-Options)
 
-### Monitoring
+### Monitoring (Required)
 
 - [ ] Health endpoint monitored (`GET /health`)
 - [ ] Log aggregation configured
 - [ ] Alerting set up for failures
 - [ ] Resource usage tracked
+- [ ] Error rate alerting configured (threshold: <1% 5xx errors)
+- [ ] Latency monitoring (p50, p95, p99 percentiles)
+- [ ] OAuth token refresh monitoring
+- [ ] KV storage capacity monitoring (Cloudflare Workers)
 
-### Operations
+### Operations (Required)
 
 - [ ] Backup/recovery plan documented
 - [ ] Credential rotation procedure defined
 - [ ] Incident response plan ready
 - [ ] Rollback strategy tested
+- [ ] Runbook for common failures documented
+- [ ] On-call escalation path defined
+- [ ] Change management process documented
+
+### Cloudflare Worker Checklist
+
+If deploying to Cloudflare Workers:
+
+- [ ] KV namespace created and ID verified in `wrangler.toml`
+- [ ] All secrets set via `wrangler secret put`:
+  - [ ] `ATTIO_CLIENT_ID`
+  - [ ] `ATTIO_CLIENT_SECRET`
+  - [ ] `TOKEN_ENCRYPTION_KEY` (32-byte hex)
+  - [ ] `WORKER_URL` (your deployed worker URL)
+- [ ] Production environment configured in `wrangler.toml`
+- [ ] Attio OAuth app redirect URI updated to match worker URL
+- [ ] Health endpoint returns all `true` values
+
+**Validation Commands:**
+
+```bash
+# Verify secrets are set
+wrangler secret list
+
+# Check KV namespace
+wrangler kv:namespace list
+
+# Test health endpoint
+curl https://your-worker.workers.dev/health | jq .
+
+# Expected output - all true:
+{
+  "status": "healthy",
+  "has_client_id": true,
+  "has_client_secret": true,
+  "has_encryption_key": true,
+  "has_worker_url": true,
+  "kv_connected": true
+}
+```
+
+### Smithery Checklist
+
+If deploying via Smithery:
+
+- [ ] `smithery.yaml` validated with `npx @smithery/cli build --dry-run`
+- [ ] `configSchema` exported correctly from `src/smithery.ts`
+- [ ] Discovery scan passes without errors
+- [ ] Tool count matches expected (40+ tools)
+- [ ] All required environment variables documented
+
+**Validation Commands:**
+
+```bash
+# Validate Smithery configuration
+npx @smithery/cli build --dry-run
+
+# Check exports
+node -e "import('./dist/smithery.js').then(m => console.log(Object.keys(m)))"
+
+# Expected: ['configSchema', 'default'] or ['configSchema', 'createServer']
+```
+
+### Rollback Procedure
+
+Document and test your rollback strategy:
+
+1. **Cloudflare Workers:**
+
+   ```bash
+   # List previous deployments
+   wrangler deployments list
+
+   # Rollback to previous version
+   wrangler rollback
+   ```
+
+2. **Docker:**
+
+   ```bash
+   # Stop current container
+   docker stop attio-mcp
+
+   # Start previous version
+   docker run -d --name attio-mcp attio-mcp:previous-tag
+   ```
+
+3. **Smithery:**
+   - Use Smithery dashboard to revert to previous deployment
+   - Or redeploy previous npm version
+
+### Health Check Monitoring Setup
+
+Example monitoring configurations:
+
+**Datadog:**
+
+```yaml
+# datadog-monitors.yaml
+- type: http
+  name: Attio MCP Health
+  url: https://your-endpoint/health
+  check_interval: 60
+  alert_threshold: 3
+  escalation: 'pagerduty-oncall'
+```
+
+**UptimeRobot:**
+
+- Monitor Type: HTTP(s)
+- URL: `https://your-endpoint/health`
+- Monitoring Interval: 1 minute
+- Alert Contacts: Your team
+
+**Prometheus + Alertmanager:**
+
+```yaml
+# alerting-rules.yaml
+groups:
+  - name: attio-mcp
+    rules:
+      - alert: AttioMCPDown
+        expr: up{job="attio-mcp"} == 0
+        for: 5m
+        labels:
+          severity: critical
+```
 
 ---
 
