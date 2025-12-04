@@ -118,6 +118,51 @@ Returns all available tool definitions.
 | `create-note`                 | Create a note on a record                                     |
 | `list-notes`                  | List notes for a record                                       |
 
+## Phone Validation Configuration
+
+The phone validation module normalizes phone numbers to E.164 format before sending to Attio. By default, it uses `US` as the fallback country for numbers without an international prefix.
+
+### Configuring Default Country
+
+When calling handlers directly, pass `ToolHandlerConfig` to customize phone validation:
+
+```typescript
+import {
+  handleCreateRecord,
+  createFetchClient,
+  type ToolHandlerConfig,
+} from '@attio-mcp/core';
+
+const client = createFetchClient({ token: process.env.ATTIO_API_KEY });
+
+// Configure for UK phone numbers
+const config: ToolHandlerConfig = {
+  phone: { defaultCountry: 'GB' },
+};
+
+// Create a person with UK phone number (no +44 prefix needed)
+const result = await handleCreateRecord(
+  client,
+  {
+    resource_type: 'people',
+    record_data: {
+      name: 'John Smith',
+      phone_numbers: [{ phone_number: '020 7946 0958' }],
+    },
+  },
+  config // <- Config passed here
+);
+// Phone normalized to: +442079460958
+```
+
+### Supported Countries
+
+Any ISO 3166-1 alpha-2 country code is supported (US, GB, DE, FR, JP, AU, etc.). See [libphonenumber-js](https://github.com/catamphetamine/libphonenumber-js) for the full list.
+
+### Note on Registry Dispatch
+
+When using the tool registry (`executeTool`), config injection is not yet supported. This is tracked for a future enhancement. For now, use direct handler invocation when custom country configuration is needed.
+
 ## Edge Compatibility
 
 This library is designed to work in edge environments:
