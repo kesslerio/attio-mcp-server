@@ -1,15 +1,16 @@
 /**
  * Utility exports for @attio-mcp/core
+ *
+ * Public API surface is intentionally minimal.
+ * Internal helpers (validatePhoneNumber, hasCountryCode, isPossiblePhoneNumber,
+ * isValidPhoneNumber) are available via direct import from phone-validation.js
+ * for tests but not exposed as public API.
  */
 
-// Phone validation
+// Phone validation - public API
 export {
-  validatePhoneNumber,
-  toE164,
-  hasCountryCode,
-  isPossiblePhoneNumber,
-  isValidPhoneNumber,
   normalizePhoneForAttio,
+  toE164,
   PhoneValidationError,
 } from './phone-validation.js';
 

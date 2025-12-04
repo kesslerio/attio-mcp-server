@@ -32,14 +32,10 @@ export {
 } from './tools/index.js';
 export type { ToolDefinition, ToolRegistry } from './tools/index.js';
 
-// Phone validation exports
+// Phone validation exports (minimal public API)
 export {
-  validatePhoneNumber,
-  toE164,
-  hasCountryCode,
-  isPossiblePhoneNumber,
-  isValidPhoneNumber,
   normalizePhoneForAttio,
+  toE164,
   PhoneValidationError,
 } from './utils/index.js';
 export type {

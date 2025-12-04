@@ -220,14 +220,6 @@ describe('phone-validation', () => {
       );
     });
 
-    it('throws with helpful message for missing country code', () => {
-      try {
-        normalizePhoneForAttio('5551234567'); // No country code, default is US which makes this valid
-      } catch (e) {
-        // May or may not throw depending on whether US default makes it valid
-      }
-    });
-
     it('throws for empty phone', () => {
       expect(() => normalizePhoneForAttio('')).toThrow(PhoneValidationError);
     });

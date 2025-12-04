@@ -15,7 +15,7 @@
  * - Commit a37cf250: Test relocation and enhancement
  */
 
-import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { QAAssertions } from '../shared/qa-assertions';
 import type { TestResult } from '../shared/quality-gates';

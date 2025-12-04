@@ -322,9 +322,16 @@ export function normalizePhoneForAttio(
       ? 'Verify the number is correct.'
       : 'Provide in E.164 format (e.g., +1 555 123 4567) or ensure defaultCountry is configured.';
 
+    // Build message without double spaces when error.message is empty
+    const messageParts = [
+      `Invalid phone number: ${phoneStr}.`,
+      validation.error?.message,
+      suggestion,
+    ].filter(Boolean);
+
     throw new PhoneValidationError(
       validation.error?.code || 'INVALID_FORMAT',
-      `Invalid phone number: ${phoneStr}. ${validation.error?.message || ''} ${suggestion}`,
+      messageParts.join(' '),
       phoneStr,
       config?.defaultCountry
     );
