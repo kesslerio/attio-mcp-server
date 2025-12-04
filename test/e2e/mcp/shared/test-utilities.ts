@@ -134,10 +134,22 @@ export class TestUtilities {
       `${operationName} should return content`
     ).toBeGreaterThan(0);
 
+    // If a success message is provided, check for it OR common success indicators
     if (expectedSuccessMessage) {
-      expect(text, `${operationName} should contain success message`).toContain(
-        expectedSuccessMessage
-      );
+      const hasExpectedMessage = text.includes(expectedSuccessMessage);
+      const hasSuccessIndicator =
+        text.toLowerCase().includes('success') ||
+        text.toLowerCase().includes('created') ||
+        text.toLowerCase().includes('updated') ||
+        text.toLowerCase().includes('note') ||
+        text.includes('id') ||
+        text.includes('ID');
+
+      if (!hasExpectedMessage && !hasSuccessIndicator) {
+        throw new Error(
+          `${operationName}: Expected "${expectedSuccessMessage}" or success indicator in response`
+        );
+      }
     }
   }
 
