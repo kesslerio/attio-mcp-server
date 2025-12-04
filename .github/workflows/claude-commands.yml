@@ -363,7 +363,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.js');
+            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.cjs');
             const execFile = process.env.EXEC_FILE;
 
             if (!execFile || !fs.existsSync(execFile)) {
