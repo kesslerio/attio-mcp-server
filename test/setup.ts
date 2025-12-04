@@ -78,11 +78,11 @@ let testSpecificClient: unknown = null;
   testSpecificClient = null;
 };
 
+// Mock for static imports (path without .js extension)
 // ⬇️ keep this mock unconditionally; branch *inside* the factory
 vi.mock('../src/api/attio-client', async () => {
   // In E2E we want the *real* implementation
   if (process.env.E2E_MODE === 'true') {
-    // Return the actual module (no stubbing)
     const actual = await vi.importActual<
       typeof import('../src/api/attio-client')
     >('../src/api/attio-client');
@@ -101,14 +101,12 @@ vi.mock('../src/api/attio-client', async () => {
   return {
     // Unified API
     createAttioClient: vi.fn(() => getClientInstance()),
-
     // Legacy APIs kept for compatibility (return the same instance)
     buildAttioClient: vi.fn(() => getClientInstance()),
     getAttioClient: vi.fn(() => getClientInstance()),
     initializeAttioClient: vi.fn(() => {}),
     isAttioClientInitialized: vi.fn(() => true),
     createLegacyAttioClient: vi.fn(() => getClientInstance()),
-
     // API utility functions
     getAttributeSchema: vi.fn().mockResolvedValue([]),
     getSelectOptions: vi.fn().mockResolvedValue([]),
@@ -135,9 +133,68 @@ vi.mock('../src/api/attio-client', async () => {
       { title: 'Won', id: 'won-id', value: 'won', is_archived: false },
       { title: 'Lost', id: 'lost-id', value: 'lost', is_archived: false },
     ]),
-
     // Module metadata
     __MODULE_PATH__: 'mocked-attio-client',
+  };
+});
+
+// Mock for dynamic imports (path WITH .js extension)
+// This catches `await import('../api/attio-client.js')` in deal-defaults.ts
+vi.mock('../src/api/attio-client.js', async () => {
+  // In E2E we want the *real* implementation
+  if (process.env.E2E_MODE === 'true') {
+    const actual = await vi.importActual<
+      typeof import('../src/api/attio-client')
+    >('../src/api/attio-client');
+    return actual;
+  }
+
+  // Non-E2E: Use test-specific client if provided, otherwise default mock
+  const getClientInstance = () => {
+    if (testSpecificClient) {
+      return testSpecificClient;
+    }
+    // Use the rich mock API client that simulates Attio endpoints
+    return createMockApiClient();
+  };
+
+  return {
+    // Unified API
+    createAttioClient: vi.fn(() => getClientInstance()),
+    // Legacy APIs kept for compatibility (return the same instance)
+    buildAttioClient: vi.fn(() => getClientInstance()),
+    getAttioClient: vi.fn(() => getClientInstance()),
+    initializeAttioClient: vi.fn(() => {}),
+    isAttioClientInitialized: vi.fn(() => true),
+    createLegacyAttioClient: vi.fn(() => getClientInstance()),
+    // API utility functions
+    getAttributeSchema: vi.fn().mockResolvedValue([]),
+    getSelectOptions: vi.fn().mockResolvedValue([]),
+    getStatusOptions: vi.fn().mockResolvedValue([
+      {
+        title: 'Interested',
+        id: 'interested-id',
+        value: 'interested',
+        is_archived: false,
+      },
+      {
+        title: 'Qualified',
+        id: 'qualified-id',
+        value: 'qualified',
+        is_archived: false,
+      },
+      { title: 'Demo', id: 'demo-id', value: 'demo', is_archived: false },
+      {
+        title: 'Negotiation',
+        id: 'negotiation-id',
+        value: 'negotiation',
+        is_archived: false,
+      },
+      { title: 'Won', id: 'won-id', value: 'won', is_archived: false },
+      { title: 'Lost', id: 'lost-id', value: 'lost', is_archived: false },
+    ]),
+    // Module metadata
+    __MODULE_PATH__: 'mocked-attio-client.js',
   };
 });
 

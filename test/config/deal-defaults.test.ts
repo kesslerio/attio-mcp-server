@@ -4,6 +4,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Note: The global mock in test/setup.ts mocks attio-client for both paths:
+// - '../src/api/attio-client' (static imports)
+// - '../src/api/attio-client.js' (dynamic imports like in deal-defaults.ts)
+// The global mock provides getStatusOptions with default deal stages.
+//
+// For test-specific behavior, we access the mock from the imported module
+// rather than overriding the entire mock (which causes hoisting issues).
+import * as attioClient from '../../src/api/attio-client.js';
+
+// Access the mocked function for test assertions
+const mockGetStatusOptions = vi.mocked(attioClient.getStatusOptions);
+
 import {
   applyDealDefaults,
   applyDealDefaultsWithValidation,
@@ -15,7 +28,7 @@ import {
   getAvailableStagesForErrors,
 } from '../../src/config/deal-defaults.js';
 
-// Mock API client using global override mechanism
+// Legacy mock client for tests that still use globalThis pattern
 const mockGet = vi.fn();
 const mockClient = {
   get: mockGet,
@@ -26,12 +39,23 @@ describe('Deal Defaults - PR #389 Fix', () => {
     // Clear caches before each test
     clearDealCaches();
     vi.clearAllMocks();
-    // Set up test-specific client override
+
+    // Set up default mock behavior - return common deal stages
+    mockGetStatusOptions.mockResolvedValue([
+      { title: 'Interested', value: 'interested', is_archived: false },
+      { title: 'Qualified', value: 'qualified', is_archived: false },
+      { title: 'Demo', value: 'demo', is_archived: false },
+      { title: 'Demo No Show', value: 'demo_no_show', is_archived: false },
+      { title: 'Won', value: 'won', is_archived: false },
+      { title: 'Lost', value: 'lost', is_archived: false },
+    ]);
+
+    // Legacy: Set up test-specific client override (for any remaining tests using it)
     (globalThis as any).setTestApiClient?.(mockClient);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     // Clear test-specific client override
     (globalThis as any).clearTestApiClient?.();
   });
@@ -219,22 +243,16 @@ describe('Deal Defaults - PR #389 Fix', () => {
   });
 
   describe('Issue #705: Deal Stage Empty List Fix', () => {
-    // Mock getStatusOptions function
-    const mockGetStatusOptions = vi.fn();
+    // Uses top-level mockGetStatusOptions - no local redeclaration needed
 
-    beforeEach(async () => {
+    beforeEach(() => {
       // Clear environment variables
       delete process.env.STRICT_DEAL_STAGE_VALIDATION;
-
-      // Mock the API client import
-      vi.doMock('../../src/api/attio-client.js', () => ({
-        getStatusOptions: mockGetStatusOptions,
-      }));
+      clearDealCaches();
     });
 
     afterEach(() => {
       vi.clearAllMocks();
-      vi.doUnmock('../../src/api/attio-client.js');
     });
 
     it('should fetch actual deal stages from API using getStatusOptions', async () => {
@@ -353,18 +371,14 @@ describe('Deal Defaults - PR #389 Fix', () => {
   });
 
   describe('Edge Cases and Performance - PR Feedback', () => {
-    const mockGetStatusOptions = vi.fn();
+    // Uses top-level mockGetStatusOptions - no local redeclaration needed
 
-    beforeEach(async () => {
-      vi.doMock('../../src/api/attio-client.js', () => ({
-        getStatusOptions: mockGetStatusOptions,
-      }));
+    beforeEach(() => {
       clearDealCaches();
     });
 
     afterEach(() => {
       vi.clearAllMocks();
-      vi.doUnmock('../../src/api/attio-client.js');
     });
 
     it('should handle API timeout gracefully', async () => {
