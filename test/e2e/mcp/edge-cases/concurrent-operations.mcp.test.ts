@@ -44,7 +44,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
     this.testPersonIds = [];
 
     try {
-      // Create test companies for concurrent operations (reduced from 10 to 3)
+      // Create test companies for concurrent operations (reduced from 10 to 3 to avoid rate limits in CI)
       for (let i = 0; i < 3; i++) {
         const companyData = TestDataFactory.createCompanyData(
           `TC_EC03_Company_${i}_${Date.now()}`
@@ -71,7 +71,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
         }
       }
 
-      // Create test people for concurrent operations (reduced from 5 to 2)
+      // Create test people for concurrent operations (reduced from 5 to 2 to avoid rate limits in CI)
       for (let i = 0; i < 2; i++) {
         const personData = TestDataFactory.createPersonData(
           `TC_EC03_Person_${i}`

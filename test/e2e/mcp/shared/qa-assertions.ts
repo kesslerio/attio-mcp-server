@@ -8,7 +8,13 @@ import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 // Vitest globals may not be injected in helper modules; fall back to imported instance.
 const expect =
-  (globalThis as { expect?: typeof vitestExpect }).expect ?? vitestExpect;
+  (globalThis as { expect?: typeof vitestExpect }).expect ??
+  (() => {
+    console.warn(
+      'QAAssertions: vitest globals not injected, using imported expect fallback'
+    );
+    return vitestExpect;
+  })();
 
 export class QAAssertions {
   private static readonly UUID_PATTERN =

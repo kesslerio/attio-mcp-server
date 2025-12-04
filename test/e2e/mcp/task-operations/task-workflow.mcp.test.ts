@@ -11,7 +11,6 @@ import { MCPTestBase } from '../shared/mcp-test-base.js';
 import { QAAssertions } from '../shared/qa-assertions.js';
 import { TestDataFactory } from '../shared/test-data-factory.js';
 import { taskFixtures, taskStatuses } from '../../fixtures/tasks.js';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Task Workflow Operations Test Suite
@@ -93,19 +92,6 @@ class TaskWorkflowTests extends MCPTestBase {
 describe('MCP P1 Task Workflow Operations', () => {
   let testSuite: TaskWorkflowTests;
 
-  const parseTaskResult = (result: ToolResult) => {
-    const text = testSuite.extractTextContent(result);
-    const parsed = testSuite.parseJsonFromResult(result) as {
-      id?: { record_id?: string };
-      values?: Record<string, unknown>;
-    } | null;
-    return {
-      text,
-      parsed,
-      id: parsed?.id?.record_id ?? testSuite.extractRecordId(text) ?? '',
-    };
-  };
-
   beforeEach(async () => {
     testSuite = new TaskWorkflowTests();
     await testSuite.setup();
@@ -142,7 +128,7 @@ describe('MCP P1 Task Workflow Operations', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const { id } = parseTaskResult(result);
+        const { id } = testSuite.parseRecordResult(result);
         expect(id).toContain(taskId);
 
         console.log(
@@ -173,7 +159,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         // Assert
         expect(result.isError).toBeFalsy();
 
-        const { id } = parseTaskResult(result);
+        const { id } = testSuite.parseRecordResult(result);
         expect(id).toContain(taskId);
 
         console.log(`✅ Successfully set task ${taskId} to status: ${status}`);
@@ -192,7 +178,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       });
 
       // Assert - Should handle gracefully
-      const { text, id } = parseTaskResult(result);
+      const { text, id } = testSuite.parseRecordResult(result);
 
       if (result.isError) {
         expect(text).toMatch(/invalid|error|status/i);
@@ -223,7 +209,7 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Initial deadline set
       expect(setResult.isError).toBeFalsy();
-      const { id: setId } = parseTaskResult(setResult);
+      const { id: setId } = testSuite.parseRecordResult(setResult);
       expect(setId).toContain(taskId);
 
       // Act - Update deadline (14 days from now)
@@ -239,7 +225,7 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Deadline updated
       expect(updateResult.isError).toBeFalsy();
-      const { id: updateId } = parseTaskResult(updateResult);
+      const { id: updateId } = testSuite.parseRecordResult(updateResult);
       expect(updateId).toContain(taskId);
 
       console.log(
@@ -264,7 +250,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       });
 
       // Assert - Should handle gracefully (past dates often allowed for historical tracking)
-      const { id: pastId } = parseTaskResult(result);
+      const { id: pastId } = testSuite.parseRecordResult(result);
       if (result.isError) {
         console.log(`✅ System rejected past due date (strict validation)`);
       } else {
@@ -293,7 +279,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const { id: clearedId } = parseTaskResult(result);
+      const { id: clearedId } = testSuite.parseRecordResult(result);
       expect(clearedId).toContain(taskId);
 
       console.log(`✅ Successfully removed deadline from task ${taskId}`);
@@ -346,7 +332,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const { id } = parseTaskResult(result);
+      const { id } = testSuite.parseRecordResult(result);
       expect(id).toContain(taskId);
 
       console.log(`✅ Successfully marked task ${taskId} as completed`);
@@ -372,7 +358,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const { id } = parseTaskResult(result);
+      const { id } = testSuite.parseRecordResult(result);
       expect(id).toContain(taskId);
 
       console.log(
@@ -423,7 +409,7 @@ describe('MCP P1 Task Workflow Operations', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const { id } = parseTaskResult(result);
+        const { id } = testSuite.parseRecordResult(result);
         expect(id).toContain(taskId);
 
         console.log(`✅ Workflow step: ${description} for task ${taskId}`);

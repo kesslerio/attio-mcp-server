@@ -270,7 +270,7 @@ export abstract class MCPTestBase {
   protected parseRecordResult(result: CallToolResult): {
     text: string;
     id: string;
-    values: Record<string, unknown> | null;
+    values: Record<string, unknown>;
   } {
     const text = this.extractTextContent(result);
     const parsed = this.parseJsonFromResult(result) as {
@@ -285,7 +285,7 @@ export abstract class MCPTestBase {
     return {
       text,
       id,
-      values: parsed?.values ?? null,
+      values: parsed?.values ?? {},
     };
   }
 
