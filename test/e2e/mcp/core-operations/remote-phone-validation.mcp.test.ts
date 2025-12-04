@@ -20,7 +20,10 @@
 import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
 import { MCPTestBase, type MCPTestConfig } from '../shared/mcp-test-base.js';
 import { QAAssertions } from '../shared/qa-assertions.js';
-import type { TestResult } from '../shared/quality-gates.js';
+import {
+  createResultTracker,
+  hasPhoneFormatGuidance,
+} from '../shared/phone-test-utils.js';
 
 class RemotePhoneValidationTest extends MCPTestBase {
   constructor() {
@@ -65,7 +68,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
   'MCP E2E: Remote Phone Validation - Edge Runtime (Issue #951)',
   () => {
     const testCase = new RemotePhoneValidationTest();
-    const results: TestResult[] = [];
+    const tracker = createResultTracker();
 
     beforeAll(async () => {
       await testCase.setup();
@@ -80,10 +83,9 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
       await testCase.teardown();
 
       // Log quality gate results
-      const passedCount = results.filter((r) => r.passed).length;
-      const totalCount = results.length;
+      const { passed, total } = tracker.getSummary();
       console.log(
-        `\nRemote Phone Validation E2E Results: ${passedCount}/${totalCount} passed`
+        `\nRemote Phone Validation E2E Results: ${passed}/${total} passed`
       );
     });
 
@@ -121,7 +123,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
 
@@ -155,7 +157,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
 
@@ -189,7 +191,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
 
@@ -223,7 +225,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
     });
@@ -263,7 +265,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
 
@@ -303,7 +305,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
     });
@@ -345,13 +347,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
                 : String(createError);
 
             // Error should mention phone or validation
-            const hasGuidance =
-              errorMsg.toLowerCase().includes('phone') ||
-              errorMsg.toLowerCase().includes('format') ||
-              errorMsg.toLowerCase().includes('e.164') ||
-              errorMsg.toLowerCase().includes('valid');
-
-            if (hasGuidance) {
+            if (hasPhoneFormatGuidance(errorMsg)) {
               passed = true;
             } else {
               throw new Error(`Error lacks phone format guidance: ${errorMsg}`);
@@ -361,7 +357,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
     });
@@ -399,7 +395,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           error = e instanceof Error ? e.message : String(e);
           throw e;
         } finally {
-          results.push({ test: testName, passed, error });
+          tracker.track(testName, passed, error);
         }
       });
     });
