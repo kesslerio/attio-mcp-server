@@ -60,6 +60,7 @@
     "test:integration:real-api": "vitest --config configs/vitest/vitest.config.integration.ts --run test/integration/real-api-integration.test.ts",
     "test:unit": "vitest --run test/handlers/ test/objects/ test/utils/ test/validators/",
     "test:smoke": "vitest --config configs/vitest/vitest.config.smoke.ts --run --reporter=dot",
+    "test:install-scripts": "vitest --run test/scripts/install-scripts.test.ts",
     "test:core": "vitest --config configs/vitest/vitest.config.ts --run test/services/ test/handlers/ --reporter=dot",
     "test:extended": "SKIP_INTEGRATION_TESTS=true vitest --config configs/vitest/vitest.config.ts --run test/api/ test/objects/ test/utils/ --reporter=dot",
     "typecheck": "tsc --noEmit",

@@ -11,56 +11,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Client-specific install scripts** - One-command installers for each MCP client
-  - `scripts/install-claude-desktop.sh` - Auto-configure Claude Desktop
-  - `scripts/install-cursor.sh` - Auto-configure Cursor IDE
-  - `scripts/install-claude-code.sh` - Auto-configure Claude Code CLI
-  - Scripts backup existing config, install `attio-mcp` globally, and prompt for API key
-
-- **README installation overhaul** - 4-tier installation hierarchy with client compatibility matrix
-  - Tier 1: Smithery (one-click) for Claude Desktop, ChatGPT, Claude Web, Cursor
-  - Tier 2: Shell installers for local control
-  - Tier 3: Manual configuration with collapsible per-client guides
-  - Tier 4: Cloudflare Worker for teams and enterprise
-
-- **SECURITY.md** - First-party security documentation
-  - Vulnerability disclosure via GitHub Security Advisories
-  - Token scope requirements for Attio API
-  - Secrets storage recommendations (local, Docker, Cloudflare, production)
-  - Rate limiting configuration reference
-  - Data protection and PII redaction details
-
-- **Dockerfile** - Production-ready container image
-  - Multi-stage build for smaller image size
-  - Non-root user (UID 1001) for security
-  - OCI labels + MCP-specific labels for tooling discovery
-  - Node-based health check (no curl dependency)
-
-- **Remote Deployment Guide** (`docs/guides/remote-deployment.md`)
-  - Docker production deployment with security hardening
-  - Pre-deployment checklist for production
-  - Kubernetes probe configuration
-  - Monitoring and observability recommendations
-
 ### Changed
-
-- **README Installation section** - Expanded from 40 lines to ~270 lines with clearer guidance
-
-- **docker-compose.yml** - Enhanced with security hardening
-  - Non-root user configuration
-  - Read-only filesystem with tmpfs for /tmp
-  - no-new-privileges security option
-  - Resource limits (CPU and memory)
-  - Node-based health check
 
 ### Fixed
 
 ### Security
 
-- **Container hardening** - Non-root user, read-only filesystem, privilege escalation prevention
-- **Secrets documentation** - Clear guidance on credential storage for each deployment type
-
 ### Deprecated
+
+## [1.3.6] - 2025-12-03
+
+Documentation and testing infrastructure improvements for remote deployment support.
+
+### Added
+
+- **Install Script Test Suite** (#958) - Automated testing for bash install scripts
+  - Tests for `install-claude-desktop.sh`, `install-cursor.sh`, `install-claude-code.sh`
+  - Validates API key sanitization, config merging, prerequisite checks
+  - Security tests for command injection prevention
+  - Uses Vitest + Node.js child_process for bash function testing
+
+- **E2E Remote Mode Troubleshooting Guide** (#958) - Remote-specific debugging documentation
+  - Smithery deployment troubleshooting (scanner, OAuth, session issues)
+  - Cloudflare Worker debugging (Error 1042, KV namespace, token encryption)
+  - Network debugging tools and commands (`wrangler tail`, curl examples)
+  - Local vs remote comparison table for common issues
+
+### Changed
+
+- **Remote Deployment Production Checklist** (#958) - Expanded from 12 to 28+ items
+  - Added Cloudflare Worker-specific checklist with validation commands
+  - Added Smithery-specific validation steps
+  - Added rollback procedures for all deployment types
+  - Added health check monitoring setup examples (Datadog, UptimeRobot, Prometheus)
 
 ## [1.3.5] - 2025-12-02
 
@@ -142,12 +125,6 @@ OAuth access token support - enables delegated authentication for third-party in
   - **Solution**: Added prominent warnings in README and documentation about correct package name
   - **Note**: Old package owned by different npm user, cannot be deprecated by maintainers
   - **Result**: Clear installation instructions prevent users from installing wrong package
-
-### Fixed
-
-### Security
-
-### Deprecated
 
 ## [1.2.0] - 2025-11-03
 

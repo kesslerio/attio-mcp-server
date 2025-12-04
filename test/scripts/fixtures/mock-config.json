@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "existing-server": {
+      "command": "node",
+      "args": ["existing-server.js"],
+      "env": {
+        "EXISTING_VAR": "value"
+      }
+    }
+  }
+}
