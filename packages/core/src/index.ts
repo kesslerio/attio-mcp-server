@@ -32,6 +32,18 @@ export {
 } from './tools/index.js';
 export type { ToolDefinition, ToolRegistry } from './tools/index.js';
 
+// Phone validation exports (minimal public API)
+export {
+  normalizePhoneForAttio,
+  toE164,
+  PhoneValidationError,
+} from './utils/index.js';
+export type {
+  PhoneValidationResult,
+  PhoneValidationConfig,
+  PhoneValidationErrorCode,
+} from './utils/index.js';
+
 // Type exports
 export type {
   ResourceType,
@@ -54,4 +66,6 @@ export type {
   HttpClientConfig,
   HttpResponse,
   HttpError,
+  PhoneConfig,
+  ToolHandlerConfig,
 } from './types/index.js';

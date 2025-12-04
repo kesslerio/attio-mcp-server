@@ -17,7 +17,7 @@
     "secret:set": "echo 'Run: wrangler secret put ATTIO_CLIENT_ID && wrangler secret put ATTIO_CLIENT_SECRET && wrangler secret put WORKER_URL && wrangler secret put TOKEN_ENCRYPTION_KEY'"
   },
   "dependencies": {
-    "@attio-mcp/core": "workspace:*",
+    "@attio-mcp/core": "file:../../packages/core",
     "hono": "^4.6.0"
   },
   "devDependencies": {

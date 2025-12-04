@@ -207,7 +207,7 @@
     "express": "^5.1.0",
     "fast-safe-stringify": "^2.1.1",
     "handlebars": "^4.7.8",
-    "libphonenumber-js": "^1.12.16",
+    "libphonenumber-js": "^1.12.30",
     "lru-cache": "^11.2.2",
     "ora": "^9.0.0",
     "safe-stable-stringify": "^2.5.0",

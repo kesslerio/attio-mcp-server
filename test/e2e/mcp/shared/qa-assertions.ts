@@ -3,6 +3,7 @@
  * Helper functions for validating MCP tool responses according to QA test plan requirements
  */
 
+import { expect } from 'vitest';
 import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 export class QAAssertions {

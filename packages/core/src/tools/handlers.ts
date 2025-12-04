@@ -13,7 +13,12 @@ import type {
   AttioApiResponse,
   AttioFilterConfig,
   AttioNote,
+  ToolHandlerConfig,
 } from '../types/index.js';
+import {
+  normalizePhoneForAttio,
+  PhoneValidationError,
+} from '../utils/phone-validation.js';
 
 /**
  * Create a successful tool result
@@ -208,14 +213,55 @@ const SPECIAL_FIELD_FORMATS: Record<string, string> = {
  * Attio requires:
  * 1. All values wrapped in a `values` object
  * 2. Each field value as an array: [{value: "..."}] or [{domain: "..."}] etc.
+ *
+ * Phone numbers are validated and normalized to E.164 format before sending.
+ *
+ * @param recordData - User-provided record data
+ * @param config - Optional configuration (e.g., default country for phone numbers)
+ * @throws PhoneValidationError if phone numbers are invalid
  */
 function transformRecordData(
-  recordData: Record<string, unknown>
+  recordData: Record<string, unknown>,
+  config?: ToolHandlerConfig
 ): Record<string, unknown> {
   const values: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(recordData)) {
     if (value === undefined || value === null) continue;
+
+    // Special handling for phone_numbers with validation and E.164 normalization
+    if (key === 'phone_numbers') {
+      const phoneArray = Array.isArray(value) ? value : [value];
+      const normalizedPhones: Record<string, unknown>[] = [];
+
+      for (const phone of phoneArray) {
+        if (phone === undefined || phone === null) continue;
+
+        // Skip if already in Attio format with original_phone_number
+        if (
+          typeof phone === 'object' &&
+          phone !== null &&
+          'original_phone_number' in phone &&
+          !('phone_number' in phone) &&
+          !('phone' in phone)
+        ) {
+          normalizedPhones.push(phone as Record<string, unknown>);
+          continue;
+        }
+
+        // Normalize and validate phone number
+        const normalized = normalizePhoneForAttio(
+          phone as string | Record<string, unknown>,
+          { defaultCountry: config?.phone?.defaultCountry }
+        );
+        normalizedPhones.push(normalized);
+      }
+
+      if (normalizedPhones.length > 0) {
+        values[key] = normalizedPhones;
+      }
+      continue;
+    }
 
     // If value is already in Attio array format [{...}], pass through
     if (
@@ -227,7 +273,7 @@ function transformRecordData(
       continue;
     }
 
-    // Check if this is a special field type
+    // Check if this is a special field type (domains, email_addresses)
     const specialKey = SPECIAL_FIELD_FORMATS[key];
     if (specialKey) {
       // Handle array of simple values (e.g., multiple domains)
@@ -626,6 +672,10 @@ export async function handleGetRecordDetails(
 
 /**
  * Create record handler
+ *
+ * @param client - HTTP client for API requests
+ * @param params - Record creation parameters
+ * @param config - Optional configuration (e.g., default country for phone numbers)
  */
 export async function handleCreateRecord(
   client: HttpClient,
@@ -633,14 +683,16 @@ export async function handleCreateRecord(
     resource_type: ResourceType;
     record_data: Record<string, unknown>;
     return_details?: boolean;
-  }
+  },
+  config?: ToolHandlerConfig
 ): Promise<ToolResult> {
   try {
     const { resource_type, record_data, return_details = true } = params;
     const objectSlug = getObjectSlug(resource_type);
 
     // Transform record_data to Attio's expected format with values wrapper
-    const data = transformRecordData(record_data);
+    // Phone numbers are validated and normalized to E.164 format
+    const data = transformRecordData(record_data, config);
 
     const response = await client.post<AttioApiResponse<AttioRecord>>(
       `/v2/objects/${objectSlug}/records`,
@@ -662,6 +714,15 @@ export async function handleCreateRecord(
       `Created ${resource_type} record with ID: ${id}`
     );
   } catch (error) {
+    // Handle phone validation errors with helpful messages
+    if (error instanceof PhoneValidationError) {
+      return errorResult(error.message, {
+        code: error.code,
+        input: error.input,
+        country: error.country,
+        hint: 'Provide phone numbers in E.164 format (e.g., +1 555 123 4567) or configure defaultCountry.',
+      });
+    }
     const { message, details } = extractErrorInfo(error);
     return errorResult(message || 'Failed to create record', details);
   }
@@ -669,6 +730,10 @@ export async function handleCreateRecord(
 
 /**
  * Update record handler
+ *
+ * @param client - HTTP client for API requests
+ * @param params - Record update parameters
+ * @param config - Optional configuration (e.g., default country for phone numbers)
  */
 export async function handleUpdateRecord(
   client: HttpClient,
@@ -677,7 +742,8 @@ export async function handleUpdateRecord(
     record_id: string;
     record_data: Record<string, unknown>;
     return_details?: boolean;
-  }
+  },
+  config?: ToolHandlerConfig
 ): Promise<ToolResult> {
   try {
     const {
@@ -689,7 +755,8 @@ export async function handleUpdateRecord(
     const objectSlug = getObjectSlug(resource_type);
 
     // Transform record_data to Attio's expected format with values wrapper
-    const data = transformRecordData(record_data);
+    // Phone numbers are validated and normalized to E.164 format
+    const data = transformRecordData(record_data, config);
 
     const response = await client.patch<AttioApiResponse<AttioRecord>>(
       `/v2/objects/${objectSlug}/records/${record_id}`,
@@ -710,6 +777,15 @@ export async function handleUpdateRecord(
       `Updated ${resource_type} record with ID: ${record_id}`
     );
   } catch (error) {
+    // Handle phone validation errors with helpful messages
+    if (error instanceof PhoneValidationError) {
+      return errorResult(error.message, {
+        code: error.code,
+        input: error.input,
+        country: error.country,
+        hint: 'Provide phone numbers in E.164 format (e.g., +1 555 123 4567) or configure defaultCountry.',
+      });
+    }
     const { message, details } = extractErrorInfo(error);
     return errorResult(message || 'Failed to update record', details);
   }
