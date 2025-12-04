@@ -194,6 +194,10 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
           content: noteData.content,
         });
 
+        if (createResult.isError) {
+          throw new Error('Failed to create note for company');
+        }
+
         // Extract note ID for cleanup
         const createText = createResult.content?.[0]?.text || '';
         const idMatch = createText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
@@ -208,8 +212,45 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
           limit: 10,
         });
 
-        // Success if API calls didn't error
-        passed = !createResult.isError && !notesResult.isError;
+        if (notesResult.isError) {
+          throw new Error('Failed to list company notes');
+        }
+
+        // VALIDATE: Note should appear in company's note list
+        const notesText = notesResult.content?.[0]?.text || '';
+        if (!notesText.toLowerCase().includes(noteData.title.toLowerCase())) {
+          throw new Error(
+            `Created note "${noteData.title}" not found in company notes`
+          );
+        }
+
+        // VALIDATE: Note should NOT appear in another company's notes (if available)
+        if (testCase.secondCompanyId) {
+          const otherNotesResult = await testCase.executeToolCall(
+            'list-notes',
+            {
+              resource_type: 'companies',
+              record_id: testCase.secondCompanyId,
+              limit: 10,
+            }
+          );
+
+          if (!otherNotesResult.isError) {
+            const otherNotesText = otherNotesResult.content?.[0]?.text || '';
+            if (
+              !otherNotesText.toLowerCase().includes('no notes') &&
+              otherNotesText
+                .toLowerCase()
+                .includes(noteData.title.toLowerCase())
+            ) {
+              throw new Error(
+                `Note "${noteData.title}" incorrectly appeared in other company's notes`
+              );
+            }
+          }
+        }
+
+        passed = true;
       }
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -240,6 +281,10 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
           content: noteData.content,
         });
 
+        if (createResult.isError) {
+          throw new Error('Failed to create note for person');
+        }
+
         // Extract note ID for cleanup
         const createText = createResult.content?.[0]?.text || '';
         const idMatch = createText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
@@ -254,8 +299,46 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
           limit: 10,
         });
 
-        // Success if API calls didn't error
-        passed = !createResult.isError && !notesResult.isError;
+        if (notesResult.isError) {
+          throw new Error('Failed to list person notes');
+        }
+
+        // VALIDATE: Note should appear in person's note list
+        const notesText = notesResult.content?.[0]?.text || '';
+        if (!notesText.toLowerCase().includes(noteData.title.toLowerCase())) {
+          throw new Error(
+            `Created note "${noteData.title}" not found in person notes`
+          );
+        }
+
+        // VALIDATE: Note should NOT appear in company notes (if available)
+        if (testCase.testCompanyId) {
+          const companyNotesResult = await testCase.executeToolCall(
+            'list-notes',
+            {
+              resource_type: 'companies',
+              record_id: testCase.testCompanyId,
+              limit: 10,
+            }
+          );
+
+          if (!companyNotesResult.isError) {
+            const companyNotesText =
+              companyNotesResult.content?.[0]?.text || '';
+            if (
+              !companyNotesText.toLowerCase().includes('no notes') &&
+              companyNotesText
+                .toLowerCase()
+                .includes(noteData.title.toLowerCase())
+            ) {
+              throw new Error(
+                `Person note "${noteData.title}" incorrectly appeared in company notes`
+              );
+            }
+          }
+        }
+
+        passed = true;
       }
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
