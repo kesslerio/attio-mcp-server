@@ -1,15 +1,16 @@
-name: Claude Commands
+name: Claude Commands (Issues Only)
+
+# This workflow handles @claude mentions on ISSUES only.
+# PR reviews are handled by separate workflows (claude-pr-review-labeled.yml, etc.)
 
 on:
   issue_comment:
-    types: [created]
-  pull_request_review_comment:
     types: [created]
   issues:
     types: [opened, edited, assigned]
 
 concurrency:
-  group: claude-commands-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  group: claude-commands-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: false
 
 permissions:
@@ -20,20 +21,21 @@ permissions:
 
 jobs:
   handle:
+    # Only run on issues (not PRs) with @claude mention
+    # Note: issue_comment fires for both issues AND PRs, so we filter PRs out
     if: |
       (
         github.event_name == 'issue_comment' &&
+        !github.event.issue.pull_request &&
         contains(github.event.comment.body, '@claude')
       ) || (
-        github.event_name == 'pull_request_review_comment' &&
-        contains(github.event.comment.body, '@claude')
-      ) || (
-        github.event_name == 'issues' && (
+        github.event_name == 'issues' &&
+        !github.event.issue.pull_request && (
           contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')
         )
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -52,14 +54,12 @@ jobs:
           command_type=$(jq -r '.command.type // ""' classify.json)
           is_maintainer=$(jq -r '.isMaintainer // false' classify.json)
           issue=$(jq -r '.issue // ""' classify.json)
-          is_pr=$(jq -r '.isPR // false' classify.json)
           actor=$(jq -r '.actor // ""' classify.json)
           association=$(jq -r '.association // ""' classify.json)
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
           echo "command_type=$command_type" >> "$GITHUB_OUTPUT"
           echo "is_maintainer=$is_maintainer" >> "$GITHUB_OUTPUT"
           echo "issue=$issue" >> "$GITHUB_OUTPUT"
-          echo "is_pr=$is_pr" >> "$GITHUB_OUTPUT"
           echo "actor=$actor" >> "$GITHUB_OUTPUT"
           echo "association=$association" >> "$GITHUB_OUTPUT"
         env:
@@ -69,9 +69,9 @@ jobs:
         if: steps.classify.outputs.should_run != 'true'
         run: echo 'No @claude command detected.'
 
-      - name: Skip review commands
+      - name: Skip review commands (handled by PR review workflows)
         if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.command_type == 'review'
-        run: echo 'Review command detected; handled by review workflow.'
+        run: echo 'Review command on issue - skipping (use on PRs for review).'
 
       - name: Enforce maintainer access
         if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.command_type != 'review'
@@ -205,267 +205,61 @@ jobs:
               core.info(`Found ${relatedIssues.length} related issue(s): ${relatedIssues.map(ri => `#${ri.number}`).join(', ')}`);
             }
 
-      - name: Claude Command Handler
+      # Use default Claude Code Action behavior - it handles commenting automatically with track_progress
+      - name: Claude Code Action (Default Behavior)
         if: steps.classify.outputs.should_run == 'true' && steps.classify.outputs.is_maintainer == 'true' && steps.classify.outputs.command_type != 'review'
-        id: claude
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          track_progress: false
+          track_progress: true
+          # No --max-turns = runs until completion (default action behavior)
+          # Full tool access for implementation
           claude_args: >-
             --model claude-sonnet-4-5
-            --max-turns 32
-            --allowed-tools "Read,Edit,Write,Bash(git status),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git switch:*),Bash(git diff:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(npm run *),Bash(npm test),Bash(npm run test:*),Bash(npm run build),Bash(npm run lint:*),Bash(node *),Bash(npx *),Bash(rg *),Bash(fd *)"
-            --output-format stream-json
+            --allowedTools "Read,Edit,Write,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(rg:*),Bash(fd:*),Bash(cat:*),Bash(ls:*),Bash(head:*),Bash(tail:*),Bash(wc:*)"
           prompt: |
-            You are Claude acting via GitHub Actions for the Attio MCP repo.
-
-            🚨 **CRITICAL EXECUTION CONSTRAINTS** 🚨
-            - You have 32 turns MAX before workflow terminates
-            - **BY TURN 20**: STOP using tools and start writing your final response
-            - **BY TURN 25**: You MUST have completed your full markdown report
-            - If you hit turn 32 without outputting a complete response, it will be lost
-            - Your FINAL message must contain the complete analysis/report in markdown format
-            - Do NOT end with tool calls - the last message MUST be pure markdown text
+            You are Claude acting via GitHub Actions for the Attio MCP Server repository.
 
             ## Context
             - **Issue**: #${{ steps.classify.outputs.issue }}
             - **Issue Title**: ${{ steps.context.outputs.issue_title }}
-            - **Triggering Command**: "${{ steps.context.outputs.comment_body }}"
+            - **User Request**: ${{ steps.context.outputs.comment_body }}
 
-            **Full Issue Description**:
+            **Issue Description**:
             ${{ steps.context.outputs.issue_body }}
 
-            **Recent Discussion** (last 5 user comments for context):
+            **Recent Discussion**:
             ${{ steps.context.outputs.recent_comments || 'No recent comments' }}
 
-            **Related Issues** (referenced in issue body):
-            ${{ steps.context.outputs.related_issues || 'No related issues referenced' }}
+            **Related Issues**:
+            ${{ steps.context.outputs.related_issues || 'None referenced' }}
 
-            **Previous Claude Analysis** (if this is a follow-up):
-            ${{ steps.context.outputs.previous_analysis || 'No previous analysis - this is the first request on this issue' }}
+            ## Your Task
+            Follow the user's request above. If they ask you to implement something:
 
-            **Follow-Up Instructions**:
-            - If "Previous Claude Analysis" exists, this is a FOLLOW-UP request
-            - Build on your previous analysis, don't repeat it
-            - Reference your previous recommendations when relevant
-            - Acknowledge if user comments since your last analysis provide new context
-            - If user asks a clarifying question, answer directly without repeating full framework
-            - **Note**: Issue body may have been edited since your previous analysis - if you notice discrepancies, acknowledge the updates and adjust recommendations accordingly
+            1. **Read AGENTS.md first** - it contains project conventions and standards
+            2. **Create a feature branch**: `git checkout -b feature/issue-${{ steps.classify.outputs.issue }}-description`
+            3. **Implement the changes** following project standards
+            4. **Run quality gates**:
+               - `npm run test:offline` (fast unit tests)
+               - `npm run fix:all` (lint/format)
+               - `npx tsc --noEmit` (TypeScript check)
+            5. **Commit with conventional format**: `Type: Description #${{ steps.classify.outputs.issue }}`
+            6. **Push and create a PR**: `gh pr create --title "Type: Description" --body "Fixes #${{ steps.classify.outputs.issue }}"`
 
-            ## Task Routing
-            First, examine the triggering command to determine your mode:
+            If they ask for analysis/advice, provide helpful guidance without implementing.
 
-            - **ANALYSIS MODE** (vague/exploratory requests like "thoughts?", "help", "analyze this"):
-              Provide comprehensive issue analysis using the framework below
+            ## Project Standards (from AGENTS.md)
+            - Commit format: `Type: Description #issue-number` where Type = Feature|Fix|Docs|Refactor|Test|Chore
+            - Use `@/` path aliases instead of relative imports
+            - Run `npm run test:offline` for fast validation
+            - ESLint warnings threshold: ≤1030
 
-            - **EXECUTION MODE** (specific instructions like "implement X", "fix Y", "refactor Z"):
-              Follow the maintainer's instructions precisely using repo standards
-
-            ## Exploration Philosophy: "Good Enough" > "Exhaustive"
-
-            **CRITICAL MINDSET SHIFT**: Synthesis is more valuable than exhaustive exploration.
-
-            **Analysis Mode Guidelines:**
-            - Read 1-3 KEY files (issue description, CLAUDE.md, one example file)
-            - You don't need to read the entire codebase
-            - Representative sampling beats exhaustive analysis
-            - After 8-10 tool calls, STOP and synthesize what you've learned
-            - Write sections progressively as you learn (don't wait until the end)
-
-            **Execution Mode Guidelines:**
-            - Focus on directly relevant files only (not the entire project)
-            - 12-15 tool calls for implementation + testing should be sufficient
-            - If you need more context, make educated assumptions and document them
-            - Leave time for quality gates and final summary
-
-            **Remember**: A well-reasoned analysis from limited context is better than hitting turn limits with no output.
-
-            ## ANALYSIS MODE Framework
-            Provide analysis structured in these 5 sections:
-
-            **1. Issue Quality Assessment**
-            - Problem definition clarity and underlying goals
-            - Requirements completeness and acceptance criteria
-            - Scope boundaries and potential scope creep risks
-
-            **2. Anti-Pattern Risk Detection**
-            - Infrastructure-without-validation, symptom-driven development, complexity escalation, premature optimization
-            - Explain WHY risky + suggest healthier alternatives
-
-            **3. Implementation Strategy**
-            - Concrete technical approach (technology/library choices with rationale)
-            - File structure, testing strategy, migration path, integration points
-
-            **4. Educational Recommendations**
-            - Relevant docs (official docs, CLAUDE.md sections)
-            - Similar solved problems in codebase
-            - Common pitfalls and validation techniques
-
-            **5. Actionable Next Steps**
-            - Numbered, concrete actions with rationale and dependencies
-
-            Keep analysis concise but insightful. Use a coaching tone explaining the "why" behind recommendations.
-
-            ## EXECUTION MODE Guidelines
-            Follow repo standards from `CLAUDE.md`.
-
-            **Implementation Standards:**
-            - Conventional commit format: `Type: Subject #issue-number`
-            - Single Responsibility Principle (SRP)
-            - Focused, atomic changes
-
-            **Quality Gates:**
-            - Run appropriate tests:
-              - `npm run test:offline` for unit tests (fast, no API calls)
-              - `npm run test:integration` for API integration tests (requires ATTIO_API_KEY)
-              - `npm run test:e2e` for end-to-end workflows
-            - Run lint/format: `npm run fix:all`
-            - Verify TypeScript: `npx tsc --noEmit`
-
-            **Workflow:**
-            1. Read relevant code + CLAUDE.md first
-            2. Implement changes following standards
-            3. Run quality gates
-            4. Commit with conventional format linking issue
-            5. Report results (branch/PR URL, tests, any issues)
-
-            **Constraints:**
+            ## Constraints
             - Never expose secrets or tokens
-            - Ask for clarification if ambiguous
-            - Flag anti-pattern risks proactively
-
-            ## Reply Format
-
-            **Analysis Mode**: Use 5-section structure above. Be concise, coaching tone, reference files (file:line), end with actionable steps.
-
-            **Execution Mode**: Confirm task → implement → run quality gates → report results (branch/PR URL, tests, issues).
-
-            **Always**: Be concise but thorough, reference code locations, flag anti-pattern risks.
-
-            ---
-
-            🚨 **FINAL REMINDER: OUTPUT YOUR COMPLETE RESPONSE** 🚨
-
-            - Your LAST message MUST contain the full markdown report/analysis
-            - Do NOT end with tool calls - the workflow will capture ONLY your final text message
-            - Remember: 32 turn limit, stop tools by turn 20, finish report by turn 25
-            - If you hit the turn limit without a complete response, the comment will be incomplete/lost
-            - Synthesis > exhaustive exploration - write progressively, don't wait until the end
-
-      - name: Capture Claude response
-        if: always() && steps.claude.outcome != 'skipped' && steps.claude.outputs.execution_file != ''
-        id: capture
-        uses: actions/github-script@v7
-        env:
-          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
-        with:
-          script: |
-            const fs = require('fs');
-            const { extractAllTextFromSession, dedupeAdjacent } = require('./scripts/workflows/claude/extract-text.cjs');
-            const execFile = process.env.EXEC_FILE;
-
-            if (!execFile || !fs.existsSync(execFile)) {
-              core.info('No execution file found');
-              return;
-            }
-
-            const raw = fs.readFileSync(execFile, 'utf8').replace(/^\uFEFF/, '');
-            const chunks = extractAllTextFromSession(raw);
-            const response = dedupeAdjacent(chunks).join('\n').trim();
-
-            if (!response) {
-              core.warning('No response content found');
-              core.warning(`First 500 chars of execution file:\n${raw.slice(0, 500)}`);
-              core.exportVariable('CLAUDE_RESPONSE_EMPTY', 'true');
-              return;
-            }
-
-            core.exportVariable('CLAUDE_RESPONSE', response);
-            core.info(`Captured response (${response.length} chars)`);
-
-      - name: Post response to issue
-        if: always() && steps.capture.outcome == 'success' && env.CLAUDE_RESPONSE != ''
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issueNumber = Number('${{ steps.classify.outputs.issue }}');
-            const response = process.env.CLAUDE_RESPONSE;
-
-            if (!issueNumber || !response) {
-              core.info('No issue number or response to post');
-              return;
-            }
-
-            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-            async function withRetries(fn, label, attempts = 3) {
-              for (let attempt = 1; attempt <= attempts; attempt++) {
-                try {
-                  return await fn();
-                } catch (error) {
-                  if (attempt === attempts) throw error;
-                  const delay = 1000 * attempt;
-                  core.warning(`Attempt ${attempt} failed. Retrying in ${delay}ms...`);
-                  await sleep(delay);
-                }
-              }
-            }
-
-            const marker = `<!-- claude-command-response -->`;
-            const body = `${marker}\n${response}`;
-
-            // Post the comment with retries
-            await withRetries(
-              () => github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                body: body
-              }),
-              'create comment'
-            );
-
-            core.info(`Posted response to issue #${issueNumber}`);
-
-      - name: Post diagnostic comment for empty response
-        if: always() && steps.claude.outcome == 'success' && env.CLAUDE_RESPONSE_EMPTY == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issueNumber = Number('${{ steps.classify.outputs.issue }}');
-            if (!issueNumber) return;
-
-            const runUrl = `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-            const triggerCommand = `${{ steps.context.outputs.comment_body }}`;
-
-            const lines = [
-              '<!-- claude-command-diagnostic -->',
-              '⚠️ **Claude Command Handler Issue**',
-              '',
-              'The workflow completed successfully but no response was captured from Claude. This usually means:',
-              '- Claude used all available turns on tool calls without generating a final text response',
-              '- The output format from claude-code-action was unexpected',
-              '',
-              '**Debug Information:**',
-              `- Workflow Run: ${runUrl}`,
-              `- Issue: #${issueNumber}`,
-              `- Triggering Command: "${triggerCommand}"`,
-              '',
-              'Please review the workflow logs for details. The response capture logic has been enhanced to handle multiple output formats, but further investigation may be needed.'
-            ];
-
-            const body = lines.join('\n');
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: body
-            });
-
-            core.info(`Posted diagnostic comment to issue #${issueNumber}`);
+            - Ask for clarification if the request is ambiguous
+            - Report any issues or blockers you encounter
 
       - name: Summarize skip
         if: steps.classify.outputs.should_run != 'true'
