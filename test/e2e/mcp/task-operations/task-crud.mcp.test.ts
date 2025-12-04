@@ -259,14 +259,8 @@ describe('MCP P1 Task CRUD Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      const parsed = testSuite.parseJsonFromResult(result) as {
-        id?: { record_id?: string };
-        values?: Record<string, unknown>;
-      } | null;
-      const updatedId =
-        testSuite.extractRecordId(responseText) ?? parsed?.id?.record_id ?? '';
-      expect(updatedId).toContain(taskId);
+      const { id } = testSuite.parseRecordResult(result);
+      expect(id).toContain(taskId);
     });
 
     it('should update task status', async () => {
@@ -283,14 +277,8 @@ describe('MCP P1 Task CRUD Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      const parsed = testSuite.parseJsonFromResult(result) as {
-        id?: { record_id?: string };
-        values?: Record<string, unknown>;
-      } | null;
-      const updatedId =
-        testSuite.extractRecordId(responseText) ?? parsed?.id?.record_id ?? '';
-      expect(updatedId).toContain(taskId);
+      const { id } = testSuite.parseRecordResult(result);
+      expect(id).toContain(taskId);
     });
 
     it('should update task due date', async () => {
@@ -311,14 +299,8 @@ describe('MCP P1 Task CRUD Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      const parsed = testSuite.parseJsonFromResult(result) as {
-        id?: { record_id?: string };
-        values?: Record<string, unknown>;
-      } | null;
-      const updatedId =
-        testSuite.extractRecordId(responseText) ?? parsed?.id?.record_id ?? '';
-      expect(updatedId).toContain(taskId);
+      const { id } = testSuite.parseRecordResult(result);
+      expect(id).toContain(taskId);
     });
   });
 
