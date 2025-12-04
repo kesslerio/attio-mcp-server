@@ -265,6 +265,31 @@ export abstract class MCPTestBase {
   }
 
   /**
+   * Extract commonly used fields from tool responses that return record data.
+   */
+  protected parseRecordResult(result: CallToolResult): {
+    text: string;
+    id: string;
+    values: Record<string, unknown>;
+  } {
+    const text = this.extractTextContent(result);
+    const parsed = this.parseJsonFromResult(result) as {
+      id?: { record_id?: string };
+      values?: Record<string, unknown>;
+    } | null;
+    const id =
+      parsed?.id?.record_id ??
+      this.extractRecordId(text) ??
+      this.extractFirstUuid(text) ??
+      '';
+    return {
+      text,
+      id,
+      values: parsed?.values ?? {},
+    };
+  }
+
+  /**
    * Extract record ID from MCP response text
    * MCP returns IDs in format: "(ID: uuid-here)"
    */
@@ -308,6 +333,11 @@ export abstract class MCPTestBase {
 
     const unique = new Set(matches.map((id) => id.toLowerCase()));
     return Array.from(unique);
+  }
+
+  private extractFirstUuid(text: string): string | null {
+    const ids = this.extractRecordIdsFromText(text);
+    return ids.length > 0 ? ids[0] : null;
   }
 
   /**

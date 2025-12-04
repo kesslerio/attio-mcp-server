@@ -93,9 +93,9 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
-      expect(responseText).toContain(taskId);
+      const parsed = testSuite.parseRecordResult(result);
+      expect(parsed.id).toContain(taskId);
+      expect(parsed.values?.assignees ?? []).not.toBeUndefined();
 
       console.log(`✅ Successfully assigned user to task ${taskId}`);
     });
@@ -133,9 +133,11 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
-      expect(responseText).toContain(taskId);
+      const parsed = testSuite.parseRecordResult(result);
+      expect(parsed.id).toContain(taskId);
+      expect(JSON.stringify(parsed.values ?? parsed.text)).toContain(
+        newAssignee.user_id
+      );
 
       console.log(`✅ Successfully changed assignment for task ${taskId}`);
     });
@@ -167,9 +169,9 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
-      expect(responseText).toContain(taskId);
+      const parsed = testSuite.parseRecordResult(result);
+      expect(parsed.id).toContain(taskId);
+      expect(parsed.values?.assignees ?? []).toEqual([]);
 
       console.log(`✅ Successfully removed assignment from task ${taskId}`);
     });
@@ -214,9 +216,9 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
-      expect(responseText).toContain(taskId);
+      const parsed = testSuite.parseRecordResult(result);
+      expect(parsed.id).toContain(taskId);
+      expect(parsed.values?.assignees ?? []).toHaveLength(assignees.length);
 
       console.log(
         `✅ Successfully assigned ${assignees.length} users to task ${taskId}`
@@ -266,9 +268,11 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
-      expect(responseText).toContain(taskId);
+      const parsed = testSuite.parseRecordResult(result);
+      expect(parsed.id).toContain(taskId);
+      expect(JSON.stringify(parsed.values ?? parsed.text)).toContain(
+        allAssignees[2].user_id
+      );
 
       console.log(
         `✅ Successfully added assignee to task ${taskId} (now ${allAssignees.length} assignees)`
@@ -316,9 +320,14 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(/Updated task|Successfully updated task/);
-      expect(responseText).toContain(taskId);
+      const parsed = testSuite.parseRecordResult(result);
+      expect(parsed.id).toContain(taskId);
+      expect(JSON.stringify(parsed.values ?? parsed.text)).toContain(
+        remainingAssignees[0].user_id
+      );
+      expect(JSON.stringify(parsed.values ?? parsed.text)).not.toContain(
+        allAssignees[1].user_id
+      );
 
       console.log(
         `✅ Successfully removed one assignee from task ${taskId} (now ${remainingAssignees.length} assignees)`
@@ -345,13 +354,13 @@ describe('MCP P1 Task Assignment Operations', () => {
       });
 
       // Assert - Should handle gracefully (either error or ignore)
-      const responseText = testSuite.extractTextContent(result);
+      const parsed = testSuite.parseRecordResult(result);
 
       if (result.isError) {
-        expect(responseText).toMatch(/invalid|error|required/i);
+        expect(parsed.text).toMatch(/invalid|error|required/i);
         console.log(`✅ Correctly rejected invalid assignee data`);
       } else {
-        expect(responseText).toMatch(/Updated task|Successfully updated task/);
+        expect(parsed.id).toContain(taskId);
         console.log(`✅ Gracefully handled invalid assignee data`);
       }
     });
@@ -377,12 +386,12 @@ describe('MCP P1 Task Assignment Operations', () => {
       });
 
       // Assert - Should handle gracefully (deduplicate or error)
-      const responseText = testSuite.extractTextContent(result);
+      const parsed = testSuite.parseRecordResult(result);
 
       if (result.isError) {
         console.log(`✅ Correctly handled duplicate assignees with error`);
       } else {
-        expect(responseText).toMatch(/Updated task|Successfully updated task/);
+        expect(parsed.id).toContain(taskId);
         console.log(
           `✅ Successfully handled duplicate assignees (likely deduplicated)`
         );

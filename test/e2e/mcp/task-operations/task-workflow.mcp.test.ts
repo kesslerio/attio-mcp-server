@@ -11,7 +11,6 @@ import { MCPTestBase } from '../shared/mcp-test-base.js';
 import { QAAssertions } from '../shared/qa-assertions.js';
 import { TestDataFactory } from '../shared/test-data-factory.js';
 import { taskFixtures, taskStatuses } from '../../fixtures/tasks.js';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Task Workflow Operations Test Suite
@@ -129,11 +128,8 @@ describe('MCP P1 Task Workflow Operations', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
-        expect(responseText).toContain(taskId);
+        const { id } = testSuite.parseRecordResult(result);
+        expect(id).toContain(taskId);
 
         console.log(
           `✅ Successfully updated task ${taskId} to status: ${status}`
@@ -163,10 +159,8 @@ describe('MCP P1 Task Workflow Operations', () => {
         // Assert
         expect(result.isError).toBeFalsy();
 
-        const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
+        const { id } = testSuite.parseRecordResult(result);
+        expect(id).toContain(taskId);
 
         console.log(`✅ Successfully set task ${taskId} to status: ${status}`);
       }
@@ -184,15 +178,13 @@ describe('MCP P1 Task Workflow Operations', () => {
       });
 
       // Assert - Should handle gracefully
-      const responseText = testSuite.extractTextContent(result);
+      const { text, id } = testSuite.parseRecordResult(result);
 
       if (result.isError) {
-        expect(responseText).toMatch(/invalid|error|status/i);
+        expect(text).toMatch(/invalid|error|status/i);
         console.log(`✅ Correctly rejected invalid status`);
       } else {
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
+        expect(id).toContain(taskId);
         console.log(`✅ Gracefully handled invalid status`);
       }
     });
@@ -217,10 +209,8 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Initial deadline set
       expect(setResult.isError).toBeFalsy();
-      const setResponse = testSuite.extractTextContent(setResult);
-      expect(setResponse).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
+      const { id: setId } = testSuite.parseRecordResult(setResult);
+      expect(setId).toContain(taskId);
 
       // Act - Update deadline (14 days from now)
       const updatedDeadline = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -235,10 +225,8 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Deadline updated
       expect(updateResult.isError).toBeFalsy();
-      const updateResponse = testSuite.extractTextContent(updateResult);
-      expect(updateResponse).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
+      const { id: updateId } = testSuite.parseRecordResult(updateResult);
+      expect(updateId).toContain(taskId);
 
       console.log(
         `✅ Successfully set and updated deadline for task ${taskId}`
@@ -262,14 +250,11 @@ describe('MCP P1 Task Workflow Operations', () => {
       });
 
       // Assert - Should handle gracefully (past dates often allowed for historical tracking)
-      const responseText = testSuite.extractTextContent(result);
-
+      const { id: pastId } = testSuite.parseRecordResult(result);
       if (result.isError) {
         console.log(`✅ System rejected past due date (strict validation)`);
       } else {
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
+        expect(pastId).toContain(taskId);
         console.log(`✅ System accepted past due date (historical tracking)`);
       }
     });
@@ -294,10 +279,8 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
+      const { id: clearedId } = testSuite.parseRecordResult(result);
+      expect(clearedId).toContain(taskId);
 
       console.log(`✅ Successfully removed deadline from task ${taskId}`);
     });
@@ -349,11 +332,8 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
-      expect(responseText).toContain(taskId);
+      const { id } = testSuite.parseRecordResult(result);
+      expect(id).toContain(taskId);
 
       console.log(`✅ Successfully marked task ${taskId} as completed`);
     });
@@ -378,10 +358,8 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
+      const { id } = testSuite.parseRecordResult(result);
+      expect(id).toContain(taskId);
 
       console.log(
         `✅ Successfully completed task ${taskId} with completion notes`
@@ -431,10 +409,8 @@ describe('MCP P1 Task Workflow Operations', () => {
 
         expect(result.isError).toBeFalsy();
 
-        const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
+        const { id } = testSuite.parseRecordResult(result);
+        expect(id).toContain(taskId);
 
         console.log(`✅ Workflow step: ${description} for task ${taskId}`);
       }
