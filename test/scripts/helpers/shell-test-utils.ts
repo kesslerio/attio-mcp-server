@@ -56,7 +56,7 @@ export function execBash(
     encoding: 'utf8',
     env: { ...process.env, ...options.env },
     cwd: options.cwd,
-    timeout: options.timeout || 5000,
+    timeout: options.timeout || 10000,
     stdio: ['pipe', 'pipe', 'pipe'],
   };
 

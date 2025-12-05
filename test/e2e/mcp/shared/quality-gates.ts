@@ -4,7 +4,7 @@
  */
 
 export interface TestResult {
-  test: string;
+  testName: string;
   passed: boolean;
   duration?: number;
   error?: string;
@@ -46,7 +46,7 @@ export class QualityGates {
           passed: passCount,
           failed: failedTests.length,
           failedTests: failedTests.map(
-            (t) => `${t.test}${t.error ? `: ${t.error}` : ''}`
+            (t) => `${t.testName}${t.error ? `: ${t.error}` : ''}`
           ),
         },
       };
@@ -88,7 +88,7 @@ export class QualityGates {
           passed: passCount,
           failed: failedTests.length,
           failedTests: failedTests.map(
-            (t) => `${t.test}${t.error ? `: ${t.error}` : ''}`
+            (t) => `${t.testName}${t.error ? `: ${t.error}` : ''}`
           ),
         },
       };
@@ -104,7 +104,9 @@ export class QualityGates {
         passed: passCount,
         failed: failedTests.length,
         failedTests:
-          failedTests.length > 0 ? failedTests.map((t) => t.test) : undefined,
+          failedTests.length > 0
+            ? failedTests.map((t) => t.testName)
+            : undefined,
       },
     };
   }
@@ -135,7 +137,9 @@ export class QualityGates {
         passed: passCount,
         failed: failedTests.length,
         failedTests:
-          failedTests.length > 0 ? failedTests.map((t) => t.test) : undefined,
+          failedTests.length > 0
+            ? failedTests.map((t) => t.testName)
+            : undefined,
       },
     };
   }

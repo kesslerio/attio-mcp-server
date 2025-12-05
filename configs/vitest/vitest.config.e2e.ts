@@ -7,7 +7,11 @@ export default defineConfig({
   envDir: resolve(__dirname),
   test: {
     environment: 'node',
-    include: ['test/e2e/suites/**/*.e2e.test.ts', 'test/e2e/**/*.e2e.test.ts'],
+    include: [
+      'test/e2e/suites/**/*.e2e.test.ts',
+      'test/e2e/**/*.e2e.test.ts',
+      'test/e2e/mcp/**/*.mcp.test.ts', // MCP protocol tests
+    ],
     exclude: [
       // Exclude non-E2E tests
       'test/unit/**',
@@ -18,10 +22,6 @@ export default defineConfig({
       'test/validators/**',
       'test/objects/**',
       'test/manual/**',
-      // Exclude non-E2E test files but keep E2E files
-      'test/**/!(*.e2e).test.ts',
-      'test/**/!(*.e2e).test.js',
-      // Keep only E2E tests (*.e2e.test.ts files)
     ],
     globals: true,
     testTimeout: 120000, // 2 minutes for E2E operations

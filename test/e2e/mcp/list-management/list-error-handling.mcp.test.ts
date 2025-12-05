@@ -128,7 +128,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
         throw e;
       }
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -178,7 +178,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
         throw e;
       }
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -268,7 +268,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
         throw e;
       }
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

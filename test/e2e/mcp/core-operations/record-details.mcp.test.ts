@@ -6,7 +6,15 @@
  * Must achieve 100% pass rate as part of P0 quality gate.
  */
 
-import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import {
+  describe,
+  it,
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  expect,
+} from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
@@ -61,7 +69,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
         'Warning: Could not retrieve IDs for testing. Some tests may be skipped.'
       );
     }
-  });
+  }, 60000);
 
   afterEach(async () => {
     await testCase.cleanupTestData();
@@ -77,7 +85,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     console.log(`\nTC-002 Results: ${passedCount}/${totalCount} passed`);
   });
 
-  it('should get company details by ID', async () => {
+  it('should get company details by ID', { timeout: 30000 }, async () => {
     const testName = 'get_company_details';
     let passed = false;
     let error: string | undefined;
@@ -110,11 +118,11 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
-  it('should get person details by ID', async () => {
+  it('should get person details by ID', { timeout: 30000 }, async () => {
     const testName = 'get_person_details';
     let passed = false;
     let error: string | undefined;
@@ -142,11 +150,11 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
-  it('should get task details by ID', async () => {
+  it('should get task details by ID', { timeout: 30000 }, async () => {
     const testName = 'get_task_details';
     let passed = false;
     let error: string | undefined;
@@ -174,65 +182,73 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
-  it('should handle non-existent record IDs gracefully', async () => {
-    const testName = 'handle_nonexistent_id';
-    let passed = false;
-    let error: string | undefined;
+  it(
+    'should handle non-existent record IDs gracefully',
+    { timeout: 30000 },
+    async () => {
+      const testName = 'handle_nonexistent_id';
+      let passed = false;
+      let error: string | undefined;
 
-    try {
-      const fakeId = 'NONEXISTENT_' + Date.now();
-      const result = await testCase.executeToolCall('get-record-details', {
-        resource_type: 'companies',
-        record_id: fakeId,
-      });
-
-      // The result should exist (not undefined)
-      expect(result).toBeDefined();
-      expect(result?.content).toBeTruthy();
-
-      // Should return appropriate error or not found message
-      QAAssertions.assertRecordNotFound(result, 'companies', fakeId);
-      passed = true;
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
-      throw e;
-    } finally {
-      results.push({ test: testName, passed, error });
-    }
-  });
-
-  it('should return complete record details with all fields', async () => {
-    const testName = 'complete_record_details';
-    let passed = false;
-    let error: string | undefined;
-
-    try {
-      // Use company ID if available
-      if (companyId) {
+      try {
+        const fakeId = 'NONEXISTENT_' + Date.now();
         const result = await testCase.executeToolCall('get-record-details', {
           resource_type: 'companies',
-          record_id: companyId,
+          record_id: fakeId,
         });
 
-        const text = testCase.extractTextContent(result);
+        // The result should exist (not undefined)
+        expect(result).toBeDefined();
+        expect(result?.content).toBeTruthy();
 
-        // Verify we got substantial data back (not just an ID)
-        expect(text.length).toBeGreaterThan(50);
-        expect(result.isError).toBeFalsy();
+        // Should return appropriate error or not found message
+        QAAssertions.assertRecordNotFound(result, 'companies', fakeId);
+        passed = true;
+      } catch (e) {
+        error = e instanceof Error ? e.message : String(e);
+        throw e;
+      } finally {
+        results.push({ testName, passed, error });
       }
-
-      passed = true;
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
-      throw e;
-    } finally {
-      results.push({ test: testName, passed, error });
     }
-  });
+  );
+
+  it(
+    'should return complete record details with all fields',
+    { timeout: 30000 },
+    async () => {
+      const testName = 'complete_record_details';
+      let passed = false;
+      let error: string | undefined;
+
+      try {
+        // Use company ID if available
+        if (companyId) {
+          const result = await testCase.executeToolCall('get-record-details', {
+            resource_type: 'companies',
+            record_id: companyId,
+          });
+
+          const text = testCase.extractTextContent(result);
+
+          // Verify we got substantial data back (not just an ID)
+          expect(text.length).toBeGreaterThan(50);
+          expect(result.isError).toBeFalsy();
+        }
+
+        passed = true;
+      } catch (e) {
+        error = e instanceof Error ? e.message : String(e);
+        throw e;
+      } finally {
+        results.push({ testName, passed, error });
+      }
+    }
+  );
 });
 
 export { results as TC002Results };

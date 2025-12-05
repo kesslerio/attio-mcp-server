@@ -33,18 +33,11 @@ export const TASK_CONSTRAINTS = {
 
 /**
  * Valid task status values
- * Matches Attio API task status options
+ * Attio Tasks API uses is_completed boolean, which maps to these status strings
+ * - 'pending' = is_completed: false
+ * - 'completed' = is_completed: true
  */
-export const TASK_STATUSES = [
-  'open',
-  'in_progress',
-  'completed',
-  'scheduled',
-  'cancelled',
-  'on_hold',
-  'waiting',
-  'recurring',
-] as const;
+export const TASK_STATUSES = ['pending', 'completed'] as const;
 
 /**
  * Valid task priority values

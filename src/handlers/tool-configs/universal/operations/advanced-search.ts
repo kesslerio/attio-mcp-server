@@ -16,6 +16,7 @@ import {
 import { validateUniversalToolParams } from '../schemas.js';
 import { ErrorService } from '../../../../services/ErrorService.js';
 import { formatResourceType } from '../shared-handlers.js';
+import { getPluralResourceType } from '../core/utils.js';
 
 /**
  * Universal advanced search tool
@@ -146,7 +147,7 @@ export const advancedSearchConfig: UniversalToolConfig<
     const headerType = resourceType
       ? count === 1
         ? typeName
-        : `${typeName}s`
+        : getPluralResourceType(resourceType as UniversalResourceType)
       : 'records';
 
     if (!Array.isArray(results)) {
