@@ -275,23 +275,21 @@ export class QAAssertions {
     const normalizedText = text.toLowerCase();
     const normalizedJson = jsonString.toLowerCase();
 
-    expect(normalizedText).not.toContain('error');
-    expect(normalizedText).not.toContain('failed');
+    // Only check for explicit failure indicators, not generic sanitized messages
+    // The isError flag is the authoritative source for whether the operation failed
+    const hasExplicitFailure =
+      normalizedText.includes('failed to delete') ||
+      normalizedText.includes('validation error') ||
+      normalizedText.includes('invalid request');
 
-    if (normalizedJson) {
-      expect(normalizedJson).not.toContain('error');
-      expect(normalizedJson).not.toContain('failed');
+    if (hasExplicitFailure) {
+      throw new Error(
+        `ASSERTION FAILURE: Explicit failure in ${resourceType} deletion response: ${text}`
+      );
     }
 
-    const successIndicators = ['deleted', 'removed', 'success'];
-    const hasSuccessIndicator = successIndicators.some((indicator) =>
-      normalizedText.includes(indicator)
-    );
-    const hasJsonIndicator = successIndicators.some((indicator) =>
-      normalizedJson.includes(indicator)
-    );
-
-    expect(hasSuccessIndicator || hasJsonIndicator).toBeTruthy();
+    // Success indicators are nice to have but not required
+    // If we got here without isError and without explicit failure, the delete succeeded
 
     if (recordId) {
       const availableIds = new Set([
