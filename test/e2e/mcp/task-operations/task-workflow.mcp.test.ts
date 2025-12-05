@@ -34,7 +34,7 @@ class TaskWorkflowTests extends MCPTestBase {
       title: `${this.generateTestId()} Workflow Test Task`,
       content: 'Task for testing workflow operations',
       priority: 'medium',
-      status: 'open',
+      status: 'pending',
     };
 
     // Use universal tool with resource_type parameter
@@ -114,12 +114,12 @@ describe('MCP P1 Task Workflow Operations', () => {
         const taskId = await testSuite.createTestTask({
           title: `${testSuite.generateTestId()} Status Progression Task`,
           content: 'Task for testing status progression through workflow',
-          status: 'open',
+          status: 'pending',
           priority: 'high',
         });
 
-        // Status progression: open -> in_progress -> completed
-        const statusProgression = ['in_progress', 'completed'];
+        // Status progression: pending -> completed (Attio API only supports these 2 statuses)
+        const statusProgression = ['completed'];
 
         // Act & Assert - Progress through each status
         for (const status of statusProgression) {
@@ -153,7 +153,7 @@ describe('MCP P1 Task Workflow Operations', () => {
           const taskId = await testSuite.createTestTask({
             title: `${testSuite.generateTestId()} Status ${status} Task`,
             content: `Task for testing ${status} status validation`,
-            status: 'open', // Start with open status
+            status: 'pending', // Start with open status
           });
 
           // Act - Update to target status
@@ -331,11 +331,11 @@ describe('MCP P1 Task Workflow Operations', () => {
       'should mark task as completed with success status',
       { timeout: 30000 },
       async () => {
-        // Arrange - Create task in progress
+        // Arrange - Create pending task
         const taskId = await testSuite.createTestTask({
           title: `${testSuite.generateTestId()} Completion Test Task`,
           content: 'Task for testing completion workflow',
-          status: 'in_progress',
+          status: 'pending',
           priority: 'high',
         });
 
@@ -397,7 +397,7 @@ describe('MCP P1 Task Workflow Operations', () => {
           title: `${testSuite.generateTestId()} Full Workflow Task`,
           content: 'Task to test complete workflow from creation to completion',
           priority: 'medium',
-          status: 'open',
+          status: 'pending',
           due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split('T')[0],
@@ -405,13 +405,8 @@ describe('MCP P1 Task Workflow Operations', () => {
 
         const taskId = await testSuite.createTestTask(workflowTask);
 
-        // Workflow steps
+        // Workflow steps (Attio API only supports 'pending' and 'completed' statuses)
         const workflowSteps = [
-          { status: 'in_progress', description: 'Start working on task' },
-          {
-            // Note: content is immutable - simulating progress update with other fields
-            description: 'Add progress notes',
-          },
           {
             priority: 'high',
             description: 'Escalate priority',

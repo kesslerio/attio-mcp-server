@@ -16,6 +16,7 @@ class ListFilteringTest extends MCPTestBase {
   private testListId: string | null = null;
   private testCompanyId: string | null = null;
   private testParentId: string | null = null;
+  public listAttributes: string[] = [];
 
   constructor() {
     super('TC008');
@@ -69,13 +70,24 @@ class ListFilteringTest extends MCPTestBase {
         this.testListId = lists[0].id?.list_id || lists[0].api_slug;
         console.log(`Using existing list for filtering: ${this.testListId}`);
 
+        // Discover list attributes for workspace-agnostic testing
+        if (this.testListId) {
+          this.listAttributes = await this.discoverListAttributes(
+            this.testListId
+          );
+          console.log(
+            `📋 Discovered ${this.listAttributes.length} list attributes:`,
+            this.listAttributes.slice(0, 5)
+          );
+        }
+
         // Add test records to the list for filtering
+        // Note: We don't pass custom values since they may not match list schema
         if (this.testCompanyId) {
           await this.executeToolCall('add-record-to-list', {
             listId: this.testListId,
             recordId: this.testCompanyId,
             objectType: 'companies',
-            values: { filter_test: 'TC008', priority: 'high' },
           });
         }
       }

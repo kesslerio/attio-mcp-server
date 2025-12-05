@@ -398,4 +398,122 @@ export abstract class MCPTestBase {
       text.includes('not found')
     );
   }
+
+  /**
+   * Discover available deal stages from the workspace.
+   * Queries the API to get actual stage names, making tests workspace-agnostic.
+   */
+  async discoverDealStages(): Promise<string[]> {
+    try {
+      const result = await this.executeToolCall('records_discover_attributes', {
+        resource_type: 'deals',
+      });
+
+      const parsed = this.parseJsonFromResult(result) as {
+        attributes?: Array<{
+          api_slug: string;
+          config?: {
+            statuses?: Array<{
+              title: string;
+              is_archived?: boolean;
+            }>;
+          };
+        }>;
+      };
+
+      // Find stage attribute and extract status titles
+      const stageAttr = parsed?.attributes?.find((a) => a.api_slug === 'stage');
+
+      const stages =
+        stageAttr?.config?.statuses
+          ?.filter((s) => !s.is_archived)
+          ?.map((s) => s.title)
+          .filter((title): title is string => typeof title === 'string') || [];
+
+      if (stages.length === 0) {
+        console.warn('⚠️ No deal stages found via API, using fallback stages');
+        return ['MQL', 'Sales Qualified', 'Demo Booked', 'Negotiations'];
+      }
+
+      return stages;
+    } catch (error) {
+      console.warn('⚠️ Failed to discover deal stages:', error);
+      // Fallback to common stages if discovery fails
+      return ['MQL', 'Sales Qualified', 'Demo Booked', 'Negotiations'];
+    }
+  }
+
+  /**
+   * Discover workspace members from the workspace.
+   * Queries the API to get actual member details, making tests workspace-agnostic.
+   */
+  async discoverWorkspaceMembers(): Promise<
+    Array<{ id: string; email: string; name: string }>
+  > {
+    try {
+      const result = await this.executeToolCall('list-workspace-members', {});
+
+      const parsed = this.parseJsonFromResult(result) as {
+        members?: Array<{
+          id?: { workspace_member_id?: string };
+          email_address?: string;
+          first_name?: string;
+          last_name?: string;
+        }>;
+      };
+
+      const members =
+        parsed?.members?.map((m) => ({
+          id: m.id?.workspace_member_id || '',
+          email: m.email_address || '',
+          name: [m.first_name, m.last_name].filter(Boolean).join(' '),
+        })) || [];
+
+      if (members.length === 0) {
+        console.warn('⚠️ No workspace members found via API');
+        return [];
+      }
+
+      return members.filter((m) => m.id && m.email);
+    } catch (error) {
+      console.warn('⚠️ Failed to discover workspace members:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Discover list attributes/schema for a specific list.
+   * Queries the API to get available fields, making tests workspace-agnostic.
+   */
+  async discoverListAttributes(listId: string): Promise<string[]> {
+    try {
+      const result = await this.executeToolCall('get-list-details', { listId });
+
+      const parsed = this.parseJsonFromResult(result) as {
+        attributes?: Array<{
+          api_slug?: string;
+        }>;
+      };
+
+      const attributes =
+        parsed?.attributes
+          ?.map((a) => a.api_slug)
+          .filter((slug): slug is string => typeof slug === 'string') || [];
+
+      if (attributes.length === 0) {
+        console.warn(
+          `⚠️ No attributes found for list ${listId}, using common defaults`
+        );
+        return ['name', 'stage', 'status'];
+      }
+
+      return attributes;
+    } catch (error) {
+      console.warn(
+        `⚠️ Failed to discover list attributes for ${listId}:`,
+        error
+      );
+      return ['name', 'stage', 'status'];
+    }
+  }
 }

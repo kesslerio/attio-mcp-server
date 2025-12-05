@@ -165,7 +165,7 @@ describe('MCP P1 Task CRUD Operations', () => {
           title: `${testSuite.generateTestId()} Full Featured Task`,
           content: 'Detailed task description with all optional fields',
           priority: 'high',
-          status: 'open',
+          status: 'pending',
           due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split('T')[0], // 7 days from now
@@ -271,7 +271,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       const updateData = {
         // Note: title and content are immutable - only update mutable fields
         priority: 'high',
-        status: 'in_progress',
+        status: 'completed',
       };
 
       // Act

@@ -15,8 +15,24 @@ import { TestDataFactory } from '../shared/test-data-factory';
 import type { TestResult } from '../shared/quality-gates';
 
 class DealPipelineTest extends MCPTestBase {
+  public availableStages: string[] = [];
+
   constructor() {
     super('TCD05-07');
+  }
+
+  async setup(config = {}): Promise<void> {
+    await super.setup(config);
+    this.availableStages = await this.discoverDealStages();
+    console.log(
+      `📋 Discovered ${this.availableStages.length} deal stages:`,
+      this.availableStages.slice(0, 5)
+    );
+    if (this.availableStages.length < 3) {
+      throw new Error(
+        `Need at least 3 deal stages for pipeline tests, found ${this.availableStages.length}: ${this.availableStages.join(', ')}`
+      );
+    }
   }
 }
 
@@ -56,7 +72,7 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
   });
 
   it(
-    'TC-D05: should move deal through pipeline stages (MQL → Qualified → Proposal)',
+    'TC-D05: should move deal through pipeline stages dynamically',
     { timeout: 60000 },
     async () => {
       const testName = 'pipeline_progression';
@@ -64,8 +80,14 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
       let error: string | undefined;
 
       try {
-        // Create a deal in "MQL" stage
-        const dealData = TestDataFactory.createDealWithStage('TCD05', 'MQL');
+        // Use dynamically discovered stages
+        const [stage1, stage2, stage3] = testCase.availableStages.slice(0, 3);
+        console.log(
+          `🔄 Testing pipeline progression: ${stage1} → ${stage2} → ${stage3}`
+        );
+
+        // Create a deal in first stage
+        const dealData = TestDataFactory.createDealWithStage('TCD05', stage1);
 
         const createResult = await testCase.executeToolCall('create-record', {
           resource_type: 'deals',
@@ -78,29 +100,23 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         pipelineDealId = recordId;
         testCase.trackRecord('deals', recordId);
 
-        // Stage 1: Move to "Qualified"
-        const updateToQualified = await testCase.executeToolCall(
-          'update-record',
-          {
-            resource_type: 'deals',
-            record_id: recordId,
-            record_data: { stage: 'Qualified' },
-          }
-        );
+        // Stage 1: Move to second stage
+        const updateToStage2 = await testCase.executeToolCall('update-record', {
+          resource_type: 'deals',
+          record_id: recordId,
+          record_data: { stage: stage2 },
+        });
 
-        QAAssertions.assertRecordUpdated(updateToQualified, 'deals');
+        QAAssertions.assertRecordUpdated(updateToStage2, 'deals');
 
-        // Stage 2: Move to "Proposal"
-        const updateToProposal = await testCase.executeToolCall(
-          'update-record',
-          {
-            resource_type: 'deals',
-            record_id: recordId,
-            record_data: { stage: 'Proposal' },
-          }
-        );
+        // Stage 2: Move to third stage
+        const updateToStage3 = await testCase.executeToolCall('update-record', {
+          resource_type: 'deals',
+          record_id: recordId,
+          record_data: { stage: stage3 },
+        });
 
-        QAAssertions.assertRecordUpdated(updateToProposal, 'deals');
+        QAAssertions.assertRecordUpdated(updateToStage3, 'deals');
 
         passed = true;
       } catch (e) {
@@ -123,9 +139,11 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
       try {
         // Skip if pipeline deal creation failed
         if (!pipelineDealId) {
+          // Use first discovered stage for fallback deal
+          const fallbackStage = testCase.availableStages[0] || 'MQL';
           const fallbackDeal = TestDataFactory.createDealWithStage(
             'TCD06',
-            'Qualified'
+            fallbackStage
           );
           const createResult = await testCase.executeToolCall('create-record', {
             resource_type: 'deals',
