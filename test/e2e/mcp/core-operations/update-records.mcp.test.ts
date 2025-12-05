@@ -7,10 +7,19 @@
  * Must achieve 100% pass rate as part of P0 quality gate.
  */
 
-import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
+import {
+  describe,
+  it,
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  expect,
+} from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
+import { TestUtilities } from '../shared/test-utilities';
 import type { TestResult } from '../shared/quality-gates';
 
 class UpdateRecordsTest extends MCPTestBase {
@@ -38,28 +47,30 @@ describe('TC-004: Update Records - Data Modification', () => {
       resource_type: 'companies',
       record_data: companyData,
     });
-    companyId = testCase.extractRecordId(
+    companyId = TestUtilities.extractRecordId(
       testCase.extractTextContent(companyResult)
     );
-    testCase.trackRecord('companies', companyId);
+    if (companyId) testCase.trackRecord('companies', companyId);
 
     const personData = TestDataFactory.createPersonData('TC004_SETUP');
     const personResult = await testCase.executeToolCall('create-record', {
       resource_type: 'people',
       record_data: personData,
     });
-    personId = testCase.extractRecordId(
+    personId = TestUtilities.extractRecordId(
       testCase.extractTextContent(personResult)
     );
-    testCase.trackRecord('people', personId);
+    if (personId) testCase.trackRecord('people', personId);
 
     const taskData = TestDataFactory.createTaskData('TC004_SETUP');
     const taskResult = await testCase.executeToolCall('create-record', {
       resource_type: 'tasks',
       record_data: taskData,
     });
-    taskId = testCase.extractRecordId(testCase.extractTextContent(taskResult));
-    testCase.trackRecord('tasks', taskId);
+    taskId = TestUtilities.extractRecordId(
+      testCase.extractTextContent(taskResult)
+    );
+    if (taskId) testCase.trackRecord('tasks', taskId);
   });
 
   afterEach(async () => {
