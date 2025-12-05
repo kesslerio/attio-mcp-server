@@ -279,9 +279,10 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
     let error: string | undefined;
 
     try {
-      if (!testCase['testListId']) {
+      // Check for all required test data
+      if (!testCase['testListId'] || !testCase['testCompanyId']) {
         console.log(
-          'No test list available, skipping multiple conditions test'
+          'No test list or company available, skipping multiple conditions test'
         );
         passed = true;
         return;
@@ -316,8 +317,10 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
 
         const text = result.content?.[0]?.text || '';
 
-        // Accept JSON array response or success without errors
+        // Accept JSON array response (including empty arrays), JSON objects, or success without errors
+        // Empty arrays [] are valid responses for filters with no matches
         const isValidResponse =
+          text === '[]' ||
           text.startsWith('[') ||
           text.startsWith('{') ||
           (!text.toLowerCase().includes('error') &&
