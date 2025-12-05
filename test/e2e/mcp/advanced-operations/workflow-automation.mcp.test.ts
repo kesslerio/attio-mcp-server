@@ -118,7 +118,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

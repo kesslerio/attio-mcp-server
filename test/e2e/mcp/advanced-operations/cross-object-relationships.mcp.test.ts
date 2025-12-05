@@ -129,7 +129,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

@@ -102,7 +102,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -188,7 +188,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -244,7 +244,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -290,7 +290,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

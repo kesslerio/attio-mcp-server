@@ -156,7 +156,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -196,7 +196,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -239,7 +239,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -279,7 +279,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -319,7 +319,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -362,7 +362,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

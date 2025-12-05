@@ -89,7 +89,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -142,7 +142,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -195,7 +195,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -228,7 +228,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
         throw e;
       }
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -308,7 +308,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -354,7 +354,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

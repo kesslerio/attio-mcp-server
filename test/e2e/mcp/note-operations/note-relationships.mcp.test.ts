@@ -235,18 +235,19 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
             }
           );
 
-          if (!otherNotesResult.isError) {
-            const otherNotesText = otherNotesResult.content?.[0]?.text || '';
-            if (
-              !otherNotesText.toLowerCase().includes('no notes') &&
-              otherNotesText
-                .toLowerCase()
-                .includes(noteData.title.toLowerCase())
-            ) {
-              throw new Error(
-                `Note "${noteData.title}" incorrectly appeared in other company's notes`
-              );
-            }
+          // Per P2 review, we must never silently ignore cross-parent errors
+          if (otherNotesResult.isError) {
+            throw new Error('Failed to list notes for second company');
+          }
+
+          const otherNotesText = otherNotesResult.content?.[0]?.text || '';
+          if (
+            !otherNotesText.toLowerCase().includes('no notes') &&
+            otherNotesText.toLowerCase().includes(noteData.title.toLowerCase())
+          ) {
+            throw new Error(
+              `Note "${noteData.title}" incorrectly appeared in other company's notes`
+            );
           }
         }
 
@@ -322,19 +323,23 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
             }
           );
 
-          if (!companyNotesResult.isError) {
-            const companyNotesText =
-              companyNotesResult.content?.[0]?.text || '';
-            if (
-              !companyNotesText.toLowerCase().includes('no notes') &&
-              companyNotesText
-                .toLowerCase()
-                .includes(noteData.title.toLowerCase())
-            ) {
-              throw new Error(
-                `Person note "${noteData.title}" incorrectly appeared in company notes`
-              );
-            }
+          // Per P2 review, we must never silently ignore cross-parent errors
+          if (companyNotesResult.isError) {
+            throw new Error(
+              'Failed to list company notes for cross-parent check'
+            );
+          }
+
+          const companyNotesText = companyNotesResult.content?.[0]?.text || '';
+          if (
+            !companyNotesText.toLowerCase().includes('no notes') &&
+            companyNotesText
+              .toLowerCase()
+              .includes(noteData.title.toLowerCase())
+          ) {
+            throw new Error(
+              `Person note "${noteData.title}" incorrectly appeared in company notes`
+            );
           }
         }
 

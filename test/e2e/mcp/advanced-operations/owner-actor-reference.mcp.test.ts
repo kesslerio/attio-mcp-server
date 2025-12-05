@@ -127,7 +127,7 @@ describe('TC-AO03: Owner (actor-reference) filtering by name', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -195,7 +195,7 @@ describe('TC-AO03: Owner (actor-reference) filtering by name', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -263,7 +263,7 @@ describe('TC-AO03: Owner (actor-reference) filtering by name', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

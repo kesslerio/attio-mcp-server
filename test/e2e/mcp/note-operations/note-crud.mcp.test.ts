@@ -320,6 +320,12 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
           content: noteData.content,
         });
 
+        TestUtilities.assertOperationSuccess(
+          createResult,
+          'Create note for person retrieval test',
+          'Note created successfully'
+        );
+
         // Extract note ID for cleanup
         const noteId = TestUtilities.extractRecordId(
           TestUtilities.getResponseText(createResult)
@@ -335,8 +341,18 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
           limit: 10,
         });
 
-        // Success if API calls didn't error
-        passed = !createResult.isError && !result.isError;
+        TestUtilities.assertOperationSuccess(
+          result,
+          'List person notes',
+          'Notes retrieved successfully'
+        );
+        TestUtilities.assertContains(
+          result,
+          noteData.title,
+          'Person notes listing'
+        );
+
+        passed = true;
       }
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -368,6 +384,17 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
           format: 'markdown',
         });
 
+        TestUtilities.assertOperationSuccess(
+          result,
+          'Create markdown note',
+          'Note created successfully'
+        );
+        TestUtilities.assertContains(
+          result,
+          'TCN01_Markdown',
+          'Markdown note creation'
+        );
+
         // Extract note ID for cleanup
         const noteId = TestUtilities.extractRecordId(
           TestUtilities.getResponseText(result)
@@ -376,8 +403,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
           testCase.trackNote(noteId);
         }
 
-        // Success if API call didn't error
-        passed = !result.isError;
+        passed = true;
       }
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);

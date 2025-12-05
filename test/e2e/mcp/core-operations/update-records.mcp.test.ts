@@ -123,7 +123,7 @@ describe('TC-004: Update Records - Data Modification', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -154,7 +154,7 @@ describe('TC-004: Update Records - Data Modification', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -187,7 +187,7 @@ describe('TC-004: Update Records - Data Modification', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -220,7 +220,7 @@ describe('TC-004: Update Records - Data Modification', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -254,7 +254,7 @@ describe('TC-004: Update Records - Data Modification', () => {
       // If it throws, that's also acceptable error handling
       passed = true;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -309,7 +309,7 @@ describe('TC-004: Update Records - Data Modification', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

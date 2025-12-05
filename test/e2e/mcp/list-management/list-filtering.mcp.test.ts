@@ -166,7 +166,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -212,7 +212,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -257,7 +257,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -319,7 +319,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

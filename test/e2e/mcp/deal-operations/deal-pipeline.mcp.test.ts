@@ -55,14 +55,14 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
     }
   });
 
-  it('TC-D05: should move deal through pipeline stages (Lead → Qualified → Proposal)', async () => {
+  it('TC-D05: should move deal through pipeline stages (MQL → Qualified → Proposal)', async () => {
     const testName = 'pipeline_progression';
     let passed = false;
     let error: string | undefined;
 
     try {
-      // Create a deal in "Lead" stage
-      const dealData = TestDataFactory.createDealWithStage('TCD05', 'Lead');
+      // Create a deal in "MQL" stage
+      const dealData = TestDataFactory.createDealWithStage('TCD05', 'MQL');
 
       const createResult = await testCase.executeToolCall('create-record', {
         resource_type: 'deals',
