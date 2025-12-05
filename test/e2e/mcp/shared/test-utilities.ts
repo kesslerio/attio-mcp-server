@@ -12,11 +12,46 @@ import type { MCPToolCallResult } from './mcp-test-base.js';
 export class TestUtilities {
   /**
    * Extract record ID from MCP tool response text
-   * Handles the common pattern: "(ID: abc-123-def)"
+   * Handles multiple patterns:
+   * - Text format: "(ID: abc-123-def)"
+   * - JSON format: {"id":{"record_id":"abc-123-def",...},...}
+   * - Direct record_id in JSON: {"record_id":"abc-123-def",...}
    */
   static extractRecordId(responseText: string): string | null {
+    // Try text pattern first: (ID: abc-123-def)
     const idMatch = responseText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-    return idMatch?.[1] || null;
+    if (idMatch?.[1]) {
+      return idMatch[1];
+    }
+
+    // Try JSON parsing for nested id.record_id or direct record_id
+    try {
+      const parsed = JSON.parse(responseText);
+      // Handle nested id.record_id structure
+      if (parsed?.id?.record_id) {
+        return parsed.id.record_id;
+      }
+      // Handle direct record_id
+      if (parsed?.record_id) {
+        return parsed.record_id;
+      }
+      // Handle values.record_id (some responses have it there)
+      if (parsed?.values?.record_id) {
+        return parsed.values.record_id;
+      }
+    } catch {
+      // Not valid JSON, try regex patterns on the text
+    }
+
+    // Try regex for record_id in JSON-like text
+    const recordIdMatch = responseText.match(
+      /"record_id"\s*:\s*"([a-f0-9-]+)"/i
+    );
+    if (recordIdMatch?.[1]) {
+      return recordIdMatch[1];
+    }
+
+    return null;
   }
 
   /**

@@ -21,7 +21,15 @@
  * All tests are expected to PASS - they verify the current API behavior.
  */
 
-import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
+import {
+  describe,
+  it,
+  beforeAll,
+  beforeEach,
+  afterAll,
+  afterEach,
+  expect,
+} from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { TestDataFactory } from '../shared/test-data-factory';
 import type { TestResult } from '../shared/quality-gates';

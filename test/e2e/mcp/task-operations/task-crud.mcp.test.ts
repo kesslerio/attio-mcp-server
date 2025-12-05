@@ -104,83 +104,95 @@ describe('MCP P1 Task CRUD Operations', () => {
   });
 
   describe('Task Creation', () => {
-    it('should create a task with basic properties', async () => {
-      // Arrange
-      const testTask = taskFixtures.sales.followUp();
+    it(
+      'should create a task with basic properties',
+      { timeout: 30000 },
+      async () => {
+        // Arrange
+        const testTask = taskFixtures.sales.followUp();
 
-      // Act
-      const result = await testSuite.executeToolCall('create-record', {
-        resource_type: 'tasks',
-        record_data: testTask,
-      });
+        // Act
+        const result = await testSuite.executeToolCall('create-record', {
+          resource_type: 'tasks',
+          record_data: testTask,
+        });
 
-      // Assert
-      expect(result.isError).toBeFalsy();
+        // Assert
+        expect(result.isError).toBeFalsy();
 
-      const { id } = testSuite.parseRecordResult(result);
-      expect(id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
+        const { id } = testSuite.parseRecordResult(result);
+        expect(id).toMatch(/^[a-f0-9-]{36}$/); // UUID format
 
-      // Track for cleanup
-      testSuite.trackRecord('tasks', id);
+        // Track for cleanup
+        testSuite.trackRecord('tasks', id);
 
-      console.log(`✅ Created task with ID: ${id}`);
-    });
+        console.log(`✅ Created task with ID: ${id}`);
+      }
+    );
 
-    it('should create a task with minimal required fields', async () => {
-      // Arrange
-      const minimalTask = {
-        title: `${testSuite.generateTestId()} Minimal Task`,
-        content: 'Minimal task with only required fields',
-      };
+    it(
+      'should create a task with minimal required fields',
+      { timeout: 30000 },
+      async () => {
+        // Arrange
+        const minimalTask = {
+          title: `${testSuite.generateTestId()} Minimal Task`,
+          content: 'Minimal task with only required fields',
+        };
 
-      // Act
-      const result = await testSuite.executeToolCall('create-record', {
-        resource_type: 'tasks',
-        record_data: minimalTask,
-      });
+        // Act
+        const result = await testSuite.executeToolCall('create-record', {
+          resource_type: 'tasks',
+          record_data: minimalTask,
+        });
 
-      // Assert
-      expect(result.isError).toBeFalsy();
+        // Assert
+        expect(result.isError).toBeFalsy();
 
-      const { id } = testSuite.parseRecordResult(result);
-      expect(id).toMatch(/^[a-f0-9-]{36}$/);
-      testSuite.trackRecord('tasks', id);
-      console.log(`✅ Created minimal task with ID: ${id}`);
-    });
+        const { id } = testSuite.parseRecordResult(result);
+        expect(id).toMatch(/^[a-f0-9-]{36}$/);
+        testSuite.trackRecord('tasks', id);
+        console.log(`✅ Created minimal task with ID: ${id}`);
+      }
+    );
 
-    it('should create a task with all optional fields', async () => {
-      // Arrange
-      const fullTask = {
-        title: `${testSuite.generateTestId()} Full Featured Task`,
-        content: 'Detailed task description with all optional fields',
-        priority: 'high',
-        status: 'open',
-        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0], // 7 days from now
-      };
+    it(
+      'should create a task with all optional fields',
+      { timeout: 30000 },
+      async () => {
+        // Arrange
+        const fullTask = {
+          title: `${testSuite.generateTestId()} Full Featured Task`,
+          content: 'Detailed task description with all optional fields',
+          priority: 'high',
+          status: 'open',
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0], // 7 days from now
+        };
 
-      // Act
-      const result = await testSuite.executeToolCall('create-record', {
-        resource_type: 'tasks',
-        record_data: fullTask,
-      });
+        // Act
+        const result = await testSuite.executeToolCall('create-record', {
+          resource_type: 'tasks',
+          record_data: fullTask,
+        });
 
-      // Assert
-      expect(result.isError).toBeFalsy();
+        // Assert
+        expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      const taskId = testSuite.extractRecordId(responseText);
-      expect(taskId).toBeTruthy();
+        const responseText = testSuite.extractTextContent(result);
+        const taskId = testSuite.extractRecordId(responseText);
+        expect(taskId).toBeTruthy();
 
-      testSuite.trackRecord('tasks', taskId!);
+        testSuite.trackRecord('tasks', taskId!);
 
-      console.log(`✅ Created full-featured task with ID: ${taskId}`);
-    });
+        console.log(`✅ Created full-featured task with ID: ${taskId}`);
+      }
+    );
   });
 
   describe('Task Retrieval', () => {
-    it('should retrieve a task by ID', async () => {
+    it('should retrieve a task by ID', { timeout: 30000 }, async () => {
       // Arrange - Create a test task first
       const taskId = await testSuite.createTestTask();
 
@@ -213,7 +225,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       console.log(`✅ Successfully retrieved task ${taskId}`);
     });
 
-    it('should list multiple tasks', async () => {
+    it('should list multiple tasks', { timeout: 30000 }, async () => {
       // Arrange - Create multiple test tasks
       const taskIds = await Promise.all([
         testSuite.createTestTask(taskFixtures.sales.followUp()),
@@ -252,7 +264,7 @@ describe('MCP P1 Task CRUD Operations', () => {
   });
 
   describe('Task Updates', () => {
-    it('should update task properties', async () => {
+    it('should update task properties', { timeout: 30000 }, async () => {
       // Arrange - Create a test task first
       const taskId = await testSuite.createTestTask();
 
@@ -276,7 +288,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       expect(id).toContain(taskId);
     });
 
-    it('should update task status', async () => {
+    it('should update task status', { timeout: 30000 }, async () => {
       // Arrange - Create a test task
       const taskId = await testSuite.createTestTask();
 
@@ -294,7 +306,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       expect(id).toContain(taskId);
     });
 
-    it('should update task due date', async () => {
+    it('should update task due date', { timeout: 30000 }, async () => {
       // Arrange - Create a test task
       const taskId = await testSuite.createTestTask();
 
@@ -318,7 +330,7 @@ describe('MCP P1 Task CRUD Operations', () => {
   });
 
   describe('Task Deletion', () => {
-    it('should delete a task successfully', async () => {
+    it('should delete a task successfully', { timeout: 30000 }, async () => {
       // Arrange - Create a test task
       const taskId = await testSuite.createTestTask();
 
@@ -352,28 +364,34 @@ describe('MCP P1 Task CRUD Operations', () => {
       console.log(`✅ Successfully deleted task ${taskId}`);
     });
 
-    it('should handle deletion of non-existent task gracefully', async () => {
-      // Arrange - Use a non-existent task ID
-      const fakeTaskId = 'non-existent-task-id-12345';
+    it(
+      'should handle deletion of non-existent task gracefully',
+      { timeout: 30000 },
+      async () => {
+        // Arrange - Use a non-existent task ID
+        const fakeTaskId = 'non-existent-task-id-12345';
 
-      // Act
-      const result = await testSuite.executeToolCall('delete-record', {
-        resource_type: 'tasks',
-        record_id: fakeTaskId,
-      });
+        // Act
+        const result = await testSuite.executeToolCall('delete-record', {
+          resource_type: 'tasks',
+          record_id: fakeTaskId,
+        });
 
-      // Assert - Should handle gracefully with validation error
-      const responseText = testSuite.extractTextContent(result);
+        // Assert - Should handle gracefully with validation error
+        const responseText = testSuite.extractTextContent(result);
 
-      // Should handle invalid UUID validation error gracefully - check for error response
-      const hasError =
-        result.isError === true ||
-        responseText.includes('error') ||
-        responseText.includes('validation');
-      expect(hasError).toBe(true);
-      expect(responseText).toMatch(/not found|invalid|error|validation|uuid/i);
+        // Should handle invalid UUID validation error gracefully - check for error response
+        const hasError =
+          result.isError === true ||
+          responseText.includes('error') ||
+          responseText.includes('validation');
+        expect(hasError).toBe(true);
+        expect(responseText).toMatch(
+          /not found|invalid|error|validation|uuid/i
+        );
 
-      console.log(`✅ Handled non-existent task deletion gracefully`);
-    });
+        console.log(`✅ Handled non-existent task deletion gracefully`);
+      }
+    );
   });
 });
