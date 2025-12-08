@@ -56,7 +56,8 @@ export function getCreateService(): CreateService {
   }
 
   // Fail fast if real API requested but no credentials available
-  if (!process.env.ATTIO_API_KEY) {
+  // Issue #928: Support both ATTIO_API_KEY and ATTIO_ACCESS_TOKEN (OAuth alternative)
+  if (!process.env.ATTIO_API_KEY && !process.env.ATTIO_ACCESS_TOKEN) {
     throw new Error(
       'ATTIO_API_KEY is required for real API calls. Set USE_MOCK_DATA=true to use mock data instead.'
     );

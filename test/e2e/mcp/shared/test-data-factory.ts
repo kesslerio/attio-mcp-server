@@ -106,8 +106,10 @@ export class TestDataFactory {
       name: `${testCase} Test Deal ${uniqueId}`,
       stage: stages[Math.floor(Math.random() * stages.length)],
       value: values[Math.floor(Math.random() * values.length)],
-      // Add owner field to satisfy required field requirement (email format required)
-      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com',
+      // Owner field required - must be set via environment variable or discovered dynamically
+      ...(process.env.ATTIO_DEFAULT_DEAL_OWNER
+        ? { owner: process.env.ATTIO_DEFAULT_DEAL_OWNER }
+        : {}),
     };
   }
 
@@ -127,7 +129,8 @@ export class TestDataFactory {
       }
     }
     // Fallback to known valid stages in this Attio workspace
-    return ['Lead', 'Qualified', 'Proposal', 'Negotiation'];
+    // These are common fallback stages - use discoverDealStages() for workspace-specific stages
+    return ['MQL', 'Sales Qualified', 'Demo Booked', 'Negotiations'];
   }
 
   /**
@@ -145,14 +148,14 @@ export class TestDataFactory {
         );
       }
     }
-    // Fallback to full pipeline stages that exist in this Attio workspace
+    // Fallback to common stages - use discoverDealStages() for workspace-specific stages
     return [
-      'Lead',
-      'Qualified',
-      'Proposal',
-      'Negotiation',
-      'Closed Won',
-      'Closed Lost',
+      'MQL',
+      'Sales Qualified',
+      'Demo Booked',
+      'Negotiations',
+      'Won 🎉',
+      'Lost',
     ];
   }
 
@@ -167,8 +170,10 @@ export class TestDataFactory {
       name: `${testCase} Deal ${stage} ${uniqueId}`,
       stage: stage,
       value: values[Math.floor(Math.random() * values.length)],
-      // Add owner field to satisfy required field requirement (email format required)
-      owner: process.env.ATTIO_DEFAULT_DEAL_OWNER || 'martin@shapescale.com',
+      // Owner field required - must be set via environment variable or discovered dynamically
+      ...(process.env.ATTIO_DEFAULT_DEAL_OWNER
+        ? { owner: process.env.ATTIO_DEFAULT_DEAL_OWNER }
+        : {}),
     };
   }
 
