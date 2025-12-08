@@ -6,7 +6,7 @@
  * Must achieve 80% pass rate as part of P1 quality gate.
  */
 
-import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
@@ -16,6 +16,7 @@ class ListFilteringTest extends MCPTestBase {
   private testListId: string | null = null;
   private testCompanyId: string | null = null;
   private testParentId: string | null = null;
+  public listAttributes: string[] = [];
 
   constructor() {
     super('TC008');
@@ -69,13 +70,24 @@ class ListFilteringTest extends MCPTestBase {
         this.testListId = lists[0].id?.list_id || lists[0].api_slug;
         console.log(`Using existing list for filtering: ${this.testListId}`);
 
+        // Discover list attributes for workspace-agnostic testing
+        if (this.testListId) {
+          this.listAttributes = await this.discoverListAttributes(
+            this.testListId
+          );
+          console.log(
+            `📋 Discovered ${this.listAttributes.length} list attributes:`,
+            this.listAttributes.slice(0, 5)
+          );
+        }
+
         // Add test records to the list for filtering
+        // Note: We don't pass custom values since they may not match list schema
         if (this.testCompanyId) {
           await this.executeToolCall('add-record-to-list', {
             listId: this.testListId,
             recordId: this.testCompanyId,
             objectType: 'companies',
-            values: { filter_test: 'TC008', priority: 'high' },
           });
         }
       }
@@ -166,7 +178,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -212,7 +224,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -257,7 +269,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -267,9 +279,10 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
     let error: string | undefined;
 
     try {
-      if (!testCase['testListId']) {
+      // Check for all required test data
+      if (!testCase['testListId'] || !testCase['testCompanyId']) {
         console.log(
-          'No test list available, skipping multiple conditions test'
+          'No test list or company available, skipping multiple conditions test'
         );
         passed = true;
         return;
@@ -304,8 +317,10 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
 
         const text = result.content?.[0]?.text || '';
 
-        // Accept JSON array response or success without errors
+        // Accept JSON array response (including empty arrays), JSON objects, or success without errors
+        // Empty arrays [] are valid responses for filters with no matches
         const isValidResponse =
+          text === '[]' ||
           text.startsWith('[') ||
           text.startsWith('{') ||
           (!text.toLowerCase().includes('error') &&
@@ -319,7 +334,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

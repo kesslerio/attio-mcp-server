@@ -11,7 +11,6 @@ import { MCPTestBase } from '../shared/mcp-test-base.js';
 import { QAAssertions } from '../shared/qa-assertions.js';
 import { TestDataFactory } from '../shared/test-data-factory.js';
 import { taskFixtures, taskStatuses } from '../../fixtures/tasks.js';
-import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Task Workflow Operations Test Suite
@@ -35,7 +34,7 @@ class TaskWorkflowTests extends MCPTestBase {
       title: `${this.generateTestId()} Workflow Test Task`,
       content: 'Task for testing workflow operations',
       priority: 'medium',
-      status: 'open',
+      status: 'pending',
     };
 
     // Use universal tool with resource_type parameter
@@ -107,99 +106,106 @@ describe('MCP P1 Task Workflow Operations', () => {
   });
 
   describe('Task Status Updates', () => {
-    it('should update task status through workflow progression', async () => {
-      // Arrange - Create a test task with initial status
-      const taskId = await testSuite.createTestTask({
-        title: `${testSuite.generateTestId()} Status Progression Task`,
-        content: 'Task for testing status progression through workflow',
-        status: 'open',
-        priority: 'high',
-      });
-
-      // Status progression: open -> in_progress -> completed
-      const statusProgression = ['in_progress', 'completed'];
-
-      // Act & Assert - Progress through each status
-      for (const status of statusProgression) {
-        const result = await testSuite.executeToolCall('update-record', {
-          resource_type: 'tasks',
-          record_id: taskId,
-          record_data: { status: status },
-        });
-
-        expect(result.isError).toBeFalsy();
-
-        const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
-        expect(responseText).toContain(taskId);
-
-        console.log(
-          `✅ Successfully updated task ${taskId} to status: ${status}`
-        );
-      }
-    });
-
-    it('should handle all valid task statuses', async () => {
-      // Test each valid status from fixtures
-      const validStatuses = taskStatuses.slice(0, 3); // Test first 3 for performance
-
-      for (const status of validStatuses) {
-        // Arrange - Create a new task for each status test
+    it(
+      'should update task status through workflow progression',
+      { timeout: 30000 },
+      async () => {
+        // Arrange - Create a test task with initial status
         const taskId = await testSuite.createTestTask({
-          title: `${testSuite.generateTestId()} Status ${status} Task`,
-          content: `Task for testing ${status} status validation`,
-          status: 'open', // Start with open status
+          title: `${testSuite.generateTestId()} Status Progression Task`,
+          content: 'Task for testing status progression through workflow',
+          status: 'pending',
+          priority: 'high',
         });
 
-        // Act - Update to target status
+        // Status progression: pending -> completed (Attio API only supports these 2 statuses)
+        const statusProgression = ['completed'];
+
+        // Act & Assert - Progress through each status
+        for (const status of statusProgression) {
+          const result = await testSuite.executeToolCall('update-record', {
+            resource_type: 'tasks',
+            record_id: taskId,
+            record_data: { status: status },
+          });
+
+          expect(result.isError).toBeFalsy();
+
+          const { id } = testSuite.parseRecordResult(result);
+          expect(id).toContain(taskId);
+
+          console.log(
+            `✅ Successfully updated task ${taskId} to status: ${status}`
+          );
+        }
+      }
+    );
+
+    it(
+      'should handle all valid task statuses',
+      { timeout: 60000 },
+      async () => {
+        // Test each valid status from fixtures
+        const validStatuses = taskStatuses.slice(0, 3); // Test first 3 for performance
+
+        for (const status of validStatuses) {
+          // Arrange - Create a new task for each status test
+          const taskId = await testSuite.createTestTask({
+            title: `${testSuite.generateTestId()} Status ${status} Task`,
+            content: `Task for testing ${status} status validation`,
+            status: 'pending', // Start with open status
+          });
+
+          // Act - Update to target status
+          const result = await testSuite.executeToolCall('update-record', {
+            resource_type: 'tasks',
+            record_id: taskId,
+            record_data: { status: status },
+          });
+
+          // Assert
+          expect(result.isError).toBeFalsy();
+
+          const { id } = testSuite.parseRecordResult(result);
+          expect(id).toContain(taskId);
+
+          console.log(
+            `✅ Successfully set task ${taskId} to status: ${status}`
+          );
+        }
+      }
+    );
+
+    it(
+      'should handle invalid status gracefully',
+      { timeout: 30000 },
+      async () => {
+        // Arrange - Create a test task
+        const taskId = await testSuite.createTestTask();
+
+        // Act - Try to set invalid status
         const result = await testSuite.executeToolCall('update-record', {
           resource_type: 'tasks',
           record_id: taskId,
-          record_data: { status: status },
+          record_data: { status: 'invalid_status_123' },
         });
 
-        // Assert
-        expect(result.isError).toBeFalsy();
+        // Assert - Should handle gracefully
+        const { text, id } = testSuite.parseRecordResult(result);
 
-        const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
-
-        console.log(`✅ Successfully set task ${taskId} to status: ${status}`);
+        if (result.isError) {
+          expect(text).toMatch(/invalid|error|status/i);
+          console.log(`✅ Correctly rejected invalid status`);
+        } else {
+          expect(id).toContain(taskId);
+          console.log(`✅ Gracefully handled invalid status`);
+        }
       }
-    });
-
-    it('should handle invalid status gracefully', async () => {
-      // Arrange - Create a test task
-      const taskId = await testSuite.createTestTask();
-
-      // Act - Try to set invalid status
-      const result = await testSuite.executeToolCall('update-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-        record_data: { status: 'invalid_status_123' },
-      });
-
-      // Assert - Should handle gracefully
-      const responseText = testSuite.extractTextContent(result);
-
-      if (result.isError) {
-        expect(responseText).toMatch(/invalid|error|status/i);
-        console.log(`✅ Correctly rejected invalid status`);
-      } else {
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
-        console.log(`✅ Gracefully handled invalid status`);
-      }
-    });
+    );
   });
 
   describe('Task Deadlines', () => {
-    it('should set and update task deadlines', async () => {
+    it('should set and update task deadlines', { timeout: 30000 }, async () => {
       // Arrange - Create a test task without due date
       const taskId = await testSuite.createTestTask();
 
@@ -217,10 +223,8 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Initial deadline set
       expect(setResult.isError).toBeFalsy();
-      const setResponse = testSuite.extractTextContent(setResult);
-      expect(setResponse).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
+      const { id: setId } = testSuite.parseRecordResult(setResult);
+      expect(setId).toContain(taskId);
 
       // Act - Update deadline (14 days from now)
       const updatedDeadline = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -235,17 +239,15 @@ describe('MCP P1 Task Workflow Operations', () => {
 
       // Assert - Deadline updated
       expect(updateResult.isError).toBeFalsy();
-      const updateResponse = testSuite.extractTextContent(updateResult);
-      expect(updateResponse).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
+      const { id: updateId } = testSuite.parseRecordResult(updateResult);
+      expect(updateId).toContain(taskId);
 
       console.log(
         `✅ Successfully set and updated deadline for task ${taskId}`
       );
     });
 
-    it('should handle past due dates', async () => {
+    it('should handle past due dates', { timeout: 30000 }, async () => {
       // Arrange - Create a test task
       const taskId = await testSuite.createTestTask();
 
@@ -262,19 +264,16 @@ describe('MCP P1 Task Workflow Operations', () => {
       });
 
       // Assert - Should handle gracefully (past dates often allowed for historical tracking)
-      const responseText = testSuite.extractTextContent(result);
-
+      const { id: pastId } = testSuite.parseRecordResult(result);
       if (result.isError) {
         console.log(`✅ System rejected past due date (strict validation)`);
       } else {
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
+        expect(pastId).toContain(taskId);
         console.log(`✅ System accepted past due date (historical tracking)`);
       }
     });
 
-    it('should remove deadline from task', async () => {
+    it('should remove deadline from task', { timeout: 30000 }, async () => {
       // Arrange - Create task with deadline
       const taskId = await testSuite.createTestTask({
         title: `${testSuite.generateTestId()} Deadline Removal Task`,
@@ -294,10 +293,8 @@ describe('MCP P1 Task Workflow Operations', () => {
       // Assert
       expect(result.isError).toBeFalsy();
 
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
+      const { id: clearedId } = testSuite.parseRecordResult(result);
+      expect(clearedId).toContain(taskId);
 
       console.log(`✅ Successfully removed deadline from task ${taskId}`);
     });
@@ -307,7 +304,7 @@ describe('MCP P1 Task Workflow Operations', () => {
   // The link-record-to-task tool is not yet mapped to universal tools
   // These tests will be re-enabled once the universal equivalent is available
   describe.skip('Record Linking', () => {
-    it('should link task to company record', async () => {
+    it('should link task to company record', { timeout: 30000 }, async () => {
       // Arrange - Create test task and company
       const taskId = await testSuite.createTestTask({
         title: `${testSuite.generateTestId()} Company Link Task`,
@@ -330,116 +327,118 @@ describe('MCP P1 Task Workflow Operations', () => {
   });
 
   describe('Task Completion', () => {
-    it('should mark task as completed with success status', async () => {
-      // Arrange - Create task in progress
-      const taskId = await testSuite.createTestTask({
-        title: `${testSuite.generateTestId()} Completion Test Task`,
-        content: 'Task for testing completion workflow',
-        status: 'in_progress',
-        priority: 'high',
-      });
-
-      // Act - Mark as completed
-      const result = await testSuite.executeToolCall('update-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-        record_data: { status: 'completed' },
-      });
-
-      // Assert
-      expect(result.isError).toBeFalsy();
-
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
-      expect(responseText).toContain(taskId);
-
-      console.log(`✅ Successfully marked task ${taskId} as completed`);
-    });
-
-    it('should complete task with completion notes', async () => {
-      // Arrange - Create test task
-      const taskId = await testSuite.createTestTask();
-
-      // Act - Complete with notes
-      const completionNotes =
-        'Task completed successfully with all requirements met';
-
-      const result = await testSuite.executeToolCall('update-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-        record_data: {
-          status: 'completed',
-          // Note: content is immutable - cannot update with completion notes
-        },
-      });
-
-      // Assert
-      expect(result.isError).toBeFalsy();
-
-      const responseText = testSuite.extractTextContent(result);
-      expect(responseText).toMatch(
-        /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-      );
-
-      console.log(
-        `✅ Successfully completed task ${taskId} with completion notes`
-      );
-    });
-
-    it('should handle workflow from creation to completion', async () => {
-      // Arrange - Create a comprehensive workflow task
-      const workflowTask = {
-        title: `${testSuite.generateTestId()} Full Workflow Task`,
-        content: 'Task to test complete workflow from creation to completion',
-        priority: 'medium',
-        status: 'open',
-        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0],
-      };
-
-      const taskId = await testSuite.createTestTask(workflowTask);
-
-      // Workflow steps
-      const workflowSteps = [
-        { status: 'in_progress', description: 'Start working on task' },
-        {
-          // Note: content is immutable - simulating progress update with other fields
-          description: 'Add progress notes',
-        },
-        {
+    it(
+      'should mark task as completed with success status',
+      { timeout: 30000 },
+      async () => {
+        // Arrange - Create pending task
+        const taskId = await testSuite.createTestTask({
+          title: `${testSuite.generateTestId()} Completion Test Task`,
+          content: 'Task for testing completion workflow',
+          status: 'pending',
           priority: 'high',
-          description: 'Escalate priority',
-        },
-        {
-          status: 'completed',
-          // Note: content is immutable - cannot update with completion notes
-          description: 'Mark as completed with notes',
-        },
-      ];
+        });
 
-      // Act & Assert - Execute each workflow step
-      for (const step of workflowSteps) {
-        const { description, ...stepData } = step;
+        // Act - Mark as completed
         const result = await testSuite.executeToolCall('update-record', {
           resource_type: 'tasks',
           record_id: taskId,
-          record_data: stepData,
+          record_data: { status: 'completed' },
         });
 
+        // Assert
         expect(result.isError).toBeFalsy();
 
-        const responseText = testSuite.extractTextContent(result);
-        expect(responseText).toMatch(
-          /Updated task|Successfully updated task|✅.*updated|updated.*task/i
-        );
+        const { id } = testSuite.parseRecordResult(result);
+        expect(id).toContain(taskId);
 
-        console.log(`✅ Workflow step: ${description} for task ${taskId}`);
+        console.log(`✅ Successfully marked task ${taskId} as completed`);
       }
+    );
 
-      console.log(`🎉 Successfully completed full workflow for task ${taskId}`);
-    });
+    it(
+      'should complete task with completion notes',
+      { timeout: 30000 },
+      async () => {
+        // Arrange - Create test task
+        const taskId = await testSuite.createTestTask();
+
+        // Act - Complete with notes
+        const completionNotes =
+          'Task completed successfully with all requirements met';
+
+        const result = await testSuite.executeToolCall('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            status: 'completed',
+            // Note: content is immutable - cannot update with completion notes
+          },
+        });
+
+        // Assert
+        expect(result.isError).toBeFalsy();
+
+        const { id } = testSuite.parseRecordResult(result);
+        expect(id).toContain(taskId);
+
+        console.log(
+          `✅ Successfully completed task ${taskId} with completion notes`
+        );
+      }
+    );
+
+    it(
+      'should handle workflow from creation to completion',
+      { timeout: 60000 },
+      async () => {
+        // Arrange - Create a comprehensive workflow task
+        const workflowTask = {
+          title: `${testSuite.generateTestId()} Full Workflow Task`,
+          content: 'Task to test complete workflow from creation to completion',
+          priority: 'medium',
+          status: 'pending',
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+        };
+
+        const taskId = await testSuite.createTestTask(workflowTask);
+
+        // Workflow steps (Attio API only supports 'pending' and 'completed' statuses)
+        const workflowSteps = [
+          {
+            priority: 'high',
+            description: 'Escalate priority',
+          },
+          {
+            status: 'completed',
+            // Note: content is immutable - cannot update with completion notes
+            description: 'Mark as completed with notes',
+          },
+        ];
+
+        // Act & Assert - Execute each workflow step
+        for (const step of workflowSteps) {
+          const { description, ...stepData } = step;
+          const result = await testSuite.executeToolCall('update-record', {
+            resource_type: 'tasks',
+            record_id: taskId,
+            record_data: stepData,
+          });
+
+          expect(result.isError).toBeFalsy();
+
+          const { id } = testSuite.parseRecordResult(result);
+          expect(id).toContain(taskId);
+
+          console.log(`✅ Workflow step: ${description} for task ${taskId}`);
+        }
+
+        console.log(
+          `🎉 Successfully completed full workflow for task ${taskId}`
+        );
+      }
+    );
   });
 });

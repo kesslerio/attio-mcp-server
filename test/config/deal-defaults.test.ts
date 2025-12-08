@@ -4,6 +4,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Note: The global mock in test/setup.ts mocks attio-client for both paths:
+// - '../src/api/attio-client' (static imports)
+// - '../src/api/attio-client.js' (dynamic imports like in deal-defaults.ts)
+// The global mock provides getStatusOptions with default deal stages.
+//
+// For test-specific behavior, we access the mock from the imported module
+// rather than overriding the entire mock (which causes hoisting issues).
+import * as attioClient from '../../src/api/attio-client.js';
+
+// Access the mocked function for test assertions
+const mockGetStatusOptions = vi.mocked(attioClient.getStatusOptions);
+
 import {
   applyDealDefaults,
   applyDealDefaultsWithValidation,
@@ -15,7 +28,7 @@ import {
   getAvailableStagesForErrors,
 } from '../../src/config/deal-defaults.js';
 
-// Mock API client using global override mechanism
+// Legacy mock client for tests that still use globalThis pattern
 const mockGet = vi.fn();
 const mockClient = {
   get: mockGet,
@@ -26,12 +39,23 @@ describe('Deal Defaults - PR #389 Fix', () => {
     // Clear caches before each test
     clearDealCaches();
     vi.clearAllMocks();
-    // Set up test-specific client override
+
+    // Set up default mock behavior - return common deal stages
+    mockGetStatusOptions.mockResolvedValue([
+      { title: 'MQL', value: 'mql', is_archived: false },
+      { title: 'Qualified', value: 'qualified', is_archived: false },
+      { title: 'Demo', value: 'demo', is_archived: false },
+      { title: 'Demo No Show', value: 'demo_no_show', is_archived: false },
+      { title: 'Won', value: 'won', is_archived: false },
+      { title: 'Lost', value: 'lost', is_archived: false },
+    ]);
+
+    // Legacy: Set up test-specific client override (for any remaining tests using it)
     (globalThis as any).setTestApiClient?.(mockClient);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     // Clear test-specific client override
     (globalThis as any).clearTestApiClient?.();
   });
@@ -69,7 +93,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       const dealData = {
         name: 'Test Deal',
-        stage: 'Interested',
+        stage: 'MQL',
         value: 1000,
       };
 
@@ -78,7 +102,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // Verify data was processed
       expect(result.dealData.name).toEqual([{ value: 'Test Deal' }]);
-      expect(result.dealData.stage).toEqual([{ status: 'Interested' }]);
+      expect(result.dealData.stage).toEqual([{ status: 'MQL' }]);
     });
   });
 
@@ -109,12 +133,12 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(result1.validatedStage).toBe('Demo');
 
       // Second call should also work with fallback
-      const result2 = await validateDealStage('Interested', false);
-      expect(result2.validatedStage).toBe('Interested');
+      const result2 = await validateDealStage('MQL', false);
+      expect(result2.validatedStage).toBe('MQL');
 
       // Invalid stage should fall back to default
       const result3 = await validateDealStage('NonExistentStage', false);
-      expect(result3.validatedStage).toBe('Interested'); // Falls back to default
+      expect(result3.validatedStage).toBe('MQL'); // Falls back to default
     });
   });
 
@@ -131,7 +155,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // First attempt with validation (normal path)
       const attempt1 = await applyDealDefaultsWithValidation(dealData, false);
       // With new implementation, invalid stages are corrected to default
-      expect(attempt1.dealData.stage).toEqual([{ status: 'Interested' }]);
+      expect(attempt1.dealData.stage).toEqual([{ status: 'MQL' }]);
 
       // Simulate error occurred, now in error recovery path
       // This should NOT make API calls due to skipValidation=true
@@ -219,22 +243,16 @@ describe('Deal Defaults - PR #389 Fix', () => {
   });
 
   describe('Issue #705: Deal Stage Empty List Fix', () => {
-    // Mock getStatusOptions function
-    const mockGetStatusOptions = vi.fn();
+    // Uses top-level mockGetStatusOptions - no local redeclaration needed
 
-    beforeEach(async () => {
+    beforeEach(() => {
       // Clear environment variables
       delete process.env.STRICT_DEAL_STAGE_VALIDATION;
-
-      // Mock the API client import
-      vi.doMock('../../src/api/attio-client.js', () => ({
-        getStatusOptions: mockGetStatusOptions,
-      }));
+      clearDealCaches();
     });
 
     afterEach(() => {
       vi.clearAllMocks();
-      vi.doUnmock('../../src/api/attio-client.js');
     });
 
     it('should fetch actual deal stages from API using getStatusOptions', async () => {
@@ -268,7 +286,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // Test with archived stage - should not find it
       const result = await validateDealStage('Archived Stage', false);
 
-      expect(result.validatedStage).toBe('Interested'); // Should fall back to default
+      expect(result.validatedStage).toBe('MQL'); // Should fall back to default
     });
 
     it('should use common fallback stages when API fails', async () => {
@@ -296,7 +314,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // Test with invalid stage to trigger warning message
       const result = await validateDealStage('InvalidStage', false);
 
-      expect(result.validatedStage).toBe('Interested'); // Should fall back to default
+      expect(result.validatedStage).toBe('MQL'); // Should fall back to default
     });
 
     it('should throw error in strict validation mode', async () => {
@@ -316,7 +334,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       try {
         const result = await validateDealStage('InvalidStage', false);
         // If no error thrown, it should at least return a fallback value
-        expect(['Interested', 'InvalidStage']).toContain(result);
+        expect(['MQL', 'InvalidStage']).toContain(result);
       } catch (error) {
         // If error is thrown, that's also acceptable for strict mode
         expect(error).toBeDefined();
@@ -333,7 +351,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // Should return common stages as fallback
       expect(stages).toContain('Demo');
       expect(stages).toContain('Demo No Show');
-      expect(stages).toContain('Interested');
+      expect(stages).toContain('MQL');
       expect(stages.length).toBeGreaterThan(0);
     });
 
@@ -347,24 +365,20 @@ describe('Deal Defaults - PR #389 Fix', () => {
       const result = await validateDealStage('Demo', false);
 
       // With empty API response, it should fall back to common stages where 'Demo' exists
-      // or fall back to 'Interested' if the fallback logic isn't working as expected
-      expect(['Demo', 'Interested']).toContain(result.validatedStage);
+      // or fall back to 'MQL' if the fallback logic isn't working as expected
+      expect(['Demo', 'MQL']).toContain(result.validatedStage);
     });
   });
 
   describe('Edge Cases and Performance - PR Feedback', () => {
-    const mockGetStatusOptions = vi.fn();
+    // Uses top-level mockGetStatusOptions - no local redeclaration needed
 
-    beforeEach(async () => {
-      vi.doMock('../../src/api/attio-client.js', () => ({
-        getStatusOptions: mockGetStatusOptions,
-      }));
+    beforeEach(() => {
       clearDealCaches();
     });
 
     afterEach(() => {
       vi.clearAllMocks();
-      vi.doUnmock('../../src/api/attio-client.js');
     });
 
     it('should handle API timeout gracefully', async () => {
@@ -453,7 +467,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
 
       // Test with invalid stage - should fall back to default
       const result2 = await validateDealStage('Invalid Stage', false);
-      expect(result2.validatedStage).toBe('Interested');
+      expect(result2.validatedStage).toBe('MQL');
     });
 
     it('should validate with mixed case stage names', async () => {

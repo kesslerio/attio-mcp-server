@@ -9,7 +9,7 @@
  * - TC-D04: Delete deal record
  */
 
-import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { describe, it, beforeAll, afterAll, afterEach, expect } from 'vitest';
 import { MCPTestBase } from '../shared/mcp-test-base';
 import { QAAssertions } from '../shared/qa-assertions';
 import { TestDataFactory } from '../shared/test-data-factory';
@@ -82,7 +82,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -116,7 +116,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -153,7 +153,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 
@@ -187,7 +187,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
       error = e instanceof Error ? e.message : String(e);
       throw e;
     } finally {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     }
   });
 });

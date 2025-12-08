@@ -21,7 +21,7 @@
  *
  * ENVIRONMENT VARIABLES (Runtime Behavior Configuration):
  *
- * @env ATTIO_DEFAULT_DEAL_STAGE - Default stage for new deals (default: "Interested")
+ * @env ATTIO_DEFAULT_DEAL_STAGE - Default stage for new deals (default: "MQL")
  *      Example: ATTIO_DEFAULT_DEAL_STAGE="Qualified"
  *      Impact: Changes default fallback stage when none provided
  *
@@ -88,13 +88,13 @@ const ERROR_CACHE_TTL = 30 * 1000; // 30 seconds - shorter TTL for errors
  * Get deal defaults from environment configuration
  *
  * Environment variables:
- * - ATTIO_DEFAULT_DEAL_STAGE: Default stage for new deals (e.g., "Interested")
+ * - ATTIO_DEFAULT_DEAL_STAGE: Default stage for new deals (e.g., "MQL")
  * - ATTIO_DEFAULT_DEAL_OWNER: Default owner workspace member ID
  * - ATTIO_DEFAULT_CURRENCY: Default currency code (e.g., "USD")
  */
 export function getDealDefaults(): DealDefaults {
   return {
-    stage: process.env.ATTIO_DEFAULT_DEAL_STAGE || 'Interested',
+    stage: process.env.ATTIO_DEFAULT_DEAL_STAGE || 'MQL',
     owner: process.env.ATTIO_DEFAULT_DEAL_OWNER,
     currency: process.env.ATTIO_DEFAULT_CURRENCY || 'USD',
   };
@@ -385,7 +385,7 @@ async function getAvailableDealStages(): Promise<string[]> {
  */
 function getCommonDealStages(): string[] {
   return [
-    'Interested',
+    'MQL',
     'Qualified',
     'Demo Scheduled',
     'Demo',

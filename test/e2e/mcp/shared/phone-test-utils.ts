@@ -81,7 +81,7 @@ export function createResultTracker(): {
   return {
     results,
     track: (testName: string, passed: boolean, error?: string) => {
-      results.push({ test: testName, passed, error });
+      results.push({ testName, passed, error });
     },
     getSummary: () => ({
       passed: results.filter((r) => r.passed).length,
