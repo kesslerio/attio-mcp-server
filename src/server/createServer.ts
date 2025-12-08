@@ -51,8 +51,10 @@ export function createServer(context?: ServerContext) {
 
   // For backward compatibility: if no context provided (STDIO mode),
   // create one that reads from environment variables
+  // Issue #928: Support both ATTIO_API_KEY and ATTIO_ACCESS_TOKEN (OAuth alternative)
   const ctx: ServerContext = context || {
-    getApiKey: () => process.env.ATTIO_API_KEY,
+    getApiKey: () =>
+      process.env.ATTIO_API_KEY || process.env.ATTIO_ACCESS_TOKEN,
     getWorkspaceId: () => process.env.ATTIO_WORKSPACE_ID,
   };
 
