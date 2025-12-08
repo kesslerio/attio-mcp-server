@@ -39,6 +39,51 @@ function resolveQueryApiClient(): AxiosInstance {
 }
 
 /**
+ * Handle Query API errors consistently across methods
+ * Issue #935: Extracted to reduce code duplication
+ */
+function handleQueryApiError(
+  error: unknown,
+  path: string,
+  context: {
+    resourceType: string;
+    operation: string;
+    metadata?: Record<string, unknown>;
+  }
+): AttioRecord[] {
+  const apiError = createApiErrorFromAxiosError(error, path, 'POST');
+
+  // Re-throw critical errors that should bubble up
+  if (
+    apiError instanceof AuthenticationError ||
+    apiError instanceof AuthorizationError ||
+    apiError instanceof NetworkError ||
+    apiError instanceof RateLimitError ||
+    apiError instanceof ServerError
+  ) {
+    throw apiError;
+  }
+
+  // Handle not found gracefully - return empty results
+  if (apiError instanceof ResourceNotFoundError) {
+    debug(
+      'QueryApiService',
+      `No results for ${context.operation}`,
+      context.metadata
+    );
+    return [];
+  }
+
+  // Log and return empty for other errors
+  createScopedLogger(
+    'QueryApiService',
+    context.operation,
+    OperationType.API_CALL
+  ).error(`${context.operation} failed for ${context.resourceType}`, error);
+  return [];
+}
+
+/**
  * Query API Service for advanced search operations
  */
 export class QueryApiService {
@@ -62,9 +107,9 @@ export class QueryApiService {
 
     const queryApiFilter = createRelationshipQuery(relationshipQuery);
 
+    const path = `/objects/${sourceResourceType}/records/query`;
     try {
       const client = resolveQueryApiClient();
-      const path = `/objects/${sourceResourceType}/records/query`;
       const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
@@ -74,40 +119,11 @@ export class QueryApiService {
       const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
-      const apiError = createApiErrorFromAxiosError(
-        error,
-        `/objects/${sourceResourceType}/records/query`,
-        'POST'
-      );
-
-      if (
-        apiError instanceof AuthenticationError ||
-        apiError instanceof AuthorizationError ||
-        apiError instanceof NetworkError ||
-        apiError instanceof RateLimitError ||
-        apiError instanceof ServerError
-      ) {
-        throw apiError;
-      }
-
-      if (apiError instanceof ResourceNotFoundError) {
-        debug(
-          'QueryApiService',
-          `No relationship found between ${sourceResourceType} -> ${targetResourceType}`,
-          { targetRecordId }
-        );
-        return [];
-      }
-
-      createScopedLogger(
-        'QueryApiService',
-        'searchByRelationship',
-        OperationType.API_CALL
-      ).error(
-        `Relationship search failed for ${sourceResourceType} -> ${targetResourceType}`,
-        error
-      );
-      return [];
+      return handleQueryApiError(error, path, {
+        resourceType: sourceResourceType,
+        operation: 'searchByRelationship',
+        metadata: { targetResourceType, targetRecordId },
+      });
     }
   }
 
@@ -121,10 +137,10 @@ export class QueryApiService {
     offset?: number
   ): Promise<AttioRecord[]> {
     const queryApiFilter = createTimeframeQuery(timeframeConfig);
+    const path = `/objects/${resourceType}/records/query`;
 
     try {
       const client = resolveQueryApiClient();
-      const path = `/objects/${resourceType}/records/query`;
       const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
@@ -134,37 +150,11 @@ export class QueryApiService {
       const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
-      const apiError = createApiErrorFromAxiosError(
-        error,
-        `/objects/${resourceType}/records/query`,
-        'POST'
-      );
-
-      if (
-        apiError instanceof AuthenticationError ||
-        apiError instanceof AuthorizationError ||
-        apiError instanceof NetworkError ||
-        apiError instanceof RateLimitError ||
-        apiError instanceof ServerError
-      ) {
-        throw apiError;
-      }
-
-      if (apiError instanceof ResourceNotFoundError) {
-        debug(
-          'QueryApiService',
-          `No ${resourceType} records found in specified timeframe`,
-          { timeframeConfig }
-        );
-        return [];
-      }
-
-      createScopedLogger(
-        'QueryApiService',
-        'searchByTimeframe',
-        OperationType.API_CALL
-      ).error(`Timeframe search failed for ${resourceType}`, error);
-      return [];
+      return handleQueryApiError(error, path, {
+        resourceType,
+        operation: 'searchByTimeframe',
+        metadata: { timeframeConfig },
+      });
     }
   }
 
@@ -195,10 +185,10 @@ export class QueryApiService {
     }
 
     const queryApiFilter = createContentSearchQuery(fields, query, useOrLogic);
+    const path = `/objects/${resourceType}/records/query`;
 
     try {
-      const client = getLazyAttioClient();
-      const path = `/objects/${resourceType}/records/query`;
+      const client = resolveQueryApiClient();
       const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
@@ -208,37 +198,11 @@ export class QueryApiService {
       const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
-      const apiError = createApiErrorFromAxiosError(
-        error,
-        `/objects/${resourceType}/records/query`,
-        'POST'
-      );
-
-      if (
-        apiError instanceof AuthenticationError ||
-        apiError instanceof AuthorizationError ||
-        apiError instanceof NetworkError ||
-        apiError instanceof RateLimitError ||
-        apiError instanceof ServerError
-      ) {
-        throw apiError;
-      }
-
-      if (apiError instanceof ResourceNotFoundError) {
-        debug(
-          'QueryApiService',
-          `No ${resourceType} records found matching content search`,
-          { query, fields }
-        );
-        return [];
-      }
-
-      createScopedLogger(
-        'QueryApiService',
-        'searchByContent',
-        OperationType.API_CALL
-      ).error(`Content search failed for ${resourceType}`, error);
-      return [];
+      return handleQueryApiError(error, path, {
+        resourceType,
+        operation: 'searchByContent',
+        metadata: { query, fields },
+      });
     }
   }
 }

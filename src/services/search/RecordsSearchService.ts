@@ -6,10 +6,76 @@
  */
 
 import { AttioRecord } from '@/types/attio.js';
-import { createScopedLogger, OperationType } from '@/utils/logger.js';
+import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
 import { ValidationService } from '@/services/ValidationService.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
+import * as AttioClientModule from '@/api/attio-client.js';
+import type { AxiosInstance } from 'axios';
 import { listObjectRecords } from '@/objects/records/index.js';
+import {
+  AuthenticationError,
+  AuthorizationError,
+  NetworkError,
+  RateLimitError,
+  ServerError,
+  ResourceNotFoundError,
+  createApiErrorFromAxiosError,
+} from '@/errors/api-errors.js';
+
+/**
+ * Resolve API client (prefers mocked version in tests)
+ */
+function resolveApiClient(): AxiosInstance {
+  const mod = AttioClientModule as { getAttioClient?: () => AxiosInstance };
+  if (typeof mod.getAttioClient === 'function') {
+    return mod.getAttioClient();
+  }
+  return getLazyAttioClient();
+}
+
+/**
+ * Handle API errors consistently
+ * Issue #935: Matches QueryApiService error handling pattern
+ */
+function handleRecordsApiError(
+  error: unknown,
+  path: string,
+  context: {
+    operation: string;
+    metadata?: Record<string, unknown>;
+  }
+): AttioRecord[] {
+  const apiError = createApiErrorFromAxiosError(error, path, 'POST');
+
+  // Re-throw critical errors that should bubble up
+  if (
+    apiError instanceof AuthenticationError ||
+    apiError instanceof AuthorizationError ||
+    apiError instanceof NetworkError ||
+    apiError instanceof RateLimitError ||
+    apiError instanceof ServerError
+  ) {
+    throw apiError;
+  }
+
+  // Handle not found gracefully - return empty results
+  if (apiError instanceof ResourceNotFoundError) {
+    debug(
+      'RecordsSearchService',
+      `No results for ${context.operation}`,
+      context.metadata
+    );
+    return [];
+  }
+
+  // Log and return empty for other errors
+  createScopedLogger(
+    'RecordsSearchService',
+    context.operation,
+    OperationType.API_CALL
+  ).error(`${context.operation} failed`, error);
+  return [];
+}
 
 /**
  * Records Search Service for generic records and custom objects
@@ -49,7 +115,7 @@ export class RecordsSearchService {
    * @param objectSlug - The custom object type (e.g., "funds", "investment_opportunities")
    * @param limit - Maximum results
    * @param offset - Pagination offset
-   * @param filters - Optional filters
+   * @param filters - Optional filters to apply to the search
    */
   static async searchCustomObject(
     objectSlug: string,
@@ -83,7 +149,6 @@ export class RecordsSearchService {
 
     // Custom objects require POST to /objects/{slug}/records/query
     // The GET endpoint (/objects/{slug}/records) returns 404 for custom objects
-    const api = getLazyAttioClient();
     const path = `/objects/${objectSlug}/records/query`;
 
     const requestBody: Record<string, unknown> = {
@@ -95,7 +160,24 @@ export class RecordsSearchService {
       requestBody.offset = offset;
     }
 
-    const response = await api.post(path, requestBody);
-    return Array.isArray(response?.data?.data) ? response.data.data : [];
+    // Issue #935: Forward filters to request body (was silently dropped before)
+    if (filters && Object.keys(filters).length > 0) {
+      // Exclude list_membership from filter object as it's handled separately
+      const { list_membership, ...remainingFilters } = filters;
+      if (Object.keys(remainingFilters).length > 0) {
+        requestBody.filter = remainingFilters;
+      }
+    }
+
+    try {
+      const api = resolveApiClient();
+      const response = await api.post(path, requestBody);
+      return Array.isArray(response?.data?.data) ? response.data.data : [];
+    } catch (error: unknown) {
+      return handleRecordsApiError(error, path, {
+        operation: 'searchCustomObject',
+        metadata: { objectSlug, limit, offset, hasFilters: !!filters },
+      });
+    }
   }
 }

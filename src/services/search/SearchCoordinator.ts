@@ -46,11 +46,10 @@ export interface SearchRoutingParams {
 export class SearchCoordinator {
   /**
    * Route search to appropriate service based on search type
+   * Issue #935: Performance tracking is handled at the UniversalSearchService level
    */
   static async executeSearch(
-    params: SearchRoutingParams,
-    perfId: string,
-    apiStart: number
+    params: SearchRoutingParams
   ): Promise<AttioRecord[]> {
     const {
       resource_type,
