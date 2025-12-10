@@ -20,6 +20,16 @@
 - **Notes tools**: validate `record_id` with `isValidUUID` before hitting Attio and format responses via the shared `extractNoteFields` helper to normalize nested/flat shapes.
 - **Attio tests**: real API tests require `ATTIO_API_KEY`.
 
+## Runtime Configuration
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ENABLE_ENHANCED_VALIDATION` | `false` | Enhanced attribute validation with suggestions |
+| `ENABLE_FIELD_VERIFICATION` | `false` | Field persistence verification after updates |
+| `STRICT_FIELD_VALIDATION` | `false` | Reject unknown fields instead of ignoring |
+
+**Note**: Test thoroughly before enabling in production.
+
 ## Precedence & Compatibility (with System‑Wide CLAUDE.md)
 
 - **This repo doc overrides** system rules when they conflict.
