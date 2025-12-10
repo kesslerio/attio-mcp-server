@@ -348,12 +348,12 @@ export async function handleUniversalGetAttributeOptions(
   const objectSlug =
     OBJECT_SLUG_MAP[resource_type.toLowerCase()] || resource_type.toLowerCase();
 
-  // For lists, we need to use the list-specific options endpoint
+  // Lists require both list_id and attribute_slug - not yet supported via this tool
+  // TODO: Add list_id parameter to support list attributes (see plan Phase 3B)
   if (resource_type === UniversalResourceType.LISTS) {
-    return AttributeOptionsService.getListOptions(
-      attribute, // For lists, attribute is the list ID
-      attribute,
-      show_archived
+    throw new Error(
+      'records_get_attribute_options does not yet support list attributes. ' +
+        'Use get-list-details to inspect list attribute schemas instead.'
     );
   }
 

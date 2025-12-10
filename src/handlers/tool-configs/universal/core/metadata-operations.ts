@@ -265,7 +265,7 @@ export const discoverAttributesDefinition = {
     boundaries: 'alter schema or create fields.',
     constraints: 'Requires resource_type; optional categories selects subsets.',
     recoveryHint:
-      'Follow with records.get_attributes to inspect specific fields.',
+      'For select/status attributes, use records_get_attribute_options to fetch valid values before creating or updating records.',
   }),
   inputSchema: discoverAttributesSchema,
   annotations: {
@@ -368,7 +368,7 @@ export const getAttributeOptionsDefinition = {
     boundaries: 'return options for text, number, or other non-option types.',
     constraints: 'Requires resource_type and attribute slug/ID.',
     recoveryHint:
-      'Use records_discover_attributes to find option-based attributes first.',
+      'Use records_discover_attributes to find option-based attributes first. Use retrieved option titles when calling create-record or update-record.',
   }),
   inputSchema: getAttributeOptionsSchema,
   annotations: {

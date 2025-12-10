@@ -103,19 +103,27 @@ const enhanceSelectStatusError = async (
         const { options, attributeType } =
           await AttributeOptionsService.getOptions(resourceType, fieldName);
         const validList = options
-          .slice(0, 10)
+          .slice(0, 8)
           .map((o) => o.title)
           .join(', ');
+        const hasMore =
+          options.length > 8 ? ` (+${options.length - 8} more)` : '';
         return (
-          `Invalid ${attributeType} value "${invalidValue}" for field "${fieldName}". ` +
-          `Valid options: ${validList}. ` +
-          `Use records_get_attribute_options(resource_type="${resourceType}", attribute="${fieldName}") for full list.`
+          `Value "${invalidValue}" is not valid for ${attributeType} attribute "${fieldName}" on ${resourceType}.\n\n` +
+          `Valid options: ${validList}${hasMore}\n\n` +
+          `Next step: Call records_get_attribute_options with\n` +
+          `  resource_type: "${resourceType}"\n` +
+          `  attribute: "${fieldName}"\n` +
+          `to list all valid values, then retry.`
         );
       } catch {
         // Can't fetch options, return generic hint
         return (
-          `Invalid select/status value "${invalidValue}" for field "${fieldName}". ` +
-          `Use records_get_attribute_options(resource_type="${resourceType}", attribute="${fieldName}") to see valid options.`
+          `Value "${invalidValue}" is not valid for attribute "${fieldName}" on ${resourceType}.\n\n` +
+          `Next step: Call records_get_attribute_options with\n` +
+          `  resource_type: "${resourceType}"\n` +
+          `  attribute: "${fieldName}"\n` +
+          `to see valid options, then retry.`
         );
       }
     }
@@ -123,8 +131,8 @@ const enhanceSelectStatusError = async (
 
   // Couldn't match to a specific field, return generic hint
   return (
-    `Invalid select/status value "${invalidValue}". ` +
-    `Use records_get_attribute_options to discover valid options.`
+    `Value "${invalidValue}" is not valid for an attribute on ${resourceType}.\n\n` +
+    `Next step: Use records_get_attribute_options to discover valid options for the attribute.`
   );
 };
 

@@ -17,7 +17,6 @@ import { error as logError } from '@/utils/logger.js';
 export interface AttributeOptionsResult {
   options: (AttioSelectOption | AttioStatusOption)[];
   attributeType: 'select' | 'status';
-  isMultiSelect?: boolean;
 }
 
 /**
@@ -67,7 +66,17 @@ export class AttributeOptionsService {
         logError(
           'AttributeOptionsService',
           `Failed to get options for ${objectSlug}.${attributeSlug}`,
-          { selectError, statusError }
+          statusError instanceof Error ? statusError : selectError,
+          {
+            selectError:
+              selectError instanceof Error
+                ? selectError.message
+                : String(selectError),
+            statusError:
+              statusError instanceof Error
+                ? statusError.message
+                : String(statusError),
+          }
         );
 
         // Throw the original select error with enhanced message
