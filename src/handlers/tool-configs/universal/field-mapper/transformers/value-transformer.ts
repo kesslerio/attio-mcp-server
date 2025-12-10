@@ -3,7 +3,8 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/field-mapper/types.js';
+import { normalizeLocation } from '@/utils/location-normalizer.js';
 
 /**
  * Converts various value types to boolean for task completion status
@@ -200,6 +201,25 @@ export async function transformFieldValue(
       }
       // For other types, wrap in array
       return [value];
+    }
+  }
+
+  // Handle location fields (primary_location, location) for companies and people
+  // Attio requires ALL location fields to be present, even if null
+  // Uses shared normalizeLocation utility for consistent behavior
+  if (
+    (resourceType === UniversalResourceType.COMPANIES ||
+      resourceType === UniversalResourceType.PEOPLE) &&
+    (fieldName === 'primary_location' || fieldName === 'location')
+  ) {
+    // If value is a string, Attio will parse it - pass through
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    // If value is an object, normalize to ensure all required fields are present
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      return normalizeLocation(value as Record<string, unknown>);
     }
   }
 

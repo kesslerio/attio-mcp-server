@@ -82,6 +82,12 @@ export async function processFieldValue(
     if (fieldType === 'array' && typeof value === 'string') {
       return [value];
     }
+
+    // Object fields (like location, primary_location) should pass through as-is
+    // Issue #987: Don't convert location objects to strings
+    if (fieldType === 'object' && typeof value === 'object' && value !== null) {
+      return value as ProcessedFieldValue;
+    }
   } catch {
     if (
       isBooleanFieldByName(fieldName) &&
