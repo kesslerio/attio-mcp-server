@@ -21,6 +21,8 @@ Commits are considered "meaningful" when their subject line starts with one of t
 
 Commits using other prefixes (for example `Chore:`, `Docs:`, `Test:`) are generally excluded from the automated daily changelog.
 
+> **Note:** These prefixes are **case-sensitive** and must appear exactly at the start of the commit subject line. For example, `fix:` (lowercase) or `Feature(scope):` will not be matched.
+
 ## Improvements Made
 
 ### Key Issues Resolved

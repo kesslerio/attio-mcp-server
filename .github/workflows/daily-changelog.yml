@@ -116,8 +116,9 @@ jobs:
           echo "Claude action failed, using fallback method..."
 
           # Avoid duplicate PRs: skip if an open Daily changelog PR already exists
-          EXISTING_PR=$(gh pr list --state open --search "chore: Daily changelog for" --limit 1 --json number 2>/dev/null || true)
-          if [ -n "$EXISTING_PR" ]; then
+          # Use --jq 'length' to correctly detect zero vs non-zero results (empty array [] is non-empty string)
+          EXISTING_PR_COUNT=$(gh pr list --state open --search "chore: Daily changelog for" --limit 1 --json number --jq 'length' 2>/dev/null || echo 0)
+          if [ "$EXISTING_PR_COUNT" -gt 0 ]; then
             echo "Open Daily changelog PR already exists - skipping fallback changelog update"
             exit 0
           fi
@@ -190,9 +191,6 @@ jobs:
           gh pr create --title "chore: Daily changelog for $TODAY" --body "Automated daily changelog generation (fallback method)"
 
           echo "Fallback changelog generation completed successfully"
-
-          # Mark that a changelog branch/PR was created for summary reporting
-          echo "BRANCH_CREATED=1" >> "$GITHUB_ENV"
 
       - name: Workflow summary
         if: always()

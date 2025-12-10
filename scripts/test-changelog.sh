@@ -27,24 +27,26 @@ echo "Current git status:"
 git status --short
 
 # Get recent commits
+# Use the SAME prefix policy as the workflow: Fix:, Feature:, Refactor:, Perf:, UI:, UX:
+# These prefixes are CASE-SENSITIVE and must appear at the start of the commit subject.
 echo ""
-echo "Recent commits (last 24 hours):"
-COMMITS=$(git log --since="1 day ago" --oneline --no-merges | grep -E "(Fix|Feature|Add|Update|Improve|Remove|Refactor)" || true)
+echo "Recent commits (last 24 hours) matching meaningful prefixes:"
+COMMITS=$(git log --since="1 day ago" --format='%h %s' --no-merges | grep -E '^[0-9a-f]+ (Fix:|Feature:|Refactor:|Perf:|UI:|UX:)' || true)
 
 if [ -z "$COMMITS" ]; then
     echo "No meaningful changes in the last 24 hours"
-    echo "For testing, showing commits from last 7 days:"
-    COMMITS=$(git log --since="7 days ago" --oneline --no-merges | head -10)
+    echo "For testing, showing ALL commits from last 7 days (not filtered by prefix):"
+    COMMITS=$(git log --since="7 days ago" --format='%h %s' --no-merges | head -10)
 fi
 
 echo "$COMMITS"
 
-# Categorize commits
+# Categorize commits using the SAME categories as the workflow
 echo ""
 echo "Categorizing commits..."
-FEATURES=$(echo "$COMMITS" | grep -E "(Feature|Add)" || true)
-FIXES=$(echo "$COMMITS" | grep -E "(Fix|Improve)" || true)  
-CHANGES=$(echo "$COMMITS" | grep -E "(Update|Refactor|Change)" || true)
+FEATURES=$(echo "$COMMITS" | grep -E '^[0-9a-f]+ (Feature:)' || true)
+FIXES=$(echo "$COMMITS" | grep -E '^[0-9a-f]+ (Fix:)' || true)
+CHANGES=$(echo "$COMMITS" | grep -E '^[0-9a-f]+ (Refactor:|Perf:|UI:|UX:)' || true)
 
 # Generate changelog content
 TODAY=$(date +%Y-%m-%d)
