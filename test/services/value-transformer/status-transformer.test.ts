@@ -87,6 +87,31 @@ describe('status-transformer', () => {
       expect(result.transformedValue).toBe(123);
     });
 
+    it('should convert UUID strings directly to status_id without lookup', async () => {
+      const { AttributeOptionsService } = await import(
+        '@/services/metadata/index.js'
+      );
+      const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
+      mockGetOptions.mockResolvedValue({
+        options: [{ id: 'status-uuid-1', title: 'MQL', is_archived: false }],
+        attributeType: 'status',
+      });
+
+      const uuid = '7fc992e0-d89b-40bd-b158-8ab25ea86904';
+
+      const result = await transformStatusValue(
+        uuid,
+        'stage',
+        mockContext,
+        statusAttributeMeta
+      );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual({ status_id: uuid });
+      expect(result.description).toContain('UUID string');
+      expect(mockGetOptions).not.toHaveBeenCalled();
+    });
+
     it('should transform status title to status_id format', async () => {
       const { AttributeOptionsService } = await import(
         '@/services/metadata/index.js'
