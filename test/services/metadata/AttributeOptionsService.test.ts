@@ -194,19 +194,21 @@ describe('AttributeOptionsService', () => {
           new Error('Status: 404 Not Found')
         );
 
-        await expect(
-          AttributeOptionsService.getOptions('invalid', 'attribute')
-        ).rejects.toThrow('does not support options');
-
-        // Verify both error messages are included
+        // Single call to verify error message contains all expected parts
+        let error: Error | undefined;
         try {
           await AttributeOptionsService.getOptions('invalid', 'attribute');
-        } catch (error) {
-          expect((error as Error).message).toContain('Select error:');
-          expect((error as Error).message).toContain('Status error:');
-          expect((error as Error).message).toContain('Select: 404 Not Found');
-          expect((error as Error).message).toContain('Status: 404 Not Found');
+          expect.fail('Should have thrown');
+        } catch (e) {
+          error = e as Error;
         }
+
+        expect(error).toBeDefined();
+        expect(error!.message).toContain('does not support options');
+        expect(error!.message).toContain('Select error:');
+        expect(error!.message).toContain('Status error:');
+        expect(error!.message).toContain('Select: 404 Not Found');
+        expect(error!.message).toContain('Status: 404 Not Found');
       });
 
       it('should include attribute and object info in error message', async () => {

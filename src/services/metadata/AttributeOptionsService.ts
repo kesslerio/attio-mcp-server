@@ -80,7 +80,8 @@ export class AttributeOptionsService {
       logError(
         'AttributeOptionsService',
         `Status endpoint failed for ${objectSlug}.${attributeSlug}`,
-        err
+        err,
+        { objectSlug, attributeSlug }
       );
     }
 
@@ -140,7 +141,8 @@ export class AttributeOptionsService {
       logError(
         'AttributeOptionsService',
         `Failed to get list options for ${listId}.${attributeSlug}`,
-        err
+        err,
+        { listId, attributeSlug }
       );
       throw err;
     }
