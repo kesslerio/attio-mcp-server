@@ -1,6 +1,6 @@
 /**
  * TC-EC07: Attribute Validation Error Handling
- * P2 Edge Cases Test - PR #976 Complete Coverage (Phases 1-4)
+ * P2 Edge Cases Test - PR #976 Complete Coverage (Phases 1-4) + Issue #980
  *
  * Validates all attribute-related error handling and UX improvements:
  *
@@ -19,6 +19,10 @@
  * - Invalid attribute on update triggers enhanced error with suggestions
  * - Error message includes `records_discover_attributes` hint
  * - Field alias mapping normalizes common mistakes (linkedin_url → linkedin)
+ *
+ * Issue #980 UX Fixes:
+ * - Display name → API slug resolution ("Deal stage" → "stage")
+ * - Error messages show actual attribute name (not "attribute" placeholder)
  *
  * Resources covered: people, companies, deals, lists
  */
@@ -352,6 +356,70 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
 
       testResults.push(result);
       expect(result.passed).toBe(true);
+    });
+  });
+
+  describe('Display Name to API Slug Resolution (Issue #980)', () => {
+    it('should resolve display name "Deal stage" to API slug "stage"', async () => {
+      // Issue #980: When user provides display name instead of API slug,
+      // the tool should automatically resolve it
+      const result = await testCase.executeToolCall(
+        'records_get_attribute_options',
+        {
+          resource_type: 'deals',
+          attribute: 'Deal stage', // Display name, not API slug
+        }
+      );
+
+      const text = testCase.extractTextContent(result);
+      const isSuccess = !result.isError && text.length > 0;
+
+      testResults.push({
+        test: 'display_name_resolution_deal_stage',
+        passed: isSuccess,
+        executionTime: 0,
+        expectedBehavior: 'graceful_handling',
+        actualBehavior: isSuccess ? 'success' : 'error',
+        error: isSuccess ? undefined : text,
+      });
+
+      // Should succeed by resolving "Deal stage" to "stage"
+      expect(result.isError).toBeFalsy();
+      // Verify response contains stage options
+      expect(text.toLowerCase()).toMatch(/option|stage/i);
+    });
+
+    it('should show attribute name in error messages (not placeholder)', async () => {
+      // Issue #980: formatResult was showing "attribute" instead of actual name
+      const result = await testCase.executeToolCall(
+        'records_get_attribute_options',
+        {
+          resource_type: 'companies',
+          attribute: 'name', // text field, not a select
+        }
+      );
+
+      const text = testCase.extractTextContent(result);
+      // Error message should mention "name", not generic "attribute"
+      const hasActualAttributeName =
+        text.includes('"name"') || text.includes("'name'");
+      const hasGenericPlaceholder =
+        text.includes('"attribute"') && !text.includes('"name"');
+
+      testResults.push({
+        test: 'error_shows_actual_attribute_name',
+        passed: hasActualAttributeName && !hasGenericPlaceholder,
+        executionTime: 0,
+        expectedBehavior: 'graceful_handling',
+        actualBehavior: hasActualAttributeName ? 'success' : 'error',
+        error:
+          hasActualAttributeName && !hasGenericPlaceholder
+            ? undefined
+            : `Expected "name" in message, got placeholder: ${text.substring(0, 200)}`,
+      });
+
+      expect(hasActualAttributeName).toBe(true);
+      expect(hasGenericPlaceholder).toBe(false);
     });
   });
 

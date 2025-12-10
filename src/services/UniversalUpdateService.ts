@@ -584,6 +584,68 @@ export class UniversalUpdateService {
       }
     }
 
+    // FEATURE: Auto-transform values for Issue #980 UX improvements
+    // Transforms: status titles → {status_id: uuid}, single values → arrays for multi-select
+    try {
+      const { transformRecordValues, mayNeedTransformation } = await import(
+        './value-transformer/index.js'
+      );
+
+      // Quick check to avoid unnecessary async work
+      if (
+        mayNeedTransformation(
+          attioPayload.values as Record<string, unknown>,
+          resource_type
+        )
+      ) {
+        const transformResult = await transformRecordValues(
+          attioPayload.values as Record<string, unknown>,
+          {
+            resourceType: resource_type,
+            operation: 'update',
+            recordId: record_id,
+          }
+        );
+
+        attioPayload.values = transformResult.data;
+
+        // Log transformations for debugging
+        if (transformResult.transformations.length > 0) {
+          debug('UniversalUpdateService', 'Value transformations applied', {
+            transformations: transformResult.transformations.map((t) => ({
+              field: t.field,
+              type: t.type,
+            })),
+          });
+        }
+
+        if (transformResult.warnings.length > 0) {
+          debug('UniversalUpdateService', 'Value transformation warnings', {
+            warnings: transformResult.warnings,
+          });
+        }
+      }
+    } catch (transformError) {
+      // If transformation throws (e.g., invalid status value), propagate the error
+      if (transformError instanceof Error) {
+        throw new UniversalValidationError(
+          transformError.message,
+          ErrorType.USER_ERROR,
+          {
+            suggestion:
+              'Check that field values match the expected format. Use records_get_attribute_options to see valid options.',
+            field: undefined,
+            cause: undefined,
+          }
+        );
+      }
+      throw transformError;
+    }
+
+    // Capture post-transform data for verification (PR #981 review feedback)
+    // This ensures verification compares what was actually sent to API
+    const dataForVerification = { ...attioPayload.values };
+
     let updatedRecord: AttioRecord;
 
     switch (resource_type) {
@@ -686,10 +748,11 @@ export class UniversalUpdateService {
       process.env.ENABLE_FIELD_VERIFICATION !== 'false'
     ) {
       try {
+        // Use post-transform data for accurate verification (PR #981 review feedback)
         const verification = await UpdateValidation.verifyFieldPersistence(
           resource_type,
           record_id,
-          sanitizedData
+          dataForVerification
         );
         if (verification.warnings.length > 0) {
           logError(
