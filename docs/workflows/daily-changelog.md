@@ -4,6 +4,25 @@
 
 The daily changelog workflow automatically generates changelog entries by analyzing git commits from the last 24 hours. It runs at 8 PM PT daily and can also be triggered manually.
 
+The changelog is intentionally focused on **meaningful product changes**:
+
+- Bug fixes
+- New features
+- Refactors or performance improvements that impact UX/behavior
+
+Commits are considered "meaningful" when their subject line starts with one of these prefixes:
+
+- `Fix:`
+- `Feature:`
+- `Refactor:`
+- `Perf:`
+- `UI:`
+- `UX:`
+
+Commits using other prefixes (for example `Chore:`, `Docs:`, `Test:`) are generally excluded from the automated daily changelog.
+
+> **Note:** These prefixes are **case-sensitive** and must appear exactly at the start of the commit subject line. For example, `fix:` (lowercase) or `Feature(scope):` will not be matched.
+
 ## Improvements Made
 
 ### Key Issues Resolved
@@ -70,6 +89,8 @@ flowchart TD
 - Commit changes with descriptive message
 - Create pull request automatically
 
+Only **one** Daily changelog PR should be open at any given time. If an open PR with title matching `chore: Daily changelog for [date]` already exists, the workflow will skip creating a new branch/PR for that run.
+
 ## Manual Testing
 
 Use the provided test script to debug locally:
@@ -114,6 +135,9 @@ permissions:
 1. **No Meaningful Changes**
    - Workflow will output: "No meaningful changes since yesterday"
    - This is expected behavior, not an error
+   - Common reasons:
+     - Only `Chore:`, `Docs:`, or `Test:` commits in the last 24 hours
+     - No commits at all in the last 24 hours
 
 2. **Permission Denied**
    - Check if `CLAUDE_CODE_OAUTH_TOKEN` secret is configured
