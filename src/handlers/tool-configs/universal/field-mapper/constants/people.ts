@@ -37,6 +37,24 @@ export const PEOPLE_FIELD_MAPPING: FieldMapping = {
     // Other fields - 'description' exists on people, don't map to 'notes'
     note: 'description',
     bio: 'description',
+
+    // LinkedIn aliases (common mistakes)
+    linkedin_url: 'linkedin',
+    linkedin_link: 'linkedin',
+    linkedinUrl: 'linkedin',
+    linkedIn: 'linkedin',
+
+    // Twitter aliases (common mistakes)
+    twitter_url: 'twitter',
+    twitter_handle: 'twitter',
+    twitter_link: 'twitter',
+    twitterHandle: 'twitter',
+    twitterUrl: 'twitter',
+
+    // Facebook aliases
+    facebook_url: 'facebook',
+    facebook_link: 'facebook',
+    facebookUrl: 'facebook',
   },
   validFields: [
     'name',

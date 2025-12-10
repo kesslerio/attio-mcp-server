@@ -131,23 +131,40 @@ export const COMPANY_FIELD_MAPPINGS = {
   employee_count: 'team_size',
   headcount: 'team_size',
   staff_count: 'team_size',
+
+  // LinkedIn aliases (common mistakes)
+  linkedin_url: 'linkedin',
+  linkedin_link: 'linkedin',
+  linkedinUrl: 'linkedin',
+  linkedIn: 'linkedin',
+
+  // Twitter aliases (common mistakes)
+  twitter_url: 'twitter',
+  twitter_handle: 'twitter',
+  twitter_link: 'twitter',
+  twitterHandle: 'twitter',
+  twitterUrl: 'twitter',
+
+  // Facebook aliases
+  facebook_url: 'facebook',
+  facebook_link: 'facebook',
+  facebookUrl: 'facebook',
 };
 
 export const COMPANY_VALID_FIELDS = [
   'name',
   'domains',
   'description',
-  'industry',
-  'team_size',
-  'founded_at',
-  'headquarters',
-  'linkedin_url',
-  'twitter_handle',
-  'facebook_url',
-  'crunchbase_url',
-  'annual_revenue',
   'categories',
-  'locations',
+  'primary_location',
+  'team', // Associated people
+  'linkedin', // Note: canonical field name, not linkedin_url
+  'twitter', // Note: canonical field name, not twitter_handle
+  'facebook', // Note: canonical field name, not facebook_url
+  'instagram',
+  'angellist',
+  'associated_deals',
+  'associated_workspaces',
 ];
 
 export const COMPANY_COMMON_MISTAKES = {
@@ -195,6 +212,24 @@ export const PEOPLE_FIELD_MAPPINGS = {
   job_role: 'title',
   occupation: 'title',
   designation: 'title',
+
+  // LinkedIn aliases (common mistakes)
+  linkedin_url: 'linkedin',
+  linkedin_link: 'linkedin',
+  linkedinUrl: 'linkedin',
+  linkedIn: 'linkedin',
+
+  // Twitter aliases (common mistakes)
+  twitter_url: 'twitter',
+  twitter_handle: 'twitter',
+  twitter_link: 'twitter',
+  twitterHandle: 'twitter',
+  twitterUrl: 'twitter',
+
+  // Facebook aliases
+  facebook_url: 'facebook',
+  facebook_link: 'facebook',
+  facebookUrl: 'facebook',
 };
 
 export const PEOPLE_VALID_FIELDS = [
@@ -202,13 +237,14 @@ export const PEOPLE_VALID_FIELDS = [
   'email_addresses',
   'phone_numbers',
   'title',
-  'linkedin_url',
-  'twitter_handle',
+  'linkedin', // Note: canonical field name, not linkedin_url
+  'twitter', // Note: canonical field name, not twitter_handle
+  'facebook',
   'location',
-  'avatar_url',
-  'timezone',
-  'primary_email_address',
-  'primary_phone_number',
+  'description',
+  'company',
+  'first_name',
+  'last_name',
 ];
 
 export const PEOPLE_COMMON_MISTAKES = {
