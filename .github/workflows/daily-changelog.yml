@@ -150,31 +150,31 @@ jobs:
 
           if [ ! -z "$FEATURES" ]; then
             CHANGELOG_ENTRY="${CHANGELOG_ENTRY}### Added\n"
-            echo "$FEATURES" | while read line; do
+            while read -r line; do
               if [ ! -z "$line" ]; then
                 CHANGELOG_ENTRY="${CHANGELOG_ENTRY}- ${line#* }\n"
               fi
-            done
+            done <<< "$FEATURES"
             CHANGELOG_ENTRY="${CHANGELOG_ENTRY}\n"
           fi
 
           if [ ! -z "$FIXES" ]; then
             CHANGELOG_ENTRY="${CHANGELOG_ENTRY}### Fixed\n"
-            echo "$FIXES" | while read line; do
+            while read -r line; do
               if [ ! -z "$line" ]; then
                 CHANGELOG_ENTRY="${CHANGELOG_ENTRY}- ${line#* }\n"
               fi
-            done
+            done <<< "$FIXES"
             CHANGELOG_ENTRY="${CHANGELOG_ENTRY}\n"
           fi
 
           if [ ! -z "$CHANGES" ]; then
             CHANGELOG_ENTRY="${CHANGELOG_ENTRY}### Changed\n"
-            echo "$CHANGES" | while read line; do  
+            while read -r line; do
               if [ ! -z "$line" ]; then
                 CHANGELOG_ENTRY="${CHANGELOG_ENTRY}- ${line#* }\n"
               fi
-            done
+            done <<< "$CHANGES"
             CHANGELOG_ENTRY="${CHANGELOG_ENTRY}\n"
           fi
 
