@@ -203,6 +203,55 @@ export async function transformFieldValue(
     }
   }
 
+  // Handle location fields (primary_location, location) for companies and people
+  // Attio requires ALL location fields to be present, even if null
+  if (
+    (resourceType === UniversalResourceType.COMPANIES ||
+      resourceType === UniversalResourceType.PEOPLE) &&
+    (fieldName === 'primary_location' || fieldName === 'location')
+  ) {
+    // If value is a string, Attio will parse it - pass through
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    // If value is an object, ensure all required fields are present
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      const locationObj = value as Record<string, unknown>;
+
+      // Required location fields per Attio API docs
+      // All must be present even if null (attribute_type NOT required in write payload)
+      const normalizedLocation: Record<string, unknown> = {
+        line_1:
+          locationObj.line_1 ??
+          locationObj.street ??
+          locationObj.address ??
+          null,
+        line_2: locationObj.line_2 ?? null,
+        line_3: locationObj.line_3 ?? null,
+        line_4: locationObj.line_4 ?? null,
+        locality: locationObj.locality ?? locationObj.city ?? null,
+        region:
+          locationObj.region ??
+          locationObj.state ??
+          locationObj.province ??
+          null,
+        postcode:
+          locationObj.postcode ??
+          locationObj.postal_code ??
+          locationObj.zip ??
+          locationObj.zip_code ??
+          null,
+        country_code: locationObj.country_code ?? locationObj.country ?? null,
+        latitude: locationObj.latitude ?? locationObj.lat ?? null,
+        longitude:
+          locationObj.longitude ?? locationObj.lng ?? locationObj.lon ?? null,
+      };
+
+      return normalizedLocation;
+    }
+  }
+
   // Default: return value unchanged
   return value;
 }

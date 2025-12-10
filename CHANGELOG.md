@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Companies: `team_size`, `founded_at`, `headquarters`, `crunchbase`, `instagram`, `angellist`, etc.
   - People: `primary_email_address`, `primary_phone_number`, `avatar_url`, `timezone`, `instagram`, etc.
 
+- **Location field auto-normalization** (#987) - Incomplete location objects now auto-fill missing fields
+  - Attio requires all 10 location fields (`line_1`-`line_4`, `locality`, `region`, `postcode`, `country_code`, `latitude`, `longitude`) even if null
+  - Transformer auto-fills missing fields with `null` to prevent validation errors
+  - Common aliases supported: `street`→`line_1`, `city`→`locality`, `state`→`region`, `zip`→`postcode`, `lat`→`latitude`
+
 ### Fixed
 
 - **`records_get_attribute_options` now returns status options** (#987) - Fixed empty results for status attributes
