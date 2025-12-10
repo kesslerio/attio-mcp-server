@@ -19,6 +19,7 @@ import {
   UniversalUpdateNoteParams,
   UniversalSearchNotesParams,
   UniversalDeleteNoteParams,
+  UniversalGetAttributeOptionsParams,
 } from './types.js';
 
 import { JsonObject } from '../../../types/attio.js';
@@ -31,6 +32,10 @@ import { UniversalUpdateService } from '../../../services/UniversalUpdateService
 import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
 import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
 import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import {
+  AttributeOptionsService,
+  type AttributeOptionsResult,
+} from '../../../services/metadata/index.js';
 import { getLazyAttioClient } from '../../../api/lazy-client.js';
 
 // Import existing handlers by resource type
@@ -315,6 +320,49 @@ export async function handleUniversalDiscoverAttributes(
   }
 ): Promise<JsonObject> {
   return UniversalMetadataService.discoverAttributes(resource_type, options);
+}
+
+/**
+ * Object slug mapping for resource types
+ */
+const OBJECT_SLUG_MAP: Record<string, string> = {
+  companies: 'companies',
+  people: 'people',
+  deals: 'deals',
+  tasks: 'tasks',
+  records: 'records',
+  lists: 'lists',
+  notes: 'notes',
+};
+
+/**
+ * Universal get attribute options handler
+ * Retrieves valid options for select, multi-select, and status attributes
+ */
+export async function handleUniversalGetAttributeOptions(
+  params: UniversalGetAttributeOptionsParams
+): Promise<AttributeOptionsResult> {
+  const { resource_type, attribute, show_archived } = params;
+
+  // Map resource type to object slug
+  const objectSlug =
+    OBJECT_SLUG_MAP[resource_type.toLowerCase()] || resource_type.toLowerCase();
+
+  // Lists require both list_id and attribute_slug - not yet supported via this tool
+  // TODO: Add list_id parameter to support list attributes (see plan Phase 3B)
+  if (resource_type === UniversalResourceType.LISTS) {
+    throw new Error(
+      'records_get_attribute_options does not yet support list attributes. ' +
+        'Use get-list-details to inspect list attribute schemas instead.'
+    );
+  }
+
+  // Standard objects use the object options endpoint
+  return AttributeOptionsService.getOptions(
+    objectSlug,
+    attribute,
+    show_archived
+  );
 }
 
 /**

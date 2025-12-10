@@ -131,23 +131,72 @@ export const COMPANY_FIELD_MAPPINGS = {
   employee_count: 'team_size',
   headcount: 'team_size',
   staff_count: 'team_size',
+
+  // LinkedIn aliases (common mistakes)
+  linkedin_url: 'linkedin',
+  linkedin_link: 'linkedin',
+  linkedinUrl: 'linkedin',
+  linkedIn: 'linkedin',
+
+  // Twitter aliases (common mistakes)
+  twitter_url: 'twitter',
+  twitter_handle: 'twitter',
+  twitter_link: 'twitter',
+  twitterHandle: 'twitter',
+  twitterUrl: 'twitter',
+
+  // Facebook aliases
+  facebook_url: 'facebook',
+  facebook_link: 'facebook',
+  facebookUrl: 'facebook',
 };
 
 export const COMPANY_VALID_FIELDS = [
+  // Core fields
   'name',
   'domains',
   'description',
+  'categories',
   'industry',
+  'type',
+  'typpe', // Valid Attio field (not a typo)
+
+  // Size and financials
   'team_size',
+  'employee_count',
+  'estimated_arr',
+  'revenue',
+  'founded',
   'founded_at',
+
+  // Location fields
+  'location',
+  'locations',
+  'primary_location',
   'headquarters',
+
+  // Social media - canonical names
+  'linkedin',
+  'twitter',
+  'facebook',
+  'instagram',
+  'angellist',
+  'crunchbase',
+
+  // Social media - alias forms (for validation acceptance)
   'linkedin_url',
+  'twitter_url',
   'twitter_handle',
   'facebook_url',
-  'crunchbase_url',
-  'annual_revenue',
-  'categories',
-  'locations',
+
+  // Relationships
+  'team', // Associated people
+  'associated_deals',
+  'associated_workspaces',
+
+  // Other standard fields
+  'notes',
+  'primary_domain',
 ];
 
 export const COMPANY_COMMON_MISTAKES = {
@@ -195,20 +244,60 @@ export const PEOPLE_FIELD_MAPPINGS = {
   job_role: 'title',
   occupation: 'title',
   designation: 'title',
+
+  // LinkedIn aliases (common mistakes)
+  linkedin_url: 'linkedin',
+  linkedin_link: 'linkedin',
+  linkedinUrl: 'linkedin',
+  linkedIn: 'linkedin',
+
+  // Twitter aliases (common mistakes)
+  twitter_url: 'twitter',
+  twitter_handle: 'twitter',
+  twitter_link: 'twitter',
+  twitterHandle: 'twitter',
+  twitterUrl: 'twitter',
+
+  // Facebook aliases
+  facebook_url: 'facebook',
+  facebook_link: 'facebook',
+  facebookUrl: 'facebook',
 };
 
 export const PEOPLE_VALID_FIELDS = [
+  // Core fields
   'name',
+  'first_name',
+  'last_name',
   'email_addresses',
   'phone_numbers',
   'title',
-  'linkedin_url',
-  'twitter_handle',
-  'location',
-  'avatar_url',
-  'timezone',
+  'description',
+
+  // Primary contact fields
   'primary_email_address',
   'primary_phone_number',
+
+  // Profile fields
+  'avatar_url',
+  'timezone',
+  'location',
+
+  // Social media - canonical names
+  'linkedin',
+  'twitter',
+  'facebook',
+  'instagram',
+
+  // Social media - alias forms (for validation acceptance)
+  'linkedin_url',
+  'twitter_url',
+  'twitter_handle',
+  'facebook_url',
+
+  // Relationships
+  'company',
+  'associated_deals',
 ];
 
 export const PEOPLE_COMMON_MISTAKES = {

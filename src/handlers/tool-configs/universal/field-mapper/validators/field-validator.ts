@@ -20,7 +20,9 @@ function getRequiredFieldErrorMessage(
 
   // Add resource-specific examples for common required fields
   if (resourceType === UniversalResourceType.DEALS && fieldName === 'stage') {
-    return `${baseMessage}. Example: stage: "Interested" (common values: "Interested", "Qualified", "Proposal", "Negotiation", "Closed Won", "Closed Lost")`;
+    // Don't hard-code stage examples - they vary by workspace
+    // Instead, guide users to discover valid options
+    return `${baseMessage}. Tip: Use records_get_attribute_options(resource_type="deals", attribute="stage") to see valid stages for your workspace.`;
   }
 
   if (resourceType === UniversalResourceType.DEALS && fieldName === 'name') {

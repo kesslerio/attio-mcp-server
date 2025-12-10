@@ -169,4 +169,50 @@ describe('crud-error-handlers', () => {
       message: expect.stringContaining('generic search failure'),
     });
   });
+
+  describe('attribute-not-found error handling', () => {
+    it('throws attribute_not_found with suggestions for unknown create attribute', async () => {
+      await expect(
+        handleCreateError(
+          new Error('Cannot find attribute with slug/ID "linkedin_url".'),
+          UniversalResourceType.PEOPLE,
+          { linkedin_url: 'https://linkedin.com/in/test' }
+        )
+      ).rejects.toMatchObject({
+        name: 'attribute_not_found',
+        message: expect.stringContaining(
+          'Attribute "linkedin_url" does not exist'
+        ),
+      });
+    });
+
+    it('throws attribute_not_found with suggestions for unknown update attribute', async () => {
+      await expect(
+        handleUpdateError(
+          new Error('Cannot find attribute with slug/ID "twitter_handle".'),
+          UniversalResourceType.PEOPLE,
+          { twitter_handle: '@testuser' },
+          'person_123'
+        )
+      ).rejects.toMatchObject({
+        name: 'attribute_not_found',
+        message: expect.stringContaining(
+          'Attribute "twitter_handle" does not exist'
+        ),
+      });
+    });
+
+    it('includes discovery hint in attribute-not-found error message', async () => {
+      await expect(
+        handleCreateError(
+          new Error('Cannot find attribute with slug/ID "unknown_field".'),
+          companies,
+          { unknown_field: 'test' }
+        )
+      ).rejects.toMatchObject({
+        name: 'attribute_not_found',
+        message: expect.stringContaining('records_discover_attributes'),
+      });
+    });
+  });
 });

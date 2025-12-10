@@ -17,8 +17,10 @@ import {
 import {
   getAttributesConfig,
   discoverAttributesConfig,
+  getAttributeOptionsConfig,
   getAttributesDefinition,
   discoverAttributesDefinition,
+  getAttributeOptionsDefinition,
 } from './metadata-operations.js';
 import {
   getDetailedInfoConfig,
@@ -41,6 +43,7 @@ export const coreOperationsToolConfigs = {
   'delete-record': deleteRecordConfig,
   records_get_attributes: getAttributesConfig,
   records_discover_attributes: discoverAttributesConfig,
+  records_get_attribute_options: getAttributeOptionsConfig,
   records_get_info: getDetailedInfoConfig,
 };
 
@@ -52,6 +55,7 @@ export const coreOperationsToolDefinitions = {
   'delete-record': deleteRecordDefinition,
   records_get_attributes: getAttributesDefinition,
   records_discover_attributes: discoverAttributesDefinition,
+  records_get_attribute_options: getAttributeOptionsDefinition,
   records_get_info: getDetailedInfoDefinition,
   'create-note': createNoteDefinition,
   'list-notes': listNotesDefinition,
@@ -65,6 +69,7 @@ export {
   deleteRecordConfig,
   getAttributesConfig,
   discoverAttributesConfig,
+  getAttributeOptionsConfig,
   getDetailedInfoConfig,
   createNoteConfig,
   listNotesConfig,

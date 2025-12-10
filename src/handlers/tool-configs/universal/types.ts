@@ -257,6 +257,16 @@ export interface UniversalAttributesParams {
 }
 
 /**
+ * Universal get attribute options parameters
+ * Used for retrieving valid options for select, multi-select, and status attributes
+ */
+export interface UniversalGetAttributeOptionsParams {
+  resource_type: UniversalResourceType;
+  attribute: string;
+  show_archived?: boolean;
+}
+
+/**
  * Universal detailed info parameters
  */
 export interface UniversalDetailedInfoParams {

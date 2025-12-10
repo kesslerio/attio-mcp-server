@@ -35,3 +35,7 @@ export { DefaultMetadataErrorService } from './MetadataErrorService.js';
 export { InMemoryMetadataMetricsService } from './MetadataMetricsService.js';
 export { DefaultMetadataRecordService } from './MetadataRecordService.js';
 export { DefaultMetadataTransformService } from './MetadataTransformService.js';
+export {
+  AttributeOptionsService,
+  type AttributeOptionsResult,
+} from './AttributeOptionsService.js';

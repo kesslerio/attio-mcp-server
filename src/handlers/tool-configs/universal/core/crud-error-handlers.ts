@@ -29,6 +29,115 @@ import { sanitizedLog } from './pii-sanitizer.js';
 const logger = createScopedLogger('crud-error-handlers');
 
 /**
+ * Calculate Levenshtein distance between two strings
+ * Used for suggesting similar attribute names
+ */
+const levenshteinDistance = (a: string, b: string): number => {
+  const matrix: number[][] = [];
+
+  // Initialize first column
+  for (let i = 0; i <= a.length; i++) {
+    matrix[i] = [i];
+  }
+
+  // Initialize first row
+  for (let j = 0; j <= b.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  // Fill in the rest of the matrix
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1, // insertion
+          matrix[i - 1][j] + 1 // deletion
+        );
+      }
+    }
+  }
+
+  return matrix[a.length][b.length];
+};
+
+/**
+ * Find similar attribute names using Levenshtein distance
+ */
+const findSimilarAttributes = (
+  target: string,
+  candidates: string[],
+  maxResults: number
+): string[] => {
+  const scored = candidates.map((c) => ({
+    name: c,
+    distance: levenshteinDistance(target.toLowerCase(), c.toLowerCase()),
+  }));
+  return scored
+    .filter((s) => s.distance <= 3) // Max 3 edits
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, maxResults)
+    .map((s) => s.name);
+};
+
+/**
+ * Enhance error messages for attribute-not-found errors
+ * Detects "Cannot find attribute with slug/ID" errors and provides suggestions
+ *
+ * @param error - The original error
+ * @param resourceType - The resource type (companies, people, etc.)
+ * @returns Enhanced error message with suggestions, or null if not an attribute-not-found error
+ */
+const enhanceAttributeNotFoundError = async (
+  error: unknown,
+  resourceType: string
+): Promise<string | null> => {
+  const msg = error instanceof Error ? error.message : String(error);
+
+  // Pattern: "Cannot find attribute with slug/ID "X"."
+  const attrMatch = msg.match(/Cannot find attribute with slug\/ID "(.+?)"/);
+  if (!attrMatch) return null;
+
+  const invalidAttr = attrMatch[1];
+
+  try {
+    // Fetch valid attributes and find similar ones
+    const { handleUniversalDiscoverAttributes } = await import(
+      '../shared-handlers.js'
+    );
+    const schema = await handleUniversalDiscoverAttributes(
+      resourceType as UniversalResourceType
+    );
+    const allAttrs = ((schema as Record<string, unknown>).all || []) as Array<{
+      name: string;
+    }>;
+    const attrNames = allAttrs.map((a) => a.name);
+
+    // Find similar attribute names using Levenshtein distance
+    const suggestions = findSimilarAttributes(invalidAttr, attrNames, 3);
+
+    let message = `Attribute "${invalidAttr}" does not exist on ${resourceType}.\n\n`;
+
+    if (suggestions.length > 0) {
+      message += `Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?\n\n`;
+    }
+
+    message += `Next step: Call records_discover_attributes with\n`;
+    message += `  resource_type: "${resourceType}"\n`;
+    message += `to see all valid attributes.`;
+
+    return message;
+  } catch {
+    return (
+      `Attribute "${invalidAttr}" does not exist on ${resourceType}.\n\n` +
+      `Next step: Use records_discover_attributes to see valid attributes.`
+    );
+  }
+};
+
+/**
  * Extract Attio API validation errors from error response
  * HOTFIX: Improve error messaging for relationship field failures
  */
@@ -62,6 +171,78 @@ const extractAttioValidationErrors = (error: unknown): string | null => {
     // If extraction fails, return null and fall back to generic error handling
   }
   return null;
+};
+
+/**
+ * Enhance error messages for select/status attribute errors
+ * Detects "Cannot find select option" or "Cannot find Status" errors
+ * and provides valid options from AttributeOptionsService
+ *
+ * @param error - The original error
+ * @param resourceType - The resource type (companies, deals, etc.)
+ * @param recordData - The record data that was submitted
+ * @returns Enhanced error message with valid options, or null if not a select/status error
+ */
+const enhanceSelectStatusError = async (
+  error: unknown,
+  resourceType: string,
+  recordData: Record<string, unknown>
+): Promise<string | null> => {
+  const msg = error instanceof Error ? error.message : String(error);
+
+  // Pattern: "Cannot find select option with title 'X'" or "Cannot find Status with title 'X'"
+  const selectMatch = msg.match(
+    /Cannot find (?:select option|Status) with title "(.+?)"/
+  );
+  if (!selectMatch) return null;
+
+  const invalidValue = selectMatch[1];
+
+  // Try to identify which field has the problem by checking record data
+  for (const [fieldName, fieldValue] of Object.entries(recordData)) {
+    if (
+      fieldValue === invalidValue ||
+      (Array.isArray(fieldValue) && fieldValue.includes(invalidValue))
+    ) {
+      try {
+        // Dynamic import to avoid circular dependencies
+        const { AttributeOptionsService } = await import(
+          '../../../../services/metadata/index.js'
+        );
+        const { options, attributeType } =
+          await AttributeOptionsService.getOptions(resourceType, fieldName);
+        const validList = options
+          .slice(0, 8)
+          .map((o) => o.title)
+          .join(', ');
+        const hasMore =
+          options.length > 8 ? ` (+${options.length - 8} more)` : '';
+        return (
+          `Value "${invalidValue}" is not valid for ${attributeType} attribute "${fieldName}" on ${resourceType}.\n\n` +
+          `Valid options: ${validList}${hasMore}\n\n` +
+          `Next step: Call records_get_attribute_options with\n` +
+          `  resource_type: "${resourceType}"\n` +
+          `  attribute: "${fieldName}"\n` +
+          `to list all valid values, then retry.`
+        );
+      } catch {
+        // Can't fetch options, return generic hint
+        return (
+          `Value "${invalidValue}" is not valid for attribute "${fieldName}" on ${resourceType}.\n\n` +
+          `Next step: Call records_get_attribute_options with\n` +
+          `  resource_type: "${resourceType}"\n` +
+          `  attribute: "${fieldName}"\n` +
+          `to see valid options, then retry.`
+        );
+      }
+    }
+  }
+
+  // Couldn't match to a specific field, return generic hint
+  return (
+    `Value "${invalidValue}" is not valid for an attribute on ${resourceType}.\n\n` +
+    `Next step: Use records_get_attribute_options to discover valid options for the attribute.`
+  );
 };
 
 /**
@@ -117,6 +298,35 @@ export const handleCreateError = async (
     const errorResult = createErrorResult(
       `Failed to create ${resourceName}: A record with similar data already exists.`,
       'duplicate_error',
+      { context }
+    );
+    throw errorResult;
+  }
+
+  // Check for attribute-not-found errors (must come before select/status check)
+  const enhancedAttrError = await enhanceAttributeNotFoundError(
+    error,
+    resourceType
+  );
+  if (enhancedAttrError) {
+    const errorResult = createErrorResult(
+      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedAttrError}`,
+      'attribute_not_found',
+      { context }
+    );
+    throw errorResult;
+  }
+
+  // Check for select/status errors and enhance with valid options
+  const enhancedSelectError = await enhanceSelectStatusError(
+    error,
+    resourceType,
+    recordData
+  );
+  if (enhancedSelectError) {
+    const errorResult = createErrorResult(
+      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
+      'value_not_found',
       { context }
     );
     throw errorResult;
@@ -182,6 +392,36 @@ export const handleUpdateError = async (
     const errorResult = createErrorResult(errorMessage, 'validation_error', {
       context,
     });
+    throw errorResult;
+  }
+
+  // Check for attribute-not-found errors (must come before select/status check)
+  const enhancedAttrError = await enhanceAttributeNotFoundError(
+    error,
+    resourceType
+  );
+  if (enhancedAttrError) {
+    const errorResult = createErrorResult(
+      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedAttrError}`,
+      'attribute_not_found',
+      { context }
+    );
+    throw errorResult;
+  }
+
+  // Check for select/status errors and enhance with valid options
+  // (Must come before "not found" check since select errors contain "not found")
+  const enhancedSelectError = await enhanceSelectStatusError(
+    error,
+    resourceType,
+    recordData
+  );
+  if (enhancedSelectError) {
+    const errorResult = createErrorResult(
+      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
+      'value_not_found',
+      { context }
+    );
     throw errorResult;
   }
 

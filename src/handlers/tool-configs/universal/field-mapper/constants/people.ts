@@ -37,20 +37,59 @@ export const PEOPLE_FIELD_MAPPING: FieldMapping = {
     // Other fields - 'description' exists on people, don't map to 'notes'
     note: 'description',
     bio: 'description',
+
+    // LinkedIn aliases (common mistakes)
+    linkedin_url: 'linkedin',
+    linkedin_link: 'linkedin',
+    linkedinUrl: 'linkedin',
+    linkedIn: 'linkedin',
+
+    // Twitter aliases (common mistakes)
+    twitter_url: 'twitter',
+    twitter_handle: 'twitter',
+    twitter_link: 'twitter',
+    twitterHandle: 'twitter',
+    twitterUrl: 'twitter',
+
+    // Facebook aliases
+    facebook_url: 'facebook',
+    facebook_link: 'facebook',
+    facebookUrl: 'facebook',
   },
   validFields: [
+    // Core fields
     'name',
+    'first_name',
+    'last_name',
     'email_addresses',
     'phone_numbers',
     'title',
-    'company',
-    'location',
-    'twitter',
-    'linkedin',
-    'facebook',
     'description',
-    'first_name',
-    'last_name',
+
+    // Primary contact fields
+    'primary_email_address',
+    'primary_phone_number',
+
+    // Profile fields
+    'avatar_url',
+    'timezone',
+    'location',
+
+    // Social media - canonical names
+    'linkedin',
+    'twitter',
+    'facebook',
+    'instagram',
+
+    // Social media - alias forms (for validation acceptance)
+    'linkedin_url',
+    'twitter_url',
+    'twitter_handle',
+    'facebook_url',
+
+    // Relationships
+    'company',
+    'associated_deals',
   ],
   commonMistakes: {
     email: 'Use "email_addresses" (plural) as an array',

@@ -6,6 +6,12 @@ import { getCompanyDetails, extractCompanyId } from './basic.js';
 import { listCompanies } from './basic.js';
 import { wrapError, getErrorMessage } from '../../utils/error-utilities.js';
 import { createScopedLogger } from '../../utils/logger.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import {
+  buildAttributeMetadataIndex,
+  findAttributeMetadata,
+  resolveFieldType,
+} from '@/services/utils/attribute-metadata.js';
 
 /**
  * Logs attribute operation errors in a consistent format
@@ -39,19 +45,13 @@ export async function getCompanyFields(
   companyIdOrUri: string,
   fields: string[]
 ): Promise<Partial<Company>> {
+  const log = createScopedLogger('companies.attributes', 'getCompanyFields');
   let companyId: string;
 
   try {
     // Extract company ID from URI if needed
     companyId = extractCompanyId(companyIdOrUri);
-
-    if (process.env.NODE_ENV === 'development') {
-      const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger('companies.attributes', 'getCompanyFields').debug(
-        'Fetching fields for company',
-        { companyId, fields }
-      );
-    }
+    log.debug('Fetching fields for company', { companyId, fields });
 
     // Fetch all company data first
     const fullCompany = await getCompanyDetails(companyIdOrUri);
@@ -76,13 +76,9 @@ export async function getCompanyFields(
       values: filteredValues,
     };
 
-    if (process.env.NODE_ENV === 'development') {
-      const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger('companies.attributes', 'getCompanyFields').debug(
-        'Filtered fields count',
-        { count: Object.keys(filteredValues).length }
-      );
-    }
+    log.debug('Filtered fields count', {
+      count: Object.keys(filteredValues).length,
+    });
 
     return result;
   } catch (error: unknown) {
@@ -266,17 +262,15 @@ export async function discoverCompanyAttributes(): Promise<{
     isCustom: boolean;
   }>;
 }> {
+  const log = createScopedLogger(
+    'companies.attributes',
+    'discoverCompanyAttributes'
+  );
+
   // This is a simplified version - in reality, Attio likely has an API endpoint
   // to list all available attributes for an object type
   // For now, we'll fetch a sample company and examine its fields
-
-  if (process.env.NODE_ENV === 'development') {
-    const { createScopedLogger } = await import('../../utils/logger.js');
-    createScopedLogger(
-      'companies.attributes',
-      'discoverCompanyAttributes'
-    ).debug('Starting attribute discovery');
-  }
+  log.debug('Starting attribute discovery');
 
   try {
     // Get a sample company to see what fields are available
@@ -316,11 +310,7 @@ export async function discoverCompanyAttributes(): Promise<{
 
     const sampleCompanyId = sampleCompany?.id?.record_id;
     if (!sampleCompanyId) {
-      const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger(
-        'companies.attributes',
-        'discoverCompanyAttributes'
-      ).warn('Sample company has no record ID', {
+      log.warn('Sample company has no record ID', {
         hasId: !!sampleCompany?.id,
         idType: typeof sampleCompany?.id,
         idKeys: sampleCompany?.id ? Object.keys(sampleCompany.id) : null,
@@ -333,26 +323,14 @@ export async function discoverCompanyAttributes(): Promise<{
       };
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger(
-        'companies.attributes',
-        'discoverCompanyAttributes'
-      ).debug('Using sample company ID', { sampleCompanyId });
-    }
+    log.debug('Using sample company ID', { sampleCompanyId });
 
     const sampleCompanyDetails = await getCompanyDetails(sampleCompanyId);
     const values = sampleCompanyDetails.values || {};
 
-    if (process.env.NODE_ENV === 'development') {
-      const { createScopedLogger } = await import('../../utils/logger.js');
-      createScopedLogger(
-        'companies.attributes',
-        'discoverCompanyAttributes'
-      ).debug('Retrieved fields from sample company', {
-        count: Object.keys(values).length,
-      });
-    }
+    log.debug('Retrieved fields from sample company', {
+      count: Object.keys(values).length,
+    });
 
     const standardFields = new Set([
       // Official list from user
@@ -386,16 +364,36 @@ export async function discoverCompanyAttributes(): Promise<{
       'strongest_connection_user',
     ]);
 
+    // Fetch attribute metadata from the API to get actual field types
+    // This fixes the "(unknown)" type issue - record values don't contain type info
+    const client = getLazyAttioClient();
+    let attributeMetadataIndex: ReturnType<typeof buildAttributeMetadataIndex> =
+      {};
+    try {
+      const metadataResponse = await client.get(
+        '/objects/companies/attributes'
+      );
+      const attributes =
+        metadataResponse?.data?.data || metadataResponse?.data || [];
+      if (Array.isArray(attributes)) {
+        attributeMetadataIndex = buildAttributeMetadataIndex(attributes);
+      }
+    } catch (metadataError) {
+      // Log but don't fail - we'll fall back to 'unknown' types
+      log.warn('Failed to fetch attribute metadata, types will be unknown', {
+        error: metadataError,
+      });
+    }
+
     const standard: string[] = [];
     const custom: string[] = [];
     const all: Array<{ name: string; type: string; isCustom: boolean }> = [];
 
-    for (const [fieldName, fieldValue] of Object.entries(values)) {
+    for (const [fieldName] of Object.entries(values)) {
       const isCustom = !standardFields.has(fieldName);
-      const fieldType =
-        Array.isArray(fieldValue) && fieldValue.length > 0
-          ? fieldValue[0].attribute_type || 'unknown'
-          : 'unknown';
+      // Look up the field type from metadata API instead of record values
+      const metadata = findAttributeMetadata(fieldName, attributeMetadataIndex);
+      const fieldType = resolveFieldType(metadata) || 'unknown';
 
       if (isCustom) {
         custom.push(fieldName);
@@ -416,11 +414,10 @@ export async function discoverCompanyAttributes(): Promise<{
       all: all.sort((a, b) => a.name.localeCompare(b.name)),
     };
 
-    if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[discoverCompanyAttributes] Discovery complete. Found ${standard.length} standard fields and ${custom.length} custom fields.`
-      );
-    }
+    log.debug('Discovery complete', {
+      standardCount: standard.length,
+      customCount: custom.length,
+    });
 
     return result;
   } catch (error: unknown) {
