@@ -3,7 +3,8 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/field-mapper/types.js';
+import { normalizeLocation } from '@/utils/location-normalizer.js';
 
 /**
  * Converts various value types to boolean for task completion status
@@ -205,6 +206,7 @@ export async function transformFieldValue(
 
   // Handle location fields (primary_location, location) for companies and people
   // Attio requires ALL location fields to be present, even if null
+  // Uses shared normalizeLocation utility for consistent behavior
   if (
     (resourceType === UniversalResourceType.COMPANIES ||
       resourceType === UniversalResourceType.PEOPLE) &&
@@ -215,40 +217,9 @@ export async function transformFieldValue(
       return value;
     }
 
-    // If value is an object, ensure all required fields are present
+    // If value is an object, normalize to ensure all required fields are present
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      const locationObj = value as Record<string, unknown>;
-
-      // Required location fields per Attio API docs
-      // All must be present even if null (attribute_type NOT required in write payload)
-      const normalizedLocation: Record<string, unknown> = {
-        line_1:
-          locationObj.line_1 ??
-          locationObj.street ??
-          locationObj.address ??
-          null,
-        line_2: locationObj.line_2 ?? null,
-        line_3: locationObj.line_3 ?? null,
-        line_4: locationObj.line_4 ?? null,
-        locality: locationObj.locality ?? locationObj.city ?? null,
-        region:
-          locationObj.region ??
-          locationObj.state ??
-          locationObj.province ??
-          null,
-        postcode:
-          locationObj.postcode ??
-          locationObj.postal_code ??
-          locationObj.zip ??
-          locationObj.zip_code ??
-          null,
-        country_code: locationObj.country_code ?? locationObj.country ?? null,
-        latitude: locationObj.latitude ?? locationObj.lat ?? null,
-        longitude:
-          locationObj.longitude ?? locationObj.lng ?? locationObj.lon ?? null,
-      };
-
-      return normalizedLocation;
+      return normalizeLocation(value as Record<string, unknown>);
     }
   }
 

@@ -1,10 +1,11 @@
 /**
  * Attribute type detection and management for Attio attributes
  */
-import { getLazyAttioClient } from '../api/lazy-client.js';
-import { parsePersonalName } from '../utils/personal-name-parser.js';
-import { debug, error } from '../utils/logger.js';
-import { TTLCache } from '../utils/ttl-cache.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { parsePersonalName } from '@/utils/personal-name-parser.js';
+import { debug, error } from '@/utils/logger.js';
+import { TTLCache } from '@/utils/ttl-cache.js';
+import { normalizeLocation } from '@/utils/location-normalizer.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -607,27 +608,12 @@ export async function formatAttributeValue(
       // Location fields expect object format directly (not wrapped in { value: ... })
       // Attio requires ALL 10 location fields to be present, even if null
       // Issue #987: Normalize location objects with all required fields
+      // Note: Avoid logging raw location data (PII risk) - log only metadata
       debug('attribute-types', `[formatAttributeValue] Location field:`, {
-        input: value,
+        hasValue: !!value,
+        isObject: typeof value === 'object' && value !== null,
         objectSlug,
         attributeSlug,
-      });
-
-      // Helper to normalize a single location object
-      const normalizeLocation = (
-        loc: Record<string, unknown>
-      ): Record<string, unknown> => ({
-        line_1: loc.line_1 ?? loc.street ?? loc.address ?? null,
-        line_2: loc.line_2 ?? null,
-        line_3: loc.line_3 ?? null,
-        line_4: loc.line_4 ?? null,
-        locality: loc.locality ?? loc.city ?? null,
-        region: loc.region ?? loc.state ?? loc.province ?? null,
-        postcode:
-          loc.postcode ?? loc.postal_code ?? loc.zip ?? loc.zip_code ?? null,
-        country_code: loc.country_code ?? loc.country ?? null,
-        latitude: loc.latitude ?? loc.lat ?? null,
-        longitude: loc.longitude ?? loc.lng ?? loc.lon ?? null,
       });
 
       if (typeInfo.isArray) {
