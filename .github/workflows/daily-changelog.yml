@@ -63,12 +63,28 @@ jobs:
           prompt: |
             Generate a daily changelog by analyzing commits since yesterday.
 
-            IMPORTANT: You have full permissions to write files and create branches. Use the following workflow:
+            IMPORTANT POLICY:
+            - The changelog should only include **meaningful product changes**:
+              - Bug fixes
+              - New features
+              - Refactors or performance/UX improvements
+            - A commit is considered "meaningful" only if its subject line starts with one of:
+              - "Fix:", "Feature:", "Refactor:", "Perf:", "UI:", or "UX:"
+            - Commits with other prefixes (for example "Chore:", "Docs:", "Test:") should generally be ignored.
 
-            1. Review git commits from the last 24 hours using: git log --since="1 day ago" --oneline
-            2. Categorize changes (Features, Fixes, Refactor, Documentation, etc.)
-            3. Check if there are meaningful changes worth documenting
-            4. If yes, create a branch: git checkout -b chore/daily-changelog-$(date +%Y-%m-%d)
+            BEFORE creating any branch or editing files, you MUST:
+            1. Check if there is already an open Daily changelog PR using:
+               gh pr list --state open --search "chore: Daily changelog for" --limit 1
+               - If there is an open PR, log a short message like
+                 "Open Daily changelog PR already exists - skipping changelog update" and then exit without changes.
+
+            When there is no existing Daily changelog PR and there ARE meaningful commits in the last 24 hours, use the following workflow:
+
+            1. Review git commits from the last 24 hours using: git log --since="1 day ago" --oneline --no-merges
+            2. Filter to only those commits whose subject starts with one of:
+               "Fix:", "Feature:", "Refactor:", "Perf:", "UI:", "UX:"
+            3. If there are **no** such commits, log "No meaningful changes since yesterday - skipping changelog update" and exit without making any git changes.
+            4. If there ARE meaningful commits, create a branch: git checkout -b chore/daily-changelog-$(date +%Y-%m-%d)
             5. Update CHANGELOG.md by adding a new section after "## [Unreleased]"
             6. Commit changes: git add CHANGELOG.md && git commit -m "chore: Daily changelog for $(date +%Y-%m-%d)"
             7. Push branch: git push -u origin HEAD
@@ -86,7 +102,7 @@ jobs:
             - Docs updates with PR/issue references
 
             Rules:
-            - Only include meaningful changes (exclude merge commits)
+            - Only include meaningful changes (exclude merge commits and non-meaningful prefixes)
             - Include PR/issue numbers where available
             - If no meaningful changes, output "No meaningful changes since yesterday - skipping changelog update"
             - Group related changes logically
@@ -99,8 +115,18 @@ jobs:
         run: |
           echo "Claude action failed, using fallback method..."
 
+          # Avoid duplicate PRs: skip if an open Daily changelog PR already exists
+          EXISTING_PR=$(gh pr list --state open --search "chore: Daily changelog for" --limit 1 --json number 2>/dev/null || true)
+          if [ -n "$EXISTING_PR" ]; then
+            echo "Open Daily changelog PR already exists - skipping fallback changelog update"
+            exit 0
+          fi
+
           # Get commits from last 24 hours
-          COMMITS=$(git log --since="1 day ago" --oneline --no-merges | grep -E "(Fix|Feature|Add|Update|Improve|Remove|Refactor)" || true)
+          # Only treat commits as meaningful if they use conventional prefixes
+          # that indicate bugs, new features, or UX/performance improvements.
+          # Examples: "Fix: ...", "Feature: ...", "Refactor: ...", "Perf: ...", "UI: ...", "UX: ...".
+          COMMITS=$(git log --since="1 day ago" --format='%h %s' --no-merges | grep -E '^[0-9a-f]+ (Fix:|Feature:|Refactor:|Perf:|UI:|UX:)' || true)
 
           if [ -z "$COMMITS" ]; then
             echo "No meaningful changes since yesterday - skipping changelog update"
@@ -117,9 +143,9 @@ jobs:
           CHANGELOG_ENTRY="## [$TODAY] - Daily Update\n\n"
 
           # Categorize commits
-          FEATURES=$(echo "$COMMITS" | grep -E "(Feature|Add)" || true)
-          FIXES=$(echo "$COMMITS" | grep -E "(Fix|Improve)" || true)  
-          CHANGES=$(echo "$COMMITS" | grep -E "(Update|Refactor|Change)" || true)
+          FEATURES=$(echo "$COMMITS" | grep -E '^[0-9a-f]+ (Feature:)' || true)
+          FIXES=$(echo "$COMMITS" | grep -E '^[0-9a-f]+ (Fix:)' || true)
+          CHANGES=$(echo "$COMMITS" | grep -E '^[0-9a-f]+ (Refactor:|Perf:|UI:|UX:)' || true)
 
           if [ ! -z "$FEATURES" ]; then
             CHANGELOG_ENTRY="${CHANGELOG_ENTRY}### Added\n"
@@ -165,6 +191,9 @@ jobs:
 
           echo "Fallback changelog generation completed successfully"
 
+          # Mark that a changelog branch/PR was created for summary reporting
+          echo "BRANCH_CREATED=1" >> "$GITHUB_ENV"
+
       - name: Workflow summary
         if: always()
         run: |
@@ -173,8 +202,13 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           echo "Triggered by: ${{ github.event_name }}"
 
-          if [ "${{ job.status }}" = "success" ]; then
-            echo "✅ Status: SUCCESS - Changelog generated and PR created"
+          TODAY=$(date +%Y-%m-%d)
+          BRANCH_EXISTS=$(git ls-remote --heads origin chore/daily-changelog-${TODAY} || true)
+
+          if [ "${{ job.status }}" = "success" ] && [ ! -z "$BRANCH_EXISTS" ]; then
+            echo "✅ Status: SUCCESS - Daily changelog branch created (check PRs for details)"
+          elif [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Status: SUCCESS - No daily changelog branch created (no meaningful changes or existing PR)"
           elif [ "${{ job.status }}" = "failure" ]; then
             echo "❌ Status: FAILED - Check logs for details"
           else
@@ -182,8 +216,6 @@ jobs:
           fi
 
           # Check if PR was created
-          TODAY=$(date +%Y-%m-%d)
-          BRANCH_EXISTS=$(git ls-remote --heads origin chore/daily-changelog-${TODAY} || true)
           if [ ! -z "$BRANCH_EXISTS" ]; then
             echo "📝 Branch created: chore/daily-changelog-${TODAY}"
             echo "🔗 Check for PR at: https://github.com/${{ github.repository }}/pulls"
