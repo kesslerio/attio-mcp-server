@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`records_get_attribute_options` now returns status options** (#987) - Fixed empty results for status attributes
+  - Select endpoint returning empty `[]` now falls back to status endpoint
+  - `deals.stage` and similar status attributes now return correct options
+  - `attributeType` correctly identifies `'status'` vs `'select'` based on successful endpoint
+  - Error messages include both select and status error details when both fail
+
 - **PR review workflow path alias detection** (#977) - Fixed false positive "missing file" errors
   - Ring scope generator now detects `@/...` path alias imports (not just relative imports)
   - Resolves `@/services/utils/foo.js` to `src/services/utils/foo.ts` for Ring 1 inclusion

@@ -137,7 +137,9 @@ describe('AttributeOptionsService', () => {
 
   describe('result formatting', () => {
     it('includes attributeType in response', async () => {
+      // Mock both to ensure consistent behavior
       mockGetSelectOptions.mockResolvedValue([]);
+      mockGetStatusOptions.mockResolvedValue([]);
 
       const result = await AttributeOptionsService.getOptions(
         'companies',
@@ -148,8 +150,11 @@ describe('AttributeOptionsService', () => {
       expect(result).toHaveProperty('options');
     });
 
-    it('returns empty array when no options exist', async () => {
+    it('returns empty array when no options exist (select type)', async () => {
+      // Select returns empty, status throws (not a status attribute)
+      // Should return empty select result
       mockGetSelectOptions.mockResolvedValue([]);
+      mockGetStatusOptions.mockRejectedValue(new Error('Not a status type'));
 
       const result = await AttributeOptionsService.getOptions(
         'companies',
@@ -158,6 +163,21 @@ describe('AttributeOptionsService', () => {
 
       expect(result.options).toEqual([]);
       expect(result.attributeType).toBe('select');
+    });
+
+    it('returns empty array when no options exist (status type)', async () => {
+      // Select returns empty, status also returns empty
+      // Should return empty status result (status endpoint succeeded)
+      mockGetSelectOptions.mockResolvedValue([]);
+      mockGetStatusOptions.mockResolvedValue([]);
+
+      const result = await AttributeOptionsService.getOptions(
+        'deals',
+        'empty_stage'
+      );
+
+      expect(result.options).toEqual([]);
+      expect(result.attributeType).toBe('status');
     });
   });
 });

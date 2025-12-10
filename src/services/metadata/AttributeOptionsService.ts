@@ -38,59 +38,79 @@ export class AttributeOptionsService {
     attributeSlug: string,
     showArchived?: boolean
   ): Promise<AttributeOptionsResult> {
+    let selectOptions: AttioSelectOption[] = [];
+    let selectError: unknown = null;
+    let statusError: unknown = null;
+
     // Try select endpoint first (covers select and multi-select)
     try {
-      const options = await getSelectOptions(
+      selectOptions = await getSelectOptions(
         objectSlug,
         attributeSlug,
         showArchived
       );
+    } catch (err) {
+      selectError = err;
+    }
+
+    // Select succeeded with results → return as select
+    if (!selectError && selectOptions.length > 0) {
       return {
-        options,
+        options: selectOptions,
         attributeType: 'select',
       };
-    } catch (selectError) {
-      // Select failed - try status endpoint
-      try {
-        const statuses = await getStatusOptions(
-          objectSlug,
-          attributeSlug,
-          showArchived
-        );
-        return {
-          options: statuses,
-          attributeType: 'status',
-        };
-      } catch (statusError) {
-        // Both failed - re-throw with helpful message
-        logError(
-          'AttributeOptionsService',
-          `Failed to get options for ${objectSlug}.${attributeSlug}`,
-          statusError instanceof Error ? statusError : selectError,
-          {
-            selectError:
-              selectError instanceof Error
-                ? selectError.message
-                : String(selectError),
-            statusError:
-              statusError instanceof Error
-                ? statusError.message
-                : String(statusError),
-          }
-        );
-
-        // Throw the original select error with enhanced message
-        const message =
-          selectError instanceof Error
-            ? selectError.message
-            : String(selectError);
-        throw new Error(
-          `Attribute "${attributeSlug}" on "${objectSlug}" does not support options. ` +
-            `This may not be a select, multi-select, or status attribute. ` +
-            `Original error: ${message}`
-        );
-      }
     }
+
+    // Select empty or failed → try status endpoint
+    // This handles status attributes like deals.stage where /options returns []
+    // but /statuses returns actual values (Issue #987)
+    try {
+      const statuses = await getStatusOptions(
+        objectSlug,
+        attributeSlug,
+        showArchived
+      );
+      // Status endpoint succeeded → treat as status type (even if empty)
+      return {
+        options: statuses,
+        attributeType: 'status',
+      };
+    } catch (err) {
+      statusError = err;
+      logError(
+        'AttributeOptionsService',
+        `Status endpoint failed for ${objectSlug}.${attributeSlug}`,
+        err
+      );
+    }
+
+    // Status failed but select succeeded with empty → return empty select
+    // (legitimate case for unconfigured select attributes)
+    if (!selectError) {
+      return {
+        options: selectOptions,
+        attributeType: 'select',
+      };
+    }
+
+    // Both failed → throw with detailed error context
+    const selectMsg =
+      selectError instanceof Error ? selectError.message : String(selectError);
+    const statusMsg =
+      statusError instanceof Error ? statusError.message : String(statusError);
+
+    logError(
+      'AttributeOptionsService',
+      `Failed to get options for ${objectSlug}.${attributeSlug}`,
+      selectError instanceof Error ? selectError : new Error(selectMsg),
+      { selectError: selectMsg, statusError: statusMsg }
+    );
+
+    throw new Error(
+      `Attribute "${attributeSlug}" on "${objectSlug}" does not support options. ` +
+        `This may not be a select, multi-select, or status attribute. ` +
+        `Select error: ${selectMsg}; Status error: ${statusMsg}`
+    );
   }
 
   /**
