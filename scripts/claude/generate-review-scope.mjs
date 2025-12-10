@@ -120,9 +120,58 @@ function captureUnifiedDiff(diffRange, maxChars = 15000) {
   }
 }
 
+// Relative imports (./foo, ../bar)
 const RELATIVE_IMPORT_RE = /import\s+[^;]*?from\s+['\"](\.{1,2}\/.+?)['\"]/g;
 const EXPORT_IMPORT_RE = /export\s+[^;]*?from\s+['\"](\.{1,2}\/[^'\"]+)['\"]/g;
 const REQUIRE_RE = /require\(\s*['\"](\.{1,2}\/[^'\"]+)['\"]\s*\)/g;
+
+// Path alias imports (@/... maps to src/...)
+// These are configured in tsconfig.json: "@/*": ["src/*"]
+const PATH_ALIAS_IMPORT_RE = /import\s+[^;]*?from\s+['\"]@\/([^'\"]+)['\"]/g;
+const PATH_ALIAS_EXPORT_RE = /export\s+[^;]*?from\s+['\"]@\/([^'\"]+)['\"]/g;
+
+const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
+
+/**
+ * Resolves a path alias import to an actual file path.
+ * @param {string} aliasPath - The path after @/ (e.g., "services/utils/foo.js")
+ * @returns {string|null} - The resolved path (e.g., "src/services/utils/foo.ts") or null
+ */
+function resolvePathAlias(aliasPath) {
+  // @/foo/bar.js → src/foo/bar
+  let resolved = `src/${aliasPath}`;
+
+  // Convert .js extension to .ts for source files (ESM imports use .js)
+  if (resolved.endsWith('.js')) {
+    resolved = resolved.replace(/\.js$/, '.ts');
+  }
+
+  // Check if file exists with various extensions
+  const safePath = ensureSafePath(resolved);
+  if (safePath && existsSync(safePath)) {
+    return safePath;
+  }
+
+  // Try without extension (might be a directory with index)
+  const withoutExt = resolved.replace(/\.[^/.]+$/, '');
+  for (const ext of EXTENSIONS) {
+    const candidate = ensureSafePath(`${withoutExt}${ext}`);
+    if (candidate && existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  // Try as directory with index file
+  for (const ext of EXTENSIONS) {
+    const indexPath = ensureSafePath(join(resolved, `index${ext}`));
+    if (indexPath && existsSync(indexPath)) {
+      return indexPath;
+    }
+  }
+
+  // Return the .ts path even if it doesn't exist (let caller handle)
+  return safePath;
+}
 
 function extractRelativeImports(filePath, source) {
   const matches = new Set();
@@ -132,15 +181,35 @@ function extractRelativeImports(filePath, source) {
       matches.add(match[1]);
     }
   };
+
+  // Capture relative imports
   capture(new RegExp(RELATIVE_IMPORT_RE));
   capture(new RegExp(EXPORT_IMPORT_RE));
   capture(new RegExp(REQUIRE_RE));
-  return Array.from(matches)
+
+  // Capture path alias imports (@/...)
+  const aliasMatches = new Set();
+  const captureAlias = (regex) => {
+    let match;
+    while ((match = regex.exec(source)) !== null) {
+      aliasMatches.add(match[1]);
+    }
+  };
+  captureAlias(new RegExp(PATH_ALIAS_IMPORT_RE));
+  captureAlias(new RegExp(PATH_ALIAS_EXPORT_RE));
+
+  // Resolve relative imports
+  const relativeResolved = Array.from(matches)
     .map((rel) => normalizeRelative(filePath, rel))
     .filter(Boolean);
-}
 
-const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
+  // Resolve path alias imports
+  const aliasResolved = Array.from(aliasMatches)
+    .map((alias) => resolvePathAlias(alias))
+    .filter(Boolean);
+
+  return [...relativeResolved, ...aliasResolved];
+}
 
 function normalizeRelative(fromFile, relativePath) {
   const baseDir = dirname(fromFile);
