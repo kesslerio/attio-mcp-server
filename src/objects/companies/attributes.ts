@@ -6,6 +6,12 @@ import { getCompanyDetails, extractCompanyId } from './basic.js';
 import { listCompanies } from './basic.js';
 import { wrapError, getErrorMessage } from '../../utils/error-utilities.js';
 import { createScopedLogger } from '../../utils/logger.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import {
+  buildAttributeMetadataIndex,
+  findAttributeMetadata,
+  resolveFieldType,
+} from '@/services/utils/attribute-metadata.js';
 
 /**
  * Logs attribute operation errors in a consistent format
@@ -386,16 +392,41 @@ export async function discoverCompanyAttributes(): Promise<{
       'strongest_connection_user',
     ]);
 
+    // Fetch attribute metadata from the API to get actual field types
+    // This fixes the "(unknown)" type issue - record values don't contain type info
+    const client = getLazyAttioClient();
+    let attributeMetadataIndex: ReturnType<typeof buildAttributeMetadataIndex> =
+      {};
+    try {
+      const metadataResponse = await client.get(
+        '/objects/companies/attributes'
+      );
+      const attributes =
+        metadataResponse?.data?.data || metadataResponse?.data || [];
+      if (Array.isArray(attributes)) {
+        attributeMetadataIndex = buildAttributeMetadataIndex(attributes);
+      }
+    } catch (metadataError) {
+      // Log but don't fail - we'll fall back to 'unknown' types
+      if (process.env.NODE_ENV === 'development') {
+        createScopedLogger(
+          'companies.attributes',
+          'discoverCompanyAttributes'
+        ).warn('Failed to fetch attribute metadata, types will be unknown', {
+          error: metadataError,
+        });
+      }
+    }
+
     const standard: string[] = [];
     const custom: string[] = [];
     const all: Array<{ name: string; type: string; isCustom: boolean }> = [];
 
-    for (const [fieldName, fieldValue] of Object.entries(values)) {
+    for (const [fieldName] of Object.entries(values)) {
       const isCustom = !standardFields.has(fieldName);
-      const fieldType =
-        Array.isArray(fieldValue) && fieldValue.length > 0
-          ? fieldValue[0].attribute_type || 'unknown'
-          : 'unknown';
+      // Look up the field type from metadata API instead of record values
+      const metadata = findAttributeMetadata(fieldName, attributeMetadataIndex);
+      const fieldType = resolveFieldType(metadata) || 'unknown';
 
       if (isCustom) {
         custom.push(fieldName);

@@ -48,3 +48,33 @@ export const discoverAttributesSchema = {
     },
   ],
 };
+
+export const getAttributeOptionsSchema = {
+  type: 'object' as const,
+  properties: {
+    resource_type: resourceTypeProperty,
+    attribute: {
+      type: 'string' as const,
+      description:
+        'The attribute slug or ID (e.g., "channel", "stage", "categories")',
+    },
+    show_archived: {
+      type: 'boolean' as const,
+      default: false,
+      description: 'Include archived options in the response',
+    },
+  },
+  required: ['resource_type' as const, 'attribute' as const],
+  additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'companies',
+      attribute: 'channel',
+    },
+    {
+      resource_type: 'deals',
+      attribute: 'stage',
+      show_archived: true,
+    },
+  ],
+};

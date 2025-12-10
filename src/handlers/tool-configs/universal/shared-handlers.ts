@@ -19,6 +19,7 @@ import {
   UniversalUpdateNoteParams,
   UniversalSearchNotesParams,
   UniversalDeleteNoteParams,
+  UniversalGetAttributeOptionsParams,
 } from './types.js';
 
 import { JsonObject } from '../../../types/attio.js';
@@ -31,6 +32,10 @@ import { UniversalUpdateService } from '../../../services/UniversalUpdateService
 import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
 import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
 import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import {
+  AttributeOptionsService,
+  type AttributeOptionsResult,
+} from '../../../services/metadata/index.js';
 import { getLazyAttioClient } from '../../../api/lazy-client.js';
 
 // Import existing handlers by resource type
@@ -315,6 +320,49 @@ export async function handleUniversalDiscoverAttributes(
   }
 ): Promise<JsonObject> {
   return UniversalMetadataService.discoverAttributes(resource_type, options);
+}
+
+/**
+ * Object slug mapping for resource types
+ */
+const OBJECT_SLUG_MAP: Record<string, string> = {
+  companies: 'companies',
+  people: 'people',
+  deals: 'deals',
+  tasks: 'tasks',
+  records: 'records',
+  lists: 'lists',
+  notes: 'notes',
+};
+
+/**
+ * Universal get attribute options handler
+ * Retrieves valid options for select, multi-select, and status attributes
+ */
+export async function handleUniversalGetAttributeOptions(
+  params: UniversalGetAttributeOptionsParams
+): Promise<AttributeOptionsResult> {
+  const { resource_type, attribute, show_archived } = params;
+
+  // Map resource type to object slug
+  const objectSlug =
+    OBJECT_SLUG_MAP[resource_type.toLowerCase()] || resource_type.toLowerCase();
+
+  // For lists, we need to use the list-specific options endpoint
+  if (resource_type === UniversalResourceType.LISTS) {
+    return AttributeOptionsService.getListOptions(
+      attribute, // For lists, attribute is the list ID
+      attribute,
+      show_archived
+    );
+  }
+
+  // Standard objects use the object options endpoint
+  return AttributeOptionsService.getOptions(
+    objectSlug,
+    attribute,
+    show_archived
+  );
 }
 
 /**
