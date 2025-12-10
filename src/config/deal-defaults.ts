@@ -48,6 +48,7 @@
  */
 
 import { warn, error } from '../utils/logger.js';
+import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 
 export interface DealDefaults {
   stage?: string;
@@ -491,6 +492,15 @@ export async function validateDealStage(
   if (!stage) {
     return {
       validatedStage: undefined,
+      warnings: [],
+      suggestions: [],
+    };
+  }
+
+  // UUID provided (status_id) - bypass title validation
+  if (isValidUUID(stage)) {
+    return {
+      validatedStage: stage,
       warnings: [],
       suggestions: [],
     };

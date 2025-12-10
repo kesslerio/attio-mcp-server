@@ -8,7 +8,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MCPTestClient } from 'mcp-test-client';
 
-const STAGE_UUID = 'f78ef71e-9306-4c37-90d6-e83550326228'; // Known deal stage
+const STAGE_UUID =
+  process.env.ATTIO_STAGE_UUID ||
+  // Demo Booked (from live workspace lookup)
+  '7fc992e0-d89b-40bd-b158-8ab25ea86904';
 const HAS_API_KEY = !!process.env.ATTIO_API_KEY;
 
 describe('Deal status UUID passthrough - Issue #986', () => {
