@@ -65,6 +65,70 @@ const extractAttioValidationErrors = (error: unknown): string | null => {
 };
 
 /**
+ * Enhance error messages for select/status attribute errors
+ * Detects "Cannot find select option" or "Cannot find Status" errors
+ * and provides valid options from AttributeOptionsService
+ *
+ * @param error - The original error
+ * @param resourceType - The resource type (companies, deals, etc.)
+ * @param recordData - The record data that was submitted
+ * @returns Enhanced error message with valid options, or null if not a select/status error
+ */
+const enhanceSelectStatusError = async (
+  error: unknown,
+  resourceType: string,
+  recordData: Record<string, unknown>
+): Promise<string | null> => {
+  const msg = error instanceof Error ? error.message : String(error);
+
+  // Pattern: "Cannot find select option with title 'X'" or "Cannot find Status with title 'X'"
+  const selectMatch = msg.match(
+    /Cannot find (?:select option|Status) with title "(.+?)"/
+  );
+  if (!selectMatch) return null;
+
+  const invalidValue = selectMatch[1];
+
+  // Try to identify which field has the problem by checking record data
+  for (const [fieldName, fieldValue] of Object.entries(recordData)) {
+    if (
+      fieldValue === invalidValue ||
+      (Array.isArray(fieldValue) && fieldValue.includes(invalidValue))
+    ) {
+      try {
+        // Dynamic import to avoid circular dependencies
+        const { AttributeOptionsService } = await import(
+          '../../../../services/metadata/index.js'
+        );
+        const { options, attributeType } =
+          await AttributeOptionsService.getOptions(resourceType, fieldName);
+        const validList = options
+          .slice(0, 10)
+          .map((o) => o.title)
+          .join(', ');
+        return (
+          `Invalid ${attributeType} value "${invalidValue}" for field "${fieldName}". ` +
+          `Valid options: ${validList}. ` +
+          `Use records_get_attribute_options(resource_type="${resourceType}", attribute="${fieldName}") for full list.`
+        );
+      } catch {
+        // Can't fetch options, return generic hint
+        return (
+          `Invalid select/status value "${invalidValue}" for field "${fieldName}". ` +
+          `Use records_get_attribute_options(resource_type="${resourceType}", attribute="${fieldName}") to see valid options.`
+        );
+      }
+    }
+  }
+
+  // Couldn't match to a specific field, return generic hint
+  return (
+    `Invalid select/status value "${invalidValue}". ` +
+    `Use records_get_attribute_options to discover valid options.`
+  );
+};
+
+/**
  * Enhanced error context for CRUD operations
  */
 interface CrudErrorContext {
@@ -117,6 +181,21 @@ export const handleCreateError = async (
     const errorResult = createErrorResult(
       `Failed to create ${resourceName}: A record with similar data already exists.`,
       'duplicate_error',
+      { context }
+    );
+    throw errorResult;
+  }
+
+  // Check for select/status errors and enhance with valid options
+  const enhancedSelectError = await enhanceSelectStatusError(
+    error,
+    resourceType,
+    recordData
+  );
+  if (enhancedSelectError) {
+    const errorResult = createErrorResult(
+      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
+      'value_not_found',
       { context }
     );
     throw errorResult;
@@ -182,6 +261,22 @@ export const handleUpdateError = async (
     const errorResult = createErrorResult(errorMessage, 'validation_error', {
       context,
     });
+    throw errorResult;
+  }
+
+  // Check for select/status errors and enhance with valid options
+  // (Must come before "not found" check since select errors contain "not found")
+  const enhancedSelectError = await enhanceSelectStatusError(
+    error,
+    resourceType,
+    recordData
+  );
+  if (enhancedSelectError) {
+    const errorResult = createErrorResult(
+      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
+      'value_not_found',
+      { context }
+    );
     throw errorResult;
   }
 

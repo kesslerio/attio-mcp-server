@@ -534,7 +534,7 @@ export async function validateDealStage(
     const availableStagesText =
       availableStages.length > 0
         ? availableStages.join(', ')
-        : 'Unable to fetch available stages. Use records_discover_attributes(resource_type: "deals") to see your workspace stages.';
+        : 'Unable to fetch available stages. Use records_get_attribute_options(resource_type="deals", attribute="stage") to see your workspace stages.';
 
     // Get suggestions for the invalid stage
     const stageSuggestions = getStageSuggestions(stage, availableStages);
@@ -545,7 +545,7 @@ export async function validateDealStage(
       warningMessage += ` Did you mean "${stageSuggestions[0]}"?`;
     }
     warningMessage += ` Falling back to default "${defaults.stage}".`;
-    warningMessage += ` Tip: Use records_discover_attributes(resource_type: "deals") to see all available stages for your workspace.`;
+    warningMessage += ` Tip: Use records_get_attribute_options(resource_type="deals", attribute="stage") to see all available stages for your workspace.`;
 
     const result: DealStageValidationResult = {
       validatedStage: defaults.stage,
