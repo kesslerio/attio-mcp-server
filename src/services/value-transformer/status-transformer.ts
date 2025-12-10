@@ -15,6 +15,7 @@ import {
   AttributeOption,
 } from './types.js';
 import { AttributeOptionsService } from '@/services/metadata/index.js';
+import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import { debug, error as logError, OperationType } from '@/utils/logger.js';
 
 /**
@@ -146,6 +147,30 @@ export async function transformStatusValue(
       transformed: false,
       originalValue: value,
       transformedValue: value,
+    };
+  }
+
+  // Short-circuit if value is already a UUID
+  if (isValidUUID(value)) {
+    const transformedValue = { status_id: value };
+
+    debug(
+      'status-transformer',
+      `Detected UUID string for status attribute`,
+      {
+        attribute: attributeSlug,
+        from: value,
+        to: transformedValue,
+      },
+      'transformStatusValue',
+      OperationType.DATA_PROCESSING
+    );
+
+    return {
+      transformed: true,
+      originalValue: value,
+      transformedValue,
+      description: `Converted UUID string to status_id for ${attributeSlug}`,
     };
   }
 
