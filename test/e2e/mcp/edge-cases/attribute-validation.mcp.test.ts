@@ -1,17 +1,26 @@
 /**
  * TC-EC07: Attribute Validation Error Handling
- * P2 Edge Cases Test - Phase 4 Coverage #975
+ * P2 Edge Cases Test - PR #976 Complete Coverage (Phases 1-4)
  *
- * Validates attribute-not-found error handling with Levenshtein suggestions
- * and discovery hints for unknown attributes.
+ * Validates all attribute-related error handling and UX improvements:
  *
- * Test scenarios:
+ * Phase 1:
+ * - `records_get_attribute_options` tool returns valid options
+ * - `records_discover_attributes` returns correct types (not "unknown")
+ *
+ * Phase 2:
+ * - Invalid select/status values show valid workspace options
+ * - Typos in category values suggest correct alternatives
+ *
+ * Phase 3:
+ * - LISTS resource_type returns clear error for attribute options
+ *
+ * Phase 4:
  * - Invalid attribute on update triggers enhanced error with suggestions
  * - Error message includes `records_discover_attributes` hint
- * - New `records_get_attribute_options` tool returns valid options
  * - Field alias mapping normalizes common mistakes (linkedin_url → linkedin)
  *
- * Resources covered: people, companies
+ * Resources covered: people, companies, deals, lists
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
@@ -282,6 +291,112 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       // If alias mapping works, create should succeed
       // If it fails, the test will catch that
       expect(result.isError).toBeFalsy();
+    });
+  });
+
+  describe('Select/Status Error Enhancement (Phase 2)', () => {
+    it('should show valid stages when invalid deal stage provided', async () => {
+      // Phase 2: enhanceSelectStatusError() should return workspace-specific stages
+      const result = await testCase.executeExpectedFailureTest(
+        'invalid_deal_stage',
+        'create-record',
+        {
+          resource_type: 'deals',
+          record_data: {
+            name: `TC-EC07 Invalid Stage Deal ${Date.now()}`,
+            stage: 'TotallyInvalidStageName',
+          },
+        },
+        'graceful_handling',
+        ['stage'] // Should mention stage in error/warning
+      );
+
+      testResults.push(result);
+      expect(result.passed).toBe(true);
+    });
+
+    it('should handle invalid company category gracefully', async () => {
+      // Phase 2: enhanceSelectStatusError() with select attribute
+      const result = await testCase.executeExpectedFailureTest(
+        'invalid_company_category',
+        'create-record',
+        {
+          resource_type: 'companies',
+          record_data: {
+            name: `TC-EC07 Invalid Category ${Date.now()}`,
+            categories: ['TotallyInvalidCategory'],
+          },
+        },
+        'graceful_handling',
+        ['categor'] // Should mention categories in error/warning
+      );
+
+      testResults.push(result);
+      expect(result.passed).toBe(true);
+    });
+  });
+
+  describe('LISTS Resource Type Handling (Phase 3)', () => {
+    it('should return clear error for lists attribute options', async () => {
+      // Phase 3: LISTS branch should error clearly
+      const result = await testCase.executeExpectedFailureTest(
+        'lists_attribute_options_error',
+        'records_get_attribute_options',
+        {
+          resource_type: 'lists',
+          attribute: 'stage',
+        },
+        'error',
+        ['list'] // Error should mention lists
+      );
+
+      testResults.push(result);
+      expect(result.passed).toBe(true);
+    });
+  });
+
+  describe('Attribute Type Discovery (Phase 1 Bug Fix)', () => {
+    it('should return correct attribute types (not unknown)', async () => {
+      // Phase 1: discoverCompanyAttributes should return real types
+      const result = await testCase.executeToolCall(
+        'records_discover_attributes',
+        {
+          resource_type: 'companies',
+        }
+      );
+
+      const text = testCase.extractTextContent(result);
+
+      // Verify types are returned (not all "unknown")
+      const hasRealTypes =
+        /select|text|number|checkbox|status|record-reference/i.test(text);
+      const unknownMatches = text.match(/\(unknown\)/gi) || [];
+      const unknownCount = unknownMatches.length;
+
+      // Count total attributes by looking for numbered list items
+      const attributeMatches = text.match(/^\d+\./gm) || [];
+      const totalAttributes = attributeMatches.length;
+
+      // Less than 20% should be unknown (allowing some tolerance)
+      const unknownRatio =
+        totalAttributes > 0 ? unknownCount / totalAttributes : 0;
+
+      const isSuccess = hasRealTypes && unknownRatio < 0.2;
+
+      testResults.push({
+        test: 'attribute_types_not_unknown',
+        passed: isSuccess,
+        executionTime: 0,
+        expectedBehavior: 'graceful_handling',
+        actualBehavior: isSuccess ? 'success' : 'error',
+        error: isSuccess
+          ? undefined
+          : `Unknown ratio: ${(unknownRatio * 100).toFixed(1)}% (${unknownCount}/${totalAttributes})`,
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(hasRealTypes).toBe(true);
+      expect(unknownRatio).toBeLessThan(0.2);
     });
   });
 });
