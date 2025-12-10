@@ -391,6 +391,55 @@ export class UniversalCreateService {
       }
     }
 
+    // FEATURE: Auto-transform values for Issue #980 UX improvements
+    // Transforms: status titles → {status_id: uuid}, single values → arrays for multi-select
+    let transformedData = mappedData;
+    try {
+      const { transformRecordValues, mayNeedTransformation } = await import(
+        './value-transformer/index.js'
+      );
+
+      // Quick check to avoid unnecessary async work
+      if (mayNeedTransformation(mappedData, resource_type)) {
+        const transformResult = await transformRecordValues(mappedData, {
+          resourceType: resource_type,
+          operation: 'create',
+        });
+
+        transformedData = transformResult.data;
+
+        // Log transformations for debugging
+        if (transformResult.transformations.length > 0) {
+          logger.info('Value transformations applied', {
+            transformations: transformResult.transformations.map((t) => ({
+              field: t.field,
+              type: t.type,
+            })),
+          });
+        }
+
+        if (transformResult.warnings.length > 0) {
+          logger.warn('Value transformation warnings', {
+            warnings: transformResult.warnings,
+          });
+        }
+      }
+    } catch (transformError) {
+      // If transformation throws (e.g., invalid status value), propagate the error
+      if (transformError instanceof Error) {
+        throw new UniversalValidationError(
+          transformError.message,
+          ErrorType.USER_ERROR,
+          {
+            suggestion:
+              'Check that field values match the expected format. Use records_get_attribute_options to see valid options.',
+            field: undefined,
+          }
+        );
+      }
+      throw transformError;
+    }
+
     switch (resource_type) {
       case UniversalResourceType.COMPANIES: {
         const { CompanyCreateStrategy } = await import(
@@ -398,7 +447,7 @@ export class UniversalCreateService {
         );
         return (await new CompanyCreateStrategy().create({
           resourceType: resource_type,
-          values: mappedData,
+          values: transformedData,
         })) as AttioRecord;
       }
 
@@ -408,7 +457,7 @@ export class UniversalCreateService {
         );
         return (await new ListCreateStrategy().create({
           resourceType: resource_type,
-          values: mappedData,
+          values: transformedData,
         })) as AttioRecord;
       }
 
@@ -418,7 +467,7 @@ export class UniversalCreateService {
         );
         return (await new PersonCreateStrategy().create({
           resourceType: resource_type,
-          values: mappedData,
+          values: transformedData,
         })) as AttioRecord;
       }
 
@@ -432,7 +481,7 @@ export class UniversalCreateService {
         >;
         return (await new RecordCreateStrategy().create({
           resourceType: resource_type,
-          values: mappedData,
+          values: transformedData,
           context,
         })) as AttioRecord;
       }
@@ -443,7 +492,7 @@ export class UniversalCreateService {
         );
         return (await new DealCreateStrategy().create({
           resourceType: resource_type,
-          values: mappedData,
+          values: transformedData,
         })) as AttioRecord;
       }
 
@@ -453,7 +502,7 @@ export class UniversalCreateService {
         );
         return (await new TaskCreateStrategy().create({
           resourceType: resource_type,
-          values: mappedData,
+          values: transformedData,
         })) as AttioRecord;
       }
 
@@ -463,7 +512,7 @@ export class UniversalCreateService {
         );
         return (await new NoteCreateStrategy().create({
           resourceType: resource_type,
-          values: mappedData,
+          values: transformedData,
         })) as AttioRecord;
       }
 
