@@ -180,9 +180,12 @@ export async function executeToolRequest(request: CallToolRequest) {
         formattedResult = JSON.stringify(rawResult, null, 2);
       } else if (toolConfig.formatResult) {
         try {
+          // Pass full args object as first param for tools that need access to all params
+          // (e.g., records_get_attribute_options needs args.attribute)
+          // Fall back to resource_type/info_type for backward compatibility
           formattedResult = (toolConfig.formatResult as FormatResultFunction)(
             rawResult,
-            args?.resource_type,
+            args, // Pass full args object
             args?.info_type
           );
         } catch {

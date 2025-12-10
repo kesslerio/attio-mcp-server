@@ -336,8 +336,48 @@ const OBJECT_SLUG_MAP: Record<string, string> = {
 };
 
 /**
+ * Resolve display name to API slug for an attribute
+ * Fetches attribute metadata and finds the slug by title match
+ *
+ * @param objectSlug - The object slug (e.g., "deals", "companies")
+ * @param displayName - The display name to resolve (e.g., "Deal stage")
+ * @returns The API slug if found, or null
+ */
+async function resolveAttributeDisplayName(
+  objectSlug: string,
+  displayName: string
+): Promise<string | null> {
+  try {
+    // Fetch all attributes for the object
+    const schema = await handleUniversalDiscoverAttributes(
+      objectSlug as UniversalResourceType
+    );
+    const allAttrs = ((schema as Record<string, unknown>).all || []) as Array<{
+      name?: string;
+      title?: string;
+      api_slug?: string;
+    }>;
+
+    // Find attribute by title (case-insensitive)
+    const displayNameLower = displayName.toLowerCase();
+    const match = allAttrs.find(
+      (attr) =>
+        attr.title?.toLowerCase() === displayNameLower ||
+        attr.name?.toLowerCase() === displayNameLower
+    );
+
+    return match?.api_slug || null;
+  } catch {
+    // If discovery fails, return null - the original error will be shown
+    return null;
+  }
+}
+
+/**
  * Universal get attribute options handler
  * Retrieves valid options for select, multi-select, and status attributes
+ *
+ * Supports both API slugs (e.g., "stage") and display names (e.g., "Deal stage")
  */
 export async function handleUniversalGetAttributeOptions(
   params: UniversalGetAttributeOptionsParams
@@ -357,12 +397,50 @@ export async function handleUniversalGetAttributeOptions(
     );
   }
 
-  // Standard objects use the object options endpoint
-  return AttributeOptionsService.getOptions(
-    objectSlug,
-    attribute,
-    show_archived
-  );
+  // First attempt: try with the attribute as provided (may be slug or display name)
+  try {
+    return await AttributeOptionsService.getOptions(
+      objectSlug,
+      attribute,
+      show_archived
+    );
+  } catch (firstError) {
+    // Check if this looks like a display name (contains space or uppercase)
+    const mightBeDisplayName =
+      attribute.includes(' ') || /[A-Z]/.test(attribute);
+
+    if (mightBeDisplayName) {
+      // Try to resolve display name to API slug
+      const resolvedSlug = await resolveAttributeDisplayName(
+        objectSlug,
+        attribute
+      );
+
+      if (resolvedSlug && resolvedSlug !== attribute) {
+        // Retry with resolved slug
+        debug(
+          'shared-handlers',
+          `Resolved display name "${attribute}" to API slug "${resolvedSlug}"`,
+          { attribute, resolvedSlug },
+          'resolveDisplayName',
+          OperationType.DATA_PROCESSING
+        );
+        return await AttributeOptionsService.getOptions(
+          objectSlug,
+          resolvedSlug,
+          show_archived
+        );
+      }
+    }
+
+    // Re-throw original error with helpful message
+    const errorMsg =
+      firstError instanceof Error ? firstError.message : String(firstError);
+    throw new Error(
+      `${errorMsg}\n\nTip: Use the API slug (e.g., "stage") not the display name (e.g., "Deal stage"). ` +
+        `Run records_discover_attributes to see available attribute slugs.`
+    );
+  }
 }
 
 /**

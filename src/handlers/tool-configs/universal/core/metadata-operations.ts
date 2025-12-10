@@ -306,12 +306,23 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
       return `Error: ${result.error}`;
     }
 
-    const params = args[0] as UniversalGetAttributeOptionsParams | undefined;
-    const resourceType = params?.resource_type;
-    const attribute = params?.attribute || 'attribute';
+    // Extract params from args - handle both new format (full args object) and legacy (resource_type string)
+    let resourceType: string | undefined;
+    let attribute = 'attribute'; // fallback
+
+    const firstArg = args[0];
+    if (typeof firstArg === 'object' && firstArg !== null) {
+      // New format: args[0] is the full params object
+      const params = firstArg as UniversalGetAttributeOptionsParams;
+      resourceType = params.resource_type;
+      attribute = params.attribute || 'attribute';
+    } else if (typeof firstArg === 'string') {
+      // Legacy format: args[0] is resource_type string
+      resourceType = firstArg;
+    }
 
     const resourceTypeName = resourceType
-      ? getSingularResourceType(resourceType)
+      ? getSingularResourceType(resourceType as UniversalResourceType)
       : 'record';
 
     const { options, attributeType } = result;
