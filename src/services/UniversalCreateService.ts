@@ -139,9 +139,14 @@ export class UniversalCreateService {
       throw new UniversalValidationError('record_data must be a JSON object');
     }
 
+    // Log metadata only to avoid PII exposure (PR #981 review feedback)
     logger.debug('Entry point - createRecord', {
       resource_type,
-      record_data: JSON.stringify(record_data, null, 2),
+      topLevelKeys: Object.keys(record_data),
+      hasValues: 'values' in record_data,
+      fieldCount: record_data.values
+        ? Object.keys(record_data.values as Record<string, unknown>).length
+        : Object.keys(record_data).length,
     });
 
     // Pre-validate fields and provide helpful suggestions

@@ -642,6 +642,10 @@ export class UniversalUpdateService {
       throw transformError;
     }
 
+    // Capture post-transform data for verification (PR #981 review feedback)
+    // This ensures verification compares what was actually sent to API
+    const dataForVerification = { ...attioPayload.values };
+
     let updatedRecord: AttioRecord;
 
     switch (resource_type) {
@@ -744,10 +748,11 @@ export class UniversalUpdateService {
       process.env.ENABLE_FIELD_VERIFICATION !== 'false'
     ) {
       try {
+        // Use post-transform data for accurate verification (PR #981 review feedback)
         const verification = await UpdateValidation.verifyFieldPersistence(
           resource_type,
           record_id,
-          sanitizedData
+          dataForVerification
         );
         if (verification.warnings.length > 0) {
           logError(
