@@ -66,22 +66,51 @@ export const COMPANIES_FIELD_MAPPING: FieldMapping = {
     year_founded: 'founded',
   },
   validFields: [
+    // Core fields
     'name',
     'domains',
-    'type',
-    'typpe',
-    'industry',
-    'categories',
     'description',
-    'founded',
-    'estimated_arr',
+    'categories',
+    'industry',
+    'type',
+    'typpe', // Valid Attio field (not a typo)
+
+    // Size and financials
+    'team_size',
     'employee_count',
+    'estimated_arr',
+    'revenue',
+    'founded',
+    'founded_at',
+
+    // Location fields
     'location',
+    'locations',
+    'primary_location',
+    'headquarters',
+
+    // Social media - canonical names
+    'linkedin',
+    'twitter',
+    'facebook',
+    'instagram',
+    'angellist',
+    'crunchbase',
+
+    // Social media - alias forms (for validation acceptance)
+    'linkedin_url',
+    'twitter_url',
+    'twitter_handle',
+    'facebook_url',
+
+    // Relationships
+    'team', // Associated people
+    'associated_deals',
+    'associated_workspaces',
+
+    // Other standard fields
     'notes',
     'primary_domain',
-    'twitter',
-    'linkedin',
-    'facebook',
   ],
   commonMistakes: {
     domain:

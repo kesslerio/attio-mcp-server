@@ -152,19 +152,51 @@ export const COMPANY_FIELD_MAPPINGS = {
 };
 
 export const COMPANY_VALID_FIELDS = [
+  // Core fields
   'name',
   'domains',
   'description',
   'categories',
+  'industry',
+  'type',
+  'typpe', // Valid Attio field (not a typo)
+
+  // Size and financials
+  'team_size',
+  'employee_count',
+  'estimated_arr',
+  'revenue',
+  'founded',
+  'founded_at',
+
+  // Location fields
+  'location',
+  'locations',
   'primary_location',
-  'team', // Associated people
-  'linkedin', // Note: canonical field name, not linkedin_url
-  'twitter', // Note: canonical field name, not twitter_handle
-  'facebook', // Note: canonical field name, not facebook_url
+  'headquarters',
+
+  // Social media - canonical names
+  'linkedin',
+  'twitter',
+  'facebook',
   'instagram',
   'angellist',
+  'crunchbase',
+
+  // Social media - alias forms (for validation acceptance)
+  'linkedin_url',
+  'twitter_url',
+  'twitter_handle',
+  'facebook_url',
+
+  // Relationships
+  'team', // Associated people
   'associated_deals',
   'associated_workspaces',
+
+  // Other standard fields
+  'notes',
+  'primary_domain',
 ];
 
 export const COMPANY_COMMON_MISTAKES = {
@@ -233,18 +265,39 @@ export const PEOPLE_FIELD_MAPPINGS = {
 };
 
 export const PEOPLE_VALID_FIELDS = [
+  // Core fields
   'name',
+  'first_name',
+  'last_name',
   'email_addresses',
   'phone_numbers',
   'title',
-  'linkedin', // Note: canonical field name, not linkedin_url
-  'twitter', // Note: canonical field name, not twitter_handle
-  'facebook',
-  'location',
   'description',
+
+  // Primary contact fields
+  'primary_email_address',
+  'primary_phone_number',
+
+  // Profile fields
+  'avatar_url',
+  'timezone',
+  'location',
+
+  // Social media - canonical names
+  'linkedin',
+  'twitter',
+  'facebook',
+  'instagram',
+
+  // Social media - alias forms (for validation acceptance)
+  'linkedin_url',
+  'twitter_url',
+  'twitter_handle',
+  'facebook_url',
+
+  // Relationships
   'company',
-  'first_name',
-  'last_name',
+  'associated_deals',
 ];
 
 export const PEOPLE_COMMON_MISTAKES = {

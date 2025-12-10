@@ -57,18 +57,39 @@ export const PEOPLE_FIELD_MAPPING: FieldMapping = {
     facebookUrl: 'facebook',
   },
   validFields: [
+    // Core fields
     'name',
+    'first_name',
+    'last_name',
     'email_addresses',
     'phone_numbers',
     'title',
-    'company',
-    'location',
-    'twitter',
-    'linkedin',
-    'facebook',
     'description',
-    'first_name',
-    'last_name',
+
+    // Primary contact fields
+    'primary_email_address',
+    'primary_phone_number',
+
+    // Profile fields
+    'avatar_url',
+    'timezone',
+    'location',
+
+    // Social media - canonical names
+    'linkedin',
+    'twitter',
+    'facebook',
+    'instagram',
+
+    // Social media - alias forms (for validation acceptance)
+    'linkedin_url',
+    'twitter_url',
+    'twitter_handle',
+    'facebook_url',
+
+    // Relationships
+    'company',
+    'associated_deals',
   ],
   commonMistakes: {
     email: 'Use "email_addresses" (plural) as an array',

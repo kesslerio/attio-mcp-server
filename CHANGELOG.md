@@ -11,9 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`records_get_attribute_options` tool** (#975) - Get valid options for select, status, and multi-select attributes
+  - Prevents "Cannot find select option" errors by showing available options upfront
+  - Works with companies, people, deals, and custom objects
+  - Returns option titles, IDs, and active/archived status
+
 ### Changed
 
+- **Enhanced attribute error messages** (#975) - Better guidance when API requests fail
+  - Levenshtein distance suggestions for misspelled attribute names (threshold ≤3 edits)
+  - Field alias mapping converts common mistakes automatically (`linkedin_url` → `linkedin`)
+  - Select/status errors now show valid workspace-specific options
+  - Error messages include `records_discover_attributes` hint for discovery
+
+- **Expanded valid field lists** (#975) - Validators now accept more standard Attio attributes
+  - Companies: `team_size`, `founded_at`, `headquarters`, `crunchbase`, `instagram`, `angellist`, etc.
+  - People: `primary_email_address`, `primary_phone_number`, `avatar_url`, `timezone`, `instagram`, etc.
+
 ### Fixed
+
+- **PR review workflow path alias detection** (#977) - Fixed false positive "missing file" errors
+  - Ring scope generator now detects `@/...` path alias imports (not just relative imports)
+  - Resolves `@/services/utils/foo.js` to `src/services/utils/foo.ts` for Ring 1 inclusion
 
 ### Security
 
