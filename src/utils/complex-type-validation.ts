@@ -89,6 +89,31 @@ export function validatePersonalNameValue(
     return null;
   }
 
+  if (Array.isArray(value)) {
+    return value.map((item, idx) => {
+      if (item === null || item === undefined) {
+        return null;
+      }
+      try {
+        return validatePersonalNameValue(item, `${fieldName}[${idx}]`);
+      } catch (err) {
+        if (err instanceof UniversalValidationError) {
+          throw new UniversalValidationError(
+            `${err.message} (item ${idx})`,
+            err.errorType,
+            {
+              field: fieldName,
+              suggestion: err.suggestion,
+              example: err.example,
+              cause: err,
+            }
+          );
+        }
+        throw err;
+      }
+    }) as unknown as UnknownRecord;
+  }
+
   const ensureHasNameParts = (nameObj: UnknownRecord): void => {
     const hasName = ['first_name', 'last_name', 'full_name'].some((k) => {
       const v = nameObj[k];

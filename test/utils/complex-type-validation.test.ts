@@ -44,6 +44,11 @@ describe('complex-type-validation', () => {
       expect(result).toMatchObject({ first_name: 'Jane', last_name: 'Doe' });
     });
 
+    it('allows null entries inside arrays for clears', () => {
+      const result = validatePersonalNameValue([null], 'names');
+      expect(result).toEqual([null]);
+    });
+
     it('requires at least one name field', () => {
       expect(() => validatePersonalNameValue({}, 'name')).toThrow(
         UniversalValidationError

@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Complex attribute validation** (#991) - clearer validation and error messages for location, personal-name, and phone-number fields
+  - Pre-validates complex types with actionable errors and examples before Attio API calls
+  - Auto-fills missing location fields with nulls; enforces phone_number/original_phone_number and non-empty names
+  - Enhanced CRUD error handling surfaces Attio validation_errors and select/status option hints
+
 - **Record-reference fields now auto-format** (#997) - Automatic transformation to Attio's required format
   - String IDs like `company: "uuid"` are auto-converted to `[{target_object: "companies", target_record_id: "uuid"}]`
   - Fixes 400 errors when linking people to companies or associating people with deals

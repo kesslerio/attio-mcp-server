@@ -2,7 +2,6 @@
  * Attribute type detection and management for Attio attributes
  */
 import { getLazyAttioClient } from '@/api/lazy-client.js';
-import { parsePersonalName } from '@/utils/personal-name-parser.js';
 import {
   validateLocationValue,
   validatePersonalNameValue,
