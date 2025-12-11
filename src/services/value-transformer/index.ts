@@ -192,6 +192,22 @@ export async function transformRecordValues(
 
     // No transformation applied, pass through unchanged
     transformedData[field] = value;
+
+    // Issue #992: Debug logging for false-positive measurement
+    // Helps evaluate if mayNeedTransformation() is triggering too often for non-multi-select fields
+    if (attrMeta && !attrMeta.is_multiselect && typeof value === 'string') {
+      debug(
+        'value-transformer',
+        'Non-multi-select string field passed through unchanged',
+        {
+          field,
+          resourceType: context.resourceType,
+          attrType: attrMeta.type,
+        },
+        'transformRecordValues',
+        OperationType.DATA_PROCESSING
+      );
+    }
   }
 
   // Log transformation summary

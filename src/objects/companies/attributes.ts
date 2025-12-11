@@ -252,6 +252,9 @@ export async function getCompanyCustomFields(
  * Discovers all available attributes for companies in the workspace
  *
  * @returns List of all company attributes with metadata
+ *   - is_multiselect: Present when attribute allows multiple values (Issue #992)
+ *     Note: Attio uses `type: "select"` + `is_multiselect: true` for multi-select attributes,
+ *     NOT `type: "multi_select"` as one might expect.
  */
 export async function discoverCompanyAttributes(): Promise<{
   standard: string[];

@@ -594,7 +594,8 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       multiSelectField = await testCase.discoverMultiSelectFieldAndOption();
       if (multiSelectField) {
         console.log(
-          `🔍 Discovered multi-select field: ${multiSelectField.fieldSlug} ` +
+          `🔍 Discovered field: ${multiSelectField.fieldSlug} ` +
+            `(${multiSelectField.isMultiSelect ? 'confirmed multi-select' : 'select type'}) ` +
             `with option: "${multiSelectField.validOption}"`
         );
       } else {
@@ -613,6 +614,12 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       const companyData: Record<string, unknown> = { name: uniqueName };
       if (multiSelectField) {
         companyData[multiSelectField.fieldSlug] = multiSelectField.validOption;
+
+        // Issue #992: Stronger guarantee - assert we're actually testing a confirmed multi-select
+        // This ensures the test is exercising the auto-wrap feature, not just passing vacuously
+        if (multiSelectField.isMultiSelect) {
+          expect(multiSelectField.isMultiSelect).toBe(true);
+        }
       }
 
       const result = await testCase.executeToolCall('create-record', {

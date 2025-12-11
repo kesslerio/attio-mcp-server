@@ -285,7 +285,12 @@ describe('multi-select-transformer', () => {
 
     it('should return false for select type with is_multiselect explicitly undefined', () => {
       // Edge case: Explicitly verify that undefined is_multiselect with select type
-      // returns false (doesn't get accidentally wrapped)
+      // returns false (doesn't get accidentally wrapped).
+      //
+      // Note: This tests explicit `is_multiselect: undefined` assignment.
+      // In real Attio API responses, the field may simply be absent (truly undefined).
+      // TypeScript treats both as `undefined`, but this test verifies our detection
+      // logic handles explicit undefined correctly - important for API response parsing.
       const selectUndefined: AttributeMetadata = {
         slug: 'channel',
         type: 'select',
