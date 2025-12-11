@@ -356,32 +356,29 @@ const enhanceComplexTypeError = (
 
   const msg = error instanceof Error ? error.message : String(error);
 
-  const hasValidationErrors =
-    error &&
-    typeof error === 'object' &&
-    'response' in error &&
-    error.response &&
-    typeof error.response === 'object' &&
-    'data' in error.response &&
-    typeof (error.response as Record<string, unknown>).data === 'object' &&
-    (error.response as Record<string, unknown>).data !== null &&
-    'validation_errors' in (error.response as Record<string, unknown>).data;
-
-  const validationErrors = hasValidationErrors
-    ? (
-        ((error as Record<string, unknown>).response as Record<string, unknown>)
-          .data as Record<string, unknown>
-      ).validation_errors
-    : null;
+  const validationErrors =
+    (error as { response?: { data?: { validation_errors?: unknown } } })
+      ?.response?.data?.validation_errors ?? null;
 
   const recordFields = recordData ? Object.keys(recordData) : [];
+
+  const validationErrorsArray = Array.isArray(validationErrors)
+    ? (validationErrors as unknown[])
+    : null;
 
   const containsLocation =
     /location/i.test(msg) ||
     recordFields.some((f) => /location/i.test(f)) ||
-    (Array.isArray(validationErrors) &&
-      validationErrors.some((ve: Record<string, unknown>) =>
-        /location/i.test(String(ve?.field || ve?.path || ve?.message || ''))
+    (validationErrorsArray &&
+      validationErrorsArray.some((ve) =>
+        /location/i.test(
+          String(
+            (ve as Record<string, unknown>)?.field ||
+              (ve as Record<string, unknown>)?.path ||
+              (ve as Record<string, unknown>)?.message ||
+              ''
+          )
+        )
       ));
 
   if (containsLocation) {
@@ -394,9 +391,16 @@ const enhanceComplexTypeError = (
 
   const containsPhone =
     /phone/.test(msg) ||
-    (Array.isArray(validationErrors) &&
-      validationErrors.some((ve: Record<string, unknown>) =>
-        /phone/.test(String(ve?.field || ve?.path || ve?.message || ''))
+    (validationErrorsArray &&
+      validationErrorsArray.some((ve) =>
+        /phone/.test(
+          String(
+            (ve as Record<string, unknown>)?.field ||
+              (ve as Record<string, unknown>)?.path ||
+              (ve as Record<string, unknown>)?.message ||
+              ''
+          )
+        )
       ));
 
   if (containsPhone) {
@@ -409,9 +413,16 @@ const enhanceComplexTypeError = (
 
   const containsPersonalName =
     /personal-name/.test(msg) ||
-    (Array.isArray(validationErrors) &&
-      validationErrors.some((ve: Record<string, unknown>) =>
-        /name/.test(String(ve?.field || ve?.path || ve?.message || ''))
+    (validationErrorsArray &&
+      validationErrorsArray.some((ve) =>
+        /name/.test(
+          String(
+            (ve as Record<string, unknown>)?.field ||
+              (ve as Record<string, unknown>)?.path ||
+              (ve as Record<string, unknown>)?.message ||
+              ''
+          )
+        )
       ));
 
   if (containsPersonalName) {
