@@ -252,6 +252,9 @@ export async function getCompanyCustomFields(
  * Discovers all available attributes for companies in the workspace
  *
  * @returns List of all company attributes with metadata
+ *   - is_multiselect: Present when attribute allows multiple values (Issue #992)
+ *     Note: Attio uses `type: "select"` + `is_multiselect: true` for multi-select attributes,
+ *     NOT `type: "multi_select"` as one might expect.
  */
 export async function discoverCompanyAttributes(): Promise<{
   standard: string[];
@@ -260,6 +263,8 @@ export async function discoverCompanyAttributes(): Promise<{
     name: string;
     type: string;
     isCustom: boolean;
+    is_multiselect?: boolean; // Issue #992: Required for multi-select detection
+    api_slug?: string;
   }>;
 }> {
   const log = createScopedLogger(
@@ -387,7 +392,13 @@ export async function discoverCompanyAttributes(): Promise<{
 
     const standard: string[] = [];
     const custom: string[] = [];
-    const all: Array<{ name: string; type: string; isCustom: boolean }> = [];
+    const all: Array<{
+      name: string;
+      type: string;
+      isCustom: boolean;
+      is_multiselect?: boolean;
+      api_slug?: string;
+    }> = [];
 
     for (const [fieldName] of Object.entries(values)) {
       const isCustom = !standardFields.has(fieldName);
@@ -405,6 +416,9 @@ export async function discoverCompanyAttributes(): Promise<{
         name: fieldName,
         type: fieldType,
         isCustom,
+        // Issue #992: Include is_multiselect from API metadata
+        is_multiselect: metadata?.is_multiselect,
+        api_slug: metadata?.api_slug || fieldName,
       });
     }
 

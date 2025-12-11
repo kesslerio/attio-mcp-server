@@ -69,6 +69,7 @@ async function getAttributeMetadata(
       title?: string;
       is_system_attribute?: boolean;
       is_writable?: boolean;
+      is_multiselect?: boolean;
     }>;
 
     for (const attr of allAttrs) {
@@ -81,6 +82,7 @@ async function getAttributeMetadata(
           api_slug: attr.api_slug,
           is_system_attribute: attr.is_system_attribute,
           is_writable: attr.is_writable,
+          is_multiselect: attr.is_multiselect,
         });
       }
     }
@@ -190,6 +192,22 @@ export async function transformRecordValues(
 
     // No transformation applied, pass through unchanged
     transformedData[field] = value;
+
+    // Issue #992: Debug logging for false-positive measurement
+    // Helps evaluate if mayNeedTransformation() is triggering too often for non-multi-select fields
+    if (attrMeta && !attrMeta.is_multiselect && typeof value === 'string') {
+      debug(
+        'value-transformer',
+        'Non-multi-select string field passed through unchanged',
+        {
+          field,
+          resourceType: context.resourceType,
+          attrType: attrMeta.type,
+        },
+        'transformRecordValues',
+        OperationType.DATA_PROCESSING
+      );
+    }
   }
 
   // Log transformation summary
@@ -219,6 +237,22 @@ export async function transformRecordValues(
 /**
  * Check if a record has fields that may need transformation
  * (Quick check without actually fetching metadata)
+ *
+ * TRADE-OFF: This function is intentionally PERMISSIVE.
+ *
+ * Issue #992: We can't know which custom fields are multi-select without fetching
+ * metadata from the API. Rather than miss a multi-select field and cause an API
+ * error, we trigger transformation for any unknown string field.
+ *
+ * Implications:
+ * - Some fields will trigger transformation unnecessarily (false positives)
+ * - First request per resource type incurs metadata API call (then cached)
+ * - This is better than the alternative: silent failures on custom multi-selects
+ *
+ * Tuning levers if performance becomes an issue:
+ * - Expand `definitelyNotMultiSelect` with common text field patterns
+ * - Monitor false-positive rate via logging
+ * - Consider workspace-specific caching of field types
  */
 export function mayNeedTransformation(
   recordData: Record<string, unknown>,
@@ -230,36 +264,64 @@ export function mayNeedTransformation(
     tasks: ['status'],
   };
 
-  // Known multi-select fields (workspace-specific, so we check all)
+  // Known multi-select fields (workspace-specific, so we check common patterns)
+  // Issue #992: Added 'channel' based on user feedback
   const multiSelectIndicators = [
     'categories',
     'tags',
     'types',
     'lead_type',
     'inbound_outbound',
+    'channel', // Added per Issue #992 feedback
+  ];
+
+  // Fields that are definitely NOT multi-select (optimization to avoid unnecessary API calls)
+  const definitelyNotMultiSelect = [
+    'name',
+    'description',
+    'notes',
+    'email',
+    'phone',
+    'website',
+    'domain',
+    'address',
+    'title',
+    'content',
+    'id',
+    'record_id',
   ];
 
   const resourceKey = resourceType.toLowerCase();
   const knownStatusFields = statusFields[resourceKey] || [];
 
   for (const field of Object.keys(recordData)) {
+    const value = recordData[field];
+    const fieldLower = field.toLowerCase();
+
+    // Skip null/undefined/array values - they don't need transformation
+    if (value === null || value === undefined || Array.isArray(value)) {
+      continue;
+    }
+
     // Check if it's a known status field with a string value
+    if (knownStatusFields.includes(field) && typeof value === 'string') {
+      return true;
+    }
+
+    // Check if it matches known multi-select indicator patterns
     if (
-      knownStatusFields.includes(field) &&
-      typeof recordData[field] === 'string'
+      multiSelectIndicators.some((indicator) => fieldLower.includes(indicator))
     ) {
       return true;
     }
 
-    // Check if it might be a multi-select field with a non-array value
+    // Issue #992: For any string value on a field that's NOT definitely-not-multi-select,
+    // trigger transformation to let the actual metadata check determine if it's multi-select
     if (
-      multiSelectIndicators.some((indicator) =>
-        field.toLowerCase().includes(indicator)
-      ) &&
-      !Array.isArray(recordData[field]) &&
-      recordData[field] !== null &&
-      recordData[field] !== undefined
+      typeof value === 'string' &&
+      !definitelyNotMultiSelect.some((safe) => fieldLower.includes(safe))
     ) {
+      // This is a potential multi-select field - trigger full transformation
       return true;
     }
   }

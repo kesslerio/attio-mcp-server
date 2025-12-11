@@ -78,6 +78,8 @@ export interface AttributeMetadata {
   api_slug?: string;
   is_system_attribute?: boolean;
   is_writable?: boolean;
+  /** Indicates multi-select attribute (Attio uses type="select" + is_multiselect=true) */
+  is_multiselect?: boolean;
 }
 
 /**

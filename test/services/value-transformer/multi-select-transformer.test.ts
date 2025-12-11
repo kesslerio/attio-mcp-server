@@ -8,7 +8,10 @@ import { describe, it, expect } from 'vitest';
 import {
   transformMultiSelectValue,
   isMultiSelectType,
+  isMultiSelectTypeName,
+  isMultiSelectAttribute,
   needsArrayWrapping,
+  needsArrayWrappingForAttribute,
 } from '@/services/value-transformer/multi-select-transformer';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types';
 import type {
@@ -32,6 +35,21 @@ describe('multi-select-transformer', () => {
     slug: 'name',
     type: 'text',
     title: 'Name',
+  };
+
+  // Issue #992: Custom multi-select with is_multiselect flag (Attio's actual format)
+  const customMultiSelectMeta: AttributeMetadata = {
+    slug: 'inbound_outbound',
+    type: 'select', // Note: type is "select", not "multi_select"
+    title: 'Inbound/Outbound',
+    is_multiselect: true, // This is how Attio actually marks multi-select attributes
+  };
+
+  const singleSelectMeta: AttributeMetadata = {
+    slug: 'priority',
+    type: 'select',
+    title: 'Priority',
+    is_multiselect: false,
   };
 
   describe('isMultiSelectType', () => {
@@ -189,6 +207,145 @@ describe('multi-select-transformer', () => {
         expect(result.transformed).toBe(true);
         expect(result.transformedValue).toEqual(['TestValue']);
       }
+    });
+
+    // Issue #992: Test transformation with is_multiselect flag
+    it('should transform custom multi-select with is_multiselect=true (Issue #992)', async () => {
+      // This is the actual Attio format: type="select" + is_multiselect=true
+      const result = await transformMultiSelectValue(
+        'Inbound',
+        'inbound_outbound',
+        mockContext,
+        customMultiSelectMeta
+      );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual(['Inbound']);
+      expect(result.description).toContain('inbound_outbound');
+    });
+
+    it('should NOT transform single-select attributes (is_multiselect=false)', async () => {
+      const result = await transformMultiSelectValue(
+        'High',
+        'priority',
+        mockContext,
+        singleSelectMeta
+      );
+
+      expect(result.transformed).toBe(false);
+      expect(result.transformedValue).toBe('High');
+    });
+
+    it('should NOT transform select attributes without is_multiselect flag', async () => {
+      const selectWithoutFlag: AttributeMetadata = {
+        slug: 'status',
+        type: 'select',
+        title: 'Status',
+        // No is_multiselect field
+      };
+
+      const result = await transformMultiSelectValue(
+        'Active',
+        'status',
+        mockContext,
+        selectWithoutFlag
+      );
+
+      expect(result.transformed).toBe(false);
+      expect(result.transformedValue).toBe('Active');
+    });
+  });
+
+  // Issue #992: New tests for isMultiSelectAttribute function
+  describe('isMultiSelectAttribute', () => {
+    it('should return true when is_multiselect flag is true', () => {
+      expect(isMultiSelectAttribute(customMultiSelectMeta)).toBe(true);
+    });
+
+    it('should return false when is_multiselect is false', () => {
+      expect(isMultiSelectAttribute(singleSelectMeta)).toBe(false);
+    });
+
+    it('should fallback to type check when is_multiselect is undefined', () => {
+      expect(isMultiSelectAttribute(multiSelectMeta)).toBe(true);
+    });
+
+    it('should return false for text type without is_multiselect', () => {
+      expect(isMultiSelectAttribute(textMeta)).toBe(false);
+    });
+
+    it('should return false for select type without is_multiselect flag', () => {
+      const selectMeta: AttributeMetadata = {
+        slug: 'status',
+        type: 'select',
+        title: 'Status',
+      };
+      expect(isMultiSelectAttribute(selectMeta)).toBe(false);
+    });
+
+    it('should return false for select type with is_multiselect explicitly undefined', () => {
+      // Edge case: Explicitly verify that undefined is_multiselect with select type
+      // returns false (doesn't get accidentally wrapped).
+      //
+      // Note: This tests explicit `is_multiselect: undefined` assignment.
+      // In real Attio API responses, the field may simply be absent (truly undefined).
+      // TypeScript treats both as `undefined`, but this test verifies our detection
+      // logic handles explicit undefined correctly - important for API response parsing.
+      const selectUndefined: AttributeMetadata = {
+        slug: 'channel',
+        type: 'select',
+        title: 'Channel',
+        is_multiselect: undefined,
+      };
+      expect(isMultiSelectAttribute(selectUndefined)).toBe(false);
+    });
+  });
+
+  // Issue #992: Tests for isMultiSelectTypeName (renamed function)
+  describe('isMultiSelectTypeName', () => {
+    it('should return true for multi_select type', () => {
+      expect(isMultiSelectTypeName('multi_select')).toBe(true);
+    });
+
+    it('should return true for multi-select type', () => {
+      expect(isMultiSelectTypeName('multi-select')).toBe(true);
+    });
+
+    it('should return false for select type', () => {
+      expect(isMultiSelectTypeName('select')).toBe(false);
+    });
+  });
+
+  // Issue #992: Tests for needsArrayWrappingForAttribute
+  describe('needsArrayWrappingForAttribute', () => {
+    it('should return true for string value on custom multi-select', () => {
+      expect(
+        needsArrayWrappingForAttribute('Inbound', customMultiSelectMeta)
+      ).toBe(true);
+    });
+
+    it('should return false for array value on custom multi-select', () => {
+      expect(
+        needsArrayWrappingForAttribute(['Inbound'], customMultiSelectMeta)
+      ).toBe(false);
+    });
+
+    it('should return false for single-select attributes', () => {
+      expect(needsArrayWrappingForAttribute('High', singleSelectMeta)).toBe(
+        false
+      );
+    });
+
+    it('should return false for null value', () => {
+      expect(needsArrayWrappingForAttribute(null, customMultiSelectMeta)).toBe(
+        false
+      );
+    });
+
+    it('should return false for undefined value', () => {
+      expect(
+        needsArrayWrappingForAttribute(undefined, customMultiSelectMeta)
+      ).toBe(false);
     });
   });
 });

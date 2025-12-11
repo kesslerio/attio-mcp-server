@@ -90,6 +90,35 @@ describe('value-transformer orchestrator', () => {
       );
       expect(result).toBe(true);
     });
+
+    // Issue #992: Tests for channel field (from user feedback)
+    it('should return true for channel with single value (Issue #992)', () => {
+      const result = mayNeedTransformation(
+        { channel: 'Inperson' },
+        UniversalResourceType.COMPANIES
+      );
+      expect(result).toBe(true);
+    });
+
+    // Issue #992: Test that unknown custom fields with string values trigger transformation
+    it('should return true for unknown custom fields with string values (Issue #992)', () => {
+      // Custom fields we don't know about should still trigger transformation
+      // so that the actual metadata check can determine if they're multi-select
+      const result = mayNeedTransformation(
+        { custom_field: 'SomeValue' },
+        UniversalResourceType.COMPANIES
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should return false for definitely-not-multi-select fields', () => {
+      // These fields are known to never be multi-select
+      const result = mayNeedTransformation(
+        { name: 'Test Company', description: 'A company' },
+        UniversalResourceType.COMPANIES
+      );
+      expect(result).toBe(false);
+    });
   });
 
   describe('transformRecordValues', () => {
@@ -285,6 +314,98 @@ describe('value-transformer orchestrator', () => {
         expect(error.message).toContain('MQL');
         expect(error.message).toContain('Demo');
       }
+    });
+
+    // Issue #992: Test transformation with is_multiselect flag from schema
+    it('should transform custom multi-select with is_multiselect flag (Issue #992)', async () => {
+      const { handleUniversalDiscoverAttributes } = await import(
+        '@/handlers/tool-configs/universal/shared-handlers.js'
+      );
+
+      vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
+        all: [
+          // Actual Attio format: type="select" with is_multiselect=true
+          {
+            api_slug: 'inbound_outbound',
+            type: 'select',
+            title: 'Inbound/Outbound',
+            is_multiselect: true,
+          },
+          { api_slug: 'name', type: 'text', title: 'Name' },
+        ],
+      });
+
+      const result = await transformRecordValues(
+        { name: 'Test Company', inbound_outbound: 'Inbound' },
+        {
+          resourceType: UniversalResourceType.COMPANIES,
+          operation: 'create',
+        }
+      );
+
+      expect(result.data.name).toBe('Test Company');
+      expect(result.data.inbound_outbound).toEqual(['Inbound']);
+      expect(result.transformations).toHaveLength(1);
+      expect(result.transformations[0].type).toBe('multi_select_wrap');
+      expect(result.transformations[0].field).toBe('inbound_outbound');
+    });
+
+    it('should NOT transform single-select attributes (is_multiselect=false)', async () => {
+      const { handleUniversalDiscoverAttributes } = await import(
+        '@/handlers/tool-configs/universal/shared-handlers.js'
+      );
+
+      vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
+        all: [
+          {
+            api_slug: 'priority',
+            type: 'select',
+            title: 'Priority',
+            is_multiselect: false,
+          },
+          { api_slug: 'name', type: 'text', title: 'Name' },
+        ],
+      });
+
+      const result = await transformRecordValues(
+        { name: 'Test Company', priority: 'High' },
+        {
+          resourceType: UniversalResourceType.COMPANIES,
+          operation: 'create',
+        }
+      );
+
+      expect(result.data.name).toBe('Test Company');
+      expect(result.data.priority).toBe('High'); // NOT wrapped in array
+      expect(result.transformations).toHaveLength(0);
+    });
+
+    it('should NOT transform select attributes without is_multiselect flag', async () => {
+      const { handleUniversalDiscoverAttributes } = await import(
+        '@/handlers/tool-configs/universal/shared-handlers.js'
+      );
+
+      vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
+        all: [
+          {
+            api_slug: 'channel',
+            type: 'select',
+            title: 'Channel',
+            // No is_multiselect field
+          },
+        ],
+      });
+
+      const result = await transformRecordValues(
+        { channel: 'Direct' },
+        {
+          resourceType: UniversalResourceType.COMPANIES,
+          operation: 'create',
+        }
+      );
+
+      expect(result.data.channel).toBe('Direct'); // NOT wrapped in array
+      expect(result.transformations).toHaveLength(0);
     });
   });
 });
