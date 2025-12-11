@@ -27,6 +27,26 @@ import {
 } from '../../../../../src/handlers/tool-configs/universal/core/crud-error-handlers.js';
 import { UniversalResourceType } from '../../../../../src/handlers/tool-configs/universal/types.js';
 
+vi.mock('../../../../../src/services/metadata/index.js', async () => {
+  const actual = await vi.importActual<
+    typeof import('../../../../../src/services/metadata/index.js')
+  >('../../../../../src/services/metadata/index.js');
+
+  return {
+    ...actual,
+    AttributeOptionsService: {
+      getOptions: vi.fn().mockResolvedValue({
+        options: [
+          { id: '1', title: 'Demo' },
+          { id: '2', title: 'Qualified' },
+          { id: '3', title: 'Closed Won' },
+        ],
+        attributeType: 'select',
+      }),
+    },
+  };
+});
+
 const companies = UniversalResourceType.COMPANIES;
 
 describe('crud-error-handlers', () => {
@@ -61,8 +81,9 @@ describe('crud-error-handlers', () => {
   });
 
   it('falls back to create_error when no specific pattern matches', async () => {
+    const err = new Error('Unexpected failure');
     await expect(
-      handleCreateError(new Error('Unexpected failure'), companies, {
+      handleCreateError(err, companies, {
         name: 'Fallback',
       })
     ).rejects.toMatchObject({
@@ -92,9 +113,10 @@ describe('crud-error-handlers', () => {
   });
 
   it('throws not_found_error when update finds no record', async () => {
+    const err = new Error('record not found');
     await expect(
       handleUpdateError(
-        new Error('record not found'),
+        err,
         UniversalResourceType.PEOPLE,
         { name: 'Missing' },
         'person_404'
@@ -199,6 +221,56 @@ describe('crud-error-handlers', () => {
         message: expect.stringContaining(
           'Attribute "twitter_handle" does not exist'
         ),
+      });
+    });
+
+    it('enhances complex type error for location', async () => {
+      const error = {
+        response: {
+          data: {
+            message:
+              'Invalid object value for "primary_location". Expected an object, but got string.',
+            validation_errors: [
+              { field: 'primary_location', message: 'Expected object' },
+            ],
+          },
+        },
+        message:
+          'Invalid object value for "primary_location". Expected an object, but got string.',
+      } as unknown as Error;
+
+      await expect(
+        handleUpdateError(error, companies, {
+          primary_location: '123 Main St',
+        })
+      ).rejects.toMatchObject({
+        name: 'validation_error',
+        message: expect.stringContaining('Invalid location value'),
+      });
+    });
+
+    it('enhances select/status errors from validation_errors with options', async () => {
+      const error = {
+        response: {
+          data: {
+            message: 'Validation failed',
+            validation_errors: [
+              {
+                field: 'stage',
+                message: 'Cannot find select option with title "Bad Stage"',
+              },
+            ],
+          },
+        },
+        message: 'Cannot find select option with title "Bad Stage"',
+      } as unknown as Error;
+
+      await expect(
+        handleUpdateError(error, UniversalResourceType.DEALS, {
+          stage: 'Bad Stage',
+        })
+      ).rejects.toMatchObject({
+        name: 'value_not_found',
       });
     });
 

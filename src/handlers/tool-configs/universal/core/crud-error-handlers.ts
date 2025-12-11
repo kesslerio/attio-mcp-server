@@ -182,6 +182,30 @@ const extractAttioValidationErrors = (error: unknown): string | null => {
 };
 
 /**
+ * Extract top-level Attio message from axios-style errors
+ */
+const extractAttioMessage = (error: unknown): string | null => {
+  try {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response &&
+      typeof error.response === 'object' &&
+      'data' in error.response
+    ) {
+      const data = (error.response as Record<string, unknown>).data;
+      if (data && typeof data === 'object' && 'message' in data) {
+        return String((data as Record<string, unknown>).message);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
+/**
  * Enhance error messages for select/status attribute errors
  * Detects "Cannot find select option" or "Cannot find Status" errors
  * and provides valid options from AttributeOptionsService
@@ -303,6 +327,102 @@ to see valid options, then retry.`;
     `Value "${invalidValue}" is not valid for an attribute on ${resourceType}.\n\n` +
     `Next step: Use records_get_attribute_options to discover valid options for the attribute.`
   );
+};
+
+/**
+ * Enhance complex type errors (location, personal-name, phone-number)
+ */
+const enhanceComplexTypeError = (
+  error: unknown,
+  recordData?: Record<string, unknown>
+): string | null => {
+  const locationExample =
+    '{\n' +
+    '  "line_1": "123 Main St",\n' +
+    '  "locality": "City",\n' +
+    '  "region": "State",\n' +
+    '  "postcode": "12345",\n' +
+    '  "country_code": "US",\n' +
+    '  "latitude": null,\n' +
+    '  "longitude": null,\n' +
+    '  "line_2": null,\n' +
+    '  "line_3": null,\n' +
+    '  "line_4": null\n' +
+    '}';
+
+  const phoneExample =
+    '{ "phone_number": "+15551234567", "country_code": "US" }';
+  const nameExample = '{ "first_name": "Jane", "last_name": "Doe" }';
+
+  const msg = error instanceof Error ? error.message : String(error);
+
+  const hasValidationErrors =
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response &&
+    typeof (error.response as Record<string, unknown>).data === 'object' &&
+    (error.response as Record<string, unknown>).data !== null &&
+    'validation_errors' in (error.response as Record<string, unknown>).data;
+
+  const validationErrors = hasValidationErrors
+    ? (
+        ((error as Record<string, unknown>).response as Record<string, unknown>)
+          .data as Record<string, unknown>
+      ).validation_errors
+    : null;
+
+  const recordFields = recordData ? Object.keys(recordData) : [];
+
+  const containsLocation =
+    /location/i.test(msg) ||
+    recordFields.some((f) => /location/i.test(f)) ||
+    (Array.isArray(validationErrors) &&
+      validationErrors.some((ve: Record<string, unknown>) =>
+        /location/i.test(String(ve?.field || ve?.path || ve?.message || ''))
+      ));
+
+  if (containsLocation) {
+    return (
+      `Invalid location value. Expected an object with all required fields.\n\n` +
+      `Expected structure:\n${locationExample}\n\n` +
+      `Tip: Missing fields are auto-filled with null; pass an object, not a string.`
+    );
+  }
+
+  const containsPhone =
+    /phone/.test(msg) ||
+    (Array.isArray(validationErrors) &&
+      validationErrors.some((ve: Record<string, unknown>) =>
+        /phone/.test(String(ve?.field || ve?.path || ve?.message || ''))
+      ));
+
+  if (containsPhone) {
+    return (
+      `Invalid phone-number value. Provide phone_number or original_phone_number strings.\n\n` +
+      `Example: ${phoneExample}\n\n` +
+      `Tip: Strings are normalized to E.164; keep label/type fields if needed.`
+    );
+  }
+
+  const containsPersonalName =
+    /personal-name/.test(msg) ||
+    (Array.isArray(validationErrors) &&
+      validationErrors.some((ve: Record<string, unknown>) =>
+        /name/.test(String(ve?.field || ve?.path || ve?.message || ''))
+      ));
+
+  if (containsPersonalName) {
+    return (
+      `Invalid personal-name value. Provide first_name/last_name or full_name.\n\n` +
+      `Example: ${nameExample}\n\n` +
+      `Tip: Strings are parsed automatically; empty strings are rejected.`
+    );
+  }
+
+  return null;
 };
 
 /**
@@ -541,6 +661,17 @@ export const handleCreateError = async (
     throw errorResult;
   }
 
+  // Check for complex type errors (location, phone, personal-name)
+  const complexTypeError = enhanceComplexTypeError(error, recordData);
+  if (complexTypeError) {
+    const errorResult = createErrorResult(
+      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${complexTypeError}`,
+      'validation_error',
+      { context }
+    );
+    throw errorResult;
+  }
+
   // Check for select/status errors and enhance with valid options
   const enhancedSelectError = await enhanceSelectStatusError(
     error,
@@ -570,9 +701,12 @@ export const handleCreateError = async (
   // Fallback to general create error handling
   const baseError = error instanceof Error ? error.message : String(error);
   const apiErrors = extractAttioValidationErrors(error);
+  const attioMessage = extractAttioMessage(error);
   const errorMessage = apiErrors
     ? `${baseError}. Details: ${apiErrors}`
-    : baseError;
+    : attioMessage
+      ? `${baseError}. Details: ${attioMessage}`
+      : baseError;
   const errorResult = createErrorResult(
     `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${errorMessage}`,
     'create_error',
@@ -644,6 +778,17 @@ export const handleUpdateError = async (
     throw errorResult;
   }
 
+  // Check for complex type errors (location, phone, personal-name)
+  const complexTypeError = enhanceComplexTypeError(error, recordData);
+  if (complexTypeError) {
+    const errorResult = createErrorResult(
+      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${complexTypeError}`,
+      'validation_error',
+      { context }
+    );
+    throw errorResult;
+  }
+
   // Check for select/status errors and enhance with valid options
   // (Must come before "not found" check since select errors contain "not found")
   const enhancedSelectError = await enhanceSelectStatusError(
@@ -688,9 +833,12 @@ export const handleUpdateError = async (
   const baseErrorMessage =
     error instanceof Error ? error.message : String(error);
   const validationDetail = extractAttioValidationErrors(error);
+  const attioMessage = extractAttioMessage(error);
   const errorMessage = validationDetail
     ? `${baseErrorMessage}. Details: ${validationDetail}`
-    : baseErrorMessage;
+    : attioMessage
+      ? `${baseErrorMessage}. Details: ${attioMessage}`
+      : baseErrorMessage;
   const errorResult = createErrorResult(
     `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${errorMessage}`,
     'update_error',
