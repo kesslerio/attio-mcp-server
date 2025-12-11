@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Record-reference fields now auto-format** (#997) - Automatic transformation to Attio's required format
+  - String IDs like `company: "uuid"` are auto-converted to `[{target_object: "companies", target_record_id: "uuid"}]`
+  - Fixes 400 errors when linking people to companies or associating people with deals
+  - Supports legacy formats: `{record_id: "uuid"}`, `{id: "uuid"}`, incomplete objects
+  - Target object inferred from field name (`company`→`companies`, `associated_people`→`people`)
+
 - **Multi-select fields now accept single values** (#992) - Automatic array wrapping for multi-select attributes
   - Single values like `lead_type: "Inbound"` are now auto-converted to `["Inbound"]`
   - Works for all custom multi-select fields (e.g., `categories`, `inbound_outbound`, `regions`)
