@@ -58,8 +58,14 @@ jobs:
 
       - name: Generate changelog with Claude
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }} # Ensure gh CLI has auth inside Claude's Bash
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: >-
+            --model claude-haiku-4-5
+            --max-turns 15
+            --allowedTools "Read,Edit,Write,Bash(git:*),Bash(gh pr list:*),Bash(gh pr create:*),Bash(date:*)"
           prompt: |
             Generate a daily changelog by analyzing commits since yesterday.
 
