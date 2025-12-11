@@ -7,6 +7,7 @@
  * Transformations:
  * - Status fields: "Demo Scheduling" → {status_id: "uuid"}
  * - Multi-select fields: "Inbound" → ["Inbound"]
+ * - Record-reference fields: "uuid" → [{target_object: "X", target_record_id: "uuid"}] (Issue #997)
  *
  * @module services/value-transformer
  */
@@ -22,6 +23,10 @@ import {
   clearStatusCache,
 } from './status-transformer.js';
 import { transformMultiSelectValue } from './multi-select-transformer.js';
+import {
+  transformRecordReferenceValue,
+  isCorrectRecordReferenceFormat,
+} from './record-reference-transformer.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { handleUniversalDiscoverAttributes } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { debug, error as logError, OperationType } from '@/utils/logger.js';
@@ -70,6 +75,10 @@ async function getAttributeMetadata(
       is_system_attribute?: boolean;
       is_writable?: boolean;
       is_multiselect?: boolean;
+      relationship?: {
+        object?: string;
+        cardinality?: string;
+      };
     }>;
 
     for (const attr of allAttrs) {
@@ -83,6 +92,8 @@ async function getAttributeMetadata(
           is_system_attribute: attr.is_system_attribute,
           is_writable: attr.is_writable,
           is_multiselect: attr.is_multiselect,
+          // Issue #997: Include relationship metadata for record-reference attributes
+          relationship: attr.relationship,
         });
       }
     }
@@ -190,6 +201,31 @@ export async function transformRecordValues(
       throw err;
     }
 
+    // Issue #997: Try record-reference transformation
+    try {
+      const refResult = await transformRecordReferenceValue(
+        value,
+        field,
+        context,
+        attrMeta
+      );
+
+      if (refResult.transformed) {
+        transformedData[field] = refResult.transformedValue;
+        transformations.push({
+          field,
+          from: refResult.originalValue,
+          to: refResult.transformedValue,
+          type: 'record_reference_format',
+          description: refResult.description || 'Record reference formatted',
+        });
+        continue;
+      }
+    } catch (err) {
+      // Record-reference transformation threw an error
+      throw err;
+    }
+
     // No transformation applied, pass through unchanged
     transformedData[field] = value;
 
@@ -244,6 +280,9 @@ export async function transformRecordValues(
  * metadata from the API. Rather than miss a multi-select field and cause an API
  * error, we trigger transformation for any unknown string field.
  *
+ * Issue #997: Record-reference fields also need transformation to format
+ * record IDs to [{target_object, target_record_id}] format.
+ *
  * Implications:
  * - Some fields will trigger transformation unnecessarily (false positives)
  * - First request per resource type incurs metadata API call (then cached)
@@ -264,6 +303,13 @@ export function mayNeedTransformation(
     tasks: ['status'],
   };
 
+  // Issue #997: Known record-reference fields by resource type
+  const recordReferenceFields: Record<string, string[]> = {
+    people: ['company'],
+    deals: ['associated_company', 'associated_people'],
+    companies: ['main_contact'],
+  };
+
   // Known multi-select fields (workspace-specific, so we check common patterns)
   // Issue #992: Added 'channel' based on user feedback
   const multiSelectIndicators = [
@@ -273,6 +319,17 @@ export function mayNeedTransformation(
     'lead_type',
     'inbound_outbound',
     'channel', // Added per Issue #992 feedback
+  ];
+
+  // Issue #997: Record-reference field name patterns
+  const recordReferenceIndicators = [
+    'company',
+    'person',
+    'people',
+    'contact',
+    'owner',
+    'assignee',
+    'associated_',
   ];
 
   // Fields that are definitely NOT multi-select (optimization to avoid unnecessary API calls)
@@ -293,13 +350,29 @@ export function mayNeedTransformation(
 
   const resourceKey = resourceType.toLowerCase();
   const knownStatusFields = statusFields[resourceKey] || [];
+  const knownRefFields = recordReferenceFields[resourceKey] || [];
 
   for (const field of Object.keys(recordData)) {
     const value = recordData[field];
     const fieldLower = field.toLowerCase();
 
-    // Skip null/undefined/array values - they don't need transformation
-    if (value === null || value === undefined || Array.isArray(value)) {
+    // Skip null/undefined values - they don't need transformation
+    if (value === null || value === undefined) {
+      continue;
+    }
+
+    // Issue #997: Check if it's a known record-reference field that may need formatting
+    // Record-reference fields can be strings, objects, or arrays - all may need transformation
+    if (knownRefFields.includes(field)) {
+      // Only skip if already in correct format (uses shared helper to avoid duplication)
+      if (isCorrectRecordReferenceFormat(value)) {
+        continue; // Already in correct format
+      }
+      return true;
+    }
+
+    // Skip arrays for other checks - they don't need multi-select transformation
+    if (Array.isArray(value)) {
       continue;
     }
 
@@ -311,6 +384,16 @@ export function mayNeedTransformation(
     // Check if it matches known multi-select indicator patterns
     if (
       multiSelectIndicators.some((indicator) => fieldLower.includes(indicator))
+    ) {
+      return true;
+    }
+
+    // Issue #997: Check if field name suggests record-reference
+    if (
+      recordReferenceIndicators.some((indicator) =>
+        fieldLower.includes(indicator)
+      ) &&
+      (typeof value === 'string' || typeof value === 'object')
     ) {
       return true;
     }

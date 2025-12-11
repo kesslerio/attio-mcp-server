@@ -250,6 +250,102 @@ const enhanceSelectStatusError = async (
 };
 
 /**
+ * Issue #997: Enhance error messages for record-reference attribute errors
+ * Detects "Missing target_object on record reference value" and similar errors
+ *
+ * @param error - The original error
+ * @param recordData - The record data that was submitted (optional)
+ * @returns Enhanced error message with format guidance, or null if not a record-reference error
+ */
+const enhanceRecordReferenceError = (
+  error: unknown,
+  recordData?: Record<string, unknown>
+): string | null => {
+  const msg = error instanceof Error ? error.message : String(error);
+
+  // Also check for validation_errors in axios response
+  let fullErrorText = msg;
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response
+  ) {
+    const data = (error.response as Record<string, unknown>).data;
+    if (data && typeof data === 'object') {
+      if ('message' in data) {
+        fullErrorText +=
+          ' ' + String((data as Record<string, unknown>).message);
+      }
+      if ('validation_errors' in data) {
+        const validationErrors = (data as Record<string, unknown>)
+          .validation_errors;
+        if (Array.isArray(validationErrors)) {
+          fullErrorText +=
+            ' ' +
+            validationErrors
+              .map((e: Record<string, unknown>) => String(e.message || e))
+              .join(' ');
+        }
+      }
+    }
+  }
+
+  // Pattern detection for record-reference errors
+  const isRecordRefError =
+    fullErrorText.includes('Missing target_object') ||
+    fullErrorText.includes('record reference') ||
+    fullErrorText.includes('target_record_id') ||
+    (fullErrorText.includes('Invalid value was passed to attribute') &&
+      (fullErrorText.includes('company') ||
+        fullErrorText.includes('associated_people') ||
+        fullErrorText.includes('associated_company') ||
+        fullErrorText.includes('main_contact')));
+
+  if (!isRecordRefError) return null;
+
+  // Try to identify which field might be the issue
+  const potentialRefFields = [
+    'company',
+    'associated_company',
+    'associated_people',
+    'main_contact',
+    'person',
+    'people',
+  ];
+
+  let affectedField: string | null = null;
+  if (recordData) {
+    for (const field of potentialRefFields) {
+      if (field in recordData) {
+        affectedField = field;
+        break;
+      }
+    }
+  }
+
+  let message = `Record reference format error`;
+  if (affectedField) {
+    message += ` on field "${affectedField}"`;
+  }
+  message += `.\n\n`;
+
+  message += `The Attio API expects record-reference fields in this format:\n`;
+  message += `  [{ "target_object": "object_type", "target_record_id": "uuid" }]\n\n`;
+
+  message += `Simplified formats (auto-transformed by this server):\n`;
+  message += `  • String: "company": "record-uuid"\n`;
+  message += `  • Legacy object: "company": {"record_id": "uuid"}\n\n`;
+
+  message += `If you're seeing this error, the auto-transformation may have failed.\n`;
+  message += `Ensure the record ID is valid and the field name is correct.`;
+
+  return message;
+};
+
+/**
  * Enhanced error context for CRUD operations
  */
 interface CrudErrorContext {
@@ -404,6 +500,17 @@ export const handleCreateError = async (
     throw errorResult;
   }
 
+  // Issue #997: Check for record-reference errors and enhance with format guidance
+  const enhancedRefError = enhanceRecordReferenceError(error, recordData);
+  if (enhancedRefError) {
+    const errorResult = createErrorResult(
+      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedRefError}`,
+      'record_reference_error',
+      { context }
+    );
+    throw errorResult;
+  }
+
   // Fallback to general create error handling
   const baseError = error instanceof Error ? error.message : String(error);
   const apiErrors = extractAttioValidationErrors(error);
@@ -492,6 +599,17 @@ export const handleUpdateError = async (
     const errorResult = createErrorResult(
       `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
       'value_not_found',
+      { context }
+    );
+    throw errorResult;
+  }
+
+  // Issue #997: Check for record-reference errors and enhance with format guidance
+  const enhancedRefError = enhanceRecordReferenceError(error, recordData);
+  if (enhancedRefError) {
+    const errorResult = createErrorResult(
+      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedRefError}`,
+      'record_reference_error',
       { context }
     );
     throw errorResult;

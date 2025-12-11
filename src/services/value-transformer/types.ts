@@ -66,7 +66,8 @@ export type TransformationType =
   | 'status_title_to_id' // "Demo Scheduling" → {status_id: "uuid"}
   | 'multi_select_wrap' // "Inbound" → ["Inbound"]
   | 'select_title_to_id' // "Technology" → {option_id: "uuid"} (if needed)
-  | 'array_coercion'; // Single value to array
+  | 'array_coercion' // Single value to array
+  | 'record_reference_format'; // "uuid" → [{target_object: "X", target_record_id: "uuid"}]
 
 /**
  * Attribute metadata needed for transformation
@@ -80,6 +81,21 @@ export interface AttributeMetadata {
   is_writable?: boolean;
   /** Indicates multi-select attribute (Attio uses type="select" + is_multiselect=true) */
   is_multiselect?: boolean;
+  /** Relationship metadata for record-reference attributes (Issue #997) */
+  relationship?: {
+    /** Target object type (e.g., 'companies', 'people') */
+    object?: string;
+    /** Relationship cardinality (API may return any string) */
+    cardinality?: string;
+  };
+}
+
+/**
+ * Record reference value format expected by Attio API
+ */
+export interface RecordReferenceValue {
+  target_object: string;
+  target_record_id: string;
 }
 
 /**
