@@ -39,7 +39,7 @@ export function validateLocationValue(
         ErrorType.USER_ERROR,
         {
           field: fieldName,
-          example: LOCATION_EXAMPLE,
+          example: JSON.stringify(LOCATION_EXAMPLE),
           suggestion:
             'Provide a location object; all missing fields will be set to null automatically.',
         }
@@ -55,7 +55,16 @@ export function validateLocationValue(
         return normalizeSingle(item);
       } catch (err) {
         if (err instanceof UniversalValidationError) {
-          err.details = { ...(err.details || {}), index: idx };
+          throw new UniversalValidationError(
+            `${err.message} (item ${idx})`,
+            err.errorType,
+            {
+              field: fieldName,
+              suggestion: err.suggestion,
+              example: err.example,
+              cause: err,
+            }
+          );
         }
         throw err;
       }
@@ -89,11 +98,11 @@ export function validatePersonalNameValue(
         ErrorType.USER_ERROR,
         {
           field: fieldName,
-          example: {
+          example: JSON.stringify({
             first_name: 'Jane',
             last_name: 'Doe',
             full_name: 'Jane Doe',
-          },
+          }),
           suggestion: 'Provide first_name/last_name or a full_name string.',
         }
       );
@@ -125,7 +134,7 @@ export function validatePersonalNameValue(
     ErrorType.USER_ERROR,
     {
       field: fieldName,
-      example: { full_name: 'Jane Doe' },
+      example: JSON.stringify({ full_name: 'Jane Doe' }),
       suggestion:
         'Provide a string ("Jane Doe") or an object with first_name/last_name.',
     }
@@ -153,7 +162,7 @@ export function validatePhoneNumberValue(
           {
             field: fieldName,
             suggestion: 'Provide a phone number like +15551234567.',
-            example: { phone_number: '+15551234567' },
+            example: '+15551234567',
           }
         );
       }
@@ -175,7 +184,10 @@ export function validatePhoneNumberValue(
           ErrorType.USER_ERROR,
           {
             field: fieldName,
-            example: { phone_number: '+15551234567', country_code: 'US' },
+            example: JSON.stringify({
+              phone_number: '+15551234567',
+              country_code: 'US',
+            }),
             suggestion:
               'Add a phone_number string; optional country_code is ISO 2-letter.',
           }
@@ -200,7 +212,7 @@ export function validatePhoneNumberValue(
       ErrorType.USER_ERROR,
       {
         field: fieldName,
-        example: { phone_number: '+15551234567' },
+        example: '+15551234567',
         suggestion: 'Provide a string or { phone_number: "..." } object.',
       }
     );
@@ -212,7 +224,16 @@ export function validatePhoneNumberValue(
         return normalizeSingle(item);
       } catch (err) {
         if (err instanceof UniversalValidationError) {
-          err.details = { ...(err.details || {}), index: idx };
+          throw new UniversalValidationError(
+            `${err.message} (item ${idx})`,
+            err.errorType,
+            {
+              field: fieldName,
+              suggestion: err.suggestion,
+              example: err.example,
+              cause: err,
+            }
+          );
         }
         throw err;
       }
