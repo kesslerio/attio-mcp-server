@@ -277,6 +277,8 @@ export const discoverAttributesDefinition = {
 /**
  * Tool config for getting attribute options (select, multi-select, status)
  */
+let lastGetAttributeOptionsParams: UniversalGetAttributeOptionsParams | null =
+  null;
 export const getAttributeOptionsConfig: UniversalToolConfig<
   UniversalGetAttributeOptionsParams,
   AttributeOptionsResult | { error: string; success: boolean }
@@ -290,10 +292,12 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
         'records_get_attribute_options',
         params
       );
+      lastGetAttributeOptionsParams = sanitizedParams;
       return await handleUniversalGetAttributeOptions(sanitizedParams);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      lastGetAttributeOptionsParams = params;
       return { error: errorMessage, success: false };
     }
   },
@@ -319,6 +323,9 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
     } else if (typeof firstArg === 'string') {
       // Legacy format: args[0] is resource_type string
       resourceType = firstArg;
+    } else if (lastGetAttributeOptionsParams) {
+      resourceType = lastGetAttributeOptionsParams.resource_type;
+      attribute = lastGetAttributeOptionsParams.attribute || attribute;
     }
 
     const resourceTypeName = resourceType
