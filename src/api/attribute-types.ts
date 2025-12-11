@@ -2,7 +2,11 @@
  * Attribute type detection and management for Attio attributes
  */
 import { getLazyAttioClient } from '@/api/lazy-client.js';
-import { parsePersonalName } from '@/utils/personal-name-parser.js';
+import {
+  validateLocationValue,
+  validatePersonalNameValue,
+  validatePhoneNumberValue,
+} from '@/utils/complex-type-validation.js';
 import { debug, error } from '@/utils/logger.js';
 import { TTLCache } from '@/utils/ttl-cache.js';
 import { normalizeLocation } from '@/utils/location-normalizer.js';
@@ -551,7 +555,7 @@ export async function formatAttributeValue(
     case 'personal-name': {
       // Personal name fields need special handling
       // Use the dedicated parser utility
-      const parsedName = parsePersonalName(value);
+      const parsedName = validatePersonalNameValue(value, attributeSlug);
       debug(
         'attribute-types',
         `[formatAttributeValue] Personal name parsing:`,
@@ -575,13 +579,15 @@ export async function formatAttributeValue(
       }
 
     case 'phone-number':
-      // Phone fields are like email - array but no value wrapping
+      // Phone fields are like email - array but no value wrapping, but validate shape first
       if (typeInfo.isArray) {
+        if (value === null || value === undefined) {
+          return value;
+        }
         const arrayValue = Array.isArray(value) ? value : [value];
-        return arrayValue;
-      } else {
-        return value;
+        return validatePhoneNumberValue(arrayValue, attributeSlug);
       }
+      return validatePhoneNumberValue(value, attributeSlug);
 
     case 'email-address': {
       // Email is an array field but doesn't need value wrapping
@@ -617,18 +623,13 @@ export async function formatAttributeValue(
       });
 
       if (typeInfo.isArray) {
-        const arrayValue = Array.isArray(value) ? value : [value];
-        return arrayValue.map((v) =>
-          typeof v === 'object' && v !== null
-            ? normalizeLocation(v as Record<string, unknown>)
-            : v
-        );
-      } else {
-        if (typeof value === 'object' && value !== null) {
-          return normalizeLocation(value as Record<string, unknown>);
+        if (value === null || value === undefined) {
+          return value;
         }
-        return value;
+        const arrayValue = Array.isArray(value) ? value : [value];
+        return validateLocationValue(arrayValue, attributeSlug);
       }
+      return validateLocationValue(value, attributeSlug);
     }
 
     case 'number':
