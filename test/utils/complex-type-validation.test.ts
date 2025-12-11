@@ -17,6 +17,14 @@ describe('complex-type-validation', () => {
       expect(result).toHaveProperty('longitude', null);
     });
 
+    it('allows null entries inside arrays for clears', () => {
+      const result = validateLocationValue(
+        [null],
+        'locations'
+      ) as Array<unknown>;
+      expect(result).toEqual([null]);
+    });
+
     it('rejects non-object', () => {
       expect(() => validateLocationValue('foo', 'primary_location')).toThrow(
         UniversalValidationError
@@ -76,6 +84,14 @@ describe('complex-type-validation', () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toHaveProperty('phone_number');
       expect(result[1]).toHaveProperty('original_phone_number');
+    });
+
+    it('allows null entries inside arrays for clears', () => {
+      const result = validatePhoneNumberValue(
+        [null],
+        'phone_numbers'
+      ) as Array<unknown>;
+      expect(result).toEqual([null]);
     });
   });
 });

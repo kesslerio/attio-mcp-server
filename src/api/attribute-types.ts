@@ -582,6 +582,9 @@ export async function formatAttributeValue(
     case 'phone-number':
       // Phone fields are like email - array but no value wrapping, but validate shape first
       if (typeInfo.isArray) {
+        if (value === null || value === undefined) {
+          return value;
+        }
         const arrayValue = Array.isArray(value) ? value : [value];
         return validatePhoneNumberValue(arrayValue, attributeSlug);
       }
@@ -621,6 +624,9 @@ export async function formatAttributeValue(
       });
 
       if (typeInfo.isArray) {
+        if (value === null || value === undefined) {
+          return value;
+        }
         const arrayValue = Array.isArray(value) ? value : [value];
         return validateLocationValue(arrayValue, attributeSlug);
       }

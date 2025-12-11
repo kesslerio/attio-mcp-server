@@ -52,6 +52,9 @@ export function validateLocationValue(
   if (Array.isArray(value)) {
     return value.map((item, idx) => {
       try {
+        if (item === null || item === undefined) {
+          return null;
+        }
         return normalizeSingle(item);
       } catch (err) {
         if (err instanceof UniversalValidationError) {
@@ -221,6 +224,9 @@ export function validatePhoneNumberValue(
   if (Array.isArray(value)) {
     return value.map((item, idx) => {
       try {
+        if (item === null || item === undefined) {
+          return null;
+        }
         return normalizeSingle(item);
       } catch (err) {
         if (err instanceof UniversalValidationError) {
