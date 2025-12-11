@@ -46,8 +46,11 @@ export function isRecordReferenceType(type: string): boolean {
 
 /**
  * Check if a value is already in the correct Attio record-reference format
+ * Exported for reuse in mayNeedTransformation() to avoid duplication
  */
-function isCorrectFormat(value: unknown): value is RecordReferenceValue[] {
+export function isCorrectRecordReferenceFormat(
+  value: unknown
+): value is RecordReferenceValue[] {
   if (!Array.isArray(value)) return false;
   if (value.length === 0) return true; // Empty array is valid (clears the field)
 
@@ -70,15 +73,24 @@ function inferTargetObject(
   field: string,
   metadata: AttributeMetadata
 ): string | null {
-  // Priority 1: Use relationship.object from metadata
+  // Priority 1: Use relationship.object from metadata (authoritative)
   if (metadata.relationship?.object) {
     return metadata.relationship.object;
   }
 
-  // Priority 2: Infer from field name
+  // Priority 2: Infer from field name (fallback - log for monitoring)
   const fieldLower = field.toLowerCase();
   for (const [pattern, target] of Object.entries(FIELD_TO_TARGET_OBJECT)) {
     if (fieldLower === pattern || fieldLower.includes(pattern)) {
+      // Log when using fallback inference to help identify fields that
+      // should have relationship metadata added to the Attio schema
+      debug(
+        'record-reference-transformer',
+        `Using fallback field-name inference: ${field} → ${target}`,
+        { field, pattern, inferredTarget: target },
+        'inferTargetObject',
+        OperationType.DATA_PROCESSING
+      );
       return target;
     }
   }
@@ -88,6 +100,15 @@ function inferTargetObject(
 
 /**
  * Extract record ID from various input formats
+ *
+ * Returns null for:
+ * - null/undefined values
+ * - Empty strings or whitespace-only strings
+ * - Objects without recognizable ID fields (record_id, target_record_id, id)
+ *
+ * Returning null causes the item to be filtered out of arrays or
+ * triggers a "Could not extract record ID" error for single values,
+ * rather than creating invalid record references.
  */
 function extractRecordId(item: unknown): string | null {
   // String: "uuid" → "uuid"
@@ -168,7 +189,7 @@ export async function transformRecordReferenceValue(
   }
 
   // Skip if already in correct format
-  if (isCorrectFormat(value)) {
+  if (isCorrectRecordReferenceFormat(value)) {
     debug(
       'record-reference-transformer',
       `Value already in correct format, skipping`,
@@ -220,6 +241,22 @@ export async function transformRecordReferenceValue(
         transformed.push(ref);
       }
     }
+
+    // CRITICAL (Issue #997): Don't silently clear on all-invalid input
+    // If user passes [null, '', {}], we should NOT return [] and clear the field.
+    // Instead, return transformed: false with an error message.
+    // User must pass [] explicitly to clear a record-reference field.
+    if (transformed.length === 0 && value.length > 0) {
+      return {
+        transformed: false,
+        originalValue: value,
+        transformedValue: value,
+        description:
+          `Could not extract any valid record IDs from array for field ${field}. ` +
+          `Received ${value.length} item(s), all invalid. Pass [] explicitly to clear the field.`,
+      };
+    }
+
     transformedValue = transformed;
   } else {
     // Single value (string or object)
@@ -271,6 +308,6 @@ export function needsRecordReferenceFormatting(
 ): boolean {
   if (!isRecordReferenceType(attrMeta.type)) return false;
   if (value === null || value === undefined) return false;
-  if (isCorrectFormat(value)) return false;
+  if (isCorrectRecordReferenceFormat(value)) return false;
   return true;
 }

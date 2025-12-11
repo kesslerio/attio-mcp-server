@@ -23,7 +23,10 @@ import {
   clearStatusCache,
 } from './status-transformer.js';
 import { transformMultiSelectValue } from './multi-select-transformer.js';
-import { transformRecordReferenceValue } from './record-reference-transformer.js';
+import {
+  transformRecordReferenceValue,
+  isCorrectRecordReferenceFormat,
+} from './record-reference-transformer.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { handleUniversalDiscoverAttributes } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { debug, error as logError, OperationType } from '@/utils/logger.js';
@@ -361,15 +364,8 @@ export function mayNeedTransformation(
     // Issue #997: Check if it's a known record-reference field that may need formatting
     // Record-reference fields can be strings, objects, or arrays - all may need transformation
     if (knownRefFields.includes(field)) {
-      // Only skip if already in correct format (array with target_object/target_record_id)
-      if (
-        Array.isArray(value) &&
-        value.length > 0 &&
-        typeof value[0] === 'object' &&
-        value[0] !== null &&
-        'target_object' in value[0] &&
-        'target_record_id' in value[0]
-      ) {
+      // Only skip if already in correct format (uses shared helper to avoid duplication)
+      if (isCorrectRecordReferenceFormat(value)) {
         continue; // Already in correct format
       }
       return true;

@@ -313,10 +313,11 @@ describe('record-reference-transformer (Issue #997)', () => {
         ]);
       });
 
-      it('should filter out invalid array items', async () => {
+      it('should filter out invalid array items including undefined', async () => {
         const arrayWithInvalid = [
           'valid-uuid',
           null,
+          undefined, // Added per PR #998 review feedback
           '',
           { invalid: 'object' },
         ];
@@ -332,6 +333,27 @@ describe('record-reference-transformer (Issue #997)', () => {
         expect(result.transformedValue).toEqual([
           { target_object: 'people', target_record_id: 'valid-uuid' },
         ]);
+      });
+
+      it('should NOT transform when all array items are invalid (Codex P1 fix)', async () => {
+        // Critical: This tests that we don't silently clear the field
+        // when user passes an array with ALL invalid items
+        const allInvalidArray = [null, '', {}, { foo: 'bar' }, undefined];
+
+        const result = await transformRecordReferenceValue(
+          allInvalidArray,
+          'associated_people',
+          { ...mockContext, resourceType: UniversalResourceType.DEALS },
+          associatedPeopleMeta
+        );
+
+        // Should NOT transform - prevents silent field clearing
+        expect(result.transformed).toBe(false);
+        expect(result.transformedValue).toEqual(allInvalidArray);
+        expect(result.description).toContain(
+          'Could not extract any valid record IDs'
+        );
+        expect(result.description).toContain('5 item(s), all invalid');
       });
     });
 
