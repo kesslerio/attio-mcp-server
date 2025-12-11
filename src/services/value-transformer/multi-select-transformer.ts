@@ -30,19 +30,30 @@ export function isMultiSelectTypeName(type: string): boolean {
 /**
  * Check if an attribute is multi-select based on metadata
  *
- * Supports both:
- * - Explicit is_multiselect flag (Attio's actual API format: type="select" + is_multiselect=true)
- * - Legacy type names like "multi_select" for backward compatibility
+ * CRITICAL: Attio's actual API format for multi-select attributes is:
+ *   { type: "select", is_multiselect: true }
  *
- * @param meta - Attribute metadata
- * @returns true if the attribute is multi-select
+ * NOT { type: "multi_select" } as one might expect.
+ *
+ * This function checks the is_multiselect flag FIRST because:
+ * 1. Custom workspace attributes (e.g., lead_type, inbound_outbound) use type="select"
+ * 2. The is_multiselect flag is the authoritative source from Attio's API
+ * 3. Type name matching is only for backward compatibility with older schemas
+ *
+ * Issue #992: Without flag-first detection, custom multi-select attributes were
+ * not being auto-wrapped to arrays, causing API errors.
+ *
+ * @param meta - Attribute metadata from Attio API
+ * @returns true if the attribute accepts multiple values
  */
 export function isMultiSelectAttribute(meta: AttributeMetadata): boolean {
-  // Check the is_multiselect flag first (Attio's actual format)
+  // IMPORTANT: Check is_multiselect flag first - this is Attio's authoritative format
+  // Custom workspace attributes have type="select" but is_multiselect=true
   if (meta.is_multiselect === true) {
     return true;
   }
-  // Fallback to checking type name for backward compatibility
+  // Fallback to type name matching for backward compatibility only
+  // (handles edge cases where schema lacks the is_multiselect field)
   return isMultiSelectTypeName(meta.type);
 }
 

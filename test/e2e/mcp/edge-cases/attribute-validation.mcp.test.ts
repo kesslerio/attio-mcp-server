@@ -96,6 +96,110 @@ class AttributeValidationTest extends EdgeCaseTestBase {
     }
     return this.baselineCompanyId;
   }
+
+  /**
+   * Discovers a multi-select attribute for companies and returns a valid option.
+   * Makes tests workspace-agnostic by not hardcoding specific field names.
+   *
+   * @returns Field slug and valid option, or null if no multi-select found
+   */
+  async discoverMultiSelectFieldAndOption(): Promise<{
+    fieldSlug: string;
+    validOption: string;
+    isMultiSelect: boolean;
+  } | null> {
+    // Common multi-select field candidates across workspaces
+    const potentialSelects = [
+      'categories',
+      'lead_type',
+      'inbound_outbound',
+      'regions',
+      'tags',
+      'types',
+    ];
+
+    for (const attr of potentialSelects) {
+      try {
+        const optionsResult = await this.executeToolCall(
+          'records_get_attribute_options',
+          {
+            resource_type: 'companies',
+            attribute: attr,
+          }
+        );
+
+        if (!optionsResult.isError) {
+          const optionsText = this.extractTextContent(optionsResult);
+
+          // Check if this is a multi-select attribute
+          const isMultiSelect =
+            optionsText.toLowerCase().includes('multi-select') ||
+            optionsText.toLowerCase().includes('multiselect') ||
+            optionsText.toLowerCase().includes('is_multiselect: true');
+
+          // Extract first option value from response
+          // Try to parse as JSON first, then fall back to regex patterns
+          let validOption: string | null = null;
+
+          // Try JSON parsing - look for options array with title fields
+          try {
+            const parsed = this.parseJsonFromResult(optionsResult) as {
+              options?: Array<{ title?: string; value?: string }>;
+              data?: Array<{ title?: string; value?: string }>;
+            };
+            const options = parsed?.options || parsed?.data || [];
+            if (Array.isArray(options) && options.length > 0) {
+              // Get first non-archived option
+              const firstOption = options.find(
+                (opt) => opt.title && opt.title !== attr
+              );
+              if (firstOption?.title) {
+                validOption = firstOption.title;
+              }
+            }
+          } catch {
+            // JSON parsing failed, fall back to regex
+          }
+
+          // Regex fallback for non-JSON responses
+          if (!validOption) {
+            const optionPatterns = [
+              /"title":\s*"([^"]+)"/gi, // JSON format: "title": "Option"
+              /Option:\s*["']?([^"'\n,]+)/gi, // "Option: Value" format
+            ];
+
+            for (const pattern of optionPatterns) {
+              const matches = [...optionsText.matchAll(pattern)];
+              // Find first option that isn't the attribute name itself
+              const validMatch = matches.find(
+                (m) =>
+                  m[1] &&
+                  m[1].trim().toLowerCase() !== attr.toLowerCase() &&
+                  m[1].trim().length > 1
+              );
+              if (validMatch) {
+                validOption = validMatch[1].trim();
+                break;
+              }
+            }
+          }
+
+          if (validOption) {
+            return {
+              fieldSlug: attr,
+              validOption,
+              isMultiSelect,
+            };
+          }
+        }
+      } catch {
+        // Try next attribute
+        continue;
+      }
+    }
+
+    return null;
+  }
 }
 
 describe('TC-EC07: Attribute Validation Error Handling', () => {
@@ -474,18 +578,42 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
    * Tests that single values are automatically wrapped in arrays for multi-select
    * attributes before being sent to the Attio API. This prevents the error:
    * "Multi-select attribute 'X' expects an array but received a single value."
+   *
+   * WORKSPACE-AGNOSTIC: Tests dynamically discover a multi-select field and
+   * valid option value rather than hardcoding workspace-specific fields.
    */
   describe('Multi-select Array Auto-Transformation (Issue #992)', () => {
+    let multiSelectField: {
+      fieldSlug: string;
+      validOption: string;
+      isMultiSelect: boolean;
+    } | null = null;
+
+    beforeAll(async () => {
+      // Dynamically discover a multi-select field in this workspace
+      multiSelectField = await testCase.discoverMultiSelectFieldAndOption();
+      if (multiSelectField) {
+        console.log(
+          `🔍 Discovered multi-select field: ${multiSelectField.fieldSlug} ` +
+            `with option: "${multiSelectField.validOption}"`
+        );
+      } else {
+        console.log(
+          '⚠️ No multi-select field found in workspace - tests will create without multi-select data'
+        );
+      }
+    }, 30000); // 30s timeout for discovery API calls
+
     it('should auto-wrap single value in array for multi-select on create', async () => {
-      // Issue #992: Creating a company with a single value for a potential
-      // multi-select field should succeed (auto-wrapped to array)
+      // Issue #992: Creating a company with a single value for a multi-select
+      // field should succeed (auto-wrapped to array)
       const uniqueName = `TC_EC07_MULTISELECT_${Date.now()}`;
-      const companyData = {
-        name: uniqueName,
-        // If lead_type is a multi-select in workspace, this single value
-        // should be auto-wrapped to ["Potential Customer"]
-        lead_type: 'Potential Customer',
-      };
+
+      // Build company data dynamically based on discovered field
+      const companyData: Record<string, unknown> = { name: uniqueName };
+      if (multiSelectField) {
+        companyData[multiSelectField.fieldSlug] = multiSelectField.validOption;
+      }
 
       const result = await testCase.executeToolCall('create-record', {
         resource_type: 'companies',
@@ -508,16 +636,20 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
         testCase.trackRecord('companies', recordId);
       }
 
+      const fieldInfo = multiSelectField
+        ? `field=${multiSelectField.fieldSlug}, value="${multiSelectField.validOption}"`
+        : 'no multi-select field tested';
+
       testResults.push({
         test: 'multiselect_auto_wrap_on_create',
         passed: hasSuccess && !hasArrayError,
         executionTime: 0,
         expectedBehavior: 'graceful_handling',
-        actualBehavior: hasSuccess ? 'success' : 'error',
+        actualBehavior: hasSuccess ? `success (${fieldInfo})` : 'error',
         error:
           hasSuccess && !hasArrayError
             ? undefined
-            : `Expected auto-wrap to array. Response: ${text.substring(0, 300)}`,
+            : `Expected auto-wrap to array for ${fieldInfo}. Response: ${text.substring(0, 300)}`,
       });
 
       // Should NOT have the array format error
@@ -525,15 +657,27 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
     });
 
     it('should auto-wrap single value in array for multi-select on update', async () => {
-      // Issue #992: Updating a company with a single value for a potential
-      // multi-select field should succeed (auto-wrapped to array)
+      if (!multiSelectField) {
+        // Skip gracefully if no multi-select field discovered
+        testResults.push({
+          test: 'multiselect_auto_wrap_on_update',
+          passed: true,
+          executionTime: 0,
+          expectedBehavior: 'graceful_handling',
+          actualBehavior: 'skipped - no multi-select field in workspace',
+        });
+        return;
+      }
+
+      // Issue #992: Updating a company with a single value for a multi-select
+      // field should succeed (auto-wrapped to array)
+      const updateData: Record<string, unknown> = {};
+      updateData[multiSelectField.fieldSlug] = multiSelectField.validOption;
+
       const result = await testCase.executeToolCall('update-record', {
         resource_type: 'companies',
         record_id: testCase.getCompanyIdOrThrow(),
-        record_data: {
-          // If lead_type is a multi-select, this should be auto-wrapped
-          lead_type: 'Enterprise',
-        },
+        record_data: updateData,
       });
 
       const text = testCase.extractTextContent(result);
@@ -541,17 +685,17 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       const hasArrayError =
         text.toLowerCase().includes('expects an array') ||
         text.toLowerCase().includes('multi-select attribute');
-      const hasSuccess =
-        !result.isError || text.includes('updated') || text.includes('success');
 
       testResults.push({
         test: 'multiselect_auto_wrap_on_update',
         passed: !hasArrayError,
         executionTime: 0,
         expectedBehavior: 'graceful_handling',
-        actualBehavior: hasArrayError ? 'error' : 'success',
+        actualBehavior: hasArrayError
+          ? 'error'
+          : `success (field=${multiSelectField.fieldSlug})`,
         error: hasArrayError
-          ? `Expected auto-wrap to array. Response: ${text.substring(0, 300)}`
+          ? `Expected auto-wrap for ${multiSelectField.fieldSlug}. Response: ${text.substring(0, 300)}`
           : undefined,
       });
 

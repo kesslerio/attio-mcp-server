@@ -282,6 +282,18 @@ describe('multi-select-transformer', () => {
       };
       expect(isMultiSelectAttribute(selectMeta)).toBe(false);
     });
+
+    it('should return false for select type with is_multiselect explicitly undefined', () => {
+      // Edge case: Explicitly verify that undefined is_multiselect with select type
+      // returns false (doesn't get accidentally wrapped)
+      const selectUndefined: AttributeMetadata = {
+        slug: 'channel',
+        type: 'select',
+        title: 'Channel',
+        is_multiselect: undefined,
+      };
+      expect(isMultiSelectAttribute(selectUndefined)).toBe(false);
+    });
   });
 
   // Issue #992: Tests for isMultiSelectTypeName (renamed function)

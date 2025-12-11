@@ -222,10 +222,21 @@ export async function transformRecordValues(
  * Check if a record has fields that may need transformation
  * (Quick check without actually fetching metadata)
  *
- * Issue #992: This function acts as a gate for transformation. We need to be
- * permissive here because we can't know which custom fields are multi-select
- * without fetching metadata. Any string value on a select-like field should
- * trigger transformation to check against actual metadata.
+ * TRADE-OFF: This function is intentionally PERMISSIVE.
+ *
+ * Issue #992: We can't know which custom fields are multi-select without fetching
+ * metadata from the API. Rather than miss a multi-select field and cause an API
+ * error, we trigger transformation for any unknown string field.
+ *
+ * Implications:
+ * - Some fields will trigger transformation unnecessarily (false positives)
+ * - First request per resource type incurs metadata API call (then cached)
+ * - This is better than the alternative: silent failures on custom multi-selects
+ *
+ * Tuning levers if performance becomes an issue:
+ * - Expand `definitelyNotMultiSelect` with common text field patterns
+ * - Monitor false-positive rate via logging
+ * - Consider workspace-specific caching of field types
  */
 export function mayNeedTransformation(
   recordData: Record<string, unknown>,
