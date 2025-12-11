@@ -327,6 +327,16 @@ jobs:
             printf 'HAS_DELETIONS=false\n' >> "$GITHUB_ENV"
           fi
 
+          # Load alias resolutions if available (pre-computed from full repo)
+          # Filter to only confirmed existing paths so prompt claim is accurate
+          ALIAS_PATH="$SCOPE_DIR/alias-resolutions.json"
+          if [ -f "$ALIAS_PATH" ]; then
+            alias_json=$(jq -c '[.[] | select(.exists == true)]' "$ALIAS_PATH")
+            printf 'ALIAS_RESOLUTIONS=%s\n' "$alias_json" >> "$GITHUB_ENV"
+          else
+            printf 'ALIAS_RESOLUTIONS=[]\n' >> "$GITHUB_ENV"
+          fi
+
           ring0_count=$(jq -r '.ring0Count' "$SUMMARY_PATH")
           ring1_count=$(jq -r '.ring1Count' "$SUMMARY_PATH")
           deletions_count=$(jq -r '.deletionsCount // 0' "$SUMMARY_PATH")
@@ -503,6 +513,11 @@ jobs:
               * State: "could not verify - outside sparse checkout scope"
               * Or skip verification and focus on Ring 0 changes only
             - Never claim files are missing based solely on Glob "no files found" results
+            - If a file or function name is **referenced in Ring 0 code** but Glob/Grep cannot find it:
+              * Assume it exists **outside sparse checkout scope**, not that it's missing
+              * Say "could not verify (outside sparse checkout scope)" rather than "missing"
+              * This applies especially to dynamic imports like `await import('@/...')`
+              * Check the "Pre-computed alias resolutions" section above - those paths are CONFIRMED to exist
 
             PATH RESOLUTION RULES
             - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
@@ -514,6 +529,10 @@ jobs:
 
             Context files (Ring 1 JSON):
             ${{ env.RING1_JSON }}
+
+            Pre-computed alias resolutions (verified from full repo before sparse checkout):
+            ${{ env.ALIAS_RESOLUTIONS }}
+            NOTE: These paths are CONFIRMED to exist in the full repository. If Glob/Grep cannot find them in sparse checkout, they exist outside the checkout scope - do NOT report them as missing.
 
             ${{ env.HAS_DELETIONS == 'true' && format('
             {0}
@@ -693,6 +712,11 @@ jobs:
               * State: "could not verify - outside sparse checkout scope"
               * Or skip verification and focus on Ring 0 changes only
             - Never claim files are missing based solely on Glob "no files found" results
+            - If a file or function name is **referenced in Ring 0 code** but Glob/Grep cannot find it:
+              * Assume it exists **outside sparse checkout scope**, not that it's missing
+              * Say "could not verify (outside sparse checkout scope)" rather than "missing"
+              * This applies especially to dynamic imports like `await import('@/...')`
+              * Check the "Pre-computed alias resolutions" section above - those paths are CONFIRMED to exist
 
             PATH RESOLUTION RULES
             - Source files use ESM imports like "../foo.js" but live on disk as "../foo.ts".
@@ -704,6 +728,10 @@ jobs:
 
             Context files (Ring 1 JSON):
             ${{ env.RING1_JSON }}
+
+            Pre-computed alias resolutions (verified from full repo before sparse checkout):
+            ${{ env.ALIAS_RESOLUTIONS }}
+            NOTE: These paths are CONFIRMED to exist in the full repository. If Glob/Grep cannot find them in sparse checkout, they exist outside the checkout scope - do NOT report them as missing.
 
             ${{ env.HAS_DELETIONS == 'true' && format('
             {0}
