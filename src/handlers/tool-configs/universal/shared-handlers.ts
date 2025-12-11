@@ -335,6 +335,56 @@ const OBJECT_SLUG_MAP: Record<string, string> = {
   notes: 'notes',
 };
 
+const normalizeAttributeValue = (value: string): string =>
+  value.trim().toLowerCase();
+
+const levenshteinDistance = (a: string, b: string): number => {
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= a.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= b.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[a.length][b.length];
+};
+
+const getAttributeSchema = async (
+  objectSlug: string
+): Promise<
+  Array<{
+    name?: string;
+    title?: string;
+    api_slug?: string;
+  }>
+> => {
+  const schema = await handleUniversalDiscoverAttributes(
+    objectSlug as UniversalResourceType
+  );
+  return ((schema as Record<string, unknown>).all || []) as Array<{
+    name?: string;
+    title?: string;
+    api_slug?: string;
+  }>;
+};
+
 /**
  * Resolve display name to API slug for an attribute
  * Fetches attribute metadata and finds the slug by title match
@@ -348,30 +398,144 @@ async function resolveAttributeDisplayName(
   displayName: string
 ): Promise<string | null> {
   try {
-    // Fetch all attributes for the object
-    const schema = await handleUniversalDiscoverAttributes(
-      objectSlug as UniversalResourceType
-    );
-    const allAttrs = ((schema as Record<string, unknown>).all || []) as Array<{
-      name?: string;
-      title?: string;
-      api_slug?: string;
-    }>;
+    const allAttrs = await getAttributeSchema(objectSlug);
+    const normalizedInput = normalizeAttributeValue(displayName);
 
-    // Find attribute by title (case-insensitive)
-    const displayNameLower = displayName.toLowerCase();
-    const match = allAttrs.find(
-      (attr) =>
-        attr.title?.toLowerCase() === displayNameLower ||
-        attr.name?.toLowerCase() === displayNameLower
-    );
+    const exactMatch = allAttrs.find((attr) => {
+      const candidates = [attr.title, attr.name, attr.api_slug].filter(Boolean);
+      return candidates.some(
+        (candidate) =>
+          normalizeAttributeValue(candidate as string) === normalizedInput
+      );
+    });
+    if (exactMatch?.api_slug) {
+      debug(
+        'shared-handlers',
+        `Resolved display name "${displayName}" to API slug "${exactMatch.api_slug}"`,
+        { attribute: displayName, resolvedSlug: exactMatch.api_slug },
+        'resolveDisplayName',
+        OperationType.DATA_PROCESSING
+      );
+      return exactMatch.api_slug;
+    }
 
-    return match?.api_slug || null;
+    const partialMatch = allAttrs.find((attr) => {
+      const title = attr.title ? normalizeAttributeValue(attr.title) : null;
+      const slug = attr.api_slug
+        ? normalizeAttributeValue(attr.api_slug)
+        : null;
+      return (
+        (title && title.includes(normalizedInput)) ||
+        (slug && slug.includes(normalizedInput)) ||
+        (title && normalizedInput.includes(title)) ||
+        (slug && normalizedInput.includes(slug))
+      );
+    });
+    if (partialMatch?.api_slug) {
+      debug(
+        'shared-handlers',
+        `Resolved display name "${displayName}" to API slug "${partialMatch.api_slug}" via partial match`,
+        { attribute: displayName, resolvedSlug: partialMatch.api_slug },
+        'resolveDisplayName',
+        OperationType.DATA_PROCESSING
+      );
+      return partialMatch.api_slug;
+    }
+
+    const typoCandidates = allAttrs
+      .filter((attr) => attr.api_slug)
+      .map((attr) => {
+        const slug = attr.api_slug as string;
+        const title = attr.title || attr.name || slug;
+        return {
+          slug,
+          distance: Math.min(
+            levenshteinDistance(normalizedInput, normalizeAttributeValue(slug)),
+            levenshteinDistance(
+              normalizedInput,
+              normalizeAttributeValue(title as string)
+            )
+          ),
+        };
+      })
+      .filter((candidate) => candidate.distance <= 2)
+      .sort((a, b) => a.distance - b.distance);
+
+    if (typoCandidates.length > 0) {
+      debug(
+        'shared-handlers',
+        `Resolved display name "${displayName}" to API slug "${typoCandidates[0].slug}" via typo tolerance`,
+        { attribute: displayName, resolvedSlug: typoCandidates[0].slug },
+        'resolveDisplayName',
+        OperationType.DATA_PROCESSING
+      );
+      return typoCandidates[0].slug;
+    }
+
+    return null;
   } catch {
     // If discovery fails, return null - the original error will be shown
     return null;
   }
 }
+
+const getSimilarAttributeSlugs = async (
+  objectSlug: string,
+  attribute: string,
+  maxResults = 3
+): Promise<string[]> => {
+  try {
+    const allAttrs = await getAttributeSchema(objectSlug);
+    const normalizedInput = normalizeAttributeValue(attribute);
+    const candidates = allAttrs
+      .filter((attr) => attr.api_slug)
+      .map((attr) => {
+        const slug = attr.api_slug as string;
+        const title = attr.title || attr.name || slug;
+        return {
+          slug,
+          distance: Math.min(
+            levenshteinDistance(normalizedInput, normalizeAttributeValue(slug)),
+            levenshteinDistance(
+              normalizedInput,
+              normalizeAttributeValue(title as string)
+            )
+          ),
+        };
+      })
+      .sort((a, b) => a.distance - b.distance);
+
+    const partials = allAttrs
+      .filter((attr) => attr.api_slug)
+      .filter((attr) => {
+        const title = attr.title ? normalizeAttributeValue(attr.title) : '';
+        const slug = attr.api_slug
+          ? normalizeAttributeValue(attr.api_slug)
+          : '';
+        return (
+          title.includes(normalizedInput) ||
+          slug.includes(normalizedInput) ||
+          normalizedInput.includes(title) ||
+          normalizedInput.includes(slug)
+        );
+      })
+      .map((attr) => attr.api_slug as string);
+
+    const combined = [
+      ...partials,
+      ...candidates.map((candidate) => candidate.slug),
+    ];
+    const unique: string[] = [];
+    for (const slug of combined) {
+      if (!unique.includes(slug)) {
+        unique.push(slug);
+      }
+    }
+    return unique.slice(0, maxResults);
+  } catch {
+    return [];
+  }
+};
 
 /**
  * Universal get attribute options handler
@@ -405,6 +569,7 @@ export async function handleUniversalGetAttributeOptions(
       show_archived
     );
   } catch (firstError) {
+    let latestError: unknown = firstError;
     // Check if this looks like a display name (contains space or uppercase)
     const mightBeDisplayName =
       attribute.includes(' ') || /[A-Z]/.test(attribute);
@@ -417,25 +582,77 @@ export async function handleUniversalGetAttributeOptions(
       );
 
       if (resolvedSlug && resolvedSlug !== attribute) {
-        // Retry with resolved slug
-        debug(
-          'shared-handlers',
-          `Resolved display name "${attribute}" to API slug "${resolvedSlug}"`,
-          { attribute, resolvedSlug },
-          'resolveDisplayName',
-          OperationType.DATA_PROCESSING
-        );
-        return await AttributeOptionsService.getOptions(
-          objectSlug,
-          resolvedSlug,
-          show_archived
-        );
+        try {
+          // Retry with resolved slug
+          debug(
+            'shared-handlers',
+            `Resolved display name "${attribute}" to API slug "${resolvedSlug}"`,
+            { attribute, resolvedSlug },
+            'resolveDisplayName',
+            OperationType.DATA_PROCESSING
+          );
+          return await AttributeOptionsService.getOptions(
+            objectSlug,
+            resolvedSlug,
+            show_archived
+          );
+        } catch (retryError) {
+          latestError = retryError;
+        }
       }
     }
 
-    // Re-throw original error with helpful message
     const errorMsg =
-      firstError instanceof Error ? firstError.message : String(firstError);
+      latestError instanceof Error ? latestError.message : String(latestError);
+    let slugExists: boolean | null = null;
+    try {
+      const allAttrs = await getAttributeSchema(objectSlug);
+      const normalizedAttr = normalizeAttributeValue(attribute);
+      const displayNameMatch = allAttrs.find((attr) => {
+        const title = attr.title ? normalizeAttributeValue(attr.title) : '';
+        const name = attr.name ? normalizeAttributeValue(attr.name) : '';
+        return title === normalizedAttr || name === normalizedAttr;
+      });
+      if (
+        displayNameMatch?.api_slug &&
+        displayNameMatch.api_slug !== attribute
+      ) {
+        try {
+          return await AttributeOptionsService.getOptions(
+            objectSlug,
+            displayNameMatch.api_slug,
+            show_archived
+          );
+        } catch (retryError) {
+          latestError = retryError;
+        }
+      }
+
+      slugExists = allAttrs.some(
+        (attr) =>
+          attr.api_slug &&
+          normalizeAttributeValue(attr.api_slug) === normalizedAttr
+      );
+      if (slugExists === false) {
+        const suggestions = await getSimilarAttributeSlugs(
+          objectSlug,
+          attribute
+        );
+        const suggestionText =
+          suggestions.length > 0
+            ? ` Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?`
+            : '';
+        throw new Error(
+          `Attribute "${attribute}" not found on ${objectSlug}.${suggestionText}\n\n` +
+            `Use API slugs (e.g., "stage" not "Deal stage"). Run records_discover_attributes(resource_type="${objectSlug}") to see available attribute slugs.`
+        );
+      }
+    } catch (resolutionError) {
+      if (resolutionError instanceof Error) {
+        throw resolutionError;
+      }
+    }
+
     throw new Error(
       `${errorMsg}\n\nTip: Use the API slug (e.g., "stage") not the display name (e.g., "Deal stage"). ` +
         `Run records_discover_attributes to see available attribute slugs.`

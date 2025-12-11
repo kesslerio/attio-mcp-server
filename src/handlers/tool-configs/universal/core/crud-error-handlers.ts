@@ -111,9 +111,13 @@ const enhanceAttributeNotFoundError = async (
       resourceType as UniversalResourceType
     );
     const allAttrs = ((schema as Record<string, unknown>).all || []) as Array<{
-      name: string;
+      name?: string;
+      title?: string;
+      api_slug?: string;
     }>;
-    const attrNames = allAttrs.map((a) => a.name);
+    const attrNames = allAttrs
+      .flatMap((a) => [a.name, a.title, a.api_slug])
+      .filter(Boolean) as string[];
 
     // Find similar attribute names using Levenshtein distance
     const suggestions = findSimilarAttributes(invalidAttr, attrNames, 3);
@@ -256,6 +260,67 @@ interface CrudErrorContext {
   validationMetadata?: ValidationMetadata;
 }
 
+const normalizeFieldName = (field: string): string =>
+  field.trim().toLowerCase();
+
+const hasStageField = (recordData: Record<string, unknown>): boolean => {
+  const directKeys = Object.keys(recordData).map(normalizeFieldName);
+  if (
+    directKeys.includes('stage') ||
+    directKeys.includes('deal stage') ||
+    directKeys.includes('status')
+  ) {
+    return true;
+  }
+
+  const values =
+    recordData.values &&
+    typeof recordData.values === 'object' &&
+    recordData.values !== null
+      ? (recordData.values as Record<string, unknown>)
+      : null;
+
+  if (!values) return false;
+
+  const valueKeys = Object.keys(values).map(normalizeFieldName);
+  return (
+    valueKeys.includes('stage') ||
+    valueKeys.includes('deal stage') ||
+    valueKeys.includes('status')
+  );
+};
+
+const buildMissingDealStageMessage = async (
+  recordData: Record<string, unknown>
+): Promise<string | null> => {
+  if (hasStageField(recordData)) return null;
+
+  try {
+    const { AttributeOptionsService } = await import(
+      '../../../../services/metadata/index.js'
+    );
+    const { options } = await AttributeOptionsService.getOptions(
+      'deals',
+      'stage'
+    );
+    const preview = options
+      .slice(0, 5)
+      .map((option) => `"${option.title}"`)
+      .join(', ');
+    const hasMore = options.length > 5 ? ` (+${options.length - 5} more)` : '';
+    return (
+      `Required field "stage" is missing for deals.\n\n` +
+      `Common stage values: ${preview}${hasMore}\n\n` +
+      `For the full list, call: records_get_attribute_options(resource_type="deals", attribute="stage").`
+    );
+  } catch {
+    return (
+      `Required field "stage" is missing for deals.\n\n` +
+      `Call records_get_attribute_options(resource_type="deals", attribute="stage") to retrieve valid stage values, then retry.`
+    );
+  }
+};
+
 /**
  * Handles errors specific to record creation operations
  */
@@ -283,11 +348,18 @@ export const handleCreateError = async (
     const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
-    const errorResult = createErrorResult(
-      `Failed to create ${resourceName}: Missing required fields. Please check that all mandatory fields are provided.`,
-      'validation_error',
-      { context }
-    );
+    let message = `Failed to create ${resourceName}: Missing required fields. Please check that all mandatory fields are provided.`;
+
+    if (resourceType === UniversalResourceType.DEALS) {
+      const stageMessage = await buildMissingDealStageMessage(recordData);
+      if (stageMessage) {
+        message = `Failed to create ${resourceName}: ${stageMessage}`;
+      }
+    }
+
+    const errorResult = createErrorResult(message, 'validation_error', {
+      context,
+    });
     throw errorResult;
   }
 
