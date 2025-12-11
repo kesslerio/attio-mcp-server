@@ -77,23 +77,34 @@ export function parsePersonalName(
     const structured = value as Record<string, unknown>;
     const result: Record<string, unknown> = {};
 
+    // Normalize string values by trimming
+    const safeString = (v: unknown): string | undefined =>
+      typeof v === 'string' ? v.trim() : undefined;
+
     // Copy over known fields
-    if (structured.first_name) result.first_name = structured.first_name;
-    if (structured.last_name) result.last_name = structured.last_name;
-    if (structured.middle_name) result.middle_name = structured.middle_name;
-    if (structured.title) result.title = structured.title;
+    const firstName = safeString(structured.first_name);
+    const lastName = safeString(structured.last_name);
+    const middleName = safeString(structured.middle_name);
+    const title = safeString(structured.title);
+
+    if (firstName) result.first_name = firstName;
+    if (lastName) result.last_name = lastName;
+    if (middleName) result.middle_name = middleName;
+    if (title) result.title = title;
 
     // Generate full_name if not provided
     if (!structured.full_name) {
       const nameParts = [];
-      if (structured.title) nameParts.push(String(structured.title));
-      if (structured.first_name) nameParts.push(String(structured.first_name));
-      if (structured.middle_name)
-        nameParts.push(String(structured.middle_name));
-      if (structured.last_name) nameParts.push(String(structured.last_name));
+      if (title) nameParts.push(title);
+      if (firstName) nameParts.push(firstName);
+      if (middleName) nameParts.push(middleName);
+      if (lastName) nameParts.push(lastName);
       result.full_name = nameParts.filter(Boolean).join(' ');
     } else {
-      result.full_name = structured.full_name;
+      const fullName = safeString(structured.full_name);
+      if (fullName) {
+        result.full_name = fullName;
+      }
     }
 
     return result;

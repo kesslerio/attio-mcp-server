@@ -162,7 +162,11 @@ const extractAttioValidationErrors = (error: unknown): string | null => {
           .validation_errors;
         if (Array.isArray(validationErrors) && validationErrors.length > 0) {
           return validationErrors
-            .map((err: Record<string, unknown>) => err.message || String(err))
+            .map((err: Record<string, unknown>) => {
+              const field = err.field || err.path;
+              const base = err.message || String(err);
+              return field ? `${field}: ${base}` : String(base);
+            })
             .join('; ');
         }
       }
@@ -193,6 +197,58 @@ const enhanceSelectStatusError = async (
   recordData: Record<string, unknown>
 ): Promise<string | null> => {
   const msg = error instanceof Error ? error.message : String(error);
+
+  // Attempt to extract validation_errors array for better detail on select fields
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response
+  ) {
+    const data = (error.response as Record<string, unknown>).data;
+    if (data && typeof data === 'object' && 'validation_errors' in data) {
+      const validationErrors = (data as Record<string, unknown>)
+        .validation_errors;
+      if (Array.isArray(validationErrors)) {
+        const selectErr = validationErrors.find((ve) =>
+          String(ve?.message || '').includes('select option')
+        );
+        if (selectErr?.field) {
+          try {
+            const { AttributeOptionsService } = await import(
+              '../../../../services/metadata/index.js'
+            );
+            const { options, attributeType } =
+              await AttributeOptionsService.getOptions(
+                resourceType,
+                selectErr.field as string
+              );
+            const validList = options
+              .slice(0, 8)
+              .map((o) => o.title)
+              .join(', ');
+            const hasMore =
+              options.length > 8 ? ` (+${options.length - 8} more)` : '';
+            return `Value is not valid for ${attributeType} attribute "${selectErr.field}" on ${resourceType}.
+Expected one of: ${validList}${hasMore}
+
+Next step: Call records_get_attribute_options with
+  resource_type: "${resourceType}"
+  attribute: "${selectErr.field}"
+to list all valid values, then retry.`;
+          } catch {
+            return `Value is not valid for attribute "${selectErr.field}" on ${resourceType}.
+Next step: Call records_get_attribute_options with
+  resource_type: "${resourceType}"
+  attribute: "${selectErr.field}"
+to see valid options, then retry.`;
+          }
+        }
+      }
+    }
+  }
 
   // Pattern: "Cannot find select option with title 'X'" or "Cannot find Status with title 'X'"
   const selectMatch = msg.match(
@@ -629,7 +685,12 @@ export const handleUpdateError = async (
   }
 
   // Fallback to general update error handling
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const baseErrorMessage =
+    error instanceof Error ? error.message : String(error);
+  const validationDetail = extractAttioValidationErrors(error);
+  const errorMessage = validationDetail
+    ? `${baseErrorMessage}. Details: ${validationDetail}`
+    : baseErrorMessage;
   const errorResult = createErrorResult(
     `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${errorMessage}`,
     'update_error',
