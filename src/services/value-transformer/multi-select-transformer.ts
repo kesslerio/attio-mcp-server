@@ -15,15 +15,43 @@ import {
 import { debug, OperationType } from '@/utils/logger.js';
 
 /**
- * Multi-select attribute types that require array values
+ * Multi-select attribute types that require array values (legacy type names)
  */
 const MULTI_SELECT_TYPES = ['multi_select', 'multi-select', 'multiselect'];
 
 /**
+ * Check if an attribute type name indicates multi-select (legacy check)
+ * @internal Use isMultiSelectAttribute() for proper detection
+ */
+export function isMultiSelectTypeName(type: string): boolean {
+  return MULTI_SELECT_TYPES.includes(type.toLowerCase().replace(/[_-]/g, ''));
+}
+
+/**
+ * Check if an attribute is multi-select based on metadata
+ *
+ * Supports both:
+ * - Explicit is_multiselect flag (Attio's actual API format: type="select" + is_multiselect=true)
+ * - Legacy type names like "multi_select" for backward compatibility
+ *
+ * @param meta - Attribute metadata
+ * @returns true if the attribute is multi-select
+ */
+export function isMultiSelectAttribute(meta: AttributeMetadata): boolean {
+  // Check the is_multiselect flag first (Attio's actual format)
+  if (meta.is_multiselect === true) {
+    return true;
+  }
+  // Fallback to checking type name for backward compatibility
+  return isMultiSelectTypeName(meta.type);
+}
+
+/**
  * Check if an attribute type is multi-select
+ * @deprecated Use isMultiSelectAttribute() instead for proper detection with metadata
  */
 export function isMultiSelectType(type: string): boolean {
-  return MULTI_SELECT_TYPES.includes(type.toLowerCase().replace(/[_-]/g, ''));
+  return isMultiSelectTypeName(type);
 }
 
 /**
@@ -48,8 +76,8 @@ export async function transformMultiSelectValue(
   context: TransformContext,
   attributeMeta: AttributeMetadata
 ): Promise<TransformResult> {
-  // Only transform multi-select type attributes
-  if (!isMultiSelectType(attributeMeta.type)) {
+  // Only transform multi-select attributes (check is_multiselect flag OR type name)
+  if (!isMultiSelectAttribute(attributeMeta)) {
     return {
       transformed: false,
       originalValue: value,
@@ -86,6 +114,9 @@ export async function transformMultiSelectValue(
       from: value,
       to: transformedValue,
       resourceType: context.resourceType,
+      detectedVia: attributeMeta.is_multiselect
+        ? 'is_multiselect flag'
+        : 'type name',
     },
     'transformMultiSelectValue',
     OperationType.DATA_PROCESSING
@@ -102,12 +133,29 @@ export async function transformMultiSelectValue(
 /**
  * Check if a value needs to be wrapped for multi-select
  * (Useful for validation without transformation)
+ * @deprecated Use needsArrayWrappingForAttribute() instead for proper detection
  */
 export function needsArrayWrapping(
   value: unknown,
   attributeType: string
 ): boolean {
-  if (!isMultiSelectType(attributeType)) return false;
+  if (!isMultiSelectTypeName(attributeType)) return false;
+  if (isArray(value)) return false;
+  if (value === null || value === undefined) return false;
+  return true;
+}
+
+/**
+ * Check if a value needs to be wrapped for multi-select based on attribute metadata
+ * @param value - The value to check
+ * @param attributeMeta - Attribute metadata
+ * @returns true if the value needs to be wrapped in an array
+ */
+export function needsArrayWrappingForAttribute(
+  value: unknown,
+  attributeMeta: AttributeMetadata
+): boolean {
+  if (!isMultiSelectAttribute(attributeMeta)) return false;
   if (isArray(value)) return false;
   if (value === null || value === undefined) return false;
   return true;

@@ -69,6 +69,7 @@ async function getAttributeMetadata(
       title?: string;
       is_system_attribute?: boolean;
       is_writable?: boolean;
+      is_multiselect?: boolean;
     }>;
 
     for (const attr of allAttrs) {
@@ -81,6 +82,7 @@ async function getAttributeMetadata(
           api_slug: attr.api_slug,
           is_system_attribute: attr.is_system_attribute,
           is_writable: attr.is_writable,
+          is_multiselect: attr.is_multiselect,
         });
       }
     }
@@ -219,6 +221,11 @@ export async function transformRecordValues(
 /**
  * Check if a record has fields that may need transformation
  * (Quick check without actually fetching metadata)
+ *
+ * Issue #992: This function acts as a gate for transformation. We need to be
+ * permissive here because we can't know which custom fields are multi-select
+ * without fetching metadata. Any string value on a select-like field should
+ * trigger transformation to check against actual metadata.
  */
 export function mayNeedTransformation(
   recordData: Record<string, unknown>,
@@ -230,36 +237,64 @@ export function mayNeedTransformation(
     tasks: ['status'],
   };
 
-  // Known multi-select fields (workspace-specific, so we check all)
+  // Known multi-select fields (workspace-specific, so we check common patterns)
+  // Issue #992: Added 'channel' based on user feedback
   const multiSelectIndicators = [
     'categories',
     'tags',
     'types',
     'lead_type',
     'inbound_outbound',
+    'channel', // Added per Issue #992 feedback
+  ];
+
+  // Fields that are definitely NOT multi-select (optimization to avoid unnecessary API calls)
+  const definitelyNotMultiSelect = [
+    'name',
+    'description',
+    'notes',
+    'email',
+    'phone',
+    'website',
+    'domain',
+    'address',
+    'title',
+    'content',
+    'id',
+    'record_id',
   ];
 
   const resourceKey = resourceType.toLowerCase();
   const knownStatusFields = statusFields[resourceKey] || [];
 
   for (const field of Object.keys(recordData)) {
+    const value = recordData[field];
+    const fieldLower = field.toLowerCase();
+
+    // Skip null/undefined/array values - they don't need transformation
+    if (value === null || value === undefined || Array.isArray(value)) {
+      continue;
+    }
+
     // Check if it's a known status field with a string value
+    if (knownStatusFields.includes(field) && typeof value === 'string') {
+      return true;
+    }
+
+    // Check if it matches known multi-select indicator patterns
     if (
-      knownStatusFields.includes(field) &&
-      typeof recordData[field] === 'string'
+      multiSelectIndicators.some((indicator) => fieldLower.includes(indicator))
     ) {
       return true;
     }
 
-    // Check if it might be a multi-select field with a non-array value
+    // Issue #992: For any string value on a field that's NOT definitely-not-multi-select,
+    // trigger transformation to let the actual metadata check determine if it's multi-select
     if (
-      multiSelectIndicators.some((indicator) =>
-        field.toLowerCase().includes(indicator)
-      ) &&
-      !Array.isArray(recordData[field]) &&
-      recordData[field] !== null &&
-      recordData[field] !== undefined
+      typeof value === 'string' &&
+      !definitelyNotMultiSelect.some((safe) => fieldLower.includes(safe))
     ) {
+      // This is a potential multi-select field - trigger full transformation
       return true;
     }
   }

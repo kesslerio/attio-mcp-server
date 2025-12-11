@@ -467,4 +467,96 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       expect(unknownRatio).toBeLessThan(0.2);
     });
   });
+
+  /**
+   * Issue #992: Multi-select Array Auto-Transformation
+   *
+   * Tests that single values are automatically wrapped in arrays for multi-select
+   * attributes before being sent to the Attio API. This prevents the error:
+   * "Multi-select attribute 'X' expects an array but received a single value."
+   */
+  describe('Multi-select Array Auto-Transformation (Issue #992)', () => {
+    it('should auto-wrap single value in array for multi-select on create', async () => {
+      // Issue #992: Creating a company with a single value for a potential
+      // multi-select field should succeed (auto-wrapped to array)
+      const uniqueName = `TC_EC07_MULTISELECT_${Date.now()}`;
+      const companyData = {
+        name: uniqueName,
+        // If lead_type is a multi-select in workspace, this single value
+        // should be auto-wrapped to ["Potential Customer"]
+        lead_type: 'Potential Customer',
+      };
+
+      const result = await testCase.executeToolCall('create-record', {
+        resource_type: 'companies',
+        record_data: companyData,
+      });
+
+      const text = testCase.extractTextContent(result);
+      // Check if creation succeeded (not a multi-select array error)
+      const hasArrayError =
+        text.toLowerCase().includes('expects an array') ||
+        text.toLowerCase().includes('multi-select attribute');
+      const hasSuccess =
+        text.includes(uniqueName) ||
+        text.includes('ID:') ||
+        text.includes('record_id');
+
+      // Cleanup if record was created
+      const recordId = testCase.extractRecordId(text);
+      if (recordId) {
+        testCase.trackRecord('companies', recordId);
+      }
+
+      testResults.push({
+        test: 'multiselect_auto_wrap_on_create',
+        passed: hasSuccess && !hasArrayError,
+        executionTime: 0,
+        expectedBehavior: 'graceful_handling',
+        actualBehavior: hasSuccess ? 'success' : 'error',
+        error:
+          hasSuccess && !hasArrayError
+            ? undefined
+            : `Expected auto-wrap to array. Response: ${text.substring(0, 300)}`,
+      });
+
+      // Should NOT have the array format error
+      expect(hasArrayError).toBe(false);
+    });
+
+    it('should auto-wrap single value in array for multi-select on update', async () => {
+      // Issue #992: Updating a company with a single value for a potential
+      // multi-select field should succeed (auto-wrapped to array)
+      const result = await testCase.executeToolCall('update-record', {
+        resource_type: 'companies',
+        record_id: testCase.getCompanyIdOrThrow(),
+        record_data: {
+          // If lead_type is a multi-select, this should be auto-wrapped
+          lead_type: 'Enterprise',
+        },
+      });
+
+      const text = testCase.extractTextContent(result);
+      // Check if update succeeded (not a multi-select array error)
+      const hasArrayError =
+        text.toLowerCase().includes('expects an array') ||
+        text.toLowerCase().includes('multi-select attribute');
+      const hasSuccess =
+        !result.isError || text.includes('updated') || text.includes('success');
+
+      testResults.push({
+        test: 'multiselect_auto_wrap_on_update',
+        passed: !hasArrayError,
+        executionTime: 0,
+        expectedBehavior: 'graceful_handling',
+        actualBehavior: hasArrayError ? 'error' : 'success',
+        error: hasArrayError
+          ? `Expected auto-wrap to array. Response: ${text.substring(0, 300)}`
+          : undefined,
+      });
+
+      // Should NOT have the array format error
+      expect(hasArrayError).toBe(false);
+    });
+  });
 });
