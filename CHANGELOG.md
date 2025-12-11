@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Multi-select fields now accept single values** (#992) - Automatic array wrapping for multi-select attributes
+  - Single values like `lead_type: "Inbound"` are now auto-converted to `["Inbound"]`
+  - Works for all custom multi-select fields (e.g., `categories`, `inbound_outbound`, `regions`)
+  - Fixes "Multi-select attribute expects an array" errors when using natural input format
+  - Detects multi-select via Attio's `is_multiselect` flag (not just type name)
+
 - **`records_get_attribute_options` now returns status options** (#987) - Fixed empty results for status attributes
   - Select endpoint returning empty `[]` now falls back to status endpoint
   - `deals.stage` and similar status attributes now return correct options
