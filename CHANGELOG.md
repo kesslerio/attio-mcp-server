@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Claude PR review dynamic import detection** (#1002) - Ring 1 scope now includes dynamically imported modules
+  - Fixes false positive "missing dependency" errors when PR files use `await import('@/...')` or `await import('./...')`
+  - Adds prompt hardening to prevent "missing file" claims from sparse checkout limitations
+  - Pre-computes alias resolutions from full repo and passes them to Claude
+
 - **Complex attribute validation** (#991) - clearer validation and error messages for location, personal-name, and phone-number fields
   - Pre-validates complex types with actionable errors and examples before Attio API calls
   - Auto-fills missing location fields with nulls; enforces phone_number/original_phone_number and non-empty names
