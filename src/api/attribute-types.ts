@@ -1,10 +1,11 @@
 /**
  * Attribute type detection and management for Attio attributes
  */
-import { getLazyAttioClient } from '../api/lazy-client.js';
-import { parsePersonalName } from '../utils/personal-name-parser.js';
-import { debug, error } from '../utils/logger.js';
-import { TTLCache } from '../utils/ttl-cache.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { parsePersonalName } from '@/utils/personal-name-parser.js';
+import { debug, error } from '@/utils/logger.js';
+import { TTLCache } from '@/utils/ttl-cache.js';
+import { normalizeLocation } from '@/utils/location-normalizer.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -602,6 +603,33 @@ export async function formatAttributeValue(
       } else {
         return value;
       }
+
+    case 'location': {
+      // Location fields expect object format directly (not wrapped in { value: ... })
+      // Attio requires ALL 10 location fields to be present, even if null
+      // Issue #987: Normalize location objects with all required fields
+      // Note: Avoid logging raw location data (PII risk) - log only metadata
+      debug('attribute-types', `[formatAttributeValue] Location field:`, {
+        hasValue: !!value,
+        isObject: typeof value === 'object' && value !== null,
+        objectSlug,
+        attributeSlug,
+      });
+
+      if (typeInfo.isArray) {
+        const arrayValue = Array.isArray(value) ? value : [value];
+        return arrayValue.map((v) =>
+          typeof v === 'object' && v !== null
+            ? normalizeLocation(v as Record<string, unknown>)
+            : v
+        );
+      } else {
+        if (typeof value === 'object' && value !== null) {
+          return normalizeLocation(value as Record<string, unknown>);
+        }
+        return value;
+      }
+    }
 
     case 'number':
     case 'currency':
