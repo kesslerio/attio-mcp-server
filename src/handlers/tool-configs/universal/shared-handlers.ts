@@ -335,7 +335,7 @@ const OBJECT_SLUG_MAP: Record<string, string> = {
   notes: 'notes',
 };
 
-const normalizeAttributeValue = (value: string): string =>
+export const normalizeAttributeValue = (value: string): string =>
   value.trim().toLowerCase();
 
 const levenshteinDistance = (a: string, b: string): number => {
@@ -393,7 +393,7 @@ const getAttributeSchema = async (
  * @param displayName - The display name to resolve (e.g., "Deal stage")
  * @returns The API slug if found, or null
  */
-async function resolveAttributeDisplayName(
+export async function resolveAttributeDisplayName(
   objectSlug: string,
   displayName: string
 ): Promise<string | null> {
@@ -479,7 +479,7 @@ async function resolveAttributeDisplayName(
   }
 }
 
-const getSimilarAttributeSlugs = async (
+export const getSimilarAttributeSlugs = async (
   objectSlug: string,
   attribute: string,
   maxResults = 3

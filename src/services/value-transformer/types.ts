@@ -15,6 +15,11 @@ export interface TransformContext {
   operation: 'create' | 'update';
   /** Optional record ID for updates */
   recordId?: string;
+  /**
+   * Optional pre-fetched attribute metadata to avoid duplicate API calls
+   * @see Issue #984 - Consolidate metadata fetching
+   */
+  attributeMetadata?: Map<string, AttributeMetadata>;
 }
 
 /**
