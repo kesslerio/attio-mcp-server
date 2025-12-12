@@ -15,6 +15,7 @@ import {
 
 // Import services
 import { ValidationService } from './ValidationService.js';
+import { FieldValidationHandler } from './update/FieldValidationHandler.js';
 
 // Import field mapping utilities
 import {
@@ -170,6 +171,91 @@ export class UniversalCreateService {
         string,
         unknown
       >; // Normal validation for other types
+    }
+
+    // Issue #984: Display name resolution integration
+    // Attempt to resolve display names (e.g., "Deal stage" → "stage") before validation
+    const objectSlug =
+      resource_type === UniversalResourceType.RECORDS
+        ? typeof record_data.object === 'string'
+          ? record_data.object
+          : typeof record_data.object_api_slug === 'string'
+            ? record_data.object_api_slug
+            : undefined
+        : resource_type.toLowerCase();
+
+    if (objectSlug) {
+      try {
+        const validationResult =
+          await FieldValidationHandler.validateAndResolve(
+            resource_type,
+            fieldsToValidate,
+            objectSlug,
+            true // Enable display name resolution
+          );
+
+        // Apply resolved field names
+        if (
+          validationResult.resolvedFields &&
+          validationResult.resolvedFields.size > 0
+        ) {
+          for (const [
+            displayName,
+            apiSlug,
+          ] of validationResult.resolvedFields) {
+            // Update the appropriate data structure
+            if (resource_type === UniversalResourceType.RECORDS) {
+              // For RECORDS, update values if it exists
+              if (
+                record_data.values &&
+                typeof record_data.values === 'object'
+              ) {
+                const values = record_data.values as Record<string, unknown>;
+                if (displayName in values) {
+                  values[apiSlug] = values[displayName];
+                  delete values[displayName];
+                }
+              }
+            } else {
+              // For other types, update values or record_data
+              const target = record_data.values || record_data;
+              if (
+                target &&
+                typeof target === 'object' &&
+                displayName in target
+              ) {
+                const targetObj = target as Record<string, unknown>;
+                targetObj[apiSlug] = targetObj[displayName];
+                delete targetObj[displayName];
+              }
+            }
+          }
+
+          logger.info('Display names resolved', {
+            count: validationResult.resolvedFields.size,
+            mappings: Array.from(validationResult.resolvedFields.entries()),
+          });
+
+          // Update fieldsToValidate with resolved names
+          if (resource_type === UniversalResourceType.RECORDS) {
+            const { values, ...topLevelFields } = record_data;
+            fieldsToValidate =
+              Object.keys(topLevelFields).length > 0
+                ? (topLevelFields as Record<string, unknown>)
+                : ({ object: 'placeholder' } as Record<string, unknown>);
+          } else {
+            fieldsToValidate = (record_data.values || record_data) as Record<
+              string,
+              unknown
+            >;
+          }
+        }
+      } catch (err) {
+        // Display name resolution is non-critical - log and continue
+        logger.debug('Display name resolution skipped', {
+          reason: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
 
     const fieldValidation = validateFields(resource_type, fieldsToValidate);
