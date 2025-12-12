@@ -25,7 +25,7 @@
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `ENABLE_ENHANCED_VALIDATION` | `false` | Enhanced attribute validation with suggestions |
-| `ENABLE_FIELD_VERIFICATION` | enabled (any value except `'false'`) | Field persistence verification after updates. Set to `'false'` to disable. See FieldPersistenceHandler for semantic vs cosmetic mismatch handling. |
+| `ENABLE_FIELD_VERIFICATION` | enabled (any value except `'false'`) | Field persistence verification after updates. Set to `'false'` to disable. See FieldPersistenceHandler for semantic vs cosmetic mismatch handling. (#984) |
 | `STRICT_FIELD_VALIDATION` | `false` | Reject unknown fields instead of ignoring |
 
 **Note**: Test thoroughly before enabling in production.
