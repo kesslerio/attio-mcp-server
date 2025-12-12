@@ -436,9 +436,11 @@ jobs:
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
 
             LANGUAGE SEMANTICS VERIFICATION (critical rule)
+            NOTE: Keep this section in sync with both Sonnet and Opus prompts to prevent drift
             - When making claims about JavaScript/TypeScript operator behavior (??/||/&&/etc):
-              * State the claim as a question first: "Does X operator work this way?"
-              * If uncertain, say "I'm not certain about the semantics of [operator]" instead of making incorrect claims
+              * If you're confident, state it directly with evidence
+              * If uncertain, phrase as a question: "Does X operator work this way?" and recommend writing a test
+              * Say "I'm not certain about the semantics of [operator]" instead of making incorrect claims
               * Prefer empirical testing over theoretical reasoning when possible
               * If tools don't allow verification, clearly state: "Cannot verify [claim] without running code"
             - Common pitfalls to avoid:
@@ -671,9 +673,11 @@ jobs:
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
 
             LANGUAGE SEMANTICS VERIFICATION (critical rule)
+            NOTE: Keep this section in sync with both Sonnet and Opus prompts to prevent drift
             - When making claims about JavaScript/TypeScript operator behavior (??/||/&&/etc):
-              * State the claim as a question first: "Does X operator work this way?"
-              * If uncertain, say "I'm not certain about the semantics of [operator]" instead of making incorrect claims
+              * If you're confident, state it directly with evidence
+              * If uncertain, phrase as a question: "Does X operator work this way?" and recommend writing a test
+              * Say "I'm not certain about the semantics of [operator]" instead of making incorrect claims
               * Prefer empirical testing over theoretical reasoning when possible
               * If tools don't allow verification, clearly state: "Cannot verify [claim] without running code"
             - Common pitfalls to avoid:
@@ -1126,23 +1130,25 @@ jobs:
         if: always() && (steps.claude_sonnet.outcome == 'success' || steps.claude_opus.outcome == 'success')
         run: |
           # Check for common false positive patterns in review output
+          # Uses -F (fixed-string) to avoid regex interpretation of special chars like '?'
           VALIDATION_WARNINGS=""
+          DOC_LINK="See: .github/docs/claude-review-known-issues.md"
 
           if [ -n "$RESULT_SONNET" ]; then
-            if echo "$RESULT_SONNET" | grep -q "?? operator"; then
-              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Sonnet review mentions ?? operator - verify semantics manually\n"
+            if printf '%s' "$RESULT_SONNET" | grep -Fq '?? operator'; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Sonnet review mentions ?? operator - verify semantics manually. ${DOC_LINK}\n"
             fi
-            if echo "$RESULT_SONNET" | grep -q "nullish coalescing"; then
-              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Sonnet review mentions nullish coalescing - verify semantics manually\n"
+            if printf '%s' "$RESULT_SONNET" | grep -Fq 'nullish coalescing'; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Sonnet review mentions nullish coalescing - verify semantics manually. ${DOC_LINK}\n"
             fi
           fi
 
           if [ -n "$RESULT_OPUS" ]; then
-            if echo "$RESULT_OPUS" | grep -q "?? operator"; then
-              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Opus review mentions ?? operator - verify semantics manually\n"
+            if printf '%s' "$RESULT_OPUS" | grep -Fq '?? operator'; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Opus review mentions ?? operator - verify semantics manually. ${DOC_LINK}\n"
             fi
-            if echo "$RESULT_OPUS" | grep -q "nullish coalescing"; then
-              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Opus review mentions nullish coalescing - verify semantics manually\n"
+            if printf '%s' "$RESULT_OPUS" | grep -Fq 'nullish coalescing'; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Opus review mentions nullish coalescing - verify semantics manually. ${DOC_LINK}\n"
             fi
           fi
 
