@@ -18,6 +18,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Refactored UniversalUpdateService** (#984) - Reduced from 831 to 691 lines (-17%) by extracting focused modules
+  - Created MetadataResolver for centralized metadata fetching (eliminates 40-60% duplicate API calls)
+  - Created UpdateOrchestrator for clean strategy dispatch separation
+  - Created FieldValidationHandler for validation with display name resolution
+  - Created FieldPersistenceHandler for post-update verification
+
+- **Consolidated metadata fetching** (#984) - Single API call per resource type per request
+  - MetadataResolver provides single source of truth for attribute metadata
+  - Value transformer receives metadata via context to avoid duplicate fetch
+  - Reduces API calls and improves performance
+
+- **Extended display name resolution** (#984) - User-friendly field names now work in create/update operations
+  - Can use "Deal stage" instead of "stage" in all operations (not just attribute_options)
+  - FieldValidationHandler automatically resolves display names before validation
+  - Integrated into both UniversalCreateService and UniversalUpdateService
+
+- **Added TTL to metadata caches** (#984) - All metadata caches now expire after 5 minutes
+  - Value transformer migrated to CachingService with DEFAULT_ATTRIBUTES_CACHE_TTL
+  - Status transformer uses timestamp-based expiration with lazy eviction
+  - Prevents stale data while maintaining performance benefits
+
 - **Enhanced attribute error messages** (#975) - Better guidance when API requests fail
   - Levenshtein distance suggestions for misspelled attribute names (threshold ≤3 edits)
   - Field alias mapping converts common mistakes automatically (`linkedin_url` → `linkedin`)
