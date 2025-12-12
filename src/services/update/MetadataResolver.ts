@@ -12,6 +12,7 @@ import { CachingService } from '@/services/CachingService.js';
 import { DEFAULT_ATTRIBUTES_CACHE_TTL } from '@/constants/universal.constants.js';
 import type { AttributeMetadata } from '@/services/value-transformer/types.js';
 import { debug } from '@/utils/logger.js';
+import { convertToMetadataMap } from '@/utils/metadata-utils.js';
 
 /**
  * Result of metadata resolution
@@ -23,15 +24,6 @@ export interface MetadataResolutionResult {
   availableAttributes: string[];
   /** Whether result came from cache (true) or fresh fetch (false) */
   fromCache: boolean;
-}
-
-/**
- * Type guard for attribute objects
- */
-function isAttributeObject(
-  obj: unknown
-): obj is Record<string, unknown> & { api_slug?: string } {
-  return typeof obj === 'object' && obj !== null;
 }
 
 /**
@@ -63,7 +55,8 @@ export class MetadataResolver {
         DEFAULT_ATTRIBUTES_CACHE_TTL
       );
 
-      const metadataMap = this.convertToMetadataMap(result.data);
+      // Use shared utility from metadata-utils (PR #1006 Phase 2.1)
+      const metadataMap = convertToMetadataMap(result.data);
       const availableAttributes = this.extractAttributeSlugs(metadataMap);
 
       debug('MetadataResolver', 'Metadata fetched', {
@@ -115,7 +108,7 @@ export class MetadataResolver {
   /**
    * Extract object slug from resource type and record data
    */
-  private static extractObjectSlug(
+  public static extractObjectSlug(
     resourceType: UniversalResourceType,
     recordData?: Record<string, unknown>
   ): string | undefined {
@@ -130,42 +123,6 @@ export class MetadataResolver {
       return 'deals';
     }
     return undefined;
-  }
-
-  /**
-   * Convert schema response to metadata map
-   */
-  private static convertToMetadataMap(
-    schema: Record<string, unknown>
-  ): Map<string, AttributeMetadata> {
-    const map = new Map<string, AttributeMetadata>();
-    const allAttrs = (schema.attributes || schema.all || []) as Array<unknown>;
-
-    for (const attr of allAttrs) {
-      if (!isAttributeObject(attr)) {
-        continue;
-      }
-
-      const slug = (attr.api_slug || attr.slug || '') as string;
-      if (!slug) {
-        continue;
-      }
-
-      map.set(slug, {
-        slug,
-        type: (attr.type as string) || 'unknown',
-        title: attr.title as string | undefined,
-        api_slug: attr.api_slug as string | undefined,
-        is_system_attribute: attr.is_system_attribute as boolean | undefined,
-        is_writable: attr.is_writable as boolean | undefined,
-        is_multiselect: attr.is_multiselect as boolean | undefined,
-        relationship: attr.relationship as
-          | { object?: string; cardinality?: string }
-          | undefined,
-      });
-    }
-
-    return map;
   }
 
   /**

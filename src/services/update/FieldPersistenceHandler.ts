@@ -4,7 +4,20 @@
  * Extracted from UniversalUpdateService to separate verification concerns.
  * Handles field persistence checking with configurable strictness.
  *
+ * **Verification Modes** (controlled by `ENABLE_FIELD_VERIFICATION` env var):
+ * - **Enabled** (default): Any value except `'false'` enables verification
+ * - **Disabled**: Set to `'false'` to skip verification entirely
+ *
+ * **Strictness Modes** (controlled by `STRICT_FIELD_VALIDATION` env var):
+ * - **Strict**: `'true'` - Logs all discrepancies (cosmetic + semantic)
+ * - **Standard** (default): `'false'` - Logs only semantic mismatches
+ *
+ * **Semantic vs Cosmetic Mismatches**:
+ * - Cosmetic: Format differences with same logical value (e.g., "Demo" vs {title: "Demo"})
+ * - Semantic: Actual data loss or corruption (e.g., "Demo" vs "Qualified", missing data)
+ *
  * @see Issue #984 - Modularize UniversalUpdateService (831→220 lines)
+ * @see PR #1006 Phase 3.2 - Enhanced JSDoc for verification behavior
  */
 
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
@@ -43,6 +56,22 @@ export interface VerificationResult {
 
 /**
  * FieldPersistenceHandler - Post-update verification orchestration
+ *
+ * @example
+ * ```typescript
+ * // Standard mode (semantic mismatches only)
+ * const result = await FieldPersistenceHandler.verifyPersistence(
+ *   UniversalResourceType.COMPANIES,
+ *   'company-123',
+ *   { stage: 'Demo' }
+ * );
+ * // Cosmetic mismatch "Demo" vs {title: "Demo"} → not logged
+ * // Semantic mismatch "Demo" vs "Qualified" → logged
+ *
+ * // Strict mode (all mismatches)
+ * process.env.STRICT_FIELD_VALIDATION = 'true';
+ * // Both cosmetic and semantic mismatches logged
+ * ```
  */
 export class FieldPersistenceHandler {
   /**
@@ -198,7 +227,7 @@ export class FieldPersistenceHandler {
    * @param discrepancy - Discrepancy message from verification
    * @returns true if semantic mismatch, false if cosmetic
    */
-  private static isSemanticMismatch(discrepancy: string): boolean {
+  public static isSemanticMismatch(discrepancy: string): boolean {
     // Extract expected and actual from: Field "X" persistence mismatch: expected Y, got Z
     const match = discrepancy.match(/expected (.+?), got (.+?)$/);
     if (!match) {

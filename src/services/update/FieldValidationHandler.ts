@@ -16,6 +16,10 @@ import { debug, OperationType } from '@/utils/logger.js';
  * Result of field validation
  */
 export interface ValidationResult {
+  /** Whether validation passed */
+  valid: boolean;
+  /** Validation errors (blocking) */
+  errors: string[];
   /** Validation warnings (non-blocking) */
   warnings: string[];
   /** Field suggestions for user */
@@ -47,6 +51,8 @@ export class FieldValidationHandler {
     enableDisplayNameResolution: boolean = true
   ): Promise<ValidationResult> {
     const result: ValidationResult = {
+      valid: true,
+      errors: [],
       warnings: [],
       suggestions: [],
       resolvedFields: new Map(),
@@ -54,6 +60,10 @@ export class FieldValidationHandler {
 
     // Pre-validate fields with suggestions
     const fieldValidation = validateFields(resourceType, values);
+
+    // Propagate validation results (PR #1006 Phase 3.1)
+    result.valid = fieldValidation.valid;
+    result.errors.push(...fieldValidation.errors);
 
     if (fieldValidation.warnings.length > 0) {
       result.warnings.push(...fieldValidation.warnings);

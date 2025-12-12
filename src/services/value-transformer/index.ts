@@ -28,6 +28,7 @@ import {
   isCorrectRecordReferenceFormat,
 } from './record-reference-transformer.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import { convertToMetadataMap } from '@/utils/metadata-utils.js';
 import { handleUniversalDiscoverAttributes } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { debug, error as logError, OperationType } from '@/utils/logger.js';
 import { CachingService } from '@/services/CachingService.js';
@@ -100,47 +101,8 @@ async function getAttributeMetadata(
   }
 }
 
-/**
- * Convert schema response to metadata map
- * @see Issue #984 - Extracted for reuse with CachingService
- */
-function convertToMetadataMap(
-  schema: Record<string, unknown>
-): Map<string, AttributeMetadata> {
-  const metadataMap = new Map<string, AttributeMetadata>();
-  const allAttrs = ((schema as Record<string, unknown>).all || []) as Array<{
-    api_slug?: string;
-    slug?: string;
-    type?: string;
-    title?: string;
-    is_system_attribute?: boolean;
-    is_writable?: boolean;
-    is_multiselect?: boolean;
-    relationship?: {
-      object?: string;
-      cardinality?: string;
-    };
-  }>;
-
-  for (const attr of allAttrs) {
-    const slug = attr.api_slug || attr.slug || '';
-    if (slug) {
-      metadataMap.set(slug, {
-        slug,
-        type: attr.type || 'unknown',
-        title: attr.title,
-        api_slug: attr.api_slug,
-        is_system_attribute: attr.is_system_attribute,
-        is_writable: attr.is_writable,
-        is_multiselect: attr.is_multiselect,
-        // Issue #997: Include relationship metadata for record-reference attributes
-        relationship: attr.relationship,
-      });
-    }
-  }
-
-  return metadataMap;
-}
+// Note: convertToMetadataMap() moved to @/utils/metadata-utils.js (PR #1006 Phase 2.1)
+// This eliminates duplication between value-transformer and MetadataResolver
 
 /**
  * Transform record values before API call

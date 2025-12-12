@@ -32,24 +32,24 @@
  * - Document all environment variable usage in deployment runbooks
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalUpdateParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalUpdateParams } from '@/handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@/types/attio.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import { debug, error as logError } from '../utils/logger.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
+import { debug, error as logError } from '@/utils/logger.js';
 
 // Import shared type definitions for better type safety
 import {
   createNotFoundError,
   type DataPayload,
   isAttributeObject,
-} from '../types/universal-service-types.js';
+} from '@/types/universal-service-types.js';
 
 // Import services
-import { ValidationService } from './ValidationService.js';
+import { ValidationService } from '@/services/ValidationService.js';
 
 /**
  * Validation result containing warnings and actual persisted values
@@ -75,10 +75,10 @@ import {
   validateFields,
   getValidResourceTypes,
   mapTaskFields,
-} from '../handlers/tool-configs/universal/field-mapper.js';
+} from '@/handlers/tool-configs/universal/field-mapper.js';
 
 // Import validation utilities
-import { validateRecordFields } from '../utils/validation-utils.js';
+import { validateRecordFields } from '@/utils/validation-utils.js';
 
 // Note: Deal defaults configuration removed as unused in update service
 
@@ -337,6 +337,9 @@ export class UniversalUpdateService {
         const { UpdateValidation } = await import(
           './update/UpdateValidation.js'
         );
+        const { FieldPersistenceHandler } = await import(
+          './update/FieldPersistenceHandler.js'
+        );
         const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
           attioPayload.values
         );
@@ -366,26 +369,9 @@ export class UniversalUpdateService {
             );
           } else {
             // Non-STRICT mode: only log discrepancies that appear to be semantic value changes
-            // Filter out format-only mismatches by checking if both values contain similar semantic content
-            const semanticMismatches = verification.discrepancies.filter(
-              (d) => {
-                // Extract expected and actual from: Field "X" persistence mismatch: expected Y, got Z
-                const match = d.match(/expected (.+?), got (.+?)$/);
-                if (!match) return true; // Log if we can't parse (safety)
-
-                const [, expectedStr, actualStr] = match;
-                try {
-                  // If one is a string and the other is an object containing that string, it's cosmetic
-                  const isCosmetic =
-                    (expectedStr.includes('"') &&
-                      actualStr.includes(expectedStr.replace(/^"|"$/g, ''))) ||
-                    (actualStr.includes('"') &&
-                      expectedStr.includes(actualStr.replace(/^"|"$/g, '')));
-                  return !isCosmetic;
-                } catch {
-                  return true; // Log on parse errors (safety)
-                }
-              }
+            // Use shared semantic mismatch logic (PR #1006 Phase 2.2)
+            const semanticMismatches = verification.discrepancies.filter((d) =>
+              FieldPersistenceHandler.isSemanticMismatch(d)
             );
 
             if (semanticMismatches.length > 0) {
@@ -611,21 +597,12 @@ export class UniversalUpdateService {
       './update/UpdateOrchestrator.js'
     );
 
-    /**
-     * **Safe Property Access**: Using type-safe property access for object slug
-     * extraction while providing sensible defaults.
-     */
-    const objectSlug =
-      (typeof actualRecordData?.object === 'string'
-        ? actualRecordData.object
-        : undefined) ||
-      (typeof actualRecordData?.object_api_slug === 'string'
-        ? actualRecordData.object_api_slug
-        : undefined) ||
-      (resource_type === UniversalResourceType.RECORDS ||
-      resource_type === UniversalResourceType.DEALS
-        ? 'records'
-        : undefined);
+    // Use centralized object slug extraction (fixes DEALS slug inconsistency)
+    // MetadataResolver already imported at line 468
+    const objectSlug = MetadataResolver.extractObjectSlug(
+      resource_type,
+      actualRecordData
+    );
 
     const updatedRecord = await UpdateOrchestrator.executeUpdate({
       resourceType: resource_type,
