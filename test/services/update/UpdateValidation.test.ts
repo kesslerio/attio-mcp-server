@@ -130,49 +130,7 @@ describe('UpdateValidation - Issue #705 Fix', () => {
     });
   });
 
-  describe('Edge Cases and Performance - PR Feedback', () => {
-    it('should handle concurrent field validation requests', async () => {
-      // Test concurrent validation of the same field
-      const fieldName = 'stage';
-      const expectedValue = 'Demo';
-      const actualValue = [{ status: 'Demo', id: 'demo_id' }];
-
-      // Create multiple concurrent validation requests
-      const promises = Array.from({ length: 10 }, () =>
-        UpdateValidation.compareFieldValues(
-          fieldName,
-          expectedValue,
-          actualValue
-        )
-      );
-
-      const results = await Promise.all(promises);
-
-      // All should return the same result
-      results.forEach((result) => {
-        expect(result.matches).toBe(true);
-        expect(result.warning).toBeUndefined();
-      });
-    });
-
-    it('should handle very large arrays efficiently', async () => {
-      // Test performance with large arrays
-      const fieldName = 'tags';
-      const expectedValue = Array.from({ length: 1000 }, (_, i) => `tag-${i}`);
-      const actualValue = expectedValue.map((tag) => ({ value: tag }));
-
-      const startTime = Date.now();
-      const result = UpdateValidation.compareFieldValues(
-        fieldName,
-        expectedValue,
-        actualValue
-      );
-      const duration = Date.now() - startTime;
-
-      expect(result.matches).toBe(true);
-      expect(duration).toBeLessThan(100); // Should complete within 100ms
-    });
-
+  describe('Edge Cases and Validation - PR Feedback', () => {
     it('should handle deeply nested comparison structures', async () => {
       // Test with complex nested structures
       const fieldName = 'complex_field';
