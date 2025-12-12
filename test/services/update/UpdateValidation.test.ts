@@ -487,4 +487,58 @@ describe('UpdateValidation - Issue #705 Fix', () => {
       }
     });
   });
+
+  describe('unwrapArrayValue - Null/Empty Edge Cases (defensive)', () => {
+    it('should handle null status with valid title (fallback)', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: null, title: 'Valid Title' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should fallback to title when status is null
+      expect(unwrapped).toBe('Valid Title');
+    });
+
+    it('should handle both status and title as null', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: null, title: null }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // When both are null, returns null (semantically correct - null is a valid value)
+      expect(unwrapped).toBe(null);
+    });
+
+    it('should handle empty string status with valid title', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: '', title: 'Valid Title' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Empty string is a valid value, should not fallback
+      expect(unwrapped).toBe('');
+    });
+
+    it('should handle both status and title as empty strings', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: '', title: '' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Empty string is a valid value (takes status)
+      expect(unwrapped).toBe('');
+    });
+  });
 });
