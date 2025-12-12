@@ -1,14 +1,14 @@
-import type { AttioRecord } from '../../types/attio.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { shouldUseMockData } from '../create/index.js';
-import { UniversalUtilityService } from '../UniversalUtilityService.js';
-import { getCompanyDetails } from '../../objects/companies/index.js';
-import { getListDetails } from '../../objects/lists.js';
-import { getPersonDetails } from '../../objects/people/basic.js';
-import { getObjectRecord } from '../../objects/records/index.js';
-import { getTask } from '../../objects/tasks.js';
-import type { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
-import { createScopedLogger } from '../../utils/logger.js';
+import type { AttioRecord } from '@/types/attio.js';
+import { FilterValidationError } from '@/errors/api-errors.js';
+import { shouldUseMockData } from '@/services/create/index.js';
+import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
+import { getCompanyDetails } from '@/objects/companies/index.js';
+import { getListDetails } from '@/objects/lists.js';
+import { getPersonDetails } from '@/objects/people/basic.js';
+import { getObjectRecord } from '@/objects/records/index.js';
+import { getTask } from '@/objects/tasks.js';
+import type { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import { createScopedLogger } from '@/utils/logger.js';
 
 export const UpdateValidation = {
   hasForbiddenContent(values: Record<string, unknown>): boolean {
@@ -186,10 +186,25 @@ export const UpdateValidation = {
   },
 
   /**
-   * Check if a field name represents a status field (like deal stages)
+   * Check if a field is a status-type field (stage, status, etc.)
+   * Enhanced to recognize more status field variations (Issue #995)
+   *
+   * Uses exact matching and suffix patterns to avoid false positives
+   * from unrelated fields like "status_code" or "status_updated_at"
    */
   isStatusField(fieldName: string): boolean {
-    return fieldName === 'stage' || fieldName.includes('stage');
+    const lowerFieldName = fieldName.toLowerCase();
+
+    // Exact matches for canonical status fields
+    if (lowerFieldName === 'stage' || lowerFieldName === 'status') {
+      return true;
+    }
+
+    // Suffix patterns for common variations
+    // e.g., deal_stage, pipeline_stage, company_status, deal_status
+    return (
+      lowerFieldName.endsWith('_stage') || lowerFieldName.endsWith('_status')
+    );
   },
 
   /**
@@ -217,24 +232,45 @@ export const UpdateValidation = {
       return actualValue;
     }
 
-    const firstItem = actualValue[0] as Record<string, unknown>;
+    const firstItem = actualValue[0];
 
-    // Handle status fields (like deal stages) - they use 'status' property
-    if (this.isStatusField(fieldName) && firstItem?.status !== undefined) {
-      return actualValue.length === 1
-        ? firstItem.status
-        : (actualValue as Record<string, unknown>[]).map(
-            (v: Record<string, unknown>) => v.status
-          );
+    // Guard: only proceed with status/title logic if firstItem is an object
+    // and contains status or title properties
+    if (
+      this.isStatusField(fieldName) &&
+      firstItem &&
+      typeof firstItem === 'object' &&
+      !Array.isArray(firstItem)
+    ) {
+      const firstItemObj = firstItem as Record<string, unknown>;
+
+      // Only use status/title extraction if the object actually has those properties
+      if ('status' in firstItemObj || 'title' in firstItemObj) {
+        const statusValue = firstItemObj.status ?? firstItemObj.title;
+        if (statusValue !== undefined) {
+          return actualValue.length === 1
+            ? statusValue
+            : (actualValue as Record<string, unknown>[]).map(
+                (v: Record<string, unknown>) => v.status ?? v.title
+              );
+        }
+      }
     }
 
     // Handle regular value fields
-    if (firstItem?.value !== undefined) {
-      return actualValue.length === 1
-        ? firstItem.value
-        : (actualValue as Record<string, unknown>[]).map(
-            (v: Record<string, unknown>) => v.value
-          );
+    if (
+      firstItem &&
+      typeof firstItem === 'object' &&
+      !Array.isArray(firstItem)
+    ) {
+      const firstItemObj = firstItem as Record<string, unknown>;
+      if (firstItemObj.value !== undefined) {
+        return actualValue.length === 1
+          ? firstItemObj.value
+          : (actualValue as Record<string, unknown>[]).map(
+              (v: Record<string, unknown>) => v.value
+            );
+      }
     }
 
     return actualValue;

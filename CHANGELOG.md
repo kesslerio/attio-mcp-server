@@ -11,15 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Fixed
+
+- **Field persistence warnings no longer show false positives for status field updates** (#995)
+  - Enhanced `unwrapArrayValue` to handle both `status` and `title` properties in API responses
+  - Improved `isStatusField` detection to recognize both "stage" and "status" field variations
+  - Added comprehensive test coverage for status field persistence scenarios
+  - Resolves confusing warnings after successful updates (e.g., "Sales Qualified" stage updates)
+
 ## [2025-12-12] - Daily Update
 
 ### Fixed
 
 - **Daily changelog workflow authentication** (#1005) - Added claude_args with required tool permissions
   - Explicitly permits Read, Edit, Write for file operations
-  - Allows Bash(git:*) for branch/commit/push operations
-  - Allows Bash(gh pr list:*), Bash(gh pr create:*) for PR operations
-  - Allows Bash(date:*) for branch naming
+  - Allows Bash(git:\*) for branch/commit/push operations
+  - Allows Bash(gh pr list:_), Bash(gh pr create:_) for PR operations
+  - Allows Bash(date:\*) for branch naming
   - Ensures gh CLI has authentication inside Claude's Bash environment
 
 - **Claude PR Review false positives from missing dynamic import detection** (#1002, #1003) - Ring 1 scope now includes dynamically imported modules

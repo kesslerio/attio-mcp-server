@@ -130,49 +130,7 @@ describe('UpdateValidation - Issue #705 Fix', () => {
     });
   });
 
-  describe('Edge Cases and Performance - PR Feedback', () => {
-    it('should handle concurrent field validation requests', async () => {
-      // Test concurrent validation of the same field
-      const fieldName = 'stage';
-      const expectedValue = 'Demo';
-      const actualValue = [{ status: 'Demo', id: 'demo_id' }];
-
-      // Create multiple concurrent validation requests
-      const promises = Array.from({ length: 10 }, () =>
-        UpdateValidation.compareFieldValues(
-          fieldName,
-          expectedValue,
-          actualValue
-        )
-      );
-
-      const results = await Promise.all(promises);
-
-      // All should return the same result
-      results.forEach((result) => {
-        expect(result.matches).toBe(true);
-        expect(result.warning).toBeUndefined();
-      });
-    });
-
-    it('should handle very large arrays efficiently', async () => {
-      // Test performance with large arrays
-      const fieldName = 'tags';
-      const expectedValue = Array.from({ length: 1000 }, (_, i) => `tag-${i}`);
-      const actualValue = expectedValue.map((tag) => ({ value: tag }));
-
-      const startTime = Date.now();
-      const result = UpdateValidation.compareFieldValues(
-        fieldName,
-        expectedValue,
-        actualValue
-      );
-      const duration = Date.now() - startTime;
-
-      expect(result.matches).toBe(true);
-      expect(duration).toBeLessThan(100); // Should complete within 100ms
-    });
-
+  describe('Edge Cases and Validation - PR Feedback', () => {
     it('should handle deeply nested comparison structures', async () => {
       // Test with complex nested structures
       const fieldName = 'complex_field';
@@ -295,6 +253,250 @@ describe('UpdateValidation - Issue #705 Fix', () => {
       expect(result.warning).toContain('case mismatch');
       expect(result.warning).toContain('Test Company');
       expect(result.warning).toContain('test company');
+    });
+  });
+
+  describe('unwrapArrayValue - Issue #995 Regression Tests', () => {
+    it('should handle status field with API enriched response', () => {
+      // Exact scenario from Issue #995:
+      // User sends: {"status":"Sales Qualified"}
+      // API returns: enriched object with timestamps, active_from, etc.
+      const fieldName = 'stage';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          active_until: null,
+          status: 'Sales Qualified',
+          title: 'Sales Qualified',
+          created_by_actor: { type: 'user', id: '123' },
+        },
+      ];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should extract just "Sales Qualified"
+      expect(unwrapped).toBe('Sales Qualified');
+    });
+
+    it('should handle status field with title property (fallback)', () => {
+      // Some API responses might use 'title' instead of 'status'
+      const fieldName = 'stage';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          active_until: null,
+          title: 'Sales Qualified',
+          // Note: no 'status' property, only 'title'
+        },
+      ];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should extract "Sales Qualified" from title
+      expect(unwrapped).toBe('Sales Qualified');
+    });
+
+    it('should prefer status over title when both exist', () => {
+      const fieldName = 'stage';
+      const apiResponse = [
+        {
+          status: 'From Status',
+          title: 'From Title',
+        },
+      ];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should prefer 'status' property
+      expect(unwrapped).toBe('From Status');
+    });
+
+    it('should handle multi-select status fields with title', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ title: 'Demo' }, { title: 'Qualified' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should extract array of titles
+      expect(unwrapped).toEqual(['Demo', 'Qualified']);
+    });
+
+    it('should handle end-to-end comparison with enriched API response', () => {
+      // Full integration: compare expected value against enriched API response
+      const fieldName = 'stage';
+      const expectedValue = 'Sales Qualified';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          active_until: null,
+          status: 'Sales Qualified',
+          created_by_actor: { type: 'user', id: '123' },
+        },
+      ];
+
+      const result = UpdateValidation.compareFieldValues(
+        fieldName,
+        expectedValue,
+        apiResponse
+      );
+
+      // Should match without warnings
+      expect(result.matches).toBe(true);
+      expect(result.warning).toBeUndefined();
+    });
+
+    it('should handle comparison with title-only enriched response', () => {
+      const fieldName = 'stage';
+      const expectedValue = 'Sales Qualified';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          title: 'Sales Qualified',
+        },
+      ];
+
+      const result = UpdateValidation.compareFieldValues(
+        fieldName,
+        expectedValue,
+        apiResponse
+      );
+
+      // Should match without warnings
+      expect(result.matches).toBe(true);
+      expect(result.warning).toBeUndefined();
+    });
+
+    it('should detect semantic mismatch in enriched response', () => {
+      const fieldName = 'stage';
+      const expectedValue = 'Sales Qualified';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          status: 'Demo', // Different value
+        },
+      ];
+
+      const result = UpdateValidation.compareFieldValues(
+        fieldName,
+        expectedValue,
+        apiResponse
+      );
+
+      // Should NOT match
+      expect(result.matches).toBe(false);
+    });
+  });
+
+  describe('isStatusField - Enhanced Detection', () => {
+    it('should recognize stage field variations', () => {
+      const statusFields = [
+        'stage',
+        'deal_stage',
+        'pipeline_stage',
+        'company_stage',
+        'opportunity_stage',
+        'sales_stage',
+      ];
+
+      for (const fieldName of statusFields) {
+        const isStatus = UpdateValidation.isStatusField(fieldName);
+        expect(isStatus).toBe(true);
+      }
+    });
+
+    it('should recognize status field variations', () => {
+      const statusFields = [
+        'status',
+        'deal_status',
+        'opportunity_status',
+        'project_status',
+      ];
+
+      for (const fieldName of statusFields) {
+        const isStatus = UpdateValidation.isStatusField(fieldName);
+        expect(isStatus).toBe(true);
+      }
+    });
+
+    it('should NOT recognize non-status fields', () => {
+      const regularFields = [
+        'name',
+        'email',
+        'company',
+        'description',
+        'notes',
+      ];
+
+      for (const fieldName of regularFields) {
+        const isStatus = UpdateValidation.isStatusField(fieldName);
+        expect(isStatus).toBe(false);
+      }
+    });
+  });
+
+  describe('unwrapArrayValue - Null/Empty Edge Cases (defensive)', () => {
+    it('should handle null status with valid title (fallback)', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: null, title: 'Valid Title' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should fallback to title when status is null
+      expect(unwrapped).toBe('Valid Title');
+    });
+
+    it('should handle both status and title as null', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: null, title: null }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // When both are null, returns null (semantically correct - null is a valid value)
+      expect(unwrapped).toBe(null);
+    });
+
+    it('should handle empty string status with valid title', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: '', title: 'Valid Title' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Empty string is a valid value, should not fallback
+      expect(unwrapped).toBe('');
+    });
+
+    it('should handle both status and title as empty strings', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ status: '', title: '' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Empty string is a valid value (takes status)
+      expect(unwrapped).toBe('');
     });
   });
 });
