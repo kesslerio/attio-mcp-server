@@ -11,6 +11,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [2025-12-12] - Daily Update
+
+### Fixed
+
+- **Daily changelog workflow authentication** (#1005) - Added claude_args with required tool permissions
+  - Explicitly permits Read, Edit, Write for file operations
+  - Allows Bash(git:*) for branch/commit/push operations
+  - Allows Bash(gh pr list:*), Bash(gh pr create:*) for PR operations
+  - Allows Bash(date:*) for branch naming
+  - Ensures gh CLI has authentication inside Claude's Bash environment
+
+- **Claude PR Review false positives from missing dynamic import detection** (#1002, #1003) - Ring 1 scope now includes dynamically imported modules
+  - Adds regex patterns for dynamic imports (`await import(...)`) in scope generator
+  - Captures both relative (`../../path`) and `@/` alias dynamic imports
+  - Pre-computes alias paths from full repo and outputs alias-resolutions.json
+  - Adds prompt hardening to prevent "missing file" claims from sparse checkout limitations
+
+- **Enhance uniqueness constraint violation errors** (#990, #1000) - Better error messages for duplicate records
+  - Searches for conflicting records and shows field name, conflicting value, and existing record ID
+  - Provides actionable options: update existing, view details, or use different value
+  - Integrated into handleCreateError() for companies and people records
+
+- **Changelog and personal-name field validation** (#991) - Clearer validation and error handling
+  - Pre-validates complex types with actionable errors and examples before API calls
+  - Auto-fills missing location fields with nulls
+  - Enforces phone_number/original_phone_number requirements and non-empty names
+
+### Added
+
 - **`records_get_attribute_options` tool** (#975) - Get valid options for select, status, and multi-select attributes
   - Prevents "Cannot find select option" errors by showing available options upfront
   - Works with companies, people, deals, and custom objects
