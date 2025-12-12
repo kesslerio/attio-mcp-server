@@ -10,7 +10,7 @@
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { validateFields } from '@/handlers/tool-configs/universal/field-mapper.js';
 import { ValidationService } from '@/services/ValidationService.js';
-import { debug } from '@/utils/logger.js';
+import { debug, OperationType } from '@/utils/logger.js';
 
 /**
  * Result of field validation
@@ -162,9 +162,8 @@ export class FieldValidationHandler {
           continue;
         }
 
-        // Import the resolution function (will be available after Phase 4.1)
-        // For now, this is a placeholder - actual implementation will use
-        // the exported resolveAttributeDisplayName from shared-handlers.ts
+        // Attempt to resolve display name to API slug
+        // Uses the exported resolveAttributeDisplayName from shared-handlers.ts
         const resolved = await this.attemptDisplayNameResolution(
           objectSlug,
           fieldName
@@ -188,16 +187,33 @@ export class FieldValidationHandler {
   }
 
   /**
-   * Placeholder for display name resolution
+   * Attempt to resolve a display name to an API slug
    *
-   * This will be replaced with actual implementation in Phase 4.1
-   * when resolveAttributeDisplayName is exported from shared-handlers.ts
+   * Uses the exported resolveAttributeDisplayName from shared-handlers.ts
+   * to support user-friendly field names like "Deal stage" instead of "stage"
+   *
+   * @param objectSlug - The object slug (e.g., "deals", "companies")
+   * @param fieldName - The field name to resolve (e.g., "Deal stage")
+   * @returns The resolved API slug if found, or null
    */
   private static async attemptDisplayNameResolution(
-    _objectSlug: string,
-    _fieldName: string
+    objectSlug: string,
+    fieldName: string
   ): Promise<string | null> {
-    // Placeholder - will import and use resolveAttributeDisplayName in Phase 4.1
-    return null;
+    try {
+      const { resolveAttributeDisplayName } = await import(
+        '@/handlers/tool-configs/universal/shared-handlers.js'
+      );
+      return await resolveAttributeDisplayName(objectSlug, fieldName);
+    } catch (err) {
+      debug(
+        'FieldValidationHandler',
+        'Display name resolution failed',
+        { objectSlug, fieldName, error: err },
+        'attemptDisplayNameResolution',
+        OperationType.DATA_PROCESSING
+      );
+      return null;
+    }
   }
 }
