@@ -52,20 +52,31 @@ import {
 import { ValidationService } from '@/services/ValidationService.js';
 
 /**
- * Validation result containing warnings and actual persisted values
+ * Update metadata containing warnings, suggestions, and field verification results
+ *
+ * Renamed from ValidationResult to avoid confusion with:
+ * - FieldValidationHandler.ValidationResult (pre-update validation)
+ * - FieldPersistenceHandler.VerificationResult (post-update verification)
+ *
+ * @see Issue #984 extension - Verification API unification
  */
-export interface ValidationResult {
+export interface UpdateMetadata {
   warnings: string[];
   actualValues: Record<string, unknown>;
   suggestions: string[];
+  /** Field verification details (Issue #984 extension) */
+  fieldVerification?: {
+    verified: boolean;
+    discrepancies: string[];
+  };
 }
 
 /**
- * Enhanced update result that includes validation metadata
+ * Enhanced update result that includes update metadata
  */
 export interface EnhancedUpdateResult {
   record: AttioRecord;
-  validation: ValidationResult;
+  validation: UpdateMetadata;
 }
 
 // Import field mapping utilities
@@ -230,7 +241,7 @@ export class UniversalUpdateService {
   private static async _updateRecordInternalWithValidation(
     params: UniversalUpdateParams
   ): Promise<EnhancedUpdateResult> {
-    const validationResult: ValidationResult = {
+    const validationResult: UpdateMetadata = {
       warnings: [],
       actualValues: {},
       suggestions: [],
@@ -344,44 +355,33 @@ export class UniversalUpdateService {
           attioPayload.values
         );
 
-        const verification = await UpdateValidation.verifyFieldPersistence(
+        // UNIFIED: Single call to FieldPersistenceHandler (Issue #984 extension)
+        // Eliminates duplicate semantic filtering logic by using shared implementation
+        const verification = await FieldPersistenceHandler.verifyPersistence(
           resource_type,
           record_id,
-          sanitizedData
+          sanitizedData,
+          validationResult.actualValues, // Pass actual values from line 326
+          {
+            strict: process.env.STRICT_FIELD_VALIDATION === 'true',
+            skip: false,
+          }
         );
 
-        // Add field persistence warnings to validation result
-        if (verification.warnings.length > 0) {
-          validationResult.warnings.push(...verification.warnings);
-        }
+        // Surface complete VerificationResult into validationResult
+        validationResult.warnings.push(...verification.warnings);
+        validationResult.fieldVerification = {
+          verified: verification.verified,
+          discrepancies: verification.discrepancies,
+        };
 
-        if (!verification.verified) {
-          // Issue #798: Only log warnings in STRICT mode or for semantic value mismatches
-          // Cosmetic format differences (e.g., {stage: "Demo"} vs {stage: {title: "Demo"}}) are suppressed by default
-          const isStrictMode = process.env.STRICT_FIELD_VALIDATION === 'true';
-
-          if (isStrictMode) {
-            // STRICT mode: log all discrepancies
-            validationResult.warnings.push(
-              ...verification.discrepancies.map(
-                (discrepancy) => `Field persistence issue: ${discrepancy}`
-              )
-            );
-          } else {
-            // Non-STRICT mode: only log discrepancies that appear to be semantic value changes
-            // Use shared semantic mismatch logic (PR #1006 Phase 2.2)
-            const semanticMismatches = verification.discrepancies.filter((d) =>
-              FieldPersistenceHandler.isSemanticMismatch(d)
-            );
-
-            if (semanticMismatches.length > 0) {
-              validationResult.warnings.push(
-                ...semanticMismatches.map(
-                  (discrepancy) => `Field persistence issue: ${discrepancy}`
-                )
-              );
-            }
-          }
+        // Also add discrepancies as warnings for backward compatibility
+        if (verification.discrepancies.length > 0) {
+          validationResult.warnings.push(
+            ...verification.discrepancies.map(
+              (discrepancy) => `Field persistence issue: ${discrepancy}`
+            )
+          );
         }
       } catch (error: unknown) {
         const errorMessage =

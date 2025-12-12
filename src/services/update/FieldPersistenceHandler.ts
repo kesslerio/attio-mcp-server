@@ -85,7 +85,7 @@ export class FieldPersistenceHandler {
    * @param resourceType - Resource type being verified
    * @param recordId - ID of the updated record
    * @param expectedData - Expected field values after update
-   * @param actualRecord - Actual record returned from API
+   * @param actualRecord - Optional actual record values. If not provided, will be fetched from API
    * @param options - Verification options
    * @returns Verification result with verified status, warnings, and discrepancies
    * @throws UniversalValidationError if strict mode enabled and verification fails
@@ -94,14 +94,14 @@ export class FieldPersistenceHandler {
     resourceType: UniversalResourceType,
     recordId: string,
     expectedData: Record<string, unknown>,
-    actualRecord: Record<string, unknown>,
+    actualRecord?: Record<string, unknown>,
     options: VerificationOptions = {}
   ): Promise<VerificationResult> {
     const result: VerificationResult = {
       verified: true,
       warnings: [],
       discrepancies: [],
-      actualValues: actualRecord || {},
+      actualValues: {},
     };
 
     // Check if verification is disabled globally
@@ -116,6 +116,46 @@ export class FieldPersistenceHandler {
       });
       return result;
     }
+
+    // Fetch actualRecord if not provided
+    let recordData = actualRecord;
+    if (!recordData) {
+      try {
+        const record = await UpdateValidation.fetchRecordForVerification(
+          resourceType,
+          recordId
+        );
+        if (!record) {
+          result.warnings.push(
+            'Could not fetch record for verification: Record not found'
+          );
+          debug(
+            'FieldPersistenceHandler',
+            'Record not found for verification',
+            { resourceType, recordId }
+          );
+          return result;
+        }
+        recordData = record.values || {};
+        debug('FieldPersistenceHandler', 'Fetched record for verification', {
+          resourceType,
+          recordId,
+        });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        result.warnings.push(
+          `Could not fetch record for verification: ${errorMessage}`
+        );
+        debug(
+          'FieldPersistenceHandler',
+          'Failed to fetch record for verification',
+          { resourceType, recordId, error: errorMessage }
+        );
+        return result;
+      }
+    }
+
+    result.actualValues = recordData || {};
 
     try {
       // Perform verification using existing UpdateValidation service

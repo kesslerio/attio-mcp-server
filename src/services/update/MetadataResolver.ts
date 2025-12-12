@@ -11,7 +11,7 @@ import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.j
 import { CachingService } from '@/services/CachingService.js';
 import { DEFAULT_ATTRIBUTES_CACHE_TTL } from '@/constants/universal.constants.js';
 import type { AttributeMetadata } from '@/services/value-transformer/types.js';
-import { debug } from '@/utils/logger.js';
+import { debug, error as logError } from '@/utils/logger.js';
 import { convertToMetadataMap } from '@/utils/metadata-utils.js';
 
 /**
@@ -71,14 +71,52 @@ export class MetadataResolver {
         availableAttributes,
         fromCache: result.fromCache,
       };
-    } catch (error) {
-      debug('MetadataResolver', 'Failed to fetch metadata', {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+
+      // Re-throw critical authentication errors (Issue #984 extension - PR review feedback)
+      if (
+        error.message.includes('401') ||
+        error.message.includes('403') ||
+        error.message.includes('Unauthorized') ||
+        error.message.includes('Forbidden')
+      ) {
+        logError(
+          'MetadataResolver',
+          'Authentication error fetching metadata',
+          error,
+          { resourceType, objectSlug }
+        );
+        throw error;
+      }
+
+      // Re-throw schema validation errors
+      if (
+        error.message.includes('validation') ||
+        error.message.includes('schema')
+      ) {
+        logError(
+          'MetadataResolver',
+          'Schema validation error fetching metadata',
+          error,
+          { resourceType, objectSlug }
+        );
+        throw error;
+      }
+
+      // Log and return empty for non-critical errors (transient failures, network issues)
+      logError(
+        'MetadataResolver',
+        'Non-critical metadata fetch error, using empty metadata',
+        error,
+        { resourceType, objectSlug }
+      );
+
+      debug('MetadataResolver', 'Graceful degradation with empty metadata', {
         resourceType,
         objectSlug,
-        error: error instanceof Error ? error.message : String(error),
       });
 
-      // Return empty result on error (best-effort)
       return {
         metadataMap: new Map(),
         availableAttributes: [],

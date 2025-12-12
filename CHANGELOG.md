@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Works with companies, people, deals, and custom objects
   - Returns option titles, IDs, and active/archived status
 
+- **Comprehensive FieldPersistenceHandler tests** (#984 extension) - 50 new unit tests
+  - Optional actualRecord parameter behavior (10 tests)
+  - Verification modes: disabled, warn-only, strict (15 tests)
+  - Semantic vs cosmetic mismatch filtering (15 tests)
+  - Integration with UpdateValidation (10 tests)
+  - Increases total test count from 2973 to 3026 (+53 tests)
+
 ### Changed
 
 - **Refactored UniversalUpdateService** (#984) - Reduced from 831 to 691 lines (-17%) by extracting focused modules
@@ -23,6 +30,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created UpdateOrchestrator for clean strategy dispatch separation
   - Created FieldValidationHandler for validation with display name resolution
   - Created FieldPersistenceHandler for post-update verification
+
+- **Unified verification API** (#984 extension) - Single entry point for field persistence verification
+  - UniversalUpdateService now routes through FieldPersistenceHandler.verifyPersistence
+  - Eliminates duplicate semantic filtering logic (47 lines removed)
+  - FieldPersistenceHandler.verifyPersistence now accepts optional actualRecord parameter
+  - Verification results surfaced in UpdateMetadata.fieldVerification (verified status + discrepancies)
+  - Renamed ValidationResult → UpdateMetadata for clarity (3 competing interfaces reduced to distinct purposes)
+
+- **Standardized environment variables** (#984 extension) - Consistent verification configuration
+  - UpdateValidation now uses ENABLE_FIELD_VERIFICATION (deprecated SKIP_FIELD_VERIFICATION)
+  - Both variables supported for backward compatibility with deprecation notice
+
+- **Improved MetadataResolver error handling** (#984 extension - PR #1006 review feedback)
+  - Re-throws critical authentication errors (401, 403, Unauthorized, Forbidden)
+  - Re-throws schema validation errors for immediate failure visibility
+  - Graceful degradation with empty metadata for non-critical transient errors
+  - Prevents silent masking of authentication and validation failures
 
 - **Consolidated metadata fetching** (#984) - Single API call per resource type per request
   - MetadataResolver provides single source of truth for attribute metadata
