@@ -297,4 +297,194 @@ describe('UpdateValidation - Issue #705 Fix', () => {
       expect(result.warning).toContain('test company');
     });
   });
+
+  describe('unwrapArrayValue - Issue #995 Regression Tests', () => {
+    it('should handle status field with API enriched response', () => {
+      // Exact scenario from Issue #995:
+      // User sends: {"status":"Sales Qualified"}
+      // API returns: enriched object with timestamps, active_from, etc.
+      const fieldName = 'stage';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          active_until: null,
+          status: 'Sales Qualified',
+          title: 'Sales Qualified',
+          created_by_actor: { type: 'user', id: '123' },
+        },
+      ];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should extract just "Sales Qualified"
+      expect(unwrapped).toBe('Sales Qualified');
+    });
+
+    it('should handle status field with title property (fallback)', () => {
+      // Some API responses might use 'title' instead of 'status'
+      const fieldName = 'stage';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          active_until: null,
+          title: 'Sales Qualified',
+          // Note: no 'status' property, only 'title'
+        },
+      ];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should extract "Sales Qualified" from title
+      expect(unwrapped).toBe('Sales Qualified');
+    });
+
+    it('should prefer status over title when both exist', () => {
+      const fieldName = 'stage';
+      const apiResponse = [
+        {
+          status: 'From Status',
+          title: 'From Title',
+        },
+      ];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should prefer 'status' property
+      expect(unwrapped).toBe('From Status');
+    });
+
+    it('should handle multi-select status fields with title', () => {
+      const fieldName = 'stage';
+      const apiResponse = [{ title: 'Demo' }, { title: 'Qualified' }];
+
+      const unwrapped = UpdateValidation.unwrapArrayValue(
+        fieldName,
+        apiResponse
+      );
+
+      // Should extract array of titles
+      expect(unwrapped).toEqual(['Demo', 'Qualified']);
+    });
+
+    it('should handle end-to-end comparison with enriched API response', () => {
+      // Full integration: compare expected value against enriched API response
+      const fieldName = 'stage';
+      const expectedValue = 'Sales Qualified';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          active_until: null,
+          status: 'Sales Qualified',
+          created_by_actor: { type: 'user', id: '123' },
+        },
+      ];
+
+      const result = UpdateValidation.compareFieldValues(
+        fieldName,
+        expectedValue,
+        apiResponse
+      );
+
+      // Should match without warnings
+      expect(result.matches).toBe(true);
+      expect(result.warning).toBeUndefined();
+    });
+
+    it('should handle comparison with title-only enriched response', () => {
+      const fieldName = 'stage';
+      const expectedValue = 'Sales Qualified';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          title: 'Sales Qualified',
+        },
+      ];
+
+      const result = UpdateValidation.compareFieldValues(
+        fieldName,
+        expectedValue,
+        apiResponse
+      );
+
+      // Should match without warnings
+      expect(result.matches).toBe(true);
+      expect(result.warning).toBeUndefined();
+    });
+
+    it('should detect semantic mismatch in enriched response', () => {
+      const fieldName = 'stage';
+      const expectedValue = 'Sales Qualified';
+      const apiResponse = [
+        {
+          active_from: '2025-12-11T00:56:58.672000000Z',
+          status: 'Demo', // Different value
+        },
+      ];
+
+      const result = UpdateValidation.compareFieldValues(
+        fieldName,
+        expectedValue,
+        apiResponse
+      );
+
+      // Should NOT match
+      expect(result.matches).toBe(false);
+    });
+  });
+
+  describe('isStatusField - Enhanced Detection', () => {
+    it('should recognize stage field variations', () => {
+      const statusFields = [
+        'stage',
+        'deal_stage',
+        'pipeline_stage',
+        'company_stage',
+        'opportunity_stage',
+        'sales_stage',
+      ];
+
+      for (const fieldName of statusFields) {
+        const isStatus = UpdateValidation.isStatusField(fieldName);
+        expect(isStatus).toBe(true);
+      }
+    });
+
+    it('should recognize status field variations', () => {
+      const statusFields = [
+        'status',
+        'deal_status',
+        'opportunity_status',
+        'project_status',
+      ];
+
+      for (const fieldName of statusFields) {
+        const isStatus = UpdateValidation.isStatusField(fieldName);
+        expect(isStatus).toBe(true);
+      }
+    });
+
+    it('should NOT recognize non-status fields', () => {
+      const regularFields = [
+        'name',
+        'email',
+        'company',
+        'description',
+        'notes',
+      ];
+
+      for (const fieldName of regularFields) {
+        const isStatus = UpdateValidation.isStatusField(fieldName);
+        expect(isStatus).toBe(false);
+      }
+    });
+  });
 });

@@ -186,10 +186,13 @@ export const UpdateValidation = {
   },
 
   /**
-   * Check if a field name represents a status field (like deal stages)
+   * Check if a field is a status-type field (stage, status, etc.)
+   * Enhanced to recognize more status field variations (Issue #995)
    */
   isStatusField(fieldName: string): boolean {
-    return fieldName === 'stage' || fieldName.includes('stage');
+    const lowerFieldName = fieldName.toLowerCase();
+    const statusPatterns = ['stage', 'status'];
+    return statusPatterns.some((pattern) => lowerFieldName.includes(pattern));
   },
 
   /**
@@ -219,13 +222,17 @@ export const UpdateValidation = {
 
     const firstItem = actualValue[0] as Record<string, unknown>;
 
-    // Handle status fields (like deal stages) - they use 'status' property
-    if (this.isStatusField(fieldName) && firstItem?.status !== undefined) {
-      return actualValue.length === 1
-        ? firstItem.status
-        : (actualValue as Record<string, unknown>[]).map(
-            (v: Record<string, unknown>) => v.status
-          );
+    // Handle status fields (like deal stages)
+    // Try 'status' first, then 'title' as fallback (Issue #995)
+    if (this.isStatusField(fieldName)) {
+      const statusValue = firstItem?.status ?? firstItem?.title;
+      if (statusValue !== undefined) {
+        return actualValue.length === 1
+          ? statusValue
+          : (actualValue as Record<string, unknown>[]).map(
+              (v: Record<string, unknown>) => v.status ?? v.title
+            );
+      }
     }
 
     // Handle regular value fields
