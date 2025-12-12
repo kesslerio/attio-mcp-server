@@ -435,6 +435,17 @@ jobs:
             - Start the report with the heading `# PR Review Report`.
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
 
+            LANGUAGE SEMANTICS VERIFICATION (critical rule)
+            - When making claims about JavaScript/TypeScript operator behavior (??/||/&&/etc):
+              * State the claim as a question first: "Does X operator work this way?"
+              * If uncertain, say "I'm not certain about the semantics of [operator]" instead of making incorrect claims
+              * Prefer empirical testing over theoretical reasoning when possible
+              * If tools don't allow verification, clearly state: "Cannot verify [claim] without running code"
+            - Common pitfalls to avoid:
+              * Confusing ?? (nullish coalescing) with || (logical OR)
+              * Assuming null/undefined are equivalent in all contexts
+              * Making absolute statements about runtime behavior without evidence
+
             TOOLS POLICY (hard rule)
             - Use only: Read, Glob, Grep. Do NOT use Bash, Web*, NotebookEdit, or TodoWrite.
             - If a command/build/test is needed, SKIP it and write the report instead.
@@ -524,6 +535,27 @@ jobs:
             - When a Read(...) of a "*.js" path fails, immediately retry the same path with ".ts".
             - Never treat missing "*.js" as missing code if a ".ts" twin exists.
 
+            JAVASCRIPT/TYPESCRIPT OPERATOR REFERENCE (for accuracy)
+            Quick reference for common operators (verify claims against these definitions):
+
+            - **Nullish Coalescing (??)**: Returns right side when left is null OR undefined
+              * null ?? "fallback" → "fallback"
+              * undefined ?? "fallback" → "fallback"
+              * "" ?? "fallback" → "" (empty string is NOT nullish)
+              * 0 ?? "fallback" → 0 (zero is NOT nullish)
+
+            - **Logical OR (||)**: Returns right side when left is falsy
+              * null || "fallback" → "fallback"
+              * undefined || "fallback" → "fallback"
+              * "" || "fallback" → "fallback" (empty string IS falsy)
+              * 0 || "fallback" → "fallback" (zero IS falsy)
+
+            - **Optional Chaining (?.)**: Short-circuits to undefined if left is null/undefined
+              * obj?.prop → undefined (if obj is null/undefined)
+              * obj?.prop → obj.prop (if obj exists)
+
+            If uncertain about operator semantics, say "Cannot verify without running code" rather than making incorrect claims.
+
             Changed files (Ring 0 JSON):
             ${{ env.RING0_JSON }}
 
@@ -578,6 +610,10 @@ jobs:
 
             ## Summary
             Brief overview of changes and overall assessment.
+
+            **Required**: For any IMPORTANT or CRITICAL suggestions involving language semantics:
+            - State your confidence level: "High Confidence" / "Medium Confidence" / "Low Confidence - Cannot Verify"
+            - If Low Confidence, recommend manual verification instead of implementation
 
             ## ⚠️ CRITICAL Issues (Fix before merge)
             Issues that MUST be addressed before merging:
@@ -634,6 +670,17 @@ jobs:
             - Start the report with the heading `# PR Review Report`.
             - Respect the scope rules below. If you cannot remain in scope, say so explicitly.
 
+            LANGUAGE SEMANTICS VERIFICATION (critical rule)
+            - When making claims about JavaScript/TypeScript operator behavior (??/||/&&/etc):
+              * State the claim as a question first: "Does X operator work this way?"
+              * If uncertain, say "I'm not certain about the semantics of [operator]" instead of making incorrect claims
+              * Prefer empirical testing over theoretical reasoning when possible
+              * If tools don't allow verification, clearly state: "Cannot verify [claim] without running code"
+            - Common pitfalls to avoid:
+              * Confusing ?? (nullish coalescing) with || (logical OR)
+              * Assuming null/undefined are equivalent in all contexts
+              * Making absolute statements about runtime behavior without evidence
+
             TOOLS POLICY (hard rule)
             - Use only: Read, Glob, Grep. Do NOT use Bash, Web*, NotebookEdit, or TodoWrite.
             - If a command/build/test is needed, SKIP it and write the report instead.
@@ -723,6 +770,27 @@ jobs:
             - When a Read(...) of a "*.js" path fails, immediately retry the same path with ".ts".
             - Never treat missing "*.js" as missing code if a ".ts" twin exists.
 
+            JAVASCRIPT/TYPESCRIPT OPERATOR REFERENCE (for accuracy)
+            Quick reference for common operators (verify claims against these definitions):
+
+            - **Nullish Coalescing (??)**: Returns right side when left is null OR undefined
+              * null ?? "fallback" → "fallback"
+              * undefined ?? "fallback" → "fallback"
+              * "" ?? "fallback" → "" (empty string is NOT nullish)
+              * 0 ?? "fallback" → 0 (zero is NOT nullish)
+
+            - **Logical OR (||)**: Returns right side when left is falsy
+              * null || "fallback" → "fallback"
+              * undefined || "fallback" → "fallback"
+              * "" || "fallback" → "fallback" (empty string IS falsy)
+              * 0 || "fallback" → "fallback" (zero IS falsy)
+
+            - **Optional Chaining (?.)**: Short-circuits to undefined if left is null/undefined
+              * obj?.prop → undefined (if obj is null/undefined)
+              * obj?.prop → obj.prop (if obj exists)
+
+            If uncertain about operator semantics, say "Cannot verify without running code" rather than making incorrect claims.
+
             Changed files (Ring 0 JSON):
             ${{ env.RING0_JSON }}
 
@@ -777,6 +845,10 @@ jobs:
 
             ## Summary
             Brief overview of changes and overall assessment.
+
+            **Required**: For any IMPORTANT or CRITICAL suggestions involving language semantics:
+            - State your confidence level: "High Confidence" / "Medium Confidence" / "Low Confidence - Cannot Verify"
+            - If Low Confidence, recommend manual verification instead of implementation
 
             ## ⚠️ CRITICAL Issues (Fix before merge)
             Issues that MUST be addressed before merging:
@@ -1049,6 +1121,38 @@ jobs:
             }
             core.exportVariable('RESULT_OPUS', review);
             core.info(`Captured Opus review content (${review.length} chars).`);
+
+      - name: Validate Review for Common False Positives
+        if: always() && (steps.claude_sonnet.outcome == 'success' || steps.claude_opus.outcome == 'success')
+        run: |
+          # Check for common false positive patterns in review output
+          VALIDATION_WARNINGS=""
+
+          if [ -n "$RESULT_SONNET" ]; then
+            if echo "$RESULT_SONNET" | grep -q "?? operator"; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Sonnet review mentions ?? operator - verify semantics manually\n"
+            fi
+            if echo "$RESULT_SONNET" | grep -q "nullish coalescing"; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Sonnet review mentions nullish coalescing - verify semantics manually\n"
+            fi
+          fi
+
+          if [ -n "$RESULT_OPUS" ]; then
+            if echo "$RESULT_OPUS" | grep -q "?? operator"; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Opus review mentions ?? operator - verify semantics manually\n"
+            fi
+            if echo "$RESULT_OPUS" | grep -q "nullish coalescing"; then
+              VALIDATION_WARNINGS="${VALIDATION_WARNINGS}⚠️ Opus review mentions nullish coalescing - verify semantics manually\n"
+            fi
+          fi
+
+          if [ -n "$VALIDATION_WARNINGS" ]; then
+            echo -e "$VALIDATION_WARNINGS"
+            echo -e "$VALIDATION_WARNINGS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No common false positive patterns detected"
+            echo "✅ No common false positive patterns detected" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Debug review env
         run: |
