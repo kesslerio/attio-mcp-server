@@ -464,52 +464,10 @@ export class UniversalUpdateService {
       });
     }
 
-    // Fetch available attributes for attribute-aware mapping (optional; best-effort)
-    let availableAttributes: string[] | undefined;
-    try {
-      const { UniversalMetadataService } = await import(
-        './UniversalMetadataService.js'
-      );
-      const options =
-        resource_type === UniversalResourceType.RECORDS
-          ? {
-              objectSlug:
-                (actualRecordData?.object as string) ||
-                (actualRecordData?.object_api_slug as string) ||
-                'records',
-            }
-          : resource_type === UniversalResourceType.DEALS
-            ? { objectSlug: 'deals' }
-            : undefined;
-      const attributeResult =
-        await UniversalMetadataService.discoverAttributesForResourceType(
-          resource_type,
-          options
-        );
-      const attrs = (attributeResult?.attributes as unknown[]) ?? [];
-      /**
-       * **Type Guard Usage**: Using isAttributeObject type guard instead of inline casting
-       * for safer attribute processing and better runtime type validation.
-       */
-      availableAttributes = Array.from(
-        new Set(
-          attrs.flatMap((a) => {
-            if (!isAttributeObject(a)) {
-              return [];
-            }
-            return [a.api_slug, a.title, a.name].filter(
-              (s): s is string => typeof s === 'string'
-            );
-          })
-        )
-      ).map((s) => s.toLowerCase());
-    } catch (error) {
-      debug('UniversalUpdateService', 'Failed to fetch attributes', {
-        resource_type,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      availableAttributes = undefined;
-    }
+    // Issue #984: Fetch metadata once using MetadataResolver
+    const { MetadataResolver } = await import('./update/MetadataResolver.js');
+    const { metadataMap, availableAttributes } =
+      await MetadataResolver.fetchMetadata(resource_type, actualRecordData);
 
     // Map field names to correct ones with collision detection
     const mappingResult = await mapRecordFields(
@@ -604,6 +562,8 @@ export class UniversalUpdateService {
             resourceType: resource_type,
             operation: 'update',
             recordId: record_id,
+            // Issue #984: Pass metadata to avoid duplicate fetch
+            attributeMetadata: metadataMap,
           }
         );
 
@@ -646,91 +606,33 @@ export class UniversalUpdateService {
     // This ensures verification compares what was actually sent to API
     const dataForVerification = { ...attioPayload.values };
 
-    let updatedRecord: AttioRecord;
+    // Issue #984: Use UpdateOrchestrator for strategy dispatch
+    const { UpdateOrchestrator } = await import(
+      './update/UpdateOrchestrator.js'
+    );
 
-    switch (resource_type) {
-      case UniversalResourceType.COMPANIES: {
-        const { CompanyUpdateStrategy } = await import(
-          './update/strategies/CompanyUpdateStrategy.js'
-        );
-        const strategy = new CompanyUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      case UniversalResourceType.LISTS: {
-        const { ListUpdateStrategy } = await import(
-          './update/strategies/ListUpdateStrategy.js'
-        );
-        const strategy = new ListUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      case UniversalResourceType.PEOPLE: {
-        const { PersonUpdateStrategy } = await import(
-          './update/strategies/PersonUpdateStrategy.js'
-        );
-        const strategy = new PersonUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      case UniversalResourceType.RECORDS:
-      case UniversalResourceType.DEALS: {
-        const { RecordUpdateStrategy } = await import(
-          './update/strategies/RecordUpdateStrategy.js'
-        );
-        const strategy = new RecordUpdateStrategy();
-        /**
-         * **Safe Property Access**: Using type-safe property access for object slug
-         * extraction while providing sensible defaults.
-         */
-        const recordsObjectSlug =
-          (typeof actualRecordData?.object === 'string'
-            ? actualRecordData.object
-            : undefined) ||
-          (typeof actualRecordData?.object_api_slug === 'string'
-            ? actualRecordData.object_api_slug
-            : undefined) ||
-          'records';
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type,
-          { objectSlug: recordsObjectSlug }
-        );
-        break;
-      }
-      case UniversalResourceType.TASKS: {
-        const { TaskUpdateStrategy } = await import(
-          './update/strategies/TaskUpdateStrategy.js'
-        );
-        const strategy = new TaskUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      default: {
-        updatedRecord = await this.handleUnsupportedResourceType(
-          resource_type as unknown as string,
-          params
-        );
-        break;
-      }
-    }
+    /**
+     * **Safe Property Access**: Using type-safe property access for object slug
+     * extraction while providing sensible defaults.
+     */
+    const objectSlug =
+      (typeof actualRecordData?.object === 'string'
+        ? actualRecordData.object
+        : undefined) ||
+      (typeof actualRecordData?.object_api_slug === 'string'
+        ? actualRecordData.object_api_slug
+        : undefined) ||
+      (resource_type === UniversalResourceType.RECORDS ||
+      resource_type === UniversalResourceType.DEALS
+        ? 'records'
+        : undefined);
+
+    const updatedRecord = await UpdateOrchestrator.executeUpdate({
+      resourceType: resource_type,
+      recordId: record_id,
+      sanitizedValues: attioPayload.values,
+      objectSlug,
+    });
 
     const { ResponseNormalizer } = await import(
       './update/ResponseNormalizer.js'
@@ -740,62 +642,18 @@ export class UniversalUpdateService {
       updatedRecord
     );
 
-    // Field persistence verification (enabled by default)
-    // WARNING: Disabling this can cause silent data consistency issues
-    // Skip verification if called from validation-aware path to avoid duplication
-    if (
-      !skipVerification &&
-      process.env.ENABLE_FIELD_VERIFICATION !== 'false'
-    ) {
-      try {
-        // Use post-transform data for accurate verification (PR #981 review feedback)
-        const verification = await UpdateValidation.verifyFieldPersistence(
-          resource_type,
-          record_id,
-          dataForVerification
-        );
-        if (verification.warnings.length > 0) {
-          logError(
-            'UniversalUpdateService',
-            `Field persistence warnings for ${resource_type} ${record_id}:`,
-            verification.warnings
-          );
-        }
-        if (!verification.verified) {
-          // Use structured logging for field persistence verification failures
-          logError(
-            'UniversalUpdateService',
-            'Field persistence verification failed',
-            new Error('Verification failed'),
-            {
-              resource_type,
-              record_id,
-              discrepancies: verification.discrepancies,
-            }
-          );
-
-          // If strict validation is enabled, fail the operation
-          // WARNING: This environment variable changes runtime behavior
-          // Production Impact: Operations may fail that previously succeeded
-          if (process.env.STRICT_FIELD_VALIDATION === 'true') {
-            throw new UniversalValidationError(
-              `Field persistence verification failed: ${verification.discrepancies.join('; ')}`,
-              ErrorType.API_ERROR,
-              {
-                field: 'field_verification',
-                suggestion:
-                  'Check that the field values are correctly formatted and supported by the API',
-              }
-            );
-          }
-        }
-      } catch (error: unknown) {
-        logError(
-          'UniversalUpdateService',
-          'Field persistence verification error',
-          error
-        );
-      }
+    // Issue #984: Use FieldPersistenceHandler for verification
+    if (!skipVerification) {
+      const { FieldPersistenceHandler } = await import(
+        './update/FieldPersistenceHandler.js'
+      );
+      await FieldPersistenceHandler.verifyPersistence(
+        resource_type,
+        record_id,
+        dataForVerification,
+        normalizedRecord.values || {},
+        { strict: false }
+      );
     }
 
     return normalizedRecord;
