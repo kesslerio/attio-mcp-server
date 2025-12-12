@@ -62,7 +62,15 @@ export const UpdateValidation = {
       discrepancies: [] as string[],
       warnings: [] as string[],
     };
-    if (shouldUseMockData() || process.env.SKIP_FIELD_VERIFICATION === 'true') {
+
+    // Standardized environment variable (Issue #984 extension)
+    // SKIP_FIELD_VERIFICATION is deprecated, use ENABLE_FIELD_VERIFICATION=false instead
+    const skipVerification =
+      shouldUseMockData() ||
+      process.env.ENABLE_FIELD_VERIFICATION === 'false' ||
+      process.env.SKIP_FIELD_VERIFICATION === 'true'; // Deprecated
+
+    if (skipVerification) {
       result.warnings.push(
         'Field persistence verification skipped in test environment'
       );

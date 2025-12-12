@@ -5,16 +5,17 @@
  * Provides universal create functionality across all resource types with enhanced validation and error handling.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalCreateParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalCreateParams } from '@/handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@/types/attio.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
 
 // Import services
-import { ValidationService } from './ValidationService.js';
+import { ValidationService } from '@/services/ValidationService.js';
+import { FieldValidationHandler } from '@/services/update/FieldValidationHandler.js';
 
 // Import field mapping utilities
 import {
@@ -23,10 +24,10 @@ import {
   validateFields,
   getValidResourceTypes,
   FIELD_MAPPINGS,
-} from '../handlers/tool-configs/universal/field-mapper.js';
+} from '@/handlers/tool-configs/universal/field-mapper.js';
 
 // Import validation utilities
-import { validateRecordFields } from '../utils/validation-utils.js';
+import { validateRecordFields } from '@/utils/validation-utils.js';
 
 // Import format helpers
 // Attribute format conversions are handled within create strategies
@@ -40,22 +41,22 @@ import { validateRecordFields } from '../utils/validation-utils.js';
 // Enhanced API error helpers are used within strategies
 
 // Import logging utilities
-import { OperationType, createScopedLogger } from '../utils/logger.js';
+import { OperationType, createScopedLogger } from '@/utils/logger.js';
 
 // Import constants for better maintainability
 import {
   ERROR_MESSAGES,
   MAX_VALIDATION_SUGGESTIONS,
   MAX_SUGGESTION_TEXT_LENGTH,
-} from '../constants/universal.constants.js';
+} from '@/constants/universal.constants.js';
 
 // Import enhanced types for better type safety
 //
 import {
   createEnhancedValidationError,
   createFieldCollisionError,
-} from './create/helpers/ErrorHelpers.js';
-import { ErrorCategory } from './create/helpers/ErrorHelpers.js';
+} from '@/services/create/helpers/ErrorHelpers.js';
+import { ErrorCategory } from '@/services/create/helpers/ErrorHelpers.js';
 
 // Create scoped logger for this service
 const logger = createScopedLogger(
@@ -172,7 +173,112 @@ export class UniversalCreateService {
       >; // Normal validation for other types
     }
 
-    const fieldValidation = validateFields(resource_type, fieldsToValidate);
+    // Issue #984: Display name resolution integration
+    // Attempt to resolve display names (e.g., "Deal stage" → "stage") before validation
+    const objectSlug =
+      resource_type === UniversalResourceType.RECORDS
+        ? typeof record_data.object === 'string'
+          ? record_data.object
+          : typeof record_data.object_api_slug === 'string'
+            ? record_data.object_api_slug
+            : undefined
+        : resource_type.toLowerCase();
+
+    // Issue #984 / PR #1006 Phase 3.1: Single validation call via validateAndResolve()
+    // This eliminates ~40% performance overhead from double validation
+    let fieldValidation: {
+      valid: boolean;
+      errors: string[];
+      warnings: string[];
+      suggestions: string[];
+    };
+
+    if (objectSlug) {
+      try {
+        const validationResult =
+          await FieldValidationHandler.validateAndResolve(
+            resource_type,
+            fieldsToValidate,
+            objectSlug,
+            true // Enable display name resolution
+          );
+
+        // Store validation result for later use
+        fieldValidation = {
+          valid: validationResult.valid,
+          errors: validationResult.errors,
+          warnings: validationResult.warnings,
+          suggestions: validationResult.suggestions,
+        };
+
+        // Apply resolved field names
+        if (
+          validationResult.resolvedFields &&
+          validationResult.resolvedFields.size > 0
+        ) {
+          for (const [
+            displayName,
+            apiSlug,
+          ] of validationResult.resolvedFields) {
+            // Update the appropriate data structure
+            if (resource_type === UniversalResourceType.RECORDS) {
+              // For RECORDS, update values if it exists
+              if (
+                record_data.values &&
+                typeof record_data.values === 'object'
+              ) {
+                const values = record_data.values as Record<string, unknown>;
+                if (displayName in values) {
+                  values[apiSlug] = values[displayName];
+                  delete values[displayName];
+                }
+              }
+            } else {
+              // For other types, update values or record_data
+              const target = record_data.values || record_data;
+              if (
+                target &&
+                typeof target === 'object' &&
+                displayName in target
+              ) {
+                const targetObj = target as Record<string, unknown>;
+                targetObj[apiSlug] = targetObj[displayName];
+                delete targetObj[displayName];
+              }
+            }
+          }
+
+          logger.info('Display names resolved', {
+            count: validationResult.resolvedFields.size,
+            mappings: Array.from(validationResult.resolvedFields.entries()),
+          });
+
+          // Update fieldsToValidate with resolved names
+          if (resource_type === UniversalResourceType.RECORDS) {
+            const { values, ...topLevelFields } = record_data;
+            fieldsToValidate =
+              Object.keys(topLevelFields).length > 0
+                ? (topLevelFields as Record<string, unknown>)
+                : ({ object: 'placeholder' } as Record<string, unknown>);
+          } else {
+            fieldsToValidate = (record_data.values || record_data) as Record<
+              string,
+              unknown
+            >;
+          }
+        }
+      } catch (err) {
+        // Display name resolution is non-critical - log and continue
+        logger.debug('Display name resolution skipped', {
+          reason: err instanceof Error ? err.message : String(err),
+        });
+        // Fall back to basic validation if validateAndResolve fails
+        fieldValidation = validateFields(resource_type, fieldsToValidate);
+      }
+    } else {
+      // No objectSlug - use basic validation
+      fieldValidation = validateFields(resource_type, fieldsToValidate);
+    }
     logger.debug('Field validation result', {
       valid: fieldValidation.valid,
       warnings: fieldValidation.warnings,

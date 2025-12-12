@@ -28,87 +28,81 @@ import {
   isCorrectRecordReferenceFormat,
 } from './record-reference-transformer.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import { convertToMetadataMap } from '@/utils/metadata-utils.js';
 import { handleUniversalDiscoverAttributes } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { debug, error as logError, OperationType } from '@/utils/logger.js';
+import { CachingService } from '@/services/CachingService.js';
+import { DEFAULT_ATTRIBUTES_CACHE_TTL } from '@/constants/universal.constants.js';
 
 // Re-export types
 export * from './types.js';
 export { clearStatusCache };
 
 /**
- * Cache for attribute metadata to avoid repeated API calls
- */
-const attributeMetadataCache = new Map<
-  string,
-  Map<string, AttributeMetadata>
->();
-
-/**
  * Clear all transformer caches (useful for testing)
+ * @see Issue #984 - Now uses CachingService instead of local cache
  */
 export function clearAllCaches(): void {
-  attributeMetadataCache.clear();
+  CachingService.clearAttributesCache();
   clearStatusCache();
 }
 
 /**
  * Get attribute metadata for a resource type with caching
+ * @see Issue #984 - Now uses CachingService with TTL and accepts provided metadata
  */
 async function getAttributeMetadata(
-  resourceType: UniversalResourceType
+  resourceType: UniversalResourceType,
+  providedMetadata?: Map<string, AttributeMetadata>
 ): Promise<Map<string, AttributeMetadata>> {
-  const cacheKey = resourceType.toLowerCase();
-
-  if (attributeMetadataCache.has(cacheKey)) {
-    return attributeMetadataCache.get(cacheKey)!;
+  // Use provided metadata if available (avoid duplicate fetch)
+  if (providedMetadata && providedMetadata.size > 0) {
+    debug(
+      'value-transformer',
+      'Using pre-fetched metadata from parent',
+      { resourceType, attributeCount: providedMetadata.size },
+      'getAttributeMetadata',
+      OperationType.DATA_PROCESSING
+    );
+    return providedMetadata;
   }
 
-  const metadataMap = new Map<string, AttributeMetadata>();
-
   try {
-    const schema = await handleUniversalDiscoverAttributes(resourceType);
-    const allAttrs = ((schema as Record<string, unknown>).all || []) as Array<{
-      api_slug?: string;
-      slug?: string;
-      type?: string;
-      title?: string;
-      is_system_attribute?: boolean;
-      is_writable?: boolean;
-      is_multiselect?: boolean;
-      relationship?: {
-        object?: string;
-        cardinality?: string;
-      };
-    }>;
+    // Use CachingService with TTL instead of local cache
+    const result = await CachingService.getOrLoadAttributes(
+      async () => {
+        const schema = await handleUniversalDiscoverAttributes(resourceType);
+        return schema as Record<string, unknown>;
+      },
+      resourceType,
+      undefined,
+      DEFAULT_ATTRIBUTES_CACHE_TTL
+    );
 
-    for (const attr of allAttrs) {
-      const slug = attr.api_slug || attr.slug || '';
-      if (slug) {
-        metadataMap.set(slug, {
-          slug,
-          type: attr.type || 'unknown',
-          title: attr.title,
-          api_slug: attr.api_slug,
-          is_system_attribute: attr.is_system_attribute,
-          is_writable: attr.is_writable,
-          is_multiselect: attr.is_multiselect,
-          // Issue #997: Include relationship metadata for record-reference attributes
-          relationship: attr.relationship,
-        });
-      }
-    }
+    debug(
+      'value-transformer',
+      'Fetched attribute metadata',
+      {
+        resourceType,
+        fromCache: result.fromCache,
+      },
+      'getAttributeMetadata',
+      OperationType.DATA_PROCESSING
+    );
 
-    attributeMetadataCache.set(cacheKey, metadataMap);
+    return convertToMetadataMap(result.data);
   } catch (err) {
     logError(
       'value-transformer',
       `Failed to fetch attribute metadata for ${resourceType}`,
       err
     );
+    return new Map();
   }
-
-  return metadataMap;
 }
+
+// Note: convertToMetadataMap() moved to @/utils/metadata-utils.js (PR #1006 Phase 2.1)
+// This eliminates duplication between value-transformer and MetadataResolver
 
 /**
  * Transform record values before API call
@@ -126,7 +120,11 @@ export async function transformRecordValues(
   const transformedData: Record<string, unknown> = {};
 
   // Get attribute metadata for this resource type
-  const attributeMetadata = await getAttributeMetadata(context.resourceType);
+  // Issue #984: Use provided metadata if available to avoid duplicate API fetch
+  const attributeMetadata = await getAttributeMetadata(
+    context.resourceType,
+    context.attributeMetadata
+  );
 
   debug(
     'value-transformer',

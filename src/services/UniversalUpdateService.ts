@@ -32,40 +32,51 @@
  * - Document all environment variable usage in deployment runbooks
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalUpdateParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalUpdateParams } from '@/handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@/types/attio.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import { debug, error as logError } from '../utils/logger.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
+import { debug, error as logError } from '@/utils/logger.js';
 
 // Import shared type definitions for better type safety
 import {
   createNotFoundError,
   type DataPayload,
   isAttributeObject,
-} from '../types/universal-service-types.js';
+} from '@/types/universal-service-types.js';
 
 // Import services
-import { ValidationService } from './ValidationService.js';
+import { ValidationService } from '@/services/ValidationService.js';
 
 /**
- * Validation result containing warnings and actual persisted values
+ * Update metadata containing warnings, suggestions, and field verification results
+ *
+ * Renamed from ValidationResult to avoid confusion with:
+ * - FieldValidationHandler.ValidationResult (pre-update validation)
+ * - FieldPersistenceHandler.VerificationResult (post-update verification)
+ *
+ * @see Issue #984 extension - Verification API unification
  */
-export interface ValidationResult {
+export interface UpdateMetadata {
   warnings: string[];
   actualValues: Record<string, unknown>;
   suggestions: string[];
+  /** Field verification details (Issue #984 extension) */
+  fieldVerification?: {
+    verified: boolean;
+    discrepancies: string[];
+  };
 }
 
 /**
- * Enhanced update result that includes validation metadata
+ * Enhanced update result that includes update metadata
  */
 export interface EnhancedUpdateResult {
   record: AttioRecord;
-  validation: ValidationResult;
+  validation: UpdateMetadata;
 }
 
 // Import field mapping utilities
@@ -75,10 +86,10 @@ import {
   validateFields,
   getValidResourceTypes,
   mapTaskFields,
-} from '../handlers/tool-configs/universal/field-mapper.js';
+} from '@/handlers/tool-configs/universal/field-mapper.js';
 
 // Import validation utilities
-import { validateRecordFields } from '../utils/validation-utils.js';
+import { validateRecordFields } from '@/utils/validation-utils.js';
 
 // Note: Deal defaults configuration removed as unused in update service
 
@@ -230,7 +241,7 @@ export class UniversalUpdateService {
   private static async _updateRecordInternalWithValidation(
     params: UniversalUpdateParams
   ): Promise<EnhancedUpdateResult> {
-    const validationResult: ValidationResult = {
+    const validationResult: UpdateMetadata = {
       warnings: [],
       actualValues: {},
       suggestions: [],
@@ -337,65 +348,40 @@ export class UniversalUpdateService {
         const { UpdateValidation } = await import(
           './update/UpdateValidation.js'
         );
+        const { FieldPersistenceHandler } = await import(
+          './update/FieldPersistenceHandler.js'
+        );
         const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
           attioPayload.values
         );
 
-        const verification = await UpdateValidation.verifyFieldPersistence(
+        // UNIFIED: Single call to FieldPersistenceHandler (Issue #984 extension)
+        // Eliminates duplicate semantic filtering logic by using shared implementation
+        const verification = await FieldPersistenceHandler.verifyPersistence(
           resource_type,
           record_id,
-          sanitizedData
+          sanitizedData,
+          validationResult.actualValues, // Pass actual values from line 326
+          {
+            strict: process.env.STRICT_FIELD_VALIDATION === 'true',
+            skip: false,
+          }
         );
 
-        // Add field persistence warnings to validation result
-        if (verification.warnings.length > 0) {
-          validationResult.warnings.push(...verification.warnings);
-        }
+        // Surface complete VerificationResult into validationResult
+        validationResult.warnings.push(...verification.warnings);
+        validationResult.fieldVerification = {
+          verified: verification.verified,
+          discrepancies: verification.discrepancies,
+        };
 
-        if (!verification.verified) {
-          // Issue #798: Only log warnings in STRICT mode or for semantic value mismatches
-          // Cosmetic format differences (e.g., {stage: "Demo"} vs {stage: {title: "Demo"}}) are suppressed by default
-          const isStrictMode = process.env.STRICT_FIELD_VALIDATION === 'true';
-
-          if (isStrictMode) {
-            // STRICT mode: log all discrepancies
-            validationResult.warnings.push(
-              ...verification.discrepancies.map(
-                (discrepancy) => `Field persistence issue: ${discrepancy}`
-              )
-            );
-          } else {
-            // Non-STRICT mode: only log discrepancies that appear to be semantic value changes
-            // Filter out format-only mismatches by checking if both values contain similar semantic content
-            const semanticMismatches = verification.discrepancies.filter(
-              (d) => {
-                // Extract expected and actual from: Field "X" persistence mismatch: expected Y, got Z
-                const match = d.match(/expected (.+?), got (.+?)$/);
-                if (!match) return true; // Log if we can't parse (safety)
-
-                const [, expectedStr, actualStr] = match;
-                try {
-                  // If one is a string and the other is an object containing that string, it's cosmetic
-                  const isCosmetic =
-                    (expectedStr.includes('"') &&
-                      actualStr.includes(expectedStr.replace(/^"|"$/g, ''))) ||
-                    (actualStr.includes('"') &&
-                      expectedStr.includes(actualStr.replace(/^"|"$/g, '')));
-                  return !isCosmetic;
-                } catch {
-                  return true; // Log on parse errors (safety)
-                }
-              }
-            );
-
-            if (semanticMismatches.length > 0) {
-              validationResult.warnings.push(
-                ...semanticMismatches.map(
-                  (discrepancy) => `Field persistence issue: ${discrepancy}`
-                )
-              );
-            }
-          }
+        // Also add discrepancies as warnings for backward compatibility
+        if (verification.discrepancies.length > 0) {
+          validationResult.warnings.push(
+            ...verification.discrepancies.map(
+              (discrepancy) => `Field persistence issue: ${discrepancy}`
+            )
+          );
         }
       } catch (error: unknown) {
         const errorMessage =
@@ -464,52 +450,10 @@ export class UniversalUpdateService {
       });
     }
 
-    // Fetch available attributes for attribute-aware mapping (optional; best-effort)
-    let availableAttributes: string[] | undefined;
-    try {
-      const { UniversalMetadataService } = await import(
-        './UniversalMetadataService.js'
-      );
-      const options =
-        resource_type === UniversalResourceType.RECORDS
-          ? {
-              objectSlug:
-                (actualRecordData?.object as string) ||
-                (actualRecordData?.object_api_slug as string) ||
-                'records',
-            }
-          : resource_type === UniversalResourceType.DEALS
-            ? { objectSlug: 'deals' }
-            : undefined;
-      const attributeResult =
-        await UniversalMetadataService.discoverAttributesForResourceType(
-          resource_type,
-          options
-        );
-      const attrs = (attributeResult?.attributes as unknown[]) ?? [];
-      /**
-       * **Type Guard Usage**: Using isAttributeObject type guard instead of inline casting
-       * for safer attribute processing and better runtime type validation.
-       */
-      availableAttributes = Array.from(
-        new Set(
-          attrs.flatMap((a) => {
-            if (!isAttributeObject(a)) {
-              return [];
-            }
-            return [a.api_slug, a.title, a.name].filter(
-              (s): s is string => typeof s === 'string'
-            );
-          })
-        )
-      ).map((s) => s.toLowerCase());
-    } catch (error) {
-      debug('UniversalUpdateService', 'Failed to fetch attributes', {
-        resource_type,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      availableAttributes = undefined;
-    }
+    // Issue #984: Fetch metadata once using MetadataResolver
+    const { MetadataResolver } = await import('./update/MetadataResolver.js');
+    const { metadataMap, availableAttributes } =
+      await MetadataResolver.fetchMetadata(resource_type, actualRecordData);
 
     // Map field names to correct ones with collision detection
     const mappingResult = await mapRecordFields(
@@ -604,6 +548,8 @@ export class UniversalUpdateService {
             resourceType: resource_type,
             operation: 'update',
             recordId: record_id,
+            // Issue #984: Pass metadata to avoid duplicate fetch
+            attributeMetadata: metadataMap,
           }
         );
 
@@ -646,91 +592,24 @@ export class UniversalUpdateService {
     // This ensures verification compares what was actually sent to API
     const dataForVerification = { ...attioPayload.values };
 
-    let updatedRecord: AttioRecord;
+    // Issue #984: Use UpdateOrchestrator for strategy dispatch
+    const { UpdateOrchestrator } = await import(
+      './update/UpdateOrchestrator.js'
+    );
 
-    switch (resource_type) {
-      case UniversalResourceType.COMPANIES: {
-        const { CompanyUpdateStrategy } = await import(
-          './update/strategies/CompanyUpdateStrategy.js'
-        );
-        const strategy = new CompanyUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      case UniversalResourceType.LISTS: {
-        const { ListUpdateStrategy } = await import(
-          './update/strategies/ListUpdateStrategy.js'
-        );
-        const strategy = new ListUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      case UniversalResourceType.PEOPLE: {
-        const { PersonUpdateStrategy } = await import(
-          './update/strategies/PersonUpdateStrategy.js'
-        );
-        const strategy = new PersonUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      case UniversalResourceType.RECORDS:
-      case UniversalResourceType.DEALS: {
-        const { RecordUpdateStrategy } = await import(
-          './update/strategies/RecordUpdateStrategy.js'
-        );
-        const strategy = new RecordUpdateStrategy();
-        /**
-         * **Safe Property Access**: Using type-safe property access for object slug
-         * extraction while providing sensible defaults.
-         */
-        const recordsObjectSlug =
-          (typeof actualRecordData?.object === 'string'
-            ? actualRecordData.object
-            : undefined) ||
-          (typeof actualRecordData?.object_api_slug === 'string'
-            ? actualRecordData.object_api_slug
-            : undefined) ||
-          'records';
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type,
-          { objectSlug: recordsObjectSlug }
-        );
-        break;
-      }
-      case UniversalResourceType.TASKS: {
-        const { TaskUpdateStrategy } = await import(
-          './update/strategies/TaskUpdateStrategy.js'
-        );
-        const strategy = new TaskUpdateStrategy();
-        updatedRecord = await strategy.update(
-          record_id,
-          attioPayload.values,
-          resource_type
-        );
-        break;
-      }
-      default: {
-        updatedRecord = await this.handleUnsupportedResourceType(
-          resource_type as unknown as string,
-          params
-        );
-        break;
-      }
-    }
+    // Use centralized object slug extraction (fixes DEALS slug inconsistency)
+    // MetadataResolver already imported at line 468
+    const objectSlug = MetadataResolver.extractObjectSlug(
+      resource_type,
+      actualRecordData
+    );
+
+    const updatedRecord = await UpdateOrchestrator.executeUpdate({
+      resourceType: resource_type,
+      recordId: record_id,
+      sanitizedValues: attioPayload.values,
+      objectSlug,
+    });
 
     const { ResponseNormalizer } = await import(
       './update/ResponseNormalizer.js'
@@ -740,62 +619,18 @@ export class UniversalUpdateService {
       updatedRecord
     );
 
-    // Field persistence verification (enabled by default)
-    // WARNING: Disabling this can cause silent data consistency issues
-    // Skip verification if called from validation-aware path to avoid duplication
-    if (
-      !skipVerification &&
-      process.env.ENABLE_FIELD_VERIFICATION !== 'false'
-    ) {
-      try {
-        // Use post-transform data for accurate verification (PR #981 review feedback)
-        const verification = await UpdateValidation.verifyFieldPersistence(
-          resource_type,
-          record_id,
-          dataForVerification
-        );
-        if (verification.warnings.length > 0) {
-          logError(
-            'UniversalUpdateService',
-            `Field persistence warnings for ${resource_type} ${record_id}:`,
-            verification.warnings
-          );
-        }
-        if (!verification.verified) {
-          // Use structured logging for field persistence verification failures
-          logError(
-            'UniversalUpdateService',
-            'Field persistence verification failed',
-            new Error('Verification failed'),
-            {
-              resource_type,
-              record_id,
-              discrepancies: verification.discrepancies,
-            }
-          );
-
-          // If strict validation is enabled, fail the operation
-          // WARNING: This environment variable changes runtime behavior
-          // Production Impact: Operations may fail that previously succeeded
-          if (process.env.STRICT_FIELD_VALIDATION === 'true') {
-            throw new UniversalValidationError(
-              `Field persistence verification failed: ${verification.discrepancies.join('; ')}`,
-              ErrorType.API_ERROR,
-              {
-                field: 'field_verification',
-                suggestion:
-                  'Check that the field values are correctly formatted and supported by the API',
-              }
-            );
-          }
-        }
-      } catch (error: unknown) {
-        logError(
-          'UniversalUpdateService',
-          'Field persistence verification error',
-          error
-        );
-      }
+    // Issue #984: Use FieldPersistenceHandler for verification
+    if (!skipVerification) {
+      const { FieldPersistenceHandler } = await import(
+        './update/FieldPersistenceHandler.js'
+      );
+      await FieldPersistenceHandler.verifyPersistence(
+        resource_type,
+        record_id,
+        dataForVerification,
+        normalizedRecord.values || {},
+        { strict: false }
+      );
     }
 
     return normalizedRecord;

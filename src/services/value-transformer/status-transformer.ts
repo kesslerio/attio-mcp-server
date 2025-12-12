@@ -17,11 +17,27 @@ import {
 import { AttributeOptionsService } from '@/services/metadata/index.js';
 import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import { debug, error as logError, OperationType } from '@/utils/logger.js';
+import { DEFAULT_ATTRIBUTES_CACHE_TTL } from '@/constants/universal.constants.js';
 
 /**
- * Cache for status options to avoid repeated API calls
+ * Cache entry with timestamp for TTL expiration
+ * @see Issue #984 - Add TTL to status cache
  */
-const statusOptionsCache = new Map<string, AttributeOption[]>();
+interface StatusCacheEntry {
+  data: AttributeOption[];
+  timestamp: number;
+}
+
+/**
+ * Cache for status options with TTL-based expiration
+ * @see Issue #984 - Add 5-minute TTL to prevent stale data
+ */
+const statusOptionsCache = new Map<string, StatusCacheEntry>();
+
+/**
+ * TTL for status options cache (5 minutes)
+ */
+const STATUS_CACHE_TTL = DEFAULT_ATTRIBUTES_CACHE_TTL;
 
 /**
  * Get cache key for status options
@@ -38,18 +54,81 @@ export function clearStatusCache(): void {
 }
 
 /**
- * Fetch status options with caching
+ * Clean up expired cache entries (lazy eviction)
+ * @see Issue #984 - Remove expired entries to prevent memory growth
+ */
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  const keysToDelete: string[] = [];
+
+  for (const [key, entry] of statusOptionsCache.entries()) {
+    if (now - entry.timestamp >= STATUS_CACHE_TTL) {
+      keysToDelete.push(key);
+    }
+  }
+
+  for (const key of keysToDelete) {
+    statusOptionsCache.delete(key);
+  }
+
+  if (keysToDelete.length > 0) {
+    debug(
+      'status-transformer',
+      `Cleaned up ${keysToDelete.length} expired cache entries`,
+      { expiredKeys: keysToDelete.length },
+      'cleanupExpiredEntries',
+      OperationType.DATA_PROCESSING
+    );
+  }
+}
+
+/**
+ * Fetch status options with TTL-based caching
+ * @see Issue #984 - Add TTL expiration to prevent stale data
  */
 async function getStatusOptionsWithCache(
   objectSlug: string,
   attributeSlug: string
 ): Promise<AttributeOption[]> {
   const cacheKey = getCacheKey(objectSlug, attributeSlug);
+  const now = Date.now();
 
+  // Check cache with TTL
   if (statusOptionsCache.has(cacheKey)) {
-    return statusOptionsCache.get(cacheKey)!;
+    const cached = statusOptionsCache.get(cacheKey)!;
+    const age = now - cached.timestamp;
+
+    if (age < STATUS_CACHE_TTL) {
+      debug(
+        'status-transformer',
+        `Using cached status options for ${objectSlug}.${attributeSlug}`,
+        {
+          age: `${Math.round(age / 1000)}s`,
+          ttl: `${STATUS_CACHE_TTL / 1000}s`,
+        },
+        'getStatusOptionsWithCache',
+        OperationType.DATA_PROCESSING
+      );
+      return cached.data;
+    }
+
+    // Expired, remove it
+    statusOptionsCache.delete(cacheKey);
+    debug(
+      'status-transformer',
+      `Cache expired for ${objectSlug}.${attributeSlug}`,
+      { age: `${Math.round(age / 1000)}s` },
+      'getStatusOptionsWithCache',
+      OperationType.DATA_PROCESSING
+    );
   }
 
+  // Periodically clean up expired entries (every 10th fetch)
+  if (Math.random() < 0.1) {
+    cleanupExpiredEntries();
+  }
+
+  // Fetch fresh data
   try {
     const result = await AttributeOptionsService.getOptions(
       objectSlug,
@@ -63,7 +142,20 @@ async function getStatusOptionsWithCache(
       is_archived: opt.is_archived,
     }));
 
-    statusOptionsCache.set(cacheKey, options);
+    // Cache with timestamp
+    statusOptionsCache.set(cacheKey, {
+      data: options,
+      timestamp: now,
+    });
+
+    debug(
+      'status-transformer',
+      `Cached fresh status options for ${objectSlug}.${attributeSlug}`,
+      { optionCount: options.length },
+      'getStatusOptionsWithCache',
+      OperationType.DATA_PROCESSING
+    );
+
     return options;
   } catch (err) {
     logError(
