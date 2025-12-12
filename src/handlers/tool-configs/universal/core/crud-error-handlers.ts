@@ -7,136 +7,52 @@
  */
 
 // import { ErrorService } from '../../../../services/ErrorService.js'; // Not used yet
-import { createScopedLogger } from '../../../../utils/logger.js';
-// Create a simple error result function
-const createErrorResult = (
-  message: string,
-  name: string,
-  details?: unknown
-): Error => {
-  const error = new Error(message);
-  error.name = name;
-  if (details) {
-    (error as Error & { details?: unknown }).details = details;
-  }
-  return error;
-};
-import { getSingularResourceType } from '../shared-handlers.js';
-import { UniversalResourceType } from '../types.js';
+import { findSimilarStrings } from '@/utils/string-similarity.js';
+
 import type { ValidationMetadata } from './utils.js';
+import { UniversalResourceType } from '../types.js';
+import { createScopedLogger } from '../../../../utils/logger.js';
+import { getSingularResourceType } from '../shared-handlers.js';
 import { sanitizedLog } from './pii-sanitizer.js';
 
-const logger = createScopedLogger('crud-error-handlers');
-
-/**
- * Calculate Levenshtein distance between two strings
- * Used for suggesting similar attribute names
- */
-const levenshteinDistance = (a: string, b: string): number => {
-  const matrix: number[][] = [];
-
-  // Initialize first column
-  for (let i = 0; i <= a.length; i++) {
-    matrix[i] = [i];
-  }
-
-  // Initialize first row
-  for (let j = 0; j <= b.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  // Fill in the rest of the matrix
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      if (a[i - 1] === b[j - 1]) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1, // insertion
-          matrix[i - 1][j] + 1 // deletion
-        );
-      }
-    }
-  }
-
-  return matrix[a.length][b.length];
-};
-
-/**
- * Find similar attribute names using Levenshtein distance
- */
-const findSimilarAttributes = (
-  target: string,
-  candidates: string[],
-  maxResults: number
-): string[] => {
-  const scored = candidates.map((c) => ({
-    name: c,
-    distance: levenshteinDistance(target.toLowerCase(), c.toLowerCase()),
-  }));
-  return scored
-    .filter((s) => s.distance <= 3) // Max 3 edits
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, maxResults)
-    .map((s) => s.name);
-};
 
 /**
  * Enhance error messages for attribute-not-found errors
  * Detects "Cannot find attribute with slug/ID" errors and provides suggestions
+ * Uses centralized attribute resolution utilities
  *
  * @param error - The original error
  * @param resourceType - The resource type (companies, people, etc.)
  * @returns Enhanced error message with suggestions, or null if not an attribute-not-found error
  */
-const enhanceAttributeNotFoundError = async (
   error: unknown,
   resourceType: string
 ): Promise<string | null> => {
-  const msg = error instanceof Error ? error.message : String(error);
 
   // Pattern: "Cannot find attribute with slug/ID "X"."
-  const attrMatch = msg.match(/Cannot find attribute with slug\/ID "(.+?)"/);
   if (!attrMatch) return null;
 
-  const invalidAttr = attrMatch[1];
 
   try {
     // Fetch valid attributes and find similar ones
     const { handleUniversalDiscoverAttributes } = await import(
       '../shared-handlers.js'
     );
-    const schema = await handleUniversalDiscoverAttributes(
       resourceType as UniversalResourceType
     );
-    const allAttrs = ((schema as Record<string, unknown>).all || []) as Array<{
-      name?: string;
-      title?: string;
-      api_slug?: string;
-    }>;
-    const attrNames = allAttrs
+      []) as AttributeSchema[];
       .flatMap((a) => [a.name, a.title, a.api_slug])
       .filter(Boolean) as string[];
 
-    // Find similar attribute names using Levenshtein distance
-    const suggestions = findSimilarAttributes(invalidAttr, attrNames, 3);
+    // Find similar attribute names using centralized utility
+      maxResults: 3,
+    });
 
-    let message = `Attribute "${invalidAttr}" does not exist on ${resourceType}.\n\n`;
-
-    if (suggestions.length > 0) {
-      message += `Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?\n\n`;
-    }
-
-    message += `Next step: Call records_discover_attributes with\n`;
-    message += `  resource_type: "${resourceType}"\n`;
-    message += `to see all valid attributes.`;
-
-    return message;
+    return formatAttributeNotFoundError(invalidAttr, resourceType, suggestions);
   } catch {
     return (
       `Attribute "${invalidAttr}" does not exist on ${resourceType}.\n\n` +
-      `Next step: Use records_discover_attributes to see valid attributes.`
+      formatNextStepHint(resourceType)
     );
   }
 };
@@ -145,7 +61,6 @@ const enhanceAttributeNotFoundError = async (
  * Extract Attio API validation errors from error response
  * HOTFIX: Improve error messaging for relationship field failures
  */
-const extractAttioValidationErrors = (error: unknown): string | null => {
   try {
     // Check for axios-style error response
     if (
@@ -156,15 +71,11 @@ const extractAttioValidationErrors = (error: unknown): string | null => {
       typeof error.response === 'object' &&
       'data' in error.response
     ) {
-      const data = (error.response as Record<string, unknown>).data;
       if (data && typeof data === 'object' && 'validation_errors' in data) {
-        const validationErrors = (data as Record<string, unknown>)
           .validation_errors;
         if (Array.isArray(validationErrors) && validationErrors.length > 0) {
           return validationErrors
             .map((err: Record<string, unknown>) => {
-              const field = err.field || err.path;
-              const base = err.message || String(err);
               return field ? `${field}: ${base}` : String(base);
             })
             .join('; ');
@@ -184,7 +95,6 @@ const extractAttioValidationErrors = (error: unknown): string | null => {
 /**
  * Extract top-level Attio message from axios-style errors
  */
-const extractAttioMessage = (error: unknown): string | null => {
   try {
     if (
       error &&
@@ -194,7 +104,6 @@ const extractAttioMessage = (error: unknown): string | null => {
       typeof error.response === 'object' &&
       'data' in error.response
     ) {
-      const data = (error.response as Record<string, unknown>).data;
       if (data && typeof data === 'object' && 'message' in data) {
         return String((data as Record<string, unknown>).message);
       }
@@ -215,12 +124,10 @@ const extractAttioMessage = (error: unknown): string | null => {
  * @param recordData - The record data that was submitted
  * @returns Enhanced error message with valid options, or null if not a select/status error
  */
-const enhanceSelectStatusError = async (
   error: unknown,
   resourceType: string,
   recordData: Record<string, unknown>
 ): Promise<string | null> => {
-  const msg = error instanceof Error ? error.message : String(error);
 
   // Attempt to extract validation_errors array for better detail on select fields
   if (
@@ -231,12 +138,9 @@ const enhanceSelectStatusError = async (
     typeof error.response === 'object' &&
     'data' in error.response
   ) {
-    const data = (error.response as Record<string, unknown>).data;
     if (data && typeof data === 'object' && 'validation_errors' in data) {
-      const validationErrors = (data as Record<string, unknown>)
         .validation_errors;
       if (Array.isArray(validationErrors)) {
-        const selectErr = validationErrors.find((ve) =>
           String(ve?.message || '').includes('select option')
         );
         if (selectErr?.field) {
@@ -249,11 +153,9 @@ const enhanceSelectStatusError = async (
                 resourceType,
                 selectErr.field as string
               );
-            const validList = options
               .slice(0, 8)
               .map((o) => o.title)
               .join(', ');
-            const hasMore =
               options.length > 8 ? ` (+${options.length - 8} more)` : '';
             return `Value is not valid for ${attributeType} attribute "${selectErr.field}" on ${resourceType}.
 Expected one of: ${validList}${hasMore}
@@ -275,12 +177,10 @@ to see valid options, then retry.`;
   }
 
   // Pattern: "Cannot find select option with title 'X'" or "Cannot find Status with title 'X'"
-  const selectMatch = msg.match(
     /Cannot find (?:select option|Status) with title "(.+?)"/
   );
   if (!selectMatch) return null;
 
-  const invalidValue = selectMatch[1];
 
   // Try to identify which field has the problem by checking record data
   for (const [fieldName, fieldValue] of Object.entries(recordData)) {
@@ -295,11 +195,9 @@ to see valid options, then retry.`;
         );
         const { options, attributeType } =
           await AttributeOptionsService.getOptions(resourceType, fieldName);
-        const validList = options
           .slice(0, 8)
           .map((o) => o.title)
           .join(', ');
-        const hasMore =
           options.length > 8 ? ` (+${options.length - 8} more)` : '';
         return (
           `Value "${invalidValue}" is not valid for ${attributeType} attribute "${fieldName}" on ${resourceType}.\n\n` +
@@ -332,11 +230,9 @@ to see valid options, then retry.`;
 /**
  * Enhance complex type errors (location, personal-name, phone-number)
  */
-const enhanceComplexTypeError = (
   error: unknown,
   recordData?: Record<string, unknown>
 ): string | null => {
-  const locationExample =
     '{\n' +
     '  "line_1": "123 Main St",\n' +
     '  "locality": "City",\n' +
@@ -350,23 +246,16 @@ const enhanceComplexTypeError = (
     '  "line_4": null\n' +
     '}';
 
-  const phoneExample =
     '{ "phone_number": "+15551234567", "country_code": "US" }';
-  const nameExample = '{ "first_name": "Jane", "last_name": "Doe" }';
 
-  const msg = error instanceof Error ? error.message : String(error);
 
-  const validationErrors =
     (error as { response?: { data?: { validation_errors?: unknown } } })
       ?.response?.data?.validation_errors ?? null;
 
-  const recordFields = recordData ? Object.keys(recordData) : [];
 
-  const validationErrorsArray = Array.isArray(validationErrors)
     ? (validationErrors as unknown[])
     : null;
 
-  const containsLocation =
     /location/i.test(msg) ||
     recordFields.some((f) => /location/i.test(f)) ||
     (validationErrorsArray &&
@@ -389,7 +278,6 @@ const enhanceComplexTypeError = (
     );
   }
 
-  const containsPhone =
     /phone/.test(msg) ||
     (validationErrorsArray &&
       validationErrorsArray.some((ve) =>
@@ -411,7 +299,6 @@ const enhanceComplexTypeError = (
     );
   }
 
-  const containsPersonalName =
     /personal-name/.test(msg) ||
     (validationErrorsArray &&
       validationErrorsArray.some((ve) =>
@@ -444,11 +331,9 @@ const enhanceComplexTypeError = (
  * @param recordData - The record data that was submitted (optional)
  * @returns Enhanced error message with format guidance, or null if not a record-reference error
  */
-const enhanceRecordReferenceError = (
   error: unknown,
   recordData?: Record<string, unknown>
 ): string | null => {
-  const msg = error instanceof Error ? error.message : String(error);
 
   // Also check for validation_errors in axios response
   let fullErrorText = msg;
@@ -460,14 +345,12 @@ const enhanceRecordReferenceError = (
     typeof error.response === 'object' &&
     'data' in error.response
   ) {
-    const data = (error.response as Record<string, unknown>).data;
     if (data && typeof data === 'object') {
       if ('message' in data) {
         fullErrorText +=
           ' ' + String((data as Record<string, unknown>).message);
       }
       if ('validation_errors' in data) {
-        const validationErrors = (data as Record<string, unknown>)
           .validation_errors;
         if (Array.isArray(validationErrors)) {
           fullErrorText +=
@@ -481,7 +364,6 @@ const enhanceRecordReferenceError = (
   }
 
   // Pattern detection for record-reference errors
-  const isRecordRefError =
     fullErrorText.includes('Missing target_object') ||
     fullErrorText.includes('record reference') ||
     fullErrorText.includes('target_record_id') ||
@@ -494,7 +376,6 @@ const enhanceRecordReferenceError = (
   if (!isRecordRefError) return null;
 
   // Try to identify which field might be the issue
-  const potentialRefFields = [
     'company',
     'associated_company',
     'associated_people',
@@ -543,11 +424,8 @@ interface CrudErrorContext {
   validationMetadata?: ValidationMetadata;
 }
 
-const normalizeFieldName = (field: string): string =>
   field.trim().toLowerCase();
 
-const hasStageField = (recordData: Record<string, unknown>): boolean => {
-  const directKeys = Object.keys(recordData).map(normalizeFieldName);
   if (
     directKeys.includes('stage') ||
     directKeys.includes('deal stage') ||
@@ -556,7 +434,6 @@ const hasStageField = (recordData: Record<string, unknown>): boolean => {
     return true;
   }
 
-  const values =
     recordData.values &&
     typeof recordData.values === 'object' &&
     recordData.values !== null
@@ -565,7 +442,6 @@ const hasStageField = (recordData: Record<string, unknown>): boolean => {
 
   if (!values) return false;
 
-  const valueKeys = Object.keys(values).map(normalizeFieldName);
   return (
     valueKeys.includes('stage') ||
     valueKeys.includes('deal stage') ||
@@ -573,7 +449,6 @@ const hasStageField = (recordData: Record<string, unknown>): boolean => {
   );
 };
 
-const buildMissingDealStageMessage = async (
   recordData: Record<string, unknown>
 ): Promise<string | null> => {
   if (hasStageField(recordData)) return null;
@@ -586,11 +461,9 @@ const buildMissingDealStageMessage = async (
       'deals',
       'stage'
     );
-    const preview = options
       .slice(0, 5)
       .map((option) => `"${option.title}"`)
       .join(', ');
-    const hasMore = options.length > 5 ? ` (+${options.length - 5} more)` : '';
     return (
       `Required field "stage" is missing for deals.\n\n` +
       `Common stage values: ${preview}${hasMore}\n\n` +
@@ -644,7 +517,6 @@ async function enhanceUniquenessErrorWithSearch(
     },
   };
 
-  const searcher = UNIQUE_FIELD_SEARCHERS[resourceType.toLowerCase()];
   if (!searcher) return null;
 
   // Find which unique field has a value in recordData
@@ -662,15 +534,12 @@ async function enhanceUniquenessErrorWithSearch(
       typeof searchValue === 'object' &&
       !Array.isArray(searchValue)
     ) {
-      const obj = searchValue as Record<string, unknown>;
       searchValue = obj.email_address || obj.email || obj.value;
     }
 
     if (searchValue && typeof searchValue === 'string') {
       try {
-        const existing = await searcher.search(searchValue);
         if (existing && existing.length > 0) {
-          const recordId = existing[0]?.id?.record_id;
           if (recordId) {
             return formatUniquenessErrorMessage(
               resourceType,
@@ -703,7 +572,6 @@ function formatUniquenessErrorMessage(
   value: string,
   recordId: string
 ): string {
-  const singular = getSingularResourceType(
     resourceType as UniversalResourceType
   );
 
@@ -741,19 +609,16 @@ export const handleCreateError = async (
 
   // Handle creation-specific error patterns
   if (error instanceof Error && error.message.includes('required field')) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
     let message = `Failed to create ${resourceName}: Missing required fields. Please check that all mandatory fields are provided.`;
 
     if (resourceType === UniversalResourceType.DEALS) {
-      const stageMessage = await buildMissingDealStageMessage(recordData);
       if (stageMessage) {
         message = `Failed to create ${resourceName}: ${stageMessage}`;
       }
     }
 
-    const errorResult = createErrorResult(message, 'validation_error', {
       context,
     });
     throw errorResult;
@@ -765,17 +630,14 @@ export const handleCreateError = async (
     (error.message.includes('duplicate') ||
       error.message.toLowerCase().includes('uniqueness constraint'))
   ) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
 
     // Try to find and identify the conflicting record
-    const enhancedMessage = await enhanceUniquenessErrorWithSearch(
       resourceType,
       recordData
     );
 
-    const errorResult = createErrorResult(
       enhancedMessage
         ? `Failed to create ${resourceName}: ${enhancedMessage}`
         : `Failed to create ${resourceName}: A record with similar data already exists. Check unique fields like domains or email_addresses.`,
@@ -786,12 +648,10 @@ export const handleCreateError = async (
   }
 
   // Check for attribute-not-found errors (must come before select/status check)
-  const enhancedAttrError = await enhanceAttributeNotFoundError(
     error,
     resourceType
   );
   if (enhancedAttrError) {
-    const errorResult = createErrorResult(
       `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedAttrError}`,
       'attribute_not_found',
       { context }
@@ -800,9 +660,7 @@ export const handleCreateError = async (
   }
 
   // Check for complex type errors (location, phone, personal-name)
-  const complexTypeError = enhanceComplexTypeError(error, recordData);
   if (complexTypeError) {
-    const errorResult = createErrorResult(
       `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${complexTypeError}`,
       'validation_error',
       { context }
@@ -811,13 +669,11 @@ export const handleCreateError = async (
   }
 
   // Check for select/status errors and enhance with valid options
-  const enhancedSelectError = await enhanceSelectStatusError(
     error,
     resourceType,
     recordData
   );
   if (enhancedSelectError) {
-    const errorResult = createErrorResult(
       `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
       'value_not_found',
       { context }
@@ -826,9 +682,7 @@ export const handleCreateError = async (
   }
 
   // Issue #997: Check for record-reference errors and enhance with format guidance
-  const enhancedRefError = enhanceRecordReferenceError(error, recordData);
   if (enhancedRefError) {
-    const errorResult = createErrorResult(
       `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedRefError}`,
       'record_reference_error',
       { context }
@@ -837,15 +691,10 @@ export const handleCreateError = async (
   }
 
   // Fallback to general create error handling
-  const baseError = error instanceof Error ? error.message : String(error);
-  const apiErrors = extractAttioValidationErrors(error);
-  const attioMessage = extractAttioMessage(error);
-  const errorMessage = apiErrors
     ? `${baseError}. Details: ${apiErrors}`
     : attioMessage
       ? `${baseError}. Details: ${attioMessage}`
       : baseError;
-  const errorResult = createErrorResult(
     `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${errorMessage}`,
     'create_error',
     { context, original: error }
@@ -883,7 +732,6 @@ export const handleUpdateError = async (
 
   // Handle validation-specific errors with enhanced context
   if (error instanceof Error && error.message.includes('validation')) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
     let errorMessage = `Failed to update ${resourceName}: Validation failed.`;
@@ -896,19 +744,16 @@ export const handleUpdateError = async (
       errorMessage += `\n\nSuggestions:\n${validationMetadata.suggestions.join('\n')}`;
     }
 
-    const errorResult = createErrorResult(errorMessage, 'validation_error', {
       context,
     });
     throw errorResult;
   }
 
   // Check for attribute-not-found errors (must come before select/status check)
-  const enhancedAttrError = await enhanceAttributeNotFoundError(
     error,
     resourceType
   );
   if (enhancedAttrError) {
-    const errorResult = createErrorResult(
       `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedAttrError}`,
       'attribute_not_found',
       { context }
@@ -917,9 +762,7 @@ export const handleUpdateError = async (
   }
 
   // Check for complex type errors (location, phone, personal-name)
-  const complexTypeError = enhanceComplexTypeError(error, recordData);
   if (complexTypeError) {
-    const errorResult = createErrorResult(
       `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${complexTypeError}`,
       'validation_error',
       { context }
@@ -929,13 +772,11 @@ export const handleUpdateError = async (
 
   // Check for select/status errors and enhance with valid options
   // (Must come before "not found" check since select errors contain "not found")
-  const enhancedSelectError = await enhanceSelectStatusError(
     error,
     resourceType,
     recordData
   );
   if (enhancedSelectError) {
-    const errorResult = createErrorResult(
       `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
       'value_not_found',
       { context }
@@ -944,9 +785,7 @@ export const handleUpdateError = async (
   }
 
   // Issue #997: Check for record-reference errors and enhance with format guidance
-  const enhancedRefError = enhanceRecordReferenceError(error, recordData);
   if (enhancedRefError) {
-    const errorResult = createErrorResult(
       `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedRefError}`,
       'record_reference_error',
       { context }
@@ -956,10 +795,8 @@ export const handleUpdateError = async (
 
   // Handle record not found errors
   if (error instanceof Error && error.message.includes('not found')) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
-    const errorResult = createErrorResult(
       `Failed to update ${resourceName}: Record not found. Please verify the record ID: ${recordId}`,
       'not_found_error',
       { context }
@@ -968,16 +805,11 @@ export const handleUpdateError = async (
   }
 
   // Fallback to general update error handling
-  const baseErrorMessage =
     error instanceof Error ? error.message : String(error);
-  const validationDetail = extractAttioValidationErrors(error);
-  const attioMessage = extractAttioMessage(error);
-  const errorMessage = validationDetail
     ? `${baseErrorMessage}. Details: ${validationDetail}`
     : attioMessage
       ? `${baseErrorMessage}. Details: ${attioMessage}`
       : baseErrorMessage;
-  const errorResult = createErrorResult(
     `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${errorMessage}`,
     'update_error',
     { context, original: error }
@@ -1007,10 +839,8 @@ export const handleDeleteError = async (
 
   // Handle delete-specific error patterns
   if (error instanceof Error && error.message.includes('not found')) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
-    const errorResult = createErrorResult(
       `Failed to delete ${resourceName}: Record not found. The record may have already been deleted.`,
       'not_found_error',
       { context }
@@ -1019,10 +849,8 @@ export const handleDeleteError = async (
   }
 
   if (error instanceof Error && error.message.includes('referenced')) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
-    const errorResult = createErrorResult(
       `Failed to delete ${resourceName}: Record is referenced by other records and cannot be deleted.`,
       'reference_constraint_error',
       { context }
@@ -1031,8 +859,6 @@ export const handleDeleteError = async (
   }
 
   // Fallback to general delete error handling
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorResult = createErrorResult(
     `Failed to delete ${getSingularResourceType(resourceType as UniversalResourceType)}: ${errorMessage}`,
     'delete_error',
     { context, original: error }
@@ -1064,10 +890,8 @@ export const handleSearchError = async (
 
   // Handle search-specific error patterns
   if (error instanceof Error && error.message.includes('invalid filter')) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
-    const errorResult = createErrorResult(
       `Failed to search ${resourceName}s: Invalid search filters. Please check your search criteria.`,
       'invalid_filter_error',
       { context }
@@ -1076,10 +900,8 @@ export const handleSearchError = async (
   }
 
   if (error instanceof Error && error.message.includes('timeout')) {
-    const resourceName = getSingularResourceType(
       resourceType as UniversalResourceType
     );
-    const errorResult = createErrorResult(
       `Search for ${resourceName}s timed out. Please try with more specific search criteria.`,
       'timeout_error',
       { context }
@@ -1088,8 +910,6 @@ export const handleSearchError = async (
   }
 
   // Fallback to general search error handling
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorResult = createErrorResult(
     `Failed to search ${getSingularResourceType(resourceType as UniversalResourceType)}s: ${errorMessage}`,
     'search_error',
     { context, original: error }
@@ -1144,9 +964,7 @@ export const handleCoreOperationError = async (
       return handleSearchError(error, resourceType, recordData);
     default:
       // Fallback to general error handling
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorResult = createErrorResult(
         `Operation failed: ${errorMessage}`,
         'operation_error',
         { operation, resourceType, recordData }

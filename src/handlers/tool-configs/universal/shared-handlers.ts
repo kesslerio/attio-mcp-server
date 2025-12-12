@@ -5,22 +5,23 @@
  * tool operations to existing resource-specific handlers.
  */
 
-import {
-  UniversalResourceType,
-  UniversalSearchParams,
-  UniversalRecordDetailsParams,
-  UniversalCreateParams,
-  UniversalUpdateParams,
-  UniversalDeleteParams,
-  UniversalAttributesParams,
-  UniversalDetailedInfoParams,
-  UniversalCreateNoteParams,
-  UniversalGetNotesParams,
-  UniversalUpdateNoteParams,
-  UniversalSearchNotesParams,
-  UniversalDeleteNoteParams,
-  UniversalGetAttributeOptionsParams,
-} from './types.js';
+import { AttioRecord } from '../../../types/attio.js';
+import { JsonObject } from '../../../types/attio.js';
+import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
+import { UniversalMetadataService } from '../../../services/UniversalMetadataService.js';
+import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
+import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
+import { UniversalUpdateService } from '../../../services/UniversalUpdateService.js';
+import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
+import { getCreateService } from '../../../services/create/index.js';
+import { getLazyAttioClient } from '../../../api/lazy-client.js';
+import { getListDetails } from '../../../objects/lists.js';
+import { getObjectRecord } from '../../../objects/records/index.js';
+import { getPersonDetails } from '../../../objects/people/index.js';
+import { getTask } from '../../../objects/tasks.js';
+import { listNotes } from '../../../objects/notes.js';
+import { unwrapAttio, normalizeNotes } from '../../../utils/attio-response.js';
 
 import { JsonObject } from '../../../types/attio.js';
 
@@ -61,6 +62,12 @@ import {
 import { unwrapAttio, normalizeNotes } from '../../../utils/attio-response.js';
 
 import { AttioRecord } from '../../../types/attio.js';
+import {
+  resolveAttribute,
+  getSimilarAttributes,
+  normalizeAttributeValue,
+  type AttributeSchema,
+} from '@/utils/attribute-resolution.js';
 
 /**
  * Universal search handler - delegates to UniversalSearchService
@@ -94,8 +101,6 @@ export async function handleUniversalCreateNote(
 
   try {
     // Use factory service for consistent behavior
-    const service = getCreateService();
-    const rawResult = await service.createNote({
       resource_type,
       record_id,
       title,
@@ -107,7 +112,6 @@ export async function handleUniversalCreateNote(
       '../../../utils/attio-response.js'
     );
 
-    const result = normalizeNote(unwrapAttio<JsonObject>(rawResult));
     debug(
       'universal.createNote',
       'Create note result',
@@ -158,15 +162,13 @@ export async function handleUniversalGetNotes(
     }
 
     // Prefer object-layer helper which handles Attio response shape
-    const response = await listNotes({
       parent_object: resource_type,
       parent_record_id: record_id,
       limit,
       offset,
     });
-    const rawList = unwrapAttio<JsonObject>(response);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
-    const noteArray: any[] = Array.isArray(rawList)
+    const noteArray: unknown[] = Array.isArray(rawList)
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
         (rawList as any[])
       : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure
@@ -175,13 +177,9 @@ export async function handleUniversalGetNotes(
     return normalizeNotes(noteArray as any[]);
   } catch (error: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error object structure varies, need flexible access
-    const anyErr = error as any;
-    const status = anyErr?.response?.status;
-    const message =
       anyErr?.response?.data?.error?.message ||
       anyErr?.message ||
       'Unknown error';
-    const semanticMessage =
       status === 404
         ? 'record not found'
         : status === 400
@@ -211,14 +209,12 @@ export async function handleUniversalUpdateNote(
   params: UniversalUpdateNoteParams
 ): Promise<JsonObject> {
   const { note_id, title, content, is_archived } = params;
-  const client = getLazyAttioClient();
 
   const updateData: JsonObject = {};
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (is_archived !== undefined) updateData.is_archived = is_archived;
 
-  const response = await client.patch(`/notes/${note_id}`, updateData);
   return response.data;
 }
 
@@ -229,7 +225,6 @@ export async function handleUniversalSearchNotes(
   params: UniversalSearchNotesParams
 ): Promise<JsonObject[]> {
   const { resource_type, record_id, query, limit = 20, offset = 0 } = params;
-  const client = getLazyAttioClient();
 
   const searchParams: Record<string, string> = {
     limit: limit.toString(),
@@ -239,8 +234,6 @@ export async function handleUniversalSearchNotes(
   if (record_id) searchParams.record_id = record_id;
   if (query) searchParams.q = query;
 
-  const queryParams = new URLSearchParams(searchParams);
-  const response = await client.get(`/notes?${queryParams}`);
   let notes = response.data.data || [];
 
   // Filter by resource type if specified
@@ -250,7 +243,6 @@ export async function handleUniversalSearchNotes(
       [UniversalResourceType.PEOPLE]: 'people',
       [UniversalResourceType.DEALS]: 'deals',
     };
-    const parentObject = resourceTypeMap[resource_type];
     if (parentObject) {
       notes = notes.filter(
         (note: JsonObject) => note.parent_object === parentObject
@@ -268,7 +260,6 @@ export async function handleUniversalDeleteNote(
   params: UniversalDeleteNoteParams
 ): Promise<{ success: boolean; note_id: string }> {
   const { note_id } = params;
-  const client = getLazyAttioClient();
 
   await client.delete(`/notes/${note_id}`);
   return { success: true, note_id };
@@ -335,59 +326,21 @@ const OBJECT_SLUG_MAP: Record<string, string> = {
   notes: 'notes',
 };
 
-export const normalizeAttributeValue = (value: string): string =>
-  value.trim().toLowerCase();
-
-const levenshteinDistance = (a: string, b: string): number => {
-  const matrix: number[][] = [];
-
-  for (let i = 0; i <= a.length; i++) {
-    matrix[i] = [i];
-  }
-
-  for (let j = 0; j <= b.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      if (a[i - 1] === b[j - 1]) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-
-  return matrix[a.length][b.length];
-};
-
-const getAttributeSchema = async (
+/**
+ * Helper to fetch attribute schemas for an object
+ * @internal
+ */
   objectSlug: string
-): Promise<
-  Array<{
-    name?: string;
-    title?: string;
-    api_slug?: string;
-  }>
-> => {
-  const schema = await handleUniversalDiscoverAttributes(
+): Promise<AttributeSchema[]> => {
     objectSlug as UniversalResourceType
   );
-  return ((schema as Record<string, unknown>).all || []) as Array<{
-    name?: string;
-    title?: string;
-    api_slug?: string;
-  }>;
+  return ((schema as Record<string, unknown>).all || []) as AttributeSchema[];
 };
 
 /**
  * Resolve display name to API slug for an attribute
  * Fetches attribute metadata and finds the slug by title match
+ * Uses centralized attribute resolution (exact → partial → typo)
  *
  * @param objectSlug - The object slug (e.g., "deals", "companies")
  * @param displayName - The display name to resolve (e.g., "Deal stage")
@@ -398,140 +351,45 @@ export async function resolveAttributeDisplayName(
   displayName: string
 ): Promise<string | null> {
   try {
-    const allAttrs = await getAttributeSchema(objectSlug);
-    const normalizedInput = normalizeAttributeValue(displayName);
 
-    const exactMatch = allAttrs.find((attr) => {
-      const candidates = [attr.title, attr.name, attr.api_slug].filter(Boolean);
-      return candidates.some(
-        (candidate) =>
-          normalizeAttributeValue(candidate as string) === normalizedInput
-      );
-    });
-    if (exactMatch?.api_slug) {
+    if (result.slug) {
       debug(
         'shared-handlers',
-        `Resolved display name "${displayName}" to API slug "${exactMatch.api_slug}"`,
-        { attribute: displayName, resolvedSlug: exactMatch.api_slug },
+        `Resolved display name "${displayName}" to API slug "${result.slug}" via ${result.matchType} match`,
+        {
+          attribute: displayName,
+          resolvedSlug: result.slug,
+          matchType: result.matchType,
+          distance: result.distance,
+        },
         'resolveDisplayName',
         OperationType.DATA_PROCESSING
       );
-      return exactMatch.api_slug;
     }
 
-    const partialMatch = allAttrs.find((attr) => {
-      const title = attr.title ? normalizeAttributeValue(attr.title) : null;
-      const slug = attr.api_slug
-        ? normalizeAttributeValue(attr.api_slug)
-        : null;
-      return (
-        (title && title.includes(normalizedInput)) ||
-        (slug && slug.includes(normalizedInput)) ||
-        (title && normalizedInput.includes(title)) ||
-        (slug && normalizedInput.includes(slug))
-      );
-    });
-    if (partialMatch?.api_slug) {
-      debug(
-        'shared-handlers',
-        `Resolved display name "${displayName}" to API slug "${partialMatch.api_slug}" via partial match`,
-        { attribute: displayName, resolvedSlug: partialMatch.api_slug },
-        'resolveDisplayName',
-        OperationType.DATA_PROCESSING
-      );
-      return partialMatch.api_slug;
-    }
-
-    const typoCandidates = allAttrs
-      .filter((attr) => attr.api_slug)
-      .map((attr) => {
-        const slug = attr.api_slug as string;
-        const title = attr.title || attr.name || slug;
-        return {
-          slug,
-          distance: Math.min(
-            levenshteinDistance(normalizedInput, normalizeAttributeValue(slug)),
-            levenshteinDistance(
-              normalizedInput,
-              normalizeAttributeValue(title as string)
-            )
-          ),
-        };
-      })
-      .filter((candidate) => candidate.distance <= 2)
-      .sort((a, b) => a.distance - b.distance);
-
-    if (typoCandidates.length > 0) {
-      debug(
-        'shared-handlers',
-        `Resolved display name "${displayName}" to API slug "${typoCandidates[0].slug}" via typo tolerance`,
-        { attribute: displayName, resolvedSlug: typoCandidates[0].slug },
-        'resolveDisplayName',
-        OperationType.DATA_PROCESSING
-      );
-      return typoCandidates[0].slug;
-    }
-
-    return null;
+    return result.slug;
   } catch {
     // If discovery fails, return null - the original error will be shown
     return null;
   }
 }
 
+/**
+ * Get similar attribute slugs for suggestion purposes
+ * Uses centralized attribute resolution for consistent suggestions
+ *
+ * @param objectSlug - The object slug
+ * @param attribute - The attribute to find suggestions for
+ * @param maxResults - Maximum number of suggestions (default: 3)
+ * @returns Array of similar attribute slugs
+ */
 export const getSimilarAttributeSlugs = async (
   objectSlug: string,
   attribute: string,
   maxResults = 3
 ): Promise<string[]> => {
   try {
-    const allAttrs = await getAttributeSchema(objectSlug);
-    const normalizedInput = normalizeAttributeValue(attribute);
-    const candidates = allAttrs
-      .filter((attr) => attr.api_slug)
-      .map((attr) => {
-        const slug = attr.api_slug as string;
-        const title = attr.title || attr.name || slug;
-        return {
-          slug,
-          distance: Math.min(
-            levenshteinDistance(normalizedInput, normalizeAttributeValue(slug)),
-            levenshteinDistance(
-              normalizedInput,
-              normalizeAttributeValue(title as string)
-            )
-          ),
-        };
-      })
-      .sort((a, b) => a.distance - b.distance);
-
-    const partials = allAttrs
-      .filter((attr) => attr.api_slug)
-      .filter((attr) => {
-        const title = attr.title ? normalizeAttributeValue(attr.title) : '';
-        const slug = attr.api_slug
-          ? normalizeAttributeValue(attr.api_slug)
-          : '';
-        return (
-          title.includes(normalizedInput) ||
-          slug.includes(normalizedInput) ||
-          normalizedInput.includes(title) ||
-          normalizedInput.includes(slug)
-        );
-      })
-      .map((attr) => attr.api_slug as string);
-
-    const combined = [
-      ...partials,
-      ...candidates.map((candidate) => candidate.slug),
-    ];
-    const unique: string[] = [];
-    for (const slug of combined) {
-      if (!unique.includes(slug)) {
-        unique.push(slug);
-      }
-    }
-    return unique.slice(0, maxResults);
+    return getSimilarAttributes(attribute, allAttrs, maxResults);
   } catch {
     return [];
   }
@@ -549,7 +407,6 @@ export async function handleUniversalGetAttributeOptions(
   const { resource_type, attribute, show_archived } = params;
 
   // Map resource type to object slug
-  const objectSlug =
     OBJECT_SLUG_MAP[resource_type.toLowerCase()] || resource_type.toLowerCase();
 
   // Lists require both list_id and attribute_slug - not yet supported via this tool
@@ -571,12 +428,10 @@ export async function handleUniversalGetAttributeOptions(
   } catch (firstError) {
     let latestError: unknown = firstError;
     // Check if this looks like a display name (contains space or uppercase)
-    const mightBeDisplayName =
       attribute.includes(' ') || /[A-Z]/.test(attribute);
 
     if (mightBeDisplayName) {
       // Try to resolve display name to API slug
-      const resolvedSlug = await resolveAttributeDisplayName(
         objectSlug,
         attribute
       );
@@ -602,15 +457,9 @@ export async function handleUniversalGetAttributeOptions(
       }
     }
 
-    const errorMsg =
       latestError instanceof Error ? latestError.message : String(latestError);
     let slugExists: boolean | null = null;
     try {
-      const allAttrs = await getAttributeSchema(objectSlug);
-      const normalizedAttr = normalizeAttributeValue(attribute);
-      const displayNameMatch = allAttrs.find((attr) => {
-        const title = attr.title ? normalizeAttributeValue(attr.title) : '';
-        const name = attr.name ? normalizeAttributeValue(attr.name) : '';
         return title === normalizedAttr || name === normalizedAttr;
       });
       if (
@@ -634,11 +483,9 @@ export async function handleUniversalGetAttributeOptions(
           normalizeAttributeValue(attr.api_slug) === normalizedAttr
       );
       if (slugExists === false) {
-        const suggestions = await getSimilarAttributeSlugs(
           objectSlug,
           attribute
         );
-        const suggestionText =
           suggestions.length > 0
             ? ` Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?`
             : '';
@@ -675,11 +522,8 @@ export async function handleUniversalGetDetailedInfo(
     case UniversalResourceType.PEOPLE:
       return getPersonDetails(record_id);
     case UniversalResourceType.LISTS: {
-      const list = await getListDetails(record_id);
       // Convert AttioList to AttioRecord format with robust shape handling
       // Handle all documented Attio API list response shapes
-      const raw = list;
-      const listId =
         raw?.id?.list_id ?? // nested shape from some endpoints
         raw?.list_id ?? // flat shape from "Get a list" endpoint
         raw?.id ?? // some responses use a flat id
