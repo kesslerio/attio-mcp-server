@@ -25,7 +25,7 @@
   "scripts": {
     "clean": "shx rm -rf dist test-dist",
     "build": "tsc && tsc-alias",
-    "postbuild": "shx chmod +x dist/*.js",
+    "postbuild": "shx chmod +x dist/*.js && shx mkdir -p dist/templates && shx cp -r src/templates/* dist/templates/",
     "prepare": "npm run build",
     "start:stdio": "node dist/cli.js",
     "start:http": "node dist/http.js",

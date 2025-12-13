@@ -91,6 +91,65 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Data Export**: JSON serialization for integrations
 - **Real-time Updates**: Live data synchronization with Attio
 
+### 🧠 **Workspace Schema Skill Generator** (#983)
+
+Auto-generate Claude Skills from your Attio workspace to eliminate LLM errors caused by unknown attribute values.
+
+**The Problem**: LLMs frequently make errors when working with Attio because they don't know:
+
+- Valid attribute names (Display Names vs API Slugs)
+- Valid select/status option values
+- Required vs optional fields
+- Multi-select vs single-select attributes
+- Complex type structures (location, personal-name, etc.)
+
+**The Solution**: One-command schema documentation generation:
+
+```bash
+# Generate Claude Skill for all Phase 1 objects and package as ZIP
+npx attio-discover generate-skill --all --zip
+
+# Output: ./output/attio-workspace-skill.zip (ready for Claude upload)
+```
+
+**Features**:
+
+- **Display Name ↔ API Slug Mapping**: Eliminates the #1 error source
+- **Select/Status Options**: Complete list of valid values (truncated at 20)
+- **Complex Type Structures**: Location (10 fields), personal-name, phone-number, email
+- **Field Indicators**: Multi-select (✓/✗), Required (✓/✗), Unique (✓/✗)
+- **3 Output Formats**: Claude Skill (.md), Markdown (single file), JSON (machine-readable)
+- **ZIP Packaging**: Ready for Claude desktop upload with --zip flag
+- **Experimental Objects**: Try custom objects with warning for non-Phase 1
+
+**Examples**:
+
+```bash
+# Generate for companies only
+npx attio-discover generate-skill --object companies
+
+# Generate as plain markdown (for non-Claude LLMs)
+npx attio-discover generate-skill --all --format markdown
+
+# Include archived options
+npx attio-discover generate-skill --all --include-archived
+
+# Custom output directory
+npx attio-discover generate-skill --all --output ./my-skills
+```
+
+**Generated Skill Structure**:
+
+```
+attio-workspace-skill/
+├── SKILL.md                        # Main skill with quick reference
+└── resources/
+    ├── attribute-reference.md      # Detailed attribute specs + options
+    └── complex-types.md            # Type structure examples
+```
+
+See [Workspace Schema Skill Generator](#workspace-schema-skill-generator-1) for complete documentation.
+
 ### 💬 **Pre-Built Prompts** (10 Prompts)
 
 Intelligent shortcuts that help Claude work faster with your CRM data:

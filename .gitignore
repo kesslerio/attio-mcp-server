@@ -25,6 +25,9 @@ dist/
 test-dist/
 .smithery/
 
+# Skill generator output
+output/
+
 # Log files
 *.log
 performance-report-22.x/
