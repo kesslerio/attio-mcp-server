@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Workspace Schema Skill Generator** (#983) - Auto-generate Claude Skills from Attio workspace schemas
+  - New CLI command `attio-discover generate-skill` for generating workspace schema documentation
+  - Supports companies, people, and deals (Phase 1 objects) with experimental support for custom objects
+  - Three output formats: Claude Skill (SKILL.md + resources/), Markdown (single file), and JSON
+  - Prominent Display Name ↔ API Slug mapping tables to address #1 LLM error source
+  - Select/status option values with 20-item truncation and "(+N more)" indicators
+  - Complex type structure documentation (location, personal-name, phone-number, email-address)
+  - Multi-select, unique, and required field indicators for accurate attribute usage
+  - ZIP packaging support (--zip flag) for easy Claude desktop upload
+  - Graceful error handling with partial data generation when individual objects fail
+  - Handlebars-based templating for clean separation of logic and presentation
+  - Security validation prevents directory traversal attacks
+  - Comprehensive unit tests for all services (45 tests total)
+
 ### Fixed
 
 - **Field persistence warnings no longer show false positives for status field updates** (#995)
