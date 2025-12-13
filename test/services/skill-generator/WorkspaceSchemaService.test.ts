@@ -24,10 +24,9 @@ const { AttributeOptionsService } = await import(
 
 describe('WorkspaceSchemaService', () => {
   let service: WorkspaceSchemaService;
-  const mockApiKey = 'test-api-key';
 
   beforeEach(() => {
-    service = new WorkspaceSchemaService(mockApiKey);
+    service = new WorkspaceSchemaService();
     vi.clearAllMocks();
   });
 

@@ -19,17 +19,16 @@ import type {
 
 /**
  * Service for fetching complete workspace schema data
+ *
+ * Note: API key flows through getLazyAttioClient() from environment/context,
+ * not through constructor dependency injection.
  */
 export class WorkspaceSchemaService {
-  private apiKey: string;
-
   /**
    * Creates a new WorkspaceSchemaService
-   *
-   * @param apiKey - Attio API key for authentication
    */
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  constructor() {
+    // No parameters needed - API key flows through getLazyAttioClient()
   }
 
   /**

@@ -85,7 +85,7 @@ export async function generateSkill(argv: GenerateSkillArgs): Promise<void> {
 
     // 5. Fetch workspace schema
     spinner.text = `Fetching workspace schema for ${objects.length} object(s)...`;
-    const schemaService = new WorkspaceSchemaService(apiKey);
+    const schemaService = new WorkspaceSchemaService();
     const schema = await schemaService.fetchSchema(objects, {
       maxOptionsPerAttribute: config.maxOptionsPerAttribute,
       includeArchived: config.includeArchived,
