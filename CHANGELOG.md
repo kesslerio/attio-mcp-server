@@ -19,6 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive test coverage for status field persistence scenarios
   - Resolves confusing warnings after successful updates (e.g., "Sales Qualified" stage updates)
 
+## [2025-12-13] - Daily Update
+
+### Fixed
+
+- **Field persistence false warnings for status fields** (#995, #1011) - Resolved spurious warnings when updating status field values
+  - Fixed unwrapArrayValue to properly handle both status and title field properties
+  - Improved isStatusField detection to recognize stage and status field variations
+  - Enhanced test coverage for status field update scenarios
+
+### Changed
+
+- **Consolidated metadata fetching and modularized UniversalUpdateService** (#984, #1006)
+  - Refactored metadata operations for improved maintainability
+  - Modularized UniversalUpdateService to separate concerns
+  - Unified metadata fetching approach across service
+
 ## [2025-12-12] - Daily Update
 
 ### Fixed
