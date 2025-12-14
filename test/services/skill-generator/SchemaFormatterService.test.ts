@@ -85,7 +85,8 @@ describe('SchemaFormatterService', () => {
 
       expect(result.format).toBe('skill');
       expect(result.files).toHaveProperty('SKILL.md');
-      expect(result.files).toHaveProperty('resources/attribute-reference.md');
+      expect(result.files).toHaveProperty('resources/companies-attributes.md');
+      expect(result.files).toHaveProperty('resources/people-attributes.md');
       expect(result.files).toHaveProperty('resources/complex-types.md');
     });
 
@@ -126,22 +127,21 @@ describe('SchemaFormatterService', () => {
       expect(skillMd).toMatch(/description:.*companies.*people/);
     });
 
-    it('should include Display Name → API Slug mapping table', async () => {
+    it('should include Display Name → API Slug mapping table in per-object files', async () => {
       const result = await service.format(mockSchema, 'skill');
-      const skillMd = result.files['SKILL.md'];
+      const companiesAttr = result.files['resources/companies-attributes.md'];
 
-      expect(skillMd).toContain('Display Name → API Slug Mapping');
-      expect(skillMd).toContain('### Companies');
-      expect(skillMd).toContain('| Name | `name`');
-      expect(skillMd).toContain('| Industry | `industry`');
+      expect(companiesAttr).toContain('Display Name → API Slug Mapping');
+      expect(companiesAttr).toContain('| Name | `name`');
+      expect(companiesAttr).toContain('| Industry | `industry`');
     });
 
-    it('should display checkmarks for boolean flags', async () => {
+    it('should display checkmarks for boolean flags in per-object files', async () => {
       const result = await service.format(mockSchema, 'skill');
-      const skillMd = result.files['SKILL.md'];
+      const companiesAttr = result.files['resources/companies-attributes.md'];
 
       // Name is required (✓), not unique (✗)
-      expect(skillMd).toMatch(/Name.*text.*✗.*✓.*✗/);
+      expect(companiesAttr).toMatch(/Name.*text.*✗.*✓.*✗/);
     });
 
     it('should include usage guidelines', async () => {
@@ -153,11 +153,12 @@ describe('SchemaFormatterService', () => {
       expect(skillMd).toContain('MCP discovery tools');
     });
 
-    it('should link to resources', async () => {
+    it('should link to per-object resources', async () => {
       const result = await service.format(mockSchema, 'skill');
       const skillMd = result.files['SKILL.md'];
 
-      expect(skillMd).toContain('resources/attribute-reference.md');
+      expect(skillMd).toContain('resources/companies-attributes.md');
+      expect(skillMd).toContain('resources/people-attributes.md');
       expect(skillMd).toContain('resources/complex-types.md');
     });
 
@@ -284,21 +285,21 @@ describe('SchemaFormatterService', () => {
   describe('attribute reference', () => {
     it('should include detailed attribute specifications', async () => {
       const result = await service.format(mockSchema, 'skill');
-      const attrRef = result.files['resources/attribute-reference.md'];
+      const companiesAttr = result.files['resources/companies-attributes.md'];
 
-      expect(attrRef).toContain('### Name (`name`)');
-      expect(attrRef).toContain('**Type**: `text`');
-      expect(attrRef).toContain('**Required**: Yes');
+      expect(companiesAttr).toContain('### Name (`name`)');
+      expect(companiesAttr).toContain('**Type**: `text`');
+      expect(companiesAttr).toContain('_(required)_');
     });
 
-    it('should include select options table', async () => {
+    it('should include inline select options', async () => {
       const result = await service.format(mockSchema, 'skill');
-      const attrRef = result.files['resources/attribute-reference.md'];
+      const companiesAttr = result.files['resources/companies-attributes.md'];
 
-      expect(attrRef).toContain('### Industry (`industry`)');
-      expect(attrRef).toContain('**Valid Options**');
-      expect(attrRef).toContain('| `opt1` | Technology | `technology` |');
-      expect(attrRef).toContain('| `opt2` | Healthcare | `healthcare` |');
+      expect(companiesAttr).toContain('### Industry (`industry`)');
+      expect(companiesAttr).toContain('**Options**:');
+      expect(companiesAttr).toContain('Technology');
+      expect(companiesAttr).toContain('Healthcare');
     });
 
     it('should show truncation warning when options are truncated', async () => {
@@ -330,20 +331,19 @@ describe('SchemaFormatterService', () => {
       };
 
       const result = await service.format(truncatedSchema, 'skill');
-      const attrRef = result.files['resources/attribute-reference.md'];
+      const companiesAttr = result.files['resources/companies-attributes.md'];
 
-      expect(attrRef).toContain('Showing 1 of 30 options');
-      expect(attrRef).toContain('records_get_attribute_options');
+      expect(companiesAttr).toContain('showing 1 of 30');
     });
 
     it('should include complex type structures', async () => {
       const result = await service.format(mockSchema, 'skill');
-      const attrRef = result.files['resources/attribute-reference.md'];
+      const peopleAttr = result.files['resources/people-attributes.md'];
 
-      expect(attrRef).toContain('### Name (`name`)');
-      expect(attrRef).toContain('**Structure**:');
-      expect(attrRef).toContain('first_name');
-      expect(attrRef).toContain('full_name');
+      expect(peopleAttr).toContain('### Name (`name`)');
+      expect(peopleAttr).toContain('**Structure**:');
+      expect(peopleAttr).toContain('first_name');
+      expect(peopleAttr).toContain('full_name');
     });
   });
 
@@ -386,7 +386,7 @@ describe('SchemaFormatterService', () => {
 
       // Should contain content from all templates
       expect(markdown).toContain('Display Name → API Slug Mapping');
-      expect(markdown).toContain('Detailed Attribute Reference');
+      expect(markdown).toContain('Detailed Specifications');
       expect(markdown).toContain('Complex Type Structures');
     });
 

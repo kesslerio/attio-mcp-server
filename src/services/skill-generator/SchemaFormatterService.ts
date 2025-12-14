@@ -74,10 +74,21 @@ export class SchemaFormatterService {
       );
     }
 
-    const attrRef = await this.renderTemplate(
-      'attribute-reference.template.md',
-      schema
-    );
+    // Generate per-object attribute files for progressive disclosure
+    // This enables Claude to load only the object it's working with (~2k tokens)
+    // instead of the entire monolithic file (~10k tokens)
+    // @see Issue #1014
+    const attributeFiles: Record<string, string> = {};
+
+    for (const obj of schema.objects) {
+      const objectSchema = { ...schema, objects: [obj] };
+      const attrMd = await this.renderTemplate(
+        'attribute-reference.template.md',
+        objectSchema
+      );
+      attributeFiles[`resources/${obj.objectSlug}-attributes.md`] = attrMd;
+    }
+
     const complexTypes = await this.renderTemplate(
       'complex-types.template.md',
       schema
@@ -87,7 +98,7 @@ export class SchemaFormatterService {
       format: 'skill',
       files: {
         'SKILL.md': skillMd,
-        'resources/attribute-reference.md': attrRef,
+        ...attributeFiles,
         'resources/complex-types.md': complexTypes,
       },
     };

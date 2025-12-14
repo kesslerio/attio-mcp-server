@@ -10,30 +10,20 @@ description: Use when working with Attio workspace data to know valid attributes
 
 ⚠️ **CRITICAL: Display Name vs API Slug**
 
-The #1 error source when working with Attio is using Display Names instead of API Slugs. **Always use the API Slug column below.**
+The #1 error source when working with Attio is using Display Names instead of API Slugs. **Always use API Slugs from the per-object files below.**
 
 ---
 
-## Quick Reference: Display Name → API Slug Mapping
+## Attribute Reference by Object
+
+**Only open the file for the object you're working with** (progressive disclosure):
 
 {{#each objects}}
 
-### {{displayName}}
+- {{displayName}}: [resources/{{objectSlug}}-attributes.md](resources/{{objectSlug}}-attributes.md)
+  {{/each}}
 
-| Display Name | API Slug | Type | Multi | Required | Unique |
-| ------------ | -------- | ---- | ----- | -------- | ------ |
-
-{{#each attributes}}
-| {{displayName}} | `{{apiSlug}}` | {{type}} | {{#if isMultiselect}}✓{{else}}✗{{/if}} | {{#if isRequired}}✓{{else}}✗{{/if}} | {{#if isUnique}}✓{{else}}✗{{/if}} |
-{{/each}}
-
-{{/each}}
-
----
-
-## Detailed Attribute Reference
-
-See [resources/attribute-reference.md](resources/attribute-reference.md) for:
+Each file contains:
 
 - Select/status option values
 - Complete attribute specifications
@@ -60,9 +50,9 @@ See [resources/complex-types.md](resources/complex-types.md) for:
    - Multi-select (✓): Send array `["value1", "value2"]`
    - Single-select (✗): Send string `"value1"`
 
-3. **Use exact option values** from the tables
-   - Values are case-sensitive
-   - Use the "Value" column, not "Title"
+3. **Use exact option titles (slugs)** from the tables
+   - Per Attio docs, select option slugs are the title field
+   - Case-sensitive
 
 4. **Complex types require specific object structures**
    - Location: All 10 fields must be present (use `null` for empty)
