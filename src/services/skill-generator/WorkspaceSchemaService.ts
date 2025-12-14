@@ -118,9 +118,22 @@ export class WorkspaceSchemaService {
           attributeSchema.options = optionsResult.options
             .slice(0, options.maxOptionsPerAttribute)
             .map((opt) => ({
-              id: opt.id || '',
+              // Handle nested ID objects from Attio API
+              // API returns: { workspace_id, object_id, attribute_id, option_id }
+              id:
+                typeof opt.id === 'object' &&
+                opt.id !== null &&
+                'option_id' in opt
+                  ? (opt.id as any).option_id || ''
+                  : (opt.id as string) || '',
               title: opt.title,
-              value: opt.value,
+              // Handle value field (may also be nested in some cases)
+              value:
+                typeof opt.value === 'object' &&
+                opt.value !== null &&
+                'value' in opt
+                  ? (opt.value as any).value || ''
+                  : opt.value || '',
               isArchived: 'is_archived' in opt ? opt.is_archived : false,
             }));
 
