@@ -63,6 +63,17 @@ export class SchemaFormatterService {
     schema: WorkspaceSchema
   ): Promise<FormattedOutput> {
     const skillMd = await this.renderTemplate('SKILL.template.md', schema);
+
+    // Validate Claude Skill description length requirement (≤200 chars)
+    const descMatch = skillMd.match(/^description:\s*(.+)$/m);
+    if (descMatch && descMatch[1].length > 200) {
+      throw new Error(
+        `Skill description exceeds 200 characters (${descMatch[1].length} chars). ` +
+          `Claude Skills require descriptions ≤200 chars. ` +
+          `Try reducing the number of objects or simplifying the description.`
+      );
+    }
+
     const attrRef = await this.renderTemplate(
       'attribute-reference.template.md',
       schema

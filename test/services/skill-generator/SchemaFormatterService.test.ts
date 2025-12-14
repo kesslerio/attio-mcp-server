@@ -160,6 +160,125 @@ describe('SchemaFormatterService', () => {
       expect(skillMd).toContain('resources/attribute-reference.md');
       expect(skillMd).toContain('resources/complex-types.md');
     });
+
+    it('should accept description ≤200 chars', async () => {
+      // Default mock has 2 objects (companies, people) → ~129 chars
+      const result = await service.format(mockSchema, 'skill');
+      const skillMd = result.files['SKILL.md'];
+
+      // Extract description from YAML frontmatter
+      const descMatch = skillMd.match(/^description:\s*(.+)$/m);
+      expect(descMatch).toBeTruthy();
+      expect(descMatch![1].length).toBeLessThanOrEqual(200);
+    });
+
+    it('should reject description >200 chars', async () => {
+      // Create schema with many objects to exceed 200 chars
+      const manyObjectsSchema: WorkspaceSchema = {
+        metadata: {
+          generatedAt: '2025-12-12T00:00:00.000Z',
+          workspace: 'test',
+          objects: [
+            'companies',
+            'people',
+            'deals',
+            'custom1',
+            'custom2',
+            'custom3',
+            'custom4',
+            'custom5',
+            'custom6',
+            'custom7',
+            'custom8',
+            'custom9',
+            'custom10',
+            'custom11',
+            'custom12',
+          ],
+        },
+        objects: [
+          {
+            objectSlug: 'companies',
+            displayName: 'Companies',
+            attributes: [],
+          },
+          {
+            objectSlug: 'people',
+            displayName: 'People',
+            attributes: [],
+          },
+          {
+            objectSlug: 'deals',
+            displayName: 'Deals',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom1',
+            displayName: 'Custom1',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom2',
+            displayName: 'Custom2',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom3',
+            displayName: 'Custom3',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom4',
+            displayName: 'Custom4',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom5',
+            displayName: 'Custom5',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom6',
+            displayName: 'Custom6',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom7',
+            displayName: 'Custom7',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom8',
+            displayName: 'Custom8',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom9',
+            displayName: 'Custom9',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom10',
+            displayName: 'Custom10',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom11',
+            displayName: 'Custom11',
+            attributes: [],
+          },
+          {
+            objectSlug: 'custom12',
+            displayName: 'Custom12',
+            attributes: [],
+          },
+        ],
+      };
+
+      await expect(service.format(manyObjectsSchema, 'skill')).rejects.toThrow(
+        /exceeds 200 characters/
+      );
+    });
   });
 
   describe('attribute reference', () => {
