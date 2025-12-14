@@ -18,6 +18,28 @@ import type {
 } from './types.js';
 
 /**
+ * Represents a nested option ID object returned by Attio API
+ * @see Issue #1014
+ */
+interface NestedOptionId {
+  option_id: string;
+  workspace_id?: string;
+  object_id?: string;
+  attribute_id?: string;
+}
+
+/**
+ * Type guard to check if an ID is a nested option ID object
+ * Attio API returns option IDs as nested objects: {workspace_id, object_id, attribute_id, option_id}
+ * @param id - The ID value to check
+ * @returns True if the ID is a nested option ID object
+ * @see Issue #1014
+ */
+function isNestedOptionId(id: unknown): id is NestedOptionId {
+  return typeof id === 'object' && id !== null && 'option_id' in id;
+}
+
+/**
  * Service for fetching complete workspace schema data
  *
  * Note: API key flows through getLazyAttioClient() from environment/context,
@@ -120,20 +142,18 @@ export class WorkspaceSchemaService {
             .map((opt) => ({
               // Handle nested ID objects from Attio API
               // API returns: { workspace_id, object_id, attribute_id, option_id }
-              id:
-                typeof opt.id === 'object' &&
-                opt.id !== null &&
-                'option_id' in opt
-                  ? (opt.id as any).option_id || ''
-                  : (opt.id as string) || '',
+              id: isNestedOptionId(opt.id)
+                ? opt.id.option_id
+                : typeof opt.id === 'string'
+                  ? opt.id
+                  : '',
               title: opt.title,
               // Handle value field (may also be nested in some cases)
-              value:
-                typeof opt.value === 'object' &&
-                opt.value !== null &&
-                'value' in opt
-                  ? (opt.value as any).value || ''
-                  : opt.value || '',
+              value: isNestedOptionId(opt.value)
+                ? opt.value.option_id
+                : typeof opt.value === 'string'
+                  ? opt.value
+                  : '',
               isArchived: 'is_archived' in opt ? opt.is_archived : false,
             }));
 
@@ -159,11 +179,11 @@ export class WorkspaceSchemaService {
         );
       }
 
-      // 5. Add relationship metadata
-      if (metadata.relationship) {
+      // 5. Add relationship metadata (only when we have real data)
+      if (metadata.relationship?.object && metadata.relationship?.cardinality) {
         attributeSchema.relationship = {
-          targetObject: metadata.relationship.object || 'unknown',
-          cardinality: metadata.relationship.cardinality || 'unknown',
+          targetObject: metadata.relationship.object,
+          cardinality: metadata.relationship.cardinality,
         };
       }
 
