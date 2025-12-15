@@ -20,7 +20,8 @@ import zipfile
 from pathlib import Path
 from typing import List, Tuple
 
-# Import validation from quick_validate
+# Add script directory to path for imports when run from different directories
+sys.path.insert(0, str(Path(__file__).parent))
 from quick_validate import validate_skill
 
 

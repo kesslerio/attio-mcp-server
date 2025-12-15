@@ -89,13 +89,29 @@ Structure the discovered data as JSON for the generator:
 
 ### Step 3: Run the Generator
 
-Execute the generator script with the workspace schema:
+Execute the generator script with the workspace schema.
+
+**Recommended: Use file-based input** (avoids shell escaping issues with large JSON):
+
+```bash
+# Save schema to file first
+echo '<JSON from Step 2>' > workspace-schema.json
+
+# Run generator with file input
+python scripts/generator.py \
+  --use-case lead-qualification \
+  --name acme-lead-qualification \
+  --workspace-schema-file workspace-schema.json \
+  --output ./generated-skills
+```
+
+**Alternative: Inline JSON** (only for small schemas):
 
 ```bash
 python scripts/generator.py \
   --use-case lead-qualification \
   --name acme-lead-qualification \
-  --workspace-schema '<JSON from Step 2>' \
+  --workspace-schema '{"objects": {...}}' \
   --output ./generated-skills
 ```
 
@@ -103,7 +119,8 @@ python scripts/generator.py \
 
 - `--use-case`: One of `lead-qualification`, `deal-management`, `customer-onboarding`
 - `--name`: Skill name (hyphen-case, max 64 chars)
-- `--workspace-schema`: JSON string with workspace data
+- `--workspace-schema-file`: Path to JSON file with workspace data (recommended)
+- `--workspace-schema`: JSON string with workspace data (alternative for small schemas)
 - `--output`: Output directory (default: `./generated-skills`)
 
 ### Step 4: Preview Generated Skill

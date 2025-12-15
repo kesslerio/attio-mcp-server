@@ -118,8 +118,16 @@ def load_use_case_config(use_case: str) -> Dict[str, Any]:
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
 
-    # Merge with base config
-    return {**USE_CASES[use_case], **config}
+    # Merge with base config, protecting critical fields
+    # Only allow YAML to override specific fields, not core identity
+    base = USE_CASES[use_case].copy()
+    protected_fields = {'config_file'}  # Fields that should not be overwritten
+
+    for key, value in config.items():
+        if key not in protected_fields:
+            base[key] = value
+
+    return base
 
 
 def load_template(template_name: str) -> str:
@@ -254,6 +262,17 @@ def generate_skill(
     """
     # Load use-case config
     use_case_config = load_use_case_config(use_case)
+
+    # Validate skill name for path traversal
+    if '/' in skill_name or '\\' in skill_name or '..' in skill_name:
+        raise ValueError("Skill name cannot contain path separators or '..'")
+
+    # Require chevron for full template rendering
+    if not HAS_CHEVRON:
+        raise RuntimeError(
+            "chevron package required for template rendering. "
+            "Install with: pip install chevron"
+        )
 
     # Build context
     context = build_context(use_case_config, workspace_schema, skill_name)

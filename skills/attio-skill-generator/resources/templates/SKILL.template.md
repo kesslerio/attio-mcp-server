@@ -59,7 +59,7 @@ This workflow primarily operates on **{{workspace.primary_object}}** records.
 {{description}}
 
 {{#tools}}
-**Tools**: {{#tools}}`{{.}}`{{^last}}, {{/last}}{{/tools}}
+**Tools**: `{{.}}`
 {{/tools}}
 
 {{/use_case.workflow_steps}}
