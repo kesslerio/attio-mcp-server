@@ -41,17 +41,24 @@ Use this skill when you want to:
 | `deal-management`     | deals                 | deals            |
 | `customer-onboarding` | companies             | companies        |
 
-**Option A: Read from attio-workspace-schema skill (preferred)**
+**FIRST: Check for attio-workspace-schema skill**
 
-If the user has the `attio-workspace-schema` skill installed:
+Before using MCP tools, check if the `attio-workspace-schema` skill is installed by looking for its resource files.
 
-1. Read ONLY the primary object's resource file (e.g., `resources/deals-attributes.md` for deal-management)
+**Option A: Use attio-workspace-schema skill (PREFERRED - faster, no API calls)**
+
+If `attio-workspace-schema` skill exists:
+
+1. Read ONLY the primary object's resource file:
+   - `deal-management` → read `resources/deals-attributes.md`
+   - `lead-qualification` → read `resources/companies-attributes.md`
+   - `customer-onboarding` → read `resources/companies-attributes.md`
 2. Extract attributes and select/status options for that object
 3. Build JSON schema structure
 
-**Option B: Query MCP tools (fallback)**
+**Option B: Query MCP tools (FALLBACK - only if no schema skill)**
 
-If no schema skill is available:
+If `attio-workspace-schema` skill is NOT available:
 
 ```
 1. Call records_discover_attributes for the PRIMARY OBJECT ONLY
