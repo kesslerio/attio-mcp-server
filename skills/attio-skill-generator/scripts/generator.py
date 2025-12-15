@@ -292,6 +292,21 @@ def build_context(
     primary_object_data['attributes'] = attributes
     primary_object_data['has_attributes'] = bool(attributes)
 
+    # Extract attributes with options (status/select fields) for separate rendering
+    option_types = {'status', 'select'}
+    attributes_with_options = []
+    for attr in attributes:
+        if attr.get('type') in option_types and attr.get('options'):
+            # Format options as bullet list
+            options = attr.get('options', [])
+            options_list = [f"- `{opt.get('title', opt.get('name', 'Unknown'))}`" for opt in options]
+            attr_copy = attr.copy()
+            attr_copy['options_formatted'] = '\n'.join(options_list)
+            attributes_with_options.append(attr_copy)
+
+    primary_object_data['attributes_with_options'] = attributes_with_options
+    primary_object_data['has_options'] = bool(attributes_with_options)
+
     # Pre-join tools in workflow steps for cleaner template output
     workflow_steps = use_case_config.get('workflow_steps', [])
     for step in workflow_steps:

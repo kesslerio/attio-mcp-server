@@ -49,6 +49,16 @@ This workflow primarily operates on **{{workspace.primary_object}}** records.
 | `{{api_slug}}` | {{type}} | {{#is_required}}Yes{{/is_required}}{{^is_required}}No{{/is_required}} | {{#is_multiselect}}Yes{{/is_multiselect}}{{^is_multiselect}}No{{/is_multiselect}} |
 {{/workspace.primary_object_data.attributes}}
 {{/workspace.primary_object_data.has_attributes}}
+{{#workspace.primary_object_data.has_options}}
+
+### Status & Select Options
+
+{{#workspace.primary_object_data.attributes_with_options}}
+**{{api_slug}}** ({{type}}):
+{{options_formatted}}
+
+{{/workspace.primary_object_data.attributes_with_options}}
+{{/workspace.primary_object_data.has_options}}
 
 ## Workflow Overview
 
