@@ -258,7 +258,17 @@ def build_context(
     """
     # Extract objects from workspace schema
     objects = workspace_schema.get('objects', {})
-    lists = workspace_schema.get('lists', [])
+    all_lists = workspace_schema.get('lists', [])
+
+    # Get primary object for filtering
+    primary_obj = use_case_config.get('primary_object', 'companies')
+
+    # Filter lists to only those matching the primary object
+    # This ensures deal-management only shows deal lists, not company lists
+    lists = [
+        lst for lst in all_lists
+        if lst.get('parent_object') == primary_obj
+    ]
 
     # Build object list for templates
     object_list = []
@@ -271,7 +281,6 @@ def build_context(
         object_list.append(obj_entry)
 
     # Get primary object data with computed flags for templates
-    primary_obj = use_case_config.get('primary_object', 'companies')
     primary_object_data = objects.get(primary_obj, {}).copy()
     attributes = primary_object_data.get('attributes', [])
     primary_object_data['has_attributes'] = bool(attributes)

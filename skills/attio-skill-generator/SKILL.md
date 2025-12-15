@@ -19,24 +19,34 @@ Use this skill when you want to:
 
 ## Available Use Cases
 
-| Use Case              | Primary Object | Description                          |
-| --------------------- | -------------- | ------------------------------------ |
-| `lead-qualification`  | companies      | Qualify and score inbound leads      |
-| `deal-management`     | deals          | Manage deals through pipeline stages |
-| `customer-onboarding` | companies      | Structured onboarding workflows      |
+| Use Case              | Primary Object | Related Objects   | Description                          |
+| --------------------- | -------------- | ----------------- | ------------------------------------ |
+| `lead-qualification`  | companies      | people            | Qualify and score inbound leads      |
+| `deal-management`     | deals          | companies, people | Manage deals through pipeline stages |
+| `customer-onboarding` | companies      | people, deals     | Structured onboarding workflows      |
 
 ## Generation Process
 
-### Step 1: Gather Workspace Schema
+### Step 1: Gather Workspace Schema (Targeted)
 
-**You (Claude) must discover the workspace schema** before running the generator. The Python scripts are sandboxed and cannot access APIs or MCP tools.
+**You (Claude) must discover the workspace schema** for the **specific use-case**. The Python scripts are sandboxed and cannot access APIs or MCP tools.
+
+**IMPORTANT: Gather data for the PRIMARY OBJECT only.** Do not gather full schemas for all objects.
+
+**Determine what to gather based on use-case:**
+
+| Use Case              | Gather Attributes For | Gather Lists For |
+| --------------------- | --------------------- | ---------------- |
+| `lead-qualification`  | companies             | companies        |
+| `deal-management`     | deals                 | deals            |
+| `customer-onboarding` | companies             | companies        |
 
 **Option A: Read from attio-workspace-schema skill (preferred)**
 
 If the user has the `attio-workspace-schema` skill installed:
 
-1. Read `resources/companies-attributes.md`, `resources/people-attributes.md`, `resources/deals-attributes.md`
-2. Extract object slugs, attributes, and select/status options
+1. Read ONLY the primary object's resource file (e.g., `resources/deals-attributes.md` for deal-management)
+2. Extract attributes and select/status options for that object
 3. Build JSON schema structure
 
 **Option B: Query MCP tools (fallback)**
@@ -44,45 +54,61 @@ If the user has the `attio-workspace-schema` skill installed:
 If no schema skill is available:
 
 ```
-1. Call records_discover_attributes for each object (companies, people, deals)
-2. Call get-lists to discover available lists
-3. For select/status fields, call records_get_attribute_options
-4. Build JSON schema structure from responses
+1. Call records_discover_attributes for the PRIMARY OBJECT ONLY
+   - deal-management → records_discover_attributes for "deals"
+   - lead-qualification → records_discover_attributes for "companies"
+   - customer-onboarding → records_discover_attributes for "companies"
+
+2. Call get-lists, then FILTER results to only lists where parent_object matches primary object
+   - deal-management → only include lists with parent_object="deals"
+   - lead-qualification → only include lists with parent_object="companies"
+
+3. For select/status fields on the primary object, call records_get_attribute_options
 ```
+
+**Do NOT gather:**
+
+- Full attribute schemas for secondary/related objects (companies, people for deal-management)
+- Lists for other object types (e.g., company lists when generating deal-management skill)
+
+**Note on related objects:** Deal management involves linked companies and people, but these relationships are handled through record-reference fields on the deals object. You don't need full attribute lists for related objects.
 
 ### Step 2: Build Schema JSON
 
-Structure the discovered data as JSON for the generator:
+Structure the discovered data as JSON for the generator. **Include only the primary object:**
 
 ```json
 {
   "objects": {
-    "companies": {
-      "display_name": "Companies",
+    "deals": {
+      "display_name": "Deals",
       "attributes": [
         {
           "api_slug": "name",
-          "display_name": "Name",
+          "display_name": "Deal Name",
           "type": "text",
-          "is_multiselect": false,
-          "is_required": true,
-          "is_writable": true
+          "is_required": true
         },
         {
-          "api_slug": "lead_status",
-          "display_name": "Lead Status",
+          "api_slug": "stage",
+          "display_name": "Stage",
           "type": "status",
           "options": [
-            { "title": "New", "id": "uuid-1" },
-            { "title": "Qualified", "id": "uuid-2" }
+            { "title": "Discovery", "id": "uuid-1" },
+            { "title": "Negotiation", "id": "uuid-2" },
+            { "title": "Closed Won", "id": "uuid-3" }
           ]
+        },
+        {
+          "api_slug": "associated_company",
+          "display_name": "Company",
+          "type": "record-reference"
         }
       ]
     }
   },
   "lists": [
-    { "name": "Prospecting", "id": "uuid", "parent_object": "companies" },
-    { "name": "Active Deals", "id": "uuid", "parent_object": "deals" }
+    { "name": "Active Pipeline", "id": "uuid", "parent_object": "deals" }
   ]
 }
 ```
@@ -166,26 +192,28 @@ Provide the user with:
 
 ## Example Interaction
 
-**User:** "Generate a lead qualification skill for my workspace"
+**User:** "Use attio-skill-generator to create a Deal Management skill for my workspace"
 
 **Claude:**
 
-1. First, let me discover your workspace schema...
-   - [Calls `records_discover_attributes` for companies, people]
-   - [Calls `get-lists` to find available lists]
-2. Building workspace schema JSON...
+1. I'll generate a Deal Management skill. Let me gather your deals schema...
+   - [Calls `records_discover_attributes` for **deals only**]
+   - [Calls `get-lists`, filters to **parent_object="deals" only**]
+2. Building workspace schema JSON with deals attributes and deal lists...
 3. Running generator:
    ```bash
-   python scripts/generator.py --use-case lead-qualification --name my-lead-qualification --workspace-schema '...'
+   python scripts/generator.py --use-case deal-management --name my-deal-management --workspace-schema-file schema.json
    ```
 4. Here's the generated skill preview:
-   [Shows SKILL.md content]
+   [Shows SKILL.md content with deal stages, attributes, and deal-specific lists]
 5. Does this look correct? I can modify it before packaging.
 6. Packaging skill...
    ```bash
-   python scripts/package_skill.py ./generated-skills/my-lead-qualification
+   python scripts/package_skill.py ./generated-skills/my-deal-management
    ```
-7. Your skill is ready: `./my-lead-qualification.skill`
+7. Your skill is ready: `./my-deal-management.skill`
+
+**Note:** The skill will include record-reference fields (associated_company, contacts) that link to companies and people, but without documenting those objects' full schemas.
 
 ## Template Customization
 

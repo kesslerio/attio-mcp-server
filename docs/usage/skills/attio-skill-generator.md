@@ -74,19 +74,22 @@ Use attio-skill-generator to create a lead qualification skill called "acme-lead
 ### What Claude Will Do
 
 1. Activate the `attio-skill-generator` skill
-2. Discover your workspace schema using MCP tools
-3. Build the schema JSON with your attributes and lists
-4. Generate a customized skill tailored to your workspace
-5. Show you a preview for approval
-6. Package it as a `.skill` file for import
+2. Identify the **primary object** for your use-case (e.g., `deals` for Deal Management)
+3. Discover attributes for that **primary object only** (not all objects)
+4. Find lists specific to that object type (e.g., deal lists, not company lists)
+5. Generate a customized skill tailored to your workspace
+6. Show you a preview for approval
+7. Package it as a `.skill` file for import
+
+**Note:** Related objects (e.g., companies linked to deals) are referenced through record-reference fields, but their full schemas are not gathered.
 
 ### Available Use Cases
 
-| Use Case            | Primary Object | Description                          |
-| ------------------- | -------------- | ------------------------------------ |
-| Lead Qualification  | companies      | Score and qualify inbound leads      |
-| Deal Management     | deals          | Manage deals through pipeline stages |
-| Customer Onboarding | companies      | Structured onboarding workflows      |
+| Use Case            | Primary Object | Related Objects   | Description                          |
+| ------------------- | -------------- | ----------------- | ------------------------------------ |
+| Lead Qualification  | companies      | people            | Score and qualify inbound leads      |
+| Deal Management     | deals          | companies, people | Manage deals through pipeline stages |
+| Customer Onboarding | companies      | people, deals     | Structured onboarding workflows      |
 
 ## Manual Generation
 
