@@ -7,6 +7,12 @@ const originalLogLevel = process.env.MCP_LOG_LEVEL;
 vi.mock('@/utils/logger.js', () => ({
   debug: vi.fn(),
   error: vi.fn(),
+  createScopedLogger: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
   OperationType: {
     API_CALL: 'API_CALL',
     SYSTEM: 'SYSTEM',

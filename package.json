@@ -25,7 +25,7 @@
   "scripts": {
     "clean": "shx rm -rf dist test-dist",
     "build": "tsc && tsc-alias",
-    "postbuild": "shx chmod +x dist/*.js",
+    "postbuild": "shx chmod +x dist/*.js && shx mkdir -p dist/templates && shx cp -r src/templates/* dist/templates/",
     "prepare": "npm run build",
     "start:stdio": "node dist/cli.js",
     "start:http": "node dist/http.js",
@@ -106,6 +106,7 @@
     "discover:robust": "./scripts/run-discover.sh",
     "discover:attributes:robust": "./scripts/run-discover.sh attributes",
     "discover:all-attributes:robust": "./scripts/run-discover.sh attributes --all",
+    "skill:generate": "attio-discover generate-skill --all",
     "debug:list-members": "node --import tsx scripts/debug/list-workspace-members.ts",
     "debug:create-test-list": "node --import tsx scripts/debug/create-test-list.ts",
     "debug:cleanup-test-list": "node --import tsx scripts/debug/cleanup-test-list.ts",
