@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Universal Usage Guide Skill** (#1018) - Hand-crafted skill for workflow patterns and error prevention
+  - Universal workflow patterns (Find or Create, Batch Update, Pipeline Movement, Data Enrichment)
+  - Golden Rules error prevention system (read-only fields, multi-select arrays, data types, UUID validation)
+  - Complete MCP tool reference with signatures and examples for all tools
+  - Integration patterns for deals pipeline, list-based organization, lead qualification, bulk import
+  - Object-agnostic design supporting companies, deals, people, lists, and custom objects
+  - Cross-references to attio-workspace-schema skill for workspace-specific details
+  - Two-skill architecture: Schema skill (WHAT) + Usage skill (HOW)
+
 - **Workspace Schema Skill Generator** (#983) - Auto-generate Claude Skills from Attio workspace schemas
   - New CLI command `attio-discover generate-skill` for generating workspace schema documentation
   - Supports companies, people, and deals (Phase 1 objects) with experimental support for custom objects
