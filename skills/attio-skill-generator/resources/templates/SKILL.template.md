@@ -38,7 +38,7 @@ Use this skill when you need to:
 
 This workflow primarily operates on **{{workspace.primary_object}}** records.
 
-{{#workspace.primary_object_data.attributes}}
+{{#workspace.primary_object_data.has_attributes}}
 
 ### Key Attributes
 
@@ -48,7 +48,7 @@ This workflow primarily operates on **{{workspace.primary_object}}** records.
 {{#workspace.primary_object_data.attributes}}
 | `{{api_slug}}` | {{type}} | {{#is_required}}Yes{{/is_required}}{{^is_required}}No{{/is_required}} | {{#is_multiselect}}Yes{{/is_multiselect}}{{^is_multiselect}}No{{/is_multiselect}} |
 {{/workspace.primary_object_data.attributes}}
-{{/workspace.primary_object_data.attributes}}
+{{/workspace.primary_object_data.has_attributes}}
 
 ## Workflow Overview
 
@@ -66,19 +66,17 @@ This workflow primarily operates on **{{workspace.primary_object}}** records.
 
 ## Lists
 
-{{#workspace.lists}}
-{{#.}}
+{{#workspace.has_lists}}
 | List | Object | ID |
 |------|--------|-----|
 {{#workspace.lists}}
 | {{name}} | {{parent_object}} | `{{id}}` |
 {{/workspace.lists}}
-{{/.}}
-{{/workspace.lists}}
-{{^workspace.lists}}
+{{/workspace.has_lists}}
+{{^workspace.has_lists}}
 
 > Use `get-lists` MCP tool to discover available lists for your workspace.
-> {{/workspace.lists}}
+> {{/workspace.has_lists}}
 
 ## Key Principles
 

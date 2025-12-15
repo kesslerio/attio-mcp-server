@@ -185,6 +185,8 @@ def render_template(template: str, context: Dict[str, Any]) -> str:
     """
     Render a Handlebars template with the given context.
 
+    Requires chevron package for Mustache/Handlebars templating.
+
     Args:
         template: Template string
         context: Context dictionary for rendering
@@ -192,32 +194,50 @@ def render_template(template: str, context: Dict[str, Any]) -> str:
     Returns:
         Rendered template string
     """
-    if HAS_CHEVRON:
-        return chevron.render(template, context)
-
-    # Basic fallback: simple variable replacement
-    # This handles {{variable}} but not {{#each}} or {{#if}}
-    result = template
-    for key, value in _flatten_context(context).items():
-        placeholder = '{{' + key + '}}'
-        if isinstance(value, str):
-            result = result.replace(placeholder, value)
-        elif isinstance(value, (int, float)):
-            result = result.replace(placeholder, str(value))
-
-    return result
+    # chevron is required - checked at startup via HAS_CHEVRON fail-fast
+    return chevron.render(template, context)
 
 
-def _flatten_context(context: Dict[str, Any], prefix: str = '') -> Dict[str, Any]:
-    """Flatten nested dictionary for simple template replacement."""
-    result = {}
-    for key, value in context.items():
-        full_key = f"{prefix}.{key}" if prefix else key
-        if isinstance(value, dict):
-            result.update(_flatten_context(value, full_key))
-        else:
-            result[full_key] = value
-    return result
+def validate_workspace_schema(
+    workspace_schema: Dict[str, Any],
+    primary_object: str
+) -> List[str]:
+    """
+    Validate workspace schema has required data for skill generation.
+
+    Args:
+        workspace_schema: Workspace schema dictionary
+        primary_object: The primary object type for the use case
+
+    Returns:
+        List of warning messages (empty if fully valid)
+
+    Raises:
+        ValueError: If critical schema data is missing
+    """
+    warnings: List[str] = []
+
+    objects = workspace_schema.get('objects', {})
+
+    # Critical: primary object must exist in schema
+    if primary_object not in objects:
+        raise ValueError(
+            f"Workspace schema missing primary object '{primary_object}'. "
+            f"Available objects: {', '.join(objects.keys()) or 'none'}. "
+            f"Please run records_discover_attributes for '{primary_object}' first."
+        )
+
+    primary_data = objects.get(primary_object, {})
+
+    # Warning: primary object should have attributes
+    attributes = primary_data.get('attributes', [])
+    if not attributes:
+        warnings.append(
+            f"Primary object '{primary_object}' has no attributes. "
+            f"The generated skill will have limited field documentation."
+        )
+
+    return warnings
 
 
 def build_context(
@@ -250,9 +270,11 @@ def build_context(
         }
         object_list.append(obj_entry)
 
-    # Get primary object data
+    # Get primary object data with computed flags for templates
     primary_obj = use_case_config.get('primary_object', 'companies')
-    primary_object_data = objects.get(primary_obj, {})
+    primary_object_data = objects.get(primary_obj, {}).copy()
+    attributes = primary_object_data.get('attributes', [])
+    primary_object_data['has_attributes'] = bool(attributes)
 
     return {
         'skill_name': skill_name,
@@ -261,6 +283,7 @@ def build_context(
         'workspace': {
             'objects': object_list,
             'lists': lists,
+            'has_lists': bool(lists),
             'primary_object': primary_obj,
             'primary_object_data': primary_object_data
         },
@@ -295,6 +318,12 @@ def generate_skill(
 
     # Validate skill name (security + format)
     validate_skill_name(skill_name)
+
+    # Validate workspace schema has required data
+    primary_object = use_case_config.get('primary_object', 'companies')
+    schema_warnings = validate_workspace_schema(workspace_schema, primary_object)
+    for warning in schema_warnings:
+        print(f"Warning: {warning}", file=sys.stderr)
 
     # Require chevron for full template rendering
     if not HAS_CHEVRON:
@@ -579,11 +608,11 @@ Available use cases:
             output_dir=Path(args.output)
         )
 
-        print(f"Skill generated: {skill_path}")
-        print("\nNext steps:")
-        print(f"  1. Review: cat {skill_path}/SKILL.md")
-        print(f"  2. Validate: python quick_validate.py {skill_path}")
-        print(f"  3. Package: python package_skill.py {skill_path}")
+        print(f"Skill generated: {skill_path}", file=sys.stderr)
+        print("\nNext steps:", file=sys.stderr)
+        print(f"  1. Review: cat {skill_path}/SKILL.md", file=sys.stderr)
+        print(f"  2. Validate: python quick_validate.py {skill_path}", file=sys.stderr)
+        print(f"  3. Package: python package_skill.py {skill_path}", file=sys.stderr)
         return 0
 
     except Exception as e:
