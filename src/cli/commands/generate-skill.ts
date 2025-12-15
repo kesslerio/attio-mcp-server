@@ -139,6 +139,12 @@ export async function generateSkill(argv: GenerateSkillArgs): Promise<void> {
         chalk.green('  ✓ ZIP package ready for Claude upload!') + '\n'
       );
     }
+
+    // Force process exit to prevent TTLCache interval from hanging
+    // @see Issue #1014 - TTLCache cleanup interval keeps event loop alive
+    setTimeout(() => {
+      process.exit(0);
+    }, 100);
   } catch (error: unknown) {
     spinner.fail(
       chalk.red(

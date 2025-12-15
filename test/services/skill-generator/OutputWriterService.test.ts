@@ -46,7 +46,7 @@ describe('OutputWriterService', () => {
         format: 'skill',
         files: {
           'SKILL.md': '# Test Skill',
-          'resources/attribute-reference.md': '# Attributes',
+          'resources/companies-attributes.md': '# Companies Attributes',
           'resources/complex-types.md': '# Complex Types',
         },
       };
@@ -66,7 +66,7 @@ describe('OutputWriterService', () => {
       expect(result.format).toBe('skill');
       expect(result.files).toHaveLength(3);
       expect(result.files).toContain('SKILL.md');
-      expect(result.files).toContain('resources/attribute-reference.md');
+      expect(result.files).toContain('resources/companies-attributes.md');
       expect(result.files).toContain('resources/complex-types.md');
 
       // Verify files exist on disk

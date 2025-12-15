@@ -40,6 +40,20 @@ function isNestedOptionId(id: unknown): id is NestedOptionId {
 }
 
 /**
+ * Generates a slug-style value from an option title
+ * Converts "Existing Customer" → "existing_customer"
+ * @param title - The option title
+ * @returns Slug-style value
+ * @see Issue #1014
+ */
+function generateOptionValue(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_') // Replace non-alphanumeric with underscore
+    .replace(/^_+|_+$/g, ''); // Trim leading/trailing underscores
+}
+
+/**
  * Service for fetching complete workspace schema data
  *
  * Note: API key flows through getLazyAttioClient() from environment/context,
@@ -148,12 +162,9 @@ export class WorkspaceSchemaService {
                   ? opt.id
                   : '',
               title: opt.title,
-              // Handle value field (may also be nested in some cases)
-              value: isNestedOptionId(opt.value)
-                ? opt.value.option_id
-                : typeof opt.value === 'string'
-                  ? opt.value
-                  : '',
+              // Generate slug-style value from title since Attio API doesn't provide it
+              // "Existing Customer" → "existing_customer"
+              value: generateOptionValue(opt.title),
               isArchived: 'is_archived' in opt ? opt.is_archived : false,
             }));
 

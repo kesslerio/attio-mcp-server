@@ -106,6 +106,7 @@
     "discover:robust": "./scripts/run-discover.sh",
     "discover:attributes:robust": "./scripts/run-discover.sh attributes",
     "discover:all-attributes:robust": "./scripts/run-discover.sh attributes --all",
+    "skill:generate": "node scripts/generate-skill-local.mjs",
     "debug:list-members": "node --import tsx scripts/debug/list-workspace-members.ts",
     "debug:create-test-list": "node --import tsx scripts/debug/create-test-list.ts",
     "debug:cleanup-test-list": "node --import tsx scripts/debug/cleanup-test-list.ts",

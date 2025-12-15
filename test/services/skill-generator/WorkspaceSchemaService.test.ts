@@ -236,6 +236,80 @@ describe('WorkspaceSchemaService', () => {
       expect(industryAttr?.totalOptions).toBe(30);
     });
 
+    it('should extract option_id from nested ID objects (Attio API format)', async () => {
+      // Mock Attio API response with nested ID structure
+      const nestedIdOptions: AttributeOptionsResult = {
+        options: [
+          {
+            id: {
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+              object_id: 'acb37e8a-bed6-4895-934a-a9e1b2cbfdbe',
+              attribute_id: '73170445-aa15-49c3-8173-7868f639e049',
+              option_id: 'ae15f49d-0f4e-4841-8117-bf6c0a20e8a4',
+            },
+            title: 'Existing Customer',
+            value: 'existing_customer',
+            is_archived: false,
+          },
+          {
+            id: {
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+              object_id: 'acb37e8a-bed6-4895-934a-a9e1b2cbfdbe',
+              attribute_id: '73170445-aa15-49c3-8173-7868f639e049',
+              option_id: '8f6ac4eb-6ab6-40be-909a-29042d3674e7',
+            },
+            title: 'Potential Customer',
+            value: 'potential_customer',
+            is_archived: false,
+          },
+        ],
+        attributeType: 'select',
+      };
+
+      const mockMetadata: Map<string, AttioAttributeMetadata> = new Map([
+        [
+          'lead_type',
+          {
+            id: {
+              workspace_id: 'fa02d59a-674a-4e08-9fbe-4c82cbbe80d7',
+              object_id: 'acb37e8a-bed6-4895-934a-a9e1b2cbfdbe',
+              attribute_id: '73170445-aa15-49c3-8173-7868f639e049',
+            },
+            api_slug: 'lead_type',
+            title: 'Type',
+            type: 'select',
+            is_multiselect: true,
+            is_writable: true,
+          },
+        ],
+      ]);
+
+      vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue(
+        nestedIdOptions
+      );
+
+      const result = await service['fetchObjectSchema']('companies', {
+        maxOptionsPerAttribute: 10,
+        includeArchived: false,
+      });
+
+      const leadTypeAttr = result.attributes.find(
+        (a) => a.apiSlug === 'lead_type'
+      );
+
+      // Verify option_id was extracted correctly (not '[object Object]')
+      expect(leadTypeAttr?.options).toHaveLength(2);
+      expect(leadTypeAttr?.options?.[0].id).toBe(
+        'ae15f49d-0f4e-4841-8117-bf6c0a20e8a4'
+      );
+      expect(leadTypeAttr?.options?.[1].id).toBe(
+        '8f6ac4eb-6ab6-40be-909a-29042d3674e7'
+      );
+      expect(leadTypeAttr?.options?.[0].title).toBe('Existing Customer');
+      expect(leadTypeAttr?.options?.[1].title).toBe('Potential Customer');
+    });
+
     it('should continue when options fetch fails', async () => {
       const mockMetadata: Map<string, AttioAttributeMetadata> = new Map([
         [

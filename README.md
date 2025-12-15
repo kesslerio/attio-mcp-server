@@ -142,11 +142,17 @@ npx attio-discover generate-skill --all --output ./my-skills
 
 ```
 attio-workspace-skill/
-├── SKILL.md                        # Main skill with quick reference
+├── SKILL.md                        # Main skill with routing logic
 └── resources/
-    ├── attribute-reference.md      # Detailed attribute specs + options
-    └── complex-types.md            # Type structure examples
+    ├── companies-attributes.md     # Companies object attributes
+    ├── people-attributes.md        # People object attributes
+    ├── deals-attributes.md         # Deals object attributes
+    ├── [other]-attributes.md       # Per-object attribute files
+    └── complex-types.md            # Shared complex type structures
 ```
+
+**Progressive Disclosure**: Claude loads only the object file it needs (~2k tokens),
+not the entire monolithic reference (~10k tokens).
 
 See [Workspace Schema Skill Generator](#workspace-schema-skill-generator-1) for complete documentation.
 
