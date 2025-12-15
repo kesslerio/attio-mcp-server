@@ -1,0 +1,179 @@
+# Customer Onboarding Workflow Configuration
+#
+# Use this template to generate a customer onboarding skill
+# for structured new customer workflows.
+
+name: customer-onboarding
+display_name: Customer Onboarding
+description: Onboard new customers with structured workflows and milestone tracking
+
+# Primary object this workflow operates on
+primary_object: companies
+secondary_objects:
+  - people
+  - deals
+
+# Suggested attributes (workspace-specific)
+suggested_attributes:
+  companies:
+    - name
+    - onboarding_status # status for onboarding progress
+    - customer_since # date field
+    - account_manager # person/user reference
+    - onboarding_score # number for health tracking
+    - contract_value # number for ARR/contract amount
+    - renewal_date # date for renewal tracking
+  people:
+    - email_addresses
+    - name
+    - job_title
+    - is_primary_contact # checkbox for main POC
+
+# Lists typically used
+suggested_lists:
+  - name: 'Onboarding Queue'
+    purpose: 'New customers awaiting onboarding kickoff'
+  - name: 'Active Onboarding'
+    purpose: 'Customers currently being onboarded'
+  - name: 'Onboarding Complete'
+    purpose: 'Successfully onboarded customers'
+  - name: 'At Risk'
+    purpose: 'Customers with onboarding issues'
+
+# Workflow steps
+workflow_steps:
+  - name: 'Initialize Onboarding'
+    description: 'Set up new customer for onboarding after deal closes'
+    tools:
+      - update-record
+      - add-record-to-list
+      - create-note
+    example: |
+      1. Update company onboarding_status to "Pending"
+      2. Set customer_since date
+      3. Add to Onboarding Queue list
+      4. Create welcome note with context from deal
+      5. Identify primary contact person
+
+  - name: 'Assign Account Manager'
+    description: 'Assign team member responsible for onboarding'
+    tools:
+      - update-record
+      - create-task
+      - create-note
+    example: |
+      1. Update account_manager field
+      2. Create kickoff preparation task
+      3. Add note documenting assignment
+      4. Notify account manager (via task)
+
+  - name: 'Schedule Kickoff'
+    description: 'Create and track kickoff meeting'
+    tools:
+      - create-task
+      - update-record
+      - create-note
+    example: |
+      1. Create task for scheduling kickoff call
+      2. Update onboarding_status to "Scheduling"
+      3. Add note with proposed agenda
+      4. Track stakeholder availability
+
+  - name: 'Track Milestones'
+    description: 'Update onboarding progress through milestones'
+    tools:
+      - update-record
+      - update-list-entry
+      - create-note
+      - create-task
+    milestones:
+      - 'Contract Signed'
+      - 'Kickoff Complete'
+      - 'Training Scheduled'
+      - 'Integration Started'
+      - 'First Value Delivered'
+      - 'Onboarding Complete'
+    example: |
+      1. Update onboarding_status to current milestone
+      2. Move between lists as appropriate
+      3. Create note documenting milestone completion
+      4. Create task for next milestone
+      5. Update onboarding_score based on progress
+
+  - name: 'Handle Issues'
+    description: 'Address and track onboarding blockers'
+    tools:
+      - update-record
+      - add-record-to-list
+      - create-task
+      - create-note
+    example: |
+      1. Add to At Risk list if blockers exist
+      2. Create task for blocker resolution
+      3. Document issue in notes
+      4. Adjust timeline expectations
+      5. Escalate if needed
+
+  - name: 'Complete Onboarding'
+    description: 'Mark customer as fully onboarded'
+    tools:
+      - update-record
+      - remove-record-from-list
+      - add-record-to-list
+      - create-note
+    example: |
+      1. Update onboarding_status to "Complete"
+      2. Set onboarding_score to 100
+      3. Remove from Active Onboarding
+      4. Add to Onboarding Complete list
+      5. Create summary note with outcomes
+      6. Schedule first check-in task
+
+# Example interactions
+example_interactions:
+  - trigger: 'Start onboarding for Acme Inc'
+    response: |
+      1. Find Acme Inc company record
+      2. Update onboarding_status to "Pending"
+      3. Set customer_since to today
+      4. Add to Onboarding Queue list
+      5. Create kickoff preparation task
+      6. Add welcome note with deal context
+
+  - trigger: 'Acme completed their kickoff call'
+    response: |
+      1. Find Acme Inc record
+      2. Update onboarding_status to "Kickoff Complete"
+      3. Move from Onboarding Queue to Active Onboarding
+      4. Create note documenting kickoff outcomes
+      5. Create task for next milestone (Training)
+      6. Update onboarding_score to 30
+
+  - trigger: 'Acme is having integration issues'
+    response: |
+      1. Find Acme Inc record
+      2. Add to At Risk list
+      3. Create urgent task for technical support
+      4. Add note documenting the issues
+      5. Update onboarding_status to "Integration Blocked"
+      6. Create escalation task if needed
+
+  - trigger: 'Mark Acme onboarding as complete'
+    response: |
+      1. Find Acme Inc record
+      2. Update onboarding_status to "Complete"
+      3. Set onboarding_score to 100
+      4. Remove from Active Onboarding
+      5. Add to Onboarding Complete list
+      6. Create completion summary note
+      7. Schedule 30-day check-in task
+
+  - trigger: 'Which customers are in onboarding?'
+    response: |
+      1. Get entries from Active Onboarding list
+      2. For each customer, get:
+         - Company name
+         - Current onboarding_status
+         - Account manager
+         - Days since customer_since
+      3. Report summary with status breakdown

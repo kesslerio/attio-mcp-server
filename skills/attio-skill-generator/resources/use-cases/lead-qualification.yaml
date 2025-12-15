@@ -1,0 +1,147 @@
+# Lead Qualification Workflow Configuration
+#
+# Use this template to generate a lead qualification skill
+# that qualifies and scores inbound leads.
+
+name: lead-qualification
+display_name: Lead Qualification
+description: Qualify and score inbound leads through structured workflows
+
+# Primary object this workflow operates on
+primary_object: companies
+secondary_objects:
+  - people
+
+# Required attributes for this workflow (workspace-specific)
+# These are suggestions - actual attributes come from workspace schema
+suggested_attributes:
+  companies:
+    - name
+    - domains
+    - lead_status # status field for qualification stage
+    - lead_score # number field for scoring
+    - source # text/select for lead source
+    - employee_count # number for firmographic data
+    - industry # select for industry classification
+  people:
+    - email_addresses
+    - name
+    - job_title
+
+# Lists typically used (workspace-specific IDs needed)
+suggested_lists:
+  - name: 'Inbound Leads'
+    purpose: 'New leads awaiting qualification'
+  - name: 'Qualified Leads'
+    purpose: 'Leads that passed qualification criteria'
+  - name: 'Disqualified'
+    purpose: "Leads that don't meet criteria"
+
+# Workflow steps
+workflow_steps:
+  - name: 'Receive Lead'
+    description: 'Capture new lead from inbound source'
+    tools:
+      - records_search
+      - create-record
+    example: |
+      1. Search for existing company by domain
+      2. If not found, create new company record
+      3. Set initial lead_status to "New"
+      4. Add to Inbound Leads list
+
+  - name: 'Enrich Data'
+    description: 'Add firmographic and contact data'
+    tools:
+      - update-record
+      - records_discover_attributes
+    example: |
+      1. Update company with employee_count
+      2. Update company with industry
+      3. Add contact person if available
+      4. Document data source in notes
+
+  - name: 'Score Lead'
+    description: 'Calculate qualification score based on criteria'
+    tools:
+      - update-record
+      - get-record
+    scoring_criteria:
+      - criterion: 'Company size > 50 employees'
+        points: 20
+      - criterion: 'Target industry match'
+        points: 15
+      - criterion: 'Has decision maker contact'
+        points: 25
+      - criterion: 'Budget authority confirmed'
+        points: 20
+      - criterion: 'Timeline within 6 months'
+        points: 20
+    example: |
+      1. Retrieve current record data
+      2. Apply scoring criteria
+      3. Calculate total score (0-100)
+      4. Update lead_score field
+
+  - name: 'Route Lead'
+    description: 'Add to appropriate list based on score'
+    tools:
+      - add-record-to-list
+      - remove-record-from-list
+      - update-record
+    routing_rules:
+      - condition: 'score >= 60'
+        action: "Add to Qualified Leads, update lead_status to 'Qualified'"
+      - condition: 'score >= 40 and score < 60'
+        action: "Keep in Inbound Leads, update lead_status to 'Needs Review'"
+      - condition: 'score < 40'
+        action: "Add to Disqualified, update lead_status to 'Disqualified'"
+    example: |
+      1. Check current score
+      2. Apply routing rules
+      3. Update lead_status field
+      4. Move to appropriate list
+
+  - name: 'Create Follow-up'
+    description: 'Create task for sales rep'
+    tools:
+      - create-task
+      - create-note
+    example: |
+      1. Create task linked to company
+      2. Set appropriate due date based on priority
+      3. Add note documenting qualification reasoning
+      4. Assign to appropriate team member
+
+# Example interactions for documentation
+example_interactions:
+  - trigger: 'Qualify the new lead from acme.com'
+    response: |
+      1. Search for company with domain acme.com
+      2. If not found, create new company record
+      3. Gather firmographic data (employee count, industry)
+      4. Calculate lead score based on criteria
+      5. Route to appropriate list based on score
+      6. Create follow-up task for sales
+
+  - trigger: 'Score all unqualified leads in the Inbound Leads list'
+    response: |
+      1. Get all entries from Inbound Leads list
+      2. For each lead (with rate limiting):
+         - Get current record data
+         - Calculate score
+         - Update lead_score field
+      3. After scoring, route qualified leads to Qualified Leads list
+      4. Report summary: X leads scored, Y qualified, Z disqualified
+
+  - trigger: 'What makes a qualified lead?'
+    response: |
+      A lead is qualified (score >= 60) when it meets criteria like:
+      - Company size > 50 employees (+20 points)
+      - Target industry match (+15 points)
+      - Decision maker identified (+25 points)
+      - Budget authority (+20 points)
+      - Timeline within 6 months (+20 points)
+
+      Check your attio-workspace-schema for the specific
+      lead_status and lead_score fields in your workspace.
