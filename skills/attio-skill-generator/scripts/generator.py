@@ -282,8 +282,21 @@ def build_context(
 
     # Get primary object data with computed flags for templates
     primary_object_data = objects.get(primary_obj, {}).copy()
-    attributes = primary_object_data.get('attributes', [])
+
+    # Filter out system attributes that aren't user-editable
+    system_attrs = {'record_id', 'id', 'created_at', 'created_by'}
+    attributes = [
+        attr for attr in primary_object_data.get('attributes', [])
+        if attr.get('api_slug') not in system_attrs
+    ]
+    primary_object_data['attributes'] = attributes
     primary_object_data['has_attributes'] = bool(attributes)
+
+    # Pre-join tools in workflow steps for cleaner template output
+    workflow_steps = use_case_config.get('workflow_steps', [])
+    for step in workflow_steps:
+        tools = step.get('tools', [])
+        step['tools_joined'] = ', '.join(f'`{t}`' for t in tools) if tools else ''
 
     return {
         'skill_name': skill_name,

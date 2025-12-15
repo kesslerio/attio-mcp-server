@@ -58,25 +58,20 @@ This workflow primarily operates on **{{workspace.primary_object}}** records.
 
 {{description}}
 
-{{#tools}}
-**Tools**: `{{.}}`
-{{/tools}}
+**Tools**: {{tools_joined}}
 
 {{/use_case.workflow_steps}}
+{{#workspace.has_lists}}
 
 ## Lists
 
-{{#workspace.has_lists}}
-| List | Object | ID |
-|------|--------|-----|
+| List | Object | ID  |
+| ---- | ------ | --- |
+
 {{#workspace.lists}}
 | {{name}} | {{parent_object}} | `{{id}}` |
 {{/workspace.lists}}
 {{/workspace.has_lists}}
-{{^workspace.has_lists}}
-
-> Use `get-lists` MCP tool to discover available lists for your workspace.
-> {{/workspace.has_lists}}
 
 ## Key Principles
 
