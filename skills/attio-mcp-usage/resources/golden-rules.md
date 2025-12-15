@@ -47,8 +47,8 @@ Universal rules to prevent API errors. Applicable to ALL Attio workspaces.
 **Common mistakes**:
 
 ```
-❌ lead_score: "85"               → ✅ lead_score: 85
-❌ deal_value: "50000"            → ✅ deal_value: 50000
+❌ value: "50000"                 → ✅ value: 50000
+❌ employee_count: "250"          → ✅ employee_count: 250
 ❌ is_active: "true"              → ✅ is_active: true
 ❌ close_date: "Dec 14, 2024"     → ✅ close_date: "2024-12-14"
 ```
@@ -98,7 +98,7 @@ if (!uuidRegex.test(record_id)) {
 ```
 ❌ "Primary Location"             → ✅ primary_location
 ❌ "Lead Type"                    → ✅ lead_type
-❌ "Deal Stage"                   → ✅ deal_stage
+❌ "Stage"                        → ✅ stage
 ❌ "Company Name"                 → ✅ name
 ```
 
@@ -223,8 +223,8 @@ function validateUpdate(resource_type, record_id, data) {
 ✅ lead_type: ["uuid-goes-here"]        (UUID)
 ❌ lead_type: ["potential customer"]    (wrong case for select)
 
-✅ deal_stage: "Proposal Sent"          (exact, status auto-converts)
-✅ deal_stage: "proposal sent"          (works for status fields)
+✅ stage: "Proposal Sent"               (exact, status auto-converts)
+✅ stage: "proposal sent"               (works for status fields)
 ```
 
 **How to Get Values**: Schema skill lists all options with exact casing

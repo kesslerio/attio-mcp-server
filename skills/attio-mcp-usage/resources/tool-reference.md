@@ -660,6 +660,44 @@ Discover attributes for an object.
 
 ---
 
+### records_get_attribute_options
+
+Get valid options for select, multi-select, and status attributes.
+
+**Signature**:
+
+```typescript
+{
+  resource_type: string,   // 'companies', 'deals', 'people', etc.
+  attribute: string,       // Attribute slug or ID (e.g., "stage", "categories")
+  show_archived?: boolean  // Include archived options (default: false)
+}
+```
+
+**Examples**:
+
+```typescript
+// Get deal stage options
+{
+  resource_type: 'deals',
+  attribute: 'stage'
+}
+
+// Get company category options
+{
+  resource_type: 'companies',
+  attribute: 'categories'
+}
+```
+
+**Returns**: Array of valid option titles and UUIDs
+
+**Use Case**: Avoid "Cannot find select option" errors by fetching valid values before create/update operations
+
+**Important**: Use `records_discover_attributes` first to find which attributes have options, then use this tool to get the valid values.
+
+---
+
 ## Important Notes
 
 ### UUID Validation

@@ -22,7 +22,7 @@ Step 3: create-record (if needed)
   → Provide required attributes
   → Cross-ref: Check [schema skill] for required fields
   → Example (company): { name: 'Acme Inc', domains: ['acme.com'] }
-  → Example (deal): { name: 'Q4 Deal', deal_value: 50000 }
+  → Example (deal): { name: 'Q4 Deal', value: 50000 }
 
 Step 4: Verify
   → Confirm record_id returned
@@ -141,8 +141,8 @@ Step 1: Fetch external data
 
 Step 2: Map to Attio attributes
   → Cross-ref: [deals-attributes.md] for attribute slugs
-  → deal_value: 50000 (number)
-  → close_probability: 0.75 (number)
+  → value: 50000 (number)
+  → Custom attributes (verify via schema skill)
 
 Step 3: Update record
   → Only changed fields
@@ -187,7 +187,7 @@ Step 2: Add record to target list(s)
 
 Step 3: Filter list entries
   → Use filter-list-entries for attribute-based filtering
-  → Example: Filter by deal_value > 10000
+  → Example: Filter by value > 10000
   → Example: Filter by created_date in last 7 days
 
 Step 4: Update list entry attributes

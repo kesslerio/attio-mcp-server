@@ -322,7 +322,7 @@ for (const deal of deals) {
   const daysSinceUpdate = getDaysSince(deal.updated_at);
 
   // Validate required fields completed
-  const hasRequiredData = deal.company && deal.deal_value;
+  const hasRequiredData = deal.company && deal.value;
 
   // Confirm progression rules met
   const hasRecentActivity = daysSinceUpdate < 7;
