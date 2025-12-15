@@ -4,12 +4,21 @@ Generate customized Claude Skills for your Attio workspace workflows.
 
 ## Overview
 
-The `attio-skill-generator` is a meta-skill that creates workspace-specific skills for common Attio workflows like lead qualification, deal management, and customer onboarding. Generated skills include your actual attribute slugs, list IDs, and status options.
+The `attio-skill-generator` is a **Python meta-skill** that creates workflow-specific skills for common Attio use cases like lead qualification, deal management, and customer onboarding. Generated skills include your actual attribute slugs, list IDs, and status options.
+
+> **Not the workspace schema generator:** This skill generates _workflow_ skills (deal-management, lead-qualification, etc.). To generate the `attio-workspace-schema` skill that documents your entire workspace structure, use the Node CLI instead:
+>
+> ```bash
+> npx attio-discover generate-skill --output ./output/attio-workspace-skill
+> ```
+>
+> The `attio-skill-generator` works best when `attio-workspace-schema` is already installed—it reads schema data from there instead of making API calls.
 
 ## Prerequisites
 
 - Python 3.8+
-- pip packages: `chevron`, `pyyaml`
+- **Required:** `chevron` (templating engine—generator fails without it)
+- **Recommended:** `pyyaml` (for custom use-case YAML files; falls back to built-in config if missing)
 - Attio MCP Server installed and configured
 
 ## Installation
@@ -75,13 +84,16 @@ Use attio-skill-generator to create a lead qualification skill called "acme-lead
 
 1. Activate the `attio-skill-generator` skill
 2. Identify the **primary object** for your use-case (e.g., `deals` for Deal Management)
-3. Discover attributes for that **primary object only** (not all objects)
-4. Find lists specific to that object type (e.g., deal lists, not company lists)
-5. Generate a customized skill tailored to your workspace
-6. Show you a preview for approval
-7. Package it as a `.skill` file for import
+3. Gather schema for that primary object:
+   - **Option A (preferred):** Read from `attio-workspace-schema` skill resources (e.g., `resources/deals-attributes.md`)—no API calls needed
+   - **Option B (fallback):** If schema skill isn't installed, call MCP discovery tools (`records_discover_attributes`)
+4. Generate a customized skill tailored to your workspace
+5. Show you a preview for approval
+6. Package it as a `.skill` file for import
 
-**Note:** Related objects (e.g., companies linked to deals) are referenced through record-reference fields, but their full schemas are not gathered.
+**Note:** Lists are NOT gathered by default. Only request list functionality if your workflow specifically needs it. Related objects (e.g., companies linked to deals) are referenced through record-reference fields, but their full schemas are not gathered.
+
+> **Claude Desktop users:** The generator runs Python scripts locally. If Claude Desktop can't execute scripts in your setup, run the commands manually in your terminal.
 
 ### Available Use Cases
 
@@ -121,13 +133,13 @@ If you prefer to run the generator manually:
       ]
     }
   },
-  "lists": [
-    { "name": "Prospecting", "id": "list-uuid", "parent_object": "companies" }
-  ]
+  "lists": []
 }
 ```
 
 Save as `workspace-schema.json`.
+
+> **Tip:** Leave `lists` empty unless your workflow specifically needs list operations.
 
 ### Step 2: Run Generator
 
@@ -208,7 +220,7 @@ my-lead-qualification/
 
 ### Modify Templates
 
-Templates are in `resources/templates/`:
+Templates are in `skills/attio-skill-generator/resources/templates/`:
 
 - `SKILL.template.md` - Main skill structure
 - `workflows.template.md` - Workflow patterns
@@ -217,10 +229,10 @@ Templates are in `resources/templates/`:
 
 ### Add Use Cases
 
-Create a new YAML file in `resources/use-cases/`:
+Create a new YAML file in `skills/attio-skill-generator/resources/use-cases/`:
 
 ```yaml
-# resources/use-cases/my-use-case.yaml
+# skills/attio-skill-generator/resources/use-cases/my-use-case.yaml
 name: My Custom Workflow
 description: Description of what this workflow does
 primary_object: companies
@@ -230,11 +242,13 @@ workflow_steps:
   - name: Step 1
     description: First step description
     tools:
-      - search-records
-      - get-record-details
+      - records_search
+      - records_get_details
 ```
 
-Then update `USE_CASES` in `generator.py`.
+Then update `USE_CASES` in `skills/attio-skill-generator/scripts/generator.py`.
+
+> **Tool names:** Use canonical tool names (e.g., `records_search`, `records_get_details`) rather than aliases (`search-records`, `get-record-details`) to avoid deprecation drift.
 
 ## Troubleshooting
 
@@ -260,6 +274,8 @@ Check:
 - Skill name doesn't exceed 64 characters
 - Description doesn't exceed 1024 characters
 - Description contains no `<` or `>` characters
+
+> **Description length warning:** While the Python generator allows up to 1024 characters, some Claude Skill importers enforce shorter limits (~200 chars). Keep descriptions concise.
 
 ## Related Documentation
 
