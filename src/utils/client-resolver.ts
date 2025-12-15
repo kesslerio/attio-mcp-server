@@ -7,6 +7,9 @@ import { AxiosInstance } from 'axios';
 import * as AttioClientModule from '../api/attio-client.js';
 import { getContextApiKey } from '../api/client-context.js';
 import { ClientConfig } from '../api/client-config.js';
+import { createScopedLogger } from './logger.js';
+
+const logger = createScopedLogger('client-resolver');
 
 /**
  * Supported factory method signatures exposed by attio-client module
@@ -59,12 +62,7 @@ function assertAxiosInstance(
           : [],
     };
 
-    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-      console.error(
-        `[client-resolver:assertAxiosInstance] Validation failed for ${source}:`,
-        diagnostics
-      );
-    }
+    logger.debug(`Validation failed for ${source}`, diagnostics);
 
     throw new Error(
       `${source} returned invalid Axios client instance (hasGetMethod=${hasGetMethod}, hasDefaults=${hasDefaults})`
@@ -88,7 +86,7 @@ export function resolveAttioClient(): AxiosInstance {
     const envApiKey = process.env.ATTIO_API_KEY;
     const resolvedApiKey = envApiKey || contextApiKey;
 
-    console.error('[client-resolver:resolve] API key resolution:', {
+    logger.debug('API key resolution', {
       hasEnvApiKey: Boolean(envApiKey),
       envKeyLength: envApiKey?.length || 0,
       hasContextApiKey: Boolean(contextApiKey),
@@ -112,9 +110,7 @@ export function resolveAttioClient(): AxiosInstance {
   // - API key resolution (env, context, config)
   // This is the proven code path used throughout the codebase
   if (typeof mod.getAttioClient === 'function') {
-    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-      console.error('[client-resolver:resolve] Using getAttioClient()');
-    }
+    logger.debug('Using getAttioClient()');
     const client = mod.getAttioClient();
     assertAxiosInstance(client, 'getAttioClient()');
     return client;
@@ -122,11 +118,7 @@ export function resolveAttioClient(): AxiosInstance {
 
   // Fallback to createAttioClient with config object
   if (typeof mod.createAttioClient === 'function') {
-    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-      console.error(
-        '[client-resolver:resolve] Fallback to createAttioClient(config)'
-      );
-    }
+    logger.debug('Fallback to createAttioClient(config)');
     try {
       const config: ClientConfig = {};
       const client = (
@@ -135,12 +127,7 @@ export function resolveAttioClient(): AxiosInstance {
       assertAxiosInstance(client, 'createAttioClient(config)');
       return client;
     } catch (error) {
-      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-        console.error(
-          '[client-resolver:resolve] createAttioClient failed:',
-          error
-        );
-      }
+      logger.debug('createAttioClient failed', { error });
       // Continue to last resort
     }
   }
@@ -157,9 +144,7 @@ export function resolveAttioClient(): AxiosInstance {
       );
     }
 
-    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-      console.error('[client-resolver:resolve] Last resort: buildAttioClient');
-    }
+    logger.debug('Last resort: buildAttioClient');
     const client = mod.buildAttioClient({ apiKey: resolvedApiKey });
     assertAxiosInstance(client, 'buildAttioClient()');
     return client;
