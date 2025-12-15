@@ -110,7 +110,34 @@ if (!uuidRegex.test(record_id)) {
 
 ## ✅ ALWAYS Do These
 
-### 1. Always Check Schema Skill First
+### 1. Discovery First - Know Your Schema
+
+**Before writing ANY code that touches Attio:**
+
+```
+Step 1: Run records_discover_attributes
+  → Get current schema for the object type
+  → Attribute slugs may differ from display names
+
+Step 2: Verify attribute slugs
+  → Use API slugs, not display names
+  → "Lead Type" → lead_type (or whatever schema returns)
+
+Step 3: Check data types
+  → Numbers: 85 (not "85")
+  → Arrays: ["value"] for multi-select
+  → Dates: ISO 8601 format
+```
+
+**Why This Matters**:
+
+- Attribute slugs are workspace-specific (custom fields)
+- Display names ≠ API slugs
+- Schema skill provides pre-fetched discovery data
+
+---
+
+### 2. Always Check Schema Skill First
 
 Before ANY operation:
 
@@ -131,7 +158,7 @@ Before ANY operation:
 
 ---
 
-### 2. Always Validate Before Updating
+### 3. Always Validate Before Updating
 
 ```typescript
 // Pre-flight validation
@@ -171,7 +198,7 @@ function validateUpdate(resource_type, record_id, data) {
 
 ---
 
-### 3. Always Use Exact Option Values
+### 4. Always Use Exact Option Values
 
 **For select fields**:
 
@@ -198,7 +225,7 @@ function validateUpdate(resource_type, record_id, data) {
 
 ---
 
-### 4. Always Verify Field Persistence
+### 5. Always Verify Field Persistence
 
 After updates:
 
@@ -226,7 +253,7 @@ Step 4: Handle mismatches
 
 ---
 
-### 5. Always Add Context with Notes
+### 6. Always Add Context with Notes
 
 When making significant changes:
 

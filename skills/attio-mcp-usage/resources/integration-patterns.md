@@ -14,9 +14,9 @@ Real-world workflow examples. Cross-reference your schema skill for workspace-sp
 Step 1: Create deal from opportunity
 {
   resource_type: 'deals',
-  data: {
+  record_data: {
     name: 'Q4 Enterprise Deal - Acme Inc',
-    deal_value: 50000,                    // Your deal_value attribute
+    value: 50000,                         // Check schema for exact slug
     stage: 'Discovery',                   // Your deal stages
     close_date: '2024-12-31',             // ISO 8601 date
     company: ['company_record_id']        // Array for reference field
@@ -26,11 +26,11 @@ Step 1: Create deal from opportunity
 
 Step 2: Add to active deals list
 {
-  list_id: 'your-active-deals-list-id',  // From schema skill
+  listId: 'your-active-deals-list-id',   // From schema skill
   record_id: deal.record_id,
   resource_type: 'deals'
 }
-// Cross-ref: Get list_id from [schema skill]
+// Cross-ref: Get listId from [schema skill]
 
 Step 3: Create discovery task
 {
@@ -40,7 +40,7 @@ Step 3: Create discovery task
     target_object: 'deals',
     target_record_id: deal.record_id
   }],
-  due_at: '2024-12-16T10:00:00Z'
+  dueDate: '2024-12-16T10:00:00Z'
 }
 
 Step 4: Document opportunity context
@@ -56,9 +56,9 @@ Step 5: Progress through stages
 {
   resource_type: 'deals',
   record_id: deal.record_id,
-  data: {
+  record_data: {
     stage: 'Proposal Sent',              // Next stage
-    close_probability: 0.65              // Update probability
+    probability: 0.65                    // Check schema for exact slug
   }
 }
 // Cross-ref: Valid stages in [deals-attributes.md]
@@ -66,12 +66,12 @@ Step 5: Progress through stages
 Step 6: Move between lists (if using list-based pipeline)
 // Remove from "Discovery" list
 {
-  list_id: 'discovery-list-id',
-  entry_id: discovery_entry.entry_id
+  listId: 'discovery-list-id',
+  entryId: discovery_entry.entry_id
 }
 // Add to "Proposal" list
 {
-  list_id: 'proposal-list-id',
+  listId: 'proposal-list-id',
   record_id: deal.record_id
 }
 ```
@@ -100,11 +100,11 @@ get-lists
 Step 2: Add record to multiple lists
 // Records can be in multiple lists simultaneously
 {
-  list_id: 'prospecting-list-id',
+  listId: 'prospecting-list-id',
   record_id: company.record_id
 }
 {
-  list_id: 'q4-target-accounts-id',
+  listId: 'q4-target-accounts-id',
   record_id: company.record_id
 }
 // Cross-ref: [schema skill] for list IDs
@@ -112,25 +112,25 @@ Step 2: Add record to multiple lists
 Step 3: Filter list entries
 // Find high-value deals in active pipeline
 {
-  list_id: 'active-deals-id',
-  attribute: 'deal_value',
-  filter_type: 'greater_than',
+  listId: 'active-deals-id',
+  attributeSlug: 'value',                  // Check schema for exact slug
+  condition: 'greater_than',
   value: 25000
 }
 
 // Find companies in specific industry
 {
-  list_id: 'prospecting-id',
-  attribute: 'industry',
-  filter_type: 'equals',
+  listId: 'prospecting-id',
+  attributeSlug: 'industry',
+  condition: 'equals',
   value: 'Technology'
 }
 
 Step 4: Update list entry attributes
 // Update priority on list entry (not record)
 {
-  list_id: 'prospecting-id',
-  entry_id: list_entry.entry_id,
+  listId: 'prospecting-id',
+  entryId: list_entry.entry_id,
   attributes: {
     priority: 'High',
     follow_up_date: '2024-12-20'
@@ -140,7 +140,7 @@ Step 4: Update list entry attributes
 Step 5: Batch operations on list
 // Get all entries
 {
-  list_id: 'target-accounts-id',
+  listId: 'target-accounts-id',
   limit: 100
 }
 // Process each entry
@@ -175,11 +175,11 @@ Step 1: Search for existing record
 Step 2: Create record if not found
 {
   resource_type: 'companies',
-  data: {
+  record_data: {
     name: form.company_name,
     domains: [form.domain],               // Array for multi-select
-    source: 'Inbound Form',               // Your source attribute
-    lead_status: 'Unqualified'            // Initial status
+    source: 'Inbound Form',               // Your source attribute (check schema)
+    status: 'Unqualified'                 // Initial status (check schema for slug)
     // Cross-ref: [companies-attributes.md] for YOUR slugs
   }
 }
@@ -188,18 +188,18 @@ Step 3: Update with qualification data
 {
   resource_type: 'companies',
   record_id: company.record_id,
-  data: {
+  record_data: {
     employee_count: form.employee_count,  // Number
     industry: [form.industry],            // Array for select
-    lead_score: calculated_score,         // Your scoring logic
-    lead_status: 'Qualified'              // Update status
+    score: calculated_score,              // Your scoring field (check schema)
+    status: 'Qualified'                   // Update status (check schema for slug)
     // Cross-ref: [companies-attributes.md] for YOUR attributes
   }
 }
 
 Step 4: Add to pipeline list
 {
-  list_id: 'prospecting-list-id',         // From schema skill
+  listId: 'prospecting-list-id',          // From schema skill
   record_id: company.record_id
 }
 
@@ -211,7 +211,7 @@ Step 5: Create qualification task
     target_record_id: company.record_id
   }],
   assignees: ['sales_rep_person_id'],     // Assign to rep
-  due_at: calculate_due_date()            // Next business day
+  dueDate: calculate_due_date()           // Next business day
 }
 
 Step 6: Document qualification
@@ -258,13 +258,13 @@ for each row in import_data:
     {
       resource_type: import_object_type,
       record_id: existing.record_id,
-      data: changed_fields_only
+      record_data: changed_fields_only
     }
   } else {
     // Create new
     {
       resource_type: import_object_type,
-      data: all_required_fields
+      record_data: all_required_fields
     }
   }
 
@@ -303,7 +303,7 @@ for each row in import_data:
 ```
 Step 1: Get deals in current stage
 {
-  list_id: 'discovery-stage-list-id',     // Or filter by stage attribute
+  listId: 'discovery-stage-list-id',      // Or filter by stage attribute
 }
 // OR
 {
@@ -331,9 +331,9 @@ Step 3: Update stage
 {
   resource_type: 'deals',
   record_id: deal.record_id,
-  data: {
+  record_data: {
     stage: 'Proposal Sent',              // Next stage
-    close_probability: 0.60              // Update probability
+    probability: 0.60                    // Check schema for exact slug
   }
 }
 // Cross-ref: Valid stages in [deals-attributes.md]
@@ -341,12 +341,12 @@ Step 3: Update stage
 Step 4: Move to new list (if list-based)
 // Remove from Discovery list
 {
-  list_id: 'discovery-list-id',
-  entry_id: deal.discovery_entry_id
+  listId: 'discovery-list-id',
+  entryId: deal.discovery_entry_id
 }
 // Add to Proposal list
 {
-  list_id: 'proposal-list-id',
+  listId: 'proposal-list-id',
   record_id: deal.record_id
 }
 
@@ -358,7 +358,7 @@ Step 5: Create next-step task
     target_object: 'deals',
     target_record_id: deal.record_id
   }],
-  due_at: calculate_due(3)  // 3 days from now
+  dueDate: calculate_due(3)  // 3 days from now
 }
 
 Step 6: Notify team
@@ -383,7 +383,7 @@ Step 6: Notify team
 ```
 Step 1: Get records needing enrichment
 {
-  list_id: 'enrichment-queue-id',
+  listId: 'enrichment-queue-id',
 }
 // OR filter by enrichment_status attribute
 
@@ -395,8 +395,8 @@ Step 3: Map to Attio schema
 mapped_data = {
   employee_count: external_data.employees,    // Number
   industry: [external_data.industry],         // Array for select
-  annual_revenue: external_data.revenue,      // Number
-  headquarters: external_data.location        // Text
+  annual_revenue: external_data.revenue,      // Number (check schema for slug)
+  headquarters: external_data.location        // Text (check schema for slug)
 };
 // Cross-ref: [companies-attributes.md] for YOUR slugs
 
@@ -404,7 +404,7 @@ Step 4: Update record
 {
   resource_type: 'companies',
   record_id: company.record_id,
-  data: mapped_data
+  record_data: mapped_data
 }
 
 Step 5: Track enrichment
@@ -419,8 +419,8 @@ Step 6: Mark as enriched
 {
   resource_type: 'companies',
   record_id: company.record_id,
-  data: {
-    enrichment_status: 'Completed',
+  record_data: {
+    enrichment_status: 'Completed',           // Check schema for exact slug
     enrichment_date: new Date().toISOString()
   }
 }
@@ -468,10 +468,13 @@ Step 3: Update + document
 
 ```typescript
 async function safeWorkflow(params) {
+  const operation = 'update-record'; // or passed as param
+  let success = false;
+
   try {
     // Step 1: Validate inputs
     validateRecordId(params.record_id);
-    validateAttributes(params.data, schema);
+    validateAttributes(params.record_data, schema);
 
     // Step 2: Execute operation
     const result = await executeOperation(params);
@@ -481,25 +484,32 @@ async function safeWorkflow(params) {
       throw new Error('Operation failed: no record_id returned');
     }
 
-    // Step 4: Log success
-    console.log(`Success: ${operation} completed`);
+    // Step 4: Log success (use structured logger)
+    logger.info('Operation completed', {
+      operation,
+      record_id: result.record_id,
+    });
+    success = true;
 
     return result;
   } catch (error) {
     // Step 5: Handle errors gracefully
     if (error.message.includes('INVALID_UUID')) {
-      // Handle validation errors
+      logger.warn('Validation error', { operation, error: 'Invalid UUID' });
       return { error: 'Invalid UUID format', code: 'VALIDATION_ERROR' };
     } else if (error.message.includes('RATE_LIMIT')) {
-      // Retry with backoff
+      logger.warn('Rate limited, retrying', { operation });
       await delay(1000);
       return safeWorkflow(params); // Retry once
     } else if (error.message.includes('NOT_FOUND')) {
-      // Handle not found
+      logger.warn('Record not found', {
+        operation,
+        record_id: params.record_id,
+      });
       return { error: 'Record not found', code: 'NOT_FOUND' };
     } else {
       // Log and escalate unknown errors
-      console.error('Unexpected error:', error);
+      logger.error('Unexpected error', { operation, error: error.message });
       throw error;
     }
   } finally {
@@ -513,6 +523,8 @@ async function safeWorkflow(params) {
   }
 }
 ```
+
+**Note**: Use structured logging (`logger.info/warn/error`) with context objects containing `toolName`, `userId`, `requestId` per CLAUDE.md guidelines. Never use `console.log` in production code.
 
 ---
 
