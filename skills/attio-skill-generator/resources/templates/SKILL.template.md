@@ -55,7 +55,7 @@ This workflow primarily operates on **{{workspace.primary_object}}** records.
 
 {{#workspace.primary_object_data.attributes_with_options}}
 **{{api_slug}}** ({{type}}):
-{{options_formatted}}
+{{{options_formatted}}}
 
 {{/workspace.primary_object_data.attributes_with_options}}
 {{/workspace.primary_object_data.has_options}}
