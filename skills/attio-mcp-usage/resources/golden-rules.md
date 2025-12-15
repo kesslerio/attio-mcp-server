@@ -115,25 +115,31 @@ if (!uuidRegex.test(record_id)) {
 **Before writing ANY code that touches Attio:**
 
 ```
-Step 1: Run records_discover_attributes
-  → Get current schema for the object type
-  → Attribute slugs may differ from display names
+Option A: Use attio-workspace-schema skill (FASTER)
+  → Pre-generated schema for your workspace
+  → Contains all attribute slugs, types, options
+  → See companies-attributes.md, deals-attributes.md, etc.
 
-Step 2: Verify attribute slugs
-  → Use API slugs, not display names
-  → "Lead Type" → lead_type (or whatever schema returns)
-
-Step 3: Check data types
-  → Numbers: 85 (not "85")
-  → Arrays: ["value"] for multi-select
-  → Dates: ISO 8601 format
+Option B: Use MCP discovery tools (RUNTIME)
+  → records_discover_attributes - Get attribute metadata
+  → records_get_attribute_options - Get valid select/status values
 ```
+
+**Standard vs Custom Attributes**:
+
+| Object    | Standard Attributes                                                               |
+| --------- | --------------------------------------------------------------------------------- |
+| Companies | `name`, `domains`, `description`, `categories`, `primary_location`, `team`        |
+| Deals     | `name`, `value`, `stage`, `owner`, `associated_people`, `associated_company`      |
+| People    | `name`, `email_addresses`, `job_title`, `description`, `company`, `phone_numbers` |
+
+> **Custom attributes** (like `lead_score`, `probability`, `industry`) vary by workspace. Always verify via schema skill or discovery tools.
 
 **Why This Matters**:
 
-- Attribute slugs are workspace-specific (custom fields)
-- Display names ≠ API slugs
-- Schema skill provides pre-fetched discovery data
+- Custom attribute slugs are workspace-specific
+- Display names ≠ API slugs (e.g., "Lead Type" → `lead_type`)
+- Schema skill provides pre-fetched data (faster than runtime discovery)
 
 ---
 

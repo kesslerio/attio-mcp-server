@@ -67,41 +67,41 @@ Create a new record.
 }
 ```
 
-**Examples**:
+**Examples** (using standard Attio attributes):
 
 ```typescript
-// Create company
+// Create company (standard attributes: name, domains, description, categories)
 {
   resource_type: 'companies',
   record_data: {
     name: 'Acme Inc',
-    domains: ['acme.com'],           // Array for multi-select
-    industry: ['Technology'],         // Array for select
-    employee_count: 250               // Number
+    domains: ['acme.com'],           // Array - unique per company, multiselect (can have multiple)
+    description: 'Enterprise software company'
   }
 }
 
-// Create deal
+// Create deal (standard attributes: name, value, stage, owner)
 {
   resource_type: 'deals',
   record_data: {
     name: 'Q4 Enterprise Deal',
-    value: 50000,                     // Number (check schema for exact slug)
-    close_date: '2024-12-31',         // ISO 8601 date
-    stage: 'Discovery'                // Status (auto-converts)
+    value: 50000,                     // Currency (standard)
+    stage: 'In Progress'              // Status - use exact option title
   }
 }
 
-// Create person
+// Create person (standard attributes: name, email_addresses, job_title)
 {
   resource_type: 'people',
   record_data: {
-    email_addresses: ['john@example.com'],
+    email_addresses: ['john@example.com'],  // Array (standard, unique)
     name: 'John Doe',
     job_title: 'VP Sales'
   }
 }
 ```
+
+> **Note**: For workspace-specific custom attributes, use `records_discover_attributes` or check your `attio-workspace-schema` skill.
 
 **Returns**: Created record with `record_id`
 
@@ -129,40 +129,41 @@ Update existing record.
 }
 ```
 
-**Examples**:
+**Examples** (using standard Attio attributes):
 
 ```typescript
-// Update company
+// Update company (standard: name, domains, description, categories)
 {
   resource_type: 'companies',
   record_id: '550e8400-e29b-41d4-a716-446655440000',
   record_data: {
-    employee_count: 300,              // Number
-    status: 'Qualified'               // Status (check schema for slug)
+    description: 'Updated company description',
+    categories: ['Technology']        // Array for multi-select
   }
 }
 
-// Update deal
+// Update deal (standard: name, value, stage)
 {
   resource_type: 'deals',
   record_id: '123e4567-e89b-12d3-a456-426614174000',
   record_data: {
-    value: 75000,                     // Updated value (check schema for slug)
-    stage: 'Proposal Sent',           // New stage
-    probability: 0.75                 // Number (check schema for slug)
+    value: 75000,                     // Currency
+    stage: 'Won 🎉'                   // Use exact option title from schema
   }
 }
 
-// Update person
+// Update person (standard: name, job_title, description)
 {
   resource_type: 'people',
   record_id: '987fcdeb-51a2-43d7-9876-543210fedcba',
   record_data: {
-    job_title: 'SVP Sales',           // Updated title
-    linkedin_url: 'https://...'       // New URL
+    job_title: 'SVP Sales',
+    linkedin: 'https://linkedin.com/in/example'  // Standard social handle
   }
 }
 ```
+
+> **Note**: For workspace-specific custom attributes, use `records_discover_attributes` or check your `attio-workspace-schema` skill.
 
 **Important**:
 

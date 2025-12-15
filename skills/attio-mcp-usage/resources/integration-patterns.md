@@ -2,6 +2,15 @@
 
 Real-world workflow examples. Cross-reference your schema skill for workspace-specific details.
 
+> **Important**: Examples use standard Attio attributes where possible. Custom attributes like `employee_count`, `industry`, `lead_score` are **workspace-specific** - verify via your `attio-workspace-schema` skill or `records_discover_attributes` before use.
+
+**Standard Attributes Reference**:
+| Object | Standard Attributes |
+|--------|---------------------|
+| Companies | `name`, `domains`, `description`, `categories`, `team` |
+| Deals | `name`, `value`, `stage`, `owner`, `associated_people`, `associated_company` |
+| People | `name`, `email_addresses`, `job_title`, `description`, `company` |
+
 ---
 
 ## Pattern 1: Deal Pipeline Workflow
@@ -16,13 +25,12 @@ Step 1: Create deal from opportunity
   resource_type: 'deals',
   record_data: {
     name: 'Q4 Enterprise Deal - Acme Inc',
-    value: 50000,                         // Check schema for exact slug
-    stage: 'Discovery',                   // Your deal stages
-    close_date: '2024-12-31',             // ISO 8601 date
-    company: ['company_record_id']        // Array for reference field
+    value: 50000,                         // Standard: currency field
+    stage: 'In Progress',                 // Standard: use exact option title
+    associated_company: ['company_record_id']  // Standard: array for reference
   }
 }
-// Cross-ref: [deals-attributes.md] for YOUR attribute slugs
+// Cross-ref: Check attio-workspace-schema for custom attributes
 
 Step 2: Add to active deals list
 {
@@ -57,11 +65,11 @@ Step 5: Progress through stages
   resource_type: 'deals',
   record_id: deal.record_id,
   record_data: {
-    stage: 'Proposal Sent',              // Next stage
-    probability: 0.65                    // Check schema for exact slug
+    stage: 'Won 🎉',                     // Standard: use exact option title
+    value: 55000                         // Standard: updated deal value
   }
 }
-// Cross-ref: Valid stages in [deals-attributes.md]
+// Cross-ref: Check attio-workspace-schema for custom attributes
 
 Step 6: Move between lists (if using list-based pipeline)
 // Remove from "Discovery" list
@@ -177,10 +185,9 @@ Step 2: Create record if not found
   resource_type: 'companies',
   record_data: {
     name: form.company_name,
-    domains: [form.domain],               // Array for multi-select
-    source: 'Inbound Form',               // Your source attribute (check schema)
-    status: 'Unqualified'                 // Initial status (check schema for slug)
-    // Cross-ref: [companies-attributes.md] for YOUR slugs
+    domains: [form.domain],               // Standard: unique, can have multiple per company
+    description: 'Inbound lead from form' // Standard: text field
+    // Custom attributes (verify via schema skill): source, lead_status, etc.
   }
 }
 
@@ -189,11 +196,9 @@ Step 3: Update with qualification data
   resource_type: 'companies',
   record_id: company.record_id,
   record_data: {
-    employee_count: form.employee_count,  // Number
-    industry: [form.industry],            // Array for select
-    score: calculated_score,              // Your scoring field (check schema)
-    status: 'Qualified'                   // Update status (check schema for slug)
-    // Cross-ref: [companies-attributes.md] for YOUR attributes
+    description: 'Qualified lead - meets criteria',
+    categories: [form.category]           // Standard: array for multi-select
+    // Custom attributes (verify via schema skill): employee_count, industry, lead_score
   }
 }
 
@@ -332,11 +337,11 @@ Step 3: Update stage
   resource_type: 'deals',
   record_id: deal.record_id,
   record_data: {
-    stage: 'Proposal Sent',              // Next stage
-    probability: 0.60                    // Check schema for exact slug
+    stage: 'In Progress',                // Standard: use exact option title
+    value: 60000                         // Standard: updated deal value
   }
 }
-// Cross-ref: Valid stages in [deals-attributes.md]
+// Cross-ref: Check attio-workspace-schema for custom attributes
 
 Step 4: Move to new list (if list-based)
 // Remove from Discovery list
@@ -392,37 +397,28 @@ external_data = await fetch_from_api(company.domain);
 // Sources: Clearbit, ZoomInfo, etc.
 
 Step 3: Map to Attio schema
-mapped_data = {
-  employee_count: external_data.employees,    // Number
-  industry: [external_data.industry],         // Array for select
-  annual_revenue: external_data.revenue,      // Number (check schema for slug)
-  headquarters: external_data.location        // Text (check schema for slug)
+// Standard attributes:
+standard_data = {
+  description: external_data.summary,         // Standard: text field
+  categories: [external_data.category]        // Standard: multiselect
 };
-// Cross-ref: [companies-attributes.md] for YOUR slugs
+// Custom attributes (verify via schema skill):
+// employee_count, industry, annual_revenue, headquarters, etc.
+custom_data = { /* your workspace-specific attributes */ };
 
 Step 4: Update record
 {
   resource_type: 'companies',
   record_id: company.record_id,
-  record_data: mapped_data
+  record_data: { ...standard_data, ...custom_data }
 }
 
-Step 5: Track enrichment
+Step 5: Track enrichment (via note)
 {
   resource_type: 'companies',
   record_id: company.record_id,
   title: 'Data Enrichment',
-  content: `Source: Clearbit\nDate: ${new Date().toISOString()}\nFields updated: ${Object.keys(mapped_data).join(', ')}`
-}
-
-Step 6: Mark as enriched
-{
-  resource_type: 'companies',
-  record_id: company.record_id,
-  record_data: {
-    enrichment_status: 'Completed',           // Check schema for exact slug
-    enrichment_date: new Date().toISOString()
-  }
+  content: `Source: Clearbit\nDate: ${new Date().toISOString()}\nFields updated: description, categories`
 }
 ```
 
