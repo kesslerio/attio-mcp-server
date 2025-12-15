@@ -78,6 +78,36 @@ USE_CASES = {
 }
 
 
+def validate_skill_name(skill_name: str) -> None:
+    """
+    Validate skill name for security and format.
+
+    Args:
+        skill_name: The skill name to validate
+
+    Raises:
+        ValueError: If skill name is invalid or contains path traversal characters
+    """
+    # Security check: prevent path traversal
+    if '/' in skill_name or '\\' in skill_name or '..' in skill_name:
+        raise ValueError("Skill name cannot contain path separators or '..'")
+
+    # Format check: must be hyphen-case
+    if not re.match(r'^[a-z][a-z0-9]*(-[a-z0-9]+)*$', skill_name):
+        if skill_name[0].isupper():
+            raise ValueError("Skill name must start with lowercase letter")
+        elif '--' in skill_name:
+            raise ValueError("Skill name cannot contain consecutive hyphens")
+        elif skill_name.startswith('-') or skill_name.endswith('-'):
+            raise ValueError("Skill name cannot start or end with hyphen")
+        else:
+            raise ValueError("Skill name must be hyphen-case (lowercase, digits, hyphens only)")
+
+    # Length check
+    if len(skill_name) > 64:
+        raise ValueError(f"Skill name exceeds 64 characters: {len(skill_name)}")
+
+
 def get_script_dir() -> Path:
     """Get the directory containing this script."""
     return Path(__file__).parent.resolve()
@@ -263,9 +293,8 @@ def generate_skill(
     # Load use-case config
     use_case_config = load_use_case_config(use_case)
 
-    # Validate skill name for path traversal
-    if '/' in skill_name or '\\' in skill_name or '..' in skill_name:
-        raise ValueError("Skill name cannot contain path separators or '..'")
+    # Validate skill name (security + format)
+    validate_skill_name(skill_name)
 
     # Require chevron for full template rendering
     if not HAS_CHEVRON:
@@ -401,16 +430,20 @@ def interactive_mode():
     default_name = f"my-{use_case}"
     skill_name = input(f"\nSkill name [{default_name}]: ").strip() or default_name
 
-    # Validate name
-    if not re.match(r'^[a-z][a-z0-9]*(-[a-z0-9]+)*$', skill_name):
-        print("Warning: Skill name should be hyphen-case (lowercase, digits, hyphens)")
+    # Validate name immediately (security + format check)
+    try:
+        validate_skill_name(skill_name)
+    except ValueError as e:
+        print(f"Error: {e}")
+        return
 
     # 3. Output directory
     output_dir = input("\nOutput directory [./generated-skills]: ").strip() or "./generated-skills"
 
     # 4. Workspace schema
     print("\n--- Workspace Schema ---")
-    print("Paste your workspace schema JSON (or press Enter for empty schema):")
+    print("Tip: For large schemas, use CLI mode with --workspace-schema-file instead")
+    print("\nPaste your workspace schema JSON (or press Enter for empty schema):")
     print("(End with an empty line)")
 
     schema_lines = []
@@ -449,6 +482,12 @@ def interactive_mode():
 
 def main():
     """CLI entry point."""
+    # Fail fast if required dependency is missing
+    if not HAS_CHEVRON:
+        print("Error: chevron package required for template rendering.", file=sys.stderr)
+        print("Install with: pip install chevron", file=sys.stderr)
+        return 1
+
     parser = argparse.ArgumentParser(
         description='Generate Attio workflow skills from templates',
         formatter_class=argparse.RawDescriptionHelpFormatter,

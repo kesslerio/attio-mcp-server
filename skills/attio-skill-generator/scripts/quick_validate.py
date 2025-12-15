@@ -253,10 +253,8 @@ Validation checks:
 
     if messages:
         for msg in messages:
-            prefix = "Warning" if msg.startswith("Warning") else "Error"
-            if not msg.startswith("Warning"):
-                prefix = "Error"
-            print(f"  {msg}")
+            symbol = "⚠" if msg.startswith("Warning") else "✗"
+            print(f"  {symbol} {msg}")
 
     if is_valid:
         if not args.quiet:
