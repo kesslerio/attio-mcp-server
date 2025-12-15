@@ -1,0 +1,154 @@
+# Deal Management Workflow Configuration
+#
+# Use this template to generate a deal management skill
+# that manages deals through pipeline stages.
+
+name: deal-management
+display_name: Deal Management
+description: Manage deals through pipeline stages from opportunity to close
+
+# Primary object this workflow operates on
+primary_object: deals
+secondary_objects:
+  - companies
+  - people
+
+# Suggested attributes (workspace-specific)
+suggested_attributes:
+  deals:
+    - name
+    - deal_value
+    - stage # status field for pipeline position
+    - close_date
+    - close_probability
+    - company # relationship to companies
+    - contacts # relationship to people
+    - deal_owner # assigned user
+    - lost_reason # text/select for loss analysis
+  companies:
+    - name
+    - domains
+
+# Lists typically used
+suggested_lists:
+  - name: 'Active Pipeline'
+    purpose: 'All active deals in progress'
+  - name: 'Discovery'
+    purpose: 'Deals in discovery stage'
+  - name: 'Proposal'
+    purpose: 'Deals with proposals sent'
+  - name: 'Negotiation'
+    purpose: 'Deals in negotiation'
+  - name: 'Closed Won'
+    purpose: 'Successfully closed deals'
+  - name: 'Closed Lost'
+    purpose: 'Lost opportunities for analysis'
+
+# Workflow steps
+workflow_steps:
+  - name: 'Create Opportunity'
+    description: 'Create new deal from qualified lead or opportunity'
+    tools:
+      - create-record
+      - add-record-to-list
+      - create-note
+    example: |
+      1. Create deal record with name and initial value
+      2. Link to company record
+      3. Set initial stage to "Discovery"
+      4. Add to Active Pipeline list
+      5. Create note with opportunity context
+
+  - name: 'Progress Stage'
+    description: 'Move deal through pipeline stages'
+    tools:
+      - update-record
+      - update-list-entry
+      - create-note
+    example: |
+      1. Validate stage transition is allowed
+      2. Update stage field (use values from workspace schema)
+      3. Adjust close_probability based on stage
+      4. Create note documenting stage change
+      5. Update list entry attributes if needed
+
+  - name: 'Track Activities'
+    description: 'Document deal activities and next steps'
+    tools:
+      - create-note
+      - create-task
+      - get-notes
+    example: |
+      1. Add note for meeting/call summary
+      2. Create follow-up task with due date
+      3. Update deal record with relevant changes
+      4. Document stakeholder interactions
+
+  - name: 'Update Forecast'
+    description: 'Update probability and expected close date'
+    tools:
+      - update-record
+      - get-record
+    example: |
+      1. Review deal progress and blockers
+      2. Adjust close_probability percentage
+      3. Update expected close_date if needed
+      4. Update deal_value if scope changed
+      5. Document forecast changes in notes
+
+  - name: 'Close Deal'
+    description: 'Mark deal as won or lost'
+    tools:
+      - update-record
+      - remove-record-from-list
+      - add-record-to-list
+      - create-note
+    example: |
+      1. Update stage to "Closed Won" or "Closed Lost"
+      2. If lost, capture lost_reason
+      3. Remove from Active Pipeline
+      4. Add to Closed Won or Closed Lost list
+      5. Create summary note with outcome details
+
+# Example interactions
+example_interactions:
+  - trigger: 'Create a new deal for Acme Inc worth $50,000'
+    response: |
+      1. Search for Acme Inc company record
+      2. Create deal:
+         - name: "Acme Inc - Q4 Deal"
+         - deal_value: 50000
+         - stage: "Discovery"
+         - close_probability: 10
+      3. Link deal to Acme Inc company
+      4. Add to Active Pipeline list
+      5. Create follow-up task for discovery call
+
+  - trigger: 'Move the Acme deal to Proposal stage'
+    response: |
+      1. Find deal by name or ID
+      2. Verify current stage allows transition
+      3. Update stage to "Proposal"
+      4. Update close_probability to 50%
+      5. Create note: "Moved to Proposal stage - sending proposal"
+      6. Create task: "Follow up on proposal"
+
+  - trigger: 'Close the Acme deal as won'
+    response: |
+      1. Find deal record
+      2. Update stage to "Closed Won"
+      3. Set close_probability to 100%
+      4. Set close_date to today
+      5. Remove from Active Pipeline
+      6. Add to Closed Won list
+      7. Create note with win summary
+
+  - trigger: "What's our pipeline value?"
+    response: |
+      1. Get all deals from Active Pipeline list
+      2. Sum deal_value weighted by close_probability
+      3. Group by stage for breakdown
+      4. Report:
+         - Total pipeline: $X
+         - Weighted pipeline: $Y
+         - By stage breakdown
