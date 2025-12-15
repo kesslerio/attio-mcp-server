@@ -35,11 +35,11 @@ Use this skill when you want to:
 
 **Determine what to gather based on use-case:**
 
-| Use Case              | Gather Attributes For | Gather Lists For |
-| --------------------- | --------------------- | ---------------- |
-| `lead-qualification`  | companies             | companies        |
-| `deal-management`     | deals                 | deals            |
-| `customer-onboarding` | companies             | companies        |
+| Use Case              | Gather Attributes For | Gather Lists?         |
+| --------------------- | --------------------- | --------------------- |
+| `lead-qualification`  | companies             | NO (unless requested) |
+| `deal-management`     | deals                 | NO (unless requested) |
+| `customer-onboarding` | companies             | NO (unless requested) |
 
 **FIRST: Check for attio-workspace-schema skill**
 
@@ -66,23 +66,21 @@ If `attio-workspace-schema` skill is NOT available:
    - lead-qualification → records_discover_attributes for "companies"
    - customer-onboarding → records_discover_attributes for "companies"
 
-2. Call get-lists, then FILTER results to only lists where parent_object matches primary object
-   - deal-management → only include lists with parent_object="deals"
-   - lead-qualification → only include lists with parent_object="companies"
-
-3. For select/status fields on the primary object, call records_get_attribute_options
+2. For select/status fields on the primary object, call records_get_attribute_options
 ```
+
+**Do NOT call get-lists** unless the user specifically asks for list-related functionality. Lists are organizational containers, not essential to core workflows like deal management or lead qualification.
 
 **Do NOT gather:**
 
 - Full attribute schemas for secondary/related objects (companies, people for deal-management)
-- Lists for other object types (e.g., company lists when generating deal-management skill)
+- Lists (unless user explicitly requests list functionality)
 
 **Note on related objects:** Deal management involves linked companies and people, but these relationships are handled through record-reference fields on the deals object. You don't need full attribute lists for related objects.
 
 ### Step 2: Build Schema JSON
 
-Structure the discovered data as JSON for the generator. **Include only the primary object:**
+Structure the discovered data as JSON for the generator. **Include only the primary object, no lists:**
 
 ```json
 {
@@ -114,11 +112,11 @@ Structure the discovered data as JSON for the generator. **Include only the prim
       ]
     }
   },
-  "lists": [
-    { "name": "Active Pipeline", "id": "uuid", "parent_object": "deals" }
-  ]
+  "lists": []
 }
 ```
+
+**Note:** `lists` array is empty by default. Only populate if user requests list functionality.
 
 ### Step 3: Run the Generator
 
@@ -203,16 +201,17 @@ Provide the user with:
 
 **Claude:**
 
-1. I'll generate a Deal Management skill. Let me gather your deals schema...
-   - [Calls `records_discover_attributes` for **deals only**]
-   - [Calls `get-lists`, filters to **parent_object="deals" only**]
-2. Building workspace schema JSON with deals attributes and deal lists...
+1. I'll generate a Deal Management skill. Let me check for attio-workspace-schema skill...
+   - [If schema skill exists: reads `resources/deals-attributes.md`]
+   - [If no schema skill: calls `records_discover_attributes` for **deals only**]
+   - [Does NOT call `get-lists` - lists are not needed for deal management]
+2. Building workspace schema JSON with deals attributes only...
 3. Running generator:
    ```bash
    python scripts/generator.py --use-case deal-management --name my-deal-management --workspace-schema-file schema.json
    ```
 4. Here's the generated skill preview:
-   [Shows SKILL.md content with deal stages, attributes, and deal-specific lists]
+   [Shows SKILL.md content with deal stages and attributes]
 5. Does this look correct? I can modify it before packaging.
 6. Packaging skill...
    ```bash
@@ -220,7 +219,7 @@ Provide the user with:
    ```
 7. Your skill is ready: `./my-deal-management.skill`
 
-**Note:** The skill will include record-reference fields (associated_company, contacts) that link to companies and people, but without documenting those objects' full schemas.
+**Note:** The skill includes record-reference fields (associated_company, contacts) that link to companies and people, but without documenting those objects' full schemas. Lists are not included unless explicitly requested.
 
 ## Template Customization
 
