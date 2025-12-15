@@ -74,6 +74,15 @@ export class SchemaFormatterService {
       );
     }
 
+    // Validate Claude Skill name length requirement (≤64 chars)
+    const nameMatch = skillMd.match(/^name:\s*(.+)$/m);
+    if (nameMatch && nameMatch[1].trim().length > 64) {
+      throw new Error(
+        `Skill name exceeds 64 characters (${nameMatch[1].trim().length} chars). ` +
+          `Claude Skills require names ≤64 chars.`
+      );
+    }
+
     // Generate per-object attribute files for progressive disclosure
     // This enables Claude to load only the object it's working with (~2k tokens)
     // instead of the entire monolithic file (~10k tokens)

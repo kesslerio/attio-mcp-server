@@ -140,11 +140,8 @@ export async function generateSkill(argv: GenerateSkillArgs): Promise<void> {
       );
     }
 
-    // Force process exit to prevent TTLCache interval from hanging
-    // @see Issue #1014 - TTLCache cleanup interval keeps event loop alive
-    setTimeout(() => {
-      process.exit(0);
-    }, 100);
+    // Note: TTLCache uses unref() on its cleanup interval (ttl-cache.ts:38-40)
+    // so it won't prevent the process from exiting naturally
   } catch (error: unknown) {
     spinner.fail(
       chalk.red(

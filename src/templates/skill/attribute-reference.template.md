@@ -57,18 +57,14 @@
 - ✅ Already converts to: `{ status_id: "uuid" }`
 - Titles are case-insensitive and support partial matching
 
-**Select fields** (type: `select`) - Requires option UUIDs:
+**Select fields** (type: `select`) - Accepts titles OR UUIDs:
 
-- ⚠️ Currently requires UUIDs: `lead_type: ["8f6ac4eb-6ab6-40be-909a-29042d3674e7"]`
-- ❌ Titles NOT supported yet: `lead_type: ["Potential Customer"]`
-- 💡 Get valid UUIDs: Use `records_get_attribute_options` tool
+- ✅ Use title: `lead_type: ["Potential Customer"]`
+- ✅ Use UUID: `lead_type: ["8f6ac4eb-6ab6-40be-909a-29042d3674e7"]`
+- Titles are case-sensitive (exact match required)
 - Multi-select fields must always use arrays (even for single values)
 
-**Why different?**
-
-- Status fields have auto-conversion (title → UUID)
-- Select fields will get auto-conversion in future update
-- For now, use `records_get_attribute_options` to retrieve option IDs
+**Both field types accept exact titles** - Use whichever is more convenient for your use case
 
 ### 2. Array Fields: Always Use Arrays
 
