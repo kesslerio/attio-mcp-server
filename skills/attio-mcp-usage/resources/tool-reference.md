@@ -8,9 +8,9 @@ Complete reference for Attio MCP server tools with universal examples.
 
 ## Search Operations
 
-### search-records
+### records_search
 
-Search for records by query string.
+Search for records by query string (universal search tool).
 
 **Signature**:
 
@@ -173,9 +173,9 @@ Update existing record.
 
 ---
 
-### get-record
+### get-record-details
 
-Retrieve record details.
+Retrieve detailed record information.
 
 **Signature**:
 
@@ -225,7 +225,7 @@ Delete a record.
 
 ## List Operations
 
-### get-lists (lists_get_all)
+### get-lists
 
 Retrieve all lists in workspace.
 
@@ -477,10 +477,10 @@ Create note linked to record.
 
 ```typescript
 {
-  parent_object: string,         // 'companies', 'deals', 'people', etc.
-  parent_record_id: string,      // UUID of parent record
-  title: string,                 // Note title
-  content: string                // Note content (supports markdown)
+  resource_type: string,   // 'companies', 'deals', 'people', etc.
+  record_id: string,       // UUID of parent record
+  title: string,           // Note title
+  content: string          // Note content (supports markdown)
 }
 ```
 
@@ -489,16 +489,16 @@ Create note linked to record.
 ```typescript
 // Note on company
 {
-  parent_object: 'companies',
-  parent_record_id: '550e8400-e29b-41d4-a716-446655440000',
+  resource_type: 'companies',
+  record_id: '550e8400-e29b-41d4-a716-446655440000',
   title: 'Demo Call Notes',
   content: 'Discussed integration requirements. Key decision maker: CTO.'
 }
 
 // Note on deal
 {
-  parent_object: 'deals',
-  parent_record_id: '123e4567-e89b-12d3-a456-426614174000',
+  resource_type: 'deals',
+  record_id: '123e4567-e89b-12d3-a456-426614174000',
   title: 'Negotiation Update',
   content: 'Price agreed at $75k. Legal review in progress.'
 }
@@ -506,11 +506,11 @@ Create note linked to record.
 
 **Returns**: Created note with `note_id`
 
-**Important**: Validate `parent_record_id` is valid UUID before calling
+**Important**: Validate `record_id` is valid UUID before calling
 
 ---
 
-### get-notes
+### list-notes
 
 Retrieve notes for a record.
 
@@ -518,8 +518,8 @@ Retrieve notes for a record.
 
 ```typescript
 {
-  parent_object: string,
-  parent_record_id: string
+  resource_type: string,   // 'companies', 'deals', 'people', etc.
+  record_id: string        // UUID of the record
 }
 ```
 
@@ -644,24 +644,6 @@ List all tasks.
 ---
 
 ## Discovery Operations
-
-### records_list_objects
-
-List all available objects in workspace.
-
-**Signature**: None
-
-**Returns**: Array of object slugs
-
-**Example Response**:
-
-```json
-["companies", "people", "deals", "custom_object_1"]
-```
-
-**Use Case**: Discover what object types are available
-
----
 
 ### records_discover_attributes
 

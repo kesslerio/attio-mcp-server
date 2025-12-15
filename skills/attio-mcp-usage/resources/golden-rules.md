@@ -207,7 +207,7 @@ Step 1: update-record
   → Send update request
 
 Step 2: Re-fetch record
-  → get-record with same record_id
+  → get-record-details with same record_id
 
 Step 3: Confirm changes applied
   → Compare sent values vs returned values
@@ -240,7 +240,7 @@ Step 2: Create note documenting WHY
   → Add timestamp
 
 Step 3: Link note to record_id
-  → parent_record_id references the updated record
+  → record_id references the updated record
 ```
 
 **Benefits**:
@@ -255,8 +255,8 @@ Step 3: Link note to record_id
 ```typescript
 // After updating deal stage
 await createNote({
-  parent_object: 'deals',
-  parent_record_id: deal.record_id,
+  resource_type: 'deals',
+  record_id: deal.record_id,
   title: 'Stage Updated',
   content:
     'Moved to Proposal Sent after demo call with CTO. Next: follow up in 48h.',

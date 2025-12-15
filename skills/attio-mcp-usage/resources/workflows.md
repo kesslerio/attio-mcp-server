@@ -9,7 +9,7 @@ Core patterns for common operations. Cross-reference your schema skill for works
 **Use Case**: Ensure record exists before updating (works for ANY object type: companies, deals, people, custom objects)
 
 ```
-Step 1: search-records
+Step 1: records_search
   → Query: identifier (name, domain, email, deal title, etc.)
   → Example: { resource_type: 'companies', query: 'Acme Inc' }
   → Example: { resource_type: 'deals', query: 'Q4 Enterprise Deal' }

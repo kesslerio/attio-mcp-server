@@ -45,8 +45,8 @@ Step 3: Create discovery task
 
 Step 4: Document opportunity context
 {
-  parent_object: 'deals',
-  parent_record_id: deal.record_id,
+  resource_type: 'deals',
+  record_id: deal.record_id,
   title: 'Opportunity Context',
   content: 'Source: Inbound demo request. Key stakeholders: CTO, VP Eng. Budget confirmed: $50k.'
 }
@@ -94,7 +94,7 @@ Step 6: Move between lists (if using list-based pipeline)
 ```
 Step 1: Discover available lists
 // Get all lists to see organization structure
-lists_get_all
+get-lists
 // Returns: ["Prospecting", "Qualified", "Customers", "Active Deals", "Q4 Pipeline"]
 
 Step 2: Add record to multiple lists
@@ -216,8 +216,8 @@ Step 5: Create qualification task
 
 Step 6: Document qualification
 {
-  parent_object: 'companies',
-  parent_record_id: company.record_id,
+  resource_type: 'companies',
+  record_id: company.record_id,
   title: 'Lead Qualification',
   content: `Source: ${form.source}\nScore: ${calculated_score}\nReason: ${qualification_reason}`
 }
@@ -363,8 +363,8 @@ Step 5: Create next-step task
 
 Step 6: Notify team
 {
-  parent_object: 'deals',
-  parent_record_id: deal.record_id,
+  resource_type: 'deals',
+  record_id: deal.record_id,
   title: 'Stage Advanced',
   content: 'Auto-advanced to Proposal Sent based on activity. Next: Follow up in 3 days.'
 }
@@ -409,8 +409,8 @@ Step 4: Update record
 
 Step 5: Track enrichment
 {
-  parent_object: 'companies',
-  parent_record_id: company.record_id,
+  resource_type: 'companies',
+  record_id: company.record_id,
   title: 'Data Enrichment',
   content: `Source: Clearbit\nDate: ${new Date().toISOString()}\nFields updated: ${Object.keys(mapped_data).join(', ')}`
 }
@@ -505,8 +505,8 @@ async function safeWorkflow(params) {
   } finally {
     // Step 6: Document operation (optional)
     await createNote({
-      parent_object: params.resource_type,
-      parent_record_id: params.record_id,
+      resource_type: params.resource_type,
+      record_id: params.record_id,
       title: 'Operation Attempted',
       content: `Operation: ${operation}\nStatus: ${success ? 'Success' : 'Failed'}\nTimestamp: ${new Date().toISOString()}`,
     });
