@@ -173,7 +173,7 @@ Update existing record.
 
 ---
 
-### get-record-details
+### records_get_details
 
 Retrieve detailed record information.
 

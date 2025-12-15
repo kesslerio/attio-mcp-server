@@ -207,7 +207,7 @@ Step 1: update-record
   → Send update request
 
 Step 2: Re-fetch record
-  → get-record-details with same record_id
+  → records_get_details with same record_id
 
 Step 3: Confirm changes applied
   → Compare sent values vs returned values
