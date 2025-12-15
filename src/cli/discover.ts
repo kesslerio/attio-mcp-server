@@ -5,6 +5,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { discoverAttributes } from './commands/attributes.js';
+import { generateSkill } from './commands/generate-skill.js';
 import * as dotenv from 'dotenv';
 
 // Load environment variables from .env file
@@ -59,6 +60,66 @@ yargs(hideBin(process.argv))
         });
     },
     discoverAttributes
+  )
+  .command(
+    'generate-skill',
+    'Generate Claude Skill from workspace schema',
+    (yargs) => {
+      yargs
+        .option('object', {
+          alias: 'o',
+          description: 'Object to generate skill for (e.g., companies, people)',
+          type: 'string',
+        })
+        .option('all', {
+          alias: 'a',
+          description:
+            'Generate for Phase 1 objects (companies, people, deals)',
+          type: 'boolean',
+          default: false,
+        })
+        .option('format', {
+          alias: 'f',
+          description: 'Output format (skill, markdown, json)',
+          type: 'string',
+          choices: ['skill', 'markdown', 'json'] as const,
+          default: 'skill',
+        })
+        .option('output', {
+          description: 'Output directory',
+          type: 'string',
+          default: './output',
+        })
+        .option('zip', {
+          alias: 'z',
+          description: 'Package as ZIP file',
+          type: 'boolean',
+          default: false,
+        })
+        .option('max-options', {
+          description: 'Max options per attribute (default: 20)',
+          type: 'number',
+          default: 20,
+        })
+        .option('include-archived', {
+          description: 'Include archived options',
+          type: 'boolean',
+          default: false,
+        })
+        .option('api-key', {
+          alias: 'k',
+          description: 'Attio API key (defaults to ATTIO_API_KEY env var)',
+          type: 'string',
+        })
+        .conflicts('object', 'all')
+        .check((argv) => {
+          if (!argv.object && !argv.all) {
+            throw new Error('You must specify either --object or --all');
+          }
+          return true;
+        });
+    },
+    generateSkill
   )
   /*
   // These commands will be implemented in future phases

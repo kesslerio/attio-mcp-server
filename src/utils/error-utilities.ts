@@ -7,6 +7,8 @@ import axios, { AxiosError } from 'axios';
 import { createErrorResult, AttioApiError } from './error-handler.js';
 import { createScopedLogger } from './logger.js';
 
+const logger = createScopedLogger('error-utilities');
+
 /**
  * Safely gets the error message from an unknown error type
  *
@@ -213,15 +215,11 @@ export function logAndReturn(
 ): unknown {
   const message = getErrorMessage(error);
 
-  if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
-    console.error(`[${context}] Error:`, message);
-    if (details) {
-      console.error(`[${context}] Details:`, details);
-    }
-    if (error instanceof Error && error.stack) {
-      console.error(`[${context}] Stack:`, error.stack);
-    }
-  }
+  logger.error(message, {
+    context,
+    details,
+    stack: error instanceof Error ? error.stack : undefined,
+  });
 
   return error;
 }

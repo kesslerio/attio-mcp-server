@@ -64,7 +64,7 @@ export function createServer(context?: ServerContext) {
       getApiKey?: () => string | undefined;
       getWorkspaceId?: () => string | undefined;
     };
-    console.error('[createServer:init] Context configuration:', {
+    logger.debug('Context configuration', {
       hasContext: Boolean(context),
       contextKeys: context ? Object.keys(context) : [],
       hasGetApiKey: typeof typedContext.getApiKey === 'function',
@@ -110,7 +110,7 @@ export function createServer(context?: ServerContext) {
 
   // Final debug summary for Issue #891
   if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-    console.error('[createServer:complete] Server initialization complete:', {
+    logger.debug('Server initialization complete', {
       duration: `${duration}ms`,
       serverVersion: '1.1.2',
       capabilities: ['resources', 'tools', 'prompts'],
