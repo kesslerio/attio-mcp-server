@@ -65,16 +65,9 @@ workflow_steps:
       - update-record
       - update-list-entry
       - create-note
-    stages:
-      - Discovery
-      - Qualification
-      - Proposal
-      - Negotiation
-      - Closed Won
-      - Closed Lost
     example: |
       1. Validate stage transition is allowed
-      2. Update stage field
+      2. Update stage field (use values from workspace schema)
       3. Adjust close_probability based on stage
       4. Create note documenting stage change
       5. Update list entry attributes if needed

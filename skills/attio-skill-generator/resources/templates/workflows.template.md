@@ -52,16 +52,6 @@ Detailed workflow patterns for {{use_case.description}}.
   {{/routing_rules}}
   {{/routing_rules}}
 
-{{#stages}}
-
-### Pipeline Stages
-
-{{#stages}}
-
-1. {{.}}
-   {{/stages}}
-   {{/stages}}
-
 {{#milestones}}
 
 ### Milestones

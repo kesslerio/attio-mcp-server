@@ -80,7 +80,17 @@ If `attio-workspace-schema` skill is NOT available:
 
 ### Step 2: Build Schema JSON
 
-Structure the discovered data as JSON for the generator. **Include only the primary object, no lists:**
+Structure the discovered data as JSON for the generator. **This structure is CRITICAL for correct output.**
+
+**⚠️ REQUIRED FIELDS for each attribute:**
+
+- `api_slug` - The API field name (required)
+- `type` - Field type: text, status, select, number, date, etc. (required)
+- `is_required` - Boolean, true if field is required (optional, defaults to false)
+- `is_multiselect` - Boolean, true if field accepts multiple values (optional, defaults to false)
+- `options` - Array of option objects for status/select fields (REQUIRED for status/select types!)
+
+**⚠️ OPTIONS ARE CRITICAL:** For `status` and `select` type fields, you MUST include the `options` array with the actual option titles from the workspace. Without this, the generated skill won't show pipeline stages or dropdown values!
 
 ```json
 {
@@ -92,22 +102,58 @@ Structure the discovered data as JSON for the generator. **Include only the prim
           "api_slug": "name",
           "display_name": "Deal Name",
           "type": "text",
-          "is_required": true
+          "is_required": true,
+          "is_multiselect": false
         },
         {
           "api_slug": "stage",
-          "display_name": "Stage",
+          "display_name": "Deal Stage",
           "type": "status",
+          "is_required": true,
+          "is_multiselect": false,
           "options": [
-            { "title": "Discovery", "id": "uuid-1" },
-            { "title": "Negotiation", "id": "uuid-2" },
-            { "title": "Closed Won", "id": "uuid-3" }
+            { "title": "MQL" },
+            { "title": "Demo Request" },
+            { "title": "Discovery Call" },
+            { "title": "Demo Booked" },
+            { "title": "Negotiations" },
+            { "title": "Won 🎉" },
+            { "title": "Lost" }
           ]
+        },
+        {
+          "api_slug": "primary_interest",
+          "display_name": "Primary Interest",
+          "type": "select",
+          "is_multiselect": false,
+          "options": [
+            { "title": "GLP-1 / medical weight loss" },
+            { "title": "Body contouring / aesthetics" },
+            { "title": "Replacing existing device" }
+          ]
+        },
+        {
+          "api_slug": "lost_reason",
+          "display_name": "Lost Reason",
+          "type": "select",
+          "is_multiselect": true,
+          "options": [
+            { "title": "Pricing/Cost" },
+            { "title": "Competitor" },
+            { "title": "Timing Not Right" }
+          ]
+        },
+        {
+          "api_slug": "associated_people",
+          "display_name": "Associated People",
+          "type": "record-reference",
+          "is_multiselect": true
         },
         {
           "api_slug": "associated_company",
           "display_name": "Company",
-          "type": "record-reference"
+          "type": "record-reference",
+          "is_multiselect": false
         }
       ]
     }
@@ -116,7 +162,11 @@ Structure the discovered data as JSON for the generator. **Include only the prim
 }
 ```
 
-**Note:** `lists` array is empty by default. Only populate if user requests list functionality.
+**Key points:**
+
+- `lists` array is empty by default. Only populate if user requests list functionality.
+- For `status`/`select` fields, copy the EXACT option titles from the workspace schema
+- Set `is_multiselect: true` for fields that accept multiple values (check the Multi column in schema)
 
 ### Step 3: Run the Generator
 
