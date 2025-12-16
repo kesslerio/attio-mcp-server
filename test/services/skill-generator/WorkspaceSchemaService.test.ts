@@ -13,14 +13,27 @@ import type { AttributeOptionsResult } from '@/services/metadata/AttributeOption
 
 // Mock dependencies
 vi.mock('@/api/attribute-types.js');
+vi.mock('@/api/lazy-client.js');
 vi.mock('@/services/metadata/AttributeOptionsService.js');
 vi.mock('@/utils/logger.js');
 
 // Import mocked modules
 const { getObjectAttributeMetadata } = await import('@/api/attribute-types.js');
+const { getLazyAttioClient } = await import('@/api/lazy-client.js');
 const { AttributeOptionsService } = await import(
   '@/services/metadata/AttributeOptionsService.js'
 );
+
+// Helper functions for mocking getLazyAttioClient
+const mockApiError = () =>
+  vi.mocked(getLazyAttioClient).mockReturnValue({
+    get: vi.fn().mockRejectedValue(new Error('Not found')),
+  } as unknown as ReturnType<typeof getLazyAttioClient>);
+
+const mockApiSuccess = (data: unknown) =>
+  vi.mocked(getLazyAttioClient).mockReturnValue({
+    get: vi.fn().mockResolvedValue({ data }),
+  } as unknown as ReturnType<typeof getLazyAttioClient>);
 
 describe('WorkspaceSchemaService', () => {
   let service: WorkspaceSchemaService;
@@ -28,6 +41,10 @@ describe('WorkspaceSchemaService', () => {
   beforeEach(() => {
     service = new WorkspaceSchemaService();
     vi.clearAllMocks();
+
+    // Default mock for getLazyAttioClient - returns null title (graceful fallback)
+    // Individual tests can override this to test specific behaviors
+    mockApiError();
   });
 
   afterEach(() => {
@@ -578,6 +595,10 @@ describe('WorkspaceSchemaService', () => {
     it('should use standard display names for Phase 1 objects', async () => {
       const mockMetadata: Map<string, AttioAttributeMetadata> = new Map();
       vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
+      // Mock API to return null (Phase 1 objects use hardcoded fallback)
+      vi.mocked(getLazyAttioClient).mockReturnValue({
+        get: vi.fn().mockRejectedValue(new Error('Not found')),
+      } as unknown as ReturnType<typeof getLazyAttioClient>);
 
       const result = await service.fetchSchema(
         ['companies', 'people', 'deals'],
@@ -593,9 +614,13 @@ describe('WorkspaceSchemaService', () => {
       expect(result.objects[2].displayName).toBe('Deals');
     });
 
-    it('should capitalize custom object names', async () => {
+    it('should capitalize custom object names when API fails', async () => {
       const mockMetadata: Map<string, AttioAttributeMetadata> = new Map();
       vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
+      // Mock API to fail
+      vi.mocked(getLazyAttioClient).mockReturnValue({
+        get: vi.fn().mockRejectedValue(new Error('Not found')),
+      } as unknown as ReturnType<typeof getLazyAttioClient>);
 
       const result = await service.fetchSchema(['properties'], {
         maxOptionsPerAttribute: 20,
@@ -604,6 +629,77 @@ describe('WorkspaceSchemaService', () => {
       });
 
       expect(result.objects[0].displayName).toBe('Properties');
+    });
+
+    it('should use API-fetched title for custom objects (Issue #1017)', async () => {
+      const mockMetadata: Map<string, AttioAttributeMetadata> = new Map();
+      vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
+      // Mock API to return custom title
+      vi.mocked(getLazyAttioClient).mockReturnValue({
+        get: vi.fn().mockResolvedValue({
+          data: {
+            data: {
+              api_slug: 'custom_prospecting_list',
+              title: 'Prospecting Contacts',
+            },
+          },
+        }),
+      } as unknown as ReturnType<typeof getLazyAttioClient>);
+
+      const result = await service.fetchSchema(['custom_prospecting_list'], {
+        maxOptionsPerAttribute: 20,
+        includeArchived: false,
+        optionFetchDelayMs: 0,
+      });
+
+      expect(result.objects[0].displayName).toBe('Prospecting Contacts');
+      expect(result.objects[0].objectSlug).toBe('custom_prospecting_list');
+    });
+
+    it('should handle API response with flat data structure', async () => {
+      const mockMetadata: Map<string, AttioAttributeMetadata> = new Map();
+      vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
+      // Mock API to return flat data structure (no nested data.data)
+      vi.mocked(getLazyAttioClient).mockReturnValue({
+        get: vi.fn().mockResolvedValue({
+          data: {
+            api_slug: 'my_custom_object',
+            title: 'My Custom Object',
+          },
+        }),
+      } as unknown as ReturnType<typeof getLazyAttioClient>);
+
+      const result = await service.fetchSchema(['my_custom_object'], {
+        maxOptionsPerAttribute: 20,
+        includeArchived: false,
+        optionFetchDelayMs: 0,
+      });
+
+      expect(result.objects[0].displayName).toBe('My Custom Object');
+    });
+
+    it('should fallback to capitalization when API returns no title', async () => {
+      const mockMetadata: Map<string, AttioAttributeMetadata> = new Map();
+      vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
+      // Mock API to return object without title
+      vi.mocked(getLazyAttioClient).mockReturnValue({
+        get: vi.fn().mockResolvedValue({
+          data: {
+            data: {
+              api_slug: 'some_object',
+              // No title field
+            },
+          },
+        }),
+      } as unknown as ReturnType<typeof getLazyAttioClient>);
+
+      const result = await service.fetchSchema(['some_object'], {
+        maxOptionsPerAttribute: 20,
+        includeArchived: false,
+        optionFetchDelayMs: 0,
+      });
+
+      expect(result.objects[0].displayName).toBe('Some Object');
     });
   });
 });
