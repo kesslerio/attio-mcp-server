@@ -106,6 +106,12 @@ yargs(hideBin(process.argv))
           type: 'boolean',
           default: false,
         })
+        .option('option-fetch-delay', {
+          description:
+            'Delay between attribute option fetches in milliseconds (default: 100)',
+          type: 'number',
+          default: 100,
+        })
         .option('api-key', {
           alias: 'k',
           description: 'Attio API key (defaults to ATTIO_API_KEY env var)',
@@ -115,6 +121,15 @@ yargs(hideBin(process.argv))
         .check((argv) => {
           if (!argv.object && !argv.all) {
             throw new Error('You must specify either --object or --all');
+          }
+          if (
+            typeof argv.optionFetchDelay !== 'number' ||
+            !Number.isFinite(argv.optionFetchDelay) ||
+            argv.optionFetchDelay < 0
+          ) {
+            throw new Error(
+              '--option-fetch-delay must be a non-negative number'
+            );
           }
           return true;
         });

@@ -24,6 +24,7 @@ interface GenerateSkillArgs {
   zip?: boolean;
   maxOptions?: number;
   includeArchived?: boolean;
+  optionFetchDelay?: number;
   apiKey?: string;
   [key: string]: unknown;
 }
@@ -80,6 +81,7 @@ export async function generateSkill(argv: GenerateSkillArgs): Promise<void> {
       zip: argv.zip || false,
       maxOptionsPerAttribute: argv.maxOptions || 20,
       includeArchived: argv.includeArchived || false,
+      optionFetchDelayMs: argv.optionFetchDelay ?? 100,
       apiKey,
     };
 
@@ -89,6 +91,7 @@ export async function generateSkill(argv: GenerateSkillArgs): Promise<void> {
     const schema = await schemaService.fetchSchema(objects, {
       maxOptionsPerAttribute: config.maxOptionsPerAttribute,
       includeArchived: config.includeArchived,
+      optionFetchDelayMs: config.optionFetchDelayMs,
     });
 
     if (schema.objects.length === 0) {

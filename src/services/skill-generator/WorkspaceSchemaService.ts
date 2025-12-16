@@ -67,6 +67,23 @@ export class WorkspaceSchemaService {
     // No parameters needed - API key flows through getLazyAttioClient()
   }
 
+  private getOptionFetchDelayMs(options: FetchSchemaOptions): number {
+    if (options.optionFetchDelayMs === undefined) return 100;
+    if (
+      typeof options.optionFetchDelayMs !== 'number' ||
+      !Number.isFinite(options.optionFetchDelayMs) ||
+      options.optionFetchDelayMs < 0
+    ) {
+      logWarn(
+        'WorkspaceSchemaService',
+        `Invalid optionFetchDelayMs (${String(options.optionFetchDelayMs)}); using default 100ms`,
+        { optionFetchDelayMs: options.optionFetchDelayMs }
+      );
+      return 100;
+    }
+    return options.optionFetchDelayMs;
+  }
+
   /**
    * Fetches complete workspace schema for specified objects
    *
@@ -120,6 +137,8 @@ export class WorkspaceSchemaService {
     objectSlug: string,
     options: FetchSchemaOptions
   ): Promise<ObjectSchema> {
+    const optionFetchDelayMs = this.getOptionFetchDelayMs(options);
+
     // 1. Fetch attribute metadata (uses existing 15min TTL cache)
     const metadataMap = await getObjectAttributeMetadata(objectSlug);
 
@@ -171,8 +190,12 @@ export class WorkspaceSchemaService {
           attributeSchema.optionsTruncated = truncated;
           attributeSchema.totalOptions = totalOptions;
 
-          // Rate limiting: Add 100ms delay between option fetches
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          // Rate limiting: Add delay between option fetches
+          if (optionFetchDelayMs > 0) {
+            await new Promise((resolve) =>
+              setTimeout(resolve, optionFetchDelayMs)
+            );
+          }
         } catch (error: unknown) {
           // Log warning but don't fail - attribute can still be documented
           logWarn(
