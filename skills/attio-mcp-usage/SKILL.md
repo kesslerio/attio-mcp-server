@@ -32,7 +32,11 @@ Teaches universal patterns for:
 - [Workflows](resources/workflows.md) - Universal workflow patterns
 - [Golden Rules](resources/golden-rules.md) - Error prevention system
 - [Tool Reference](resources/tool-reference.md) - MCP tool signatures
-- [Integration Patterns](resources/integration-patterns.md) - Example workflows
+- [Integration Patterns](resources/integration-patterns.md) - Pattern index
+
+## Pattern Selection
+
+See [Pattern Selection Guide](resources/patterns/README.md) for keyword-based routing to the right pattern for your workflow.
 
 ## When to Use This Skill
 
