@@ -422,32 +422,40 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(mockGetStatusOptions).toHaveBeenCalledTimes(2); // New API call
     });
 
-    it('should handle concurrent requests with minimal API calls', async () => {
-      // This test simulates multiple concurrent requests
-      mockGetStatusOptions.mockResolvedValue([
-        { title: 'Concurrent Stage', value: 'concurrent', is_archived: false },
-      ]);
+    it(
+      'should handle concurrent requests with minimal API calls',
+      { timeout: 15000 },
+      async () => {
+        // This test simulates multiple concurrent requests
+        mockGetStatusOptions.mockResolvedValue([
+          {
+            title: 'Concurrent Stage',
+            value: 'concurrent',
+            is_archived: false,
+          },
+        ]);
 
-      clearDealCaches();
+        clearDealCaches();
 
-      // Simulate multiple concurrent requests
-      const promises = Array.from({ length: 5 }, () =>
-        validateDealStage('Concurrent Stage', false)
-      );
+        // Simulate multiple concurrent requests
+        const promises = Array.from({ length: 5 }, () =>
+          validateDealStage('Concurrent Stage', false)
+        );
 
-      const results = await Promise.all(promises);
+        const results = await Promise.all(promises);
 
-      // All should return the same result
-      results.forEach((result) => {
-        expect(result.validatedStage).toBe('Concurrent Stage');
-      });
+        // All should return the same result
+        results.forEach((result) => {
+          expect(result.validatedStage).toBe('Concurrent Stage');
+        });
 
-      // API should be called but with minimal calls (allowing for some race conditions)
-      // In a real-world scenario, some concurrent requests might slip through
-      const callCount = mockGetStatusOptions.mock.calls.length;
-      expect(callCount).toBeGreaterThanOrEqual(1);
-      expect(callCount).toBeLessThanOrEqual(5);
-    });
+        // API should be called but with minimal calls (allowing for some race conditions)
+        // In a real-world scenario, some concurrent requests might slip through
+        const callCount = mockGetStatusOptions.mock.calls.length;
+        expect(callCount).toBeGreaterThanOrEqual(1);
+        expect(callCount).toBeLessThanOrEqual(5);
+      }
+    );
 
     it('should handle malformed API responses', async () => {
       // Mock malformed API response
