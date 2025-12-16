@@ -8,8 +8,13 @@
  */
 
 import { getObjectAttributeMetadata } from '@/api/attribute-types.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import { AttributeOptionsService } from '@/services/metadata/AttributeOptionsService.js';
-import { error as logError, warn as logWarn } from '@/utils/logger.js';
+import {
+  debug as logDebug,
+  error as logError,
+  warn as logWarn,
+} from '@/utils/logger.js';
 import type {
   WorkspaceSchema,
   ObjectSchema,
@@ -65,6 +70,29 @@ export class WorkspaceSchemaService {
    */
   constructor() {
     // No parameters needed - API key flows through getLazyAttioClient()
+  }
+
+  /**
+   * Fetches the display title for an object from the Attio API
+   *
+   * @param objectSlug - Object API slug (e.g., 'companies', 'custom_prospecting_list')
+   * @returns The object title from Attio, or null if fetch fails
+   * @see Issue #1017
+   */
+  private async fetchObjectTitle(objectSlug: string): Promise<string | null> {
+    try {
+      const client = getLazyAttioClient();
+      const response = await client.get(`/objects/${objectSlug}`);
+      const obj = response?.data?.data || response?.data;
+      return obj?.title || null;
+    } catch {
+      logDebug(
+        'WorkspaceSchemaService',
+        `Could not fetch title for ${objectSlug}, using fallback`,
+        { objectSlug }
+      );
+      return null;
+    }
   }
 
   private getOptionFetchDelayMs(options: FetchSchemaOptions): number {
@@ -134,11 +162,18 @@ export class WorkspaceSchemaService {
     options: FetchSchemaOptions
   ): Promise<ObjectSchema> {
     const optionFetchDelayMs = this.getOptionFetchDelayMs(options);
+    const PHASE1_OBJECTS = ['companies', 'people', 'deals'];
 
-    // 1. Fetch attribute metadata (uses existing 15min TTL cache)
+    // 1. Fetch object title from API for custom objects (Issue #1017)
+    // Skip API call for Phase 1 objects - they have hardcoded display names
+    const objectTitle = PHASE1_OBJECTS.includes(objectSlug)
+      ? null
+      : await this.fetchObjectTitle(objectSlug);
+
+    // 2. Fetch attribute metadata (uses existing 15min TTL cache)
     const metadataMap = await getObjectAttributeMetadata(objectSlug);
 
-    // 2. Convert metadata to AttributeSchema array
+    // 3. Convert metadata to AttributeSchema array
     const attributes: AttributeSchema[] = [];
 
     for (const [apiSlug, metadata] of metadataMap.entries()) {
@@ -153,7 +188,7 @@ export class WorkspaceSchemaService {
         description: metadata.description,
       };
 
-      // 3. Fetch options for select/status attributes
+      // 4. Fetch options for select/status attributes
       if (this.isOptionBasedAttribute(metadata.type)) {
         try {
           const optionsResult = await AttributeOptionsService.getOptions(
@@ -204,14 +239,14 @@ export class WorkspaceSchemaService {
         }
       }
 
-      // 4. Add complex type structures
+      // 5. Add complex type structures
       if (this.isComplexType(metadata.type)) {
         attributeSchema.complexTypeStructure = this.getComplexTypeStructure(
           metadata.type
         );
       }
 
-      // 5. Add relationship metadata (only when we have real data)
+      // 6. Add relationship metadata (only when we have real data)
       if (metadata.relationship?.object && metadata.relationship?.cardinality) {
         attributeSchema.relationship = {
           targetObject: metadata.relationship.object,
@@ -224,7 +259,7 @@ export class WorkspaceSchemaService {
 
     return {
       objectSlug,
-      displayName: this.getDisplayName(objectSlug),
+      displayName: this.getDisplayName(objectSlug, objectTitle),
       attributes,
     };
   }
@@ -305,20 +340,37 @@ export class WorkspaceSchemaService {
   /**
    * Gets human-readable display name for an object slug
    *
+   * Uses the fetched title from Attio API if available, otherwise falls back
+   * to hardcoded display names for Phase 1 objects or slug capitalization.
+   *
    * @param objectSlug - Object API slug
-   * @returns Capitalized display name
+   * @param fetchedTitle - Title fetched from Attio API (optional)
+   * @returns Human-readable display name
+   * @see Issue #1017
    */
-  private getDisplayName(objectSlug: string): string {
+  private getDisplayName(
+    objectSlug: string,
+    fetchedTitle?: string | null
+  ): string {
+    // Use API-fetched title if available
+    if (fetchedTitle) {
+      return fetchedTitle;
+    }
+
+    // Fallback to hardcoded display names for Phase 1 objects
     const displayNames: Record<string, string> = {
       companies: 'Companies',
       people: 'People',
       deals: 'Deals',
     };
 
-    // If not in map, capitalize first letter of slug
+    // If not in map, title-case the slug (replace underscores with spaces)
     return (
       displayNames[objectSlug] ||
-      objectSlug.charAt(0).toUpperCase() + objectSlug.slice(1)
+      objectSlug
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
     );
   }
 }
