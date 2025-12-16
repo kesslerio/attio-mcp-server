@@ -274,7 +274,7 @@ export async function transformSelectValue(
     debug(
       'select-transformer',
       `No select options found for ${objectSlug}.${attributeSlug}`,
-      { value },
+      { hasValue: !!value, valueType: typeof value },
       'transformSelectValue',
       OperationType.DATA_PROCESSING
     );

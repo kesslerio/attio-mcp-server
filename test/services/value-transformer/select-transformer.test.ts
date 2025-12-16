@@ -607,7 +607,7 @@ describe('select-transformer', () => {
   });
 
   describe('Concurrent Operations', () => {
-    it('should handle concurrent transformations without duplicate API calls', async () => {
+    it('documents potential duplicate API calls during concurrent access (no mutex)', async () => {
       const { AttributeOptionsService } = await import(
         '@/services/metadata/index.js'
       );
@@ -641,10 +641,11 @@ describe('select-transformer', () => {
         expect(result.transformedValue).toEqual(['opt-1']);
       });
 
-      // Note: Current implementation doesn't have mutex, so this may make multiple calls
-      // If test fails, it reveals a concurrency bug that should be fixed
-      // Ideally should only make 1 API call (cache prevents duplicates)
-      expect(apiCallCount).toBeGreaterThan(0);
+      // Current implementation lacks mutex, so multiple calls may occur during race conditions
+      // This documents observed behavior rather than enforcing an ideal (1 call)
+      // Future improvement: Add mutex to guarantee single API call per cache key
+      expect(apiCallCount).toBeGreaterThanOrEqual(1);
+      expect(apiCallCount).toBeLessThanOrEqual(5); // At most one per concurrent request
     });
   });
 });
