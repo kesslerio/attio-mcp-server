@@ -239,6 +239,6 @@ Call `add-record-to-list` with:
 ## Cross-References
 
 - [Golden Rules](../golden-rules.md) - Record relationships, stage formatting
-- [Tool Reference](../tool-reference.md) - `create-record`, `create-deal`, `add-record-to-list`
+- [Tool Reference](../tool-reference.md) - `create-record`, `add-record-to-list`
 - [Sales Pipeline](sales-pipeline.md) - Similar deal progression patterns
 - **attio-workspace-schema skill** - Your fundraising-specific attributes

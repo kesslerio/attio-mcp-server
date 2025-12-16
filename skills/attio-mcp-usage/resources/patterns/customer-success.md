@@ -195,16 +195,16 @@ Call `update-record` with:
 
 #### Step 2: Get CSM's book of business
 
-Call `records_search` with:
+Call `get-list-entries` with:
 
 ```json
 {
-  "resource_type": "companies",
-  "query": "<csm_name>"
+  "listId": "<csm-book-of-business-list-id>",
+  "limit": 100
 }
 ```
 
-> **Note**: Filter by team contains CSM's person ID. Calculate book metrics: total ARR, account count, avg health, upcoming renewals.
+> **Note**: If you don't have a dedicated list per CSM, use your workspace setup (lists, views, or schema skill) to identify accounts where `team` contains the CSM.
 
 ## Health Score Tiers
 
@@ -237,6 +237,6 @@ Call `records_search` with:
 ## Cross-References
 
 - [Golden Rules](../golden-rules.md) - Team assignments, date formatting
-- [Tool Reference](../tool-reference.md) - `update-record`, `create-deal`, `create-task`
+- [Tool Reference](../tool-reference.md) - `update-record`, `create-record`, `create-task`
 - [Deal Stage Automation](deal-stage-automation.md) - Renewal stage progression
 - **attio-workspace-schema skill** - Your CS-specific attributes

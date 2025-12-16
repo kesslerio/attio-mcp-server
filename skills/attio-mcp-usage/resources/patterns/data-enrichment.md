@@ -71,7 +71,7 @@ Call `create-note` with:
 
 #### Step 1: Get deal company domain
 
-Call `get-record` to fetch the deal and its associated company domain.
+Call `records_get_details` to fetch the deal and its associated company domain.
 
 #### Step 2: Update deal with intelligence
 
@@ -106,7 +106,7 @@ Call `create-note` with:
 
 #### Step 1: Get person record
 
-Call `get-record` to fetch person details and email.
+Call `records_get_details` to fetch person details and email.
 
 #### Step 2: Update with social data
 

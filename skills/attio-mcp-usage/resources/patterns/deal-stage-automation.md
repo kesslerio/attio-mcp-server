@@ -31,7 +31,7 @@ Call `get-list-entries` with:
 }
 ```
 
-Option B - Search by stage attribute:
+Option B - Approximate search (not a deterministic stage filter):
 
 Call `records_search` with:
 
@@ -41,6 +41,8 @@ Call `records_search` with:
   "query": "Discovery"
 }
 ```
+
+> **Note**: `records_search` is a universal text search. It may not reliably return "stage = Discovery" deals unless your workspace uses consistent naming conventions. Prefer list-based pipelines (Option A) for deterministic stage selection.
 
 ### Step 2: Evaluate advancement criteria
 
