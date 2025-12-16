@@ -9,7 +9,6 @@ import {
 } from '@/utils/complex-type-validation.js';
 import { debug, error } from '@/utils/logger.js';
 import { TTLCache } from '@/utils/ttl-cache.js';
-import { normalizeLocation } from '@/utils/location-normalizer.js';
 
 /**
  * Interface for Attio attribute metadata
