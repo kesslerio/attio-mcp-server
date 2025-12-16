@@ -54,17 +54,17 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 
 ### 📊 **Company Management**
 
-- **Universal Search**: Find companies with `search-records` and `advanced-search`
+- **Universal Search**: Find companies with `search_records` and `search_records_advanced`
 - **Full CRUD**: Create, read, update, and delete with universal record operations
-- **Relationship Discovery**: Find companies through `search-by-relationship`
-- **Batch Operations**: Process hundreds of companies with `batch-operations`
-- **Detailed Information**: Get contact, business, and social info with `get-detailed-info`
+- **Relationship Discovery**: Find companies through `search_records_by_relationship`
+- **Batch Operations**: Process hundreds of companies with `batch_records`
+- **Detailed Information**: Get contact, business, and social info with `get_record_info`
 
 ### 👥 **People Management**
 
 - **Universal Contact Search**: Find people by any criteria using universal search tools
-- **Relationship Tracking**: Link people to companies with `search-by-relationship`
-- **Activity Timeline**: Track interactions with `search-by-content` and `search-by-timeframe`
+- **Relationship Tracking**: Link people to companies with `search_records_by_relationship`
+- **Activity Timeline**: Track interactions with `search_records_by_content` and `search_records_by_timeframe`
 - **Advanced Filtering**: Multi-attribute search with universal filtering
 - **Bulk Operations**: Efficiently manage contacts with universal batch operations
 
