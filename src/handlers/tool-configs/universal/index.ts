@@ -123,7 +123,7 @@ export * from './shared-handlers.js';
 export const universalToolConfigs = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckConfig,
-  'smithery_debug_config': smitheryDiagnosticsConfig,
+  smithery_debug_config: smitheryDiagnosticsConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   batch_search_records: batchSearchConfig,
@@ -136,7 +136,7 @@ export const universalToolConfigs = {
 export const universalToolDefinitions = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckToolDefinition,
-  'smithery_debug_config': smitheryDiagnosticsToolDefinition,
+  smithery_debug_config: smitheryDiagnosticsToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   batch_search_records: batchSearchToolDefinition,
@@ -150,9 +150,9 @@ export const universalToolDefinitions = {
 export const coreUniversalTools = [
   'search_records',
   'get_record_details',
-  'create-record',
-  'update-record',
-  'delete-record',
+  'create_record',
+  'update_record',
+  'delete_record',
   'get_record_attributes',
   'discover_record_attributes',
   'get_record_info',

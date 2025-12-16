@@ -34,13 +34,13 @@ import {
 } from './notes-operations.js';
 
 export const coreOperationsToolConfigs = {
-  'create_note': createNoteConfig,
-  'list_notes': listNotesConfig,
+  create_note: createNoteConfig,
+  list_notes: listNotesConfig,
   search_records: searchRecordsConfig,
   get_record_details: getRecordDetailsConfig,
-  'create_record': createRecordConfig,
-  'update_record': updateRecordConfig,
-  'delete_record': deleteRecordConfig,
+  create_record: createRecordConfig,
+  update_record: updateRecordConfig,
+  delete_record: deleteRecordConfig,
   get_record_attributes: getAttributesConfig,
   discover_record_attributes: discoverAttributesConfig,
   get_record_attribute_options: getAttributeOptionsConfig,
@@ -50,15 +50,15 @@ export const coreOperationsToolConfigs = {
 export const coreOperationsToolDefinitions = {
   search_records: searchRecordsDefinition,
   get_record_details: getRecordDetailsDefinition,
-  'create_record': createRecordDefinition,
-  'update_record': updateRecordDefinition,
-  'delete_record': deleteRecordDefinition,
+  create_record: createRecordDefinition,
+  update_record: updateRecordDefinition,
+  delete_record: deleteRecordDefinition,
   get_record_attributes: getAttributesDefinition,
   discover_record_attributes: discoverAttributesDefinition,
   get_record_attribute_options: getAttributeOptionsDefinition,
   get_record_info: getDetailedInfoDefinition,
-  'create_note': createNoteDefinition,
-  'list_notes': listNotesDefinition,
+  create_note: createNoteDefinition,
+  list_notes: listNotesDefinition,
 };
 
 export {

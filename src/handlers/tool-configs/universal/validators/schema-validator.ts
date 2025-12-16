@@ -162,7 +162,7 @@ const toolValidators: Record<string, ToolValidator> = {
     return p;
   },
   // Legacy CRUD tools (still using hyphenated names)
-  'create_record': (p) => {
+  create_record: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -183,7 +183,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  'update_record': (p) => {
+  update_record: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -224,7 +224,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  'delete_record': (p) => {
+  delete_record: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -245,7 +245,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  'create_note': (p) => {
+  create_note: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -401,7 +401,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  'list_notes': (p) => {
+  list_notes: (p) => {
     const candidateParams = p as Record<string, unknown>;
     if (!p.record_id && typeof candidateParams.parent_record_id === 'string') {
       p.record_id = candidateParams.parent_record_id;

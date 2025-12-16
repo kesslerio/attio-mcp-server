@@ -28,7 +28,7 @@ export const advancedOperationsToolConfigs = {
 
 export const advancedOperationsToolDefinitions = {
   search_records_advanced: {
-    name: 'records_search_advanced',
+    name: 'search_records_advanced',
     description: formatToolDescription({
       capability:
         'Search companies, people, deals, or tasks with complex nested filters (e.g., find deals by owner+stage, companies by industry+location).',
@@ -45,7 +45,7 @@ export const advancedOperationsToolDefinitions = {
     },
   },
   search_records_by_relationship: {
-    name: 'records_search_by_relationship',
+    name: 'search_records_by_relationship',
     description: formatToolDescription({
       capability:
         'Search records using relationship anchors (list, company, people).',
@@ -60,7 +60,7 @@ export const advancedOperationsToolDefinitions = {
     },
   },
   search_records_by_content: {
-    name: 'records_search_by_content',
+    name: 'search_records_by_content',
     description: formatToolDescription({
       capability: 'Search record content (notes, activity, communications).',
       boundaries: 'modify note content or attachments.',
@@ -76,7 +76,7 @@ export const advancedOperationsToolDefinitions = {
     },
   },
   search_records_by_timeframe: {
-    name: 'records_search_by_timeframe',
+    name: 'search_records_by_timeframe',
     description: formatToolDescription({
       capability:
         'Filter records by creation, update, or interaction timeframes.',
@@ -93,7 +93,7 @@ export const advancedOperationsToolDefinitions = {
     },
   },
   batch_records: {
-    name: 'records_batch',
+    name: 'batch_records',
     description: formatToolDescription({
       capability:
         'Execute batched record operations (create/update/delete/get/search).',
