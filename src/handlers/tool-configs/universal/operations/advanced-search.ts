@@ -26,11 +26,11 @@ export const advancedSearchConfig: UniversalToolConfig<
   AdvancedSearchParams,
   AttioRecord[]
 > = {
-  name: 'records_search_advanced',
+  name: 'search_records_advanced',
   handler: async (params: AdvancedSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'records_search_advanced',
+        'search_records_advanced',
         params
       );
 
@@ -132,7 +132,7 @@ export const advancedSearchConfig: UniversalToolConfig<
         ? String((params as { resource_type: unknown }).resource_type)
         : '';
       throw ErrorService.createUniversalError(
-        'records_search_advanced',
+        'search_records_advanced',
         ctx,
         error
       );

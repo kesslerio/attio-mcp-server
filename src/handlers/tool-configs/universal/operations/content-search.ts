@@ -20,11 +20,11 @@ export const searchByContentConfig: UniversalToolConfig<
   ContentSearchParams,
   AttioRecord[]
 > = {
-  name: 'records_search_by_content',
+  name: 'search_records_by_content',
   handler: async (params: ContentSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'records_search_by_content',
+        'search_records_by_content',
         params
       );
 
@@ -88,7 +88,7 @@ export const searchByContentConfig: UniversalToolConfig<
       }
 
       throw ErrorService.createUniversalError(
-        'records_search_by_content',
+        'search_records_by_content',
         `${params.resource_type}:${params.content_type}`,
         error
       );
