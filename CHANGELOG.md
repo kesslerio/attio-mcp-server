@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Select-field Transformer** (#1019) - Quality-of-life enhancement for select field values
+  - Case-insensitive title matching: `"potential customer"` → `"Potential Customer"`
+  - Partial matching support: `"Potential"` → `"Potential Customer"`
+  - Better error messages listing valid options with suggestions
+  - UUID pass-through support (no API lookup needed)
+  - 5-minute TTL caching to minimize API calls
+  - Consistent UX with existing status-transformer
+
 - **Universal Usage Guide Skill** (#1018) - Hand-crafted skill for workflow patterns and error prevention
   - Universal workflow patterns (Find or Create, Batch Update, Pipeline Movement, Data Enrichment)
   - Golden Rules error prevention system (read-only fields, multi-select arrays, data types, UUID validation)
