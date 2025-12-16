@@ -18,69 +18,101 @@ Manage deals from opportunity creation to close. This is the PRIMARY workflow fo
 
 ## Workflow Steps
 
+### Step 1: Create deal from opportunity
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_data": {
+    "name": "Q4 Enterprise Deal - Acme Inc",
+    "value": 50000,
+    "stage": "In Progress",
+    "associated_company": ["<company_record_id>"]
+  }
+}
 ```
-Step 1: Create deal from opportunity
-// Tool: create-record
+
+> **Note**: Use exact stage option titles from your workspace. Check schema skill for custom attributes.
+
+### Step 2: Add to active deals list
+
+Call `add-record-to-list` with:
+
+```json
 {
-  resource_type: 'deals',
-  record_data: {
-    name: 'Q4 Enterprise Deal - Acme Inc',
-    value: 50000,                         // Standard: currency field
-    stage: 'In Progress',                 // Standard: use exact option title
-    associated_company: ['company_record_id']  // Standard: array for reference
+  "listId": "<your-active-deals-list-id>",
+  "record_id": "<deal_record_id>",
+  "resource_type": "deals"
+}
+```
+
+> **Note**: Get listId from your schema skill.
+
+### Step 3: Create discovery task
+
+Call `create-task` with:
+
+```json
+{
+  "content": "Schedule discovery call",
+  "title": "Discovery Call",
+  "linked_records": [
+    {
+      "target_object": "deals",
+      "target_record_id": "<deal_record_id>"
+    }
+  ],
+  "dueDate": "2024-12-16T10:00:00Z"
+}
+```
+
+### Step 4: Document opportunity context
+
+Call `create-note` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "title": "Opportunity Context",
+  "content": "Source: Inbound demo request. Key stakeholders: CTO, VP Eng. Budget confirmed: $50k."
+}
+```
+
+### Step 5: Progress through stages
+
+Call `update-record` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "record_data": {
+    "stage": "Won",
+    "value": 55000
   }
 }
+```
 
-Step 2: Add to active deals list
-// Tool: add-record-to-list
-{
-  listId: 'your-active-deals-list-id',   // From schema skill
-  record_id: deal.record_id,
-  resource_type: 'deals'
-}
+### Step 6: Move between lists (if using list-based pipeline)
 
-Step 3: Create discovery task
-// Tool: create-task
-{
-  content: 'Schedule discovery call',
-  title: 'Discovery Call',
-  linked_records: [{
-    target_object: 'deals',
-    target_record_id: deal.record_id
-  }],
-  dueDate: '2024-12-16T10:00:00Z'
-}
+Call `remove-record-from-list` with:
 
-Step 4: Document opportunity context
-// Tool: create-note
+```json
 {
-  resource_type: 'deals',
-  record_id: deal.record_id,
-  title: 'Opportunity Context',
-  content: 'Source: Inbound demo request. Key stakeholders: CTO, VP Eng. Budget confirmed: $50k.'
+  "listId": "<discovery-list-id>",
+  "entryId": "<entry_id>"
 }
+```
 
-Step 5: Progress through stages
-// Tool: update-record
-{
-  resource_type: 'deals',
-  record_id: deal.record_id,
-  record_data: {
-    stage: 'Won',                         // Standard: use exact option title
-    value: 55000                          // Standard: updated deal value
-  }
-}
+Then call `add-record-to-list` with:
 
-Step 6: Move between lists (if using list-based pipeline)
-// Tool: remove-record-from-list
+```json
 {
-  listId: 'discovery-list-id',
-  entryId: discovery_entry.entry_id
-}
-// Tool: add-record-to-list
-{
-  listId: 'proposal-list-id',
-  record_id: deal.record_id
+  "listId": "<proposal-list-id>",
+  "record_id": "<deal_record_id>"
 }
 ```
 

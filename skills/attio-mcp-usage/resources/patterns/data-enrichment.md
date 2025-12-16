@@ -20,75 +20,122 @@ Augment Attio records with external data from enrichment providers. This pattern
 
 ### Companies (Firmographic Data)
 
+#### Step 1: Get records needing enrichment
+
+Call `get-list-entries` with:
+
+```json
+{
+  "listId": "<enrichment-queue-id>",
+  "limit": 100
+}
 ```
-Step 1: Get records needing enrichment
+
+> **Note**: Or search for records with empty enrichment fields.
+
+#### Step 2: Fetch external data
+
+Query your enrichment provider (Clearbit, ZoomInfo, etc.) using the company domain.
+
+#### Step 3: Update record with enriched data
+
+Call `update-record` with:
+
+```json
 {
-  listId: 'enrichment-queue-id',
+  "resource_type": "companies",
+  "record_id": "<company_record_id>",
+  "record_data": {
+    "description": "B2B SaaS company focused on developer tools",
+    "categories": ["Technology", "SaaS"]
+  }
 }
-// OR filter by enrichment_status attribute
+```
 
-Step 2: Fetch external data
-external_data = await fetch_from_api(company.domain);
-// Sources: Clearbit, ZoomInfo, etc.
+> **Note**: Standard attributes: `description`, `categories`. Custom attributes (verify via schema skill): `employee_count`, `industry`, `annual_revenue`, `headquarters`.
 
-Step 3: Map to Attio schema
-// Standard attributes:
-standard_data = {
-  description: external_data.summary,         // Standard: text field
-  categories: [external_data.category]        // Standard: multiselect
-};
-// Custom attributes (verify via schema skill):
-// employee_count, industry, annual_revenue, headquarters, etc.
-custom_data = { /* your workspace-specific attributes */ };
+#### Step 4: Document enrichment source
 
-Step 4: Update record
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: company.record_id,
-  record_data: { ...standard_data, ...custom_data }
-}
-
-Step 5: Track enrichment (via note)
-{
-  resource_type: 'companies',
-  record_id: company.record_id,
-  title: 'Data Enrichment',
-  content: `Source: Clearbit\nDate: ${new Date().toISOString()}\nFields updated: description, categories`
+  "resource_type": "companies",
+  "record_id": "<company_record_id>",
+  "title": "Data Enrichment",
+  "content": "Source: Clearbit\nDate: 2024-12-15\nFields updated: description, categories, employee_count"
 }
 ```
 
 ### Deals (Financial/Competitive Data)
 
+#### Step 1: Get deal company domain
+
+Call `get-record` to fetch the deal and its associated company domain.
+
+#### Step 2: Update deal with intelligence
+
+Call `update-record` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "record_data": {
+    "description": "Competitive landscape: 2 alternatives evaluated"
+  }
+}
 ```
-Step 1: Fetch deal intelligence
-external_data = await fetch_deal_intel(deal.company_domain);
 
-Step 2: Map to Attio
-mapped_data = {
-  competitive_threat: external_data.competitors,  // Text
-  market_segment: [external_data.segment],        // Array
-  estimated_close_value: external_data.value      // Number
-};
+> **Note**: Custom attributes (verify via schema): `competitive_threat`, `market_segment`, `estimated_close_value`.
 
-Step 3: Update + document
-// Same pattern as companies
+#### Step 3: Document intelligence source
+
+Call `create-note` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "title": "Competitive Intelligence",
+  "content": "Source: G2 + LinkedIn\nCompetitors evaluating: Competitor A, Competitor B\nDifferentiators: Feature X, pricing"
+}
 ```
 
 ### People (Social Profiles)
 
+#### Step 1: Get person record
+
+Call `get-record` to fetch person details and email.
+
+#### Step 2: Update with social data
+
+Call `update-record` with:
+
+```json
+{
+  "resource_type": "people",
+  "record_id": "<person_record_id>",
+  "record_data": {
+    "job_title": "VP of Engineering",
+    "description": "15+ years experience in B2B SaaS"
+  }
+}
 ```
-Step 1: Fetch social data
-linkedin_data = await fetch_linkedin(person.email);
 
-Step 2: Map to Attio
-mapped_data = {
-  job_title: linkedin_data.title,           // Text
-  linkedin_url: linkedin_data.profile_url,  // Text
-  seniority_level: [linkedin_data.level]    // Array for select
-};
+> **Note**: Custom attributes (verify via schema): `linkedin_url`, `seniority_level`, `years_experience`.
 
-Step 3: Update + document
-// Same pattern as companies
+#### Step 3: Document profile source
+
+Call `create-note` with:
+
+```json
+{
+  "resource_type": "people",
+  "record_id": "<person_record_id>",
+  "title": "Profile Enrichment",
+  "content": "Source: LinkedIn\nVerified: 2024-12-15\nProfile URL: https://linkedin.com/in/example"
+}
 ```
 
 ## Field Mapping Reference

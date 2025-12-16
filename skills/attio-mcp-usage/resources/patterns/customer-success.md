@@ -21,169 +21,190 @@ Customer Success workflows for retention and renewal management. Track customer 
 
 ### Customer Health Scoring
 
-```
-Step 1: Aggregate health signals
-const health_signals = {
-  usage_trend: calculate_usage_trend(last_30d),      // Up, Down, Flat
-  support_tickets: get_ticket_count(last_30d),       // Count
-  nps_score: get_latest_nps(),                       // 0-10
-  engagement_score: calculate_engagement(),          // 0-100
-  payment_status: get_payment_status(),              // Current, Late, At-risk
-  renewal_date: get_renewal_date()                   // Days until renewal
-};
+Calculate health score based on: usage trend, support tickets, NPS score, engagement, payment status, days to renewal.
 
-Step 2: Calculate composite health score
-const health_score = weighted_average({
-  usage: { score: health_signals.usage_trend, weight: 30 },
-  support: { score: invert_ticket_score(health_signals.support_tickets), weight: 20 },
-  nps: { score: health_signals.nps_score * 10, weight: 25 },
-  engagement: { score: health_signals.engagement_score, weight: 15 },
-  payment: { score: payment_score(health_signals.payment_status), weight: 10 }
-});
+#### Step 1: Update company with health score
 
-Step 3: Update company record
+Call `update-record` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: customer.record_id,
-  record_data: {
-    // Custom attributes - verify via schema
-    // health_score: health_score,
-    // health_status: health_score >= 70 ? 'Healthy' : health_score >= 40 ? 'At-Risk' : 'Critical',
-    // last_health_update: new Date().toISOString()
+  "resource_type": "companies",
+  "record_id": "<customer_record_id>",
+  "record_data": {
+    "description": "Health: Healthy (85/100) - Active usage, positive NPS"
   }
 }
+```
 
-Step 4: Route at-risk accounts
-if (health_score < 40) {
-  // Add to at-risk list
-  {
-    listId: 'at-risk-customers-id',
-    record_id: customer.record_id
-  }
+> **Note**: Custom attributes (verify via schema): `health_score`, `health_status`, `last_health_update`.
 
-  // Create urgent task for CSM
-  {
-    content: `Critical health score (${health_score}) - immediate intervention needed`,
-    title: 'At-Risk Account Review',
-    linked_records: [{
-      target_object: 'companies',
-      target_record_id: customer.record_id
-    }],
-    assignees: [csm_person_id],
-    dueDate: today()
-  }
+#### Step 2: Route at-risk accounts to list
+
+For accounts with health score < 40:
+
+Call `add-record-to-list` with:
+
+```json
+{
+  "listId": "<at-risk-customers-id>",
+  "record_id": "<customer_record_id>",
+  "resource_type": "companies"
+}
+```
+
+#### Step 3: Create urgent task for CSM
+
+Call `create-task` with:
+
+```json
+{
+  "content": "Critical health score (35) - immediate intervention needed for Acme Corp",
+  "title": "At-Risk Account Review",
+  "linked_records": [
+    {
+      "target_object": "companies",
+      "target_record_id": "<customer_record_id>"
+    }
+  ],
+  "assignees": ["<csm_person_id>"],
+  "dueDate": "2024-12-15T17:00:00Z"
 }
 ```
 
 ### Renewal Pipeline Management
 
-```
-Step 1: Get renewals in window (90 days)
-{
-  listId: 'upcoming-renewals-id',
-  // Filter: renewal_date within 90 days
-}
+#### Step 1: Get renewals in window (90 days)
 
-Step 2: Create renewal deal
+Call `get-list-entries` with:
+
+```json
 {
-  resource_type: 'deals',
-  record_data: {
-    name: `Renewal - ${customer.name} - ${renewal_year}`,
-    value: current_arr,
-    stage: 'Renewal Due',
-    associated_company: [customer.record_id]
-    // Custom: renewal_date, contract_term, expansion_potential
+  "listId": "<upcoming-renewals-id>",
+  "limit": 100
+}
+```
+
+> **Note**: Filter returned entries by renewal_date within 90 days.
+
+#### Step 2: Create renewal deal
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_data": {
+    "name": "Renewal - Acme Corp - 2025",
+    "value": 48000,
+    "stage": "Renewal Due",
+    "associated_company": ["<customer_record_id>"]
   }
 }
+```
 
-Step 3: Add to renewal pipeline list
-{
-  listId: 'renewal-pipeline-id',
-  record_id: deal.record_id
-}
+> **Note**: Custom attributes (verify via schema): `renewal_date`, `contract_term`, `expansion_potential`.
 
-Step 4: Create renewal kickoff task
+#### Step 3: Add to renewal pipeline
+
+Call `add-record-to-list` with:
+
+```json
 {
-  content: 'Schedule renewal discussion',
-  title: 'Renewal Kickoff',
-  linked_records: [{
-    target_object: 'deals',
-    target_record_id: deal.record_id
-  }],
-  dueDate: renewal_date_minus_60_days
+  "listId": "<renewal-pipeline-id>",
+  "record_id": "<deal_record_id>",
+  "resource_type": "deals"
 }
 ```
+
+#### Step 4: Create renewal kickoff task
+
+Call `create-task` with:
+
+```json
+{
+  "content": "Schedule renewal discussion with Acme Corp",
+  "title": "Renewal Kickoff",
+  "linked_records": [
+    {
+      "target_object": "deals",
+      "target_record_id": "<deal_record_id>"
+    }
+  ],
+  "dueDate": "2024-10-15T10:00:00Z"
+}
+```
+
+> **Note**: Due date should be ~60 days before renewal.
 
 ### Churn Risk Monitoring
 
-```
-Step 1: Identify churn signals
-const churn_signals = [
-  { signal: 'usage_decline', detected: usage_down_30_percent },
-  { signal: 'key_contact_left', detected: champion_churned },
-  { signal: 'support_escalation', detected: recent_escalation },
-  { signal: 'payment_issues', detected: payment_failed },
-  { signal: 'competitor_mention', detected: competitor_in_notes }
-];
+When multiple churn signals detected (usage decline, key contact left, support escalation, payment issues, competitor mention):
 
-Step 2: Document churn risk
+#### Step 1: Document churn risk assessment
+
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: customer.record_id,
-  title: 'Churn Risk Assessment',
-  content: `Risk Level: High
-Signals Detected:
-${detected_signals.map(s => `- ${s.signal}`).join('\n')}
-
-Recommended Actions:
-1. Executive outreach
-2. Product roadmap review
-3. Pricing discussion
-4. Success plan refresh`
+  "resource_type": "companies",
+  "record_id": "<customer_record_id>",
+  "title": "Churn Risk Assessment",
+  "content": "Risk Level: High\nSignals Detected:\n- Usage declined 30% MoM\n- Champion (Jane Smith) left company\n- Recent support escalation\n\nRecommended Actions:\n1. Executive outreach\n2. Product roadmap review\n3. Pricing discussion\n4. Success plan refresh"
 }
+```
 
-Step 3: Escalate if critical
-if (detected_signals.length >= 3) {
-  {
-    content: 'Multiple churn signals detected - executive escalation needed',
-    title: 'Churn Risk Escalation',
-    linked_records: [{
-      target_object: 'companies',
-      target_record_id: customer.record_id
-    }],
-    assignees: [cs_manager_id, account_exec_id],
-    dueDate: today()
-  }
+#### Step 2: Create escalation task
+
+For critical risk (3+ signals detected):
+
+Call `create-task` with:
+
+```json
+{
+  "content": "Multiple churn signals detected - executive escalation needed for Acme Corp",
+  "title": "Churn Risk Escalation",
+  "linked_records": [
+    {
+      "target_object": "companies",
+      "target_record_id": "<customer_record_id>"
+    }
+  ],
+  "assignees": ["<cs_manager_id>", "<account_exec_id>"],
+  "dueDate": "2024-12-15T17:00:00Z"
 }
 ```
 
 ### CSM Book Management
 
-```
-Step 1: Assign CSM to account
+#### Step 1: Assign CSM to account
+
+Call `update-record` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: customer.record_id,
-  record_data: {
-    team: [csm_person_id]                // Standard: team assignment
-    // Custom: primary_csm, csm_assigned_date
+  "resource_type": "companies",
+  "record_id": "<customer_record_id>",
+  "record_data": {
+    "team": ["<csm_person_id>"]
   }
 }
-
-Step 2: Get CSM's book of business
-{
-  resource_type: 'companies',
-  // Filter by team contains csm_person_id
-}
-
-Step 3: Calculate book metrics
-const book_metrics = {
-  total_arr: sum(accounts.map(a => a.arr)),
-  account_count: accounts.length,
-  avg_health: average(accounts.map(a => a.health_score)),
-  upcoming_renewals: accounts.filter(a => a.renewal_in_90d).length
-};
 ```
+
+> **Note**: `team` is a standard attribute for team assignment. Custom attributes (verify via schema): `primary_csm`, `csm_assigned_date`.
+
+#### Step 2: Get CSM's book of business
+
+Call `records_search` with:
+
+```json
+{
+  "resource_type": "companies",
+  "query": "<csm_name>"
+}
+```
+
+> **Note**: Filter by team contains CSM's person ID. Calculate book metrics: total ARR, account count, avg health, upcoming renewals.
 
 ## Health Score Tiers
 

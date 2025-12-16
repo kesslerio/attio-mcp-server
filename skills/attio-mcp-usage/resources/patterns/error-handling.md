@@ -6,77 +6,129 @@
 
 ## Overview
 
-Universal error handling template for all Attio MCP workflows. This pattern provides structured validation, execution, verification, and graceful error recovery with proper logging.
+Universal error handling guidance for all Attio MCP workflows. This pattern provides structured validation, error recovery, and best practices for robust integrations.
 
 ## When to Use
 
 - Any multi-step workflow needing robust error handling
 - Operations that may fail due to rate limits
 - Validating data before API calls
-- Logging operations for debugging
 - Recovering from transient failures
 
-## Workflow Steps
+## Validation Before Calls
 
-```typescript
-async function safeWorkflow(params) {
-  const operation = 'update-record'; // or passed as param
-  let success = false;
+### Validate Record IDs
 
-  try {
-    // Step 1: Validate inputs
-    validateRecordId(params.record_id);
-    validateAttributes(params.record_data, schema);
+Before calling any tool with a `record_id`, verify the UUID format:
 
-    // Step 2: Execute operation
-    const result = await executeOperation(params);
+- Valid: `12345678-1234-1234-1234-123456789012`
+- Invalid: `12345`, `abc`, `null`
 
-    // Step 3: Verify result
-    if (!result.record_id) {
-      throw new Error('Operation failed: no record_id returned');
-    }
+### Validate Attributes
 
-    // Step 4: Log success (use structured logger)
-    logger.info('Operation completed', {
-      operation,
-      record_id: result.record_id,
-    });
-    success = true;
+Before calling `update-record` or `create-record`:
 
-    return result;
-  } catch (error) {
-    // Step 5: Handle errors gracefully
-    if (error.message.includes('INVALID_UUID')) {
-      logger.warn('Validation error', { operation, error: 'Invalid UUID' });
-      return { error: 'Invalid UUID format', code: 'VALIDATION_ERROR' };
-    } else if (error.message.includes('RATE_LIMIT')) {
-      logger.warn('Rate limited, retrying', { operation });
-      await delay(1000);
-      return safeWorkflow(params); // Retry once
-    } else if (error.message.includes('NOT_FOUND')) {
-      logger.warn('Record not found', {
-        operation,
-        record_id: params.record_id,
-      });
-      return { error: 'Record not found', code: 'NOT_FOUND' };
-    } else {
-      // Log and escalate unknown errors
-      logger.error('Unexpected error', { operation, error: error.message });
-      throw error;
-    }
-  } finally {
-    // Step 6: Document operation (optional)
-    await createNote({
-      resource_type: params.resource_type,
-      record_id: params.record_id,
-      title: 'Operation Attempted',
-      content: `Operation: ${operation}\nStatus: ${success ? 'Success' : 'Failed'}\nTimestamp: ${new Date().toISOString()}`,
-    });
+1. Check attribute slugs exist via schema skill
+2. Verify data types match (text, number, select, date)
+3. For select/status fields, use exact option titles
+
+## Common Error Recovery
+
+### INVALID_UUID Error
+
+**Cause**: Malformed or missing record ID
+
+**Recovery**:
+
+1. Verify the record ID format
+2. Search for the record first if ID is unknown
+
+Call `records_search` with:
+
+```json
+{
+  "resource_type": "companies",
+  "query": "Acme Corp"
+}
+```
+
+### RATE_LIMIT Error
+
+**Cause**: Too many requests in short time
+
+**Recovery**:
+
+1. Wait 1 second before retrying
+2. For bulk operations, add 100ms delay between calls
+
+### NOT_FOUND Error
+
+**Cause**: Record doesn't exist or was deleted
+
+**Recovery**:
+
+1. Search to verify record exists
+2. Create the record if it should exist
+
+Call `records_search` with:
+
+```json
+{
+  "resource_type": "companies",
+  "query": "<search_term>"
+}
+```
+
+If not found, create:
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_data": {
+    "name": "Acme Corp",
+    "domains": ["acme.com"]
   }
 }
 ```
 
-## Common Error Types
+### VALIDATION_ERROR
+
+**Cause**: Invalid attribute slug or value type
+
+**Recovery**:
+
+1. Check schema skill for valid attributes
+2. Verify data type matches attribute type
+3. For select fields, use exact option title
+
+Call `records_discover_attributes` with:
+
+```json
+{
+  "resource_type": "companies"
+}
+```
+
+### DUPLICATE Error
+
+**Cause**: Record already exists (unique constraint)
+
+**Recovery**:
+
+1. Search first, then update existing record
+
+### PERMISSION_DENIED
+
+**Cause**: API key lacks required scope
+
+**Recovery**:
+
+1. Check API key permissions in Attio settings
+2. Request additional scopes if needed
+
+## Error Code Reference
 
 | Error Code          | Cause                 | Recovery                    |
 | ------------------- | --------------------- | --------------------------- |
@@ -87,47 +139,28 @@ async function safeWorkflow(params) {
 | `PERMISSION_DENIED` | API key scope         | Check API permissions       |
 | `DUPLICATE`         | Record already exists | Search before create        |
 
-## Validation Functions
+## Best Practices
 
-```typescript
-function validateRecordId(id: string): void {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(id)) {
-    throw new Error('INVALID_UUID: ' + id);
-  }
+1. **Validate before calling** - Check IDs and attributes upfront
+2. **Search before create** - Prevent duplicates
+3. **Handle partial failures** - In bulk operations, log failures and continue
+4. **Document errors** - Create notes when operations fail for audit trail
+
+### Document Operation Failure
+
+Call `create-note` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_id": "<company_record_id>",
+  "title": "Operation Failed",
+  "content": "Operation: update-record\nError: VALIDATION_ERROR\nField: industry\nTimestamp: 2024-12-15T10:00:00Z"
 }
-
-function validateAttributes(data: object, schema: object): void {
-  for (const [key, value] of Object.entries(data)) {
-    if (!schema[key]) {
-      throw new Error(`VALIDATION_ERROR: Unknown attribute ${key}`);
-    }
-    // Type checking based on schema
-  }
-}
-```
-
-## Logging Best Practices
-
-```typescript
-// DO: Structured logging with context
-logger.info('Operation completed', {
-  toolName: 'update-record',
-  userId: context.userId,
-  requestId: context.requestId,
-  record_id: result.record_id,
-});
-
-// DON'T: Console.log in production
-console.log('Updated record'); // Never in src/
-
-// DON'T: Log secrets or PII
-logger.info({ apiKey: key }); // Never!
 ```
 
 ## Cross-References
 
 - [Golden Rules](../golden-rules.md) - Validation rules, error prevention
 - [Tool Reference](../tool-reference.md) - Tool-specific error responses
-- **CLAUDE.md** - Structured logging requirements with `toolName`, `userId`, `requestId`
+- **CLAUDE.md** - Structured logging requirements

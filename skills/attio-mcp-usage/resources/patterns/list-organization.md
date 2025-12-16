@@ -18,64 +18,88 @@ Organize records via lists as an alternative to status-based pipelines. Records 
 
 ## Workflow Steps
 
+### Step 1: Discover available lists
+
+Call `get-lists` with:
+
+```json
+{}
 ```
-Step 1: Discover available lists
-// Get all lists to see organization structure
-get-lists
-// Returns: ["Prospecting", "Qualified", "Customers", "Active Deals", "Q4 Pipeline"]
 
-Step 2: Add record to multiple lists
-// Records can be in multiple lists simultaneously
-{
-  listId: 'prospecting-list-id',
-  record_id: company.record_id
-}
-{
-  listId: 'q4-target-accounts-id',
-  record_id: company.record_id
-}
-// Cross-ref: [schema skill] for list IDs
+> **Note**: Returns all lists in your workspace (e.g., "Prospecting", "Qualified", "Customers", "Active Deals", "Q4 Pipeline").
 
-Step 3: Filter list entries
-// Find high-value deals in active pipeline
-{
-  listId: 'active-deals-id',
-  attributeSlug: 'value',                  // Check schema for exact slug
-  condition: 'greater_than',
-  value: 25000
-}
+### Step 2: Add record to multiple lists
 
-// Find companies in specific industry
-{
-  listId: 'prospecting-id',
-  attributeSlug: 'industry',
-  condition: 'equals',
-  value: 'Technology'
-}
+Records can be in multiple lists simultaneously.
 
-Step 4: Update list entry attributes
-// Update priority on list entry (not record)
+Call `add-record-to-list` with:
+
+```json
 {
-  listId: 'prospecting-id',
-  entryId: list_entry.entry_id,
-  attributes: {
-    priority: 'High',
-    follow_up_date: '2024-12-20'
+  "listId": "<prospecting-list-id>",
+  "record_id": "<company_record_id>",
+  "resource_type": "companies"
+}
+```
+
+Then call `add-record-to-list` again with:
+
+```json
+{
+  "listId": "<q4-target-accounts-id>",
+  "record_id": "<company_record_id>",
+  "resource_type": "companies"
+}
+```
+
+> **Note**: Get list IDs from your schema skill.
+
+### Step 3: Get list entries with filtering
+
+Call `get-list-entries` with:
+
+```json
+{
+  "listId": "<active-deals-id>",
+  "limit": 100
+}
+```
+
+> **Note**: Filtering by attributes like `value > 25000` or `industry = Technology` is done by examining the returned entries. Use your schema skill to verify available attribute slugs.
+
+### Step 4: Update list entry attributes
+
+List entries can have their own attributes separate from the record.
+
+Call `update-list-entry` with:
+
+```json
+{
+  "listId": "<prospecting-id>",
+  "entryId": "<list_entry_id>",
+  "attributes": {
+    "priority": "High",
+    "follow_up_date": "2024-12-20"
   }
 }
+```
 
-Step 5: Batch operations on list
-// Get all entries
+> **Note**: Use `entryId` (not `record_id`) for list entry operations.
+
+### Step 5: Process list entries in batch
+
+First, get all entries:
+
+Call `get-list-entries` with:
+
+```json
 {
-  listId: 'target-accounts-id',
-  limit: 100
-}
-// Process each entry
-for (const entry of entries) {
-  // Update record or list entry
-  // Add notes, create tasks, etc.
+  "listId": "<target-accounts-id>",
+  "limit": 100
 }
 ```
+
+Then for each entry, you can update records, add notes, or create tasks as needed using the `record_id` from each entry.
 
 ## Key Points
 

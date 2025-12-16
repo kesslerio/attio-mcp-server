@@ -18,73 +18,110 @@ Auto-advance deals through pipeline stages based on activity, data completeness,
 
 ## Workflow Steps
 
+### Step 1: Get deals in current stage
+
+Option A - Get from list:
+
+Call `get-list-entries` with:
+
+```json
+{
+  "listId": "<discovery-stage-list-id>",
+  "limit": 100
+}
 ```
-Step 1: Get deals in current stage
+
+Option B - Search by stage attribute:
+
+Call `records_search` with:
+
+```json
 {
-  listId: 'discovery-stage-list-id',      // Or filter by stage attribute
+  "resource_type": "deals",
+  "query": "Discovery"
 }
-// OR
+```
+
+### Step 2: Evaluate advancement criteria
+
+For each deal, check:
+
+- **Activity timestamps**: Has `updated_at` within last 7 days?
+- **Required fields**: Has company, value, and contact assigned?
+- **Data completeness**: All required fields populated?
+
+> **Note**: Only advance deals that meet ALL criteria.
+
+### Step 3: Update stage
+
+Call `update-record` with:
+
+```json
 {
-  resource_type: 'deals',
-  // Filter by stage = "Discovery"
-}
-
-Step 2: Evaluate advancement criteria
-for (const deal of deals) {
-  // Check activity timestamps
-  const daysSinceUpdate = getDaysSince(deal.updated_at);
-
-  // Validate required fields completed
-  const hasRequiredData = deal.company && deal.value;
-
-  // Confirm progression rules met
-  const hasRecentActivity = daysSinceUpdate < 7;
-
-  if (hasRequiredData && hasRecentActivity) {
-    // Eligible for advancement
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "record_data": {
+    "stage": "In Progress",
+    "value": 60000
   }
 }
+```
 
-Step 3: Update stage
-{
-  resource_type: 'deals',
-  record_id: deal.record_id,
-  record_data: {
-    stage: 'In Progress',                // Standard: use exact option title
-    value: 60000                         // Standard: updated deal value
-  }
-}
-// Cross-ref: Check attio-workspace-schema for custom attributes
+> **Note**: Use exact stage option title from your workspace. Check schema skill for available stage options.
 
-Step 4: Move to new list (if list-based)
-// Remove from Discovery list
-{
-  listId: 'discovery-list-id',
-  entryId: deal.discovery_entry_id
-}
-// Add to Proposal list
-{
-  listId: 'proposal-list-id',
-  record_id: deal.record_id
-}
+### Step 4: Move to new list (if list-based pipeline)
 
-Step 5: Create next-step task
-{
-  content: 'Follow up on proposal',
-  title: 'Proposal Follow-up',
-  linked_records: [{
-    target_object: 'deals',
-    target_record_id: deal.record_id
-  }],
-  dueDate: calculate_due(3)  // 3 days from now
-}
+Remove from current list:
 
-Step 6: Notify team
+Call `remove-record-from-list` with:
+
+```json
 {
-  resource_type: 'deals',
-  record_id: deal.record_id,
-  title: 'Stage Advanced',
-  content: 'Auto-advanced to Proposal Sent based on activity. Next: Follow up in 3 days.'
+  "listId": "<discovery-list-id>",
+  "entryId": "<discovery_entry_id>"
+}
+```
+
+Add to next stage list:
+
+Call `add-record-to-list` with:
+
+```json
+{
+  "listId": "<proposal-list-id>",
+  "record_id": "<deal_record_id>",
+  "resource_type": "deals"
+}
+```
+
+### Step 5: Create next-step task
+
+Call `create-task` with:
+
+```json
+{
+  "content": "Follow up on proposal for Acme deal",
+  "title": "Proposal Follow-up",
+  "linked_records": [
+    {
+      "target_object": "deals",
+      "target_record_id": "<deal_record_id>"
+    }
+  ],
+  "dueDate": "2024-12-19T10:00:00Z"
+}
+```
+
+### Step 6: Document stage change
+
+Call `create-note` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "title": "Stage Advanced",
+  "content": "Auto-advanced to Proposal Sent based on activity. Next: Follow up in 3 days."
 }
 ```
 

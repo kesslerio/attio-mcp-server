@@ -18,58 +18,96 @@ Qualify inbound leads from form submissions or external sources. This pattern ha
 
 ## Workflow Steps
 
+### Step 1: Search for existing record
+
+Call `records_search` with:
+
+```json
+{
+  "resource_type": "companies",
+  "query": "<company_name_from_form>"
+}
 ```
-Step 1: Search for existing record
-{
-  resource_type: 'companies',
-  query: form.company_name
-}
 
-Step 2: Create record if not found
+> **Note**: Always search before creating to prevent duplicates.
+
+### Step 2: Create record if not found
+
+Call `create-record` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_data: {
-    name: form.company_name,
-    domains: [form.domain],               // Standard: unique, can have multiple per company
-    description: 'Inbound lead from form' // Standard: text field
-    // Custom attributes (verify via schema skill): source, lead_status, etc.
+  "resource_type": "companies",
+  "record_data": {
+    "name": "Acme Corp",
+    "domains": ["acme.com"],
+    "description": "Inbound lead from contact form"
   }
 }
+```
 
-Step 3: Update with qualification data
+> **Note**: `domains` is standard (unique, can have multiple per company). Custom attributes like `source`, `lead_status` should be verified via schema skill.
+
+### Step 3: Update with qualification data
+
+Call `update-record` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: company.record_id,
-  record_data: {
-    description: 'Qualified lead - meets criteria',
-    categories: [form.category]           // Standard: array for multi-select
-    // Custom attributes (verify via schema skill): employee_count, industry, lead_score
+  "resource_type": "companies",
+  "record_id": "<company_record_id>",
+  "record_data": {
+    "description": "Qualified lead - meets criteria",
+    "categories": ["Enterprise"]
   }
 }
+```
 
-Step 4: Add to pipeline list
+> **Note**: `categories` is standard (array for multi-select). Custom attributes like `employee_count`, `industry`, `lead_score` should be verified via schema skill.
+
+### Step 4: Add to pipeline list
+
+Call `add-record-to-list` with:
+
+```json
 {
-  listId: 'prospecting-list-id',          // From schema skill
-  record_id: company.record_id
+  "listId": "<prospecting-list-id>",
+  "record_id": "<company_record_id>",
+  "resource_type": "companies"
 }
+```
 
-Step 5: Create qualification task
+> **Note**: Get `listId` from your schema skill.
+
+### Step 5: Create qualification task
+
+Call `create-task` with:
+
+```json
 {
-  content: 'Schedule qualification call',
-  linked_records: [{
-    target_object: 'companies',
-    target_record_id: company.record_id
-  }],
-  assignees: ['sales_rep_person_id'],     // Assign to rep
-  dueDate: calculate_due_date()           // Next business day
+  "content": "Schedule qualification call with Acme Corp",
+  "title": "Qualification Call",
+  "linked_records": [
+    {
+      "target_object": "companies",
+      "target_record_id": "<company_record_id>"
+    }
+  ],
+  "assignees": ["<sales_rep_person_id>"],
+  "dueDate": "2024-12-16T10:00:00Z"
 }
+```
 
-Step 6: Document qualification
+### Step 6: Document qualification
+
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: company.record_id,
-  title: 'Lead Qualification',
-  content: `Source: ${form.source}\nScore: ${calculated_score}\nReason: ${qualification_reason}`
+  "resource_type": "companies",
+  "record_id": "<company_record_id>",
+  "title": "Lead Qualification",
+  "content": "Source: Contact form\nScore: 85\nReason: Enterprise company, high intent"
 }
 ```
 

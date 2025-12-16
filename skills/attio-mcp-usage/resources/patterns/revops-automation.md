@@ -20,240 +20,208 @@ Revenue Operations automation patterns for multi-tool orchestration. Handle webh
 
 ### Form Submission Processing
 
-```
-Step 1: Receive webhook payload
-// Webhook from Typeform, HubSpot, or custom form
-const form_data = {
-  email: payload.email,
-  name: payload.name,
-  company: payload.company,
-  message: payload.message,
-  source: payload.form_id,
-  timestamp: payload.submitted_at
-};
+When receiving webhook from form provider (Typeform, HubSpot, Tally, etc.):
 
-Step 2: Validate and normalize data
-const normalized = {
-  email: form_data.email.toLowerCase().trim(),
-  name: capitalize(form_data.name),
-  company_name: form_data.company,
-  domain: extract_domain(form_data.email)
-};
+#### Step 1: Search for existing company
 
-Step 3: Search or create company
+Call `records_search` with:
+
+```json
 {
-  resource_type: 'companies',
-  query: normalized.domain
+  "resource_type": "companies",
+  "query": "acme.com"
 }
-// If not found:
+```
+
+> **Note**: Use normalized domain from form email.
+
+#### Step 2: Create company if not found
+
+Call `create-record` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_data: {
-    name: normalized.company_name,
-    domains: [normalized.domain],
-    description: `Inbound from ${form_data.source}`
-    // Custom: lead_source, form_id
+  "resource_type": "companies",
+  "record_data": {
+    "name": "Acme Corp",
+    "domains": ["acme.com"],
+    "description": "Inbound from contact form"
   }
 }
+```
 
-Step 4: Create or update person
+> **Note**: Custom attributes (verify via schema): `lead_source`, `form_id`.
+
+#### Step 3: Create or update person
+
+Call `create-record` with:
+
+```json
 {
-  resource_type: 'people',
-  record_data: {
-    name: normalized.name,
-    email_addresses: [normalized.email],
-    company: company.record_id
-    // Custom: lead_source, form_submission_date
+  "resource_type": "people",
+  "record_data": {
+    "name": "John Doe",
+    "email_addresses": ["john@acme.com"],
+    "company": "<company_record_id>"
   }
 }
+```
 
-Step 5: Add to appropriate list
-{
-  listId: determine_list(form_data.source),
-  record_id: person.record_id
-}
+> **Note**: Custom attributes (verify via schema): `lead_source`, `form_submission_date`.
 
-Step 6: Create follow-up task
+#### Step 4: Add to appropriate list
+
+Call `add-record-to-list` with:
+
+```json
 {
-  content: `Form submission: ${form_data.message.substring(0, 100)}`,
-  title: 'Form Lead Follow-up',
-  linked_records: [{
-    target_object: 'people',
-    target_record_id: person.record_id
-  }],
-  assignees: [route_to_rep(company)],
-  dueDate: next_business_day()
+  "listId": "<inbound-leads-id>",
+  "record_id": "<person_record_id>",
+  "resource_type": "people"
 }
 ```
 
-### Slack Notification Workflow
+> **Note**: List selection depends on form source (contact form → inbound-leads, demo request → demo-requests, etc.).
 
-```
-Step 1: Trigger on significant event
-// Events: new deal created, deal won, high-value lead
-const event = {
-  type: 'deal_won',
-  deal: deal_record,
-  company: associated_company,
-  value: deal.value
-};
+#### Step 5: Create follow-up task
 
-Step 2: Prepare notification
-const notification = {
-  channel: '#sales-wins',
-  message: format_slack_message(event),
-  attachments: [{
-    title: event.deal.name,
-    value: format_currency(event.value),
-    company: event.company.name,
-    rep: event.deal.owner
-  }]
-};
+Call `create-task` with:
 
-Step 3: Document notification sent
+```json
 {
-  resource_type: 'deals',
-  record_id: deal.record_id,
-  title: 'Notification Sent',
-  content: `Slack notification sent to ${notification.channel}\nTimestamp: ${new Date().toISOString()}`
+  "content": "Form submission: Interested in enterprise pricing...",
+  "title": "Form Lead Follow-up",
+  "linked_records": [
+    {
+      "target_object": "people",
+      "target_record_id": "<person_record_id>"
+    }
+  ],
+  "assignees": ["<routed_rep_id>"],
+  "dueDate": "2024-12-16T09:00:00Z"
+}
+```
+
+### Notification Workflow (e.g., Slack)
+
+After significant events (deal won, high-value lead, etc.), document the notification:
+
+#### Step 1: Document notification sent
+
+Call `create-note` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "title": "Notification Sent",
+  "content": "Slack notification sent to #sales-wins\nTimestamp: 2024-12-15T15:30:00Z\nMessage: Deal Won - Acme Corp ($50,000)"
 }
 ```
 
 ### Data Sync Pattern
 
-```
-Step 1: Define sync mapping
-const field_mapping = {
-  // External System → Attio
-  'sf_account_id': 'salesforce_id',        // Custom text field
-  'sf_industry': 'industry',                // Custom select
-  'sf_employees': 'employee_count',         // Custom number
-  'sf_annual_revenue': 'annual_revenue'     // Custom currency
-};
+For syncing records between Attio and external systems (Salesforce, HubSpot, etc.):
 
-Step 2: Fetch external data
-const external_records = await fetch_from_salesforce(query);
+#### Step 1: Search for existing record by external ID
 
-Step 3: Process each record
-for (const external of external_records) {
-  // Map fields
-  const attio_data = {};
-  for (const [ext_field, attio_field] of Object.entries(field_mapping)) {
-    if (external[ext_field]) {
-      attio_data[attio_field] = transform_value(external[ext_field], attio_field);
-    }
-  }
+Call `records_search` with:
 
-  // Search for existing record
-  const existing = await search_by_external_id(external.sf_account_id);
-
-  // Create or update
-  if (existing) {
-    {
-      resource_type: 'companies',
-      record_id: existing.record_id,
-      record_data: attio_data
-    }
-  } else {
-    {
-      resource_type: 'companies',
-      record_data: {
-        name: external.name,
-        domains: [external.website],
-        ...attio_data
-      }
-    }
-  }
-
-  // Rate limit
-  await delay(100);
+```json
+{
+  "resource_type": "companies",
+  "query": "sf_12345"
 }
 ```
+
+> **Note**: Search by Salesforce ID stored in custom attribute.
+
+#### Step 2: Update existing record
+
+Call `update-record` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_id": "<company_record_id>",
+  "record_data": {
+    "description": "Updated from Salesforce sync"
+  }
+}
+```
+
+> **Note**: Custom attributes (verify via schema): `salesforce_id`, `industry`, `employee_count`, `annual_revenue`.
+
+#### Step 3: Or create new record
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_data": {
+    "name": "New Corp from Salesforce",
+    "domains": ["newcorp.com"],
+    "description": "Synced from Salesforce"
+  }
+}
+```
+
+> **Note**: Rate limit: Add 100ms delay between sync calls for bulk operations.
 
 ### Lead Routing Automation
 
+Route leads based on criteria (company size, industry, region):
+
+#### Step 1: Assign to appropriate rep/team
+
+Call `update-record` with:
+
+```json
+{
+  "resource_type": "people",
+  "record_id": "<lead_record_id>",
+  "record_data": {
+    "team": ["<assigned_rep_id>"]
+  }
+}
 ```
-Step 1: Define routing rules
-const routing_rules = [
-  { condition: (lead) => lead.company_size >= 500, assign_to: 'enterprise_team_id' },
-  { condition: (lead) => lead.industry === 'Technology', assign_to: 'tech_rep_id' },
-  { condition: (lead) => lead.region === 'EMEA', assign_to: 'emea_team_id' },
-  { default: 'general_queue_id' }
-];
 
-Step 2: Evaluate rules
-function route_lead(lead) {
-  for (const rule of routing_rules) {
-    if (rule.condition && rule.condition(lead)) {
-      return rule.assign_to;
+> **Note**: `team` is standard attribute. Custom attributes (verify via schema): `assigned_date`, `routing_reason`.
+
+#### Step 2: Notify assigned rep
+
+Call `create-task` with:
+
+```json
+{
+  "content": "New lead assigned: John Doe from Acme Corp (Enterprise, Technology)",
+  "title": "New Lead Assignment",
+  "linked_records": [
+    {
+      "target_object": "people",
+      "target_record_id": "<lead_record_id>"
     }
-  }
-  return routing_rules.find(r => r.default).default;
-}
-
-Step 3: Apply routing
-const assigned_rep = route_lead(lead_data);
-
-{
-  resource_type: 'people',
-  record_id: lead.record_id,
-  record_data: {
-    team: [assigned_rep]                  // Standard: team assignment
-    // Custom: assigned_date, routing_reason
-  }
-}
-
-Step 4: Notify assigned rep
-{
-  content: `New lead assigned: ${lead.name} from ${lead.company}`,
-  title: 'New Lead Assignment',
-  linked_records: [{
-    target_object: 'people',
-    target_record_id: lead.record_id
-  }],
-  assignees: [assigned_rep],
-  dueDate: today()
+  ],
+  "assignees": ["<assigned_rep_id>"],
+  "dueDate": "2024-12-15T17:00:00Z"
 }
 ```
 
 ### Multi-Tool Orchestration
 
-```
-Step 1: Define workflow sequence
-const workflow = {
-  trigger: 'form_submission',
-  steps: [
-    { action: 'create_attio_record', tool: 'attio' },
-    { action: 'enrich_data', tool: 'clearbit' },
-    { action: 'send_notification', tool: 'slack' },
-    { action: 'create_task', tool: 'attio' },
-    { action: 'add_to_sequence', tool: 'outreach' }
-  ]
-};
+For complex workflows spanning multiple systems:
 
-Step 2: Execute with error handling
-for (const step of workflow.steps) {
-  try {
-    const result = await execute_step(step);
-    log_success(step, result);
-  } catch (error) {
-    log_failure(step, error);
-    // Continue or abort based on step criticality
-    if (step.critical) {
-      throw error;
-    }
-  }
-}
+#### Step 1: Document workflow execution
 
-Step 3: Document workflow execution
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'people',
-  record_id: person.record_id,
-  title: 'Automation Executed',
-  content: `Workflow: ${workflow.trigger}
-Steps Completed: ${completed_steps.join(', ')}
-Status: ${all_success ? 'Success' : 'Partial'}
-Timestamp: ${new Date().toISOString()}`
+  "resource_type": "people",
+  "record_id": "<person_record_id>",
+  "title": "Automation Executed",
+  "content": "Workflow: form_submission\nSteps Completed: create_attio_record, enrich_data, send_notification, create_task\nStatus: Success\nTimestamp: 2024-12-15T15:45:00Z"
 }
 ```
 
@@ -271,9 +239,9 @@ Timestamp: ${new Date().toISOString()}`
 ## Key Points
 
 - **Webhooks = real-time triggers** - Process events as they happen
-- **Idempotency** - Handle duplicate webhooks gracefully
+- **Idempotency** - Handle duplicate webhooks gracefully (search before create)
 - **Error recovery** - Log failures, retry transients
-- **Rate limiting** - Respect API limits across all systems
+- **Rate limiting** - Respect API limits across all systems (100ms between calls)
 - **Audit trail** - Document automation actions in notes
 
 ## Cross-References

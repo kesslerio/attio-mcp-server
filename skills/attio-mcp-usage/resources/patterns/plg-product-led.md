@@ -20,182 +20,213 @@ Product-Led Growth workflows that connect product events to CRM actions. Track u
 
 ### Signup Event Processing
 
+#### Step 1: Create or update person from signup
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "people",
+  "record_data": {
+    "name": "John Doe",
+    "email_addresses": ["john@acme.com"],
+    "job_title": "Engineering Manager"
+  }
+}
 ```
-Step 1: Create or update person from signup
+
+> **Note**: Custom attributes (verify via schema): `signup_date`, `signup_source`, `plan_type`.
+
+#### Step 2: Search for existing company
+
+Call `records_search` with:
+
+```json
 {
-  resource_type: 'people',
-  record_data: {
-    name: signup_event.name,
-    email_addresses: [signup_event.email],
-    job_title: signup_event.job_title
-    // Custom: signup_date, signup_source, plan_type
+  "resource_type": "companies",
+  "query": "acme.com"
+}
+```
+
+#### Step 3: Create company if not found
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_data": {
+    "name": "Acme Corp",
+    "domains": ["acme.com"]
   }
 }
+```
 
-Step 2: Create or link company
-// Search for existing company
-{
-  resource_type: 'companies',
-  query: signup_event.company_domain
-}
+> **Note**: Custom attributes (verify via schema): `company_size`, `industry`.
 
-// Create if not found
+#### Step 4: Link person to company
+
+Call `update-record` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_data: {
-    name: signup_event.company_name,
-    domains: [signup_event.company_domain]
-    // Custom: company_size, industry
+  "resource_type": "people",
+  "record_id": "<person_record_id>",
+  "record_data": {
+    "company": "<company_record_id>"
   }
 }
+```
 
-Step 3: Link person to company
-{
-  resource_type: 'people',
-  record_id: person.record_id,
-  record_data: {
-    company: company.record_id
-  }
-}
+#### Step 5: Add to trial list
 
-Step 4: Add to trial list
+Call `add-record-to-list` with:
+
+```json
 {
-  listId: 'active-trials-id',
-  record_id: person.record_id
+  "listId": "<active-trials-id>",
+  "record_id": "<person_record_id>",
+  "resource_type": "people"
 }
 ```
 
 ### PQL Scoring and Detection
 
-```
-Step 1: Process product events
-// Aggregate usage metrics
-const pql_score = calculate_pql_score({
-  logins_7d: event.logins,
-  features_used: event.features,
-  team_members: event.invites_sent,
-  integrations: event.integrations_connected
-});
+When product usage indicates high engagement (e.g., 5+ logins, 3+ features used, team invites sent), create a PQL deal.
 
-Step 2: Update PQL score on record
+#### Step 1: Update person with PQL data
+
+Call `update-record` with:
+
+```json
 {
-  resource_type: 'people',
-  record_id: person.record_id,
-  record_data: {
-    // Custom attributes - verify via schema
-    // pql_score: pql_score,
-    // last_activity_date: event.timestamp,
-    // features_activated: event.features
+  "resource_type": "people",
+  "record_id": "<person_record_id>",
+  "record_data": {
+    "description": "High product engagement - PQL candidate"
   }
 }
+```
 
-Step 3: Check PQL threshold
-if (pql_score >= PQL_THRESHOLD) {
-  // Create deal for sales follow-up
-  {
-    resource_type: 'deals',
-    record_data: {
-      name: `PQL - ${company.name}`,
-      stage: 'Product Qualified',
-      associated_company: [company.record_id],
-      associated_people: [person.record_id]
-      // Custom: pql_score, activation_events
+> **Note**: Custom attributes (verify via schema): `pql_score`, `last_activity_date`, `features_activated`.
+
+#### Step 2: Create deal for sales follow-up
+
+When PQL threshold is met (e.g., score >= 60):
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "deals",
+  "record_data": {
+    "name": "PQL - Acme Corp",
+    "stage": "Product Qualified",
+    "associated_company": ["<company_record_id>"],
+    "associated_people": ["<person_record_id>"]
+  }
+}
+```
+
+> **Note**: Custom attributes (verify via schema): `pql_score`, `activation_events`.
+
+#### Step 3: Move to PQL list
+
+Call `add-record-to-list` with:
+
+```json
+{
+  "listId": "<pql-queue-id>",
+  "record_id": "<person_record_id>",
+  "resource_type": "people"
+}
+```
+
+#### Step 4: Create task for sales
+
+Call `create-task` with:
+
+```json
+{
+  "content": "High PQL score (75) - reach out to John Doe at Acme Corp",
+  "title": "PQL Follow-up",
+  "linked_records": [
+    {
+      "target_object": "people",
+      "target_record_id": "<person_record_id>"
     }
-  }
-
-  // Move to PQL list
-  {
-    listId: 'pql-queue-id',
-    record_id: person.record_id
-  }
-
-  // Create task for sales
-  {
-    content: `High PQL score (${pql_score}) - reach out to ${person.name}`,
-    title: 'PQL Follow-up',
-    linked_records: [{
-      target_object: 'people',
-      target_record_id: person.record_id
-    }],
-    assignees: ['sales_rep_id'],
-    dueDate: next_business_day()
-  }
+  ],
+  "assignees": ["<sales_rep_id>"],
+  "dueDate": "2024-12-16T09:00:00Z"
 }
 ```
 
 ### Activation Milestone Tracking
 
-```
-Step 1: Define activation milestones
-const milestones = [
-  { event: 'first_login', weight: 1 },
-  { event: 'profile_complete', weight: 2 },
-  { event: 'first_integration', weight: 3 },
-  { event: 'invite_teammate', weight: 4 },
-  { event: 'first_workflow', weight: 5 }
-];
+Track key activation events: first_login, profile_complete, first_integration, invite_teammate, first_workflow.
 
-Step 2: Update activation progress
-{
-  resource_type: 'people',
-  record_id: person.record_id,
-  record_data: {
-    // Custom: activation_score, milestones_completed
-  }
-}
+#### Step 1: Document milestone achievement
 
-Step 3: Document milestone achievement
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'people',
-  record_id: person.record_id,
-  title: 'Activation Milestone',
-  content: `Milestone: ${milestone.event}\nTimestamp: ${event.timestamp}\nDays since signup: ${days_since_signup}`
+  "resource_type": "people",
+  "record_id": "<person_record_id>",
+  "title": "Activation Milestone",
+  "content": "Milestone: invite_teammate\nTimestamp: 2024-12-15T14:30:00Z\nDays since signup: 3"
 }
 ```
 
 ### Sales Handoff Flow
 
-```
-Step 1: Identify sales-ready accounts
-// High PQL + large company + active usage
-const sales_ready = pql_score >= 80 &&
-                    company.employees >= 50 &&
-                    active_users >= 5;
+When account is sales-ready (high PQL + large company + active usage):
 
-Step 2: Create opportunity
+#### Step 1: Create opportunity
+
+Call `create-record` with:
+
+```json
 {
-  resource_type: 'deals',
-  record_data: {
-    name: `Enterprise Upgrade - ${company.name}`,
-    value: calculate_arr(company.employees, plan),
-    stage: 'Sales Qualified',
-    associated_company: [company.record_id]
+  "resource_type": "deals",
+  "record_data": {
+    "name": "Enterprise Upgrade - Acme Corp",
+    "value": 24000,
+    "stage": "Sales Qualified",
+    "associated_company": ["<company_record_id>"]
   }
 }
+```
 
-Step 3: Assign to sales rep
+#### Step 2: Create handoff task
+
+Call `create-task` with:
+
+```json
 {
-  content: `Sales-ready account from PLG funnel`,
-  title: 'PLG → Sales Handoff',
-  linked_records: [{
-    target_object: 'deals',
-    target_record_id: deal.record_id
-  }],
-  assignees: [assigned_rep_id],
-  dueDate: today()
+  "content": "Sales-ready account from PLG funnel",
+  "title": "PLG → Sales Handoff",
+  "linked_records": [
+    {
+      "target_object": "deals",
+      "target_record_id": "<deal_record_id>"
+    }
+  ],
+  "assignees": ["<assigned_rep_id>"],
+  "dueDate": "2024-12-15T17:00:00Z"
 }
+```
 
-Step 4: Document handoff context
+#### Step 3: Document handoff context
+
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'deals',
-  record_id: deal.record_id,
-  title: 'PLG Handoff Context',
-  content: `PQL Score: ${pql_score}
-Active Users: ${active_users}
-Key Features: ${features.join(', ')}
-Trial Start: ${signup_date}
-Activation: ${activation_score}%
-Recommended Approach: ${sales_playbook}`
+  "resource_type": "deals",
+  "record_id": "<deal_record_id>",
+  "title": "PLG Handoff Context",
+  "content": "PQL Score: 82\nActive Users: 5\nKey Features: Integrations, Team Workspaces, API\nTrial Start: 2024-12-01\nActivation: 90%\nRecommended Approach: Enterprise expansion play"
 }
 ```
 

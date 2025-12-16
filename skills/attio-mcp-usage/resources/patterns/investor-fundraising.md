@@ -20,140 +20,198 @@ Manage investor relationships and fundraising pipelines. Track LPs, VCs, and ang
 
 ### Setting Up Fundraising Pipeline
 
+#### Step 1: Create investor record (company = fund)
+
+Call `create-record` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_data": {
+    "name": "Acme Ventures",
+    "domains": ["acmeventures.com"],
+    "description": "Series A-B investor, $200M fund"
+  }
+}
 ```
-Step 1: Create investor record (company = fund)
+
+> **Note**: Custom attributes (verify via schema): `fund_size`, `check_size_min`, `check_size_max`, `focus_sectors`.
+
+#### Step 2: Create contact (person = partner/associate)
+
+Call `create-record` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_data: {
-    name: 'Acme Ventures',
-    domains: ['acmeventures.com'],
-    description: 'Series A-B investor, $200M fund'
-    // Custom: fund_size, check_size_min, check_size_max, focus_sectors
+  "resource_type": "people",
+  "record_data": {
+    "name": "Jane Smith",
+    "email_addresses": ["jane@acmeventures.com"],
+    "job_title": "Partner",
+    "company": "<investor_company_id>"
   }
 }
+```
 
-Step 2: Create contact (person = partner/associate)
-{
-  resource_type: 'people',
-  record_data: {
-    name: 'Jane Smith',
-    email_addresses: ['jane@acmeventures.com'],
-    job_title: 'Partner',
-    company: investor_company_id
-    // Custom: decision_maker, portfolio_overlap
-  }
-}
+> **Note**: Custom attributes (verify via schema): `decision_maker`, `portfolio_overlap`.
 
-Step 3: Add to fundraising list
+#### Step 3: Add to fundraising list
+
+Call `add-record-to-list` with:
+
+```json
 {
-  listId: 'series-a-pipeline-id',
-  record_id: investor_company_id
+  "listId": "<series-a-pipeline-id>",
+  "record_id": "<investor_company_id>",
+  "resource_type": "companies"
 }
 ```
 
 ### Tracking Investor Progress
 
-```
-Step 1: Get investors by stage
-{
-  listId: 'series-a-pipeline-id',
-  // Filter by stage if using list attributes
-}
+#### Step 1: Get investors by stage
 
-Step 2: Update after meeting
+Call `get-list-entries` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: investor.record_id,
-  record_data: {
-    // Custom attributes - verify via schema
-    // investor_stage: 'Partner Meeting',
-    // interest_level: 'High',
-    // next_step: 'IC Presentation'
+  "listId": "<series-a-pipeline-id>",
+  "limit": 100
+}
+```
+
+#### Step 2: Update after meeting
+
+Call `update-record` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_id": "<investor_record_id>",
+  "record_data": {
+    "description": "High interest - IC presentation scheduled"
   }
 }
+```
 
-Step 3: Document meeting notes
+> **Note**: Custom attributes (verify via schema): `investor_stage`, `interest_level`, `next_step`.
+
+#### Step 3: Document meeting notes
+
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: investor.record_id,
-  title: 'Partner Meeting Notes',
-  content: `Attendees: Jane Smith (Partner), John Doe (Associate)
-Discussed: Product roadmap, GTM strategy, unit economics
-Interest: High - want to present to IC
-Next Steps: Send updated deck, schedule IC meeting
-Timeline: Decision by end of month`
+  "resource_type": "companies",
+  "record_id": "<investor_record_id>",
+  "title": "Partner Meeting Notes",
+  "content": "Attendees: Jane Smith (Partner), John Doe (Associate)\nDiscussed: Product roadmap, GTM strategy, unit economics\nInterest: High - want to present to IC\nNext Steps: Send updated deck, schedule IC meeting\nTimeline: Decision by end of month"
 }
+```
 
-Step 4: Create follow-up task
+#### Step 4: Create follow-up task
+
+Call `create-task` with:
+
+```json
 {
-  content: 'Send updated deck to Acme Ventures',
-  title: 'Deck Follow-up',
-  linked_records: [{
-    target_object: 'companies',
-    target_record_id: investor.record_id
-  }],
-  dueDate: '2024-12-18T09:00:00Z'
+  "content": "Send updated deck to Acme Ventures",
+  "title": "Deck Follow-up",
+  "linked_records": [
+    {
+      "target_object": "companies",
+      "target_record_id": "<investor_record_id>"
+    }
+  ],
+  "dueDate": "2024-12-18T09:00:00Z"
 }
 ```
 
 ### Warm Introduction Flow
 
+#### Step 1: Search for mutual connection
+
+Call `records_search` with:
+
+```json
+{
+  "resource_type": "people",
+  "query": "Sarah Chen"
+}
 ```
-Step 1: Search for mutual connection
-{
-  resource_type: 'people',
-  query: connector_name
-}
 
-Step 2: Create intro request note
-{
-  resource_type: 'companies',
-  record_id: target_investor.record_id,
-  title: 'Warm Intro Request',
-  content: `Connector: Sarah Chen (mutual connection)
-Relationship: Portfolio CEO at TechCorp
-Ask: Introduction to Jane Smith at Acme Ventures
-Forwardable Blurb: [Include pitch here]
-Status: Request sent to connector`
-}
+#### Step 2: Create intro request note
 
-Step 3: Track intro status
+Call `create-note` with:
+
+```json
 {
-  resource_type: 'companies',
-  record_id: target_investor.record_id,
-  record_data: {
-    // Custom: intro_source, intro_status, connector_person_id
+  "resource_type": "companies",
+  "record_id": "<target_investor_record_id>",
+  "title": "Warm Intro Request",
+  "content": "Connector: Sarah Chen (mutual connection)\nRelationship: Portfolio CEO at TechCorp\nAsk: Introduction to Jane Smith at Acme Ventures\nForwardable Blurb: [Include pitch here]\nStatus: Request sent to connector"
+}
+```
+
+#### Step 3: Track intro status
+
+Call `update-record` with:
+
+```json
+{
+  "resource_type": "companies",
+  "record_id": "<target_investor_record_id>",
+  "record_data": {
+    "description": "Warm intro requested via Sarah Chen"
   }
 }
 ```
+
+> **Note**: Custom attributes (verify via schema): `intro_source`, `intro_status`, `connector_person_id`.
 
 ### Commitment Tracking
 
-```
-Step 1: Record commitment
+#### Step 1: Record commitment
+
+Call `create-record` with:
+
+```json
 {
-  resource_type: 'deals',
-  record_data: {
-    name: 'Acme Ventures - Series A Commitment',
-    value: 2000000,                        // Commitment amount
-    stage: 'Committed',
-    associated_company: [investor_company_id]
-    // Custom: commitment_date, term_sheet_signed, wire_received
+  "resource_type": "deals",
+  "record_data": {
+    "name": "Acme Ventures - Series A Commitment",
+    "value": 2000000,
+    "stage": "Committed",
+    "associated_company": ["<investor_company_id>"]
   }
 }
+```
 
-Step 2: Update round progress
-// Calculate total committed across all deals in round list
+> **Note**: Custom attributes (verify via schema): `commitment_date`, `term_sheet_signed`, `wire_received`.
+
+#### Step 2: Add to commitments list
+
+Call `add-record-to-list` with:
+
+```json
 {
-  listId: 'series-a-commitments-id',
-  // Sum all deal values
+  "listId": "<series-a-commitments-id>",
+  "record_id": "<deal_record_id>",
+  "resource_type": "deals"
 }
-// Target: $10M round, Committed: $6M, Remaining: $4M
+```
 
-Step 3: Move investor to committed list
+> **Note**: Sum all deal values in this list to track round progress (e.g., Target: $10M, Committed: $6M, Remaining: $4M).
+
+#### Step 3: Move investor to committed list
+
+Call `add-record-to-list` with:
+
+```json
 {
-  listId: 'committed-investors-id',
-  record_id: investor_company_id
+  "listId": "<committed-investors-id>",
+  "record_id": "<investor_company_id>",
+  "resource_type": "companies"
 }
 ```
 
