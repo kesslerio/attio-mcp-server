@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deprecated
+
+- **Legacy resource-specific tools** (#1022) - Removal: v2.0.0 (Q1 2026)
+  - All resource-specific tools (`search-companies`, `create-person`, etc.) are deprecated
+  - Use universal tools instead (`records_search`, `create-record`, etc.)
+  - Legacy tools accessible via `DISABLE_UNIVERSAL_TOOLS=true` but emit deprecation warnings
+  - See `docs/MIGRATION-GUIDE.md` for migration guide
+
 ## [2025-12-16] - Daily Update
 
 ### Added

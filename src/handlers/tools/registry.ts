@@ -64,6 +64,13 @@ import {
  */
 const USE_UNIVERSAL_TOOLS_ONLY = process.env.DISABLE_UNIVERSAL_TOOLS !== 'true';
 
+// Issue #1022: Deprecation warning for legacy tools
+if (!USE_UNIVERSAL_TOOLS_ONLY) {
+  createScopedLogger('tools', 'registry').warn(
+    'Legacy tools (DISABLE_UNIVERSAL_TOOLS=true) are deprecated and will be removed in v2.0.0 (Q1 2026). See docs/MIGRATION-GUIDE.md'
+  );
+}
+
 /**
  * Consolidated tool configurations from modular files
  */
