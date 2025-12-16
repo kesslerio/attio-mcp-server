@@ -12,7 +12,7 @@ import { getContextStats } from '@/api/client-context.js';
  * Tool definition for Smithery diagnostics
  */
 export const smitheryDiagnosticsToolDefinition = {
-  name: 'smithery-debug-config',
+  name: 'smithery_debug_config',
   description: formatToolDescription({
     capability:
       'Retrieve sanitized diagnostic information about Smithery server configuration and runtime environment.',
@@ -37,7 +37,7 @@ export const smitheryDiagnosticsToolDefinition = {
  * Handler for Smithery diagnostics tool
  */
 export const smitheryDiagnosticsConfig = {
-  name: 'smithery-debug-config',
+  name: 'smithery_debug_config',
   handler: async () => {
     // Gather diagnostic info
     const contextStats = getContextStats();
