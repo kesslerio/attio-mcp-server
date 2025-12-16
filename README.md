@@ -91,70 +91,24 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Data Export**: JSON serialization for integrations
 - **Real-time Updates**: Live data synchronization with Attio
 
-### 🧠 **Workspace Schema Skill Generator** (#983)
+### 🧠 **Claude Skills**
 
-Auto-generate Claude Skills from your Attio workspace to eliminate LLM errors caused by unknown attribute values.
+Supercharge Claude's Attio knowledge with pre-built skills that prevent common errors and teach best practices.
 
-**The Problem**: LLMs frequently make errors when working with Attio because they don't know:
+| Skill                      | Purpose                                        | Setup                                           |
+| -------------------------- | ---------------------------------------------- | ----------------------------------------------- |
+| **attio-mcp-usage**        | Error prevention + universal workflow patterns | Bundled - just use it                           |
+| **attio-workspace-schema** | YOUR workspace's exact field names and options | `npx attio-discover generate-skill --all --zip` |
+| **attio-skill-generator**  | Create custom workflow skills (advanced)       | Python + prompting                              |
 
-- Valid attribute names (Display Names vs API Slugs)
-- Valid select/status option values
-- Required vs optional fields
-- Multi-select vs single-select attributes
-- Complex type structures (location, personal-name, etc.)
-
-**The Solution**: One-command schema documentation generation:
+**Quick Start** (solves "wrong field name" errors):
 
 ```bash
-# Generate Claude Skill for all Phase 1 objects and package as ZIP
 npx attio-discover generate-skill --all --zip
-
-# Output: ./output/attio-workspace-skill.zip (ready for Claude upload)
+# Import ZIP into Claude Desktop: Settings > Skills > Install Skill
 ```
 
-**Features**:
-
-- **Display Name ↔ API Slug Mapping**: Eliminates the #1 error source
-- **Select/Status Options**: Complete list of valid values (truncated at 20)
-- **Complex Type Structures**: Location (10 fields), personal-name, phone-number, email
-- **Field Indicators**: Multi-select (✓/✗), Required (✓/✗), Unique (✓/✗)
-- **3 Output Formats**: Claude Skill (.md), Markdown (single file), JSON (machine-readable)
-- **ZIP Packaging**: Ready for Claude desktop upload with --zip flag
-- **Experimental Objects**: Try custom objects with warning for non-Phase 1
-
-**Examples**:
-
-```bash
-# Generate for companies only
-npx attio-discover generate-skill --object companies
-
-# Generate as plain markdown (for non-Claude LLMs)
-npx attio-discover generate-skill --all --format markdown
-
-# Include archived options
-npx attio-discover generate-skill --all --include-archived
-
-# Custom output directory
-npx attio-discover generate-skill --all --output ./my-skills
-```
-
-**Generated Skill Structure**:
-
-```
-attio-workspace-skill/
-├── SKILL.md                        # Main skill with routing logic
-└── resources/
-    ├── companies-attributes.md     # Companies object attributes
-    ├── people-attributes.md        # People object attributes
-    ├── deals-attributes.md         # Deals object attributes
-    ├── [other]-attributes.md       # Per-object attribute files
-    └── complex-types.md            # Shared complex type structures
-```
-
-**Progressive Disclosure**: Claude loads only the object file it needs (~2k tokens),
-not the entire monolithic reference (~10k tokens).
-
-See [Workspace Schema Skill Generator](#workspace-schema-skill-generator-1) for complete documentation.
+See [Skills Documentation](./docs/usage/skills/README.md) for complete setup and usage guides.
 
 ### 💬 **Pre-Built Prompts** (10 Prompts)
 
@@ -255,189 +209,9 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 
 For detailed troubleshooting and solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) and [GitHub Issues](https://github.com/kesslerio/attio-mcp-server/issues).
 
-## 🎯 **Mastering Advanced Search Filters**
+## 🎯 **Advanced Search Filters**
 
-**The Power Behind Precise CRM Queries** - Stop wrestling with complex data searches. Our advanced filtering system lets you find exactly what you need with surgical precision.
-
-> _"Find all AI companies with 50+ employees that we haven't contacted in 30 days and add them to our Q1 outreach list"_ - This kind of complex query is exactly what advanced search filters excel at.
-
-### 🏗️ **Filter Architecture**
-
-Every advanced search follows this proven pattern that's been battle-tested across thousands of CRM queries:
-
-```json
-{
-  "resource_type": "companies",
-  "filters": {
-    "filters": [
-      {
-        "attribute": { "slug": "field_name" },
-        "condition": "operator",
-        "value": "search_value"
-      }
-    ]
-  }
-}
-```
-
-### ⚡ **Real-World Examples**
-
-**🔍 Single Criteria Search**
-
-```json
-{
-  "resource_type": "companies",
-  "filters": {
-    "filters": [
-      {
-        "attribute": { "slug": "name" },
-        "condition": "contains",
-        "value": "Tech"
-      }
-    ]
-  }
-}
-```
-
-**🎯 Multi-Criteria Power Search (AND Logic)**
-
-```json
-{
-  "resource_type": "companies",
-  "filters": {
-    "filters": [
-      {
-        "attribute": { "slug": "name" },
-        "condition": "contains",
-        "value": "Tech"
-      },
-      {
-        "attribute": { "slug": "employee_count" },
-        "condition": "greater_than",
-        "value": 50
-      },
-      {
-        "attribute": { "slug": "industry" },
-        "condition": "equals",
-        "value": "AI/Machine Learning"
-      }
-    ]
-  }
-}
-```
-
-**🚀 Flexible OR Logic**
-
-```json
-{
-  "resource_type": "companies",
-  "filters": {
-    "filters": [
-      {
-        "attribute": { "slug": "name" },
-        "condition": "contains",
-        "value": "Tech"
-      },
-      {
-        "attribute": { "slug": "name" },
-        "condition": "contains",
-        "value": "AI"
-      }
-    ],
-    "matchAny": true
-  }
-}
-```
-
-### 🧠 **Smart Filter Operators**
-
-| Operator       | Perfect For         | Example Use Case                      |
-| -------------- | ------------------- | ------------------------------------- |
-| `contains`     | Text searches       | Finding companies with "Tech" in name |
-| `equals`       | Exact matches       | Specific industry classification      |
-| `starts_with`  | Prefix searches     | Companies beginning with "Acme"       |
-| `ends_with`    | Suffix searches     | Companies ending with "Inc"           |
-| `greater_than` | Numerical analysis  | Companies with 100+ employees         |
-| `less_than`    | Size filtering      | Startups under 50 people              |
-| `is_empty`     | Data cleanup        | Find records missing key information  |
-| `is_not_empty` | Completeness checks | Records with populated fields         |
-
-### 💡 **Pro Tips for Different Teams**
-
-**🎯 Sales Teams** - Use these field combinations:
-
-- **Companies**: `name`, `industry`, `employee_count`, `website`, `location`
-- **People**: `full_name`, `job_title`, `email`, `company`
-
-**📈 Marketing Teams** - Focus on engagement fields:
-
-- **Activity tracking**: `last_interaction`, `email_status`, `campaign_response`
-- **Segmentation**: `industry`, `company_size`, `location`, `engagement_score`
-
-**✅ Customer Success** - Monitor health metrics:
-
-- **Account health**: `renewal_date`, `support_tickets`, `usage_metrics`
-- **Risk indicators**: `last_contact`, `satisfaction_score`, `contract_value`
-
-### 🚨 **Avoid These Common Mistakes**
-
-❌ **Wrong** (Flat object structure):
-
-```json
-{
-  "filters": {
-    "name": { "operator": "contains", "value": "Test" }
-  }
-}
-```
-
-✅ **Correct** (Nested array structure):
-
-```json
-{
-  "filters": {
-    "filters": [
-      {
-        "attribute": { "slug": "name" },
-        "condition": "contains",
-        "value": "Test"
-      }
-    ]
-  }
-}
-```
-
-### 🔧 **Quick Troubleshooting**
-
-**Getting "Filters must include a 'filters' array property"?**
-
-1. ✅ Ensure your filters object contains a `filters` array
-2. ✅ Each array item needs `attribute`, `condition`, and `value`
-3. ✅ The `attribute` must be an object with a `slug` property
-4. ✅ Double-check your JSON structure matches the examples above
-
-**💬 Pro Tip**: Start with simple single-filter searches, then build complexity once you're comfortable with the structure.
-
-## 🏆 Latest Updates - Critical Issues Resolved
-
-✅ **100% Integration Test Pass Rate Achieved** - All critical API contract violations and build issues have been resolved:
-
-### Recently Fixed Issues (August 2025)
-
-- **P0 Critical API Failures**: Fixed response data structure handling for robust fallback patterns
-- **Build Compilation Errors**: Created missing enhanced-validation module and resolved TypeScript compilation
-- **E2E Test Implementation**: Fixed JSON truncation, resource mappings, and email validation consistency
-- **Field Parameter Filtering**: Resolved tasks attribute handling with special case for missing `/objects/tasks/attributes` endpoint
-- **Email Validation Consistency**: Fixed batch validation and create/update operation alignment
-- **Pagination System**: Documented tasks pagination limitation with in-memory handling workaround
-
-### Test Status
-
-- **Integration Tests**: 15/15 passing (100% pass rate)
-- **Build Status**: All TypeScript compilation successful
-- **API Contract**: All violations resolved with robust error handling
-
-See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for detailed solutions to these resolved issues.
+Build powerful CRM queries with multi-criteria AND/OR filtering. See the [Advanced Search Guide](./docs/usage/advanced-search.md) for complete examples and operator reference.
 
 ## 🚀 Installation
 
@@ -986,87 +760,14 @@ See [docs/deployment/smithery-cli-setup.md](./docs/deployment/smithery-cli-setup
 
 ### **Testing**
 
-The project includes comprehensive testing at multiple levels with **100% E2E test pass rate**:
-
-#### **🚀 E2E Test Framework (100% Pass Rate)**
-
-Our comprehensive E2E test framework validates all universal tools with real Attio API integration:
-
 ```bash
-# E2E Tests (requires ATTIO_API_KEY in .env file)
-npm run e2e                 # Run complete E2E test suite (51 tests, 100% pass rate)
-npm test -- test/e2e/suites/universal-tools.e2e.test.ts  # Universal tools E2E tests
-
-# Set up E2E environment
-echo "ATTIO_API_KEY=your_api_key_here" > .env
-npm run e2e                 # Should show 51/51 tests passing
-```
-
-**✅ Comprehensive Coverage:**
-
-- **Pagination Testing**: Validates `offset` parameter across all universal tools
-- **Field Filtering**: Tests `fields` parameter for selective data retrieval
-- **Tasks Integration**: Complete lifecycle testing for tasks resource type
-- **Cross-Resource Validation**: Ensures consistent behavior across companies, people, lists, tasks
-- **Error Handling**: Validates graceful error responses and edge cases
-- **Performance Monitoring**: Tracks execution times and API response sizes
-
-**🛠️ Enhanced Assertions (7 New Methods):**
-
-```typescript
-// Available in test/e2e/utils/assertions.ts
-expectValidPagination(result, params); // Validates pagination behavior
-expectFieldFiltering(result, fields); // Validates field selection
-expectValidTasksIntegration(result); // Tasks-specific validation
-expectSpecificError(result, errorType); // Typed error validation
-expectOptimalPerformance(result, budget); // Performance validation
-expectValidUniversalToolParams(params); // Parameter validation
-expectValidBatchOperation(result, records); // Batch operation validation
-```
-
-**📊 Performance Benchmarks:**
-
-- **Search Operations**: < 1000ms per API call
-- **CRUD Operations**: < 1500ms per operation
-- **Batch Operations**: < 3000ms for 10 records
-- **Field Filtering**: < 500ms additional overhead
-- **Pagination**: < 200ms additional per offset
-
-#### **Unit & Integration Tests**
-
-```bash
-# Unit Tests (no API required)
 npm test                    # Run all tests
-npm run test:offline        # Run only offline tests (206 tests)
-npm run test:watch          # Watch mode for development
-
-# Integration Tests (requires API key and test data)
-npm run test:integration    # Run all integration tests (15 tests, 100% pass rate)
-npm run setup:test-data     # Create test data in your workspace
+npm run test:offline        # Run only offline tests (no API required)
+npm run test:integration    # Integration tests (requires ATTIO_API_KEY)
+npm run e2e                 # E2E tests (requires ATTIO_API_KEY)
 ```
 
-#### **Test Environment Setup**
-
-For E2E and integration tests, you need:
-
-1. **Create `.env` file** in project root:
-
-```bash
-# Required for E2E/Integration tests
-ATTIO_API_KEY=your_64_character_api_key_here
-PORT=3000
-LOG_LEVEL=debug
-NODE_ENV=development
-```
-
-2. **Verify API key** format (must be exactly 64 characters)
-3. **Run tests** to validate setup:
-
-```bash
-npm run build && npm run test:integration
-```
-
-See the [Testing Guide](./docs/testing.md) and [E2E Troubleshooting Guide](./docs/testing/e2e-troubleshooting.md) for detailed setup instructions.
+For E2E/integration tests, create `.env` with your `ATTIO_API_KEY`. See the [Testing Guide](./docs/testing.md) for detailed setup.
 
 ### **Available Scripts**
 
