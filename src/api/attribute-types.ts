@@ -9,7 +9,6 @@ import {
 } from '@/utils/complex-type-validation.js';
 import { debug, error } from '@/utils/logger.js';
 import { TTLCache } from '@/utils/ttl-cache.js';
-import { normalizeLocation } from '@/utils/location-normalizer.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -494,15 +493,10 @@ export async function formatAttributeValue(
   // Different field types need different formatting
   switch (typeInfo.attioType) {
     case 'select':
-      // Select fields expect direct string values (title or ID)
-      if (typeInfo.isArray) {
-        // Multiselect: array of strings
-        const arrayValue = Array.isArray(value) ? value : [value];
-        return arrayValue;
-      } else {
-        // Single select: direct string
-        return value;
-      }
+      // Select fields are represented as string arrays in Attio "values",
+      // even for single-select (Issue #1019 / #1030). Single-select uses a
+      // one-element array like ["option-uuid"].
+      return Array.isArray(value) ? value : [value];
 
     case 'text':
       // Text fields for people object don't need wrapping for certain slugs
