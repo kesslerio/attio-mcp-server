@@ -84,5 +84,5 @@ Step 6: Document qualification
 ## Cross-References
 
 - [Golden Rules](../golden-rules.md) - Duplicate prevention, attribute validation
-- [Tool Reference](../tool-reference.md) - `search-records`, `create-record`, `update-record`, `add-record-to-list`
+- [Tool Reference](../tool-reference.md) - `records_search`, `create-record`, `update-record`, `add-record-to-list`
 - **attio-workspace-schema skill** - `companies-attributes.md` for available fields

@@ -97,14 +97,17 @@ for (const row of data) {
   await delay(100);
 }
 
-// Summary report
-console.log(`Success: ${results.success.length}`);
-console.log(`Failed: ${results.failed.length}`);
-console.log(`Skipped: ${results.skipped.length}`);
+// Summary report (use structured logging - never console.log in production)
+logger.info('Bulk import completed', {
+  toolName: 'bulk-import',
+  success: results.success.length,
+  failed: results.failed.length,
+  skipped: results.skipped.length,
+});
 ```
 
 ## Cross-References
 
 - [Golden Rules](../golden-rules.md) - Rate limiting, error handling
-- [Tool Reference](../tool-reference.md) - `search-records`, `create-record`, `update-record`
+- [Tool Reference](../tool-reference.md) - `records_search`, `create-record`, `update-record`
 - **attio-workspace-schema skill** - Object schemas and required fields

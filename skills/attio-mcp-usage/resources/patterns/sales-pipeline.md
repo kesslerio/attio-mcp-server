@@ -20,6 +20,7 @@ Manage deals from opportunity creation to close. This is the PRIMARY workflow fo
 
 ```
 Step 1: Create deal from opportunity
+// Tool: create-record
 {
   resource_type: 'deals',
   record_data: {
@@ -29,17 +30,17 @@ Step 1: Create deal from opportunity
     associated_company: ['company_record_id']  // Standard: array for reference
   }
 }
-// Cross-ref: Check attio-workspace-schema for custom attributes
 
 Step 2: Add to active deals list
+// Tool: add-record-to-list
 {
   listId: 'your-active-deals-list-id',   // From schema skill
   record_id: deal.record_id,
   resource_type: 'deals'
 }
-// Cross-ref: Get listId from [schema skill]
 
 Step 3: Create discovery task
+// Tool: create-task
 {
   content: 'Schedule discovery call',
   title: 'Discovery Call',
@@ -51,6 +52,7 @@ Step 3: Create discovery task
 }
 
 Step 4: Document opportunity context
+// Tool: create-note
 {
   resource_type: 'deals',
   record_id: deal.record_id,
@@ -59,7 +61,7 @@ Step 4: Document opportunity context
 }
 
 Step 5: Progress through stages
-// As deal progresses, update stage
+// Tool: update-record
 {
   resource_type: 'deals',
   record_id: deal.record_id,
@@ -68,15 +70,14 @@ Step 5: Progress through stages
     value: 55000                          // Standard: updated deal value
   }
 }
-// Cross-ref: Check attio-workspace-schema for custom attributes
 
 Step 6: Move between lists (if using list-based pipeline)
-// Remove from "Discovery" list
+// Tool: remove-record-from-list
 {
   listId: 'discovery-list-id',
   entryId: discovery_entry.entry_id
 }
-// Add to "Proposal" list
+// Tool: add-record-to-list
 {
   listId: 'proposal-list-id',
   record_id: deal.record_id

@@ -35,6 +35,9 @@ Choose the pattern that matches your workflow intent:
 ### Retention & Success
 
 - **[Customer Success](customer-success.md)** - Renewal tracking and health scoring
+
+### Fundraising
+
 - **[Investor Fundraising](investor-fundraising.md)** - VC/Angel pipeline management
 
 ### Operations
