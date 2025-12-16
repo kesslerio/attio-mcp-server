@@ -68,20 +68,16 @@ export class WorkspaceSchemaService {
   }
 
   private getOptionFetchDelayMs(options: FetchSchemaOptions): number {
-    if (options.optionFetchDelayMs === undefined) return 100;
+    const optionFetchDelayMs = options.optionFetchDelayMs;
+    if (optionFetchDelayMs === undefined) return 100;
     if (
-      typeof options.optionFetchDelayMs !== 'number' ||
-      !Number.isFinite(options.optionFetchDelayMs) ||
-      options.optionFetchDelayMs < 0
+      typeof optionFetchDelayMs !== 'number' ||
+      !Number.isFinite(optionFetchDelayMs) ||
+      optionFetchDelayMs < 0
     ) {
-      logWarn(
-        'WorkspaceSchemaService',
-        `Invalid optionFetchDelayMs (${String(options.optionFetchDelayMs)}); using default 100ms`,
-        { optionFetchDelayMs: options.optionFetchDelayMs }
-      );
       return 100;
     }
-    return options.optionFetchDelayMs;
+    return optionFetchDelayMs;
   }
 
   /**
@@ -198,10 +194,12 @@ export class WorkspaceSchemaService {
           }
         } catch (error: unknown) {
           // Log warning but don't fail - attribute can still be documented
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           logWarn(
             'WorkspaceSchemaService',
             `No options available for ${objectSlug}.${apiSlug}`,
-            { objectSlug, attributeSlug: apiSlug, error }
+            { objectSlug, attributeSlug: apiSlug, errorMessage }
           );
         }
       }
