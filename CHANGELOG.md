@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-16] - Daily Update
+
+### Added
+
+- **Configurable option fetch delay** - New `--option-fetch-delay` flag to tune rate limiting between option fetches
+- **Select-field transformer** (#1019, #1029) - Quality-of-life enhancement for select field values with case-insensitive title matching, partial matching support, and UUID pass-through
+- **Attio skill generator meta-skill** (#1020, #1024) - Meta-skill for generating workspace schema documentation
+
+### Fixed
+
+- **SDK dependency pinning** (#1025, #1026) - Pinned @modelcontextprotocol/sdk to ~1.24.0 to ensure stability
+
 ### Breaking Changes
 
 ### Added
