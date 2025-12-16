@@ -192,14 +192,8 @@ function findOptionByTitle(
   );
   if (exactMatch) return exactMatch;
 
-  // Priority 2: Partial match (bidirectional inclusion)
-  const partialMatch = options.find(
-    (opt) =>
-      opt.title.toLowerCase().includes(titleLower) ||
-      titleLower.includes(opt.title.toLowerCase())
-  );
-
-  return partialMatch;
+  // Priority 2: Partial match (one-directional: option title contains input)
+  return options.find((opt) => opt.title.toLowerCase().includes(titleLower));
 }
 
 /**
@@ -212,22 +206,16 @@ function findOptionByTitle(
  * - Multi-select: type="select" && is_multiselect === true
  *
  * Multi-select is handled by multi-select-transformer, so we skip here.
- *
- * @param meta - Attribute metadata
- * @returns True if single-select attribute
  */
 function isSingleSelectAttribute(meta: AttributeMetadata): boolean {
   return meta.type === 'select' && meta.is_multiselect !== true;
 }
 
 /**
- * Check if a value is already in array format (Attio's expected format)
- *
- * @param value - Value to check
- * @returns True if already an array
+ * Create a "no transformation needed" result
  */
-function isSelectFormat(value: unknown): boolean {
-  return Array.isArray(value);
+function noTransform(value: unknown): TransformResult {
+  return { transformed: false, originalValue: value, transformedValue: value };
 }
 
 /**
@@ -251,32 +239,10 @@ export async function transformSelectValue(
   context: TransformContext,
   attributeMeta: AttributeMetadata
 ): Promise<TransformResult> {
-  // Guard: Only transform single-select attributes
-  if (!isSingleSelectAttribute(attributeMeta)) {
-    return {
-      transformed: false,
-      originalValue: value,
-      transformedValue: value,
-    };
-  }
-
-  // Guard: Skip if already in array format
-  if (isSelectFormat(value)) {
-    return {
-      transformed: false,
-      originalValue: value,
-      transformedValue: value,
-    };
-  }
-
-  // Guard: Only transform string values
-  if (typeof value !== 'string') {
-    return {
-      transformed: false,
-      originalValue: value,
-      transformedValue: value,
-    };
-  }
+  // Guard: Only transform single-select string values not already in array format
+  if (!isSingleSelectAttribute(attributeMeta)) return noTransform(value);
+  if (Array.isArray(value)) return noTransform(value);
+  if (typeof value !== 'string') return noTransform(value);
 
   // Short-circuit: UUID string detection (skip lookup)
   if (isValidUUID(value)) {
@@ -285,7 +251,7 @@ export async function transformSelectValue(
     debug(
       'select-transformer',
       'Detected UUID string for select attribute',
-      { attribute: attributeSlug, from: value, to: transformedValue },
+      { attribute: attributeSlug, matchType: 'uuid-passthrough' },
       'transformSelectValue',
       OperationType.DATA_PROCESSING
     );
@@ -312,11 +278,7 @@ export async function transformSelectValue(
       'transformSelectValue',
       OperationType.DATA_PROCESSING
     );
-    return {
-      transformed: false,
-      originalValue: value,
-      transformedValue: value,
-    };
+    return noTransform(value);
   }
 
   // Find matching option
@@ -343,8 +305,10 @@ export async function transformSelectValue(
     'Transformed select value',
     {
       attribute: attributeSlug,
-      from: value,
-      to: transformedValue,
+      matchType:
+        match.title.toLowerCase() === value.toLowerCase().trim()
+          ? 'exact'
+          : 'partial',
       matchedTitle: match.title,
     },
     'transformSelectValue',
