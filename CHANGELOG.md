@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 5-minute TTL caching to minimize API calls
   - Consistent UX with existing status-transformer
 
+- **Configurable skill generator option fetch delay** (#1015) - New `--option-fetch-delay` flag to tune rate limiting between option fetches
+
 - **Universal Usage Guide Skill** (#1018) - Hand-crafted skill for workflow patterns and error prevention
   - Universal workflow patterns (Find or Create, Batch Update, Pipeline Movement, Data Enrichment)
   - Golden Rules error prevention system (read-only fields, multi-select arrays, data types, UUID validation)

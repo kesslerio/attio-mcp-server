@@ -62,6 +62,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       expect(result.metadata.objects).toEqual(['companies']);
@@ -99,6 +100,7 @@ describe('WorkspaceSchemaService', () => {
         {
           maxOptionsPerAttribute: 20,
           includeArchived: false,
+          optionFetchDelayMs: 0,
         }
       );
 
@@ -133,6 +135,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies', 'people'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       // Should have 1 object (people), companies failed
@@ -178,6 +181,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const industryAttr = result.objects[0].attributes.find(
@@ -188,6 +192,55 @@ describe('WorkspaceSchemaService', () => {
       expect(industryAttr?.options?.[0].value).toBe('technology');
       expect(industryAttr?.optionsTruncated).toBe(false);
       expect(industryAttr?.totalOptions).toBe(3);
+    });
+
+    it('should respect optionFetchDelayMs when provided', async () => {
+      vi.useFakeTimers();
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+
+      try {
+        const mockMetadata: Map<string, AttioAttributeMetadata> = new Map([
+          [
+            'industry',
+            {
+              id: {
+                workspace_id: 'ws1',
+                object_id: 'obj1',
+                attribute_id: 'attr1',
+              },
+              api_slug: 'industry',
+              title: 'Industry',
+              type: 'select',
+              is_writable: true,
+            },
+          ],
+        ]);
+
+        const mockOptions: AttributeOptionsResult = {
+          options: [{ id: 'opt1', title: 'Technology', value: 'technology' }],
+          attributeType: 'select',
+        };
+
+        vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
+        vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue(
+          mockOptions
+        );
+
+        const fetchPromise = service.fetchSchema(['companies'], {
+          maxOptionsPerAttribute: 20,
+          includeArchived: false,
+          optionFetchDelayMs: 123,
+        });
+
+        await vi.runAllTimersAsync();
+        await fetchPromise;
+
+        expect(setTimeoutSpy.mock.calls.some((call) => call[1] === 123)).toBe(
+          true
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should truncate options when exceeding maxOptionsPerAttribute', async () => {
@@ -225,6 +278,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const industryAttr = result.objects[0].attributes.find(
@@ -292,6 +346,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service['fetchObjectSchema']('companies', {
         maxOptionsPerAttribute: 10,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const leadTypeAttr = result.attributes.find(
@@ -336,6 +391,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const industryAttr = result.objects[0].attributes.find(
@@ -372,6 +428,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const locationAttr = result.objects[0].attributes.find(
@@ -408,6 +465,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['people'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const nameAttr = result.objects[0].attributes.find(
@@ -446,6 +504,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const tagsAttr = result.objects[0].attributes[0];
@@ -476,6 +535,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const domainsAttr = result.objects[0].attributes[0];
@@ -506,6 +566,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['companies'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       const nameAttr = result.objects[0].attributes[0];
@@ -523,6 +584,7 @@ describe('WorkspaceSchemaService', () => {
         {
           maxOptionsPerAttribute: 20,
           includeArchived: false,
+          optionFetchDelayMs: 0,
         }
       );
 
@@ -538,6 +600,7 @@ describe('WorkspaceSchemaService', () => {
       const result = await service.fetchSchema(['properties'], {
         maxOptionsPerAttribute: 20,
         includeArchived: false,
+        optionFetchDelayMs: 0,
       });
 
       expect(result.objects[0].displayName).toBe('Properties');

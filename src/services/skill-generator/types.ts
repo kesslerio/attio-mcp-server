@@ -29,6 +29,9 @@ export interface GenerateSkillConfig {
   /** Whether to include archived options */
   includeArchived: boolean;
 
+  /** Delay between attribute option fetches in milliseconds (default: 100) */
+  optionFetchDelayMs?: number;
+
   /** Attio API key for authentication */
   apiKey: string;
 }
@@ -168,4 +171,7 @@ export interface FetchSchemaOptions {
 
   /** Whether to include archived options */
   includeArchived: boolean;
+
+  /** Delay between attribute option fetches in milliseconds (default: 100) */
+  optionFetchDelayMs?: number;
 }

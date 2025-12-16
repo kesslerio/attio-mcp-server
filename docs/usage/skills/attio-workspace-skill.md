@@ -44,16 +44,17 @@ npx attio-discover generate-skill [OPTIONS]
 
 ### Options
 
-| Option               | Short | Type    | Default         | Description                                            |
-| -------------------- | ----- | ------- | --------------- | ------------------------------------------------------ |
-| `--object`           | `-o`  | string  | -               | Single object to generate (e.g., `companies`)          |
-| `--all`              | `-a`  | boolean | false           | Generate for Phase 1 objects: companies, people, deals |
-| `--format`           | `-f`  | choice  | `skill`         | Output format: `skill`, `markdown`, or `json`          |
-| `--output`           | -     | string  | `./output`      | Output directory path                                  |
-| `--zip`              | `-z`  | boolean | false           | Package as ZIP file (ready for Claude upload)          |
-| `--max-options`      | -     | number  | 20              | Max select/status options per attribute                |
-| `--include-archived` | -     | boolean | false           | Include archived options in output                     |
-| `--api-key`          | `-k`  | string  | `ATTIO_API_KEY` | Attio API key (env var preferred)                      |
+| Option                 | Short | Type    | Default         | Description                                            |
+| ---------------------- | ----- | ------- | --------------- | ------------------------------------------------------ |
+| `--object`             | `-o`  | string  | -               | Single object to generate (e.g., `companies`)          |
+| `--all`                | `-a`  | boolean | false           | Generate for Phase 1 objects: companies, people, deals |
+| `--format`             | `-f`  | choice  | `skill`         | Output format: `skill`, `markdown`, or `json`          |
+| `--output`             | -     | string  | `./output`      | Output directory path                                  |
+| `--zip`                | `-z`  | boolean | false           | Package as ZIP file (ready for Claude upload)          |
+| `--max-options`        | -     | number  | 20              | Max select/status options per attribute                |
+| `--option-fetch-delay` | -     | number  | 100             | Delay between attribute option fetches (ms)            |
+| `--include-archived`   | -     | boolean | false           | Include archived options in output                     |
+| `--api-key`            | `-k`  | string  | `ATTIO_API_KEY` | Attio API key (env var preferred)                      |
 
 ### Examples
 
@@ -72,6 +73,9 @@ npx attio-discover generate-skill --all --include-archived
 
 # Custom output directory
 npx attio-discover generate-skill --all --output ./my-skills
+
+# Reduce delay between option fetches (higher-rate API tiers)
+npx attio-discover generate-skill --all --option-fetch-delay 50
 ```
 
 ## Output Formats
