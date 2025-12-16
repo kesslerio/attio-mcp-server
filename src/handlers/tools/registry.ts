@@ -1,10 +1,10 @@
 /**
  * Tool registry module - handles tool registration mechanics and discovery
  */
-import { ResourceType } from '../../types/attio.js';
-import { ToolConfig } from '../tool-types.js';
-import { createScopedLogger } from '../../utils/logger.js';
-import { isToolAllowed } from '../../config/tool-mode.js';
+import { ResourceType } from '@/types/attio.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
+import { createScopedLogger } from '@/utils/logger.js';
+import { isToolAllowed } from '@/config/tool-mode.js';
 import { resolveToolName } from '@/config/tool-aliases.js';
 
 // Type for return values that can include special resource markers
@@ -18,41 +18,41 @@ type ToolConfigResult = {
 import {
   companyToolConfigs,
   companyToolDefinitions,
-} from '../tool-configs/companies/index.js';
+} from '@/handlers/tool-configs/companies/index.js';
 import {
   peopleToolConfigs,
   peopleToolDefinitions,
-} from '../tool-configs/people/index.js';
+} from '@/handlers/tool-configs/people/index.js';
 import {
   dealToolConfigs,
   dealToolDefinitions,
-} from '../tool-configs/deals/index.js';
+} from '@/handlers/tool-configs/deals/index.js';
 import {
   listsToolConfigs,
   listsToolDefinitions,
-} from '../tool-configs/lists.js';
+} from '@/handlers/tool-configs/lists.js';
 import {
   tasksToolConfigs,
   tasksToolDefinitions,
-} from '../tool-configs/tasks.js';
+} from '@/handlers/tool-configs/tasks.js';
 import {
   recordToolConfigs,
   recordToolDefinitions,
-} from '../tool-configs/records/index.js';
+} from '@/handlers/tool-configs/records/index.js';
 import {
   generalToolConfigs,
   generalToolDefinitions,
-} from '../tool-configs/general/index.js';
+} from '@/handlers/tool-configs/general/index.js';
 import {
   workspaceMembersToolConfigs,
   workspaceMembersToolDefinitions,
-} from '../tool-configs/workspace-members.js';
+} from '@/handlers/tool-configs/workspace-members.js';
 
 // Import universal tool configurations for consolidated operations
 import {
   universalToolConfigs,
   universalToolDefinitions,
-} from '../tool-configs/universal/index.js';
+} from '@/handlers/tool-configs/universal/index.js';
 
 /**
  * Universal tool consolidation (Issue #352): Only expose universal tools
@@ -65,7 +65,8 @@ import {
 const USE_UNIVERSAL_TOOLS_ONLY = process.env.DISABLE_UNIVERSAL_TOOLS !== 'true';
 
 // Issue #1022: Deprecation warning for legacy tools
-if (!USE_UNIVERSAL_TOOLS_ONLY) {
+// Gate warning to avoid test noise (module-load side effect)
+if (!USE_UNIVERSAL_TOOLS_ONLY && process.env.NODE_ENV !== 'test') {
   createScopedLogger('tools', 'registry').warn(
     'Legacy tools (DISABLE_UNIVERSAL_TOOLS=true) are deprecated and will be removed in v2.0.0 (Q1 2026). See docs/MIGRATION-GUIDE.md'
   );

@@ -20,6 +20,13 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 - **Now**: Legacy tools deprecated, accessible via `DISABLE_UNIVERSAL_TOOLS=true`
 - **Q1 2026**: Legacy tools removed in v2.0.0
 
+### Environment Variables
+
+- **Default (no env var)**: Universal tools enabled ✓
+- **`DISABLE_UNIVERSAL_TOOLS=true`**: Enables legacy tools (deprecated)
+
+> **Note**: `DISABLE_UNIVERSAL_TOOLS` is a legacy flag name. Setting it to `true` **enables** legacy tools, not disables universal tools.
+
 ## Quick Reference
 
 ### Core Universal Tools
@@ -158,6 +165,8 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 ```
 
 ## Complete Mapping Table
+
+> **Note**: This mapping table may lag behind code changes. Use tool discovery output or the source definitions in `src/handlers/tool-configs/universal/index.ts:deprecatedToolMappings` as the authoritative reference.
 
 ### Company Tools
 
