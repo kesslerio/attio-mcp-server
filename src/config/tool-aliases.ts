@@ -13,74 +13,200 @@ export interface ToolAliasDefinition {
 
 const TOOL_ALIAS_FLAG = 'MCP_DISABLE_TOOL_ALIASES';
 
-const SINCE_PHASE_1 = '2025-09-30';
+const SINCE_MCP_COMPLIANCE = '2025-12-16';
 
 const TOOL_ALIAS_REGISTRY: Record<string, ToolAliasDefinition> = Object.freeze({
+  // Universal search/metadata tools - dual aliases (old noun_verb snake + old kebab)
+  records_search: {
+    target: 'search_records',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
   'search-records': {
-    target: 'records_search',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'search_records',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_get_details: {
+    target: 'get_record_details',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'get-record-details': {
-    target: 'records_get_details',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'get_record_details',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_get_attributes: {
+    target: 'get_record_attributes',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'get-attributes': {
-    target: 'records_get_attributes',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'get_record_attributes',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_discover_attributes: {
+    target: 'discover_record_attributes',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'discover-attributes': {
-    target: 'records_discover_attributes',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'discover_record_attributes',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_get_attribute_options: {
+    target: 'get_record_attribute_options',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_get_info: {
+    target: 'get_record_info',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'get-detailed-info': {
-    target: 'records_get_info',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'get_record_info',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_search_advanced: {
+    target: 'search_records_advanced',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'advanced-search': {
-    target: 'records_search_advanced',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'search_records_advanced',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_search_by_relationship: {
+    target: 'search_records_by_relationship',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'search-by-relationship': {
-    target: 'records_search_by_relationship',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'search_records_by_relationship',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_search_by_content: {
+    target: 'search_records_by_content',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'search-by-content': {
-    target: 'records_search_by_content',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'search_records_by_content',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_search_by_timeframe: {
+    target: 'search_records_by_timeframe',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'search-by-timeframe': {
-    target: 'records_search_by_timeframe',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'search_records_by_timeframe',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_batch: {
+    target: 'batch_records',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'batch-operations': {
-    target: 'records_batch',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'batch_records',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  records_search_batch: {
+    target: 'batch_search_records',
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
   'batch-search': {
-    target: 'records_search_batch',
-    reason: 'Phase 1 search tool rename (#776)',
-    since: SINCE_PHASE_1,
-    removal: 'v1.x (TBD)',
+    target: 'batch_search_records',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  // CRUD tools - kebab to snake_case
+  'create-record': {
+    target: 'create_record',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+  'update-record': {
+    target: 'update_record',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+  'delete-record': {
+    target: 'delete_record',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  // Note tools - kebab to snake_case
+  'create-note': {
+    target: 'create_note',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+  'list-notes': {
+    target: 'list_notes',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
+  },
+
+  // Debug tool - kebab to snake_case
+  'smithery-debug-config': {
+    target: 'smithery_debug_config',
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+    since: SINCE_MCP_COMPLIANCE,
+    removal: 'v2.0.0',
   },
 });
 
