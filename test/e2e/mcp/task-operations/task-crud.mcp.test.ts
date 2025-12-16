@@ -71,7 +71,7 @@ class TaskCrudTests extends MCPTestBase {
     const testTask = taskData || taskFixtures.sales.followUp();
 
     // Use universal tool with resource_type parameter
-    const result = await this.executeToolCall('create-record', {
+    const result = await this.executeToolCall('create_record', {
       resource_type: 'tasks',
       record_data: testTask,
     });
@@ -112,7 +112,7 @@ describe('MCP P1 Task CRUD Operations', () => {
         const testTask = taskFixtures.sales.followUp();
 
         // Act
-        const result = await testSuite.executeToolCall('create-record', {
+        const result = await testSuite.executeToolCall('create_record', {
           resource_type: 'tasks',
           record_data: testTask,
         });
@@ -141,7 +141,7 @@ describe('MCP P1 Task CRUD Operations', () => {
         };
 
         // Act
-        const result = await testSuite.executeToolCall('create-record', {
+        const result = await testSuite.executeToolCall('create_record', {
           resource_type: 'tasks',
           record_data: minimalTask,
         });
@@ -172,7 +172,7 @@ describe('MCP P1 Task CRUD Operations', () => {
         };
 
         // Act
-        const result = await testSuite.executeToolCall('create-record', {
+        const result = await testSuite.executeToolCall('create_record', {
           resource_type: 'tasks',
           record_data: fullTask,
         });
@@ -275,7 +275,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       };
 
       // Act
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: updateData,
@@ -293,7 +293,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       const taskId = await testSuite.createTestTask();
 
       // Act - Update status to completed
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { status: 'completed' },
@@ -315,7 +315,7 @@ describe('MCP P1 Task CRUD Operations', () => {
         .split('T')[0]; // 14 days from now
 
       // Act
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { due_date: futureDate },
@@ -350,7 +350,7 @@ describe('MCP P1 Task CRUD Operations', () => {
       expect(hasTaskReference).toBe(true);
 
       // Act - Delete the task
-      const deleteResult = await testSuite.executeToolCall('delete-record', {
+      const deleteResult = await testSuite.executeToolCall('delete_record', {
         resource_type: 'tasks',
         record_id: taskId,
       });
@@ -372,7 +372,7 @@ describe('MCP P1 Task CRUD Operations', () => {
         const fakeTaskId = 'non-existent-task-id-12345';
 
         // Act
-        const result = await testSuite.executeToolCall('delete-record', {
+        const result = await testSuite.executeToolCall('delete_record', {
           resource_type: 'tasks',
           record_id: fakeTaskId,
         });

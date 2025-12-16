@@ -171,7 +171,7 @@ describe.skipIf(
       const companyData = testDataGenerator.companies.basicCompany();
       const companyId = await createTestRecord(
         (resourceType, data) =>
-          callUniversalTool('create-record', {
+          callUniversalTool('create_record', {
             resource_type: resourceType as any,
             record_data: data,
           }),
@@ -183,7 +183,7 @@ describe.skipIf(
         testRecordIds.push(companyId);
 
         // Create related records
-        const taskResponse = await callTasksTool('create-record', {
+        const taskResponse = await callTasksTool('create_record', {
           resource_type: 'tasks',
           record_data: {
             content: 'Integration boundary test task',
@@ -192,7 +192,7 @@ describe.skipIf(
           },
         });
 
-        const noteResponse = await callNotesTool('create-note', {
+        const noteResponse = await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: companyId,
           title: 'Integration boundary test note',
@@ -218,7 +218,7 @@ describe.skipIf(
             resource_type: 'companies',
           } as any), // Missing record_id
         () =>
-          callUniversalTool('create-record', {
+          callUniversalTool('create_record', {
             resource_type: 'companies',
           } as any), // Missing record_data
       ];
@@ -291,7 +291,7 @@ describe.skipIf(
             if (companyResponse && !companyResponse.isError) {
               const companyId = firstRecordIdFromSearch(companyResponse);
               if (companyId) {
-                return await callNotesTool('list-notes', {
+                return await callNotesTool('list_notes', {
                   resource_type: 'companies',
                   record_id: companyId,
                   limit: 1,

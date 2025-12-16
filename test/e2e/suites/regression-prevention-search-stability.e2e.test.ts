@@ -150,7 +150,7 @@ describe.skipIf(
             limit: 1,
           } as any),
         () =>
-          callUniversalTool('update-record', {
+          callUniversalTool('update_record', {
             resource_type: 'companies',
             record_id: 'non-existent-id',
             record_data: { name: 'Update test' },

@@ -58,7 +58,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
         // Create demo company
         seededCompanyName = `Demo CS Co ${new Date().toISOString().replace(/[:.]/g, '-')}`;
         await client.assertToolCall(
-          'create-record',
+          'create_record',
           {
             resource_type: 'companies',
             record_data: { name: seededCompanyName },
@@ -99,7 +99,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
         if (resolvedCompanyId) {
           for (const phrase of seededNotePhrases) {
             await client.assertToolCall(
-              'create-record',
+              'create_record',
               {
                 resource_type: 'notes',
                 record_data: {
@@ -216,7 +216,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     if (process.env.CS_E2E_SEED === 'true' && seededCompanyId) {
       try {
         await client.assertToolCall(
-          'delete-record',
+          'delete_record',
           { resource_type: 'companies', record_id: seededCompanyId },
           () => true
         );
@@ -305,7 +305,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'create-record',
+        'create_record',
         {
           resource_type: 'tasks',
           record_data: {
@@ -455,7 +455,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'create-record',
+        'create_record',
         {
           resource_type: 'notes',
           record_data: {
@@ -482,7 +482,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       // Seed a note with matching keywords to make content search deterministic
       if (resolvedCompanyId) {
         await client.assertToolCall(
-          'create-record',
+          'create_record',
           {
             resource_type: 'notes',
             record_data: {
@@ -522,7 +522,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'list-notes',
+        'list_notes',
         {
           resource_type: 'companies',
           record_id: resolvedCompanyId || TEST_CONSTANTS.FALLBACK_COMPANY_ID,
@@ -570,7 +570,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'create-record',
+        'create_record',
         {
           resource_type: 'tasks',
           record_data: {
@@ -641,7 +641,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       // Seed a note with matching keywords for deterministic content search
       if (resolvedCompanyId) {
         await client.assertToolCall(
-          'create-record',
+          'create_record',
           {
             resource_type: 'notes',
             record_data: {

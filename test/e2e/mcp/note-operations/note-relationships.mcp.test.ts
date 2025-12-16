@@ -40,7 +40,7 @@ class NoteRelationshipsTest extends MCPTestBase {
       this.createdNotes = [];
       // Create first test company
       const companyData1 = TestDataFactory.createCompanyData('TCN02_Company1');
-      const companyResult1 = await this.executeToolCall('create-record', {
+      const companyResult1 = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData1,
       });
@@ -56,7 +56,7 @@ class NoteRelationshipsTest extends MCPTestBase {
 
       // Create second test company
       const companyData2 = TestDataFactory.createCompanyData('TCN02_Company2');
-      const companyResult2 = await this.executeToolCall('create-record', {
+      const companyResult2 = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData2,
       });
@@ -72,7 +72,7 @@ class NoteRelationshipsTest extends MCPTestBase {
 
       // Create a test person
       const personData = TestDataFactory.createPersonData('TCN02');
-      const personResult = await this.executeToolCall('create-record', {
+      const personResult = await this.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -89,7 +89,7 @@ class NoteRelationshipsTest extends MCPTestBase {
       // Try to create a test deal (may not be configured in all workspaces)
       try {
         const dealData = TestDataFactory.createDealData('TCN02');
-        const dealResult = await this.executeToolCall('create-record', {
+        const dealResult = await this.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -117,7 +117,7 @@ class NoteRelationshipsTest extends MCPTestBase {
     for (const noteId of this.createdNotes) {
       try {
         // Try to delete via universal delete if supported
-        await this.executeToolCall('delete-record', {
+        await this.executeToolCall('delete_record', {
           resource_type: 'notes',
           record_id: noteId,
         });
@@ -195,7 +195,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
       } else {
         // Create a note for the company
         const noteData = TestDataFactory.createNoteData('TCN02_CompanyAttach');
-        const createResult = await testCase.executeToolCall('create-note', {
+        const createResult = await testCase.executeToolCall('create_note', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           title: noteData.title,
@@ -214,7 +214,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         }
 
         // Verify the note is attached by retrieving company notes
-        const notesResult = await testCase.executeToolCall('list-notes', {
+        const notesResult = await testCase.executeToolCall('list_notes', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           limit: 10,
@@ -235,7 +235,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         // VALIDATE: Note should NOT appear in another company's notes (if available)
         if (testCase.secondCompanyId) {
           const otherNotesResult = await testCase.executeToolCall(
-            'list-notes',
+            'list_notes',
             {
               resource_type: 'companies',
               record_id: testCase.secondCompanyId,
@@ -283,7 +283,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
       } else {
         // Create a note for the person
         const noteData = TestDataFactory.createNoteData('TCN02_PersonAttach');
-        const createResult = await testCase.executeToolCall('create-note', {
+        const createResult = await testCase.executeToolCall('create_note', {
           resource_type: 'people',
           record_id: testCase.testPersonId,
           title: noteData.title,
@@ -302,7 +302,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         }
 
         // Verify the note is attached by retrieving person notes
-        const notesResult = await testCase.executeToolCall('list-notes', {
+        const notesResult = await testCase.executeToolCall('list_notes', {
           resource_type: 'people',
           record_id: testCase.testPersonId,
           limit: 10,
@@ -323,7 +323,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         // VALIDATE: Note should NOT appear in company notes (if available)
         if (testCase.testCompanyId) {
           const companyNotesResult = await testCase.executeToolCall(
-            'list-notes',
+            'list_notes',
             {
               resource_type: 'companies',
               record_id: testCase.testCompanyId,
@@ -383,7 +383,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
 
         // Create company note
         const companyNoteResult = await testCase.executeToolCall(
-          'create-note',
+          'create_note',
           {
             resource_type: 'companies',
             record_id: testCase.testCompanyId,
@@ -400,7 +400,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         }
 
         // Create person note
-        const personNoteResult = await testCase.executeToolCall('create-note', {
+        const personNoteResult = await testCase.executeToolCall('create_note', {
           resource_type: 'people',
           record_id: testCase.testPersonId,
           title: personNoteData.title,
@@ -416,7 +416,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
 
         // List company notes and person notes
         const companyNotesResult = await testCase.executeToolCall(
-          'list-notes',
+          'list_notes',
           {
             resource_type: 'companies',
             record_id: testCase.testCompanyId,
@@ -424,7 +424,7 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
           }
         );
 
-        const personNotesResult = await testCase.executeToolCall('list-notes', {
+        const personNotesResult = await testCase.executeToolCall('list_notes', {
           resource_type: 'people',
           record_id: testCase.testPersonId,
           limit: 10,

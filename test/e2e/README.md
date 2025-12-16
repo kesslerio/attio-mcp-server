@@ -430,7 +430,7 @@ describe('Universal Tools E2E', () => {
     const companyData = CompanyFactory.create();
 
     // Your test implementation here
-    const response = await callMcpTool('create-record', {
+    const response = await callMcpTool('create_record', {
       resource_type: 'companies',
       record_data: companyData,
     });

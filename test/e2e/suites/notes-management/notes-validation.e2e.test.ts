@@ -62,7 +62,7 @@ describe
           testCompany.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -102,7 +102,7 @@ describe
           'people'
         );
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -139,7 +139,7 @@ describe
         }
         const noteData = edgeCaseNotes.longContent(testCompany.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -180,7 +180,7 @@ describe
         }
         const noteData = edgeCaseNotes.htmlContent(testCompany.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -223,7 +223,7 @@ describe
           'people'
         );
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -267,7 +267,7 @@ describe
         );
 
         // Create company notes
-        const companyNoteResponse = (await callNotesTool('create-note', {
+        const companyNoteResponse = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: salesNotes.initialMeeting.title,
@@ -281,7 +281,7 @@ describe
         createdNotes.push(companyNote);
 
         // Create person notes
-        const personNoteResponse = (await callNotesTool('create-note', {
+        const personNoteResponse = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: salesNotes.introduction.title,
@@ -319,7 +319,7 @@ describe
         );
 
         // Create onboarding note
-        const onboardingResponse = (await callNotesTool('create-note', {
+        const onboardingResponse = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: successNotes.onboardingSession.title,
@@ -333,7 +333,7 @@ describe
         createdNotes.push(onboardingNote);
 
         // Create user feedback note
-        const feedbackResponse = (await callNotesTool('create-note', {
+        const feedbackResponse = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: successNotes.userFeedback.title,
@@ -369,7 +369,7 @@ describe
         );
 
         // Create project status note
-        const statusResponse = (await callNotesTool('create-note', {
+        const statusResponse = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: projectNotes.statusUpdate.title,
@@ -396,7 +396,7 @@ describe
 
     describe('Error Handling and Validation', () => {
       it('should handle invalid company ID gracefully', async () => {
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: 'invalid-company-id-12345',
           title: 'Test Note',
@@ -410,7 +410,7 @@ describe
       }, 15000);
 
       it('should handle invalid person ID gracefully', async () => {
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: 'invalid-person-id-12345',
           title: 'Test Note',
@@ -438,7 +438,7 @@ describe
         }
 
         // Missing title
-        const missingTitleResponse = (await callNotesTool('create-note', {
+        const missingTitleResponse = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           content: 'Content without title',
@@ -447,7 +447,7 @@ describe
         E2EAssertions.expectMcpError(missingTitleResponse);
 
         // Missing content
-        const missingContentResponse = (await callNotesTool('create-note', {
+        const missingContentResponse = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: 'Title without content',
@@ -457,7 +457,7 @@ describe
       }, 20000);
 
       it('should handle notes retrieval for non-existent records', async () => {
-        const companyResponse = (await callNotesTool('list-notes', {
+        const companyResponse = (await callNotesTool('list_notes', {
           resource_type: 'companies',
           record_id: 'non-existent-company-12345',
         })) as McpToolResponse;
@@ -470,7 +470,7 @@ describe
           expect(notes).toBeDefined();
         }
 
-        const personResponse = (await callNotesTool('list-notes', {
+        const personResponse = (await callNotesTool('list_notes', {
           resource_type: 'people',
           record_id: 'non-existent-person-12345',
         })) as McpToolResponse;
@@ -500,7 +500,7 @@ describe
         }
         const noteData = edgeCaseNotes.emptyContent(testCompany.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,

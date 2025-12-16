@@ -89,7 +89,7 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         // Create a deal in first stage
         const dealData = TestDataFactory.createDealWithStage('TCD05', stage1);
 
-        const createResult = await testCase.executeToolCall('create-record', {
+        const createResult = await testCase.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -101,7 +101,7 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         testCase.trackRecord('deals', recordId);
 
         // Stage 1: Move to second stage
-        const updateToStage2 = await testCase.executeToolCall('update-record', {
+        const updateToStage2 = await testCase.executeToolCall('update_record', {
           resource_type: 'deals',
           record_id: recordId,
           record_data: { stage: stage2 },
@@ -110,7 +110,7 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         QAAssertions.assertRecordUpdated(updateToStage2, 'deals');
 
         // Stage 2: Move to third stage
-        const updateToStage3 = await testCase.executeToolCall('update-record', {
+        const updateToStage3 = await testCase.executeToolCall('update_record', {
           resource_type: 'deals',
           record_id: recordId,
           record_data: { stage: stage3 },
@@ -145,7 +145,7 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
             'TCD06',
             fallbackStage
           );
-          const createResult = await testCase.executeToolCall('create-record', {
+          const createResult = await testCase.executeToolCall('create_record', {
             resource_type: 'deals',
             record_data: fallbackDeal,
           });
@@ -158,7 +158,7 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         const valueUpdates = [25000, 50000, 100000];
 
         for (const value of valueUpdates) {
-          const result = await testCase.executeToolCall('update-record', {
+          const result = await testCase.executeToolCall('update_record', {
             resource_type: 'deals',
             record_id: pipelineDealId,
             record_data: { value: value },
@@ -195,7 +195,7 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         for (const stage of searchStages) {
           const dealData = TestDataFactory.createDealWithStage('TCD07', stage);
 
-          const createResult = await testCase.executeToolCall('create-record', {
+          const createResult = await testCase.executeToolCall('create_record', {
             resource_type: 'deals',
             record_data: dealData,
           });

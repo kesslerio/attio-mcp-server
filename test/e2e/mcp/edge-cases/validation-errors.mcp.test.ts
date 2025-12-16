@@ -39,7 +39,7 @@ class ValidationErrorsTest extends EdgeCaseTestBase {
   async setupBaselineRecords(): Promise<void> {
     try {
       const companyData = TestDataFactory.createCompanyData('TC_EC06_BASE');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -54,7 +54,7 @@ class ValidationErrorsTest extends EdgeCaseTestBase {
 
     try {
       const personData = TestDataFactory.createPersonData('TC_EC06_BASE');
-      const personResult = await this.executeToolCall('create-record', {
+      const personResult = await this.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -69,7 +69,7 @@ class ValidationErrorsTest extends EdgeCaseTestBase {
 
     try {
       const taskData = TestDataFactory.createTaskData('TC_EC06_BASE');
-      const taskResult = await this.executeToolCall('create-record', {
+      const taskResult = await this.executeToolCall('create_record', {
         resource_type: 'tasks',
         record_data: taskData,
       });
@@ -135,7 +135,7 @@ describe('TC-EC06: Validation Error Handling Edge Cases', () => {
   it('should provide select option suggestions for invalid company categories', async () => {
     const result = await testCase.executeExpectedFailureTest(
       'invalid_company_category_select',
-      'create-record',
+      'create_record',
       {
         resource_type: 'companies',
         record_data: {
@@ -154,7 +154,7 @@ describe('TC-EC06: Validation Error Handling Edge Cases', () => {
   it('should enforce required fields when creating people records', async () => {
     const result = await testCase.executeExpectedFailureTest(
       'person_missing_required_fields',
-      'create-record',
+      'create_record',
       {
         resource_type: 'people',
         record_data: {
@@ -174,7 +174,7 @@ describe('TC-EC06: Validation Error Handling Edge Cases', () => {
     const taskId = testCase.getTaskIdOrThrow();
 
     // Note: Attio API silently ignores read-only field updates rather than returning errors
-    const result = await testCase.executeToolCall('update-record', {
+    const result = await testCase.executeToolCall('update_record', {
       resource_type: 'tasks',
       record_id: taskId,
       record_data: {
@@ -197,7 +197,7 @@ describe('TC-EC06: Validation Error Handling Edge Cases', () => {
   it('should validate email formats for people records', async () => {
     const result = await testCase.executeExpectedFailureTest(
       'person_invalid_email_format',
-      'create-record',
+      'create_record',
       {
         resource_type: 'people',
         record_data: {
@@ -223,7 +223,7 @@ describe('TC-EC06: Validation Error Handling Edge Cases', () => {
 
     const result = await testCase.executeExpectedFailureTest(
       'note_missing_required_fields',
-      'create-note',
+      'create_note',
       {
         resource_type: 'companies',
         record_id: companyId,

@@ -355,7 +355,7 @@ export abstract class EdgeCaseTestBase extends MCPTestBase {
 
     for (const record of trackedRecords) {
       try {
-        const result = await this.executeToolCall('delete-record', {
+        const result = await this.executeToolCall('delete_record', {
           resource_type: record.type,
           record_id: record.id,
         });

@@ -70,7 +70,7 @@ describe.skipIf(
     async () => {
       // Ensure we have a company, a person and a task to relate
       const companyResp = asToolResponse(
-        await callUniversalTool('create-record', {
+        await callUniversalTool('create_record', {
           resource_type: 'companies',
           record_data: CompanyFactory.create() as any,
         })
@@ -80,7 +80,7 @@ describe.skipIf(
       const companyId = (company as any).id?.record_id;
 
       const personResp = asToolResponse(
-        await callUniversalTool('create-record', {
+        await callUniversalTool('create_record', {
           resource_type: 'people',
           record_data: PersonFactory.create() as any,
         })
@@ -91,7 +91,7 @@ describe.skipIf(
 
       const taskData = TaskFactory.create();
       const taskCreate = asToolResponse(
-        await callTasksTool('create-record', {
+        await callTasksTool('create_record', {
           resource_type: 'tasks',
           record_data: {
             content: 'Relationship validation task',
@@ -108,7 +108,7 @@ describe.skipIf(
       if (taskId && companyId) {
         // Use correct schema for linking: recordIds expects an array
         const linkResponse = asToolResponse(
-          await callTasksTool('update-record', {
+          await callTasksTool('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: { recordIds: [companyId] },
@@ -119,7 +119,7 @@ describe.skipIf(
 
       if (companyId) {
         const companyNote = asToolResponse(
-          await callNotesTool('create-note', {
+          await callNotesTool('create_note', {
             resource_type: 'companies',
             record_id: companyId,
             title: 'Company relationship note',
@@ -132,7 +132,7 @@ describe.skipIf(
 
       if (personId) {
         const personNote = asToolResponse(
-          await callNotesTool('create-note', {
+          await callNotesTool('create_note', {
             resource_type: 'people',
             record_id: personId,
             title: 'Person relationship note',
@@ -152,7 +152,7 @@ describe.skipIf(
     'validates data consistency across operations',
     async () => {
       const companyResp = asToolResponse(
-        await callUniversalTool('create-record', {
+        await callUniversalTool('create_record', {
           resource_type: 'companies',
           record_data: CompanyFactory.create() as any,
         })
@@ -175,7 +175,7 @@ describe.skipIf(
         })
       );
       const noteResponse = asToolResponse(
-        await callNotesTool('create-note', {
+        await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: companyId,
           title: 'Consistency validation note',
@@ -185,7 +185,7 @@ describe.skipIf(
       );
       const taskData2 = TaskFactory.create();
       const taskResponse = asToolResponse(
-        await callTasksTool('create-record', {
+        await callTasksTool('create_record', {
           resource_type: 'tasks',
           record_data: {
             content: 'Consistency validation task',

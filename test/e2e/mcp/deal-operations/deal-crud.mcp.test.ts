@@ -63,7 +63,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
     try {
       const dealData = TestDataFactory.createDealData('TCD01');
 
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'deals',
         record_data: dealData,
       });
@@ -94,7 +94,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
     try {
       if (!testDealId) {
         const dealData = TestDataFactory.createDealData('TCD02');
-        const createResult = await testCase.executeToolCall('create-record', {
+        const createResult = await testCase.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -128,7 +128,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
     try {
       if (!testDealId) {
         const dealData = TestDataFactory.createDealData('TCD03');
-        const createResult = await testCase.executeToolCall('create-record', {
+        const createResult = await testCase.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -139,7 +139,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
 
       const updateData = TestDataFactory.createUpdateData('deals', 'TCD03');
 
-      const result = await testCase.executeToolCall('update-record', {
+      const result = await testCase.executeToolCall('update_record', {
         resource_type: 'deals',
         record_id: testDealId,
         record_data: updateData,
@@ -165,7 +165,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
     try {
       if (!testDealId) {
         const dealData = TestDataFactory.createDealData('TCD04');
-        const createResult = await testCase.executeToolCall('create-record', {
+        const createResult = await testCase.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -174,7 +174,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
         testCase.trackRecord('deals', testDealId);
       }
 
-      const result = await testCase.executeToolCall('delete-record', {
+      const result = await testCase.executeToolCall('delete_record', {
         resource_type: 'deals',
         record_id: testDealId,
       });

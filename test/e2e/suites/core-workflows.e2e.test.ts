@@ -197,7 +197,7 @@ describe.skipIf(
       // Create for tasks
       const companyData = CompanyFactory.create();
       const response = asToolResponse(
-        await callTasksTool('create-record', {
+        await callTasksTool('create_record', {
           resource_type: 'companies',
           record_data: companyData as any,
         })
@@ -225,7 +225,7 @@ describe.skipIf(
       // Create for tasks
       const personData = PersonFactory.create();
       const response = asToolResponse(
-        await callTasksTool('create-record', {
+        await callTasksTool('create_record', {
           resource_type: 'people',
           record_data: personData as any,
         })
@@ -260,7 +260,7 @@ describe.skipIf(
         const taskData = TaskFactory.create();
 
         const response = asToolResponse(
-          await callTasksTool('create-record', {
+          await callTasksTool('create_record', {
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
@@ -308,7 +308,7 @@ describe.skipIf(
         });
 
         const response = asToolResponse(
-          await callTasksTool('create-record', {
+          await callTasksTool('create_record', {
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
@@ -365,7 +365,7 @@ describe.skipIf(
         const company = taskTestCompanies[0];
 
         const response = asToolResponse(
-          await callTasksTool('create-record', {
+          await callTasksTool('create_record', {
             resource_type: 'tasks',
             record_data: {
               content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
@@ -393,7 +393,7 @@ describe.skipIf(
         const taskData = TaskFactory.createHighPriority();
 
         const response = asToolResponse(
-          await callTasksTool('create-record', {
+          await callTasksTool('create_record', {
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
@@ -435,7 +435,7 @@ describe.skipIf(
         const taskId = task.id.task_id;
 
         const response = asToolResponse(
-          await callTasksTool('update-record', {
+          await callTasksTool('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
@@ -465,7 +465,7 @@ describe.skipIf(
         const newAssignee = taskTestPeople[0];
 
         const response = asToolResponse(
-          await callTasksTool('update-record', {
+          await callTasksTool('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
@@ -501,7 +501,7 @@ describe.skipIf(
         newDueDate.setDate(newDueDate.getDate() + 7);
 
         const response = asToolResponse(
-          await callTasksTool('update-record', {
+          await callTasksTool('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
@@ -538,7 +538,7 @@ describe.skipIf(
         const taskId = taskToDelete.id.task_id;
 
         const response = asToolResponse(
-          await callTasksTool('delete-record', {
+          await callTasksTool('delete_record', {
             resource_type: 'tasks',
             record_id: taskId,
           })
@@ -554,7 +554,7 @@ describe.skipIf(
 
       it('should handle deletion of non-existent task gracefully', async () => {
         const response = asToolResponse(
-          await callTasksTool('delete-record', {
+          await callTasksTool('delete_record', {
             resource_type: 'tasks',
             record_id: 'already-deleted-task-12345',
           })
@@ -577,7 +577,7 @@ describe.skipIf(
           if (testCompanies.length === 0) {
             const companyData = CompanyFactory.create();
             const resp = asToolResponse(
-              await callNotesTool('create-record', {
+              await callNotesTool('create_record', {
                 resource_type: 'companies',
                 record_data: companyData as any,
               })
@@ -606,7 +606,7 @@ describe.skipIf(
           testCompany.id.record_id
         );
 
-        const response = (await notesToolCaller('create-note', {
+        const response = (await notesToolCaller('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -643,7 +643,7 @@ describe.skipIf(
           );
           return;
         }
-        const response = (await notesToolCaller('list-notes', {
+        const response = (await notesToolCaller('list_notes', {
           resource_type: 'companies',
           parent_object: 'companies',
           record_id: testCompany.id.record_id,
@@ -693,7 +693,7 @@ describe.skipIf(
           testCompany.id.record_id
         );
 
-        const response = (await notesToolCaller('create-note', {
+        const response = (await notesToolCaller('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -733,7 +733,7 @@ describe.skipIf(
         );
         const uri = `attio://companies/${testCompany.id.record_id}`;
 
-        const response = (await notesToolCaller('create-note', {
+        const response = (await notesToolCaller('create_note', {
           uri: uri,
           title: noteData.title,
           content: noteData.content,
@@ -770,7 +770,7 @@ describe.skipIf(
           testPerson.id.record_id
         );
 
-        const response = (await notesToolCaller('create-note', {
+        const response = (await notesToolCaller('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -807,7 +807,7 @@ describe.skipIf(
           );
           return;
         }
-        const response = (await notesToolCaller('list-notes', {
+        const response = (await notesToolCaller('list_notes', {
           resource_type: 'people',
           parent_object: 'people',
           record_id: testPerson.id.record_id,
@@ -853,7 +853,7 @@ describe.skipIf(
         }
         const noteData = noteFixtures.people.technical(testPerson.id.record_id);
 
-        const response = (await notesToolCaller('create-note', {
+        const response = (await notesToolCaller('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -894,7 +894,7 @@ describe.skipIf(
           'people'
         );
 
-        const response = (await notesToolCaller('create-note', {
+        const response = (await notesToolCaller('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -935,7 +935,7 @@ describe.skipIf(
       // Create a task for the company
       const taskData = TaskFactory.create();
       const taskResponse = asToolResponse(
-        await callTasksTool('create-record', {
+        await callTasksTool('create_record', {
           resource_type: 'tasks',
           record_data: {
             content: `Follow up on integration for ${company.values.name?.[0]?.value || 'company'}`,
@@ -953,7 +953,7 @@ describe.skipIf(
 
       // Create a note for the same company
       const noteData = noteFixtures.companies.meeting(companyId);
-      const noteResponse = (await notesToolCaller('create-note', {
+      const noteResponse = (await notesToolCaller('create_note', {
         resource_type: 'companies',
         record_id: companyId,
         title: noteData.title,
@@ -985,7 +985,7 @@ describe.skipIf(
 
       // Update task to completed
       const taskUpdateResponse = asToolResponse(
-        await callTasksTool('update-record', {
+        await callTasksTool('update_record', {
           resource_type: 'tasks',
           record_id: taskId,
           record_data: {

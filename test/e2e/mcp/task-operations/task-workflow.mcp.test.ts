@@ -38,7 +38,7 @@ class TaskWorkflowTests extends MCPTestBase {
     };
 
     // Use universal tool with resource_type parameter
-    const result = await this.executeToolCall('create-record', {
+    const result = await this.executeToolCall('create_record', {
       resource_type: 'tasks',
       record_data: testTask,
     });
@@ -74,7 +74,7 @@ class TaskWorkflowTests extends MCPTestBase {
       domain: `test-${Date.now()}.example.com`,
     });
 
-    const result = await this.executeToolCall('create-record', {
+    const result = await this.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: testCompany,
     });
@@ -123,7 +123,7 @@ describe('MCP P1 Task Workflow Operations', () => {
 
         // Act & Assert - Progress through each status
         for (const status of statusProgression) {
-          const result = await testSuite.executeToolCall('update-record', {
+          const result = await testSuite.executeToolCall('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: { status: status },
@@ -157,7 +157,7 @@ describe('MCP P1 Task Workflow Operations', () => {
           });
 
           // Act - Update to target status
-          const result = await testSuite.executeToolCall('update-record', {
+          const result = await testSuite.executeToolCall('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: { status: status },
@@ -184,7 +184,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         const taskId = await testSuite.createTestTask();
 
         // Act - Try to set invalid status
-        const result = await testSuite.executeToolCall('update-record', {
+        const result = await testSuite.executeToolCall('update_record', {
           resource_type: 'tasks',
           record_id: taskId,
           record_data: { status: 'invalid_status_123' },
@@ -215,7 +215,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         .split('T')[0];
 
       // Act - Set initial deadline
-      const setResult = await testSuite.executeToolCall('update-record', {
+      const setResult = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { due_date: initialDeadline },
@@ -231,7 +231,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         .toISOString()
         .split('T')[0];
 
-      const updateResult = await testSuite.executeToolCall('update-record', {
+      const updateResult = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { due_date: updatedDeadline },
@@ -257,7 +257,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         .split('T')[0];
 
       // Act - Set past due date
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { due_date: pastDate },
@@ -284,7 +284,7 @@ describe('MCP P1 Task Workflow Operations', () => {
       });
 
       // Act - Remove deadline (set to null/empty)
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { due_date: null },
@@ -340,7 +340,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         });
 
         // Act - Mark as completed
-        const result = await testSuite.executeToolCall('update-record', {
+        const result = await testSuite.executeToolCall('update_record', {
           resource_type: 'tasks',
           record_id: taskId,
           record_data: { status: 'completed' },
@@ -367,7 +367,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         const completionNotes =
           'Task completed successfully with all requirements met';
 
-        const result = await testSuite.executeToolCall('update-record', {
+        const result = await testSuite.executeToolCall('update_record', {
           resource_type: 'tasks',
           record_id: taskId,
           record_data: {
@@ -421,7 +421,7 @@ describe('MCP P1 Task Workflow Operations', () => {
         // Act & Assert - Execute each workflow step
         for (const step of workflowSteps) {
           const { description, ...stepData } = step;
-          const result = await testSuite.executeToolCall('update-record', {
+          const result = await testSuite.executeToolCall('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: stepData,

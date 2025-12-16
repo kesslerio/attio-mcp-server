@@ -32,7 +32,7 @@ class LimitsBoundariesTest extends EdgeCaseTestBase {
     try {
       // Create a valid company for boundary testing
       const companyData = TestDataFactory.createCompanyData('TC_EC02');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -68,7 +68,7 @@ class LimitsBoundariesTest extends EdgeCaseTestBase {
         const extraCompanyData = TestDataFactory.createCompanyData(
           `TC_EC02_${i}`
         );
-        const extraResult = await this.executeToolCall('create-record', {
+        const extraResult = await this.executeToolCall('create_record', {
           resource_type: 'companies',
           record_data: extraCompanyData,
         });
@@ -134,7 +134,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       tags: new Array(100).fill('tag'),
     };
 
-    const createResponse = await testCase.executeToolCall('create-record', {
+    const createResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: longStringData,
     });
@@ -352,7 +352,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ),
     };
 
-    const largeArrayResponse = await testCase.executeToolCall('create-record', {
+    const largeArrayResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: largeArrayData,
     });
@@ -386,7 +386,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       metadata: {},
     };
 
-    const emptyResponse = await testCase.executeToolCall('create-record', {
+    const emptyResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: emptyCollectionsData,
     });
@@ -418,7 +418,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       description: '🚀💻📊' + '\u200B'.repeat(10), // Zero-width spaces
     };
 
-    const unicodeResponse = await testCase.executeToolCall('create-record', {
+    const unicodeResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: unicodeData,
     });
@@ -439,7 +439,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       tags: ['🏷️', '📝', '✅'],
     };
 
-    const emojiResponse = await testCase.executeToolCall('create-record', {
+    const emojiResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: emojiData,
     });
@@ -452,7 +452,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       description: 'Description with\u200B\u200C\u200D invisible chars',
     };
 
-    const controlResponse = await testCase.executeToolCall('create-record', {
+    const controlResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: controlCharsData,
     });
@@ -659,7 +659,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     }
 
     // Test list-notes with invalid parent
-    const listNotesResponse = await testCase.executeToolCall('list-notes', {
+    const listNotesResponse = await testCase.executeToolCall('list_notes', {
       parent_object: 'invalid-parent-id',
       limit: -1, // Invalid limit
     });
@@ -682,7 +682,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     ).toBe(true);
 
     // Test delete-record with invalid ID
-    const deleteResponse = await testCase.executeToolCall('delete-record', {
+    const deleteResponse = await testCase.executeToolCall('delete_record', {
       resource_type: 'companies',
       record_id: 'invalid-delete-id',
     });

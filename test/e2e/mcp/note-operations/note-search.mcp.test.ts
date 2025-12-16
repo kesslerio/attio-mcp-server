@@ -45,7 +45,7 @@ class NoteSearchTest extends MCPTestBase {
 
       // Create test company
       const companyData = TestDataFactory.createCompanyData('TCN03');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -61,7 +61,7 @@ class NoteSearchTest extends MCPTestBase {
 
       // Create test person
       const personData = TestDataFactory.createPersonData('TCN03');
-      const personResult = await this.executeToolCall('create-record', {
+      const personResult = await this.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -123,7 +123,7 @@ class NoteSearchTest extends MCPTestBase {
       try {
         // Use universal create-note tool for all types
 
-        const result = await this.executeToolCall('create-note', {
+        const result = await this.executeToolCall('create_note', {
           resource_type: noteSpec.type === 'company' ? 'companies' : 'people',
           record_id: noteSpec.parentId,
           title: noteSpec.title,
@@ -161,7 +161,7 @@ class NoteSearchTest extends MCPTestBase {
     for (const noteId of this.createdNotes) {
       try {
         // Try to delete via universal delete if supported
-        await this.executeToolCall('delete-record', {
+        await this.executeToolCall('delete_record', {
           resource_type: 'notes',
           record_id: noteId,
         });
@@ -277,7 +277,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
           console.log('Skipping: Test company not available');
         } else {
           // Get first page of notes (limit 2)
-          const firstPageResult = await testCase.executeToolCall('list-notes', {
+          const firstPageResult = await testCase.executeToolCall('list_notes', {
             resource_type: 'companies',
             record_id: testCase.testCompanyId,
             limit: 2,
@@ -286,7 +286,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
           // Get second page of notes (limit 2, offset 2)
           const secondPageResult = await testCase.executeToolCall(
-            'list-notes',
+            'list_notes',
             {
               resource_type: 'companies',
               record_id: testCase.testCompanyId,
@@ -324,7 +324,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
         } else {
           // Get company notes
           const companyNotesResult = await testCase.executeToolCall(
-            'list-notes',
+            'list_notes',
             {
               resource_type: 'companies',
               record_id: testCase.testCompanyId,
@@ -334,7 +334,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
           // Get person notes
           const personNotesResult = await testCase.executeToolCall(
-            'list-notes',
+            'list_notes',
             {
               resource_type: 'people',
               record_id: testCase.testPersonId,

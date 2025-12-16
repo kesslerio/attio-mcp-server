@@ -61,7 +61,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
 
       try {
         const companyData = TestDataFactory.createCompanyData('TCAO02_company');
-        const companyResult = await testCase.executeToolCall('create-record', {
+        const companyResult = await testCase.executeToolCall('create_record', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -73,7 +73,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
 
         const personData = TestDataFactory.createPersonData('TCAO02_person');
         personData.company = companyId;
-        const personResult = await testCase.executeToolCall('create-record', {
+        const personResult = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -89,7 +89,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
           { target_object: 'people', target_record_id: personId },
         ];
 
-        const taskResult = await testCase.executeToolCall('create-record', {
+        const taskResult = await testCase.executeToolCall('create_record', {
           resource_type: 'tasks',
           record_data: taskData,
         });

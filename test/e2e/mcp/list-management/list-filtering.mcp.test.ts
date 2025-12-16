@@ -29,7 +29,7 @@ class ListFilteringTest extends MCPTestBase {
     try {
       // Create test companies for filtering
       const company1Data = TestDataFactory.createCompanyData('TC008_Filter1');
-      const company1Result = await this.executeToolCall('create-record', {
+      const company1Result = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: company1Data,
       });
@@ -46,7 +46,7 @@ class ListFilteringTest extends MCPTestBase {
 
       // Create another company to use as parent
       const company2Data = TestDataFactory.createCompanyData('TC008_Parent');
-      const company2Result = await this.executeToolCall('create-record', {
+      const company2Result = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: company2Data,
       });
