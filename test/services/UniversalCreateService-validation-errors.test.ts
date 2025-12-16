@@ -95,6 +95,8 @@ describe('UniversalCreateService', () => {
       errors: [],
     } as any);
 
+    vi.mocked(validateResourceType).mockReturnValue(true);
+
     vi.mocked(mapRecordFields).mockImplementation(
       (resourceType: string, data: any) =>
         ({
