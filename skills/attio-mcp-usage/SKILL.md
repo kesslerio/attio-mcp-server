@@ -32,7 +32,25 @@ Teaches universal patterns for:
 - [Workflows](resources/workflows.md) - Universal workflow patterns
 - [Golden Rules](resources/golden-rules.md) - Error prevention system
 - [Tool Reference](resources/tool-reference.md) - MCP tool signatures
-- [Integration Patterns](resources/integration-patterns.md) - Example workflows
+- [Integration Patterns](resources/integration-patterns.md) - Pattern index
+
+## Pattern Selection
+
+Choose the right pattern for your workflow:
+
+| Keywords                               | Pattern                                                              |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| investors, fundraising, LP, term sheet | [Investor Fundraising](resources/patterns/investor-fundraising.md)   |
+| product usage, PQL, activation, trial  | [PLG Product-Led](resources/patterns/plg-product-led.md)             |
+| renewal, churn, health score, CSM      | [Customer Success](resources/patterns/customer-success.md)           |
+| webhook, form submission, automation   | [RevOps Automation](resources/patterns/revops-automation.md)         |
+| sales, deal, pipeline, opportunity     | [Sales Pipeline](resources/patterns/sales-pipeline.md)               |
+| stage, auto-advance, progression       | [Deal Stage Automation](resources/patterns/deal-stage-automation.md) |
+| lead, qualification, inbound, form     | [Lead Qualification](resources/patterns/lead-qualification.md)       |
+| list, organize, filter, segment        | [List Organization](resources/patterns/list-organization.md)         |
+| import, bulk, batch, migrate           | [Bulk Operations](resources/patterns/bulk-operations.md)             |
+| enrich, external data, augment         | [Data Enrichment](resources/patterns/data-enrichment.md)             |
+| error, retry, validate, exception      | [Error Handling](resources/patterns/error-handling.md)               |
 
 ## When to Use This Skill
 
