@@ -326,7 +326,7 @@ describe('Universal Core Operations Search Tests', () => {
   describe('legacy alias compatibility', () => {
     it('resolves search-records alias to records.search', () => {
       const resolution = resolveToolName('search-records');
-      expect(resolution.name).toBe('records_search');
+      expect(resolution.name).toBe('search_records');
       expect(resolution.alias?.alias).toBe('search-records');
     });
   });
