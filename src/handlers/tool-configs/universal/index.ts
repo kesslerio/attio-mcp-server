@@ -188,9 +188,9 @@ export const deprecatedToolMappings: Record<string, string> = {
   // Company tools → Universal equivalents
   'search-companies': 'search_records',
   'get-company-details': 'get_record_details',
-  'create-company': 'create-record',
-  'update-company': 'update-record',
-  'delete-company': 'delete-record',
+  'create-company': 'create_record',
+  'update-company': 'update_record',
+  'delete-company': 'delete_record',
   'get-company-attributes': 'get_record_attributes',
   'discover-company-attributes': 'discover_record_attributes',
   'get-company-basic-info': 'get_record_info',
@@ -204,7 +204,7 @@ export const deprecatedToolMappings: Record<string, string> = {
   // People tools → Universal equivalents
   'search-people': 'search_records',
   'get-person-details': 'get_record_details',
-  'create-person': 'create-record',
+  'create-person': 'create_record',
   'advanced-search-people': 'search_records_advanced',
   'search-people-by-company': 'search_records_by_relationship',
   'search-people-by-activity': 'search_records_by_content',
@@ -214,18 +214,18 @@ export const deprecatedToolMappings: Record<string, string> = {
   'search-people-by-last-interaction': 'search_records_by_timeframe',
 
   // Record tools → Universal equivalents
-  'create-record': 'create-record', // Already universal
+  'create-record': 'create_record', // Already universal
   'get-record': 'get_record_details',
-  'update-record': 'update-record', // Already universal
-  'delete-record': 'delete-record', // Already universal
+  'update-record': 'update_record', // Already universal
+  'delete-record': 'delete_record', // Already universal
   'list-records': 'search_records',
   'batch-create-records': 'batch_records',
   'batch-update-records': 'batch_records',
 
   // Task tools → Universal equivalents
-  'create-task': 'create-record',
-  'update-task': 'update-record',
-  'delete-task': 'delete-record',
+  'create-task': 'create_record',
+  'update-task': 'update_record',
+  'delete-task': 'delete_record',
   'list-tasks': 'search_records',
 
   // Batch tools → Universal equivalent
