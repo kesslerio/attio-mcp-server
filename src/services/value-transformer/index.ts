@@ -24,6 +24,10 @@ import {
 } from './status-transformer.js';
 import { transformMultiSelectValue } from './multi-select-transformer.js';
 import {
+  transformSelectValue,
+  clearSelectCache,
+} from './select-transformer.js';
+import {
   transformRecordReferenceValue,
   isCorrectRecordReferenceFormat,
 } from './record-reference-transformer.js';
@@ -36,7 +40,7 @@ import { DEFAULT_ATTRIBUTES_CACHE_TTL } from '@/constants/universal.constants.js
 
 // Re-export types
 export * from './types.js';
-export { clearStatusCache };
+export { clearStatusCache, clearSelectCache };
 
 /**
  * Clear all transformer caches (useful for testing)
@@ -45,6 +49,7 @@ export { clearStatusCache };
 export function clearAllCaches(): void {
   CachingService.clearAttributesCache();
   clearStatusCache();
+  clearSelectCache();
 }
 
 /**
@@ -196,6 +201,31 @@ export async function transformRecordValues(
       }
     } catch (err) {
       // Multi-select transformation threw an error
+      throw err;
+    }
+
+    // Issue #1019: Try single-select transformation
+    try {
+      const selectResult = await transformSelectValue(
+        value,
+        field,
+        context,
+        attrMeta
+      );
+
+      if (selectResult.transformed) {
+        transformedData[field] = selectResult.transformedValue;
+        transformations.push({
+          field,
+          from: selectResult.originalValue,
+          to: selectResult.transformedValue,
+          type: 'select_title_to_id',
+          description: selectResult.description || 'Select value transformed',
+        });
+        continue;
+      }
+    } catch (err) {
+      // Select transformation threw an error
       throw err;
     }
 

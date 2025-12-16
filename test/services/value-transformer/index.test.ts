@@ -407,5 +407,73 @@ describe('value-transformer orchestrator', () => {
       expect(result.data.channel).toBe('Direct'); // NOT wrapped in array
       expect(result.transformations).toHaveLength(0);
     });
+
+    // Issue #1019: Test select-transformer integration within orchestrator
+    it('should transform select values within orchestrator without interfering with other transformers', async () => {
+      const { handleUniversalDiscoverAttributes } = await import(
+        '@/handlers/tool-configs/universal/shared-handlers.js'
+      );
+      const { AttributeOptionsService } = await import(
+        '@/services/metadata/index.js'
+      );
+
+      vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
+        all: [
+          { api_slug: 'name', type: 'text', title: 'Name' },
+          {
+            api_slug: 'industry',
+            type: 'select',
+            title: 'Industry',
+            // Single-select: no is_multiselect flag
+          },
+          {
+            api_slug: 'categories',
+            type: 'select',
+            title: 'Categories',
+            is_multiselect: true,
+          },
+        ],
+      });
+
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'ind-1', title: 'Technology', is_archived: false },
+          { id: 'ind-2', title: 'Healthcare', is_archived: false },
+        ],
+        attributeType: 'select',
+      });
+
+      const result = await transformRecordValues(
+        {
+          name: 'Test Company',
+          industry: 'Technology', // Should use select-transformer
+          categories: 'SaaS', // Should use multi-select-transformer
+        },
+        {
+          resourceType: UniversalResourceType.COMPANIES,
+          operation: 'create',
+        }
+      );
+
+      // Name should pass through unchanged
+      expect(result.data.name).toBe('Test Company');
+
+      // Select-transformer should convert industry to array with UUID
+      expect(result.data.industry).toEqual(['ind-1']);
+      const industryTransform = result.transformations.find(
+        (t) => t.field === 'industry'
+      );
+      expect(industryTransform?.type).toBe('select_title_to_id');
+
+      // Multi-select-transformer should wrap categories in array (no UUID lookup)
+      expect(result.data.categories).toEqual(['SaaS']);
+      const categoriesTransform = result.transformations.find(
+        (t) => t.field === 'categories'
+      );
+      expect(categoriesTransform?.type).toBe('multi_select_wrap');
+
+      // Should have exactly 2 transformations (industry + categories)
+      expect(result.transformations).toHaveLength(2);
+    });
   });
 });
