@@ -1,11 +1,14 @@
 /**
- * Status transformer - converts status titles to {status_id: "uuid"} format
+ * Status transformer - converts status titles to Attio status object format
  *
  * Problem: LLMs commonly pass status values as strings (e.g., "Demo Scheduling")
- * but Attio API requires {status_id: "uuid"} format.
+ * but Attio API requires a structured object for status attributes.
  *
  * Solution: Auto-detect status attributes and transform string titles to the
  * required object format by looking up the status ID from the workspace options.
+ *
+ * Note: Attio expects the key `status` (not `status_id`). The value can be the
+ * status UUID. We always wrap as an array to match Attio attribute value shapes.
  */
 
 import {
@@ -197,11 +200,11 @@ function findStatusByTitle(
  */
 function isStatusFormat(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false;
-  return 'status_id' in value || 'status' in value;
+  return 'status' in value || 'status_id' in value;
 }
 
 /**
- * Transform a status value from string title to {status_id: "uuid"} format
+ * Transform a status value from string title to Attio status object format
  *
  * @param value - The value to transform
  * @param attributeSlug - The attribute slug (e.g., "stage")
@@ -244,7 +247,7 @@ export async function transformStatusValue(
 
   // Short-circuit if value is already a UUID
   if (isValidUUID(value)) {
-    const transformedValue = { status_id: value };
+    const transformedValue = [{ status: value }];
 
     debug(
       'status-transformer',
@@ -262,7 +265,7 @@ export async function transformStatusValue(
       transformed: true,
       originalValue: value,
       transformedValue,
-      description: `Converted UUID string to status_id for ${attributeSlug}`,
+      description: `Converted UUID string to status object for ${attributeSlug}`,
     };
   }
 
@@ -304,7 +307,7 @@ export async function transformStatusValue(
   }
 
   // Transform to status ID format
-  const transformedValue = { status_id: match.id };
+  const transformedValue = [{ status: match.id }];
 
   debug(
     'status-transformer',
@@ -323,7 +326,7 @@ export async function transformStatusValue(
     transformed: true,
     originalValue: value,
     transformedValue,
-    description: `Converted status title "${value}" to status_id "${match.id}" (matched: "${match.title}")`,
+    description: `Converted status title "${value}" to status "${match.id}" (matched: "${match.title}")`,
   };
 }
 

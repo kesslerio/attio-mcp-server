@@ -5,7 +5,7 @@
  * common LLM errors when creating/updating records.
  *
  * Transformations:
- * - Status fields: "Demo Scheduling" → {status_id: "uuid"}
+ * - Status fields: "Demo Scheduling" → [{status: "uuid"}]
  * - Multi-select fields: "Inbound" → ["Inbound"]
  * - Record-reference fields: "uuid" → [{target_object: "X", target_record_id: "uuid"}] (Issue #997)
  *

@@ -1,7 +1,7 @@
 /**
  * Unit tests for status-transformer.ts
  *
- * Tests the transformation of status titles to {status_id: "uuid"} format
+ * Tests the transformation of status titles to Attio status object format
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -63,7 +63,7 @@ describe('status-transformer', () => {
     });
 
     it('should skip transformation for values already in status format', async () => {
-      const statusFormat = { status_id: 'abc-123' };
+      const statusFormat = { status: 'abc-123' };
       const result = await transformStatusValue(
         statusFormat,
         'stage',
@@ -107,7 +107,7 @@ describe('status-transformer', () => {
       );
 
       expect(result.transformed).toBe(true);
-      expect(result.transformedValue).toEqual({ status_id: uuid });
+      expect(result.transformedValue).toEqual([{ status: uuid }]);
       expect(result.description).toContain('UUID string');
       expect(mockGetOptions).not.toHaveBeenCalled();
     });
@@ -133,7 +133,7 @@ describe('status-transformer', () => {
       );
 
       expect(result.transformed).toBe(true);
-      expect(result.transformedValue).toEqual({ status_id: 'status-uuid-2' });
+      expect(result.transformedValue).toEqual([{ status: 'status-uuid-2' }]);
       expect(result.description).toContain('Demo Scheduling');
     });
 
@@ -156,7 +156,7 @@ describe('status-transformer', () => {
       );
 
       expect(result.transformed).toBe(true);
-      expect(result.transformedValue).toEqual({ status_id: 'status-uuid-1' });
+      expect(result.transformedValue).toEqual([{ status: 'status-uuid-1' }]);
     });
 
     it('should throw error for invalid status value with valid options', async () => {

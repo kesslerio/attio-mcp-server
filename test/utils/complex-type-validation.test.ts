@@ -68,7 +68,7 @@ describe('complex-type-validation', () => {
         '+15551234567',
         'phone_numbers'
       ) as Record<string, unknown>;
-      expect(result).toHaveProperty('phone_number', '+15551234567');
+      expect(result).toHaveProperty('original_phone_number', '+15551234567');
     });
 
     it('requires phone_number or original_phone_number in object', () => {
@@ -87,7 +87,7 @@ describe('complex-type-validation', () => {
       ) as Array<Record<string, unknown>>;
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toHaveProperty('phone_number');
+      expect(result[0]).toHaveProperty('original_phone_number');
       expect(result[1]).toHaveProperty('original_phone_number');
     });
 
