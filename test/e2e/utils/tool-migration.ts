@@ -37,7 +37,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   // Task Management Tools
   {
     legacyToolName: 'create-task',
-    universalToolName: 'create-record',
+    universalToolName: 'create_record',
     resourceType: 'tasks',
     parameterTransform: (params: ToolParameters) => ({
       resource_type: 'tasks',
@@ -69,7 +69,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'update-task',
-    universalToolName: 'update-record',
+    universalToolName: 'update_record',
     resourceType: 'tasks',
     parameterTransform: (params: any) => {
       const { task_id, taskId, record_id, ...recordData } = params;
@@ -83,7 +83,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'delete-task',
-    universalToolName: 'delete-record',
+    universalToolName: 'delete_record',
     resourceType: 'tasks',
     parameterTransform: (params: any) => ({
       resource_type: 'tasks',
@@ -95,7 +95,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   // Company Management Tools
   {
     legacyToolName: 'create-company',
-    universalToolName: 'create-record',
+    universalToolName: 'create_record',
     resourceType: 'companies',
     parameterTransform: (params: any) => ({
       resource_type: 'companies',
@@ -127,7 +127,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'update-company',
-    universalToolName: 'update-record',
+    universalToolName: 'update_record',
     resourceType: 'companies',
     parameterTransform: (params: any) => {
       const { company_id, record_id, ...recordData } = params;
@@ -143,7 +143,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   // People Management Tools
   {
     legacyToolName: 'create-person',
-    universalToolName: 'create-record',
+    universalToolName: 'create_record',
     resourceType: 'people',
     parameterTransform: (params: any) => ({
       resource_type: 'people',
@@ -177,7 +177,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   // Notes Management Tools - Use dedicated note APIs
   {
     legacyToolName: 'get-company-notes',
-    universalToolName: 'list-notes',
+    universalToolName: 'list_notes',
     resourceType: 'companies',
     parameterTransform: (params: any) => ({
       resource_type: 'companies',
@@ -189,7 +189,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'get-person-notes',
-    universalToolName: 'list-notes',
+    universalToolName: 'list_notes',
     resourceType: 'people',
     parameterTransform: (params: any) => ({
       resource_type: 'people',
@@ -201,7 +201,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'create-company-note',
-    universalToolName: 'create-note',
+    universalToolName: 'create_note',
     resourceType: 'companies',
     parameterTransform: (params: any) => {
       return {
@@ -216,7 +216,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'create-person-note',
-    universalToolName: 'create-note',
+    universalToolName: 'create_note',
     resourceType: 'people',
     parameterTransform: (params: any) => {
       return {
@@ -245,7 +245,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'create-list',
-    universalToolName: 'create-record',
+    universalToolName: 'create_record',
     resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
@@ -277,7 +277,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'add-record-to-list',
-    universalToolName: 'update-record',
+    universalToolName: 'update_record',
     resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
@@ -295,7 +295,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'remove-record-from-list',
-    universalToolName: 'update-record',
+    universalToolName: 'update_record',
     resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
@@ -312,7 +312,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   },
   {
     legacyToolName: 'update-list-entry',
-    universalToolName: 'update-record',
+    universalToolName: 'update_record',
     resourceType: 'records',
     parameterTransform: (params: any) => {
       const { entry_id, record_id, list_id, ...updateData } = params;
@@ -397,7 +397,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   // Record linking tools
   {
     legacyToolName: 'link-record-to-task',
-    universalToolName: 'update-record',
+    universalToolName: 'update_record',
     resourceType: 'tasks',
     parameterTransform: (params: any) => ({
       resource_type: 'tasks',

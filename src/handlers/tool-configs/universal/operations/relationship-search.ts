@@ -39,11 +39,11 @@ export const searchByRelationshipConfig: UniversalToolConfig<
   RelationshipSearchParams,
   AttioRecord[]
 > = {
-  name: 'records_search_by_relationship',
+  name: 'search_records_by_relationship',
   handler: async (params: RelationshipSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'records_search_by_relationship',
+        'search_records_by_relationship',
         params
       );
 
@@ -105,7 +105,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
       }
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'records_search_by_relationship',
+        'search_records_by_relationship',
         params.relationship_type,
         error
       );

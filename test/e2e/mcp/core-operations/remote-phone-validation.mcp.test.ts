@@ -106,7 +106,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
             ],
           };
 
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });
@@ -143,7 +143,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
             ],
           };
 
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });
@@ -177,7 +177,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
             ],
           };
 
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });
@@ -211,7 +211,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
             ],
           };
 
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });
@@ -251,7 +251,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
             ],
           };
 
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });
@@ -291,7 +291,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
             ],
           };
 
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });
@@ -328,7 +328,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
           };
 
           try {
-            const result = await testCase.executeToolCall('create-record', {
+            const result = await testCase.executeToolCall('create_record', {
               resource_type: 'people',
               record_data: personData,
             });
@@ -379,7 +379,7 @@ describe.skipIf(SKIP_REMOTE_TESTS)(
             ],
           };
 
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });

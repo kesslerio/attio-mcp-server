@@ -75,7 +75,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 2) Missing required parameter (e.g., people.create without email)
   {
-    const resp = (await callUniversalTool('create-record', {
+    const resp = (await callUniversalTool('create_record', {
       resource_type: 'people',
       record_data: { name: 'Only Name' },
     })) as McpToolResponse;
@@ -99,7 +99,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 3) Task title maps to content on create (discoverability)
   {
-    const resp = (await callTasksTool('create-record', {
+    const resp = (await callTasksTool('create_record', {
       resource_type: 'tasks',
       record_data: { title: 'Quick Task' },
     })) as McpToolResponse;
@@ -139,7 +139,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 5) Unknown field name provides suggestions (companies.create with 'nam')
   {
-    const resp = (await callUniversalTool('create-record', {
+    const resp = (await callUniversalTool('create_record', {
       resource_type: 'companies',
       record_data: { nam: 'Acme Inc.' } as any,
     })) as McpToolResponse;
@@ -162,7 +162,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 6) Partial field 'domain' is accepted or mapped (companies.create)
   {
-    const resp = (await callUniversalTool('create-record', {
+    const resp = (await callUniversalTool('create_record', {
       resource_type: 'companies',
       record_data: { name: 'Acme', domain: 'acme.com' } as any,
     })) as McpToolResponse;

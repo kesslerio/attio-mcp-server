@@ -113,7 +113,7 @@ function preprocessParameters(
 ): ToolParameters {
   // Handle URI parameter for note creation tools
   if (
-    toolName === 'create-note' &&
+    toolName === 'create_note' &&
     'uri' in parameters &&
     !('record_id' in parameters)
   ) {
@@ -170,7 +170,7 @@ export async function callToolWithEnhancements(
       process.env.E2E_MODE === 'true' &&
       process.env.USE_MOCK_DATA !== 'false' &&
       // Tools that provide E2E-safe fallbacks (no real API needed)
-      ['list-notes'].includes(toolName);
+      ['list_notes'].includes(toolName);
 
     if (
       !apiKeyStatus.available &&
@@ -525,7 +525,7 @@ export async function callUniversalTool(
 function isCreationTool(toolName: string): boolean {
   return (
     toolName.includes('create-') ||
-    toolName === 'create-record' ||
+    toolName === 'create_record' ||
     toolName.startsWith('create')
   );
 }

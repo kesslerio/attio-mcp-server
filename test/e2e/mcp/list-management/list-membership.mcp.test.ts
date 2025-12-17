@@ -29,7 +29,7 @@ class ListMembershipTest extends MCPTestBase {
     try {
       // Create a test company
       const companyData = TestDataFactory.createCompanyData('TC007');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -46,7 +46,7 @@ class ListMembershipTest extends MCPTestBase {
 
       // Create a test person
       const personData = TestDataFactory.createPersonData('TC007');
-      const personResult = await this.executeToolCall('create-record', {
+      const personResult = await this.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });

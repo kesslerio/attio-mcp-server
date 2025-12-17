@@ -75,11 +75,11 @@ export const createRecordConfig: UniversalToolConfig<
   UniversalCreateParams,
   AttioRecord
 > = {
-  name: 'create-record',
+  name: 'create_record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'create-record',
+        'create_record',
         params
       );
 
@@ -95,7 +95,7 @@ export const createRecordConfig: UniversalToolConfig<
           const { logTaskDebug, inspectTaskRecordShape } = await import(
             '../../../../utils/task-debug.js'
           );
-          logTaskDebug('mcp.create-record', 'Returning MCP task record', {
+          logTaskDebug('mcp.create_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
         }
@@ -149,13 +149,13 @@ export const updateRecordConfig: UniversalToolConfig<
   UniversalUpdateParams,
   EnhancedAttioRecord
 > = {
-  name: 'update-record',
+  name: 'update_record',
   handler: async (
     params: UniversalUpdateParams
   ): Promise<EnhancedAttioRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'update-record',
+        'update_record',
         params
       );
 
@@ -198,7 +198,7 @@ export const updateRecordConfig: UniversalToolConfig<
           const { logTaskDebug, inspectTaskRecordShape } = await import(
             '../../../../utils/task-debug.js'
           );
-          logTaskDebug('mcp.update-record', 'Returning MCP task record', {
+          logTaskDebug('mcp.update_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
         }
@@ -256,13 +256,13 @@ export const deleteRecordConfig: UniversalToolConfig<
   UniversalDeleteParams,
   { success: boolean; record_id: string }
 > = {
-  name: 'delete-record',
+  name: 'delete_record',
   handler: async (
     params: UniversalDeleteParams
   ): Promise<{ success: boolean; record_id: string }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'delete-record',
+        'delete_record',
         params
       );
       return await handleUniversalDelete(sanitizedParams);
@@ -291,7 +291,7 @@ export const deleteRecordConfig: UniversalToolConfig<
 };
 
 export const createRecordDefinition = {
-  name: 'create-record',
+  name: 'create_record',
   description: formatToolDescription({
     capability: 'Create new Attio records (companies, people, deals, tasks).',
     boundaries:
@@ -310,7 +310,7 @@ export const createRecordDefinition = {
 };
 
 export const updateRecordDefinition = {
-  name: 'update-record',
+  name: 'update_record',
   description: formatToolDescription({
     capability:
       'Update existing Attio record fields across all supported resource types.',
@@ -329,7 +329,7 @@ export const updateRecordDefinition = {
 };
 
 export const deleteRecordDefinition = {
-  name: 'delete-record',
+  name: 'delete_record',
   description: formatToolDescription({
     capability:
       'Delete an Attio record from its object (company, person, deal, task).',

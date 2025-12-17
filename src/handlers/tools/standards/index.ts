@@ -11,32 +11,42 @@ export interface ToolDescriptionTemplateOptions {
 export function formatToolDescription(
   options: ToolDescriptionTemplateOptions
 ): string {
-  const parts: string[] = [];
+  const sentences: string[] = [];
 
-  // Primary capability (<20 words target)
-  parts.push(options.capability.trim());
+  // Primary capability - ensure it ends with a period
+  const capability = options.capability.trim();
+  sentences.push(capability.endsWith('.') ? capability : `${capability}.`);
+
+  // Safety/boundaries - what it does NOT do
+  if (options.boundaries) {
+    const boundaries = options.boundaries.trim();
+    sentences.push(
+      boundaries.startsWith('Never ') || boundaries.startsWith('Does not ')
+        ? boundaries.endsWith('.')
+          ? boundaries
+          : `${boundaries}.`
+        : `Never ${boundaries.endsWith('.') ? boundaries : `${boundaries}.`}`
+    );
+  }
 
   // Approval flag (if write operation)
   if (options.requiresApproval) {
-    parts.push('WRITE: requires approval');
-  }
-
-  // Boundaries (what it does NOT do)
-  if (options.boundaries) {
-    parts.push(`Does not: ${options.boundaries.trim()}`);
+    sentences.push('May require explicit user approval from the host.');
   }
 
   // Constraints (limits/requirements)
   if (options.constraints) {
-    parts.push(options.constraints.trim());
+    const constraints = options.constraints.trim();
+    sentences.push(constraints.endsWith('.') ? constraints : `${constraints}.`);
   }
 
   // Recovery hint (fallback action)
   if (options.recoveryHint) {
-    parts.push(`If errors occur: ${options.recoveryHint.trim()}`);
+    const hint = options.recoveryHint.trim();
+    sentences.push(hint.endsWith('.') ? hint : `${hint}.`);
   }
 
-  return parts.join(' | ');
+  return sentences.join(' ');
 }
 
 export interface ErrorTemplateOptions {

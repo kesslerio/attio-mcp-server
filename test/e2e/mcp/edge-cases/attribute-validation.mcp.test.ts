@@ -49,7 +49,7 @@ class AttributeValidationTest extends EdgeCaseTestBase {
     // Create person for update tests
     try {
       const personData = TestDataFactory.createPersonData('TC_EC07_BASE');
-      const personResult = await this.executeToolCall('create-record', {
+      const personResult = await this.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -67,7 +67,7 @@ class AttributeValidationTest extends EdgeCaseTestBase {
     // Create company for attribute options test
     try {
       const companyData = TestDataFactory.createCompanyData('TC_EC07_BASE');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -242,7 +242,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       // This should succeed (graceful_handling) because the alias is mapped
       const result = await testCase.executeExpectedFailureTest(
         'linkedin_url_alias_update',
-        'update-record',
+        'update_record',
         {
           resource_type: 'people',
           record_id: testCase.getPersonIdOrThrow(),
@@ -260,7 +260,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       // Truly unknown attributes (no alias) trigger enhanced error with discovery hint
       const result = await testCase.executeExpectedFailureTest(
         'unknown_attribute_discovery_hint',
-        'update-record',
+        'update_record',
         {
           resource_type: 'people',
           record_id: testCase.getPersonIdOrThrow(),
@@ -279,7 +279,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       // This should succeed (graceful_handling) because the alias is mapped
       const result = await testCase.executeExpectedFailureTest(
         'twitter_handle_alias_update',
-        'update-record',
+        'update_record',
         {
           resource_type: 'people',
           record_id: testCase.getPersonIdOrThrow(),
@@ -368,7 +368,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
     it('should normalize linkedin_url to linkedin on create', async () => {
       // Phase 4 adds field alias mapping: linkedin_url → linkedin
       // On create, this should succeed (mapped) rather than error
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: {
           name: `TC-EC07 LinkedIn Alias Test ${Date.now()}`,
@@ -407,7 +407,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       // Phase 2: enhanceSelectStatusError() should return workspace-specific stages
       const result = await testCase.executeExpectedFailureTest(
         'invalid_deal_stage',
-        'create-record',
+        'create_record',
         {
           resource_type: 'deals',
           record_data: {
@@ -427,7 +427,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       // Phase 2: enhanceSelectStatusError() with select attribute
       const result = await testCase.executeExpectedFailureTest(
         'invalid_company_category',
-        'create-record',
+        'create_record',
         {
           resource_type: 'companies',
           record_data: {
@@ -622,7 +622,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
         }
       }
 
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -681,7 +681,7 @@ describe('TC-EC07: Attribute Validation Error Handling', () => {
       const updateData: Record<string, unknown> = {};
       updateData[multiSelectField.fieldSlug] = multiSelectField.validOption;
 
-      const result = await testCase.executeToolCall('update-record', {
+      const result = await testCase.executeToolCall('update_record', {
         resource_type: 'companies',
         record_id: testCase.getCompanyIdOrThrow(),
         record_data: updateData,

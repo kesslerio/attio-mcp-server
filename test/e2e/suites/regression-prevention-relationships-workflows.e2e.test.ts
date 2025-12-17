@@ -57,7 +57,7 @@ describe.skipIf(
     async () => {
       let recordId: string | undefined;
       const companyData = testDataGenerator.companies.basicCompany();
-      const createResponse = (await callUniversalTool('create-record', {
+      const createResponse = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       } as any)) as McpToolResponse;
@@ -80,7 +80,7 @@ describe.skipIf(
           : readResponse.content
       ).toBeTruthy();
 
-      const updateResponse = (await callUniversalTool('update-record', {
+      const updateResponse = (await callUniversalTool('update_record', {
         resource_type: 'companies',
         record_id: recordId,
         record_data: { description: 'Updated for CRUD workflow test' },
@@ -110,7 +110,7 @@ describe.skipIf(
       const companyData = testDataGenerator.companies.basicCompany();
       const companyId = await createTestRecord(
         (resourceType, data) =>
-          callUniversalTool('create-record', {
+          callUniversalTool('create_record', {
             resource_type: resourceType as any,
             record_data: data,
           }),
@@ -125,7 +125,7 @@ describe.skipIf(
       }
       testRecordIds.push(companyId);
 
-      const taskResponse = await callTasksTool('create-record', {
+      const taskResponse = await callTasksTool('create_record', {
         resource_type: 'tasks',
         record_data: {
           content: 'Relationship integrity test task',
@@ -135,7 +135,7 @@ describe.skipIf(
       } as any);
       expect(taskResponse).toBeDefined();
 
-      const noteResponse = await callNotesTool('create-note', {
+      const noteResponse = await callNotesTool('create_note', {
         resource_type: 'companies',
         record_id: companyId,
         title: 'Relationship integrity test note',
@@ -168,7 +168,7 @@ describe.skipIf(
         {
           name: 'Required field validation',
           test: async () => {
-            const response = await callUniversalTool('create-record', {
+            const response = await callUniversalTool('create_record', {
               resource_type: 'companies',
               record_data: {
                 /* intentionally missing required fields to assert validation */

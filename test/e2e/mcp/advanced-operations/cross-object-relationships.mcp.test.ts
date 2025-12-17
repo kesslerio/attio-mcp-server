@@ -60,7 +60,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
 
       try {
         const companyData = TestDataFactory.createCompanyData('TCAO03_company');
-        const companyResult = await testCase.executeToolCall('create-record', {
+        const companyResult = await testCase.executeToolCall('create_record', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -71,7 +71,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
         testCase.trackRecord('companies', companyId);
 
         const personData = TestDataFactory.createPersonData('TCAO03_person');
-        const personResult = await testCase.executeToolCall('create-record', {
+        const personResult = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -84,7 +84,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
         const dealData = TestDataFactory.createDealData('TCAO03_deal');
         dealData.associated_company = companyId;
         dealData.associated_people = [personId];
-        const dealResult = await testCase.executeToolCall('create-record', {
+        const dealResult = await testCase.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });

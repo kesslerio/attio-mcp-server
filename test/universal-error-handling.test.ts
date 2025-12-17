@@ -84,7 +84,7 @@ describe('Enhanced Universal Error Handling', () => {
       const params = { resource_type: UniversalResourceType.COMPANIES };
 
       try {
-        validateUniversalToolParams('create-record', params);
+        validateUniversalToolParams('create_record', params);
         expect.fail('Should have thrown validation error');
       } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);

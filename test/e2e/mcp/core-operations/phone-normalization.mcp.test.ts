@@ -68,7 +68,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -106,7 +106,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -145,7 +145,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -184,7 +184,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -225,7 +225,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -261,7 +261,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -295,7 +295,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -338,7 +338,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const createResult = await testCase.executeToolCall('create-record', {
+        const createResult = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: createData,
         });
@@ -354,7 +354,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           name: 'Phone Test Person 9 Updated',
         };
 
-        const updateResult = await testCase.executeToolCall('update-record', {
+        const updateResult = await testCase.executeToolCall('update_record', {
           resource_type: 'people',
           record_id: recordId,
           record_data: updateData,
@@ -391,7 +391,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
 
         // This should either succeed (storing as-is) or fail with helpful error
         try {
-          const result = await testCase.executeToolCall('create-record', {
+          const result = await testCase.executeToolCall('create_record', {
             resource_type: 'people',
             record_data: personData,
           });
@@ -445,7 +445,7 @@ describe('MCP E2E: Phone Number Normalization (Issue #798)', () => {
           ],
         };
 
-        const result = await testCase.executeToolCall('create-record', {
+        const result = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });

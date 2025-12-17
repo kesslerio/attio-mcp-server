@@ -17,9 +17,9 @@ export const getDetailedInfoConfig: UniversalToolConfig<
   UniversalDetailedInfoParams,
   Record<string, unknown>
 > = {
-  name: 'records_get_info',
+  name: 'get_record_info',
   handler: async (params: UniversalDetailedInfoParams) => {
-    validateUniversalToolParams('records_get_info', params);
+    validateUniversalToolParams('get_record_info', params);
     return await handleUniversalGetDetailedInfo(params);
   },
   formatResult: (info: Record<string, unknown>, ...args: unknown[]): string => {
@@ -81,7 +81,7 @@ export const getDetailedInfoConfig: UniversalToolConfig<
 };
 
 export const getDetailedInfoDefinition = {
-  name: 'records_get_info',
+  name: 'get_record_info',
   description: formatToolDescription({
     capability:
       'Retrieve enriched info subsets (contact, business, social) for a record.',

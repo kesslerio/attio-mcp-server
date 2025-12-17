@@ -120,7 +120,7 @@ export abstract class MCPTestBase {
 
     for (const { type, id } of allTracked.values()) {
       try {
-        const result = await this.executeToolCall('delete-record', {
+        const result = await this.executeToolCall('delete_record', {
           resource_type: type,
           record_id: id,
         });

@@ -265,16 +265,15 @@ describe('Performance Regression Tests', () => {
 
     // Create a test record for performance testing
     try {
-      const createResult = await coreOperationsToolConfigs[
-        'create-record'
-      ].handler({
-        resource_type: UniversalResourceType.COMPANIES,
-        record_data: {
-          name: `Perf Test Company ${timestamp}`,
-          website: `https://perftest-${timestamp}.com`,
-          description: 'Performance regression test record',
-        },
-      });
+      const createResult =
+        await coreOperationsToolConfigs.create_record.handler({
+          resource_type: UniversalResourceType.COMPANIES,
+          record_data: {
+            name: `Perf Test Company ${timestamp}`,
+            website: `https://perftest-${timestamp}.com`,
+            description: 'Performance regression test record',
+          },
+        });
 
       testRecordId = (createResult as any)?.id?.record_id || null;
       console.log('Created test record:', testRecordId);
@@ -287,7 +286,7 @@ describe('Performance Regression Tests', () => {
     // Clean up test record
     if (testRecordId) {
       try {
-        await coreOperationsToolConfigs['delete-record'].handler({
+        await coreOperationsToolConfigs.delete_record.handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: testRecordId,
         });
@@ -308,7 +307,7 @@ describe('Performance Regression Tests', () => {
       const startTime = performance.now();
 
       try {
-        await coreOperationsToolConfigs['get-record-details'].handler({
+        await coreOperationsToolConfigs.get_record_details.handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: invalidId,
         });
@@ -343,7 +342,7 @@ describe('Performance Regression Tests', () => {
       const startTime = performance.now();
 
       try {
-        await coreOperationsToolConfigs['get-record-details'].handler({
+        await coreOperationsToolConfigs.get_record_details.handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: nonExistentId,
         });
@@ -369,7 +368,7 @@ describe('Performance Regression Tests', () => {
       // First request - should hit API
       const firstStart = performance.now();
       try {
-        await coreOperationsToolConfigs['get-record-details'].handler({
+        await coreOperationsToolConfigs.get_record_details.handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: nonExistentId,
         });
@@ -381,7 +380,7 @@ describe('Performance Regression Tests', () => {
       // Second request - should hit cache
       const secondStart = performance.now();
       try {
-        await coreOperationsToolConfigs['get-record-details'].handler({
+        await coreOperationsToolConfigs.get_record_details.handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: nonExistentId,
         });
@@ -409,13 +408,11 @@ describe('Performance Regression Tests', () => {
     it('should complete search within budget', async () => {
       const startTime = performance.now();
 
-      const results = await coreOperationsToolConfigs['search-records'].handler(
-        {
-          resource_type: UniversalResourceType.COMPANIES,
-          query: 'test',
-          limit: 10,
-        }
-      );
+      const results = await coreOperationsToolConfigs.search_records.handler({
+        resource_type: UniversalResourceType.COMPANIES,
+        query: 'test',
+        limit: 10,
+      });
 
       const duration = performance.now() - startTime;
 
@@ -435,13 +432,11 @@ describe('Performance Regression Tests', () => {
     it('should handle pagination efficiently', async () => {
       const startTime = performance.now();
 
-      const results = await coreOperationsToolConfigs['search-records'].handler(
-        {
-          resource_type: UniversalResourceType.COMPANIES,
-          limit: 20,
-          offset: 0,
-        }
-      );
+      const results = await coreOperationsToolConfigs.search_records.handler({
+        resource_type: UniversalResourceType.COMPANIES,
+        limit: 20,
+        offset: 0,
+      });
 
       const duration = performance.now() - startTime;
 
@@ -455,7 +450,7 @@ describe('Performance Regression Tests', () => {
       const startTime = performance.now();
 
       try {
-        await coreOperationsToolConfigs['search-records'].handler({
+        await coreOperationsToolConfigs.search_records.handler({
           resource_type: UniversalResourceType.COMPANIES,
           limit: -5, // Invalid parameter
         });
@@ -487,12 +482,12 @@ describe('Performance Regression Tests', () => {
 
       const startTime = performance.now();
 
-      const record = await coreOperationsToolConfigs[
-        'get-record-details'
-      ].handler({
-        resource_type: UniversalResourceType.COMPANIES,
-        record_id: testRecordId,
-      });
+      const record = await coreOperationsToolConfigs.get_record_details.handler(
+        {
+          resource_type: UniversalResourceType.COMPANIES,
+          record_id: testRecordId,
+        }
+      );
 
       const duration = performance.now() - startTime;
 
@@ -511,7 +506,7 @@ describe('Performance Regression Tests', () => {
 
       const startTime = performance.now();
 
-      const updated = await coreOperationsToolConfigs['update-record'].handler({
+      const updated = await coreOperationsToolConfigs.update_record.handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: testRecordId,
         record_data: {
@@ -531,7 +526,7 @@ describe('Performance Regression Tests', () => {
     it('should create record within budget', async () => {
       const startTime = performance.now();
 
-      const created = await coreOperationsToolConfigs['create-record'].handler({
+      const created = await coreOperationsToolConfigs.create_record.handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_data: {
           name: `Perf Test Create ${timestamp}`,
@@ -584,7 +579,7 @@ describe('Performance Regression Tests', () => {
           process.env.E2E_MODE === 'true'
         ) {
           try {
-            await coreOperationsToolConfigs['delete-record'].handler({
+            await coreOperationsToolConfigs.delete_record.handler({
               resource_type: UniversalResourceType.COMPANIES,
               record_id: recordId,
             });
@@ -597,15 +592,13 @@ describe('Performance Regression Tests', () => {
 
     it('should delete record within budget', async () => {
       // Create a record to delete
-      const toDelete = await coreOperationsToolConfigs['create-record'].handler(
-        {
-          resource_type: UniversalResourceType.COMPANIES,
-          record_data: {
-            name: `Perf Test Delete ${timestamp}`,
-            website: `https://delete-${timestamp}.com`,
-          },
-        }
-      );
+      const toDelete = await coreOperationsToolConfigs.create_record.handler({
+        resource_type: UniversalResourceType.COMPANIES,
+        record_data: {
+          name: `Perf Test Delete ${timestamp}`,
+          website: `https://delete-${timestamp}.com`,
+        },
+      });
 
       // Check for either new or legacy response structure
       const deleteId =
@@ -619,7 +612,7 @@ describe('Performance Regression Tests', () => {
 
       const startTime = performance.now();
 
-      const result = await coreOperationsToolConfigs['delete-record'].handler({
+      const result = await coreOperationsToolConfigs.delete_record.handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: deleteId,
       });
@@ -642,14 +635,14 @@ describe('Performance Regression Tests', () => {
       }
 
       // Perform an operation
-      await coreOperationsToolConfigs['get-record-details'].handler({
+      await coreOperationsToolConfigs.get_record_details.handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: testRecordId,
       });
 
       // Get statistics
       const stats =
-        enhancedPerformanceTracker.getStatistics('get-record-details');
+        enhancedPerformanceTracker.getStatistics('get_record_details');
 
       expect(stats).toBeDefined();
       expect(stats.count).toBeGreaterThan(0);
@@ -691,7 +684,7 @@ describe('Performance Regression Tests', () => {
     it('should generate alerts for operations exceeding budget', async () => {
       // Intentionally trigger a slow operation (search with large limit)
       try {
-        await coreOperationsToolConfigs['search-records'].handler({
+        await coreOperationsToolConfigs.search_records.handler({
           resource_type: UniversalResourceType.COMPANIES,
           limit: 100,
         });

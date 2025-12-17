@@ -30,7 +30,7 @@ class NoteCrudTest extends MCPTestBase {
     try {
       // Create a test company
       const companyData = TestDataFactory.createCompanyData('TCN01');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -43,7 +43,7 @@ class NoteCrudTest extends MCPTestBase {
 
       // Create a test person
       const personData = TestDataFactory.createPersonData('TCN01');
-      const personResult = await this.executeToolCall('create-record', {
+      const personResult = await this.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -57,7 +57,7 @@ class NoteCrudTest extends MCPTestBase {
       // Try to create a test deal (may not be configured in all workspaces)
       try {
         const dealData = TestDataFactory.createDealData('TCN01');
-        const dealResult = await this.executeToolCall('create-record', {
+        const dealResult = await this.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -82,7 +82,7 @@ class NoteCrudTest extends MCPTestBase {
     for (const noteId of this.createdNotes) {
       try {
         // Try to delete via universal delete if supported
-        await this.executeToolCall('delete-record', {
+        await this.executeToolCall('delete_record', {
           resource_type: 'notes',
           record_id: noteId,
         });
@@ -155,7 +155,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         console.log('Skipping: Test company not available');
       } else {
         const noteData = TestDataFactory.createNoteData('TCN01_Company');
-        const result = await testCase.executeToolCall('create-note', {
+        const result = await testCase.executeToolCall('create_note', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           title: noteData.title,
@@ -204,7 +204,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         console.log('Skipping: Test person not available');
       } else {
         const noteData = TestDataFactory.createNoteData('TCN01_Person');
-        const result = await testCase.executeToolCall('create-note', {
+        const result = await testCase.executeToolCall('create_note', {
           resource_type: 'people',
           record_id: testCase.testPersonId,
           title: noteData.title,
@@ -254,7 +254,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
       } else {
         // First create a note to retrieve
         const noteData = TestDataFactory.createNoteData('TCN01_Read');
-        const createResult = await testCase.executeToolCall('create-note', {
+        const createResult = await testCase.executeToolCall('create_note', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           title: noteData.title,
@@ -276,7 +276,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         }
 
         // Now retrieve the notes
-        const result = await testCase.executeToolCall('list-notes', {
+        const result = await testCase.executeToolCall('list_notes', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           limit: 10,
@@ -313,7 +313,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
       } else {
         // First create a note to retrieve
         const noteData = TestDataFactory.createNoteData('TCN01_PersonRead');
-        const createResult = await testCase.executeToolCall('create-note', {
+        const createResult = await testCase.executeToolCall('create_note', {
           resource_type: 'people',
           record_id: testCase.testPersonId,
           title: noteData.title,
@@ -335,7 +335,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
         }
 
         // Now retrieve the notes
-        const result = await testCase.executeToolCall('list-notes', {
+        const result = await testCase.executeToolCall('list_notes', {
           resource_type: 'people',
           record_id: testCase.testPersonId,
           limit: 10,
@@ -376,7 +376,7 @@ describe('TC-N01: Note CRUD Operations - Basic Note Management', () => {
       } else {
         const markdownContent =
           '# Meeting Notes\n\n## Key Points\n- Point 1\n- Point 2\n\n**Action Items:**\n1. Follow up\n2. Review';
-        const result = await testCase.executeToolCall('create-note', {
+        const result = await testCase.executeToolCall('create_note', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           title: 'TCN01_Markdown',

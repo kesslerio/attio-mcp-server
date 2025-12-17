@@ -98,7 +98,7 @@ export function createSharedSetup() {
 export async function createTestCompany(): Promise<void> {
   try {
     const companyData = CompanyFactory.create();
-    const response = (await callUniversalTool('create-record', {
+    const response = (await callUniversalTool('create_record', {
       resource_type: 'companies',
       record_data: companyData as unknown as RecordData,
     })) as McpToolResponse;
@@ -127,7 +127,7 @@ export async function createTestCompany(): Promise<void> {
 export async function createTestPerson(): Promise<void> {
   try {
     const personData = PersonFactory.create();
-    const response = (await callUniversalTool('create-record', {
+    const response = (await callUniversalTool('create_record', {
       resource_type: 'people',
       record_data: personData as unknown as RecordData,
     })) as McpToolResponse;

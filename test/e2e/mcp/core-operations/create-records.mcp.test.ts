@@ -49,7 +49,7 @@ describe('TC-003: Create Records - Data Creation', () => {
     try {
       const companyData = TestDataFactory.createCompanyData('TC003');
 
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -77,7 +77,7 @@ describe('TC-003: Create Records - Data Creation', () => {
     try {
       const personData = TestDataFactory.createPersonData('TC003');
 
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -105,7 +105,7 @@ describe('TC-003: Create Records - Data Creation', () => {
     try {
       const taskData = TestDataFactory.createTaskData('TC003');
 
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'tasks',
         record_data: taskData,
       });
@@ -137,7 +137,7 @@ describe('TC-003: Create Records - Data Creation', () => {
         // Missing required 'name' field
       };
 
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: incompleteData,
       });
@@ -168,7 +168,7 @@ describe('TC-003: Create Records - Data Creation', () => {
     try {
       const companyData = TestDataFactory.createCompanyData('TC003_ID_TEST');
 
-      const result = await testCase.executeToolCall('create-record', {
+      const result = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -218,7 +218,7 @@ describe('TC-003: Create Records - Data Creation', () => {
         domains: [`${uniqueIdentifier.toLowerCase()}.test.com`],
       };
 
-      const createResult = await testCase.executeToolCall('create-record', {
+      const createResult = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
