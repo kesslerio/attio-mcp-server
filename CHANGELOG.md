@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Old names continue to work via dual alias support (both old `noun_verb` and `kebab-case` formats)
   - See `docs/MIGRATION-GUIDE.md` for complete migration table
 
+### Fixed
+
+- Deal creation: accept stage titles + UTM fields and improve validation/error surfacing (#1043)
+
 ### Deprecated
 
 - **Old universal tool names** (#1039) - Removal: v2.0.0 (Q1 2026)

@@ -19,6 +19,24 @@ import {
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import type { AttributeOptionsResult } from '@/services/metadata/index.js';
 
+function extractResourceTypeFromFormatArgs(
+  args: unknown[]
+): UniversalResourceType | undefined {
+  const first = args[0];
+  if (typeof first === 'string') {
+    return first as UniversalResourceType;
+  }
+
+  if (first && typeof first === 'object' && 'resource_type' in first) {
+    const candidate = (first as { resource_type?: unknown }).resource_type;
+    if (typeof candidate === 'string') {
+      return candidate as UniversalResourceType;
+    }
+  }
+
+  return undefined;
+}
+
 export const getAttributesConfig: UniversalToolConfig<
   UniversalAttributesParams,
   Record<string, unknown> | { error: string; success: boolean }
@@ -43,7 +61,7 @@ export const getAttributesConfig: UniversalToolConfig<
     attributes: Record<string, unknown>,
     ...args: unknown[]
   ): string => {
-    const resourceType = args[0] as UniversalResourceType | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!attributes) {
       return 'No attributes found';
     }
@@ -140,7 +158,7 @@ export const discoverAttributesConfig: UniversalToolConfig<
     }
   },
   formatResult: (schema: unknown, ...args: unknown[]): string => {
-    const resourceType = args[0] as UniversalResourceType | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!schema) {
       return 'No attribute schema found';
     }

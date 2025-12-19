@@ -7,7 +7,6 @@ import { FieldMapping } from '../types.js';
 import {
   createDisplayNameConstants,
   createPluralMappingConstants,
-  validateFieldMappingConstants,
 } from '../utils/field-mapping-constants.js';
 
 // Display name constants for better maintainability (Issue #720)
@@ -18,6 +17,11 @@ const DISPLAY_NAMES = createDisplayNameConstants({
   DEAL_OWNER: 'deal owner',
   ASSOCIATED_COMPANY: 'associated company',
   ASSOCIATED_PEOPLE: 'associated people',
+  UTM_SOURCE: 'utm source',
+  UTM_MEDIUM: 'utm medium',
+  UTM_CAMPAIGN: 'utm campaign',
+  UTM_CONTENT: 'utm content',
+  UTM_TERM: 'utm term',
 });
 
 // Plural to singular mapping pattern (Issue #720)
@@ -31,15 +35,6 @@ const PLURAL_MAPPINGS = createPluralMappingConstants({
   owners: 'owner',
 });
 
-// Validate constants for consistency
-const validation = validateFieldMappingConstants(
-  DISPLAY_NAMES,
-  PLURAL_MAPPINGS
-);
-if (!validation.valid) {
-  console.warn('Field mapping constants validation issues:', validation.issues);
-}
-
 /**
  * Field mapping configuration for deals resource type
  */
@@ -52,6 +47,11 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     [DISPLAY_NAMES.DEAL_OWNER]: 'owner',
     [DISPLAY_NAMES.ASSOCIATED_COMPANY]: 'associated_company',
     [DISPLAY_NAMES.ASSOCIATED_PEOPLE]: 'associated_people',
+    [DISPLAY_NAMES.UTM_SOURCE]: 'utm_source',
+    [DISPLAY_NAMES.UTM_MEDIUM]: 'utm_medium',
+    [DISPLAY_NAMES.UTM_CAMPAIGN]: 'utm_campaign',
+    [DISPLAY_NAMES.UTM_CONTENT]: 'utm_content',
+    [DISPLAY_NAMES.UTM_TERM]: 'utm_term',
     // Owner variations
     'deal owner': 'owner',
     owner_id: 'owner',
@@ -91,6 +91,17 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     'associated people': 'associated_people',
     associated_person: 'associated_people',
     associated_people: 'associated_people',
+    // UTM fields
+    utm_source: 'utm_source',
+    utm_medium: 'utm_medium',
+    utm_campaign: 'utm_campaign',
+    utm_content: 'utm_content',
+    utm_term: 'utm_term',
+    utmSource: 'utm_source',
+    utmMedium: 'utm_medium',
+    utmCampaign: 'utm_campaign',
+    utmContent: 'utm_content',
+    utmTerm: 'utm_term',
     // Invalid fields that users often try
     description: null, // Not available for deals
     notes: null, // Should be created separately
@@ -112,6 +123,11 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     'owner',
     'associated_company',
     'associated_people',
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_content',
+    'utm_term',
   ] as const,
   commonMistakes: {
     'deal name':

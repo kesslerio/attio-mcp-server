@@ -43,9 +43,17 @@ describe('value-transformer orchestrator', () => {
       expect(result).toBe(true);
     });
 
-    it('should return false for deals with object stage value', () => {
+    it('should return true for deals with object stage value', () => {
       const result = mayNeedTransformation(
-        { stage: { status_id: 'abc-123' } },
+        { stage: { status: 'abc-123' } },
+        UniversalResourceType.DEALS
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should return false for deals with normalized stage array value', () => {
+      const result = mayNeedTransformation(
+        { stage: [{ status: 'abc-123' }] },
         UniversalResourceType.DEALS
       );
       expect(result).toBe(false);
@@ -145,7 +153,7 @@ describe('value-transformer orchestrator', () => {
       expect(result.transformations).toHaveLength(0);
     });
 
-    it('should transform status field to status_id format', async () => {
+    it('should transform status field to Attio status format', async () => {
       const { handleUniversalDiscoverAttributes } = await import(
         '@/handlers/tool-configs/universal/shared-handlers.js'
       );
@@ -177,7 +185,7 @@ describe('value-transformer orchestrator', () => {
       );
 
       expect(result.data.name).toBe('Test Deal');
-      expect(result.data.stage).toEqual({ status_id: 'status-uuid-1' });
+      expect(result.data.stage).toEqual([{ status: 'status-uuid-1' }]);
       expect(result.transformations).toHaveLength(1);
       expect(result.transformations[0].type).toBe('status_title_to_id');
     });
@@ -244,7 +252,7 @@ describe('value-transformer orchestrator', () => {
       );
 
       expect(result.data.name).toBe('Test Deal');
-      expect(result.data.stage).toEqual({ status_id: 'status-uuid-1' });
+      expect(result.data.stage).toEqual([{ status: 'status-uuid-1' }]);
       expect(result.data.categories).toEqual(['Technology']);
       expect(result.transformations).toHaveLength(2);
     });

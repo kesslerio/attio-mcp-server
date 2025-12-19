@@ -68,7 +68,7 @@ export interface FieldTransformation {
  * Types of transformations supported
  */
 export type TransformationType =
-  | 'status_title_to_id' // "Demo Scheduling" → {status_id: "uuid"}
+  | 'status_title_to_id' // "Demo Scheduling" → [{status: "uuid"}]
   | 'multi_select_wrap' // "Inbound" → ["Inbound"]
   | 'select_title_to_id' // "Technology" → ["uuid"]
   | 'array_coercion' // Single value to array
