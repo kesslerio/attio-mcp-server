@@ -62,8 +62,8 @@ describe('status-transformer', () => {
       expect(result.transformedValue).toBe('Demo Scheduling');
     });
 
-    it('should skip transformation for values already in status format', async () => {
-      const statusFormat = { status: 'abc-123' };
+    it('should skip transformation for values already in Attio status array format', async () => {
+      const statusFormat = [{ status: 'abc-123' }];
       const result = await transformStatusValue(
         statusFormat,
         'stage',
@@ -73,6 +73,19 @@ describe('status-transformer', () => {
 
       expect(result.transformed).toBe(false);
       expect(result.transformedValue).toEqual(statusFormat);
+    });
+
+    it('should normalize object status_id to Attio status array format', async () => {
+      const statusFormat = { status_id: 'abc-123' };
+      const result = await transformStatusValue(
+        statusFormat,
+        'stage',
+        mockContext,
+        statusAttributeMeta
+      );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual([{ status: 'abc-123' }]);
     });
 
     it('should skip transformation for non-string values', async () => {
@@ -87,7 +100,7 @@ describe('status-transformer', () => {
       expect(result.transformedValue).toBe(123);
     });
 
-    it('should convert UUID strings directly to status_id without lookup', async () => {
+    it('should convert UUID strings directly to status without lookup', async () => {
       const { AttributeOptionsService } = await import(
         '@/services/metadata/index.js'
       );
@@ -112,7 +125,7 @@ describe('status-transformer', () => {
       expect(mockGetOptions).not.toHaveBeenCalled();
     });
 
-    it('should transform status title to status_id format', async () => {
+    it('should transform status title to status format', async () => {
       const { AttributeOptionsService } = await import(
         '@/services/metadata/index.js'
       );

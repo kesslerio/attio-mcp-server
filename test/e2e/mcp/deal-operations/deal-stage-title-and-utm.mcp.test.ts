@@ -116,7 +116,7 @@ describe('Deal create: stage title + UTM fields - Issue #1043', () => {
           record_id: dealId,
         });
       } catch (error) {
-        console.log(`Failed to cleanup deal ${dealId}:`, error);
+        console.error(`Failed to cleanup deal ${dealId}:`, error);
       }
     }
 

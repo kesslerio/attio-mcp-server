@@ -43,9 +43,17 @@ describe('value-transformer orchestrator', () => {
       expect(result).toBe(true);
     });
 
-    it('should return false for deals with object stage value', () => {
+    it('should return true for deals with object stage value', () => {
       const result = mayNeedTransformation(
         { stage: { status: 'abc-123' } },
+        UniversalResourceType.DEALS
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should return false for deals with normalized stage array value', () => {
+      const result = mayNeedTransformation(
+        { stage: [{ status: 'abc-123' }] },
         UniversalResourceType.DEALS
       );
       expect(result).toBe(false);

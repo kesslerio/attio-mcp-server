@@ -380,6 +380,14 @@ export function mayNeedTransformation(
   const knownStatusFields = statusFields[resourceKey] || [];
   const knownRefFields = recordReferenceFields[resourceKey] || [];
 
+  const isAlreadyNormalizedStatusArray = (value: unknown): boolean => {
+    if (!Array.isArray(value) || value.length === 0) return false;
+    const first = value[0];
+    if (!first || typeof first !== 'object' || Array.isArray(first))
+      return false;
+    return 'status' in first;
+  };
+
   for (const field of Object.keys(recordData)) {
     const value = recordData[field];
     const fieldLower = field.toLowerCase();
@@ -404,8 +412,15 @@ export function mayNeedTransformation(
       continue;
     }
 
-    // Check if it's a known status field with a string value
-    if (knownStatusFields.includes(field) && typeof value === 'string') {
+    // Check if it's a known status field (deals.stage, tasks.status) that needs normalization
+    if (knownStatusFields.includes(field)) {
+      // Strings always need transformation (title → id)
+      if (typeof value === 'string') return true;
+
+      // Accept already-normalized Attio array shape
+      if (isAlreadyNormalizedStatusArray(value)) continue;
+
+      // Any other non-null shape (object / legacy / wrong array) should trigger normalization
       return true;
     }
 

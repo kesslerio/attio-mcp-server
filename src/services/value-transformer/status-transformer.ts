@@ -199,8 +199,68 @@ function findStatusByTitle(
  * Check if a value is already in the correct status format
  */
 function isStatusFormat(value: unknown): boolean {
-  if (typeof value !== 'object' || value === null) return false;
-  return 'status' in value || 'status_id' in value;
+  if (!Array.isArray(value) || value.length === 0) return false;
+  const first = value[0];
+  if (!first || typeof first !== 'object' || Array.isArray(first)) return false;
+  return 'status' in first;
+}
+
+function hasStringKey(
+  value: unknown,
+  key: 'status' | 'status_id'
+): value is Record<string, unknown> & { [K in typeof key]: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    key in value &&
+    typeof (value as Record<string, unknown>)[key] === 'string'
+  );
+}
+
+function normalizeIncomingStatusValue(value: unknown): {
+  normalized: unknown;
+  extractedText?: string;
+} {
+  // Already-correct Attio form: [{ status: "..." }]
+  if (isStatusFormat(value)) {
+    return { normalized: value };
+  }
+
+  // Handle array-of-objects with the legacy key: [{ status_id: "..." }] → [{ status: "..." }]
+  if (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    hasStringKey(value[0], 'status_id')
+  ) {
+    return { normalized: [{ status: value[0].status_id }] };
+  }
+
+  // Handle single object forms (common mistakes): { status: "..." } / { status_id: "..." }
+  if (hasStringKey(value, 'status')) {
+    return {
+      normalized: [{ status: value.status }],
+      extractedText: value.status,
+    };
+  }
+
+  if (hasStringKey(value, 'status_id')) {
+    return {
+      normalized: [{ status: value.status_id }],
+      extractedText: value.status_id,
+    };
+  }
+
+  // Handle array of string values: ["Demo Scheduling"] → "Demo Scheduling"
+  if (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    typeof value[0] === 'string'
+  ) {
+    return { normalized: value, extractedText: value[0] };
+  }
+
+  return { normalized: value };
 }
 
 /**
@@ -227,34 +287,48 @@ export async function transformStatusValue(
     };
   }
 
-  // Skip if already in correct format
-  if (isStatusFormat(value)) {
+  const normalizedIncoming = normalizeIncomingStatusValue(value);
+  const normalizedValue = normalizedIncoming.normalized;
+
+  // Skip if already in correct Attio format after normalization
+  if (isStatusFormat(normalizedValue)) {
     return {
-      transformed: false,
+      transformed: normalizedValue !== value,
       originalValue: value,
-      transformedValue: value,
+      transformedValue: normalizedValue,
+      description:
+        normalizedValue !== value
+          ? `Normalized status value format for ${attributeSlug}`
+          : undefined,
     };
   }
 
-  // Only transform string values
-  if (typeof value !== 'string') {
+  const extractedText =
+    typeof normalizedIncoming.extractedText === 'string'
+      ? normalizedIncoming.extractedText
+      : typeof normalizedValue === 'string'
+        ? normalizedValue
+        : undefined;
+
+  // Only transform string-like values
+  if (typeof extractedText !== 'string') {
     return {
       transformed: false,
       originalValue: value,
-      transformedValue: value,
+      transformedValue: normalizedValue,
     };
   }
 
   // Short-circuit if value is already a UUID
-  if (isValidUUID(value)) {
-    const transformedValue = [{ status: value }];
+  if (isValidUUID(extractedText)) {
+    const transformedValue = [{ status: extractedText }];
 
     debug(
       'status-transformer',
       `Detected UUID string for status attribute`,
       {
         attribute: attributeSlug,
-        from: value,
+        from: extractedText,
         to: transformedValue,
       },
       'transformStatusValue',
@@ -263,7 +337,7 @@ export async function transformStatusValue(
 
     return {
       transformed: true,
-      originalValue: value,
+      originalValue: extractedText,
       transformedValue,
       description: `Converted UUID string to status object for ${attributeSlug}`,
     };
@@ -279,19 +353,19 @@ export async function transformStatusValue(
     debug(
       'status-transformer',
       `No status options found for ${objectSlug}.${attributeSlug}`,
-      { value },
+      { value: extractedText },
       'transformStatusValue',
       OperationType.DATA_PROCESSING
     );
     return {
       transformed: false,
       originalValue: value,
-      transformedValue: value,
+      transformedValue: normalizedValue,
     };
   }
 
   // Find matching status
-  const match = findStatusByTitle(options, value);
+  const match = findStatusByTitle(options, extractedText);
 
   if (!match) {
     // No match found - return error with valid options
@@ -301,7 +375,7 @@ export async function transformStatusValue(
       .join(', ');
 
     throw new Error(
-      `Invalid status value "${value}" for ${attributeSlug}. ` +
+      `Invalid status value "${extractedText}" for ${attributeSlug}. ` +
         `Valid options are: ${validOptions}`
     );
   }
@@ -314,7 +388,7 @@ export async function transformStatusValue(
     `Transformed status value`,
     {
       attribute: attributeSlug,
-      from: value,
+      from: extractedText,
       to: transformedValue,
       matchedTitle: match.title,
     },
@@ -326,7 +400,7 @@ export async function transformStatusValue(
     transformed: true,
     originalValue: value,
     transformedValue,
-    description: `Converted status title "${value}" to status "${match.id}" (matched: "${match.title}")`,
+    description: `Converted status title "${extractedText}" to status "${match.id}" (matched: "${match.title}")`,
   };
 }
 
