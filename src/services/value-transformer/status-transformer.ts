@@ -139,11 +139,32 @@ async function getStatusOptionsWithCache(
       true // include archived for complete matching
     );
 
-    const options = result.options.map((opt) => ({
-      id: 'id' in opt ? (opt.id as string) : '',
-      title: opt.title,
-      is_archived: opt.is_archived,
-    }));
+    const options = result.options.map((opt) => {
+      // Extract status ID - handle both string and object formats from Attio API
+      let id = '';
+      if ('id' in opt && opt.id) {
+        if (typeof opt.id === 'string') {
+          // Simple string ID
+          id = opt.id;
+        } else if (typeof opt.id === 'object' && opt.id !== null) {
+          // Object ID structure: { workspace_id, object_id, attribute_id, option_id }
+          const idObj = opt.id as Record<string, unknown>;
+          if ('option_id' in idObj && typeof idObj.option_id === 'string') {
+            id = idObj.option_id;
+          } else if (
+            'status_id' in idObj &&
+            typeof idObj.status_id === 'string'
+          ) {
+            id = idObj.status_id;
+          }
+        }
+      }
+      return {
+        id,
+        title: opt.title,
+        is_archived: opt.is_archived,
+      };
+    });
 
     // Cache with timestamp
     statusOptionsCache.set(cacheKey, {
