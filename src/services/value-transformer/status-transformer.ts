@@ -337,7 +337,7 @@ export async function transformStatusValue(
 
     return {
       transformed: true,
-      originalValue: extractedText,
+      originalValue: value,
       transformedValue,
       description: `Converted UUID string to status object for ${attributeSlug}`,
     };

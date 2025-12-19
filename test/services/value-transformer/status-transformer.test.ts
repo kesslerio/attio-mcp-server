@@ -88,6 +88,29 @@ describe('status-transformer', () => {
       expect(result.transformedValue).toEqual([{ status: 'abc-123' }]);
     });
 
+    it('should normalize array status_id to Attio status array format without lookup', async () => {
+      const { AttributeOptionsService } = await import(
+        '@/services/metadata/index.js'
+      );
+      const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
+      mockGetOptions.mockResolvedValue({
+        options: [{ id: 'status-uuid-1', title: 'Demo', is_archived: false }],
+        attributeType: 'status',
+      });
+
+      const statusFormat = [{ status_id: 'abc-123' }];
+      const result = await transformStatusValue(
+        statusFormat,
+        'stage',
+        mockContext,
+        statusAttributeMeta
+      );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual([{ status: 'abc-123' }]);
+      expect(mockGetOptions).not.toHaveBeenCalled();
+    });
+
     it('should skip transformation for non-string values', async () => {
       const result = await transformStatusValue(
         123,
@@ -148,6 +171,29 @@ describe('status-transformer', () => {
       expect(result.transformed).toBe(true);
       expect(result.transformedValue).toEqual([{ status: 'status-uuid-2' }]);
       expect(result.description).toContain('Demo Scheduling');
+    });
+
+    it('should transform array-of-string status titles via lookup', async () => {
+      const { AttributeOptionsService } = await import(
+        '@/services/metadata/index.js'
+      );
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'status-uuid-1', title: 'MQL', is_archived: false },
+          { id: 'status-uuid-2', title: 'Demo Scheduling', is_archived: false },
+        ],
+        attributeType: 'status',
+      });
+
+      const result = await transformStatusValue(
+        ['Demo Scheduling'],
+        'stage',
+        mockContext,
+        statusAttributeMeta
+      );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual([{ status: 'status-uuid-2' }]);
     });
 
     it('should match status titles case-insensitively', async () => {

@@ -7,7 +7,6 @@ import { FieldMapping } from '../types.js';
 import {
   createDisplayNameConstants,
   createPluralMappingConstants,
-  validateFieldMappingConstants,
 } from '../utils/field-mapping-constants.js';
 
 // Display name constants for better maintainability (Issue #720)
@@ -35,15 +34,6 @@ const PLURAL_MAPPINGS = createPluralMappingConstants({
   contacts: 'associated_people',
   owners: 'owner',
 });
-
-// Validate constants for consistency
-const validation = validateFieldMappingConstants(
-  DISPLAY_NAMES,
-  PLURAL_MAPPINGS
-);
-if (!validation.valid) {
-  console.warn('Field mapping constants validation issues:', validation.issues);
-}
 
 /**
  * Field mapping configuration for deals resource type
