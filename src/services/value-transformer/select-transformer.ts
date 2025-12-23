@@ -1,14 +1,17 @@
 /**
- * Select transformer - converts select option titles to ["uuid"] array format
+ * Select transformer - converts select option titles to ["title"] array format
  *
  * Problem: LLMs commonly pass select values as human-readable strings
  * (e.g., "Technology", "Potential Customer") but Attio API requires
- * array format with option UUIDs: ["uuid"]
+ * array format: ["title"]
  *
  * Solution: Auto-detect single-select attributes (type="select" AND
- * is_multiselect !== true) and transform string titles to UUID arrays.
+ * is_multiselect !== true) and transform string titles to title arrays.
  *
- * @see Issue #1019
+ * NOTE: Attio API accepts ["title"] format and silently rejects ["uuid"] format
+ * despite returning HTTP 200 OK (Issue #1045). This transformer uses titles.
+ *
+ * @see Issue #1019, #1045
  */
 
 import {
@@ -219,19 +222,22 @@ function noTransform(value: unknown): TransformResult {
 }
 
 /**
- * Transform a select value from string title to ["uuid"] array format
+ * Transform a select value from string title to ["title"] array format
  *
  * Supports:
- * - Case-insensitive title matching: "technology" → ["uuid"]
- * - Partial matching: "Tech" → ["uuid"] (if matches "Technology")
+ * - Case-insensitive title matching: "technology" → ["Technology"]
+ * - Partial matching: "Tech" → ["Technology"] (if matches "Technology")
  * - UUID pass-through: "uuid-string" → ["uuid-string"] (no API lookup)
  * - Error suggestions: Lists valid options on invalid input
+ *
+ * NOTE: Uses ["title"] format not ["uuid"] because Attio API silently
+ * rejects UUID arrays despite returning HTTP 200 OK (Issue #1045).
  *
  * @param value - The value to transform
  * @param attributeSlug - The attribute slug
  * @param context - Transformation context
  * @param attributeMeta - Attribute metadata (must be single-select)
- * @returns Transform result with ["uuid"] format
+ * @returns Transform result with ["title"] array format
  */
 export async function transformSelectValue(
   value: unknown,
@@ -297,8 +303,9 @@ export async function transformSelectValue(
     );
   }
 
-  // Transform to array format with option ID
-  const transformedValue = [match.id];
+  // Transform to array format with option title
+  // NOTE: Attio API accepts ["title"] format, but silently rejects ["uuid"] format (Issue #1045)
+  const transformedValue = [match.title];
 
   debug(
     'select-transformer',
@@ -319,7 +326,7 @@ export async function transformSelectValue(
     transformed: true,
     originalValue: value,
     transformedValue,
-    description: `Converted select title "${value}" to ["${match.id}"] (matched: "${match.title}")`,
+    description: `Converted select title "${value}" to ["${match.title}"]`,
   };
 }
 

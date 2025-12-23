@@ -248,8 +248,11 @@ export async function detectFieldType(
       return isMultiple ? 'array' : 'string';
 
     case 'select':
-      // For select fields, check if multiselect is enabled
-      return isMultiple ? 'array' : 'string';
+      // Select fields are ALWAYS arrays in Attio, even single-select
+      // Single-select: ["uuid"], Multi-select: ["uuid1", "uuid2"]
+      // (isMultiple flag is intentionally ignored - both formats use array)
+      // See Issue #1019, #1030, #1045
+      return 'array';
 
     case 'record-reference':
       return isMultiple ? 'array' : 'object';
@@ -343,7 +346,12 @@ export async function getAttributeTypeInfo(
 
   return {
     fieldType,
-    isArray: attrMetadata.is_multiselect || false,
+    // For select fields, isArray should match fieldType (always true)
+    // For other types, use is_multiselect flag
+    isArray:
+      attrMetadata.type === 'select'
+        ? true
+        : attrMetadata.is_multiselect || false,
     isRequired: attrMetadata.is_required || false,
     isUnique: attrMetadata.is_unique || false,
     attioType: attrMetadata.type,

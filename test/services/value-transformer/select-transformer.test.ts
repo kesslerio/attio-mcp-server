@@ -1,9 +1,12 @@
 /**
  * Unit tests for select-transformer.ts
  *
- * Tests the transformation of select option titles to ["uuid"] array format
+ * Tests the transformation of select option titles to ["title"] array format
  *
- * @see Issue #1019
+ * NOTE: Uses ["title"] not ["uuid"] because Attio API silently rejects
+ * UUID arrays despite returning HTTP 200 OK (Issue #1045).
+ *
+ * @see Issue #1019, #1045
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -159,7 +162,7 @@ describe('select-transformer', () => {
       expect(mockGetOptions).not.toHaveBeenCalled();
     });
 
-    it('should transform select title to array with option ID', async () => {
+    it('should transform select title to array with title (Issue #1045)', async () => {
       const { AttributeOptionsService } = await import(
         '@/services/metadata/index.js'
       );
@@ -180,7 +183,7 @@ describe('select-transformer', () => {
       );
 
       expect(result.transformed).toBe(true);
-      expect(result.transformedValue).toEqual(['opt-uuid-1']);
+      expect(result.transformedValue).toEqual(['Technology']);
       expect(result.description).toContain('Technology');
     });
 
@@ -207,7 +210,7 @@ describe('select-transformer', () => {
       );
 
       expect(result.transformed).toBe(true);
-      expect(result.transformedValue).toEqual(['opt-uuid-1']);
+      expect(result.transformedValue).toEqual(['Potential Customer']);
     });
 
     it('should support partial matching', async () => {
@@ -233,7 +236,7 @@ describe('select-transformer', () => {
       );
 
       expect(result.transformed).toBe(true);
-      expect(result.transformedValue).toEqual(['opt-uuid-1']);
+      expect(result.transformedValue).toEqual(['Potential Customer']);
     });
 
     it('should handle whitespace in input', async () => {
@@ -255,7 +258,7 @@ describe('select-transformer', () => {
       );
 
       expect(result.transformed).toBe(true);
-      expect(result.transformedValue).toEqual(['opt-uuid-1']);
+      expect(result.transformedValue).toEqual(['Technology']);
     });
 
     it('should throw error for invalid select value with valid options', async () => {
@@ -399,7 +402,7 @@ describe('select-transformer', () => {
       );
 
       // Should match "Tech" exactly, not "Tech Company" partially
-      expect(result.transformedValue).toEqual(['opt-uuid-2']);
+      expect(result.transformedValue).toEqual(['Tech']);
     });
   });
 
@@ -638,7 +641,7 @@ describe('select-transformer', () => {
       // All should succeed
       results.forEach((result) => {
         expect(result.transformed).toBe(true);
-        expect(result.transformedValue).toEqual(['opt-1']);
+        expect(result.transformedValue).toEqual(['Tech']);
       });
 
       // Current implementation lacks mutex, so multiple calls may occur during race conditions
