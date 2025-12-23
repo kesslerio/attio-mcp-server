@@ -70,6 +70,14 @@ describe('Attribute Type Detection', () => {
     it('should detect array type for single-select fields (Issue #1045)', async () => {
       // Single-select fields should return 'array' because Attio expects
       // select values as arrays even for single-select: ["uuid"]
+
+      // Verify test precondition: mock has status as single-select (not multiselect)
+      const metadata = await getObjectAttributeMetadata('companies');
+      const statusAttr = metadata.get('status');
+      expect(statusAttr).toBeDefined();
+      expect(statusAttr?.type).toBe('select');
+      expect(statusAttr?.is_multiselect).toBe(false); // Single-select precondition
+
       const fieldType = await detectFieldType('companies', 'status');
       expect(fieldType).toBe('array');
     });
@@ -115,6 +123,23 @@ describe('Attribute Type Detection', () => {
         attioType: 'unknown',
         metadata: null,
       });
+    });
+
+    it('should return isArray: true for select fields (Issue #1045)', async () => {
+      // Test single-select field
+      const statusInfo = await getAttributeTypeInfo('companies', 'status');
+      expect(statusInfo.fieldType).toBe('array');
+      expect(statusInfo.isArray).toBe(true);
+      expect(statusInfo.attioType).toBe('select');
+
+      // Test multi-select field
+      const categoriesInfo = await getAttributeTypeInfo(
+        'companies',
+        'categories'
+      );
+      expect(categoriesInfo.fieldType).toBe('array');
+      expect(categoriesInfo.isArray).toBe(true);
+      expect(categoriesInfo.attioType).toBe('select');
     });
   });
 
