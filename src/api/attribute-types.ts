@@ -248,8 +248,10 @@ export async function detectFieldType(
       return isMultiple ? 'array' : 'string';
 
     case 'select':
-      // For select fields, check if multiselect is enabled
-      return isMultiple ? 'array' : 'string';
+      // Select fields are ALWAYS arrays in Attio, even single-select
+      // Single-select: ["uuid"], Multi-select: ["uuid1", "uuid2"]
+      // See Issue #1019, #1030, #1045
+      return 'array';
 
     case 'record-reference':
       return isMultiple ? 'array' : 'object';

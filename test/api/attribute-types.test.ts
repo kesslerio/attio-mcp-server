@@ -67,6 +67,13 @@ describe('Attribute Type Detection', () => {
       expect(fieldType).toBe('array');
     });
 
+    it('should detect array type for single-select fields (Issue #1045)', async () => {
+      // Single-select fields should return 'array' because Attio expects
+      // select values as arrays even for single-select: ["uuid"]
+      const fieldType = await detectFieldType('companies', 'status');
+      expect(fieldType).toBe('array');
+    });
+
     it('should detect number type for numeric fields', async () => {
       const fieldType = await detectFieldType('companies', 'revenue');
       expect(fieldType).toBe('number');
