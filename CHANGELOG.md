@@ -43,6 +43,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Legacy tools accessible via `DISABLE_UNIVERSAL_TOOLS=true` but emit deprecation warnings
   - See `docs/MIGRATION-GUIDE.md` for migration guide
 
+## [2025-12-17] - Daily Update
+
+### Changed
+
+- **Refactored select array handling** (#1030) - Normalized select array data structures for consistency
+- **Removed unused normalizeLocation function** (#1030) - Cleaned up unused code to reduce technical debt
+
 ## [2025-12-16] - Daily Update
 
 ### Added
