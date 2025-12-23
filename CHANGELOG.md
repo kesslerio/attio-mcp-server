@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Select field persistence** (#1045) - Fixed silent API failures where select field updates returned 200 OK but didn't persist
+  - Fixed `detectFieldType()` to return `'array'` for all select fields (single and multi-select)
+  - Fixed select-transformer to use `["title"]` format instead of `["uuid"]` format (Attio silently rejects UUID arrays)
+  - Added E2E test validating real API persistence with select fields
+  - Resolves type mismatch validation errors and false-positive update confirmations
 - Deal creation: accept stage titles + UTM fields and improve validation/error surfacing (#1043)
 
 ### Deprecated
