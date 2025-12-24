@@ -68,7 +68,7 @@ describe('TC-D08 to TC-D10: Deal Relationship Operations', () => {
       // First, create a test company
       const companyData = TestDataFactory.createCompanyData('TCD08');
 
-      const companyResult = await testCase.executeToolCall('create-record', {
+      const companyResult = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -84,7 +84,7 @@ describe('TC-D08 to TC-D10: Deal Relationship Operations', () => {
       // Note: associated_company requires company record ID based on field mappings
       dealData.associated_company = testCompanyId;
 
-      const dealResult = await testCase.executeToolCall('create-record', {
+      const dealResult = await testCase.executeToolCall('create_record', {
         resource_type: 'deals',
         record_data: dealData,
       });
@@ -110,7 +110,7 @@ describe('TC-D08 to TC-D10: Deal Relationship Operations', () => {
       // Create a test person
       const personData = TestDataFactory.createPersonData('TCD09');
 
-      const personResult = await testCase.executeToolCall('create-record', {
+      const personResult = await testCase.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -123,7 +123,7 @@ describe('TC-D08 to TC-D10: Deal Relationship Operations', () => {
       // Note: associated_people requires array of person record IDs
       dealData.associated_people = [testPersonId];
 
-      const dealResult = await testCase.executeToolCall('create-record', {
+      const dealResult = await testCase.executeToolCall('create_record', {
         resource_type: 'deals',
         record_data: dealData,
       });
@@ -151,7 +151,7 @@ describe('TC-D08 to TC-D10: Deal Relationship Operations', () => {
       const relatedPersonData = TestDataFactory.createPersonData('TCD10');
 
       // Create company
-      const companyResult = await testCase.executeToolCall('create-record', {
+      const companyResult = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: relatedCompanyData,
       });
@@ -163,7 +163,7 @@ describe('TC-D08 to TC-D10: Deal Relationship Operations', () => {
       testCase.trackRecord('companies', companyId);
 
       // Create person
-      const personResult = await testCase.executeToolCall('create-record', {
+      const personResult = await testCase.executeToolCall('create_record', {
         resource_type: 'people',
         record_data: relatedPersonData,
       });
@@ -176,7 +176,7 @@ describe('TC-D08 to TC-D10: Deal Relationship Operations', () => {
       dealData.associated_company = companyId;
       dealData.associated_people = [personId];
 
-      const dealResult = await testCase.executeToolCall('create-record', {
+      const dealResult = await testCase.executeToolCall('create_record', {
         resource_type: 'deals',
         record_data: dealData,
       });

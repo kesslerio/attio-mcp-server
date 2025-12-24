@@ -19,16 +19,16 @@ import {
 } from '../schemas.js';
 
 export const advancedOperationsToolConfigs = {
-  records_search_advanced: advancedSearchConfig,
-  records_search_by_relationship: searchByRelationshipConfig,
-  records_search_by_content: searchByContentConfig,
-  records_search_by_timeframe: searchByTimeframeConfig,
-  records_batch: batchOperationsConfig,
+  search_records_advanced: advancedSearchConfig,
+  search_records_by_relationship: searchByRelationshipConfig,
+  search_records_by_content: searchByContentConfig,
+  search_records_by_timeframe: searchByTimeframeConfig,
+  batch_records: batchOperationsConfig,
 };
 
 export const advancedOperationsToolDefinitions = {
-  records_search_advanced: {
-    name: 'records_search_advanced',
+  search_records_advanced: {
+    name: 'search_records_advanced',
     description: formatToolDescription({
       capability:
         'Search companies, people, deals, or tasks with complex nested filters (e.g., find deals by owner+stage, companies by industry+location).',
@@ -44,8 +44,8 @@ export const advancedOperationsToolDefinitions = {
       idempotentHint: true,
     },
   },
-  records_search_by_relationship: {
-    name: 'records_search_by_relationship',
+  search_records_by_relationship: {
+    name: 'search_records_by_relationship',
     description: formatToolDescription({
       capability:
         'Search records using relationship anchors (list, company, people).',
@@ -59,8 +59,8 @@ export const advancedOperationsToolDefinitions = {
       idempotentHint: true,
     },
   },
-  records_search_by_content: {
-    name: 'records_search_by_content',
+  search_records_by_content: {
+    name: 'search_records_by_content',
     description: formatToolDescription({
       capability: 'Search record content (notes, activity, communications).',
       boundaries: 'modify note content or attachments.',
@@ -75,8 +75,8 @@ export const advancedOperationsToolDefinitions = {
       idempotentHint: true,
     },
   },
-  records_search_by_timeframe: {
-    name: 'records_search_by_timeframe',
+  search_records_by_timeframe: {
+    name: 'search_records_by_timeframe',
     description: formatToolDescription({
       capability:
         'Filter records by creation, update, or interaction timeframes.',
@@ -92,8 +92,8 @@ export const advancedOperationsToolDefinitions = {
       idempotentHint: true,
     },
   },
-  records_batch: {
-    name: 'records_batch',
+  batch_records: {
+    name: 'batch_records',
     description: formatToolDescription({
       capability:
         'Execute batched record operations (create/update/delete/get/search).',

@@ -87,7 +87,7 @@ export function validationErrorsTests(testCompanyId?: string) {
         email_address: errorScenarios.invalidFormats.email.malformed,
       };
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'people',
         record_data: personData,
       })) as McpToolResponse;
@@ -103,7 +103,7 @@ export function validationErrorsTests(testCompanyId?: string) {
         content: 'Test task with extremely long title',
       };
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'tasks',
         record_data: taskData,
       })) as McpToolResponse;
@@ -115,7 +115,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     it('should handle special characters and Unicode', async () => {
       const companyData = errorScenarios.unicodeData.company;
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: companyData as any,
       })) as McpToolResponse;
@@ -127,7 +127,7 @@ export function validationErrorsTests(testCompanyId?: string) {
       if (hasValidContent(response)) {
         const recordId = extractRecordId(response);
         if (recordId) {
-          await callUniversalTool('delete-record', {
+          await callUniversalTool('delete_record', {
             resource_type: 'companies',
             record_id: recordId,
           }).catch(() => {});
@@ -138,7 +138,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     it('should handle null and undefined values', async () => {
       const companyData = errorDataGenerators.invalidCompany();
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: companyData as any,
       })) as McpToolResponse;
@@ -153,7 +153,7 @@ export function validationErrorsTests(testCompanyId?: string) {
         due_date: errorScenarios.invalidFormats.dates.invalid,
       };
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'tasks',
         record_data: taskData,
       })) as McpToolResponse;
@@ -165,7 +165,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     it('should handle malformed JSON in parameters', async () => {
       // This test might be limited by the TypeScript interface,
       // but we can test edge cases within valid structure
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: errorScenarios.malformedData.company as any,
       })) as McpToolResponse;
@@ -176,7 +176,7 @@ export function validationErrorsTests(testCompanyId?: string) {
       if (hasValidContent(response)) {
         const recordId = extractRecordId(response);
         if (recordId) {
-          await callUniversalTool('delete-record', {
+          await callUniversalTool('delete_record', {
             resource_type: 'companies',
             record_id: recordId,
           }).catch(() => {});
@@ -185,7 +185,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     });
 
     it('should handle memory-intensive operations', async () => {
-      const response = (await callNotesTool('create-note', {
+      const response = (await callNotesTool('create_note', {
         resource_type: 'companies',
         record_id: testCompanyId || 'test_id',
         title: errorScenarios.memoryIntensive.largeNote.title,

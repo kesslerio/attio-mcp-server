@@ -13,7 +13,7 @@ export class TestValidator {
         'Invalid resource type',
       ],
     },
-    'create-record': {
+    create_record: {
       expectedFields: ['id', 'data', 'attributes'],
       errorPatterns: [
         'Error executing tool',
@@ -71,7 +71,7 @@ export class TestValidator {
         'Invalid search query',
       ],
     },
-    'list-notes': {
+    list_notes: {
       expectedFields: ['data', 'notes'],
       errorPatterns: [
         'Error executing tool',

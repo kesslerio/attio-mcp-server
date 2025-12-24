@@ -95,7 +95,7 @@ describe('Deal status UUID passthrough - Issue #986', () => {
 
     for (const dealId of createdDealIds) {
       try {
-        await client.callTool('delete-record', {
+        await client.callTool('delete_record', {
           resource_type: 'deals',
           record_id: dealId,
         });
@@ -117,7 +117,7 @@ describe('Deal status UUID passthrough - Issue #986', () => {
         throw new Error('MCP client or stage UUID not initialized');
       }
 
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('create_record', {
         resource_type: 'deals',
         record_data: {
           values: {

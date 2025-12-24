@@ -551,7 +551,7 @@ describe('Core Operations Workflow Integration', () => {
       await createRecordConfig.handler(createParams);
 
       expect(vi.mocked(validateUniversalToolParams)).toHaveBeenCalledWith(
-        'create-record',
+        'create_record',
         createParams
       );
     });

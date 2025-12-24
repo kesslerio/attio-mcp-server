@@ -31,7 +31,7 @@ class InputValidationTest extends EdgeCaseTestBase {
     try {
       // Create a valid company for testing
       const companyData = TestDataFactory.createCompanyData('TC_EC01');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -113,7 +113,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     // Test graceful handling - should respond without crashing
     const result = await testCase.executeExpectedFailureTest(
       'empty_required_fields',
-      'create-record',
+      'create_record',
       {
         resource_type: 'companies',
         record_data: emptyFieldsScenario!.inputData,
@@ -124,7 +124,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(result.passed).toBe(true);
 
     // Verify server handles invalid input properly with error validation
-    const response = await testCase.executeToolCall('create-record', {
+    const response = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: emptyFieldsScenario!.inputData,
     });
@@ -176,7 +176,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     // Test type mismatches in record creation
     const result = await testCase.executeExpectedFailureTest(
       'type_mismatch_validation',
-      'create-record',
+      'create_record',
       {
         resource_type: 'companies',
         record_data: {
@@ -238,7 +238,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
 
     // Test that server handles injection attempts without crashing
     // Note: The API may correctly store and return data as-is (escaping happens at rendering)
-    const createResult = await testCase.executeToolCall('create-record', {
+    const createResult = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: injectionData,
     });
@@ -293,7 +293,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
 
     // Test invalid update operations with complex data
     if (testCase['validCompanyId']) {
-      const updateResponse = await testCase.executeToolCall('update-record', {
+      const updateResponse = await testCase.executeToolCall('update_record', {
         resource_type: 'companies',
         record_id: testCase['validCompanyId'],
         updates: {
@@ -328,7 +328,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       },
     };
 
-    const edgeResponse = await testCase.executeToolCall('create-record', {
+    const edgeResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: edgeCaseData,
     });
@@ -359,7 +359,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       attributes: {}, // Empty object
     };
 
-    const emptyResponse = await testCase.executeToolCall('create-record', {
+    const emptyResponse = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: emptyCollectionsData,
     });
@@ -451,7 +451,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
 
     // Test create-note with malformed data (if valid company exists)
     if (testCase['validCompanyId']) {
-      const noteResponse = await testCase.executeToolCall('create-note', {
+      const noteResponse = await testCase.executeToolCall('create_note', {
         parent_object: testCase['validCompanyId'],
         title: null, // Invalid title
         content: '',

@@ -18,13 +18,13 @@ export const batchOperationsConfig: UniversalToolConfig<
   Record<string, unknown>,
   Record<string, unknown> | Record<string, unknown>[]
 > = {
-  name: 'records_batch',
+  name: 'batch_records',
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown> | Record<string, unknown>[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'records_batch',
+        'batch_records',
         params
       ) as JsonObject;
 
@@ -43,7 +43,7 @@ export const batchOperationsConfig: UniversalToolConfig<
     } catch (error: unknown) {
       const typedParams = params as Record<string, unknown>;
       throw ErrorService.createUniversalError(
-        'records_batch',
+        'batch_records',
         `${typedParams?.resource_type}:${typedParams?.operation_type}`,
         error
       );

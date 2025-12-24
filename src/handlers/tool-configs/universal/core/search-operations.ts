@@ -21,11 +21,11 @@ export const searchRecordsConfig: UniversalToolConfig<
   UniversalSearchParams,
   AttioRecord[]
 > = {
-  name: 'records_search',
+  name: 'search_records',
   handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'records_search',
+        'search_records',
         params
       );
       return await handleUniversalSearch(sanitizedParams);
@@ -153,12 +153,12 @@ export const searchRecordsConfig: UniversalToolConfig<
 };
 
 export const searchRecordsDefinition = {
-  name: 'records_search',
+  name: 'search_records',
   description: formatToolDescription({
     capability: 'Search across companies, people, deals, tasks, and records',
     boundaries: 'create or modify records',
     constraints: 'Returns max 100 results (default: 10)',
-    recoveryHint: 'use records.discover_attributes to find searchable fields',
+    recoveryHint: 'use discover_record_attributes to find searchable fields',
   }),
   inputSchema: searchRecordsSchema,
   annotations: {

@@ -312,6 +312,16 @@ export function getErrorStatus(error: unknown): number | undefined {
     return error.response.status;
   }
 
+  // Some internal wrappers lose the structured status, but keep it in the message
+  // e.g. "Request failed with status code 400"
+  if (error instanceof Error) {
+    const match = error.message.match(/status code (\d{3})/i);
+    if (match?.[1]) {
+      const parsed = Number(match[1]);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+
   if (error && typeof error === 'object' && 'status' in error) {
     const status = (error as Record<string, unknown>).status;
     return typeof status === 'number' ? status : undefined;

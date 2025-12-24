@@ -23,12 +23,12 @@ describe.skipIf(
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.generic,
       }),
-      callTasksTool('update-record', {
+      callTasksTool('update_record', {
         resource_type: 'tasks',
         record_id: errorScenarios.invalidIds.task,
         record_data: { status: 'completed' },
       }),
-      callNotesTool('list-notes', {
+      callNotesTool('list_notes', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.generic,
       }),
@@ -43,7 +43,7 @@ describe.skipIf(
   }, 60000);
 
   it('should provide helpful error messages', async () => {
-    const response = (await callUniversalTool('create-record', {
+    const response = (await callUniversalTool('create_record', {
       resource_type: 'people',
       record_data: { email_address: 'invalid-email-format' },
     })) as McpToolResponse;

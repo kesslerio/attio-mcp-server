@@ -113,7 +113,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
       };
 
       await expect(advancedSearchConfig.handler(params)).rejects.toThrow(
-        'Universal records_search_advanced failed for resource type companies: Filter error'
+        'Universal search_records_advanced failed for resource type companies: Filter error'
       );
     });
   });

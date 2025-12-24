@@ -53,7 +53,7 @@ class NoteSearchValidationTest extends MCPTestBase {
     try {
       // Create test company
       const companyData = TestDataFactory.createCompanyData('TCN04');
-      const companyResult = await this.executeToolCall('create-record', {
+      const companyResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -69,7 +69,7 @@ class NoteSearchValidationTest extends MCPTestBase {
 
       // Create test deal (for additional parent type testing)
       const dealData = TestDataFactory.createDealData('TCN04');
-      const dealResult = await this.executeToolCall('create-record', {
+      const dealResult = await this.executeToolCall('create_record', {
         resource_type: 'deals',
         record_data: dealData,
       });
@@ -85,7 +85,7 @@ class NoteSearchValidationTest extends MCPTestBase {
 
       // Create the exact note from Issue #888
       if (this.testCompanyId) {
-        const noteResult = await this.executeToolCall('create-note', {
+        const noteResult = await this.executeToolCall('create_note', {
           resource_type: 'companies',
           record_id: this.testCompanyId,
           title: this.testNoteTitle,
@@ -371,7 +371,7 @@ describe('TC-N04: Note Search Validation - Issue #888 Fix', () => {
         passed = true;
         console.log('Skipping: Test company not available');
       } else {
-        const result = await testCase.executeToolCall('list-notes', {
+        const result = await testCase.executeToolCall('list_notes', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           limit: 10,
@@ -401,7 +401,7 @@ describe('TC-N04: Note Search Validation - Issue #888 Fix', () => {
         console.log('Skipping: Test deal not available');
       } else {
         // Create a note for the deal
-        const noteResult = await testCase.executeToolCall('create-note', {
+        const noteResult = await testCase.executeToolCall('create_note', {
           resource_type: 'deals',
           record_id: testCase.testDealId,
           title: 'Deal Note for Testing',
@@ -409,7 +409,7 @@ describe('TC-N04: Note Search Validation - Issue #888 Fix', () => {
         });
 
         // Now list notes
-        const result = await testCase.executeToolCall('list-notes', {
+        const result = await testCase.executeToolCall('list_notes', {
           resource_type: 'deals',
           record_id: testCase.testDealId,
           limit: 10,

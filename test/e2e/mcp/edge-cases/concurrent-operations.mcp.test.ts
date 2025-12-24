@@ -49,7 +49,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
         const companyData = TestDataFactory.createCompanyData(
           `TC_EC03_Company_${i}_${Date.now()}`
         );
-        const companyResult = await this.executeToolCall('create-record', {
+        const companyResult = await this.executeToolCall('create_record', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -76,7 +76,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
         const personData = TestDataFactory.createPersonData(
           `TC_EC03_Person_${i}`
         );
-        const personResult = await this.executeToolCall('create-record', {
+        const personResult = await this.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -196,7 +196,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
 
       const results = await Promise.allSettled(promises);
 
-      if (toolName === 'create-record') {
+      if (toolName === 'create_record') {
         results.forEach((settled, index) => {
           if (settled.status === 'fulfilled' && !settled.value.isError) {
             const responseText = this.extractTextContent(settled.value);
@@ -300,7 +300,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     const result = await testCase.executeConcurrencyTest(
       'simultaneous_record_creation',
-      'create-record',
+      'create_record',
       testCase.generateConcurrentCreateParams,
       config
     );
@@ -345,7 +345,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     const identicalResult = await testCase.executeConcurrencyTest(
       'identical_data_creation',
-      'create-record',
+      'create_record',
       identicalDataParams,
       identicalDataConfig
     );
@@ -367,7 +367,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     const updatePromises = [];
     for (let i = 0; i < 6; i++) {
       updatePromises.push(
-        testCase.executeToolCall('update-record', {
+        testCase.executeToolCall('update_record', {
           resource_type: 'companies',
           record_id: targetCompanyId,
           updates: {
@@ -670,7 +670,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Create operations
     complexWorkflowPromises.push(
-      testCase.executeToolCall('create-record', {
+      testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: testCase.generateConcurrentCreateParams()['record_data'],
       })
@@ -678,7 +678,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Update operations
     complexWorkflowPromises.push(
-      testCase.executeToolCall('update-record', {
+      testCase.executeToolCall('update_record', {
         resource_type: 'companies',
         record_id: testCase['testCompanyIds'][0],
         updates: { description: `Complex workflow update ${Date.now()}` },

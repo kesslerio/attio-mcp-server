@@ -182,7 +182,7 @@ describe('TCAO01: Batch Operations Validation', () => {
           const companyData = TestDataFactory.createCompanyData(
             `TCAO01_update_${index}`
           );
-          const createResult = await testCase.executeToolCall('create-record', {
+          const createResult = await testCase.executeToolCall('create_record', {
             resource_type: 'companies',
             record_data: companyData,
           });
@@ -259,7 +259,7 @@ describe('TCAO01: Batch Operations Validation', () => {
           const companyData = TestDataFactory.createCompanyData(
             `TCAO01_boundary_seed_${index}`
           );
-          const createResult = await testCase.executeToolCall('create-record', {
+          const createResult = await testCase.executeToolCall('create_record', {
             resource_type: 'companies',
             record_data: companyData,
           });
@@ -423,7 +423,7 @@ describe('TCAO01: Batch Operations Validation', () => {
           const companyData = TestDataFactory.createCompanyData(
             `TCAO01_perf_seed_${index}`
           );
-          const createResult = await testCase.executeToolCall('create-record', {
+          const createResult = await testCase.executeToolCall('create_record', {
             resource_type: 'companies',
             record_data: companyData,
           });

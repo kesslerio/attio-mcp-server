@@ -60,7 +60,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
       const companyData = TestDataFactory.createCompanyData('TCAO02_filters');
       companyData.description = `${companyData.description} - filters scenario`;
 
-      const createResult = await testCase.executeToolCall('create-record', {
+      const createResult = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -118,7 +118,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
         const companyData = TestDataFactory.createCompanyData(
           'TCAO02_relationships_company'
         );
-        const companyResult = await testCase.executeToolCall('create-record', {
+        const companyResult = await testCase.executeToolCall('create_record', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -131,7 +131,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
         const personData = TestDataFactory.createPersonData(
           'TCAO02_relationships_person'
         );
-        const personResult = await testCase.executeToolCall('create-record', {
+        const personResult = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -146,7 +146,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
         );
         dealData.associated_company = companyId;
         dealData.associated_people = [personId];
-        const dealResult = await testCase.executeToolCall('create-record', {
+        const dealResult = await testCase.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -223,7 +223,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
       const companyData = TestDataFactory.createCompanyData(
         'TCAO02_notes_company'
       );
-      const companyResult = await testCase.executeToolCall('create-record', {
+      const companyResult = await testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -234,7 +234,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
       testCase.trackRecord('companies', companyId);
 
       const noteKeyword = `attio-mcp-content-${Date.now()}`;
-      const noteResult = await testCase.executeToolCall('create-note', {
+      const noteResult = await testCase.executeToolCall('create_note', {
         resource_type: 'companies',
         record_id: companyId,
         title: `TCAO02 Content Search ${noteKeyword}`,
@@ -293,7 +293,7 @@ describe('TC-AO02: Advanced Search Operations', () => {
 
       try {
         const dealData = TestDataFactory.createDealData('TCAO02_timeframe');
-        const dealResult = await testCase.executeToolCall('create-record', {
+        const dealResult = await testCase.executeToolCall('create_record', {
           resource_type: 'deals',
           record_data: dealData,
         });

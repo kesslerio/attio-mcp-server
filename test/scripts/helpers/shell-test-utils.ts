@@ -210,8 +210,10 @@ export function validateBashSyntax(scriptPath: string): ShellResult {
  * Get list of functions defined in a bash script
  */
 export function getBashFunctions(scriptPath: string): string[] {
+  // Use grep to find function definitions without sourcing the script
+  // This avoids executing any setup code that might hang
   const result = execBash(
-    `bash -c 'source "${scriptPath}" 2>/dev/null; declare -F' | awk '{print $3}'`
+    `grep -E '^[a-zA-Z_][a-zA-Z0-9_]*\\s*\\(\\)' "${scriptPath}" | sed 's/().*$//' | tr -d ' '`
   );
 
   if (result.exitCode !== 0) {

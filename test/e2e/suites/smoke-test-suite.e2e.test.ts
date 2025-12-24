@@ -131,7 +131,7 @@ describe.skipIf(
 
       // Test task creation (smoke test with minimal data)
       const taskData = testDataGenerator.tasks.basicTask();
-      const createResponse = (await callTasksTool('create-record', {
+      const createResponse = (await callTasksTool('create_record', {
         resource_type: 'tasks',
         record_data: {
           content: taskData.content,
@@ -144,7 +144,7 @@ describe.skipIf(
 
     it('should validate notes tool basic operations', async () => {
       // Test notes list (expected to handle gracefully even with invalid ID)
-      const listResponse = (await callNotesTool('list-notes', {
+      const listResponse = (await callNotesTool('list_notes', {
         resource_type: 'companies',
         record_id: 'smoke-test-company-id',
         limit: 1,
@@ -159,7 +159,7 @@ describe.skipIf(
     it('should validate basic record creation workflow', async () => {
       const companyData = testDataGenerator.companies.basicCompany();
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       })) as McpToolResponse;
@@ -174,7 +174,7 @@ describe.skipIf(
         // Cleanup (optional for smoke test)
         const recordId = data?.id?.record_id;
         if (recordId) {
-          await callUniversalTool('delete-record', {
+          await callUniversalTool('delete_record', {
             resource_type: 'companies',
             record_id: recordId,
           }).catch(() => {
@@ -291,7 +291,7 @@ describe.skipIf(
             limit: 1,
           }),
         () =>
-          callNotesTool('list-notes', {
+          callNotesTool('list_notes', {
             resource_type: 'companies',
             record_id: 'tool-reg-test-id',
             limit: 1,

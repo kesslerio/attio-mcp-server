@@ -27,7 +27,7 @@ class ListOperationsTest extends MCPTestBase {
     try {
       // Create a test company first
       const companyData = TestDataFactory.createCompanyData('TC006');
-      const createResult = await this.executeToolCall('create-record', {
+      const createResult = await this.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       });

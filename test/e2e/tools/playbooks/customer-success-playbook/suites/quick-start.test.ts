@@ -39,7 +39,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         // Create demo company and parse ID from the returned text
         seededCompanyName = `Demo CS Co ${new Date().toISOString().replace(/[:.]/g, '-')}`;
         await client.assertToolCall(
-          'create-record',
+          'create_record',
           {
             resource_type: 'companies',
             record_data: { name: seededCompanyName },
@@ -197,7 +197,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         client,
         prompt,
         expectedOutcome,
-        'create-record',
+        'create_record',
         {
           resource_type: 'tasks',
           record_data: {

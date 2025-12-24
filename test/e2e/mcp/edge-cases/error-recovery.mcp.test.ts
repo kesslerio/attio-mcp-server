@@ -36,7 +36,7 @@ class ErrorRecoveryTest extends EdgeCaseTestBase {
         const companyData = TestDataFactory.createCompanyData(
           `TC_EC04_Company_${i}`
         );
-        const companyResult = await this.executeToolCall('create-record', {
+        const companyResult = await this.executeToolCall('create_record', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -221,7 +221,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     // Test creating record with potentially corrupted data
     const corruptionResult = await testCase.executeExpectedFailureTest(
       'partial_data_corruption',
-      'create-record',
+      'create_record',
       {
         resource_type: 'companies',
         record_data: corruptionScenario!.inputData,
@@ -234,7 +234,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Test recovery by attempting to create valid record after corruption
     const recoveryData = TestDataFactory.createCompanyData('TC_EC04_Recovery');
-    const recoveryResult = await testCase.executeToolCall('create-record', {
+    const recoveryResult = await testCase.executeToolCall('create_record', {
       resource_type: 'companies',
       record_data: recoveryData,
     });
@@ -384,7 +384,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       // Step 1: Valid update
       {
         operation: () =>
-          testCase.executeToolCall('update-record', {
+          testCase.executeToolCall('update_record', {
             resource_type: 'companies',
             record_id: testCase['testCompanyIds'][0],
             updates: { description: 'Transaction step 1' },
@@ -394,7 +394,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       // Step 2: Invalid update (should fail)
       {
         operation: () =>
-          testCase.executeToolCall('update-record', {
+          testCase.executeToolCall('update_record', {
             resource_type: 'companies',
             record_id: 'invalid-id-that-does-not-exist',
             updates: { description: 'Transaction step 2' },
@@ -509,17 +509,17 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Rapid conflicting updates to create potential inconsistency
     const conflictingOperations = [
-      testCase.executeToolCall('update-record', {
+      testCase.executeToolCall('update_record', {
         resource_type: 'companies',
         record_id: companyId,
         updates: { description: 'State A' },
       }),
-      testCase.executeToolCall('update-record', {
+      testCase.executeToolCall('update_record', {
         resource_type: 'companies',
         record_id: companyId,
         updates: { description: 'State B' },
       }),
-      testCase.executeToolCall('update-record', {
+      testCase.executeToolCall('update_record', {
         resource_type: 'companies',
         record_id: companyId,
         updates: { description: 'State C' },
@@ -574,7 +574,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     expect(recoveryText).toContain(companyId);
 
     // Additional recovery test: fix inconsistent state with fresh update
-    const fixResult = await testCase.executeToolCall('update-record', {
+    const fixResult = await testCase.executeToolCall('update_record', {
       resource_type: 'companies',
       record_id: companyId,
       updates: { description: 'Consistent Recovery State' },
@@ -635,7 +635,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     // Simulate cascading failures with multiple invalid operations
     const cascadingFailures = [
       // Invalid record creation
-      testCase.executeToolCall('create-record', {
+      testCase.executeToolCall('create_record', {
         resource_type: 'companies',
         record_data: { name: null, invalid_field: 'test' },
       }),
@@ -650,7 +650,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
         query: null,
       }),
       // Invalid update
-      testCase.executeToolCall('update-record', {
+      testCase.executeToolCall('update_record', {
         resource_type: 'companies',
         record_id: 'non-existent-id',
         updates: null,

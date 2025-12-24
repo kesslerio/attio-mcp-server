@@ -62,7 +62,7 @@ describe
           testCompany.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -99,7 +99,7 @@ describe
           );
           return;
         }
-        const response = (await callNotesTool('list-notes', {
+        const response = (await callNotesTool('list_notes', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           limit: 10,
@@ -148,7 +148,7 @@ describe
           testCompany.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -188,7 +188,7 @@ describe
         );
         const uri = `attio://companies/${testCompany.id.record_id}`;
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           uri: uri,
           title: noteData.title,
           content: noteData.content,
@@ -221,7 +221,7 @@ describe
         }
 
         // Test with small limit
-        const response = (await callNotesTool('list-notes', {
+        const response = (await callNotesTool('list_notes', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           limit: 2,
@@ -254,7 +254,7 @@ describe
           testPerson.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -291,7 +291,7 @@ describe
           );
           return;
         }
-        const response = (await callNotesTool('list-notes', {
+        const response = (await callNotesTool('list_notes', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
         })) as McpToolResponse;
@@ -336,7 +336,7 @@ describe
         }
         const noteData = noteFixtures.people.technical(testPerson.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -377,7 +377,7 @@ describe
           'people'
         );
 
-        const response = (await callNotesTool('create-note', {
+        const response = (await callNotesTool('create_note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,

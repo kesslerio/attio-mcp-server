@@ -194,7 +194,7 @@ export function validatePhoneNumberValue(
           }
         );
       }
-      return { phone_number: trimmed };
+      return { original_phone_number: trimmed };
     }
 
     if (typeof input === 'object' && input !== null && !Array.isArray(input)) {
@@ -222,14 +222,11 @@ export function validatePhoneNumberValue(
         );
       }
 
-      // Preserve other fields (label/type) while ensuring trimmed phone string
-      if (record.phone_number) {
-        record.phone_number = (record.phone_number as string).trim();
-      }
-      if (record.original_phone_number) {
-        record.original_phone_number = (
-          record.original_phone_number as string
-        ).trim();
+      // Attio expects original_phone_number key; accept phone_number input for compatibility.
+      const normalizedPhone = phone.trim();
+      record.original_phone_number = normalizedPhone;
+      if ('phone_number' in record) {
+        delete record.phone_number;
       }
 
       return record;

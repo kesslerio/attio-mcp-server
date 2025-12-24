@@ -26,11 +26,11 @@ export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
   AttioRecord[]
 > = {
-  name: 'records_search_by_timeframe',
+  name: 'search_records_by_timeframe',
   handler: async (params: TimeframeSearchParams): Promise<AttioRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'records_search_by_timeframe',
+        'search_records_by_timeframe',
         params
       );
 
@@ -198,7 +198,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       });
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'records_search_by_timeframe',
+        'search_records_by_timeframe',
         `${params.resource_type}:${params.timeframe_type || 'undefined'}`,
         error
       );

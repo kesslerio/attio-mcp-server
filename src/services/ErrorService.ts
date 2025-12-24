@@ -281,7 +281,7 @@ export class ErrorService {
       if (attrMatch && attrMatch[1]) {
         // Provide resource-specific field suggestions
         if (resourceType === 'deals') {
-          return `Unknown field "${attrMatch[1]}". Available deal fields: name, stage, value, owner, associated_company, associated_people. Use discover-attributes for full list`;
+          return `Unknown field "${attrMatch[1]}". Core deal fields: name, stage, value, owner, associated_company, associated_people. Common custom fields may include: utm_source, utm_medium, utm_campaign, utm_content, utm_term. Use discover-attributes for the full list`;
         }
         return `Unknown field "${attrMatch[1]}". Use discover-attributes tool to see available fields for ${resourceType}`;
       }
@@ -334,7 +334,7 @@ export class ErrorService {
     }
 
     if (errorMessage.includes('description')) {
-      return 'Deals do not have a "description" field. Available fields: name, stage, value, owner, associated_company, associated_people';
+      return 'Deals do not have a "description" field. Core fields: name, stage, value, owner, associated_company, associated_people. Custom fields may exist (use discover-attributes).';
     }
 
     if (
@@ -386,7 +386,7 @@ export class ErrorService {
 
     // Generic unknown field error
     if (errorMessage.includes('cannot find attribute')) {
-      return 'Unknown deal field. Core fields: name, stage, value, owner, associated_company, associated_people. Use discover-attributes tool to see all available fields including custom ones';
+      return 'Unknown deal field. Core fields: name, stage, value, owner, associated_company, associated_people. Use discover-attributes tool to see all available fields including custom ones.';
     }
 
     return undefined;

@@ -76,7 +76,7 @@ describe.skipIf(
       const companyData = testDataGenerator.companies.basicCompany();
       testCompanyId = await createTestRecord(
         (resourceType, data) =>
-          callUniversalTool('create-record', {
+          callUniversalTool('create_record', {
             resource_type: resourceType as any,
             record_data: data,
           }),
@@ -94,7 +94,7 @@ describe.skipIf(
       const personData = testDataGenerator.people.basicPerson();
       testPersonId = await createTestRecord(
         (resourceType, data) =>
-          callUniversalTool('create-record', {
+          callUniversalTool('create_record', {
             resource_type: resourceType as any,
             record_data: data,
           }),
@@ -222,7 +222,7 @@ describe.skipIf(
         email_address: errorScenarios.invalidFormats.email.malformed,
       };
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'people',
         record_data: personData,
       })) as McpToolResponse;
@@ -236,7 +236,7 @@ describe.skipIf(
     it('should handle extremely long text values', async () => {
       const longText = 'A'.repeat(10000); // Very long string
 
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: {
           name: 'Test Company',
@@ -280,7 +280,7 @@ describe.skipIf(
     });
 
     it('should handle task not found errors', async () => {
-      const response = (await callUniversalTool('update-record', {
+      const response = (await callUniversalTool('update_record', {
         resource_type: 'tasks',
         record_id: errorScenarios.invalidIds.task,
         record_data: {
@@ -311,7 +311,7 @@ describe.skipIf(
     });
 
     it('should handle note not found errors', async () => {
-      const response = (await callNotesTool('list-notes', {
+      const response = (await callNotesTool('list_notes', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.note,
         limit: 50,
@@ -328,7 +328,7 @@ describe.skipIf(
     it('should handle errors when linking non-existent records', async () => {
       // First create a task
       const taskData = testDataGenerator.tasks.basicTask();
-      const taskResponse = (await callUniversalTool('create-record', {
+      const taskResponse = (await callUniversalTool('create_record', {
         resource_type: 'tasks',
         record_data: taskData as any,
       })) as McpToolResponse;
@@ -338,7 +338,7 @@ describe.skipIf(
 
         if (taskId) {
           // Try to link to non-existent company
-          const linkResponse = (await callTasksTool('update-record', {
+          const linkResponse = (await callTasksTool('update_record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
@@ -350,7 +350,7 @@ describe.skipIf(
           expect(linkResponse).toBeDefined();
 
           // Clean up
-          await callUniversalTool('delete-record', {
+          await callUniversalTool('delete_record', {
             resource_type: 'tasks',
             record_id: taskId,
           }).catch(() => {});
@@ -362,7 +362,7 @@ describe.skipIf(
 
     it('should handle cascading tool failures', async () => {
       // Test scenario where one tool failure could affect another
-      const companyResponse = (await callUniversalTool('create-record', {
+      const companyResponse = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: {
           // Missing required field to trigger error
@@ -375,7 +375,7 @@ describe.skipIf(
 
       if (companyResponse.isError) {
         // Try to create a note for the failed company creation
-        const noteResponse = (await callNotesTool('create-note', {
+        const noteResponse = (await callNotesTool('create_note', {
           resource_type: 'companies',
           record_id: 'non-existent-company-id',
           title: 'Test Note',
@@ -400,13 +400,13 @@ describe.skipIf(
       // Attempt concurrent updates to the same record
       const operations = [
         () =>
-          callUniversalTool('update-record', {
+          callUniversalTool('update_record', {
             resource_type: 'companies',
             record_id: testCompanyId!,
             record_data: { name: 'Updated Name 1' },
           }),
         () =>
-          callUniversalTool('update-record', {
+          callUniversalTool('update_record', {
             resource_type: 'companies',
             record_id: testCompanyId!,
             record_data: { name: 'Updated Name 2' },
@@ -474,7 +474,7 @@ describe.skipIf(
     it('should handle incomplete transaction scenarios', async () => {
       // Test creating a record and then immediately trying to reference it
       const companyData = testDataGenerator.companies.basicCompany();
-      const createResponse = (await callUniversalTool('create-record', {
+      const createResponse = (await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: companyData,
       })) as McpToolResponse;
@@ -484,7 +484,7 @@ describe.skipIf(
 
         if (companyId) {
           // Immediately try to create a note for the company
-          const noteResponse = (await callNotesTool('create-note', {
+          const noteResponse = (await callNotesTool('create_note', {
             resource_type: 'companies',
             record_id: companyId,
             title: 'Immediate Note',
@@ -496,7 +496,7 @@ describe.skipIf(
           expect(noteResponse).toBeDefined();
 
           // Clean up
-          await callUniversalTool('delete-record', {
+          await callUniversalTool('delete_record', {
             resource_type: 'companies',
             record_id: companyId,
           }).catch(() => {});
@@ -538,12 +538,12 @@ describe.skipIf(
           resource_type: 'companies',
           record_id: errorScenarios.invalidIds.generic,
         }),
-        callTasksTool('update-record', {
+        callTasksTool('update_record', {
           resource_type: 'tasks',
           record_id: errorScenarios.invalidIds.task,
           record_data: { status: 'completed' },
         }),
-        callNotesTool('list-notes', {
+        callNotesTool('list_notes', {
           resource_type: 'companies',
           record_id: errorScenarios.invalidIds.generic,
         }),
@@ -561,7 +561,7 @@ describe.skipIf(
     });
 
     it('should provide helpful error messages', async () => {
-      const response = (await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create_record', {
         resource_type: 'people',
         record_data: {
           // Missing required fields

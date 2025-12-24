@@ -318,7 +318,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
 
       try {
         const personData = TestDataFactory.createPersonData('TCCO07_contact');
-        const createResult = await testCase.executeToolCall('create-record', {
+        const createResult = await testCase.executeToolCall('create_record', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -366,7 +366,7 @@ describe('TC-CO07: Metadata & Detailed Info Operations', () => {
       try {
         const companyData =
           TestDataFactory.createCompanyData('TCCO07_business');
-        const createResult = await testCase.executeToolCall('create-record', {
+        const createResult = await testCase.executeToolCall('create_record', {
           resource_type: 'companies',
           record_data: companyData,
         });

@@ -55,7 +55,7 @@ describe.skipIf(
 
   it('creates company and person records', async () => {
     const companyResponse = asToolResponse(
-      await callUniversalTool('create-record', {
+      await callUniversalTool('create_record', {
         resource_type: 'companies',
         record_data: CompanyFactory.create() as any,
       })
@@ -66,7 +66,7 @@ describe.skipIf(
     testCompaniesRecord.push(company);
 
     const personResponse = asToolResponse(
-      await callUniversalTool('create-record', {
+      await callUniversalTool('create_record', {
         resource_type: 'people',
         record_data: PersonFactory.create() as any,
       })

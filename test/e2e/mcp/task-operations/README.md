@@ -33,7 +33,7 @@ These tests use universal tools instead of task-specific tools:
 
 ```typescript
 // ✅ Correct - Universal tool pattern
-await this.executeToolCall('create-record', {
+await this.executeToolCall('create_record', {
   resource_type: 'tasks',
   record_data: taskData,
 });

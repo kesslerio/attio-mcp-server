@@ -26,13 +26,13 @@ export const createNoteConfig: UniversalToolConfig<
   Record<string, unknown>,
   Record<string, unknown>
 > = {
-  name: 'create-note',
+  name: 'create_note',
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown>> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'create-note',
+        'create_note',
         params
       ) as UniversalCreateNoteParams;
 
@@ -58,7 +58,7 @@ export const createNoteConfig: UniversalToolConfig<
 
       return result;
     } catch (err: unknown) {
-      throw ErrorService.createUniversalError('create-note', 'notes', err);
+      throw ErrorService.createUniversalError('create_note', 'notes', err);
     }
   },
   formatResult: (note: Record<string, unknown>): string => {
@@ -76,7 +76,7 @@ export const createNoteConfig: UniversalToolConfig<
       const err = error instanceof Error ? error : new Error(String(error));
       const fallback = createErrorResult(
         err,
-        'create-note#format',
+        'create_note#format',
         'FORMAT'
       ) as McpErrorPayload;
       const message = fallback.content?.[0]?.text;
@@ -109,13 +109,13 @@ export const listNotesConfig: UniversalToolConfig<
   Record<string, unknown>,
   Record<string, unknown>[]
 > = {
-  name: 'list-notes',
+  name: 'list_notes',
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown>[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'list-notes',
+        'list_notes',
         params
       ) as UniversalGetNotesParams;
 
@@ -128,7 +128,7 @@ export const listNotesConfig: UniversalToolConfig<
 
       return await handleUniversalGetNotes(sanitizedParams);
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError('list-notes', 'notes', error);
+      throw ErrorService.createUniversalError('list_notes', 'notes', error);
     }
   },
   formatResult: (notes: Record<string, unknown>[]): string => {
@@ -153,7 +153,7 @@ export const listNotesConfig: UniversalToolConfig<
       const err = error instanceof Error ? error : new Error(String(error));
       const fallback = createErrorResult(
         err,
-        'list-notes#format',
+        'list_notes#format',
         'FORMAT'
       ) as McpErrorPayload;
       const message = fallback.content?.[0]?.text;
@@ -165,7 +165,7 @@ export const listNotesConfig: UniversalToolConfig<
 };
 
 export const createNoteDefinition = {
-  name: 'create-note',
+  name: 'create_note',
   description: formatToolDescription({
     capability:
       'Create note for companies, people, or deals with optional markdown formatting.',
@@ -183,7 +183,7 @@ export const createNoteDefinition = {
 };
 
 export const listNotesDefinition = {
-  name: 'list-notes',
+  name: 'list_notes',
   description: formatToolDescription({
     capability: 'Retrieve notes for a record with timestamps.',
     boundaries: 'create or modify notes; read-only.',

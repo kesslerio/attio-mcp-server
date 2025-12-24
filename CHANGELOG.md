@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **MCP-compliant tool naming** (#1039) - All universal tools now use `snake_case`, verb-first naming
+  - Universal search/metadata tools: `records_search` → `search_records`, `records_get_details` → `get_record_details`, etc. (12 tools)
+  - CRUD tools: `create-record` → `create_record`, `update-record` → `update_record`, `delete-record` → `delete_record`
+  - Note tools: `create-note` → `create_note`, `list-notes` → `list_notes`
+  - Debug tool: `smithery-debug-config` → `smithery_debug_config`
+  - Tool descriptions now use natural language sentences instead of pipe-separated labels
+  - Aligns with MCP ecosystem standards (Desktop Commander, SEP-986, official MCP docs)
+  - Old names continue to work via dual alias support (both old `noun_verb` and `kebab-case` formats)
+  - See `docs/MIGRATION-GUIDE.md` for complete migration table
+
+### Fixed
+
+- **Select field persistence** (#1045) - Fixed silent API failures where select field updates returned 200 OK but didn't persist
+  - Fixed `detectFieldType()` to return `'array'` for all select fields (single and multi-select)
+  - Fixed select-transformer to use `["title"]` format instead of `["uuid"]` format (Attio silently rejects UUID arrays)
+  - Added E2E test validating real API persistence with select fields
+  - Resolves type mismatch validation errors and false-positive update confirmations
+- Deal creation: accept stage titles + UTM fields and improve validation/error surfacing (#1043)
+
+### Deprecated
+
+- **Old universal tool names** (#1039) - Removal: v2.0.0 (Q1 2026)
+  - Old noun-verb snake_case format (e.g., `records_search`, `records_get_details`)
+  - Old kebab-case format (e.g., `create-record`, `update-record`, `create-note`)
+  - Use new verb-first snake_case names (e.g., `search_records`, `create_record`, `create_note`)
+  - Dual aliases provide backward compatibility with deprecation warnings
+  - Migration guide available in `docs/MIGRATION-GUIDE.md`
+
+- **Legacy resource-specific tools** (#1022) - Removal: v2.0.0 (Q1 2026)
+  - All resource-specific tools (`search-companies`, `create-person`, etc.) are deprecated
+  - Use universal tools instead (`search_records`, `create_record`, etc.)
+  - Legacy tools accessible via `DISABLE_UNIVERSAL_TOOLS=true` but emit deprecation warnings
+  - See `docs/MIGRATION-GUIDE.md` for migration guide
+
+## [2025-12-17] - Daily Update
+
+### Changed
+
+- **Refactored select array handling** (#1030) - Normalized select array data structures for consistency
+- **Removed unused normalizeLocation function** (#1030) - Cleaned up unused code to reduce technical debt
+
 ## [2025-12-16] - Daily Update
 
 ### Added

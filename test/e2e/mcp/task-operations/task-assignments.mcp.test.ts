@@ -75,7 +75,7 @@ class TaskAssignmentTests extends MCPTestBase {
     };
 
     // Use universal tool with resource_type parameter
-    const result = await this.executeToolCall('create-record', {
+    const result = await this.executeToolCall('create_record', {
       resource_type: 'tasks',
       record_data: testTask,
     });
@@ -116,7 +116,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       const assigneeData = testSuite.getAssignee(0);
 
       // Act - Update task with assignee
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: [assigneeData] },
@@ -140,7 +140,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       const initialAssignee = testSuite.getAssignee(0);
 
       // Set initial assignment
-      await testSuite.executeToolCall('update-record', {
+      await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: [initialAssignee] },
@@ -149,7 +149,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Act - Change assignment to new user
       const newAssignee = testSuite.getAssignee(1);
 
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: [newAssignee] },
@@ -173,14 +173,14 @@ describe('MCP P1 Task Assignment Operations', () => {
       const assignee = testSuite.getAssignee(0);
 
       // Set initial assignment
-      await testSuite.executeToolCall('update-record', {
+      await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: [assignee] },
       });
 
       // Act - Remove assignment (empty assignees array)
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: [] },
@@ -216,7 +216,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       ].filter((a) => a.user_id); // Filter out empty assignees
 
       // Act - Assign multiple users
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: assignees },
@@ -245,7 +245,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       ];
 
       // Set initial assignments
-      await testSuite.executeToolCall('update-record', {
+      await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: initialAssignees },
@@ -254,7 +254,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Act - Add third assignee
       const allAssignees = [...initialAssignees, testSuite.getAssignee(2)];
 
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: allAssignees },
@@ -284,7 +284,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       ];
 
       // Set initial assignments
-      await testSuite.executeToolCall('update-record', {
+      await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: allAssignees },
@@ -293,7 +293,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       // Act - Remove middle assignee (keep first and third)
       const remainingAssignees = [allAssignees[0], allAssignees[2]];
 
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: remainingAssignees },
@@ -325,7 +325,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       };
 
       // Act - Attempt to assign invalid user
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: [invalidAssignee] },
@@ -354,7 +354,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       const duplicateAssignees = [assigneeData, assigneeData, assigneeData];
 
       // Act - Assign duplicate users
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: { assignees: duplicateAssignees },
@@ -385,7 +385,7 @@ describe('MCP P1 Task Assignment Operations', () => {
       };
 
       // Act - Attempt to assign to non-existent task
-      const result = await testSuite.executeToolCall('update-record', {
+      const result = await testSuite.executeToolCall('update_record', {
         resource_type: 'tasks',
         record_id: fakeTaskId,
         record_data: { assignees: [assignee] },
