@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [2025-12-24] - Daily Update
+
+### Fixed
+
+- **Select field persistence** (#1045) - Fixed silent API failures where select field updates returned 200 OK but didn't persist
+  - Fixed `detectFieldType()` to return `'array'` for all select fields (single and multi-select)
+  - Fixed select-transformer to use `["title"]` format instead of `["uuid"]` format (Attio silently rejects UUID arrays)
+
+## [2025-12-17] - Daily Update
+
+### Changed
+
 - **MCP-compliant tool naming** (#1039) - All universal tools now use `snake_case`, verb-first naming
   - Universal search/metadata tools: `records_search` → `search_records`, `records_get_details` → `get_record_details`, etc. (12 tools)
   - CRUD tools: `create-record` → `create_record`, `update-record` → `update_record`, `delete-record` → `delete_record`
