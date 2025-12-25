@@ -4,6 +4,7 @@
  */
 
 export { requiredFieldsEnhancer } from './required-fields-enhancer.js';
+export { uniquenessEnhancer } from './uniqueness-enhancer.js';
 
 export type {
   CrudErrorContext,
