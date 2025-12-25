@@ -6,6 +6,9 @@
 export { requiredFieldsEnhancer } from './required-fields-enhancer.js';
 export { uniquenessEnhancer } from './uniqueness-enhancer.js';
 export { attributeNotFoundEnhancer } from './attribute-enhancer.js';
+export { selectStatusEnhancer } from './select-status-enhancer.js';
+export { complexTypeEnhancer } from './complex-type-enhancer.js';
+export { recordReferenceEnhancer } from './record-reference-enhancer.js';
 
 export type {
   CrudErrorContext,

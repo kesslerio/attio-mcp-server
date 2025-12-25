@@ -11,6 +11,9 @@ import { createScopedLogger } from '../../../../utils/logger.js';
 import { requiredFieldsEnhancer } from './error-enhancers/required-fields-enhancer.js';
 import { uniquenessEnhancer } from './error-enhancers/uniqueness-enhancer.js';
 import { attributeNotFoundEnhancer } from './error-enhancers/attribute-enhancer.js';
+import { selectStatusEnhancer } from './error-enhancers/select-status-enhancer.js';
+import { complexTypeEnhancer } from './error-enhancers/complex-type-enhancer.js';
+import { recordReferenceEnhancer } from './error-enhancers/record-reference-enhancer.js';
 // Create a simple error result function
 const createErrorResult = (
   message: string,
@@ -31,8 +34,11 @@ import { sanitizedLog } from './pii-sanitizer.js';
 
 const logger = createScopedLogger('crud-error-handlers');
 
-// Attribute enhancer functions (levenshteinDistance, findSimilarAttributes, enhanceAttributeNotFoundError)
-// moved to error-enhancers/attribute-enhancer.ts
+// Enhancer functions moved to error-enhancers/:
+// - attribute-enhancer.ts: levenshteinDistance, findSimilarAttributes, enhanceAttributeNotFoundError
+// - select-status-enhancer.ts: enhanceSelectStatusError
+// - complex-type-enhancer.ts: enhanceComplexTypeError
+// - record-reference-enhancer.ts: enhanceRecordReferenceError
 
 /**
  * Extract Attio API validation errors from error response
@@ -96,333 +102,6 @@ const extractAttioMessage = (error: unknown): string | null => {
     // ignore
   }
   return null;
-};
-
-/**
- * Enhance error messages for select/status attribute errors
- * Detects "Cannot find select option" or "Cannot find Status" errors
- * and provides valid options from AttributeOptionsService
- *
- * @param error - The original error
- * @param resourceType - The resource type (companies, deals, etc.)
- * @param recordData - The record data that was submitted
- * @returns Enhanced error message with valid options, or null if not a select/status error
- */
-const enhanceSelectStatusError = async (
-  error: unknown,
-  resourceType: string,
-  recordData: Record<string, unknown>
-): Promise<string | null> => {
-  const msg = error instanceof Error ? error.message : String(error);
-
-  // Attempt to extract validation_errors array for better detail on select fields
-  if (
-    error &&
-    typeof error === 'object' &&
-    'response' in error &&
-    error.response &&
-    typeof error.response === 'object' &&
-    'data' in error.response
-  ) {
-    const data = (error.response as Record<string, unknown>).data;
-    if (data && typeof data === 'object' && 'validation_errors' in data) {
-      const validationErrors = (data as Record<string, unknown>)
-        .validation_errors;
-      if (Array.isArray(validationErrors)) {
-        const selectErr = validationErrors.find((ve) =>
-          String(ve?.message || '').includes('select option')
-        );
-        if (selectErr?.field) {
-          try {
-            const { AttributeOptionsService } = await import(
-              '../../../../services/metadata/index.js'
-            );
-            const { options, attributeType } =
-              await AttributeOptionsService.getOptions(
-                resourceType,
-                selectErr.field as string
-              );
-            const validList = options
-              .slice(0, 8)
-              .map((o) => o.title)
-              .join(', ');
-            const hasMore =
-              options.length > 8 ? ` (+${options.length - 8} more)` : '';
-            return `Value is not valid for ${attributeType} attribute "${selectErr.field}" on ${resourceType}.
-Expected one of: ${validList}${hasMore}
-
-Next step: Call records_get_attribute_options with
-  resource_type: "${resourceType}"
-  attribute: "${selectErr.field}"
-to list all valid values, then retry.`;
-          } catch {
-            return `Value is not valid for attribute "${selectErr.field}" on ${resourceType}.
-Next step: Call records_get_attribute_options with
-  resource_type: "${resourceType}"
-  attribute: "${selectErr.field}"
-to see valid options, then retry.`;
-          }
-        }
-      }
-    }
-  }
-
-  // Pattern: "Cannot find select option with title 'X'" or "Cannot find Status with title 'X'"
-  const selectMatch = msg.match(
-    /Cannot find (?:select option|Status) with title "(.+?)"/
-  );
-  if (!selectMatch) return null;
-
-  const invalidValue = selectMatch[1];
-
-  // Try to identify which field has the problem by checking record data
-  for (const [fieldName, fieldValue] of Object.entries(recordData)) {
-    if (
-      fieldValue === invalidValue ||
-      (Array.isArray(fieldValue) && fieldValue.includes(invalidValue))
-    ) {
-      try {
-        // Dynamic import to avoid circular dependencies
-        const { AttributeOptionsService } = await import(
-          '../../../../services/metadata/index.js'
-        );
-        const { options, attributeType } =
-          await AttributeOptionsService.getOptions(resourceType, fieldName);
-        const validList = options
-          .slice(0, 8)
-          .map((o) => o.title)
-          .join(', ');
-        const hasMore =
-          options.length > 8 ? ` (+${options.length - 8} more)` : '';
-        return (
-          `Value "${invalidValue}" is not valid for ${attributeType} attribute "${fieldName}" on ${resourceType}.\n\n` +
-          `Valid options: ${validList}${hasMore}\n\n` +
-          `Next step: Call records_get_attribute_options with\n` +
-          `  resource_type: "${resourceType}"\n` +
-          `  attribute: "${fieldName}"\n` +
-          `to list all valid values, then retry.`
-        );
-      } catch {
-        // Can't fetch options, return generic hint
-        return (
-          `Value "${invalidValue}" is not valid for attribute "${fieldName}" on ${resourceType}.\n\n` +
-          `Next step: Call records_get_attribute_options with\n` +
-          `  resource_type: "${resourceType}"\n` +
-          `  attribute: "${fieldName}"\n` +
-          `to see valid options, then retry.`
-        );
-      }
-    }
-  }
-
-  // Couldn't match to a specific field, return generic hint
-  return (
-    `Value "${invalidValue}" is not valid for an attribute on ${resourceType}.\n\n` +
-    `Next step: Use records_get_attribute_options to discover valid options for the attribute.`
-  );
-};
-
-/**
- * Enhance complex type errors (location, personal-name, phone-number)
- */
-const enhanceComplexTypeError = (
-  error: unknown,
-  recordData?: Record<string, unknown>
-): string | null => {
-  const locationExample =
-    '{\n' +
-    '  "line_1": "123 Main St",\n' +
-    '  "locality": "City",\n' +
-    '  "region": "State",\n' +
-    '  "postcode": "12345",\n' +
-    '  "country_code": "US",\n' +
-    '  "latitude": null,\n' +
-    '  "longitude": null,\n' +
-    '  "line_2": null,\n' +
-    '  "line_3": null,\n' +
-    '  "line_4": null\n' +
-    '}';
-
-  const phoneExample =
-    '{ "phone_number": "+15551234567", "country_code": "US" }';
-  const nameExample = '{ "first_name": "Jane", "last_name": "Doe" }';
-
-  const msg = error instanceof Error ? error.message : String(error);
-
-  const validationErrors =
-    (error as { response?: { data?: { validation_errors?: unknown } } })
-      ?.response?.data?.validation_errors ?? null;
-
-  const recordFields = recordData ? Object.keys(recordData) : [];
-
-  const validationErrorsArray = Array.isArray(validationErrors)
-    ? (validationErrors as unknown[])
-    : null;
-
-  const containsLocation =
-    /location/i.test(msg) ||
-    recordFields.some((f) => /location/i.test(f)) ||
-    (validationErrorsArray &&
-      validationErrorsArray.some((ve) =>
-        /location/i.test(
-          String(
-            (ve as Record<string, unknown>)?.field ||
-              (ve as Record<string, unknown>)?.path ||
-              (ve as Record<string, unknown>)?.message ||
-              ''
-          )
-        )
-      ));
-
-  if (containsLocation) {
-    return (
-      `Invalid location value. Expected an object with all required fields.\n\n` +
-      `Expected structure:\n${locationExample}\n\n` +
-      `Tip: Missing fields are auto-filled with null; pass an object, not a string.`
-    );
-  }
-
-  const containsPhone =
-    /phone/.test(msg) ||
-    (validationErrorsArray &&
-      validationErrorsArray.some((ve) =>
-        /phone/.test(
-          String(
-            (ve as Record<string, unknown>)?.field ||
-              (ve as Record<string, unknown>)?.path ||
-              (ve as Record<string, unknown>)?.message ||
-              ''
-          )
-        )
-      ));
-
-  if (containsPhone) {
-    return (
-      `Invalid phone-number value. Provide phone_number or original_phone_number strings.\n\n` +
-      `Example: ${phoneExample}\n\n` +
-      `Tip: Strings are normalized to E.164; keep label/type fields if needed.`
-    );
-  }
-
-  const containsPersonalName =
-    /personal-name/.test(msg) ||
-    (validationErrorsArray &&
-      validationErrorsArray.some((ve) =>
-        /name/.test(
-          String(
-            (ve as Record<string, unknown>)?.field ||
-              (ve as Record<string, unknown>)?.path ||
-              (ve as Record<string, unknown>)?.message ||
-              ''
-          )
-        )
-      ));
-
-  if (containsPersonalName) {
-    return (
-      `Invalid personal-name value. Provide first_name/last_name or full_name.\n\n` +
-      `Example: ${nameExample}\n\n` +
-      `Tip: Strings are parsed automatically; empty strings are rejected.`
-    );
-  }
-
-  return null;
-};
-
-/**
- * Issue #997: Enhance error messages for record-reference attribute errors
- * Detects "Missing target_object on record reference value" and similar errors
- *
- * @param error - The original error
- * @param recordData - The record data that was submitted (optional)
- * @returns Enhanced error message with format guidance, or null if not a record-reference error
- */
-const enhanceRecordReferenceError = (
-  error: unknown,
-  recordData?: Record<string, unknown>
-): string | null => {
-  const msg = error instanceof Error ? error.message : String(error);
-
-  // Also check for validation_errors in axios response
-  let fullErrorText = msg;
-  if (
-    error &&
-    typeof error === 'object' &&
-    'response' in error &&
-    error.response &&
-    typeof error.response === 'object' &&
-    'data' in error.response
-  ) {
-    const data = (error.response as Record<string, unknown>).data;
-    if (data && typeof data === 'object') {
-      if ('message' in data) {
-        fullErrorText +=
-          ' ' + String((data as Record<string, unknown>).message);
-      }
-      if ('validation_errors' in data) {
-        const validationErrors = (data as Record<string, unknown>)
-          .validation_errors;
-        if (Array.isArray(validationErrors)) {
-          fullErrorText +=
-            ' ' +
-            validationErrors
-              .map((e: Record<string, unknown>) => String(e.message || e))
-              .join(' ');
-        }
-      }
-    }
-  }
-
-  // Pattern detection for record-reference errors
-  const isRecordRefError =
-    fullErrorText.includes('Missing target_object') ||
-    fullErrorText.includes('record reference') ||
-    fullErrorText.includes('target_record_id') ||
-    (fullErrorText.includes('Invalid value was passed to attribute') &&
-      (fullErrorText.includes('company') ||
-        fullErrorText.includes('associated_people') ||
-        fullErrorText.includes('associated_company') ||
-        fullErrorText.includes('main_contact')));
-
-  if (!isRecordRefError) return null;
-
-  // Try to identify which field might be the issue
-  const potentialRefFields = [
-    'company',
-    'associated_company',
-    'associated_people',
-    'main_contact',
-    'person',
-    'people',
-  ];
-
-  let affectedField: string | null = null;
-  if (recordData) {
-    for (const field of potentialRefFields) {
-      if (field in recordData) {
-        affectedField = field;
-        break;
-      }
-    }
-  }
-
-  let message = `Record reference format error`;
-  if (affectedField) {
-    message += ` on field "${affectedField}"`;
-  }
-  message += `.\n\n`;
-
-  message += `The Attio API expects record-reference fields in this format:\n`;
-  message += `  [{ "target_object": "object_type", "target_record_id": "uuid" }]\n\n`;
-
-  message += `Simplified formats (auto-transformed by this server):\n`;
-  message += `  • String: "company": "record-uuid"\n`;
-  message += `  • Legacy object: "company": {"record_id": "uuid"}\n\n`;
-
-  message += `If you're seeing this error, the auto-transformation may have failed.\n`;
-  message += `Ensure the record ID is valid and the field name is correct.`;
-
-  return message;
 };
 
 /**
@@ -511,40 +190,42 @@ export const handleCreateError = async (
   }
 
   // Check for complex type errors (location, phone, personal-name)
-  const complexTypeError = enhanceComplexTypeError(error, recordData);
-  if (complexTypeError) {
-    const errorResult = createErrorResult(
-      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${complexTypeError}`,
-      'validation_error',
-      { context }
-    );
-    throw errorResult;
+  if (complexTypeEnhancer.matches(error, context)) {
+    const enhancedMessage = await complexTypeEnhancer.enhance(error, context);
+    if (enhancedMessage) {
+      throw createErrorResult(
+        `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
+        complexTypeEnhancer.errorName,
+        { context }
+      );
+    }
   }
 
   // Check for select/status errors and enhance with valid options
-  const enhancedSelectError = await enhanceSelectStatusError(
-    error,
-    resourceType,
-    recordData
-  );
-  if (enhancedSelectError) {
-    const errorResult = createErrorResult(
-      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
-      'value_not_found',
-      { context }
-    );
-    throw errorResult;
+  if (selectStatusEnhancer.matches(error, context)) {
+    const enhancedMessage = await selectStatusEnhancer.enhance(error, context);
+    if (enhancedMessage) {
+      throw createErrorResult(
+        `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
+        selectStatusEnhancer.errorName,
+        { context }
+      );
+    }
   }
 
   // Issue #997: Check for record-reference errors and enhance with format guidance
-  const enhancedRefError = enhanceRecordReferenceError(error, recordData);
-  if (enhancedRefError) {
-    const errorResult = createErrorResult(
-      `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedRefError}`,
-      'record_reference_error',
-      { context }
+  if (recordReferenceEnhancer.matches(error, context)) {
+    const enhancedMessage = await recordReferenceEnhancer.enhance(
+      error,
+      context
     );
-    throw errorResult;
+    if (enhancedMessage) {
+      throw createErrorResult(
+        `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
+        recordReferenceEnhancer.errorName,
+        { context }
+      );
+    }
   }
 
   // Fallback to general create error handling
@@ -629,41 +310,43 @@ export const handleUpdateError = async (
   }
 
   // Check for complex type errors (location, phone, personal-name)
-  const complexTypeError = enhanceComplexTypeError(error, recordData);
-  if (complexTypeError) {
-    const errorResult = createErrorResult(
-      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${complexTypeError}`,
-      'validation_error',
-      { context }
-    );
-    throw errorResult;
+  if (complexTypeEnhancer.matches(error, context)) {
+    const enhancedMessage = await complexTypeEnhancer.enhance(error, context);
+    if (enhancedMessage) {
+      throw createErrorResult(
+        `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
+        complexTypeEnhancer.errorName,
+        { context }
+      );
+    }
   }
 
   // Check for select/status errors and enhance with valid options
   // (Must come before "not found" check since select errors contain "not found")
-  const enhancedSelectError = await enhanceSelectStatusError(
-    error,
-    resourceType,
-    recordData
-  );
-  if (enhancedSelectError) {
-    const errorResult = createErrorResult(
-      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedSelectError}`,
-      'value_not_found',
-      { context }
-    );
-    throw errorResult;
+  if (selectStatusEnhancer.matches(error, context)) {
+    const enhancedMessage = await selectStatusEnhancer.enhance(error, context);
+    if (enhancedMessage) {
+      throw createErrorResult(
+        `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
+        selectStatusEnhancer.errorName,
+        { context }
+      );
+    }
   }
 
   // Issue #997: Check for record-reference errors and enhance with format guidance
-  const enhancedRefError = enhanceRecordReferenceError(error, recordData);
-  if (enhancedRefError) {
-    const errorResult = createErrorResult(
-      `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedRefError}`,
-      'record_reference_error',
-      { context }
+  if (recordReferenceEnhancer.matches(error, context)) {
+    const enhancedMessage = await recordReferenceEnhancer.enhance(
+      error,
+      context
     );
-    throw errorResult;
+    if (enhancedMessage) {
+      throw createErrorResult(
+        `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
+        recordReferenceEnhancer.errorName,
+        { context }
+      );
+    }
   }
 
   // Handle record not found errors
