@@ -37,4 +37,16 @@ export interface ErrorEnhancer {
   errorName: string;
 }
 
+/**
+ * Extract error message from Error instances, axios-style errors, or objects
+ * Handles both real Error instances and test mocks with message properties
+ */
+export const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as Record<string, unknown>).message);
+  }
+  return String(error);
+};
+
 export type { ValidationMetadata };

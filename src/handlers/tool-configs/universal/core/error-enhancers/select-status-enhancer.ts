@@ -7,6 +7,7 @@
  */
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
+import { getErrorMessage } from './types.js';
 
 /**
  * Enhance error messages for select/status attribute errors
@@ -16,7 +17,7 @@ const enhanceSelectStatusError = async (
   resourceType: string,
   recordData: Record<string, unknown>
 ): Promise<string | null> => {
-  const msg = error instanceof Error ? error.message : String(error);
+  const msg = getErrorMessage(error);
 
   // Attempt to extract validation_errors array for better detail on select fields
   if (
@@ -132,7 +133,7 @@ export const selectStatusEnhancer: ErrorEnhancer = {
   errorName: 'value_not_found',
 
   matches: (error: unknown, _context: CrudErrorContext): boolean => {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     return (
       msg.includes('Cannot find select option') ||
       msg.includes('Cannot find Status') ||

@@ -7,6 +7,7 @@
  */
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
+import { getErrorMessage } from './types.js';
 
 /**
  * Enhance complex type errors (location, personal-name, phone-number)
@@ -33,7 +34,7 @@ const enhanceComplexTypeError = (
     '{ "phone_number": "+15551234567", "country_code": "US" }';
   const nameExample = '{ "first_name": "Jane", "last_name": "Doe" }';
 
-  const msg = error instanceof Error ? error.message : String(error);
+  const msg = getErrorMessage(error);
 
   const validationErrors =
     (error as { response?: { data?: { validation_errors?: unknown } } })
@@ -124,7 +125,7 @@ export const complexTypeEnhancer: ErrorEnhancer = {
   errorName: 'validation_error',
 
   matches: (error: unknown, _context: CrudErrorContext): boolean => {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     return (
       /location/i.test(msg) ||
       /phone/.test(msg) ||

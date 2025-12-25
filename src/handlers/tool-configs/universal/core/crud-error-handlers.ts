@@ -1,19 +1,39 @@
 /**
  * CRUD-Specific Error Handlers
  *
- * Replaces the generic error delegation pattern with operation-specific
- * error handling to improve error boundaries and provide more precise
- * error messages for different CRUD operations.
+ * Uses Strategy Pattern with error enhancers for operation-specific
+ * error handling with precise error messages.
+ *
+ * Architecture:
+ * - Error enhancers in ./error-enhancers/ handle specific patterns
+ * - Handlers run enhancers in priority order via pipelines
+ * - First matching enhancer wins (order matters)
+ * - Fallback to generic error if no match
+ *
+ * Enhancer Pipelines:
+ * - CREATE_ERROR_ENHANCERS: required-fields → uniqueness → attribute-not-found
+ *   → complex-type → select-status → record-reference
+ * - UPDATE_ERROR_ENHANCERS: attribute-not-found → complex-type → select-status
+ *   → record-reference
+ *
+ * Benefits:
+ * - 62% code reduction (1156 → 440 lines)
+ * - Enhanced error messages with actionable guidance
+ * - Maintainable: add new enhancers without touching core logic
+ * - Testable: each enhancer can be tested in isolation
+ *
+ * @see ./error-enhancers/ for individual enhancer implementations
+ * @see Issue #1001: Strategy Pattern refactoring
+ * @see Issue #990: Uniqueness constraint violation handling
+ * @see Issue #997: Record-reference format error handling
  */
 
 // import { ErrorService } from '../../../../services/ErrorService.js'; // Not used yet
 import { createScopedLogger } from '../../../../utils/logger.js';
-import { requiredFieldsEnhancer } from './error-enhancers/required-fields-enhancer.js';
-import { uniquenessEnhancer } from './error-enhancers/uniqueness-enhancer.js';
-import { attributeNotFoundEnhancer } from './error-enhancers/attribute-enhancer.js';
-import { selectStatusEnhancer } from './error-enhancers/select-status-enhancer.js';
-import { complexTypeEnhancer } from './error-enhancers/complex-type-enhancer.js';
-import { recordReferenceEnhancer } from './error-enhancers/record-reference-enhancer.js';
+import {
+  CREATE_ERROR_ENHANCERS,
+  UPDATE_ERROR_ENHANCERS,
+} from './error-enhancers/index.js';
 // Create a simple error result function
 const createErrorResult = (
   message: string,
@@ -140,91 +160,20 @@ export const handleCreateError = async (
     recordData, // This will be sanitized by sanitizedLog
   });
 
-  // Handle creation-specific error patterns
-  // Check for required field errors
-  if (requiredFieldsEnhancer.matches(error, context)) {
-    const enhancedMessage = await requiredFieldsEnhancer.enhance(
-      error,
-      context
-    );
-    if (enhancedMessage) {
-      const resourceName = getSingularResourceType(
-        resourceType as UniversalResourceType
-      );
-      throw createErrorResult(
-        `Failed to create ${resourceName}: ${enhancedMessage}`,
-        requiredFieldsEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Check for uniqueness/duplicate errors (Issue #990)
-  if (uniquenessEnhancer.matches(error, context)) {
-    const enhancedMessage = await uniquenessEnhancer.enhance(error, context);
-    if (enhancedMessage) {
-      const resourceName = getSingularResourceType(
-        resourceType as UniversalResourceType
-      );
-      throw createErrorResult(
-        `Failed to create ${resourceName}: ${enhancedMessage}`,
-        uniquenessEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Check for attribute-not-found errors (must come before select/status check)
-  if (attributeNotFoundEnhancer.matches(error, context)) {
-    const enhancedMessage = await attributeNotFoundEnhancer.enhance(
-      error,
-      context
-    );
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        attributeNotFoundEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Check for complex type errors (location, phone, personal-name)
-  if (complexTypeEnhancer.matches(error, context)) {
-    const enhancedMessage = await complexTypeEnhancer.enhance(error, context);
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        complexTypeEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Check for select/status errors and enhance with valid options
-  if (selectStatusEnhancer.matches(error, context)) {
-    const enhancedMessage = await selectStatusEnhancer.enhance(error, context);
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        selectStatusEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Issue #997: Check for record-reference errors and enhance with format guidance
-  if (recordReferenceEnhancer.matches(error, context)) {
-    const enhancedMessage = await recordReferenceEnhancer.enhance(
-      error,
-      context
-    );
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to create ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        recordReferenceEnhancer.errorName,
-        { context }
-      );
+  // Run enhancer pipeline - order matters (specific errors before generic)
+  for (const enhancer of CREATE_ERROR_ENHANCERS) {
+    if (enhancer.matches(error, context)) {
+      const enhancedMessage = await enhancer.enhance(error, context);
+      if (enhancedMessage) {
+        const resourceName = getSingularResourceType(
+          resourceType as UniversalResourceType
+        );
+        throw createErrorResult(
+          `Failed to create ${resourceName}: ${enhancedMessage}`,
+          enhancer.errorName,
+          { context }
+        );
+      }
     }
   }
 
@@ -294,58 +243,20 @@ export const handleUpdateError = async (
     throw errorResult;
   }
 
-  // Check for attribute-not-found errors (must come before select/status check)
-  if (attributeNotFoundEnhancer.matches(error, context)) {
-    const enhancedMessage = await attributeNotFoundEnhancer.enhance(
-      error,
-      context
-    );
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        attributeNotFoundEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Check for complex type errors (location, phone, personal-name)
-  if (complexTypeEnhancer.matches(error, context)) {
-    const enhancedMessage = await complexTypeEnhancer.enhance(error, context);
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        complexTypeEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Check for select/status errors and enhance with valid options
-  // (Must come before "not found" check since select errors contain "not found")
-  if (selectStatusEnhancer.matches(error, context)) {
-    const enhancedMessage = await selectStatusEnhancer.enhance(error, context);
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        selectStatusEnhancer.errorName,
-        { context }
-      );
-    }
-  }
-
-  // Issue #997: Check for record-reference errors and enhance with format guidance
-  if (recordReferenceEnhancer.matches(error, context)) {
-    const enhancedMessage = await recordReferenceEnhancer.enhance(
-      error,
-      context
-    );
-    if (enhancedMessage) {
-      throw createErrorResult(
-        `Failed to update ${getSingularResourceType(resourceType as UniversalResourceType)}: ${enhancedMessage}`,
-        recordReferenceEnhancer.errorName,
-        { context }
-      );
+  // Run enhancer pipeline - order matters (specific errors before generic)
+  for (const enhancer of UPDATE_ERROR_ENHANCERS) {
+    if (enhancer.matches(error, context)) {
+      const enhancedMessage = await enhancer.enhance(error, context);
+      if (enhancedMessage) {
+        const resourceName = getSingularResourceType(
+          resourceType as UniversalResourceType
+        );
+        throw createErrorResult(
+          `Failed to update ${resourceName}: ${enhancedMessage}`,
+          enhancer.errorName,
+          { context }
+        );
+      }
     }
   }
 
