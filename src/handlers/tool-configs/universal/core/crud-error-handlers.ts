@@ -8,6 +8,7 @@
 
 // import { ErrorService } from '../../../../services/ErrorService.js'; // Not used yet
 import { createScopedLogger } from '../../../../utils/logger.js';
+import { requiredFieldsEnhancer } from './error-enhancers/required-fields-enhancer.js';
 // Create a simple error result function
 const createErrorResult = (
   message: string,
@@ -543,66 +544,7 @@ interface CrudErrorContext {
   validationMetadata?: ValidationMetadata;
 }
 
-const normalizeFieldName = (field: string): string =>
-  field.trim().toLowerCase();
-
-const hasStageField = (recordData: Record<string, unknown>): boolean => {
-  const directKeys = Object.keys(recordData).map(normalizeFieldName);
-  if (
-    directKeys.includes('stage') ||
-    directKeys.includes('deal stage') ||
-    directKeys.includes('status')
-  ) {
-    return true;
-  }
-
-  const values =
-    recordData.values &&
-    typeof recordData.values === 'object' &&
-    recordData.values !== null
-      ? (recordData.values as Record<string, unknown>)
-      : null;
-
-  if (!values) return false;
-
-  const valueKeys = Object.keys(values).map(normalizeFieldName);
-  return (
-    valueKeys.includes('stage') ||
-    valueKeys.includes('deal stage') ||
-    valueKeys.includes('status')
-  );
-};
-
-const buildMissingDealStageMessage = async (
-  recordData: Record<string, unknown>
-): Promise<string | null> => {
-  if (hasStageField(recordData)) return null;
-
-  try {
-    const { AttributeOptionsService } = await import(
-      '../../../../services/metadata/index.js'
-    );
-    const { options } = await AttributeOptionsService.getOptions(
-      'deals',
-      'stage'
-    );
-    const preview = options
-      .slice(0, 5)
-      .map((option) => `"${option.title}"`)
-      .join(', ');
-    const hasMore = options.length > 5 ? ` (+${options.length - 5} more)` : '';
-    return (
-      `Required field "stage" is missing for deals.\n\n` +
-      `Common stage values: ${preview}${hasMore}\n\n` +
-      `For the full list, call: records_get_attribute_options(resource_type="deals", attribute="stage").`
-    );
-  } catch {
-    return (
-      `Required field "stage" is missing for deals.\n\n` +
-      `Call records_get_attribute_options(resource_type="deals", attribute="stage") to retrieve valid stage values, then retry.`
-    );
-  }
-};
+// Required fields enhancer functions moved to error-enhancers/required-fields-enhancer.ts
 
 /**
  * Issue #990: Configuration for unique field searchers per resource type
@@ -740,23 +682,22 @@ export const handleCreateError = async (
   });
 
   // Handle creation-specific error patterns
-  if (error instanceof Error && error.message.includes('required field')) {
-    const resourceName = getSingularResourceType(
-      resourceType as UniversalResourceType
+  // Check for required field errors
+  if (requiredFieldsEnhancer.matches(error, context)) {
+    const enhancedMessage = await requiredFieldsEnhancer.enhance(
+      error,
+      context
     );
-    let message = `Failed to create ${resourceName}: Missing required fields. Please check that all mandatory fields are provided.`;
-
-    if (resourceType === UniversalResourceType.DEALS) {
-      const stageMessage = await buildMissingDealStageMessage(recordData);
-      if (stageMessage) {
-        message = `Failed to create ${resourceName}: ${stageMessage}`;
-      }
+    if (enhancedMessage) {
+      const resourceName = getSingularResourceType(
+        resourceType as UniversalResourceType
+      );
+      throw createErrorResult(
+        `Failed to create ${resourceName}: ${enhancedMessage}`,
+        requiredFieldsEnhancer.errorName,
+        { context }
+      );
     }
-
-    const errorResult = createErrorResult(message, 'validation_error', {
-      context,
-    });
-    throw errorResult;
   }
 
   // Issue #990: Enhanced uniqueness constraint violation handling
