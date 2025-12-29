@@ -116,14 +116,15 @@ Call `create-task` with:
 
 ### Step 6: Document stage change
 
-Call `create-note` with:
+Call `create-note` with markdown for structured logging:
 
 ```json
 {
   "resource_type": "deals",
   "record_id": "<deal_record_id>",
   "title": "Stage Advanced",
-  "content": "Auto-advanced to Proposal Sent based on activity. Next: Follow up in 3 days."
+  "content": "## Stage Change\nAuto-advanced to **Proposal Sent** based on activity.\n\n## Next Steps\n- Follow up in 3 days\n- Prepare proposal document",
+  "format": "markdown"
 }
 ```
 

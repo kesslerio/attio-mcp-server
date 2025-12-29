@@ -11,16 +11,71 @@ import {
   validatePaginationParams,
 } from './field-validator.js';
 
+/**
+ * Fields that should preserve newlines during sanitization.
+ * These are content-heavy fields where multiline formatting is meaningful.
+ */
+const MULTILINE_FIELDS = new Set([
+  'content',
+  'content_markdown',
+  'content_plaintext',
+  'description',
+  'body',
+  'notes',
+]);
+
 export class InputSanitizer {
+  /**
+   * Strip XSS vectors: script tags, event handlers, HTML tags, and stray angle brackets.
+   * Shared by both single-line and multiline sanitization.
+   */
+  private static stripXss(s: string): string {
+    // Remove script tags (keep content inside)
+    s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
+    // Remove event handlers
+    s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
+    // Remove HTML tags
+    s = s.replace(/<\/?[^>]+>/g, '');
+    // Final safety: remove any remaining angle brackets to prevent partial tags
+    s = s.replace(/[<>]/g, '');
+    return s;
+  }
+
   static sanitizeString(input: unknown): string {
     if (typeof input !== 'string') {
       return String(input);
     }
-    let s = input;
-    s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
-    s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
-    s = s.replace(/<\/?[^>]+>/g, '');
+    const s = this.stripXss(input);
     return s.replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Sanitize a multiline string - preserves newlines but normalizes other whitespace.
+   * Still removes XSS/HTML tags and normalizes excessive whitespace within lines.
+   * Used for content fields where line breaks are meaningful (notes, descriptions).
+   */
+  static sanitizeMultilineString(input: unknown): string {
+    if (typeof input !== 'string') {
+      return String(input);
+    }
+    const s = this.stripXss(input);
+
+    // Normalize whitespace per line, but preserve newlines and leading indentation
+    const lines = s.split(/\r?\n/);
+    const normalizedLines = lines.map((line) => {
+      // Preserve leading whitespace (semantic for Markdown indentation)
+      const leadingWhitespace = line.match(/^[ \t]*/)?.[0] || '';
+      const rest = line.slice(leadingWhitespace.length);
+      // Normalize multiple spaces/tabs to single space in content, trim trailing only
+      const normalizedRest = rest.replace(/[ \t]+/g, ' ').trimEnd();
+      return leadingWhitespace + normalizedRest;
+    });
+    let result = normalizedLines.join('\n');
+
+    // Normalize excessive blank lines (more than 2 consecutive) to just 2
+    result = result.replace(/\n{3,}/g, '\n\n');
+
+    return result.trim();
   }
 
   static normalizeEmail(email: unknown): string {
@@ -62,6 +117,11 @@ export class InputSanitizer {
               ? this.normalizeEmail(v)
               : (this.sanitizeObject(v) as SanitizedValue)
           );
+          continue;
+        }
+        // Multiline field handling - preserve newlines for content fields
+        if (MULTILINE_FIELDS.has(lowerKey) && typeof value === 'string') {
+          result[key] = this.sanitizeMultilineString(value);
           continue;
         }
         result[key] = this.sanitizeObject(value);

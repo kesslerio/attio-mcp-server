@@ -481,10 +481,27 @@ Create note linked to record.
   resource_type: string,   // 'companies', 'deals', 'people', etc.
   record_id: string,       // UUID of parent record
   title: string,           // Note title
-  content: string,         // Note content
+  content: string,         // Note content (supports full markdown)
   format?: 'plaintext' | 'markdown'  // Optional: content format (default: 'plaintext')
 }
 ```
+
+**Markdown Support**:
+
+Notes support full markdown formatting including:
+
+- Headings: `# H1`, `## H2`, `### H3`
+- Bold/Italic: `**bold**`, `*italic*`
+- Lists: `- bullet` or `1. numbered`
+- Nested lists (use 2 spaces for indentation):
+  ```
+  - Item 1
+    - Nested item
+      - Deeply nested
+  ```
+- Blockquotes: `> quote`
+- Code: `` `inline` `` or fenced blocks
+- Line breaks: Use `\n` for newlines
 
 **Examples**:
 
@@ -503,6 +520,15 @@ Create note linked to record.
   record_id: '123e4567-e89b-12d3-a456-426614174000',
   title: 'Negotiation Update',
   content: '## Summary\n- Price agreed at $75k\n- Legal review in progress',
+  format: 'markdown'
+}
+
+// Note with nested markdown structure
+{
+  resource_type: 'companies',
+  record_id: '550e8400-e29b-41d4-a716-446655440000',
+  title: 'Meeting Notes',
+  content: '# Meeting Notes\n\n## Attendees\n- John Smith\n- Jane Doe\n\n## Action Items\n1. Follow up on proposal\n2. Schedule demo\n  - Technical team\n  - Sales team',
   format: 'markdown'
 }
 ```

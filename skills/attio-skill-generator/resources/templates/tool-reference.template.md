@@ -159,14 +159,29 @@ Update existing task.
 
 ### create-note
 
-Add note to {{workspace.primary_object}} record.
+Add note to {{workspace.primary_object}} record. Supports full markdown formatting.
 
 ```json
 {
   "resource_type": "{{workspace.primary_object}}",
   "record_id": "uuid-here",
   "title": "Note title",
-  "content": "Note content with context"
+  "content": "Note content with context",
+  "format": "markdown"
+}
+```
+
+**Markdown support**: Use `\n` for line breaks. Supports headings (`#`), lists (`-` or `1.`), bold (`**text**`), and nested structures with 2-space indentation.
+
+**Example with markdown**:
+
+```json
+{
+  "resource_type": "{{workspace.primary_object}}",
+  "record_id": "uuid-here",
+  "title": "Meeting Notes",
+  "content": "## Summary\n- Key point 1\n- Key point 2\n\n## Next Steps\n1. Action item",
+  "format": "markdown"
 }
 ```
 

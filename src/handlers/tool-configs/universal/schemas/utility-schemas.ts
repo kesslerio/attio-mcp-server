@@ -17,11 +17,16 @@ export const createNoteSchema = {
       description: 'ID of the record to attach the note to',
     },
     title: { type: 'string' as const, description: 'Title of the note' },
-    content: { type: 'string' as const, description: 'Content of the note' },
+    content: {
+      type: 'string' as const,
+      description:
+        'Note content. Use \\n for line breaks. With format="markdown": supports # headings, - bullets, 1. numbered lists, **bold**, `code`, nested lists (2-space indent).',
+    },
     format: {
       type: 'string' as const,
       enum: ['plaintext', 'markdown'],
-      description: 'Content format (default: plaintext)',
+      description:
+        'Content format. Use "markdown" for rich text: headings, lists, bold, code blocks. Default: plaintext.',
       // Note: Default value 'plaintext' is enforced in src/api/operations/notes.ts:57
       default: 'plaintext',
     },
