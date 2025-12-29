@@ -472,8 +472,7 @@ describe('value-transformer orchestrator', () => {
       const industryTransform = result.transformations.find(
         (t) => t.field === 'industry'
       );
-      // Type name is misleading - it's actually 'title_to_title_array' but named 'select_title_to_id'
-      expect(industryTransform?.type).toBe('select_title_to_id');
+      expect(industryTransform?.type).toBe('select_title_to_array');
 
       // Multi-select-transformer should wrap categories in array (no UUID lookup)
       expect(result.data.categories).toEqual(['SaaS']);
@@ -484,6 +483,55 @@ describe('value-transformer orchestrator', () => {
 
       // Should have exactly 2 transformations (industry + categories)
       expect(result.transformations).toHaveLength(2);
+    });
+
+    it('should report transformation type that accurately describes behavior (Issue #1053)', async () => {
+      // Regression test to prevent reverting to misleading 'select_title_to_id' name
+      // The select-transformer wraps titles in arrays (NOT converts to UUIDs)
+      const { handleUniversalDiscoverAttributes } = await import(
+        '@/handlers/tool-configs/universal/shared-handlers.js'
+      );
+      const { AttributeOptionsService } = await import(
+        '@/services/metadata/index.js'
+      );
+
+      vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
+        all: [
+          {
+            api_slug: 'industry',
+            type: 'select',
+            title: 'Industry',
+            is_multiselect: false,
+          },
+        ],
+      });
+
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [{ id: 'uuid-tech', title: 'Technology', is_archived: false }],
+        attributeType: 'select',
+      });
+
+      const result = await transformRecordValues(
+        { industry: 'Technology' },
+        {
+          resourceType: UniversalResourceType.COMPANIES,
+          operation: 'create',
+        }
+      );
+
+      // Verify transformation produces title array (not UUID array)
+      // This is the actual behavior described by Issue #1045
+      expect(result.data.industry).toEqual(['Technology']); // NOT ['uuid-tech']
+
+      // Verify type name reflects actual behavior
+      const transform = result.transformations[0];
+      expect(transform.type).toBe('select_title_to_array');
+
+      // Explicitly prevent regression to misleading name
+      expect(transform.type).not.toBe('select_title_to_id');
+
+      // Verify description contains the actual title value
+      expect(transform.description).toContain('Technology');
     });
   });
 });

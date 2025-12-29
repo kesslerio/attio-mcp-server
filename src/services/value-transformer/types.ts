@@ -70,7 +70,7 @@ export interface FieldTransformation {
 export type TransformationType =
   | 'status_title_to_id' // "Demo Scheduling" → [{status: "uuid"}]
   | 'multi_select_wrap' // "Inbound" → ["Inbound"]
-  | 'select_title_to_id' // "Technology" → ["uuid"]
+  | 'select_title_to_array' // "Technology" → ["Technology"]
   | 'array_coercion' // Single value to array
   | 'record_reference_format'; // "uuid" → [{target_object: "X", target_record_id: "uuid"}]
 
