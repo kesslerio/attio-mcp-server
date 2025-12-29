@@ -1,13 +1,13 @@
 /**
  * Result formatting module - handles transformation and formatting of tool results
  */
-import { AttioRecord, AttioListEntry } from '../../types/attio.js';
-import { processListEntries } from '../../utils/record-utils.js';
+import { AttioRecord, AttioListEntry } from '@/types/attio.js';
+import { processListEntries } from '@/utils/record-utils.js';
 import {
   safeJsonStringify,
   sanitizeMcpResponse,
-} from '../../utils/json-serializer.js';
-import { createScopedLogger } from '../../utils/logger.js';
+} from '@/utils/json-serializer.js';
+import { createScopedLogger } from '@/utils/logger.js';
 
 // Types for batch operations
 interface BatchOperationResult {
@@ -27,6 +27,12 @@ interface BatchOperationResult {
 interface AttributeValue {
   value?: unknown;
   [key: string]: unknown;
+}
+
+// Type for MCP response format
+interface McpResponse {
+  content: Array<{ type: 'text'; text: string }>;
+  isError: boolean;
 }
 
 /**
@@ -202,7 +208,7 @@ export function formatBatchResults(
 export function formatResponse(
   content: string | unknown,
   isError: boolean = false
-) {
+): McpResponse {
   // Handle non-string content by converting it to a string
   let formattedContent: string;
 
@@ -224,12 +230,10 @@ export function formatResponse(
             })
           : String(content);
     } catch (error: unknown) {
-      if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
-        const log = createScopedLogger('tools.formatters', 'formatResponse');
-        log.warn('Error converting content to string', {
-          error: String(error),
-        });
-      }
+      const log = createScopedLogger('tools.formatters', 'formatResponse');
+      log.debug('Error converting content to string', {
+        error: String(error),
+      });
       formattedContent = 'Error: Content could not be serialized';
     }
   }
@@ -252,5 +256,5 @@ export function formatResponse(
   };
 
   // Sanitize the final response to ensure it's MCP-compatible
-  return sanitizeMcpResponse(response);
+  return sanitizeMcpResponse(response) as McpResponse;
 }
