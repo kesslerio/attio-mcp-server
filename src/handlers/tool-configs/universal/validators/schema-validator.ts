@@ -25,16 +25,27 @@ const MULTILINE_FIELDS = new Set([
 ]);
 
 export class InputSanitizer {
+  /**
+   * Strip XSS vectors: script tags, event handlers, HTML tags, and stray angle brackets.
+   * Shared by both single-line and multiline sanitization.
+   */
+  private static stripXss(s: string): string {
+    // Remove script tags (keep content inside)
+    s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
+    // Remove event handlers
+    s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
+    // Remove HTML tags
+    s = s.replace(/<\/?[^>]+>/g, '');
+    // Final safety: remove any remaining angle brackets to prevent partial tags
+    s = s.replace(/[<>]/g, '');
+    return s;
+  }
+
   static sanitizeString(input: unknown): string {
     if (typeof input !== 'string') {
       return String(input);
     }
-    let s = input;
-    s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
-    s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
-    s = s.replace(/<\/?[^>]+>/g, '');
-    // Final safety: remove any remaining angle brackets to prevent partial tags
-    s = s.replace(/[<>]/g, '');
+    const s = this.stripXss(input);
     return s.replace(/\s+/g, ' ').trim();
   }
 
@@ -47,15 +58,7 @@ export class InputSanitizer {
     if (typeof input !== 'string') {
       return String(input);
     }
-    let s = input;
-    // Security: Remove script tags (keep content inside)
-    s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
-    // Security: Remove event handlers
-    s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
-    // Security: Remove HTML tags
-    s = s.replace(/<\/?[^>]+>/g, '');
-    // Final safety: remove any remaining angle brackets to prevent partial tags
-    s = s.replace(/[<>]/g, '');
+    const s = this.stripXss(input);
 
     // Normalize whitespace per line, but preserve newlines and leading indentation
     const lines = s.split(/\r?\n/);
