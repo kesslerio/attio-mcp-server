@@ -8,50 +8,33 @@ import {
   universalToolDefinitions,
 } from '../../../../src/handlers/tool-configs/universal/index.js';
 import { getToolAliasRegistry } from '../../../../src/config/tool-aliases.js';
+import { ToolAssertions } from '../../../utils/tool-assertions.js';
 
 describe('Tool Name Consistency Validation', () => {
   describe('Advanced Operations Tool Definitions', () => {
     it('should have name property matching object key', () => {
-      for (const [key, definition] of Object.entries(
+      ToolAssertions.expectDefinitionKeyMatch(
         advancedOperationsToolDefinitions
-      )) {
-        expect(definition.name).toBe(
-          key,
-          `Tool definition for "${key}" has mismatched name: "${definition.name}"`
-        );
-      }
+      );
     });
   });
 
   describe('Core Operations Tool Definitions', () => {
     it('should have name property matching object key', () => {
-      for (const [key, definition] of Object.entries(
-        coreOperationsToolDefinitions
-      )) {
-        expect(definition.name).toBe(
-          key,
-          `Tool definition for "${key}" has mismatched name: "${definition.name}"`
-        );
-      }
+      ToolAssertions.expectDefinitionKeyMatch(coreOperationsToolDefinitions);
     });
   });
 
   describe('Tool Arrays Consistency', () => {
     it('coreUniversalTools should use snake_case format', () => {
       for (const toolName of coreUniversalTools) {
-        expect(toolName).not.toMatch(
-          /-/,
-          `Tool name "${toolName}" uses kebab-case; should use snake_case`
-        );
+        ToolAssertions.expectSnakeCase(toolName);
       }
     });
 
     it('advancedUniversalTools should use snake_case format', () => {
       for (const toolName of advancedUniversalTools) {
-        expect(toolName).not.toMatch(
-          /-/,
-          `Tool name "${toolName}" uses kebab-case; should use snake_case`
-        );
+        ToolAssertions.expectSnakeCase(toolName);
       }
     });
   });
@@ -68,28 +51,20 @@ describe('Tool Name Consistency Validation', () => {
 
       for (const toolName of allToolNames) {
         if (kebabCaseExceptions.includes(toolName)) continue;
-
-        expect(toolName).not.toMatch(
-          /-/,
-          `Tool "${toolName}" in universalToolConfigs uses kebab-case; should use snake_case`
-        );
+        ToolAssertions.expectSnakeCase(toolName);
       }
     });
 
     it('should validate ALL tools in universalToolDefinitions match their keys', () => {
       // OpenAI tools use shortened names internally (pre-existing design)
       const openaiToolExceptions = ['openai-search', 'openai-fetch'];
+      const filteredDefinitions = Object.fromEntries(
+        Object.entries(universalToolDefinitions).filter(
+          ([key]) => !openaiToolExceptions.includes(key)
+        )
+      );
 
-      for (const [key, definition] of Object.entries(
-        universalToolDefinitions
-      )) {
-        if (openaiToolExceptions.includes(key)) continue;
-
-        expect(definition.name).toBe(
-          key,
-          `Tool definition key "${key}" has mismatched name property: "${definition.name}"`
-        );
-      }
+      ToolAssertions.expectDefinitionKeyMatch(filteredDefinitions);
     });
 
     it('should validate note tools (create_note, list_notes) use snake_case', () => {
@@ -98,14 +73,14 @@ describe('Tool Name Consistency Validation', () => {
 
       for (const toolName of noteTools) {
         expect(universalToolConfigs[toolName]).toBeDefined();
-        expect(toolName).not.toMatch(/-/);
+        ToolAssertions.expectSnakeCase(toolName);
       }
     });
 
     it('should validate diagnostic tools (smithery_debug_config) use snake_case', () => {
       // Explicitly test diagnostic tool that was missing from array-based validation
       expect(universalToolConfigs.smithery_debug_config).toBeDefined();
-      expect('smithery_debug_config').not.toMatch(/-/);
+      ToolAssertions.expectSnakeCase('smithery_debug_config');
     });
   });
 
@@ -126,8 +101,6 @@ describe('Tool Name Consistency Validation', () => {
         'smithery', // Special prefix for debug tool
       ];
 
-      // Pattern allows both underscore and hyphen separators
-      const verbPattern = new RegExp(`^(${verbFirstVerbs.join('|')})(_|-)`);
       const allTools = [
         ...coreUniversalTools,
         ...advancedUniversalTools,
@@ -139,10 +112,7 @@ describe('Tool Name Consistency Validation', () => {
       ];
 
       for (const toolName of allTools) {
-        expect(toolName).toMatch(
-          verbPattern,
-          `Tool "${toolName}" does not follow verb-first naming pattern (should start with: ${verbFirstVerbs.join(', ')})`
-        );
+        ToolAssertions.expectVerbFirst(toolName, verbFirstVerbs);
       }
     });
 
@@ -162,13 +132,7 @@ describe('Tool Name Consistency Validation', () => {
       ];
 
       const allToolNames = Object.keys(universalToolConfigs);
-
-      for (const badPattern of nounVerbPatterns) {
-        expect(allToolNames).not.toContain(
-          badPattern,
-          `Found deprecated noun-verb pattern "${badPattern}" in tool configs`
-        );
-      }
+      ToolAssertions.expectNoForbiddenPatterns(allToolNames, nounVerbPatterns);
     });
   });
 
@@ -192,10 +156,7 @@ describe('Tool Name Consistency Validation', () => {
         ];
 
         if (!specialCases.includes(definition.target)) {
-          expect(definition.target).not.toMatch(
-            /-/,
-            `Alias "${alias}" points to kebab-case target "${definition.target}"; should use snake_case`
-          );
+          ToolAssertions.expectSnakeCase(definition.target);
         }
       }
     });
@@ -213,13 +174,10 @@ describe('Tool Name Consistency Validation', () => {
         'get-record-details': 'get_record_details',
       };
 
-      for (const [kebab, expectedSnake] of Object.entries(
+      ToolAssertions.expectKebabToSnakeMappings(
+        registry,
         kebabToSnakeCaseMappings
-      )) {
-        const aliasDefinition = registry[kebab];
-        expect(aliasDefinition).toBeDefined();
-        expect(aliasDefinition.target).toBe(expectedSnake);
-      }
+      );
     });
 
     it('should validate all noun-verb aliases point to verb-first targets', () => {
@@ -236,24 +194,15 @@ describe('Tool Name Consistency Validation', () => {
         records_batch: 'batch_records',
       };
 
-      for (const [nounVerb, expectedVerbFirst] of Object.entries(
+      ToolAssertions.expectNounVerbToVerbFirstMappings(
+        registry,
         nounVerbToVerbFirstMappings
-      )) {
-        const aliasDefinition = registry[nounVerb];
-        expect(aliasDefinition).toBeDefined();
-        expect(aliasDefinition.target).toBe(expectedVerbFirst);
-      }
+      );
     });
 
     it('should validate all aliases have deprecation metadata', () => {
       const registry = getToolAliasRegistry();
-      const aliasEntries = Object.entries(registry);
-
-      for (const [alias, definition] of aliasEntries) {
-        expect(definition.since).toBeDefined();
-        expect(definition.removal).toBe('v2.0.0');
-        expect(definition.reason).toContain('#1039');
-      }
+      ToolAssertions.expectDeprecationMetadata(registry, 'v2.0.0', '#1039');
     });
   });
 });
