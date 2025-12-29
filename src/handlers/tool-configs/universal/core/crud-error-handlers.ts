@@ -33,6 +33,7 @@ import {
   CREATE_ERROR_ENHANCERS,
   UPDATE_ERROR_ENHANCERS,
   type CrudErrorContext,
+  type ErrorEnhancer,
 } from './error-enhancers/index.js';
 
 /**
@@ -75,12 +76,70 @@ const createErrorResult = (
   }
   return error;
 };
+
 import { getSingularResourceType } from '../shared-handlers.js';
 import { UniversalResourceType } from '../types.js';
 import type { ValidationMetadata } from './utils.js';
 import { sanitizedLog } from './pii-sanitizer.js';
 
 const logger = createScopedLogger('crud-error-handlers');
+
+/**
+ * Execute enhancer with comprehensive error handling
+ *
+ * Protects the enhancer pipeline from crashes by catching exceptions in both
+ * pattern matching (matches()) and enhancement execution (enhance()). This ensures
+ * that a single enhancer failure doesn't prevent other enhancers from running or
+ * hide the original error from the user.
+ *
+ * @param enhancer - Error enhancer to execute
+ * @param error - Original error from CRUD operation
+ * @param context - Error context (operation, resourceType, recordData, etc.)
+ * @param logger - Scoped logger for error tracking
+ * @returns Enhanced message or null if enhancer failed to match/enhance
+ *
+ * @see Issue #1050 - Post-review fix: Unprotected enhancer pipeline
+ */
+async function executeEnhancerSafely(
+  enhancer: ErrorEnhancer,
+  error: unknown,
+  context: CrudErrorContext,
+  logger: ReturnType<typeof createScopedLogger>
+): Promise<string | null> {
+  try {
+    // Outer try-catch: protect against pattern matching failures
+    if (enhancer.matches(error, context)) {
+      try {
+        // Inner try-catch: protect against enhancement execution failures
+        const enhancedMessage = await enhancer.enhance(error, context);
+        return enhancedMessage;
+      } catch (enhanceError) {
+        // Log enhancement failure with context, continue to next enhancer
+        sanitizedLog(logger, 'warn', 'Enhancer execution failed', {
+          enhancerName: enhancer.name,
+          enhancerError:
+            enhanceError instanceof Error
+              ? enhanceError.message
+              : String(enhanceError),
+          originalError: error instanceof Error ? error.message : String(error),
+          operation: context.operation,
+          resourceType: context.resourceType,
+        });
+        return null;
+      }
+    }
+    return null;
+  } catch (matchError) {
+    // Log pattern matching failure with context, continue to next enhancer
+    sanitizedLog(logger, 'warn', 'Enhancer pattern matching failed', {
+      enhancerName: enhancer.name,
+      matchError:
+        matchError instanceof Error ? matchError.message : String(matchError),
+      originalError: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
 
 // Enhancer functions moved to error-enhancers/:
 // - attribute-enhancer.ts: levenshteinDistance, findSimilarAttributes, enhanceAttributeNotFoundError
@@ -178,19 +237,23 @@ export const handleCreateError = async (
   });
 
   // Run enhancer pipeline - order matters (specific errors before generic)
+  // Use safe execution to prevent pipeline crashes from enhancer failures
   for (const enhancer of CREATE_ERROR_ENHANCERS) {
-    if (enhancer.matches(error, context)) {
-      const enhancedMessage = await enhancer.enhance(error, context);
-      if (enhancedMessage) {
-        const resourceName = getSingularResourceType(
-          resourceType as UniversalResourceType
-        );
-        throw createErrorResult(
-          `Failed to create ${resourceName}: ${enhancedMessage}`,
-          enhancer.errorName,
-          { context }
-        );
-      }
+    const enhancedMessage = await executeEnhancerSafely(
+      enhancer,
+      error,
+      context,
+      logger
+    );
+    if (enhancedMessage) {
+      const resourceName = getSingularResourceType(
+        resourceType as UniversalResourceType
+      );
+      throw createErrorResult(
+        `Failed to create ${resourceName}: ${enhancedMessage}`,
+        enhancer.errorName,
+        { context }
+      );
     }
   }
 
@@ -261,19 +324,23 @@ export const handleUpdateError = async (
   }
 
   // Run enhancer pipeline - order matters (specific errors before generic)
+  // Use safe execution to prevent pipeline crashes from enhancer failures
   for (const enhancer of UPDATE_ERROR_ENHANCERS) {
-    if (enhancer.matches(error, context)) {
-      const enhancedMessage = await enhancer.enhance(error, context);
-      if (enhancedMessage) {
-        const resourceName = getSingularResourceType(
-          resourceType as UniversalResourceType
-        );
-        throw createErrorResult(
-          `Failed to update ${resourceName}: ${enhancedMessage}`,
-          enhancer.errorName,
-          { context }
-        );
-      }
+    const enhancedMessage = await executeEnhancerSafely(
+      enhancer,
+      error,
+      context,
+      logger
+    );
+    if (enhancedMessage) {
+      const resourceName = getSingularResourceType(
+        resourceType as UniversalResourceType
+      );
+      throw createErrorResult(
+        `Failed to update ${resourceName}: ${enhancedMessage}`,
+        enhancer.errorName,
+        { context }
+      );
     }
   }
 
