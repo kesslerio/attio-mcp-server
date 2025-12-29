@@ -204,5 +204,29 @@ describe('Tool Name Consistency Validation', () => {
       const registry = getToolAliasRegistry();
       ToolAssertions.expectDeprecationMetadata(registry, 'v2.0.0', '#1039');
     });
+
+    it('should freeze alias registry to prevent adding new aliases', () => {
+      const registry = getToolAliasRegistry();
+
+      // Verify registry is frozen at the top level
+      expect(Object.isFrozen(registry)).toBe(true);
+
+      // Verify new aliases cannot be added
+      expect(() => {
+        // @ts-expect-error - Testing immutability at runtime
+        registry['new-alias'] = {
+          target: 'search_records',
+          reason: 'test',
+          since: '2025-01-01',
+          removal: 'v3.0.0',
+        };
+      }).toThrow();
+
+      // Verify deleting aliases is not allowed
+      expect(() => {
+        // @ts-expect-error - Testing immutability at runtime
+        delete registry['records_search'];
+      }).toThrow();
+    });
   });
 });

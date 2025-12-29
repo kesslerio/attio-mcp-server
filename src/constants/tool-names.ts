@@ -20,6 +20,13 @@
 
 /**
  * All canonical MCP-compliant tool names (snake_case, verb-first).
+ *
+ * NOTE: Excludes special tools that use kebab-case by design:
+ * - aaa-health-check (health monitoring)
+ * - openai-search, openai-fetch (OpenAI integration)
+ *
+ * These special tools are not included because they intentionally use
+ * kebab-case naming for specific integration purposes.
  */
 export const TOOL_NAMES = {
   // Core search/metadata tools

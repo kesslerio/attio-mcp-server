@@ -44,6 +44,11 @@ interface AliasPattern {
 /**
  * Generates noun-verb to verb-first aliases.
  * Pattern: records_{verb} → {verb}_records
+ *
+ * Examples:
+ * - records_search → search_records
+ * - records_batch → batch_records
+ * - records_get_details → get_record_details
  */
 const NOUN_VERB_ALIASES: AliasPattern[] = [
   {
@@ -111,6 +116,11 @@ const NOUN_VERB_ALIASES: AliasPattern[] = [
 /**
  * Generates kebab-case to snake_case aliases.
  * Pattern: {name-with-dashes} → {name_with_underscores}
+ *
+ * Examples:
+ * - search-records → search_records
+ * - create-record → create_record
+ * - get-record-details → get_record_details
  */
 const KEBAB_CASE_ALIASES: AliasPattern[] = [
   // Search/metadata tools
