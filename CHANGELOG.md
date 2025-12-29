@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **People search results display** (#1051) - Fixed people search showing "Unnamed" instead of actual names
+  - Updated `getAttributeValue()` to handle `personal-name` attributes with `full_name`, `first_name`, `last_name` fields
+  - Added fallback support for `formatted` attribute values
+  - Maintains backward compatibility with standard `value` attributes
+
 ### Changed
 
 ## [2025-12-24] - Daily Update
