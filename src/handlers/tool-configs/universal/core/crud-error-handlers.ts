@@ -39,27 +39,36 @@ import {
 /**
  * Create enhanced error result for CRUD operations
  *
- * NOTE: This differs from ErrorService.createUniversalError which is designed
- * for universal tool handlers. Error enhancers construct CUSTOM messages with
- * actionable guidance, rather than just extracting original error messages.
+ * NOTE: This differs from ErrorService.createUniversalError in ARCHITECTURAL SCOPE,
+ * not functionality. Both functions enhance error messages; the difference is WHERE
+ * in the call stack they're used.
  *
- * ErrorService.createUniversalError is for the tool handler layer:
- * - Extracts original error messages from Attio API responses
- * - Used in universal tool handlers (records_create, records_update, etc.)
+ * ErrorService.createUniversalError:
+ * - Used at the TOOL HANDLER LAYER (universal operations boundary)
+ * - Wraps ALL errors from universal handlers (records_create, records_update, etc.)
+ * - Adds operation/resource context, classifies error types, provides guidance
+ * - Entry point for all universal tool error handling
  *
- * createErrorResult is for the service/enhancer layer:
- * - Constructs enhanced messages with contextual guidance
- * - Used by error enhancers to provide actionable error messages
- * - Includes suggestions, valid options, and next steps
+ * createErrorResult:
+ * - Used within the ENHANCER LAYER (internal to CRUD error handling)
+ * - Constructs specific messages with actionable, pattern-matched guidance
+ * - Called by individual enhancers AFTER pattern matching succeeds
+ * - Returns already-enhanced messages (not extracting from original errors)
  *
- * @param message - Enhanced error message from enhancer (includes guidance)
- * @param name - Error type name from enhancer.errorName
- * @param details - Optional context details (operation, resourceType, etc.)
- * @returns Error with enhanced message and metadata
+ * Call Stack Example:
+ *   records_create (tool)
+ *     → handleCreateError (this file)
+ *       → enhancer.enhance() → createErrorResult()  ← YOU ARE HERE
+ *     → ErrorService.createUniversalError (wraps everything)
+ *
+ * @param message - Enhanced error message from enhancer (includes guidance, suggestions, examples)
+ * @param name - Error type name from enhancer.errorName (e.g., 'validation_error', 'duplicate_error')
+ * @param details - Optional context details (operation, resourceType, recordData, etc.)
+ * @returns Error object with enhanced message and metadata
  *
  * @example
  * createErrorResult(
- *   "Missing required field: stage. Use records_discover_attributes to see all fields.",
+ *   "Missing required field: stage. Valid options: MQL, SQL, Demo. Use records_get_attribute_options to see all.",
  *   "validation_error",
  *   { context: { operation: "create", resourceType: "deals" } }
  * )
