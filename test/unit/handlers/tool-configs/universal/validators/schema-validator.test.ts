@@ -92,6 +92,28 @@ describe('InputSanitizer', () => {
         'undefined'
       );
     });
+
+    it('should preserve leading indentation for nested markdown', () => {
+      const input = '- Item 1\n  - Nested Item\n    - Deeply nested';
+      const result = InputSanitizer.sanitizeMultilineString(input);
+      expect(result).toBe('- Item 1\n  - Nested Item\n    - Deeply nested');
+      // Verify leading spaces are preserved
+      expect(result.split('\n')[1]).toMatch(/^ {2}-/);
+      expect(result.split('\n')[2]).toMatch(/^ {4}-/);
+    });
+
+    it('should preserve indentation for code blocks', () => {
+      const input = '```\n  function foo() {\n    return bar;\n  }\n```';
+      const result = InputSanitizer.sanitizeMultilineString(input);
+      expect(result).toContain('  function');
+      expect(result).toContain('    return');
+    });
+
+    it('should preserve tab indentation', () => {
+      const input = '- Item 1\n\t- Tab indented\n\t\t- Double tab';
+      const result = InputSanitizer.sanitizeMultilineString(input);
+      expect(result).toBe('- Item 1\n\t- Tab indented\n\t\t- Double tab');
+    });
   });
 
   describe('sanitizeObject - field-aware sanitization', () => {
@@ -156,6 +178,28 @@ describe('InputSanitizer', () => {
         unknown
       >;
       expect(result.content_markdown).toBe('# Heading\n\n- Item 1\n- Item 2');
+    });
+
+    it('should preserve newlines in content_plaintext field', () => {
+      const input = {
+        content_plaintext: 'Line 1\nLine 2\nLine 3',
+      };
+      const result = InputSanitizer.sanitizeObject(input) as Record<
+        string,
+        unknown
+      >;
+      expect(result.content_plaintext).toBe('Line 1\nLine 2\nLine 3');
+    });
+
+    it('should preserve newlines in notes field', () => {
+      const input = {
+        notes: 'Note line 1\nNote line 2',
+      };
+      const result = InputSanitizer.sanitizeObject(input) as Record<
+        string,
+        unknown
+      >;
+      expect(result.notes).toBe('Note line 1\nNote line 2');
     });
 
     it('should handle nested objects with content fields', () => {

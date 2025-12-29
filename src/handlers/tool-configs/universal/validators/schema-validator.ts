@@ -53,11 +53,16 @@ export class InputSanitizer {
     // Security: Remove HTML tags
     s = s.replace(/<\/?[^>]+>/g, '');
 
-    // Normalize whitespace per line, but preserve newlines
+    // Normalize whitespace per line, but preserve newlines and leading indentation
     const lines = s.split(/\r?\n/);
-    const normalizedLines = lines.map((line) =>
-      line.replace(/[ \t]+/g, ' ').trim()
-    );
+    const normalizedLines = lines.map((line) => {
+      // Preserve leading whitespace (semantic for Markdown indentation)
+      const leadingWhitespace = line.match(/^[ \t]*/)?.[0] || '';
+      const rest = line.slice(leadingWhitespace.length);
+      // Normalize multiple spaces/tabs to single space in content, trim trailing only
+      const normalizedRest = rest.replace(/[ \t]+/g, ' ').trimEnd();
+      return leadingWhitespace + normalizedRest;
+    });
     let result = normalizedLines.join('\n');
 
     // Normalize excessive blank lines (more than 2 consecutive) to just 2
