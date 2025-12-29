@@ -58,20 +58,34 @@ function getAttributeValue(
   // Handle different value formats
   if (Array.isArray(fieldValue) && fieldValue.length > 0) {
     const firstValue = fieldValue[0];
-    if (
-      typeof firstValue === 'object' &&
-      firstValue !== null &&
-      'value' in firstValue
-    ) {
-      return (firstValue.value as string) || 'Unknown';
+    if (typeof firstValue === 'object' && firstValue !== null) {
+      // Handle personal-name attribute type (full_name, first_name, last_name)
+      if ('full_name' in firstValue) {
+        return (firstValue.full_name as string) || 'Unknown';
+      }
+      // Handle standard value attribute (text, email, etc.)
+      if ('value' in firstValue) {
+        return (firstValue.value as string) || 'Unknown';
+      }
+      // Handle formatted value (some attribute types)
+      if ('formatted' in firstValue) {
+        return (firstValue.formatted as string) || 'Unknown';
+      }
     }
     return String(firstValue) || 'Unknown';
-  } else if (
-    typeof fieldValue === 'object' &&
-    fieldValue !== null &&
-    'value' in fieldValue
-  ) {
-    return (fieldValue.value as string) || 'Unknown';
+  } else if (typeof fieldValue === 'object' && fieldValue !== null) {
+    // Handle personal-name attribute type (full_name, first_name, last_name)
+    if ('full_name' in fieldValue) {
+      return (fieldValue.full_name as string) || 'Unknown';
+    }
+    // Handle standard value attribute (text, email, etc.)
+    if ('value' in fieldValue) {
+      return (fieldValue.value as string) || 'Unknown';
+    }
+    // Handle formatted value (some attribute types)
+    if ('formatted' in fieldValue) {
+      return (fieldValue.formatted as string) || 'Unknown';
+    }
   }
 
   // Fallback for any other format
