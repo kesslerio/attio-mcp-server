@@ -219,7 +219,7 @@ export async function transformRecordValues(
           field,
           from: selectResult.originalValue,
           to: selectResult.transformedValue,
-          type: 'select_title_to_id',
+          type: 'select_title_to_array',
           description: selectResult.description || 'Select value transformed',
         });
         continue;

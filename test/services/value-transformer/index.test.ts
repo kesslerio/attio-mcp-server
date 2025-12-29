@@ -472,8 +472,7 @@ describe('value-transformer orchestrator', () => {
       const industryTransform = result.transformations.find(
         (t) => t.field === 'industry'
       );
-      // Type name is misleading - it's actually 'title_to_title_array' but named 'select_title_to_id'
-      expect(industryTransform?.type).toBe('select_title_to_id');
+      expect(industryTransform?.type).toBe('select_title_to_array');
 
       // Multi-select-transformer should wrap categories in array (no UUID lookup)
       expect(result.data.categories).toEqual(['SaaS']);
