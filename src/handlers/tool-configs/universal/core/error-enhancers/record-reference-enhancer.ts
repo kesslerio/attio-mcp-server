@@ -8,6 +8,7 @@
  */
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
+import { getErrorMessage } from './types.js';
 
 /**
  * Enhance error messages for record-reference attribute errors
@@ -16,7 +17,7 @@ const enhanceRecordReferenceError = (
   error: unknown,
   recordData?: Record<string, unknown>
 ): string | null => {
-  const msg = error instanceof Error ? error.message : String(error);
+  const msg = getErrorMessage(error);
 
   // Also check for validation_errors in axios response
   let fullErrorText = msg;
@@ -109,7 +110,7 @@ export const recordReferenceEnhancer: ErrorEnhancer = {
   errorName: 'record_reference_error',
 
   matches: (error: unknown, _context: CrudErrorContext): boolean => {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
 
     // Check for axios validation errors
     let fullText = msg;
