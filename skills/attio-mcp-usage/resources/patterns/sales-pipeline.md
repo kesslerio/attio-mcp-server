@@ -70,16 +70,19 @@ Call `create-task` with:
 
 ### Step 4: Document opportunity context
 
-Call `create-note` with:
+Call `create-note` with markdown formatting for structured notes:
 
 ```json
 {
   "resource_type": "deals",
   "record_id": "<deal_record_id>",
   "title": "Opportunity Context",
-  "content": "Source: Inbound demo request. Key stakeholders: CTO, VP Eng. Budget confirmed: $50k."
+  "content": "## Source\nInbound demo request\n\n## Key Stakeholders\n- CTO\n- VP Engineering\n\n## Budget\nConfirmed: $50k",
+  "format": "markdown"
 }
 ```
+
+**Tip**: Use `\n` for line breaks, `##` for headings, and `-` for bullet points.
 
 ### Step 5: Progress through stages
 
