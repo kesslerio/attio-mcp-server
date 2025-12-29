@@ -168,11 +168,11 @@ export const createNoteDefinition = {
   name: 'create_note',
   description: formatToolDescription({
     capability:
-      'Create note for companies, people, or deals with optional markdown formatting.',
+      'Create note for companies, people, or deals with full markdown support.',
     boundaries: 'update or delete notes; creates only.',
     requiresApproval: true,
     constraints:
-      'Requires resource_type, record_id, title, content. Optional format (plaintext or markdown).',
+      'Requires resource_type, record_id, title, content. Set format="markdown" for rich formatting: headings (# ## ###), lists (- or 1.), nested bullets (2-space indent), bold (**text**), code blocks. Use \\n for line breaks.',
     recoveryHint: 'If record not found, use records_search first.',
   }),
   inputSchema: createNoteSchema,

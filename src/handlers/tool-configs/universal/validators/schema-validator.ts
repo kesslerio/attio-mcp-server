@@ -33,6 +33,8 @@ export class InputSanitizer {
     s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
     s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
     s = s.replace(/<\/?[^>]+>/g, '');
+    // Final safety: remove any remaining angle brackets to prevent partial tags
+    s = s.replace(/[<>]/g, '');
     return s.replace(/\s+/g, ' ').trim();
   }
 
@@ -52,6 +54,8 @@ export class InputSanitizer {
     s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
     // Security: Remove HTML tags
     s = s.replace(/<\/?[^>]+>/g, '');
+    // Final safety: remove any remaining angle brackets to prevent partial tags
+    s = s.replace(/[<>]/g, '');
 
     // Normalize whitespace per line, but preserve newlines and leading indentation
     const lines = s.split(/\r?\n/);
