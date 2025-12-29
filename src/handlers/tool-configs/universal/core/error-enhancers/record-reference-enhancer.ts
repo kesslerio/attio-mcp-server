@@ -120,15 +120,35 @@ export const recordReferenceEnhancer: ErrorEnhancer = {
       (error.response as Record<string, unknown>)?.data
     ) {
       const data = (error.response as Record<string, unknown>).data;
-      if (typeof data === 'object' && data && 'message' in data) {
-        fullText += ' ' + String((data as Record<string, unknown>).message);
+      if (typeof data === 'object' && data) {
+        if ('message' in data) {
+          fullText += ' ' + String((data as Record<string, unknown>).message);
+        }
+        // CRITICAL: Also check validation_errors array for record-reference patterns
+        if ('validation_errors' in data) {
+          const validationErrors = (data as Record<string, unknown>)
+            .validation_errors;
+          if (Array.isArray(validationErrors)) {
+            fullText +=
+              ' ' +
+              validationErrors
+                .map((e: Record<string, unknown>) => String(e.message || e))
+                .join(' ');
+          }
+        }
       }
     }
 
     return (
       fullText.includes('Missing target_object') ||
       fullText.includes('record reference') ||
-      fullText.includes('target_record_id')
+      fullText.includes('target_record_id') ||
+      // CRITICAL: Match "Invalid value was passed to attribute" pattern (from enhanceRecordReferenceError)
+      (fullText.includes('Invalid value was passed to attribute') &&
+        (fullText.includes('company') ||
+          fullText.includes('associated_people') ||
+          fullText.includes('associated_company') ||
+          fullText.includes('main_contact')))
     );
   },
 
