@@ -448,7 +448,7 @@ export const handleCoreOperationError = async (
     case 'search':
     case 'get details':
       return handleSearchError(error, resourceType, recordData);
-    default:
+    default: {
       // Fallback to general error handling
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -458,5 +458,6 @@ export const handleCoreOperationError = async (
         { operation, resourceType, recordData }
       );
       throw errorResult;
+    }
   }
 };
