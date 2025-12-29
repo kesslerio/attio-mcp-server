@@ -33,6 +33,7 @@ import { createScopedLogger } from '../../../../utils/logger.js';
 import {
   CREATE_ERROR_ENHANCERS,
   UPDATE_ERROR_ENHANCERS,
+  type CrudErrorContext,
 } from './error-enhancers/index.js';
 // Create a simple error result function
 const createErrorResult = (
@@ -123,17 +124,6 @@ const extractAttioMessage = (error: unknown): string | null => {
   }
   return null;
 };
-
-/**
- * Enhanced error context for CRUD operations
- */
-interface CrudErrorContext {
-  operation: 'create' | 'update' | 'delete' | 'search';
-  resourceType: string;
-  recordData?: Record<string, unknown>;
-  recordId?: string;
-  validationMetadata?: ValidationMetadata;
-}
 
 // Required fields enhancer functions moved to error-enhancers/required-fields-enhancer.ts
 // Uniqueness enhancer functions moved to error-enhancers/uniqueness-enhancer.ts
