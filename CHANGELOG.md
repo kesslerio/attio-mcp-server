@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Preserved leading indentation for nested Markdown (bullet lists, code blocks)
   - Added `sanitizeMultilineString()` for content-heavy fields while maintaining XSS security
   - Supports all multiline fields: content, content_markdown, content_plaintext, description, body, notes
+  - Enhanced `create_note` tool description with markdown formatting guidance
+  - **Action**: Re-generate workspace schema skills to get updated note formatting documentation
 
 - **People search results display** (#1051) - Fixed people search showing "Unnamed" instead of actual names
   - Updated `getAttributeValue()` to handle `personal-name` attributes with `full_name`, `first_name`, `last_name` fields
