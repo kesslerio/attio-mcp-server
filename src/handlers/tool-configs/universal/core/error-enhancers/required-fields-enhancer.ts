@@ -8,6 +8,10 @@
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
 import { UniversalResourceType } from '../../types.js';
+import { sanitizedLog } from '../pii-sanitizer.js';
+import { createScopedLogger } from '@/utils/logger.js';
+
+const logger = createScopedLogger('required-fields-enhancer');
 
 /**
  * Normalize field names for comparison
@@ -71,7 +75,18 @@ const buildMissingDealStageMessage = async (
       `Common stage values: ${preview}${hasMore}\n\n` +
       `For the full list, call: records_get_attribute_options(resource_type="deals", attribute="stage").`
     );
-  } catch {
+  } catch (err) {
+    sanitizedLog(
+      logger,
+      'debug',
+      'Failed to fetch stage options for enhanced error message',
+      {
+        enhancerName: 'required-fields',
+        resourceType: 'deals',
+        attribute: 'stage',
+        error: err instanceof Error ? err.message : String(err),
+      }
+    );
     return (
       `Required field "stage" is missing for deals.\n\n` +
       `Call records_get_attribute_options(resource_type="deals", attribute="stage") to retrieve valid stage values, then retry.`

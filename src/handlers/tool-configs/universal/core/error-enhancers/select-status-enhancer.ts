@@ -8,6 +8,10 @@
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
 import { getErrorMessage } from './types.js';
+import { sanitizedLog } from '../pii-sanitizer.js';
+import { createScopedLogger } from '@/utils/logger.js';
+
+const logger = createScopedLogger('select-status-enhancer');
 
 /**
  * Enhance error messages for select/status attribute errors
@@ -59,7 +63,18 @@ Next step: Call records_get_attribute_options with
   resource_type: "${resourceType}"
   attribute: "${selectErr.field}"
 to list all valid values, then retry.`;
-          } catch {
+          } catch (err) {
+            sanitizedLog(
+              logger,
+              'debug',
+              'Failed to fetch select/status options for enhanced error message',
+              {
+                enhancerName: 'select-status',
+                resourceType,
+                attribute: selectErr.field,
+                error: err instanceof Error ? err.message : String(err),
+              }
+            );
             return `Value is not valid for attribute "${selectErr.field}" on ${resourceType}.
 Next step: Call records_get_attribute_options with
   resource_type: "${resourceType}"
@@ -105,7 +120,18 @@ to see valid options, then retry.`;
           `  attribute: "${fieldName}"\n` +
           `to list all valid values, then retry.`
         );
-      } catch {
+      } catch (err) {
+        sanitizedLog(
+          logger,
+          'debug',
+          'Failed to fetch attribute options (no invalid value extracted)',
+          {
+            enhancerName: 'select-status',
+            resourceType,
+            attribute: fieldName,
+            error: err instanceof Error ? err.message : String(err),
+          }
+        );
         return (
           `Value "${invalidValue}" is not valid for attribute "${fieldName}" on ${resourceType}.\n\n` +
           `Next step: Call records_get_attribute_options with\n` +

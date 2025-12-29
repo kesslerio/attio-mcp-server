@@ -11,6 +11,10 @@
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
 import { UniversalResourceType } from '../../types.js';
+import { sanitizedLog } from '../pii-sanitizer.js';
+import { createScopedLogger } from '@/utils/logger.js';
+
+const logger = createScopedLogger('attribute-enhancer');
 
 /**
  * Calculate Levenshtein distance between two strings
@@ -117,7 +121,18 @@ const enhanceAttributeNotFoundError = async (
     message += `to see all valid attributes.`;
 
     return message;
-  } catch {
+  } catch (err) {
+    sanitizedLog(
+      logger,
+      'debug',
+      'Failed to discover attributes for suggestions',
+      {
+        enhancerName: 'attribute-not-found',
+        resourceType,
+        invalidAttribute: invalidAttr,
+        error: err instanceof Error ? err.message : String(err),
+      }
+    );
     return (
       `Attribute "${invalidAttr}" does not exist on ${resourceType}.\n\n` +
       `Next step: Use records_discover_attributes to see valid attributes.`
