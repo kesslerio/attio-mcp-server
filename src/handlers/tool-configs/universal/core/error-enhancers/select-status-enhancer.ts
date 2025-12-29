@@ -7,7 +7,7 @@
  */
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
-import { getErrorMessage } from './types.js';
+import { getErrorMessage, isAxiosError } from './types.js';
 import { sanitizedLog } from '../pii-sanitizer.js';
 import { createScopedLogger } from '@/utils/logger.js';
 
@@ -24,63 +24,52 @@ const enhanceSelectStatusError = async (
   const msg = getErrorMessage(error);
 
   // Attempt to extract validation_errors array for better detail on select fields
-  if (
-    error &&
-    typeof error === 'object' &&
-    'response' in error &&
-    error.response &&
-    typeof error.response === 'object' &&
-    'data' in error.response
-  ) {
-    const data = (error.response as Record<string, unknown>).data;
-    if (data && typeof data === 'object' && 'validation_errors' in data) {
-      const validationErrors = (data as Record<string, unknown>)
-        .validation_errors;
-      if (Array.isArray(validationErrors)) {
-        const selectErr = validationErrors.find((ve) =>
-          String(ve?.message || '').includes('select option')
-        );
-        if (selectErr?.field) {
-          try {
-            const { AttributeOptionsService } = await import(
-              '@/services/metadata/index.js'
+  if (isAxiosError(error)) {
+    const validationErrors = error.response?.data?.validation_errors;
+    if (validationErrors) {
+      const selectErr = validationErrors.find((ve) =>
+        String(ve?.message || '').includes('select option')
+      );
+      if (selectErr?.field) {
+        try {
+          const { AttributeOptionsService } = await import(
+            '@/services/metadata/index.js'
+          );
+          const { options, attributeType } =
+            await AttributeOptionsService.getOptions(
+              resourceType,
+              selectErr.field as string
             );
-            const { options, attributeType } =
-              await AttributeOptionsService.getOptions(
-                resourceType,
-                selectErr.field as string
-              );
-            const validList = options
-              .slice(0, 8)
-              .map((o) => o.title)
-              .join(', ');
-            const hasMore =
-              options.length > 8 ? ` (+${options.length - 8} more)` : '';
-            return `Value is not valid for ${attributeType} attribute "${selectErr.field}" on ${resourceType}.
+          const validList = options
+            .slice(0, 8)
+            .map((o) => o.title)
+            .join(', ');
+          const hasMore =
+            options.length > 8 ? ` (+${options.length - 8} more)` : '';
+          return `Value is not valid for ${attributeType} attribute "${selectErr.field}" on ${resourceType}.
 Expected one of: ${validList}${hasMore}
 
 Next step: Call records_get_attribute_options with
   resource_type: "${resourceType}"
   attribute: "${selectErr.field}"
 to list all valid values, then retry.`;
-          } catch (err) {
-            sanitizedLog(
-              logger,
-              'debug',
-              'Failed to fetch select/status options for enhanced error message',
-              {
-                enhancerName: 'select-status',
-                resourceType,
-                attribute: selectErr.field,
-                error: err instanceof Error ? err.message : String(err),
-              }
-            );
-            return `Value is not valid for attribute "${selectErr.field}" on ${resourceType}.
+        } catch (err) {
+          sanitizedLog(
+            logger,
+            'debug',
+            'Failed to fetch select/status options for enhanced error message',
+            {
+              enhancerName: 'select-status',
+              resourceType,
+              attribute: selectErr.field,
+              error: err instanceof Error ? err.message : String(err),
+            }
+          );
+          return `Value is not valid for attribute "${selectErr.field}" on ${resourceType}.
 Next step: Call records_get_attribute_options with
   resource_type: "${resourceType}"
   attribute: "${selectErr.field}"
 to see valid options, then retry.`;
-          }
         }
       }
     }

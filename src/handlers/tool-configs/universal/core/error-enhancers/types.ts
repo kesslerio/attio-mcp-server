@@ -9,11 +9,11 @@ import type { ValidationMetadata } from '@/handlers/tool-configs/universal/core/
  * Context passed to error enhancers
  */
 export interface CrudErrorContext {
-  operation: 'create' | 'update' | 'delete' | 'search';
-  resourceType: string;
-  recordData?: Record<string, unknown>;
-  recordId?: string;
-  validationMetadata?: ValidationMetadata;
+  readonly operation: 'create' | 'update' | 'delete' | 'search';
+  readonly resourceType: string;
+  readonly recordData?: Readonly<Record<string, unknown>>;
+  readonly recordId?: string;
+  readonly validationMetadata?: Readonly<ValidationMetadata>;
 }
 
 /**
@@ -22,19 +22,19 @@ export interface CrudErrorContext {
  */
 export interface ErrorEnhancer {
   /** Unique name for the enhancer */
-  name: string;
+  readonly name: string;
 
   /** Check if this enhancer can handle the error */
-  matches: (error: unknown, context: CrudErrorContext) => boolean;
+  readonly matches: (error: unknown, context: CrudErrorContext) => boolean;
 
   /** Enhance the error message with context-specific details */
-  enhance: (
+  readonly enhance: (
     error: unknown,
     context: CrudErrorContext
   ) => Promise<string | null>;
 
   /** Error name to use when throwing the enhanced error */
-  errorName: string;
+  readonly errorName: string;
 }
 
 /**
@@ -64,5 +64,40 @@ export const getErrorMessage = (error: unknown): string => {
   }
   return String(error);
 };
+
+/**
+ * Axios-style error response structure
+ * Used for type-safe extraction of validation errors from Attio API responses
+ */
+export interface AxiosErrorResponse {
+  data?: {
+    message?: string;
+    validation_errors?: Array<{
+      field?: string;
+      path?: string;
+      message?: string;
+    }>;
+  };
+}
+
+/**
+ * Axios error with response
+ * Allows type-safe access to error.response.data.validation_errors
+ */
+export interface AxiosError extends Error {
+  response?: AxiosErrorResponse;
+}
+
+/**
+ * Type guard to check if error is an Axios error
+ */
+export function isAxiosError(error: unknown): error is AxiosError {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'response' in error &&
+    typeof (error as { response?: unknown }).response === 'object'
+  );
+}
 
 export type { ValidationMetadata };

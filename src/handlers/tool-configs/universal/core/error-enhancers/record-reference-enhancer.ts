@@ -8,7 +8,7 @@
  */
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
-import { getErrorMessage } from './types.js';
+import { getErrorMessage, isAxiosError } from './types.js';
 
 /**
  * Enhance error messages for record-reference attribute errors
@@ -21,31 +21,15 @@ const enhanceRecordReferenceError = (
 
   // Also check for validation_errors in axios response
   let fullErrorText = msg;
-  if (
-    error &&
-    typeof error === 'object' &&
-    'response' in error &&
-    error.response &&
-    typeof error.response === 'object' &&
-    'data' in error.response
-  ) {
-    const data = (error.response as Record<string, unknown>).data;
-    if (data && typeof data === 'object') {
-      if ('message' in data) {
-        fullErrorText +=
-          ' ' + String((data as Record<string, unknown>).message);
-      }
-      if ('validation_errors' in data) {
-        const validationErrors = (data as Record<string, unknown>)
-          .validation_errors;
-        if (Array.isArray(validationErrors)) {
-          fullErrorText +=
-            ' ' +
-            validationErrors
-              .map((e: Record<string, unknown>) => String(e.message || e))
-              .join(' ');
-        }
-      }
+  if (isAxiosError(error)) {
+    const data = error.response?.data;
+    if (data?.message) {
+      fullErrorText += ' ' + data.message;
+    }
+    if (data?.validation_errors) {
+      fullErrorText +=
+        ' ' +
+        data.validation_errors.map((e) => String(e.message || e)).join(' ');
     }
   }
 
@@ -114,29 +98,16 @@ export const recordReferenceEnhancer: ErrorEnhancer = {
 
     // Check for axios validation errors
     let fullText = msg;
-    if (
-      error &&
-      typeof error === 'object' &&
-      'response' in error &&
-      (error.response as Record<string, unknown>)?.data
-    ) {
-      const data = (error.response as Record<string, unknown>).data;
-      if (typeof data === 'object' && data) {
-        if ('message' in data) {
-          fullText += ' ' + String((data as Record<string, unknown>).message);
-        }
-        // CRITICAL: Also check validation_errors array for record-reference patterns
-        if ('validation_errors' in data) {
-          const validationErrors = (data as Record<string, unknown>)
-            .validation_errors;
-          if (Array.isArray(validationErrors)) {
-            fullText +=
-              ' ' +
-              validationErrors
-                .map((e: Record<string, unknown>) => String(e.message || e))
-                .join(' ');
-          }
-        }
+    if (isAxiosError(error)) {
+      const data = error.response?.data;
+      if (data?.message) {
+        fullText += ' ' + data.message;
+      }
+      // CRITICAL: Also check validation_errors array for record-reference patterns
+      if (data?.validation_errors) {
+        fullText +=
+          ' ' +
+          data.validation_errors.map((e) => String(e.message || e)).join(' ');
       }
     }
 

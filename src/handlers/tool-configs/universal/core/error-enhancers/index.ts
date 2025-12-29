@@ -47,4 +47,8 @@ export type {
   CrudErrorContext,
   ErrorEnhancer,
   ValidationMetadata,
+  AxiosError,
+  AxiosErrorResponse,
 } from './types.js';
+
+export { isAxiosError } from './types.js';
