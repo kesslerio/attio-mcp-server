@@ -28,14 +28,41 @@
  * @see Issue #997: Record-reference format error handling
  */
 
-// import { ErrorService } from '../../../../services/ErrorService.js'; // Not used yet
 import { createScopedLogger } from '../../../../utils/logger.js';
 import {
   CREATE_ERROR_ENHANCERS,
   UPDATE_ERROR_ENHANCERS,
   type CrudErrorContext,
 } from './error-enhancers/index.js';
-// Create a simple error result function
+
+/**
+ * Create enhanced error result for CRUD operations
+ *
+ * NOTE: This differs from ErrorService.createUniversalError which is designed
+ * for universal tool handlers. Error enhancers construct CUSTOM messages with
+ * actionable guidance, rather than just extracting original error messages.
+ *
+ * ErrorService.createUniversalError is for the tool handler layer:
+ * - Extracts original error messages from Attio API responses
+ * - Used in universal tool handlers (records_create, records_update, etc.)
+ *
+ * createErrorResult is for the service/enhancer layer:
+ * - Constructs enhanced messages with contextual guidance
+ * - Used by error enhancers to provide actionable error messages
+ * - Includes suggestions, valid options, and next steps
+ *
+ * @param message - Enhanced error message from enhancer (includes guidance)
+ * @param name - Error type name from enhancer.errorName
+ * @param details - Optional context details (operation, resourceType, etc.)
+ * @returns Error with enhanced message and metadata
+ *
+ * @example
+ * createErrorResult(
+ *   "Missing required field: stage. Use records_discover_attributes to see all fields.",
+ *   "validation_error",
+ *   { context: { operation: "create", resourceType: "deals" } }
+ * )
+ */
 const createErrorResult = (
   message: string,
   name: string,
