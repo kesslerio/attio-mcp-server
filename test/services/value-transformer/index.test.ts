@@ -466,11 +466,13 @@ describe('value-transformer orchestrator', () => {
       // Name should pass through unchanged
       expect(result.data.name).toBe('Test Company');
 
-      // Select-transformer should convert industry to array with UUID
-      expect(result.data.industry).toEqual(['ind-1']);
+      // Select-transformer should convert industry to array with TITLE (not UUID)
+      // NOTE: Attio API accepts ["title"] format, silently rejects ["uuid"] (Issue #1045)
+      expect(result.data.industry).toEqual(['Technology']);
       const industryTransform = result.transformations.find(
         (t) => t.field === 'industry'
       );
+      // Type name is misleading - it's actually 'title_to_title_array' but named 'select_title_to_id'
       expect(industryTransform?.type).toBe('select_title_to_id');
 
       // Multi-select-transformer should wrap categories in array (no UUID lookup)
