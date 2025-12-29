@@ -3,7 +3,7 @@
  * Issue #1001 - Refactoring crud-error-handlers.ts
  */
 
-import type { ValidationMetadata } from '../utils.js';
+import type { ValidationMetadata } from '@/handlers/tool-configs/universal/core/utils.js';
 
 /**
  * Context passed to error enhancers

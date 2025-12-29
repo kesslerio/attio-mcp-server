@@ -7,7 +7,7 @@
  */
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
-import { UniversalResourceType } from '../../types.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { sanitizedLog } from '../pii-sanitizer.js';
 import { createScopedLogger } from '@/utils/logger.js';
 

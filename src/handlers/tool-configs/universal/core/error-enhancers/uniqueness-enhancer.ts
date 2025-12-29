@@ -8,9 +8,9 @@
  */
 
 import type { ErrorEnhancer, CrudErrorContext } from './types.js';
-import { getSingularResourceType } from '../../shared-handlers.js';
-import { UniversalResourceType } from '../../types.js';
-import { sanitizedLog } from '../pii-sanitizer.js';
+import { getSingularResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import { sanitizedLog } from '@/handlers/tool-configs/universal/core/pii-sanitizer.js';
 import { createScopedLogger } from '@/utils/logger.js';
 
 const logger = createScopedLogger('uniqueness-enhancer');
