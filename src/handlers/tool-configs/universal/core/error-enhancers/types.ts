@@ -38,8 +38,24 @@ export interface ErrorEnhancer {
 }
 
 /**
- * Extract error message from Error instances, axios-style errors, or objects
- * Handles both real Error instances and test mocks with message properties
+ * Extract error message from Error instances, axios-style errors, or test mocks
+ *
+ * Handles three cases:
+ * 1. Real Error instances: returns error.message
+ * 2. Error-like objects (axios/mocks): extracts message property
+ * 3. Primitive values: converts to string
+ *
+ * This helper was added to fix test compatibility issues where test mocks
+ * aren't true Error instances but have message properties. It provides a
+ * consistent way to extract error messages across production code and tests.
+ *
+ * @param error - Any error value (Error, axios error object, string, etc.)
+ * @returns Error message as string (never null/undefined)
+ *
+ * @example
+ * getErrorMessage(new Error("test")) // "test"
+ * getErrorMessage({ message: "axios error" }) // "axios error"
+ * getErrorMessage("string error") // "string error"
  */
 export const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
