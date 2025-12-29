@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Tool alias system refactoring** (#1041) - Simplified and improved maintainability of the tool alias system
+  - Created `src/constants/tool-names.ts` with type-safe tool name constants and `ToolName` type
+  - Refactored `src/config/tool-aliases.ts` to use data-driven pattern-based alias generation
+  - Created `test/utils/tool-assertions.ts` with reusable assertion helpers for tool validation
+  - Refactored consistency tests to use assertion helpers, improving readability and reducing duplication
+  - All 29 aliases remain fully functional with 100% backward compatibility
+
 ## [2025-12-25] - Daily Update
 
 ### Changed
