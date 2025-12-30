@@ -1,10 +1,10 @@
 # Attio API Overview
 
-✅ **Current Status**: Attio MCP Server implements **32 total tools** - 21 universal tools + 11 list-specific tools
+✅ **Current Status**: Attio MCP Server implements **35 total tools** - 21 universal tools + 11 list tools + 3 workspace member tools
 
 Attio provides a powerful REST API that allows developers to build applications that read and write information to and from Attio workspaces. The API exchanges JSON over HTTPS and provides comprehensive access to Attio's core functionality.
 
-> **🚀 Universal Tools Available**: The MCP server provides Universal Tools that consolidate 40+ resource-specific operations into 21 powerful tools (using MCP-compliant `snake_case`, verb-first naming). List-specific operations are available through 11 dedicated list tools. This provides better performance, consistent APIs, and simplified integration.
+> **🚀 Universal Tools Available**: The MCP server provides Universal Tools that consolidate 40+ resource-specific operations into 21 powerful tools (using MCP-compliant `snake_case`, verb-first naming). List-specific operations and workspace member management are available through 14 additional specialized tools (11 list tools + 3 workspace tools). This provides better performance, consistent APIs, and simplified integration.
 
 ## Understanding the Model Context Protocol (MCP)
 
@@ -30,7 +30,7 @@ Claude uses these URIs to reference specific records when performing operations.
 
 ### Available Tools
 
-Claude can interact with Attio using **32 fully implemented tools** provided by the MCP server:
+Claude can interact with Attio using **35 fully implemented tools** provided by the MCP server:
 
 #### ✅ Core Universal Tools (8 tools)
 
@@ -68,9 +68,9 @@ Claude can interact with Attio using **32 fully implemented tools** provided by 
 - **`openai-search`** - OpenAI integration search
 - **`openai-fetch`** - OpenAI integration fetch
 
-#### 📋 Lists Tools (11 tools) - Separate Category
+#### 📋 Lists Tools (11 tools) - Always Exposed
 
-List-specific tools remain available as a separate category (not part of universal tools):
+List-specific tools are always exposed alongside universal tools (Issue #470 - "Lists are relationship containers"):
 
 - `get-lists`, `get-list-details`, `get-list-entries`
 - `filter-list-entries`, `advanced-filter-list-entries`
@@ -80,11 +80,19 @@ List-specific tools remain available as a separate category (not part of univers
 
 These tools provide specialized list management capabilities beyond what universal tools offer. See [Lists API documentation](./lists.md) for details.
 
+#### 👥 Workspace Member Tools (3 tools) - Always Exposed
+
+Workspace member tools are always exposed for user discovery (Issue #684):
+
+- `list-workspace-members` - Get all workspace members
+- `search-workspace-members` - Search workspace members by name or email
+- `get-workspace-member` - Get specific workspace member details
+
 #### ⚠️ Legacy Tools (Deprecated)
 
 Old tool names (e.g., `records_search`, `create-record`) are deprecated but work via backward-compatible aliases until v2.0.0 (Q1 2026). Migration to new MCP-compliant names is recommended.
 
-**Current Tools**: All 32 tools (21 universal + 11 list-specific) are fully implemented and tested.
+**Current Tools**: All 35 tools (21 universal + 11 list + 3 workspace member) are fully implemented and tested.
 
 ### Advanced Filtering Capabilities
 

@@ -196,7 +196,7 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 ### 🤝 **OpenAI MCP Compatibility**
 
 - **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
-- **Full Tool Access (Default)**: All 21 tools are exposed by default. Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
+- **Full Tool Access (Default)**: All 35 tools are exposed by default (21 universal + 11 list + 3 workspace member). Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
 - **Search-Only Mode**: To restrict to read-only tools (`search`, `fetch`, `aaa-health-check`), explicitly configure `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery dashboard when Developer Mode is unavailable.
 - **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
 - **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.
