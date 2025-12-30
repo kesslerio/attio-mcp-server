@@ -39,7 +39,7 @@
     "libphonenumber-js": "^1.12.30"
   },
   "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.4.1"
+    "@modelcontextprotocol/sdk": "~1.24.0"
   },
   "peerDependenciesMeta": {
     "@modelcontextprotocol/sdk": {
