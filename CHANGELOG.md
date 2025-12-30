@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Universal tools (`search_records`, `get_record_details`) now return proper list format matching list-specific tools instead of generic record format with values wrapper (#1068)
 - MCP Registry publishing workflow schema version and re-publish errors (#1066)
 
 ## [1.4.0] - 2025-12-29

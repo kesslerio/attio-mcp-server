@@ -32,18 +32,29 @@ export function ensureListShape(raw: unknown): AttioList {
       : {};
 
   let listId: string | undefined;
+  let workspaceId: string | undefined;
   const rawId = value.id;
   if (typeof rawId === 'object' && rawId !== null && 'list_id' in rawId) {
     const candidate = (rawId as Record<string, unknown>).list_id;
     if (typeof candidate === 'string') {
       listId = candidate;
     }
+    // Also extract workspace_id from id object
+    const wsId = (rawId as Record<string, unknown>).workspace_id;
+    if (typeof wsId === 'string') {
+      workspaceId = wsId;
+    }
   }
   if (typeof value.list_id === 'string') {
     listId = value.list_id;
   }
+  // Check top-level workspace_id as well
+  if (typeof value.workspace_id === 'string') {
+    workspaceId = value.workspace_id;
+  }
 
   const resolvedListId = listId ?? crypto.randomUUID?.() ?? `tmp_${Date.now()}`;
+  const resolvedWorkspaceId = workspaceId || '';
   const resolvedTitle =
     typeof value.title === 'string'
       ? value.title
@@ -61,8 +72,7 @@ export function ensureListShape(raw: unknown): AttioList {
     description: typeof value.description === 'string' ? value.description : '',
     object_slug:
       typeof value.object_slug === 'string' ? value.object_slug : 'lists',
-    workspace_id:
-      typeof value.workspace_id === 'string' ? value.workspace_id : '',
+    workspace_id: resolvedWorkspaceId,
     created_at: typeof value.created_at === 'string' ? value.created_at : '',
     updated_at: typeof value.updated_at === 'string' ? value.updated_at : '',
     entry_count:

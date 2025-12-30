@@ -56,7 +56,7 @@ vi.mock('../../src/objects/companies/index.js', () => ({
 vi.mock('../../src/objects/people/index.js', () => ({
   getPersonDetails: vi.fn(),
 }));
-vi.mock('../../src/objects/lists.js', () => ({ getListDetails: vi.fn() }));
+vi.mock('@/objects/lists.js', () => ({ getListDetails: vi.fn() }));
 vi.mock('../../src/objects/records/index.js', () => ({
   getObjectRecord: vi.fn(),
 }));
@@ -74,7 +74,7 @@ import { CachingService } from '../../src/services/CachingService.js';
 import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
 import { getCompanyDetails } from '../../src/objects/companies/index.js';
 import { getPersonDetails } from '../../src/objects/people/index.js';
-import * as lists from '../../src/objects/lists.js';
+import * as lists from '@/objects/lists.js';
 import { getObjectRecord } from '../../src/objects/records/index.js';
 import * as tasks from '../../src/objects/tasks.js';
 import { shouldUseMockData } from '../../src/services/create/index.js';
@@ -143,20 +143,20 @@ describe('UniversalRetrievalService', () => {
       });
 
       expect(lists.getListDetails).toHaveBeenCalledWith('list_789');
+      // Issue #1068: Lists returned in list-native format (no values wrapper, no record_id)
       expect(result).toEqual({
         id: {
-          record_id: 'list_789',
           list_id: 'list_789',
         },
-        values: {
-          name: 'Test List',
-          description: 'Test description',
-          parent_object: 'companies',
-          api_slug: 'test-list',
-          workspace_id: 'ws_123',
-          workspace_member_access: 'read',
-          created_at: '2024-01-01T00:00:00Z',
-        },
+        name: 'Test List',
+        title: 'Test List',
+        description: 'Test description',
+        object_slug: 'companies',
+        api_slug: 'test-list',
+        workspace_id: 'ws_123',
+        workspace_member_access: 'read',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
       });
     });
 

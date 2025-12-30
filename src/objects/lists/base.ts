@@ -24,7 +24,9 @@ export async function getLists(
   limit: number = 20
 ): Promise<AttioList[]> {
   try {
-    return await getGenericLists(objectSlug, limit);
+    const lists = await getGenericLists(objectSlug, limit);
+    // Always normalize list shapes to extract workspace_id from id objects
+    return asListArray(lists);
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error) ?? 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
@@ -51,7 +53,9 @@ export async function getLists(
  */
 export async function getListDetails(listId: string): Promise<AttioList> {
   try {
-    return await getGenericListDetails(listId);
+    const list = await getGenericListDetails(listId);
+    // Always normalize the list shape to extract workspace_id from id object
+    return ensureListShape(list);
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error) ?? 'Unknown error';
     if (process.env.NODE_ENV === 'development') {

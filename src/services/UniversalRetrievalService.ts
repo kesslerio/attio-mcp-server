@@ -35,7 +35,7 @@ import {
 // Import resource-specific retrieval functions
 import { getCompanyDetails } from '../objects/companies/index.js';
 import { getPersonDetails } from '../objects/people/index.js';
-import { getListDetails } from '../objects/lists.js';
+import { getListDetails } from '@/objects/lists.js';
 import { getObjectRecord } from '../objects/records/index.js';
 import { getTask } from '../objects/tasks.js';
 import { getNote, normalizeNoteResponse } from '../objects/notes.js';
@@ -51,13 +51,15 @@ import { getNote, normalizeNoteResponse } from '../objects/notes.js';
  *
  * **Record<string, unknown> Benefits**: Unlike any, this type prevents accidental
  * operations while maintaining flexibility for varied API response formats.
+ *
+ * Issue #1068: Lists returned in list-native format (cast to AttioRecord)
  */
 export class UniversalRetrievalService {
   /**
    * Get record details across any supported resource type
    *
    * @param params - Retrieval operation parameters
-   * @returns Promise resolving to AttioRecord
+   * @returns Promise resolving to AttioRecord (lists cast from list-native format)
    */
   static async getRecordDetails(
     params: UniversalRecordDetailsParams
@@ -166,7 +168,20 @@ export class UniversalRetrievalService {
       // Apply field filtering if fields parameter was provided
       if (fields && fields.length > 0) {
         const filteredResult = this.filterResponseFields(result, fields);
-        // Ensure the filtered result maintains AttioRecord structure
+
+        // Issue #1068: Lists don't have values wrapper (list-native format)
+        // Only reconstruct AttioRecord structure for non-list resources
+        if (resource_type === UniversalResourceType.LISTS) {
+          // Force-include id.list_id even if fields parameter excludes it
+          // This matches behavior of other resources (companies, people, tasks)
+          const resultWithId = {
+            ...filteredResult,
+            id: result.id, // Always include id
+          };
+          return resultWithId as unknown as AttioRecord;
+        }
+
+        // For regular records, ensure AttioRecord structure with values wrapper
         return {
           id: result.id,
           created_at: result.created_at,
@@ -367,20 +382,14 @@ export class UniversalRetrievalService {
         });
       }
 
-      // proceed safely
+      // Return list-native format (no values wrapper, no record_id alias)
+      // Issue #1068: Lists preserve their native structure with top-level fields
       return {
+        ...list, // Spread all top-level fields (name, title, description, etc.)
         id: {
-          record_id: list.id.list_id,
+          ...list.id,
           list_id: list.id.list_id,
-        },
-        values: {
-          name: list.name || list.title,
-          description: list.description,
-          parent_object: list.object_slug || list.parent_object,
-          api_slug: list.api_slug,
-          workspace_id: list.workspace_id,
-          workspace_member_access: list.workspace_member_access,
-          created_at: list.created_at,
+          // NO record_id alias - preserve list-native structure
         },
       } as unknown as AttioRecord;
     } catch (error: unknown) {

@@ -22,7 +22,7 @@ import {
   UniversalGetAttributeOptionsParams,
 } from './types.js';
 
-import { JsonObject } from '../../../types/attio.js';
+import { JsonObject, AttioRecord } from '../../../types/attio.js';
 
 // Import extracted services from Issue #489 Phase 2 & 3
 import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
@@ -60,10 +60,9 @@ import {
 // Import Attio API client for direct note operations
 import { unwrapAttio, normalizeNotes } from '../../../utils/attio-response.js';
 
-import { AttioRecord } from '../../../types/attio.js';
-
 /**
  * Universal search handler - delegates to UniversalSearchService
+ * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
  */
 export async function handleUniversalSearch(
   params: UniversalSearchParams
@@ -73,6 +72,7 @@ export async function handleUniversalSearch(
 
 /**
  * Universal get record details handler with performance optimization
+ * Issue #1068: Lists returned in list-native format (cast to AttioRecord)
  */
 export async function handleUniversalGetDetails(
   params: UniversalRecordDetailsParams

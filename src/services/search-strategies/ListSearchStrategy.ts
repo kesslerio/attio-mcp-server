@@ -1,6 +1,7 @@
 /**
  * List search strategy implementation
  * Issue #574: Extract list search logic from UniversalSearchService
+ * Issue #1068: Returns list-native format (AttioList cast to AttioRecord)
  */
 
 import { AttioRecord, AttioList } from '../../types/attio.js';
@@ -22,7 +23,8 @@ import { assertNoMockInE2E } from '../_guards.js';
 const CONTENT_SEARCH_FETCH_LIMIT = 100;
 
 /**
- * Search strategy for lists with content search support and convert to AttioRecord format
+ * Search strategy for lists with content search support
+ * Issue #1068: Returns list-native format (top-level fields, list_id only)
  */
 export class ListSearchStrategy extends BaseSearchStrategy {
   constructor(dependencies: StrategyDependencies) {
@@ -76,10 +78,15 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         throw new Error('Lists search function not available');
       }
 
+      // For content search, fetch all lists and apply pagination after filtering
+      // For regular search, pass offset to the list function
+      const requestOffset =
+        search_type === SearchType.CONTENT ? 0 : offset || 0;
+
       const lists = await this.dependencies.listFunction(
         searchQuery,
         requestLimit,
-        0
+        requestOffset
       );
 
       // Convert AttioList[] to AttioRecord[] format
@@ -109,26 +116,68 @@ export class ListSearchStrategy extends BaseSearchStrategy {
 
   /**
    * Convert Attio lists to AttioRecord format
+   * Fix for Issue #1068: Return lists in proper list-native format (not wrapped in values)
+   *
+   * Lists use `list_id` in the id object and have top-level fields (no values wrapper).
+   * This method transforms lists to be compatible with universal record tools while
+   * maintaining the proper list-native structure.
+   *
+   * NOTE: Lists are cast to AttioRecord even though they don't have a values wrapper.
+   * This is acceptable because formatters explicitly check for LISTS resource type
+   * and read top-level fields. A proper UniversalRecord refactor should happen in a separate PR.
+   *
+   * @example Input (AttioList from API):
+   * {
+   *   id: { list_id: 'list-abc-123', workspace_id: 'ws-xyz' },
+   *   name: 'Sales Pipeline',
+   *   title: 'Sales Pipeline',
+   *   workspace_id: 'ws-xyz',
+   *   ...
+   * }
+   *
+   * @example Output (AttioList cast to AttioRecord):
+   * {
+   *   id: { list_id: 'list-abc-123' },
+   *   name: 'Sales Pipeline',
+   *   workspace_id: 'ws-xyz',
+   *   ...
+   * }
+   *
+   * @param lists - Array of AttioList objects from the API
+   * @returns Array of AttioList objects cast to AttioRecord[]
    */
   private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
-    return lists.map(
-      (list) =>
-        ({
-          id: {
-            record_id: list.id.list_id,
-            list_id: list.id.list_id,
-          },
-          values: {
-            name: list.name || list.title,
-            description: list.description,
-            parent_object: list.object_slug || list.parent_object,
-            api_slug: list.api_slug,
-            workspace_id: list.workspace_id,
-            workspace_member_access: list.workspace_member_access,
-            created_at: list.created_at,
-          },
-        }) as unknown as AttioRecord
-    );
+    return lists.map((list) => {
+      // Prioritize existing top-level workspace_id, fallback to id.workspace_id
+      // Use ?? (nullish coalescing) to preserve empty strings as valid values
+      const existingWorkspaceId = (list as { workspace_id?: string })
+        .workspace_id;
+      const idWorkspaceId = (list.id as { workspace_id?: string })
+        ?.workspace_id;
+      const workspaceId = existingWorkspaceId ?? idWorkspaceId;
+
+      // Build result object without overwriting existing workspace_id
+      const result: Record<string, unknown> = {
+        ...list,
+        // Ensure id structure is consistent
+        id: {
+          ...list.id,
+          list_id: list.id.list_id,
+        },
+        // Use name field (fallback to title for backward compatibility)
+        name: list.name || list.title,
+      };
+
+      // Set workspace_id if we found one (null/undefined are excluded by ??)
+      // Empty strings are valid values and will be preserved
+      if (workspaceId !== undefined) {
+        result.workspace_id = workspaceId;
+      }
+
+      // Cast to AttioRecord for compatibility with universal tools
+      // Lists don't have values wrapper, but formatters explicitly handle this
+      return result as unknown as AttioRecord;
+    });
   }
 
   /**

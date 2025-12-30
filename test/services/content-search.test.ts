@@ -688,7 +688,8 @@ describe('Content Search Functionality', () => {
 
       expect(searchLists).toHaveBeenCalledWith('', 100, 0);
       expect(result).toHaveLength(1);
-      expect(result[0].values?.name).toContain('Customer');
+      // Fix for #1068: Lists now have fields at top level (not in values)
+      expect((result[0] as any).name).toContain('Customer');
     });
 
     it('should search across custom list fields', async () => {
@@ -714,7 +715,8 @@ describe('Content Search Functionality', () => {
       });
 
       expect(result).toHaveLength(1);
-      expect(result[0].values?.description).toContain('Important test data');
+      // Fix for #1068: Lists now have fields at top level (not in values)
+      expect((result[0] as any).description).toContain('Important test data');
     });
 
     it('should handle exact match for lists', async () => {
@@ -747,7 +749,8 @@ describe('Content Search Functionality', () => {
       });
 
       expect(result).toHaveLength(1);
-      expect(result[0].values?.name).toBe('test');
+      // Fix for #1068: Lists now have fields at top level (not in values)
+      expect((result[0] as any).name).toBe('test');
     });
 
     it('should apply relevance ranking for lists', async () => {
@@ -806,7 +809,8 @@ describe('Content Search Functionality', () => {
       });
 
       expect(result).toHaveLength(5);
-      expect(result[0].values?.name).toBe('Customer List 1');
+      // Fix for #1068: Lists now have fields at top level (not in values)
+      expect((result[0] as any).name).toBe('Customer List 1');
     });
   });
 });

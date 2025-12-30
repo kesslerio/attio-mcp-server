@@ -133,9 +133,12 @@ describe('UniversalSearchService', () => {
 
       expect(searchLists).toHaveBeenCalledWith('Prospects', 10, 0);
       expect(result).toHaveLength(1);
+      // Fix for #1068: Lists now returned in proper format (not wrapped in values)
       expect(result[0]).toMatchObject({
-        id: { record_id: 'list_1', list_id: 'list_1' },
-        values: { name: 'Prospects' },
+        id: { list_id: 'list_1' },
+        name: 'Prospects',
+        title: 'Prospects',
+        description: 'Prospect list',
       });
     });
   });

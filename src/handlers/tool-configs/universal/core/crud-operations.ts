@@ -122,15 +122,22 @@ export const createRecordConfig: UniversalToolConfig<
       ? getSingularResourceType(resourceType)
       : 'record';
 
+    // For lists, fields are at top level (no values wrapper)
+    // For other records, fields are in values wrapper
+    const hasValues = record.values && Object.keys(record.values).length > 0;
     const inferredName = extractDisplayName(
-      record.values as Record<string, unknown> | undefined,
+      hasValues
+        ? (record.values as Record<string, unknown>)
+        : (record as Record<string, unknown>),
       resourceType
     );
     const displayName =
       inferredName === 'Unnamed' ? `New ${resourceTypeName}` : inferredName;
 
+    // Issue #1068: Extract ID based on resource type (list_id for lists, record_id for others)
     const id = String(
-      record.id?.record_id ||
+      record.id?.list_id ||
+        record.id?.record_id ||
         (record as { record_id?: string }).record_id ||
         'unknown'
     );
@@ -231,8 +238,13 @@ export const updateRecordConfig: UniversalToolConfig<
       ? getSingularResourceType(resourceType)
       : 'record';
 
+    // For lists, fields are at top level (no values wrapper)
+    // For other records, fields are in values wrapper
+    const hasValues = record.values && Object.keys(record.values).length > 0;
     const name = extractDisplayName(
-      record.values as Record<string, unknown> | undefined,
+      hasValues
+        ? (record.values as Record<string, unknown>)
+        : (record as Record<string, unknown>),
       resourceType
     );
     const id = String(record.id?.record_id || 'unknown');
