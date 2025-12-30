@@ -64,7 +64,7 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
 vi.mock('../../src/objects/companies/index.js', () => ({
   getCompanyDetails: vi.fn(),
 }));
-vi.mock('../../src/objects/lists.js', () => ({ getListDetails: vi.fn() }));
+vi.mock('@/objects/lists.js', () => ({ getListDetails: vi.fn() }));
 vi.mock('../../src/objects/tasks.js', () => ({ getTask: vi.fn() }));
 vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
 import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
@@ -76,7 +76,7 @@ import { createRecordNotFoundError } from '../../src/utils/validation/uuid-valid
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 import { getCompanyDetails } from '../../src/objects/companies/index.js';
 import * as tasks from '../../src/objects/tasks.js';
-import * as lists from '../../src/objects/lists.js';
+import * as lists from '@/objects/lists.js';
 import * as companies from '../../src/objects/companies/index.js';
 import * as notes from '../../src/objects/notes.js';
 

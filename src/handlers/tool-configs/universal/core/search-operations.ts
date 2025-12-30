@@ -16,6 +16,7 @@ import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 /**
  * Universal search records tool configuration.
  * Consolidates: search-companies, search-people, list-records, list-tasks.
+ * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
  */
 export const searchRecordsConfig: UniversalToolConfig<
   UniversalSearchParams,
@@ -67,9 +68,17 @@ export const searchRecordsConfig: UniversalToolConfig<
     const formattedResults = recordsArray
       .map((record, index) => {
         let identifier = 'Unnamed';
-        let id = String(record.id?.record_id || 'unknown');
 
-        const values = record.values || {};
+        // Extract ID with list_id fallback (Issue #1068 - lists use list_id)
+        let id = String(
+          record.id?.list_id || record.id?.record_id || 'unknown'
+        );
+
+        // Check if values has content (Issue #1068 - lists have empty values)
+        const hasValues =
+          record.values && Object.keys(record.values).length > 0;
+        const values = hasValues ? record.values : {};
+
         const getFirstValue = (field: unknown): string | undefined => {
           if (!field || !Array.isArray(field) || field.length === 0)
             return undefined;
@@ -82,7 +91,21 @@ export const searchRecordsConfig: UniversalToolConfig<
             : undefined;
         };
 
-        if (resourceType === UniversalResourceType.TASKS) {
+        // Handle lists explicitly (top-level fields, not values wrapper)
+        if (resourceType === UniversalResourceType.LISTS) {
+          const recordObj = record as Record<string, unknown>;
+          const name =
+            (typeof recordObj.name === 'string' ? recordObj.name : undefined) ||
+            (typeof recordObj.title === 'string'
+              ? recordObj.title
+              : undefined) ||
+            'Unnamed';
+          const objectSlug = recordObj.object_slug
+            ? ` [${recordObj.object_slug}]`
+            : '';
+          identifier = `${name}${objectSlug}`;
+          id = String(record.id?.list_id || 'unknown');
+        } else if (resourceType === UniversalResourceType.TASKS) {
           identifier =
             typeof values.content === 'string'
               ? values.content

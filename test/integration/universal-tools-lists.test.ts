@@ -279,6 +279,116 @@ describe('Universal Tools - Lists Integration', () => {
     });
   });
 
+  describe('List-native format (Issue #1068)', () => {
+    it('should return list-native format from search_records (list_id only, no record_id)', async () => {
+      const lists = await UniversalSearchService.searchRecords({
+        resource_type: UniversalResourceType.LISTS,
+        query: '',
+        limit: 10,
+      });
+
+      if (lists.length > 0) {
+        const list = lists[0] as any;
+
+        // Verify list_id exists
+        expect(list.id).toHaveProperty('list_id');
+        expect(typeof list.id.list_id).toBe('string');
+        expect(list.id.list_id.length).toBeGreaterThan(0);
+
+        // Verify NO record_id normalization (preserve list-native structure)
+        expect(list.id.record_id).toBeUndefined();
+
+        // Verify top-level fields (not in values wrapper)
+        expect(typeof list.name).toBe('string');
+        expect(list.name.length).toBeGreaterThan(0);
+
+        // Verify NO values wrapper
+        expect(list.values).toBeUndefined();
+      }
+    });
+
+    it('should return list-native format from get_record_details (list_id only, no record_id)', async () => {
+      const lists = await getLists();
+      if (lists.length === 0) {
+        console.warn('No lists available for testing');
+        return;
+      }
+
+      const testListId = lists[0].id?.list_id;
+      if (!testListId) {
+        console.warn('No test list ID available');
+        return;
+      }
+
+      const details = (await UniversalMetadataService.getRecordDetails({
+        resource_type: UniversalResourceType.LISTS,
+        record_id: testListId,
+      })) as any;
+
+      // Verify list_id exists
+      expect(details.id).toHaveProperty('list_id');
+      expect(typeof details.id.list_id).toBe('string');
+
+      // Verify NO record_id normalization (preserve list-native structure)
+      expect(details.id.record_id).toBeUndefined();
+
+      // Verify top-level fields (not in values wrapper)
+      expect(typeof details.name).toBe('string');
+      expect(details.name.length).toBeGreaterThan(0);
+
+      // Verify NO values wrapper
+      expect(details.values).toBeUndefined();
+    });
+
+    it('should return consistent format between search and details', async () => {
+      const lists = await getLists();
+      if (lists.length === 0) {
+        console.warn('No lists available for testing');
+        return;
+      }
+
+      const testListId = lists[0].id?.list_id;
+      if (!testListId) {
+        console.warn('No test list ID available');
+        return;
+      }
+
+      // Get from search
+      const searchResults = await UniversalSearchService.searchRecords({
+        resource_type: UniversalResourceType.LISTS,
+        query: '',
+        limit: 100,
+      });
+
+      const searchResult = searchResults.find(
+        (l: any) => l.id?.list_id === testListId
+      ) as any;
+
+      if (!searchResult) {
+        console.warn('Test list not found in search results');
+        return;
+      }
+
+      // Get from details
+      const detailsResult = (await UniversalMetadataService.getRecordDetails({
+        resource_type: UniversalResourceType.LISTS,
+        record_id: testListId,
+      })) as any;
+
+      // Both should have identical structure
+      expect(searchResult.id).toEqual(detailsResult.id);
+      expect(searchResult.name).toBe(detailsResult.name);
+      expect(searchResult.values).toBeUndefined();
+      expect(detailsResult.values).toBeUndefined();
+
+      // Both should use list_id (not record_id)
+      expect(searchResult.id.list_id).toBe(testListId);
+      expect(detailsResult.id.list_id).toBe(testListId);
+      expect(searchResult.id.record_id).toBeUndefined();
+      expect(detailsResult.id.record_id).toBeUndefined();
+    });
+  });
+
   describe('Error handling', () => {
     it('should handle empty query gracefully', async () => {
       const lists = await UniversalSearchService.searchRecords({

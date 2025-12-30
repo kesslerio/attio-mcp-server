@@ -16,6 +16,9 @@ import { handleSearchError } from './error-utils.js';
 import { UniversalUtilityService } from '../../../../services/UniversalUtilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
+/**
+ * Issue #1068: Lists returned in list-native format (cast to AttioRecord)
+ */
 export const getRecordDetailsConfig: UniversalToolConfig<
   UniversalRecordDetailsParams,
   AttioRecord
@@ -47,7 +50,31 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
-    // For lists, fields are at top level (no values wrapper)
+
+    // Issue #1068: Lists have top-level fields (no values wrapper)
+    // Handle lists explicitly before checking values
+    if (resourceType === UniversalResourceType.LISTS) {
+      const recordObj = record as Record<string, unknown>;
+      const name =
+        (typeof recordObj.name === 'string' ? recordObj.name : undefined) ||
+        (typeof recordObj.title === 'string' ? recordObj.title : undefined) ||
+        'Unnamed';
+      const id = String(
+        (record.id as { list_id?: string })?.list_id || 'unknown'
+      );
+      const description = recordObj.description
+        ? `\nDescription: ${recordObj.description}`
+        : '';
+      const objectSlug = recordObj.object_slug
+        ? `\nObject: ${recordObj.object_slug}`
+        : '';
+      const apiSlug = recordObj.api_slug
+        ? `\nAPI Slug: ${recordObj.api_slug}`
+        : '';
+
+      return `List: ${name}\nID: ${id}${description}${objectSlug}${apiSlug}`.trim();
+    }
+
     // For other records, fields are in values wrapper
     const hasValues = record.values && Object.keys(record.values).length > 0;
     const name = UniversalUtilityService.extractDisplayName(

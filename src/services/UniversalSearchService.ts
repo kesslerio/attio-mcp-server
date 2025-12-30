@@ -32,10 +32,12 @@ import { SearchCoordinator } from './search/SearchCoordinator.js';
 /**
  * UniversalSearchService provides centralized record search functionality
  * Issue #935: Strategy initialization delegated to StrategyFactory via SearchCoordinator
+ * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
  */
 export class UniversalSearchService {
   /**
    * Universal search handler with performance tracking
+   * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
    */
   static async searchRecords(
     params: UniversalSearchParams

@@ -158,11 +158,12 @@ function transformRecordToSearchResult(
   resourceType: UniversalResourceType,
   record: AttioRecord
 ): OpenAiSearchResult {
-  const recordId = record.id?.record_id ?? 'unknown';
+  // Support list_id for lists (Issue #1068 - lists use list_id, not record_id)
+  const recordId = (record.id?.list_id || record.id?.record_id) ?? 'unknown';
   return {
     id: `${resourceType}:${recordId}`,
     title: buildTitle(resourceType, record),
-    url: buildApiUrl(resourceType, recordId),
+    url: buildApiUrl(resourceType, String(recordId)),
     snippet: buildSnippet(resourceType, record),
     metadata: {
       resource_type: resourceType,
@@ -174,11 +175,12 @@ function transformRecordToFetchResult(
   resourceType: UniversalResourceType,
   record: AttioRecord
 ): OpenAiFetchResult {
-  const recordId = record.id?.record_id ?? 'unknown';
+  // Support list_id for lists (Issue #1068 - lists use list_id, not record_id)
+  const recordId = (record.id?.list_id || record.id?.record_id) ?? 'unknown';
   return {
     id: `${resourceType}:${recordId}`,
     title: buildTitle(resourceType, record),
-    url: buildApiUrl(resourceType, recordId),
+    url: buildApiUrl(resourceType, String(recordId)),
     text: safeJsonStringify(record, { indent: 2 }),
     metadata: {
       resource_type: resourceType,
@@ -204,9 +206,11 @@ function buildTitle(
         `Person ${record.id?.record_id ?? ''}`.trim()
       );
     case UniversalResourceType.LISTS:
+      // Issue #1068: Lists use list_id, not record_id
       return (
         SearchUtilities.getFieldValue(record, 'name') ||
-        `List ${record.id?.record_id ?? ''}`.trim()
+        SearchUtilities.getFieldValue(record, 'title') ||
+        `List ${(record.id as { list_id?: string })?.list_id ?? ''}`.trim()
       );
     case UniversalResourceType.TASKS:
       return (

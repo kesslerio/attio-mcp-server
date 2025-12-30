@@ -134,8 +134,10 @@ export const createRecordConfig: UniversalToolConfig<
     const displayName =
       inferredName === 'Unnamed' ? `New ${resourceTypeName}` : inferredName;
 
+    // Issue #1068: Extract ID based on resource type (list_id for lists, record_id for others)
     const id = String(
-      record.id?.record_id ||
+      record.id?.list_id ||
+        record.id?.record_id ||
         (record as { record_id?: string }).record_id ||
         'unknown'
     );

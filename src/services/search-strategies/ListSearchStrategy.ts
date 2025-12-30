@@ -1,9 +1,10 @@
 /**
  * List search strategy implementation
  * Issue #574: Extract list search logic from UniversalSearchService
+ * Issue #1068: Returns list-native format (AttioList cast to AttioRecord)
  */
 
-import { AttioRecord, AttioList, AttioListRecord } from '../../types/attio.js';
+import { AttioRecord, AttioList } from '../../types/attio.js';
 import {
   SearchType,
   MatchType,
@@ -22,7 +23,8 @@ import { assertNoMockInE2E } from '../_guards.js';
 const CONTENT_SEARCH_FETCH_LIMIT = 100;
 
 /**
- * Search strategy for lists with content search support and convert to AttioRecord format
+ * Search strategy for lists with content search support
+ * Issue #1068: Returns list-native format (top-level fields, list_id only)
  */
 export class ListSearchStrategy extends BaseSearchStrategy {
   constructor(dependencies: StrategyDependencies) {
@@ -114,12 +116,15 @@ export class ListSearchStrategy extends BaseSearchStrategy {
 
   /**
    * Convert Attio lists to AttioRecord format
-   * Fix for Issue #1068: Return lists in proper format (not wrapped in values)
+   * Fix for Issue #1068: Return lists in proper list-native format (not wrapped in values)
    *
-   * Lists use `list_id` in the id object, while typical records use `record_id`.
+   * Lists use `list_id` in the id object and have top-level fields (no values wrapper).
    * This method transforms lists to be compatible with universal record tools while
-   * maintaining the proper list ID structure. The returned objects are compatible
-   * with AttioRecord but have list-specific ID structure (AttioListRecord).
+   * maintaining the proper list-native structure.
+   *
+   * NOTE: Lists are cast to AttioRecord even though they don't have a values wrapper.
+   * This is acceptable because formatters explicitly check for LISTS resource type
+   * and read top-level fields. A proper UniversalRecord refactor should happen in a separate PR.
    *
    * @example Input (AttioList from API):
    * {
@@ -130,7 +135,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
    *   ...
    * }
    *
-   * @example Output (AttioListRecord):
+   * @example Output (AttioList cast to AttioRecord):
    * {
    *   id: { list_id: 'list-abc-123' },
    *   name: 'Sales Pipeline',
@@ -139,7 +144,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
    * }
    *
    * @param lists - Array of AttioList objects from the API
-   * @returns Array of AttioRecord objects with list-specific ID structure (AttioListRecord)
+   * @returns Array of AttioList objects cast to AttioRecord[]
    */
   private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
     return lists.map((list) => {
@@ -169,9 +174,9 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         result.workspace_id = workspaceId;
       }
 
-      // Cast to AttioListRecord for type safety, which is compatible with AttioRecord
-      // The result has list_id in the id object, making it an AttioListRecord
-      return result as AttioListRecord;
+      // Cast to AttioRecord for compatibility with universal tools
+      // Lists don't have values wrapper, but formatters explicitly handle this
+      return result as unknown as AttioRecord;
     });
   }
 
