@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0] - 2025-12-29
 
+**TL;DR for Users**: New workspace skill generator, better select field handling, MCP-compliant tool naming. **No action needed** - old tool names still work via backward-compatible aliases until v2.0.0 (Q1 2026). See [Migration Guide](./docs/MIGRATION-GUIDE.md) for future planning.
+
 ### Added
 
 - **Workspace Schema Skill Generator** (#983) - Auto-generate Claude Skills from Attio workspace schemas
@@ -58,7 +60,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Attio skill generator meta-skill** (#1020, #1024) - Meta-skill for generating workspace schema documentation
 
+- **Phone validation to @attio-mcp/core** (#951, #964) - Extracted phone number validation into dedicated package
+  - New `@attio-mcp/core` package with phone validation utilities
+  - E.164 format support with international dialing code parsing
+  - Reusable validation logic for phone number attributes across the codebase
+
 ### Changed
+
+- **Extract search services from UniversalSearchService** (#935, #974) - Improved search architecture and maintainability
+  - Created dedicated strategy classes: CompanySearchStrategy, PeopleSearchStrategy, NoteSearchStrategy, TaskSearchStrategy
+  - Extracted common search patterns into BaseSearchStrategy abstract class
+  - Reduced code duplication and improved testability
+  - Better separation of concerns for resource-specific search logic
 
 - **Transformation type rename** (#1055) - Renamed transformation type for clarity
   - Renamed `select_title_to_id` to `select_title_to_array` to better reflect array-based format
