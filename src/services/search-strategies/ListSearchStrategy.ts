@@ -144,12 +144,12 @@ export class ListSearchStrategy extends BaseSearchStrategy {
   private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
     return lists.map((list) => {
       // Prioritize existing top-level workspace_id, fallback to id.workspace_id
-      // This prevents overwriting valid workspace_id with empty string
+      // Use ?? (nullish coalescing) to preserve empty strings as valid values
       const existingWorkspaceId = (list as { workspace_id?: string })
         .workspace_id;
       const idWorkspaceId = (list.id as { workspace_id?: string })
         ?.workspace_id;
-      const workspaceId = existingWorkspaceId || idWorkspaceId;
+      const workspaceId = existingWorkspaceId ?? idWorkspaceId;
 
       // Build result object without overwriting existing workspace_id
       const result: Record<string, unknown> = {
@@ -163,8 +163,9 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         name: list.name || list.title,
       };
 
-      // Only set workspace_id if we found one (don't overwrite with empty string)
-      if (workspaceId) {
+      // Set workspace_id if we found one (null/undefined are excluded by ??)
+      // Empty strings are valid values and will be preserved
+      if (workspaceId !== undefined) {
         result.workspace_id = workspaceId;
       }
 
