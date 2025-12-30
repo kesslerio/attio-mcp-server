@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Consolidated list filter tools (5 → 1)** (#1069) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #2 of 4
+  - Enhanced `filter-list-entries` with 4 auto-detected parameter modes:
+    - Mode 1 (Simple): Single attribute filtering
+    - Mode 2 (Advanced): Multi-condition AND/OR filtering
+    - Mode 3 (Parent Attribute): Filter by parent record attributes
+    - Mode 4 (Parent UUID): Filter by exact parent record UUID
+  - Deprecated tools (removal in v2.0.0): `advanced-filter-list-entries`, `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
+  - Full backward compatibility maintained - all existing Mode 1 calls work unchanged
+  - Simpler API surface - one tool to learn instead of five
+
 ### Fixed
 
 - Universal tools (`search_records`, `get_record_details`) now return proper list format matching list-specific tools instead of generic record format with values wrapper (#1068)

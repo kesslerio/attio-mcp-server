@@ -304,31 +304,90 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries',
-    description: formatToolDescription({
-      capability: 'Filter list entries by single attribute condition.',
-      boundaries:
-        'combine conditions; use advanced-filter for multi-condition.',
-      constraints: 'Requires listId, attributeSlug, condition, value.',
-      recoveryHint: 'Use get-list-details for valid attribute slugs.',
-    }),
+    description: `Filter list entries with flexible parameter modes. Auto-detects mode based on parameters provided.
+
+**Mode 1 - Simple Filtering (Single Attribute):**
+Filter entries by a single attribute condition.
+Required parameters: listId, attributeSlug, condition, value
+
+Example:
+{
+  "listId": "550e8400-e29b-41d4-a716-446655440000",
+  "attributeSlug": "status",
+  "condition": "equals",
+  "value": "active"
+}
+
+**Mode 2 - Advanced Filtering (Multi-Condition):**
+Filter entries with multiple conditions using AND/OR logic.
+Required parameters: listId, filters (object with filters array and matchAny flag)
+
+Example:
+{
+  "listId": "550e8400-e29b-41d4-a716-446655440000",
+  "filters": {
+    "filters": [
+      {"attribute": {"slug": "status"}, "condition": "equals", "value": "active"},
+      {"attribute": {"slug": "priority"}, "condition": "greater_than", "value": 5}
+    ],
+    "matchAny": false
+  }
+}
+
+**Mode 3 - Parent Attribute Filtering:**
+Filter entries by parent record attributes (e.g., company industry, person role).
+Required parameters: listId, parentObjectType, parentAttributeSlug, condition, value
+
+Example:
+{
+  "listId": "550e8400-e29b-41d4-a716-446655440000",
+  "parentObjectType": "companies",
+  "parentAttributeSlug": "categories",
+  "condition": "contains",
+  "value": "Technology"
+}
+
+**Mode 4 - Parent UUID Filtering:**
+Filter entries by exact parent record UUID (convenience mode, fastest).
+Required parameters: listId, parentRecordId
+
+Example:
+{
+  "listId": "550e8400-e29b-41d4-a716-446655440000",
+  "parentRecordId": "660e8400-e29b-41d4-a716-446655440001"
+}
+
+**Mode Detection:**
+The tool automatically detects which mode to use based on the parameters you provide.
+You must provide parameters for exactly ONE mode per call.
+
+**Pagination:**
+All modes support optional 'limit' and 'offset' parameters for pagination.
+
+**Migration Guide:**
+- Replaces: advanced-filter-list-entries → Use Mode 2 (filters parameter)
+- Replaces: filter-list-entries-by-parent → Use Mode 3 (parentObjectType + parentAttributeSlug)
+- Replaces: filter-list-entries-by-parent-id → Use Mode 4 (parentRecordId)`,
     inputSchema: {
       type: 'object',
       properties: {
         listId: {
           type: 'string',
-          description: 'ID of the list to filter entries from',
+          description:
+            'UUID of the list to filter entries from (required for all modes)',
           example: '550e8400-e29b-41d4-a716-446655440000',
         },
+        // Mode 1: Simple filtering parameters
         attributeSlug: {
           type: 'string',
           description:
-            "Slug of the attribute to filter by (e.g., 'stage', 'status')",
+            "Mode 1: Slug of the attribute to filter by (e.g., 'stage', 'status')",
           example: 'stage',
         },
         condition: {
           type: 'string',
           description:
-            "Filter condition (e.g., 'equals', 'contains', 'greater_than')",
+            "Mode 1 & 3: Filter condition (e.g., 'equals', 'contains', 'greater_than')",
           enum: [
             'equals',
             'not_equals',
@@ -348,32 +407,133 @@ export const listsToolDefinitions = [
           example: 'equals',
         },
         value: {
-          description: 'Value to filter by (type depends on the attribute)',
+          description:
+            'Mode 1 & 3: Value to filter by (type depends on the attribute)',
           example: 'Qualified',
         },
+        // Mode 2: Advanced multi-condition filtering
+        filters: {
+          type: 'object',
+          description:
+            'Mode 2: Advanced filter configuration with multiple conditions',
+          properties: {
+            filters: {
+              type: 'array',
+              description: 'Array of filter conditions to apply',
+              items: {
+                type: 'object',
+                properties: {
+                  attribute: {
+                    type: 'object',
+                    properties: {
+                      slug: {
+                        type: 'string',
+                        description:
+                          "Slug of the attribute to filter by (e.g., 'stage', 'status')",
+                      },
+                    },
+                    required: ['slug'],
+                  },
+                  condition: {
+                    type: 'string',
+                    description:
+                      "Filter condition (e.g., 'equals', 'contains', 'greater_than')",
+                    enum: [
+                      'equals',
+                      'not_equals',
+                      'contains',
+                      'not_contains',
+                      'starts_with',
+                      'ends_with',
+                      'greater_than',
+                      'less_than',
+                      'greater_than_or_equals',
+                      'less_than_or_equals',
+                      'is_empty',
+                      'is_not_empty',
+                      'is_set',
+                      'is_not_set',
+                    ],
+                  },
+                  value: {
+                    description:
+                      'Value to filter by (type depends on the attribute)',
+                  },
+                  logicalOperator: {
+                    type: 'string',
+                    description:
+                      "Logical operator to use with the next filter (default: 'and')",
+                    enum: ['and', 'or'],
+                  },
+                },
+                required: ['attribute', 'condition', 'value'],
+              },
+            },
+            matchAny: {
+              type: 'boolean',
+              description:
+                'When true, at least one filter must match (OR logic). When false, all filters must match (AND logic). Default: false',
+            },
+          },
+          required: ['filters'],
+        },
+        // Mode 3: Parent attribute filtering
+        parentObjectType: {
+          type: 'string',
+          description:
+            'Mode 3: Type of the parent record (e.g., "companies", "people")',
+          enum: ['companies', 'people'],
+          example: 'companies',
+        },
+        parentAttributeSlug: {
+          type: 'string',
+          description:
+            'Mode 3: Attribute of the parent record to filter by (e.g., "name", "email_addresses", "categories")',
+          example: 'categories',
+        },
+        // Mode 4: Parent UUID filtering
+        parentRecordId: {
+          type: 'string',
+          description:
+            'Mode 4: UUID of the parent record to filter by (fastest mode for exact record filtering)',
+          example: '660e8400-e29b-41d4-a716-446655440001',
+        },
+        // Common pagination parameters for all modes
         limit: {
           type: 'number',
-          description: 'Maximum number of entries to fetch (default: 20)',
+          description:
+            'Maximum number of entries to fetch (default: 20, applies to all modes)',
           example: 50,
         },
         offset: {
           type: 'number',
-          description: 'Number of entries to skip for pagination (default: 0)',
+          description:
+            'Number of entries to skip for pagination (default: 0, applies to all modes)',
           example: 0,
         },
       },
-      required: ['listId', 'attributeSlug', 'condition', 'value'],
+      required: ['listId'],
       additionalProperties: false,
     },
   },
   {
     name: 'advanced-filter-list-entries',
-    description: formatToolDescription({
-      capability: 'Filter entries with multi-condition queries (AND/OR logic).',
-      boundaries: 'modify entries; read-only.',
-      constraints: 'Requires listId, filters array; matchAny for OR logic.',
-      recoveryHint: 'Use filter-list-entries for single conditions.',
-    }),
+    description: `[DEPRECATED] This tool has been consolidated into 'filter-list-entries'.
+
+Please use 'filter-list-entries' with Mode 2 (Advanced) parameters instead:
+- Pass a 'filters' object with 'filters' array and 'matchAny' flag
+- All functionality remains identical
+
+This tool will be removed in version 2.0.0.
+
+---
+
+${formatToolDescription({
+  capability: 'Filter entries with multi-condition queries (AND/OR logic).',
+  boundaries: 'modify entries; read-only.',
+  constraints: 'Requires listId, filters array; matchAny for OR logic.',
+  recoveryHint: 'Use filter-list-entries for single conditions.',
+})}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -570,14 +730,23 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries-by-parent',
-    description: formatToolDescription({
-      capability:
-        'Filter entries by parent record attributes (industry, role).',
-      boundaries: 'search multiple lists or modify records.',
-      constraints:
-        'Requires listId, parentObjectType, parentAttributeSlug, condition, value.',
-      recoveryHint: 'Use records_discover_attributes for valid slugs.',
-    }),
+    description: `[DEPRECATED] This tool has been consolidated into 'filter-list-entries'.
+
+Please use 'filter-list-entries' with Mode 3 (Parent Attribute) parameters instead:
+- Pass 'parentObjectType', 'parentAttributeSlug', 'condition', and 'value'
+- All functionality remains identical
+
+This tool will be removed in version 2.0.0.
+
+---
+
+${formatToolDescription({
+  capability: 'Filter entries by parent record attributes (industry, role).',
+  boundaries: 'search multiple lists or modify records.',
+  constraints:
+    'Requires listId, parentObjectType, parentAttributeSlug, condition, value.',
+  recoveryHint: 'Use records_discover_attributes for valid slugs.',
+})}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -648,14 +817,24 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries-by-parent-id',
-    description: formatToolDescription({
-      capability: 'Filter entries by exact parent record UUID.',
-      boundaries: 'search multiple lists.',
-      constraints:
-        'Requires list UUID, record UUID; faster than attribute filtering.',
-      recoveryHint:
-        'Use get-record-list-memberships for workspace-wide search.',
-    }),
+    description: `[DEPRECATED] This tool has been consolidated into 'filter-list-entries'.
+
+Please use 'filter-list-entries' with Mode 4 (Parent UUID) parameters instead:
+- Pass 'parentRecordId' parameter
+- Note: Parameter renamed from 'recordId' to 'parentRecordId' for consistency
+- All functionality remains identical (fastest filtering mode)
+
+This tool will be removed in version 2.0.0.
+
+---
+
+${formatToolDescription({
+  capability: 'Filter entries by exact parent record UUID.',
+  boundaries: 'search multiple lists.',
+  constraints:
+    'Requires list UUID, record UUID; faster than attribute filtering.',
+  recoveryHint: 'Use get-record-list-memberships for workspace-wide search.',
+})}`,
     inputSchema: {
       type: 'object',
       properties: {
