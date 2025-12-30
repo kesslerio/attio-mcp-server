@@ -95,6 +95,13 @@ export class SearchUtilities {
    * Issue #598: Simplified with better type safety and helper methods
    */
   static getFieldValue(record: AttioRecord, field: string): string {
+    // Fix for #1068: Check top-level fields first (for lists)
+    const topLevelValue = (record as Record<string, unknown>)[field];
+    if (typeof topLevelValue === 'string') {
+      return topLevelValue;
+    }
+
+    // Check in values wrapper (for other record types)
     const values = record.values as Record<string, AttioFieldValue>;
     if (!values) return '';
 
@@ -161,6 +168,14 @@ export class SearchUtilities {
    * Helper method to extract field value from a list record for content search
    */
   static getListFieldValue(list: AttioRecord, field: string): string {
+    // Fix for #1068: Lists now have fields at top level (not wrapped in values)
+    // Check top-level field first (new format)
+    const topLevelValue = (list as Record<string, unknown>)[field];
+    if (typeof topLevelValue === 'string') {
+      return topLevelValue;
+    }
+
+    // Fall back to values wrapper for backwards compatibility (old format)
     const values = list.values as Record<string, unknown>;
     if (!values) return '';
 
