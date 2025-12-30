@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-12-30] - Daily Update
+
+### Fixed
+
+- Updated @modelcontextprotocol/sdk peerDependency to ~1.24.0 (#1063)
+- Excluded failing CI tests from offline test suite (#1061)
+- Skipped status-field-validation test in CI until core package build is added
+- Preserved line breaks in note content (#1052)
+- Fixed People search results showing 'Unnamed' instead of full name (#1051, #1054)
+
+### Changed
+
+- Simplified tool alias system (#1041, #1057)
+- Refactored transformation type 'select_title_to_id' to 'select_title_to_array' (#1055)
+- Implemented Strategy Pattern for CRUD error handlers (#1001, #1050)
+
 ## [1.4.0] - 2025-12-29
 
 **TL;DR for Users**: New workspace skill generator, better select field handling, MCP-compliant tool naming. **No action needed** - old tool names still work via backward-compatible aliases until v2.0.0 (Q1 2026). See [Migration Guide](./docs/MIGRATION-GUIDE.md) for future planning.
