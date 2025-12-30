@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- MCP Registry publishing workflow schema version and re-publish errors (#1066)
+
 ## [1.4.0] - 2025-12-29
 
 **TL;DR for Users**: New workspace skill generator, better select field handling, MCP-compliant tool naming. **No action needed** - old tool names still work via backward-compatible aliases until v2.0.0 (Q1 2026). See [Migration Guide](./docs/MIGRATION-GUIDE.md) for future planning.
