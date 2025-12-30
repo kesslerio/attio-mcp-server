@@ -240,6 +240,22 @@ export interface EnhancedAttioRecord extends AttioRecord {
 }
 
 /**
+ * AttioListRecord: Type for lists when treated as records in universal tools
+ *
+ * Lists use `list_id` in the id object, while typical records use `record_id`.
+ * This type extends AttioRecord to allow both ID formats, making lists compatible
+ * with universal record tools.
+ *
+ * @see Issue #1068 - Fix universal tools list format
+ * @see src/services/search-strategies/ListSearchStrategy.ts
+ */
+export type AttioListRecord = AttioRecord & {
+  id: AttioRecord['id'] & {
+    list_id: string;
+  };
+};
+
+/**
  * Interface for a batch request item
  */
 export interface BatchRequestItem<T> {

@@ -91,17 +91,52 @@ export class SearchUtilities {
   }
 
   /**
+   * Extract top-level field value with explicit null/undefined handling
+   *
+   * @param record - The record object to extract from
+   * @param field - The field name to extract
+   * @returns The string value if field exists at top level, null if not found
+   */
+  private static getTopLevelFieldValue(
+    record: Record<string, unknown>,
+    field: string
+  ): string | null {
+    const topLevelValue = record[field];
+
+    // Explicitly handle non-string top-level values
+    if (topLevelValue !== undefined && topLevelValue !== null) {
+      if (typeof topLevelValue === 'string') {
+        return topLevelValue;
+      }
+      // Top-level exists but isn't a string - convert to string, skip values wrapper
+      // This prevents unintended fallback to values wrapper when top-level field exists
+      return String(topLevelValue);
+    }
+
+    return null; // Field not found at top level
+  }
+
+  /**
    * Helper method to extract field value from a record
    * Issue #598: Simplified with better type safety and helper methods
+   * Issue #1068: Check top-level fields first (for lists), with explicit non-string handling
+   *
+   * Priority order:
+   * 1. Top-level string field (for lists and new format)
+   * 2. Top-level non-string field (convert to string, skip values wrapper)
+   * 3. Values wrapper field (for records in old format)
    */
   static getFieldValue(record: AttioRecord, field: string): string {
-    // Fix for #1068: Check top-level fields first (for lists)
-    const topLevelValue = (record as Record<string, unknown>)[field];
-    if (typeof topLevelValue === 'string') {
+    // Try top-level fields first (for lists and new format)
+    const topLevelValue = this.getTopLevelFieldValue(
+      record as Record<string, unknown>,
+      field
+    );
+    if (topLevelValue !== null) {
       return topLevelValue;
     }
 
-    // Check in values wrapper (for other record types)
+    // No top-level field - check in values wrapper (for other record types)
     const values = record.values as Record<string, AttioFieldValue>;
     if (!values) return '';
 
@@ -166,12 +201,15 @@ export class SearchUtilities {
 
   /**
    * Helper method to extract field value from a list record for content search
+   * Issue #1068: Lists now have fields at top level (not wrapped in values)
    */
   static getListFieldValue(list: AttioRecord, field: string): string {
-    // Fix for #1068: Lists now have fields at top level (not wrapped in values)
-    // Check top-level field first (new format)
-    const topLevelValue = (list as Record<string, unknown>)[field];
-    if (typeof topLevelValue === 'string') {
+    // Try top-level field first (new format) - uses shared helper for consistency
+    const topLevelValue = this.getTopLevelFieldValue(
+      list as Record<string, unknown>,
+      field
+    );
+    if (topLevelValue !== null) {
       return topLevelValue;
     }
 

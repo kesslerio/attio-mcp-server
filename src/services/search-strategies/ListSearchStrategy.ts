@@ -3,7 +3,7 @@
  * Issue #574: Extract list search logic from UniversalSearchService
  */
 
-import { AttioRecord, AttioList } from '../../types/attio.js';
+import { AttioRecord, AttioList, AttioListRecord } from '../../types/attio.js';
 import {
   SearchType,
   MatchType,
@@ -115,6 +115,31 @@ export class ListSearchStrategy extends BaseSearchStrategy {
   /**
    * Convert Attio lists to AttioRecord format
    * Fix for Issue #1068: Return lists in proper format (not wrapped in values)
+   *
+   * Lists use `list_id` in the id object, while typical records use `record_id`.
+   * This method transforms lists to be compatible with universal record tools while
+   * maintaining the proper list ID structure. The returned objects are compatible
+   * with AttioRecord but have list-specific ID structure (AttioListRecord).
+   *
+   * @example Input (AttioList from API):
+   * {
+   *   id: { list_id: 'list-abc-123', workspace_id: 'ws-xyz' },
+   *   name: 'Sales Pipeline',
+   *   title: 'Sales Pipeline',
+   *   workspace_id: 'ws-xyz',
+   *   ...
+   * }
+   *
+   * @example Output (AttioListRecord):
+   * {
+   *   id: { list_id: 'list-abc-123' },
+   *   name: 'Sales Pipeline',
+   *   workspace_id: 'ws-xyz',
+   *   ...
+   * }
+   *
+   * @param lists - Array of AttioList objects from the API
+   * @returns Array of AttioRecord objects with list-specific ID structure (AttioListRecord)
    */
   private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
     return lists.map((list) => {
@@ -143,7 +168,9 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         result.workspace_id = workspaceId;
       }
 
-      return result as unknown as AttioRecord;
+      // Cast to AttioListRecord for type safety, which is compatible with AttioRecord
+      // The result has list_id in the id object, making it an AttioListRecord
+      return result as AttioListRecord;
     });
   }
 
