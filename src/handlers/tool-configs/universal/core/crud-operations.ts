@@ -122,8 +122,13 @@ export const createRecordConfig: UniversalToolConfig<
       ? getSingularResourceType(resourceType)
       : 'record';
 
+    // For lists, fields are at top level (no values wrapper)
+    // For other records, fields are in values wrapper
+    const hasValues = record.values && Object.keys(record.values).length > 0;
     const inferredName = extractDisplayName(
-      record.values as Record<string, unknown> | undefined,
+      hasValues
+        ? (record.values as Record<string, unknown>)
+        : (record as Record<string, unknown>),
       resourceType
     );
     const displayName =
@@ -231,8 +236,13 @@ export const updateRecordConfig: UniversalToolConfig<
       ? getSingularResourceType(resourceType)
       : 'record';
 
+    // For lists, fields are at top level (no values wrapper)
+    // For other records, fields are in values wrapper
+    const hasValues = record.values && Object.keys(record.values).length > 0;
     const name = extractDisplayName(
-      record.values as Record<string, unknown> | undefined,
+      hasValues
+        ? (record.values as Record<string, unknown>)
+        : (record as Record<string, unknown>),
       resourceType
     );
     const id = String(record.id?.record_id || 'unknown');

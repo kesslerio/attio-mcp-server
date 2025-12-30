@@ -47,8 +47,11 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
+    // For lists, fields are at top level (no values wrapper)
+    // For other records, fields are in values wrapper
+    const hasValues = record.values && Object.keys(record.values).length > 0;
     const name = UniversalUtilityService.extractDisplayName(
-      record.values || {}
+      hasValues ? record.values : (record as Record<string, unknown>)
     );
     const id = String(record.id?.record_id || 'unknown');
 
