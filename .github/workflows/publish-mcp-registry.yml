@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g., v1.1.2)'
+        description: 'Version tag to publish (e.g., v1.4.0)'
         required: true
         type: string
 
@@ -18,26 +18,78 @@ permissions:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.check.outputs.should_publish }}
+      package_version: ${{ steps.extract.outputs.version }}
     steps:
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.version.outputs.version }}
+
+      - name: Extract package version
+        id: extract
+        run: |
+          PKG_VERSION=$(jq -r '.version' package.json)
+          SERVER_VERSION=$(jq -r '.version' server.json)
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          TAG_VERSION_STRIPPED="${TAG_VERSION#v}"
+
+          echo "version=$PKG_VERSION" >> $GITHUB_OUTPUT
+
+          # Validate versions match
+          if [ "$PKG_VERSION" != "$SERVER_VERSION" ]; then
+            echo "::error::Version mismatch: package.json=$PKG_VERSION, server.json=$SERVER_VERSION"
+            exit 1
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$PKG_VERSION" != "$TAG_VERSION_STRIPPED" ]; then
+            echo "::error::Version mismatch: package.json=$PKG_VERSION, input tag=$TAG_VERSION_STRIPPED"
+            exit 1
+          fi
+
+      - name: Check if package exists on npm
+        id: check
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          if npm view "attio-mcp@$VERSION" version &>/dev/null; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "::notice::Package attio-mcp@$VERSION already exists on npm, skipping publish"
+          else
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "::notice::Package attio-mcp@$VERSION not found on npm, will publish"
+          fi
 
       - name: Setup Node.js
+        if: steps.check.outputs.should_publish == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
+        if: steps.check.outputs.should_publish == 'true'
         run: npm ci
 
       - name: Run tests
+        if: steps.check.outputs.should_publish == 'true'
         run: npm run test:offline
 
       - name: Build package
+        if: steps.check.outputs.should_publish == 'true'
         run: npm run build
 
       - name: Publish to NPM
+        if: steps.check.outputs.should_publish == 'true'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -46,8 +98,19 @@ jobs:
     needs: publish-npm
     runs-on: ubuntu-latest
     steps:
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.version.outputs.version }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -56,12 +119,17 @@ jobs:
 
       - name: Install MCP Publisher CLI
         run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.2.3/mcp-publisher_1.2.3_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz
+          # Use latest to avoid schema version drift
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz
           chmod +x mcp-publisher
+          ./mcp-publisher --version
 
-      - name: Validate server.json
+      - name: Validate server.json schema
         run: |
-          curl -s -o /tmp/server.schema.json https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json
+          # Get schema version from server.json
+          SCHEMA_URL=$(jq -r '."$schema"' server.json)
+          echo "Validating against schema: $SCHEMA_URL"
+          curl -s -o /tmp/server.schema.json "$SCHEMA_URL"
           npx ajv-cli validate \
             -s /tmp/server.schema.json \
             -d server.json \
@@ -75,6 +143,9 @@ jobs:
 
       - name: Verify publication
         run: |
-          echo "Server published to MCP Registry!"
-          echo "Name: io.github.kesslerio/attio-mcp-server"
-          echo "Version: ${{ github.ref_name }}"
+          VERSION="${{ needs.publish-npm.outputs.package_version }}"
+          echo "✓ Successfully published to MCP Registry"
+          echo "Server: io.github.kesslerio/attio-mcp-server"
+          echo "Version: $VERSION"
+          echo "npm: https://www.npmjs.com/package/attio-mcp/v/$VERSION"
+          echo "Registry: https://registry.modelcontextprotocol.io"

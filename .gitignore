@@ -79,3 +79,7 @@ examples/cloudflare-mcp-server/.wrangler/
 logs/*.log
 tsconfig.tsbuildinfo
 .github/claude-cache/
+
+# MCP Publisher tokens (local authentication)
+.mcpregistry_*
+mcp-publisher
