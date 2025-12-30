@@ -118,13 +118,16 @@ export class ListSearchStrategy extends BaseSearchStrategy {
    */
   private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
     return lists.map((list) => {
-      // Extract workspace_id from id object to top level (matching list-specific tools)
-      const workspaceId =
-        (list.id as { workspace_id?: string })?.workspace_id || '';
+      // Prioritize existing top-level workspace_id, fallback to id.workspace_id
+      // This prevents overwriting valid workspace_id with empty string
+      const existingWorkspaceId = (list as { workspace_id?: string })
+        .workspace_id;
+      const idWorkspaceId = (list.id as { workspace_id?: string })
+        ?.workspace_id;
+      const workspaceId = existingWorkspaceId || idWorkspaceId;
 
-      // Return list in proper format - fields at top level, not wrapped in values
-      // This ensures universal tools return same format as list-specific tools
-      return {
+      // Build result object without overwriting existing workspace_id
+      const result: Record<string, unknown> = {
         ...list,
         // Ensure id structure is consistent
         id: {
@@ -133,9 +136,14 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         },
         // Use name field (fallback to title for backward compatibility)
         name: list.name || list.title,
-        // Extract workspace_id to top level
-        workspace_id: workspaceId,
-      } as unknown as AttioRecord;
+      };
+
+      // Only set workspace_id if we found one (don't overwrite with empty string)
+      if (workspaceId) {
+        result.workspace_id = workspaceId;
+      }
+
+      return result as unknown as AttioRecord;
     });
   }
 
