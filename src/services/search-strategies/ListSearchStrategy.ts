@@ -76,10 +76,15 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         throw new Error('Lists search function not available');
       }
 
+      // For content search, fetch all lists and apply pagination after filtering
+      // For regular search, pass offset to the list function
+      const requestOffset =
+        search_type === SearchType.CONTENT ? 0 : offset || 0;
+
       const lists = await this.dependencies.listFunction(
         searchQuery,
         requestLimit,
-        0
+        requestOffset
       );
 
       // Convert AttioList[] to AttioRecord[] format
@@ -109,26 +114,29 @@ export class ListSearchStrategy extends BaseSearchStrategy {
 
   /**
    * Convert Attio lists to AttioRecord format
+   * Fix for Issue #1068: Return lists in proper format (not wrapped in values)
    */
   private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
-    return lists.map(
-      (list) =>
-        ({
-          id: {
-            record_id: list.id.list_id,
-            list_id: list.id.list_id,
-          },
-          values: {
-            name: list.name || list.title,
-            description: list.description,
-            parent_object: list.object_slug || list.parent_object,
-            api_slug: list.api_slug,
-            workspace_id: list.workspace_id,
-            workspace_member_access: list.workspace_member_access,
-            created_at: list.created_at,
-          },
-        }) as unknown as AttioRecord
-    );
+    return lists.map((list) => {
+      // Extract workspace_id from id object to top level (matching list-specific tools)
+      const workspaceId =
+        (list.id as { workspace_id?: string })?.workspace_id || '';
+
+      // Return list in proper format - fields at top level, not wrapped in values
+      // This ensures universal tools return same format as list-specific tools
+      return {
+        ...list,
+        // Ensure id structure is consistent
+        id: {
+          ...list.id,
+          list_id: list.id.list_id,
+        },
+        // Use name field (fallback to title for backward compatibility)
+        name: list.name || list.title,
+        // Extract workspace_id to top level
+        workspace_id: workspaceId,
+      } as unknown as AttioRecord;
+    });
   }
 
   /**

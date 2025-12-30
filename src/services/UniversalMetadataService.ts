@@ -322,6 +322,36 @@ export class UniversalMetadataService {
     return this.facade.getAttributes(params);
   }
 
+  /**
+   * Get record details by resource type and record ID
+   * Fix for Issue #1068: Enable get_record_details for lists
+   */
+  static async getRecordDetails(params: {
+    resource_type: UniversalResourceType;
+    record_id: string;
+  }): Promise<Record<string, unknown>> {
+    const { resource_type, record_id } = params;
+
+    // Import list service for lists
+    const { getListDetails } = await import('../objects/lists/base.js');
+
+    switch (resource_type) {
+      case UniversalResourceType.LISTS: {
+        // Return list details in proper format (not wrapped in values)
+        const list = await getListDetails(record_id);
+        return list as unknown as Record<string, unknown>;
+      }
+
+      // For other resource types, use existing attribute fetching
+      // (can be extended to other resources as needed)
+      default:
+        throw new Error(
+          `getRecordDetails not yet implemented for resource_type: ${resource_type}. ` +
+            `Use getAttributes() or getAttributesForRecord() instead.`
+        );
+    }
+  }
+
   static async discoverAttributes(
     resource_type: UniversalResourceType,
     options?: {
