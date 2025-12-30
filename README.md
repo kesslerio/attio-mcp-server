@@ -196,7 +196,7 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 ### 🤝 **OpenAI MCP Compatibility**
 
 - **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
-- **Full Tool Access (Default)**: All 33 universal tools are exposed by default. Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
+- **Full Tool Access (Default)**: All 21 tools are exposed by default. Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
 - **Search-Only Mode**: To restrict to read-only tools (`search`, `fetch`, `aaa-health-check`), explicitly configure `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery dashboard when Developer Mode is unavailable.
 - **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
 - **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.
@@ -493,6 +493,80 @@ See [Cloudflare Worker Deployment Guide](./examples/cloudflare-mcp-server/README
 - Token encryption configuration
 - Production deployment checklist
 - Troubleshooting guide
+
+---
+
+## 🆕 What's New in v1.4.0
+
+### Major Features
+
+- **🎯 Workspace Schema Skill Generator** (#983) - Auto-generate Claude Skills from your Attio workspace schema for error-free field names and options
+- **🔍 Select-field Transformer** (#1019) - Case-insensitive matching, partial matching, and UUID pass-through for select/status fields
+- **🛠️ Attio Skill Generator Meta-skill** (#1020) - Meta-skill for automatic workspace documentation
+- **📚 Universal Usage Guide Skill** (#1018) - Hand-crafted workflow patterns and error prevention
+- **⚙️ `get_record_attribute_options` tool** (#975) - Get valid options for select/status fields with enhanced error messages
+- **📞 Phone validation** (#951) - Built-in phone number validation support
+- **⏱️ Configurable option fetch delay** - Rate limiting control via `--option-fetch-delay` flag
+
+### Major Enhancements
+
+- **🏷️ MCP-compliant tool naming** (#1039) - All tools now use `snake_case`, verb-first naming (old names work via aliases until v2.0.0)
+- **🎨 Custom object display names** (#1017) - Fetch display names directly from Attio API
+- **📖 Split integration patterns** (#1023) - Progressive discovery patterns by use case
+- **💡 Enhanced attribute error messages** (#975) - Levenshtein distance suggestions for typos
+
+### Critical Fixes
+
+- 📝 Note content line breaks preserved (#1052)
+- 👤 People search "Unnamed" display fixed (#1051)
+- ✅ Select field persistence (#1045)
+- 🔗 Record-reference auto-transformation (#997)
+- 📊 Multi-select array auto-transformation (#992)
+- 🛡️ Complex attribute validation (#991)
+- ⚠️ Field persistence false warnings (#995)
+- 📦 SDK dependency pinning (#1025)
+- 💼 Deal stage/UTM validation (#1043)
+- 📍 Location field auto-normalization (#987)
+
+### Internal Improvements
+
+- Tool alias system refactoring (#1041) - Type-safe constants with pattern-based generation
+- Strategy Pattern for CRUD error handlers (#1001)
+- Consolidated metadata fetching (#984)
+- UniversalUpdateService modularization (#984)
+- Select transformation type rename (#1055) - `select_title_to_array` for clarity
+
+## 🔄 Migration Guide
+
+**Upgrading from v1.3.x or earlier?** Tool names have changed to follow MCP naming conventions.
+
+**Old names still work** via backward-compatible aliases, but will be removed in **v2.0.0 (Q1 2026)**.
+
+### Tool Name Changes
+
+| Old Name (Deprecated)            | New Name (MCP-compliant)         | Notes              |
+| -------------------------------- | -------------------------------- | ------------------ |
+| `records_search`                 | `search_records`                 | Verb-first pattern |
+| `records_get_details`            | `get_record_details`             | Verb-first pattern |
+| `records_get_attributes`         | `get_record_attributes`          | Verb-first pattern |
+| `records_discover_attributes`    | `discover_record_attributes`     | Verb-first pattern |
+| `records_search_advanced`        | `search_records_advanced`        | Verb-first pattern |
+| `records_search_by_relationship` | `search_records_by_relationship` | Verb-first pattern |
+| `records_search_by_content`      | `search_records_by_content`      | Verb-first pattern |
+| `records_search_by_timeframe`    | `search_records_by_timeframe`    | Verb-first pattern |
+| `records_batch`                  | `batch_records`                  | Verb-first pattern |
+| `search-records`                 | `search_records`                 | snake_case format  |
+| `get-record-details`             | `get_record_details`             | snake_case format  |
+| `create-record`                  | `create_record`                  | snake_case format  |
+| `update-record`                  | `update_record`                  | snake_case format  |
+| `delete-record`                  | `delete_record`                  | snake_case format  |
+| `create-note`                    | `create_note`                    | snake_case format  |
+| `list-notes`                     | `list_notes`                     | snake_case format  |
+| `smithery-debug-config`          | `smithery_debug_config`          | snake_case format  |
+
+**Action Required:** Update your integrations to use new tool names before Q1 2026. See [MIGRATION-GUIDE.md](docs/MIGRATION-GUIDE.md) for the complete migration table.
+
+---
 
 ## ⚡ Quick Start
 
