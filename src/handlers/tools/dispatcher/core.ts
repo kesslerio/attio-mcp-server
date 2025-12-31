@@ -57,6 +57,7 @@ import {
   handleAddRecordToListOperation,
   handleRemoveRecordFromListOperation,
   handleUpdateListEntryOperation,
+  handleManageListEntryOperation,
   handleGetListDetailsOperation,
   handleGetListEntriesOperation,
   handleFilterListEntriesOperation,
@@ -363,6 +364,8 @@ export async function executeToolRequest(request: CallToolRequest) {
       result = await handleRemoveRecordFromListOperation(request, toolConfig);
     } else if (toolType === 'updateListEntry') {
       result = await handleUpdateListEntryOperation(request, toolConfig);
+    } else if (toolType === 'manageListEntry') {
+      result = await handleManageListEntryOperation(request, toolConfig);
     } else if (toolType === 'getListDetails') {
       result = await handleGetListDetailsOperation(request, toolConfig);
     } else if (toolType === 'getListEntries') {
