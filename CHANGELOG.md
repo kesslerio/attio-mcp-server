@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Deprecated tools (removal in v2.0.0): `advanced-filter-list-entries`, `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
   - Full backward compatibility maintained - all existing Mode 1 calls work unchanged
   - Simpler API surface - one tool to learn instead of five
+- **Consolidated list entry management tools (3 → 1)** (#1075) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #3 of 4
+  - Enhanced `manage-list-entry` with 3 auto-detected parameter modes:
+    - Mode 1 (Add): Add company/person to list with optional initial values
+    - Mode 2 (Remove): Remove entry from list
+    - Mode 3 (Update): Update entry attributes (stage, status, custom fields)
+  - Deprecated tools (removal in v2.0.0): `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
+  - Full backward compatibility maintained - all existing calls work unchanged with identical parameter structure
+  - Simpler API surface - one tool to learn instead of three
 
 ### Fixed
 

@@ -15,6 +15,11 @@ import {
   filterListEntriesByParent,
   filterListEntriesByParentId,
 } from '../../../../objects/lists/filtering.js';
+import {
+  addRecordToList,
+  removeRecordFromList,
+  updateListEntry,
+} from '../../../../objects/lists/entries.js';
 import { ListEntryFilters } from '../../../../api/operations/index.js';
 
 /**
@@ -197,6 +202,210 @@ export async function handleUpdateListEntryOperation(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries/${entryId}`,
       'PUT',
+      hasResponseData(error) ? error.response.data : {}
+    );
+  }
+}
+
+/**
+ * Management mode type for unified manage-list-entry tool
+ */
+type ManagementMode = 'add' | 'remove' | 'update';
+
+/**
+ * Detects which management mode to use based on parameters provided
+ *
+ * Mode detection priority (most specific to least specific):
+ * 1. Add (recordId + objectType) - Mode 1
+ * 2. Update (entryId + attributes) - Mode 3
+ * 3. Remove (entryId only) - Mode 2
+ *
+ * @param params - Request parameters
+ * @returns ManagementMode
+ * @throws Error if no mode or multiple modes detected
+ */
+function detectManagementMode(params: Record<string, unknown>): ManagementMode {
+  const hasRecordId = 'recordId' in params && params.recordId !== undefined;
+  const hasObjectType =
+    'objectType' in params && params.objectType !== undefined;
+  const hasEntryId = 'entryId' in params && params.entryId !== undefined;
+  const hasAttributes =
+    'attributes' in params && params.attributes !== undefined;
+
+  // Count mode indicators
+  const isAddMode = hasRecordId && hasObjectType;
+  const isUpdateMode = hasEntryId && hasAttributes;
+  const isRemoveMode = hasEntryId && !hasAttributes;
+
+  const modesDetected = [isAddMode, isUpdateMode, isRemoveMode].filter(
+    Boolean
+  ).length;
+
+  if (modesDetected === 0) {
+    throw new Error(
+      'No management mode detected. Must provide parameters for one of:\n' +
+        '  - Mode 1 (Add): recordId, objectType, [initialValues]\n' +
+        '  - Mode 2 (Remove): entryId (only)\n' +
+        '  - Mode 3 (Update): entryId, attributes\n' +
+        'See tool description for details on each mode.'
+    );
+  }
+
+  if (modesDetected > 1) {
+    throw new Error(
+      'Multiple management modes detected. Provide parameters for exactly ONE mode.\n' +
+        'See tool description for details on parameter requirements for each mode.'
+    );
+  }
+
+  // Priority: add > update > remove
+  if (isAddMode) return 'add';
+  if (isUpdateMode) return 'update';
+  return 'remove';
+}
+
+/**
+ * Handle manageListEntry operations (unified with 3 action modes)
+ *
+ * This unified handler supports 3 management modes:
+ * - Mode 1 (Add): Add record to list
+ * - Mode 2 (Remove): Remove entry from list
+ * - Mode 3 (Update): Update entry attributes
+ *
+ * Mode is auto-detected based on parameters provided.
+ */
+export async function handleManageListEntryOperation(
+  request: CallToolRequest,
+  toolConfig: ToolConfig
+) {
+  const params = request.params.arguments || {};
+  const listId = params.listId as string;
+
+  // Validate required listId parameter (common to all modes)
+  if (!listId) {
+    return createErrorResult(
+      new Error('listId parameter is required'),
+      '/lists',
+      'POST',
+      { status: 400, message: 'Missing required parameter: listId' }
+    );
+  }
+
+  try {
+    // Detect management mode
+    const mode = detectManagementMode(params);
+
+    // Route to appropriate handler based on mode
+    let result;
+
+    switch (mode) {
+      case 'add': {
+        // Mode 1: Add record to list
+        const recordId = params.recordId as string;
+        const objectType = params.objectType as string;
+        const initialValues = params.initialValues as
+          | Record<string, unknown>
+          | undefined;
+
+        // Validate Mode 1 parameters
+        if (!recordId) {
+          return createErrorResult(
+            new Error('Mode 1 (Add): recordId parameter is required'),
+            `/lists/${listId}/entries`,
+            'POST',
+            { status: 400, message: 'Mode 1 requires: recordId, objectType' }
+          );
+        }
+        if (!objectType) {
+          return createErrorResult(
+            new Error('Mode 1 (Add): objectType parameter is required'),
+            `/lists/${listId}/entries`,
+            'POST',
+            { status: 400, message: 'Mode 1 requires: recordId, objectType' }
+          );
+        }
+
+        result = await addRecordToList(
+          listId,
+          recordId,
+          objectType,
+          initialValues
+        );
+        break;
+      }
+
+      case 'remove': {
+        // Mode 2: Remove entry from list
+        const entryId = params.entryId as string;
+
+        // Validate Mode 2 parameters
+        if (!entryId) {
+          return createErrorResult(
+            new Error('Mode 2 (Remove): entryId parameter is required'),
+            `/lists/${listId}/entries`,
+            'DELETE',
+            { status: 400, message: 'Mode 2 requires: entryId' }
+          );
+        }
+
+        result = await removeRecordFromList(listId, entryId);
+        break;
+      }
+
+      case 'update': {
+        // Mode 3: Update entry attributes
+        const entryId = params.entryId as string;
+        const attributes = params.attributes as Record<string, unknown>;
+
+        // Validate Mode 3 parameters
+        if (!entryId) {
+          return createErrorResult(
+            new Error('Mode 3 (Update): entryId parameter is required'),
+            `/lists/${listId}/entries`,
+            'PATCH',
+            { status: 400, message: 'Mode 3 requires: entryId, attributes' }
+          );
+        }
+        if (
+          !attributes ||
+          typeof attributes !== 'object' ||
+          Array.isArray(attributes)
+        ) {
+          return createErrorResult(
+            new Error(
+              'Mode 3 (Update): attributes parameter is required and must be an object'
+            ),
+            `/lists/${listId}/entries`,
+            'PATCH',
+            {
+              status: 400,
+              message: 'Mode 3 requires: entryId, attributes (object)',
+            }
+          );
+        }
+
+        result = await updateListEntry(listId, entryId, attributes);
+        break;
+      }
+    }
+
+    // Format result based on mode
+    // Add and Update return AttioListEntry, Remove returns boolean
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : mode === 'remove'
+        ? JSON.stringify({
+            success: true,
+            message: `Entry removed from list ${listId}`,
+          })
+        : result;
+
+    return formatResponse(formattedResult);
+  } catch (error: unknown) {
+    return createErrorResult(
+      error instanceof Error ? error : new Error('Unknown error'),
+      `/lists/${listId}/entries`,
+      'POST',
       hasResponseData(error) ? error.response.data : {}
     );
   }

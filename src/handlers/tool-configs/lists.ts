@@ -166,6 +166,21 @@ export const listsToolConfigs = {
     },
   } as ToolConfig,
 
+  manageListEntry: {
+    name: 'manage-list-entry',
+    type: 'manageListEntry' as const,
+    handler: () => {
+      // Placeholder - actual routing happens in dispatcher
+      throw new Error('Direct handler call not supported - use dispatcher');
+    },
+    idParams: ['listId'],
+    formatResult: (result: AttioListEntry | boolean) => {
+      // Return JSON string
+      // Boolean result (from remove) is handled in dispatcher
+      return JSON.stringify(result);
+    },
+  } as ListActionToolConfig,
+
   filterListEntriesByParent: {
     name: 'filter-list-entries-by-parent',
     handler: filterListEntriesByParent,
@@ -623,13 +638,21 @@ ${formatToolDescription({
   },
   {
     name: 'add-record-to-list',
-    description: formatToolDescription({
-      capability: 'Add company or person to list with optional initial values.',
-      boundaries: 'create records; record must exist first.',
-      requiresApproval: true,
-      constraints: 'Requires list UUID, record UUID, object type.',
-      recoveryHint: 'If not found, create record first with create-record.',
-    }),
+    description: `[DEPRECATED] This tool has been consolidated into 'manage-list-entry'.
+
+Please use 'manage-list-entry' with Mode 1 (Add) parameters instead:
+- Pass 'recordId', 'objectType', and optionally 'initialValues'
+- All functionality remains identical
+
+This tool will be removed in version 2.0.0.
+
+${formatToolDescription({
+  capability: 'Add company or person to list with optional initial values.',
+  boundaries: 'create records; record must exist first.',
+  requiresApproval: true,
+  constraints: 'Requires list UUID, record UUID, object type.',
+  recoveryHint: 'If not found, create record first with create-record.',
+})}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -662,13 +685,21 @@ ${formatToolDescription({
   },
   {
     name: 'remove-record-from-list',
-    description: formatToolDescription({
-      capability: 'Remove company or person from list (membership only).',
-      boundaries: 'delete underlying record; membership only.',
-      requiresApproval: true,
-      constraints: 'Requires list UUID, entry UUID (not record UUID).',
-      recoveryHint: 'Use get-list-entries to find entry UUID.',
-    }),
+    description: `[DEPRECATED] This tool has been consolidated into 'manage-list-entry'.
+
+Please use 'manage-list-entry' with Mode 2 (Remove) parameters instead:
+- Pass 'entryId' only (do not include 'attributes' or 'recordId')
+- All functionality remains identical
+
+This tool will be removed in version 2.0.0.
+
+${formatToolDescription({
+  capability: 'Remove company or person from list (membership only).',
+  boundaries: 'delete underlying record; membership only.',
+  requiresApproval: true,
+  constraints: 'Requires list UUID, entry UUID (not record UUID).',
+  recoveryHint: 'Use get-list-entries to find entry UUID.',
+})}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -689,14 +720,21 @@ ${formatToolDescription({
   },
   {
     name: 'update-list-entry',
-    description: formatToolDescription({
-      capability:
-        'Update list entry attributes (stage, status, custom fields).',
-      boundaries: 'update record attributes; use update-record for that.',
-      requiresApproval: true,
-      constraints: 'Requires list UUID, entry UUID, attributes object.',
-      recoveryHint: 'Use get-list-details for valid attributes and values.',
-    }),
+    description: `[DEPRECATED] This tool has been consolidated into 'manage-list-entry'.
+
+Please use 'manage-list-entry' with Mode 3 (Update) parameters instead:
+- Pass 'entryId' and 'attributes' parameters
+- All functionality remains identical
+
+This tool will be removed in version 2.0.0.
+
+${formatToolDescription({
+  capability: 'Update list entry attributes (stage, status, custom fields).',
+  boundaries: 'update record attributes; use update-record for that.',
+  requiresApproval: true,
+  constraints: 'Requires list UUID, entry UUID, attributes object.',
+  recoveryHint: 'Use get-list-details for valid attributes and values.',
+})}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -725,6 +763,93 @@ ${formatToolDescription({
         },
       },
       required: ['listId', 'entryId', 'attributes'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'manage-list-entry',
+    description: `Manage list entries with flexible action modes. Auto-detects action based on parameters provided.
+
+**Mode 1 - Add Entry (Add record to list):**
+Add a company or person record to a list with optional initial values.
+Required parameters: listId, recordId, objectType
+Optional parameters: initialValues
+
+Example:
+{
+  "listId": "550e8400-e29b-41d4-a716-446655440000",
+  "recordId": "660e8400-e29b-41d4-a716-446655440001",
+  "objectType": "companies",
+  "initialValues": {"stage": "Prospect"}
+}
+
+**Mode 2 - Remove Entry:**
+Remove an entry from a list.
+Required parameters: listId, entryId
+
+Example:
+{
+  "listId": "550e8400-e29b-41d4-a716-446655440000",
+  "entryId": "770e8400-e29b-41d4-a716-446655440002"
+}
+
+**Mode 3 - Update Entry:**
+Update attributes on an existing list entry.
+Required parameters: listId, entryId, attributes
+
+Example:
+{
+  "listId": "550e8400-e29b-41d4-a716-446655440000",
+  "entryId": "770e8400-e29b-41d4-a716-446655440002",
+  "attributes": {"stage": "Qualified"}
+}
+
+**Mode Detection:**
+The tool automatically detects which action to perform based on the parameters you provide.
+You must provide parameters for exactly ONE mode per call.
+
+**Migration Guide:**
+- Replaces: add-record-to-list → Use Mode 1 (recordId + objectType)
+- Replaces: remove-record-from-list → Use Mode 2 (entryId only)
+- Replaces: update-list-entry → Use Mode 3 (entryId + attributes)`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        listId: {
+          type: 'string',
+          description: 'UUID of the list (required for all modes)',
+          example: '550e8400-e29b-41d4-a716-446655440000',
+        },
+        // Mode 1 parameters
+        recordId: {
+          type: 'string',
+          description: 'Mode 1: UUID of the record to add to the list',
+          example: '660e8400-e29b-41d4-a716-446655440001',
+        },
+        objectType: {
+          type: 'string',
+          enum: ['companies', 'people'],
+          description: 'Mode 1: Type of record to add',
+        },
+        initialValues: {
+          type: 'object',
+          description: 'Mode 1: Initial attribute values for the list entry',
+          additionalProperties: true,
+        },
+        // Mode 2 & 3 parameters
+        entryId: {
+          type: 'string',
+          description: 'Mode 2 & 3: UUID of the list entry to remove or update',
+          example: '770e8400-e29b-41d4-a716-446655440002',
+        },
+        // Mode 3 parameters
+        attributes: {
+          type: 'object',
+          description: 'Mode 3: Attributes to update on the list entry',
+          additionalProperties: true,
+        },
+      },
+      required: ['listId'],
       additionalProperties: false,
     },
   },
