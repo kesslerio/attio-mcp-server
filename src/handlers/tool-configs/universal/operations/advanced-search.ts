@@ -64,6 +64,8 @@ export const advancedSearchConfig: UniversalToolConfig<
                 return 'lte';
               case 'not_empty':
                 return 'is_not_empty';
+              case 'empty':
+                return 'is_empty';
               default:
                 return raw; // fallback
             }
@@ -71,6 +73,7 @@ export const advancedSearchConfig: UniversalToolConfig<
           // Also accept already-correct tokens and legacy typos
           if (
             cond === 'is_not_empty' ||
+            cond === 'is_empty' ||
             cond === 'equals' ||
             cond === 'contains' ||
             cond === 'starts_with' ||
@@ -103,7 +106,8 @@ export const advancedSearchConfig: UniversalToolConfig<
                 next.condition = deDollar(next.condition);
               }
               if (
-                next.condition === 'is_not_empty' &&
+                (next.condition === 'is_not_empty' ||
+                  next.condition === 'is_empty') &&
                 (next.value == null || next.value === '')
               ) {
                 next.value = true;
