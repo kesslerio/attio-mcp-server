@@ -242,6 +242,22 @@ function detectManagementMode(params: Record<string, unknown>): ManagementMode {
   ).length;
 
   if (modesDetected === 0) {
+    // Provide more helpful error messages for common edge cases
+    if (hasRecordId && !hasObjectType) {
+      throw new Error(
+        'Mode 1 (Add) requires both recordId AND objectType.\n' +
+          'You provided recordId but missing objectType (must be "companies" or "people").\n' +
+          'Example: { listId: "...", recordId: "...", objectType: "companies" }'
+      );
+    }
+    if (hasObjectType && !hasRecordId) {
+      throw new Error(
+        'Mode 1 (Add) requires both recordId AND objectType.\n' +
+          'You provided objectType but missing recordId.\n' +
+          'Example: { listId: "...", recordId: "...", objectType: "companies" }'
+      );
+    }
+
     throw new Error(
       'No management mode detected. Must provide parameters for one of:\n' +
         '  - Mode 1 (Add): recordId, objectType, [initialValues]\n' +
@@ -291,9 +307,16 @@ export async function handleManageListEntryOperation(
     );
   }
 
+  // Track HTTP method for error reporting (will be set based on detected mode)
+  let httpMethod: 'POST' | 'DELETE' | 'PATCH' = 'POST';
+
   try {
     // Detect management mode
     const mode = detectManagementMode(params);
+
+    // Map mode to HTTP method for error reporting
+    httpMethod =
+      mode === 'add' ? 'POST' : mode === 'remove' ? 'DELETE' : 'PATCH';
 
     // Route to appropriate handler based on mode
     let result;
@@ -405,7 +428,7 @@ export async function handleManageListEntryOperation(
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries`,
-      'POST',
+      httpMethod,
       hasResponseData(error) ? error.response.data : {}
     );
   }

@@ -212,8 +212,13 @@ describe('Consolidated manage-list-entry Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      // Without recordId, mode detection fails before parameter validation
-      expect(result.content[0].text).toContain('No management mode detected');
+      // Improved error message for missing recordId when objectType provided
+      expect(result.content[0].text).toContain(
+        'Mode 1 (Add) requires both recordId AND objectType'
+      );
+      expect(result.content[0].text).toContain(
+        'You provided objectType but missing recordId'
+      );
     });
 
     it('should require objectType for Mode 1', async () => {
@@ -234,8 +239,13 @@ describe('Consolidated manage-list-entry Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      // Without objectType, mode detection fails before parameter validation
-      expect(result.content[0].text).toContain('No management mode detected');
+      // Improved error message for missing objectType when recordId provided
+      expect(result.content[0].text).toContain(
+        'Mode 1 (Add) requires both recordId AND objectType'
+      );
+      expect(result.content[0].text).toContain(
+        'You provided recordId but missing objectType'
+      );
     });
 
     it('should accept optional initialValues for Mode 1', async () => {
