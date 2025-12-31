@@ -46,13 +46,11 @@ interface DiscoveredAttributes {
   companies: {
     industry?: AttioAttribute;
     website?: AttioAttribute;
-    emptyCheckField?: AttioAttribute;
   };
   people: {
     email?: AttioAttribute;
     linkedin?: AttioAttribute;
     company?: AttioAttribute;
-    jobTitle?: AttioAttribute;
   };
 }
 
@@ -76,15 +74,11 @@ describe('Operations Playbook Validation Suite', () => {
       companies: {
         industry: discovery.findByIntent('companies', 'INDUSTRY'),
         website: discovery.findByIntent('companies', 'WEBSITE'),
-        emptyCheckField:
-          discovery.findByType('companies', 'text') ||
-          discovery.findByType('companies', 'select'),
       },
       people: {
         email: discovery.findByIntent('people', 'EMAIL'),
         linkedin: discovery.findByIntent('people', 'LINKEDIN'),
         company: discovery.findByIntent('people', 'COMPANY'),
-        jobTitle: discovery.findByIntent('people', 'JOB_TITLE'),
       },
     };
 
@@ -653,7 +647,7 @@ describe('Operations Playbook Validation Suite', () => {
 - **Total Tests:** ${testResults.length}
 - **Failed Tests:** ${failures.length}
 - **Skipped Tests:** ${testResults.filter((r) => r.skipped).length}
-- **Success Rate:** ${(((testResults.length - failures.length) / testResults.length) * 100).toFixed(1)}%
+- **Success Rate:** ${testResults.filter((r) => !r.skipped).length > 0 ? (((testResults.filter((r) => !r.skipped).length - failures.length) / testResults.filter((r) => !r.skipped).length) * 100).toFixed(1) : 'N/A'}% (of non-skipped tests)
 
 ## Discovered Attributes
 
@@ -727,8 +721,8 @@ ${discovery.getSummary('people')}
     const body = `## Operations Playbook Validation Results
 
 **Test Date:** ${timestamp}
-**Failed Examples:** ${failures.length}/${testResults.length}
-**Success Rate:** ${(((testResults.length - failures.length) / testResults.length) * 100).toFixed(1)}%
+**Failed Examples:** ${failures.length}/${testResults.filter((r) => !r.skipped).length}
+**Success Rate:** ${testResults.filter((r) => !r.skipped).length > 0 ? (((testResults.filter((r) => !r.skipped).length - failures.length) / testResults.filter((r) => !r.skipped).length) * 100).toFixed(1) : 'N/A'}% (of non-skipped tests)
 
 ## Failed Examples Summary
 

@@ -46,24 +46,16 @@ export interface AttributeDiscoveryOptions {
  * Common attribute type mappings for semantic lookups
  */
 export const ATTRIBUTE_INTENTS = {
-  /** Any field that could be empty for data quality checks */
-  EMPTY_CHECK_TEXT: ['description', 'about', 'notes', 'bio', 'summary'],
   /** Industry/segment classification */
   INDUSTRY: ['industry', 'b2b_segment', 'segment', 'category', 'categories'],
   /** Email addresses */
   EMAIL: ['email_addresses', 'email', 'emails', 'primary_email'],
-  /** Phone numbers */
-  PHONE: ['phone_numbers', 'phone', 'phones', 'primary_phone'],
   /** LinkedIn profile */
   LINKEDIN: ['linkedin', 'linkedin_url', 'linkedin_profile'],
   /** Company association */
   COMPANY: ['company', 'companies', 'employer', 'organization'],
-  /** Job title */
-  JOB_TITLE: ['job_title', 'title', 'position', 'role'],
   /** Website */
   WEBSITE: ['website', 'domains', 'url', 'web'],
-  /** Employee count */
-  EMPLOYEES: ['employees', 'employee_count', 'employee_range', 'headcount'],
 } as const;
 
 export class AttributeDiscovery {
@@ -112,23 +104,24 @@ export class AttributeDiscovery {
       );
 
       if (!response.ok) {
-        // Auth/server errors should fail the suite, not silently skip
+        // Auth errors should fail the suite
         if (response.status === 401 || response.status === 403) {
           throw new Error(
             `Authentication failed for ${objectType}: ${response.status} - check ATTIO_API_KEY`
           );
         }
-        if (response.status >= 500) {
-          throw new Error(
-            `Attio API error for ${objectType}: ${response.status}`
-          );
-        }
         // 404 is acceptable - object type may not exist in workspace
-        console.warn(
-          `[AttributeDiscovery] ${objectType} not found: ${response.status}`
+        if (response.status === 404) {
+          console.warn(
+            `[AttributeDiscovery] ${objectType} not found: ${response.status}`
+          );
+          this.cache.set(objectType, []);
+          return;
+        }
+        // All other errors (400, 409, 429, 5xx) should fail
+        throw new Error(
+          `Attio API error for ${objectType}: ${response.status}`
         );
-        this.cache.set(objectType, []);
-        return;
       }
 
       const data = (await response.json()) as { data: AttioAttribute[] };
@@ -189,14 +182,6 @@ export class AttributeDiscovery {
   }
 
   /**
-   * Find multiple attributes by type
-   */
-  findAllByType(objectType: string, attrType: string): AttioAttribute[] {
-    const attrs = this.getAttributes(objectType);
-    return attrs.filter((a) => a.type === attrType);
-  }
-
-  /**
    * Get a summary of available attributes for debugging
    */
   getSummary(objectType: string): string {
@@ -214,12 +199,5 @@ export class AttributeDiscovery {
       lines.push(`  ${type}: ${slugs.join(', ')}`);
     }
     return lines.join('\n');
-  }
-
-  /**
-   * Check if discovery has been initialized
-   */
-  isInitialized(): boolean {
-    return this.initialized;
   }
 }
