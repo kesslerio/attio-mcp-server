@@ -126,12 +126,11 @@ export function isRemoveSuccess(result: CallToolResult): boolean {
     return true;
   }
 
-  // Try JSON parsing for structured success response
+  // Try JSON parsing for explicit success field only
   try {
     const jsonData = JSON.parse(text);
     if (jsonData.success === true) return true;
-    // Entry data returned (has id field) indicates success
-    if (jsonData.id && !isErrorResponse(result)) return true;
+    // NOTE: Do NOT accept arbitrary JSON with id field - error payloads can have ids
   } catch {
     // Not valid JSON
   }

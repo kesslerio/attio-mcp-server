@@ -53,7 +53,15 @@ class ManageListEntryErrorTest extends MCPTestBase {
       const lists = JSON.parse(listsText);
 
       if (Array.isArray(lists) && lists.length > 0) {
-        this.testListId = lists[0].id?.list_id || lists[0].api_slug;
+        // Prefer lists that support companies (parent_object check)
+        const companyList = lists.find(
+          (l: Record<string, unknown>) =>
+            l.parent_object === 'companies' || !l.parent_object
+        );
+        const selectedList = companyList || lists[0];
+        this.testListId =
+          (selectedList.id as Record<string, string>)?.list_id ||
+          (selectedList.api_slug as string);
       }
     } catch (error) {
       console.error('Failed to setup error test data:', error);
