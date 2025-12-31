@@ -11,9 +11,40 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { MCPTestBase } from '../shared/mcp-test-base';
-import { TestDataFactory } from '../shared/test-data-factory';
-import type { TestResult } from '../shared/quality-gates';
+import { MCPTestBase } from '@test/e2e/mcp/shared/mcp-test-base.js';
+import { TestDataFactory } from '@test/e2e/mcp/shared/test-data-factory.js';
+import type { TestResult } from '@test/e2e/mcp/shared/quality-gates.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+
+// Test constants
+const TEST_CONSTANTS = {
+  /** Invalid UUID for error testing */
+  INVALID_UUID: '00000000-0000-0000-0000-000000000000',
+  /** Invalid string value for type error testing */
+  INVALID_ATTRIBUTES_STRING: 'invalid-string-instead-of-object',
+  /** Dummy entry ID for error testing */
+  DUMMY_ENTRY_ID: 'some-entry-id',
+  /** P1 quality gate pass rate threshold */
+  P1_PASS_RATE_THRESHOLD: 80,
+} as const;
+
+/**
+ * Extract entry ID from MCP tool response
+ * Handles both JSON and text format responses
+ */
+function extractEntryId(result: CallToolResult): string | null {
+  const text = result.content?.[0]?.text || '';
+
+  // Try JSON format first
+  try {
+    const jsonData = JSON.parse(text);
+    return jsonData.id?.entry_id || jsonData.id || null;
+  } catch {
+    // Fall back to text pattern matching
+    const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
+    return idMatch ? idMatch[1] : null;
+  }
+}
 
 class ManageListEntryTest extends MCPTestBase {
   private testListId: string | null = null;
@@ -177,9 +208,9 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
     // P1 tests require 80% pass rate
     if (totalCount > 0) {
       const passRate = (passedCount / totalCount) * 100;
-      if (passRate < 80) {
+      if (passRate < TEST_CONSTANTS.P1_PASS_RATE_THRESHOLD) {
         console.warn(
-          `⚠️ TC-010 below P1 threshold: ${passRate.toFixed(1)}% (required: 80%)`
+          `⚠️ TC-010 below P1 threshold: ${passRate.toFixed(1)}% (required: ${TEST_CONSTANTS.P1_PASS_RATE_THRESHOLD}%)`
         );
       } else {
         console.log(`✅ TC-010 meets P1 threshold: ${passRate.toFixed(1)}%`);
@@ -213,20 +244,8 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         expect(result.content).toBeDefined();
         expect(result.isError).toBeFalsy();
 
-        const text = result.content?.[0]?.text || '';
-
         // Extract entry ID for cleanup and subsequent tests
-        let entryId = null;
-        try {
-          const jsonData = JSON.parse(text);
-          entryId = jsonData.id?.entry_id || jsonData.id;
-        } catch {
-          const idMatch = text.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-          if (idMatch) {
-            entryId = idMatch[1];
-          }
-        }
-
+        const entryId = extractEntryId(result);
         if (entryId) {
           testCase.setTestEntryId(entryId);
           console.log(`Added record to list, entry ID: ${entryId}`);
@@ -303,14 +322,9 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         expect(isAcceptable).toBeTruthy();
 
         // Track entry for cleanup
-        try {
-          const jsonData = JSON.parse(text);
-          const entryId = jsonData.id?.entry_id || jsonData.id;
-          if (entryId) {
-            testCase.setTestEntryId(entryId);
-          }
-        } catch {
-          // May not be JSON
+        const entryId = extractEntryId(result);
+        if (entryId) {
+          testCase.setTestEntryId(entryId);
         }
 
         passed = true;
@@ -357,16 +371,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
             }
           );
 
-          const addText = addResult.content?.[0]?.text || '';
-          try {
-            const jsonData = JSON.parse(addText);
-            entryId = jsonData.id?.entry_id || jsonData.id;
-          } catch {
-            const idMatch = addText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-            if (idMatch) {
-              entryId = idMatch[1];
-            }
-          }
+          entryId = extractEntryId(addResult);
         }
 
         if (!entryId) {
@@ -439,18 +444,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
           objectType: 'companies',
         });
 
-        const addText = addResult.content?.[0]?.text || '';
-        let entryId = null;
-        try {
-          const jsonData = JSON.parse(addText);
-          entryId = jsonData.id?.entry_id || jsonData.id;
-        } catch {
-          const idMatch = addText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-          if (idMatch) {
-            entryId = idMatch[1];
-          }
-        }
-
+        const entryId = extractEntryId(addResult);
         if (!entryId) {
           // Entry may already exist, try to find it via list entries
           console.log(
@@ -551,17 +545,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
           objectType: 'companies',
         });
 
-        const addText = addResult.content?.[0]?.text || '';
-        try {
-          const jsonData = JSON.parse(addText);
-          lifecycleEntryId = jsonData.id?.entry_id || jsonData.id;
-        } catch {
-          const idMatch = addText.match(/\(ID:\s*([a-f0-9-]+)\)/i);
-          if (idMatch) {
-            lifecycleEntryId = idMatch[1];
-          }
-        }
-
+        lifecycleEntryId = extractEntryId(addResult);
         if (!lifecycleEntryId) {
           console.log('Could not extract entry ID from add result');
           passed = true;
@@ -723,7 +707,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
           listId,
           recordId: companyId,
           objectType: 'companies',
-          entryId: 'some-entry-id',
+          entryId: TEST_CONSTANTS.DUMMY_ENTRY_ID,
           attributes: { test: 'value' },
         });
 
@@ -769,7 +753,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
 
         // Use a non-existent list ID
         const result = await testCase.executeToolCall('manage-list-entry', {
-          listId: '00000000-0000-0000-0000-000000000000',
+          listId: TEST_CONSTANTS.INVALID_UUID,
           recordId: companyId,
           objectType: 'companies',
         });
@@ -871,8 +855,8 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         // Provide attributes as string instead of object
         const result = await testCase.executeToolCall('manage-list-entry', {
           listId,
-          entryId: 'some-entry-id',
-          attributes: 'invalid-string-instead-of-object',
+          entryId: TEST_CONSTANTS.DUMMY_ENTRY_ID,
+          attributes: TEST_CONSTANTS.INVALID_ATTRIBUTES_STRING,
         });
 
         // Should return an error about invalid attributes
