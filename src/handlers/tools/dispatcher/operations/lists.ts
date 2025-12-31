@@ -23,6 +23,10 @@ import {
 import { ListEntryFilters } from '../../../../api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
 
+// Deprecation metadata constants (Issue #1071)
+const DEPRECATION_VERSION = 'v2.0.0';
+const MIGRATION_GUIDE_PATH = '/docs/migration/v2-list-tools.md';
+
 /**
  * Handle getLists operations
  */
@@ -33,13 +37,13 @@ export async function handleGetListsOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'get-lists' invoked. Use universal 'search_records' with resource_type="lists" instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'get-lists' invoked. Use universal 'search_records' with resource_type="lists" instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'get-lists',
       replacement: 'search_records',
       migrationMode: 'resource_type="lists"',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'get-lists',
     OperationType.TOOL_EXECUTION
@@ -78,13 +82,13 @@ export async function handleAddRecordToListOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'add-record-to-list' invoked. Use 'manage-list-entry' Mode 1 (Add) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'add-record-to-list' invoked. Use 'manage-list-entry' Mode 1 (Add) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'add-record-to-list',
       replacement: 'manage-list-entry',
       migrationMode: 'Mode 1 (Add)',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'add-record-to-list',
     OperationType.TOOL_EXECUTION
@@ -148,13 +152,13 @@ export async function handleRemoveRecordFromListOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'remove-record-from-list' invoked. Use 'manage-list-entry' Mode 2 (Remove) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'remove-record-from-list' invoked. Use 'manage-list-entry' Mode 2 (Remove) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'remove-record-from-list',
       replacement: 'manage-list-entry',
       migrationMode: 'Mode 2 (Remove)',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'remove-record-from-list',
     OperationType.TOOL_EXECUTION
@@ -208,13 +212,13 @@ export async function handleUpdateListEntryOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'update-list-entry' invoked. Use 'manage-list-entry' Mode 3 (Update) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'update-list-entry' invoked. Use 'manage-list-entry' Mode 3 (Update) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'update-list-entry',
       replacement: 'manage-list-entry',
       migrationMode: 'Mode 3 (Update)',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'update-list-entry',
     OperationType.TOOL_EXECUTION
@@ -508,13 +512,13 @@ export async function handleFilterListEntriesByParentOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'filter-list-entries-by-parent' invoked. Use 'filter-list-entries' Mode 3 (Parent Attr) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'filter-list-entries-by-parent' invoked. Use 'filter-list-entries' Mode 3 (Parent Attr) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'filter-list-entries-by-parent',
       replacement: 'filter-list-entries',
       migrationMode: 'Mode 3 (Parent Attr)',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'filter-list-entries-by-parent',
     OperationType.TOOL_EXECUTION
@@ -619,13 +623,13 @@ export async function handleFilterListEntriesByParentIdOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'filter-list-entries-by-parent-id' invoked. Use 'filter-list-entries' Mode 4 (Parent UUID) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'filter-list-entries-by-parent-id' invoked. Use 'filter-list-entries' Mode 4 (Parent UUID) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'filter-list-entries-by-parent-id',
       replacement: 'filter-list-entries',
       migrationMode: 'Mode 4 (Parent UUID)',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'filter-list-entries-by-parent-id',
     OperationType.TOOL_EXECUTION
@@ -685,13 +689,13 @@ export async function handleGetListDetailsOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'get-list-details' invoked. Use universal 'get_record_details' with resource_type="lists" instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'get-list-details' invoked. Use universal 'get_record_details' with resource_type="lists" instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'get-list-details',
       replacement: 'get_record_details',
       migrationMode: 'resource_type="lists"',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'get-list-details',
     OperationType.TOOL_EXECUTION
@@ -1074,13 +1078,13 @@ export async function handleAdvancedFilterListEntriesOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'advanced-filter-list-entries' invoked. Use 'filter-list-entries' Mode 2 (Advanced) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    `Deprecated tool 'advanced-filter-list-entries' invoked. Use 'filter-list-entries' Mode 2 (Advanced) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
       deprecatedTool: 'advanced-filter-list-entries',
       replacement: 'filter-list-entries',
       migrationMode: 'Mode 2 (Advanced)',
-      removalVersion: 'v2.0.0',
-      migrationGuide: '/docs/migration/v2-list-tools.md',
+      removalVersion: DEPRECATION_VERSION,
+      migrationGuide: MIGRATION_GUIDE_PATH,
     },
     'advanced-filter-list-entries',
     OperationType.TOOL_EXECUTION

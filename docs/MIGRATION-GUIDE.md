@@ -463,7 +463,8 @@ See **[List Tools Migration Guide](./migration/v2-list-tools.md)** for complete 
     "listId": "list_deals",
     "parentObjectType": "companies",
     "parentAttributeSlug": "industry",
-    "parentAttributeValue": "Technology"
+    "condition": "equals",
+    "value": "Technology"
   }
 }
 ```
@@ -477,7 +478,8 @@ See **[List Tools Migration Guide](./migration/v2-list-tools.md)** for complete 
     "listId": "list_deals",
     "parentObjectType": "companies",
     "parentAttributeSlug": "industry",
-    "parentAttributeValue": "Technology"
+    "condition": "equals",
+    "value": "Technology"
   }
 }
 ```

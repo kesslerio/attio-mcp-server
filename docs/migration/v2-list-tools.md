@@ -38,12 +38,12 @@ The list tools have been consolidated from **11 tools → 4 tools** for better c
 
 ### Filter Operations (PR #1074)
 
-| Deprecated Tool                    | →   | New Tool              | Mode   | Parameters                                 |
-| ---------------------------------- | --- | --------------------- | ------ | ------------------------------------------ |
-| `filter-list-entries`              | ✓   | `filter-list-entries` | Mode 1 | `attributeSlug`, `filterValue` (unchanged) |
-| `advanced-filter-list-entries`     | ⚠️  | `filter-list-entries` | Mode 2 | `filters` (AND/OR logic)                   |
-| `filter-list-entries-by-parent`    | ⚠️  | `filter-list-entries` | Mode 3 | `parentObjectType`, `parentAttributeSlug`  |
-| `filter-list-entries-by-parent-id` | ⚠️  | `filter-list-entries` | Mode 4 | `parentRecordId` (UUID)                    |
+| Deprecated Tool                    | →   | New Tool              | Mode   | Parameters                                                      |
+| ---------------------------------- | --- | --------------------- | ------ | --------------------------------------------------------------- |
+| `filter-list-entries`              | ✓   | `filter-list-entries` | Mode 1 | `attributeSlug`, `condition`, `value` (unchanged)               |
+| `advanced-filter-list-entries`     | ⚠️  | `filter-list-entries` | Mode 2 | `filters` (AND/OR logic)                                        |
+| `filter-list-entries-by-parent`    | ⚠️  | `filter-list-entries` | Mode 3 | `parentObjectType`, `parentAttributeSlug`, `condition`, `value` |
+| `filter-list-entries-by-parent-id` | ⚠️  | `filter-list-entries` | Mode 4 | `parentRecordId` (UUID)                                         |
 
 ### Entry Management Operations (PR #1076)
 
@@ -116,7 +116,8 @@ await client.callTool('filter-list-entries-by-parent', {
   listId: 'list_deals',
   parentObjectType: 'companies',
   parentAttributeSlug: 'industry',
-  parentAttributeValue: 'Technology',
+  condition: 'equals',
+  value: 'Technology',
 });
 ```
 
@@ -127,14 +128,15 @@ await client.callTool('filter-list-entries', {
   listId: 'list_deals',
   parentObjectType: 'companies', // Mode 3 auto-detected
   parentAttributeSlug: 'industry',
-  parentAttributeValue: 'Technology',
+  condition: 'equals',
+  value: 'Technology',
 });
 ```
 
 **Migration Steps**:
 
 1. Change tool name: `filter-list-entries-by-parent` → `filter-list-entries`
-2. Keep all parameters identical
+2. Keep all parameters identical (`parentObjectType`, `parentAttributeSlug`, `condition`, `value`)
 3. Tool auto-detects Mode 3 from `parentObjectType` + `parentAttributeSlug`
 
 ---

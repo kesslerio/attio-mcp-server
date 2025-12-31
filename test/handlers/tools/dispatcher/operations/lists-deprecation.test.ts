@@ -19,10 +19,8 @@ import {
   handleFilterListEntriesByParentOperation,
   handleFilterListEntriesByParentIdOperation,
 } from '@/handlers/tools/dispatcher/operations/lists.js';
-import type {
-  CallToolRequest,
-  ToolConfig,
-} from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolConfig } from '@/tool-types.js';
 
 describe('List Tools Deprecation Warnings (Issue #1071)', () => {
   let warnSpy: MockInstance;
@@ -56,6 +54,8 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       name: 'test-tool',
       description: 'test',
       inputSchema: { type: 'object' as const, properties: {} },
+      handler: vi.fn().mockResolvedValue({ data: {} }),
+      formatResult: vi.fn().mockReturnValue('formatted'),
     };
 
     it('should warn when add-record-to-list is invoked', async () => {
@@ -160,6 +160,8 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       name: 'test-tool',
       description: 'test',
       inputSchema: { type: 'object' as const, properties: {} },
+      handler: vi.fn().mockResolvedValue({ data: [] }),
+      formatResult: vi.fn().mockReturnValue('formatted'),
     };
 
     it('should warn when advanced-filter-list-entries is invoked', async () => {
@@ -268,6 +270,8 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       name: 'test-tool',
       description: 'test',
       inputSchema: { type: 'object' as const, properties: {} },
+      handler: vi.fn().mockResolvedValue([]),
+      formatResult: vi.fn().mockReturnValue('formatted'),
     };
 
     it('should warn when get-lists is invoked', async () => {
@@ -336,6 +340,8 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       name: 'test-tool',
       description: 'test',
       inputSchema: { type: 'object' as const, properties: {} },
+      handler: vi.fn().mockResolvedValue({ data: {} }),
+      formatResult: vi.fn().mockReturnValue('formatted'),
     };
 
     it('should include migration guide path in all warnings', async () => {
@@ -405,6 +411,8 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
         name: 'test-tool',
         description: 'test',
         inputSchema: { type: 'object' as const, properties: {} },
+        handler: vi.fn().mockResolvedValue({ data: {} }),
+        formatResult: vi.fn().mockReturnValue('formatted'),
       };
 
       const request: CallToolRequest = {
@@ -437,6 +445,8 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
         name: 'test-tool',
         description: 'test',
         inputSchema: { type: 'object' as const, properties: {} },
+        handler: vi.fn().mockResolvedValue([]),
+        formatResult: vi.fn().mockReturnValue('formatted'),
       };
 
       const request: CallToolRequest = {
