@@ -26,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Deprecated tools (removal in v2.0.0): `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
   - Full backward compatibility maintained - all existing calls work unchanged with identical parameter structure
   - Simpler API surface - one tool to learn instead of three
+- **List tools consolidation complete** (#1071) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #4 of 4
+  - Added runtime deprecation warnings for 8 legacy list tools (removal in v2.0.0):
+    - Filter operations: `advanced-filter-list-entries`, `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
+    - Entry management: `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
+    - List discovery: `get-lists`, `get-list-details` (migrate to universal tools)
+  - Comprehensive migration guide at `/docs/migration/v2-list-tools.md` with all 8 tools documented
+  - Updated tool count: 11 → 4 (64% reduction achieved)
+  - See [Migration Guide](./docs/migration/v2-list-tools.md) for migration examples
 
 ### Fixed
 
