@@ -6,11 +6,22 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 /**
+ * Extract text content from MCP result with type narrowing
+ */
+function getResultText(result: CallToolResult): string {
+  const content = result.content?.[0];
+  if (content && 'text' in content) {
+    return content.text;
+  }
+  return '';
+}
+
+/**
  * Extract entry ID from MCP tool response
  * Handles both JSON format (id.entry_id) and text format ((ID: xxx))
  */
 export function extractEntryId(result: CallToolResult): string | null {
-  const text = result.content?.[0]?.text || '';
+  const text = getResultText(result);
 
   // Try JSON format first (preferred)
   try {
@@ -28,7 +39,7 @@ export function extractEntryId(result: CallToolResult): string | null {
  * Handles both JSON format and text format
  */
 export function extractRecordId(result: CallToolResult): string | null {
-  const text = result.content?.[0]?.text || '';
+  const text = getResultText(result);
 
   // Try JSON format first
   try {
@@ -43,17 +54,37 @@ export function extractRecordId(result: CallToolResult): string | null {
 
 /**
  * Check if an MCP response indicates an error
- * Handles both explicit isError flag and error indicators in response text
- *
- * Note: This is intentionally strict - only triggers on clear error patterns
+ * Uses JSON parsing when possible, falls back to text patterns
  */
 export function isErrorResponse(result: CallToolResult): boolean {
   if (result.isError) return true;
 
-  const text = result.content?.[0]?.text || '';
+  const text = getResultText(result);
   const lower = text.toLowerCase();
 
-  // Check for clear error patterns only (avoid false positives)
+  // Try JSON parsing first for structured error detection
+  try {
+    const jsonData = JSON.parse(text);
+
+    // Check for common error indicators in parsed JSON
+    if (jsonData.error !== undefined) return true;
+    if (jsonData.isError === true) return true;
+    if (typeof jsonData.status === 'number' && jsonData.status >= 400)
+      return true;
+    if (
+      jsonData.code &&
+      typeof jsonData.code === 'number' &&
+      jsonData.code >= 400
+    )
+      return true;
+
+    // Not a JSON error response
+    return false;
+  } catch {
+    // Not valid JSON, check text patterns
+  }
+
+  // Check for clear error patterns in text (avoid false positives)
   return (
     lower.includes('error:') ||
     lower.includes('failed:') ||
@@ -61,23 +92,19 @@ export function isErrorResponse(result: CallToolResult): boolean {
     lower.includes('no management mode') ||
     lower.includes('multiple modes') ||
     lower.includes('missing required') ||
-    text.includes('"error":') || // JSON error field
-    text.includes('"isError":true') ||
-    text.includes('"status":400') ||
-    text.includes('"status":404') ||
-    text.includes('"status":500')
+    lower.startsWith('error ')
   );
 }
 
 /**
  * Check if an MCP response indicates success for a remove/delete operation
- * Handles various response formats from Attio API
+ * Strict: only accepts explicit success indicators, NOT arbitrary JSON
  */
 export function isRemoveSuccess(result: CallToolResult): boolean {
   // Explicit error means failure
   if (result.isError) return false;
 
-  const text = result.content?.[0]?.text || '';
+  const text = getResultText(result);
   const lower = text.toLowerCase();
 
   // Boolean string response (common for remove operations)
@@ -85,24 +112,28 @@ export function isRemoveSuccess(result: CallToolResult): boolean {
     return true;
   }
 
-  // Check for explicit success indicators
-  if (
-    lower.includes('success') ||
-    lower.includes('removed') ||
-    lower.includes('deleted') ||
-    text.includes('"success":true')
-  ) {
-    return true;
-  }
-
-  // Empty response or empty object typically means successful deletion
+  // Empty response typically means successful deletion
   if (text === '' || text === '{}' || text === 'null') {
     return true;
   }
 
-  // JSON response without error indicators is considered success
-  if (text.startsWith('{') && !isErrorResponse(result)) {
+  // Check for explicit success keywords
+  if (
+    lower.includes('success') ||
+    lower.includes('removed') ||
+    lower.includes('deleted')
+  ) {
     return true;
+  }
+
+  // Try JSON parsing for structured success response
+  try {
+    const jsonData = JSON.parse(text);
+    if (jsonData.success === true) return true;
+    // Entry data returned (has id field) indicates success
+    if (jsonData.id && !isErrorResponse(result)) return true;
+  } catch {
+    // Not valid JSON
   }
 
   return false;
@@ -110,26 +141,28 @@ export function isRemoveSuccess(result: CallToolResult): boolean {
 
 /**
  * Check if an MCP response indicates success for an update operation
+ * Strict: only accepts explicit success indicators or valid entry data
  */
 export function isUpdateSuccess(result: CallToolResult): boolean {
   // Explicit error means failure
   if (result.isError) return false;
 
-  const text = result.content?.[0]?.text || '';
+  const text = getResultText(result);
   const lower = text.toLowerCase();
 
-  // Check for explicit success indicators
-  if (
-    lower.includes('success') ||
-    lower.includes('updated') ||
-    text.includes('"success":true')
-  ) {
+  // Check for explicit success keywords
+  if (lower.includes('success') || lower.includes('updated')) {
     return true;
   }
 
-  // JSON response with entry data indicates success
-  if (text.startsWith('{') && !isErrorResponse(result)) {
-    return true;
+  // Try JSON parsing for structured response
+  try {
+    const jsonData = JSON.parse(text);
+    if (jsonData.success === true) return true;
+    // Entry data returned (has id field) indicates success
+    if (jsonData.id && !isErrorResponse(result)) return true;
+  } catch {
+    // Not valid JSON
   }
 
   return false;
@@ -137,12 +170,13 @@ export function isUpdateSuccess(result: CallToolResult): boolean {
 
 /**
  * Check if an MCP response indicates success for an add operation
+ * Strict: requires valid entry data with ID
  */
 export function isAddSuccess(result: CallToolResult): boolean {
   // Explicit error means failure
   if (result.isError) return false;
 
-  const text = result.content?.[0]?.text || '';
+  const text = getResultText(result);
 
   // Must have some content for add operations
   if (!text || text === '{}') {
@@ -160,8 +194,35 @@ export function isAddSuccess(result: CallToolResult): boolean {
     return true;
   }
 
-  // Valid JSON response with entry data indicates success
-  return text.startsWith('{');
+  // Try JSON parsing - require ID to confirm entry was created
+  try {
+    const jsonData = JSON.parse(text);
+    if (jsonData.success === true) return true;
+    // Entry data returned (has id field) indicates success
+    if (jsonData.id) return true;
+  } catch {
+    // Not valid JSON
+  }
+
+  return false;
+}
+
+/**
+ * Check if a cleanup failure is benign (expected in some cases)
+ * Mirrors MCPTestBase.isBenignCleanupFailure() pattern
+ */
+export function isBenignCleanupFailure(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes('not found') ||
+    normalized.includes('already deleted') ||
+    normalized.includes('does not exist') ||
+    normalized.includes('404') ||
+    normalized.includes('uniqueness') ||
+    normalized.includes('conflict') ||
+    normalized.includes('duplicate') ||
+    normalized.includes('cannot delete')
+  );
 }
 
 /**

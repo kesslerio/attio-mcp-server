@@ -23,6 +23,7 @@ import {
   isAddSuccess,
   isRemoveSuccess,
   isUpdateSuccess,
+  isBenignCleanupFailure,
 } from '@test/e2e/mcp/shared/list-entry-helpers.js';
 
 class ManageListEntryTest extends MCPTestBase {
@@ -72,19 +73,28 @@ class ManageListEntryTest extends MCPTestBase {
 
   /**
    * Cleanup test data - remove all tracked entries and records
+   * Only ignores benign failures (not found, already deleted, etc.)
    */
   async cleanupTestData(): Promise<void> {
-    console.log(`Cleanup: removing ${this.trackedEntryIds.length} entries...`);
-
-    if (this.testListId) {
+    if (this.testListId && this.trackedEntryIds.length > 0) {
       for (const entryId of this.trackedEntryIds) {
         try {
-          await this.executeToolCall('manage-list-entry', {
+          const result = await this.executeToolCall('manage-list-entry', {
             listId: this.testListId,
             entryId: entryId,
           });
-        } catch {
-          // Entry may already be removed - this is expected
+          const text = result.content?.[0]?.text || '';
+          if (result.isError && !isBenignCleanupFailure(text)) {
+            console.warn(
+              `Cleanup warning for entry ${entryId}: ${text.substring(0, 100)}`
+            );
+          }
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : String(error);
+          if (!isBenignCleanupFailure(errorMsg)) {
+            console.warn(`Cleanup warning for entry ${entryId}: ${errorMsg}`);
+          }
         }
       }
     }
@@ -377,16 +387,18 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         expect(result).toBeDefined();
         expect(result.content).toBeDefined();
 
-        // Accept success OR validation/attribute errors (test unknown attributes are acceptable)
-        // The test may use attributes that don't exist on the list, which is expected
+        // Accept success OR specific validation errors (unknown attribute is acceptable)
+        // The test may use attributes that don't exist on the list, which triggers validation errors
         const text = result.content?.[0]?.text || '';
         const lower = text.toLowerCase();
         const isAcceptable =
           isUpdateSuccess(result) ||
           lower.includes('unknown attribute') ||
           lower.includes('invalid attribute') ||
-          lower.includes('400') || // Attribute validation errors return 400
-          lower.includes('error'); // Any error response shows mode detection works
+          lower.includes('not found') ||
+          lower.includes('validation') ||
+          lower.includes('400') ||
+          lower.includes('error ['); // Attio error code format (e.g., ERROR [unknown_error])
         expect(isAcceptable).toBeTruthy();
         console.log(`Mode 3 update completed for entry: ${entryId}`);
 
