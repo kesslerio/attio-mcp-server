@@ -4,25 +4,13 @@
  * Dynamically discovers available attributes in the Attio workspace,
  * making tests portable across different workspaces with varying schemas.
  *
- * Instead of hardcoding attribute slugs like 'industry' or 'email',
- * tests can request attributes by type or pattern, and this utility
- * finds appropriate attributes that actually exist.
- *
  * @example
  * ```typescript
  * const discovery = new AttributeDiscovery();
  * await discovery.initialize(['companies', 'people']);
  *
- * // Find any text field for companies
- * const textField = discovery.findByType('companies', 'text');
- *
- * // Find email field with fallbacks
- * const emailField = discovery.findBySlugPattern('people', ['email_addresses', 'email', 'emails']);
- *
- * // Check if attribute exists before using
- * if (discovery.hasAttribute('companies', 'industry')) {
- *   // use it
- * }
+ * // Find email field by semantic intent
+ * const emailField = discovery.findByIntent('people', 'EMAIL');
  * ```
  */
 
@@ -62,7 +50,6 @@ export class AttributeDiscovery {
   private cache: Map<string, AttioAttribute[]> = new Map();
   private baseUrl: string;
   private apiKey: string;
-  private initialized = false;
 
   constructor(options: AttributeDiscoveryOptions = {}) {
     this.baseUrl = options.baseUrl || 'https://api.attio.com';
@@ -81,7 +68,6 @@ export class AttributeDiscovery {
   async initialize(objectTypes: string[]): Promise<void> {
     const fetchPromises = objectTypes.map((type) => this.fetchAttributes(type));
     await Promise.all(fetchPromises);
-    this.initialized = true;
   }
 
   /**
@@ -140,14 +126,6 @@ export class AttributeDiscovery {
   }
 
   /**
-   * Check if a specific attribute exists
-   */
-  hasAttribute(objectType: string, slug: string): boolean {
-    const attrs = this.getAttributes(objectType);
-    return attrs.some((a) => a.api_slug === slug);
-  }
-
-  /**
    * Find first attribute matching any of the provided slugs
    */
   findBySlugPattern(
@@ -160,14 +138,6 @@ export class AttributeDiscovery {
       if (found) return found;
     }
     return undefined;
-  }
-
-  /**
-   * Find first attribute of a specific type
-   */
-  findByType(objectType: string, attrType: string): AttioAttribute | undefined {
-    const attrs = this.getAttributes(objectType);
-    return attrs.find((a) => a.type === attrType);
   }
 
   /**

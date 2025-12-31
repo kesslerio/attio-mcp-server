@@ -2,8 +2,8 @@
  * Operations Playbook Evaluation Test Suite
  *
  * This test validates that all the concrete examples in our operations-playbook.md
- * actually work with the MCP server. Significant failures (>3) can create
- * GitHub issues for tracking (set SKIP_GITHUB_ISSUE_CREATION=false to enable).
+ * actually work with the MCP server. Significant failures (>3) create GitHub
+ * issues for tracking (disable with SKIP_GITHUB_ISSUE_CREATION=true).
  *
  * Purpose: Ensure our operational workflows are actually realistic and useful.
  *
