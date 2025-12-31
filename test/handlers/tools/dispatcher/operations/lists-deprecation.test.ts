@@ -22,26 +22,26 @@ import {
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolConfig } from '@/tool-types.js';
 
+// Mock getAttioClient at module level (hoisted by Vitest)
+vi.mock('@/utils/client.js', () => ({
+  getAttioClient: vi.fn(() => ({
+    lists: {
+      get: vi.fn().mockResolvedValue({ data: [] }),
+      entries: {
+        create: vi.fn().mockResolvedValue({ data: {} }),
+        delete: vi.fn().mockResolvedValue({ data: {} }),
+        update: vi.fn().mockResolvedValue({ data: {} }),
+      },
+    },
+  })),
+}));
+
 describe('List Tools Deprecation Warnings (Issue #1071)', () => {
   let warnSpy: MockInstance;
 
   beforeEach(() => {
     // Mock the warn function
     warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-
-    // Mock getAttioClient to prevent actual API calls
-    vi.mock('@/utils/client.js', () => ({
-      getAttioClient: vi.fn(() => ({
-        lists: {
-          get: vi.fn().mockResolvedValue({ data: [] }),
-          entries: {
-            create: vi.fn().mockResolvedValue({ data: {} }),
-            delete: vi.fn().mockResolvedValue({ data: {} }),
-            update: vi.fn().mockResolvedValue({ data: {} }),
-          },
-        },
-      })),
-    }));
   });
 
   afterEach(() => {
@@ -206,7 +206,8 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
             listId: 'list_123',
             parentObjectType: 'companies',
             parentAttributeSlug: 'industry',
-            parentAttributeValue: 'Technology',
+            condition: 'equals',
+            value: 'Technology',
           },
         },
       };
@@ -237,7 +238,7 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
           name: 'filter-list-entries-by-parent-id',
           arguments: {
             listId: 'list_123',
-            parentRecordId: 'company_xyz789',
+            recordId: 'company_xyz789',
           },
         },
       };
