@@ -68,8 +68,14 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Advanced Filtering**: Multi-attribute search with universal filtering
 - **Bulk Operations**: Efficiently manage contacts with universal batch operations
 
-### 📋 **Lists & Pipeline Management** (11 Tools)
+### 📋 **Lists & Pipeline Management** (4 Tools + 8 Deprecated)
 
+- **Active Tools**: 4 consolidated tools with auto-mode detection ([Migration Guide](./docs/migration/v2-list-tools.md))
+  - `filter-list-entries` - Unified filtering with 4 modes
+  - `manage-list-entry` - Unified entry management with 3 modes
+  - `get-list-entries` - Retrieve list entries
+  - `get-record-list-memberships` - Find record's list memberships
+- **Deprecated (v2.0.0 removal)**: 8 legacy tools replaced by consolidated versions
 - **Pipeline Operations**: Move deals through sales stages
 - **Smart Segmentation**: Create and manage targeted contact lists
 - **Advanced Filtering**: Complex multi-condition filtering with AND/OR logic

@@ -21,6 +21,7 @@ import {
   updateListEntry,
 } from '../../../../objects/lists/entries.js';
 import { ListEntryFilters } from '../../../../api/operations/index.js';
+import { warn, OperationType } from '@/utils/logger.js';
 
 /**
  * Handle getLists operations
@@ -29,6 +30,21 @@ export async function handleGetListsOperation(
   request: CallToolRequest,
   toolConfig: GetListsToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'get-lists' invoked. Use universal 'search_records' with resource_type="lists" instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'get-lists',
+      replacement: 'search_records',
+      migrationMode: 'resource_type="lists"',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'get-lists',
+    OperationType.TOOL_EXECUTION
+  );
+
   try {
     const lists = await toolConfig.handler();
     const formattedResult = toolConfig.formatResult!(lists);
@@ -59,6 +75,21 @@ export async function handleAddRecordToListOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'add-record-to-list' invoked. Use 'manage-list-entry' Mode 1 (Add) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'add-record-to-list',
+      replacement: 'manage-list-entry',
+      migrationMode: 'Mode 1 (Add)',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'add-record-to-list',
+    OperationType.TOOL_EXECUTION
+  );
+
   const listId = request.params.arguments?.listId as string;
   const recordId = request.params.arguments?.recordId as string;
   const objectType = request.params.arguments?.objectType as string | undefined;
@@ -114,6 +145,21 @@ export async function handleRemoveRecordFromListOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'remove-record-from-list' invoked. Use 'manage-list-entry' Mode 2 (Remove) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'remove-record-from-list',
+      replacement: 'manage-list-entry',
+      migrationMode: 'Mode 2 (Remove)',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'remove-record-from-list',
+    OperationType.TOOL_EXECUTION
+  );
+
   const listId = request.params.arguments?.listId as string;
   const entryId = request.params.arguments?.entryId as string;
 
@@ -159,6 +205,21 @@ export async function handleUpdateListEntryOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'update-list-entry' invoked. Use 'manage-list-entry' Mode 3 (Update) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'update-list-entry',
+      replacement: 'manage-list-entry',
+      migrationMode: 'Mode 3 (Update)',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'update-list-entry',
+    OperationType.TOOL_EXECUTION
+  );
+
   const listId = request.params.arguments?.listId as string;
   const entryId = request.params.arguments?.entryId as string;
   const attributes = request.params.arguments?.attributes;
@@ -444,6 +505,21 @@ export async function handleFilterListEntriesByParentOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'filter-list-entries-by-parent' invoked. Use 'filter-list-entries' Mode 3 (Parent Attr) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'filter-list-entries-by-parent',
+      replacement: 'filter-list-entries',
+      migrationMode: 'Mode 3 (Parent Attr)',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'filter-list-entries-by-parent',
+    OperationType.TOOL_EXECUTION
+  );
+
   const listId = request.params.arguments?.listId as string;
   const parentObjectType = request.params.arguments?.parentObjectType as string;
   const parentAttributeSlug = request.params.arguments
@@ -540,6 +616,21 @@ export async function handleFilterListEntriesByParentIdOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'filter-list-entries-by-parent-id' invoked. Use 'filter-list-entries' Mode 4 (Parent UUID) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'filter-list-entries-by-parent-id',
+      replacement: 'filter-list-entries',
+      migrationMode: 'Mode 4 (Parent UUID)',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'filter-list-entries-by-parent-id',
+    OperationType.TOOL_EXECUTION
+  );
+
   const listId = request.params.arguments?.listId as string;
   const recordId = request.params.arguments?.recordId as string;
   const limit = request.params.arguments?.limit as number;
@@ -591,6 +682,21 @@ export async function handleGetListDetailsOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'get-list-details' invoked. Use universal 'get_record_details' with resource_type="lists" instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'get-list-details',
+      replacement: 'get_record_details',
+      migrationMode: 'resource_type="lists"',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'get-list-details',
+    OperationType.TOOL_EXECUTION
+  );
+
   const listId = request.params.arguments?.listId as string;
 
   if (!listId) {
@@ -965,6 +1071,21 @@ export async function handleAdvancedFilterListEntriesOperation(
   request: CallToolRequest,
   toolConfig: ToolConfig
 ) {
+  // DEPRECATION WARNING (Issue #1071)
+  warn(
+    'handlers/tools/dispatcher/operations/lists',
+    `Deprecated tool 'advanced-filter-list-entries' invoked. Use 'filter-list-entries' Mode 2 (Advanced) instead. Removal in v2.0.0. Migration guide: /docs/migration/v2-list-tools.md`,
+    {
+      deprecatedTool: 'advanced-filter-list-entries',
+      replacement: 'filter-list-entries',
+      migrationMode: 'Mode 2 (Advanced)',
+      removalVersion: 'v2.0.0',
+      migrationGuide: '/docs/migration/v2-list-tools.md',
+    },
+    'advanced-filter-list-entries',
+    OperationType.TOOL_EXECUTION
+  );
+
   const listId = request.params.arguments?.listId as string;
   const filters = request.params.arguments?.filters;
   const limit = request.params.arguments?.limit as number;
