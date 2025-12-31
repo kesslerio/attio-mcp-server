@@ -112,19 +112,30 @@ export class AttributeDiscovery {
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch attributes for ${objectType}: ${response.status}`
+        // Auth/server errors should fail the suite, not silently skip
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(
+            `Authentication failed for ${objectType}: ${response.status} - check ATTIO_API_KEY`
+          );
+        }
+        if (response.status >= 500) {
+          throw new Error(
+            `Attio API error for ${objectType}: ${response.status}`
+          );
+        }
+        // 404 is acceptable - object type may not exist in workspace
+        console.warn(
+          `[AttributeDiscovery] ${objectType} not found: ${response.status}`
         );
+        this.cache.set(objectType, []);
+        return;
       }
 
       const data = (await response.json()) as { data: AttioAttribute[] };
       this.cache.set(objectType, data.data || []);
     } catch (error) {
-      console.warn(
-        `[AttributeDiscovery] Failed to fetch ${objectType} attributes:`,
-        error
-      );
-      this.cache.set(objectType, []);
+      // Network errors propagate (don't swallow) - only auth/server errors are explicitly handled above
+      throw error;
     }
   }
 
@@ -211,20 +222,4 @@ export class AttributeDiscovery {
   isInitialized(): boolean {
     return this.initialized;
   }
-}
-
-/**
- * Singleton instance for shared use across tests
- */
-let sharedInstance: AttributeDiscovery | null = null;
-
-export function getSharedAttributeDiscovery(): AttributeDiscovery {
-  if (!sharedInstance) {
-    sharedInstance = new AttributeDiscovery();
-  }
-  return sharedInstance;
-}
-
-export function resetSharedAttributeDiscovery(): void {
-  sharedInstance = null;
 }

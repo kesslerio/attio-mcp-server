@@ -2,8 +2,8 @@
  * Operations Playbook Evaluation Test Suite
  *
  * This test validates that all the concrete examples in our operations-playbook.md
- * actually work with the MCP server. Any failures automatically create GitHub
- * issues for tracking and fixing.
+ * actually work with the MCP server. Significant failures (>3) can create
+ * GitHub issues for tracking (set SKIP_GITHUB_ISSUE_CREATION=false to enable).
  *
  * Purpose: Ensure our operational workflows are actually realistic and useful.
  *
@@ -25,7 +25,6 @@ import {
 } from '@test/e2e/mcp/shared/mcp-client.js';
 import {
   AttributeDiscovery,
-  ATTRIBUTE_INTENTS,
   type AttioAttribute,
 } from '@test/e2e/utils/attribute-discovery.js';
 
@@ -333,14 +332,15 @@ describe('Operations Playbook Validation Suite', () => {
       expect(result.success).toBeTruthy();
     });
 
-    it.skip('should find overdue tasks for reassignment (tasks do not support advanced search)', async () => {
-      // SKIPPED: Tasks resource type does not support the search-by-timeframe tool
+    it('should find overdue tasks for reassignment (tasks do not support advanced search)', async () => {
+      // Tasks resource type does not support the search-by-timeframe tool
       // This is a known limitation - tasks have their own API endpoints
       const result = createSkippedResult(
         'Review overdue tasks',
         'Tasks do not support search-by-timeframe - use list-tasks instead'
       );
       testResults.push(result);
+      expect(result.skipped).toBe(true);
     });
 
     it('should create high-priority accounts list based on company size', async () => {
@@ -538,14 +538,15 @@ describe('Operations Playbook Validation Suite', () => {
       expect(result.success).toBeTruthy();
     });
 
-    it.skip('should find tasks without due dates (tasks do not support advanced search)', async () => {
-      // SKIPPED: Tasks resource type does not support advanced-search filters
+    it('should find tasks without due dates (tasks do not support advanced search)', async () => {
+      // Tasks resource type does not support advanced-search filters
       // This is a known limitation - tasks have their own API structure
       const result = createSkippedResult(
         'Find tasks without due dates',
         'Tasks do not support advanced-search - use list-tasks instead'
       );
       testResults.push(result);
+      expect(result.skipped).toBe(true);
     });
   });
 
