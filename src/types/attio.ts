@@ -255,6 +255,62 @@ export interface EnhancedAttioRecord extends AttioRecord {
 export type UniversalRecord = AttioRecord | AttioList;
 
 /**
+ * Type guard to check if a UniversalRecord is an AttioRecord (has values wrapper)
+ *
+ * @param record - The record to check
+ * @returns true if the record is an AttioRecord with a values object
+ *
+ * @example
+ * if (isAttioRecord(record)) {
+ *   // Safe to access record.values
+ *   const name = record.values.name;
+ * }
+ */
+export function isAttioRecord(record: UniversalRecord): record is AttioRecord {
+  return 'values' in record && record.values !== undefined;
+}
+
+/**
+ * Type guard to check if a UniversalRecord is an AttioList (has list_id, no values wrapper)
+ *
+ * @param record - The record to check
+ * @returns true if the record is an AttioList with list_id in its id object
+ *
+ * @example
+ * if (isAttioList(record)) {
+ *   // Safe to access top-level list fields
+ *   const title = record.title;
+ *   const listId = record.id.list_id;
+ * }
+ */
+export function isAttioList(record: UniversalRecord): record is AttioList {
+  return (
+    'id' in record &&
+    typeof record.id === 'object' &&
+    record.id !== null &&
+    'list_id' in record.id
+  );
+}
+
+/**
+ * Get the record ID regardless of record type (record_id for AttioRecord, list_id for AttioList)
+ *
+ * @param record - The UniversalRecord to extract ID from
+ * @returns The record_id or list_id as a string
+ *
+ * @example
+ * const id = getRecordId(record);
+ * // Works for both companies: { id: { record_id: "123" } }
+ * // and lists: { id: { list_id: "456" } }
+ */
+export function getRecordId(record: UniversalRecord): string {
+  if (isAttioList(record)) {
+    return record.id.list_id;
+  }
+  return record.id.record_id;
+}
+
+/**
  * @deprecated Use UniversalRecord instead
  * AttioListRecord: Transitional type that extends AttioRecord (requires values)
  *

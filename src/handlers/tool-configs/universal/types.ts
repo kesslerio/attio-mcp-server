@@ -5,7 +5,7 @@
  * tool count from 70 to ~30 tools while maintaining full functionality.
  */
 
-import { AttioRecord } from '../../../types/attio.js';
+import { UniversalRecord } from '../../../types/attio.js';
 import { ToolConfig } from '../../tool-types.js';
 import { ListEntryFilters } from '../../../api/operations/index.js';
 
@@ -380,22 +380,23 @@ export interface ResourceTypeHandler {
 
 /**
  * Universal tool result formatting interface
+ * Updated for Issue #1073 to use UniversalRecord (AttioRecord | AttioList)
  */
 export interface UniversalResultFormatter {
   formatSearch: (
-    results: AttioRecord[],
+    results: UniversalRecord[],
     resourceType: UniversalResourceType
   ) => string;
   formatDetails: (
-    record: AttioRecord,
+    record: UniversalRecord,
     resourceType: UniversalResourceType
   ) => string;
   formatCreate: (
-    record: AttioRecord,
+    record: UniversalRecord,
     resourceType: UniversalResourceType
   ) => string;
   formatUpdate: (
-    record: AttioRecord,
+    record: UniversalRecord,
     resourceType: UniversalResourceType
   ) => string;
   formatDelete: (
