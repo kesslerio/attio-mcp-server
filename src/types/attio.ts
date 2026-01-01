@@ -298,6 +298,9 @@ export function isAttioList(record: UniversalRecord): record is AttioList {
  * @param record - The UniversalRecord to extract ID from
  * @returns The record_id or list_id as a string
  *
+ * @remarks
+ * If a record has both values and list_id (unusual but possible), list_id takes precedence.
+ *
  * @example
  * const id = getRecordId(record);
  * // Works for both companies: { id: { record_id: "123" } }
