@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-01-01] - Daily Update
+
+### Added
+
+- Deprecation warnings and migration guide for list tools consolidation (#1071) - Comprehensive migration path for 8 legacy list tools moving to 4 unified tools in v2.0.0
+
+### Fixed
+
+- Playbook validation tests now work across all workspaces via dynamic attribute discovery (#973, #1081)
+  - Added `is_empty` operator support to advanced-search
+  - Tests discover available attributes at runtime instead of hardcoding field names
+  - Proper error handling for API failures (auth, rate limits, server errors)
+
 ### Changed
 
 - **Consolidated list filter tools (5 → 1)** (#1069) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #2 of 4
