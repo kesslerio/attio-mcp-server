@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Universal tools (`search_records`, `get_record_details`) now return proper list format matching list-specific tools instead of generic record format with values wrapper (#1068)
 - MCP Registry publishing workflow schema version and re-publish errors (#1066)
+- Operations playbook validation tests now work across all workspaces via dynamic attribute discovery (#973, #1081)
+  - Added `is_empty` operator support to advanced-search
+  - Tests discover available attributes at runtime instead of hardcoding field names
+  - Proper error handling for API failures (auth, rate limits, server errors)
 
 ## [1.4.0] - 2025-12-29
 
