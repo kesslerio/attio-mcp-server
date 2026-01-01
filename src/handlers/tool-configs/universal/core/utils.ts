@@ -12,6 +12,15 @@ import {
   type SanitizedValidationMetadata,
 } from './pii-sanitizer.js';
 
+// Re-export type guards for UniversalRecord (Issue #1073)
+// These allow discriminating between AttioRecord (has values) and AttioList (top-level fields)
+export {
+  isAttioRecord,
+  isAttioList,
+  getRecordId,
+  type UniversalRecord,
+} from '../../../../types/attio.js';
+
 /**
  * Return plural form label for universal resource types. Used solely for result formatting.
  */

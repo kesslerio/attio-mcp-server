@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **UniversalRecord type guards** (#1073) - Part 1 of 3: Type discrimination functions for list/record handling
+  - `isAttioRecord()`: Check if record has values wrapper (companies, people, deals, tasks)
+  - `isAttioList()`: Check if record has list_id in id object
+  - `getRecordId()`: Extract record_id or list_id based on type
+  - Foundation for enforcing UniversalRecord type across universal tools
+  - Re-exported from `@/handlers/tool-configs/universal/core/utils` for convenience
+
 ### Changed
 
 - **Consolidated list filter tools (5 → 1)** (#1069) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #2 of 4
