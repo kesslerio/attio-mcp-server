@@ -129,9 +129,10 @@ describe('UniversalUpdateService', () => {
       expect(result.id.object_id).toBe('people');
     });
 
-    it('should update a list record and convert format', async () => {
+    it('should update a list record in list-native format', async () => {
       const mockList = {
         id: { list_id: 'list_789' },
+        title: 'Updated List',
         name: 'Updated List',
         description: 'Updated description',
         object_slug: 'companies',
@@ -139,6 +140,7 @@ describe('UniversalUpdateService', () => {
         workspace_id: 'ws_123',
         workspace_member_access: 'read',
         created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-02T00:00:00Z',
       } as any;
       vi.mocked(updateList).mockResolvedValue(mockList);
 
@@ -151,10 +153,7 @@ describe('UniversalUpdateService', () => {
       expect(updateList).toHaveBeenCalledWith('list_789', {
         name: 'Test Company',
       });
-      expect(result.id.object_id).toBe('lists');
-      expect(result.values.name).toBe('Updated List');
-      expect(result.values.api_slug).toBe('updated-list');
-      expect(result.updated_at).toBeDefined();
+      expect(result).toEqual(mockList);
     });
 
     it('should update a records object record', async () => {

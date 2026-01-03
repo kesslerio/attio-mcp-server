@@ -2,28 +2,31 @@ import {
   UniversalToolConfig,
   UniversalSearchParams,
   UniversalResourceType,
-} from '../types.js';
-import { AttioRecord } from '../../../../types/attio.js';
-import { getPluralResourceType } from './utils.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+import type { UniversalRecord } from '@/types/attio.js';
+import { isAttioRecord } from '@/types/attio.js';
 import {
   validateUniversalToolParams,
   searchRecordsSchema,
-} from '../schemas.js';
-import { handleSearchError } from './error-utils.js';
-import { handleUniversalSearch } from '../shared-handlers.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
+import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
+import { handleUniversalSearch } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
  * Universal search records tool configuration.
  * Consolidates: search-companies, search-people, list-records, list-tasks.
- * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
+ * Issue #1068: Lists returned in list-native format (UniversalRecord[])
  */
 export const searchRecordsConfig: UniversalToolConfig<
   UniversalSearchParams,
-  AttioRecord[]
+  UniversalRecord[]
 > = {
   name: 'search_records',
-  handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
+  handler: async (
+    params: UniversalSearchParams
+  ): Promise<UniversalRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records',
@@ -39,7 +42,7 @@ export const searchRecordsConfig: UniversalToolConfig<
     }
   },
   formatResult: (
-    results: AttioRecord[] | { data: AttioRecord[] },
+    results: UniversalRecord[] | { data: UniversalRecord[] },
     ...args: unknown[]
   ): string => {
     const resourceType = args[0] as UniversalResourceType | undefined;
@@ -76,7 +79,7 @@ export const searchRecordsConfig: UniversalToolConfig<
 
         // Check if values has content (Issue #1068 - lists have empty values)
         const hasValues =
-          record.values && Object.keys(record.values).length > 0;
+          isAttioRecord(record) && Object.keys(record.values).length > 0;
         const values = hasValues ? record.values : {};
 
         const getFirstValue = (field: unknown): string | undefined => {
@@ -165,7 +168,7 @@ export const searchRecordsConfig: UniversalToolConfig<
     return `Found ${recordsArray.length} ${typeName}:\n${formattedResults}`;
   },
   structuredOutput: (
-    results: AttioRecord[] | { data: AttioRecord[] }
+    results: UniversalRecord[] | { data: UniversalRecord[] }
   ): Record<string, unknown> => {
     // Return the raw records array for JSON parsing
     const recordsArray = Array.isArray(results)

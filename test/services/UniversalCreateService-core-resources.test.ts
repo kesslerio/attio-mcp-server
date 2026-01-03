@@ -190,7 +190,7 @@ describe('UniversalCreateService', () => {
       expect(result).toEqual(mockPerson);
     });
 
-    it('should create a list record and convert format', async () => {
+    it('should create a list record in list-native format', async () => {
       const mockList = {
         id: { list_id: 'list_789' },
         title: 'Test List',
@@ -211,18 +211,7 @@ describe('UniversalCreateService', () => {
       });
 
       expect(createList).toHaveBeenCalledWith({ name: 'Test List' });
-      expect(result).toEqual({
-        id: { record_id: 'list_789', list_id: 'list_789' },
-        values: {
-          name: 'Test List',
-          description: 'Test description',
-          parent_object: 'companies',
-          api_slug: 'test-list',
-          workspace_id: 'ws_123',
-          workspace_member_access: 'read',
-          created_at: '2024-01-01T00:00:00Z',
-        },
-      });
+      expect(result).toEqual(mockList);
     });
   });
 });

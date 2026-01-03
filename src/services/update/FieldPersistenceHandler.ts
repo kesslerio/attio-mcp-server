@@ -21,12 +21,13 @@
  */
 
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
-import { UpdateValidation } from './UpdateValidation.js';
+import { UpdateValidation } from '@/services/update/UpdateValidation.js';
 import { debug, error as logError } from '@/utils/logger.js';
 import {
   UniversalValidationError,
   ErrorType,
 } from '@/handlers/tool-configs/universal/schemas.js';
+import { isAttioList, isAttioRecord } from '@/types/attio.js';
 
 /**
  * Options for field persistence verification
@@ -136,7 +137,13 @@ export class FieldPersistenceHandler {
           );
           return result;
         }
-        recordData = record.values || {};
+        if (isAttioRecord(record)) {
+          recordData = record.values || {};
+        } else if (isAttioList(record)) {
+          recordData = { ...record };
+        } else {
+          recordData = {};
+        }
         debug('FieldPersistenceHandler', 'Fetched record for verification', {
           resourceType,
           recordId,
@@ -214,7 +221,9 @@ export class FieldPersistenceHandler {
           );
 
           throw new UniversalValidationError(
-            `Field persistence verification failed: ${result.discrepancies.join('; ')}`,
+            `Field persistence verification failed: ${result.discrepancies.join(
+              '; '
+            )}`,
             ErrorType.API_ERROR,
             {
               field: 'field_verification',

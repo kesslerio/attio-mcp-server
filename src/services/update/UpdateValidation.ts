@@ -1,4 +1,8 @@
-import type { AttioRecord } from '@/types/attio.js';
+import {
+  isAttioList,
+  isAttioRecord,
+  type UniversalRecord,
+} from '@/types/attio.js';
 import { FilterValidationError } from '@/errors/api-errors.js';
 import { shouldUseMockData } from '@/services/create/index.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
@@ -97,7 +101,11 @@ export const UpdateValidation = {
           ['created_at', 'updated_at', 'id', 'workspace_id'].includes(fieldName)
         )
           continue;
-        const actualValue = verificationRecord.values?.[fieldName];
+        const actualValue = isAttioRecord(verificationRecord)
+          ? verificationRecord.values?.[fieldName]
+          : isAttioList(verificationRecord)
+            ? verificationRecord[fieldName]
+            : undefined;
         const comparisonResult = this.compareFieldValues(
           fieldName,
           expectedValue,
@@ -106,7 +114,9 @@ export const UpdateValidation = {
         if (!comparisonResult.matches) {
           result.verified = false;
           result.discrepancies.push(
-            `Field "${fieldName}" persistence mismatch: expected ${JSON.stringify(expectedValue)}, got ${JSON.stringify(actualValue)}`
+            `Field "${fieldName}" persistence mismatch: expected ${JSON.stringify(
+              expectedValue
+            )}, got ${JSON.stringify(actualValue)}`
           );
         } else if (comparisonResult.warning) {
           result.warnings.push(comparisonResult.warning);
@@ -129,32 +139,17 @@ export const UpdateValidation = {
   async fetchRecordForVerification(
     resourceType: UniversalResourceType,
     recordId: string
-  ): Promise<AttioRecord | null> {
+  ): Promise<UniversalRecord | null> {
     try {
       switch (resourceType) {
         case 'companies' as unknown as UniversalResourceType:
-          return (await getCompanyDetails(recordId)) as unknown as AttioRecord;
+          return await getCompanyDetails(recordId);
         case 'people' as unknown as UniversalResourceType:
-          return (await getPersonDetails(recordId)) as unknown as AttioRecord;
+          return await getPersonDetails(recordId);
         case 'lists' as unknown as UniversalResourceType: {
           const list = await getListDetails(recordId);
-          return {
-            id: { record_id: list.id.list_id, list_id: list.id.list_id },
-            values: {
-              name:
-                (list as Record<string, unknown>).name ||
-                (list as Record<string, unknown>).title,
-              description: (list as Record<string, unknown>).description,
-              parent_object:
-                (list as Record<string, unknown>).object_slug ||
-                (list as Record<string, unknown>).parent_object,
-              api_slug: (list as Record<string, unknown>).api_slug,
-              workspace_id: (list as Record<string, unknown>).workspace_id,
-              workspace_member_access: (list as Record<string, unknown>)
-                .workspace_member_access,
-              created_at: (list as Record<string, unknown>).created_at,
-            },
-          } as unknown as AttioRecord;
+          const resolvedName = list.name || list.title;
+          return resolvedName ? { ...list, name: resolvedName } : list;
         }
         case 'tasks' as unknown as UniversalResourceType: {
           const task = await getTask(recordId);

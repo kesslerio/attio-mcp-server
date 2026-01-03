@@ -5,18 +5,35 @@
  * Provides universal utility functions for resource type formatting, validation, and data conversion.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import {
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import type {
+  AttioList,
   AttioRecord,
   AttioTask,
   AttioRecordValues,
   AttioFieldValue,
-} from '../types/attio.js';
+  UniversalRecord,
+} from '@/types/attio.js';
+import { isAttioList, isAttioRecord } from '@/types/attio.js';
 
 /**
  * UniversalUtilityService provides centralized utility functions
  */
 export class UniversalUtilityService {
+  /**
+   * Type guard for AttioRecord.
+   */
+  static isAttioRecord(record: UniversalRecord): record is AttioRecord {
+    return isAttioRecord(record);
+  }
+
+  /**
+   * Type guard for AttioList.
+   */
+  static isAttioList(record: UniversalRecord): record is AttioList {
+    return isAttioList(record);
+  }
+
   /**
    * Utility function to format resource type for display
    */

@@ -5,17 +5,17 @@
  * Handles search type detection and routing to appropriate services
  */
 
-import { AttioRecord } from '@/types/attio.js';
+import type { UniversalRecord } from '@/types/attio.js';
 import {
   UniversalResourceType,
   SearchType,
   MatchType,
   SortType,
 } from '@/handlers/tool-configs/universal/types.js';
-import { TimeframeQuery } from '@/utils/filters/types.js';
-import { QueryApiService } from './QueryApiService.js';
-import { RecordsSearchService } from './RecordsSearchService.js';
-import { StrategyFactory } from './StrategyFactory.js';
+import type { TimeframeQuery } from '@/utils/filters/types.js';
+import { QueryApiService } from '@/services/search/QueryApiService.js';
+import { RecordsSearchService } from '@/services/search/RecordsSearchService.js';
+import { StrategyFactory } from '@/services/search/StrategyFactory.js';
 
 /**
  * Parameters for search routing
@@ -50,7 +50,7 @@ export class SearchCoordinator {
    */
   static async executeSearch(
     params: SearchRoutingParams
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     const {
       resource_type,
       query,

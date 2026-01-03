@@ -61,7 +61,15 @@ vi.mock('../../src/objects/companies/index.js', () => ({
   updateCompany: vi.fn(() => ({ id: { record_id: 'comp_123' }, values: {} })),
 }));
 vi.mock('../../src/objects/lists.js', () => ({
-  updateList: vi.fn(() => ({ id: { record_id: 'list_123' }, values: {} })),
+  updateList: vi.fn(() => ({
+    id: { list_id: 'list_123' },
+    title: 'Test List',
+    name: 'Test List',
+    object_slug: 'companies',
+    workspace_id: 'ws_123',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+  })),
 }));
 vi.mock('../../src/objects/people-write.js', () => ({
   updatePerson: vi.fn(() => ({ id: { record_id: 'person_123' }, values: {} })),

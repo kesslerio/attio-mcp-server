@@ -1,16 +1,32 @@
-import type { AttioRecord } from '../../types/attio.js';
-import type { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
+import type { AttioList, AttioRecord, UniversalRecord } from '@/types/attio.js';
+import { isAttioList, isAttioRecord } from '@/types/attio.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 
 export const ResponseNormalizer = {
   normalizeResponseFormat(
     resourceType: UniversalResourceType,
-    record: AttioRecord
-  ): AttioRecord {
+    record: UniversalRecord
+  ): UniversalRecord {
     if (!record || typeof record !== 'object') {
       throw new Error(
         `Invalid record format received for ${resourceType}: ${typeof record}`
       );
     }
+    if (resourceType === UniversalResourceType.LISTS) {
+      if (!isAttioList(record)) {
+        throw new Error(
+          `Invalid list format received for ${resourceType}: ${typeof record}`
+        );
+      }
+      return this.normalizeListRecord(record);
+    }
+
+    if (!isAttioRecord(record)) {
+      throw new Error(
+        `Invalid record format received for ${resourceType}: ${typeof record}`
+      );
+    }
+
     const normalized: AttioRecord = {
       id: record.id || { record_id: 'unknown' },
       values: record.values || {},
@@ -19,17 +35,15 @@ export const ResponseNormalizer = {
     };
 
     switch (resourceType) {
-      case 'companies' as unknown as UniversalResourceType:
+      case UniversalResourceType.COMPANIES:
         return this.normalizeCompanyRecord(normalized);
-      case 'people' as unknown as UniversalResourceType:
+      case UniversalResourceType.PEOPLE:
         return this.normalizePersonRecord(normalized);
-      case 'lists' as unknown as UniversalResourceType:
-        return this.normalizeListRecord(normalized);
-      case 'tasks' as unknown as UniversalResourceType:
+      case UniversalResourceType.TASKS:
         return this.normalizeTaskRecord(normalized);
-      case 'deals' as unknown as UniversalResourceType:
+      case UniversalResourceType.DEALS:
         return this.normalizeDealRecord(normalized);
-      case 'records' as unknown as UniversalResourceType:
+      case UniversalResourceType.RECORDS:
         return this.normalizeGenericRecord(normalized);
       default:
         return normalized;
@@ -77,16 +91,16 @@ export const ResponseNormalizer = {
     } as AttioRecord;
   },
 
-  normalizeListRecord(record: AttioRecord): AttioRecord {
-    const idObj = (record.id as unknown as Record<string, unknown>) || {};
+  normalizeListRecord(record: AttioList): AttioList {
+    const idObj = (record.id as Record<string, unknown>) || {};
     return {
       ...record,
       id: {
         ...record.id,
-        object_id: (idObj.object_id as string) || 'lists',
-        list_id: (idObj.list_id as string) || (idObj.record_id as string),
+        list_id: (idObj.list_id as string) || record.id.list_id,
       },
-    } as AttioRecord;
+      name: record.name || record.title,
+    };
   },
 
   normalizeTaskRecord(record: AttioRecord): AttioRecord {
