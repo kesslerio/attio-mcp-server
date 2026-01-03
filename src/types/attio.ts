@@ -352,6 +352,34 @@ export interface AttioList {
 }
 
 /**
+ * Type guard for AttioRecord (record values wrapper present).
+ */
+export const isAttioRecord = (
+  record: UniversalRecord
+): record is AttioRecord => {
+  return (
+    typeof record === 'object' &&
+    record !== null &&
+    'values' in record &&
+    (record as { values?: unknown }).values !== undefined
+  );
+};
+
+/**
+ * Type guard for AttioList (list_id present).
+ */
+export const isAttioList = (record: UniversalRecord): record is AttioList => {
+  return (
+    typeof record === 'object' &&
+    record !== null &&
+    'id' in record &&
+    typeof (record as { id?: unknown }).id === 'object' &&
+    (record as { id?: Record<string, unknown> }).id !== null &&
+    'list_id' in (record as { id: Record<string, unknown> }).id
+  );
+};
+
+/**
  * List entry record type
  */
 export interface AttioListEntry {

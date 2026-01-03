@@ -3,16 +3,19 @@
  * Issue #885: Add deals support to fast path optimization
  */
 
-import { AttioRecord } from '../../types/attio.js';
 import {
   SearchType,
   MatchType,
   SortType,
   UniversalResourceType,
-} from '../../handlers/tool-configs/universal/types.js';
-import { BaseSearchStrategy } from './BaseSearchStrategy.js';
-import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { FilterValidationError } from '@/errors/api-errors.js';
+import { BaseSearchStrategy } from '@/services/search-strategies/BaseSearchStrategy.js';
+import type {
+  SearchStrategyParams,
+  StrategyDependencies,
+} from '@/services/search-strategies/interfaces.js';
+import type { UniversalRecord } from '@/types/attio.js';
 
 /**
  * Search strategy for deals with fast path optimization
@@ -34,7 +37,7 @@ export class DealSearchStrategy extends BaseSearchStrategy {
     return true;
   }
 
-  async search(params: SearchStrategyParams): Promise<AttioRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecord[]> {
     const {
       query,
       filters,
@@ -82,7 +85,7 @@ export class DealSearchStrategy extends BaseSearchStrategy {
     filters: Record<string, unknown>,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Deals advanced search function not available');
     }
@@ -114,7 +117,7 @@ export class DealSearchStrategy extends BaseSearchStrategy {
     sort: SortType = SortType.NAME,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Deals search function not available');
     }
@@ -155,7 +158,7 @@ export class DealSearchStrategy extends BaseSearchStrategy {
   private async searchWithoutQuery(
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Deals search function not available');
     }
@@ -177,7 +180,7 @@ export class DealSearchStrategy extends BaseSearchStrategy {
     sort: SortType = SortType.NAME,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     // Default content fields for deals
     const searchFields =
       fields && fields.length > 0 ? fields : ['name', 'notes'];
@@ -210,7 +213,7 @@ export class DealSearchStrategy extends BaseSearchStrategy {
     matchType: MatchType = MatchType.PARTIAL,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     const nameFilters = this.createNameFilters(query, matchType);
 
     if (!this.dependencies.advancedSearchFunction) {

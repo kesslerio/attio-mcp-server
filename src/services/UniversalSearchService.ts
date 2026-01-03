@@ -5,43 +5,44 @@
  * Issue #935: Search routing delegated to SearchCoordinator and extracted services
  */
 
+import { performance } from 'perf_hooks';
+
 import {
   UniversalResourceType,
   SearchType,
   MatchType,
   SortType,
-} from '../handlers/tool-configs/universal/types.js';
-import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
-import { performance } from 'perf_hooks';
-import { debug } from '../utils/logger.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalSearchParams } from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalRecord } from '@/types/attio.js';
+import { debug } from '@/utils/logger.js';
 
 // Import services
-import { ValidationService } from './ValidationService.js';
-import { CachingService } from './CachingService.js';
+import { ValidationService } from '@/services/ValidationService.js';
+import { CachingService } from '@/services/CachingService.js';
 
 // Import performance tracking
-import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
 
 // Import timeframe utility functions for Issue #475
-import { convertDateParamsToTimeframeQuery } from '../utils/filters/timeframe-utils.js';
+import { convertDateParamsToTimeframeQuery } from '@/utils/filters/timeframe-utils.js';
 
 // Issue #935: Search routing delegated to SearchCoordinator
-import { SearchCoordinator } from './search/SearchCoordinator.js';
+import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
 
 /**
  * UniversalSearchService provides centralized record search functionality
  * Issue #935: Strategy initialization delegated to StrategyFactory via SearchCoordinator
- * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
+ * Issue #1068: Lists returned in list-native format (UniversalRecord[])
  */
 export class UniversalSearchService {
   /**
    * Universal search handler with performance tracking
-   * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
+   * Issue #1068: Lists returned in list-native format (UniversalRecord[])
    */
   static async searchRecords(
     params: UniversalSearchParams
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     const {
       resource_type,
       query,
@@ -164,7 +165,7 @@ export class UniversalSearchService {
 
     // Track API call timing
     const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
-    let results: AttioRecord[];
+    let results: UniversalRecord[];
 
     try {
       results = await this.performSearchByResourceType(resource_type, {
@@ -238,7 +239,7 @@ export class UniversalSearchService {
       content_fields?: string[];
       use_or_logic?: boolean;
     }
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     // Issue #935: Delegate to SearchCoordinator for all search routing
     return SearchCoordinator.executeSearch({
       resource_type,

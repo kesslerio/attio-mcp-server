@@ -7,21 +7,23 @@ import {
   ContentSearchParams,
   ContentSearchType,
   UniversalResourceType,
-} from '@handlers/tool-configs/universal/types.js';
-import { AttioRecord, InteractionType } from '@shared-types/attio.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { InteractionType } from '@/types/attio.js';
+import type { UniversalRecord } from '@/types/attio.js';
+import { isAttioRecord } from '@/types/attio.js';
 
-import { validateUniversalToolParams } from '@handlers/tool-configs/universal/schemas.js';
-import { UniversalSearchService } from '@services/UniversalSearchService.js';
-import { ErrorService } from '@services/ErrorService.js';
-import { getPluralResourceType } from '@handlers/tool-configs/universal/core/utils.js';
-import { formatResourceType } from '@handlers/tool-configs/universal/shared-handlers.js';
+import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
+import { UniversalSearchService } from '@/services/UniversalSearchService.js';
+import { ErrorService } from '@/services/ErrorService.js';
+import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
 
 export const searchByContentConfig: UniversalToolConfig<
   ContentSearchParams,
-  AttioRecord[]
+  UniversalRecord[]
 > = {
   name: 'search_records_by_content',
-  handler: async (params: ContentSearchParams): Promise<AttioRecord[]> => {
+  handler: async (params: ContentSearchParams): Promise<UniversalRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_by_content',
@@ -51,7 +53,7 @@ export const searchByContentConfig: UniversalToolConfig<
         // Support basic activity content for people via specialized handler mock
         if (resource_type === UniversalResourceType.PEOPLE) {
           const { searchPeopleByActivity } = await import(
-            '@src/objects/people/search.js'
+            '@/objects/people/search.js'
           );
           return await searchPeopleByActivity({
             dateRange: { preset: 'last_month' },
@@ -94,7 +96,7 @@ export const searchByContentConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+  formatResult: (results: UniversalRecord[], ...args: unknown[]) => {
     const contentType = args[0] as ContentSearchType | undefined;
     const resourceType = args[1] as UniversalResourceType | undefined;
     if (!Array.isArray(results)) {
@@ -111,17 +113,28 @@ export const searchByContentConfig: UniversalToolConfig<
         ? 'record'
         : 'records';
 
-    return `Found ${results.length} ${resourceTypeName} with matching ${contentTypeName}:\n${results
+    return `Found ${
+      results.length
+    } ${resourceTypeName} with matching ${contentTypeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown>;
-        const recordId = record.id as Record<string, unknown>;
+        const values = isAttioRecord(record as UniversalRecord)
+          ? ((record as { values?: Record<string, unknown> }).values as Record<
+              string,
+              unknown
+            >)
+          : (record as Record<string, unknown>);
+        const recordId = (record as { id?: Record<string, unknown> }).id;
         const name =
           (values?.name as Record<string, unknown>[])?.[0]?.value ||
           (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
           (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
           (values?.title as Record<string, unknown>[])?.[0]?.value ||
+          (typeof values?.name === 'string' ? values.name : undefined) ||
           'Unnamed';
-        const id = recordId?.record_id || 'unknown';
+        const id =
+          recordId?.record_id ||
+          recordId?.list_id ||
+          (typeof recordId === 'string' ? recordId : 'unknown');
 
         return `${index + 1}. ${name} (ID: ${id})`;
       })

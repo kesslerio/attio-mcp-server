@@ -5,13 +5,14 @@
  * Handles generic records and custom object searches
  */
 
-import { AttioRecord } from '@/types/attio.js';
-import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
-import { ValidationService } from '@/services/ValidationService.js';
+import type { AxiosInstance } from 'axios';
+
+import type { UniversalRecord } from '@/types/attio.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
 import * as AttioClientModule from '@/api/attio-client.js';
-import type { AxiosInstance } from 'axios';
 import { listObjectRecords } from '@/objects/records/index.js';
+import { ValidationService } from '@/services/ValidationService.js';
+import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
 import {
   AuthenticationError,
   AuthorizationError,
@@ -44,7 +45,7 @@ function handleRecordsApiError(
     operation: string;
     metadata?: Record<string, unknown>;
   }
-): AttioRecord[] {
+): UniversalRecord[] {
   const apiError = createApiErrorFromAxiosError(error, path, 'POST');
 
   // Re-throw critical errors that should bubble up
@@ -88,7 +89,7 @@ export class RecordsSearchService {
     limit?: number,
     offset?: number,
     filters?: Record<string, unknown>
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     // Handle list_membership filters - invalid UUID should return empty array
     if (filters?.list_membership) {
       const listId = String(filters.list_membership);
@@ -122,7 +123,7 @@ export class RecordsSearchService {
     limit?: number,
     offset?: number,
     filters?: Record<string, unknown>
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     // Handle list_membership filters - invalid UUID should return empty array
     if (filters?.list_membership) {
       const listId = String(filters.list_membership);

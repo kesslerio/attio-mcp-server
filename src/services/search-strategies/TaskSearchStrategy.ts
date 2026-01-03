@@ -3,23 +3,25 @@
  * Issue #574: Extract task search logic from UniversalSearchService
  */
 
-import { AttioRecord } from '../../types/attio.js';
+import { performance } from 'perf_hooks';
+
 import {
   SearchType,
   MatchType,
   SortType,
   UniversalResourceType,
-} from '../../handlers/tool-configs/universal/types.js';
-import { BaseSearchStrategy } from './BaseSearchStrategy.js';
-import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
-import { performance } from 'perf_hooks';
-import { SearchUtilities } from '../search-utilities/SearchUtilities.js';
-import { createScopedLogger, OperationType } from '../../utils/logger.js';
-
-// Import performance tracking and caching services
-import { enhancedPerformanceTracker } from '../../middleware/performance-enhanced.js';
-import { CachingService } from '../CachingService.js';
-import { UniversalUtilityService } from '../UniversalUtilityService.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
+import { SearchUtilities } from '@/services/search-utilities/SearchUtilities.js';
+import { BaseSearchStrategy } from '@/services/search-strategies/BaseSearchStrategy.js';
+import type {
+  SearchStrategyParams,
+  StrategyDependencies,
+} from '@/services/search-strategies/interfaces.js';
+import { CachingService } from '@/services/CachingService.js';
+import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
+import type { AttioRecord, UniversalRecord } from '@/types/attio.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
 
 /**
  * Search strategy for tasks with performance optimization, caching, and content search support
@@ -41,7 +43,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     return true; // Tasks support content search via applyContentSearch method
   }
 
-  async search(params: SearchStrategyParams): Promise<AttioRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecord[]> {
     const {
       query,
       limit,
@@ -94,7 +96,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     fields?: string[],
     match_type: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     const log = createScopedLogger(
       'TaskSearchStrategy',
       'tasks_search',
@@ -116,7 +118,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
           });
           return [];
         } else {
-          // Convert AttioTask[] to AttioRecord[]
+          // Convert AttioTask[] to UniversalRecord[]
           return tasksList.map(UniversalUtilityService.convertTaskToRecord);
         }
       } catch (error: unknown) {

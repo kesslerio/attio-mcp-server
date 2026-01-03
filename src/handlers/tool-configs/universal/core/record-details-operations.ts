@@ -2,31 +2,32 @@ import {
   UniversalToolConfig,
   UniversalRecordDetailsParams,
   UniversalResourceType,
-} from '../types.js';
-import { AttioRecord } from '../../../../types/attio.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalRecord } from '@/types/attio.js';
+import { isAttioRecord } from '@/types/attio.js';
 import {
   getRecordDetailsSchema,
   validateUniversalToolParams,
-} from '../schemas.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
 import {
   handleUniversalGetDetails,
   getSingularResourceType,
-} from '../shared-handlers.js';
-import { handleSearchError } from './error-utils.js';
-import { UniversalUtilityService } from '../../../../services/UniversalUtilityService.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
+import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
- * Issue #1068: Lists returned in list-native format (cast to AttioRecord)
+ * Issue #1068: Lists returned in list-native format (UniversalRecord)
  */
 export const getRecordDetailsConfig: UniversalToolConfig<
   UniversalRecordDetailsParams,
-  AttioRecord
+  UniversalRecord
 > = {
   name: 'get_record_details',
   handler: async (
     params: UniversalRecordDetailsParams
-  ): Promise<AttioRecord> => {
+  ): Promise<UniversalRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'get_record_details',
@@ -41,7 +42,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (record: AttioRecord, ...args: unknown[]): string => {
+  formatResult: (record: UniversalRecord, ...args: unknown[]): string => {
     const resourceType = args[0] as UniversalResourceType | undefined;
     if (!record) {
       return 'Record not found';
@@ -76,15 +77,18 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     }
 
     // For other records, fields are in values wrapper
-    const hasValues = record.values && Object.keys(record.values).length > 0;
+    const hasValues =
+      isAttioRecord(record) && Object.keys(record.values).length > 0;
     const name = UniversalUtilityService.extractDisplayName(
       hasValues ? record.values : (record as Record<string, unknown>)
     );
     const id = String(record.id?.record_id || 'unknown');
 
-    let details = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)}: ${name}\nID: ${id}\n\n`;
+    let details = `${
+      resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)
+    }: ${name}\nID: ${id}\n\n`;
 
-    if (record.values) {
+    if (isAttioRecord(record) && record.values) {
       let fieldOrder = [
         'email',
         'domains',
@@ -176,14 +180,16 @@ export const getRecordDetailsConfig: UniversalToolConfig<
         Array.isArray(record.values.created_at) &&
         (record.values.created_at as { value: string }[])[0]?.value
       ) {
-        details += `Created at: ${(record.values.created_at as { value: string }[])[0].value}\n`;
+        details += `Created at: ${
+          (record.values.created_at as { value: string }[])[0].value
+        }\n`;
       }
     }
 
     return details.trim();
   },
   structuredOutput: (
-    record: AttioRecord,
+    record: UniversalRecord,
     resourceType?: string
   ): Record<string, unknown> => {
     if (!record) return {};
@@ -191,7 +197,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     const result: Record<string, unknown> = { ...record };
 
     // Normalize company name to string for consistency
-    if (resourceType === 'companies' && record.values) {
+    if (resourceType === 'companies' && isAttioRecord(record)) {
       const values = record.values as Record<string, unknown>;
       const nameArray = values.name;
       if (Array.isArray(nameArray) && nameArray[0]?.value) {
