@@ -5,7 +5,7 @@
  * Handles search type detection and routing to appropriate services
  */
 
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import {
   UniversalResourceType,
   SearchType,
@@ -50,7 +50,7 @@ export class SearchCoordinator {
    */
   static async executeSearch(
     params: SearchRoutingParams
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const {
       resource_type,
       query,

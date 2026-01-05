@@ -16,7 +16,7 @@ import type {
   StrategyDependencies,
 } from '@/services/search-strategies/interfaces.js';
 import { buildCompanyQueryFilters } from '@/services/search-strategies/query-filter-builder.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 
 /**
  * Search strategy for companies with advanced filtering and content search
@@ -38,7 +38,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     return true;
   }
 
-  async search(params: SearchStrategyParams): Promise<UniversalRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecordResult[]> {
     const {
       query,
       filters,
@@ -86,7 +86,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     filters: Record<string, unknown>,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Companies advanced search function not available');
     }
@@ -118,7 +118,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     sort: SortType = SortType.NAME,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Companies search function not available');
     }
@@ -159,7 +159,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
   private async searchWithoutQuery(
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     if (!this.dependencies.advancedSearchFunction) {
       throw new Error('Companies search function not available');
     }
@@ -178,7 +178,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     query: string,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const domainFilters = {
       filters: [
         {
@@ -210,7 +210,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     sort: SortType = SortType.NAME,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     // Default content fields for companies
     const searchFields =
       fields && fields.length > 0
@@ -245,7 +245,7 @@ export class CompanySearchStrategy extends BaseSearchStrategy {
     matchType: MatchType = MatchType.PARTIAL,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const nameFilters = this.createNameFilters(query, matchType);
 
     if (!this.dependencies.advancedSearchFunction) {

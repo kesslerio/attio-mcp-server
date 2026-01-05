@@ -8,7 +8,7 @@
 import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioRecord,
-  UniversalRecord,
+  UniversalRecordResult,
   ResourceType,
   AttioListResponse,
   RecordBatchCreateParams,
@@ -321,7 +321,7 @@ export async function batchGetObjectDetails<T extends AttioRecord>(
 export interface UniversalBatchSearchResult {
   success: boolean;
   query: string;
-  result?: UniversalRecord[];
+  result?: UniversalRecordResult[];
   error?: string;
 }
 
@@ -563,7 +563,7 @@ export async function universalBatchGetDetails(
   Array<{
     success: boolean;
     recordId: string;
-    result?: UniversalRecord;
+    result?: UniversalRecordResult;
     error?: string;
   }>
 > {

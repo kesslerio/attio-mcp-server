@@ -307,7 +307,7 @@ export class UniversalCreateService {
       // Add each error on its own line for clarity
       if (fieldValidation.errors.length > 0) {
         errorMessage +=
-          '\n' + fieldValidation.errors.map((err) => `  ❌ ${err}`).join('\n');
+          '\n' + fieldValidation.errors.map((err) => `  - ${err}`).join('\n');
       }
 
       // Add suggestions if available (truncated to prevent buffer overflow)
@@ -315,8 +315,8 @@ export class UniversalCreateService {
         const truncated = ValidationService.truncateSuggestions(
           fieldValidation.suggestions
         );
-        errorMessage += '\n\n💡 Suggestions:\n';
-        errorMessage += truncated.map((sug) => `  • ${sug}`).join('\n');
+        errorMessage += '\n\nSuggestions:\n';
+        errorMessage += truncated.map((sug) => `  - ${sug}`).join('\n');
 
         remediation = truncated.slice(0, MAX_VALIDATION_SUGGESTIONS);
       }
@@ -324,7 +324,7 @@ export class UniversalCreateService {
       // List available fields for this resource type
       const mapping = FIELD_MAPPINGS[resource_type];
       if (mapping && mapping.validFields.length > 0) {
-        errorMessage += `\n\n📋 Available fields for ${resource_type}:\n  ${mapping.validFields.join(
+        errorMessage += `\n\nAvailable fields for ${resource_type}:\n  ${mapping.validFields.join(
           ', '
         )}`;
         remediation.push(

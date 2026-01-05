@@ -3,7 +3,7 @@
  * Issue #574: Extract shared utilities for reuse
  */
 
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { isAttioRecord } from '@/types/attio.js';
 import type { TimeframeParams } from '@/services/search-strategies/interfaces.js';
 
@@ -31,7 +31,7 @@ export class SearchUtilities {
    * Rank search results by relevance based on query match frequency
    * This provides client-side relevance scoring since Attio API doesn't have native relevance ranking
    */
-  static rankByRelevance<T extends UniversalRecord>(
+  static rankByRelevance<T extends UniversalRecordResult>(
     results: T[],
     query: string,
     searchFields: string[]
@@ -127,7 +127,7 @@ export class SearchUtilities {
    * 2. Top-level non-string field (convert to string, skip values wrapper)
    * 3. Values wrapper field (for records in old format)
    */
-  static getFieldValue(record: UniversalRecord, field: string): string {
+  static getFieldValue(record: UniversalRecordResult, field: string): string {
     // Try top-level fields first (for lists and new format)
     const topLevelValue = this.getTopLevelFieldValue(
       record as Record<string, unknown>,
@@ -206,7 +206,7 @@ export class SearchUtilities {
    * Helper method to extract field value from a list record for content search
    * Issue #1068: Lists now have fields at top level (not wrapped in values)
    */
-  static getListFieldValue(list: UniversalRecord, field: string): string {
+  static getListFieldValue(list: UniversalRecordResult, field: string): string {
     // Try top-level field first (new format) - uses shared helper for consistency
     const topLevelValue = this.getTopLevelFieldValue(
       list as Record<string, unknown>,
@@ -241,7 +241,7 @@ export class SearchUtilities {
   /**
    * Helper method to extract field value from a task record for content search
    */
-  static getTaskFieldValue(task: UniversalRecord, field: string): string {
+  static getTaskFieldValue(task: UniversalRecordResult, field: string): string {
     const values = isAttioRecord(task)
       ? (task.values as Record<string, unknown>)
       : undefined;
@@ -267,7 +267,7 @@ export class SearchUtilities {
    * Helper method to extract field value from a note record for content search
    * Issue #888: Support notes search by title and content
    */
-  static getNoteFieldValue(note: UniversalRecord, field: string): string {
+  static getNoteFieldValue(note: UniversalRecordResult, field: string): string {
     const values = isAttioRecord(note)
       ? (note.values as Record<string, unknown>)
       : undefined;

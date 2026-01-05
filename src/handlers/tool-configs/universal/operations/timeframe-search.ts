@@ -9,7 +9,7 @@ import {
   UniversalResourceType,
   RelativeTimeframe,
 } from '@/handlers/tool-configs/universal/types.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { isAttioRecord } from '@/types/attio.js';
 import { safeExtractTimestamp } from '@/handlers/tool-configs/shared/type-utils.js';
 
@@ -25,12 +25,12 @@ import { mapFieldName } from '@/utils/AttioFieldMapper.js';
 
 export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
-  UniversalRecord[]
+  UniversalRecordResult[]
 > = {
   name: 'search_records_by_timeframe',
   handler: async (
     params: TimeframeSearchParams
-  ): Promise<UniversalRecord[]> => {
+  ): Promise<UniversalRecordResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_by_timeframe',
@@ -207,7 +207,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: UniversalRecord[], ...args: unknown[]) => {
+  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
     const timeframeType = args[0] as TimeframeType | undefined;
     const resourceType = args[1] as UniversalResourceType | undefined;
     if (!Array.isArray(results)) {
@@ -230,7 +230,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       results.length
     } ${resourceTypeName} by ${timeframeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = isAttioRecord(record as UniversalRecord)
+        const values = isAttioRecord(record as UniversalRecordResult)
           ? ((record as { values?: Record<string, unknown> }).values as Record<
               string,
               unknown

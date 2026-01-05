@@ -4,7 +4,7 @@ import {
   UniversalResourceType,
 } from '@/handlers/tool-configs/universal/types.js';
 import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { isAttioRecord } from '@/types/attio.js';
 import {
   validateUniversalToolParams,
@@ -17,16 +17,16 @@ import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 /**
  * Universal search records tool configuration.
  * Consolidates: search-companies, search-people, list-records, list-tasks.
- * Issue #1068: Lists returned in list-native format (UniversalRecord[])
+ * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
  */
 export const searchRecordsConfig: UniversalToolConfig<
   UniversalSearchParams,
-  UniversalRecord[]
+  UniversalRecordResult[]
 > = {
   name: 'search_records',
   handler: async (
     params: UniversalSearchParams
-  ): Promise<UniversalRecord[]> => {
+  ): Promise<UniversalRecordResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records',
@@ -42,7 +42,7 @@ export const searchRecordsConfig: UniversalToolConfig<
     }
   },
   formatResult: (
-    results: UniversalRecord[] | { data: UniversalRecord[] },
+    results: UniversalRecordResult[] | { data: UniversalRecordResult[] },
     ...args: unknown[]
   ): string => {
     const resourceType = args[0] as UniversalResourceType | undefined;
@@ -168,7 +168,7 @@ export const searchRecordsConfig: UniversalToolConfig<
     return `Found ${recordsArray.length} ${typeName}:\n${formattedResults}`;
   },
   structuredOutput: (
-    results: UniversalRecord[] | { data: UniversalRecord[] }
+    results: UniversalRecordResult[] | { data: UniversalRecordResult[] }
   ): Record<string, unknown> => {
     // Return the raw records array for JSON parsing
     const recordsArray = Array.isArray(results)

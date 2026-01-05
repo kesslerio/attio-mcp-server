@@ -338,22 +338,7 @@ export class UniversalUpdateService {
     const record = await this._updateRecordInternal(params, true);
 
     // Store actual values for comparison
-    if (isAttioRecord(record)) {
-      validationResult.actualValues = record.values || {};
-    } else if (isAttioList(record)) {
-      validationResult.actualValues = {
-        name: record.name || record.title,
-        title: record.title,
-        description: record.description,
-        object_slug: record.object_slug,
-        workspace_id: record.workspace_id,
-        created_at: record.created_at,
-        updated_at: record.updated_at,
-        entry_count: record.entry_count,
-      };
-    } else {
-      validationResult.actualValues = {};
-    }
+    validationResult.actualValues = this.extractActualValues(record);
 
     // Capture field persistence verification warnings if enabled
     if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
@@ -651,20 +636,7 @@ export class UniversalUpdateService {
         resource_type,
         record_id,
         dataForVerification,
-        isAttioRecord(normalizedRecord)
-          ? normalizedRecord.values || {}
-          : isAttioList(normalizedRecord)
-            ? {
-                name: normalizedRecord.name || normalizedRecord.title,
-                title: normalizedRecord.title,
-                description: normalizedRecord.description,
-                object_slug: normalizedRecord.object_slug,
-                workspace_id: normalizedRecord.workspace_id,
-                created_at: normalizedRecord.created_at,
-                updated_at: normalizedRecord.updated_at,
-                entry_count: normalizedRecord.entry_count,
-              }
-            : {},
+        this.extractActualValues(normalizedRecord),
         { strict: false }
       );
     }
@@ -698,5 +670,28 @@ export class UniversalUpdateService {
           `Valid resource types are: ${getValidResourceTypes()}`,
       }
     );
+  }
+
+  private static extractActualValues(
+    record: UniversalRecord
+  ): Record<string, unknown> {
+    if (isAttioRecord(record)) {
+      return record.values || {};
+    }
+
+    if (isAttioList(record)) {
+      return {
+        name: record.name || record.title,
+        title: record.title,
+        description: record.description,
+        object_slug: record.object_slug,
+        workspace_id: record.workspace_id,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        entry_count: record.entry_count,
+      };
+    }
+
+    return {};
   }
 }

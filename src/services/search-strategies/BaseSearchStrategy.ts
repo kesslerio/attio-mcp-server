@@ -3,7 +3,7 @@
  * Issue #574: Extract resource-specific search strategies
  */
 
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { warn } from '@/utils/logger.js';
 import {
   MatchType,
@@ -26,7 +26,7 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
     this.dependencies = dependencies;
   }
 
-  abstract search(params: SearchStrategyParams): Promise<UniversalRecord[]>;
+  abstract search(params: SearchStrategyParams): Promise<UniversalRecordResult[]>;
   abstract getResourceType(): string;
   abstract supportsAdvancedFiltering(): boolean;
   abstract supportsQuerySearch(): boolean;
@@ -64,7 +64,7 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
   /**
    * Apply relevance ranking to results
    */
-  protected applyRelevanceRanking<T extends UniversalRecord>(
+  protected applyRelevanceRanking<T extends UniversalRecordResult>(
     results: T[],
     query: string,
     searchFields: string[],
@@ -139,10 +139,10 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
       filters: Record<string, unknown>,
       limit?: number,
       offset?: number
-    ) => Promise<UniversalRecord[]>,
+    ) => Promise<UniversalRecordResult[]>,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     try {
       return await searchFunction({ filters: [] }, limit, offset);
     } catch (error: unknown) {

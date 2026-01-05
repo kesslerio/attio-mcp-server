@@ -352,10 +352,23 @@ export interface AttioList {
 }
 
 /**
+ * Partial list shape returned when field filtering is applied.
+ * `id` is always present, other list fields are optional.
+ */
+export type ListRecordSummary = {
+  id: AttioList['id'];
+} & Partial<Omit<AttioList, 'id'>>;
+
+/**
+ * Universal record result type for list field filtering.
+ */
+export type UniversalRecordResult = UniversalRecord | ListRecordSummary;
+
+/**
  * Type guard for AttioRecord (record values wrapper present).
  */
 export const isAttioRecord = (
-  record: UniversalRecord
+  record: UniversalRecordResult
 ): record is AttioRecord => {
   return (
     typeof record === 'object' &&
@@ -368,7 +381,9 @@ export const isAttioRecord = (
 /**
  * Type guard for AttioList (list_id present).
  */
-export const isAttioList = (record: UniversalRecord): record is AttioList => {
+export const isAttioList = (
+  record: UniversalRecordResult
+): record is AttioList => {
   return (
     typeof record === 'object' &&
     record !== null &&

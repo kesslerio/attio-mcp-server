@@ -9,7 +9,13 @@ import { performance } from 'perf_hooks';
 
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalRecordDetailsParams } from '@/handlers/tool-configs/universal/types.js';
-import type { AttioList, AttioRecord, UniversalRecord } from '@/types/attio.js';
+import type {
+  AttioList,
+  AttioRecord,
+  ListRecordSummary,
+  UniversalRecord,
+  UniversalRecordResult,
+} from '@/types/attio.js';
 import { isAttioList, isAttioRecord } from '@/types/attio.js';
 // Import services
 import { ValidationService } from '@/services/ValidationService.js';
@@ -64,7 +70,7 @@ export class UniversalRetrievalService {
    */
   static async getRecordDetails(
     params: UniversalRecordDetailsParams
-  ): Promise<UniversalRecord> {
+  ): Promise<UniversalRecordResult> {
     const { resource_type, record_id, fields } = params;
 
     // NOTE: E2E tests should use real API by default. Mock shortcuts are reserved for offline smoke tests.
@@ -174,10 +180,11 @@ export class UniversalRetrievalService {
           resource_type === UniversalResourceType.LISTS &&
           isAttioList(result)
         ) {
-          return {
+          const listSummary: ListRecordSummary = {
             ...(filteredResult as Record<string, unknown>),
             id: result.id,
-          } as UniversalRecord;
+          };
+          return listSummary;
         }
 
         if (isAttioRecord(result)) {
@@ -706,7 +713,7 @@ export class UniversalRetrievalService {
     resource_type: UniversalResourceType,
     record_ids: string[],
     fields?: string[]
-  ): Promise<(UniversalRecord | null)[]> {
+  ): Promise<(UniversalRecordResult | null)[]> {
     // For now, fetch records individually
     // TODO: Implement batch API calls where supported by Attio
     const results = await Promise.allSettled(
@@ -726,7 +733,7 @@ export class UniversalRetrievalService {
   static async getRecordWithMetrics(
     params: UniversalRecordDetailsParams
   ): Promise<{
-    record: UniversalRecord;
+    record: UniversalRecordResult;
     metrics: { duration: number; cached: boolean; source: 'cache' | 'live' };
   }> {
     const start = performance.now();

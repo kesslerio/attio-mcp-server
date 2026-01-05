@@ -15,7 +15,7 @@ import {
 import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
-import { isAttioRecord, type UniversalRecord } from '@/types/attio.js';
+import { isAttioRecord, type UniversalRecordResult } from '@/types/attio.js';
 import { validateBatchOperation } from '@/utils/batch-validation.js';
 
 // Note: Batch processing is now handled by the optimized universalBatchSearch API
@@ -122,7 +122,7 @@ export const batchSearchConfig = {
             const displayCount = Math.min(records.length, 3);
             records
               .slice(0, displayCount)
-              .forEach((record: UniversalRecord, recordIndex: number) => {
+              .forEach((record: UniversalRecordResult, recordIndex: number) => {
                 const values = isAttioRecord(record)
                   ? (record.values as Record<string, unknown>)
                   : (record as Record<string, unknown>);

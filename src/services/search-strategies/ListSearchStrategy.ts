@@ -4,7 +4,7 @@
  * Issue #1068: Returns list-native format
  */
 
-import type { AttioList, UniversalRecord } from '@/types/attio.js';
+import type { AttioList, UniversalRecordResult } from '@/types/attio.js';
 import {
   SearchType,
   MatchType,
@@ -46,7 +46,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
     return true;
   }
 
-  async search(params: SearchStrategyParams): Promise<UniversalRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecordResult[]> {
     const {
       query,
       limit,
@@ -216,7 +216,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
   /**
    * Handle list search errors gracefully
    */
-  private handleListSearchError(error: unknown): UniversalRecord[] {
+  private handleListSearchError(error: unknown): UniversalRecordResult[] {
     // Handle benign status codes (404/204) by returning empty success
     if (error && typeof error === 'object' && 'status' in error) {
       const statusError = error as { status?: number };

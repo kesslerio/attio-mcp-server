@@ -3,7 +3,7 @@ import {
   UniversalRecordDetailsParams,
   UniversalResourceType,
 } from '@/handlers/tool-configs/universal/types.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { isAttioRecord } from '@/types/attio.js';
 import {
   getRecordDetailsSchema,
@@ -22,12 +22,12 @@ import { formatToolDescription } from '@/handlers/tools/standards/index.js';
  */
 export const getRecordDetailsConfig: UniversalToolConfig<
   UniversalRecordDetailsParams,
-  UniversalRecord
+  UniversalRecordResult
 > = {
   name: 'get_record_details',
   handler: async (
     params: UniversalRecordDetailsParams
-  ): Promise<UniversalRecord> => {
+  ): Promise<UniversalRecordResult> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'get_record_details',
@@ -42,7 +42,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (record: UniversalRecord, ...args: unknown[]): string => {
+  formatResult: (record: UniversalRecordResult, ...args: unknown[]): string => {
     const resourceType = args[0] as UniversalResourceType | undefined;
     if (!record) {
       return 'Record not found';
@@ -189,7 +189,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     return details.trim();
   },
   structuredOutput: (
-    record: UniversalRecord,
+    record: UniversalRecordResult,
     resourceType?: string
   ): Record<string, unknown> => {
     if (!record) return {};

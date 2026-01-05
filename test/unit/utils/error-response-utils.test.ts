@@ -265,12 +265,12 @@ describe('error-response-utils', () => {
       expect(formatted.content[0].text).toContain(
         "Invalid value 'invalid' for select field 'status'"
       );
-      expect(formatted.content[0].text).toContain('💡 Suggestions:');
+      expect(formatted.content[0].text).toContain('Suggestions:');
       expect(formatted.content[0].text).toContain(
-        '• Choose one of: active, inactive'
+        '- Choose one of: active, inactive'
       );
       expect(formatted.content[0].text).toContain(
-        '• Use get-attributes to see all available options'
+        '- Use get-attributes to see all available options'
       );
 
       expect(formatted.isError).toBe(true);
@@ -294,7 +294,7 @@ describe('error-response-utils', () => {
       const formatted = formatEnhancedErrorResponse(errorResponse);
 
       expect(formatted.content[0].text).toBe('Simple error message');
-      expect(formatted.content[0].text).not.toContain('💡 Suggestions:');
+      expect(formatted.content[0].text).not.toContain('Suggestions:');
     });
 
     it('should include help URL when provided', () => {
@@ -303,7 +303,7 @@ describe('error-response-utils', () => {
       const formatted = formatEnhancedErrorResponse(errorResponse);
 
       expect(formatted.content[0].text).toContain(
-        '📖 Documentation: https://docs.attio.com/api-reference/companies'
+        'Documentation: https://docs.attio.com/api-reference/companies'
       );
     });
   });

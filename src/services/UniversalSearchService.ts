@@ -14,7 +14,7 @@ import {
   SortType,
 } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalSearchParams } from '@/handlers/tool-configs/universal/types.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { debug } from '@/utils/logger.js';
 
 // Import services
@@ -33,16 +33,16 @@ import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
 /**
  * UniversalSearchService provides centralized record search functionality
  * Issue #935: Strategy initialization delegated to StrategyFactory via SearchCoordinator
- * Issue #1068: Lists returned in list-native format (UniversalRecord[])
+ * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
  */
 export class UniversalSearchService {
   /**
    * Universal search handler with performance tracking
-   * Issue #1068: Lists returned in list-native format (UniversalRecord[])
+   * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
    */
   static async searchRecords(
     params: UniversalSearchParams
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const {
       resource_type,
       query,
@@ -165,7 +165,7 @@ export class UniversalSearchService {
 
     // Track API call timing
     const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
-    let results: UniversalRecord[];
+    let results: UniversalRecordResult[];
 
     try {
       results = await this.performSearchByResourceType(resource_type, {
@@ -239,7 +239,7 @@ export class UniversalSearchService {
       content_fields?: string[];
       use_or_logic?: boolean;
     }
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     // Issue #935: Delegate to SearchCoordinator for all search routing
     return SearchCoordinator.executeSearch({
       resource_type,

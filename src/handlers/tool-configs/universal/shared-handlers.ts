@@ -22,7 +22,11 @@ import {
   UniversalGetAttributeOptionsParams,
 } from '@/handlers/tool-configs/universal/types.js';
 
-import type { JsonObject, UniversalRecord } from '@/types/attio.js';
+import type {
+  JsonObject,
+  UniversalRecord,
+  UniversalRecordResult,
+} from '@/types/attio.js';
 
 // Import extracted services from Issue #489 Phase 2 & 3
 import { UniversalDeleteService } from '@/services/UniversalDeleteService.js';
@@ -58,11 +62,11 @@ import { unwrapAttio, normalizeNotes } from '@/utils/attio-response.js';
 
 /**
  * Universal search handler - delegates to UniversalSearchService
- * Issue #1068: Lists returned in list-native format (UniversalRecord[])
+ * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
  */
 export async function handleUniversalSearch(
   params: UniversalSearchParams
-): Promise<UniversalRecord[]> {
+): Promise<UniversalRecordResult[]> {
   return UniversalSearchService.searchRecords(params);
 }
 
@@ -72,7 +76,7 @@ export async function handleUniversalSearch(
  */
 export async function handleUniversalGetDetails(
   params: UniversalRecordDetailsParams
-): Promise<UniversalRecord> {
+): Promise<UniversalRecordResult> {
   return UniversalRetrievalService.getRecordDetails(params);
 }
 

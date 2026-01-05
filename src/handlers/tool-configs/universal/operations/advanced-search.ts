@@ -7,7 +7,7 @@ import {
   AdvancedSearchParams,
   UniversalResourceType,
 } from '@/handlers/tool-configs/universal/types.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import {
   safeExtractRecordValues,
   safeExtractFirstValue,
@@ -24,10 +24,12 @@ import { ErrorService } from '@/services/ErrorService.js';
  */
 export const advancedSearchConfig: UniversalToolConfig<
   AdvancedSearchParams,
-  UniversalRecord[]
+  UniversalRecordResult[]
 > = {
   name: 'search_records_advanced',
-  handler: async (params: AdvancedSearchParams): Promise<UniversalRecord[]> => {
+  handler: async (
+    params: AdvancedSearchParams
+  ): Promise<UniversalRecordResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_advanced',
@@ -144,7 +146,7 @@ export const advancedSearchConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: UniversalRecord[], ...args: unknown[]) => {
+  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
     const resourceType = args[0] as string | undefined;
     const count = Array.isArray(results) ? results.length : 0;
     const typeName = resourceType

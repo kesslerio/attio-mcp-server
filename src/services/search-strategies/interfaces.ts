@@ -3,7 +3,11 @@
  * Issue #574: Extract resource-specific search strategies
  */
 
-import type { AttioList, AttioTask, UniversalRecord } from '@/types/attio.js';
+import type {
+  AttioList,
+  AttioTask,
+  UniversalRecordResult,
+} from '@/types/attio.js';
 import {
   SearchType,
   MatchType,
@@ -42,7 +46,7 @@ export interface ISearchStrategy {
   /**
    * Execute the search for this resource type
    */
-  search(params: SearchStrategyParams): Promise<UniversalRecord[]>;
+  search(params: SearchStrategyParams): Promise<UniversalRecordResult[]>;
 
   /**
    * Get the resource type this strategy handles
@@ -70,13 +74,13 @@ export interface StrategyDependencies {
         filters: Record<string, unknown>,
         limit?: number,
         offset?: number
-      ) => Promise<UniversalRecord[]>)
+      ) => Promise<UniversalRecordResult[]>)
     | null;
   paginatedSearchFunction?:
     | ((
         filters: Record<string, unknown>,
         pagination: { limit?: number; offset?: number }
-      ) => Promise<{ results: UniversalRecord[] }>)
+      ) => Promise<{ results: UniversalRecordResult[] }>)
     | null;
   listFunction?: (
     query?: string,
@@ -101,10 +105,10 @@ export interface StrategyDependencies {
     existing: Record<string, unknown> | undefined,
     dateFilter: Record<string, unknown>
   ) => Record<string, unknown>;
-  rankByRelevance?: <T extends UniversalRecord>(
+  rankByRelevance?: <T extends UniversalRecordResult>(
     results: T[],
     query: string,
     searchFields: string[]
   ) => T[];
-  getFieldValue?: (record: UniversalRecord, field: string) => string;
+  getFieldValue?: (record: UniversalRecordResult, field: string) => string;
 }

@@ -16,7 +16,7 @@ import type {
   StrategyDependencies,
 } from '@/services/search-strategies/interfaces.js';
 import { buildPeopleQueryFilters } from '@/services/search-strategies/query-filter-builder.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { createScopedLogger } from '../../utils/logger.js';
 
 /**
@@ -39,7 +39,7 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     return true;
   }
 
-  async search(params: SearchStrategyParams): Promise<UniversalRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecordResult[]> {
     const {
       query,
       filters,
@@ -87,7 +87,7 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     filters: Record<string, unknown>,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     if (!this.dependencies.paginatedSearchFunction) {
       throw new Error('People search function not available');
     }
@@ -122,7 +122,7 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     sort: SortType = SortType.NAME,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     if (!this.dependencies.paginatedSearchFunction) {
       throw new Error('People search function not available');
     }
@@ -163,7 +163,7 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
   private async searchWithoutQuery(
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     if (!this.dependencies.paginatedSearchFunction) {
       throw new Error('People search function not available');
     }
@@ -189,7 +189,7 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     query: string,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const emailFilters = {
       filters: [
         {
@@ -224,7 +224,7 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     sort: SortType = SortType.NAME,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     // Default content fields for people
     const searchFields =
       fields && fields.length > 0
@@ -267,7 +267,7 @@ export class PeopleSearchStrategy extends BaseSearchStrategy {
     matchType: MatchType = MatchType.PARTIAL,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const nameEmailFilters = {
       filters: [
         {

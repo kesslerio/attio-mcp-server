@@ -35,7 +35,7 @@ import type {
 } from '@/services/search-strategies/interfaces.js';
 import { CachingService } from '@/services/CachingService.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
-import type { AttioNote, AttioRecord, UniversalRecord } from '@/types/attio.js';
+import type { AttioNote, AttioRecord, UniversalRecordResult } from '@/types/attio.js';
 import { createScopedLogger, OperationType } from '@/utils/logger.js';
 
 // Performance warning threshold for large note datasets
@@ -66,7 +66,7 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
     return true; // Notes support content search via applyContentSearch method
   }
 
-  async search(params: SearchStrategyParams): Promise<UniversalRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecordResult[]> {
     const {
       query,
       limit,
@@ -122,7 +122,7 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
     match_type: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME,
     filters?: Record<string, unknown>
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const log = createScopedLogger(
       'NoteSearchStrategy',
       'notes_search',
@@ -159,7 +159,7 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
           });
           return [];
         } else {
-          // Convert AttioNote[] to UniversalRecord[]
+          // Convert AttioNote[] to UniversalRecordResult[]
           // Cast to AttioNote[] since we know the API returns notes
           return (notesList as AttioNote[]).map((note) =>
             this.convertNoteToRecord(note)

@@ -20,7 +20,7 @@ import type {
 } from '@/services/search-strategies/interfaces.js';
 import { CachingService } from '@/services/CachingService.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
-import type { AttioRecord, UniversalRecord } from '@/types/attio.js';
+import type { AttioRecord, UniversalRecordResult } from '@/types/attio.js';
 import { createScopedLogger, OperationType } from '@/utils/logger.js';
 
 /**
@@ -43,7 +43,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     return true; // Tasks support content search via applyContentSearch method
   }
 
-  async search(params: SearchStrategyParams): Promise<UniversalRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecordResult[]> {
     const {
       query,
       limit,
@@ -96,7 +96,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     fields?: string[],
     match_type: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME
-  ): Promise<UniversalRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     const log = createScopedLogger(
       'TaskSearchStrategy',
       'tasks_search',
@@ -118,7 +118,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
           });
           return [];
         } else {
-          // Convert AttioTask[] to UniversalRecord[]
+          // Convert AttioTask[] to UniversalRecordResult[]
           return tasksList.map(UniversalUtilityService.convertTaskToRecord);
         }
       } catch (error: unknown) {

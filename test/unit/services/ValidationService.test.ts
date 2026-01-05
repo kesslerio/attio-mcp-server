@@ -577,8 +577,8 @@ describe('ValidationService', () => {
       expect(result.errorMessage).toContain(
         'Field validation failed for companies'
       );
-      expect(result.errorMessage).toContain('❌ Name is required');
-      expect(result.errorMessage).toContain('💡 Suggestions:');
+      expect(result.errorMessage).toContain('- Name is required');
+      expect(result.errorMessage).toContain('Suggestions:');
       expect(result.errorMessage).toContain('Available fields for companies:');
     });
 

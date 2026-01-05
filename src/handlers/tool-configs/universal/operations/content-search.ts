@@ -9,7 +9,7 @@ import {
   UniversalResourceType,
 } from '@/handlers/tool-configs/universal/types.js';
 import { InteractionType } from '@/types/attio.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import { isAttioRecord } from '@/types/attio.js';
 
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
@@ -20,10 +20,12 @@ import { formatResourceType } from '@/handlers/tool-configs/universal/shared-han
 
 export const searchByContentConfig: UniversalToolConfig<
   ContentSearchParams,
-  UniversalRecord[]
+  UniversalRecordResult[]
 > = {
   name: 'search_records_by_content',
-  handler: async (params: ContentSearchParams): Promise<UniversalRecord[]> => {
+  handler: async (
+    params: ContentSearchParams
+  ): Promise<UniversalRecordResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_by_content',
@@ -96,7 +98,7 @@ export const searchByContentConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: UniversalRecord[], ...args: unknown[]) => {
+  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
     const contentType = args[0] as ContentSearchType | undefined;
     const resourceType = args[1] as UniversalResourceType | undefined;
     if (!Array.isArray(results)) {
@@ -117,7 +119,7 @@ export const searchByContentConfig: UniversalToolConfig<
       results.length
     } ${resourceTypeName} with matching ${contentTypeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = isAttioRecord(record as UniversalRecord)
+        const values = isAttioRecord(record as UniversalRecordResult)
           ? ((record as { values?: Record<string, unknown> }).values as Record<
               string,
               unknown

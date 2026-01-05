@@ -7,7 +7,7 @@
 
 import type { ListEntryFilters } from '@/api/operations/index.js';
 import type { ToolConfig } from '@/handlers/tool-types.js';
-import type { UniversalRecord } from '@/types/attio.js';
+import type { UniversalRecord, UniversalRecordResult } from '@/types/attio.js';
 
 /**
  * Supported resource types for universal operations
@@ -387,7 +387,7 @@ export interface UniversalResultFormatter {
     resourceType: UniversalResourceType
   ) => string;
   formatDetails: (
-    record: UniversalRecord,
+    record: UniversalRecordResult,
     resourceType: UniversalResourceType
   ) => string;
   formatCreate: (
