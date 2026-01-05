@@ -35,7 +35,11 @@ import type {
 } from '@/services/search-strategies/interfaces.js';
 import { CachingService } from '@/services/CachingService.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
-import type { AttioNote, AttioRecord, UniversalRecordResult } from '@/types/attio.js';
+import type {
+  AttioNote,
+  AttioRecord,
+  UniversalRecordResult,
+} from '@/types/attio.js';
 import { createScopedLogger, OperationType } from '@/utils/logger.js';
 
 // Performance warning threshold for large note datasets

@@ -26,7 +26,9 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
     this.dependencies = dependencies;
   }
 
-  abstract search(params: SearchStrategyParams): Promise<UniversalRecordResult[]>;
+  abstract search(
+    params: SearchStrategyParams
+  ): Promise<UniversalRecordResult[]>;
   abstract getResourceType(): string;
   abstract supportsAdvancedFiltering(): boolean;
   abstract supportsQuerySearch(): boolean;
