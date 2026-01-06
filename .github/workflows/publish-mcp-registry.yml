@@ -61,6 +61,7 @@ jobs:
         id: check
         run: |
           VERSION="${{ steps.extract.outputs.version }}"
+          # Keep npm for registry queries
           if npm view "attio-mcp@$VERSION" version &>/dev/null; then
             echo "should_publish=false" >> $GITHUB_OUTPUT
             echo "::notice::Package attio-mcp@$VERSION already exists on npm, skipping publish"
@@ -68,6 +69,12 @@ jobs:
             echo "should_publish=true" >> $GITHUB_OUTPUT
             echo "::notice::Package attio-mcp@$VERSION not found on npm, will publish"
           fi
+
+      - name: Setup Bun
+        if: steps.check.outputs.should_publish == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Setup Node.js
         if: steps.check.outputs.should_publish == 'true'
@@ -78,18 +85,19 @@ jobs:
 
       - name: Install dependencies
         if: steps.check.outputs.should_publish == 'true'
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Run tests
         if: steps.check.outputs.should_publish == 'true'
-        run: npm run test:offline
+        run: bun run test:offline
 
       - name: Build package
         if: steps.check.outputs.should_publish == 'true'
-        run: npm run build
+        run: bun run build
 
       - name: Publish to NPM
         if: steps.check.outputs.should_publish == 'true'
+        # Keep npm for publishing to npm registry
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,1 +1,1 @@
-npm run verify:staged
+bun run verify:staged

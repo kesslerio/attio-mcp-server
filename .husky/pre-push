@@ -23,7 +23,7 @@ echo "🔍 Validating branch name..."
 }
 
 echo "🔍 Running TypeScript check..."
-npm run typecheck || {
+bun run typecheck || {
   echo "❌ TypeScript errors found"
   exit 1
 }
@@ -32,7 +32,7 @@ echo "🔍 Running fast tests..."
 if [ -n "${PREPUSH_TEST_CMD:-}" ]; then
   sh -lc "$PREPUSH_TEST_CMD"
 else
-  npm run test:offline:run --silent -- --reporter=dot --bail=1
+  bun run test:offline:run --silent -- --reporter=dot --bail=1
 fi || {
   echo "❌ Tests failed"
   exit 1

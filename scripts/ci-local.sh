@@ -171,7 +171,7 @@ SCRIPT_START=$(date +%s)
 # Step 1: Environment validation
 echo "${BLUE}🌍 Environment Information${NC}"
 echo "  Node: $(node --version)"
-echo "  NPM: $(npm --version)"
+echo "  Bun: $(bun --version)"
 echo "  Platform: $(uname -s)"
 echo "  Working Dir: $(pwd)"
 echo ""
@@ -181,26 +181,25 @@ analyze_changes
 
 # Step 3: Dependency installation (skip lifecycle scripts to avoid prepare/husky issues)
 # Ensure devDependencies are installed regardless of NODE_ENV in user env
-export npm_config_production=false
 export NODE_ENV=development
-run_step "Installing dependencies" "npm ci --ignore-scripts" || exit 1
+run_step "Installing dependencies" "bun install --frozen-lockfile" || exit 1
 
 # Explicitly install git hooks using our repo script (husky not required here)
-run_step "Install git hooks" "npm run setup-hooks" || echo "${YELLOW}⚠️ Hook setup optional; continuing...${NC}"
+run_step "Install git hooks" "bun run setup-hooks" || echo "${YELLOW}⚠️ Hook setup optional; continuing...${NC}"
 
 # Ensure ESLint parser is available even if lockfile lags
-run_step "Install ESLint TS parser" "npm i --no-save @typescript-eslint/parser@^8.39.0" || echo "${YELLOW}⚠️ Parser install optional; continuing...${NC}"
+run_step "Install ESLint TS parser" "bun add --no-save @typescript-eslint/parser@^8.39.0" || echo "${YELLOW}⚠️ Parser install optional; continuing...${NC}"
 
 # Step 4: Lint and Type Check
 echo "${YELLOW}📝 Code Quality Checks${NC}"
-run_step "ESLint check" "npm run lint:check" || exit 1
-run_step "TypeScript check" "npm run typecheck" || exit 1
-run_step "Format check" "npm run check:format" || exit 1
+run_step "ESLint check" "bun run lint:check" || exit 1
+run_step "TypeScript check" "bun run typecheck" || exit 1
+run_step "Format check" "bun run check:format" || exit 1
 
 # Step 5: Build
 if [[ "$SKIP_BUILD" != "true" && "$TEST_STRATEGY" != "smoke" ]]; then
   echo "${YELLOW}🔨 Build Process${NC}"
-  run_step "TypeScript compilation" "npm run build" || exit 1
+  run_step "TypeScript compilation" "bun run build" || exit 1
   
   # Verify build artifacts
   run_step "Build verification" "test -d dist && test -f dist/index.js" || exit 1
@@ -212,26 +211,26 @@ echo "${YELLOW}🧪 Smart Test Execution (Strategy: ${TEST_STRATEGY})${NC}"
 case "$TEST_STRATEGY" in
   smoke)
     echo "${BLUE}📚 Documentation changes detected - running smoke tests${NC}"
-    run_step "Smoke tests" "npm run test:smoke" || exit 1
+    run_step "Smoke tests" "bun run test:smoke" || exit 1
     ;;
   affected)
     echo "${BLUE}🎯 Test-only changes detected - running affected tests${NC}"
-    run_step "Affected tests" "npm run test:affected" || exit 1
+    run_step "Affected tests" "bun run test:affected" || exit 1
     ;;
   core)
     echo "${BLUE}🔧 Source changes detected - running core tests${NC}"
-    run_step "Core tests" "npm run test:core" || exit 1
+    run_step "Core tests" "bun run test:core" || exit 1
     ;;
   full)
     echo "${BLUE}🚀 API/Service changes detected - running extended tests${NC}"
-    run_step "Extended tests" "npm run test:extended" || exit 1
+    run_step "Extended tests" "bun run test:extended" || exit 1
     ;;
 esac
 
 # Step 7: Performance Budget Check
 if [[ "$TEST_STRATEGY" != "smoke" ]]; then
   echo "${YELLOW}⚡ Performance Validation${NC}"
-  run_step "Performance budgets" "npm run perf:budgets -- --tests-only" || {
+  run_step "Performance budgets" "bun run perf:budgets -- --tests-only" || {
     echo "${YELLOW}⚠️ Performance budget check failed, but continuing...${NC}"
   }
 fi
@@ -239,18 +238,18 @@ fi
 # Step 8: Integration Tests (if requested)
 if [[ "$RUN_INTEGRATION" == "true" ]]; then
   echo "${YELLOW}🔗 Integration Tests${NC}"
-  
+
   if [[ -z "$ATTIO_API_KEY" ]]; then
     echo "${YELLOW}⚠️ ATTIO_API_KEY not set, skipping integration tests${NC}"
   else
-    run_step "Integration tests" "npm run test:integration" || exit 1
+    run_step "Integration tests" "bun run test:integration" || exit 1
   fi
 fi
 
 # Step 9: Performance Tests (if requested)
 if [[ "$RUN_PERFORMANCE" == "true" ]]; then
   echo "${YELLOW}🏃 Performance Tests${NC}"
-  run_step "Performance regression" "npm run perf:budgets -- --regression" || {
+  run_step "Performance regression" "bun run perf:budgets -- --regression" || {
     echo "${YELLOW}⚠️ Performance regression check failed, but continuing...${NC}"
   }
 fi

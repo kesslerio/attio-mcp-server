@@ -107,26 +107,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Run linter (src only)
-        run: npm run lint:src
+        run: bun run lint:src
 
       - name: Enforce no new src warnings
-        run: npm run lint:guard
+        run: bun run lint:guard
 
       - name: Run type checker
-        run: npm run typecheck
+        run: bun run typecheck
 
       - name: Check format
-        run: npm run check:format
+        run: bun run check:format
 
   # Optional: Lint tests (non-blocking)
   lint-tests:
@@ -140,17 +144,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Run linter (tests)
-        run: npm run lint:test
+        run: bun run lint:test
 
   # Job 3: Smart Test Execution
   smart-tests:
@@ -169,21 +177,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
 
-      - name: Clean npm cache and install dependencies
-        run: |
-          # Fix for npm optional dependencies bug with Rollup
-          rm -rf node_modules package-lock.json
-          npm cache clean --force
-          npm install
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Execute smart test strategy
         run: |
@@ -193,19 +201,19 @@ jobs:
           case "$strategy" in
             smoke)
               echo "📚 Documentation changes detected - running smoke tests"
-              npm run test:smoke
+              bun run test:smoke
               ;;
             affected)
               echo "🎯 Test-only changes detected - running affected tests"
-              npm run test:affected
+              bun run test:affected
               ;;
             core)
               echo "🔧 Source changes detected - running core tests"
-              npm run test:core
+              bun run test:core
               ;;
             full)
               echo "🚀 API/Service changes detected - running extended tests"
-              npm run test:extended
+              bun run test:extended
               ;;
           esac
         env:
@@ -216,7 +224,7 @@ jobs:
         run: |
           strategy="${{ needs.change-analysis.outputs.test-strategy }}"
           if [ "$strategy" != "smoke" ]; then
-            npm run perf:budgets -- --tests-only
+            bun run perf:budgets -- --tests-only
           fi
 
   # Job 4: Integration Tests (conditional)
@@ -233,17 +241,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Run integration tests
         env:
@@ -254,7 +266,7 @@ jobs:
             echo "⚠️ Integration tests skipped: ATTIO_TEST_API_KEY not available"
             exit 0
           fi
-          npm run test:integration
+          bun run test:integration
 
   # Job 5: Build Verification (skip for docs-only changes)
   build:
@@ -268,17 +280,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Verify build artifacts
         run: |
@@ -306,20 +322,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Run performance budget checks
-        run: npm run perf:budgets -- --report --regression
+        run: bun run perf:budgets -- --report --regression
 
       - name: Upload performance results
         if: always()
