@@ -20,63 +20,63 @@ import {
   UniversalSearchNotesParams,
   UniversalDeleteNoteParams,
   UniversalGetAttributeOptionsParams,
-} from './types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 
-import { JsonObject, AttioRecord } from '../../../types/attio.js';
+import type {
+  JsonObject,
+  UniversalRecord,
+  UniversalRecordResult,
+} from '@/types/attio.js';
 
 // Import extracted services from Issue #489 Phase 2 & 3
-import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
-import { UniversalMetadataService } from '../../../services/UniversalMetadataService.js';
-import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
-import { UniversalUpdateService } from '../../../services/UniversalUpdateService.js';
-import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
-import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
-import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import { UniversalDeleteService } from '@/services/UniversalDeleteService.js';
+import { UniversalMetadataService } from '@/services/UniversalMetadataService.js';
+import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
+import { UniversalUpdateService } from '@/services/UniversalUpdateService.js';
+import { UniversalRetrievalService } from '@/services/UniversalRetrievalService.js';
+import { UniversalSearchService } from '@/services/UniversalSearchService.js';
+import { UniversalCreateService } from '@/services/UniversalCreateService.js';
 import {
   AttributeOptionsService,
   type AttributeOptionsResult,
-} from '../../../services/metadata/index.js';
-import { getLazyAttioClient } from '../../../api/lazy-client.js';
+} from '@/services/metadata/index.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 
 // Import existing handlers by resource type
 
-import { getListDetails } from '../../../objects/lists.js';
+import { getListDetails } from '@/objects/lists.js';
 
-import { getPersonDetails } from '../../../objects/people/index.js';
+import { getPersonDetails } from '@/objects/people/index.js';
 
-import { getObjectRecord } from '../../../objects/records/index.js';
+import { getObjectRecord } from '@/objects/records/index.js';
 
-import { getTask } from '../../../objects/tasks.js';
-import { listNotes } from '../../../objects/notes.js';
-import { getCreateService } from '../../../services/create/index.js';
-import {
-  debug,
-  error as logError,
-  OperationType,
-} from '../../../utils/logger.js';
+import { getTask } from '@/objects/tasks.js';
+import { listNotes } from '@/objects/notes.js';
+import { getCreateService } from '@/services/create/index.js';
+import { debug, error as logError, OperationType } from '@/utils/logger.js';
 
 // Note: Using direct Attio API client calls instead of object-specific note functions
 
 // Import Attio API client for direct note operations
-import { unwrapAttio, normalizeNotes } from '../../../utils/attio-response.js';
+import { unwrapAttio, normalizeNotes } from '@/utils/attio-response.js';
 
 /**
  * Universal search handler - delegates to UniversalSearchService
- * Issue #1068: Lists returned in list-native format (cast to AttioRecord[])
+ * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
  */
 export async function handleUniversalSearch(
   params: UniversalSearchParams
-): Promise<AttioRecord[]> {
+): Promise<UniversalRecordResult[]> {
   return UniversalSearchService.searchRecords(params);
 }
 
 /**
  * Universal get record details handler with performance optimization
- * Issue #1068: Lists returned in list-native format (cast to AttioRecord)
+ * Issue #1068: Lists returned in list-native format (UniversalRecord)
  */
 export async function handleUniversalGetDetails(
   params: UniversalRecordDetailsParams
-): Promise<AttioRecord> {
+): Promise<UniversalRecordResult> {
   return UniversalRetrievalService.getRecordDetails(params);
 }
 
@@ -103,9 +103,8 @@ export async function handleUniversalCreateNote(
       format,
     });
 
-    const { unwrapAttio, normalizeNote } = await import(
-      '../../../utils/attio-response.js'
-    );
+    const { unwrapAttio, normalizeNote } =
+      await import('@/utils/attio-response.js');
 
     const result = normalizeNote(unwrapAttio<JsonObject>(rawResult));
     debug(
@@ -190,7 +189,9 @@ export async function handleUniversalGetNotes(
             ? message
             : `invalid: ${message}`;
     throw new Error(
-      `Attio list-notes failed${status ? ` (${status})` : ''}: ${semanticMessage}`
+      `Attio list-notes failed${
+        status ? ` (${status})` : ''
+      }: ${semanticMessage}`
     );
   }
 }
@@ -279,7 +280,7 @@ export async function handleUniversalDeleteNote(
  */
 export async function handleUniversalCreate(
   params: UniversalCreateParams
-): Promise<AttioRecord> {
+): Promise<UniversalRecord> {
   return UniversalCreateService.createRecord(params);
 }
 
@@ -288,7 +289,7 @@ export async function handleUniversalCreate(
  */
 export async function handleUniversalUpdate(
   params: UniversalUpdateParams
-): Promise<AttioRecord> {
+): Promise<UniversalRecord> {
   return UniversalUpdateService.updateRecord(params);
 }
 
@@ -675,31 +676,7 @@ export async function handleUniversalGetDetailedInfo(
     case UniversalResourceType.PEOPLE:
       return getPersonDetails(record_id);
     case UniversalResourceType.LISTS: {
-      const list = await getListDetails(record_id);
-      // Convert AttioList to AttioRecord format with robust shape handling
-      // Handle all documented Attio API list response shapes
-      const raw = list;
-      const listId =
-        raw?.id?.list_id ?? // nested shape from some endpoints
-        raw?.list_id ?? // flat shape from "Get a list" endpoint
-        raw?.id ?? // some responses use a flat id
-        record_id; // final fallback when caller already knows it
-
-      return {
-        id: {
-          record_id: listId,
-          list_id: listId,
-        },
-        values: {
-          name: list.name || list.title,
-          description: list.description,
-          parent_object: list.object_slug || list.parent_object,
-          api_slug: list.api_slug,
-          workspace_id: list.workspace_id,
-          workspace_member_access: list.workspace_member_access,
-          created_at: list.created_at,
-        },
-      } as unknown as AttioRecord;
+      return getListDetails(record_id);
     }
     case UniversalResourceType.DEALS:
       return getObjectRecord('deals', record_id);

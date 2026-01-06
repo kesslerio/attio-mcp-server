@@ -1,23 +1,26 @@
 /**
  * List search strategy implementation
  * Issue #574: Extract list search logic from UniversalSearchService
- * Issue #1068: Returns list-native format (AttioList cast to AttioRecord)
+ * Issue #1068: Returns list-native format
  */
 
-import { AttioRecord, AttioList } from '../../types/attio.js';
+import type { AttioList, UniversalRecordResult } from '@/types/attio.js';
 import {
   SearchType,
   MatchType,
   SortType,
   UniversalResourceType,
-} from '../../handlers/tool-configs/universal/types.js';
-import { BaseSearchStrategy } from './BaseSearchStrategy.js';
-import { SearchStrategyParams, StrategyDependencies } from './interfaces.js';
-import { SearchUtilities } from '../search-utilities/SearchUtilities.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { SearchUtilities } from '@/services/search-utilities/SearchUtilities.js';
+import { BaseSearchStrategy } from '@/services/search-strategies/BaseSearchStrategy.js';
+import type {
+  SearchStrategyParams,
+  StrategyDependencies,
+} from '@/services/search-strategies/interfaces.js';
 
 // Import guard functions
-import { shouldUseMockData } from '../create/index.js';
-import { assertNoMockInE2E } from '../_guards.js';
+import { shouldUseMockData } from '@/services/create/index.js';
+import { assertNoMockInE2E } from '@/services/_guards.js';
 
 // Constants for search optimization
 const CONTENT_SEARCH_FETCH_LIMIT = 100;
@@ -43,7 +46,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
     return true;
   }
 
-  async search(params: SearchStrategyParams): Promise<AttioRecord[]> {
+  async search(params: SearchStrategyParams): Promise<UniversalRecordResult[]> {
     const {
       query,
       limit,
@@ -89,8 +92,8 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         requestOffset
       );
 
-      // Convert AttioList[] to AttioRecord[] format
-      let records = this.convertListsToRecords(lists);
+      // Normalize list shapes for list-native handling
+      let records = this.normalizeLists(lists);
 
       // Apply content search filtering if requested
       if (search_type === SearchType.CONTENT && query && query.trim()) {
@@ -115,16 +118,12 @@ export class ListSearchStrategy extends BaseSearchStrategy {
   }
 
   /**
-   * Convert Attio lists to AttioRecord format
-   * Fix for Issue #1068: Return lists in proper list-native format (not wrapped in values)
+   * Normalize Attio lists for list-native format
+   * Fix for Issue #1068: Lists should remain list-native (no values wrapper)
    *
    * Lists use `list_id` in the id object and have top-level fields (no values wrapper).
    * This method transforms lists to be compatible with universal record tools while
    * maintaining the proper list-native structure.
-   *
-   * NOTE: Lists are cast to AttioRecord even though they don't have a values wrapper.
-   * This is acceptable because formatters explicitly check for LISTS resource type
-   * and read top-level fields. A proper UniversalRecord refactor should happen in a separate PR.
    *
    * @example Input (AttioList from API):
    * {
@@ -135,7 +134,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
    *   ...
    * }
    *
-   * @example Output (AttioList cast to AttioRecord):
+   * @example Output (AttioList normalized):
    * {
    *   id: { list_id: 'list-abc-123' },
    *   name: 'Sales Pipeline',
@@ -144,9 +143,9 @@ export class ListSearchStrategy extends BaseSearchStrategy {
    * }
    *
    * @param lists - Array of AttioList objects from the API
-   * @returns Array of AttioList objects cast to AttioRecord[]
+   * @returns Array of AttioList objects with normalized id/name fields
    */
-  private convertListsToRecords(lists: AttioList[]): AttioRecord[] {
+  private normalizeLists(lists: AttioList[]): AttioList[] {
     return lists.map((list) => {
       // Prioritize existing top-level workspace_id, fallback to id.workspace_id
       // Use ?? (nullish coalescing) to preserve empty strings as valid values
@@ -174,9 +173,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
         result.workspace_id = workspaceId;
       }
 
-      // Cast to AttioRecord for compatibility with universal tools
-      // Lists don't have values wrapper, but formatters explicitly handle this
-      return result as unknown as AttioRecord;
+      return result as AttioList;
     });
   }
 
@@ -184,16 +181,16 @@ export class ListSearchStrategy extends BaseSearchStrategy {
    * Apply content search filtering to lists
    */
   private applyContentSearch(
-    records: AttioRecord[],
+    records: AttioList[],
     query: string,
     fields?: string[],
     matchType: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME
-  ): AttioRecord[] {
+  ): AttioList[] {
     const searchFields = fields || ['name', 'description'];
     const queryLower = query.toLowerCase();
 
-    let filteredRecords = records.filter((record: AttioRecord) => {
+    let filteredRecords = records.filter((record: AttioList) => {
       return searchFields.some((field) => {
         const fieldValue = SearchUtilities.getListFieldValue(record, field);
         if (matchType === MatchType.EXACT) {
@@ -219,7 +216,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
   /**
    * Handle list search errors gracefully
    */
-  private handleListSearchError(error: unknown): AttioRecord[] {
+  private handleListSearchError(error: unknown): UniversalRecordResult[] {
     // Handle benign status codes (404/204) by returning empty success
     if (error && typeof error === 'object' && 'status' in error) {
       const statusError = error as { status?: number };

@@ -25,7 +25,7 @@ export class ValueMatchError extends AttioApiError {
     } else if (matchResult.suggestions.length > 0) {
       message += '\n\nDid you mean one of these?';
       matchResult.suggestions.forEach((suggestion) => {
-        message += `\n  • ${suggestion.value} (${Math.round(
+        message += `\n  - ${suggestion.value} (${Math.round(
           suggestion.similarity * 100
         )}% similar)`;
       });

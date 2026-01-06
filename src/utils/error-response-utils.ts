@@ -264,15 +264,15 @@ export function formatEnhancedErrorResponse(
 
   // Add suggestions to the text content if available
   if (errorResponse.suggestions && errorResponse.suggestions.length > 0) {
-    formattedError.content[0].text += '\n\n💡 Suggestions:\n';
+    formattedError.content[0].text += '\n\nSuggestions:\n';
     formattedError.content[0].text += errorResponse.suggestions
-      .map((s) => `  • ${s}`)
+      .map((s) => `  - ${s}`)
       .join('\n');
   }
 
   // Add help URL if available
   if (errorResponse.help_url) {
-    formattedError.content[0].text += `\n\n📖 Documentation: ${errorResponse.help_url}`;
+    formattedError.content[0].text += `\n\nDocumentation: ${errorResponse.help_url}`;
   }
 
   return formattedError;

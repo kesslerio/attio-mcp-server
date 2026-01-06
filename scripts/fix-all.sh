@@ -177,7 +177,7 @@ SCRIPT_START=$(date +%s)
 # Step 1: Environment validation
 echo "${BLUE}🌍 Environment Validation${NC}"
 echo "  Node: $(node --version)"
-echo "  NPM: $(npm --version)"
+echo "  Bun: $(bun --version)"
 echo "  Working Dir: $(pwd)"
 echo ""
 
@@ -188,13 +188,13 @@ fi
 
 # Step 2: Prettier formatting
 echo "${YELLOW}📝 Code Formatting${NC}"
-run_fix "Prettier format" "npm run format" || {
+run_fix "Prettier format" "bun run format" || {
   echo "${YELLOW}⚠️ Prettier formatting failed, but continuing...${NC}"
 }
 
 # Step 3: ESLint auto-fix
 echo "${YELLOW}🔍 ESLint Auto-Fix${NC}"
-run_fix "ESLint auto-fix" "npm run lint:fix" || {
+run_fix "ESLint auto-fix" "bun run lint:fix" || {
   echo "${YELLOW}⚠️ ESLint auto-fix failed, but continuing...${NC}"
 }
 
@@ -209,14 +209,14 @@ fi
 
 # Step 5: Remove unused imports (using TypeScript compiler)
 echo "${YELLOW}🧹 Import Cleanup${NC}"
-run_fix "Remove unused imports" "npx ts-unused-exports tsconfig.json --deleteUnusedFile" || {
+run_fix "Remove unused imports" "bunx ts-unused-exports tsconfig.json --deleteUnusedFile" || {
   echo "${YELLOW}⚠️ Import cleanup failed, but continuing...${NC}"
 }
 
 # Step 6: Build verification (if not skipped)
 if [[ "$SKIP_BUILD" != "true" ]]; then
   echo "${YELLOW}🔨 Build Verification${NC}"
-  run_fix "TypeScript compilation" "npm run build" || {
+  run_fix "TypeScript compilation" "bun run build" || {
     echo "${RED}❌ Build failed after fixes - manual intervention required${NC}"
     exit 1
   }
@@ -224,11 +224,11 @@ fi
 
 # Step 7: Final validation
 echo "${YELLOW}✅ Final Validation${NC}"
-run_fix "Format check" "npm run check:format" || {
+run_fix "Format check" "bun run check:format" || {
   echo "${YELLOW}⚠️ Format check failed after fixes${NC}"
 }
 
-run_fix "Lint check" "npm run lint:check" || {
+run_fix "Lint check" "bun run lint:check" || {
   echo "${YELLOW}⚠️ Lint check still has issues - may need manual fixes${NC}"
 }
 
@@ -277,6 +277,6 @@ if [[ "$DRY_RUN" != "true" ]]; then
   echo ""
   echo "${BLUE}🚀 Next steps:${NC}"
   echo "  • Review changes with: git diff"
-  echo "  • Run tests: npm test"
+  echo "  • Run tests: bun run test"
   echo "  • Create commit: git add -A && git commit -m 'Chore: Auto-fix issues'"
 fi

@@ -6,17 +6,17 @@ import {
   UniversalToolConfig,
   AdvancedSearchParams,
   UniversalResourceType,
-} from '../types.js';
-import { AttioRecord } from '../../../../types/attio.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
 import {
   safeExtractRecordValues,
   safeExtractFirstValue,
-} from '../../shared/type-utils.js';
+} from '@/handlers/tool-configs/shared/type-utils.js';
 
-import { validateUniversalToolParams } from '../schemas.js';
-import { ErrorService } from '../../../../services/ErrorService.js';
-import { formatResourceType } from '../shared-handlers.js';
-import { getPluralResourceType } from '../core/utils.js';
+import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
+import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+import { ErrorService } from '@/services/ErrorService.js';
 
 /**
  * Universal advanced search tool
@@ -24,10 +24,12 @@ import { getPluralResourceType } from '../core/utils.js';
  */
 export const advancedSearchConfig: UniversalToolConfig<
   AdvancedSearchParams,
-  AttioRecord[]
+  UniversalRecordResult[]
 > = {
   name: 'search_records_advanced',
-  handler: async (params: AdvancedSearchParams): Promise<AttioRecord[]> => {
+  handler: async (
+    params: AdvancedSearchParams
+  ): Promise<UniversalRecordResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_advanced',
@@ -123,7 +125,8 @@ export const advancedSearchConfig: UniversalToolConfig<
 
       // Delegate to universal search handler defined elsewhere
       // We intentionally avoid importing the handler here to keep concerns separated
-      const { handleUniversalSearch } = await import('../shared-handlers.js');
+      const { handleUniversalSearch } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       return await handleUniversalSearch({
         resource_type,
         query: sanitizedParams.query,
@@ -142,7 +145,7 @@ export const advancedSearchConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
     const resourceType = args[0] as string | undefined;
     const count = Array.isArray(results) ? results.length : 0;
     const typeName = resourceType
@@ -179,7 +182,10 @@ export const advancedSearchConfig: UniversalToolConfig<
         const industry = coerce(values?.industry);
         const location = coerce(values?.location);
         const website = coerce(values?.website);
-        const id = (recordId?.record_id as string) || 'unknown';
+        const id =
+          (recordId?.record_id as string) ||
+          (recordId?.list_id as string) ||
+          'unknown';
 
         let details = name;
         if (industry) details += ` [${industry}]`;

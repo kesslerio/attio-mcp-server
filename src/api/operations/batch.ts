@@ -8,6 +8,7 @@
 import { getLazyAttioClient } from '../../api/lazy-client.js';
 import {
   AttioRecord,
+  UniversalRecordResult,
   ResourceType,
   AttioListResponse,
   RecordBatchCreateParams,
@@ -320,7 +321,7 @@ export async function batchGetObjectDetails<T extends AttioRecord>(
 export interface UniversalBatchSearchResult {
   success: boolean;
   query: string;
-  result?: AttioRecord[];
+  result?: UniversalRecordResult[];
   error?: string;
 }
 
@@ -508,9 +509,8 @@ async function handleUniversalResourceTypeBatchSearch(
     queries.map(async (query) => {
       try {
         // Dynamic import to avoid circular dependency
-        const { UniversalSearchService } = await import(
-          '../../services/UniversalSearchService.js'
-        );
+        const { UniversalSearchService } =
+          await import('../../services/UniversalSearchService.js');
         const searchResult = await UniversalSearchService.searchRecords({
           resource_type: resourceType,
           query,
@@ -562,7 +562,7 @@ export async function universalBatchGetDetails(
   Array<{
     success: boolean;
     recordId: string;
-    result?: AttioRecord;
+    result?: UniversalRecordResult;
     error?: string;
   }>
 > {

@@ -26,19 +26,19 @@
     "clean": "shx rm -rf dist test-dist",
     "build": "tsc && tsc-alias",
     "postbuild": "shx chmod +x dist/*.js && shx mkdir -p dist/templates && shx cp -r src/templates/* dist/templates/",
-    "prepare": "npm run build",
+    "prepare": "bun run build",
     "start:stdio": "node dist/cli.js",
     "start:http": "node dist/http.js",
-    "dev": "npx @smithery/cli dev",
+    "dev": "bunx @smithery/cli dev",
     "check": "wireit",
     "build:watch": "tsc --watch",
     "lint:check": "wireit",
-    "lint:src": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=1000 \"src/**/*.ts\"",
-    "lint:test": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=800 \"test/**/*.ts\"",
+    "lint:src": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings=1000 \"src/**/*.ts\"",
+    "lint:test": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings=800 \"test/**/*.ts\"",
     "lint:guard": "node scripts/ci/lint-warning-guard.cjs",
     "lint:fix": "wireit",
-    "format": "npx prettier --write --config .prettierrc \"src/**/*.ts\" \"test/**/*.ts\"",
-    "check:format": "npx prettier --check --config .prettierrc \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "bunx prettier --write --config .prettierrc \"src/**/*.ts\" \"test/**/*.ts\"",
+    "check:format": "bunx prettier --check --config .prettierrc \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint:tools": "wireit",
     "test": "vitest --config configs/vitest/vitest.config.ts",
     "test:watch": "vitest --config configs/vitest/vitest.config.ts --watch",
@@ -80,7 +80,7 @@
     "test:playbooks:sales": "vitest -c configs/vitest/vitest.config.e2e.ts test/e2e/tools/universal/sales-playbook-eval.e2e.test.ts --run --reporter=verbose",
     "test:playbooks:operations": "vitest -c configs/vitest/vitest.config.e2e.ts test/e2e/tools/universal/operations-playbook-eval.e2e.test.ts --run --reporter=verbose",
     "perf:monitor": "node scripts/performance-monitor.cjs",
-    "perf:report": "npm run test:performance -- --reporter=json > performance-results.json",
+    "perf:report": "bun run test:performance -- --reporter=json > performance-results.json",
     "perf:budgets": "node scripts/check-performance-budgets.cjs",
     "test:attio-operators": "tsx scripts/test-attio-operators.mjs",
     "check:offline": "tsc --project configs/tsconfig/tsconfig.offline.json --noEmit",
@@ -112,10 +112,10 @@
     "debug:cleanup-test-list": "node --import tsx scripts/debug/cleanup-test-list.ts",
     "syncpack:check": "syncpack list-mismatches",
     "syncpack:fix": "syncpack fix-mismatches",
-    "check:all": "npm run check && npm run build && npm run test:offline",
+    "check:all": "bun run check && bun run build && bun run test:offline",
     "e2e:gates": "node scripts/aggregate-ci-quality-gates.mjs --vitest-json vitest-report.json --suite core-workflows",
     "e2e:gates:enforce": "ENFORCE_GATES=true node scripts/aggregate-ci-quality-gates.mjs --vitest-json vitest-report.json --suite core-workflows",
-    "setup:dev": "npm install && npm run build",
+    "setup:dev": "bun install && bun run build",
     "setup:tdd": "./scripts/setup-tdd.sh",
     "test:affected": "node scripts/test-affected.cjs",
     "ci:local": "./scripts/ci-local.sh",
@@ -145,10 +145,10 @@
     "cleanup:test-data": "tsx scripts/cleanup/index.ts",
     "cleanup:test-data:dry": "tsx scripts/cleanup/index.ts --dry-run",
     "cleanup:test-data:live": "tsx scripts/cleanup/index.ts --live",
-    "cleanup:test-data:tasks": "npm run cleanup:test-data -- --resources=tasks",
-    "cleanup:test-data:companies": "npm run cleanup:test-data -- --resources=companies",
-    "cleanup:test-data:people": "npm run cleanup:test-data -- --resources=people",
-    "cleanup:test-data:deals": "npm run cleanup:test-data -- --resources=deals",
+    "cleanup:test-data:tasks": "bun run cleanup:test-data -- --resources=tasks",
+    "cleanup:test-data:companies": "bun run cleanup:test-data -- --resources=companies",
+    "cleanup:test-data:people": "bun run cleanup:test-data -- --resources=people",
+    "cleanup:test-data:deals": "bun run cleanup:test-data -- --resources=deals",
     "cleanup:test-data:verbose": "tsx scripts/cleanup/index.ts --verbose",
     "cleanup:test-data:pattern": "tsx scripts/cleanup/index.ts --pattern=\"TEST_*,E2E_*\"",
     "oauth:setup": "tsx scripts/attio-oauth.ts",
@@ -168,7 +168,7 @@
     "e2e:analyze:basic": "python3 ./scripts/e2e_analyze.py test-results --stdout",
     "e2e:health": "./scripts/e2e-health-check.sh",
     "verify:staged": "lint-staged",
-    "lint:ci": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings=50 \"src/**/*.ts\" \"test/**/*.ts\""
+    "lint:ci": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings=50 \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "files": [
     "dist",
@@ -220,7 +220,7 @@
   },
   "engines": {
     "node": ">=20.0.0",
-    "npm": ">=10.0.0"
+    "bun": ">=1.1.0"
   },
   "author": "@kesslerio",
   "license": "Apache-2.0",
@@ -266,7 +266,7 @@
   },
   "wireit": {
     "lint:check": {
-      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 800 \"src/**/*.ts\" \"test/**/*.ts\"",
+      "command": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings 800 \"src/**/*.ts\" \"test/**/*.ts\"",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",
@@ -278,7 +278,7 @@
       "output": []
     },
     "lint:src": {
-      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 1000 \"src/**/*.ts\"",
+      "command": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings 1000 \"src/**/*.ts\"",
       "files": [
         "src/**/*.ts",
         "eslint.config.js",
@@ -288,7 +288,7 @@
       "output": []
     },
     "lint:test": {
-      "command": "npx eslint --cache --cache-location .eslintcache -f compact --max-warnings 800 \"test/**/*.ts\"",
+      "command": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings 800 \"test/**/*.ts\"",
       "files": [
         "test/**/*.ts",
         "eslint.config.js",
@@ -298,7 +298,7 @@
       "output": []
     },
     "lint:fix": {
-      "command": "npx eslint --fix",
+      "command": "bunx eslint --fix",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",

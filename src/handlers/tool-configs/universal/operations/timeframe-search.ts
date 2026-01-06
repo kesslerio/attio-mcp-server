@@ -8,26 +8,29 @@ import {
   TimeframeType,
   UniversalResourceType,
   RelativeTimeframe,
-} from '@handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '@shared-types/attio.js';
-import { safeExtractTimestamp } from '@handlers/tool-configs/shared/type-utils.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
+import { isAttioRecord } from '@/types/attio.js';
+import { safeExtractTimestamp } from '@/handlers/tool-configs/shared/type-utils.js';
 
-import { validateUniversalToolParams } from '@handlers/tool-configs/universal/schemas.js';
-import { ErrorService } from '@services/ErrorService.js';
+import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
+import { ErrorService } from '@/services/ErrorService.js';
 import {
   formatResourceType,
   handleUniversalSearch,
-} from '@handlers/tool-configs/universal/shared-handlers.js';
-import { getPluralResourceType } from '@handlers/tool-configs/universal/core/utils.js';
-import { normalizeOperator } from '@utils/AttioFilterOperators.js';
-import { mapFieldName } from '@utils/AttioFieldMapper.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+import { normalizeOperator } from '@/utils/AttioFilterOperators.js';
+import { mapFieldName } from '@/utils/AttioFieldMapper.js';
 
 export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
-  AttioRecord[]
+  UniversalRecordResult[]
 > = {
   name: 'search_records_by_timeframe',
-  handler: async (params: TimeframeSearchParams): Promise<AttioRecord[]> => {
+  handler: async (
+    params: TimeframeSearchParams
+  ): Promise<UniversalRecordResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_by_timeframe',
@@ -52,9 +55,8 @@ export const searchByTimeframeConfig: UniversalToolConfig<
 
       if (relative_range) {
         // Import the timeframe utility to convert relative ranges
-        const { getRelativeTimeframeRange } = await import(
-          '@utils/filters/timeframe-utils.js'
-        );
+        const { getRelativeTimeframeRange } =
+          await import('@/utils/filters/timeframe-utils.js');
 
         try {
           const range = getRelativeTimeframeRange(
@@ -204,7 +206,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
     const timeframeType = args[0] as TimeframeType | undefined;
     const resourceType = args[1] as UniversalResourceType | undefined;
     if (!Array.isArray(results)) {
@@ -223,17 +225,28 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         ? 'record'
         : 'records';
 
-    return `Found ${results.length} ${resourceTypeName} by ${timeframeName}:\n${results
+    return `Found ${
+      results.length
+    } ${resourceTypeName} by ${timeframeName}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown>;
+        const values = isAttioRecord(record as UniversalRecordResult)
+          ? ((record as { values?: Record<string, unknown> }).values as Record<
+              string,
+              unknown
+            >)
+          : (record as Record<string, unknown>);
         const name =
           (values?.name as Record<string, unknown>[])?.[0]?.value ||
           (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
           (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
           (values?.title as Record<string, unknown>[])?.[0]?.value ||
+          (typeof values?.name === 'string' ? values.name : undefined) ||
           'Unnamed';
-        const recordId = record.id as Record<string, unknown>;
-        const id = recordId?.record_id || 'unknown';
+        const recordId = (record as { id?: Record<string, unknown> }).id;
+        const id =
+          recordId?.record_id ||
+          recordId?.list_id ||
+          (typeof recordId === 'string' ? recordId : 'unknown');
 
         // Try to show relevant date information
         const created = safeExtractTimestamp(record.created_at);

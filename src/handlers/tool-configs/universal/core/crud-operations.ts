@@ -4,30 +4,31 @@ import {
   UniversalUpdateParams,
   UniversalDeleteParams,
   UniversalResourceType,
-} from '../types.js';
-import { AttioRecord, EnhancedAttioRecord } from '../../../../types/attio.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalRecord } from '@/types/attio.js';
+import { isAttioRecord } from '@/types/attio.js';
 import {
   createRecordSchema,
   updateRecordSchema,
   deleteRecordSchema,
   validateUniversalToolParams,
-} from '../schemas.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
 import {
   handleUniversalCreate,
   handleUniversalUpdate,
   handleUniversalDelete,
   getSingularResourceType,
-} from '../shared-handlers.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
 import {
   handleCreateError,
   handleUpdateError,
   handleDeleteError,
-} from './error-utils.js';
+} from '@/handlers/tool-configs/universal/core/error-utils.js';
 import {
   extractDisplayName,
   formatValidationDetails,
   ValidationMetadata,
-} from './utils.js';
+} from '@/handlers/tool-configs/universal/core/utils.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
@@ -36,7 +37,7 @@ import { formatToolDescription } from '@/handlers/tools/standards/index.js';
  * - Tasks: id.workspace_id must exist
  */
 function normalizeRecordForOutput(
-  record: AttioRecord,
+  record: UniversalRecord,
   resourceType?: string
 ): Record<string, unknown> {
   if (!record) return {};
@@ -44,7 +45,7 @@ function normalizeRecordForOutput(
   const result: Record<string, unknown> = { ...record };
 
   // Normalize company name to string
-  if (resourceType === 'companies' && record.values) {
+  if (resourceType === 'companies' && isAttioRecord(record)) {
     const values = record.values as Record<string, unknown>;
     const nameArray = values.name;
     if (Array.isArray(nameArray) && nameArray[0]?.value) {
@@ -73,17 +74,18 @@ function normalizeRecordForOutput(
 
 export const createRecordConfig: UniversalToolConfig<
   UniversalCreateParams,
-  AttioRecord
+  UniversalRecord
 > = {
   name: 'create_record',
-  handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
+  handler: async (params: UniversalCreateParams): Promise<UniversalRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'create_record',
         params
       );
 
-      const { CrossResourceValidator } = await import('../schemas.js');
+      const { CrossResourceValidator } =
+        await import('@/handlers/tool-configs/universal/schemas.js');
       await CrossResourceValidator.validateRecordRelationships(
         sanitizedParams.resource_type,
         sanitizedParams.record_data
@@ -92,9 +94,8 @@ export const createRecordConfig: UniversalToolConfig<
       const result = await handleUniversalCreate(sanitizedParams);
       try {
         if (sanitizedParams.resource_type === 'tasks') {
-          const { logTaskDebug, inspectTaskRecordShape } = await import(
-            '../../../../utils/task-debug.js'
-          );
+          const { logTaskDebug, inspectTaskRecordShape } =
+            await import('../../../../utils/task-debug.js');
           logTaskDebug('mcp.create_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
@@ -112,7 +113,7 @@ export const createRecordConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (record: AttioRecord, ...args: unknown[]): string => {
+  formatResult: (record: UniversalRecord, ...args: unknown[]): string => {
     const resourceType = args[0] as UniversalResourceType | undefined;
     if (!record) {
       return 'Record creation failed';
@@ -124,7 +125,8 @@ export const createRecordConfig: UniversalToolConfig<
 
     // For lists, fields are at top level (no values wrapper)
     // For other records, fields are in values wrapper
-    const hasValues = record.values && Object.keys(record.values).length > 0;
+    const hasValues =
+      isAttioRecord(record) && Object.keys(record.values).length > 0;
     const inferredName = extractDisplayName(
       hasValues
         ? (record.values as Record<string, unknown>)
@@ -145,7 +147,7 @@ export const createRecordConfig: UniversalToolConfig<
     return `✅ Successfully created ${resourceTypeName}: ${displayName} (ID: ${id})`;
   },
   structuredOutput: (
-    record: AttioRecord,
+    record: UniversalRecord,
     resourceType?: string
   ): Record<string, unknown> => {
     return normalizeRecordForOutput(record, resourceType);
@@ -154,30 +156,28 @@ export const createRecordConfig: UniversalToolConfig<
 
 export const updateRecordConfig: UniversalToolConfig<
   UniversalUpdateParams,
-  EnhancedAttioRecord
+  UniversalRecord
 > = {
   name: 'update_record',
-  handler: async (
-    params: UniversalUpdateParams
-  ): Promise<EnhancedAttioRecord> => {
+  handler: async (params: UniversalUpdateParams): Promise<UniversalRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'update_record',
         params
       );
 
-      const { CrossResourceValidator } = await import('../schemas.js');
+      const { CrossResourceValidator } =
+        await import('@/handlers/tool-configs/universal/schemas.js');
       await CrossResourceValidator.validateRecordRelationships(
         sanitizedParams.resource_type,
         sanitizedParams.record_data
       );
 
-      let result: EnhancedAttioRecord;
+      let result: UniversalRecord;
       if (sanitizedParams.resource_type === 'deals') {
         try {
-          const { UniversalUpdateService } = await import(
-            '../../../../services/UniversalUpdateService.js'
-          );
+          const { UniversalUpdateService } =
+            await import('../../../../services/UniversalUpdateService.js');
           const enhancedResult =
             await UniversalUpdateService.updateRecordWithValidation(
               sanitizedParams
@@ -190,21 +190,20 @@ export const updateRecordConfig: UniversalToolConfig<
               suggestions: enhancedResult.validation.suggestions,
               actualValues: enhancedResult.validation.actualValues,
             },
-          } as EnhancedAttioRecord;
+          };
         } catch (error: unknown) {
           const standardResult = await handleUniversalUpdate(sanitizedParams);
-          result = { ...standardResult } as EnhancedAttioRecord;
+          result = { ...standardResult };
         }
       } else {
         const standardResult = await handleUniversalUpdate(sanitizedParams);
-        result = { ...standardResult } as EnhancedAttioRecord;
+        result = { ...standardResult };
       }
 
       try {
         if (sanitizedParams.resource_type === 'tasks') {
-          const { logTaskDebug, inspectTaskRecordShape } = await import(
-            '../../../../utils/task-debug.js'
-          );
+          const { logTaskDebug, inspectTaskRecordShape } =
+            await import('../../../../utils/task-debug.js');
           logTaskDebug('mcp.update_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
@@ -223,7 +222,7 @@ export const updateRecordConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (record: EnhancedAttioRecord, ...args: unknown[]): string => {
+  formatResult: (record: UniversalRecord, ...args: unknown[]): string => {
     const resourceType = args[0] as UniversalResourceType | undefined;
     if (!record) {
       return 'Record update failed';
@@ -240,14 +239,15 @@ export const updateRecordConfig: UniversalToolConfig<
 
     // For lists, fields are at top level (no values wrapper)
     // For other records, fields are in values wrapper
-    const hasValues = record.values && Object.keys(record.values).length > 0;
+    const hasValues =
+      isAttioRecord(record) && Object.keys(record.values).length > 0;
     const name = extractDisplayName(
       hasValues
         ? (record.values as Record<string, unknown>)
         : (record as Record<string, unknown>),
       resourceType
     );
-    const id = String(record.id?.record_id || 'unknown');
+    const id = String(record.id?.record_id || record.id?.list_id || 'unknown');
     const hasWarnings = Boolean(metadata?.warnings?.length);
 
     const baseMessage = hasWarnings
@@ -257,10 +257,10 @@ export const updateRecordConfig: UniversalToolConfig<
     return `${baseMessage}${formatValidationDetails(metadata)}`;
   },
   structuredOutput: (
-    record: EnhancedAttioRecord,
+    record: UniversalRecord,
     resourceType?: string
   ): Record<string, unknown> => {
-    return normalizeRecordForOutput(record as AttioRecord, resourceType);
+    return normalizeRecordForOutput(record, resourceType);
   },
 };
 
@@ -292,7 +292,9 @@ export const deleteRecordConfig: UniversalToolConfig<
   ): string => {
     const resourceType = args[0] as UniversalResourceType | undefined;
     if (!result.success) {
-      return `❌ Failed to delete ${resourceType ? getSingularResourceType(resourceType) : 'record'} with ID: ${result.record_id}`;
+      return `❌ Failed to delete ${
+        resourceType ? getSingularResourceType(resourceType) : 'record'
+      } with ID: ${result.record_id}`;
     }
 
     const resourceTypeName = resourceType

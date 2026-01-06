@@ -73,7 +73,7 @@ describe('Postal Code Field Mapping - Issue #219', () => {
       // Default behavior: snake_case slugs pass through, display names get normalized
       expect(postalCodeResult).toBe('postal_code');
       expect(postalCodeDisplayResult).toBe('postal_code'); // Display name normalized to slug
-      expect(zipResult).toBe('ZIP');
+      expect(zipResult).toBe('postal_code');
     });
 
     it('should not map to non-existent "zip" slug if that causes the API error', () => {

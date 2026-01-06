@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Universal tools (`search_records`, `get_record_details`) now return proper list format matching list-specific tools instead of generic record format with values wrapper (#1068)
+- Universal update/search flows now preserve list-native shapes across the UniversalRecord union without values wrapper coercion (#1073)
 - MCP Registry publishing workflow schema version and re-publish errors (#1066)
 - Operations playbook validation tests now work across all workspaces via dynamic attribute discovery (#973, #1081)
   - Added `is_empty` operator support to advanced-search

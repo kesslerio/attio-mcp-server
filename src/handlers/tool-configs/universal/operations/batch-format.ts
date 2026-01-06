@@ -1,14 +1,14 @@
 import {
   BatchOperationType,
   UniversalResourceType,
-} from '@handlers/tool-configs/universal/types.js';
-import { formatResourceType } from '@handlers/tool-configs/universal/shared-handlers.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import {
   safeExtractRecordValues,
   safeExtractFirstValue,
-} from '@handlers/tool-configs/shared/type-utils.js';
-import type { JsonObject } from '@shared-types/attio.js';
-import type { UniversalBatchSearchResult } from '@api/operations/batch.js';
+} from '@/handlers/tool-configs/shared/type-utils.js';
+import type { UniversalBatchSearchResult } from '@/api/operations/batch.js';
+import type { JsonObject } from '@/types/attio.js';
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -83,6 +83,23 @@ function extractDisplayName(
   return name ?? title ?? fallback ?? 'Unknown';
 }
 
+function extractRecordDisplayName(
+  record: JsonObject | undefined,
+  fallback?: string
+): string {
+  if (!record) return fallback ?? 'Unknown';
+
+  const values = isJsonObject(record.values) ? record.values : undefined;
+  const fromValues = extractDisplayName(values);
+  if (fromValues !== 'Unknown') {
+    return fromValues;
+  }
+
+  const topLevelName = coerceDisplayValue(record.name);
+  const topLevelTitle = coerceDisplayValue(record.title);
+  return topLevelName ?? topLevelTitle ?? fallback ?? 'Unknown';
+}
+
 function formatBatchSearchResults(
   batchResults: UniversalBatchSearchResult[],
   resourceTypeName: string
@@ -98,7 +115,9 @@ function formatBatchSearchResults(
     successful.forEach((searchResult, index) => {
       const records = searchResult.result ?? [];
       const resourceLabel = pluralizeResource(resourceTypeName, records.length);
-      summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${records.length} ${resourceLabel}\n`;
+      summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${
+        records.length
+      } ${resourceLabel}\n`;
 
       if (records.length > 0) {
         records.slice(0, 3).forEach((record: unknown, recordIndex: number) => {
@@ -111,9 +130,16 @@ function formatBatchSearchResults(
           const recordId = isJsonObject(record.id) ? record.id : undefined;
           const name =
             safeExtractFirstValue(values?.name) ??
-            safeExtractFirstValue(values?.title, 'Unnamed');
-          const id = isRecordId(recordId) ? recordId.record_id : 'unknown';
-          summary += `   ${recordIndex + 1}. ${name} (ID: ${id})\n`;
+            safeExtractFirstValue(values?.title, '');
+          const displayName =
+            name !== '' ? name : extractRecordDisplayName(record, 'Unnamed');
+          const id =
+            isRecordId(recordId) || (recordId && 'list_id' in recordId)
+              ? (recordId.record_id as string | undefined) ||
+                (recordId.list_id as string | undefined) ||
+                'unknown'
+              : 'unknown';
+          summary += `   ${recordIndex + 1}. ${displayName} (ID: ${id})\n`;
         });
         if (records.length > 3) {
           summary += `   ... and ${records.length - 3} more\n`;
@@ -126,7 +152,9 @@ function formatBatchSearchResults(
   if (failed.length > 0) {
     summary += '\nFailed searches:\n';
     failed.forEach((searchResult, index) => {
-      summary += `${index + 1}. Query: "${searchResult.query}" - Error: ${searchResult.error}\n`;
+      summary += `${index + 1}. Query: "${searchResult.query}" - Error: ${
+        searchResult.error
+      }\n`;
     });
   }
 
@@ -162,12 +190,11 @@ function formatSuccessfulOperations(
     }
 
     const opResult = op.result;
-    const values = isJsonObject(opResult?.values) ? opResult.values : undefined;
     const fallbackId =
       (typeof opResult?.record_id === 'string'
         ? opResult.record_id
         : undefined) ?? 'Unknown';
-    const name = extractDisplayName(values, fallbackId);
+    const name = extractRecordDisplayName(opResult, fallbackId);
     const descriptor = resourceTypeName ? `${name}` : name;
     return `${index + 1}. ${descriptor}`;
   });
@@ -210,11 +237,21 @@ function formatSearchRecords(
     const values = safeExtractRecordValues(record);
     const recordId = isJsonObject(record.id) ? record.id : undefined;
     const name = extractDisplayName(values, 'Unnamed');
-    const id = isRecordId(recordId) ? recordId.record_id : 'unknown';
-    return `${index + 1}. ${name} (ID: ${id})`;
+    const displayName =
+      name !== 'Unnamed' ? name : extractRecordDisplayName(record, 'Unnamed');
+    const id =
+      isRecordId(recordId) || (recordId && 'list_id' in recordId)
+        ? (recordId.record_id as string | undefined) ||
+          (recordId.list_id as string | undefined) ||
+          'unknown'
+        : 'unknown';
+    return `${index + 1}. ${displayName} (ID: ${id})`;
   });
 
-  return `Batch search found ${records.length} ${pluralizeResource(resourceTypeName, records.length)}:\n${lines.join('\n')}`;
+  return `Batch search found ${records.length} ${pluralizeResource(
+    resourceTypeName,
+    records.length
+  )}:\n${lines.join('\n')}`;
 }
 
 export function formatBatchResult(

@@ -61,7 +61,15 @@ vi.mock('../../src/objects/companies/index.js', () => ({
   updateCompany: vi.fn(() => ({ id: { record_id: 'comp_123' }, values: {} })),
 }));
 vi.mock('../../src/objects/lists.js', () => ({
-  updateList: vi.fn(() => ({ id: { record_id: 'list_123' }, values: {} })),
+  updateList: vi.fn(() => ({
+    id: { list_id: 'list_123' },
+    title: 'Test List',
+    name: 'Test List',
+    object_slug: 'companies',
+    workspace_id: 'ws_123',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+  })),
 }));
 vi.mock('../../src/objects/people-write.js', () => ({
   updatePerson: vi.fn(() => ({ id: { record_id: 'person_123' }, values: {} })),
@@ -182,9 +190,8 @@ describe('UniversalUpdateService', () => {
 
     it('should handle attribute not found errors with suggestions', async () => {
       // Simulate downstream update error
-      const { updateCompany } = await import(
-        '../../src/objects/companies/index.js'
-      );
+      const { updateCompany } =
+        await import('../../src/objects/companies/index.js');
       vi.mocked(updateCompany as any).mockRejectedValue(
         new Error('Cannot find attribute with slug/ID "invalid_field"')
       );
@@ -426,9 +433,8 @@ describe('UniversalUpdateService', () => {
 
     it('should handle empty record data', async () => {
       // Reset the updateCompany mock from previous tests
-      const { updateCompany } = await import(
-        '../../src/objects/companies/index.js'
-      );
+      const { updateCompany } =
+        await import('../../src/objects/companies/index.js');
       vi.mocked(updateCompany).mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: {},
