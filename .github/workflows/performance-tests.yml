@@ -27,22 +27,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          # Fix for Rollup optional dependency issue in CI
-          # See: https://github.com/npm/cli/issues/4828
-          if [ -f package-lock.json ]; then rm package-lock.json; fi
-          if [ -d node_modules ]; then rm -rf node_modules; fi
-          npm install
+        run: bun install --frozen-lockfile
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Run performance tests
         env:
@@ -60,7 +59,7 @@ jobs:
           PERF_BUDGET_BATCH_SMALL: 500
           PERF_BUDGET_BATCH_LARGE: 1000
           PERF_BUDGET_DEFAULT: 200
-        run: npm test test/performance/regression.test.ts
+        run: bun run test test/performance/regression.test.ts
         continue-on-error: true
         id: perf-test
 
@@ -127,29 +126,28 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          # Fix for Rollup optional dependency issue in CI
-          # See: https://github.com/npm/cli/issues/4828
-          if [ -f package-lock.json ]; then rm package-lock.json; fi
-          if [ -d node_modules ]; then rm -rf node_modules; fi
-          npm install
+        run: bun install --frozen-lockfile
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Run performance tests on PR branch
         env:
           ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
           NODE_ENV: test
         run: |
-          npm test test/performance/regression.test.ts > pr-performance.txt 2>&1 || true
+          bun run test test/performance/regression.test.ts > pr-performance.txt 2>&1 || true
 
       - name: Checkout base branch
         uses: actions/checkout@v4
@@ -157,21 +155,17 @@ jobs:
           ref: ${{ github.base_ref }}
 
       - name: Install dependencies (base)
-        run: |
-          # Fix for Rollup optional dependency issue in CI
-          if [ -f package-lock.json ]; then rm package-lock.json; fi
-          if [ -d node_modules ]; then rm -rf node_modules; fi
-          npm install
+        run: bun install --frozen-lockfile
 
       - name: Build project (base)
-        run: npm run build
+        run: bun run build
 
       - name: Run performance tests on base branch
         env:
           ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
           NODE_ENV: test
         run: |
-          npm test test/performance/regression.test.ts > base-performance.txt 2>&1 || true
+          bun run test test/performance/regression.test.ts > base-performance.txt 2>&1 || true
 
       - name: Compare performance
         run: |
