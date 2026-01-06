@@ -5,7 +5,7 @@
  * Handles relationship, timeframe, and content searches using the Query API
  */
 
-import { AttioRecord } from '@/types/attio.js';
+import type { UniversalRecord } from '@/types/attio.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
 import {
@@ -50,7 +50,7 @@ function handleQueryApiError(
     operation: string;
     metadata?: Record<string, unknown>;
   }
-): AttioRecord[] {
+): UniversalRecord[] {
   const apiError = createApiErrorFromAxiosError(error, path, 'POST');
 
   // Re-throw critical errors that should bubble up
@@ -96,7 +96,7 @@ export class QueryApiService {
     targetRecordId: string,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     const relationshipQuery: RelationshipQuery = {
       sourceObjectType: sourceResourceType,
       targetObjectType: targetResourceType,
@@ -135,7 +135,7 @@ export class QueryApiService {
     timeframeConfig: TimeframeQuery,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     const queryApiFilter = createTimeframeQuery(timeframeConfig);
     const path = `/objects/${resourceType}/records/query`;
 
@@ -168,7 +168,7 @@ export class QueryApiService {
     useOrLogic: boolean = true,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecord[]> {
     let fields = searchFields;
     if (fields.length === 0) {
       switch (resourceType) {

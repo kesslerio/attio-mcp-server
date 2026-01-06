@@ -3,24 +3,20 @@
  * Provides a clean API for batch search operations with multiple queries
  */
 
-import { UniversalToolConfig, UniversalResourceType } from './types.js';
-
-import { validateUniversalToolParams } from './schemas.js';
-
-import { formatResourceType } from './shared-handlers.js';
-
-// Import ErrorService for error handling
-import { ErrorService } from '../../../services/ErrorService.js';
-
-import { AttioRecord } from '../../../types/attio.js';
-import { validateBatchOperation } from '../../../utils/batch-validation.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
-
-// Import enhanced batch API for optimized performance (Issue #471)
 import {
   universalBatchSearch,
   UniversalBatchSearchResult,
-} from '../../../api/operations/batch.js';
+} from '@/api/operations/batch.js';
+import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import {
+  UniversalToolConfig,
+  UniversalResourceType,
+} from '@/handlers/tool-configs/universal/types.js';
+import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
+import { ErrorService } from '@/services/ErrorService.js';
+import { isAttioRecord, type UniversalRecordResult } from '@/types/attio.js';
+import { validateBatchOperation } from '@/utils/batch-validation.js';
 
 // Note: Batch processing is now handled by the optimized universalBatchSearch API
 
@@ -117,21 +113,29 @@ export const batchSearchConfig = {
           const query = searchResult.query;
           const records = searchResult.result || [];
 
-          summary += `\n${index + 1}. Query: "${query}" - Found ${records.length} ${getPluralForm(records.length, resourceTypeName)}\n`;
+          summary += `\n${index + 1}. Query: "${query}" - Found ${
+            records.length
+          } ${getPluralForm(records.length, resourceTypeName)}\n`;
 
           if (Array.isArray(records) && records.length > 0) {
             // Show first few results for each query
             const displayCount = Math.min(records.length, 3);
             records
               .slice(0, displayCount)
-              .forEach((record: AttioRecord, recordIndex: number) => {
-                const values = record.values as Record<string, unknown>;
+              .forEach((record: UniversalRecordResult, recordIndex: number) => {
+                const values = isAttioRecord(record)
+                  ? (record.values as Record<string, unknown>)
+                  : (record as Record<string, unknown>);
                 const recordId = record.id as Record<string, unknown>;
                 const name =
                   (values?.name as Record<string, unknown>[])?.[0]?.value ||
                   (values?.title as Record<string, unknown>[])?.[0]?.value ||
+                  (typeof values?.name === 'string'
+                    ? values.name
+                    : undefined) ||
                   'Unnamed';
-                const id = recordId?.record_id || 'unknown';
+                const id =
+                  recordId?.record_id || recordId?.list_id || 'unknown';
 
                 summary += `   ${recordIndex + 1}. ${name} (ID: ${id})\n`;
               });

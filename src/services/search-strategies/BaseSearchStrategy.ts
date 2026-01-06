@@ -3,18 +3,18 @@
  * Issue #574: Extract resource-specific search strategies
  */
 
-import { AttioRecord } from '../../types/attio.js';
-import { warn } from '../../utils/logger.js';
+import type { UniversalRecordResult } from '@/types/attio.js';
+import { warn } from '@/utils/logger.js';
 import {
   MatchType,
   SortType,
-} from '../../handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 import {
   ISearchStrategy,
   SearchStrategyParams,
   StrategyDependencies,
   TimeframeParams,
-} from './interfaces.js';
+} from '@/services/search-strategies/interfaces.js';
 
 /**
  * Abstract base class for search strategies
@@ -26,7 +26,9 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
     this.dependencies = dependencies;
   }
 
-  abstract search(params: SearchStrategyParams): Promise<AttioRecord[]>;
+  abstract search(
+    params: SearchStrategyParams
+  ): Promise<UniversalRecordResult[]>;
   abstract getResourceType(): string;
   abstract supportsAdvancedFiltering(): boolean;
   abstract supportsQuerySearch(): boolean;
@@ -64,12 +66,12 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
   /**
    * Apply relevance ranking to results
    */
-  protected applyRelevanceRanking(
-    results: AttioRecord[],
+  protected applyRelevanceRanking<T extends UniversalRecordResult>(
+    results: T[],
     query: string,
     searchFields: string[],
     sort: SortType = SortType.NAME
-  ): AttioRecord[] {
+  ): T[] {
     if (sort === SortType.RELEVANCE && this.dependencies.rankByRelevance) {
       return this.dependencies.rankByRelevance(results, query, searchFields);
     }
@@ -139,10 +141,10 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
       filters: Record<string, unknown>,
       limit?: number,
       offset?: number
-    ) => Promise<AttioRecord[]>,
+    ) => Promise<UniversalRecordResult[]>,
     limit?: number,
     offset?: number
-  ): Promise<AttioRecord[]> {
+  ): Promise<UniversalRecordResult[]> {
     try {
       return await searchFunction({ filters: [] }, limit, offset);
     } catch (error: unknown) {

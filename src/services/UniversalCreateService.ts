@@ -7,7 +7,7 @@
 
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalCreateParams } from '@/handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '@/types/attio.js';
+import type { UniversalRecord } from '@/types/attio.js';
 import {
   UniversalValidationError,
   ErrorType,
@@ -101,7 +101,7 @@ export class UniversalCreateService {
    * @param params - The record creation parameters
    * @param params.resource_type - Type of record to create (companies, people, etc.)
    * @param params.record_data - The data for the new record
-   * @returns Promise resolving to the created AttioRecord with full metadata
+   * @returns Promise resolving to the created UniversalRecord with full metadata
    *
    * @throws {UniversalValidationError} When field validation fails with enhanced details
    * @throws {Error} For authentication, network, or other system errors
@@ -120,7 +120,7 @@ export class UniversalCreateService {
    */
   static async createRecord(
     params: UniversalCreateParams
-  ): Promise<AttioRecord> {
+  ): Promise<UniversalRecord> {
     // CRITICAL FIX: Ensure record_data is always a plain object (not JSON string)
     // Must mutate the original params.record_data, not just local variable
     if (typeof params.record_data === 'string') {
@@ -307,7 +307,7 @@ export class UniversalCreateService {
       // Add each error on its own line for clarity
       if (fieldValidation.errors.length > 0) {
         errorMessage +=
-          '\n' + fieldValidation.errors.map((err) => `  ❌ ${err}`).join('\n');
+          '\n' + fieldValidation.errors.map((err) => `  - ${err}`).join('\n');
       }
 
       // Add suggestions if available (truncated to prevent buffer overflow)
@@ -315,8 +315,8 @@ export class UniversalCreateService {
         const truncated = ValidationService.truncateSuggestions(
           fieldValidation.suggestions
         );
-        errorMessage += '\n\n💡 Suggestions:\n';
-        errorMessage += truncated.map((sug) => `  • ${sug}`).join('\n');
+        errorMessage += '\n\nSuggestions:\n';
+        errorMessage += truncated.map((sug) => `  - ${sug}`).join('\n');
 
         remediation = truncated.slice(0, MAX_VALIDATION_SUGGESTIONS);
       }
@@ -324,7 +324,7 @@ export class UniversalCreateService {
       // List available fields for this resource type
       const mapping = FIELD_MAPPINGS[resource_type];
       if (mapping && mapping.validFields.length > 0) {
-        errorMessage += `\n\n📋 Available fields for ${resource_type}:\n  ${mapping.validFields.join(
+        errorMessage += `\n\nAvailable fields for ${resource_type}:\n  ${mapping.validFields.join(
           ', '
         )}`;
         remediation.push(
@@ -554,77 +554,77 @@ export class UniversalCreateService {
     switch (resource_type) {
       case UniversalResourceType.COMPANIES: {
         const { CompanyCreateStrategy } = await import(
-          './create/strategies/CompanyCreateStrategy.js'
+          '@/services/create/strategies/CompanyCreateStrategy.js'
         );
-        return (await new CompanyCreateStrategy().create({
+        return await new CompanyCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
-        })) as AttioRecord;
+        });
       }
 
       case UniversalResourceType.LISTS: {
         const { ListCreateStrategy } = await import(
-          './create/strategies/ListCreateStrategy.js'
+          '@/services/create/strategies/ListCreateStrategy.js'
         );
-        return (await new ListCreateStrategy().create({
+        return await new ListCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
-        })) as AttioRecord;
+        });
       }
 
       case UniversalResourceType.PEOPLE: {
         const { PersonCreateStrategy } = await import(
-          './create/strategies/PersonCreateStrategy.js'
+          '@/services/create/strategies/PersonCreateStrategy.js'
         );
-        return (await new PersonCreateStrategy().create({
+        return await new PersonCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
-        })) as AttioRecord;
+        });
       }
 
       case UniversalResourceType.RECORDS: {
         const { RecordCreateStrategy } = await import(
-          './create/strategies/RecordCreateStrategy.js'
+          '@/services/create/strategies/RecordCreateStrategy.js'
         );
         const context = { objectSlug: recordsObjectSlug } as Record<
           string,
           unknown
         >;
-        return (await new RecordCreateStrategy().create({
+        return await new RecordCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
           context,
-        })) as AttioRecord;
+        });
       }
 
       case UniversalResourceType.DEALS: {
         const { DealCreateStrategy } = await import(
-          './create/strategies/DealCreateStrategy.js'
+          '@/services/create/strategies/DealCreateStrategy.js'
         );
-        return (await new DealCreateStrategy().create({
+        return await new DealCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
-        })) as AttioRecord;
+        });
       }
 
       case UniversalResourceType.TASKS: {
         const { TaskCreateStrategy } = await import(
-          './create/strategies/TaskCreateStrategy.js'
+          '@/services/create/strategies/TaskCreateStrategy.js'
         );
-        return (await new TaskCreateStrategy().create({
+        return await new TaskCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
-        })) as AttioRecord;
+        });
       }
 
       case UniversalResourceType.NOTES: {
         const { NoteCreateStrategy } = await import(
-          './create/strategies/NoteCreateStrategy.js'
+          '@/services/create/strategies/NoteCreateStrategy.js'
         );
-        return (await new NoteCreateStrategy().create({
+        return await new NoteCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
-        })) as AttioRecord;
+        });
       }
 
       default:
@@ -640,7 +640,7 @@ export class UniversalCreateService {
   private static async handleUnsupportedResourceType(
     resource_type: string,
     params: UniversalCreateParams
-  ): Promise<AttioRecord> {
+  ): Promise<UniversalRecord> {
     // Check if resource type can be corrected
     const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {

@@ -6,8 +6,9 @@ import {
   UniversalToolConfig,
   RelationshipSearchParams,
   RelationshipType,
-} from '../types.js';
-import { AttioRecord } from '@shared-types/attio.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalRecord } from '@/types/attio.js';
+import { isAttioRecord } from '@/types/attio.js';
 
 // Specific interfaces for better type safety
 interface RecordValues {
@@ -21,26 +22,29 @@ interface RecordValues {
 
 interface RecordId {
   record_id?: string;
+  list_id?: string;
 }
 
-import { validateUniversalToolParams } from '../schemas.js';
-import { ValidationService } from '@services/ValidationService.js';
-import { isValidUUID } from '@utils/validation/uuid-validation.js';
-import { ErrorService } from '@services/ErrorService.js';
+import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
+import { ValidationService } from '@/services/ValidationService.js';
+import { ErrorService } from '@/services/ErrorService.js';
+import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 
-import { searchCompaniesByPeople } from '@src/objects/companies/index.js';
-import { searchPeopleByCompany } from '@src/objects/people/index.js';
+import { searchCompaniesByPeople } from '@/objects/companies/index.js';
+import { searchPeopleByCompany } from '@/objects/people/index.js';
 import {
   searchDealsByCompany,
   searchDealsByPerson,
-} from '@src/objects/deals/index.js';
+} from '@/objects/deals/index.js';
 
 export const searchByRelationshipConfig: UniversalToolConfig<
   RelationshipSearchParams,
-  AttioRecord[]
+  UniversalRecord[]
 > = {
   name: 'search_records_by_relationship',
-  handler: async (params: RelationshipSearchParams): Promise<AttioRecord[]> => {
+  handler: async (
+    params: RelationshipSearchParams
+  ): Promise<UniversalRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_by_relationship',
@@ -111,7 +115,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: AttioRecord[], ...args: unknown[]) => {
+  formatResult: (results: UniversalRecord[], ...args: unknown[]) => {
     const relationshipType = args[0] as RelationshipType | undefined;
     if (!Array.isArray(results)) {
       return 'No related records found';
@@ -122,8 +126,10 @@ export const searchByRelationshipConfig: UniversalToolConfig<
       : 'relationship';
 
     return `Found ${results.length} records for ${relationshipName}:\n${results
-      .map((record: AttioRecord, index: number) => {
-        const values = record.values as RecordValues;
+      .map((record: UniversalRecord, index: number) => {
+        const values = isAttioRecord(record)
+          ? (record.values as RecordValues)
+          : ({} as RecordValues);
         const recordId = record.id as RecordId;
         const name =
           values?.name?.[0]?.value ||
@@ -131,7 +137,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
           values?.full_name?.[0]?.value ||
           values?.title?.[0]?.value ||
           'Unnamed';
-        const id = recordId?.record_id || 'unknown';
+        const id = recordId?.record_id || recordId?.list_id || 'unknown';
         const email = values?.email?.[0]?.value;
         const role = values?.role?.[0]?.value || values?.position?.[0]?.value;
 

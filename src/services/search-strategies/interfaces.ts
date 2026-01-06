@@ -3,12 +3,16 @@
  * Issue #574: Extract resource-specific search strategies
  */
 
-import { AttioRecord, AttioList, AttioTask } from '../../types/attio.js';
+import type {
+  AttioList,
+  AttioTask,
+  UniversalRecordResult,
+} from '@/types/attio.js';
 import {
   SearchType,
   MatchType,
   SortType,
-} from '../../handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 
 /**
  * Timeframe parameters for date-based filtering
@@ -42,7 +46,7 @@ export interface ISearchStrategy {
   /**
    * Execute the search for this resource type
    */
-  search(params: SearchStrategyParams): Promise<AttioRecord[]>;
+  search(params: SearchStrategyParams): Promise<UniversalRecordResult[]>;
 
   /**
    * Get the resource type this strategy handles
@@ -70,13 +74,13 @@ export interface StrategyDependencies {
         filters: Record<string, unknown>,
         limit?: number,
         offset?: number
-      ) => Promise<AttioRecord[]>)
+      ) => Promise<UniversalRecordResult[]>)
     | null;
   paginatedSearchFunction?:
     | ((
         filters: Record<string, unknown>,
         pagination: { limit?: number; offset?: number }
-      ) => Promise<{ results: AttioRecord[] }>)
+      ) => Promise<{ results: UniversalRecordResult[] }>)
     | null;
   listFunction?: (
     query?: string,
@@ -101,10 +105,10 @@ export interface StrategyDependencies {
     existing: Record<string, unknown> | undefined,
     dateFilter: Record<string, unknown>
   ) => Record<string, unknown>;
-  rankByRelevance?: (
-    results: AttioRecord[],
+  rankByRelevance?: <T extends UniversalRecordResult>(
+    results: T[],
     query: string,
     searchFields: string[]
-  ) => AttioRecord[];
-  getFieldValue?: (record: AttioRecord, field: string) => string;
+  ) => T[];
+  getFieldValue?: (record: UniversalRecordResult, field: string) => string;
 }

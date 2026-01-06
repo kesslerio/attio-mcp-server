@@ -249,21 +249,21 @@ export class ValidationService {
       // Add each error on its own line for clarity
       if (fieldValidation.errors.length > 0) {
         errorMessage += fieldValidation.errors
-          .map((err) => `  ❌ ${err}`)
+          .map((err) => `  - ${err}`)
           .join('\n');
       }
 
       // Add suggestions if available (truncated to prevent buffer overflow)
       if (fieldValidation.suggestions.length > 0) {
         const truncated = this.truncateSuggestions(fieldValidation.suggestions);
-        errorMessage += '\n\n💡 Suggestions:\n';
-        errorMessage += truncated.map((sug) => `  • ${sug}`).join('\n');
+        errorMessage += '\n\nSuggestions:\n';
+        errorMessage += truncated.map((sug) => `  - ${sug}`).join('\n');
       }
 
       // List available fields for this resource type
       const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
       if (mapping && mapping.validFields.length > 0) {
-        errorMessage += `\n\n📋 Available fields for ${resourceType}:\n  ${mapping.validFields.join(
+        errorMessage += `\n\nAvailable fields for ${resourceType}:\n  ${mapping.validFields.join(
           ', '
         )}`;
       }

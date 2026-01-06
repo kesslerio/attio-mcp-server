@@ -34,7 +34,11 @@
 
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalUpdateParams } from '@/handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '@/types/attio.js';
+import {
+  isAttioList,
+  isAttioRecord,
+  type UniversalRecord,
+} from '@/types/attio.js';
 import {
   UniversalValidationError,
   ErrorType,
@@ -75,7 +79,7 @@ export interface UpdateMetadata {
  * Enhanced update result that includes update metadata
  */
 export interface EnhancedUpdateResult {
-  record: AttioRecord;
+  record: UniversalRecord;
   validation: UpdateMetadata;
 }
 
@@ -174,7 +178,7 @@ export class UniversalUpdateService {
 
   static async updateRecord(
     params: UniversalUpdateParams
-  ): Promise<AttioRecord> {
+  ): Promise<UniversalRecord> {
     // Validate resource type is supported
     const validResourceTypes = Object.values(UniversalResourceType);
     if (!validResourceTypes.includes(params.resource_type)) {
@@ -298,7 +302,7 @@ export class UniversalUpdateService {
     if (resource_type === UniversalResourceType.DEALS) {
       try {
         const { applyDealDefaultsWithValidation } = await import(
-          '../config/deal-defaults.js'
+          '@/config/deal-defaults.js'
         );
 
         const dealValidation = await applyDealDefaultsWithValidation(
@@ -334,7 +338,7 @@ export class UniversalUpdateService {
     const record = await this._updateRecordInternal(params, true);
 
     // Store actual values for comparison
-    validationResult.actualValues = record.values || {};
+    validationResult.actualValues = this.extractActualValues(record);
 
     // Capture field persistence verification warnings if enabled
     if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
@@ -346,10 +350,10 @@ export class UniversalUpdateService {
         );
         const attioPayload = { values: mappedData };
         const { UpdateValidation } = await import(
-          './update/UpdateValidation.js'
+          '@/services/update/UpdateValidation.js'
         );
         const { FieldPersistenceHandler } = await import(
-          './update/FieldPersistenceHandler.js'
+          '@/services/update/FieldPersistenceHandler.js'
         );
         const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
           attioPayload.values
@@ -404,7 +408,7 @@ export class UniversalUpdateService {
   private static async _updateRecordInternal(
     params: UniversalUpdateParams,
     skipVerification: boolean = false
-  ): Promise<AttioRecord> {
+  ): Promise<UniversalRecord> {
     const { resource_type, record_id, record_data } = params;
 
     // Handle edge case where test uses 'data' instead of 'record_data'
@@ -451,7 +455,9 @@ export class UniversalUpdateService {
     }
 
     // Issue #984: Fetch metadata once using MetadataResolver
-    const { MetadataResolver } = await import('./update/MetadataResolver.js');
+    const { MetadataResolver } = await import(
+      '@/services/update/MetadataResolver.js'
+    );
     const { metadataMap, availableAttributes } =
       await MetadataResolver.fetchMetadata(resource_type, actualRecordData);
 
@@ -494,7 +500,7 @@ export class UniversalUpdateService {
 
     // Normalize values (e.g., phone numbers to E.164)
     const { normalizeValues } = await import(
-      './normalizers/AttributeAwareNormalizer.js'
+      '@/services/normalizers/AttributeAwareNormalizer.js'
     );
     attioPayload.values = await normalizeValues(
       resource_type,
@@ -503,7 +509,9 @@ export class UniversalUpdateService {
     );
 
     // Sanitize special characters while preserving intended content
-    const { UpdateValidation } = await import('./update/UpdateValidation.js');
+    const { UpdateValidation } = await import(
+      '@/services/update/UpdateValidation.js'
+    );
     const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
       attioPayload.values
     );
@@ -532,7 +540,7 @@ export class UniversalUpdateService {
     // Transforms: status titles → {status_id: uuid}, single values → arrays for multi-select
     try {
       const { transformRecordValues, mayNeedTransformation } = await import(
-        './value-transformer/index.js'
+        '@/services/value-transformer/index.js'
       );
 
       // Quick check to avoid unnecessary async work
@@ -594,7 +602,7 @@ export class UniversalUpdateService {
 
     // Issue #984: Use UpdateOrchestrator for strategy dispatch
     const { UpdateOrchestrator } = await import(
-      './update/UpdateOrchestrator.js'
+      '@/services/update/UpdateOrchestrator.js'
     );
 
     // Use centralized object slug extraction (fixes DEALS slug inconsistency)
@@ -612,7 +620,7 @@ export class UniversalUpdateService {
     });
 
     const { ResponseNormalizer } = await import(
-      './update/ResponseNormalizer.js'
+      '@/services/update/ResponseNormalizer.js'
     );
     const normalizedRecord = ResponseNormalizer.normalizeResponseFormat(
       resource_type,
@@ -622,13 +630,13 @@ export class UniversalUpdateService {
     // Issue #984: Use FieldPersistenceHandler for verification
     if (!skipVerification) {
       const { FieldPersistenceHandler } = await import(
-        './update/FieldPersistenceHandler.js'
+        '@/services/update/FieldPersistenceHandler.js'
       );
       await FieldPersistenceHandler.verifyPersistence(
         resource_type,
         record_id,
         dataForVerification,
-        normalizedRecord.values || {},
+        this.extractActualValues(normalizedRecord),
         { strict: false }
       );
     }
@@ -639,7 +647,7 @@ export class UniversalUpdateService {
   private static async handleUnsupportedResourceType(
     resource_type: string,
     params: UniversalUpdateParams
-  ): Promise<AttioRecord> {
+  ): Promise<UniversalRecord> {
     // Check if resource type can be corrected
     const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
@@ -662,5 +670,28 @@ export class UniversalUpdateService {
           `Valid resource types are: ${getValidResourceTypes()}`,
       }
     );
+  }
+
+  private static extractActualValues(
+    record: UniversalRecord
+  ): Record<string, unknown> {
+    if (isAttioRecord(record)) {
+      return record.values || {};
+    }
+
+    if (isAttioList(record)) {
+      return {
+        name: record.name || record.title,
+        title: record.title,
+        description: record.description,
+        object_slug: record.object_slug,
+        workspace_id: record.workspace_id,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        entry_count: record.entry_count,
+      };
+    }
+
+    return {};
   }
 }

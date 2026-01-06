@@ -5,40 +5,47 @@
  * Provides universal record retrieval functionality across all resource types.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalRecordDetailsParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
 
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalRecordDetailsParams } from '@/handlers/tool-configs/universal/types.js';
+import type {
+  AttioList,
+  AttioRecord,
+  ListRecordSummary,
+  UniversalRecord,
+  UniversalRecordResult,
+} from '@/types/attio.js';
+import { isAttioList, isAttioRecord } from '@/types/attio.js';
 // Import services
-import { ValidationService } from './ValidationService.js';
-import { CachingService } from './CachingService.js';
-import { UniversalUtilityService } from './UniversalUtilityService.js';
-import { shouldUseMockData } from './create/index.js';
+import { ValidationService } from '@/services/ValidationService.js';
+import { CachingService } from '@/services/CachingService.js';
+import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
+import { shouldUseMockData } from '@/services/create/index.js';
 
 // Import performance tracking
-import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
 
 // Import error handling utilities
-import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
-import { ErrorEnhancer } from '../errors/enhanced-api-errors.js';
+import { createRecordNotFoundError } from '@/utils/validation/uuid-validation.js';
+import { ErrorEnhancer } from '@/errors/enhanced-api-errors.js';
 import {
   isEnhancedApiError,
   ensureEnhanced,
   withEnumerableMessage,
-} from '../errors/enhanced-helpers.js';
+} from '@/errors/enhanced-helpers.js';
 
 // Import shared type definitions for better type safety
 // Note: These imports are available for future error handling improvements
 // but not yet fully integrated into this service
 
 // Import resource-specific retrieval functions
-import { getCompanyDetails } from '../objects/companies/index.js';
-import { getPersonDetails } from '../objects/people/index.js';
+import { getCompanyDetails } from '@/objects/companies/index.js';
+import { getPersonDetails } from '@/objects/people/index.js';
 import { getListDetails } from '@/objects/lists.js';
-import { getObjectRecord } from '../objects/records/index.js';
-import { getTask } from '../objects/tasks.js';
-import { getNote, normalizeNoteResponse } from '../objects/notes.js';
+import { getObjectRecord } from '@/objects/records/index.js';
+import { getTask } from '@/objects/tasks.js';
+import { getNote, normalizeNoteResponse } from '@/objects/notes.js';
 
 /**
  * UniversalRetrievalService provides centralized record retrieval functionality
@@ -52,18 +59,18 @@ import { getNote, normalizeNoteResponse } from '../objects/notes.js';
  * **Record<string, unknown> Benefits**: Unlike any, this type prevents accidental
  * operations while maintaining flexibility for varied API response formats.
  *
- * Issue #1068: Lists returned in list-native format (cast to AttioRecord)
+ * Issue #1068: Lists returned in list-native format (UniversalRecord)
  */
 export class UniversalRetrievalService {
   /**
    * Get record details across any supported resource type
    *
    * @param params - Retrieval operation parameters
-   * @returns Promise resolving to AttioRecord (lists cast from list-native format)
+   * @returns Promise resolving to UniversalRecord (lists are list-native)
    */
   static async getRecordDetails(
     params: UniversalRecordDetailsParams
-  ): Promise<AttioRecord> {
+  ): Promise<UniversalRecordResult> {
     const { resource_type, record_id, fields } = params;
 
     // NOTE: E2E tests should use real API by default. Mock shortcuts are reserved for offline smoke tests.
@@ -157,7 +164,7 @@ export class UniversalRetrievalService {
 
     // Track API call timing
     const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
-    let result: AttioRecord;
+    let result: UniversalRecord;
 
     try {
       result = await this.retrieveRecordByType(resource_type, record_id);
@@ -169,26 +176,22 @@ export class UniversalRetrievalService {
       if (fields && fields.length > 0) {
         const filteredResult = this.filterResponseFields(result, fields);
 
-        // Issue #1068: Lists don't have values wrapper (list-native format)
-        // Only reconstruct AttioRecord structure for non-list resources
-        if (resource_type === UniversalResourceType.LISTS) {
-          // Force-include id.list_id even if fields parameter excludes it
-          // This matches behavior of other resources (companies, people, tasks)
-          const resultWithId = {
-            ...filteredResult,
-            id: result.id, // Always include id
+        if (
+          resource_type === UniversalResourceType.LISTS &&
+          isAttioList(result)
+        ) {
+          const listSummary: ListRecordSummary = {
+            ...(filteredResult as Record<string, unknown>),
+            id: result.id,
           };
-          return resultWithId as unknown as AttioRecord;
+          return listSummary;
         }
 
-        // For regular records, ensure AttioRecord structure with values wrapper
-        return {
-          id: result.id,
-          created_at: result.created_at,
-          updated_at: result.updated_at,
-          values:
-            (filteredResult.values as Record<string, unknown>) || result.values,
-        } as unknown as AttioRecord;
+        if (isAttioRecord(result)) {
+          return filteredResult as AttioRecord;
+        }
+
+        return result;
       }
       return result;
     } catch (apiError: unknown) {
@@ -322,7 +325,7 @@ export class UniversalRetrievalService {
   private static async retrieveRecordByType(
     resource_type: UniversalResourceType,
     record_id: string
-  ): Promise<AttioRecord> {
+  ): Promise<UniversalRecord> {
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
         return await getCompanyDetails(record_id);
@@ -357,7 +360,7 @@ export class UniversalRetrievalService {
    */
   private static async retrieveListRecord(
     record_id: string
-  ): Promise<AttioRecord> {
+  ): Promise<AttioList> {
     try {
       const list = await getListDetails(record_id);
 
@@ -389,9 +392,8 @@ export class UniversalRetrievalService {
         id: {
           ...list.id,
           list_id: list.id.list_id,
-          // NO record_id alias - preserve list-native structure
         },
-      } as unknown as AttioRecord;
+      };
     } catch (error: unknown) {
       // Handle EnhancedApiError instances directly
       if (isEnhancedApiError(error)) {
@@ -449,7 +451,7 @@ export class UniversalRetrievalService {
     try {
       if (shouldUseMockData()) {
         try {
-          const mod = (await import('../utils/task-debug.js')) as {
+          const mod = (await import('@/utils/task-debug.js')) as {
             logTaskDebug?: (
               op: string,
               msg: string,
@@ -463,20 +465,21 @@ export class UniversalRetrievalService {
           // Ignore debug import errors
         }
         // Return a minimal mock AttioRecord for tasks to satisfy E2E flows
-        return {
+        const mockRecord: AttioRecord = {
           id: {
             record_id,
             task_id: record_id,
             object_id: 'tasks',
           },
           values: {
-            title: [{ value: 'Mock Task' }],
-            content: [{ value: 'Mock Task' }],
-            status: [{ value: 'open' }],
+            title: 'Mock Task',
+            content: 'Mock Task',
+            status: 'open',
           },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        } as unknown as AttioRecord;
+        };
+        return mockRecord;
       }
 
       const task = await getTask(record_id);
@@ -542,7 +545,7 @@ export class UniversalRetrievalService {
 
       // Normalize to universal record format
       const normalizedRecord = normalizeNoteResponse(note);
-      return normalizedRecord as AttioRecord;
+      return normalizedRecord;
     } catch (error: unknown) {
       // Handle EnhancedApiError instances directly
       if (isEnhancedApiError(error)) {
@@ -597,7 +600,7 @@ export class UniversalRetrievalService {
    * Filter response fields to only include requested fields
    */
   private static filterResponseFields(
-    data: Record<string, unknown>,
+    data: UniversalRecord,
     requestedFields?: string[]
   ): Record<string, unknown> {
     if (!requestedFields || requestedFields.length === 0) {
@@ -605,7 +608,7 @@ export class UniversalRetrievalService {
     }
 
     // Handle AttioRecord structure with id, values, created_at, updated_at
-    if (data && typeof data === 'object' && 'id' in data && 'values' in data) {
+    if (isAttioRecord(data)) {
       // Always preserve core AttioRecord structure
       const attioData = data as AttioRecord;
       const filtered: AttioRecord = {
@@ -644,7 +647,7 @@ export class UniversalRetrievalService {
     const filtered: Record<string, unknown> = {};
     for (const field of requestedFields) {
       if (field in data) {
-        filtered[field] = data[field];
+        filtered[field] = (data as Record<string, unknown>)[field];
       }
     }
 
@@ -710,7 +713,7 @@ export class UniversalRetrievalService {
     resource_type: UniversalResourceType,
     record_ids: string[],
     fields?: string[]
-  ): Promise<(AttioRecord | null)[]> {
+  ): Promise<(UniversalRecordResult | null)[]> {
     // For now, fetch records individually
     // TODO: Implement batch API calls where supported by Attio
     const results = await Promise.allSettled(
@@ -730,7 +733,7 @@ export class UniversalRetrievalService {
   static async getRecordWithMetrics(
     params: UniversalRecordDetailsParams
   ): Promise<{
-    record: AttioRecord;
+    record: UniversalRecordResult;
     metrics: { duration: number; cached: boolean; source: 'cache' | 'live' };
   }> {
     const start = performance.now();

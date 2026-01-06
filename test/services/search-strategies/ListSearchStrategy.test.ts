@@ -18,7 +18,7 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
     });
   });
 
-  describe('convertListsToRecords - workspace_id extraction', () => {
+  describe('normalizeLists - workspace_id extraction', () => {
     it('should prioritize top-level workspace_id over nested when both exist', () => {
       const mockLists: AttioList[] = [
         {
@@ -37,7 +37,7 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
       ];
 
       // Access private method via type assertion for testing
-      const result = (strategy as any).convertListsToRecords(mockLists);
+      const result = (strategy as any).normalizeLists(mockLists);
 
       expect(result).toHaveLength(1);
       expect(result[0].workspace_id).toBe('ws-toplevel');
@@ -61,7 +61,7 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
         },
       ];
 
-      const result = (strategy as any).convertListsToRecords(mockLists);
+      const result = (strategy as any).normalizeLists(mockLists);
 
       expect(result).toHaveLength(1);
       // Empty string should be preserved, NOT overwritten by nested value
@@ -86,7 +86,7 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
         },
       ];
 
-      const result = (strategy as any).convertListsToRecords(mockLists);
+      const result = (strategy as any).normalizeLists(mockLists);
 
       expect(result).toHaveLength(1);
       // null should fall back to nested value
@@ -111,7 +111,7 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
         },
       ];
 
-      const result = (strategy as any).convertListsToRecords(mockLists);
+      const result = (strategy as any).normalizeLists(mockLists);
 
       expect(result).toHaveLength(1);
       // undefined should fall back to nested value
@@ -136,7 +136,7 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
         },
       ];
 
-      const result = (strategy as any).convertListsToRecords(mockLists);
+      const result = (strategy as any).normalizeLists(mockLists);
 
       expect(result).toHaveLength(1);
       // When both are undefined, workspace_id should not be set
@@ -164,7 +164,7 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
         },
       ];
 
-      const result = (strategy as any).convertListsToRecords(mockLists);
+      const result = (strategy as any).normalizeLists(mockLists);
 
       expect(result).toHaveLength(1);
       const list = result[0];
@@ -206,10 +206,10 @@ describe('ListSearchStrategy - workspace_id prioritization', () => {
         },
       ];
 
-      const resultWithName = (strategy as any).convertListsToRecords(
+      const resultWithName = (strategy as any).normalizeLists(
         mockListsWithName
       );
-      const resultWithoutName = (strategy as any).convertListsToRecords(
+      const resultWithoutName = (strategy as any).normalizeLists(
         mockListsWithoutName
       );
 
