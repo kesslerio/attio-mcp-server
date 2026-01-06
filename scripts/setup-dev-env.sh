@@ -164,17 +164,17 @@ EOF
 # ============================================================================
 
 check_node_version() {
-    print_step "Checking Node.js version..."
-    
+    print_step "Checking Node.js and Bun versions..."
+
     if ! check_command node "Node.js"; then
         print_error "Node.js is not installed"
         print_info "Please install Node.js 18.0.0 or higher from https://nodejs.org/"
         return 1
     fi
-    
+
     local node_version=$(node --version | sed 's/v//')
     local required_version="18.0.0"
-    
+
     if version_compare "$node_version" "$required_version"; then
         print_success "Node.js version $node_version meets requirements (>= $required_version)"
     else
@@ -182,43 +182,44 @@ check_node_version() {
         print_info "Please upgrade Node.js from https://nodejs.org/"
         return 1
     fi
-    
-    # Check npm
-    if check_command npm "npm"; then
-        local npm_version=$(npm --version)
-        print_success "npm version $npm_version is installed"
+
+    # Check bun
+    if check_command bun "bun"; then
+        local bun_version=$(bun --version)
+        print_success "Bun version $bun_version is installed"
     else
-        print_error "npm is not installed"
+        print_error "Bun is not installed"
+        print_info "Please install Bun from https://bun.sh/"
         return 1
     fi
 }
 
 install_dependencies() {
-    print_step "Installing npm dependencies..."
-    
+    print_step "Installing dependencies with Bun..."
+
     if [[ -d "$PROJECT_ROOT/node_modules" ]] && [[ "$FORCE_SETUP" != "true" ]]; then
         print_info "Dependencies already installed (use --force to reinstall)"
-        
+
         # Quick check for missing dependencies
         print_substep "Verifying dependencies..."
-        (cd "$PROJECT_ROOT" && npm ls --depth=0 &>/dev/null) &
+        (cd "$PROJECT_ROOT" && bun pm ls &>/dev/null) &
         spinner $! "Checking installed packages"
-        
+
         if [[ $? -eq 0 ]]; then
             print_success "All dependencies are properly installed"
         else
-            print_warning "Some dependencies might be missing, running npm install..."
-            (cd "$PROJECT_ROOT" && npm install) &
+            print_warning "Some dependencies might be missing, running bun install..."
+            (cd "$PROJECT_ROOT" && bun install) &
             spinner $! "Installing missing dependencies"
             wait $!
             print_success "Dependencies updated"
         fi
     else
-        print_substep "Running npm install..."
-        (cd "$PROJECT_ROOT" && npm install) &
+        print_substep "Running bun install..."
+        (cd "$PROJECT_ROOT" && bun install) &
         spinner $! "Installing dependencies"
         wait $!
-        
+
         if [[ $? -eq 0 ]]; then
             print_success "Dependencies installed successfully"
         else
@@ -246,7 +247,7 @@ setup_git_hooks() {
         print_info "Husky hooks already configured"
     else
         print_substep "Initializing Husky..."
-        (cd "$PROJECT_ROOT" && npx husky init 2>/dev/null || true)
+        (cd "$PROJECT_ROOT" && bunx husky init 2>/dev/null || true)
         print_success "Husky initialized"
     fi
     
@@ -269,28 +270,28 @@ echo "Running pre-commit checks..."
 
 # Run linting
 echo "→ Checking lint..."
-npm run lint:check || {
-    echo "❌ Lint check failed. Run 'npm run lint:fix' to fix issues."
+bun run lint:check || {
+    echo "❌ Lint check failed. Run 'bun run lint:fix' to fix issues."
     exit 1
 }
 
 # Check formatting
 echo "→ Checking formatting..."
-npm run check:format || {
-    echo "❌ Format check failed. Run 'npm run format' to fix formatting."
+bun run check:format || {
+    echo "❌ Format check failed. Run 'bun run format' to fix formatting."
     exit 1
 }
 
 # Run build
 echo "→ Building project..."
-npm run build || {
+bun run build || {
     echo "❌ Build failed. Please fix TypeScript errors."
     exit 1
 }
 
 # Run offline tests (fast)
 echo "→ Running tests..."
-npm run test:offline || {
+bun run test:offline || {
     echo "❌ Tests failed. Please fix failing tests."
     exit 1
 }
@@ -325,17 +326,17 @@ setup_environment() {
 
 run_initial_build() {
     print_step "Running initial build..."
-    
+
     print_substep "Compiling TypeScript..."
-    (cd "$PROJECT_ROOT" && npm run build) &
+    (cd "$PROJECT_ROOT" && bun run build) &
     spinner $! "Building project"
     wait $!
-    
+
     if [[ $? -eq 0 ]]; then
         print_success "Build completed successfully"
     else
         print_error "Build failed - there might be TypeScript errors"
-        print_info "Run 'npm run build' to see detailed error messages"
+        print_info "Run 'bun run build' to see detailed error messages"
         return 1
     fi
 }
@@ -457,34 +458,34 @@ run_health_checks() {
     
     # Check TypeScript compilation
     print_substep "Checking TypeScript compilation..."
-    if (cd "$PROJECT_ROOT" && npx tsc --noEmit) &>/dev/null; then
+    if (cd "$PROJECT_ROOT" && bunx tsc --noEmit) &>/dev/null; then
         print_success "TypeScript compilation check passed"
     else
         print_warning "TypeScript has compilation warnings/errors"
         health_status=1
     fi
-    
+
     # Check linting
     print_substep "Checking linting..."
-    if (cd "$PROJECT_ROOT" && npm run lint:check) &>/dev/null; then
+    if (cd "$PROJECT_ROOT" && bun run lint:check) &>/dev/null; then
         print_success "Linting check passed"
     else
-        print_warning "Linting issues found (run 'npm run lint:fix' to fix)"
+        print_warning "Linting issues found (run 'bun run lint:fix' to fix)"
         health_status=1
     fi
-    
+
     # Check formatting
     print_substep "Checking code formatting..."
-    if (cd "$PROJECT_ROOT" && npm run check:format) &>/dev/null; then
+    if (cd "$PROJECT_ROOT" && bun run check:format) &>/dev/null; then
         print_success "Code formatting check passed"
     else
-        print_warning "Formatting issues found (run 'npm run format' to fix)"
+        print_warning "Formatting issues found (run 'bun run format' to fix)"
         health_status=1
     fi
-    
+
     # Run offline tests
     print_substep "Running offline tests..."
-    if (cd "$PROJECT_ROOT" && npm run test:offline -- --run) &>/dev/null; then
+    if (cd "$PROJECT_ROOT" && bun run test:offline -- --run) &>/dev/null; then
         print_success "Offline tests passed"
     else
         print_warning "Some tests are failing"
@@ -554,13 +555,13 @@ print_summary() {
     echo "   Get it from: https://app.attio.com/settings/api"
     echo ""
     echo "2. Start development:"
-    echo "   ${GREEN}npm run test:watch:offline${NC} - Run tests in watch mode"
-    echo "   ${GREEN}npm run build:watch${NC} - Build in watch mode"
-    echo "   ${GREEN}npm run dev${NC} - Start development server"
+    echo "   ${GREEN}bun run test:watch:offline${NC} - Run tests in watch mode"
+    echo "   ${GREEN}bun run build:watch${NC} - Build in watch mode"
+    echo "   ${GREEN}bun run dev${NC} - Start development server"
     echo ""
     echo "3. Before committing:"
-    echo "   ${GREEN}npm run check${NC} - Run all validation checks"
-    echo "   ${GREEN}npm test${NC} - Run all tests"
+    echo "   ${GREEN}bun run check${NC} - Run all validation checks"
+    echo "   ${GREEN}bun run test${NC} - Run all tests"
     echo ""
     echo "4. View documentation:"
     echo "   ${GREEN}cat docs/README.md${NC} - Main documentation"
@@ -611,7 +612,7 @@ Examples:
 
 Requirements:
     - Node.js >= 18.0.0
-    - npm >= 8.0.0
+    - Bun >= 1.1.0
     - Git (for hooks setup)
     - Attio API key (for integration tests)
 

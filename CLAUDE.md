@@ -1,5 +1,27 @@
 # CLAUDE.md — Attio MCP Server (Shared for Claude Code & Codex CLI)
 
+## Development Workflow
+
+**Always use `bun`, not `npm`.**
+
+```sh
+# 1. Make changes
+
+# 2. Typecheck (fast)
+bun run typecheck
+
+# 3. Run tests
+bun run test -- -t "test name"     # Single suite
+bun run test:file -- "glob"        # Specific files
+
+# 4. Lint before committing
+bun run lint:file -- "file1.ts"    # Specific files
+bun run lint                        # All files
+
+# 5. Before creating PR
+bun run lint:claude && bun run test
+```
+
 ## STYLE & TOKEN BUDGET
 
 - Keep this file concise; it loads into every Claude Code / Codex CLI session.
@@ -50,11 +72,11 @@ RULE: Path aliases over relative imports | WHEN: Editing any file | DO: Use `@/`
 
 ## Quality Gates — Distributed Validation Strategy (PR #624)
 
-**FAST PRE-COMMIT (≤10s)**: Uses lint-staged for staged files only via `npm run verify:staged`
+**FAST PRE-COMMIT (≤10s)**: Uses lint-staged for staged files only via `bun run verify:staged`
 **PRE-PUSH VALIDATION**: TypeScript + fast tests before sharing code (≤30s)
 **CI COMPREHENSIVE**: Full validation suite with branch protection
 
-RULE: Pre-commit fast feedback | WHEN: Committing | DO: Husky runs `npm run verify:staged` (prettier + eslint --fix on staged files) | ELSE: Commit blocked
+RULE: Pre-commit fast feedback | WHEN: Committing | DO: Husky runs `bun run verify:staged` (prettier + eslint --fix on staged files) | ELSE: Commit blocked
 RULE: Pre-push safety check | WHEN: Pushing code | DO: TypeScript validation + fast tests (bypass with `SKIP_PREPUSH=1` for emergencies) | ELSE: Push blocked
 RULE: Skip tests for deletions | WHEN: Branch deletion pushes | DO: Bypass pre-push validation | ELSE: Unnecessary test execution
 RULE: CI full validation | WHEN: PR created | DO: Complete test suite + build + lint with ESLint ≤1030 warnings | ELSE: PR blocked
@@ -68,14 +90,14 @@ RULE: Use the right scope for the task.
 
 | **Type**    | **Command**                                                         | **Notes**                                    |
 | ----------- | ------------------------------------------------------------------- | -------------------------------------------- |
-| Unit        | `npm test`                                                          | Fast, offline with mocks                     |
-| Integration | `npm run test:integration`                                          | Real Attio API (`ATTIO_API_KEY`)             |
-| E2E         | `npm run test:e2e`                                                  | End‑to‑end workflows                         |
-| Smoke       | `npm run test:smoke`                                                | <30s critical paths                          |
-| Performance | `npm run test:performance` / `:all` / `:tools`                      | CI budgets auto‑adjust                       |
-| Affected    | `npm run test:affected`                                             | Git‑based selection                          |
-| Offline     | `npm run test:offline`                                              | No API calls                                 |
-| CI JSON     | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | For quality gates (requires `ATTIO_API_KEY`) |
+| Unit        | `bun run test`                                                      | Fast, offline with mocks                     |
+| Integration | `bun run test:integration`                                          | Real Attio API (`ATTIO_API_KEY`)             |
+| E2E         | `bun run test:e2e`                                                  | End‑to‑end workflows                         |
+| Smoke       | `bun run test:smoke`                                                | <30s critical paths                          |
+| Performance | `bun run test:performance` / `:all` / `:tools`                      | CI budgets auto‑adjust                       |
+| Affected    | `bun run test:affected`                                             | Git‑based selection                          |
+| Offline     | `bun run test:offline`                                              | No API calls                                 |
+| CI JSON     | `bun run test:ci -- --reporter=json > vitest-report.json \|\| true` | For quality gates (requires `ATTIO_API_KEY`) |
 
 ### CI vs OFFLINE TESTING (scope)
 
@@ -85,9 +107,9 @@ RULE: Use the right scope for the task.
 
 ### PERFORMANCE TESTING (commands)
 
-- `npm run test:performance` - Regression tests only
-- `npm run test:performance:all` - All performance tests (regression + tools)
-- `npm run test:performance:tools` - Tool-specific performance tests
+- `bun run test:performance` - Regression tests only
+- `bun run test:performance:all` - All performance tests (regression + tools)
+- `bun run test:performance:tools` - Tool-specific performance tests
 
 ## Logging & `formatResult` (PR #483 enforcement)
 
@@ -113,26 +135,26 @@ Avoid top‑level `oneOf`/`allOf`/`anyOf` in tool `inputSchema` due to client/In
 
 **Use after failures for deep‑dive debugging; not during passing cycles.**
 
-- `npm run e2e:diagnose` — Enhanced test runner with standardized env
-- `npm run e2e:diagnose:core` — Core‑workflows focus
-- `npm run e2e:analyze` — Enhanced analysis with anomaly detection
-- `npm run e2e:analyze:trends` — 14‑day trend analysis
-- `npm run e2e:analyze -- --latest --stdout` — Latest only
-- `npm run e2e:analyze -- --basic --stdout` — Simple mode
-- `npm run e2e:health` — Env health (0–100), `--fix` to attempt auto‑fix
+- `bun run e2e:diagnose` — Enhanced test runner with standardized env
+- `bun run e2e:diagnose:core` — Core‑workflows focus
+- `bun run e2e:analyze` — Enhanced analysis with anomaly detection
+- `bun run e2e:analyze:trends` — 14‑day trend analysis
+- `bun run e2e:analyze -- --latest --stdout` — Latest only
+- `bun run e2e:analyze -- --basic --stdout` — Simple mode
+- `bun run e2e:health` — Env health (0–100), `--fix` to attempt auto‑fix
 
 **Quick path**
 
 ```bash
 ./scripts/e2e-diagnostics.sh --suite core-workflows --json --verbose
-npm run e2e:analyze -- --latest --stdout
+bun run e2e:analyze -- --latest --stdout
 ```
 
 **Manual fallback** (no bail, capture logs)
 
 ```bash
 TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
-  npx vitest run test/e2e/suites/core-workflows.e2e.test.ts --reporter=verbose --reporter=json --bail=0 \
+  bunx vitest run test/e2e/suites/core-workflows.e2e.test.ts --reporter=verbose --reporter=json --bail=0 \
   |& tee test-results/e2e-console.core-workflows.realapi.full.log
 ```
 
@@ -146,20 +168,20 @@ rg -n "tasks\.createTask|tasks\.updateTask|Prepared (create|update) payload|resp
 ### Policy: E2E ≠ Mocks
 
 - E2E runs always use the real Attio API. Mock injection is disabled by default in E2E.
-- Use `npm run test:offline` for mock‑only smoke/iteration. Don't mix mocks into E2E.
+- Use `bun run test:offline` for mock‑only smoke/iteration. Don't mix mocks into E2E.
 
 ## TEST DATA CLEANUP
 
 RULE: Always use API token filtering | WHEN: Cleaning test data | DO: Use WORKSPACE_API_UUID | ELSE: Risk deleting other users' data
 RULE: Verify before deletion | WHEN: Running cleanup | DO: Always dry-run first | ELSE: Accidental data loss
 
-`npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion
+`bun run cleanup:test-data` - Dry run preview (safe) | `bun run cleanup:test-data:live` - Live deletion
 ⚠️ CRITICAL: Set `WORKSPACE_API_UUID` in .env | Only deletes MCP server data via API token filtering
 
 ## CI/CD (Quality Gates & Pipeline)
 
-RULE: Local CI validation | WHEN: Before pushing | DO: `npm run ci:local` | ELSE: CI failures after push
-RULE: Auto-fix issues | WHEN: Lint/format errors | DO: `npm run fix:all` | ELSE: Manual fixes take longer
+RULE: Local CI validation | WHEN: Before pushing | DO: `bun run ci:local` | ELSE: CI failures after push
+RULE: Auto-fix issues | WHEN: Lint/format errors | DO: `bun run fix:all` | ELSE: Manual fixes take longer
 
 KEY COMMANDS:
 
@@ -221,7 +243,7 @@ CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P
 
 ## Documentation Search Workflow
 
-1. **Context7**: install & run via MCP (`npx -y @upstash/context7-mcp@latest`), then **introspect tools** and use the server's advertised names.
+1. **Context7**: install & run via MCP (`bunx -y @upstash/context7-mcp@latest`), then **introspect tools** and use the server's advertised names.
 2. **Official docs** (vendor sites).
 3. **Web search** last (only if 1–2 fail).
    **Do not invent tool IDs.**
@@ -266,12 +288,12 @@ COMMON PATTERNS:
 
 RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: Check `scripts/debug/README.md` | ELSE: Slower debugging cycles
 KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
-USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
+USAGE: `node scripts/debug/[script-name].js` (requires `bun run build` first)
 
 ## RELEASE PROCESS
 
 RULE: Use automated release | WHEN: Creating release | DO: Run `./scripts/release.sh` | ELSE: Manual error-prone process
-MANUAL FALLBACK: `npm version` → `npm run build` → `npm test` → commit → tag → `gh release create` → `npm publish`
+MANUAL FALLBACK: `npm version` → `bun run build` → `bun run test` → commit → tag → `gh release create` → `npm publish`
 
 ### CHANGELOG BEST PRACTICES (Keep a Changelog Standard)
 
@@ -286,7 +308,7 @@ RULE: Changelogs for humans | WHEN: Updating CHANGELOG.md | DO: Clear, user-focu
 ## MCP TOOL TESTING
 
 RULE: Validate MCP tools with real API calls | WHEN: MCP tool changes | DO: Use mcp-test-client for end-to-end validation | ELSE: Production failures
-SETUP: `npm install --save-dev mcp-test-client` (already installed)
+SETUP: `bun add --dev mcp-test-client` (already installed)
 USAGE: Create test in `test/mcp/` directory:
 
 ```typescript
