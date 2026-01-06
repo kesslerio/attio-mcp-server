@@ -55,9 +55,8 @@ export const searchByTimeframeConfig: UniversalToolConfig<
 
       if (relative_range) {
         // Import the timeframe utility to convert relative ranges
-        const { getRelativeTimeframeRange } = await import(
-          '@/utils/filters/timeframe-utils.js'
-        );
+        const { getRelativeTimeframeRange } =
+          await import('@/utils/filters/timeframe-utils.js');
 
         try {
           const range = getRelativeTimeframeRange(

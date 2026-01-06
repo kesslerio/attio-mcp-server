@@ -125,9 +125,8 @@ export const advancedSearchConfig: UniversalToolConfig<
 
       // Delegate to universal search handler defined elsewhere
       // We intentionally avoid importing the handler here to keep concerns separated
-      const { handleUniversalSearch } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalSearch } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       return await handleUniversalSearch({
         resource_type,
         query: sanitizedParams.query,

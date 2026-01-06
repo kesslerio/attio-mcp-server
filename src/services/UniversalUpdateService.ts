@@ -301,9 +301,8 @@ export class UniversalUpdateService {
     // Apply deal-specific validation for deals
     if (resource_type === UniversalResourceType.DEALS) {
       try {
-        const { applyDealDefaultsWithValidation } = await import(
-          '@/config/deal-defaults.js'
-        );
+        const { applyDealDefaultsWithValidation } =
+          await import('@/config/deal-defaults.js');
 
         const dealValidation = await applyDealDefaultsWithValidation(
           values as Record<string, unknown>,
@@ -349,12 +348,10 @@ export class UniversalUpdateService {
           values as Record<string, unknown>
         );
         const attioPayload = { values: mappedData };
-        const { UpdateValidation } = await import(
-          '@/services/update/UpdateValidation.js'
-        );
-        const { FieldPersistenceHandler } = await import(
-          '@/services/update/FieldPersistenceHandler.js'
-        );
+        const { UpdateValidation } =
+          await import('@/services/update/UpdateValidation.js');
+        const { FieldPersistenceHandler } =
+          await import('@/services/update/FieldPersistenceHandler.js');
         const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
           attioPayload.values
         );
@@ -455,9 +452,8 @@ export class UniversalUpdateService {
     }
 
     // Issue #984: Fetch metadata once using MetadataResolver
-    const { MetadataResolver } = await import(
-      '@/services/update/MetadataResolver.js'
-    );
+    const { MetadataResolver } =
+      await import('@/services/update/MetadataResolver.js');
     const { metadataMap, availableAttributes } =
       await MetadataResolver.fetchMetadata(resource_type, actualRecordData);
 
@@ -499,9 +495,8 @@ export class UniversalUpdateService {
     }
 
     // Normalize values (e.g., phone numbers to E.164)
-    const { normalizeValues } = await import(
-      '@/services/normalizers/AttributeAwareNormalizer.js'
-    );
+    const { normalizeValues } =
+      await import('@/services/normalizers/AttributeAwareNormalizer.js');
     attioPayload.values = await normalizeValues(
       resource_type,
       attioPayload.values,
@@ -509,9 +504,8 @@ export class UniversalUpdateService {
     );
 
     // Sanitize special characters while preserving intended content
-    const { UpdateValidation } = await import(
-      '@/services/update/UpdateValidation.js'
-    );
+    const { UpdateValidation } =
+      await import('@/services/update/UpdateValidation.js');
     const sanitizedData = UpdateValidation.sanitizeSpecialCharacters(
       attioPayload.values
     );
@@ -539,9 +533,8 @@ export class UniversalUpdateService {
     // FEATURE: Auto-transform values for Issue #980 UX improvements
     // Transforms: status titles → {status_id: uuid}, single values → arrays for multi-select
     try {
-      const { transformRecordValues, mayNeedTransformation } = await import(
-        '@/services/value-transformer/index.js'
-      );
+      const { transformRecordValues, mayNeedTransformation } =
+        await import('@/services/value-transformer/index.js');
 
       // Quick check to avoid unnecessary async work
       if (
@@ -601,9 +594,8 @@ export class UniversalUpdateService {
     const dataForVerification = { ...attioPayload.values };
 
     // Issue #984: Use UpdateOrchestrator for strategy dispatch
-    const { UpdateOrchestrator } = await import(
-      '@/services/update/UpdateOrchestrator.js'
-    );
+    const { UpdateOrchestrator } =
+      await import('@/services/update/UpdateOrchestrator.js');
 
     // Use centralized object slug extraction (fixes DEALS slug inconsistency)
     // MetadataResolver already imported at line 468
@@ -619,9 +611,8 @@ export class UniversalUpdateService {
       objectSlug,
     });
 
-    const { ResponseNormalizer } = await import(
-      '@/services/update/ResponseNormalizer.js'
-    );
+    const { ResponseNormalizer } =
+      await import('@/services/update/ResponseNormalizer.js');
     const normalizedRecord = ResponseNormalizer.normalizeResponseFormat(
       resource_type,
       updatedRecord
@@ -629,9 +620,8 @@ export class UniversalUpdateService {
 
     // Issue #984: Use FieldPersistenceHandler for verification
     if (!skipVerification) {
-      const { FieldPersistenceHandler } = await import(
-        '@/services/update/FieldPersistenceHandler.js'
-      );
+      const { FieldPersistenceHandler } =
+        await import('@/services/update/FieldPersistenceHandler.js');
       await FieldPersistenceHandler.verifyPersistence(
         resource_type,
         record_id,

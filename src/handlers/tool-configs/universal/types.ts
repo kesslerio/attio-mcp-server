@@ -380,6 +380,7 @@ export interface ResourceTypeHandler {
 
 /**
  * Universal tool result formatting interface
+ * Updated for Issue #1073 to use UniversalRecord (AttioRecord | AttioList)
  */
 export interface UniversalResultFormatter {
   formatSearch: (

@@ -54,9 +54,8 @@ export const searchByContentConfig: UniversalToolConfig<
       if (content_type === ContentSearchType.ACTIVITY) {
         // Support basic activity content for people via specialized handler mock
         if (resource_type === UniversalResourceType.PEOPLE) {
-          const { searchPeopleByActivity } = await import(
-            '@/objects/people/search.js'
-          );
+          const { searchPeopleByActivity } =
+            await import('@/objects/people/search.js');
           return await searchPeopleByActivity({
             dateRange: { preset: 'last_month' },
             interactionType: InteractionType.ANY,
