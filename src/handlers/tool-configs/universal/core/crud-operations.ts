@@ -84,9 +84,8 @@ export const createRecordConfig: UniversalToolConfig<
         params
       );
 
-      const { CrossResourceValidator } = await import(
-        '@/handlers/tool-configs/universal/schemas.js'
-      );
+      const { CrossResourceValidator } =
+        await import('@/handlers/tool-configs/universal/schemas.js');
       await CrossResourceValidator.validateRecordRelationships(
         sanitizedParams.resource_type,
         sanitizedParams.record_data
@@ -95,9 +94,8 @@ export const createRecordConfig: UniversalToolConfig<
       const result = await handleUniversalCreate(sanitizedParams);
       try {
         if (sanitizedParams.resource_type === 'tasks') {
-          const { logTaskDebug, inspectTaskRecordShape } = await import(
-            '../../../../utils/task-debug.js'
-          );
+          const { logTaskDebug, inspectTaskRecordShape } =
+            await import('../../../../utils/task-debug.js');
           logTaskDebug('mcp.create_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
@@ -168,9 +166,8 @@ export const updateRecordConfig: UniversalToolConfig<
         params
       );
 
-      const { CrossResourceValidator } = await import(
-        '@/handlers/tool-configs/universal/schemas.js'
-      );
+      const { CrossResourceValidator } =
+        await import('@/handlers/tool-configs/universal/schemas.js');
       await CrossResourceValidator.validateRecordRelationships(
         sanitizedParams.resource_type,
         sanitizedParams.record_data
@@ -179,9 +176,8 @@ export const updateRecordConfig: UniversalToolConfig<
       let result: UniversalRecord;
       if (sanitizedParams.resource_type === 'deals') {
         try {
-          const { UniversalUpdateService } = await import(
-            '../../../../services/UniversalUpdateService.js'
-          );
+          const { UniversalUpdateService } =
+            await import('../../../../services/UniversalUpdateService.js');
           const enhancedResult =
             await UniversalUpdateService.updateRecordWithValidation(
               sanitizedParams
@@ -206,9 +202,8 @@ export const updateRecordConfig: UniversalToolConfig<
 
       try {
         if (sanitizedParams.resource_type === 'tasks') {
-          const { logTaskDebug, inspectTaskRecordShape } = await import(
-            '../../../../utils/task-debug.js'
-          );
+          const { logTaskDebug, inspectTaskRecordShape } =
+            await import('../../../../utils/task-debug.js');
           logTaskDebug('mcp.update_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });

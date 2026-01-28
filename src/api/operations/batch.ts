@@ -509,9 +509,8 @@ async function handleUniversalResourceTypeBatchSearch(
     queries.map(async (query) => {
       try {
         // Dynamic import to avoid circular dependency
-        const { UniversalSearchService } = await import(
-          '../../services/UniversalSearchService.js'
-        );
+        const { UniversalSearchService } =
+          await import('../../services/UniversalSearchService.js');
         const searchResult = await UniversalSearchService.searchRecords({
           resource_type: resourceType,
           query,

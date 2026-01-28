@@ -355,9 +355,8 @@ export class UniversalCreateService {
       availableAttributes = undefined;
     } else {
       try {
-        const { UniversalMetadataService } = await import(
-          './UniversalMetadataService.js'
-        );
+        const { UniversalMetadataService } =
+          await import('./UniversalMetadataService.js');
         // For records, we need to extract the objectSlug for metadata discovery
         const options: { objectSlug?: string } = {};
         if (resource_type === UniversalResourceType.RECORDS) {
@@ -506,9 +505,8 @@ export class UniversalCreateService {
     // Transforms: status titles → {status_id: uuid}, single values → arrays for multi-select
     let transformedData = mappedData;
     try {
-      const { transformRecordValues, mayNeedTransformation } = await import(
-        './value-transformer/index.js'
-      );
+      const { transformRecordValues, mayNeedTransformation } =
+        await import('./value-transformer/index.js');
 
       // Quick check to avoid unnecessary async work
       if (mayNeedTransformation(mappedData, resource_type)) {
@@ -553,9 +551,8 @@ export class UniversalCreateService {
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES: {
-        const { CompanyCreateStrategy } = await import(
-          '@/services/create/strategies/CompanyCreateStrategy.js'
-        );
+        const { CompanyCreateStrategy } =
+          await import('@/services/create/strategies/CompanyCreateStrategy.js');
         return await new CompanyCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
@@ -563,9 +560,8 @@ export class UniversalCreateService {
       }
 
       case UniversalResourceType.LISTS: {
-        const { ListCreateStrategy } = await import(
-          '@/services/create/strategies/ListCreateStrategy.js'
-        );
+        const { ListCreateStrategy } =
+          await import('@/services/create/strategies/ListCreateStrategy.js');
         return await new ListCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
@@ -573,9 +569,8 @@ export class UniversalCreateService {
       }
 
       case UniversalResourceType.PEOPLE: {
-        const { PersonCreateStrategy } = await import(
-          '@/services/create/strategies/PersonCreateStrategy.js'
-        );
+        const { PersonCreateStrategy } =
+          await import('@/services/create/strategies/PersonCreateStrategy.js');
         return await new PersonCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
@@ -583,9 +578,8 @@ export class UniversalCreateService {
       }
 
       case UniversalResourceType.RECORDS: {
-        const { RecordCreateStrategy } = await import(
-          '@/services/create/strategies/RecordCreateStrategy.js'
-        );
+        const { RecordCreateStrategy } =
+          await import('@/services/create/strategies/RecordCreateStrategy.js');
         const context = { objectSlug: recordsObjectSlug } as Record<
           string,
           unknown
@@ -598,9 +592,8 @@ export class UniversalCreateService {
       }
 
       case UniversalResourceType.DEALS: {
-        const { DealCreateStrategy } = await import(
-          '@/services/create/strategies/DealCreateStrategy.js'
-        );
+        const { DealCreateStrategy } =
+          await import('@/services/create/strategies/DealCreateStrategy.js');
         return await new DealCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
@@ -608,9 +601,8 @@ export class UniversalCreateService {
       }
 
       case UniversalResourceType.TASKS: {
-        const { TaskCreateStrategy } = await import(
-          '@/services/create/strategies/TaskCreateStrategy.js'
-        );
+        const { TaskCreateStrategy } =
+          await import('@/services/create/strategies/TaskCreateStrategy.js');
         return await new TaskCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,
@@ -618,9 +610,8 @@ export class UniversalCreateService {
       }
 
       case UniversalResourceType.NOTES: {
-        const { NoteCreateStrategy } = await import(
-          '@/services/create/strategies/NoteCreateStrategy.js'
-        );
+        const { NoteCreateStrategy } =
+          await import('@/services/create/strategies/NoteCreateStrategy.js');
         return await new NoteCreateStrategy().create({
           resourceType: resource_type,
           values: transformedData,

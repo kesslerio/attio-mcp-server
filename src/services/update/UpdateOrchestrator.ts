@@ -48,9 +48,8 @@ export class UpdateOrchestrator {
 
     switch (resourceType) {
       case UniversalResourceType.COMPANIES: {
-        const { CompanyUpdateStrategy } = await import(
-          '@/services/update/strategies/CompanyUpdateStrategy.js'
-        );
+        const { CompanyUpdateStrategy } =
+          await import('@/services/update/strategies/CompanyUpdateStrategy.js');
         return new CompanyUpdateStrategy().update(
           recordId,
           sanitizedValues,
@@ -59,9 +58,8 @@ export class UpdateOrchestrator {
       }
 
       case UniversalResourceType.LISTS: {
-        const { ListUpdateStrategy } = await import(
-          '@/services/update/strategies/ListUpdateStrategy.js'
-        );
+        const { ListUpdateStrategy } =
+          await import('@/services/update/strategies/ListUpdateStrategy.js');
         return new ListUpdateStrategy().update(
           recordId,
           sanitizedValues,
@@ -70,9 +68,8 @@ export class UpdateOrchestrator {
       }
 
       case UniversalResourceType.PEOPLE: {
-        const { PersonUpdateStrategy } = await import(
-          '@/services/update/strategies/PersonUpdateStrategy.js'
-        );
+        const { PersonUpdateStrategy } =
+          await import('@/services/update/strategies/PersonUpdateStrategy.js');
         return new PersonUpdateStrategy().update(
           recordId,
           sanitizedValues,
@@ -82,9 +79,8 @@ export class UpdateOrchestrator {
 
       case UniversalResourceType.RECORDS:
       case UniversalResourceType.DEALS: {
-        const { RecordUpdateStrategy } = await import(
-          '@/services/update/strategies/RecordUpdateStrategy.js'
-        );
+        const { RecordUpdateStrategy } =
+          await import('@/services/update/strategies/RecordUpdateStrategy.js');
         return new RecordUpdateStrategy().update(
           recordId,
           sanitizedValues,
@@ -94,9 +90,8 @@ export class UpdateOrchestrator {
       }
 
       case UniversalResourceType.TASKS: {
-        const { TaskUpdateStrategy } = await import(
-          '@/services/update/strategies/TaskUpdateStrategy.js'
-        );
+        const { TaskUpdateStrategy } =
+          await import('@/services/update/strategies/TaskUpdateStrategy.js');
         return new TaskUpdateStrategy().update(
           recordId,
           sanitizedValues,

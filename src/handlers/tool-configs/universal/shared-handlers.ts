@@ -103,9 +103,8 @@ export async function handleUniversalCreateNote(
       format,
     });
 
-    const { unwrapAttio, normalizeNote } = await import(
-      '@/utils/attio-response.js'
-    );
+    const { unwrapAttio, normalizeNote } =
+      await import('@/utils/attio-response.js');
 
     const result = normalizeNote(unwrapAttio<JsonObject>(rawResult));
     debug(

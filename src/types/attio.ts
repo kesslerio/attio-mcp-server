@@ -395,6 +395,23 @@ export const isAttioList = (
 };
 
 /**
+ * Get the record ID regardless of record type (record_id for AttioRecord, list_id for AttioList)
+ *
+ * @param record - The UniversalRecordResult to extract ID from
+ * @returns The record_id or list_id as a string
+ */
+export function getRecordId(record: UniversalRecordResult): string {
+  if (isAttioList(record)) {
+    return record.id.list_id;
+  }
+  if (isAttioRecord(record)) {
+    return record.id.record_id;
+  }
+  // Fallback for ListRecordSummary
+  return (record as { id?: { record_id?: string } }).id?.record_id ?? '';
+}
+
+/**
  * List entry record type
  */
 export interface AttioListEntry {

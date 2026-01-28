@@ -45,6 +45,7 @@ export interface SearchStrategyParams {
 export interface ISearchStrategy {
   /**
    * Execute the search for this resource type
+   * Note: Return type will be updated to UniversalRecord[] in Issue #1073 PR 2
    */
   search(params: SearchStrategyParams): Promise<UniversalRecordResult[]>;
 
