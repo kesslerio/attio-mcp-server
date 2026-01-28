@@ -247,7 +247,7 @@ const toolValidators: Record<string, ToolValidator> = {
     const candidateParams = p as Record<string, unknown>;
     if (!p.record_data) {
       if (candidateParams.data !== undefined) {
-        p.record_data = candidateParams.data as Record<string, unknown>;
+        p.record_data = candidateParams.data as SanitizedValue;
         delete candidateParams.data;
       } else {
         const ignoredKeys = new Set([
@@ -263,7 +263,7 @@ const toolValidators: Record<string, ToolValidator> = {
           }
         }
         if (Object.keys(recordData).length > 0) {
-          p.record_data = recordData;
+          p.record_data = recordData as SanitizedObject;
           for (const key of Object.keys(recordData)) {
             delete candidateParams[key];
           }
