@@ -55,7 +55,7 @@
 
 - ✅ Use title: `stage: "Demo Scheduling"`
 - ✅ Already converts to: `{ status_id: "uuid" }`
-- Titles are case-insensitive and support partial matching
+- Titles are case-insensitive and support unambiguous partial matching (ambiguous inputs error)
 
 **Select fields** (type: `select`) - Accepts titles OR UUIDs:
 

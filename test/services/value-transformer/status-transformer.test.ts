@@ -255,6 +255,45 @@ describe('status-transformer', () => {
       expect(result.transformedValue).toEqual([{ status: 'status-uuid-1' }]);
     });
 
+    it('should match unambiguous partial status titles', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'status-uuid-1', title: 'Demo Scheduling', is_archived: false },
+          { id: 'status-uuid-2', title: 'Proposal Sent', is_archived: false },
+        ],
+        attributeType: 'status',
+      });
+
+      const result = await transformStatusValue(
+        'Scheduling',
+        'stage',
+        mockContext,
+        statusAttributeMeta
+      );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual([{ status: 'status-uuid-1' }]);
+    });
+
+    it('should throw on ambiguous partial status titles', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'status-uuid-1', title: 'Demo Scheduling', is_archived: false },
+          { id: 'status-uuid-2', title: 'Demo Completed', is_archived: false },
+          { id: 'status-uuid-3', title: 'Qualification', is_archived: false },
+        ],
+        attributeType: 'status',
+      });
+
+      await expect(
+        transformStatusValue('Demo', 'stage', mockContext, statusAttributeMeta)
+      ).rejects.toThrow(/Ambiguous status value/);
+    });
+
     it('should throw error for invalid status value with valid options', async () => {
       const { AttributeOptionsService } =
         await import('@/services/metadata/index.js');

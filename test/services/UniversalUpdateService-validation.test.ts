@@ -102,7 +102,7 @@ beforeEach(() => {
 describe('UniversalUpdateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.SKIP_FIELD_VERIFICATION = 'true';
+    process.env.ENABLE_FIELD_VERIFICATION = 'false';
     // Default to using mock data for most tests (offline mode)
     vi.mocked(shouldUseMockData).mockReturnValue(true);
     vi.mocked(validateFields).mockReturnValue({
