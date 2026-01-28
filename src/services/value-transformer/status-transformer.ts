@@ -228,7 +228,7 @@ function isStatusFormat(value: unknown): boolean {
 
 function hasStringKey(
   value: unknown,
-  key: 'status' | 'status_id'
+  key: 'status' | 'status_id' | 'title'
 ): value is Record<string, unknown> & { [K in typeof key]: string } {
   return (
     typeof value === 'object' &&
@@ -245,6 +245,14 @@ function normalizeIncomingStatusValue(value: unknown): {
 } {
   // Already-correct Attio form: [{ status: "..." }]
   if (isStatusFormat(value)) {
+    const first = Array.isArray(value) ? value[0] : undefined;
+    const statusValue =
+      first && typeof first === 'object' && !Array.isArray(first)
+        ? (first as Record<string, unknown>).status
+        : undefined;
+    if (typeof statusValue === 'string' && !isValidUUID(statusValue)) {
+      return { normalized: value, extractedText: statusValue };
+    }
     return { normalized: value };
   }
 
@@ -259,17 +267,37 @@ function normalizeIncomingStatusValue(value: unknown): {
 
   // Handle single object forms (common mistakes): { status: "..." } / { status_id: "..." }
   if (hasStringKey(value, 'status')) {
+    const extractedText = isValidUUID(value.status) ? undefined : value.status;
     return {
       normalized: [{ status: value.status }],
-      extractedText: value.status,
+      extractedText,
     };
   }
 
   if (hasStringKey(value, 'status_id')) {
     return {
       normalized: [{ status: value.status_id }],
-      extractedText: value.status_id,
     };
+  }
+
+  if (hasStringKey(value, 'title')) {
+    return {
+      normalized: [{ status: value.title }],
+      extractedText: value.title,
+    };
+  }
+
+  if (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    typeof value[0] === 'object' &&
+    value[0] !== null &&
+    !Array.isArray(value[0]) &&
+    'title' in (value[0] as Record<string, unknown>) &&
+    typeof (value[0] as Record<string, unknown>).title === 'string'
+  ) {
+    const title = (value[0] as Record<string, unknown>).title as string;
+    return { normalized: [{ status: title }], extractedText: title };
   }
 
   // Handle array of string values: ["Demo Scheduling"] → "Demo Scheduling"
@@ -312,7 +340,7 @@ export async function transformStatusValue(
   const normalizedValue = normalizedIncoming.normalized;
 
   // Skip if already in correct Attio format after normalization
-  if (isStatusFormat(normalizedValue)) {
+  if (isStatusFormat(normalizedValue) && !normalizedIncoming.extractedText) {
     return {
       transformed: normalizedValue !== value,
       originalValue: value,
