@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-01-29] - Daily Update
+
+### Fixed
+
+- `update_record` now accepts legacy `data` payloads, wraps top-level field updates into `record_data`, parses JSON string updates, and normalizes status/title inputs for stage updates (#1099)
+
+### Changed
+
+- `update_record` input normalization now uses immutable transformations to prevent shared state mutations (#1100)
+
 ## [1.4.1] - 2026-01-28
 
 ### Added
