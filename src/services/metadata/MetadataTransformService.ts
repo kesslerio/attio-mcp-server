@@ -4,9 +4,7 @@ import type { MetadataTransformService } from './types.js';
 
 const LOGGER_SCOPE = 'MetadataTransformService';
 
-export class DefaultMetadataTransformService
-  implements MetadataTransformService
-{
+export class DefaultMetadataTransformService implements MetadataTransformService {
   parseAttributesResponse(data: unknown): unknown[] {
     if (Array.isArray(data)) return data;
 

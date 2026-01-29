@@ -20,9 +20,8 @@ vi.mock('@/utils/logger.js');
 // Import mocked modules
 const { getObjectAttributeMetadata } = await import('@/api/attribute-types.js');
 const { getLazyAttioClient } = await import('@/api/lazy-client.js');
-const { AttributeOptionsService } = await import(
-  '@/services/metadata/AttributeOptionsService.js'
-);
+const { AttributeOptionsService } =
+  await import('@/services/metadata/AttributeOptionsService.js');
 
 // Helper functions for mocking getLazyAttioClient
 const mockApiError = () =>

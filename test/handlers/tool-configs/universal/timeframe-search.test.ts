@@ -126,9 +126,8 @@ describe('Timeframe Search Integration', () => {
   describe('API Path Structure Validation', () => {
     it('should build correct API path structure for timeframe queries', async () => {
       // Import the createTimeframeQuery function to test directly
-      const { createTimeframeQuery } = await import(
-        '../../../../src/utils/filters/builders/query-api.js'
-      );
+      const { createTimeframeQuery } =
+        await import('../../../../src/utils/filters/builders/query-api.js');
 
       // Test companies path structure
       const companiesConfig = {

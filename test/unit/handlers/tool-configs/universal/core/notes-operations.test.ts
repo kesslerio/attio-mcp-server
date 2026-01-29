@@ -38,15 +38,12 @@ vi.mock('@/utils/validation/uuid-validation.js', () => ({
   isValidUUID: mockIsValidUUID,
 }));
 
-const { createNoteConfig, listNotesConfig } = await import(
-  '@/handlers/tool-configs/universal/core/notes-operations.js'
-);
-const { extractNoteFields } = await import(
-  '@/handlers/tool-configs/universal/core/utils/note-formatters.js'
-);
-const { validateUniversalToolParams } = await import(
-  '@/handlers/tool-configs/universal/schemas.js'
-);
+const { createNoteConfig, listNotesConfig } =
+  await import('@/handlers/tool-configs/universal/core/notes-operations.js');
+const { extractNoteFields } =
+  await import('@/handlers/tool-configs/universal/core/utils/note-formatters.js');
+const { validateUniversalToolParams } =
+  await import('@/handlers/tool-configs/universal/schemas.js');
 
 describe('extractNoteFields', () => {
   beforeEach(() => {

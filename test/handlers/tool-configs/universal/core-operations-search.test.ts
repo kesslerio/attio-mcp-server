@@ -38,9 +38,8 @@ describe('Universal Core Operations Search Tests', () => {
         },
       ];
 
-      const { handleUniversalSearch } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalSearch } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockResolvedValue(mockResults);
 
       const params: UniversalSearchParams = {
@@ -64,9 +63,8 @@ describe('Universal Core Operations Search Tests', () => {
         },
       ];
 
-      const { handleUniversalSearch } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalSearch } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockResolvedValue(mockResults);
 
       const params: UniversalSearchParams = {
@@ -82,9 +80,8 @@ describe('Universal Core Operations Search Tests', () => {
 
     it('should handle search errors properly', async () => {
       const mockError = new Error('API error');
-      const { handleUniversalSearch } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalSearch } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockRejectedValue(mockError);
 
       const params: UniversalSearchParams = {
@@ -191,9 +188,8 @@ describe('Universal Core Operations Search Tests', () => {
         },
       };
 
-      const { handleUniversalGetDetails } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalGetDetails } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord as any);
 
       const params: UniversalRecordDetailsParams = {
@@ -216,9 +212,8 @@ describe('Universal Core Operations Search Tests', () => {
         },
       };
 
-      const { handleUniversalGetDetails } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalGetDetails } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       // Cast to any to align with AttioRecord typing used by handler
       vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord as any);
 
@@ -242,9 +237,8 @@ describe('Universal Core Operations Search Tests', () => {
         },
       };
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getRecordDetailsConfig.formatResult as any)(
@@ -261,9 +255,8 @@ describe('Universal Core Operations Search Tests', () => {
 
   describe('Cross-resource type validation', () => {
     it('should handle all resource types for search', async () => {
-      const { handleUniversalSearch } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalSearch } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockResolvedValue([]);
 
       const resourceTypes = [
@@ -294,9 +287,8 @@ describe('Universal Core Operations Search Tests', () => {
         handleUniversalCreate,
         handleUniversalUpdate,
         handleUniversalDelete,
-      } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
 
       vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as any);
       vi.mocked(handleUniversalCreate).mockResolvedValue({} as any);

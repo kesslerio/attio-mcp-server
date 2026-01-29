@@ -50,9 +50,8 @@ export class IntegrationTestSetup {
       );
     }
 
-    const { initializeAttioClient } = await import(
-      '../../../../../src/api/attio-client.js'
-    );
+    const { initializeAttioClient } =
+      await import('../../../../../src/api/attio-client.js');
 
     console.log('Initializing API client for integration tests...');
     initializeAttioClient(process.env.ATTIO_API_KEY);
@@ -75,9 +74,7 @@ export class IntegrationTestSetup {
   }> {
     try {
       const { coreOperationsToolConfigs, advancedOperationsToolConfigs } =
-        await import(
-          '../../../../../src/handlers/tool-configs/universal/index.js'
-        );
+        await import('../../../../../src/handlers/tool-configs/universal/index.js');
 
       const coreTools = Object.keys(coreOperationsToolConfigs || {});
       const advancedTools = Object.keys(advancedOperationsToolConfigs || {});

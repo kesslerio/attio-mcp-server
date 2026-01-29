@@ -32,9 +32,8 @@ const enhanceSelectStatusError = async (
       );
       if (selectErr?.field) {
         try {
-          const { AttributeOptionsService } = await import(
-            '@/services/metadata/index.js'
-          );
+          const { AttributeOptionsService } =
+            await import('@/services/metadata/index.js');
           const { options, attributeType } =
             await AttributeOptionsService.getOptions(
               resourceType,
@@ -90,9 +89,8 @@ to see valid options, then retry.`;
       (Array.isArray(fieldValue) && fieldValue.includes(invalidValue))
     ) {
       try {
-        const { AttributeOptionsService } = await import(
-          '@/services/metadata/index.js'
-        );
+        const { AttributeOptionsService } =
+          await import('@/services/metadata/index.js');
         const { options, attributeType } =
           await AttributeOptionsService.getOptions(resourceType, fieldName);
         const validList = options

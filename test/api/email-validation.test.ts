@@ -66,9 +66,8 @@ describe('Email Validation', () => {
       ];
 
       // Mock searchPeopleByEmails to return no duplicates
-      const { searchPeopleByEmails } = await import(
-        '../../src/objects/people-write.js'
-      );
+      const { searchPeopleByEmails } =
+        await import('../../src/objects/people-write.js');
       vi.mocked(searchPeopleByEmails).mockResolvedValue(
         validEmails.map((email) => ({ email, exists: false }))
       );
@@ -95,9 +94,8 @@ describe('Email Validation', () => {
     });
 
     it('should handle email addresses as array properly', async () => {
-      const { searchPeopleByEmails } = await import(
-        '../../src/objects/people-write.js'
-      );
+      const { searchPeopleByEmails } =
+        await import('../../src/objects/people-write.js');
       vi.mocked(searchPeopleByEmails).mockResolvedValue([
         { email: 'valid1@example.com', exists: false },
         { email: 'valid2@example.com', exists: false },
@@ -114,9 +112,8 @@ describe('Email Validation', () => {
     });
 
     it('should convert single email string to array', async () => {
-      const { searchPeopleByEmails } = await import(
-        '../../src/objects/people-write.js'
-      );
+      const { searchPeopleByEmails } =
+        await import('../../src/objects/people-write.js');
       vi.mocked(searchPeopleByEmails).mockResolvedValue([
         { email: 'valid@example.com', exists: false },
       ]);

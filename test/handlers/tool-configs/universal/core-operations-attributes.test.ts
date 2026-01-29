@@ -39,9 +39,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         { name: 'industry', type: 'select', required: false },
       ];
 
-      const { handleUniversalGetAttributes } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalGetAttributes } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalGetAttributes).mockResolvedValue(mockAttributes);
 
       const params: UniversalAttributesParams = {
@@ -62,9 +61,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         { name: 'website', type: 'url' },
       ];
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getAttributesConfig.formatResult as any)(
@@ -82,9 +80,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         website: 'https://test.com',
       };
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getAttributesConfig.formatResult as any)(
@@ -104,9 +101,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         { name: 'website', type: 'url', required: false },
       ];
 
-      const { handleUniversalDiscoverAttributes } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue(
         mockSchema as any
       );
@@ -127,9 +123,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         { name: 'website', type: 'url', required: false },
       ];
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (discoverAttributesConfig.formatResult as any)(
@@ -152,9 +147,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         },
       };
 
-      const { handleUniversalGetDetailedInfo } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalGetDetailedInfo } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalGetDetailedInfo).mockResolvedValue(mockInfo);
 
       const params: UniversalDetailedInfoParams = {
@@ -179,9 +173,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         },
       };
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getDetailedInfoConfig.formatResult as any)(
@@ -203,9 +196,8 @@ describe('Universal Core Operations Attributes Tests', () => {
         email: 'info@test.com',
       };
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getDetailedInfoConfig.formatResult as any)(
@@ -328,9 +320,8 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         };
 
-        const { getSingularResourceType } = await import(
-          '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-        );
+        const { getSingularResourceType } =
+          await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
         const formatted = (getRecordDetailsConfig.formatResult as any)(
@@ -351,9 +342,8 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         };
 
-        const { getSingularResourceType } = await import(
-          '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-        );
+        const { getSingularResourceType } =
+          await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
         const formatted = (getRecordDetailsConfig.formatResult as any)(
@@ -374,9 +364,8 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         };
 
-        const { getSingularResourceType } = await import(
-          '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-        );
+        const { getSingularResourceType } =
+          await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
         vi.mocked(getSingularResourceType).mockReturnValue('record');
 
         const formatted = (getRecordDetailsConfig.formatResult as any)(

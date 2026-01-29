@@ -92,9 +92,8 @@ const enhanceAttributeNotFoundError = async (
 
   try {
     // Fetch valid attributes and find similar ones
-    const { handleUniversalDiscoverAttributes } = await import(
-      '../../shared-handlers.js'
-    );
+    const { handleUniversalDiscoverAttributes } =
+      await import('../../shared-handlers.js');
     const schema = await handleUniversalDiscoverAttributes(
       resourceType as UniversalResourceType
     );

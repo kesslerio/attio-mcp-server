@@ -4,7 +4,6 @@
 [![npm version](https://badge.fury.io/js/attio-mcp.svg)](https://badge.fury.io/js/attio-mcp)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
 [![GitHub Release](https://img.shields.io/github/v/release/kesslerio/attio-mcp-server)](https://github.com/kesslerio/attio-mcp-server/releases)
-[![smithery badge](https://smithery.ai/badge/@kesslerio/attio-mcp-server)](https://smithery.ai/server/@kesslerio/attio-mcp-server)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kesslerio/attio-mcp-server)
 
 A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.com/), providing **complete CRM surface coverage**. This server enables AI assistants like Claude and ChatGPT to interact directly with your entire Attio workspace through natural language—manage Deals, Tasks, Lists, People, Companies, Records, and Notes without falling back to raw API calls.
@@ -17,14 +16,16 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 
 > "Find all AI companies with 50+ employees that we haven't contacted in 30 days and add them to our Q1 outreach list"
 
-## 🚀 **NEW: ChatGPT Developer Mode Integration**
+## 🚀 **ChatGPT Developer Mode Integration**
 
-**v1.0.0 introduces full ChatGPT compatibility!** ChatGPT Pro/Plus users can now access the entire Attio toolset through natural language via [Smithery marketplace](https://smithery.ai/server/@kesslerio/attio-mcp-server).
+> **⚠️ Smithery Temporarily Unavailable**: Smithery has changed their deployment model to require external hosting. We're working on Cloudflare Worker hosting for ChatGPT users. In the meantime, use [Tier 4 (Cloudflare Worker)](#tier-4-cloudflare-worker-remote-deployment) for ChatGPT/remote access.
+
+ChatGPT Pro/Plus users can access the Attio toolset through natural language using a self-hosted Cloudflare Worker:
 
 - **🔐 Built-in Approval Flows**: MCP safety annotations auto-approve read operations, request approval for writes
-- **🌐 OAuth Integration**: Seamless authentication via `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
+- **🌐 OAuth Integration**: Self-hosted OAuth via Cloudflare Worker deployment
 - **💬 Natural Language CRM**: Manage your entire Attio workspace through conversational AI
-- **📖 Setup Guide**: See [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for complete configuration
+- **📖 Setup Guide**: See [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) and [Cloudflare Worker Guide](./examples/cloudflare-mcp-server/README.md)
 
 ## ✨ Core Features & Implementation Status
 
@@ -229,61 +230,23 @@ Build powerful CRM queries with multi-criteria AND/OR filtering. See the [Advanc
 
 ### Client Compatibility
 
-| Client             | Smithery (Tier 1) | Local Install (Tier 2-3) | Cloudflare Worker (Tier 4) |
-| ------------------ | ----------------- | ------------------------ | -------------------------- |
-| Claude Desktop     | ✅ Recommended    | ✅ Full support          | ✅ Full support            |
-| Claude Web         | ✅ Recommended    | N/A                      | ✅ Full support            |
-| ChatGPT (Pro/Plus) | ✅ Required       | N/A                      | ✅ Full support            |
-| Cursor IDE         | ✅ Supported      | ✅ Full support          | ✅ Full support            |
-| Claude Code (CLI)  | Partial           | ✅ Recommended           | Partial                    |
+| Client             | Local Install (Tier 1-2) | Cloudflare Worker (Tier 3) |
+| ------------------ | ------------------------ | -------------------------- |
+| Claude Desktop     | ✅ Recommended           | ✅ Full support            |
+| Claude Web         | N/A                      | ✅ Full support            |
+| ChatGPT (Pro/Plus) | N/A                      | ✅ Recommended             |
+| Cursor IDE         | ✅ Full support          | ✅ Full support            |
+| Claude Code (CLI)  | ✅ Recommended           | Partial                    |
 
 **Choose your installation method:**
 
-- **Most users**: Use [Tier 1 (Smithery)](#tier-1-smithery-one-click---recommended) - zero local config required
-- **Local control**: Use [Tier 2 (Shell Installers)](#tier-2-shell-installers) - one command, automatic setup
-- **Power users**: Use [Tier 3 (Manual)](#tier-3-manual-configuration) - full control over configuration
-- **Teams/Enterprise**: Use [Tier 4 (Cloudflare Worker)](#tier-4-cloudflare-worker-remote-deployment) - self-hosted, multi-user OAuth
+- **Most users**: Use [Tier 1 (Shell Installers)](#tier-1-shell-installers) - one command, automatic setup
+- **Power users**: Use [Tier 2 (Manual)](#tier-2-manual-configuration) - full control over configuration
+- **ChatGPT/Teams/Enterprise**: Use [Tier 3 (Cloudflare Worker)](#tier-3-cloudflare-worker-remote-deployment) - self-hosted, multi-user OAuth
 
 ---
 
-### Tier 1: Smithery (One-Click) - Recommended
-
-> **Best for**: Claude Desktop, Claude Web, ChatGPT, Cursor - zero local installation required.
-
-[Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server) handles OAuth, hosting, and configuration automatically.
-
-#### Claude Desktop via Smithery
-
-```bash
-npx -y @smithery/cli install @kesslerio/attio-mcp-server --client claude
-```
-
-#### Cursor IDE via Smithery
-
-```bash
-npx -y @smithery/cli install @kesslerio/attio-mcp-server --client cursor
-```
-
-#### ChatGPT Developer Mode
-
-ChatGPT requires Smithery for OAuth authentication. Direct server URLs are not supported.
-
-1. Enable Developer Mode: **Settings → Connectors → Advanced → Developer Mode**
-2. Add MCP Server URL: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
-3. Complete OAuth authorization when prompted
-
-See [ChatGPT Developer Mode Guide](./docs/chatgpt-developer-mode.md) for detailed setup instructions.
-
-#### Claude Web
-
-1. Go to [Claude.ai](https://claude.ai) Settings → Connectors
-2. Add new MCP connector
-3. Select "Attio CRM" from Smithery marketplace
-4. Authorize with your Attio account
-
----
-
-### Tier 2: Shell Installers
+### Tier 1: Shell Installers
 
 > **Best for**: Developers who prefer local installations with automatic configuration.
 
@@ -317,7 +280,7 @@ These scripts will:
 
 ---
 
-### Tier 3: Manual Configuration
+### Tier 2: Manual Configuration
 
 > **Best for**: Power users who prefer full control or use unsupported clients.
 
@@ -448,7 +411,7 @@ npm install attio-mcp
 
 ---
 
-### Tier 4: Cloudflare Worker (Remote Deployment)
+### Tier 3: Cloudflare Worker (Remote Deployment)
 
 > **Best for**: Teams needing centralized OAuth, multi-user access, mobile access, or running MCP without local installation.
 
@@ -460,18 +423,18 @@ Deploy your own Attio MCP server on Cloudflare Workers with full OAuth 2.1 suppo
 - Claude mobile app (iOS/Android)
 - Any browser on any device
 
-#### Smithery vs. Cloudflare Worker
+#### Cloudflare Worker Features
 
-| Feature           | Smithery  | Cloudflare Worker |
-| ----------------- | --------- | ----------------- |
-| Setup complexity  | Very Low  | Medium            |
-| OAuth built-in    | ✅        | ✅                |
-| Mobile app access | ✅        | ✅                |
-| Multi-user access | ❌        | ✅                |
-| Custom domain     | ❌        | ✅                |
-| Self-hosted       | ❌        | ✅                |
-| Team deployments  | Limited   | ✅ Full           |
-| Cost              | Free tier | Free tier         |
+| Feature           | Cloudflare Worker |
+| ----------------- | ----------------- |
+| Setup complexity  | Medium            |
+| OAuth built-in    | ✅                |
+| Mobile app access | ✅                |
+| Multi-user access | ✅                |
+| Custom domain     | ✅                |
+| Self-hosted       | ✅                |
+| Team deployments  | ✅ Full           |
+| Cost              | Free tier         |
 
 #### Quick Deploy
 

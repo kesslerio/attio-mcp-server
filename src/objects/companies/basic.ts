@@ -302,9 +302,8 @@ export async function createCompany(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            const { createScopedLogger } = await import(
-              '../../utils/logger.js'
-            );
+            const { createScopedLogger } =
+              await import('../../utils/logger.js');
             createScopedLogger('companies.basic', 'createCompany').debug(
               'Query fallback response',
               {
@@ -328,9 +327,8 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              const { createScopedLogger } = await import(
-                '../../utils/logger.js'
-              );
+              const { createScopedLogger } =
+                await import('../../utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').info(
                 'Found existing company via query fallback',
                 { foundCompany }
@@ -367,9 +365,8 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              const { createScopedLogger } = await import(
-                '../../utils/logger.js'
-              );
+              const { createScopedLogger } =
+                await import('../../utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').debug(
                 'Created mock company result for testing',
                 { result }
@@ -381,9 +378,8 @@ export async function createCompany(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            const { createScopedLogger } = await import(
-              '../../utils/logger.js'
-            );
+            const { createScopedLogger } =
+              await import('../../utils/logger.js');
             createScopedLogger('companies.basic', 'createCompany').error(
               'Query fallback failed during company creation',
               queryError instanceof Error ? queryError : undefined
@@ -418,9 +414,8 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              const { createScopedLogger } = await import(
-                '../../utils/logger.js'
-              );
+              const { createScopedLogger } =
+                await import('../../utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').warn(
                 'Created emergency mock company result after query failure',
                 { result }

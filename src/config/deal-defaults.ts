@@ -570,9 +570,8 @@ export async function validateDealStage(
     // WARNING: This environment variable changes runtime behavior
     // Production Impact: Previously working deals may start failing
     if (process.env.STRICT_DEAL_STAGE_VALIDATION === 'true') {
-      const { UniversalValidationError, ErrorType } = await import(
-        '../handlers/tool-configs/universal/schemas.js'
-      );
+      const { UniversalValidationError, ErrorType } =
+        await import('../handlers/tool-configs/universal/schemas.js');
       throw new UniversalValidationError(
         `Deal stage "${stage}" not found. Available stages: ${availableStagesText}`,
         ErrorType.USER_ERROR,

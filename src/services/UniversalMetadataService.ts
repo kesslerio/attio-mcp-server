@@ -213,9 +213,8 @@ class UniversalMetadataFacade {
           options
         );
 
-        const { FIELD_MAPPINGS } = await import(
-          '../handlers/tool-configs/universal/field-mapper.js'
-        );
+        const { FIELD_MAPPINGS } =
+          await import('../handlers/tool-configs/universal/field-mapper.js');
         const dealsMapping = FIELD_MAPPINGS[UniversalResourceType.DEALS];
 
         if (dealsMapping?.fieldMappings) {

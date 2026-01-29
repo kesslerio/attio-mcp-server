@@ -142,9 +142,8 @@ describe('select-transformer', () => {
     });
 
     it('should wrap UUID strings directly in array without API lookup', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
 
       const uuid = '7fc992e0-d89b-40bd-b158-8ab25ea86904';
@@ -163,9 +162,8 @@ describe('select-transformer', () => {
     });
 
     it('should transform select title to array with title (Issue #1045)', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'opt-uuid-1', title: 'Technology', is_archived: false },
@@ -188,9 +186,8 @@ describe('select-transformer', () => {
     });
 
     it('should match titles case-insensitively', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           {
@@ -214,9 +211,8 @@ describe('select-transformer', () => {
     });
 
     it('should support partial matching', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           {
@@ -240,9 +236,8 @@ describe('select-transformer', () => {
     });
 
     it('should handle whitespace in input', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'opt-uuid-1', title: 'Technology', is_archived: false },
@@ -262,9 +257,8 @@ describe('select-transformer', () => {
     });
 
     it('should throw error for invalid select value with valid options', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'opt-uuid-1', title: 'Technology', is_archived: false },
@@ -284,9 +278,8 @@ describe('select-transformer', () => {
     });
 
     it('should include valid options in error message', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'opt-uuid-1', title: 'Technology', is_archived: false },
@@ -313,9 +306,8 @@ describe('select-transformer', () => {
     });
 
     it('should cache select options to avoid repeated API calls', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
       mockGetOptions.mockResolvedValue({
         options: [{ id: 'opt-uuid-1', title: 'Tech', is_archived: false }],
@@ -343,9 +335,8 @@ describe('select-transformer', () => {
     });
 
     it('should skip transformation if no options available', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [],
         attributeType: 'select',
@@ -363,9 +354,8 @@ describe('select-transformer', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockRejectedValue(
         new Error('API error')
       );
@@ -383,9 +373,8 @@ describe('select-transformer', () => {
     });
 
     it('should prefer exact match over partial match', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'opt-uuid-1', title: 'Tech Company', is_archived: false },
@@ -408,9 +397,8 @@ describe('select-transformer', () => {
 
   describe('getValidSelectOptions', () => {
     it('should return valid non-archived option titles', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'opt-uuid-1', title: 'Technology', is_archived: false },
@@ -427,9 +415,8 @@ describe('select-transformer', () => {
     });
 
     it('should return empty array if no options available', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [],
         attributeType: 'select',
@@ -441,9 +428,8 @@ describe('select-transformer', () => {
     });
 
     it('should use cache for repeated calls', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
       mockGetOptions.mockResolvedValue({
         options: [{ id: 'opt-uuid-1', title: 'Tech', is_archived: false }],
@@ -462,9 +448,8 @@ describe('select-transformer', () => {
 
   describe('clearSelectCache', () => {
     it('should clear the cache', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
       mockGetOptions.mockResolvedValue({
         options: [{ id: 'opt-uuid-1', title: 'Tech', is_archived: false }],
@@ -496,9 +481,8 @@ describe('select-transformer', () => {
 
   describe('Cache TTL and Cleanup', () => {
     it('should refetch options after cache TTL expires', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
 
       // Mock current time control
@@ -552,9 +536,8 @@ describe('select-transformer', () => {
     });
 
     it('should eventually clean up expired cache entries via probabilistic cleanup', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
 
       // Mock Date.now for timestamp control
@@ -611,9 +594,8 @@ describe('select-transformer', () => {
 
   describe('Concurrent Operations', () => {
     it('documents potential duplicate API calls during concurrent access (no mutex)', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
 
       // Track API call count

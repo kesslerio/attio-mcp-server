@@ -525,9 +525,8 @@ export async function updateRecord<T extends AttioRecord>(
 
             // Store the updated mock result in shared state so getCompanyDetails() can find it
             try {
-              const { setMockCompany } = await import(
-                '../../utils/mock-state.js'
-              );
+              const { setMockCompany } =
+                await import('../../utils/mock-state.js');
               setMockCompany(params.recordId, mockResult);
 
               if (

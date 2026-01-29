@@ -164,9 +164,8 @@ export async function createObjectRecord<T extends AttioRecord>(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            const { createScopedLogger } = await import(
-              '../../utils/logger.js'
-            );
+            const { createScopedLogger } =
+              await import('../../utils/logger.js');
             createScopedLogger('objects.records', 'createObjectRecord').info(
               'Found existing company via query fallback',
               { foundRecord }

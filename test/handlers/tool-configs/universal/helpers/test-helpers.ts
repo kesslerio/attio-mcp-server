@@ -404,9 +404,8 @@ export const integrationHelpers = {
    * Setup API client for integration tests
    */
   setupApiClient: async (apiKey?: string) => {
-    const { initializeAttioClient } = await import(
-      '../../../../../src/api/attio-client.js'
-    );
+    const { initializeAttioClient } =
+      await import('../../../../../src/api/attio-client.js');
 
     const key = apiKey || process.env.ATTIO_API_KEY;
     if (!key) {

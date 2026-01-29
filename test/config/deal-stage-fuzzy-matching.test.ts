@@ -25,9 +25,8 @@ describe('Deal Stage Fuzzy Matching', () => {
   describe('getStageSuggestions with Levenshtein distance', () => {
     // We'll test the fuzzy matching by importing and calling applyDealDefaultsWithValidation
     it('should provide suggestions for invalid stage names', async () => {
-      const { makeAttioRequest } = await import(
-        '../../src/api/operations/index.js'
-      );
+      const { makeAttioRequest } =
+        await import('../../src/api/operations/index.js');
 
       // Mock the API response for getting deal stages
       vi.mocked(makeAttioRequest).mockResolvedValue({
@@ -39,9 +38,8 @@ describe('Deal Stage Fuzzy Matching', () => {
         ],
       });
 
-      const { applyDealDefaultsWithValidation } = await import(
-        '../../src/config/deal-defaults.js'
-      );
+      const { applyDealDefaultsWithValidation } =
+        await import('../../src/config/deal-defaults.js');
 
       // Test with an invalid stage
       const result = await applyDealDefaultsWithValidation(
@@ -60,9 +58,8 @@ describe('Deal Stage Fuzzy Matching', () => {
     });
 
     it('should provide warnings for invalid stage names', async () => {
-      const { makeAttioRequest } = await import(
-        '../../src/api/operations/index.js'
-      );
+      const { makeAttioRequest } =
+        await import('../../src/api/operations/index.js');
 
       // Mock the API response for getting deal stages
       vi.mocked(makeAttioRequest).mockResolvedValue({
@@ -73,9 +70,8 @@ describe('Deal Stage Fuzzy Matching', () => {
         ],
       });
 
-      const { applyDealDefaultsWithValidation } = await import(
-        '../../src/config/deal-defaults.js'
-      );
+      const { applyDealDefaultsWithValidation } =
+        await import('../../src/config/deal-defaults.js');
 
       // Test with a completely different string
       const result = await applyDealDefaultsWithValidation(
@@ -88,18 +84,16 @@ describe('Deal Stage Fuzzy Matching', () => {
     });
 
     it('should handle empty stage list gracefully', async () => {
-      const { makeAttioRequest } = await import(
-        '../../src/api/operations/index.js'
-      );
+      const { makeAttioRequest } =
+        await import('../../src/api/operations/index.js');
 
       // Mock empty API response
       vi.mocked(makeAttioRequest).mockResolvedValue({
         data: [],
       });
 
-      const { applyDealDefaultsWithValidation } = await import(
-        '../../src/config/deal-defaults.js'
-      );
+      const { applyDealDefaultsWithValidation } =
+        await import('../../src/config/deal-defaults.js');
 
       const result = await applyDealDefaultsWithValidation(
         { name: 'Test Deal', stage: 'invalid-stage' },
@@ -112,9 +106,8 @@ describe('Deal Stage Fuzzy Matching', () => {
     });
 
     it('should work with valid stage names', async () => {
-      const { makeAttioRequest } = await import(
-        '../../src/api/operations/index.js'
-      );
+      const { makeAttioRequest } =
+        await import('../../src/api/operations/index.js');
 
       // Mock the API response
       vi.mocked(makeAttioRequest).mockResolvedValue({
@@ -124,9 +117,8 @@ describe('Deal Stage Fuzzy Matching', () => {
         ],
       });
 
-      const { applyDealDefaultsWithValidation } = await import(
-        '../../src/config/deal-defaults.js'
-      );
+      const { applyDealDefaultsWithValidation } =
+        await import('../../src/config/deal-defaults.js');
 
       const result = await applyDealDefaultsWithValidation(
         { name: 'Test Deal', stage: 'qualified' },

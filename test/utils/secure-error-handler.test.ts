@@ -269,9 +269,8 @@ describe('retryWithSecureErrors', () => {
       .mockResolvedValue('success');
 
     // Mock getErrorStatus to return 500 for retry logic
-    const { getErrorStatus } = await import(
-      '../../src/utils/error-utilities.js'
-    );
+    const { getErrorStatus } =
+      await import('../../src/utils/error-utilities.js');
     vi.mocked(getErrorStatus).mockReturnValue(500);
 
     const promise = retryWithSecureErrors(testFn, mockContext, {
@@ -291,9 +290,8 @@ describe('retryWithSecureErrors', () => {
     const testFn = vi.fn().mockRejectedValue(new Error('Persistent error'));
 
     // Mock getErrorStatus to return 500 for retry logic
-    const { getErrorStatus } = await import(
-      '../../src/utils/error-utilities.js'
-    );
+    const { getErrorStatus } =
+      await import('../../src/utils/error-utilities.js');
     vi.mocked(getErrorStatus).mockReturnValue(500);
 
     // Use 0 retries to avoid timing issues

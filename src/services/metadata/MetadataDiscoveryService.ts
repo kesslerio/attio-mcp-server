@@ -16,9 +16,7 @@ import type {
   MetadataTransformService,
 } from './types.js';
 
-export class DefaultMetadataDiscoveryService
-  implements MetadataDiscoveryService
-{
+export class DefaultMetadataDiscoveryService implements MetadataDiscoveryService {
   private readonly runner: DiscoveryRunner;
 
   constructor(

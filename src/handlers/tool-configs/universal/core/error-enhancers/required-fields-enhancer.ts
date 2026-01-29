@@ -58,9 +58,8 @@ const buildMissingDealStageMessage = async (
   if (hasStageField(recordData)) return null;
 
   try {
-    const { AttributeOptionsService } = await import(
-      '@/services/metadata/index.js'
-    );
+    const { AttributeOptionsService } =
+      await import('@/services/metadata/index.js');
     const { options } = await AttributeOptionsService.getOptions(
       'deals',
       'stage'

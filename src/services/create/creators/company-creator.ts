@@ -61,9 +61,9 @@ export class CompanyCreator extends BaseCreator {
         const c = (h.common as JsonObject) ?? ({} as JsonObject);
         const hasAuth = Boolean(
           (c.Authorization as string) ||
-            (c.authorization as string) ||
-            (h.Authorization as string) ||
-            (h.authorization as string)
+          (c.authorization as string) ||
+          (h.Authorization as string) ||
+          (h.authorization as string)
         );
         createScopedLogger('CompanyCreator', 'create').debug('Client probe', {
           baseURL: context.client.defaults?.baseURL,
