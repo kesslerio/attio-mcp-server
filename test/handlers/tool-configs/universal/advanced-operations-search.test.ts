@@ -19,9 +19,8 @@ describe('Universal Advanced Operations - Search Tests', () => {
     await setupUnitTestMocks();
 
     // Import after mocks are set up
-    const advancedOps = await import(
-      '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
-    );
+    const advancedOps =
+      await import('../../../../src/handlers/tool-configs/universal/advanced-operations.js');
     advancedSearchConfig = advancedOps.advancedSearchConfig;
     searchByRelationshipConfig = advancedOps.searchByRelationshipConfig;
   });

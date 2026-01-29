@@ -73,8 +73,8 @@ export const smitheryDiagnosticsConfig = {
         isAuthenticated: hasContextApiKey || envDiag.hasAttioApiKey,
         apiKeyAvailable: Boolean(
           contextStats.hasDirectApiKey ||
-            contextStats.hasApiKeyGetter ||
-            envDiag.hasAttioApiKey
+          contextStats.hasApiKeyGetter ||
+          envDiag.hasAttioApiKey
         ),
       },
     };

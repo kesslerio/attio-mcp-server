@@ -108,9 +108,8 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     });
 
     it('should preserve properly wrapped arguments without modification using universal tools', async () => {
-      const { executeToolRequest } = await import(
-        '../../../src/handlers/tools/dispatcher.js'
-      );
+      const { executeToolRequest } =
+        await import('../../../src/handlers/tools/dispatcher.js');
       const mockedExecute = vi.mocked(executeToolRequest);
 
       const request: any = {
@@ -136,9 +135,8 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     });
 
     it('should wrap loose arguments correctly using universal tools', async () => {
-      const { executeToolRequest } = await import(
-        '../../../src/handlers/tools/dispatcher.js'
-      );
+      const { executeToolRequest } =
+        await import('../../../src/handlers/tools/dispatcher.js');
       const mockedExecute = vi.mocked(executeToolRequest);
 
       const request = {
@@ -193,9 +191,8 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     });
 
     it('should not wrap arguments if they already exist using universal tools', async () => {
-      const { executeToolRequest } = await import(
-        '../../../src/handlers/tools/dispatcher.js'
-      );
+      const { executeToolRequest } =
+        await import('../../../src/handlers/tools/dispatcher.js');
       const mockedExecute = vi.mocked(executeToolRequest);
 
       const request = {

@@ -36,18 +36,16 @@ async function enhanceUniquenessErrorWithSearch(
     companies: {
       fields: ['domains', 'domain'],
       search: async (value: string) => {
-        const { searchCompaniesByDomain } = await import(
-          '@/objects/companies/search.js'
-        );
+        const { searchCompaniesByDomain } =
+          await import('@/objects/companies/search.js');
         return searchCompaniesByDomain(value);
       },
     },
     people: {
       fields: ['email_addresses', 'email', 'emails'],
       search: async (value: string) => {
-        const { searchPeopleByEmail } = await import(
-          '@/objects/people/search.js'
-        );
+        const { searchPeopleByEmail } =
+          await import('@/objects/people/search.js');
         return searchPeopleByEmail(value);
       },
     },

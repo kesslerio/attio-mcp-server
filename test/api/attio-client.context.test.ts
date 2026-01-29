@@ -126,9 +126,8 @@ describe('Attio client context fallback', () => {
         ATTIO_API_KEY: 'fallback-key-12345',
       });
 
-      const { getContextApiKey } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { getContextApiKey } =
+        await import('../../src/api/client-context.js');
 
       // First call should attempt getApiKey
       getContextApiKey();
@@ -143,9 +142,8 @@ describe('Attio client context fallback', () => {
   describe('Enhanced context functionality', () => {
     it('should provide context statistics for debugging', async () => {
       const { setGlobalContext } = await import('@/api/lazy-client.js');
-      const { getContextStats } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { getContextStats } =
+        await import('../../src/api/client-context.js');
 
       setGlobalContext({
         getApiKey: () => 'test-key-12345',
@@ -163,9 +161,8 @@ describe('Attio client context fallback', () => {
     });
 
     it('should validate API keys properly', async () => {
-      const { validateApiKey } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { validateApiKey } =
+        await import('../../src/api/client-context.js');
 
       expect(validateApiKey('valid-api-key-123')).toBe(true);
       expect(validateApiKey('')).toBe(false);
@@ -176,12 +173,10 @@ describe('Attio client context fallback', () => {
     });
 
     it('should clear all context storage properly', async () => {
-      const { setGlobalContext, clearClientCache } = await import(
-        '@/api/lazy-client.js'
-      );
-      const { getContextStats } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { setGlobalContext, clearClientCache } =
+        await import('@/api/lazy-client.js');
+      const { getContextStats } =
+        await import('../../src/api/client-context.js');
 
       // Set context
       setGlobalContext({
@@ -204,9 +199,8 @@ describe('Attio client context fallback', () => {
   describe('Edge cases and error scenarios', () => {
     it('should handle malformed context objects', async () => {
       const { setGlobalContext } = await import('@/api/lazy-client.js');
-      const { getContextApiKey } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { getContextApiKey } =
+        await import('../../src/api/client-context.js');
 
       // Set malformed context
       setGlobalContext({
@@ -220,9 +214,8 @@ describe('Attio client context fallback', () => {
 
     it('should handle context with empty string API key', async () => {
       const { setGlobalContext } = await import('@/api/lazy-client.js');
-      const { getContextApiKey } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { getContextApiKey } =
+        await import('../../src/api/client-context.js');
 
       setGlobalContext({
         ATTIO_API_KEY: '',
@@ -234,9 +227,8 @@ describe('Attio client context fallback', () => {
 
     it('should handle context with whitespace-only API key', async () => {
       const { setGlobalContext } = await import('@/api/lazy-client.js');
-      const { getContextApiKey } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { getContextApiKey } =
+        await import('../../src/api/client-context.js');
 
       setGlobalContext({
         ATTIO_API_KEY: '   \n\t   ',
@@ -248,9 +240,8 @@ describe('Attio client context fallback', () => {
 
     it('should handle null context gracefully', async () => {
       const { clearClientCache } = await import('@/api/lazy-client.js');
-      const { getContextApiKey } = await import(
-        '../../src/api/client-context.js'
-      );
+      const { getContextApiKey } =
+        await import('../../src/api/client-context.js');
 
       clearClientCache();
 

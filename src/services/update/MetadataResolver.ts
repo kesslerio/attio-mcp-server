@@ -132,9 +132,8 @@ export class MetadataResolver {
     resourceType: UniversalResourceType,
     objectSlug?: string
   ): Promise<Record<string, unknown>> {
-    const { UniversalMetadataService } = await import(
-      '@/services/UniversalMetadataService.js'
-    );
+    const { UniversalMetadataService } =
+      await import('@/services/UniversalMetadataService.js');
 
     const options = objectSlug ? { objectSlug } : undefined;
     return UniversalMetadataService.discoverAttributesForResourceType(

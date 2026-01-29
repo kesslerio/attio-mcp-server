@@ -61,14 +61,12 @@ export class NoteCreator extends BaseCreator {
    */
   private async ensureDependencies(): Promise<void> {
     if (!this.noteModule) {
-      this.noteModule = (await import(
-        '../../../objects/notes.js'
-      )) as NoteModule;
+      this.noteModule =
+        (await import('../../../objects/notes.js')) as NoteModule;
     }
     if (!this.responseUtilsModule) {
-      this.responseUtilsModule = (await import(
-        '../../../utils/attio-response.js'
-      )) as ResponseUtilsModule;
+      this.responseUtilsModule =
+        (await import('../../../utils/attio-response.js')) as ResponseUtilsModule;
     }
   }
 

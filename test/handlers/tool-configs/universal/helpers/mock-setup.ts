@@ -240,9 +240,8 @@ export const setupMockHandlers = async () => {
   vi.clearAllMocks();
 
   // Reset shared handlers to default successful behaviors
-  const shared: any = await import(
-    '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-  );
+  const shared: any =
+    await import('../../../../../src/handlers/tool-configs/universal/shared-handlers.js');
   const {
     handleUniversalSearch,
     handleUniversalGetDetails,
@@ -322,9 +321,8 @@ export const setupMockHandlers = async () => {
  * Used by: core-operations.test.ts
  */
 export const setupMockErrorService = async () => {
-  const { ErrorService } = await import(
-    '../../../../../src/services/ErrorService.js'
-  );
+  const { ErrorService } =
+    await import('../../../../../src/services/ErrorService.js');
 
   // Set up default error creation behavior
   (vi.mocked as any)(ErrorService.createUniversalError).mockImplementation(
@@ -416,30 +414,24 @@ let mockInstances: any = {};
  * Initialize mock instances (called by setupUnitTestMocks)
  */
 export const initializeMockInstances = async () => {
-  const sharedHandlers = await import(
-    '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-  );
+  const sharedHandlers =
+    await import('../../../../../src/handlers/tool-configs/universal/shared-handlers.js');
 
-  const schemas = await import(
-    '../../../../../src/handlers/tool-configs/universal/schemas.js'
-  );
+  const schemas =
+    await import('../../../../../src/handlers/tool-configs/universal/schemas.js');
 
   const dateUtils = await import('../../../../../src/utils/date-utils.js');
-  const universalSearchService = await import(
-    '../../../../../src/services/UniversalSearchService.js'
-  );
+  const universalSearchService =
+    await import('../../../../../src/services/UniversalSearchService.js');
 
-  const companiesHandlers = await import(
-    '../../../../../src/objects/companies/index.js'
-  );
+  const companiesHandlers =
+    await import('../../../../../src/objects/companies/index.js');
 
-  const peopleHandlers = await import(
-    '../../../../../src/objects/people/index.js'
-  );
+  const peopleHandlers =
+    await import('../../../../../src/objects/people/index.js');
 
-  const peopleSearchHandlers = await import(
-    '../../../../../src/objects/people/search.js'
-  );
+  const peopleSearchHandlers =
+    await import('../../../../../src/objects/people/search.js');
 
   mockInstances = {
     mockHandlers: {

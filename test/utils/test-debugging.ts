@@ -582,9 +582,8 @@ export class MockDataValidator {
   static async validateTaskFactory(): Promise<ValidationResult> {
     try {
       // Import factory dynamically to avoid circular dependencies
-      const TaskMockFactoryModule = await import(
-        './mock-factories/TaskMockFactory.js'
-      );
+      const TaskMockFactoryModule =
+        await import('./mock-factories/TaskMockFactory.js');
       const TaskMockFactory =
         TaskMockFactoryModule.TaskMockFactory || TaskMockFactoryModule.default;
 
@@ -670,9 +669,8 @@ export class MockDataValidator {
    */
   static async validateCompanyFactory(): Promise<ValidationResult> {
     try {
-      const CompanyMockFactoryModule = await import(
-        './mock-factories/CompanyMockFactory.js'
-      );
+      const CompanyMockFactoryModule =
+        await import('./mock-factories/CompanyMockFactory.js');
       const CompanyMockFactory =
         CompanyMockFactoryModule.CompanyMockFactory ||
         CompanyMockFactoryModule.default;
@@ -725,9 +723,8 @@ export class MockDataValidator {
    */
   static async validatePersonFactory(): Promise<ValidationResult> {
     try {
-      const PersonMockFactoryModule = await import(
-        './mock-factories/PersonMockFactory.js'
-      );
+      const PersonMockFactoryModule =
+        await import('./mock-factories/PersonMockFactory.js');
       const PersonMockFactory =
         PersonMockFactoryModule.PersonMockFactory ||
         PersonMockFactoryModule.default;
@@ -780,9 +777,8 @@ export class MockDataValidator {
    */
   static async validateListFactory(): Promise<ValidationResult> {
     try {
-      const ListMockFactoryModule = await import(
-        './mock-factories/ListMockFactory.js'
-      );
+      const ListMockFactoryModule =
+        await import('./mock-factories/ListMockFactory.js');
       const ListMockFactory =
         ListMockFactoryModule.ListMockFactory || ListMockFactoryModule.default;
 

@@ -104,13 +104,11 @@ if (!isMain) {
     }
 
     // Dynamic imports to avoid loading modules during help/version
-    const { StdioServerTransport } = await import(
-      '@modelcontextprotocol/sdk/server/stdio.js'
-    );
+    const { StdioServerTransport } =
+      await import('@modelcontextprotocol/sdk/server/stdio.js');
     const { createServer } = await import('./server/createServer.js');
-    const { error: logError, OperationType } = await import(
-      './utils/logger.js'
-    );
+    const { error: logError, OperationType } =
+      await import('./utils/logger.js');
 
     try {
       // Create the configured MCP server
@@ -171,9 +169,8 @@ if (!isMain) {
 
   main().catch(async (error) => {
     // Import logger only if needed for error handling
-    const { error: logError, OperationType } = await import(
-      './utils/logger.js'
-    );
+    const { error: logError, OperationType } =
+      await import('./utils/logger.js');
     logError(
       'main',
       'Unhandled error in main process',

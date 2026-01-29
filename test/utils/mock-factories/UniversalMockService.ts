@@ -59,9 +59,8 @@ export class UniversalMockService {
   ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
-      const { createCompany } = await import(
-        '../../../src/objects/companies/index.js'
-      );
+      const { createCompany } =
+        await import('../../../src/objects/companies/index.js');
       return await createCompany(companyData as any);
     }
 
@@ -146,9 +145,8 @@ export class UniversalMockService {
   ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
-      const { createPerson } = await import(
-        '../../../src/objects/people/index.js'
-      );
+      const { createPerson } =
+        await import('../../../src/objects/people/index.js');
       return await createPerson(personData as any);
     }
 

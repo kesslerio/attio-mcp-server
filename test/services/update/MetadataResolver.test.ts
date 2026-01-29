@@ -444,9 +444,8 @@ describe('MetadataResolver', () => {
       );
 
       // Import and mock UniversalMetadataService dynamically
-      const { UniversalMetadataService } = await import(
-        '@/services/UniversalMetadataService.js'
-      );
+      const { UniversalMetadataService } =
+        await import('@/services/UniversalMetadataService.js');
       const mockResponse = { data: [] };
       vi.mocked(
         UniversalMetadataService.discoverAttributesForResourceType

@@ -83,9 +83,8 @@ export async function getListDetails(listId: string): Promise<AttioList> {
         });
       }
       if (status === 422) {
-        const { InvalidRequestError } = await import(
-          '../../errors/api-errors.js'
-        );
+        const { InvalidRequestError } =
+          await import('../../errors/api-errors.js');
         throw new InvalidRequestError(
           'Invalid parameter(s) for list operation',
           '/lists',

@@ -220,9 +220,8 @@ describe('Filter Translators', () => {
 
     it('should throw FilterValidationError for invalid stage value', async () => {
       const { vi } = await import('vitest');
-      const { getAttributeTypeInfo } = await import(
-        '../../../src/api/attribute-types.js'
-      );
+      const { getAttributeTypeInfo } =
+        await import('../../../src/api/attribute-types.js');
 
       // Mock stage attribute with valid options
       vi.mocked(getAttributeTypeInfo).mockResolvedValue({
@@ -290,9 +289,8 @@ describe('Filter Translators', () => {
 
     it('should pass validation for valid stage value', async () => {
       const { vi } = await import('vitest');
-      const { getAttributeTypeInfo } = await import(
-        '../../../src/api/attribute-types.js'
-      );
+      const { getAttributeTypeInfo } =
+        await import('../../../src/api/attribute-types.js');
 
       // Mock stage attribute
       vi.mocked(getAttributeTypeInfo).mockResolvedValue({
@@ -348,9 +346,8 @@ describe('Filter Translators', () => {
 
     it('should skip validation when resourceType is undefined (list entry context)', async () => {
       const { vi } = await import('vitest');
-      const { getAttributeTypeInfo } = await import(
-        '../../../src/api/attribute-types.js'
-      );
+      const { getAttributeTypeInfo } =
+        await import('../../../src/api/attribute-types.js');
 
       const filters: ListEntryFilters = {
         filters: [
@@ -377,9 +374,8 @@ describe('Filter Translators', () => {
 
     it('should skip validation for non-equals operators (contains)', async () => {
       const { vi } = await import('vitest');
-      const { getAttributeTypeInfo } = await import(
-        '../../../src/api/attribute-types.js'
-      );
+      const { getAttributeTypeInfo } =
+        await import('../../../src/api/attribute-types.js');
 
       // Mock to track if validation was triggered
       vi.mocked(getAttributeTypeInfo).mockResolvedValue({

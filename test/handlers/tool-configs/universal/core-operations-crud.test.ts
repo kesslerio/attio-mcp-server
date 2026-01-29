@@ -39,9 +39,8 @@ describe('Universal Core Operations CRUD Tests', () => {
         },
       };
 
-      const { handleUniversalCreate } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalCreate } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalCreate).mockResolvedValue(
         mockCreatedRecord as any
       );
@@ -69,9 +68,8 @@ describe('Universal Core Operations CRUD Tests', () => {
         },
       };
 
-      const { handleUniversalCreate } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalCreate } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalCreate).mockResolvedValue(
         mockCreatedRecord as any
       );
@@ -96,9 +94,8 @@ describe('Universal Core Operations CRUD Tests', () => {
         },
       };
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (createRecordConfig.formatResult as any)(
@@ -121,9 +118,8 @@ describe('Universal Core Operations CRUD Tests', () => {
         },
       };
 
-      const { handleUniversalUpdate } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalUpdate } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalUpdate).mockResolvedValue(
         mockUpdatedRecord as any
       );
@@ -150,9 +146,8 @@ describe('Universal Core Operations CRUD Tests', () => {
         },
       };
 
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (updateRecordConfig.formatResult as any)(
@@ -172,9 +167,8 @@ describe('Universal Core Operations CRUD Tests', () => {
         record_id: 'comp-1',
       };
 
-      const { handleUniversalDelete } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalDelete } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalDelete).mockResolvedValue(mockResult);
 
       const params: UniversalDeleteParams = {
@@ -189,9 +183,8 @@ describe('Universal Core Operations CRUD Tests', () => {
 
     it('should format successful delete result correctly', async () => {
       const mockResult = { success: true, record_id: 'comp-1' };
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (deleteRecordConfig.formatResult as any)(
@@ -203,9 +196,8 @@ describe('Universal Core Operations CRUD Tests', () => {
 
     it('should format failed delete result correctly', async () => {
       const mockResult = { success: false, record_id: 'comp-1' };
-      const { getSingularResourceType } = await import(
-        '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (deleteRecordConfig.formatResult as any)(

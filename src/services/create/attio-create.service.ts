@@ -130,9 +130,8 @@ export class AttioCreateService implements CreateService {
       this.taskModule = (await import('../../objects/tasks.js')) as TaskModule;
     }
     if (!this.converterModule) {
-      this.converterModule = (await import(
-        './data-normalizers.js'
-      )) as ConverterModule;
+      this.converterModule =
+        (await import('./data-normalizers.js')) as ConverterModule;
     }
     if (!this.noteModule) {
       this.noteModule = (await import('../../objects/notes.js')) as NoteModule;

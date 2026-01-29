@@ -75,9 +75,8 @@ export class MockCreateService implements CreateService {
 
     // Issue #480 compatible mock task
     try {
-      const { logTaskDebug, sanitizePayload } = await import(
-        '../../utils/task-debug.js'
-      );
+      const { logTaskDebug, sanitizePayload } =
+        await import('../../utils/task-debug.js');
       logTaskDebug(
         'mock.createTask',
         'Incoming taskData',
@@ -151,9 +150,8 @@ export class MockCreateService implements CreateService {
     }
 
     try {
-      const { logTaskDebug, inspectTaskRecordShape } = await import(
-        '../../utils/task-debug.js'
-      );
+      const { logTaskDebug, inspectTaskRecordShape } =
+        await import('../../utils/task-debug.js');
       logTaskDebug(
         'mock.createTask',
         'Returning mock task',
@@ -257,9 +255,8 @@ export class MockCreateService implements CreateService {
     }
 
     try {
-      const { logTaskDebug, inspectTaskRecordShape } = await import(
-        '../../utils/task-debug.js'
-      );
+      const { logTaskDebug, inspectTaskRecordShape } =
+        await import('../../utils/task-debug.js');
       logTaskDebug(
         'mock.updateTask',
         'Returning updated mock task',

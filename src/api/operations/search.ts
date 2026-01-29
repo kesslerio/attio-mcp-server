@@ -798,9 +798,8 @@ export async function advancedSearchObject<T extends AttioRecord>(
       }
 
       // Import validation utilities dynamically to avoid circular dependencies
-      const { validateFilters } = await import(
-        '../../utils/filters/validation-utils.js'
-      );
+      const { validateFilters } =
+        await import('../../utils/filters/validation-utils.js');
 
       // Use centralized validation with consistent error messages
       try {

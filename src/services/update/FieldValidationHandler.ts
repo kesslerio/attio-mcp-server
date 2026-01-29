@@ -108,9 +108,8 @@ export class FieldValidationHandler {
     suggestions: string[];
   }> {
     try {
-      const { applyDealDefaultsWithValidation } = await import(
-        '@/config/deal-defaults.js'
-      );
+      const { applyDealDefaultsWithValidation } =
+        await import('@/config/deal-defaults.js');
 
       const dealValidation = await applyDealDefaultsWithValidation(
         values,
@@ -211,9 +210,8 @@ export class FieldValidationHandler {
     fieldName: string
   ): Promise<string | null> {
     try {
-      const { resolveAttributeDisplayName } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { resolveAttributeDisplayName } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       return await resolveAttributeDisplayName(objectSlug, fieldName);
     } catch (err) {
       debug(

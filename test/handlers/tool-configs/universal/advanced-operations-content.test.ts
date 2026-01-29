@@ -20,9 +20,8 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
     await setupUnitTestMocks();
 
     // Import after mocks are set up
-    const advancedOps = await import(
-      '@handlers/tool-configs/universal/advanced-operations.js'
-    );
+    const advancedOps =
+      await import('@handlers/tool-configs/universal/advanced-operations.js');
     searchByContentConfig = advancedOps.searchByContentConfig;
     searchByTimeframeConfig = advancedOps.searchByTimeframeConfig;
   });

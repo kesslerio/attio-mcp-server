@@ -131,9 +131,8 @@ describe('value-transformer orchestrator', () => {
 
   describe('transformRecordValues', () => {
     it('should pass through fields with no metadata', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [], // No attributes discovered
       });
@@ -154,12 +153,10 @@ describe('value-transformer orchestrator', () => {
     });
 
     it('should transform status field to Attio status format', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [
@@ -191,9 +188,8 @@ describe('value-transformer orchestrator', () => {
     });
 
     it('should transform multi-select field to array format', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [
@@ -217,12 +213,10 @@ describe('value-transformer orchestrator', () => {
     });
 
     it('should apply multiple transformations in one call', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [
@@ -258,12 +252,10 @@ describe('value-transformer orchestrator', () => {
     });
 
     it('should throw error for invalid status value', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [{ api_slug: 'stage', type: 'status', title: 'Deal stage' }],
@@ -289,12 +281,10 @@ describe('value-transformer orchestrator', () => {
     });
 
     it('should include valid options in error message for invalid status', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [{ api_slug: 'stage', type: 'status', title: 'Deal stage' }],
@@ -326,9 +316,8 @@ describe('value-transformer orchestrator', () => {
 
     // Issue #992: Test transformation with is_multiselect flag from schema
     it('should transform custom multi-select with is_multiselect flag (Issue #992)', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [
@@ -359,9 +348,8 @@ describe('value-transformer orchestrator', () => {
     });
 
     it('should NOT transform single-select attributes (is_multiselect=false)', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [
@@ -389,9 +377,8 @@ describe('value-transformer orchestrator', () => {
     });
 
     it('should NOT transform select attributes without is_multiselect flag', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [
@@ -418,12 +405,10 @@ describe('value-transformer orchestrator', () => {
 
     // Issue #1019: Test select-transformer integration within orchestrator
     it('should transform select values within orchestrator without interfering with other transformers', async () => {
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [
@@ -488,12 +473,10 @@ describe('value-transformer orchestrator', () => {
     it('should report transformation type that accurately describes behavior (Issue #1053)', async () => {
       // Regression test to prevent reverting to misleading 'select_title_to_id' name
       // The select-transformer wraps titles in arrays (NOT converts to UUIDs)
-      const { handleUniversalDiscoverAttributes } = await import(
-        '@/handlers/tool-configs/universal/shared-handlers.js'
-      );
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { handleUniversalDiscoverAttributes } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
 
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
         all: [

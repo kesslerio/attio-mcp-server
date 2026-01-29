@@ -83,9 +83,8 @@ class TestDataTracker {
 
   async cleanup() {
     // Import cleanup functions dynamically to avoid circular dependencies
-    const { deleteCompany } = await import(
-      '../../src/objects/companies/index.js'
-    );
+    const { deleteCompany } =
+      await import('../../src/objects/companies/index.js');
     const { deletePerson } = await import('../../src/objects/people/index.js');
 
     for (const record of this.createdRecords.reverse()) {
