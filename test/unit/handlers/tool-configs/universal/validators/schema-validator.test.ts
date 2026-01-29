@@ -274,7 +274,7 @@ describe('validateUniversalToolParams', () => {
       expect(result.record_data).toEqual({ name: 'Test Company' });
     });
 
-    it('should collect extra fields into record_data', () => {
+    it('should collect extra fields into record_data without leftover fields', () => {
       const params = {
         resource_type: 'companies',
         record_id: 'comp_123',
@@ -286,6 +286,9 @@ describe('validateUniversalToolParams', () => {
         name: 'Test Company',
         website: 'https://example.com',
       });
+      // Verify flat fields are NOT left at top level (single source of truth)
+      expect(result).not.toHaveProperty('name');
+      expect(result).not.toHaveProperty('website');
     });
 
     it('should not mutate original params when normalizing', () => {

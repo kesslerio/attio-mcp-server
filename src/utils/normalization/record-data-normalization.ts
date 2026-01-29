@@ -2,67 +2,59 @@
  * Record Data Input Normalization
  *
  * Handles normalization of record_data inputs for the update_record tool.
- * Converts various input shapes to the standard format without mutating the original input.
+ * Converts legacy input shapes (data field, flat fields) to standard format.
+ *
+ * Note: JSON string parsing and validation is handled by UniversalUpdateService,
+ * not here. This normalizer only handles structural transformations.
  *
  * @see Issue #1099 - SRP compliance: separates normalization from validation
  */
 
-import type { SanitizedObject } from '../../handlers/tool-configs/universal/schemas/common/types.js';
+import type { SanitizedObject } from '@/handlers/tool-configs/universal/schemas/common/types.js';
 
 /**
- * Parameters that may need normalization
+ * Keys that are standard params, not record data fields
  */
-interface NormalizableParams {
-  resource_type?: string;
-  record_id?: string;
-  record_data?: unknown;
-  return_details?: boolean;
-  data?: unknown;
-  [key: string]: unknown;
-}
-
-/**
- * Normalized update parameters
- */
-export interface NormalizedUpdateParams {
-  resource_type: string;
-  record_id: string;
-  record_data: SanitizedObject;
-  return_details?: boolean;
-}
-
-/**
- * Keys that should not be treated as record data fields
- */
-const IGNORED_KEYS = new Set([
+const STANDARD_KEYS = new Set([
   'resource_type',
   'record_id',
   'return_details',
   'data',
+  'record_data',
 ]);
 
 /**
- * RecordDataNormalizer provides immutable input normalization for update operations.
+ * Normalized update parameters - only contains standard fields
+ */
+export interface NormalizedParams {
+  resource_type?: string;
+  record_id?: string;
+  record_data?: SanitizedObject;
+  return_details?: boolean;
+}
+
+/**
+ * RecordDataNormalizer provides input normalization for update operations.
  *
- * Design principles:
- * - Never mutates input objects - always returns new copies
- * - Follows PeopleDataNormalizer pattern for consistency
- * - Separated from validation logic (SRP compliance)
+ * Handles two legacy input patterns:
+ * 1. { data: {...} } - Maps to record_data
+ * 2. { name: "...", status: "..." } - Collects flat fields into record_data
+ *
+ * Design: Returns clean normalized object without leftover fields.
  */
 export class RecordDataNormalizer {
   /**
    * Check if parameters need normalization.
    *
-   * Returns true if:
-   * - record_data is missing but `data` field is present
-   * - record_data is missing but there are extra fields that could be record data
+   * Returns true only when record_data is missing AND there's
+   * either a `data` field or extra flat fields to collect.
    */
   static needsNormalization(params: unknown): boolean {
     if (!params || typeof params !== 'object' || Array.isArray(params)) {
       return false;
     }
 
-    const p = params as NormalizableParams;
+    const p = params as Record<string, unknown>;
 
     // Already has record_data - no normalization needed
     if (p.record_data !== undefined) {
@@ -75,117 +67,53 @@ export class RecordDataNormalizer {
     }
 
     // Check for extra fields that could be record data
-    const extraFields = Object.keys(p).filter((key) => !IGNORED_KEYS.has(key));
+    const extraFields = Object.keys(p).filter((key) => !STANDARD_KEYS.has(key));
     return extraFields.length > 0;
   }
 
   /**
    * Normalize parameters into standard format.
    *
-   * Handles three input patterns:
-   * 1. { record_data: {...} } - Already normalized, returns copy
-   * 2. { data: {...} } - Legacy format, maps to record_data
-   * 3. { name: "...", status: "..." } - Flat fields, collects into record_data
-   *
-   * @returns New object with normalized record_data (never mutates input)
+   * Returns a clean object with ONLY standard fields - no leftover
+   * flat fields that were collected into record_data.
    */
-  static normalize(params: unknown): NormalizableParams {
+  static normalize(params: unknown): NormalizedParams {
     if (!params || typeof params !== 'object' || Array.isArray(params)) {
-      return { record_data: {} } as NormalizableParams;
-    }
-
-    const p = params as NormalizableParams;
-
-    // Start with a shallow copy of all standard fields
-    const result: NormalizableParams = {
-      resource_type: p.resource_type,
-      record_id: p.record_id,
-      return_details: p.return_details,
-    };
-
-    // If record_data exists, copy it
-    if (p.record_data !== undefined) {
-      result.record_data = this.copyRecordData(p.record_data);
-      return result;
-    }
-
-    // Handle legacy `data` field
-    if (p.data !== undefined) {
-      result.record_data = this.copyRecordData(p.data);
-      return result;
-    }
-
-    // Collect extra fields as record data
-    const recordData: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(p)) {
-      if (!IGNORED_KEYS.has(key)) {
-        recordData[key] = value;
-      }
-    }
-
-    if (Object.keys(recordData).length > 0) {
-      result.record_data = recordData as SanitizedObject;
-    }
-
-    return result;
-  }
-
-  /**
-   * Create a deep copy of record data to prevent mutation
-   */
-  private static copyRecordData(data: unknown): SanitizedObject {
-    if (data === null || data === undefined) {
-      return {} as SanitizedObject;
-    }
-
-    if (typeof data === 'string') {
-      // JSON string - parse it (validation happens elsewhere)
-      try {
-        return JSON.parse(data) as SanitizedObject;
-      } catch {
-        // Return as-is, let validation catch the error
-        return {} as SanitizedObject;
-      }
-    }
-
-    if (typeof data !== 'object' || Array.isArray(data)) {
-      return {} as SanitizedObject;
-    }
-
-    // Deep copy the object
-    return JSON.parse(JSON.stringify(data)) as SanitizedObject;
-  }
-
-  /**
-   * Extract the values to update from record_data.
-   *
-   * Handles both:
-   * - { values: {...} } - Wrapped format
-   * - { field: value, ... } - Direct format
-   *
-   * @returns Copy of the values object (never mutates input)
-   */
-  static extractValues(recordData: unknown): Record<string, unknown> {
-    if (
-      !recordData ||
-      typeof recordData !== 'object' ||
-      Array.isArray(recordData)
-    ) {
       return {};
     }
 
-    const data = recordData as Record<string, unknown>;
+    const p = params as Record<string, unknown>;
 
-    // If there's a `values` wrapper, use that
-    if (
-      data.values &&
-      typeof data.values === 'object' &&
-      !Array.isArray(data.values)
-    ) {
-      return JSON.parse(JSON.stringify(data.values));
+    // Build result with only standard fields
+    const result: NormalizedParams = {};
+
+    if (p.resource_type !== undefined) {
+      result.resource_type = p.resource_type as string;
+    }
+    if (p.record_id !== undefined) {
+      result.record_id = p.record_id as string;
+    }
+    if (p.return_details !== undefined) {
+      result.return_details = p.return_details as boolean;
     }
 
-    // Otherwise, return a copy of the whole object
-    return JSON.parse(JSON.stringify(data));
+    // Determine record_data source
+    if (p.data !== undefined && typeof p.data === 'object' && p.data !== null) {
+      // Legacy `data` field - use it as record_data
+      result.record_data = p.data as SanitizedObject;
+    } else {
+      // Collect extra fields as record_data
+      const recordData: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(p)) {
+        if (!STANDARD_KEYS.has(key)) {
+          recordData[key] = value;
+        }
+      }
+      if (Object.keys(recordData).length > 0) {
+        result.record_data = recordData as SanitizedObject;
+      }
+    }
+
+    return result;
   }
 }

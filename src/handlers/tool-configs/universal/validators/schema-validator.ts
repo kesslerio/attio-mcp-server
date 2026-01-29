@@ -10,7 +10,7 @@ import {
   validateIdFields,
   validatePaginationParams,
 } from './field-validator.js';
-import { RecordDataNormalizer } from '../../../../utils/normalization/record-data-normalization.js';
+import { RecordDataNormalizer } from '@/utils/normalization/record-data-normalization.js';
 
 /**
  * Fields that should preserve newlines during sanitization.
@@ -245,15 +245,10 @@ const toolValidators: Record<string, ToolValidator> = {
     return p;
   },
   update_record: (p) => {
-    // Normalize input format (immutable - returns new object if needed)
-    let params = p;
-    if (RecordDataNormalizer.needsNormalization(p)) {
-      const normalized = RecordDataNormalizer.normalize(p);
-      params = {
-        ...p,
-        record_data: normalized.record_data,
-      } as SanitizedObject;
-    }
+    // Normalize input format - use normalized result directly (no leftover fields)
+    const params = RecordDataNormalizer.needsNormalization(p)
+      ? (RecordDataNormalizer.normalize(p) as SanitizedObject)
+      : p;
     if (!params.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
