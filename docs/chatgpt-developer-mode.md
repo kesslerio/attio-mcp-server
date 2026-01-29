@@ -1,9 +1,11 @@
 # ChatGPT Developer Mode Integration
 
+> **⚠️ Smithery Temporarily Unavailable**: Smithery has changed their deployment model to require external hosting. Use the **Cloudflare Worker** deployment method below for ChatGPT integration.
+
 This guide explains how to expose the Attio MCP server to ChatGPT users in two configurations:
 
 1. **Full Developer Mode** – Pro/Plus accounts with the Developer Mode beta enabled can access the entire Attio toolset, including write operations, with built-in approval flows.
-2. **Search-Only Compatibility** – For accounts without Developer Mode, expose a minimal `search`/`fetch` surface that mirrors OpenAI’s baseline MCP requirements.
+2. **Search-Only Compatibility** – For accounts without Developer Mode, expose a minimal `search`/`fetch` surface that mirrors OpenAI's baseline MCP requirements.
 
 The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) on every tool definition so ChatGPT can make informed approval decisions.
 
@@ -18,9 +20,8 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 ### Server prerequisites
 
-- Publicly accessible HTTPS endpoint (or a tunnel such as `smithery dev --public` during development).
-- Standard MCP transport (STDIO is fine locally, Smithery or your hosting provider for production).
-- Set `ATTIO_API_KEY`/`ATTIO_WORKSPACE_ID` for Attio API access.
+- Self-hosted Cloudflare Worker deployment (see [Cloudflare Worker Guide](../examples/cloudflare-mcp-server/README.md))
+- Set `ATTIO_API_KEY`/`ATTIO_WORKSPACE_ID` for Attio API access
 
 ---
 
@@ -28,39 +29,37 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 ### Prerequisites for ChatGPT Integration
 
-**IMPORTANT**: ChatGPT Developer Mode requires deployment via **Smithery** for OAuth authentication. Direct server URLs are not supported.
-
-**New to Smithery?** Check out these helpful resources:
-
-- 📖 [Smithery Quick Start Guide](https://smithery.ai/docs/getting_started/quickstart_build)
-- 🛠️ [Our Smithery CLI Setup Guide](../deployment/smithery-cli-setup.md)
-- 🎮 [Live Demo: Smithery Playground](https://smithery.ai/server/@kesslerio/attio-mcp-server)
+**IMPORTANT**: ChatGPT Developer Mode requires a publicly accessible HTTPS endpoint with OAuth support. Deploy using the **Cloudflare Worker** template.
 
 ### Setup Steps
 
-1. **Expose the full tool catalogue** - Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration. The server exposes all 33 tools by default.
-
-2. **Deploy the server** to Smithery (required for ChatGPT compatibility):
+1. **Deploy the Cloudflare Worker**:
 
    ```bash
-   # Development testing
-   npm run dev  # Opens Smithery Playground with ngrok tunnel
-
-   # Production deployment - already available at Smithery marketplace
+   cd examples/cloudflare-mcp-server
+   npm install
+   wrangler kv:namespace create "TOKEN_STORE"
+   # Update wrangler.toml with the KV namespace ID
+   wrangler secret put ATTIO_CLIENT_ID
+   wrangler secret put ATTIO_CLIENT_SECRET
+   wrangler secret put TOKEN_ENCRYPTION_KEY
+   wrangler deploy
    ```
+
+   See [Cloudflare Worker Deployment Guide](../examples/cloudflare-mcp-server/README.md) for detailed instructions.
+
+2. **Expose the full tool catalogue** - Do NOT set `ATTIO_MCP_TOOL_MODE`. The server exposes all tools by default.
 
 3. **Configure ChatGPT**:
    - Open **Settings → Connectors → Advanced**.
    - Enable **Developer Mode**.
-   - Add the **Attio MCP Server URL**: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp`
-     - This is the official ChatGPT endpoint with the required `/mcp` suffix
-     - Server marketplace page: https://smithery.ai/server/@kesslerio/attio-mcp-server
-   - **Do NOT use direct server URLs** - ChatGPT requires Smithery OAuth integration
+   - Add your **Cloudflare Worker URL**: `https://your-worker.your-subdomain.workers.dev/mcp`
+   - Complete OAuth authorization when prompted
 
 4. **OAuth Authentication**:
-   - ChatGPT will redirect to Smithery for OAuth authorization
+   - ChatGPT will redirect to your Worker for OAuth authorization
    - Grant permissions for the Attio MCP server
-   - Smithery handles token refresh and API key management automatically
+   - The Worker handles token refresh automatically
 
 5. **Verification**:
    - ChatGPT will automatically auto-approve tools with `readOnlyHint: true` (e.g. `records.search`, `records.get_details`)
@@ -75,7 +74,7 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 ## 3. Search-Only Compatibility Mode
 
-For accounts without Developer Mode, configure `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery dashboard settings.
+For accounts without Developer Mode, configure `ATTIO_MCP_TOOL_MODE: 'search'` as an environment variable in your Cloudflare Worker.
 
 When this mode is active, the server will only advertise:
 
@@ -104,16 +103,16 @@ Unset the variable (or set it to any value other than `search`) to restore the f
 
 ## 5. Troubleshooting
 
-| Symptom                                            | Likely Cause                                                                  | Fix                                                                                    |
-| -------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations                     |
-| **ChatGPT only sees 'search' and 'fetch' tools**   | **`ATTIO_MCP_TOOL_MODE` set in Smithery config (Issue #869)**                 | **Remove `ATTIO_MCP_TOOL_MODE` from Smithery configuration - server defaults to full mode** |
-| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery config               | Remove the configuration field - do NOT set it for full access                         |
-| ChatGPT cannot connect to server                   | Using direct server URL instead of Smithery                                   | Use ChatGPT endpoint URL: `https://server.smithery.ai/@kesslerio/attio-mcp-server/mcp` |
-| OAuth authentication fails                         | Smithery deployment not configured properly                                   | Ensure server is deployed via `npm run dev` or available at Smithery marketplace       |
-| Tools show "unauthorized" errors                   | API credentials not configured in Smithery                                    | Configure `ATTIO_API_KEY` and `ATTIO_WORKSPACE_ID` in Smithery dashboard               |
-| `search` returns no results                        | Ensure Attio API credentials are set and universal search works in Claude/CLI | Verify credentials in Smithery configuration                                           |
-| PR validation fails with missing Attio credentials | Expected if secrets are not available locally; see `README.md` testing notes  | Use Smithery for production deployments with proper credential management              |
+| Symptom                                            | Likely Cause                                                                  | Fix                                                                                |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| ChatGPT requests consent for read-only tools       | `readOnlyHint` missing                                                        | Confirm you are running a version that includes safety annotations                 |
+| **ChatGPT only sees 'search' and 'fetch' tools**   | **`ATTIO_MCP_TOOL_MODE` environment variable set**                            | **Remove `ATTIO_MCP_TOOL_MODE` - server defaults to full mode**                    |
+| ChatGPT cannot see write tools                     | Running with `ATTIO_MCP_TOOL_MODE: 'search'`                                  | Remove the environment variable - do NOT set it for full access                    |
+| ChatGPT cannot connect to server                   | Worker not deployed or incorrect URL                                          | Verify your Cloudflare Worker is deployed and use the correct `/mcp` endpoint      |
+| OAuth authentication fails                         | Cloudflare Worker OAuth not configured properly                               | Check ATTIO_CLIENT_ID, ATTIO_CLIENT_SECRET, and TOKEN_ENCRYPTION_KEY secrets       |
+| Tools show "unauthorized" errors                   | API credentials not configured                                                | Configure `ATTIO_API_KEY` and `ATTIO_WORKSPACE_ID` in Cloudflare Worker secrets    |
+| `search` returns no results                        | Ensure Attio API credentials are set and universal search works in Claude/CLI | Verify credentials in Cloudflare Worker configuration                              |
+| PR validation fails with missing Attio credentials | Expected if secrets are not available locally; see `README.md` testing notes  | Use Cloudflare Worker for production deployments with proper credential management |
 
 ---
 

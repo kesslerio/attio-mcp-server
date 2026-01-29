@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-01-28
+
 ### Added
 
-- **UniversalRecord type guards** (#1073) - Part 1 of 3: Type discrimination functions for list/record handling
+- **UniversalRecord type guards** (#1073) - Type discrimination functions for list/record handling
   - `isAttioRecord()`: Check if record has values wrapper (companies, people, deals, tasks)
   - `isAttioList()`: Check if record has list_id in id object
   - `getRecordId()`: Extract record_id or list_id based on type
@@ -18,42 +20,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Consolidated list filter tools (5 → 1)** (#1069) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #2 of 4
-  - Enhanced `filter-list-entries` with 4 auto-detected parameter modes:
-    - Mode 1 (Simple): Single attribute filtering
-    - Mode 2 (Advanced): Multi-condition AND/OR filtering
-    - Mode 3 (Parent Attribute): Filter by parent record attributes
-    - Mode 4 (Parent UUID): Filter by exact parent record UUID
+- **Consolidated list filter tools (5 → 1)** (#1069) - Part of Issue #1059 list tools consolidation (11 → 4 tools)
+  - Enhanced `filter-list-entries` with 4 auto-detected parameter modes
   - Deprecated tools (removal in v2.0.0): `advanced-filter-list-entries`, `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
-  - Full backward compatibility maintained - all existing Mode 1 calls work unchanged
-  - Simpler API surface - one tool to learn instead of five
-- **Consolidated list entry management tools (3 → 1)** (#1075) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #3 of 4
-  - Enhanced `manage-list-entry` with 3 auto-detected parameter modes:
-    - Mode 1 (Add): Add company/person to list with optional initial values
-    - Mode 2 (Remove): Remove entry from list
-    - Mode 3 (Update): Update entry attributes (stage, status, custom fields)
+  - Full backward compatibility maintained
+- **Consolidated list entry management tools (3 → 1)** (#1075) - Part of Issue #1059 list tools consolidation (11 → 4 tools)
+  - Enhanced `manage-list-entry` with 3 auto-detected parameter modes
   - Deprecated tools (removal in v2.0.0): `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
-  - Full backward compatibility maintained - all existing calls work unchanged with identical parameter structure
-  - Simpler API surface - one tool to learn instead of three
-- **List tools consolidation complete** (#1071) - Part of Issue #1059 list tools consolidation (11 → 4 tools) - PR #4 of 4
-  - Added runtime deprecation warnings for 8 legacy list tools (removal in v2.0.0):
-    - Filter operations: `advanced-filter-list-entries`, `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
-    - Entry management: `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
-    - List discovery: `get-lists`, `get-list-details` (migrate to universal tools)
-  - Comprehensive migration guide at `/docs/migration/v2-list-tools.md` with all 8 tools documented
+  - Full backward compatibility maintained
+- **List tools consolidation complete** (#1071) - Part of Issue #1059 list tools consolidation (11 → 4 tools)
+  - Added runtime deprecation warnings for 8 legacy list tools
+  - Comprehensive migration guide at `/docs/migration/v2-list-tools.md`
   - Updated tool count: 11 → 4 (64% reduction achieved)
-  - See [Migration Guide](./docs/migration/v2-list-tools.md) for migration examples
+- **Smithery references temporarily removed** (#1097) - Smithery changed their deployment model to require external hosting
+  - Removed Smithery badge from README
+  - Updated installation tiers (Tier 1-3 instead of 1-4)
+  - ChatGPT users should use Cloudflare Worker deployment
+  - Will be restored when Cloudflare Worker hosting is set up for Smithery
 
 ### Fixed
 
-- Universal tools (`search_records`, `get_record_details`) now return proper list format matching list-specific tools instead of generic record format with values wrapper (#1068)
-- Universal update/search flows now preserve list-native shapes across the UniversalRecord union without values wrapper coercion (#1073)
+- Universal tools (`search_records`, `get_record_details`) now return proper list format matching list-specific tools (#1068)
+- Universal update/search flows now preserve list-native shapes across the UniversalRecord union (#1073)
 - `update_record` now accepts legacy `data` payloads, wraps top-level field updates into `record_data`, parses JSON string updates, and normalizes status/title inputs for stage updates (#1099)
+- `update_record` input normalization now uses immutable transformations to prevent shared state mutations (#1100)
 - MCP Registry publishing workflow schema version and re-publish errors (#1066)
 - Operations playbook validation tests now work across all workspaces via dynamic attribute discovery (#973, #1081)
-  - Added `is_empty` operator support to advanced-search
-  - Tests discover available attributes at runtime instead of hardcoding field names
-  - Proper error handling for API failures (auth, rate limits, server errors)
 
 ## [1.4.0] - 2025-12-29
 
@@ -907,7 +899,14 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.3.6...v1.4.0
+[1.3.6]: https://github.com/kesslerio/attio-mcp-server/compare/v1.3.5...v1.3.6
+[1.3.5]: https://github.com/kesslerio/attio-mcp-server/compare/v1.3.0...v1.3.5
+[1.3.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.2.2...v1.3.0
+[1.2.2]: https://github.com/kesslerio/attio-mcp-server/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.10...v1.2.0
 [1.1.10]: https://github.com/kesslerio/attio-mcp-server/compare/v1.1.0...v1.1.10
 [1.1.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.0.0...v1.1.0

@@ -19,13 +19,7 @@ Choose your preferred installation method:
 npm install -g attio-mcp
 ```
 
-### Option B: Smithery (Auto-configuration)
-
-```bash
-npx -y @smithery/cli install @kesslerio/attio-mcp --client claude
-```
-
-### Option C: Manual Installation
+### Option B: Manual Installation
 
 ```bash
 git clone https://github.com/kesslerio/attio-mcp-server.git
