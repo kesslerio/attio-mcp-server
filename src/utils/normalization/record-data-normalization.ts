@@ -11,6 +11,7 @@
  */
 
 import type { SanitizedObject } from '@/handlers/tool-configs/universal/schemas/common/types.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 
 /**
  * Keys that are standard params, not record data fields
@@ -98,8 +99,17 @@ export class RecordDataNormalizer {
     }
 
     // Determine record_data source
-    if (p.data !== undefined && typeof p.data === 'object' && p.data !== null) {
-      // Legacy `data` field - use it as record_data
+    if (p.data !== undefined) {
+      // Legacy `data` field - validate it's an object
+      if (
+        typeof p.data !== 'object' ||
+        p.data === null ||
+        Array.isArray(p.data)
+      ) {
+        throw new UniversalValidationError(
+          '`data` must be an object containing the fields to update'
+        );
+      }
       result.record_data = p.data as SanitizedObject;
     } else {
       // Collect extra fields as record_data

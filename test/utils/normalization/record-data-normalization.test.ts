@@ -78,6 +78,32 @@ describe('RecordDataNormalizer', () => {
       expect(result).not.toHaveProperty('data');
     });
 
+    it('should throw clear error when data is not an object', () => {
+      expect(() =>
+        RecordDataNormalizer.normalize({
+          resource_type: 'companies',
+          record_id: 'comp_123',
+          data: 'not an object',
+        })
+      ).toThrow('`data` must be an object');
+
+      expect(() =>
+        RecordDataNormalizer.normalize({
+          resource_type: 'companies',
+          record_id: 'comp_123',
+          data: 123,
+        })
+      ).toThrow('`data` must be an object');
+
+      expect(() =>
+        RecordDataNormalizer.normalize({
+          resource_type: 'companies',
+          record_id: 'comp_123',
+          data: ['array'],
+        })
+      ).toThrow('`data` must be an object');
+    });
+
     it('should collect extra fields into record_data', () => {
       const params = {
         resource_type: 'companies',
