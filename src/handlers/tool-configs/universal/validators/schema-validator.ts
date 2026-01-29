@@ -10,6 +10,7 @@ import {
   validateIdFields,
   validatePaginationParams,
 } from './field-validator.js';
+import { RecordDataNormalizer } from '@/utils/normalization/record-data-normalization.js';
 
 /**
  * Fields that should preserve newlines during sanitization.
@@ -244,47 +245,25 @@ const toolValidators: Record<string, ToolValidator> = {
     return p;
   },
   update_record: (p) => {
-    const candidateParams = p as Record<string, unknown>;
-    if (!p.record_data) {
-      if (candidateParams.data !== undefined) {
-        p.record_data = candidateParams.data as SanitizedValue;
-        delete candidateParams.data;
-      } else {
-        const ignoredKeys = new Set([
-          'resource_type',
-          'record_id',
-          'return_details',
-          'data',
-        ]);
-        const recordData: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(candidateParams)) {
-          if (!ignoredKeys.has(key)) {
-            recordData[key] = value;
-          }
-        }
-        if (Object.keys(recordData).length > 0) {
-          p.record_data = recordData as SanitizedObject;
-          for (const key of Object.keys(recordData)) {
-            delete candidateParams[key];
-          }
-        }
-      }
-    }
-    if (!p.resource_type) {
+    // Normalize input format - use normalized result directly (no leftover fields)
+    const params = RecordDataNormalizer.needsNormalization(p)
+      ? (RecordDataNormalizer.normalize(p) as SanitizedObject)
+      : p;
+    if (!params.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
         ErrorType.USER_ERROR,
         { field: 'resource_type', example: `resource_type: 'companies'` }
       );
     }
-    if (!p.record_id) {
+    if (!params.record_id) {
       throw new UniversalValidationError(
         'Missing required parameter: record_id',
         ErrorType.USER_ERROR,
         { field: 'record_id', example: `record_id: 'comp_abc123'` }
       );
     }
-    if (!p.record_data) {
+    if (!params.record_data) {
       throw new UniversalValidationError(
         'Missing required parameter: record_data',
         ErrorType.USER_ERROR,
@@ -295,12 +274,18 @@ const toolValidators: Record<string, ToolValidator> = {
         }
       );
     }
-    if (p.resource_type === 'tasks') {
+    if (params.resource_type === 'tasks') {
       const forbidden = ['content', 'content_markdown', 'content_plaintext'];
-      if (p.record_data && typeof p.record_data === 'object') {
-        const recordData = p.record_data as Record<string, unknown>;
+      if (params.record_data && typeof params.record_data === 'object') {
+        const recordData = params.record_data as Record<string, unknown>;
+        // Check both nesting patterns: direct and wrapped in values
+        const valuesToCheck = (
+          recordData.values && typeof recordData.values === 'object'
+            ? recordData.values
+            : recordData
+        ) as Record<string, unknown>;
         for (const k of forbidden) {
-          if (k in recordData) {
+          if (k in valuesToCheck) {
             throw new UniversalValidationError(
               'Task content is immutable and cannot be updated'
             );
@@ -308,7 +293,7 @@ const toolValidators: Record<string, ToolValidator> = {
         }
       }
     }
-    return p;
+    return params;
   },
   delete_record: (p) => {
     if (!p.resource_type) {

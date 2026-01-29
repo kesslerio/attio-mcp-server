@@ -110,23 +110,37 @@ import { validateRecordFields } from '@/utils/validation-utils.js';
  * while maintaining the flexibility required for varied API response structures.
  */
 export class UniversalUpdateService {
-  private static normalizeRecordData(params: UniversalUpdateParams): void {
+  /**
+   * Normalize record_data and return a new params object.
+   *
+   * @returns New params object with normalized record_data (never mutates input)
+   */
+  private static normalizeRecordData(
+    params: UniversalUpdateParams
+  ): UniversalUpdateParams {
+    let normalizedRecordData = params.record_data;
+
     if (typeof params.record_data === 'string') {
       try {
-        params.record_data = JSON.parse(params.record_data);
+        normalizedRecordData = JSON.parse(params.record_data);
       } catch {
         throw new UniversalValidationError('record_data must be an object');
       }
     }
 
-    const recordData = params.record_data;
     if (
-      !recordData ||
-      typeof recordData !== 'object' ||
-      Array.isArray(recordData)
+      !normalizedRecordData ||
+      typeof normalizedRecordData !== 'object' ||
+      Array.isArray(normalizedRecordData)
     ) {
       throw new UniversalValidationError('record_data must be a JSON object');
     }
+
+    // Return a new object with normalized record_data (immutable)
+    return {
+      ...params,
+      record_data: normalizedRecordData,
+    };
   }
 
   /**
@@ -150,10 +164,10 @@ export class UniversalUpdateService {
       );
     }
 
-    this.normalizeRecordData(params);
+    const normalizedParams = this.normalizeRecordData(params);
 
     try {
-      return await this._updateRecordInternalWithValidation(params);
+      return await this._updateRecordInternalWithValidation(normalizedParams);
     } catch (error: unknown) {
       // Check if this is already a structured HTTP response - if so, pass it through unchanged
       if (
@@ -215,10 +229,10 @@ export class UniversalUpdateService {
       );
     }
 
-    this.normalizeRecordData(params);
+    const normalizedParams = this.normalizeRecordData(params);
 
     try {
-      return await this._updateRecordInternal(params);
+      return await this._updateRecordInternal(normalizedParams);
     } catch (error: unknown) {
       // Check if this is already a structured HTTP response - if so, pass it through unchanged
       if (

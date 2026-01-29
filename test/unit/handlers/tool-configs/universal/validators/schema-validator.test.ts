@@ -1,9 +1,13 @@
 /**
- * Unit tests for InputSanitizer - particularly multiline content preservation
+ * Unit tests for InputSanitizer and validateUniversalToolParams
  * @see Issue #1052: Preserve line breaks in note content
+ * @see Issue #1099: Fix task immutability for nested values
  */
 import { describe, it, expect } from 'vitest';
-import { InputSanitizer } from '@/handlers/tool-configs/universal/validators/schema-validator.js';
+import {
+  InputSanitizer,
+  validateUniversalToolParams,
+} from '../../../../../../src/handlers/tool-configs/universal/validators/schema-validator.js';
 
 describe('InputSanitizer', () => {
   describe('sanitizeString', () => {
@@ -254,6 +258,142 @@ describe('InputSanitizer', () => {
       expect(result.content).toContain('## Attendees');
       expect(result.content).toContain('- John');
       expect((result.content as string).split('\n').length).toBeGreaterThan(5);
+    });
+  });
+});
+
+describe('validateUniversalToolParams', () => {
+  describe('update_record - input normalization', () => {
+    it('should normalize data field to record_data', () => {
+      const params = {
+        resource_type: 'companies',
+        record_id: 'comp_123',
+        data: { name: 'Test Company' },
+      };
+      const result = validateUniversalToolParams('update_record', params);
+      expect(result.record_data).toEqual({ name: 'Test Company' });
+    });
+
+    it('should collect extra fields into record_data without leftover fields', () => {
+      const params = {
+        resource_type: 'companies',
+        record_id: 'comp_123',
+        name: 'Test Company',
+        website: 'https://example.com',
+      };
+      const result = validateUniversalToolParams('update_record', params);
+      expect(result.record_data).toEqual({
+        name: 'Test Company',
+        website: 'https://example.com',
+      });
+      // Verify flat fields are NOT left at top level (single source of truth)
+      expect(result).not.toHaveProperty('name');
+      expect(result).not.toHaveProperty('website');
+    });
+
+    it('should not mutate original params when normalizing', () => {
+      const original = {
+        resource_type: 'companies',
+        record_id: 'comp_123',
+        name: 'Test Company',
+      };
+      const originalCopy = JSON.parse(JSON.stringify(original));
+
+      validateUniversalToolParams('update_record', original);
+
+      // Original should be unchanged (except for sanitization of existing fields)
+      expect(original.resource_type).toBe(originalCopy.resource_type);
+      expect(original.record_id).toBe(originalCopy.record_id);
+    });
+  });
+
+  describe('update_record - task immutability validation', () => {
+    it('should reject task content updates at top level', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { content: 'Updated content' },
+      };
+      expect(() =>
+        validateUniversalToolParams('update_record', params)
+      ).toThrow('Task content is immutable');
+    });
+
+    it('should reject task content_markdown updates at top level', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { content_markdown: '# Updated' },
+      };
+      expect(() =>
+        validateUniversalToolParams('update_record', params)
+      ).toThrow('Task content is immutable');
+    });
+
+    it('should reject task content_plaintext updates at top level', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { content_plaintext: 'Plain text' },
+      };
+      expect(() =>
+        validateUniversalToolParams('update_record', params)
+      ).toThrow('Task content is immutable');
+    });
+
+    it('should reject task content updates in nested values structure', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { values: { content: 'Updated content' } },
+      };
+      expect(() =>
+        validateUniversalToolParams('update_record', params)
+      ).toThrow('Task content is immutable');
+    });
+
+    it('should reject task content_markdown updates in nested values', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { values: { content_markdown: '# Updated' } },
+      };
+      expect(() =>
+        validateUniversalToolParams('update_record', params)
+      ).toThrow('Task content is immutable');
+    });
+
+    it('should reject task content_plaintext updates in nested values', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { values: { content_plaintext: 'Plain text' } },
+      };
+      expect(() =>
+        validateUniversalToolParams('update_record', params)
+      ).toThrow('Task content is immutable');
+    });
+
+    it('should allow task status updates (not content)', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { status: 'completed' },
+      };
+      const result = validateUniversalToolParams('update_record', params);
+      expect(result.record_data).toEqual({ status: 'completed' });
+    });
+
+    it('should allow task status updates in nested values structure', () => {
+      const params = {
+        resource_type: 'tasks',
+        record_id: 'task_123',
+        record_data: { values: { status: 'completed', assignees: 'user_123' } },
+      };
+      const result = validateUniversalToolParams('update_record', params);
+      expect(result.record_data).toEqual({
+        values: { status: 'completed', assignees: 'user_123' },
+      });
     });
   });
 });
