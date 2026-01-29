@@ -126,10 +126,8 @@ async function getStatusOptionsWithCache(
     );
   }
 
-  // Periodically clean up expired entries (every 10th fetch)
-  if (Math.random() < 0.1) {
-    cleanupExpiredEntries();
-  }
+  // Deterministically clean up expired entries on cache miss
+  cleanupExpiredEntries();
 
   // Fetch fresh data
   try {
@@ -194,26 +192,40 @@ async function getStatusOptionsWithCache(
 /**
  * Find status ID by title (case-insensitive)
  */
+type StatusMatchResult = {
+  match?: AttributeOption;
+  ambiguousMatches: AttributeOption[];
+};
+
 function findStatusByTitle(
   options: AttributeOption[],
   title: string
-): AttributeOption | undefined {
+): StatusMatchResult {
   const titleLower = title.toLowerCase().trim();
+  const activeOptions = options.filter((opt) => !opt.is_archived);
 
   // First try exact match (case-insensitive)
-  const exactMatch = options.find(
+  const exactMatches = activeOptions.filter(
     (opt) => opt.title.toLowerCase() === titleLower
   );
-  if (exactMatch) return exactMatch;
+  if (exactMatches.length === 1) {
+    return { match: exactMatches[0], ambiguousMatches: [] };
+  }
+  if (exactMatches.length > 1) {
+    return { ambiguousMatches: exactMatches };
+  }
 
-  // Then try partial match
-  const partialMatch = options.find(
-    (opt) =>
-      opt.title.toLowerCase().includes(titleLower) ||
-      titleLower.includes(opt.title.toLowerCase())
-  );
+  // Then try partial match (unambiguous only)
+  const partialMatches = activeOptions.filter((opt) => {
+    const optionTitle = opt.title.toLowerCase();
+    return optionTitle.includes(titleLower) || titleLower.includes(optionTitle);
+  });
 
-  return partialMatch;
+  if (partialMatches.length === 1) {
+    return { match: partialMatches[0], ambiguousMatches: [] };
+  }
+
+  return { ambiguousMatches: partialMatches };
 }
 
 /**
@@ -228,7 +240,7 @@ function isStatusFormat(value: unknown): boolean {
 
 function hasStringKey(
   value: unknown,
-  key: 'status' | 'status_id'
+  key: 'status' | 'status_id' | 'title'
 ): value is Record<string, unknown> & { [K in typeof key]: string } {
   return (
     typeof value === 'object' &&
@@ -245,6 +257,14 @@ function normalizeIncomingStatusValue(value: unknown): {
 } {
   // Already-correct Attio form: [{ status: "..." }]
   if (isStatusFormat(value)) {
+    const first = Array.isArray(value) ? value[0] : undefined;
+    const statusValue =
+      first && typeof first === 'object' && !Array.isArray(first)
+        ? (first as Record<string, unknown>).status
+        : undefined;
+    if (typeof statusValue === 'string' && !isValidUUID(statusValue)) {
+      return { normalized: value, extractedText: statusValue };
+    }
     return { normalized: value };
   }
 
@@ -259,17 +279,37 @@ function normalizeIncomingStatusValue(value: unknown): {
 
   // Handle single object forms (common mistakes): { status: "..." } / { status_id: "..." }
   if (hasStringKey(value, 'status')) {
+    const extractedText = isValidUUID(value.status) ? undefined : value.status;
     return {
       normalized: [{ status: value.status }],
-      extractedText: value.status,
+      extractedText,
     };
   }
 
   if (hasStringKey(value, 'status_id')) {
     return {
       normalized: [{ status: value.status_id }],
-      extractedText: value.status_id,
     };
+  }
+
+  if (hasStringKey(value, 'title')) {
+    return {
+      normalized: [{ status: value.title }],
+      extractedText: value.title,
+    };
+  }
+
+  if (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    typeof value[0] === 'object' &&
+    value[0] !== null &&
+    !Array.isArray(value[0]) &&
+    'title' in (value[0] as Record<string, unknown>) &&
+    typeof (value[0] as Record<string, unknown>).title === 'string'
+  ) {
+    const title = (value[0] as Record<string, unknown>).title as string;
+    return { normalized: [{ status: title }], extractedText: title };
   }
 
   // Handle array of string values: ["Demo Scheduling"] → "Demo Scheduling"
@@ -312,7 +352,7 @@ export async function transformStatusValue(
   const normalizedValue = normalizedIncoming.normalized;
 
   // Skip if already in correct Attio format after normalization
-  if (isStatusFormat(normalizedValue)) {
+  if (isStatusFormat(normalizedValue) && !normalizedIncoming.extractedText) {
     return {
       transformed: normalizedValue !== value,
       originalValue: value,
@@ -386,9 +426,19 @@ export async function transformStatusValue(
   }
 
   // Find matching status
-  const match = findStatusByTitle(options, extractedText);
+  const { match, ambiguousMatches } = findStatusByTitle(options, extractedText);
 
   if (!match) {
+    if (ambiguousMatches.length > 0) {
+      const matches = ambiguousMatches
+        .map((opt) => `"${opt.title}"`)
+        .join(', ');
+      throw new Error(
+        `Ambiguous status value "${extractedText}" for ${attributeSlug}. ` +
+          `Matches: ${matches}. Use the full title or a status ID.`
+      );
+    }
+
     // No match found - return error with valid options
     const validOptions = options
       .filter((opt) => !opt.is_archived)

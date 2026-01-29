@@ -110,6 +110,25 @@ import { validateRecordFields } from '@/utils/validation-utils.js';
  * while maintaining the flexibility required for varied API response structures.
  */
 export class UniversalUpdateService {
+  private static normalizeRecordData(params: UniversalUpdateParams): void {
+    if (typeof params.record_data === 'string') {
+      try {
+        params.record_data = JSON.parse(params.record_data);
+      } catch {
+        throw new UniversalValidationError('record_data must be an object');
+      }
+    }
+
+    const recordData = params.record_data;
+    if (
+      !recordData ||
+      typeof recordData !== 'object' ||
+      Array.isArray(recordData)
+    ) {
+      throw new UniversalValidationError('record_data must be a JSON object');
+    }
+  }
+
   /**
    * Enhanced update method that returns validation metadata
    */
@@ -130,6 +149,8 @@ export class UniversalUpdateService {
         }
       );
     }
+
+    this.normalizeRecordData(params);
 
     try {
       return await this._updateRecordInternalWithValidation(params);
@@ -193,6 +214,8 @@ export class UniversalUpdateService {
         }
       );
     }
+
+    this.normalizeRecordData(params);
 
     try {
       return await this._updateRecordInternal(params);

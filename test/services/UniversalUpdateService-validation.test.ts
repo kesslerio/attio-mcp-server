@@ -102,7 +102,7 @@ beforeEach(() => {
 describe('UniversalUpdateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.SKIP_FIELD_VERIFICATION = 'true';
+    process.env.ENABLE_FIELD_VERIFICATION = 'false';
     // Default to using mock data for most tests (offline mode)
     vi.mocked(shouldUseMockData).mockReturnValue(true);
     vi.mocked(validateFields).mockReturnValue({
@@ -117,6 +117,30 @@ describe('UniversalUpdateService', () => {
   });
 
   describe('Field validation & suggestions', () => {
+    it('should parse record_data JSON strings', async () => {
+      await UniversalUpdateService.updateRecord({
+        resource_type: UniversalResourceType.COMPANIES,
+        record_id: 'comp_123',
+        record_data: JSON.stringify({ name: 'Test Company' }),
+      });
+
+      expect(mapRecordFields).toHaveBeenCalledWith(
+        UniversalResourceType.COMPANIES,
+        expect.objectContaining({ name: 'Test Company' }),
+        expect.any(Array)
+      );
+    });
+
+    it('should reject invalid record_data JSON strings', async () => {
+      await expect(
+        UniversalUpdateService.updateRecord({
+          resource_type: UniversalResourceType.COMPANIES,
+          record_id: 'comp_123',
+          record_data: '{invalid-json',
+        })
+      ).rejects.toThrow('record_data must be an object');
+    });
+
     it('should log warnings and suggestions when present', async () => {
       vi.mocked(validateFields).mockReturnValue({
         warnings: ['Field warning 1', 'Field warning 2'],

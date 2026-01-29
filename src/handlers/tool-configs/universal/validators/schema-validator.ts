@@ -244,6 +244,32 @@ const toolValidators: Record<string, ToolValidator> = {
     return p;
   },
   update_record: (p) => {
+    const candidateParams = p as Record<string, unknown>;
+    if (!p.record_data) {
+      if (candidateParams.data !== undefined) {
+        p.record_data = candidateParams.data as SanitizedValue;
+        delete candidateParams.data;
+      } else {
+        const ignoredKeys = new Set([
+          'resource_type',
+          'record_id',
+          'return_details',
+          'data',
+        ]);
+        const recordData: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(candidateParams)) {
+          if (!ignoredKeys.has(key)) {
+            recordData[key] = value;
+          }
+        }
+        if (Object.keys(recordData).length > 0) {
+          p.record_data = recordData as SanitizedObject;
+          for (const key of Object.keys(recordData)) {
+            delete candidateParams[key];
+          }
+        }
+      }
+    }
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',

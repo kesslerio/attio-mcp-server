@@ -63,7 +63,7 @@ describe('status-transformer', () => {
     });
 
     it('should skip transformation for values already in Attio status array format', async () => {
-      const statusFormat = [{ status: 'abc-123' }];
+      const statusFormat = [{ status: '7fc992e0-d89b-40bd-b158-8ab25ea86904' }];
       const result = await transformStatusValue(
         statusFormat,
         'stage',
@@ -88,10 +88,51 @@ describe('status-transformer', () => {
       expect(result.transformedValue).toEqual([{ status: 'abc-123' }]);
     });
 
-    it('should normalize array status_id to Attio status array format without lookup', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
+    it('should transform object status title via lookup', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'status-uuid-1', title: 'Demo Scheduling', is_archived: false },
+        ],
+        attributeType: 'status',
+      });
+
+      const result = await transformStatusValue(
+        { status: 'Demo Scheduling' },
+        'stage',
+        mockContext,
+        statusAttributeMeta
       );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual([{ status: 'status-uuid-1' }]);
+    });
+
+    it('should transform object title via lookup', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'status-uuid-1', title: 'Demo Completed', is_archived: false },
+        ],
+        attributeType: 'status',
+      });
+
+      const result = await transformStatusValue(
+        { title: 'Demo Completed' },
+        'stage',
+        mockContext,
+        statusAttributeMeta
+      );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual([{ status: 'status-uuid-1' }]);
+    });
+
+    it('should normalize array status_id to Attio status array format without lookup', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
       mockGetOptions.mockResolvedValue({
         options: [{ id: 'status-uuid-1', title: 'Demo', is_archived: false }],
@@ -124,9 +165,8 @@ describe('status-transformer', () => {
     });
 
     it('should convert UUID strings directly to status without lookup', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
       mockGetOptions.mockResolvedValue({
         options: [{ id: 'status-uuid-1', title: 'MQL', is_archived: false }],
@@ -149,9 +189,8 @@ describe('status-transformer', () => {
     });
 
     it('should transform status title to status format', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'status-uuid-1', title: 'MQL', is_archived: false },
@@ -174,9 +213,8 @@ describe('status-transformer', () => {
     });
 
     it('should transform array-of-string status titles via lookup', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'status-uuid-1', title: 'MQL', is_archived: false },
@@ -197,9 +235,8 @@ describe('status-transformer', () => {
     });
 
     it('should match status titles case-insensitively', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'status-uuid-1', title: 'Demo Scheduling', is_archived: false },
@@ -218,10 +255,48 @@ describe('status-transformer', () => {
       expect(result.transformedValue).toEqual([{ status: 'status-uuid-1' }]);
     });
 
-    it('should throw error for invalid status value with valid options', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
+    it('should match unambiguous partial status titles', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'status-uuid-1', title: 'Demo Scheduling', is_archived: false },
+          { id: 'status-uuid-2', title: 'Proposal Sent', is_archived: false },
+        ],
+        attributeType: 'status',
+      });
+
+      const result = await transformStatusValue(
+        'Scheduling',
+        'stage',
+        mockContext,
+        statusAttributeMeta
       );
+
+      expect(result.transformed).toBe(true);
+      expect(result.transformedValue).toEqual([{ status: 'status-uuid-1' }]);
+    });
+
+    it('should throw on ambiguous partial status titles', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
+      vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
+        options: [
+          { id: 'status-uuid-1', title: 'Demo Scheduling', is_archived: false },
+          { id: 'status-uuid-2', title: 'Demo Completed', is_archived: false },
+          { id: 'status-uuid-3', title: 'Qualification', is_archived: false },
+        ],
+        attributeType: 'status',
+      });
+
+      await expect(
+        transformStatusValue('Demo', 'stage', mockContext, statusAttributeMeta)
+      ).rejects.toThrow(/Ambiguous status value/);
+    });
+
+    it('should throw error for invalid status value with valid options', async () => {
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'status-uuid-1', title: 'MQL', is_archived: false },
@@ -242,9 +317,8 @@ describe('status-transformer', () => {
     });
 
     it('should include valid options in error message', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       vi.mocked(AttributeOptionsService.getOptions).mockResolvedValue({
         options: [
           { id: 'status-uuid-1', title: 'MQL', is_archived: false },
@@ -271,9 +345,8 @@ describe('status-transformer', () => {
     });
 
     it('should cache status options to avoid repeated API calls', async () => {
-      const { AttributeOptionsService } = await import(
-        '@/services/metadata/index.js'
-      );
+      const { AttributeOptionsService } =
+        await import('@/services/metadata/index.js');
       const mockGetOptions = vi.mocked(AttributeOptionsService.getOptions);
       mockGetOptions.mockResolvedValue({
         options: [{ id: 'status-uuid-1', title: 'Demo', is_archived: false }],

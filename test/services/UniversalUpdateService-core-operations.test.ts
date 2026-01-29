@@ -71,7 +71,7 @@ describe('UniversalUpdateService', () => {
     delete process.env.OFFLINE_MODE;
     delete process.env.PERFORMANCE_TEST;
     delete process.env.ENABLE_ENHANCED_VALIDATION;
-    process.env.SKIP_FIELD_VERIFICATION = 'true';
+    process.env.ENABLE_FIELD_VERIFICATION = 'false';
 
     vi.mocked(validateFields).mockReturnValue({
       warnings: [],
