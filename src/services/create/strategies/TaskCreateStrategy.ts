@@ -10,7 +10,7 @@ import { getCreateService } from '../../create/index.js';
 // - content/title: ensure non-empty `content`; default in E2E
 // - assignees -> assigneeId: accept array/object/string and extract an identifier
 // - deadline_at -> dueDate
-// - linked_records/record_id -> recordId
+// - linked_records -> linked_records (Attio API format) or recordId (legacy)
 // - targetObject: forwarded unchanged (used by downstream service)
 export class TaskCreateStrategy implements CreateStrategy<AttioRecord> {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {
@@ -59,20 +59,38 @@ export class TaskCreateStrategy implements CreateStrategy<AttioRecord> {
     }
     // deadline_at -> dueDate
     if (payload.deadline_at !== undefined) out.dueDate = payload.deadline_at;
-    // linked_records/record_id -> recordId
+    // linked_records/record_id -> linked_records or recordId (#1098)
+    // Forward the full linked_records array when items use Attio API format
+    // (target_object + target_record_id), otherwise fall back to recordId extraction
     if (payload.linked_records !== undefined) {
       const lr = payload.linked_records as unknown;
-      if (Array.isArray(lr as unknown[])) {
-        const first = (lr as unknown[])[0] as unknown;
-        if (typeof first === 'string') out.recordId = first as string;
-        else if (first && typeof first === 'object') {
+      if (Array.isArray(lr)) {
+        const first = lr[0] as unknown;
+        // Detect Attio API format: { target_object, target_record_id }
+        if (
+          first &&
+          typeof first === 'object' &&
+          'target_record_id' in (first as Record<string, unknown>)
+        ) {
+          // Forward the entire array for multi-record linking support
+          out.linked_records = lr;
+        } else if (typeof first === 'string') {
+          out.recordId = first as string;
+        } else if (first && typeof first === 'object') {
           const lo = first as Record<string, unknown>;
-          out.recordId = (lo.record_id as string) || (lo.id as string);
+          out.recordId =
+            (lo.target_record_id as string) ||
+            (lo.record_id as string) ||
+            (lo.id as string);
         }
-      } else if (typeof lr === 'string') out.recordId = lr as string;
-      else if (lr && typeof lr === 'object') {
+      } else if (typeof lr === 'string') {
+        out.recordId = lr as string;
+      } else if (lr && typeof lr === 'object') {
         const lo = lr as Record<string, unknown>;
-        out.recordId = (lo.record_id as string) || (lo.id as string);
+        out.recordId =
+          (lo.target_record_id as string) ||
+          (lo.record_id as string) ||
+          (lo.id as string);
       }
     } else if (payload.record_id !== undefined) {
       out.recordId = payload.record_id as string;
