@@ -513,14 +513,6 @@ describe('Deal Defaults - PR #389 Fix', () => {
   });
 
   describe('Issue #1109: Deal updates must not inject default stage', () => {
-    beforeEach(() => {
-      clearDealCaches();
-    });
-
-    afterEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should NOT inject default stage when updating non-stage fields', async () => {
       // Simulate updating only deal_value — no stage provided
       const updateData = { value: 5000 };
@@ -535,8 +527,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
     });
 
     it('should NOT inject default owner when updating non-owner fields', () => {
-      // Set a default owner in env
-      process.env.ATTIO_DEFAULT_DEAL_OWNER = 'member-uuid-123';
+      vi.stubEnv('ATTIO_DEFAULT_DEAL_OWNER', 'member-uuid-123');
 
       const updateData = { value: 9780 };
       const result = applyDealDefaults(updateData, { isUpdate: true });
@@ -544,7 +535,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
       // Owner must NOT be injected during updates
       expect(result.owner).toBeUndefined();
 
-      delete process.env.ATTIO_DEFAULT_DEAL_OWNER;
+      vi.unstubAllEnvs();
     });
 
     it('should still format user-provided stage during updates', async () => {
@@ -600,7 +591,7 @@ describe('Deal Defaults - PR #389 Fix', () => {
     });
 
     it('applyDealDefaults with isUpdate skips stage and owner defaults', () => {
-      process.env.ATTIO_DEFAULT_DEAL_OWNER = 'member-uuid-123';
+      vi.stubEnv('ATTIO_DEFAULT_DEAL_OWNER', 'member-uuid-123');
 
       const updateData = { value: 2500 };
       const result = applyDealDefaults(updateData, { isUpdate: true });
@@ -609,11 +600,11 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(result.owner).toBeUndefined();
       expect(result.value).toBe(2500);
 
-      delete process.env.ATTIO_DEFAULT_DEAL_OWNER;
+      vi.unstubAllEnvs();
     });
 
     it('applyDealDefaults without isUpdate injects stage and owner defaults', () => {
-      process.env.ATTIO_DEFAULT_DEAL_OWNER = 'member-uuid-123';
+      vi.stubEnv('ATTIO_DEFAULT_DEAL_OWNER', 'member-uuid-123');
 
       const createData = { name: 'Test', value: 1000 };
       const result = applyDealDefaults(createData);
@@ -621,7 +612,32 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(result.stage).toEqual([{ status: 'MQL' }]);
       expect(result.owner).toBe('member-uuid-123');
 
-      delete process.env.ATTIO_DEFAULT_DEAL_OWNER;
+      vi.unstubAllEnvs();
+    });
+
+    it('should not inject default stage when updating via deal_stage alias', async () => {
+      // deal_stage alias should be transformed but not trigger default injection
+      const updateData = { deal_stage: 'Qualified' };
+
+      mockGetStatusOptions.mockResolvedValue([
+        { title: 'Qualified', value: 'qualified', is_archived: false },
+      ]);
+
+      const result = await applyDealDefaultsWithValidation(updateData, false, {
+        isUpdate: true,
+      });
+
+      // Alias should be transformed to stage format
+      expect(result.dealData.stage).toEqual([{ status: 'Qualified' }]);
+      expect(result.dealData.deal_stage).toBeUndefined();
+    });
+
+    it('should not inject default when no deal_stage alias provided during update', () => {
+      // No stage or deal_stage — should stay absent
+      const updateData = { name: [{ value: 'Renamed Deal' }] };
+      const result = applyDealDefaults(updateData, { isUpdate: true });
+
+      expect(result.stage).toBeUndefined();
     });
   });
 });
