@@ -162,7 +162,7 @@ export class TaskCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
-     
+
     _normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     // Tasks are handled via delegation, so no direct recovery needed
