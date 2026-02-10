@@ -109,6 +109,23 @@ describe('TaskCreateStrategy - Issue #1098: linked_records forwarding', () => {
     expect(call.linked_records).toBeUndefined();
   });
 
+  it('falls back to recordId when only target_record_id provided (missing target_object)', async () => {
+    const strategy = new TaskCreateStrategy();
+
+    await strategy.create({
+      resourceType: 'tasks' as any,
+      values: {
+        content: 'Incomplete API format task',
+        linked_records: [{ target_record_id: 'person-uuid-456' }], // missing target_object
+      },
+    });
+
+    const call = mockCreateTask.mock.calls[0][0];
+    // Should extract as recordId since target_object is missing
+    expect(call.recordId).toBe('person-uuid-456');
+    expect(call.linked_records).toBeUndefined();
+  });
+
   it('does not inject linked_records when not provided', async () => {
     const strategy = new TaskCreateStrategy();
 

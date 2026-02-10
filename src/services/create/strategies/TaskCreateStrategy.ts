@@ -67,10 +67,12 @@ export class TaskCreateStrategy implements CreateStrategy<AttioRecord> {
       if (Array.isArray(lr)) {
         const first = lr[0] as unknown;
         // Detect Attio API format: { target_object, target_record_id }
+        // Require BOTH fields to be present to avoid sending invalid payloads
         if (
           first &&
           typeof first === 'object' &&
-          'target_record_id' in (first as Record<string, unknown>)
+          'target_record_id' in (first as Record<string, unknown>) &&
+          'target_object' in (first as Record<string, unknown>)
         ) {
           // Forward the entire array for multi-record linking support
           out.linked_records = lr;

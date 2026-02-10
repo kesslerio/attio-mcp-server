@@ -51,7 +51,9 @@ export class TaskCreator extends BaseCreator {
       dueDate: input.dueDate,
       recordId: input.recordId,
       targetObject: input.targetObject,
-      linked_records: input.linked_records,
+      linked_records_count: Array.isArray(input.linked_records)
+        ? input.linked_records.length
+        : 0,
     } as JsonObject);
 
     if (typeof input.content !== 'string' || input.content.trim() === '') {
