@@ -32,11 +32,6 @@ import {
 import { configLoader } from './config-loader.js';
 import type { ToolParameters } from '../types/index.js';
 import { extractRecordId } from '../../../src/utils/validation/uuid-validation.js';
-import {
-  buildMCPClientConfig,
-  createMCPClient,
-  type MCPClientAdapter,
-} from '../mcp/shared/mcp-client.js';
 
 export interface ToolCallOptions {
   testName?: string;
@@ -59,22 +54,6 @@ export interface ToolCallResult {
   originalToolName: string;
   wasTransformed: boolean;
   isError?: boolean;
-}
-
-let remoteClient: MCPClientAdapter | null = null;
-let remoteInitPromise: Promise<void> | null = null;
-
-async function ensureRemoteClient(): Promise<MCPClientAdapter> {
-  if (!remoteClient) {
-    remoteClient = createMCPClient(buildMCPClientConfig());
-  }
-
-  if (!remoteInitPromise) {
-    remoteInitPromise = remoteClient.init();
-  }
-
-  await remoteInitPromise;
-  return remoteClient;
 }
 
 function captureDebugResult(
@@ -160,8 +139,6 @@ export async function callToolWithEnhancements(
   let actualToolName = toolName;
   let actualParams = parameters;
   let wasTransformed = false;
-  const useRemoteMcp =
-    (process.env.MCP_TEST_MODE || '').toLowerCase() === 'remote';
 
   try {
     // Step 0: Check if API key is available for API-dependent operations
@@ -225,24 +202,7 @@ export async function callToolWithEnhancements(
         arguments: actualParams,
       },
     };
-    let response: CallToolResult;
-
-    if (useRemoteMcp) {
-      const client = await ensureRemoteClient();
-      let remoteResult: CallToolResult | null = null;
-
-      await client.assertToolCall(actualToolName, actualParams, (result) => {
-        remoteResult = result;
-      });
-
-      if (!remoteResult) {
-        throw new Error('Remote MCP call did not return a result');
-      }
-
-      response = remoteResult;
-    } else {
-      response = (await executeToolRequest(request)) as CallToolResult;
-    }
+    const response = (await executeToolRequest(request)) as CallToolResult;
     const endTime = Date.now();
 
     // Step 3: Transform response if needed

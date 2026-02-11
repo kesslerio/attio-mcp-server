@@ -141,10 +141,15 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Handle Universal and General tools first (Issue #352)
     if (resourceType === 'UNIVERSAL') {
       // For universal tools, use the tool's own handler directly
-      const args = request.params.arguments as Record<string, unknown>;
+      // Shallow-clone to avoid mutating the caller's object (e.g. shared params in Promise.all)
+      const rawArgs = (request.params.arguments ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const args = { ...rawArgs };
 
       // Canonicalize and freeze resource_type to prevent mutation
-      if (args && 'resource_type' in args) {
+      if ('resource_type' in args) {
         args.resource_type = canonicalizeResourceType(args.resource_type);
         Object.defineProperty(args, 'resource_type', {
           value: args.resource_type,
