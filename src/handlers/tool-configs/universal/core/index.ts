@@ -32,6 +32,10 @@ import {
   createNoteDefinition,
   listNotesDefinition,
 } from './notes-operations.js';
+import {
+  getRecordInteractionsConfig,
+  getRecordInteractionsDefinition,
+} from './interaction-operations.js';
 
 export const coreOperationsToolConfigs = {
   create_note: createNoteConfig,
@@ -45,6 +49,7 @@ export const coreOperationsToolConfigs = {
   discover_record_attributes: discoverAttributesConfig,
   get_record_attribute_options: getAttributeOptionsConfig,
   get_record_info: getDetailedInfoConfig,
+  get_record_interactions: getRecordInteractionsConfig,
 };
 
 export const coreOperationsToolDefinitions = {
@@ -59,6 +64,7 @@ export const coreOperationsToolDefinitions = {
   get_record_info: getDetailedInfoDefinition,
   create_note: createNoteDefinition,
   list_notes: listNotesDefinition,
+  get_record_interactions: getRecordInteractionsDefinition,
 };
 
 export {
@@ -73,4 +79,5 @@ export {
   getDetailedInfoConfig,
   createNoteConfig,
   listNotesConfig,
+  getRecordInteractionsConfig,
 };
