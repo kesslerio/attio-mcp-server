@@ -70,9 +70,10 @@ export const searchByContentConfig: UniversalToolConfig<
 
       if (content_type === ContentSearchType.INTERACTIONS) {
         throw new Error(
-          `Interaction content search is not currently available for ${resource_type}. ` +
-            `This feature requires access to interaction/activity API endpoints. ` +
-            `As an alternative, try searching by notes content or using timeframe search with 'last_interaction' type.`
+          `Interaction content search is not available via search_records_by_content. ` +
+            `Use get_record_interactions(resource_type, record_id) instead to fetch ` +
+            `interaction metadata (first/last email, calendar, interaction timestamps) ` +
+            `for a specific person or company record.`
         );
       }
 
@@ -85,6 +86,12 @@ export const searchByContentConfig: UniversalToolConfig<
       if (
         error instanceof Error &&
         (error.message.includes('Content search not supported') ||
+          error.message.includes(
+            'Interaction content search is not available'
+          ) ||
+          error.message.includes(
+            'Activity content search is not currently available'
+          ) ||
           error.message.includes('Timeframe search is not currently optimized'))
       ) {
         throw error;

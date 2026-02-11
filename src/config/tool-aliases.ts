@@ -82,6 +82,11 @@ const NOUN_VERB_ALIASES: AliasPattern[] = [
     reason: 'MCP compliance: verb-first snake_case (#1039)',
   },
   {
+    alias: 'records_get_interactions',
+    target: TOOL_NAMES.GET_RECORD_INTERACTIONS,
+    reason: 'MCP compliance: verb-first snake_case (#1039)',
+  },
+  {
     alias: 'records_search_advanced',
     target: TOOL_NAMES.SEARCH_RECORDS_ADVANCED,
     reason: 'MCP compliance: verb-first snake_case (#1039)',
@@ -147,6 +152,11 @@ const KEBAB_CASE_ALIASES: AliasPattern[] = [
   {
     alias: 'get-detailed-info',
     target: TOOL_NAMES.GET_RECORD_INFO,
+    reason: 'MCP compliance: snake_case over kebab-case (#1039)',
+  },
+  {
+    alias: 'get-record-interactions',
+    target: TOOL_NAMES.GET_RECORD_INTERACTIONS,
     reason: 'MCP compliance: snake_case over kebab-case (#1039)',
   },
   // Advanced search tools
