@@ -306,6 +306,22 @@ describe('get_record_interactions', () => {
       );
       expect(formatted).toContain('No interaction data found');
     });
+
+    it('returns error string instead of throwing on formatting crash', () => {
+      // Force a crash by providing a result whose interactions getter throws
+      const badResult = {
+        record_id: 'test',
+        resource_type: 'people',
+        record_name: 'Test',
+        get interactions() {
+          throw new Error('boom');
+        },
+      } as unknown as InteractionsResult;
+
+      const formatted = getRecordInteractionsConfig.formatResult(badResult);
+      expect(typeof formatted).toBe('string');
+      expect(formatted.length).toBeGreaterThan(0);
+    });
   });
 
   describe('definition', () => {

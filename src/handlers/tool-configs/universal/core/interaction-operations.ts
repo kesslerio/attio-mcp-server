@@ -18,6 +18,7 @@ import {
   validateUniversalToolParams,
 } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
+import { createErrorResult } from '@/utils/error-handler.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { getObjectRecord } from '@/objects/records/index.js';
 import { getPersonDetails } from '@/objects/people/basic.js';
@@ -168,55 +169,68 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
     }
   },
   formatResult: (result: InteractionsResult): string => {
-    if (!result || !result.interactions) {
-      return 'No interaction data found.';
-    }
-
-    const { record_name, record_id, resource_type, interactions } = result;
-    const displayName = record_name || record_id;
-    const lines: string[] = [
-      `Interactions for ${resource_type} "${displayName}" (${record_id}):`,
-      '',
-    ];
-
-    const labelMap: Record<string, string> = {
-      first_email_interaction: 'First Email',
-      last_email_interaction: 'Last Email',
-      first_calendar_interaction: 'First Meeting',
-      last_calendar_interaction: 'Last Meeting',
-      next_calendar_interaction: 'Next Meeting',
-      first_interaction: 'First Interaction',
-      last_interaction: 'Last Interaction',
-      next_interaction: 'Next Interaction',
-    };
-
-    let hasAny = false;
-    for (const attr of INTERACTION_ATTRIBUTES) {
-      const interaction = interactions[attr];
-      const label = labelMap[attr] || attr;
-
-      if (interaction) {
-        hasAny = true;
-        const date = new Date(interaction.date!).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        });
-        const type = interaction.interaction_type
-          ? ` (${interaction.interaction_type})`
-          : '';
-        const owner = interaction.owner_actor_id
-          ? ` — owner: ${interaction.owner_actor_type}/${interaction.owner_actor_id}`
-          : '';
-        lines.push(`  ${label}: ${date}${type}${owner}`);
+    try {
+      if (!result || !result.interactions) {
+        return 'No interaction data found.';
       }
-    }
 
-    if (!hasAny) {
-      lines.push('  No interaction history recorded.');
-    }
+      const { record_name, record_id, resource_type, interactions } = result;
+      const displayName = record_name || record_id;
+      const lines: string[] = [
+        `Interactions for ${resource_type} "${displayName}" (${record_id}):`,
+        '',
+      ];
 
-    return lines.join('\n');
+      const labelMap: Record<string, string> = {
+        first_email_interaction: 'First Email',
+        last_email_interaction: 'Last Email',
+        first_calendar_interaction: 'First Meeting',
+        last_calendar_interaction: 'Last Meeting',
+        next_calendar_interaction: 'Next Meeting',
+        first_interaction: 'First Interaction',
+        last_interaction: 'Last Interaction',
+        next_interaction: 'Next Interaction',
+      };
+
+      let hasAny = false;
+      for (const attr of INTERACTION_ATTRIBUTES) {
+        const interaction = interactions[attr];
+        const label = labelMap[attr] || attr;
+
+        if (interaction) {
+          hasAny = true;
+          const date = new Date(interaction.date!).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          });
+          const type = interaction.interaction_type
+            ? ` (${interaction.interaction_type})`
+            : '';
+          const owner = interaction.owner_actor_id
+            ? ` — owner: ${interaction.owner_actor_type}/${interaction.owner_actor_id}`
+            : '';
+          lines.push(`  ${label}: ${date}${type}${owner}`);
+        }
+      }
+
+      if (!hasAny) {
+        lines.push('  No interaction history recorded.');
+      }
+
+      return lines.join('\n');
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      const fallback = createErrorResult(
+        err,
+        'get_record_interactions#format',
+        'FORMAT'
+      ) as { content?: Array<{ type: string; text?: string }> };
+      const message = fallback.content?.[0]?.text;
+      return typeof message === 'string'
+        ? message
+        : 'Error formatting interaction results';
+    }
   },
 };
 

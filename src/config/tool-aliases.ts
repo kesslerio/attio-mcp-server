@@ -250,7 +250,7 @@ function generateAliasRegistry(
 }
 
 /**
- * Complete tool alias registry (29 aliases total).
+ * Complete tool alias registry (31 aliases total).
  */
 const TOOL_ALIAS_REGISTRY = generateAliasRegistry([
   ...NOUN_VERB_ALIASES,
