@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Refined GitHub issue forms and PR template for reproducibility, triage quality, and rollback clarity, added `CONTRIBUTING.md`, and removed legacy markdown issue templates to avoid duplicate issue flows
+
 ## [2026-01-29] - Daily Update
 
 ### Fixed
