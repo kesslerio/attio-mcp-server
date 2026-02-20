@@ -1,20 +1,27 @@
-name: '🐛 Bug report'
-description: Report a bug and help us reproduce it
-title: 'bug: <short description>'
-labels: ['status:untriaged', 'type:bug']
+name: Bug report
+description: Report a defect or unexpected behavior.
+title: 'bug: <symptom> when <condition>'
+labels:
+  - type:bug
+  - status:untriaged
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing this report. Keep it concise, reproducible, and evidence-based.
+
   - type: dropdown
     id: priority
     attributes:
       label: Priority
-      description: How critical is this bug?
+      description: How critical is this issue?
       options:
-        - P0 (Critical - System down, data loss)
-        - P1 (High - Major functionality broken)
-        - P2 (Medium - Important feature affected)
-        - P3 (Low - Minor issue or workaround exists)
-        - P4 (Minor - Cosmetic or edge case)
-        - P5 (Trivial - Nice to have fix)
+        - P0
+        - P1
+        - P2
+        - P3
+        - P4
+        - P5
     validations:
       required: true
 
@@ -22,11 +29,12 @@ body:
     id: area
     attributes:
       label: Area
-      description: Which area of the system is affected?
+      description: Which area is affected?
       options:
         - area:core
         - area:api
         - area:build
+        - area:dist
         - area:documentation
         - area:testing
         - area:performance
@@ -46,39 +54,24 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: status
+  - type: textarea
+    id: summary
     attributes:
-      label: Initial status
-      description: Current status of this issue
-      options:
-        - status:untriaged
-        - status:ready
-        - status:blocked
-        - status:needs-info
-      default: 0
+      label: Summary
+      description: One-sentence statement of what is broken.
+      placeholder: Search returns incomplete results when pagination token is provided.
     validations:
       required: true
 
   - type: textarea
-    id: description
-    attributes:
-      label: Bug description
-      description: A clear and concise description of what the bug is
-      placeholder: Describe what happened and what you expected to happen
-    validations:
-      required: true
-
-  - type: textarea
-    id: steps
+    id: repro
     attributes:
       label: Steps to reproduce
-      description: Precise steps to reproduce the issue
+      description: Provide the shortest deterministic repro path.
       placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
+        1. Set ATTIO_API_KEY
+        2. Run bun run test -- -t "..."
+        3. Observe failure in tool output
     validations:
       required: true
 
@@ -86,7 +79,7 @@ body:
     id: expected
     attributes:
       label: Expected behavior
-      description: What should have happened?
+      description: What should happen if the bug does not exist.
     validations:
       required: true
 
@@ -94,30 +87,66 @@ body:
     id: actual
     attributes:
       label: Actual behavior
-      description: What actually happened?
+      description: What happened instead, including user-visible errors.
     validations:
       required: true
 
-  - type: textarea
-    id: environment
+  - type: input
+    id: version
     attributes:
-      label: Environment
-      description: Please provide environment details
-      placeholder: |
-        - OS: [e.g. macOS 14.0]
-        - Node.js version: [e.g. 20.x]
-        - Package version: [e.g. 1.0.0]
-        - Attio API version: [e.g. v2]
+      label: Version/ref tested
+      description: Exact branch, commit, or tag tested.
+      placeholder: main@<sha>
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: OS and shell where this occurs.
+      placeholder: macOS 15.x + zsh / Ubuntu 24.04 + bash
+    validations:
+      required: true
+
+  - type: input
+    id: tooling
+    attributes:
+      label: Related tool versions
+      description: Include bun/node/gh/claude/codex versions when relevant.
+      placeholder: bun --version, node --version, gh --version
 
   - type: textarea
     id: logs
     attributes:
-      label: Logs and error messages
-      description: Include any relevant logs, error messages, or screenshots
-      placeholder: Paste logs here or attach screenshots
+      label: Logs, screenshots, and evidence
+      description: Include redacted logs/screenshots that prove the behavior.
+      render: shell
 
   - type: textarea
-    id: context
+    id: impact
     attributes:
-      label: Additional context
-      description: Any other context about the problem
+      label: Impact and severity
+      description: |
+        Explain who is affected, severity, frequency, and practical consequence.
+        Include:
+        - Affected users/workflows
+        - Severity (annoying, blocks workflow, data risk, etc.)
+        - Frequency (always/intermittent/edge case)
+        - Consequence (errors, manual work, delays, etc.)
+
+  - type: textarea
+    id: additional_information
+    attributes:
+      label: Additional information
+      description: Any context that helps triage but does not fit above.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I reproduced this on the latest main branch.
+          required: true
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
