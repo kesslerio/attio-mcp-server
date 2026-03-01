@@ -252,7 +252,7 @@
     "tsc-alias": "^1.8.16",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.18",
     "wireit": "^0.14.12"
   },
   "lint-staged": {
