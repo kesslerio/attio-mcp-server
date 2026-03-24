@@ -1,20 +1,27 @@
-name: '✨ Feature request'
-description: Suggest a new feature or enhancement
-title: 'feature: <short description>'
-labels: ['status:untriaged', 'type:feature']
+name: Feature request
+description: Propose a capability or workflow improvement.
+title: 'feature: <capability> (for <surface>)'
+labels:
+  - type:feature
+  - status:untriaged
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us evaluate this request with concrete use cases and tradeoffs.
+
   - type: dropdown
     id: priority
     attributes:
       label: Priority
       description: How important is this feature?
       options:
-        - P0 (Critical - Blocking core functionality)
-        - P1 (High - Important for user experience)
-        - P2 (Medium - Valuable enhancement)
-        - P3 (Low - Nice to have)
-        - P4 (Minor - Small improvement)
-        - P5 (Trivial - Polish or convenience)
+        - P0
+        - P1
+        - P2
+        - P3
+        - P4
+        - P5
     validations:
       required: true
 
@@ -27,6 +34,7 @@ body:
         - area:core
         - area:api
         - area:build
+        - area:dist
         - area:documentation
         - area:testing
         - area:performance
@@ -46,35 +54,28 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: status
+  - type: textarea
+    id: summary
     attributes:
-      label: Initial status
-      description: Current status of this request
-      options:
-        - status:untriaged
-        - status:ready
-        - status:blocked
-        - status:needs-info
-      default: 0
+      label: Summary
+      description: One-line statement of the requested capability.
+      placeholder: Add automatic object attribute validation hints for create/update tools.
     validations:
       required: true
 
   - type: textarea
     id: problem
     attributes:
-      label: Problem statement
-      description: What problem does this feature solve?
-      placeholder: Describe the problem or pain point this feature would address
+      label: Problem to solve
+      description: What user pain this solves and why current behavior is insufficient.
     validations:
       required: true
 
   - type: textarea
-    id: solution
+    id: proposed_solution
     attributes:
       label: Proposed solution
-      description: What would you like to happen?
-      placeholder: Describe your proposed solution
+      description: Desired behavior/API/docs changes with as much specificity as possible.
     validations:
       required: true
 
@@ -82,38 +83,41 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
-      description: What other approaches have you considered?
-      placeholder: Describe any alternative solutions or features you've considered
-
-  - type: textarea
-    id: use-cases
-    attributes:
-      label: Use cases
-      description: How would this feature be used?
-      placeholder: |
-        1. User scenario 1...
-        2. User scenario 2...
-        3. User scenario 3...
-
-  - type: textarea
-    id: acceptance-criteria
-    attributes:
-      label: Acceptance criteria
-      description: What would constitute this feature being "done"?
-      placeholder: |
-        - [ ] Criteria 1
-        - [ ] Criteria 2
-        - [ ] Criteria 3
+      description: Other approaches considered and why they are weaker.
 
   - type: textarea
     id: impact
     attributes:
-      label: Impact and benefits
-      description: What value would this feature provide?
-      placeholder: Describe the expected benefits and who would be impacted
+      label: Impact
+      description: |
+        Explain who is affected, severity/urgency, frequency, and practical consequence.
+        Include:
+        - Affected users/workflows
+        - Severity (annoying, blocks workflow, etc.)
+        - Frequency (always/intermittent/edge case)
+        - Consequence (delays, errors, extra manual work, etc.)
+    validations:
+      required: true
 
   - type: textarea
-    id: context
+    id: acceptance
     attributes:
-      label: Additional context
-      description: Any other context, screenshots, or examples
+      label: Acceptance criteria
+      description: Checklist that can be verified by tests/commands.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence/examples
+      description: Prior art, links, snippets, or metrics.
+
+  - type: textarea
+    id: additional_information
+    attributes:
+      label: Additional information
+      description: Extra context, constraints, or references not covered above.

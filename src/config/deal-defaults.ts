@@ -143,10 +143,12 @@ function applyFieldNameConversions(
  */
 function applyStageDefaults(
   dealData: Record<string, unknown>,
-  defaults: DealDefaults
+  defaults: DealDefaults,
+  isUpdate: boolean = false
 ): Record<string, unknown> {
   // Apply stage default if not provided, or convert to proper format
-  if (!dealData.stage && !dealData.deal_stage && defaults.stage) {
+  // Skip default injection during updates — only inject defaults for create operations
+  if (!dealData.stage && !dealData.deal_stage && defaults.stage && !isUpdate) {
     dealData.stage = [{ status: defaults.stage }];
   } else if (dealData.stage && typeof dealData.stage === 'string') {
     // Convert string stage to proper array format
@@ -166,10 +168,12 @@ function applyStageDefaults(
  */
 function applyOwnerDefaults(
   dealData: Record<string, unknown>,
-  defaults: DealDefaults
+  defaults: DealDefaults,
+  isUpdate: boolean = false
 ): Record<string, unknown> {
   // Apply owner default if not provided
-  if (!dealData.owner && defaults.owner) {
+  // Skip default injection during updates — only inject defaults for create operations
+  if (!dealData.owner && defaults.owner && !isUpdate) {
     dealData.owner = defaults.owner;
   }
 
@@ -233,15 +237,17 @@ function applyValueDefaults(
  * 4. Allows user-provided values to override defaults
  */
 export function applyDealDefaults(
-  recordData: Record<string, unknown>
+  recordData: Record<string, unknown>,
+  options?: { isUpdate?: boolean }
 ): Record<string, unknown> {
   const defaults = getDealDefaults();
+  const isUpdate = options?.isUpdate ?? false;
   let dealData = { ...recordData };
 
   // Apply transformations in logical order
   dealData = applyFieldNameConversions(dealData);
-  dealData = applyStageDefaults(dealData, defaults);
-  dealData = applyOwnerDefaults(dealData, defaults);
+  dealData = applyStageDefaults(dealData, defaults, isUpdate);
+  dealData = applyOwnerDefaults(dealData, defaults, isUpdate);
   dealData = applyValueDefaults(dealData);
 
   return dealData;
@@ -638,9 +644,10 @@ export interface DealDefaultsValidationResult {
  */
 export async function applyDealDefaultsWithValidation(
   recordData: Record<string, unknown>,
-  skipValidation: boolean = false
+  skipValidation: boolean = false,
+  options?: { isUpdate?: boolean }
 ): Promise<DealDefaultsValidationResult> {
-  const dealData = applyDealDefaults(recordData);
+  const dealData = applyDealDefaults(recordData, options);
   const result: DealDefaultsValidationResult = {
     dealData,
     warnings: [],

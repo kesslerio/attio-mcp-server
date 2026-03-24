@@ -51,6 +51,9 @@ export class TaskCreator extends BaseCreator {
       dueDate: input.dueDate,
       recordId: input.recordId,
       targetObject: input.targetObject,
+      linked_records_count: Array.isArray(input.linked_records)
+        ? input.linked_records.length
+        : 0,
     } as JsonObject);
 
     if (typeof input.content !== 'string' || input.content.trim() === '') {
@@ -84,6 +87,12 @@ export class TaskCreator extends BaseCreator {
       }
       if (input.targetObject && input.targetObject !== 'undefined') {
         options.targetObject = input.targetObject as string;
+      }
+      if (
+        Array.isArray(input.linked_records) &&
+        input.linked_records.length > 0
+      ) {
+        options.linked_records = input.linked_records;
       }
 
       const createTaskFn = (this.taskModule as JsonObject).createTask as (
@@ -155,7 +164,7 @@ export class TaskCreator extends BaseCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     _normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     // Tasks are handled via delegation, so no direct recovery needed

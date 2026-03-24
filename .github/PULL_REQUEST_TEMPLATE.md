@@ -1,35 +1,107 @@
-## Pull Request Description
-<!-- Provide a brief summary of the changes in this PR -->
+## Summary
 
-## Related Issues
-<!-- List any issues this PR addresses using the format: "Closes #123" or "Relates to #456" -->
+Describe the problem and fix in 2-5 bullets:
 
-## Changes Made
-<!-- Describe the key changes made in this PR in detail -->
-- 
-- 
-- 
+- Problem:
+- Why it matters:
+- What changed:
+- What did not change (scope boundary):
 
-## Testing Performed
-<!-- Describe how you tested these changes -->
-- [ ] Unit tests added/updated
-- [ ] Integration tests added/updated
-- [ ] Manual testing performed
-- [ ] Test coverage maintained or improved
+## Change Type (select all)
 
-## Checklist
-- [ ] Code follows project style guidelines
-- [ ] Documentation has been updated if needed
-- [ ] Commit messages follow the required format
-- [ ] All tests pass locally
-- [ ] No unnecessary commented-out code or debug statements
-- [ ] Code is properly typed with TypeScript
+- [ ] Bug fix
+- [ ] Feature
+- [ ] Refactor
+- [ ] Docs
+- [ ] Security hardening
+- [ ] Chore/infra
 
-## Implementation Details
-<!-- Any interesting technical details about your implementation -->
+## Scope (select all touched areas)
 
-## Screenshots
-<!-- If applicable, add screenshots to help explain your changes -->
+- [ ] Tool handlers/formatting
+- [ ] Attio API integration
+- [ ] Tests/mocks/fixtures
+- [ ] Issue/PR templates or community files
+- [ ] CI/workflows
+- [ ] Other
 
-## Additional Notes
-<!-- Any other information that reviewers should know about this PR -->
+## Linked Issue/PR
+
+- Closes #
+- Related #
+
+## User-visible / Behavior Changes
+
+List user-visible changes (including defaults/config). If none, write `None`.
+
+## Security Impact (required)
+
+- New permissions/capabilities? (`Yes/No`)
+- Secrets/tokens handling changed? (`Yes/No`)
+- New/changed network calls? (`Yes/No`)
+- Tool execution surface changed? (`Yes/No`)
+- If any `Yes`, explain risk and mitigation:
+
+## Repro + Verification
+
+### Environment
+
+- OS:
+- Shell/runtime:
+- Relevant tool versions:
+
+### Steps
+
+1.
+2.
+3.
+
+### Expected
+
+-
+
+### Actual
+
+-
+
+## Evidence
+
+Attach at least one:
+
+- [ ] Failing output before and passing output after
+- [ ] Log snippets
+- [ ] Screenshot/recording
+- [ ] N/A (docs-only or template-only change)
+
+## Human Verification (required)
+
+What you personally verified (not just CI), and how:
+
+- Verified scenarios:
+- Edge cases checked:
+- What you did not verify:
+
+## Compatibility / Migration
+
+- Backward compatible? (`Yes/No`)
+- Config/env changes? (`Yes/No`)
+- Migration needed? (`Yes/No`)
+- If yes, exact upgrade steps:
+
+## Failure Recovery
+
+- How to disable/revert this change quickly:
+- Files/config to restore:
+- Known bad symptoms reviewers should watch for:
+
+## Risks and Mitigations
+
+- Risk:
+  - Mitigation:
+
+## AI Assistance
+
+- AI-assisted: yes/no
+- Tools/agents/models used:
+- Testing level: untested/lightly tested/fully tested
+- Human understanding confirmation: yes/no

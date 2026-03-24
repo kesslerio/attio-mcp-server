@@ -188,6 +188,30 @@ export const getRecordDetailsSchema = {
   ],
 };
 
+export const getRecordInteractionsSchema = {
+  type: 'object' as const,
+  properties: {
+    resource_type: {
+      type: 'string' as const,
+      enum: ['people', 'companies'],
+      description:
+        'Resource type (only people and companies have interaction metadata)',
+    },
+    record_id: {
+      type: 'string' as const,
+      description: 'Record ID to retrieve interactions for',
+    },
+  },
+  required: ['resource_type' as const, 'record_id' as const],
+  additionalProperties: false,
+  examples: [
+    {
+      resource_type: 'people',
+      record_id: 'person_123456',
+    },
+  ],
+};
+
 export const createRecordSchema = {
   type: 'object' as const,
   properties: {

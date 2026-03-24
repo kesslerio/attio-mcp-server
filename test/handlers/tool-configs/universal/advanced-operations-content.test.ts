@@ -118,7 +118,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       };
 
       await expect(searchByContentConfig.handler(params)).rejects.toThrow(
-        /Interaction content search is not currently available/
+        /Interaction content search is not available via search_records_by_content/
       );
     });
 

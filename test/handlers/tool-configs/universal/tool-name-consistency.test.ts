@@ -144,8 +144,9 @@ describe('Tool Name Consistency Validation', () => {
       // 29 aliases: 12 tools with dual aliases (noun-verb + kebab) = 24
       // + 6 tools with kebab-only aliases = 6
       // - 1 tool (get_attribute_options) has noun-verb only = -1
-      // Total: 29 aliases
-      expect(aliasEntries.length).toBe(29);
+      // + 2 aliases for get_record_interactions (Issue #1116)
+      // Total: 31 aliases
+      expect(aliasEntries.length).toBe(31);
 
       for (const [alias, definition] of aliasEntries) {
         // Target should use snake_case (no hyphens) except for special cases

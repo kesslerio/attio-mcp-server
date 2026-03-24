@@ -258,4 +258,101 @@ describe('tasks.createTask validation', () => {
       await expect(createTask('test')).rejects.toThrow('Network error');
     });
   });
+
+  describe('Issue #1098: linked_records forwarding', () => {
+    it('forwards linked_records array in Attio API format', async () => {
+      mockPost.mockResolvedValue({
+        data: {
+          data: {
+            id: 'task-linked',
+            content_plaintext: 'task with linked records',
+            status: 'pending',
+            linked_records: [
+              {
+                target_object: 'people',
+                target_record_id: 'person-uuid-123',
+              },
+            ],
+          },
+        },
+      });
+
+      await createTask('task with linked records', {
+        linked_records: [
+          {
+            target_object: 'people',
+            target_record_id: 'person-uuid-123',
+          },
+        ],
+      });
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/tasks',
+        expect.objectContaining({
+          data: expect.objectContaining({
+            content: 'task with linked records',
+            format: 'plaintext',
+            linked_records: [
+              {
+                target_object: 'people',
+                target_record_id: 'person-uuid-123',
+              },
+            ],
+          }),
+        })
+      );
+    });
+
+    it('forwards multiple linked_records', async () => {
+      mockPost.mockResolvedValue({
+        data: {
+          data: {
+            id: 'task-multi-linked',
+            content_plaintext: 'multi linked',
+            status: 'pending',
+          },
+        },
+      });
+
+      await createTask('multi linked', {
+        linked_records: [
+          { target_object: 'people', target_record_id: 'person-1' },
+          { target_object: 'companies', target_record_id: 'company-1' },
+        ],
+      });
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/tasks',
+        expect.objectContaining({
+          data: expect.objectContaining({
+            linked_records: [
+              { target_object: 'people', target_record_id: 'person-1' },
+              { target_object: 'companies', target_record_id: 'company-1' },
+            ],
+          }),
+        })
+      );
+    });
+
+    it('skips recordId/targetObject validation when linked_records provided', async () => {
+      mockPost.mockResolvedValue({
+        data: {
+          data: {
+            id: 'task-skip-val',
+            content_plaintext: 'skip validation',
+            status: 'pending',
+          },
+        },
+      });
+
+      // Should NOT throw even without targetObject — linked_records bypasses that check
+      await expect(
+        createTask('skip validation', {
+          linked_records: [
+            { target_object: 'people', target_record_id: 'person-1' },
+          ],
+        })
+      ).resolves.toBeDefined();
+    });
+  });
 });

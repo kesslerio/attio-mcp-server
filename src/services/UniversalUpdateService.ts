@@ -343,7 +343,8 @@ export class UniversalUpdateService {
 
         const dealValidation = await applyDealDefaultsWithValidation(
           values as Record<string, unknown>,
-          false // Don't skip API validation for user requests
+          false, // Don't skip API validation for user requests
+          { isUpdate: true } // Skip default injection for updates (#1109)
         );
 
         // Update values with validated deal data

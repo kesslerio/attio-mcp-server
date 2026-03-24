@@ -308,6 +308,32 @@ jobs:
           chmod +x dist/cli/discover.js
           node dist/index.js --help || echo "CLI help test completed"
 
+  # Job 5b: Build Verification Status Reporter (always runs to satisfy branch protection)
+  build-verification-status:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: [change-analysis, build]
+    if: always()
+    steps:
+      - name: Report Build Verification Status
+        run: |
+          docs_only="${{ needs.change-analysis.outputs.docs-only }}"
+          build_result="${{ needs.build.result }}"
+
+          echo "Docs only: $docs_only"
+          echo "Build result: $build_result"
+
+          if [ "$docs_only" = "true" ]; then
+            echo "✅ Docs-only changes - Build Verification passed (skipped)"
+            exit 0
+          elif [ "$build_result" = "success" ]; then
+            echo "✅ Build Verification passed"
+            exit 0
+          else
+            echo "❌ Build Verification failed"
+            exit 1
+          fi
+
   # Job 6: Performance Tests (main branch only)
   performance:
     name: Performance Tests
@@ -353,7 +379,13 @@ jobs:
   smart-summary:
     name: Smart CI Summary
     runs-on: ubuntu-latest
-    needs: [change-analysis, lint-and-typecheck, smart-tests, build]
+    needs:
+      [
+        change-analysis,
+        lint-and-typecheck,
+        smart-tests,
+        build-verification-status,
+      ]
     if: always() && github.event_name == 'pull_request'
 
     steps:
@@ -389,7 +421,7 @@ jobs:
             const jobs = {
               'Lint & Type Check': '${{ needs.lint-and-typecheck.result }}',
               'Smart Tests': '${{ needs.smart-tests.result }}',
-              'Build Verification': '${{ needs.build.result || 'skipped' }}'
+              'Build Verification': '${{ needs.build-verification-status.result }}'
             };
 
             summary += '\n## 🔍 Job Results\n\n';

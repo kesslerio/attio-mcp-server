@@ -220,6 +220,14 @@ export interface UniversalRecordDetailsParams {
 }
 
 /**
+ * Get record interactions parameters (Issue #1116)
+ */
+export interface GetRecordInteractionsParams {
+  resource_type: UniversalResourceType;
+  record_id: string;
+}
+
+/**
  * Universal create record parameters
  */
 export interface UniversalCreateParams {

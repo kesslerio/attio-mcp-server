@@ -36,6 +36,7 @@ export const TOOL_NAMES = {
   DISCOVER_RECORD_ATTRIBUTES: 'discover_record_attributes',
   GET_RECORD_ATTRIBUTE_OPTIONS: 'get_record_attribute_options',
   GET_RECORD_INFO: 'get_record_info',
+  GET_RECORD_INTERACTIONS: 'get_record_interactions',
 
   // Advanced search tools
   SEARCH_RECORDS_ADVANCED: 'search_records_advanced',

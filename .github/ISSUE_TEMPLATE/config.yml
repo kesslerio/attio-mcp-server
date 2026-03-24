@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Attio MCP Server Documentation
+  - name: Security disclosure
+    url: https://github.com/kesslerio/attio-mcp-server/security/advisories/new
+    about: Report security vulnerabilities privately.
+  - name: Attio MCP Server documentation
     url: https://github.com/kesslerio/attio-mcp-server/tree/main/docs
-    about: Check the documentation before creating an issue
+    about: Check documentation before opening an issue.
   - name: GitHub Discussions
     url: https://github.com/kesslerio/attio-mcp-server/discussions
-    about: Please ask general questions in the discussions section
+    about: Ask usage questions and open-ended discussions.
