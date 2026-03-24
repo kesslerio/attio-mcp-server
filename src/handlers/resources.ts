@@ -90,25 +90,41 @@ export function registerResourceHandlers(
     ListResourcesRequestSchema,
     async (_request): Promise<ListResourcesResult> => {
       try {
-        // The SDK no longer exposes a type filter on resources/list.
-        // Return the complete resource inventory the server supports.
-        const [companies, people, lists] = await Promise.all([
-          listCompanies().catch(() => [] as AttioRecord[]),
-          listPeople().catch(() => [] as AttioRecord[]),
-          getLists().catch(() => [] as AttioList[]),
-        ]);
+        const resources = [];
 
-        return {
-          resources: [
+        try {
+          const companies = await listCompanies();
+          resources.push(
             ...companies.map((company) =>
               formatRecordAsResource(company, ResourceType.COMPANIES)
-            ),
+            )
+          );
+        } catch {
+          // Capability scans should still work even if company listing fails.
+        }
+
+        try {
+          const people = await listPeople();
+          resources.push(
             ...people.map((person) =>
               formatRecordAsResource(person, ResourceType.PEOPLE)
-            ),
-            ...lists.map((list) => formatListAsResource(list)),
-          ],
-        };
+            )
+          );
+        } catch {
+          // Capability scans should still work even if people listing fails.
+        }
+
+        try {
+          const lists = await getLists();
+          const safeLists = Array.isArray(lists) ? lists : [];
+          resources.push(
+            ...safeLists.map((list) => formatListAsResource(list))
+          );
+        } catch {
+          // Capability scans should still work even if list listing fails.
+        }
+
+        return { resources };
       } catch (error: unknown) {
         return createErrorResult(
           error instanceof Error ? error : new Error('Unknown error'),
