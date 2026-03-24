@@ -88,61 +88,27 @@ export function registerResourceHandlers(
   // Handler for listing resources (Companies, People, and Lists)
   server.setRequestHandler(
     ListResourcesRequestSchema,
-    async (request): Promise<ListResourcesResult> => {
+    async (_request): Promise<ListResourcesResult> => {
       try {
-        // Determine resource type (default to companies if not specified)
-        const resourceType =
-          (request.params?.type as ResourceType) || ResourceType.COMPANIES;
+        // The SDK no longer exposes a type filter on resources/list.
+        // Return the complete resource inventory the server supports.
+        const [companies, people, lists] = await Promise.all([
+          listCompanies().catch(() => [] as AttioRecord[]),
+          listPeople().catch(() => [] as AttioRecord[]),
+          getLists().catch(() => [] as AttioList[]),
+        ]);
 
-        switch (resourceType) {
-          case ResourceType.PEOPLE:
-            try {
-              const people = await listPeople();
-              return {
-                resources: people.map((person) =>
-                  formatRecordAsResource(person, ResourceType.PEOPLE)
-                ),
-              };
-            } catch {
-              // For resource requests, always return resources array even on error
-              // This allows capability scanning to work without API key
-              return {
-                resources: [],
-              };
-            }
-
-          case ResourceType.LISTS:
-            try {
-              const lists = await getLists();
-              // Ensure lists is always an array
-              const safeList = Array.isArray(lists) ? lists : [];
-              return {
-                resources: safeList.map((list) => formatListAsResource(list)),
-              };
-            } catch {
-              // For resource requests, always return resources array even on error
-              return {
-                resources: [],
-              };
-            }
-
-          case ResourceType.COMPANIES:
-          default:
-            try {
-              const companies = await listCompanies();
-              return {
-                resources: companies.map((company) =>
-                  formatRecordAsResource(company, ResourceType.COMPANIES)
-                ),
-              };
-            } catch {
-              // For resource requests, always return resources array even on error
-              // This allows capability scanning to work without API key
-              return {
-                resources: [],
-              };
-            }
-        }
+        return {
+          resources: [
+            ...companies.map((company) =>
+              formatRecordAsResource(company, ResourceType.COMPANIES)
+            ),
+            ...people.map((person) =>
+              formatRecordAsResource(person, ResourceType.PEOPLE)
+            ),
+            ...lists.map((list) => formatListAsResource(list)),
+          ],
+        };
       } catch (error: unknown) {
         return createErrorResult(
           error instanceof Error ? error : new Error('Unknown error'),
