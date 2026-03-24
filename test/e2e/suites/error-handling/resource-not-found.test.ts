@@ -83,3 +83,9 @@ export function resourceNotFoundTests() {
     });
   });
 }
+
+describe.skip('Resource Not Found module', () => {
+  it('is composed by a parent suite', () => {
+    expect(true).toBe(true);
+  });
+});

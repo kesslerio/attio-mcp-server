@@ -6,33 +6,53 @@ import {
 } from '../errors/validation-errors.js';
 import { getLazyAttioClient } from '../../../../api/lazy-client.js';
 
-function extractCompanyId(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    return value;
+function asNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
   }
 
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function extractReferenceId(
+  value: Record<string, unknown>
+): string | undefined {
+  return (
+    asNonEmptyString(value.target_record_id) ??
+    asNonEmptyString(value.record_id) ??
+    asNonEmptyString(value.id)
+  );
+}
+
+function extractCompanyId(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const id = extractCompanyId(entry);
+      if (id) {
+        return id;
+      }
+    }
+
+    return undefined;
+  }
+
+  const directId = asNonEmptyString(value);
+  if (directId) {
+    return directId;
+  }
+
+  if (!value || typeof value !== 'object') {
     return undefined;
   }
 
   const companyObject = value as Record<string, unknown>;
-  if (typeof companyObject.record_id === 'string') {
-    return companyObject.record_id;
+  const targetObject = asNonEmptyString(companyObject.target_object);
+  if (targetObject && targetObject.toLowerCase() !== 'companies') {
+    return undefined;
   }
 
-  if (typeof companyObject.target_record_id === 'string') {
-    return companyObject.target_record_id;
-  }
-
-  if (typeof companyObject.id === 'string') {
-    return companyObject.id;
-  }
-
-  if (companyObject.id && typeof companyObject.id === 'object') {
-    return extractCompanyId(companyObject.id);
-  }
-
-  return undefined;
+  return extractReferenceId(companyObject);
 }
 
 export class CrossResourceValidator {
@@ -105,20 +125,11 @@ export class CrossResourceValidator {
     switch (resourceType) {
       case UniversalResourceType.PEOPLE: {
         const recordDataObj = recordData as Record<string, unknown>;
-        const companyField = recordDataObj.company as
-          | Record<string, unknown>
-          | Array<Record<string, unknown>>
-          | string
-          | undefined;
         const companyId =
-          recordDataObj.company_id ??
-          (Array.isArray(companyField)
-            ? extractCompanyId(companyField[0])
-            : extractCompanyId(companyField));
+          extractCompanyId(recordDataObj.company_id) ??
+          extractCompanyId(recordDataObj.company);
         if (companyId) {
-          const companyIdString = String(companyId);
-          const validationResult =
-            await this.validateCompanyExists(companyIdString);
+          const validationResult = await this.validateCompanyExists(companyId);
           if (!validationResult.exists) {
             const error = validationResult.error!;
             throw new UniversalValidationError(

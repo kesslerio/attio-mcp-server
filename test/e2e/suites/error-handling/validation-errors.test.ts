@@ -198,3 +198,9 @@ export function validationErrorsTests(testCompanyId?: string) {
     });
   });
 }
+
+describe.skip('Validation Errors module', () => {
+  it('is composed by a parent suite', () => {
+    expect(true).toBe(true);
+  });
+});
