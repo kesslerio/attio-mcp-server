@@ -48,6 +48,11 @@ describe('CrossResourceValidator company relationship extraction', () => {
       expectedCompanyId: 'company-005',
     },
     {
+      name: 'company object with nested id.record_id',
+      recordData: { company: { id: { record_id: 'company-005b' } } },
+      expectedCompanyId: 'company-005b',
+    },
+    {
       name: 'company array with Attio record reference',
       recordData: {
         company: [
