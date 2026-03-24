@@ -83,3 +83,6 @@ tsconfig.tsbuildinfo
 # MCP Publisher tokens (local authentication)
 .mcpregistry_*
 mcp-publisher
+
+.ai/
+.worktrees/

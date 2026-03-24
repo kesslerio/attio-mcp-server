@@ -214,6 +214,20 @@ RULE: Never mention hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include
 RULE: Delete branch after merge | WHEN: PR merged | DO: Delete feature branch immediately via GitHub UI or `git push origin --delete branch-name` | ELSE: Repository clutter
 RULE: Update CHANGELOG before merge | WHEN: Merging any PR with user-facing changes | DO: Add entry to `[Unreleased]` section with category + issue ref `#123` | ELSE: Lost change history
 
+### Issue/PR Authoring Standard (Required)
+
+- Repo title override is intentional here:
+  - PR title: `Type: Description`
+  - Commit title: `Type: Description #issue-number`
+- Issue title defaults:
+  - Feature: `feat: <capability> (for <surface>)`
+  - Bug: `bug: <symptom> when <condition>`
+  - Tracking: `TODO: <cleanup> after <dependency>`
+- PR body required sections: `What`, `Why`, `Tests`, `AI Assistance`.
+- `What`: 3-6 concrete change bullets.
+- `Tests`: exact commands run (copy/pasteable).
+- `AI Assistance`: used/not used, testing level, prompt/session log link, and "I understand this code."
+
 ### ISSUE WORKFLOW [MANDATORY CHECKLIST]
 
 1. `git branch --show-current` - Verify location
