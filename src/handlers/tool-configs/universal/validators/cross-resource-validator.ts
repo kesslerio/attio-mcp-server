@@ -52,7 +52,9 @@ function extractCompanyId(value: unknown): string | undefined {
     return undefined;
   }
 
-  return extractReferenceId(companyObject);
+  return (
+    extractReferenceId(companyObject) ?? extractCompanyId(companyObject.id)
+  );
 }
 
 export class CrossResourceValidator {
