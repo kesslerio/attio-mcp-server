@@ -27,11 +27,11 @@ vi.mock('@/services/metadata/index.js', () => ({
 describe('value-transformer orchestrator', () => {
   beforeEach(() => {
     clearAllCaches();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('mayNeedTransformation', () => {
