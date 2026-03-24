@@ -18,8 +18,8 @@ import {
 import { resolveToolName } from '../../../../src/config/tool-aliases.js';
 
 describe('Universal Core Operations Search Tests', () => {
-  beforeEach(() => {
-    setupUnitTestMocks();
+  beforeEach(async () => {
+    await setupUnitTestMocks();
   });
 
   afterEach(() => {

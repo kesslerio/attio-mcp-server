@@ -21,8 +21,8 @@ import {
 } from '../../../../src/handlers/tool-configs/universal/types.js';
 
 describe('Universal Core Operations CRUD Tests', () => {
-  beforeEach(() => {
-    setupUnitTestMocks();
+  beforeEach(async () => {
+    await setupUnitTestMocks();
   });
 
   afterEach(() => {

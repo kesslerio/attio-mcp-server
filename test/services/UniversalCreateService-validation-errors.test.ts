@@ -26,23 +26,24 @@ vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
   ),
 }));
 vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
-  EnhancedApiError: vi
-    .fn()
-    .mockImplementation(
-      (
-        message: string,
-        statusCode: number,
-        endpoint: string,
-        method: string
-      ) => {
-        const e: any = new Error(message);
-        e.statusCode = statusCode;
-        e.endpoint = endpoint;
-        e.method = method;
-        e.name = 'EnhancedApiError';
-        return e;
-      }
-    ),
+  EnhancedApiError: class EnhancedApiError extends Error {
+    statusCode: number;
+    endpoint: string;
+    method: string;
+
+    constructor(
+      message: string,
+      statusCode: number,
+      endpoint: string,
+      method: string
+    ) {
+      super(message);
+      this.statusCode = statusCode;
+      this.endpoint = endpoint;
+      this.method = method;
+      this.name = 'EnhancedApiError';
+    }
+  },
   ErrorEnhancer: { autoEnhance: vi.fn((e: any) => e) },
   ErrorTemplates: {
     TASK_FIELD_MAPPING: vi.fn(

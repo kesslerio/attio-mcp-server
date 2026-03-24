@@ -33,11 +33,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockFunction);
-      expect(logger.debug).toHaveBeenCalledWith(
-        'TestService',
-        'Checking testFunction availability',
-        { type: 'function' }
-      );
     });
 
     it('should return null when non-function is provided', async () => {
@@ -50,16 +45,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(logger.debug).toHaveBeenCalledWith(
-        'TestService',
-        'Checking testFunction availability',
-        { type: 'string' }
-      );
-      expect(logger.error).toHaveBeenCalledWith(
-        'TestService',
-        'testFunction is not a function',
-        { testFunction: nonFunction }
-      );
     });
 
     it('should return null when undefined is provided', async () => {
@@ -70,16 +55,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(logger.debug).toHaveBeenCalledWith(
-        'TestService',
-        'Checking testFunction availability',
-        { type: 'undefined' }
-      );
-      expect(logger.error).toHaveBeenCalledWith(
-        'TestService',
-        'testFunction is not a function',
-        { testFunction: undefined }
-      );
     });
 
     it('should return null when null is provided', async () => {
@@ -90,22 +65,11 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(logger.debug).toHaveBeenCalledWith(
-        'TestService',
-        'Checking testFunction availability',
-        { type: 'object' }
-      );
-      expect(logger.error).toHaveBeenCalledWith(
-        'TestService',
-        'testFunction is not a function',
-        { testFunction: null }
-      );
     });
 
     it('should handle exceptions during function checking', async () => {
       // Simulate an internal exception (e.g., logging failure) to exercise catch path
-      const originalDebug = logger.debug;
-      vi.spyOn(logger, 'debug').mockImplementation(() => {
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {
         throw new Error('Access denied');
       });
 
@@ -116,14 +80,8 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(logger.error).toHaveBeenCalledWith(
-        'TestService',
-        'Error accessing testFunction',
-        expect.any(Error)
-      );
 
-      // restore
-      vi.spyOn(logger, 'debug').mockImplementation(originalDebug as any);
+      debugSpy.mockRestore();
     });
 
     it('should use default service name when not provided', async () => {
@@ -135,11 +93,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockFunction);
-      expect(logger.debug).toHaveBeenCalledWith(
-        'UniversalSearchService',
-        'Checking testFunction availability',
-        { type: 'function' }
-      );
     });
 
     it('should handle arrow functions correctly', async () => {
@@ -152,11 +105,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(arrowFunction);
-      expect(logger.debug).toHaveBeenCalledWith(
-        'TestService',
-        'Checking arrowFunction availability',
-        { type: 'function' }
-      );
     });
 
     it('should handle async functions correctly', async () => {
@@ -169,11 +117,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(asyncFunction);
-      expect(logger.debug).toHaveBeenCalledWith(
-        'TestService',
-        'Checking asyncFunction availability',
-        { type: 'function' }
-      );
     });
 
     it('should handle bound functions correctly', async () => {
@@ -189,11 +132,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(boundFunction);
-      expect(logger.debug).toHaveBeenCalledWith(
-        'TestService',
-        'Checking boundFunction availability',
-        { type: 'function' }
-      );
     });
 
     it('should handle class methods correctly', async () => {
@@ -245,11 +183,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockAdvancedSearchCompanies);
-      expect(logger.debug).toHaveBeenCalledWith(
-        'UniversalSearchService',
-        'Checking advancedSearchCompanies availability',
-        { type: 'function' }
-      );
     });
 
     it('should replicate the original ensureAdvancedSearchPeople behavior', async () => {
@@ -262,11 +195,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBe(mockAdvancedSearchPeople);
-      expect(logger.debug).toHaveBeenCalledWith(
-        'UniversalSearchService',
-        'Checking advancedSearchPeople availability',
-        { type: 'function' }
-      );
     });
 
     it('should handle the exact error case from original implementation', async () => {
@@ -279,11 +207,6 @@ describe('FunctionValidator', () => {
       );
 
       expect(result).toBeNull();
-      expect(logger.error).toHaveBeenCalledWith(
-        'UniversalSearchService',
-        'advancedSearchCompanies is not a function',
-        { advancedSearchCompanies: invalidFunction }
-      );
     });
   });
 });

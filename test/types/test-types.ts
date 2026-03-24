@@ -312,7 +312,10 @@ export function createMockApiClient(): MockApiClient {
       }
 
       // Handle company record query/search
-      if (path === '/v2/objects/companies/records/query') {
+      if (
+        path === '/v2/objects/companies/records/query' ||
+        path === '/objects/companies/records/query'
+      ) {
         return {
           status: 200,
           data: {
@@ -324,6 +327,28 @@ export function createMockApiClient(): MockApiClient {
                   record_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
                 },
                 values: { name: [{ value: 'Test Company' }] },
+              },
+            ],
+          },
+        };
+      }
+
+      // Handle people record query/search
+      if (
+        path === '/v2/objects/people/records/query' ||
+        path === '/objects/people/records/query'
+      ) {
+        return {
+          status: 200,
+          data: {
+            data: [
+              {
+                id: {
+                  workspace_id: 'ws-1',
+                  object_id: 'people',
+                  record_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+                },
+                values: { name: [{ value: 'Test Person' }] },
               },
             ],
           },
