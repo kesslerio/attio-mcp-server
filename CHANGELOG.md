@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Hardened people/company relationship validation so direct IDs, nested references, and array-based company payloads all trigger the company existence check (#1129)
+- Restored nested `company.id.record_id` validation for people updates after review feedback (#1130)
+
 ### Changed
 
 - Refined GitHub issue forms and PR template for reproducibility, triage quality, and rollback clarity, added `CONTRIBUTING.md`, and removed legacy markdown issue templates to avoid duplicate issue flows
