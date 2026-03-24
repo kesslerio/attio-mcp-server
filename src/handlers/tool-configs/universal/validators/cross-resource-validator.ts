@@ -6,6 +6,35 @@ import {
 } from '../errors/validation-errors.js';
 import { getLazyAttioClient } from '../../../../api/lazy-client.js';
 
+function extractCompanyId(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const companyObject = value as Record<string, unknown>;
+  if (typeof companyObject.record_id === 'string') {
+    return companyObject.record_id;
+  }
+
+  if (typeof companyObject.target_record_id === 'string') {
+    return companyObject.target_record_id;
+  }
+
+  if (typeof companyObject.id === 'string') {
+    return companyObject.id;
+  }
+
+  if (companyObject.id && typeof companyObject.id === 'object') {
+    return extractCompanyId(companyObject.id);
+  }
+
+  return undefined;
+}
+
 export class CrossResourceValidator {
   static async validateCompanyExists(companyId: string): Promise<{
     exists: boolean;
@@ -78,16 +107,14 @@ export class CrossResourceValidator {
         const recordDataObj = recordData as Record<string, unknown>;
         const companyField = recordDataObj.company as
           | Record<string, unknown>
+          | Array<Record<string, unknown>>
           | string
           | undefined;
-        const nestedCompanyId =
-          typeof companyField === 'object' &&
-          companyField !== null &&
-          'id' in companyField
-            ? (companyField as Record<string, unknown>).id
-            : undefined;
         const companyId =
-          recordDataObj.company_id ?? nestedCompanyId ?? companyField;
+          recordDataObj.company_id ??
+          (Array.isArray(companyField)
+            ? extractCompanyId(companyField[0])
+            : extractCompanyId(companyField));
         if (companyId) {
           const companyIdString = String(companyId);
           const validationResult =

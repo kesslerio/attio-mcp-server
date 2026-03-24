@@ -386,7 +386,10 @@ jobs:
         smart-tests,
         build-verification-status,
       ]
-    if: always() && github.event_name == 'pull_request'
+    if: |
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
       - name: Create smart summary
