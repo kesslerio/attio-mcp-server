@@ -8,15 +8,6 @@ import { UniversalSearchService } from '../../../../src/services/UniversalSearch
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 import type { UniversalSearchParams } from '../../../../src/handlers/tool-configs/universal/types.js';
 
-// Mock external dependencies
-vi.mock('../../../../src/api/attio-client.js');
-vi.mock('../../../../src/objects/companies/index.js', () => ({
-  advancedSearchCompanies: vi.fn().mockResolvedValue([]),
-}));
-vi.mock('../../../../src/objects/people/index.js', () => ({
-  advancedSearchPeople: vi.fn().mockResolvedValue({ results: [] }),
-}));
-
 describe('Timeframe Search Integration', () => {
   const mockDate = new Date('2023-08-15T12:00:00.000Z');
 
@@ -24,18 +15,6 @@ describe('Timeframe Search Integration', () => {
     vi.useFakeTimers();
     vi.setSystemTime(mockDate);
     vi.clearAllMocks();
-
-    // Mock the companies search function
-    const mockCompanies = vi.fn().mockResolvedValue([]);
-    vi.doMock('../../../../src/objects/companies/index.js', () => ({
-      advancedSearchCompanies: mockCompanies,
-    }));
-
-    // Mock the people search function
-    const mockPeople = vi.fn().mockResolvedValue({ results: [] });
-    vi.doMock('../../../../src/objects/people/index.js', () => ({
-      advancedSearchPeople: mockPeople,
-    }));
   });
 
   afterEach(() => {

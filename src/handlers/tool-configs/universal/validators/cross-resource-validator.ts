@@ -25,76 +25,34 @@ function extractReferenceId(
   );
 }
 
-function hasCompaniesTarget(value: Record<string, unknown>): boolean {
-  const targetObject = asNonEmptyString(value.target_object);
-  return targetObject?.toLowerCase() === 'companies';
-}
-
-function extractCompanyIdFromObject(value: unknown): string | undefined {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return undefined;
-  }
-
-  const reference = value as Record<string, unknown>;
-  const targetObject = asNonEmptyString(reference.target_object);
-
-  if (targetObject && targetObject.toLowerCase() !== 'companies') {
-    return undefined;
-  }
-
-  return extractReferenceId(reference);
-}
-
-function extractCompanyIdFromArray(value: unknown[]): string | undefined {
-  for (const entry of value) {
-    if (
-      entry &&
-      typeof entry === 'object' &&
-      !Array.isArray(entry) &&
-      hasCompaniesTarget(entry as Record<string, unknown>)
-    ) {
-      const id = extractReferenceId(entry as Record<string, unknown>);
+function extractCompanyId(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const id = extractCompanyId(entry);
       if (id) {
         return id;
       }
     }
+
+    return undefined;
   }
 
-  for (const entry of value) {
-    const directId = asNonEmptyString(entry);
-    if (directId) {
-      return directId;
-    }
-
-    const id = extractCompanyIdFromObject(entry);
-    if (id) {
-      return id;
-    }
+  const directId = asNonEmptyString(value);
+  if (directId) {
+    return directId;
   }
 
-  return undefined;
-}
-
-function extractCompanyId(
-  recordData: Record<string, unknown>
-): string | undefined {
-  const directCompanyId = asNonEmptyString(recordData.company_id);
-  if (directCompanyId) {
-    return directCompanyId;
+  if (!value || typeof value !== 'object') {
+    return undefined;
   }
 
-  const companyField = recordData.company;
-  const directCompanyField = asNonEmptyString(companyField);
-
-  if (directCompanyField) {
-    return directCompanyField;
+  const companyObject = value as Record<string, unknown>;
+  const targetObject = asNonEmptyString(companyObject.target_object);
+  if (targetObject && targetObject.toLowerCase() !== 'companies') {
+    return undefined;
   }
 
-  if (Array.isArray(companyField)) {
-    return extractCompanyIdFromArray(companyField);
-  }
-
-  return extractCompanyIdFromObject(companyField);
+  return extractReferenceId(companyObject);
 }
 
 export class CrossResourceValidator {
@@ -167,7 +125,9 @@ export class CrossResourceValidator {
     switch (resourceType) {
       case UniversalResourceType.PEOPLE: {
         const recordDataObj = recordData as Record<string, unknown>;
-        const companyId = extractCompanyId(recordDataObj);
+        const companyId =
+          extractCompanyId(recordDataObj.company_id) ??
+          extractCompanyId(recordDataObj.company);
         if (companyId) {
           const validationResult = await this.validateCompanyExists(companyId);
           if (!validationResult.exists) {

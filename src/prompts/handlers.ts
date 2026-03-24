@@ -222,9 +222,26 @@ export async function getPromptDetails(
   req: Request,
   res: Response
 ): Promise<void> {
-  const promptId = req.params.id;
+  const promptId = Array.isArray(req.params.id)
+    ? req.params.id[0]
+    : req.params.id;
 
   try {
+    if (!promptId) {
+      const errorObj = new Error('Prompt not found');
+      const errorResult = createErrorResult(
+        errorObj,
+        'No prompt found with the requested ID',
+        404,
+        {
+          ...getRequestMetadata(req, 'prompts.get'),
+          context: { promptId },
+        }
+      );
+      res.status(errorResult.error.code).json(errorResult);
+      return;
+    }
+
     const prompt = getPromptById(promptId);
 
     if (!prompt) {
@@ -375,9 +392,22 @@ export async function executePrompt(
   req: Request,
   res: Response
 ): Promise<void> {
-  const promptId = req.params.id;
+  const promptId = Array.isArray(req.params.id)
+    ? req.params.id[0]
+    : req.params.id;
 
   try {
+    if (!promptId) {
+      const errorObj = new Error('Prompt not found');
+      const errorResult = createErrorResult(
+        errorObj,
+        'No prompt found with the requested ID',
+        404
+      );
+      res.status(errorResult.error.code).json(errorResult);
+      return;
+    }
+
     const prompt = getPromptById(promptId);
 
     if (!prompt) {
