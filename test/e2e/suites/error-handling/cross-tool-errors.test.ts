@@ -213,3 +213,9 @@ export function crossToolErrorsTests(
     });
   });
 }
+
+describe.skip('Cross-Tool Error Propagation module', () => {
+  it('is composed by a parent suite', () => {
+    expect(true).toBe(true);
+  });
+});

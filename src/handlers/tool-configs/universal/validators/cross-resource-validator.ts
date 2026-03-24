@@ -6,6 +6,97 @@ import {
 } from '../errors/validation-errors.js';
 import { getLazyAttioClient } from '../../../../api/lazy-client.js';
 
+function asNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function extractReferenceId(
+  value: Record<string, unknown>
+): string | undefined {
+  return (
+    asNonEmptyString(value.target_record_id) ??
+    asNonEmptyString(value.record_id) ??
+    asNonEmptyString(value.id)
+  );
+}
+
+function hasCompaniesTarget(value: Record<string, unknown>): boolean {
+  const targetObject = asNonEmptyString(value.target_object);
+  return targetObject?.toLowerCase() === 'companies';
+}
+
+function extractCompanyIdFromObject(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const reference = value as Record<string, unknown>;
+  const targetObject = asNonEmptyString(reference.target_object);
+
+  if (targetObject && targetObject.toLowerCase() !== 'companies') {
+    return undefined;
+  }
+
+  return extractReferenceId(reference);
+}
+
+function extractCompanyIdFromArray(value: unknown[]): string | undefined {
+  for (const entry of value) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      !Array.isArray(entry) &&
+      hasCompaniesTarget(entry as Record<string, unknown>)
+    ) {
+      const id = extractReferenceId(entry as Record<string, unknown>);
+      if (id) {
+        return id;
+      }
+    }
+  }
+
+  for (const entry of value) {
+    const directId = asNonEmptyString(entry);
+    if (directId) {
+      return directId;
+    }
+
+    const id = extractCompanyIdFromObject(entry);
+    if (id) {
+      return id;
+    }
+  }
+
+  return undefined;
+}
+
+function extractCompanyId(
+  recordData: Record<string, unknown>
+): string | undefined {
+  const directCompanyId = asNonEmptyString(recordData.company_id);
+  if (directCompanyId) {
+    return directCompanyId;
+  }
+
+  const companyField = recordData.company;
+  const directCompanyField = asNonEmptyString(companyField);
+
+  if (directCompanyField) {
+    return directCompanyField;
+  }
+
+  if (Array.isArray(companyField)) {
+    return extractCompanyIdFromArray(companyField);
+  }
+
+  return extractCompanyIdFromObject(companyField);
+}
+
 export class CrossResourceValidator {
   static async validateCompanyExists(companyId: string): Promise<{
     exists: boolean;
@@ -76,22 +167,9 @@ export class CrossResourceValidator {
     switch (resourceType) {
       case UniversalResourceType.PEOPLE: {
         const recordDataObj = recordData as Record<string, unknown>;
-        const companyField = recordDataObj.company as
-          | Record<string, unknown>
-          | string
-          | undefined;
-        const nestedCompanyId =
-          typeof companyField === 'object' &&
-          companyField !== null &&
-          'id' in companyField
-            ? (companyField as Record<string, unknown>).id
-            : undefined;
-        const companyId =
-          recordDataObj.company_id ?? nestedCompanyId ?? companyField;
+        const companyId = extractCompanyId(recordDataObj);
         if (companyId) {
-          const companyIdString = String(companyId);
-          const validationResult =
-            await this.validateCompanyExists(companyIdString);
+          const validationResult = await this.validateCompanyExists(companyId);
           if (!validationResult.exists) {
             const error = validationResult.error!;
             throw new UniversalValidationError(
