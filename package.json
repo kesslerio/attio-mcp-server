@@ -242,7 +242,7 @@
     "eslint-formatter-compact": "^8.40.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
-    "glob": "^11.0.3",
+    "glob": "^13.0.6",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.6",
     "mcp-test-client": "^1.0.1",
