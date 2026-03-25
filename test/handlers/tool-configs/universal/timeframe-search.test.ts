@@ -65,12 +65,27 @@ describe('Timeframe Search Integration', () => {
         resource_type: UniversalResourceType.PEOPLE,
         date_from: '2023-08-01T00:00:00Z',
         date_to: '2023-08-15T23:59:59Z',
-        date_field: 'updated_at',
+        date_field: 'created_at',
       };
 
       // Should not throw error and should return results (even if empty)
       const results = await UniversalSearchService.searchRecords(params);
       expect(Array.isArray(results)).toBe(true);
+    });
+
+    it('should reject unsupported updated_at date ranges for people', async () => {
+      const params: UniversalSearchParams = {
+        resource_type: UniversalResourceType.PEOPLE,
+        date_from: '2023-08-01T00:00:00Z',
+        date_to: '2023-08-15T23:59:59Z',
+        date_field: 'updated_at',
+      };
+
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow(
+        /Modified timeframe searches are not supported by Attio/
+      );
     });
 
     it('should prioritize timeframe over absolute dates', async () => {
