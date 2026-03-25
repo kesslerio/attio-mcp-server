@@ -141,7 +141,22 @@ const FILTER_CONDITION_ALIASES: Record<string, FilterConditionType> = {
 export function normalizeFilterCondition(
   condition: string
 ): FilterConditionType | undefined {
-  return FILTER_CONDITION_ALIASES[condition];
+  const normalizedCondition = FILTER_CONDITION_ALIASES[condition];
+  if (normalizedCondition) {
+    return normalizedCondition;
+  }
+
+  if (!condition.startsWith('$')) {
+    return undefined;
+  }
+
+  const unprefixedCondition = condition.slice(1);
+  return (
+    FILTER_CONDITION_ALIASES[unprefixedCondition] ??
+    (isValidFilterCondition(unprefixedCondition)
+      ? unprefixedCondition
+      : undefined)
+  );
 }
 
 /**

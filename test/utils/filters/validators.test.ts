@@ -84,6 +84,9 @@ describe('Filter Validators', () => {
         FilterConditionType.GREATER_THAN
       );
       expect(validateFilterCondition('$eq')).toBe(FilterConditionType.EQUALS);
+      expect(validateFilterCondition('$not_contains')).toBe(
+        FilterConditionType.NOT_CONTAINS
+      );
       expect(validateFilterCondition('$is_empty')).toBe(
         FilterConditionType.IS_EMPTY
       );
@@ -131,6 +134,18 @@ describe('Filter Validators', () => {
         attribute: { slug: 'created_at' },
         condition: 'greater_than' as FilterConditionType,
         value: '2024-01-01T00:00:00Z',
+      };
+
+      expect(() => {
+        validateFilterWithConditions(filter);
+      }).not.toThrow();
+    });
+
+    it('should accept dollar-prefixed canonical conditions', () => {
+      const filter: ListEntryFilter = {
+        attribute: { slug: 'description' },
+        condition: '$not_contains' as FilterConditionType,
+        value: 'internal',
       };
 
       expect(() => {

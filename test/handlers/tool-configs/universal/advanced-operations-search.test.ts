@@ -146,8 +146,13 @@ describe('Universal Advanced Operations - Search Tests', () => {
               value: '2024-01-01T00:00:00Z',
             },
             {
+              attribute: { slug: 'description' },
+              condition: '$not_contains',
+              value: 'internal',
+            },
+            {
               attribute: { slug: 'last_interaction' },
-              condition: 'is_not_set',
+              condition: '$is_not_set',
             },
           ],
         },
@@ -163,6 +168,11 @@ describe('Universal Advanced Operations - Search Tests', () => {
                 attribute: { slug: 'created_at' },
                 condition: 'gt',
                 value: '2024-01-01T00:00:00Z',
+              },
+              {
+                attribute: { slug: 'description' },
+                condition: 'not_contains',
+                value: 'internal',
               },
               {
                 attribute: { slug: 'last_interaction' },

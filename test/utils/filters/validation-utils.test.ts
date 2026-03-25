@@ -280,6 +280,30 @@ describe('Filter Validation Utilities', () => {
       );
     });
 
+    it('should normalize other dollar-prefixed canonical conditions before validation', () => {
+      const filters = {
+        filters: [
+          {
+            attribute: { slug: 'description' },
+            condition: '$not_contains',
+            value: 'internal',
+          },
+          {
+            attribute: { slug: 'last_interaction' },
+            condition: '$is_not_set',
+            value: true,
+          },
+        ],
+      };
+
+      const result = validateFilters(filters as any);
+
+      expect(result.filters[0].condition).toBe(
+        FilterConditionType.NOT_CONTAINS
+      );
+      expect(result.filters[1].condition).toBe(FilterConditionType.IS_NOT_SET);
+    });
+
     it('should throw detailed error when all filters are invalid with appropriate category', () => {
       const filters = {
         filters: [
