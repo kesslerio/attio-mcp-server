@@ -20,10 +20,9 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 {
   "resource_type": "people", 
   "search_type": "timeframe",
-  "timeframe_attribute": "updated_at",
+  "timeframe_attribute": "last_interaction",
   "start_date": "2024-01-01T00:00:00Z",
-  "end_date": "2024-12-31T23:59:59Z",
-  "date_operator": "between",
+  "date_operator": "greater_than",
   "limit": 50
 }
 ```
@@ -54,8 +53,9 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 | Field | Description | Supported Resources |
 |-------|-------------|-------------------|
 | `created_at` | Record creation date | All resources |
-| `updated_at` | Record last modified date | All resources |
 | `last_interaction` | Last interaction/activity date | People, Companies |
+
+`updated_at` / `modified` are not supported by the live Attio Query API for people or companies. The tool now fails explicitly for those requests instead of returning a misleading empty result.
 
 #### Date Operators
 | Operator | Description | Usage |
@@ -77,12 +77,12 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 }
 ```
 
-### 2. People Updated in Last 30 Days
+### 2. People With Recent Interactions
 ```json
 {
   "resource_type": "people",
   "search_type": "timeframe",
-  "timeframe_attribute": "updated_at", 
+  "timeframe_attribute": "last_interaction", 
   "timeframe": "last_30_days",
   "limit": 25
 }
@@ -125,6 +125,18 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 }
 ```
 
+### 6. One-Sided Timeframe Queries
+```json
+{
+  "resource_type": "companies",
+  "search_type": "timeframe",
+  "timeframe_attribute": "created_at",
+  "start_date": "2024-07-01T00:00:00Z"
+}
+```
+
+If you provide only `start_date`, the server uses a lower-bound query. If you provide only `end_date`, it uses an upper-bound query.
+
 ## 🔍 Advanced Filtering
 
 ### Combining Timeframe with Other Filters
@@ -151,7 +163,7 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 {
   "resource_type": "people",
   "search_type": "timeframe",
-  "timeframe_attribute": "updated_at",
+  "timeframe_attribute": "last_interaction",
   "timeframe": "this_month",
   "limit": 50,
   "offset": 100
@@ -165,7 +177,7 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 // DON'T USE: date_field with relative timeframes
 {
   "timeframe": "last_7_days",
-  "date_field": "updated_at",  // ❌ Wrong parameter name
+  "date_field": "last_interaction",  // ❌ Wrong parameter name for this tool
   "resource_type": "people"
 }
 ```
@@ -175,7 +187,7 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 {
   "resource_type": "people",
   "search_type": "timeframe",
-  "timeframe_attribute": "updated_at",  // ✅ Correct parameter name
+  "timeframe_attribute": "last_interaction",  // ✅ Correct parameter name
   "timeframe": "last_7_days"
 }
 ```
@@ -250,7 +262,7 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 
 #### "Unknown attribute slug" errors  
 - ✅ Verify the date field is supported for your resource type
-- ✅ Use standard fields: `created_at`, `updated_at`, `last_interaction`
+- ✅ Use live-supported fields: `created_at`, `last_interaction`
 
 ### Validation Steps
 1. **Parameter Check**: Ensure all required parameters are present

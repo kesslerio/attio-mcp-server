@@ -83,6 +83,47 @@ function handleQueryApiError(
   return [];
 }
 
+function getAxiosErrorDetails(error: unknown): {
+  status?: number;
+  message?: string;
+  code?: string;
+} {
+  const errorObject = error as {
+    response?: {
+      status?: number;
+      data?: {
+        message?: string;
+        code?: string;
+      };
+    };
+    message?: string;
+  };
+
+  return {
+    status: errorObject.response?.status,
+    message: errorObject.response?.data?.message ?? errorObject.message,
+    code: errorObject.response?.data?.code,
+  };
+}
+
+function assertSupportedTimeframeQuery(
+  resourceType: UniversalResourceType,
+  timeframeConfig: TimeframeQuery
+): void {
+  const isPeopleOrCompanies =
+    resourceType === UniversalResourceType.PEOPLE ||
+    resourceType === UniversalResourceType.COMPANIES;
+  const isModifiedAlias =
+    timeframeConfig.attribute === 'updated_at' ||
+    timeframeConfig.attribute === 'modified_at';
+
+  if (isPeopleOrCompanies && isModifiedAlias) {
+    throw new Error(
+      `Modified timeframe searches are not supported by Attio for ${resourceType}. Use created_at or last_interaction instead.`
+    );
+  }
+}
+
 /**
  * Query API Service for advanced search operations
  */
@@ -136,6 +177,8 @@ export class QueryApiService {
     limit?: number,
     offset?: number
   ): Promise<UniversalRecord[]> {
+    assertSupportedTimeframeQuery(resourceType, timeframeConfig);
+
     const queryApiFilter = createTimeframeQuery(timeframeConfig);
     const path = `/objects/${resourceType}/records/query`;
 
@@ -150,6 +193,16 @@ export class QueryApiService {
       const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
+      const { status, message } = getAxiosErrorDetails(error);
+
+      if (status === 400) {
+        throw new Error(
+          `Timeframe query rejected by Attio for ${resourceType}: ${
+            message || 'invalid timeframe filter'
+          }`
+        );
+      }
+
       return handleQueryApiError(error, path, {
         resourceType,
         operation: 'searchByTimeframe',

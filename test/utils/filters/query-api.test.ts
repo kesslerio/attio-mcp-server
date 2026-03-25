@@ -125,6 +125,7 @@ describe('Query API Implementation - Issue #523', () => {
   describe('TC-012: Timeframe Search', () => {
     it('should create proper date range query for between operator', () => {
       const config: TimeframeQuery = {
+        resourceType: 'companies',
         attribute: 'created_at',
         startDate: '2024-01-01',
         endDate: '2024-12-31',
@@ -135,7 +136,7 @@ describe('Query API Implementation - Issue #523', () => {
 
       expect(result).toEqual({
         filter: {
-          path: [['created_at']],
+          path: [['companies', 'created_at']],
           constraints: {
             $gte: '2024-01-01',
             $lte: '2024-12-31',
@@ -146,6 +147,7 @@ describe('Query API Implementation - Issue #523', () => {
 
     it('should create proper single date query for greater_than operator', () => {
       const config: TimeframeQuery = {
+        resourceType: 'people',
         attribute: 'updated_at',
         startDate: '2024-06-01',
         operator: 'greater_than',
@@ -155,7 +157,7 @@ describe('Query API Implementation - Issue #523', () => {
 
       expect(result).toEqual({
         filter: {
-          path: [['updated_at']],
+          path: [['people', 'updated_at']],
           constraints: {
             $gt: '2024-06-01',
           },
@@ -163,8 +165,9 @@ describe('Query API Implementation - Issue #523', () => {
       });
     });
 
-    it('should create proper single date query for less_than operator', () => {
+    it('should create nested interaction constraints for last_interaction searches', () => {
       const config: TimeframeQuery = {
+        resourceType: 'people',
         attribute: 'last_interaction',
         endDate: '2024-03-15',
         operator: 'less_than',
@@ -183,11 +186,12 @@ describe('Query API Implementation - Issue #523', () => {
       });
     });
 
-    it('should create proper interaction date range query for between operator', () => {
+    it('should create nested interaction constraints for between last_interaction searches', () => {
       const config: TimeframeQuery = {
+        resourceType: 'companies',
         attribute: 'last_interaction',
         startDate: '2024-01-01',
-        endDate: '2024-12-31',
+        endDate: '2024-01-31',
         operator: 'between',
       };
 
@@ -198,7 +202,7 @@ describe('Query API Implementation - Issue #523', () => {
           last_interaction: {
             interacted_at: {
               $gte: '2024-01-01',
-              $lte: '2024-12-31',
+              $lte: '2024-01-31',
             },
           },
         },

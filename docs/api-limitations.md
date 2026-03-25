@@ -54,31 +54,33 @@ const personTasks = filterTasksByPerson(allTasks, personId);
 const companyTasks = filterTasksByCompany(allTasks, companyId);
 ```
 
-### 2. Date Filtering for Non-People Resources
+### 2. Timeframe Filtering Gaps in Attio Query API
 
-**Limitation**: Native date filtering is only available for people records. Companies, records, and tasks do not support timeframe searches.
+**Limitation**: Live timeframe filtering is partially supported. `created_at` works broadly, and `last_interaction.interacted_at` works for people and companies, but Attio does not expose a filterable `updated_at` / `modified_at` field for people or companies.
 
 **Affected Operations**:
 
-- Company creation/modification date filtering
-- Task date range queries
-- Custom record timeframe searches
+- People/company `modified` timeframe searches
+- Any request translated to `updated_at` or `modified_at` on people or companies
+- Some task/custom-object timeframe routes still depend on object-specific API support
 
 **Workaround**:
 
 ```typescript
-import { filterRecordsByDate } from './utils/workarounds';
+// ✅ Supported live filters
+await searchRecords({
+  resource_type: 'companies',
+  search_type: 'timeframe',
+  timeframe_attribute: 'created_at',
+  start_date: '2024-01-01T00:00:00Z',
+});
 
-// Get all records
-const allCompanies = await searchRecords({ resource_type: 'companies' });
-
-// Filter by date range
-const recentCompanies = filterRecordsByDate(
-  allCompanies,
-  'created_at',
-  '2024-01-01',
-  '2024-03-31'
-);
+await searchRecords({
+  resource_type: 'people',
+  search_type: 'timeframe',
+  timeframe_attribute: 'last_interaction',
+  start_date: '2024-01-01T00:00:00Z',
+});
 ```
 
 ### 3. Interaction Content Search
