@@ -172,7 +172,12 @@ export type RelativeTimeframe =
 /**
  * Date field options for timeframe filtering
  */
-export type DateField = 'created_at' | 'updated_at' | 'due_date';
+export type DateField =
+  | 'created_at'
+  | 'updated_at'
+  | 'modified_at'
+  | 'last_interaction'
+  | 'due_date';
 
 /**
  * Universal search parameters
@@ -207,7 +212,7 @@ export interface UniversalSearchParams {
   updated_after?: string;
   updated_before?: string;
   timeframe?: RelativeTimeframe;
-  date_field?: 'created_at' | 'updated_at';
+  date_field?: 'created_at' | 'updated_at' | 'last_interaction';
 }
 
 /**
@@ -329,7 +334,7 @@ export interface TimeframeSearchParams {
   // New parameters to support relative timeframe searches (Issue #475)
   relative_range?: string;
   invert_range?: boolean;
-  date_field?: 'created_at' | 'updated_at' | 'modified_at';
+  date_field?: 'created_at' | 'updated_at' | 'modified_at' | 'last_interaction';
   limit?: number;
   offset?: number;
 }

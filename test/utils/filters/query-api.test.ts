@@ -174,9 +174,32 @@ describe('Query API Implementation - Issue #523', () => {
 
       expect(result).toEqual({
         filter: {
-          path: [['last_interaction']],
-          constraints: {
-            $lt: '2024-03-15',
+          last_interaction: {
+            interacted_at: {
+              $lt: '2024-03-15',
+            },
+          },
+        },
+      });
+    });
+
+    it('should create proper interaction date range query for between operator', () => {
+      const config: TimeframeQuery = {
+        attribute: 'last_interaction',
+        startDate: '2024-01-01',
+        endDate: '2024-12-31',
+        operator: 'between',
+      };
+
+      const result = createTimeframeQuery(config);
+
+      expect(result).toEqual({
+        filter: {
+          last_interaction: {
+            interacted_at: {
+              $gte: '2024-01-01',
+              $lte: '2024-12-31',
+            },
           },
         },
       });

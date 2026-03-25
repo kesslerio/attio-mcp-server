@@ -23,6 +23,36 @@ import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/ut
 import { normalizeOperator } from '@/utils/AttioFilterOperators.js';
 import { mapFieldName } from '@/utils/AttioFieldMapper.js';
 
+function resolveTimeframeAttribute(
+  timeframeType?: TimeframeType,
+  dateField?: TimeframeSearchParams['date_field']
+): string {
+  if (dateField) {
+    switch (dateField) {
+      case 'created_at':
+        return mapFieldName('created_at');
+      case 'updated_at':
+      case 'modified_at':
+        return mapFieldName('modified_at');
+      case 'last_interaction':
+        return 'last_interaction';
+      default:
+        throw new Error(`Unsupported date_field: ${dateField}`);
+    }
+  }
+
+  switch (timeframeType || TimeframeType.MODIFIED) {
+    case TimeframeType.CREATED:
+      return mapFieldName('created_at');
+    case TimeframeType.MODIFIED:
+      return mapFieldName('modified_at');
+    case TimeframeType.LAST_INTERACTION:
+      return 'last_interaction';
+    default:
+      throw new Error(`Unsupported timeframe type: ${timeframeType}`);
+  }
+}
+
 export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
   UniversalRecordResult[]
@@ -80,41 +110,10 @@ export const searchByTimeframeConfig: UniversalToolConfig<
 
       // Determine the timestamp field to filter on (Issue #475)
       // Use date_field if provided, otherwise fall back to timeframe_type logic
-      let timestampField: string;
-      if (date_field) {
-        // Map date_field directly to proper field name
-        switch (date_field) {
-          case 'created_at':
-            timestampField = mapFieldName('created_at');
-            break;
-          case 'updated_at':
-            timestampField = mapFieldName('modified_at'); // Map updated_at to modified_at
-            break;
-          case 'modified_at':
-            timestampField = mapFieldName('modified_at');
-            break;
-          default:
-            throw new Error(`Unsupported date_field: ${date_field}`);
-        }
-      } else {
-        // Fallback to original timeframe_type logic
-        const effectiveTimeframeType = timeframe_type || TimeframeType.MODIFIED;
-        switch (effectiveTimeframeType) {
-          case TimeframeType.CREATED:
-            timestampField = mapFieldName('created_at');
-            break;
-          case TimeframeType.MODIFIED:
-            timestampField = mapFieldName('modified_at');
-            break;
-          case TimeframeType.LAST_INTERACTION:
-            timestampField = mapFieldName('modified_at');
-            break;
-          default:
-            throw new Error(
-              `Unsupported timeframe type: ${effectiveTimeframeType}`
-            );
-        }
-      }
+      const timestampField = resolveTimeframeAttribute(
+        timeframe_type,
+        date_field
+      );
 
       // Build the date filter using proper Attio API v2 filter syntax
       // Use normalized operators with $ prefix

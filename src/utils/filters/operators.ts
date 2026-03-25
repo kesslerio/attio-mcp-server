@@ -9,6 +9,42 @@ import {
   FilterConditionType,
   FIELD_SPECIAL_HANDLING,
 } from './types.js';
+import { normalizeFilterCondition } from '../../types/attio.js';
+
+export function toAttioFilterOperator(condition: string): string {
+  const normalized = normalizeFilterCondition(condition);
+
+  switch (normalized) {
+    case FilterConditionType.EQUALS:
+      return '$eq';
+    case FilterConditionType.CONTAINS:
+      return '$contains';
+    case FilterConditionType.STARTS_WITH:
+      return '$starts_with';
+    case FilterConditionType.ENDS_WITH:
+      return '$ends_with';
+    case FilterConditionType.GREATER_THAN:
+      return '$gt';
+    case FilterConditionType.GREATER_THAN_OR_EQUALS:
+      return '$gte';
+    case FilterConditionType.LESS_THAN:
+      return '$lt';
+    case FilterConditionType.LESS_THAN_OR_EQUALS:
+      return '$lte';
+    case FilterConditionType.IS_NOT_EMPTY:
+      return '$not_empty';
+    case FilterConditionType.IS_EMPTY:
+      return 'is_empty';
+    case FilterConditionType.IS_SET:
+      return '$not_empty';
+    case FilterConditionType.IS_NOT_SET:
+      return 'is_empty';
+    case FilterConditionType.NOT_EQUALS:
+      return 'ne';
+    default:
+      return condition.startsWith('$') ? condition : `$${condition}`;
+  }
+}
 
 /**
  * Checks if an operator is supported for a specific field

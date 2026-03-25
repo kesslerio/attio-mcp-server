@@ -259,9 +259,10 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         '/objects/people/records/query',
         expect.objectContaining({
           filter: {
-            path: [['people', 'last_interaction']],
-            constraints: {
-              $gt: '2024-06-01',
+            last_interaction: {
+              interacted_at: {
+                $gt: '2024-06-01',
+              },
             },
           },
         })

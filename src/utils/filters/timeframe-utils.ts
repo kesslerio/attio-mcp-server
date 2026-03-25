@@ -63,7 +63,6 @@ export interface TimeframeValidation {
  */
 export function getRelativeTimeframeRange(
   timeframe: RelativeTimeframe,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _timezone: string = 'UTC'
 ): DateRange {
   const now = new Date();
@@ -202,7 +201,7 @@ export function convertDateParamsToTimeframeQuery(params: {
   updated_after?: string;
   updated_before?: string;
   timeframe?: RelativeTimeframe;
-  date_field?: 'created_at' | 'updated_at';
+  date_field?: 'created_at' | 'updated_at' | 'last_interaction';
 }): {
   timeframe_attribute?: string;
   start_date?: string;
