@@ -79,6 +79,13 @@ describe('Filter Validators', () => {
       });
     });
 
+    it('should normalize supported aliases to canonical condition types', () => {
+      expect(validateFilterCondition('greater_than')).toBe(
+        FilterConditionType.GREATER_THAN
+      );
+      expect(validateFilterCondition('$eq')).toBe(FilterConditionType.EQUALS);
+    });
+
     it('should throw error for empty condition', () => {
       expect(() => {
         validateFilterCondition('');
@@ -106,6 +113,18 @@ describe('Filter Validators', () => {
         attribute: { slug: 'name' },
         condition: FilterConditionType.CONTAINS,
         value: 'test',
+      };
+
+      expect(() => {
+        validateFilterWithConditions(filter);
+      }).not.toThrow();
+    });
+
+    it('should accept supported alias conditions', () => {
+      const filter: ListEntryFilter = {
+        attribute: { slug: 'created_at' },
+        condition: 'greater_than' as FilterConditionType,
+        value: '2024-01-01T00:00:00Z',
       };
 
       expect(() => {

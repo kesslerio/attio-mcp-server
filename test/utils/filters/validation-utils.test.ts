@@ -227,6 +227,33 @@ describe('Filter Validation Utilities', () => {
       expect(validateFilters(filters)).toBe(filters);
     });
 
+    it('should normalize documented operator aliases before validation', () => {
+      const filters = {
+        filters: [
+          {
+            attribute: { slug: 'created_at' },
+            condition: 'greater_than',
+            value: '2024-01-01T00:00:00Z',
+          },
+          {
+            attribute: { slug: 'last_interaction' },
+            condition: 'not_empty',
+            value: true,
+          },
+        ],
+      };
+
+      const result = validateFilters(filters as any);
+
+      expect(result).not.toBe(filters);
+      expect(filters.filters[0].condition).toBe('greater_than');
+      expect(filters.filters[1].condition).toBe('not_empty');
+      expect(result.filters[0].condition).toBe(FilterConditionType.GREATER_THAN);
+      expect(result.filters[1].condition).toBe(
+        FilterConditionType.IS_NOT_EMPTY
+      );
+    });
+
     it('should throw detailed error when all filters are invalid with appropriate category', () => {
       const filters = {
         filters: [

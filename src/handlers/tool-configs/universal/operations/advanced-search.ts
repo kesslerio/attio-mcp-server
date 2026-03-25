@@ -17,6 +17,7 @@ import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/s
 import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
 import { ErrorService } from '@/services/ErrorService.js';
+import { normalizeFilterCondition } from '@/types/attio.js';
 
 /**
  * Universal advanced search tool
@@ -38,57 +39,10 @@ export const advancedSearchConfig: UniversalToolConfig<
 
       const { resource_type } = sanitizedParams;
 
-      // Advanced search uses Attio's non-$ operator dialect (equals, contains, gte/lte, is_not_empty, ...).
-      // Perform a light de-normalization: translate any $-prefixed operators to the expected strings
-      // and coerce is_not_empty value to true when omitted.
+      // Normalize public operator aliases before downstream validation so the
+      // tool schema, docs, and translation layer accept the same vocabulary.
       let filters = sanitizedParams.filters as Record<string, unknown>;
       try {
-        const deDollar = (cond: string): string => {
-          if (!cond) return cond;
-          if (cond.startsWith('$')) {
-            const raw = cond.slice(1);
-            switch (raw) {
-              case 'eq':
-                return 'equals';
-              case 'contains':
-                return 'contains';
-              case 'starts_with':
-                return 'starts_with';
-              case 'ends_with':
-                return 'ends_with';
-              case 'gt':
-                return 'gt';
-              case 'gte':
-                return 'gte';
-              case 'lt':
-                return 'lt';
-              case 'lte':
-                return 'lte';
-              case 'not_empty':
-                return 'is_not_empty';
-              case 'empty':
-                return 'is_empty';
-              default:
-                return raw; // fallback
-            }
-          }
-          // Also accept already-correct tokens and legacy typos
-          if (
-            cond === 'is_not_empty' ||
-            cond === 'is_empty' ||
-            cond === 'equals' ||
-            cond === 'contains' ||
-            cond === 'starts_with' ||
-            cond === 'ends_with' ||
-            cond === 'gt' ||
-            cond === 'gte' ||
-            cond === 'lt' ||
-            cond === 'lte'
-          )
-            return cond;
-          return cond;
-        };
-
         if (
           filters &&
           typeof filters === 'object' &&
@@ -105,11 +59,14 @@ export const advancedSearchConfig: UniversalToolConfig<
               if (!f || typeof f !== 'object') return f;
               const next = { ...f } as Record<string, unknown>;
               if (typeof next.condition === 'string') {
-                next.condition = deDollar(next.condition);
+                next.condition =
+                  normalizeFilterCondition(next.condition) ?? next.condition;
               }
               if (
                 (next.condition === 'is_not_empty' ||
-                  next.condition === 'is_empty') &&
+                  next.condition === 'is_empty' ||
+                  next.condition === 'is_set' ||
+                  next.condition === 'is_not_set') &&
                 (next.value == null || next.value === '')
               ) {
                 next.value = true;

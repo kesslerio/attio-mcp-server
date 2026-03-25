@@ -39,6 +39,7 @@ import {
   ERROR_MESSAGES,
   getFilterExample,
 } from './validation-utils.js';
+import { toAttioFilterOperator } from './operators.js';
 import { isListSpecificAttribute } from './utils.js';
 import { createScopedLogger, OperationType } from '../logger.js';
 import {
@@ -467,8 +468,7 @@ async function createOrFilterStructure(
       }
 
       // List-specific attributes use direct field access
-      const operator =
-        filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+      const operator = toAttioFilterOperator(filter.condition);
       condition[slug] = {
         [operator]: filter.value,
       };
@@ -485,8 +485,7 @@ async function createOrFilterStructure(
       condition[slug] = filter.value;
     } else {
       // Standard operator handling for normal fields
-      const operator =
-        filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+      const operator = toAttioFilterOperator(filter.condition);
 
       // Check if this is a reference attribute that needs nested field specification
       const isReference = await isReferenceAttribute(
@@ -693,8 +692,7 @@ async function createAndFilterStructure(
     }
 
     const { slug } = filter.attribute;
-    const operator =
-      filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+    const operator = toAttioFilterOperator(filter.condition);
 
     // Build condition object in Attio's expected format
     let fieldPath: string;

@@ -100,6 +100,47 @@ export enum FilterConditionType {
   IS_NOT_SET = 'is_not_set',
 }
 
+const FILTER_CONDITION_ALIASES: Record<string, FilterConditionType> = {
+  equals: FilterConditionType.EQUALS,
+  eq: FilterConditionType.EQUALS,
+  contains: FilterConditionType.CONTAINS,
+  not_contains: FilterConditionType.NOT_CONTAINS,
+  starts_with: FilterConditionType.STARTS_WITH,
+  ends_with: FilterConditionType.ENDS_WITH,
+  gt: FilterConditionType.GREATER_THAN,
+  greater_than: FilterConditionType.GREATER_THAN,
+  lt: FilterConditionType.LESS_THAN,
+  less_than: FilterConditionType.LESS_THAN,
+  gte: FilterConditionType.GREATER_THAN_OR_EQUALS,
+  greater_than_or_equals: FilterConditionType.GREATER_THAN_OR_EQUALS,
+  lte: FilterConditionType.LESS_THAN_OR_EQUALS,
+  less_than_or_equals: FilterConditionType.LESS_THAN_OR_EQUALS,
+  between: FilterConditionType.BETWEEN,
+  is_empty: FilterConditionType.IS_EMPTY,
+  empty: FilterConditionType.IS_EMPTY,
+  is_not_empty: FilterConditionType.IS_NOT_EMPTY,
+  not_empty: FilterConditionType.IS_NOT_EMPTY,
+  is_set: FilterConditionType.IS_SET,
+  is_not_set: FilterConditionType.IS_NOT_SET,
+  not_equals: FilterConditionType.NOT_EQUALS,
+  ne: FilterConditionType.NOT_EQUALS,
+  $eq: FilterConditionType.EQUALS,
+  $contains: FilterConditionType.CONTAINS,
+  $starts_with: FilterConditionType.STARTS_WITH,
+  $ends_with: FilterConditionType.ENDS_WITH,
+  $gt: FilterConditionType.GREATER_THAN,
+  $lt: FilterConditionType.LESS_THAN,
+  $gte: FilterConditionType.GREATER_THAN_OR_EQUALS,
+  $lte: FilterConditionType.LESS_THAN_OR_EQUALS,
+  $not_empty: FilterConditionType.IS_NOT_EMPTY,
+};
+
+export function normalizeFilterCondition(
+  condition: string
+): FilterConditionType | undefined {
+  return FILTER_CONDITION_ALIASES[condition];
+}
+
 /**
  * Type guard to check if a string is a valid filter condition
  *

@@ -71,6 +71,110 @@ describe('Universal Advanced Operations - Search Tests', () => {
       });
     });
 
+    it('should normalize documented filter aliases before search handling', async () => {
+      const mockResults = [
+        {
+          id: { record_id: 'person-1' },
+          values: {
+            name: 'Alias Normalized Person',
+          },
+        },
+      ];
+
+      const { mockHandlers } = getMockInstances();
+      mockHandlers.handleUniversalSearch.mockResolvedValue(mockResults);
+
+      const params: any = {
+        resource_type: UniversalResourceType.PEOPLE,
+        filters: {
+          filters: [
+            {
+              attribute: { slug: 'created_at' },
+              condition: 'greater_than',
+              value: '2024-01-01T00:00:00Z',
+            },
+            {
+              attribute: { slug: 'last_interaction' },
+              condition: 'not_empty',
+            },
+          ],
+        },
+      };
+
+      const result = await advancedSearchConfig.handler(params);
+      expect(result).toEqual(mockResults);
+      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'created_at' },
+                condition: 'gt',
+                value: '2024-01-01T00:00:00Z',
+              },
+              {
+                attribute: { slug: 'last_interaction' },
+                condition: 'is_not_empty',
+                value: true,
+              },
+            ],
+          },
+        })
+      );
+    });
+
+    it('should normalize prefixed and set-style aliases before search handling', async () => {
+      const mockResults = [
+        {
+          id: { record_id: 'person-2' },
+          values: {
+            name: 'Additional Alias Person',
+          },
+        },
+      ];
+
+      const { mockHandlers } = getMockInstances();
+      mockHandlers.handleUniversalSearch.mockResolvedValue(mockResults);
+
+      const params: any = {
+        resource_type: UniversalResourceType.PEOPLE,
+        filters: {
+          filters: [
+            {
+              attribute: { slug: 'created_at' },
+              condition: '$gt',
+              value: '2024-01-01T00:00:00Z',
+            },
+            {
+              attribute: { slug: 'last_interaction' },
+              condition: 'is_not_set',
+            },
+          ],
+        },
+      };
+
+      const result = await advancedSearchConfig.handler(params);
+      expect(result).toEqual(mockResults);
+      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'created_at' },
+                condition: 'gt',
+                value: '2024-01-01T00:00:00Z',
+              },
+              {
+                attribute: { slug: 'last_interaction' },
+                condition: 'is_not_set',
+                value: true,
+              },
+            ],
+          },
+        })
+      );
+    });
+
     it('should format advanced search results with context', async () => {
       const mockResults = [
         {
