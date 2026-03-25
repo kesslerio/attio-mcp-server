@@ -218,7 +218,6 @@ export function collectInvalidFilters(
       });
       return;
     }
-
   });
 
   return invalidFilters;
@@ -331,8 +330,7 @@ export function validateFilters(
         ? normalizeFilterCondition(filter.condition)
         : undefined;
 
-    return normalizedCondition
-      && normalizedCondition !== filter.condition
+    return normalizedCondition && normalizedCondition !== filter.condition
       ? {
           ...filter,
           condition: normalizedCondition,

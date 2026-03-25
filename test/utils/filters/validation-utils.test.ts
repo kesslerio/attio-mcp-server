@@ -248,7 +248,9 @@ describe('Filter Validation Utilities', () => {
       expect(result).not.toBe(filters);
       expect(filters.filters[0].condition).toBe('greater_than');
       expect(filters.filters[1].condition).toBe('not_empty');
-      expect(result.filters[0].condition).toBe(FilterConditionType.GREATER_THAN);
+      expect(result.filters[0].condition).toBe(
+        FilterConditionType.GREATER_THAN
+      );
       expect(result.filters[1].condition).toBe(
         FilterConditionType.IS_NOT_EMPTY
       );
