@@ -256,6 +256,30 @@ describe('Filter Validation Utilities', () => {
       );
     });
 
+    it('should normalize dollar-prefixed emptiness aliases before validation', () => {
+      const filters = {
+        filters: [
+          {
+            attribute: { slug: 'description' },
+            condition: '$empty',
+            value: true,
+          },
+          {
+            attribute: { slug: 'last_interaction' },
+            condition: '$is_not_empty',
+            value: true,
+          },
+        ],
+      };
+
+      const result = validateFilters(filters as any);
+
+      expect(result.filters[0].condition).toBe(FilterConditionType.IS_EMPTY);
+      expect(result.filters[1].condition).toBe(
+        FilterConditionType.IS_NOT_EMPTY
+      );
+    });
+
     it('should throw detailed error when all filters are invalid with appropriate category', () => {
       const filters = {
         filters: [

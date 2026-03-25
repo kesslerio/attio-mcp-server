@@ -84,6 +84,12 @@ describe('Filter Validators', () => {
         FilterConditionType.GREATER_THAN
       );
       expect(validateFilterCondition('$eq')).toBe(FilterConditionType.EQUALS);
+      expect(validateFilterCondition('$is_empty')).toBe(
+        FilterConditionType.IS_EMPTY
+      );
+      expect(validateFilterCondition('$is_not_empty')).toBe(
+        FilterConditionType.IS_NOT_EMPTY
+      );
     });
 
     it('should throw error for empty condition', () => {

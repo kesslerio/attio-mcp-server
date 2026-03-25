@@ -132,6 +132,9 @@ const FILTER_CONDITION_ALIASES: Record<string, FilterConditionType> = {
   $lt: FilterConditionType.LESS_THAN,
   $gte: FilterConditionType.GREATER_THAN_OR_EQUALS,
   $lte: FilterConditionType.LESS_THAN_OR_EQUALS,
+  $empty: FilterConditionType.IS_EMPTY,
+  $is_empty: FilterConditionType.IS_EMPTY,
+  $is_not_empty: FilterConditionType.IS_NOT_EMPTY,
   $not_empty: FilterConditionType.IS_NOT_EMPTY,
 };
 
