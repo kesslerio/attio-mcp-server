@@ -178,8 +178,14 @@ export const searchByTimeframeSchema = {
     },
     date_field: {
       type: 'string' as const,
-      enum: ['created_at', 'updated_at', 'modified_at', 'last_interaction'],
-      description: 'Optional explicit date field override',
+      enum: [
+        'created_at',
+        'updated_at',
+        'modified_at',
+        'last_interaction',
+      ] as const,
+      description:
+        'Optional explicit date field override. last_interaction is supported for people and companies; updated_at and modified_at remain accepted aliases but are not supported live on those objects.',
     },
     ...paginationProperties,
   },

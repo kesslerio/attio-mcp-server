@@ -129,7 +129,7 @@ export function createTimeframeQuery(
     throw new Error('Timeframe query requires operator');
   }
 
-  const createConstraints = (): Record<string, string> => {
+  const buildConstraints = (): Record<string, string> => {
     if (operator === 'between') {
       if (!startDate || !endDate) {
         throw new Error('Between operator requires both startDate and endDate');
@@ -155,13 +155,12 @@ export function createTimeframeQuery(
     };
 
     const constraintKey = constraintMap[operator] || 'value';
-
     return {
       [constraintKey]: value,
     };
   };
 
-  const constraints = createConstraints();
+  const constraints = buildConstraints();
 
   if (isInteractionAttribute(attribute)) {
     return {

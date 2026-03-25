@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Hardened people/company relationship validation so direct IDs, nested references, and array-based company payloads all trigger the company existence check (#1129)
 - Restored nested `company.id.record_id` validation for people updates after review feedback (#1130)
+- Restored live timeframe search behavior for one-sided `created_at` and `last_interaction` queries, and made unsupported people/company `modified` timeframe requests fail explicitly instead of returning false empty results (#1126)
 
 ### Changed
 

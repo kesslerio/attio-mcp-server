@@ -176,6 +176,45 @@ describe('QueryApiService', () => {
 
       expect(results).toEqual([]);
     });
+
+    it('should reject unsupported modified timeframe queries for people', async () => {
+      await expect(
+        QueryApiService.searchByTimeframe(UniversalResourceType.PEOPLE, {
+          resourceType: UniversalResourceType.PEOPLE,
+          attribute: 'updated_at',
+          startDate: '2024-01-01',
+          endDate: '2024-12-31',
+          operator: 'between',
+        })
+      ).rejects.toThrow(
+        /Modified timeframe searches are not supported by Attio/
+      );
+    });
+
+    it('should surface invalid timeframe filter errors from Attio', async () => {
+      const mockPost = vi.fn().mockRejectedValue({
+        response: {
+          status: 400,
+          data: {
+            code: 'missing_sort_field',
+            message:
+              'Filter cannot omit field for Attribute: last_interaction.',
+          },
+        },
+      });
+      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+        post: mockPost,
+      } as any);
+
+      await expect(
+        QueryApiService.searchByTimeframe(UniversalResourceType.PEOPLE, {
+          resourceType: UniversalResourceType.PEOPLE,
+          attribute: 'last_interaction',
+          startDate: '2024-01-01',
+          operator: 'greater_than',
+        })
+      ).rejects.toThrow(/Timeframe query rejected by Attio/);
+    });
   });
 
   describe('searchByContent', () => {
