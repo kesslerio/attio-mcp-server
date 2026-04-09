@@ -8,6 +8,27 @@
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { getContextStats } from '@/api/client-context.js';
 
+interface SmitheryDiagnosticsPayload {
+  timestamp: string;
+  runtime: {
+    platform: string;
+    nodeVersion: string;
+    startCommand: string;
+  };
+  environment: {
+    hasAttioWorkspaceId: boolean;
+    mcpLogLevel: string;
+    mcpServerMode: string;
+    attioMcpToolMode: string;
+    nodeEnv: string;
+  };
+  context: {
+    hasContext: boolean;
+    hasWeakMapStorage: boolean;
+    hasFallbackStorage: boolean;
+  };
+}
+
 /**
  * Tool definition for Smithery diagnostics
  */
@@ -15,12 +36,13 @@ export const smitheryDiagnosticsToolDefinition = {
   name: 'smithery_debug_config',
   description: formatToolDescription({
     capability:
-      'Retrieve sanitized diagnostic information about Smithery server configuration and runtime environment.',
-    boundaries: 'expose API key values, write data, or modify configuration.',
+      'Retrieve non-sensitive diagnostic information about Smithery runtime configuration propagation.',
+    boundaries:
+      'expose credentials or auth state, write data, or modify configuration.',
     constraints:
-      'Returns boolean flags and counts only, no sensitive data. Read-only operation.',
+      'Returns runtime, workspace, and context-storage diagnostics only. Read-only operation.',
     recoveryHint:
-      'Use this tool to debug authentication issues in Smithery hosted deployments. Compare local vs hosted results.',
+      'Use this tool to compare runtime mode, workspace configuration, and context storage state across deployments.',
   }),
   inputSchema: {
     type: 'object',
@@ -39,43 +61,25 @@ export const smitheryDiagnosticsToolDefinition = {
 export const smitheryDiagnosticsConfig = {
   name: 'smithery_debug_config',
   handler: async () => {
-    // Gather diagnostic info
     const contextStats = getContextStats();
-    const envDiag = {
-      hasAttioApiKey: Boolean(process.env.ATTIO_API_KEY),
-      attioApiKeyLength: process.env.ATTIO_API_KEY?.length || 0,
-      hasAttioWorkspaceId: Boolean(process.env.ATTIO_WORKSPACE_ID),
-      mcpLogLevel: process.env.MCP_LOG_LEVEL || 'not set',
-      mcpServerMode: process.env.MCP_SERVER_MODE || 'not set',
-      attioMcpToolMode: process.env.ATTIO_MCP_TOOL_MODE || 'not set',
-      nodeEnv: process.env.NODE_ENV || 'not set',
-    };
-
-    // Determine if we have API key access through context
-    const hasContextApiKey =
-      contextStats.hasDirectApiKey || contextStats.hasApiKeyGetter;
-
-    const diagnostic = {
+    const diagnostic: SmitheryDiagnosticsPayload = {
       timestamp: new Date().toISOString(),
       runtime: {
         platform: 'smithery-typescript',
         nodeVersion: process.version,
         startCommand: 'http',
       },
-      environment: envDiag,
-      context: contextStats,
-      summary: {
-        configurationSource: hasContextApiKey
-          ? 'context'
-          : envDiag.hasAttioApiKey
-            ? 'environment'
-            : 'none',
-        isAuthenticated: hasContextApiKey || envDiag.hasAttioApiKey,
-        apiKeyAvailable: Boolean(
-          contextStats.hasDirectApiKey ||
-          contextStats.hasApiKeyGetter ||
-          envDiag.hasAttioApiKey
-        ),
+      environment: {
+        hasAttioWorkspaceId: Boolean(process.env.ATTIO_WORKSPACE_ID),
+        mcpLogLevel: process.env.MCP_LOG_LEVEL || 'not set',
+        mcpServerMode: process.env.MCP_SERVER_MODE || 'not set',
+        attioMcpToolMode: process.env.ATTIO_MCP_TOOL_MODE || 'not set',
+        nodeEnv: process.env.NODE_ENV || 'not set',
+      },
+      context: {
+        hasContext: contextStats.hasContext,
+        hasWeakMapStorage: contextStats.hasWeakMapStorage,
+        hasFallbackStorage: contextStats.hasFallbackStorage,
       },
     };
 
@@ -98,25 +102,21 @@ export const smitheryDiagnosticsConfig = {
     }
 
     try {
-      const data = JSON.parse(textContent) as {
-        timestamp: string;
-        runtime: { platform: string; nodeVersion: string };
-        environment: Record<string, unknown>;
-        context: Record<string, unknown>;
-        summary: {
-          configurationSource: string;
-          isAuthenticated: boolean;
-          apiKeyAvailable: boolean;
-        };
-      };
-
-      const statusIcon = data.summary.isAuthenticated ? '✅' : '❌';
+      const data = JSON.parse(textContent) as SmitheryDiagnosticsPayload;
+      const contextState = data.context.hasWeakMapStorage
+        ? 'weakmap'
+        : data.context.hasFallbackStorage
+          ? 'fallback'
+          : 'missing';
+      const workspaceState = data.environment.hasAttioWorkspaceId
+        ? 'configured'
+        : 'missing';
       const parts: string[] = [
-        `${statusIcon} Smithery Diagnostics`,
-        `Auth: ${data.summary.isAuthenticated ? 'OK' : 'FAILED'}`,
-        `Source: ${data.summary.configurationSource}`,
+        'Smithery Diagnostics',
         `Runtime: ${data.runtime.platform}`,
         `Node: ${data.runtime.nodeVersion}`,
+        `Context: ${contextState}`,
+        `Workspace: ${workspaceState}`,
       ];
 
       return parts.join(' | ');
