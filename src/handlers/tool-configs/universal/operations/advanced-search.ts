@@ -5,7 +5,6 @@
 import {
   UniversalToolConfig,
   AdvancedSearchParams,
-  UniversalResourceType,
 } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalRecordResult } from '@/types/attio.js';
 import {
@@ -14,8 +13,11 @@ import {
 } from '@/handlers/tool-configs/shared/type-utils.js';
 
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
-import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+import {
+  extractResourceTypeFromFormatArgs,
+  getPluralResourceLabel,
+  getSingularResourceLabel,
+} from '@/handlers/tool-configs/universal/core/utils.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { normalizeFilterCondition } from '@/types/attio.js';
 
@@ -103,15 +105,15 @@ export const advancedSearchConfig: UniversalToolConfig<
     }
   },
   formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
-    const resourceType = args[0] as string | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
     const count = Array.isArray(results) ? results.length : 0;
     const typeName = resourceType
-      ? formatResourceType(resourceType as UniversalResourceType)
+      ? getSingularResourceLabel(resourceType)
       : 'record';
     const headerType = resourceType
       ? count === 1
         ? typeName
-        : getPluralResourceType(resourceType as UniversalResourceType)
+        : getPluralResourceLabel(resourceType)
       : 'records';
 
     if (!Array.isArray(results)) {

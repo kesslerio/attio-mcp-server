@@ -14,7 +14,7 @@ export function normalizeToolMsg(msg: string): string {
 /**
  * Standard resource types always available in the system
  */
-const STANDARD_RESOURCE_TYPES = [
+export const STANDARD_RESOURCE_TYPES = [
   'records',
   'lists',
   'people',
@@ -23,6 +23,15 @@ const STANDARD_RESOURCE_TYPES = [
   'deals',
   'notes',
 ] as const;
+
+export function getValidResourceTypes(): string[] {
+  // Load custom objects from mapping config (e.g., "funds", "investment_opportunities")
+  const config = loadMappingConfig();
+  const customObjects = Object.keys(config.mappings?.attributes?.objects || {});
+
+  // Merge standard + custom (deduplicated)
+  return [...new Set([...STANDARD_RESOURCE_TYPES, ...customObjects])];
+}
 
 /**
  * Canonicalize resource type to valid values and prevent mutations.
@@ -33,19 +42,13 @@ const STANDARD_RESOURCE_TYPES = [
  */
 export function canonicalizeResourceType(rt: unknown): string {
   const value = String(rt ?? '').toLowerCase();
-
-  // Load custom objects from mapping config (e.g., "funds", "investment_opportunities")
-  const config = loadMappingConfig();
-  const customObjects = Object.keys(config.mappings?.attributes?.objects || {});
-
-  // Merge standard + custom (deduplicated)
-  const validTypes = [
-    ...new Set([...STANDARD_RESOURCE_TYPES, ...customObjects]),
-  ];
+  const validTypes = getValidResourceTypes();
 
   if (!validTypes.includes(value)) {
     throw new Error(
-      `Invalid resource_type: ${value}. Must be one of: ${validTypes.join(', ')}`
+      `Invalid resource_type: ${value}. Must be one of: ${validTypes.join(
+        ', '
+      )}`
     );
   }
 

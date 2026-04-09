@@ -6,7 +6,6 @@ import {
   UniversalToolConfig,
   TimeframeSearchParams,
   TimeframeType,
-  UniversalResourceType,
   RelativeTimeframe,
 } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalRecordResult } from '@/types/attio.js';
@@ -15,11 +14,12 @@ import { safeExtractTimestamp } from '@/handlers/tool-configs/shared/type-utils.
 
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
+import { handleUniversalSearch } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import {
-  formatResourceType,
-  handleUniversalSearch,
-} from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+  extractResourceTypeFromFormatArgs,
+  getPluralResourceLabel,
+  getSingularResourceLabel,
+} from '@/handlers/tool-configs/universal/core/utils.js';
 import { normalizeOperator } from '@/utils/AttioFilterOperators.js';
 import { mapFieldName } from '@/utils/AttioFieldMapper.js';
 
@@ -51,6 +51,30 @@ function resolveTimeframeAttribute(
     default:
       throw new Error(`Unsupported timeframe type: ${timeframeType}`);
   }
+}
+
+function extractTimeframeTypeFromFormatArgs(
+  args: unknown[]
+): TimeframeType | undefined {
+  const first = args[0];
+  if (
+    typeof first === 'string' &&
+    Object.values(TimeframeType).includes(first as TimeframeType)
+  ) {
+    return first as TimeframeType;
+  }
+
+  if (first && typeof first === 'object' && 'timeframe_type' in first) {
+    const candidate = (first as { timeframe_type?: unknown }).timeframe_type;
+    if (
+      typeof candidate === 'string' &&
+      Object.values(TimeframeType).includes(candidate as TimeframeType)
+    ) {
+      return candidate as TimeframeType;
+    }
+  }
+
+  return undefined;
 }
 
 function resolveDateOperator(
@@ -220,8 +244,14 @@ export const searchByTimeframeConfig: UniversalToolConfig<
     }
   },
   formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
-    const timeframeType = args[0] as TimeframeType | undefined;
-    const resourceType = args[1] as UniversalResourceType | undefined;
+    const timeframeType = extractTimeframeTypeFromFormatArgs(args);
+    const firstArgResourceType = extractResourceTypeFromFormatArgs(args);
+    const resourceType =
+      timeframeType && firstArgResourceType === timeframeType
+        ? typeof args[1] === 'string'
+          ? args[1]
+          : undefined
+        : firstArgResourceType;
     if (!Array.isArray(results)) {
       return 'Found 0 records (timeframe search)\nTip: Ensure your workspace has data in the requested date range.';
     }
@@ -232,8 +262,8 @@ export const searchByTimeframeConfig: UniversalToolConfig<
     const resourceCount = results.length;
     const resourceTypeName = resourceType
       ? resourceCount === 1
-        ? formatResourceType(resourceType)
-        : getPluralResourceType(resourceType)
+        ? getSingularResourceLabel(resourceType)
+        : getPluralResourceLabel(resourceType)
       : resourceCount === 1
         ? 'record'
         : 'records';

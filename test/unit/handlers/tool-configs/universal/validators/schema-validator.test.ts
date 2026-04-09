@@ -3,11 +3,17 @@
  * @see Issue #1052: Preserve line breaks in note content
  * @see Issue #1099: Fix task immutability for nested values
  */
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/utils/config-loader.js', () => ({
+  loadMappingConfig: vi.fn(),
+}));
+
 import {
   InputSanitizer,
   validateUniversalToolParams,
 } from '../../../../../../src/handlers/tool-configs/universal/validators/schema-validator.js';
+import { loadMappingConfig } from '@/utils/config-loader.js';
 
 describe('InputSanitizer', () => {
   describe('sanitizeString', () => {
@@ -263,6 +269,116 @@ describe('InputSanitizer', () => {
 });
 
 describe('validateUniversalToolParams', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(loadMappingConfig).mockReturnValue({
+      version: '1.0',
+      mappings: {
+        attributes: {
+          common: {},
+          objects: {},
+          custom: {},
+        },
+        objects: {},
+        lists: {},
+        relationships: {},
+      },
+    });
+  });
+
+  describe('search tool resource_type validation', () => {
+    it('accepts config-discovered custom objects for search_records', () => {
+      vi.mocked(loadMappingConfig).mockReturnValue({
+        version: '1.0',
+        mappings: {
+          attributes: {
+            common: {},
+            objects: {
+              funds: { name: 'Name' },
+              channels: { name: 'Name' },
+            },
+            custom: {},
+          },
+          objects: {},
+          lists: {},
+          relationships: {},
+        },
+      });
+
+      const result = validateUniversalToolParams('search_records', {
+        resource_type: 'FUNDS',
+        query: 'growth',
+      });
+
+      expect(result.resource_type).toBe('funds');
+      expect(result.query).toBe('growth');
+    });
+
+    it('accepts config-discovered custom objects for advanced and timeframe search tools', () => {
+      vi.mocked(loadMappingConfig).mockReturnValue({
+        version: '1.0',
+        mappings: {
+          attributes: {
+            common: {},
+            objects: {
+              channels: { name: 'Name' },
+            },
+            custom: {},
+          },
+          objects: {},
+          lists: {},
+          relationships: {},
+        },
+      });
+
+      expect(
+        validateUniversalToolParams('search_records_advanced', {
+          resource_type: 'channels',
+        }).resource_type
+      ).toBe('channels');
+
+      expect(
+        validateUniversalToolParams('search_records_by_timeframe', {
+          resource_type: 'channels',
+          start_date: '2025-01-01',
+        }).resource_type
+      ).toBe('channels');
+    });
+
+    it('still rejects unknown custom objects for search tools', () => {
+      expect(() =>
+        validateUniversalToolParams('search_records', {
+          resource_type: 'unknown_object',
+        })
+      ).toThrow("Invalid resource_type: 'unknown_object'");
+    });
+
+    it('keeps non-search tools on standard enum validation', () => {
+      vi.mocked(loadMappingConfig).mockReturnValue({
+        version: '1.0',
+        mappings: {
+          attributes: {
+            common: {},
+            objects: {
+              funds: { name: 'Name' },
+            },
+            custom: {},
+          },
+          objects: {},
+          lists: {},
+          relationships: {},
+        },
+      });
+
+      expect(() =>
+        validateUniversalToolParams('create_record', {
+          resource_type: 'funds',
+          record_data: { name: 'Fund I' },
+        })
+      ).toThrow("Invalid resource_type: 'funds'");
+    });
+  });
+
   describe('update_record - input normalization', () => {
     it('should normalize data field to record_data', () => {
       const params = {
