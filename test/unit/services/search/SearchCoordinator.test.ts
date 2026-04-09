@@ -102,7 +102,59 @@ describe('SearchCoordinator', () => {
       });
 
       expect(results).toEqual(mockResults);
-      expect(QueryApiService.searchByTimeframe).toHaveBeenCalled();
+      expect(QueryApiService.searchByTimeframe).toHaveBeenCalledWith(
+        UniversalResourceType.COMPANIES,
+        expect.objectContaining({
+          attribute: 'created_at',
+          startDate: '2024-01-01',
+          endDate: '2024-12-31',
+          operator: 'between',
+        }),
+        undefined,
+        undefined
+      );
+    });
+
+    it('should derive greater_than for TIMEFRAME searches with only start_date', async () => {
+      await SearchCoordinator.executeSearch({
+        resource_type: UniversalResourceType.COMPANIES,
+        search_type: SearchType.TIMEFRAME,
+        timeframe_attribute: 'created_at',
+        start_date: '2024-01-01',
+      });
+
+      expect(QueryApiService.searchByTimeframe).toHaveBeenCalledWith(
+        UniversalResourceType.COMPANIES,
+        expect.objectContaining({
+          attribute: 'created_at',
+          startDate: '2024-01-01',
+          endDate: undefined,
+          operator: 'greater_than',
+        }),
+        undefined,
+        undefined
+      );
+    });
+
+    it('should derive less_than for TIMEFRAME searches with only end_date', async () => {
+      await SearchCoordinator.executeSearch({
+        resource_type: UniversalResourceType.PEOPLE,
+        search_type: SearchType.TIMEFRAME,
+        timeframe_attribute: 'last_interaction',
+        end_date: '2024-12-31',
+      });
+
+      expect(QueryApiService.searchByTimeframe).toHaveBeenCalledWith(
+        UniversalResourceType.PEOPLE,
+        expect.objectContaining({
+          attribute: 'last_interaction',
+          startDate: undefined,
+          endDate: '2024-12-31',
+          operator: 'less_than',
+        }),
+        undefined,
+        undefined
+      );
     });
 
     it('should throw error for TIMEFRAME without timeframe_attribute', async () => {

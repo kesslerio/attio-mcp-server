@@ -217,7 +217,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           resource_type: UniversalResourceType.PEOPLE,
-          timeframe_attribute: 'modified_at',
+          timeframe_attribute: 'updated_at',
           start_date: '2023-12-01T00:00:00Z',
           end_date: '2023-12-31T23:59:59Z',
           date_operator: 'between',
@@ -289,7 +289,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       );
     });
 
-    it('should map updated_at date_field overrides to modified_at', async () => {
+    it('should map updated_at date_field overrides to updated_at', async () => {
       const mockResults = [
         {
           id: { record_id: 'person-3' },
@@ -313,9 +313,104 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       expect(result).toEqual(mockResults);
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
-          timeframe_attribute: 'modified_at',
+          timeframe_attribute: 'updated_at',
           start_date: '2023-12-01T00:00:00Z',
           end_date: '2023-12-31T23:59:59Z',
+        })
+      );
+    });
+
+    it('should default missing timeframe_type to created_at', async () => {
+      const mockResults = [
+        {
+          id: { record_id: 'person-4' },
+          values: {
+            name: [{ value: 'Implicit Created Person' }],
+          },
+        },
+      ];
+
+      const { mockHandlers, mockSearchService } = getMockInstances();
+      mockSearchService.searchRecords.mockResolvedValue(mockResults);
+      mockHandlers.handleUniversalSearch.mockResolvedValue(mockResults);
+
+      const params: TimeframeSearchParams = {
+        resource_type: UniversalResourceType.PEOPLE,
+        start_date: '2023-12-01T00:00:00Z',
+        end_date: '2023-12-31T23:59:59Z',
+      };
+
+      const result = await searchByTimeframeConfig.handler(params);
+
+      expect(result).toEqual(mockResults);
+      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resource_type: UniversalResourceType.PEOPLE,
+          timeframe_attribute: 'created_at',
+          start_date: '2023-12-01T00:00:00Z',
+          end_date: '2023-12-31T23:59:59Z',
+          date_operator: 'between',
+        })
+      );
+    });
+
+    it('should use a lower-bound operator for start-only timeframe queries', async () => {
+      const mockResults = [
+        {
+          id: { record_id: 'person-1' },
+          values: {
+            name: [{ value: 'Recently Interacted Person' }],
+          },
+        },
+      ];
+
+      const { mockHandlers, mockSearchService } = getMockInstances();
+      mockSearchService.searchRecords.mockResolvedValue(mockResults);
+
+      const params: TimeframeSearchParams = {
+        resource_type: UniversalResourceType.PEOPLE,
+        timeframe_type: TimeframeType.LAST_INTERACTION,
+        start_date: '2023-12-01',
+      };
+
+      const result = await searchByTimeframeConfig.handler(params);
+
+      expect(result).toEqual(mockResults);
+      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timeframe_attribute: 'last_interaction',
+          start_date: '2023-12-01T00:00:00Z',
+          end_date: undefined,
+          date_operator: 'greater_than',
+        })
+      );
+    });
+
+    it('should accept last_interaction as an explicit date_field override', async () => {
+      const mockResults = [
+        {
+          id: { record_id: 'comp-1' },
+          values: { name: [{ value: 'Test Company' }] },
+        },
+      ];
+
+      const { mockHandlers, mockSearchService } = getMockInstances();
+      mockSearchService.searchRecords.mockResolvedValue(mockResults);
+
+      const params: TimeframeSearchParams = {
+        resource_type: UniversalResourceType.COMPANIES,
+        date_field: 'last_interaction',
+        end_date: '2023-12-31',
+      };
+
+      const result = await searchByTimeframeConfig.handler(params);
+
+      expect(result).toEqual(mockResults);
+      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timeframe_attribute: 'last_interaction',
+          end_date: '2023-12-31T23:59:59.999Z',
+          date_operator: 'less_than',
         })
       );
     });
@@ -353,7 +448,16 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       // Should successfully execute without throwing errors
       const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
+      const { mockHandlers } = getMockInstances();
+      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resource_type: UniversalResourceType.COMPANIES,
+          timeframe_attribute: 'created_at',
+          start_date: '2023-12-01T00:00:00Z',
+          end_date: undefined,
+          date_operator: 'greater_than',
+        })
+      );
     });
 
     it('should format timeframe results with date info', async () => {

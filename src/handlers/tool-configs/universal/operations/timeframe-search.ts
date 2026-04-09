@@ -24,8 +24,8 @@ import { normalizeOperator } from '@/utils/AttioFilterOperators.js';
 import { mapFieldName } from '@/utils/AttioFieldMapper.js';
 
 function resolveTimeframeAttribute(
-  timeframeType?: TimeframeType,
-  dateField?: TimeframeSearchParams['date_field']
+  dateField?: TimeframeSearchParams['date_field'],
+  timeframeType?: TimeframeType
 ): string {
   if (dateField) {
     switch (dateField) {
@@ -33,7 +33,7 @@ function resolveTimeframeAttribute(
         return mapFieldName('created_at');
       case 'updated_at':
       case 'modified_at':
-        return mapFieldName('modified_at');
+        return 'updated_at';
       case 'last_interaction':
         return 'last_interaction';
       default:
@@ -41,11 +41,11 @@ function resolveTimeframeAttribute(
     }
   }
 
-  switch (timeframeType || TimeframeType.MODIFIED) {
+  switch (timeframeType || TimeframeType.CREATED) {
     case TimeframeType.CREATED:
       return mapFieldName('created_at');
     case TimeframeType.MODIFIED:
-      return mapFieldName('modified_at');
+      return 'updated_at';
     case TimeframeType.LAST_INTERACTION:
       return 'last_interaction';
     default:
@@ -75,6 +75,21 @@ function extractTimeframeTypeFromFormatArgs(
   }
 
   return undefined;
+}
+
+function resolveDateOperator(
+  startDate?: string,
+  endDate?: string
+): 'greater_than' | 'less_than' | 'between' {
+  if (startDate && endDate) {
+    return 'between';
+  }
+
+  if (startDate) {
+    return 'greater_than';
+  }
+
+  return 'less_than';
 }
 
 export const searchByTimeframeConfig: UniversalToolConfig<
@@ -132,11 +147,9 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         );
       }
 
-      // Determine the timestamp field to filter on (Issue #475)
-      // Use date_field if provided, otherwise fall back to timeframe_type logic
       const timestampField = resolveTimeframeAttribute(
-        timeframe_type,
-        date_field
+        date_field,
+        timeframe_type
       );
 
       // Build the date filter using proper Attio API v2 filter syntax
@@ -157,6 +170,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
 
       const startIso = coerceIso(processedStartDate, false);
       const endIso = coerceIso(processedEndDate, true);
+      const timeframeOperator = resolveDateOperator(startIso, endIso);
 
       // Handle invert_range logic (Issue #475)
       if (invert_range) {
@@ -167,21 +181,21 @@ export const searchByTimeframeConfig: UniversalToolConfig<
           // This is typically records older than the start date (before the timeframe)
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('lt'), // Less than start date
+            condition: normalizeOperator('$lt'), // Less than start date
             value: startIso,
           });
         } else if (startIso) {
           // Only start date - invert to find records older than this date
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('lt'),
+            condition: normalizeOperator('$lt'),
             value: startIso,
           });
         } else if (endIso) {
           // Only end date - invert to find records newer than this date
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('gt'),
+            condition: normalizeOperator('$gt'),
             value: endIso,
           });
         }
@@ -190,7 +204,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         if (startIso) {
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('gte'), // Normalize to $gte
+            condition: normalizeOperator('$gte'),
             value: startIso,
           });
         }
@@ -198,7 +212,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         if (endIso) {
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('lte'), // Normalize to $lte
+            condition: normalizeOperator('$lte'),
             value: endIso,
           });
         }
@@ -217,7 +231,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         timeframe_attribute: timestampField,
         start_date: startIso,
         end_date: endIso,
-        date_operator: 'between',
+        date_operator: timeframeOperator,
         limit: limit || 20,
         offset: offset || 0,
       });

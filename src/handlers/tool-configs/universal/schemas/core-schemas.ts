@@ -118,7 +118,8 @@ export const searchRecordsSchema = {
       type: 'string' as const,
       enum: ['created_at', 'updated_at', 'last_interaction'] as const,
       default: 'created_at',
-      description: 'Which date field to filter on',
+      description:
+        'Which date field to filter on. Attio supports created_at and last_interaction for people and companies. updated_at/modifed-style filtering is not supported live on those objects.',
     },
     ...paginationProperties,
   },
