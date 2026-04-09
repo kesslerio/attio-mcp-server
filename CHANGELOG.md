@@ -7,28 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [1.5.0] - 2026-04-09
 
-- Hardened people/company relationship validation so direct IDs, nested references, and array-based company payloads all trigger the company existence check (#1129)
-- Restored nested `company.id.record_id` validation for people updates after review feedback (#1130)
-- Redacted credential-derived metadata from `smithery_debug_config` while keeping the public tool and alias available for non-sensitive runtime diagnostics (#1142)
-- Hardened internal credential-resolution debug logs in Smithery, client context, and client resolver paths to remove secret-derived metadata (#1141, #1147)
-- `search_records`, `search_records_advanced`, and `search_records_by_timeframe` now accept config-discovered custom object slugs and keep custom object labels intact in search output and errors (#1138)
-- Restored live timeframe search behavior for one-sided `created_at` and `last_interaction` queries, and made unsupported people/company `modified` timeframe requests fail explicitly instead of returning false empty results (#1126)
+**TL;DR for Users**: This release adds record interaction history, expands search support for custom objects, and fixes several high-friction update, search, and validation issues across the Attio MCP server.
 
-### Changed
+### Added
 
-- Refined GitHub issue forms and PR template for reproducibility, triage quality, and rollback clarity, added `CONTRIBUTING.md`, and removed legacy markdown issue templates to avoid duplicate issue flows
-
-## [2026-01-29] - Daily Update
-
-### Fixed
-
-- `update_record` now accepts legacy `data` payloads, wraps top-level field updates into `record_data`, parses JSON string updates, and normalizes status/title inputs for stage updates (#1099)
+- **`get_record_interactions` tool** (#1116) - Retrieve interaction history for a record without leaving the MCP workflow
 
 ### Changed
 
-- `update_record` input normalization now uses immutable transformations to prevent shared state mutations (#1100)
+- Search tools now accept config-discovered custom object slugs and preserve custom object labels in search output and errors (#1138)
+- `update_record` is more forgiving with legacy payload shapes by accepting `data`, top-level field updates, JSON string updates, and normalized stage title/status inputs (#1099, #1100)
+
+### Fixed
+
+- Restored live timeframe search behavior for one-sided `created_at` and `last_interaction` queries, and made unsupported people/company `modified` timeframe requests fail clearly instead of returning misleading empty results (#1126)
+- Fixed search translation regressions that could block valid queries from reaching Attio (#1131)
+- Hardened people/company relationship validation so direct IDs, nested references, and array-based company payloads consistently trigger company existence checks during people updates (#1125, #1129, #1130)
+- Fixed task creation so `linked_records` are passed through correctly and deal updates no longer fail on valid status values such as `MQL` (#1098, #1109)
+- Increased response size handling for bulk search results from 40 KB to 500 KB to avoid truncating larger result sets (#1110)
+- Redacted credential-derived metadata from Smithery diagnostics and hardened internal debug logging so runtime troubleshooting no longer exposes secret-derived details (#1141, #1142, #1147, #1169, #1170)
 
 ## [1.4.1] - 2026-01-28
 
@@ -922,7 +921,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.3.6...v1.4.0
 [1.3.6]: https://github.com/kesslerio/attio-mcp-server/compare/v1.3.5...v1.3.6

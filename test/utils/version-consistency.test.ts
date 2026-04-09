@@ -10,11 +10,19 @@ import { resolve } from 'path';
 describe('Version Consistency Validation', () => {
   const projectRoot = resolve(__dirname, '../..');
 
-  it('should have consistent version across package.json and CHANGELOG.md', () => {
+  it('should have consistent version across package.json, server.json, and CHANGELOG.md', () => {
     // Read package.json version
     const packageJsonPath = resolve(projectRoot, 'package.json');
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     const packageVersion = packageJson.version;
+
+    // Read server.json version
+    const serverJsonPath = resolve(projectRoot, 'server.json');
+    const serverJson = JSON.parse(readFileSync(serverJsonPath, 'utf-8'));
+    const serverVersion = serverJson.version;
+    const npmPackageVersion = serverJson.packages?.find(
+      (pkg: { identifier?: string }) => pkg.identifier === 'attio-mcp'
+    )?.version;
 
     // Read CHANGELOG.md content
     const changelogPath = resolve(projectRoot, 'CHANGELOG.md');
@@ -30,6 +38,16 @@ describe('Version Consistency Validation', () => {
     if (changelogVersion === 'Unreleased') {
       return;
     }
+
+    expect(serverVersion).toBe(
+      packageVersion,
+      `server.json version (${serverVersion}) should match package.json version (${packageVersion})`
+    );
+
+    expect(npmPackageVersion).toBe(
+      packageVersion,
+      `server.json package version (${npmPackageVersion}) should match package.json version (${packageVersion})`
+    );
 
     expect(packageVersion).toBe(
       changelogVersion,

@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Publish Release Script
-# This script handles the full release process for Attio MCP Server
+# This script prepares and tags an Attio MCP Server release.
 
-set -e
+set -euo pipefail
 
 echo "🚀 Publishing Attio MCP Server Release"
 echo "======================================"
@@ -25,18 +25,18 @@ fi
 
 # Pull latest changes
 echo "📥 Pulling latest changes..."
-git pull
+git pull --ff-only origin main
 
 # Run build and tests
 echo "🔨 Building project..."
-npm run build
+bun run build
 
 echo "🧪 Running tests..."
-npm run test:offline
+bun run test:offline
 
 # Run linting and type checking
 echo "🔍 Running linting and type checks..."
-npm run check
+bun run check
 
 # Get current version from package.json
 CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -83,51 +83,46 @@ esac
 
 echo "🔄 Updating version to: $NEW_VERSION"
 
-# Update version in package.json
-echo "📝 Updating package.json version..."
-npm version $NEW_VERSION --no-git-tag-version
+# Update versioned files
+echo "📝 Updating package.json and server.json versions..."
+node - "$NEW_VERSION" <<'NODE'
+const fs = require('node:fs');
+
+const version = process.argv[2];
+
+for (const file of ['package.json', 'server.json']) {
+  const json = JSON.parse(fs.readFileSync(file, 'utf8'));
+  json.version = version;
+
+  if (file === 'server.json' && Array.isArray(json.packages)) {
+    json.packages = json.packages.map((pkg) =>
+      pkg.registryType === 'npm' && pkg.identifier === 'attio-mcp'
+        ? { ...pkg, version }
+        : pkg
+    );
+  }
+
+  fs.writeFileSync(file, `${JSON.stringify(json, null, 2)}\n`);
+}
+NODE
 
 # Update changelog
 echo ""
 echo "📝 Please update CHANGELOG.md with the new version details"
 echo "   New version: $NEW_VERSION"
-if [ ! -f "CHANGELOG.md" ]; then
-    echo "Creating CHANGELOG.md..."
-    cat > CHANGELOG.md << EOF
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [${NEW_VERSION}] - $(date +%Y-%m-%d)
-
-### Added
-- Initial release of Attio MCP Server
-- Model Context Protocol integration for Attio CRM
-- Company, people, lists, notes, and tasks management
-- Advanced search and filtering capabilities
-- Batch operations support
-
-### Changed
-- N/A
-
-### Fixed
-- N/A
-
-EOF
-fi
 read -p "Press enter when CHANGELOG.md is updated..."
+
+echo "🧪 Validating release notes section..."
+node scripts/release-notes.cjs "v$NEW_VERSION" --validate
 
 # Rebuild after version change
 echo "🔨 Rebuilding with new version..."
-npm run build
+bun run build
 
 # Commit version bump and changelog
 echo "📝 Committing version bump..."
-git add package.json CHANGELOG.md
-git commit -m "Bump version to $NEW_VERSION"
+git add package.json server.json CHANGELOG.md
+git commit -m "Chore: prepare v$NEW_VERSION release"
 
 # Create git tag
 echo "🏷️  Creating git tag..."
@@ -138,25 +133,13 @@ echo "⬆️  Pushing changes to GitHub..."
 git push origin main
 git push --tags
 
-# Create GitHub release
-echo "📋 Creating GitHub release..."
-if command -v gh &> /dev/null; then
-    gh release create "v$NEW_VERSION" \
-        --title "Attio MCP Server v$NEW_VERSION" \
-        --notes "See CHANGELOG.md for details" \
-        --latest
-else
-    echo "⚠️  GitHub CLI not found. Please create the release manually at:"
-    echo "   https://github.com/kesslerio/attio-mcp-server/releases/new?tag=v$NEW_VERSION"
-fi
-
 echo ""
-echo "✅ Release v$NEW_VERSION completed successfully!"
+echo "✅ Release v$NEW_VERSION prepared successfully!"
 echo ""
 echo "📋 Post-release checklist:"
-echo "[ ] Test the MCP server with the new version"
-echo "[ ] Update any documentation if needed"
-echo "[ ] Announce the release if significant"
+echo "[ ] Watch the GitHub tag workflows complete for release + npm publish"
+echo "[ ] Verify the GitHub release body matches the curated CHANGELOG entry"
+echo "[ ] Verify attio-mcp@$NEW_VERSION is available on npm"
 echo ""
-echo "🔗 Installation command for users:"
-echo "   curl -fsSL https://raw.githubusercontent.com/kesslerio/attio-mcp-server/main/install.sh | bash"
+echo "🔗 Tag pushed: v$NEW_VERSION"
+echo "   GitHub Release workflow will create the release notes from CHANGELOG.md"
