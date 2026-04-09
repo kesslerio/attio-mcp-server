@@ -21,6 +21,9 @@
 
 Include exact commands and outcomes in every PR.
 
+The published package runtime still supports Node 20.0.0+, but local linting now depends on ESLint 10.
+If you run lint commands with Node directly instead of Bun, use Node 20.19+, 22.13+, or 24+.
+
 Run the repository validation flow:
 
 ```bash
