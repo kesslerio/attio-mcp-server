@@ -346,6 +346,17 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(kebabResponse);
+
+      const text = kebabResponse.content?.[0]?.text;
+      expect(typeof text).toBe('string');
+      expect(text).not.toContain('hasAttioApiKey');
+      expect(text).not.toContain('attioApiKeyLength');
+      expect(text).not.toContain('configurationSource');
+      expect(text).not.toContain('apiKeyAvailable');
+      expect(text).not.toContain('failedContextCacheSize');
+      expect(text).not.toContain('hasApiKeyGetter');
+      expect(text).not.toContain('hasDirectApiKey');
+      expect(text).not.toContain('hasDirectAccessToken');
     }, 60000);
   });
 });
