@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Hardened people/company relationship validation so direct IDs, nested references, and array-based company payloads all trigger the company existence check (#1129)
 - Restored nested `company.id.record_id` validation for people updates after review feedback (#1130)
+- Redacted credential-derived metadata from `smithery_debug_config` while keeping the public tool and alias available for non-sensitive runtime diagnostics (#1142)
 
 ### Changed
 
