@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   canonicalizeResourceType,
+  getValidResourceTypes,
   normalizeToolMsg,
 } from '@/handlers/tools/dispatcher/utils.js';
 
@@ -233,6 +234,38 @@ describe('Dispatcher Utils', () => {
         // Should work without duplicates
         expect(canonicalizeResourceType('companies')).toBe('companies');
         expect(canonicalizeResourceType('funds')).toBe('funds');
+      });
+
+      it('should return merged valid resource types for downstream validators', () => {
+        vi.mocked(loadMappingConfig).mockReturnValue({
+          version: '1.0',
+          mappings: {
+            attributes: {
+              common: {},
+              objects: {
+                companies: { name: 'Name' },
+                funds: { name: 'Name' },
+                channels: { name: 'Name' },
+              },
+              custom: {},
+            },
+            objects: {},
+            lists: {},
+            relationships: {},
+          },
+        });
+
+        expect(getValidResourceTypes()).toEqual([
+          'records',
+          'lists',
+          'people',
+          'companies',
+          'tasks',
+          'deals',
+          'notes',
+          'funds',
+          'channels',
+        ]);
       });
     });
   });

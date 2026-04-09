@@ -212,6 +212,30 @@ describe('Universal Advanced Operations - Search Tests', () => {
       );
     });
 
+    it('uses custom object labels when formatter receives dispatcher-style args', () => {
+      const formatted = (advancedSearchConfig.formatResult as any)(
+        [
+          {
+            id: { record_id: 'channel-1' },
+            values: {
+              name: [{ value: 'Partner Channel' }],
+            },
+          },
+          {
+            id: { record_id: 'channel-2' },
+            values: {
+              title: [{ value: 'Reseller' }],
+            },
+          },
+        ],
+        { resource_type: 'channels' }
+      );
+
+      expect(formatted).toContain('Advanced search found 2 channels');
+      expect(formatted).toContain('1. Partner Channel (ID: channel-1)');
+      expect(formatted).toContain('2. Reseller (ID: channel-2)');
+    });
+
     it('should handle advanced search errors', async () => {
       const { mockHandlers } = getMockInstances();
       const mockError = new Error('Filter error');

@@ -1,15 +1,8 @@
 import { UniversalResourceType } from '../types.js';
-import {
-  extractDisplayName as extractDisplayNameTyped,
-  extractDisplayValue,
-  extractMultipleDisplayValues,
-  coerceArrayValue as legacyCoerceArrayValue,
-  coerceScalar as legacyCoerceScalar,
-} from './value-extractors.js';
+import { extractDisplayName as extractDisplayNameTyped } from './value-extractors.js';
 import {
   sanitizeValidationMetadata,
   formatSanitizedActualValue,
-  type SanitizedValidationMetadata,
 } from './pii-sanitizer.js';
 
 // Re-export type guards for UniversalRecord (Issue #1073)
@@ -47,10 +40,70 @@ export function getPluralResourceType(
   }
 }
 
-// Legacy functions maintained for backward compatibility
-// @deprecated Use extractDisplayValue from value-extractors.ts instead
-const coerceArrayValue = legacyCoerceArrayValue;
-const coerceScalar = legacyCoerceScalar;
+function isKnownUniversalResourceType(
+  resourceType: string
+): resourceType is UniversalResourceType {
+  return Object.values(UniversalResourceType).includes(
+    resourceType as UniversalResourceType
+  );
+}
+
+export function extractResourceTypeFromFormatArgs(
+  args: unknown[]
+): string | undefined {
+  const first = args[0];
+  if (typeof first === 'string') {
+    return first;
+  }
+
+  if (first && typeof first === 'object' && 'resource_type' in first) {
+    const candidate = (first as { resource_type?: unknown }).resource_type;
+    if (typeof candidate === 'string') {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+export function getSingularResourceLabel(resourceType?: string): string {
+  if (!resourceType) {
+    return 'record';
+  }
+
+  if (isKnownUniversalResourceType(resourceType)) {
+    switch (resourceType) {
+      case UniversalResourceType.COMPANIES:
+        return 'company';
+      case UniversalResourceType.PEOPLE:
+        return 'person';
+      case UniversalResourceType.LISTS:
+        return 'list';
+      case UniversalResourceType.RECORDS:
+        return 'record';
+      case UniversalResourceType.DEALS:
+        return 'deal';
+      case UniversalResourceType.TASKS:
+        return 'task';
+      case UniversalResourceType.NOTES:
+        return 'note';
+    }
+  }
+
+  return resourceType;
+}
+
+export function getPluralResourceLabel(resourceType?: string): string {
+  if (!resourceType) {
+    return 'records';
+  }
+
+  if (isKnownUniversalResourceType(resourceType)) {
+    return getPluralResourceType(resourceType);
+  }
+
+  return resourceType;
+}
 
 // Use the new type-safe extraction function
 export const extractDisplayName = extractDisplayNameTyped;
