@@ -1,7 +1,6 @@
 import js from '@eslint/js';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
-import importPlugin from 'eslint-plugin-import';
 
 export default [
   {
@@ -64,20 +63,6 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      import: importPlugin,
-    },
-    settings: {
-      'import/resolver': {
-        typescript: {
-          project: [
-            './tsconfig.json',
-            './test/tsconfig.json',
-            './configs/tsconfig/tsconfig.eslint.json',
-            './configs/tsconfig/tsconfig.tests.json',
-          ],
-          alwaysTryTypes: true,
-        },
-      },
     },
     rules: {
       // Import recommended rules but convert errors to warnings for migration phase
@@ -129,20 +114,6 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      import: importPlugin,
-    },
-    settings: {
-      'import/resolver': {
-        typescript: {
-          project: [
-            './tsconfig.json',
-            './test/tsconfig.json',
-            './configs/tsconfig/tsconfig.eslint.json',
-            './configs/tsconfig/tsconfig.tests.json',
-          ],
-          alwaysTryTypes: true,
-        },
-      },
     },
     rules: {
       'no-console': 'off',
