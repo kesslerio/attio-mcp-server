@@ -80,7 +80,8 @@ jobs:
         if: steps.check.outputs.should_publish == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # npm trusted publishing requires a recent Node/npm runtime.
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -95,12 +96,16 @@ jobs:
         if: steps.check.outputs.should_publish == 'true'
         run: bun run build
 
-      - name: Publish to NPM
+      - name: Show publish runtime versions
         if: steps.check.outputs.should_publish == 'true'
-        # Keep npm for publishing to npm registry
+        run: |
+          node --version
+          npm --version
+
+      - name: Publish to NPM with trusted publishing
+        if: steps.check.outputs.should_publish == 'true'
+        # Requires npm Trusted Publisher configuration for this repository/workflow.
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-registry:
     needs: publish-npm
