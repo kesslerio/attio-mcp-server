@@ -237,7 +237,7 @@
     "@vitest/ui": "^4.0.18",
     "dotenv-cli": "^11.0.0",
     "eslint": "^10.2.0",
-    "eslint-formatter-compact": "^8.40.0",
+    "eslint-formatter-compact": "^9.0.1",
     "glob": "^13.0.6",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.6",
