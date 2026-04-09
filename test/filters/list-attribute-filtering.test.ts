@@ -237,7 +237,7 @@ describe('List Entry Filter Transformation', () => {
       expect(result).toEqual({
         filter: {
           stage: {
-            $is_not_empty: '',
+            $not_empty: '',
           },
         },
       });

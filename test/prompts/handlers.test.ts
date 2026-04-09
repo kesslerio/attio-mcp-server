@@ -2,29 +2,21 @@
  * Tests for MCP Prompts handlers
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { registerPromptHandlers } from '../../src/prompts/handlers';
-import { getAllPrompts } from '../../src/prompts/templates/index';
-
-// Mock the server
-vi.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
-  Server: vi.fn().mockImplementation(() => ({
-    setRequestHandler: vi.fn(),
-  })),
-}));
 
 describe('Prompts Handlers', () => {
-  let server: Server;
+  let server: {
+    setRequestHandler: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
-    server = new Server(
-      { name: 'test-server', version: '1.0.0' },
-      { capabilities: {} }
-    ) as any;
+    server = {
+      setRequestHandler: vi.fn(),
+    };
     vi.clearAllMocks();
   });
 
