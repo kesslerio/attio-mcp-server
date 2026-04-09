@@ -23,7 +23,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260409.1",
     "typescript": "^5.8.3",
-    "wrangler": "^4.77.0"
+    "wrangler": "^4.81.1"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.4.1"
