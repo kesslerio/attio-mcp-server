@@ -5,7 +5,12 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: 'bun' # Root dependencies use bun.lock
+    directory: '/' # Location of package manifests
     schedule:
-      interval: "monthly"
+      interval: 'monthly'
+
+  - package-ecosystem: 'npm' # Cloudflare example tracks package-lock.json
+    directory: '/examples/cloudflare-mcp-server'
+    schedule:
+      interval: 'monthly'
