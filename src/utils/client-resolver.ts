@@ -82,25 +82,7 @@ export function resolveAttioClient(): AxiosInstance {
 
   // Debug logging for API key resolution (informational only)
   if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
-    const contextApiKey = getContextApiKey();
-    const envApiKey = process.env.ATTIO_API_KEY;
-    const resolvedApiKey = envApiKey || contextApiKey;
-
-    logger.debug('API key resolution', {
-      hasEnvApiKey: Boolean(envApiKey),
-      envKeyLength: envApiKey?.length || 0,
-      hasContextApiKey: Boolean(contextApiKey),
-      contextKeyLength: contextApiKey?.length || 0,
-      resolved: Boolean(resolvedApiKey),
-      resolvedKeyLength: resolvedApiKey?.length || 0,
-      source:
-        resolvedApiKey === envApiKey
-          ? 'env'
-          : resolvedApiKey === contextApiKey
-            ? 'context'
-            : 'none',
-      timestamp: new Date().toISOString(),
-    });
+    logger.debug('Credential resolution attempted');
   }
 
   // Use getAttioClient() - it handles all the complexity:
@@ -126,8 +108,8 @@ export function resolveAttioClient(): AxiosInstance {
       )(config);
       assertAxiosInstance(client, 'createAttioClient(config)');
       return client;
-    } catch (error) {
-      logger.debug('createAttioClient failed', { error });
+    } catch (_error) {
+      logger.debug('createAttioClient failed');
       // Continue to last resort
     }
   }

@@ -1,7 +1,25 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import type { AxiosInstance } from 'axios';
+import { expectLogCallsToExclude } from '../utils/log-assertions.js';
 
 const originalApiKey = process.env.ATTIO_API_KEY;
+const originalLogLevel = process.env.MCP_LOG_LEVEL;
+const { mockScopedDebug, mockScopedInfo, mockScopedWarn, mockScopedError } =
+  vi.hoisted(() => ({
+    mockScopedDebug: vi.fn(),
+    mockScopedInfo: vi.fn(),
+    mockScopedWarn: vi.fn(),
+    mockScopedError: vi.fn(),
+  }));
+
+vi.mock('../../src/utils/logger.js', () => ({
+  createScopedLogger: vi.fn(() => ({
+    debug: mockScopedDebug,
+    info: mockScopedInfo,
+    warn: mockScopedWarn,
+    error: mockScopedError,
+  })),
+}));
 
 type AttioModuleMock = Partial<
   Record<'getAttioClient' | 'createAttioClient' | 'buildAttioClient', any>
@@ -45,7 +63,12 @@ describe('Client Resolver', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mockScopedDebug.mockReset();
+    mockScopedInfo.mockReset();
+    mockScopedWarn.mockReset();
+    mockScopedError.mockReset();
     delete process.env.ATTIO_API_KEY;
+    delete process.env.MCP_LOG_LEVEL;
   });
 
   afterEach(() => {
@@ -53,6 +76,12 @@ describe('Client Resolver', () => {
       process.env.ATTIO_API_KEY = originalApiKey;
     } else {
       delete process.env.ATTIO_API_KEY;
+    }
+
+    if (originalLogLevel) {
+      process.env.MCP_LOG_LEVEL = originalLogLevel;
+    } else {
+      delete process.env.MCP_LOG_LEVEL;
     }
   });
 
@@ -220,6 +249,54 @@ describe('Client Resolver', () => {
       expect(client1).toBe(mockClient1);
       expect(client2).toBe(mockClient2);
       expect(getAttioClient).toHaveBeenCalledTimes(2);
+    });
+
+    it('logs only a message when debug credential resolution is enabled', async () => {
+      const mockClient = createMockClient();
+      const getAttioClient = vi.fn().mockReturnValue(mockClient);
+      mockAttioModule({ getAttioClient });
+      mockContextModule('context-key-12345');
+      process.env.ATTIO_API_KEY = 'env-key-12345';
+      process.env.MCP_LOG_LEVEL = 'DEBUG';
+
+      const { resolveAttioClient } = await importResolver();
+      resolveAttioClient();
+
+      expect(mockScopedDebug).toHaveBeenCalledWith(
+        'Credential resolution attempted'
+      );
+
+      expectLogCallsToExclude(mockScopedDebug.mock.calls, [
+        'hasEnvApiKey',
+        'envKeyLength',
+        'hasContextApiKey',
+        'contextKeyLength',
+        'resolvedKeyLength',
+        '"source"',
+        'env-key-12345',
+        'context-key-12345',
+      ]);
+    });
+
+    it('does not serialize createAttioClient failure details in debug logs', async () => {
+      const mockClient = createMockClient();
+      const createAttioClient = vi.fn().mockImplementation(() => {
+        throw new Error('factory failed with token secret-token-12345');
+      });
+      const buildAttioClient = vi.fn().mockReturnValue(mockClient);
+      mockAttioModule({ createAttioClient, buildAttioClient });
+      mockContextModule('context-key-12345');
+      process.env.MCP_LOG_LEVEL = 'DEBUG';
+
+      const { resolveAttioClient } = await importResolver();
+      const client = resolveAttioClient();
+
+      expect(client).toBe(mockClient);
+      expect(mockScopedDebug).toHaveBeenCalledWith('createAttioClient failed');
+      expectLogCallsToExclude(mockScopedDebug.mock.calls, [
+        'factory failed with token secret-token-12345',
+        'secret-token-12345',
+      ]);
     });
   });
 });

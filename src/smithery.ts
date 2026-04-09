@@ -54,16 +54,7 @@ export default function createServer({
   if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
     console.error('[smithery:init] Config received:', {
       hasConfig: Boolean(config),
-      configKeys: config ? Object.keys(config) : [],
-      hasApiKeyInConfig: Boolean(config?.ATTIO_API_KEY),
-      hasAccessTokenInConfig: Boolean(config?.ATTIO_ACCESS_TOKEN),
-      apiKeyLength: config?.ATTIO_API_KEY?.length || 0,
-      accessTokenLength: config?.ATTIO_ACCESS_TOKEN?.length || 0,
       hasWorkspaceId: Boolean(config?.ATTIO_WORKSPACE_ID),
-      hasEnvApiKey: Boolean(process.env.ATTIO_API_KEY),
-      hasEnvAccessToken: Boolean(process.env.ATTIO_ACCESS_TOKEN),
-      envApiKeyLength: process.env.ATTIO_API_KEY?.length || 0,
-      envAccessTokenLength: process.env.ATTIO_ACCESS_TOKEN?.length || 0,
       toolMode:
         config?.ATTIO_MCP_TOOL_MODE ||
         process.env.ATTIO_MCP_TOOL_MODE ||
@@ -102,14 +93,7 @@ export default function createServer({
         process.env.ATTIO_API_KEY ||
         process.env.ATTIO_ACCESS_TOKEN;
       if (process.env.MCP_LOG_LEVEL === 'DEBUG' || config?.debug) {
-        console.error('[smithery:getApiKey] API key/token resolution:', {
-          fromConfigApiKey: Boolean(config?.ATTIO_API_KEY),
-          fromConfigAccessToken: Boolean(config?.ATTIO_ACCESS_TOKEN),
-          fromEnvApiKey: Boolean(process.env.ATTIO_API_KEY),
-          fromEnvAccessToken: Boolean(process.env.ATTIO_ACCESS_TOKEN),
-          resolved: Boolean(apiKey),
-          keyLength: apiKey?.length || 0,
-        });
+        console.error('[smithery:getApiKey] Credential resolution attempted');
       }
       return apiKey;
     },

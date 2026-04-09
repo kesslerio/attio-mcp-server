@@ -132,7 +132,7 @@ describe('transformFiltersToApiFormat', () => {
           $gt: '2023-01-01',
         },
         is_active: {
-          $is_set: null,
+          $not_empty: null,
         },
       },
     });
