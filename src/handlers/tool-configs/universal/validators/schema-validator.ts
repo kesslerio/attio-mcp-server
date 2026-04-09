@@ -10,6 +10,10 @@ import {
   validateIdFields,
   validatePaginationParams,
 } from './field-validator.js';
+import {
+  canonicalizeResourceType,
+  getValidResourceTypes,
+} from '@/handlers/tools/dispatcher/utils.js';
 import { RecordDataNormalizer } from '@/utils/normalization/record-data-normalization.js';
 
 /**
@@ -499,6 +503,54 @@ const toolValidators: Record<string, ToolValidator> = {
   },
 };
 
+const SEARCH_TOOLS_WITH_DYNAMIC_RESOURCE_TYPES = new Set([
+  'search_records',
+  'search_records_advanced',
+  'search_records_by_timeframe',
+]);
+
+function validateStandardResourceType(resourceType: string): string {
+  if (
+    !Object.values(UniversalResourceType).includes(
+      resourceType as UniversalResourceType
+    )
+  ) {
+    const suggestion = suggestResourceType(resourceType);
+    const validTypes = Object.values(UniversalResourceType).join(', ');
+    throw new UniversalValidationError(
+      `Invalid resource_type: '${resourceType}'`,
+      ErrorType.USER_ERROR,
+      {
+        field: 'resource_type',
+        suggestion: suggestion ? `Did you mean '${suggestion}'?` : undefined,
+        example: `Expected one of: ${validTypes}`,
+        httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+      }
+    );
+  }
+
+  return resourceType;
+}
+
+function validateDynamicSearchResourceType(resourceType: string): string {
+  try {
+    return canonicalizeResourceType(resourceType);
+  } catch {
+    const suggestion = suggestResourceType(resourceType);
+    const validTypes = getValidResourceTypes().join(', ');
+    throw new UniversalValidationError(
+      `Invalid resource_type: '${resourceType}'`,
+      ErrorType.USER_ERROR,
+      {
+        field: 'resource_type',
+        suggestion: suggestion ? `Did you mean '${suggestion}'?` : undefined,
+        example: `Expected one of: ${validTypes}`,
+        httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+      }
+    );
+  }
+}
+
 export function validateUniversalToolParams(
   toolName: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -525,24 +577,10 @@ export function validateUniversalToolParams(
   validateIdFields(sanitizedParams);
   if (sanitizedParams.resource_type) {
     const resourceType = String(sanitizedParams.resource_type);
-    if (
-      !Object.values(UniversalResourceType).includes(
-        resourceType as UniversalResourceType
-      )
-    ) {
-      const suggestion = suggestResourceType(resourceType);
-      const validTypes = Object.values(UniversalResourceType).join(', ');
-      throw new UniversalValidationError(
-        `Invalid resource_type: '${resourceType}'`,
-        ErrorType.USER_ERROR,
-        {
-          field: 'resource_type',
-          suggestion: suggestion ? `Did you mean '${suggestion}'?` : undefined,
-          example: `Expected one of: ${validTypes}`,
-          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
-        }
-      );
-    }
+    sanitizedParams.resource_type =
+      SEARCH_TOOLS_WITH_DYNAMIC_RESOURCE_TYPES.has(toolName)
+        ? validateDynamicSearchResourceType(resourceType)
+        : validateStandardResourceType(resourceType);
   }
   const validator = toolValidators[toolName];
   if (validator) return validator(sanitizedParams);

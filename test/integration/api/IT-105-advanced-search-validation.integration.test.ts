@@ -98,5 +98,19 @@ describe.skipIf(!runIntegrationTests)(
         /missing condition property/i
       );
     });
+
+    it('IT-105.7: accepts documented greater_than alias on created_at', async () => {
+      await expect(
+        advancedSearchCompanies!({
+          filters: [
+            {
+              attribute: { slug: 'created_at' },
+              condition: 'greater_than',
+              value: '2020-01-01T00:00:00Z',
+            },
+          ],
+        } as never)
+      ).resolves.toBeDefined();
+    });
   }
 );

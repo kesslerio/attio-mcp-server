@@ -159,6 +159,20 @@ describe('TimeframeUtils', () => {
       });
     });
 
+    it('should support last_interaction as a date_field', () => {
+      const result = convertDateParamsToTimeframeQuery({
+        timeframe: 'last_7_days',
+        date_field: 'last_interaction',
+      });
+
+      expect(result).toEqual({
+        timeframe_attribute: 'last_interaction',
+        start_date: '2023-08-08T00:00:00.000Z',
+        end_date: '2023-08-15T23:59:59.999Z',
+        date_operator: 'between',
+      });
+    });
+
     it('should handle single date bounds', () => {
       const startOnly = convertDateParamsToTimeframeQuery({
         date_from: '2023-08-01T00:00:00Z',

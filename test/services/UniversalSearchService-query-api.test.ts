@@ -259,7 +259,31 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         '/objects/people/records/query',
         expect.objectContaining({
           filter: {
-            path: [['people', 'last_interaction']],
+            last_interaction: {
+              interacted_at: {
+                $gt: '2024-06-01',
+              },
+            },
+          },
+        })
+      );
+    });
+
+    it('should derive a lower-bound operator for timeframe searches when only start_date is provided', async () => {
+      const params: UniversalSearchParams = {
+        resource_type: UniversalResourceType.COMPANIES,
+        search_type: SearchType.TIMEFRAME,
+        timeframe_attribute: 'created_at',
+        start_date: '2024-06-01',
+      };
+
+      await UniversalSearchService.searchRecords(params);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/objects/companies/records/query',
+        expect.objectContaining({
+          filter: {
+            path: [['companies', 'created_at']],
             constraints: {
               $gt: '2024-06-01',
             },
@@ -312,7 +336,7 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
       expect(results).toEqual([]);
     });
 
-    it('should handle API errors gracefully for timeframe search', async () => {
+    it('should handle generic API errors gracefully for timeframe search', async () => {
       mockPost.mockRejectedValue(new Error('API Error: Invalid date format'));
 
       const params: UniversalSearchParams = {
@@ -325,6 +349,32 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
 
       const results = await UniversalSearchService.searchRecords(params);
       expect(results).toEqual([]);
+    });
+
+    it('should surface invalid timeframe filter errors instead of masking them as empty results', async () => {
+      mockPost.mockRejectedValue({
+        response: {
+          status: 400,
+          data: {
+            code: 'unknown_filter_attribute_slug',
+            message: 'Unknown attribute slug: updated_at.',
+          },
+        },
+      });
+
+      const params: UniversalSearchParams = {
+        resource_type: UniversalResourceType.COMPANIES,
+        search_type: SearchType.TIMEFRAME,
+        timeframe_attribute: 'updated_at',
+        start_date: '2024-01-01',
+        end_date: '2024-12-31',
+      };
+
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow(
+        /Modified timeframe searches are not supported by Attio/
+      );
     });
   });
 

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hardened people/company relationship validation so direct IDs, nested references, and array-based company payloads all trigger the company existence check (#1129)
 - Restored nested `company.id.record_id` validation for people updates after review feedback (#1130)
 - Redacted credential-derived metadata from `smithery_debug_config` while keeping the public tool and alias available for non-sensitive runtime diagnostics (#1142)
+- `search_records`, `search_records_advanced`, and `search_records_by_timeframe` now accept config-discovered custom object slugs and keep custom object labels intact in search output and errors (#1138)
+- Restored live timeframe search behavior for one-sided `created_at` and `last_interaction` queries, and made unsupported people/company `modified` timeframe requests fail explicitly instead of returning false empty results (#1126)
 
 ### Changed
 

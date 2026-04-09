@@ -176,6 +176,23 @@ describe('Universal Core Operations Search Tests', () => {
       const formatted = (searchRecordsConfig.formatResult as any)([]);
       expect(formatted).toContain('Found 0 records');
     });
+
+    it('should use custom object labels from dispatcher-style args', () => {
+      const formatted = (searchRecordsConfig.formatResult as any)(
+        [
+          {
+            id: { record_id: 'channel-1' },
+            values: {
+              name: [{ value: 'Partner Channel' }],
+            },
+          },
+        ],
+        { resource_type: 'channels' }
+      );
+
+      expect(formatted).toContain('Found 1 channels');
+      expect(formatted).toContain('1. Partner Channel (ID: channel-1)');
+    });
   });
 
   describe('records_get_details tool', () => {

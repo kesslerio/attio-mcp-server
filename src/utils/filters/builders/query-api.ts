@@ -11,6 +11,19 @@ import {
   TimeframeQuery,
 } from '../types.js';
 
+const INTERACTION_ATTRIBUTES = new Set([
+  'last_interaction',
+  'first_email_interaction',
+  'last_email_interaction',
+  'first_calendar_interaction',
+  'last_calendar_interaction',
+  'next_calendar_interaction',
+]);
+
+function isInteractionAttribute(attribute: string): boolean {
+  return INTERACTION_ATTRIBUTES.has(attribute);
+}
+
 /**
  * Creates a query API filter with proper path and constraints structure
  *
@@ -116,49 +129,57 @@ export function createTimeframeQuery(
     throw new Error('Timeframe query requires operator');
   }
 
-  // Build the proper path - use resourceType + attribute if resourceType is provided
-  // Note: Attio API expects path as nested array format: [[objectType, attribute]]
-  const path = resourceType ? [[resourceType, attribute]] : [[attribute]];
+  const buildConstraints = (): Record<string, string> => {
+    if (operator === 'between') {
+      if (!startDate || !endDate) {
+        throw new Error('Between operator requires both startDate and endDate');
+      }
 
-  // For date range queries
-  if (operator === 'between') {
-    if (!startDate || !endDate) {
-      throw new Error('Between operator requires both startDate and endDate');
+      return {
+        $gte: startDate,
+        $lte: endDate,
+      };
     }
+
+    const value = startDate || endDate;
+    if (!value) {
+      throw new Error('Timeframe query requires either startDate or endDate');
+    }
+
+    const constraintMap: Record<string, string> = {
+      greater_than: '$gt',
+      less_than: '$lt',
+      greater_than_or_equals: '$gte',
+      less_than_or_equals: '$lte',
+      equals: isInteractionAttribute(attribute) ? '$eq' : 'value',
+    };
+
+    const constraintKey = constraintMap[operator] || 'value';
+    return {
+      [constraintKey]: value,
+    };
+  };
+
+  const constraints = buildConstraints();
+
+  if (isInteractionAttribute(attribute)) {
     return {
       filter: {
-        path,
-        constraints: {
-          $gte: startDate,
-          $lte: endDate,
+        [attribute]: {
+          interacted_at: constraints,
         },
       },
     };
   }
 
-  // For single date comparisons
-  const value = startDate || endDate;
-  if (!value) {
-    throw new Error('Timeframe query requires either startDate or endDate');
-  }
-
-  // Map operators to constraint format (using Attio's $-prefixed operators)
-  const constraintMap: Record<string, string> = {
-    greater_than: '$gt',
-    less_than: '$lt',
-    greater_than_or_equals: '$gte',
-    less_than_or_equals: '$lte',
-    equals: 'value',
-  };
-
-  const constraintKey = constraintMap[operator] || 'value';
+  // Build the proper path - use resourceType + attribute if resourceType is provided
+  // Note: Attio API expects path as nested array format: [[objectType, attribute]]
+  const path = resourceType ? [[resourceType, attribute]] : [[attribute]];
 
   return {
     filter: {
       path,
-      constraints: {
-        [constraintKey]: value,
-      },
+      constraints,
     },
   };
 }

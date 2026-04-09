@@ -40,6 +40,30 @@ export interface SearchRoutingParams {
   use_or_logic?: boolean;
 }
 
+function resolveTimeframeOperator(
+  startDate?: string,
+  endDate?: string,
+  requestedOperator?: TimeframeQuery['operator']
+): TimeframeQuery['operator'] {
+  if (requestedOperator === 'equals' && startDate && !endDate) {
+    return 'equals';
+  }
+
+  if (startDate && endDate) {
+    return 'between';
+  }
+
+  if (startDate) {
+    return 'greater_than';
+  }
+
+  if (endDate) {
+    return 'less_than';
+  }
+
+  return requestedOperator ?? 'between';
+}
+
 /**
  * Coordinates search execution by routing to appropriate services
  */
@@ -94,7 +118,11 @@ export class SearchCoordinator {
             attribute: timeframe_attribute,
             startDate: start_date,
             endDate: end_date,
-            operator: date_operator || 'between',
+            operator: resolveTimeframeOperator(
+              start_date,
+              end_date,
+              date_operator
+            ),
           };
           return QueryApiService.searchByTimeframe(
             resource_type,

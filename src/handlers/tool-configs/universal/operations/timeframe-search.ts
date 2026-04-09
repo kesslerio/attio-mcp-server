@@ -6,7 +6,6 @@ import {
   UniversalToolConfig,
   TimeframeSearchParams,
   TimeframeType,
-  UniversalResourceType,
   RelativeTimeframe,
 } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalRecordResult } from '@/types/attio.js';
@@ -15,13 +14,83 @@ import { safeExtractTimestamp } from '@/handlers/tool-configs/shared/type-utils.
 
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
+import { handleUniversalSearch } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import {
-  formatResourceType,
-  handleUniversalSearch,
-} from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+  extractResourceTypeFromFormatArgs,
+  getPluralResourceLabel,
+  getSingularResourceLabel,
+} from '@/handlers/tool-configs/universal/core/utils.js';
 import { normalizeOperator } from '@/utils/AttioFilterOperators.js';
 import { mapFieldName } from '@/utils/AttioFieldMapper.js';
+
+function resolveTimeframeAttribute(
+  dateField?: TimeframeSearchParams['date_field'],
+  timeframeType?: TimeframeType
+): string {
+  if (dateField) {
+    switch (dateField) {
+      case 'created_at':
+        return mapFieldName('created_at');
+      case 'updated_at':
+      case 'modified_at':
+        return 'updated_at';
+      case 'last_interaction':
+        return 'last_interaction';
+      default:
+        throw new Error(`Unsupported date_field: ${dateField}`);
+    }
+  }
+
+  switch (timeframeType || TimeframeType.CREATED) {
+    case TimeframeType.CREATED:
+      return mapFieldName('created_at');
+    case TimeframeType.MODIFIED:
+      return 'updated_at';
+    case TimeframeType.LAST_INTERACTION:
+      return 'last_interaction';
+    default:
+      throw new Error(`Unsupported timeframe type: ${timeframeType}`);
+  }
+}
+
+function extractTimeframeTypeFromFormatArgs(
+  args: unknown[]
+): TimeframeType | undefined {
+  const first = args[0];
+  if (
+    typeof first === 'string' &&
+    Object.values(TimeframeType).includes(first as TimeframeType)
+  ) {
+    return first as TimeframeType;
+  }
+
+  if (first && typeof first === 'object' && 'timeframe_type' in first) {
+    const candidate = (first as { timeframe_type?: unknown }).timeframe_type;
+    if (
+      typeof candidate === 'string' &&
+      Object.values(TimeframeType).includes(candidate as TimeframeType)
+    ) {
+      return candidate as TimeframeType;
+    }
+  }
+
+  return undefined;
+}
+
+function resolveDateOperator(
+  startDate?: string,
+  endDate?: string
+): 'greater_than' | 'less_than' | 'between' {
+  if (startDate && endDate) {
+    return 'between';
+  }
+
+  if (startDate) {
+    return 'greater_than';
+  }
+
+  return 'less_than';
+}
 
 export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
@@ -78,43 +147,10 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         );
       }
 
-      // Determine the timestamp field to filter on (Issue #475)
-      // Use date_field if provided, otherwise fall back to timeframe_type logic
-      let timestampField: string;
-      if (date_field) {
-        // Map date_field directly to proper field name
-        switch (date_field) {
-          case 'created_at':
-            timestampField = mapFieldName('created_at');
-            break;
-          case 'updated_at':
-            timestampField = mapFieldName('modified_at'); // Map updated_at to modified_at
-            break;
-          case 'modified_at':
-            timestampField = mapFieldName('modified_at');
-            break;
-          default:
-            throw new Error(`Unsupported date_field: ${date_field}`);
-        }
-      } else {
-        // Fallback to original timeframe_type logic
-        const effectiveTimeframeType = timeframe_type || TimeframeType.MODIFIED;
-        switch (effectiveTimeframeType) {
-          case TimeframeType.CREATED:
-            timestampField = mapFieldName('created_at');
-            break;
-          case TimeframeType.MODIFIED:
-            timestampField = mapFieldName('modified_at');
-            break;
-          case TimeframeType.LAST_INTERACTION:
-            timestampField = mapFieldName('modified_at');
-            break;
-          default:
-            throw new Error(
-              `Unsupported timeframe type: ${effectiveTimeframeType}`
-            );
-        }
-      }
+      const timestampField = resolveTimeframeAttribute(
+        date_field,
+        timeframe_type
+      );
 
       // Build the date filter using proper Attio API v2 filter syntax
       // Use normalized operators with $ prefix
@@ -134,6 +170,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
 
       const startIso = coerceIso(processedStartDate, false);
       const endIso = coerceIso(processedEndDate, true);
+      const timeframeOperator = resolveDateOperator(startIso, endIso);
 
       // Handle invert_range logic (Issue #475)
       if (invert_range) {
@@ -144,21 +181,21 @@ export const searchByTimeframeConfig: UniversalToolConfig<
           // This is typically records older than the start date (before the timeframe)
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('lt'), // Less than start date
+            condition: normalizeOperator('$lt'), // Less than start date
             value: startIso,
           });
         } else if (startIso) {
           // Only start date - invert to find records older than this date
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('lt'),
+            condition: normalizeOperator('$lt'),
             value: startIso,
           });
         } else if (endIso) {
           // Only end date - invert to find records newer than this date
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('gt'),
+            condition: normalizeOperator('$gt'),
             value: endIso,
           });
         }
@@ -167,7 +204,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         if (startIso) {
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('gte'), // Normalize to $gte
+            condition: normalizeOperator('$gte'),
             value: startIso,
           });
         }
@@ -175,7 +212,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         if (endIso) {
           dateFilters.push({
             attribute: { slug: timestampField },
-            condition: normalizeOperator('lte'), // Normalize to $lte
+            condition: normalizeOperator('$lte'),
             value: endIso,
           });
         }
@@ -194,7 +231,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         timeframe_attribute: timestampField,
         start_date: startIso,
         end_date: endIso,
-        date_operator: 'between',
+        date_operator: timeframeOperator,
         limit: limit || 20,
         offset: offset || 0,
       });
@@ -207,8 +244,14 @@ export const searchByTimeframeConfig: UniversalToolConfig<
     }
   },
   formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
-    const timeframeType = args[0] as TimeframeType | undefined;
-    const resourceType = args[1] as UniversalResourceType | undefined;
+    const timeframeType = extractTimeframeTypeFromFormatArgs(args);
+    const firstArgResourceType = extractResourceTypeFromFormatArgs(args);
+    const resourceType =
+      timeframeType && firstArgResourceType === timeframeType
+        ? typeof args[1] === 'string'
+          ? args[1]
+          : undefined
+        : firstArgResourceType;
     if (!Array.isArray(results)) {
       return 'Found 0 records (timeframe search)\nTip: Ensure your workspace has data in the requested date range.';
     }
@@ -219,8 +262,8 @@ export const searchByTimeframeConfig: UniversalToolConfig<
     const resourceCount = results.length;
     const resourceTypeName = resourceType
       ? resourceCount === 1
-        ? formatResourceType(resourceType)
-        : getPluralResourceType(resourceType)
+        ? getSingularResourceLabel(resourceType)
+        : getPluralResourceLabel(resourceType)
       : resourceCount === 1
         ? 'record'
         : 'records';

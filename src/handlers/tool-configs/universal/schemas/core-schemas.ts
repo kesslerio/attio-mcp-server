@@ -44,7 +44,8 @@ export const searchRecordsSchema = {
         '- Stage + Owner: {"filters": [{"attribute": {"slug": "stage"}, "condition": "equals", "value": "Demo"}, {"attribute": {"slug": "owner"}, "condition": "equals", "value": "uuid-or-name"}]}\n' +
         '- OR logic: {"filters": [...], "matchAny": true}\n' +
         '- Complex: {"filters": [{"attribute": {"slug": "stage"}, "condition": "equals", "value": "Qualified"}, {"attribute": {"slug": "value"}, "condition": "greater_than", "value": 25000}, {"attribute": {"slug": "owner"}, "condition": "equals", "value": "Martin Kessler"}]}\n\n' +
-        'Supported conditions: equals, contains, starts_with, ends_with, greater_than, greater_than_or_equals, less_than, less_than_or_equals, is_empty, is_not_empty',
+        'Supported canonical conditions: equals, contains, starts_with, ends_with, gt, gte, lt, lte, is_empty, is_not_empty\n' +
+        'Also accepted aliases: eq, greater_than, greater_than_or_equals, less_than, less_than_or_equals, not_empty, $gt, $gte, $lt, $lte',
       additionalProperties: true,
     },
     search_type: {
@@ -115,9 +116,10 @@ export const searchRecordsSchema = {
     },
     date_field: {
       type: 'string' as const,
-      enum: ['created_at', 'updated_at'] as const,
+      enum: ['created_at', 'updated_at', 'last_interaction'] as const,
       default: 'created_at',
-      description: 'Which date field to filter on',
+      description:
+        'Which date field to filter on. Attio supports created_at and last_interaction for people and companies. updated_at/modifed-style filtering is not supported live on those objects.',
     },
     ...paginationProperties,
   },

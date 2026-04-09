@@ -212,6 +212,17 @@ describe('crud-error-handlers', () => {
     });
   });
 
+  it('uses custom object slugs verbatim in search errors', async () => {
+    await expect(
+      handleSearchError(new Error('API error'), 'channels', {
+        query: 'partner',
+      })
+    ).rejects.toMatchObject({
+      name: 'search_error',
+      message: 'Failed to search channels: API error',
+    });
+  });
+
   describe('attribute-not-found error handling', () => {
     it('throws attribute_not_found with suggestions for unknown create attribute', async () => {
       await expect(

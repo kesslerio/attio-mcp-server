@@ -465,6 +465,8 @@ await client.callTool('records.search_by_content', {
 }
 ```
 
+`modified` remains part of the public vocabulary for backward compatibility, but Attio does not expose a live filterable modified timestamp for people or companies. Those requests now fail explicitly instead of returning a false empty result.
+
 **Supported Date Formats** (v0.2.1+):
 
 - ISO 8601: `'2024-01-01T00:00:00Z'`
@@ -489,11 +491,11 @@ await client.callTool('records.search_by_timeframe', {
   preset: 'last 30 days',
 });
 
-// Search companies modified this month
+// Search companies with interactions after January 1, 2024
 await client.callTool('records.search_by_timeframe', {
   resource_type: 'companies',
-  timeframe_type: 'modified',
-  preset: 'this month',
+  timeframe_type: 'last_interaction',
+  start_date: '2024-01-01T00:00:00Z',
 });
 
 // Search companies by last interaction using relative dates
