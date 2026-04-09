@@ -5,7 +5,6 @@
  * per the specifications in issue #774.
  */
 
-import { z } from 'zod';
 import {
   PromptArgument,
   ValidationError,
@@ -59,7 +58,7 @@ export function validateArguments(
     if (!result.success) {
       errors.push({
         field: argDef.name,
-        message: result.error.errors[0]?.message || 'Invalid value',
+        message: result.error.issues[0]?.message || 'Invalid value',
         code: 'VALIDATION_FAILED',
       });
     } else {
