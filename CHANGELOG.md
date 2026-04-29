@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `get-workspace-member` so valid `workspace_member_id` values returned by `list-workspace-members` are passed to Attio as UUID path segments instead of malformed argument objects (#1173)
+
 ## [1.5.0] - 2026-04-09
 
 **TL;DR for Users**: This release adds record interaction history, expands search support for custom objects, and fixes several high-friction update, search, and validation issues across the Attio MCP server.

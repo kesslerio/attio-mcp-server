@@ -31,17 +31,54 @@ const formatWorkspaceMembersList = (
     .join('\n')}`;
 };
 
+type WorkspaceMemberToolArgs = Record<string, unknown>;
+
+const optionalString = (
+  args: WorkspaceMemberToolArgs,
+  field: string
+): string | undefined => {
+  const value = args[field];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const requiredString = (
+  args: WorkspaceMemberToolArgs,
+  field: string
+): string => {
+  const value = optionalString(args, field);
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    throw new Error(`${field} is required`);
+  }
+  return trimmed;
+};
+
+const optionalNumber = (
+  args: WorkspaceMemberToolArgs,
+  field: string,
+  defaultValue: number
+): number => {
+  const value = args[field];
+  return typeof value === 'number' ? value : defaultValue;
+};
+
 export const workspaceMembersToolConfigs = {
   listWorkspaceMembers: {
     name: 'list-workspace-members',
-    handler: listWorkspaceMembers,
+    handler: async (args: WorkspaceMemberToolArgs = {}) =>
+      listWorkspaceMembers(
+        optionalString(args, 'search'),
+        optionalNumber(args, 'page', 1),
+        optionalNumber(args, 'pageSize', 25)
+      ),
     formatResult: (members: AttioWorkspaceMember[]) =>
       formatWorkspaceMembersList(members, '', 'No workspace members found.'),
   } as ToolConfig,
 
   searchWorkspaceMembers: {
     name: 'search-workspace-members',
-    handler: searchWorkspaceMembers,
+    handler: async (args: WorkspaceMemberToolArgs = {}) =>
+      searchWorkspaceMembers(requiredString(args, 'query')),
     formatResult: (members: AttioWorkspaceMember[]) =>
       formatWorkspaceMembersList(
         members,
@@ -52,7 +89,8 @@ export const workspaceMembersToolConfigs = {
 
   getWorkspaceMember: {
     name: 'get-workspace-member',
-    handler: getWorkspaceMember,
+    handler: async (args: WorkspaceMemberToolArgs = {}) =>
+      getWorkspaceMember(requiredString(args, 'memberId')),
     formatResult: (member: AttioWorkspaceMember | null | undefined) => {
       if (!member) {
         return 'Workspace member not found.';
