@@ -100,7 +100,7 @@ export const advancedOperationsToolDefinitions = {
       boundaries: 'ignore approval guardrails; hosts may require confirmation.',
       requiresApproval: true,
       constraints:
-        'operation_type must be specified; enforce per-operation limits.',
+        'Use scoped single-record tools for one company or deal write. operation_type must be specified for legacy payloads; operations arrays must use explicit create/update/delete entries.',
       recoveryHint:
         'Run records.search first to stage IDs or payloads for batching.',
     }),
