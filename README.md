@@ -29,9 +29,9 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 
 ## ✨ Core Features & Implementation Status
 
-### 🎯 **Universal Tools Architecture** (14 Tools)
+### 🎯 **Universal Tools Architecture** (19 Universal Operations)
 
-**68% Tool Reduction**: Consolidated 40+ resource-specific tools into 14 universal operations for consistent, powerful CRM management.
+**Focused Tool Surface**: Consolidated 40+ resource-specific tools into universal operations, then added scoped high-frequency write tools for safer company and deal updates.
 
 - **High Performance**: 89.7% speed improvement with 227KB memory reduction (PR #483)
 - **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
@@ -56,7 +56,8 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 ### 📊 **Company Management**
 
 - **Universal Search**: Find companies with `search_records` and `search_records_advanced`
-- **Full CRUD**: Create, read, update, and delete with universal record operations
+- **Scoped Writes**: Create and update companies with `create_company` and `update_company`
+- **Full CRUD**: Create, read, update, and delete with universal record operations when a scoped tool is not available
 - **Relationship Discovery**: Find companies through `search_records_by_relationship`
 - **Batch Operations**: Process hundreds of companies with `batch_records`
 - **Detailed Information**: Get contact, business, and social info with `get_record_info`
@@ -83,6 +84,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **Entry Management**: Add, remove, and update list memberships
 - **Deal Tracking**: Monitor opportunities and revenue pipeline
 - **Deal Defaults**: Configurable default stage, owner, and currency for streamlined deal creation
+- **Scoped Deal Writes**: Create and update deals with `create_deal` and `update_deal`
 
 ### ✅ **Task Management**
 
@@ -196,14 +198,14 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 
 ### **API Compatibility**
 
-- **Universal Tools**: Primary interface (14 tools) - recommended for all new integrations
+- **Universal Tools**: Primary interface (18 tools) - recommended for all new integrations
 - **Legacy Tools**: Available via `DISABLE_UNIVERSAL_TOOLS=true` environment variable (deprecated)
 - **Lists API**: Fully functional with complete CRUD operations (contrary to some outdated documentation)
 
 ### 🤝 **OpenAI MCP Compatibility**
 
 - **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
-- **Full Tool Access (Default)**: All 35 tools are exposed by default (21 universal + 11 list + 3 workspace member). Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
+- **Full Tool Access (Default)**: All 41 tools are exposed by default (26 universal/OpenAI + 12 list + 3 workspace member). Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
 - **Search-Only Mode**: To restrict to read-only tools (`search`, `fetch`, `aaa-health-check`), explicitly configure `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery dashboard when Developer Mode is unavailable.
 - **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
 - **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.

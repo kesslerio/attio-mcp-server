@@ -1,10 +1,10 @@
 # Attio API Overview
 
-✅ **Current Status**: Attio MCP Server implements **35 total tools** - 21 universal tools + 11 list tools + 3 workspace member tools
+✅ **Current Status**: Attio MCP Server implements **41 total tools** - 26 universal/OpenAI tools + 12 list tools + 3 workspace member tools
 
 Attio provides a powerful REST API that allows developers to build applications that read and write information to and from Attio workspaces. The API exchanges JSON over HTTPS and provides comprehensive access to Attio's core functionality.
 
-> **🚀 Universal Tools Available**: The MCP server provides Universal Tools that consolidate 40+ resource-specific operations into 21 powerful tools (using MCP-compliant `snake_case`, verb-first naming). List-specific operations and workspace member management are available through 14 additional specialized tools (11 list tools + 3 workspace tools). This provides better performance, consistent APIs, and simplified integration.
+> **🚀 Universal Tools Available**: The MCP server provides Universal Tools that consolidate 40+ resource-specific operations into 26 discoverable tools (using MCP-compliant `snake_case`, verb-first naming where applicable). List-specific operations and workspace member management are available through 15 additional specialized tools (12 list tools + 3 workspace tools). This provides better performance, consistent APIs, and simplified integration.
 
 ## Understanding the Model Context Protocol (MCP)
 
@@ -30,18 +30,23 @@ Claude uses these URIs to reference specific records when performing operations.
 
 ### Available Tools
 
-Claude can interact with Attio using **35 fully implemented tools** provided by the MCP server:
+Claude can interact with Attio using **41 fully implemented tools** provided by the MCP server:
 
-#### ✅ Core Universal Tools (8 tools)
+#### ✅ Core Universal Tools (13 tools)
 
 - **`search_records`** - Universal search across companies, people, records, and tasks
 - **`get_record_details`** - Retrieve detailed information for any record type
+- **`create_company`** - Create companies without selecting `resource_type`
+- **`update_company`** - Update companies without selecting `resource_type`
+- **`create_deal`** - Create deals without selecting `resource_type`
+- **`update_deal`** - Update deals without selecting `resource_type`
 - **`create_record`** - Create new records across all resource types
 - **`update_record`** - Update existing records with validation
 - **`delete_record`** - Delete records across all resource types
 - **`get_record_attributes`** - Get attribute definitions for resource types
 - **`discover_record_attributes`** - Discover available attributes with examples
 - **`get_record_info`** - Get specific info types (basic, contact, business, social)
+- **`get_record_interactions`** - Get interaction metadata for people and companies
 
 #### ✅ Advanced Universal Tools (6 tools)
 
@@ -68,13 +73,13 @@ Claude can interact with Attio using **35 fully implemented tools** provided by 
 - **`openai-search`** - OpenAI integration search
 - **`openai-fetch`** - OpenAI integration fetch
 
-#### 📋 Lists Tools (11 tools) - Always Exposed
+#### 📋 Lists Tools (12 tools) - Always Exposed
 
 List-specific tools are always exposed alongside universal tools (Issue #470 - "Lists are relationship containers"):
 
 - `get-lists`, `get-list-details`, `get-list-entries`
 - `filter-list-entries`, `advanced-filter-list-entries`
-- `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
+- `add-record-to-list`, `remove-record-from-list`, `update-list-entry`, `manage-list-entry`
 - `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
 - `get-record-list-memberships`
 
@@ -92,7 +97,7 @@ Workspace member tools are always exposed for user discovery (Issue #684):
 
 Old tool names (e.g., `records_search`, `create-record`) are deprecated but work via backward-compatible aliases until v2.0.0 (Q1 2026). Migration to new MCP-compliant names is recommended.
 
-**Current Tools**: All 35 tools (21 universal + 11 list + 3 workspace member) are fully implemented and tested.
+**Current Tools**: All 41 tools (26 universal/OpenAI + 12 list + 3 workspace member) are fully implemented and tested.
 
 ### Advanced Filtering Capabilities
 
