@@ -43,6 +43,18 @@ describe('workspaceMembersToolConfigs', () => {
     );
   });
 
+  it('trims memberId before calling getWorkspaceMember', async () => {
+    vi.mocked(getWorkspaceMember).mockResolvedValue(mockMember);
+
+    await workspaceMembersToolConfigs.getWorkspaceMember.handler({
+      memberId: ' d28a35f1-5788-49f9-a320-6c8c353147d8 ',
+    });
+
+    expect(getWorkspaceMember).toHaveBeenCalledWith(
+      'd28a35f1-5788-49f9-a320-6c8c353147d8'
+    );
+  });
+
   it('rejects missing memberId before calling getWorkspaceMember', async () => {
     await expect(
       workspaceMembersToolConfigs.getWorkspaceMember.handler({})
@@ -54,6 +66,14 @@ describe('workspaceMembersToolConfigs', () => {
   it('rejects non-string memberId before calling getWorkspaceMember', async () => {
     await expect(
       workspaceMembersToolConfigs.getWorkspaceMember.handler({ memberId: 123 })
+    ).rejects.toThrow('memberId is required');
+
+    expect(getWorkspaceMember).not.toHaveBeenCalled();
+  });
+
+  it('rejects undefined args before calling getWorkspaceMember', async () => {
+    await expect(
+      workspaceMembersToolConfigs.getWorkspaceMember.handler()
     ).rejects.toThrow('memberId is required');
 
     expect(getWorkspaceMember).not.toHaveBeenCalled();

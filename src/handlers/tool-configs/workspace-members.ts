@@ -46,10 +46,11 @@ const requiredString = (
   field: string
 ): string => {
   const value = optionalString(args, field);
-  if (!value?.trim()) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
     throw new Error(`${field} is required`);
   }
-  return value;
+  return trimmed;
 };
 
 const optionalNumber = (
@@ -76,7 +77,7 @@ export const workspaceMembersToolConfigs = {
 
   searchWorkspaceMembers: {
     name: 'search-workspace-members',
-    handler: async (args: WorkspaceMemberToolArgs) =>
+    handler: async (args: WorkspaceMemberToolArgs = {}) =>
       searchWorkspaceMembers(requiredString(args, 'query')),
     formatResult: (members: AttioWorkspaceMember[]) =>
       formatWorkspaceMembersList(
@@ -88,7 +89,7 @@ export const workspaceMembersToolConfigs = {
 
   getWorkspaceMember: {
     name: 'get-workspace-member',
-    handler: async (args: WorkspaceMemberToolArgs) =>
+    handler: async (args: WorkspaceMemberToolArgs = {}) =>
       getWorkspaceMember(requiredString(args, 'memberId')),
     formatResult: (member: AttioWorkspaceMember | null | undefined) => {
       if (!member) {
