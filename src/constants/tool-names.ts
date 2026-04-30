@@ -52,6 +52,10 @@ export const TOOL_NAMES = {
   CREATE_RECORD: 'create_record',
   UPDATE_RECORD: 'update_record',
   DELETE_RECORD: 'delete_record',
+  CREATE_COMPANY: 'create_company',
+  UPDATE_COMPANY: 'update_company',
+  CREATE_DEAL: 'create_deal',
+  UPDATE_DEAL: 'update_deal',
 
   // Note tools
   CREATE_NOTE: 'create_note',

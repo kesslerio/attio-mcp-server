@@ -15,6 +15,16 @@ import {
   deleteRecordDefinition,
 } from './crud-operations.js';
 import {
+  createCompanyConfig,
+  updateCompanyConfig,
+  createDealConfig,
+  updateDealConfig,
+  createCompanyDefinition,
+  updateCompanyDefinition,
+  createDealDefinition,
+  updateDealDefinition,
+} from './scoped-crud-operations.js';
+import {
   getAttributesConfig,
   discoverAttributesConfig,
   getAttributeOptionsConfig,
@@ -42,6 +52,10 @@ export const coreOperationsToolConfigs = {
   list_notes: listNotesConfig,
   search_records: searchRecordsConfig,
   get_record_details: getRecordDetailsConfig,
+  create_company: createCompanyConfig,
+  update_company: updateCompanyConfig,
+  create_deal: createDealConfig,
+  update_deal: updateDealConfig,
   create_record: createRecordConfig,
   update_record: updateRecordConfig,
   delete_record: deleteRecordConfig,
@@ -55,6 +69,10 @@ export const coreOperationsToolConfigs = {
 export const coreOperationsToolDefinitions = {
   search_records: searchRecordsDefinition,
   get_record_details: getRecordDetailsDefinition,
+  create_company: createCompanyDefinition,
+  update_company: updateCompanyDefinition,
+  create_deal: createDealDefinition,
+  update_deal: updateDealDefinition,
   create_record: createRecordDefinition,
   update_record: updateRecordDefinition,
   delete_record: deleteRecordDefinition,
@@ -70,6 +88,14 @@ export const coreOperationsToolDefinitions = {
 export {
   searchRecordsConfig,
   getRecordDetailsConfig,
+  createCompanyConfig,
+  updateCompanyConfig,
+  createDealConfig,
+  updateDealConfig,
+  createCompanyDefinition,
+  updateCompanyDefinition,
+  createDealDefinition,
+  updateDealDefinition,
   createRecordConfig,
   updateRecordConfig,
   deleteRecordConfig,

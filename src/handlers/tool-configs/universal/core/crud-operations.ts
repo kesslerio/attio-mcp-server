@@ -307,11 +307,12 @@ export const deleteRecordConfig: UniversalToolConfig<
 export const createRecordDefinition = {
   name: 'create_record',
   description: formatToolDescription({
-    capability: 'Create new Attio records (companies, people, deals, tasks).',
+    capability:
+      'Create new Attio records across supported resource types when a scoped tool is not available. Prefer create_company or create_deal for common company/deal writes.',
     boundaries:
       'update existing records, attach files, or bypass required fields.',
     constraints:
-      'Requires resource_type/objectSlug plus attributes map that matches records_discover_attributes output.',
+      'Requires resource_type plus record_data that matches discover_record_attributes output.',
     requiresApproval: true,
     recoveryHint:
       'If validation fails, call records_discover_attributes to confirm required fields and enums. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options before retrying.',
@@ -327,10 +328,10 @@ export const updateRecordDefinition = {
   name: 'update_record',
   description: formatToolDescription({
     capability:
-      'Update existing Attio record fields across all supported resource types.',
+      'Update existing Attio record fields across supported resource types when a scoped tool is not available. Prefer update_company or update_deal for common company/deal writes.',
     boundaries: 'create new records, delete data, or manage list memberships.',
     constraints:
-      'Requires record_id and attributes payload; supports partial updates with schema validation.',
+      'Requires resource_type, record_id, and record_data; supports partial updates with schema validation.',
     requiresApproval: true,
     recoveryHint:
       'Call records_get_details first to inspect the latest values before editing. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options.',

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added scoped `create_company`, `update_company`, `create_deal`, and `update_deal` tools so high-frequency company/deal writes no longer require model-selected `resource_type` values (#1175)
+
 ### Fixed
 
 - Fixed `get-workspace-member` so valid `workspace_member_id` values returned by `list-workspace-members` are passed to Attio as UUID path segments instead of malformed argument objects (#1173)
