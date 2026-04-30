@@ -195,7 +195,7 @@ export const updateCompanyDefinition = {
   ]),
   annotations: {
     readOnlyHint: false,
-    destructiveHint: false,
+    destructiveHint: true,
   },
 };
 
@@ -252,6 +252,6 @@ export const updateDealDefinition = {
   ]),
   annotations: {
     readOnlyHint: false,
-    destructiveHint: false,
+    destructiveHint: true,
   },
 };

@@ -36,6 +36,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **High Performance**: 89.7% speed improvement with 227KB memory reduction (PR #483)
 - **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
 - **Clean Architecture**: Complete production-test separation with mock factory pattern
+- **Scoped Tool Policy**: Add scoped default tools only when the workflow is frequent, a generic write can mutate the wrong object class, and the scoped tool removes a model decision instead of merely renaming a universal call
 
 ### 📊 **Feature Implementation Status**
 
@@ -198,7 +199,7 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 
 ### **API Compatibility**
 
-- **Universal Tools**: Primary interface (18 tools) - recommended for all new integrations
+- **Universal Tools**: Primary interface (19 tools) - recommended for all new integrations
 - **Legacy Tools**: Available via `DISABLE_UNIVERSAL_TOOLS=true` environment variable (deprecated)
 - **Lists API**: Fully functional with complete CRUD operations (contrary to some outdated documentation)
 
