@@ -38,6 +38,18 @@ vi.mock('../../src/services/create/index.js', () => ({
   shouldUseMockData: vi.fn(),
 }));
 
+vi.mock('@/utils/config-loader.js', () => ({
+  loadMappingConfig: vi.fn(() => ({
+    mappings: {
+      attributes: {
+        objects: {
+          funds: {},
+        },
+      },
+    },
+  })),
+}));
+
 import { deleteCompany } from '../../src/objects/companies/index.js';
 import { deletePerson } from '../../src/objects/people-write.js';
 import { deleteList } from '../../src/objects/lists.js';
@@ -120,6 +132,31 @@ describe('UniversalDeleteService', () => {
 
       expect(deleteObjectRecord).toHaveBeenCalledWith('deals', 'deal_def');
       expect(result).toEqual({ success: true, record_id: 'deal_def' });
+    });
+
+    it('should delete a config-discovered custom object record', async () => {
+      vi.mocked(deleteObjectRecord).mockResolvedValue(undefined);
+
+      const result = await UniversalDeleteService.deleteRecord({
+        resource_type: 'funds',
+        record_id: 'fund_123',
+      });
+
+      expect(deleteObjectRecord).toHaveBeenCalledWith('funds', 'fund_123');
+      expect(result).toEqual({ success: true, record_id: 'fund_123' });
+    });
+
+    it('should surface custom object slug in deletion failures', async () => {
+      vi.mocked(deleteObjectRecord).mockRejectedValue(
+        new Error('funds record not found')
+      );
+
+      await expect(
+        UniversalDeleteService.deleteRecord({
+          resource_type: 'funds',
+          record_id: 'fund_404',
+        })
+      ).rejects.toThrow('funds record not found');
     });
 
     it('should delete a task record in normal mode', async () => {

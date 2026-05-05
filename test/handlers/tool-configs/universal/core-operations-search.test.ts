@@ -268,6 +268,23 @@ describe('Universal Core Operations Search Tests', () => {
       expect(formatted).toContain('Domains: test.com');
       expect(formatted).toContain('Primary location: San Francisco, CA');
     });
+
+    it('should format custom object details from dispatcher-style args', () => {
+      const mockRecord = {
+        id: { record_id: 'fund-1' },
+        values: {
+          name: [{ value: 'Fund I' }],
+        },
+      };
+
+      const formatted = (getRecordDetailsConfig.formatResult as any)(
+        mockRecord,
+        { resource_type: 'funds' }
+      );
+
+      expect(formatted).toContain('Funds: Fund I');
+      expect(formatted).toContain('ID: fund-1');
+    });
   });
 
   describe('Cross-resource type validation', () => {

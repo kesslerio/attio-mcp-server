@@ -1,6 +1,5 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import { updateObjectRecord } from '../../../objects/records/index.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 
 /**
@@ -13,11 +12,11 @@ export class RecordUpdateStrategy implements UpdateStrategy {
   async update(
     recordId: string,
     values: Record<string, unknown>,
-    resourceType: UniversalResourceType,
+    resourceType: string,
     context?: Record<string, unknown>
   ): Promise<AttioRecord> {
     // For deals, use 'deals' as the object slug since validation is already handled upstream
-    if (resourceType === ('deals' as unknown as UniversalResourceType)) {
+    if (resourceType === 'deals') {
       return updateObjectRecord('deals', recordId, values);
     }
 

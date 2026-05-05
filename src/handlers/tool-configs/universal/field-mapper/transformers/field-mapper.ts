@@ -12,11 +12,11 @@ import { attrHas } from '../validators/helpers.js';
  * Now attribute-aware to prevent incorrect mappings like typpe->type
  */
 export async function mapFieldName(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   fieldName: string,
   availableAttributes?: string[]
 ): Promise<string> {
-  const mapping = FIELD_MAPPINGS[resourceType];
+  const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
   if (!mapping) {
     return fieldName;
   }

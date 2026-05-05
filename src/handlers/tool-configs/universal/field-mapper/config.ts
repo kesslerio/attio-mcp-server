@@ -26,5 +26,5 @@ export const MappingDefaults: Record<
  * Determines if strict mode validation should be applied for a resource type
  * In strict mode, field validation errors become blocking errors instead of warnings
  */
-export const strictModeFor = (rt: UniversalResourceType): boolean =>
-  MappingDefaults[rt]?.strictMode ?? false;
+export const strictModeFor = (rt: string): boolean =>
+  MappingDefaults[rt as UniversalResourceType]?.strictMode ?? false;

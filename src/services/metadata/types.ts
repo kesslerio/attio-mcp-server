@@ -9,7 +9,7 @@ export interface MetadataResult extends Record<string, unknown> {
 }
 
 export interface DiscoverTypeOptions {
-  resourceType: UniversalResourceType;
+  resourceType: string;
   categories?: string[];
   objectSlug?: string;
   useCache?: boolean;
@@ -28,7 +28,7 @@ export interface DiscoverObjectOptions {
 }
 
 export interface MetadataCacheKey {
-  resourceType: UniversalResourceType;
+  resourceType: string;
   objectSlug?: string;
 }
 
@@ -112,7 +112,7 @@ export interface MetadataDiscoveryService {
 
 export interface MetadataRecordService {
   getAttributesForRecord(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordId: string
   ): Promise<Record<string, unknown>>;
 }
@@ -123,7 +123,7 @@ export interface MetadataErrorService {
     error: unknown
   ): never;
   toRecordFetchError(
-    resourceType: UniversalResourceType,
+    resourceType: UniversalResourceType | string,
     recordId: string,
     error: unknown
   ): never;

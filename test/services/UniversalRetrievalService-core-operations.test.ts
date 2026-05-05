@@ -22,7 +22,10 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
   },
 }));
 vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
-  createRecordNotFoundError: vi.fn(() => new Error('Record not found')),
+  createRecordNotFoundError: vi.fn(
+    (recordId: string, resourceType: string) =>
+      new Error(`${resourceType} record not found: ${recordId}`)
+  ),
 }));
 vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
   ErrorEnhancer: {
@@ -64,6 +67,17 @@ vi.mock('../../src/objects/tasks.js', () => ({ getTask: vi.fn() }));
 vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
 vi.mock('../../src/services/create/index.js', () => ({
   shouldUseMockData: vi.fn(),
+}));
+vi.mock('@/utils/config-loader.js', () => ({
+  loadMappingConfig: vi.fn(() => ({
+    mappings: {
+      attributes: {
+        objects: {
+          funds: {},
+        },
+      },
+    },
+  })),
 }));
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
@@ -182,6 +196,54 @@ describe('UniversalRetrievalService', () => {
 
       expect(getObjectRecord).toHaveBeenCalledWith('deals', 'deal_def');
       expect(result).toEqual(mockRecord);
+    });
+
+    it('should retrieve a config-discovered custom object record', async () => {
+      vi.mocked(getObjectRecord).mockResolvedValue(mockRecord);
+
+      const result = await UniversalRetrievalService.getRecordDetails({
+        resource_type: 'funds',
+        record_id: 'record_fund_123',
+      });
+
+      expect(getObjectRecord).toHaveBeenCalledWith('funds', 'record_fund_123');
+      expect(result).toEqual(mockRecord);
+    });
+
+    it('should filter fields for a config-discovered custom object record', async () => {
+      vi.mocked(getObjectRecord).mockResolvedValue({
+        id: { record_id: 'record_fund_123' },
+        values: {
+          name: [{ value: 'Fund I' }],
+          stage: [{ value: 'Active' }],
+        },
+      } as any);
+
+      const result = await UniversalRetrievalService.getRecordDetails({
+        resource_type: 'funds',
+        record_id: 'record_fund_123',
+        fields: ['name'],
+      });
+
+      expect(result).toEqual({
+        id: { record_id: 'record_fund_123' },
+        created_at: undefined,
+        updated_at: undefined,
+        values: { name: 'Fund I' },
+      });
+    });
+
+    it('should surface custom object slug in retrieval failures', async () => {
+      vi.mocked(getObjectRecord).mockRejectedValue(
+        new Error('funds record not found')
+      );
+
+      await expect(
+        UniversalRetrievalService.getRecordDetails({
+          resource_type: 'funds',
+          record_id: 'record_fund_404',
+        })
+      ).rejects.toThrow('funds record not found');
     });
 
     it('should retrieve a task record and convert to AttioRecord', async () => {

@@ -26,6 +26,7 @@ import { deleteObjectRecord } from '../objects/records/index.js';
 import { deleteTask, getTask } from '../objects/tasks.js';
 import { deleteNote } from '../objects/notes.js';
 import { shouldUseMockData } from './create/index.js';
+import { isConfiguredCustomObjectResourceType } from '../utils/resource-type-detection.js';
 
 /**
  * UniversalDeleteService provides centralized record deletion functionality
@@ -218,6 +219,11 @@ export class UniversalDeleteService {
       }
 
       default:
+        if (isConfiguredCustomObjectResourceType(resource_type)) {
+          await deleteObjectRecord(resource_type, record_id);
+          return { success: true, record_id };
+        }
+
         throw new Error(
           `Unsupported resource type for delete: ${resource_type}`
         );

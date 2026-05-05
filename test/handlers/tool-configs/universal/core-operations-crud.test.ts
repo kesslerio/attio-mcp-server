@@ -106,6 +106,28 @@ describe('Universal Core Operations CRUD Tests', () => {
         '✅ Successfully created company: New Company (ID: comp-new)'
       );
     });
+
+    it('should format custom object create results from dispatcher-style args', async () => {
+      const mockRecord = {
+        id: { record_id: 'fund-new' },
+        values: {
+          name: 'Fund I',
+        },
+      };
+
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+      vi.mocked(getSingularResourceType).mockReturnValue('funds');
+
+      const formatted = (createRecordConfig.formatResult as any)(mockRecord, {
+        resource_type: 'funds',
+      });
+
+      expect(getSingularResourceType).toHaveBeenCalledWith('funds');
+      expect(formatted).toBe(
+        '✅ Successfully created funds: Fund I (ID: fund-new)'
+      );
+    });
   });
 
   describe('update-record tool', () => {
@@ -158,6 +180,28 @@ describe('Universal Core Operations CRUD Tests', () => {
         '✅ Successfully updated company: Updated Company (ID: comp-1)'
       );
     });
+
+    it('should format custom object update results from dispatcher-style args', async () => {
+      const mockRecord = {
+        id: { record_id: 'fund-1' },
+        values: {
+          name: [{ value: 'Updated Fund' }],
+        },
+      };
+
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+      vi.mocked(getSingularResourceType).mockReturnValue('funds');
+
+      const formatted = (updateRecordConfig.formatResult as any)(mockRecord, {
+        resource_type: 'funds',
+      });
+
+      expect(getSingularResourceType).toHaveBeenCalledWith('funds');
+      expect(formatted).toBe(
+        '✅ Successfully updated funds: Updated Fund (ID: fund-1)'
+      );
+    });
   });
 
   describe('delete-record tool', () => {
@@ -205,6 +249,20 @@ describe('Universal Core Operations CRUD Tests', () => {
         UniversalResourceType.COMPANIES
       );
       expect(formatted).toBe('❌ Failed to delete company with ID: comp-1');
+    });
+
+    it('should format custom object delete results from dispatcher-style args', async () => {
+      const mockResult = { success: true, record_id: 'fund-1' };
+      const { getSingularResourceType } =
+        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+      vi.mocked(getSingularResourceType).mockReturnValue('funds');
+
+      const formatted = (deleteRecordConfig.formatResult as any)(mockResult, {
+        resource_type: 'funds',
+      });
+
+      expect(getSingularResourceType).toHaveBeenCalledWith('funds');
+      expect(formatted).toBe('✅ Successfully deleted funds with ID: fund-1');
     });
   });
 });
