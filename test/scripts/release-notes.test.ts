@@ -23,15 +23,17 @@ describe('release notes builder', () => {
     );
 
     expect(releaseNotes).toContain(
-      'This release adds record interaction history'
+      'This release makes common company and deal writes easier'
     );
     expect(releaseNotes).toContain("## What's New");
     expect(releaseNotes).toContain('### Added');
     expect(releaseNotes).toContain('### Fixed');
+    expect(releaseNotes).toContain('create_company');
+    expect(releaseNotes).toContain('config-discovered custom objects');
     expect(releaseNotes).toContain('npm install -g attio-mcp');
     expect(releaseNotes).toContain('npm update -g attio-mcp');
     expect(releaseNotes).toContain(
-      '**Full Changelog**: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.1...v1.5.0'
+      '**Full Changelog**: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...v1.6.0'
     );
   });
 });

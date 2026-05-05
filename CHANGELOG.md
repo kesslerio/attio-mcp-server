@@ -7,18 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-05-05
+
+**TL;DR for Users**: This release makes common company and deal writes easier, completes universal record support for custom objects, and fixes workspace-member lookups returned by list tools.
+
 ### Added
 
-- Added scoped `create_company`, `update_company`, `create_deal`, and `update_deal` tools so high-frequency company/deal writes no longer require model-selected `resource_type` values (#1175)
+- Scoped `create_company`, `update_company`, `create_deal`, and `update_deal` tools for high-frequency company/deal writes without manually selecting `resource_type` (#1175)
 
 ### Changed
 
-- Upgraded syncpack to v15 and migrated the syncpack validation/fix scripts to the new CLI commands (#1178)
+- Maintenance updates for npm trusted publishing reliability and current runtime/dependency compatibility (#1172, #1178)
 
 ### Fixed
 
-- Universal record tools now accept config-discovered custom object slugs for details, create, update, and delete operations instead of limiting custom objects to search-only flows (#1161)
-- Fixed `get-workspace-member` so valid `workspace_member_id` values returned by `list-workspace-members` are passed to Attio as UUID path segments instead of malformed argument objects (#1173)
+- Universal record tools now support config-discovered custom objects for details, create, update, and delete, matching existing search support (#1161)
+- `get-workspace-member` now accepts valid `workspace_member_id` values returned by `list-workspace-members` (#1173, #1176)
 
 ## [1.5.0] - 2026-04-09
 
@@ -934,7 +938,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.3.6...v1.4.0
