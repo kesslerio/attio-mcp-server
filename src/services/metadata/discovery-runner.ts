@@ -1,4 +1,3 @@
-import type { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import type {
   CachedMetadataResult,
   MetadataCacheKey,
@@ -8,7 +7,7 @@ import type {
 } from './types.js';
 
 interface DiscoveryMetricsContext {
-  resourceType: UniversalResourceType;
+  resourceType: string;
   objectSlug?: string;
 }
 
@@ -76,7 +75,7 @@ export class DiscoveryRunner {
     result,
     error,
   }: {
-    resourceType: UniversalResourceType;
+    resourceType: string;
     objectSlug?: string;
     duration: number;
     cacheHit: boolean;

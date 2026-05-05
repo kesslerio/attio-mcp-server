@@ -49,6 +49,11 @@ import {
   MAX_VALIDATION_SUGGESTIONS,
   MAX_SUGGESTION_TEXT_LENGTH,
 } from '@/constants/universal.constants.js';
+import {
+  isConfiguredCustomObjectResourceType,
+  isStandardResourceType,
+} from '@/utils/resource-type-detection.js';
+import { createObjectRecord } from '@/objects/records/index.js';
 
 // Import enhanced types for better type safety
 //
@@ -131,6 +136,12 @@ export class UniversalCreateService {
       }
     }
     const { resource_type } = params;
+    const isCustomObjectResource =
+      isConfiguredCustomObjectResourceType(resource_type);
+    if (!isStandardResourceType(resource_type) && !isCustomObjectResource) {
+      return this.handleUnsupportedResourceType(resource_type, params);
+    }
+
     const record_data = params.record_data; // Use the potentially parsed record_data
     if (
       !record_data ||
@@ -175,8 +186,9 @@ export class UniversalCreateService {
 
     // Issue #984: Display name resolution integration
     // Attempt to resolve display names (e.g., "Deal stage" → "stage") before validation
-    const objectSlug =
-      resource_type === UniversalResourceType.RECORDS
+    const objectSlug = isCustomObjectResource
+      ? resource_type
+      : resource_type === UniversalResourceType.RECORDS
         ? typeof record_data.object === 'string'
           ? record_data.object
           : typeof record_data.object_api_slug === 'string'
@@ -255,7 +267,7 @@ export class UniversalCreateService {
 
           // Update fieldsToValidate with resolved names
           if (resource_type === UniversalResourceType.RECORDS) {
-            const { values, ...topLevelFields } = record_data;
+            const { values: _values, ...topLevelFields } = record_data;
             fieldsToValidate =
               Object.keys(topLevelFields).length > 0
                 ? (topLevelFields as Record<string, unknown>)
@@ -322,7 +334,7 @@ export class UniversalCreateService {
       }
 
       // List available fields for this resource type
-      const mapping = FIELD_MAPPINGS[resource_type];
+      const mapping = FIELD_MAPPINGS[resource_type as UniversalResourceType];
       if (mapping && mapping.validFields.length > 0) {
         errorMessage += `\n\nAvailable fields for ${resource_type}:\n  ${mapping.validFields.join(
           ', '
@@ -364,6 +376,8 @@ export class UniversalCreateService {
           if (objectSlug && typeof objectSlug === 'string') {
             options.objectSlug = objectSlug;
           }
+        } else if (isCustomObjectResource) {
+          options.objectSlug = resource_type;
         }
 
         const attributeResult =
@@ -433,6 +447,8 @@ export class UniversalCreateService {
       logger.debug('RECORDS objectSlug extracted', {
         recordsObjectSlug,
       });
+    } else if (isCustomObjectResource) {
+      recordsObjectSlug = resource_type;
     }
 
     // Map field names to correct ones with collision detection
@@ -591,6 +607,17 @@ export class UniversalCreateService {
         });
       }
 
+      default: {
+        if (isCustomObjectResource) {
+          return (await createObjectRecord(
+            resource_type,
+            transformedData
+          )) as UniversalRecord;
+        }
+
+        return this.handleUnsupportedResourceType(resource_type, params);
+      }
+
       case UniversalResourceType.DEALS: {
         const { DealCreateStrategy } =
           await import('@/services/create/strategies/DealCreateStrategy.js');
@@ -617,9 +644,6 @@ export class UniversalCreateService {
           values: transformedData,
         });
       }
-
-      default:
-        return this.handleUnsupportedResourceType(resource_type, params);
     }
   }
 

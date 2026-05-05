@@ -253,6 +253,12 @@ resource_type: 'people';
 resource_type: 'records';
 ```
 
+For custom objects already discovered into the mapping configuration, you can also use the custom object slug directly with search, details, create, update, and delete tools:
+
+```typescript
+resource_type: 'funds';
+```
+
 **Tasks**: Use for activities, to-dos, follow-ups, scheduled actions
 
 ```typescript

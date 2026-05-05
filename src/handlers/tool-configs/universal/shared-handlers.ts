@@ -315,7 +315,7 @@ export async function handleUniversalGetAttributes(
  * Universal discover attributes handler
  */
 export async function handleUniversalDiscoverAttributes(
-  resource_type: UniversalResourceType,
+  resource_type: string,
   options?: {
     categories?: string[]; // NEW: Category filtering support
   }
@@ -703,9 +703,7 @@ export function formatResourceType(
 /**
  * Utility function to get singular form of resource type
  */
-export function getSingularResourceType(
-  resourceType: UniversalResourceType
-): string {
+export function getSingularResourceType(resourceType: string): string {
   return UniversalUtilityService.getSingularResourceType(resourceType);
 }
 

@@ -4,7 +4,7 @@ import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.j
 
 export const ResponseNormalizer = {
   normalizeResponseFormat(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     record: UniversalRecord
   ): UniversalRecord {
     if (!record || typeof record !== 'object') {
@@ -46,8 +46,22 @@ export const ResponseNormalizer = {
       case UniversalResourceType.RECORDS:
         return this.normalizeGenericRecord(normalized);
       default:
-        return normalized;
+        return this.normalizeCustomObjectRecord(resourceType, normalized);
     }
+  },
+
+  normalizeCustomObjectRecord(
+    resourceType: string,
+    record: AttioRecord
+  ): AttioRecord {
+    const idObj = (record.id as unknown as Record<string, unknown>) || {};
+    return {
+      ...record,
+      id: {
+        ...record.id,
+        object_id: (idObj.object_id as string) || resourceType,
+      },
+    } as AttioRecord;
   },
 
   normalizeCompanyRecord(record: AttioRecord): AttioRecord {

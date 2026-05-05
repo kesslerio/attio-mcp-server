@@ -13,11 +13,11 @@ import { createScopedLogger } from '../../../../../utils/logger.js';
  * Converts technical API errors into user-friendly explanations
  */
 export async function enhanceUniquenessError(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   errorMessage: string,
   recordData: Record<string, unknown>
 ): Promise<string> {
-  const mapping = FIELD_MAPPINGS[resourceType];
+  const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
   if (!mapping || !mapping.uniqueFields) {
     return errorMessage;
   }

@@ -1,6 +1,5 @@
 import { getLazyAttioClient } from '../../api/lazy-client.js';
 import { OBJECT_SLUG_MAP } from '../../constants/universal.constants.js';
-import type { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
 import type { MetadataErrorService, MetadataRecordService } from './types.js';
 import { OperationType as OperationTypeEnum } from '../../utils/logger.js';
 import { createScopedLogger } from '../../utils/logger.js';
@@ -15,7 +14,7 @@ export class DefaultMetadataRecordService implements MetadataRecordService {
   constructor(private readonly errorService: MetadataErrorService) {}
 
   async getAttributesForRecord(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordId: string
   ): Promise<Record<string, unknown>> {
     const client = getLazyAttioClient();

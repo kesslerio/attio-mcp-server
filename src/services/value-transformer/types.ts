@@ -3,14 +3,12 @@
  * Auto-transforms values before API calls to prevent common errors
  */
 
-import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
-
 /**
  * Context provided to transformers
  */
 export interface TransformContext {
   /** The resource type being operated on */
-  resourceType: UniversalResourceType;
+  resourceType: string;
   /** The operation type (create or update) */
   operation: 'create' | 'update';
   /** Optional record ID for updates */

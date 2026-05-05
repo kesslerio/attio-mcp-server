@@ -8,6 +8,7 @@
  */
 
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import { isConfiguredCustomObjectResourceType } from '@/utils/resource-type-detection.js';
 import type { UniversalRecord } from '@/types/attio.js';
 import { debug } from '@/utils/logger.js';
 
@@ -16,7 +17,7 @@ import { debug } from '@/utils/logger.js';
  */
 export interface UpdateContext {
   /** Resource type being updated */
-  resourceType: UniversalResourceType;
+  resourceType: string;
   /** ID of the record to update */
   recordId: string;
   /** Sanitized values to update */
@@ -100,6 +101,17 @@ export class UpdateOrchestrator {
       }
 
       default: {
+        if (isConfiguredCustomObjectResourceType(resourceType)) {
+          const { RecordUpdateStrategy } =
+            await import('@/services/update/strategies/RecordUpdateStrategy.js');
+          return new RecordUpdateStrategy().update(
+            recordId,
+            sanitizedValues,
+            resourceType,
+            { objectSlug: objectSlug || resourceType }
+          );
+        }
+
         throw new Error(
           `Unsupported resource type for update: ${resourceType}`
         );

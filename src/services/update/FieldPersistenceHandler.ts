@@ -20,7 +20,6 @@
  * @see PR #1006 Phase 3.2 - Enhanced JSDoc for verification behavior
  */
 
-import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { UpdateValidation } from '@/services/update/UpdateValidation.js';
 import { debug, error as logError } from '@/utils/logger.js';
 import {
@@ -92,7 +91,7 @@ export class FieldPersistenceHandler {
    * @throws UniversalValidationError if strict mode enabled and verification fails
    */
   static async verifyPersistence(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordId: string,
     expectedData: Record<string, unknown>,
     actualRecord?: Record<string, unknown>,

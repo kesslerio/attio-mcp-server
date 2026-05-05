@@ -16,7 +16,7 @@ import { transformFieldValue } from './value-transformer.js';
  * field mapping, value transformation, and special handling for complex fields
  */
 export async function mapRecordFields(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   recordData: Record<string, unknown>,
   availableAttributes?: string[]
 ): Promise<{
@@ -24,7 +24,7 @@ export async function mapRecordFields(
   warnings: string[];
   errors?: string[];
 }> {
-  const mapping = FIELD_MAPPINGS[resourceType];
+  const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
   if (!mapping) {
     return { mapped: recordData, warnings: [] };
   }

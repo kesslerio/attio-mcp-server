@@ -3,7 +3,6 @@ import {
   UniversalCreateParams,
   UniversalUpdateParams,
   UniversalDeleteParams,
-  UniversalResourceType,
 } from '@/handlers/tool-configs/universal/types.js';
 import type { UniversalRecord } from '@/types/attio.js';
 import { isAttioRecord } from '@/types/attio.js';
@@ -25,6 +24,7 @@ import {
   handleDeleteError,
 } from '@/handlers/tool-configs/universal/core/error-utils.js';
 import {
+  extractResourceTypeFromFormatArgs,
   extractDisplayName,
   formatValidationDetails,
   ValidationMetadata,
@@ -114,7 +114,7 @@ export const createRecordConfig: UniversalToolConfig<
     }
   },
   formatResult: (record: UniversalRecord, ...args: unknown[]): string => {
-    const resourceType = args[0] as UniversalResourceType | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!record) {
       return 'Record creation failed';
     }
@@ -191,7 +191,7 @@ export const updateRecordConfig: UniversalToolConfig<
               actualValues: enhancedResult.validation.actualValues,
             },
           };
-        } catch (error: unknown) {
+        } catch {
           const standardResult = await handleUniversalUpdate(sanitizedParams);
           result = { ...standardResult };
         }
@@ -223,7 +223,7 @@ export const updateRecordConfig: UniversalToolConfig<
     }
   },
   formatResult: (record: UniversalRecord, ...args: unknown[]): string => {
-    const resourceType = args[0] as UniversalResourceType | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!record) {
       return 'Record update failed';
     }
@@ -290,7 +290,7 @@ export const deleteRecordConfig: UniversalToolConfig<
     result: { success: boolean; record_id: string },
     ...args: unknown[]
   ): string => {
-    const resourceType = args[0] as UniversalResourceType | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!result.success) {
       return `❌ Failed to delete ${
         resourceType ? getSingularResourceType(resourceType) : 'record'

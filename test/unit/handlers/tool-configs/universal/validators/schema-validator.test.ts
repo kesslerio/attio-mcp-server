@@ -353,7 +353,7 @@ describe('validateUniversalToolParams', () => {
       ).toThrow("Invalid resource_type: 'unknown_object'");
     });
 
-    it('keeps non-search tools on standard enum validation', () => {
+    it('accepts config-discovered custom objects for detail and CRUD tools', () => {
       vi.mocked(loadMappingConfig).mockReturnValue({
         version: '1.0',
         mappings: {
@@ -370,12 +370,84 @@ describe('validateUniversalToolParams', () => {
         },
       });
 
-      expect(() =>
+      expect(
+        validateUniversalToolParams('get_record_details', {
+          resource_type: 'FUNDS',
+          record_id: 'record_123',
+        }).resource_type
+      ).toBe('funds');
+
+      expect(
         validateUniversalToolParams('create_record', {
           resource_type: 'funds',
           record_data: { name: 'Fund I' },
-        })
-      ).toThrow("Invalid resource_type: 'funds'");
+        }).resource_type
+      ).toBe('funds');
+
+      expect(
+        validateUniversalToolParams('update_record', {
+          resource_type: 'funds',
+          record_id: 'record_123',
+          record_data: { name: 'Fund II' },
+        }).resource_type
+      ).toBe('funds');
+
+      expect(
+        validateUniversalToolParams('delete_record', {
+          resource_type: 'funds',
+          record_id: 'record_123',
+        }).resource_type
+      ).toBe('funds');
+    });
+
+    it('rejects unknown custom objects for detail and CRUD tools with discovered options', () => {
+      vi.mocked(loadMappingConfig).mockReturnValue({
+        version: '1.0',
+        mappings: {
+          attributes: {
+            common: {},
+            objects: {
+              funds: { name: 'Name' },
+            },
+            custom: {},
+          },
+          objects: {},
+          lists: {},
+          relationships: {},
+        },
+      });
+
+      const cases = [
+        {
+          toolName: 'get_record_details',
+          params: { resource_type: 'unknown_object', record_id: 'record_123' },
+        },
+        {
+          toolName: 'create_record',
+          params: {
+            resource_type: 'unknown_object',
+            record_data: { name: 'Unknown' },
+          },
+        },
+        {
+          toolName: 'update_record',
+          params: {
+            resource_type: 'unknown_object',
+            record_id: 'record_123',
+            record_data: { name: 'Unknown' },
+          },
+        },
+        {
+          toolName: 'delete_record',
+          params: { resource_type: 'unknown_object', record_id: 'record_123' },
+        },
+      ];
+
+      for (const { toolName, params } of cases) {
+        expect(() => validateUniversalToolParams(toolName, params)).toThrow(
+          /unknown_object.*funds/
+        );
+      }
     });
   });
 
