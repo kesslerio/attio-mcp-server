@@ -1,5 +1,4 @@
 import type { AttioRecord } from '../../../types/attio.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 import { shouldUseMockData, getCreateService } from '../../create/index.js';
 import { getTask } from '../../../objects/tasks.js';
@@ -9,7 +8,7 @@ export class TaskUpdateStrategy implements UpdateStrategy {
   async update(
     recordId: string,
     values: Record<string, unknown>,
-    _resourceType: UniversalResourceType
+    _resourceType: string
   ): Promise<AttioRecord> {
     if (_resourceType !== 'tasks') {
       throw new Error(

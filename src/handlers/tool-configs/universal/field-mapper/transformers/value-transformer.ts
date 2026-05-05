@@ -39,7 +39,7 @@ function toBooleanish(v: unknown): boolean | undefined {
  * Handles complex field value transformations for each resource type
  */
 export async function transformFieldValue(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   fieldName: string,
   value: unknown
 ): Promise<unknown> {

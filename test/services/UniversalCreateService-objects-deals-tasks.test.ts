@@ -65,6 +65,17 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
 vi.mock('../../src/objects/records/index.js', () => ({
   createObjectRecord: vi.fn(),
 }));
+vi.mock('@/utils/config-loader.js', () => ({
+  loadMappingConfig: vi.fn(() => ({
+    mappings: {
+      attributes: {
+        objects: {
+          funds: {},
+        },
+      },
+    },
+  })),
+}));
 // Mock the create service factory to return a mock service
 const mockCreateService = {
   createCompany: vi.fn(),
@@ -133,6 +144,29 @@ describe('UniversalCreateService', () => {
       });
       expect(createObjectRecord).toHaveBeenCalledWith('companies', {
         values: { name: 'Test Record' },
+      });
+      expect(result).toEqual(mockRecord);
+    });
+
+    it('should create a config-discovered custom object record', async () => {
+      const mockRecord: AttioRecord = {
+        id: { record_id: 'fund_123' },
+        values: { name: 'Fund I' },
+      } as any;
+      vi.mocked(createObjectRecord).mockResolvedValue(mockRecord);
+
+      const result = await UniversalCreateService.createRecord({
+        resource_type: 'funds',
+        record_data: { values: { name: 'Fund I' } },
+      });
+
+      expect(mapRecordFields).toHaveBeenCalledWith(
+        'funds',
+        { name: 'Fund I' },
+        []
+      );
+      expect(createObjectRecord).toHaveBeenCalledWith('funds', {
+        name: 'Fund I',
       });
       expect(result).toEqual(mockRecord);
     });

@@ -158,7 +158,7 @@ export class DefaultMetadataDiscoveryService implements MetadataDiscoveryService
   }
 
   private async performAttributeDiscovery(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     options?: { categories?: string[] }
   ): Promise<MetadataResult> {
     const client = getLazyAttioClient();

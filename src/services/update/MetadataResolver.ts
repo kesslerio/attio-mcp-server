@@ -41,7 +41,7 @@ export class MetadataResolver {
    * @returns Metadata map and available attributes for field mapping
    */
   static async fetchMetadata(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordData?: Record<string, unknown>
   ): Promise<MetadataResolutionResult> {
     const objectSlug = this.extractObjectSlug(resourceType, recordData);
@@ -129,7 +129,7 @@ export class MetadataResolver {
    * Fetch fresh metadata from Attio API
    */
   private static async fetchFreshMetadata(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     objectSlug?: string
   ): Promise<Record<string, unknown>> {
     const { UniversalMetadataService } =
@@ -146,7 +146,7 @@ export class MetadataResolver {
    * Extract object slug from resource type and record data
    */
   public static extractObjectSlug(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordData?: Record<string, unknown>
   ): string | undefined {
     if (resourceType === UniversalResourceType.RECORDS) {
@@ -158,6 +158,13 @@ export class MetadataResolver {
     }
     if (resourceType === UniversalResourceType.DEALS) {
       return 'deals';
+    }
+    if (
+      !Object.values(UniversalResourceType).includes(
+        resourceType as UniversalResourceType
+      )
+    ) {
+      return resourceType;
     }
     return undefined;
   }

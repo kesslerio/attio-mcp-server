@@ -26,6 +26,7 @@ import type {
   DiscoveryMetricsSummary,
   MetricsFilter,
 } from './metadata/index.js';
+import { isConfiguredCustomObjectResourceType } from '../utils/resource-type-detection.js';
 
 class UniversalMetadataFacade {
   constructor(private readonly deps: MetadataServicesDeps) {}
@@ -47,7 +48,7 @@ class UniversalMetadataFacade {
   }
 
   async discoverAttributesForResourceType(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     options?: {
       categories?: string[];
       objectSlug?: string;
@@ -73,7 +74,7 @@ class UniversalMetadataFacade {
   }
 
   async getAttributesForRecord(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordId: string
   ): Promise<JsonObject> {
     return this.recordService.getAttributesForRecord(resourceType, recordId);
@@ -173,7 +174,7 @@ class UniversalMetadataFacade {
   }
 
   async discoverAttributes(
-    resource_type: UniversalResourceType,
+    resource_type: string,
     options?: {
       categories?: string[];
       objectSlug?: string;
@@ -249,6 +250,13 @@ class UniversalMetadataFacade {
         return this.discoverAttributesForResourceType(resource_type, options);
 
       default:
+        if (isConfiguredCustomObjectResourceType(resource_type)) {
+          return this.discoverAttributesForResourceType(resource_type, {
+            ...options,
+            objectSlug: options?.objectSlug ?? resource_type,
+          });
+        }
+
         throw new Error(
           `Unsupported resource type for discover attributes: ${resource_type}`
         );
@@ -284,7 +292,7 @@ export class UniversalMetadataService {
   }
 
   static async discoverAttributesForResourceType(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     options?: {
       categories?: string[];
       objectSlug?: string;
@@ -302,7 +310,7 @@ export class UniversalMetadataService {
   }
 
   static async getAttributesForRecord(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordId: string
   ): Promise<Record<string, unknown>> {
     return this.facade.getAttributesForRecord(resourceType, recordId);
@@ -352,7 +360,7 @@ export class UniversalMetadataService {
   }
 
   static async discoverAttributes(
-    resource_type: UniversalResourceType,
+    resource_type: string,
     options?: {
       categories?: string[];
       objectSlug?: string;

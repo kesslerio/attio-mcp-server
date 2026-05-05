@@ -6,7 +6,6 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '../../../handlers/tool-configs/universal/schemas.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 import { ValidationService } from '../../ValidationService.js';
 
@@ -17,7 +16,7 @@ export class PersonUpdateStrategy implements UpdateStrategy {
   async update(
     recordId: string,
     values: Record<string, unknown>,
-    resourceType: UniversalResourceType
+    resourceType: string
   ): Promise<AttioRecord> {
     try {
       // Validate emails same as create operations

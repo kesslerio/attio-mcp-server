@@ -43,13 +43,12 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '@/handlers/tool-configs/universal/schemas.js';
-import { debug, error as logError } from '@/utils/logger.js';
+import { debug } from '@/utils/logger.js';
 
 // Import shared type definitions for better type safety
 import {
   createNotFoundError,
   type DataPayload,
-  isAttributeObject,
 } from '@/types/universal-service-types.js';
 
 // Import services
@@ -91,6 +90,7 @@ import {
   getValidResourceTypes,
   mapTaskFields,
 } from '@/handlers/tool-configs/universal/field-mapper.js';
+import { isConfiguredCustomObjectResourceType } from '@/utils/resource-type-detection.js';
 
 // Import validation utilities
 import { validateRecordFields } from '@/utils/validation-utils.js';
@@ -151,7 +151,12 @@ export class UniversalUpdateService {
   ): Promise<EnhancedUpdateResult> {
     // Validate resource type is supported
     const validResourceTypes = Object.values(UniversalResourceType);
-    if (!validResourceTypes.includes(params.resource_type)) {
+    if (
+      !validResourceTypes.includes(
+        params.resource_type as UniversalResourceType
+      ) &&
+      !isConfiguredCustomObjectResourceType(params.resource_type)
+    ) {
       throw new UniversalValidationError(
         `Unsupported resource type: ${params.resource_type}`,
         ErrorType.USER_ERROR,
@@ -216,7 +221,12 @@ export class UniversalUpdateService {
   ): Promise<UniversalRecord> {
     // Validate resource type is supported
     const validResourceTypes = Object.values(UniversalResourceType);
-    if (!validResourceTypes.includes(params.resource_type)) {
+    if (
+      !validResourceTypes.includes(
+        params.resource_type as UniversalResourceType
+      ) &&
+      !isConfiguredCustomObjectResourceType(params.resource_type)
+    ) {
       throw new UniversalValidationError(
         `Unsupported resource type: ${params.resource_type}`,
         ErrorType.USER_ERROR,
