@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added scoped `create_company`, `update_company`, `create_deal`, and `update_deal` tools so high-frequency company/deal writes no longer require model-selected `resource_type` values (#1175)
 
+### Changed
+
+- Upgraded syncpack to v15 and migrated the syncpack validation/fix scripts to the new CLI commands (#1178)
+
 ### Fixed
 
 - Universal record tools now accept config-discovered custom object slugs for details, create, update, and delete operations instead of limiting custom objects to search-only flows (#1161)
