@@ -46,6 +46,7 @@ import { getListDetails } from '@/objects/lists.js';
 import { getObjectRecord } from '@/objects/records/index.js';
 import { getTask } from '@/objects/tasks.js';
 import { getNote, normalizeNoteResponse } from '@/objects/notes.js';
+import { isConfiguredCustomObjectResourceType } from '@/utils/resource-type-detection.js';
 
 /**
  * UniversalRetrievalService provides centralized record retrieval functionality
@@ -323,7 +324,7 @@ export class UniversalRetrievalService {
    * Retrieve record by resource type with type-specific handling
    */
   private static async retrieveRecordByType(
-    resource_type: UniversalResourceType,
+    resource_type: string,
     record_id: string
   ): Promise<UniversalRecord> {
     switch (resource_type) {
@@ -349,6 +350,10 @@ export class UniversalRetrievalService {
         return this.retrieveNoteRecord(record_id);
 
       default:
+        if (isConfiguredCustomObjectResourceType(resource_type)) {
+          return await getObjectRecord(resource_type, record_id);
+        }
+
         throw new Error(
           `Unsupported resource type for get details: ${resource_type}`
         );
@@ -658,7 +663,7 @@ export class UniversalRetrievalService {
    * Check if a record exists (lightweight check)
    */
   static async recordExists(
-    resource_type: UniversalResourceType,
+    resource_type: string,
     record_id: string
   ): Promise<boolean> {
     try {

@@ -10,9 +10,10 @@ import {
   validateUniversalToolParams,
 } from '@/handlers/tool-configs/universal/schemas.js';
 import {
-  handleUniversalGetDetails,
-  getSingularResourceType,
-} from '@/handlers/tool-configs/universal/shared-handlers.js';
+  extractResourceTypeFromFormatArgs,
+  getSingularResourceLabel,
+} from '@/handlers/tool-configs/universal/core/utils.js';
+import { handleUniversalGetDetails } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
@@ -43,14 +44,12 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     }
   },
   formatResult: (record: UniversalRecordResult, ...args: unknown[]): string => {
-    const resourceType = args[0] as UniversalResourceType | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!record) {
       return 'Record not found';
     }
 
-    const resourceTypeName = resourceType
-      ? getSingularResourceType(resourceType)
-      : 'record';
+    const resourceTypeName = getSingularResourceLabel(resourceType);
 
     // Issue #1068: Lists have top-level fields (no values wrapper)
     // Handle lists explicitly before checking values

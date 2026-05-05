@@ -6,24 +6,26 @@ _Validated prompts that work perfectly with the Attio MCP Server's universal too
 
 The Attio MCP Server uses **14 universal tools** (68% reduction from 40+ tools) that handle all CRM operations through `resource_type` parameters:
 
-| **Universal Tool**               | **Purpose**                        | **Resource Types**                  |
-| -------------------------------- | ---------------------------------- | ----------------------------------- |
-| `records.search`                 | Basic search with filters          | companies, people, tasks, deals     |
-| `records.search_advanced`        | Multi-condition complex queries    | companies, people, tasks, deals     |
-| `records.get_details`            | Complete record information        | companies, people, tasks, deals     |
-| `create-record`                  | Create new records                 | companies, people, tasks, deals     |
-| `update-record`                  | Modify existing records            | companies, people, tasks, deals     |
-| `delete-record`                  | Remove records                     | companies, people, tasks, deals     |
-| `records.get_attributes`         | Available fields for resource type | companies, people, tasks, deals     |
-| `records.discover_attributes`    | Dynamic field discovery            | companies, people, tasks, deals     |
-| `records.get_info`               | Structured info by type            | companies, people                   |
-| `records.search_by_relationship` | Find connected records             | companies ↔ people                 |
-| `records.search_by_content`      | Text-based matching                | notes, activities, content          |
-| `records.search_by_timeframe`    | Date-based filtering               | created, modified, last_interaction |
-| `records.batch`                  | Bulk processing                    | create, update, delete, search      |
-| `records.search_batch`           | Multi-criteria batch search        | All resource types                  |
+| **Universal Tool**               | **Purpose**                        | **Resource Types**                                   |
+| -------------------------------- | ---------------------------------- | ---------------------------------------------------- |
+| `records.search`                 | Basic search with filters          | companies, people, tasks, deals, custom object slugs |
+| `records.search_advanced`        | Multi-condition complex queries    | companies, people, tasks, deals, custom object slugs |
+| `records.get_details`            | Complete record information        | companies, people, tasks, deals, custom object slugs |
+| `create-record`                  | Create new records                 | companies, people, tasks, deals, custom object slugs |
+| `update-record`                  | Modify existing records            | companies, people, tasks, deals, custom object slugs |
+| `delete-record`                  | Remove records                     | companies, people, tasks, deals, custom object slugs |
+| `records.get_attributes`         | Available fields for resource type | companies, people, tasks, deals                      |
+| `records.discover_attributes`    | Dynamic field discovery            | companies, people, tasks, deals                      |
+| `records.get_info`               | Structured info by type            | companies, people                                    |
+| `records.search_by_relationship` | Find connected records             | companies ↔ people                                   |
+| `records.search_by_content`      | Text-based matching                | notes, activities, content                           |
+| `records.search_by_timeframe`    | Date-based filtering               | created, modified, last_interaction                  |
+| `records.batch`                  | Bulk processing                    | create, update, delete, search                       |
+| `records.search_batch`           | Multi-criteria batch search        | All resource types                                   |
 
 **Plus 11 Lists Tools**: Complete pipeline and list management functionality
+
+Custom object slugs must be present in the generated mapping configuration, for example `resource_type="funds"`.
 
 ---
 

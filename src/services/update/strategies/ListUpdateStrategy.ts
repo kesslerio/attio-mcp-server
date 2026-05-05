@@ -3,7 +3,6 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '@/handlers/tool-configs/universal/schemas.js';
-import type { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { updateList } from '@/objects/lists.js';
 import type { AttioList } from '@/types/attio.js';
 import type { UpdateStrategy } from '@/services/update/strategies/BaseUpdateStrategy.js';
@@ -18,7 +17,7 @@ export class ListUpdateStrategy implements UpdateStrategy {
   async update(
     recordId: string,
     values: Record<string, unknown>,
-    resourceType: UniversalResourceType
+    resourceType: string
   ): Promise<AttioList> {
     try {
       const list = await updateList(recordId, values);

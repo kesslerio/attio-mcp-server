@@ -191,13 +191,15 @@ const RESOURCE_FIELD_PRIORITIES: Record<
  */
 export const extractDisplayName = (
   values: Record<string, unknown> | undefined,
-  resourceType?: UniversalResourceType
+  resourceType?: string
 ): string => {
   if (!values || typeof values !== 'object') return 'Unnamed';
 
-  const priority = resourceType
-    ? RESOURCE_FIELD_PRIORITIES[resourceType]
-    : RESOURCE_FIELD_PRIORITIES[UniversalResourceType.RECORDS];
+  const resourceKey =
+    resourceType && resourceType in RESOURCE_FIELD_PRIORITIES
+      ? (resourceType as UniversalResourceType)
+      : UniversalResourceType.RECORDS;
+  const priority = RESOURCE_FIELD_PRIORITIES[resourceKey];
 
   // Try primary fields first
   for (const fieldName of priority.primaryFields) {

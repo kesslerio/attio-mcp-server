@@ -146,7 +146,7 @@ export function validateCategories(input: string | string[]): {
  * Main processing function that integrates validation with transformation
  */
 export function processCategories(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   fieldName: string,
   value: unknown
 ): {

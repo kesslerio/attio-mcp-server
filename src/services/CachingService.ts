@@ -9,7 +9,6 @@
 import { AttioRecord } from '../types/attio.js';
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 import { generateIdCacheKey } from '../utils/validation/id-validation.js';
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import {
   DEFAULT_TASKS_CACHE_TTL,
   DEFAULT_404_CACHE_TTL,
@@ -31,7 +30,7 @@ interface CacheEntry {
 interface AttributeCacheEntry {
   data: Record<string, unknown>;
   timestamp: number;
-  resourceType: UniversalResourceType;
+  resourceType: string;
   objectSlug?: string;
 }
 
@@ -198,7 +197,7 @@ export class CachingService {
    * @returns Cache key string
    */
   private static getAttributeCacheKey(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     objectSlug?: string
   ): string {
     return objectSlug
@@ -215,7 +214,7 @@ export class CachingService {
    * @returns Cached attributes if available and valid, undefined otherwise
    */
   static getCachedAttributes(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     objectSlug?: string,
     ttl: number = DEFAULT_ATTRIBUTES_CACHE_TTL
   ): Record<string, unknown> | undefined {
@@ -245,7 +244,7 @@ export class CachingService {
    * @param objectSlug - Optional object slug for records
    */
   static setCachedAttributes(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     data: Record<string, unknown>,
     objectSlug?: string
   ): void {
@@ -269,7 +268,7 @@ export class CachingService {
    * @param objectSlug - Optional object slug to invalidate specific records cache
    */
   static invalidateAttributeCache(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     objectSlug?: string
   ): void {
     if (objectSlug) {
@@ -303,7 +302,7 @@ export class CachingService {
    */
   static async getOrLoadAttributes(
     dataLoader: () => Promise<Record<string, unknown>>,
-    resourceType: UniversalResourceType,
+    resourceType: string,
     objectSlug?: string,
     ttl: number = DEFAULT_ATTRIBUTES_CACHE_TTL
   ): Promise<{ data: Record<string, unknown>; fromCache: boolean }> {

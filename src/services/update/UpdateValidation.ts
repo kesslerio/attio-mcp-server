@@ -11,7 +11,7 @@ import { getListDetails } from '@/objects/lists.js';
 import { getPersonDetails } from '@/objects/people/basic.js';
 import { getObjectRecord } from '@/objects/records/index.js';
 import { getTask } from '@/objects/tasks.js';
-import type { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import { isConfiguredCustomObjectResourceType } from '@/utils/resource-type-detection.js';
 import { createScopedLogger } from '@/utils/logger.js';
 
 export const UpdateValidation = {
@@ -53,7 +53,7 @@ export const UpdateValidation = {
   },
 
   async verifyFieldPersistence(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordId: string,
     expectedUpdates: Record<string, unknown>
   ): Promise<{
@@ -137,29 +137,33 @@ export const UpdateValidation = {
   },
 
   async fetchRecordForVerification(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     recordId: string
   ): Promise<UniversalRecord | null> {
     try {
       switch (resourceType) {
-        case 'companies' as unknown as UniversalResourceType:
+        case 'companies':
           return await getCompanyDetails(recordId);
-        case 'people' as unknown as UniversalResourceType:
+        case 'people':
           return await getPersonDetails(recordId);
-        case 'lists' as unknown as UniversalResourceType: {
+        case 'lists': {
           const list = await getListDetails(recordId);
           const resolvedName = list.name || list.title;
           return resolvedName ? { ...list, name: resolvedName } : list;
         }
-        case 'tasks' as unknown as UniversalResourceType: {
+        case 'tasks': {
           const task = await getTask(recordId);
           return UniversalUtilityService.convertTaskToRecord(task);
         }
-        case 'deals' as unknown as UniversalResourceType:
+        case 'deals':
           return await getObjectRecord('deals', recordId);
-        case 'records' as unknown as UniversalResourceType:
+        case 'records':
           return await getObjectRecord('records', recordId);
         default:
+          if (isConfiguredCustomObjectResourceType(resourceType)) {
+            return await getObjectRecord(resourceType, recordId);
+          }
+
           createScopedLogger(
             'update/UpdateValidation',
             'fetchRecordForVerification'
