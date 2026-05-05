@@ -13,7 +13,7 @@ import { findSimilarStrings } from './similarity-utils.js';
  * Provides concrete examples based on resource type
  */
 function getRequiredFieldErrorMessage(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   fieldName: string
 ): string {
   const baseMessage = `Required field "${fieldName}" is missing`;
@@ -56,10 +56,10 @@ function getRequiredFieldErrorMessage(
  * Provides context-aware error messages and suggestions
  */
 export function getFieldSuggestions(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   fieldName: string
 ): string {
-  const mapping = FIELD_MAPPINGS[resourceType];
+  const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
   if (!mapping) {
     return `Unable to provide suggestions for resource type ${resourceType}`;
   }
@@ -93,7 +93,7 @@ export function getFieldSuggestions(
  * Performs comprehensive field validation with error categorization
  */
 export function validateFields(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   recordData: Record<string, unknown>
 ): {
   valid: boolean;
@@ -101,7 +101,7 @@ export function validateFields(
   warnings: string[];
   suggestions: string[];
 } {
-  const mapping = FIELD_MAPPINGS[resourceType];
+  const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
   if (!mapping) {
     return {
       valid: true,
@@ -175,6 +175,8 @@ export function validateFields(
  * Get valid fields for a resource type
  * Used for error messages and validation
  */
-export function getValidFields(resourceType: UniversalResourceType): string[] {
-  return FIELD_MAPPINGS[resourceType]?.validFields || [];
+export function getValidFields(resourceType: string): string[] {
+  return (
+    FIELD_MAPPINGS[resourceType as UniversalResourceType]?.validFields || []
+  );
 }

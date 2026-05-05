@@ -7,7 +7,6 @@
  * @see Issue #984 - Extend display name resolution to create/update operations
  */
 
-import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { validateFields } from '@/handlers/tool-configs/universal/field-mapper.js';
 import { ValidationService } from '@/services/ValidationService.js';
 import { debug, OperationType } from '@/utils/logger.js';
@@ -45,7 +44,7 @@ export class FieldValidationHandler {
    * @returns Validation result with warnings, suggestions, and resolved field names
    */
   static async validateAndResolve(
-    resourceType: UniversalResourceType,
+    resourceType: string,
     values: Record<string, unknown>,
     objectSlug?: string,
     enableDisplayNameResolution: boolean = true

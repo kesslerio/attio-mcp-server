@@ -31,7 +31,6 @@ import {
   transformRecordReferenceValue,
   isCorrectRecordReferenceFormat,
 } from './record-reference-transformer.js';
-import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import { convertToMetadataMap } from '@/utils/metadata-utils.js';
 import { handleUniversalDiscoverAttributes } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { debug, error as logError, OperationType } from '@/utils/logger.js';
@@ -57,7 +56,7 @@ export function clearAllCaches(): void {
  * @see Issue #984 - Now uses CachingService with TTL and accepts provided metadata
  */
 async function getAttributeMetadata(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   providedMetadata?: Map<string, AttributeMetadata>
 ): Promise<Map<string, AttributeMetadata>> {
   // Use provided metadata if available (avoid duplicate fetch)
@@ -323,7 +322,7 @@ export async function transformRecordValues(
  */
 export function mayNeedTransformation(
   recordData: Record<string, unknown>,
-  resourceType: UniversalResourceType
+  resourceType: string
 ): boolean {
   // Known status fields by resource type
   const statusFields: Record<string, string[]> = {

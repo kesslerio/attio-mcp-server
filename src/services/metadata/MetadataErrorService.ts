@@ -38,7 +38,7 @@ export class DefaultMetadataErrorService implements MetadataErrorService {
   }
 
   toRecordFetchError(
-    resourceType: UniversalResourceType,
+    resourceType: UniversalResourceType | string,
     recordId: string,
     error: unknown
   ): never {

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Universal record tools now accept config-discovered custom object slugs for details, create, update, and delete operations instead of limiting custom objects to search-only flows (#1161)
 - Fixed `get-workspace-member` so valid `workspace_member_id` values returned by `list-workspace-members` are passed to Attio as UUID path segments instead of malformed argument objects (#1173)
 
 ## [1.5.0] - 2026-04-09

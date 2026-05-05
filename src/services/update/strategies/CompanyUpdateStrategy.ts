@@ -5,7 +5,6 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '../../../handlers/tool-configs/universal/schemas.js';
-import type { UniversalResourceType } from '../../../handlers/tool-configs/universal/types.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
 
 /**
@@ -15,7 +14,7 @@ export class CompanyUpdateStrategy implements UpdateStrategy {
   async update(
     recordId: string,
     values: Record<string, unknown>,
-    resourceType: UniversalResourceType
+    resourceType: string
   ): Promise<AttioRecord> {
     try {
       // Extract values from Attio envelope for legacy updateCompany function

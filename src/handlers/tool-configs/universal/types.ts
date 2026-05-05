@@ -219,7 +219,7 @@ export interface UniversalSearchParams {
  * Universal record details parameters
  */
 export interface UniversalRecordDetailsParams {
-  resource_type: UniversalResourceType;
+  resource_type: string;
   record_id: string;
   fields?: string[];
 }
@@ -236,7 +236,7 @@ export interface GetRecordInteractionsParams {
  * Universal create record parameters
  */
 export interface UniversalCreateParams {
-  resource_type: UniversalResourceType;
+  resource_type: string;
   record_data: Record<string, unknown>;
   return_details?: boolean;
 }
@@ -245,7 +245,7 @@ export interface UniversalCreateParams {
  * Universal update record parameters
  */
 export interface UniversalUpdateParams {
-  resource_type: UniversalResourceType;
+  resource_type: string;
   record_id: string;
   record_data: Record<string, unknown>;
   return_details?: boolean;
@@ -255,7 +255,7 @@ export interface UniversalUpdateParams {
  * Universal delete record parameters
  */
 export interface UniversalDeleteParams {
-  resource_type: UniversalResourceType;
+  resource_type: string;
   record_id: string;
 }
 

@@ -37,7 +37,7 @@ export class UniversalUtilityService {
   /**
    * Utility function to format resource type for display
    */
-  static formatResourceType(resourceType: UniversalResourceType): string {
+  static formatResourceType(resourceType: string): string {
     switch (resourceType) {
       case UniversalResourceType.COMPANIES:
         return 'company';
@@ -59,7 +59,7 @@ export class UniversalUtilityService {
   /**
    * Utility function to get singular form of resource type
    */
-  static getSingularResourceType(resourceType: UniversalResourceType): string {
+  static getSingularResourceType(resourceType: string): string {
     return this.formatResourceType(resourceType);
   }
 

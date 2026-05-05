@@ -12,11 +12,11 @@ import { mapFieldName } from '../transformers/field-mapper.js';
  * Provides intelligent recommendations based on field characteristics
  */
 function getFieldCollisionSuggestion(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   targetField: string,
   conflictingFields: string[]
 ): string {
-  const mapping = FIELD_MAPPINGS[resourceType];
+  const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
   if (!mapping) return '';
 
   // Check if any of the conflicting fields is the actual target field
@@ -44,7 +44,7 @@ function getFieldCollisionSuggestion(
  * Essential for preventing data overwrites and API conflicts
  */
 export async function detectFieldCollisions(
-  resourceType: UniversalResourceType,
+  resourceType: string,
   recordData: Record<string, unknown>,
   availableAttributes?: string[]
 ): Promise<{
@@ -52,7 +52,7 @@ export async function detectFieldCollisions(
   errors: string[];
   collisions: Record<string, string[]>;
 }> {
-  const mapping = FIELD_MAPPINGS[resourceType];
+  const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
   if (!mapping) {
     return { hasCollisions: false, errors: [], collisions: {} };
   }
