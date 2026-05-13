@@ -280,8 +280,11 @@ describe('ListConfigurationValidator', () => {
       expect(result.category).toBe(ListErrorCategory.UNSUPPORTED_INPUT);
     });
 
-    it('categorizes "Invalid" messages as unsupported_input', () => {
-      const error = new Error('Invalid list attributes: bad request');
+    it('categorizes 400-status errors as unsupported_input', () => {
+      const error = {
+        message: 'Invalid list attributes: bad request',
+        response: { status: 400 },
+      };
       const result = ListConfigurationValidator.categorizeError(error);
       expect(result.category).toBe(ListErrorCategory.UNSUPPORTED_INPUT);
     });
@@ -290,6 +293,13 @@ describe('ListConfigurationValidator', () => {
       const error = new Error('Something went wrong');
       const result = ListConfigurationValidator.categorizeError(error);
       expect(result.category).toBe(ListErrorCategory.API_FAILURE);
+    });
+
+    it('categorizes AttioApiError with 403 as permission_failure', async () => {
+      const { AttioApiError } = await import('@/errors/api-errors.js');
+      const error = new AttioApiError('Forbidden', 403, '/lists', 'POST');
+      const result = ListConfigurationValidator.categorizeError(error);
+      expect(result.category).toBe(ListErrorCategory.PERMISSION_FAILURE);
     });
   });
 });

@@ -59,8 +59,18 @@ export function normalizeListResponse(
   raw: AttioList,
   dryRun?: boolean
 ): NormalizedListResponse {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      list_id: '',
+      name: '',
+      parent_object: '',
+      fields_summary: {},
+      ...(dryRun ? { dry_run: true } : {}),
+    };
+  }
+
   const listId = raw.id?.list_id ?? '';
-  const name = raw.name || raw.title || '';
+  const name = raw.title || raw.name || '';
   const parentObject = raw.object_slug || '';
 
   // Build fields_summary from all non-metadata fields

@@ -22,10 +22,41 @@ import {
 } from '../../../../objects/lists/entries.js';
 import { ListEntryFilters } from '../../../../api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
+import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
+import { createList, updateList } from '@/objects/lists/base.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { AttioApiError } from '@/errors/api-errors.js';
 
 // Deprecation metadata constants (Issue #1071)
 const DEPRECATION_VERSION = 'v2.0.0';
 const MIGRATION_GUIDE_PATH = '/docs/migration/v2-list-tools.md';
+
+/**
+ * Shared error handler for list configuration tool catch blocks.
+ * Preserves 4xx status for validation errors and categorizes for actionable guidance.
+ */
+function handleListToolError(
+  error: unknown,
+  path: string,
+  method: string
+): ReturnType<typeof createErrorResult> {
+  const isUserError = error instanceof UniversalValidationError;
+  const status = isUserError ? error.httpStatusCode : undefined;
+
+  const categorized = ListConfigurationValidator.categorizeError(error);
+  const errorMessage = categorized
+    ? `${categorized.message} (Next step: ${categorized.suggested_next_step})`
+    : error instanceof Error
+      ? error.message
+      : 'Unknown error';
+
+  const responseData = hasResponseData(error) ? error.response.data : {};
+  if (status) {
+    (responseData as Record<string, unknown>).status = status;
+  }
+
+  return createErrorResult(new Error(errorMessage), path, method, responseData);
+}
 
 /**
  * Handle getLists operations
@@ -1217,11 +1248,6 @@ export async function handleCreateListOperation(
   }
 
   try {
-    // Dynamic import to avoid circular dependency at module load
-    const { ListConfigurationValidator } =
-      await import('@/services/lists/ListConfigurationValidator.js');
-    const { createList } = await import('@/objects/lists/base.js');
-
     // Build attributes: start with explicit params, merge template, then caller attributes
     let listAttributes: Record<string, unknown> = {
       name,
@@ -1252,13 +1278,13 @@ export async function handleCreateListOperation(
     if (dryRun) {
       const preview = ListConfigurationValidator.normalizeResponse(
         {
+          ...listAttributes,
           id: { list_id: 'dry-run-preview' },
           title: listAttributes.name as string,
           object_slug: listAttributes.parent_object as string,
           workspace_id: 'preview',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          ...listAttributes,
         } as import('@/types/attio.js').AttioList,
         true
       );
@@ -1277,40 +1303,7 @@ export async function handleCreateListOperation(
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
-    // Preserve 4xx status for validation errors (PR #1196 review)
-    const { UniversalValidationError: UVE } =
-      await import('@/handlers/tool-configs/universal/errors/validation-errors.js').catch(
-        () => ({ UniversalValidationError: null as never })
-      );
-    const isUserError = UVE && error instanceof UVE;
-    const status = isUserError
-      ? (error as InstanceType<typeof UVE>).httpStatusCode
-      : undefined;
-
-    // Categorize the error for actionable guidance
-    const { ListConfigurationValidator: validator } =
-      await import('@/services/lists/ListConfigurationValidator.js').catch(
-        () => ({ ListConfigurationValidator: null })
-      );
-    const categorized = validator ? validator.categorizeError(error) : null;
-
-    const errorMessage = categorized
-      ? `${categorized.message} (Next step: ${categorized.suggested_next_step})`
-      : error instanceof Error
-        ? error.message
-        : 'Unknown error';
-
-    const responseData = hasResponseData(error) ? error.response.data : {};
-    if (status) {
-      (responseData as Record<string, unknown>).status = status;
-    }
-
-    return createErrorResult(
-      new Error(errorMessage),
-      '/lists',
-      'POST',
-      responseData
-    );
+    return handleListToolError(error, '/lists', 'POST');
   }
 }
 
@@ -1350,11 +1343,6 @@ export async function handleUpdateListConfigurationOperation(
   }
 
   try {
-    // Dynamic import to avoid circular dependency at module load
-    const { ListConfigurationValidator } =
-      await import('@/services/lists/ListConfigurationValidator.js');
-    const { updateList } = await import('@/objects/lists/base.js');
-
     // Detect immutable fields before API call
     ListConfigurationValidator.detectImmutableFields(attributes);
 
@@ -1362,13 +1350,13 @@ export async function handleUpdateListConfigurationOperation(
     if (dryRun) {
       const preview = ListConfigurationValidator.normalizeResponse(
         {
+          ...attributes,
           id: { list_id: listId },
           title: (attributes.name as string) || 'Preview',
           object_slug: (attributes.parent_object as string) || '',
           workspace_id: 'preview',
           created_at: '',
           updated_at: new Date().toISOString(),
-          ...attributes,
         } as import('@/types/attio.js').AttioList,
         true
       );
@@ -1387,38 +1375,6 @@ export async function handleUpdateListConfigurationOperation(
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
-    // Preserve 4xx status for validation errors (PR #1196 review)
-    const { UniversalValidationError: UVE } =
-      await import('@/handlers/tool-configs/universal/errors/validation-errors.js').catch(
-        () => ({ UniversalValidationError: null as never })
-      );
-    const isUserError = UVE && error instanceof UVE;
-    const status = isUserError
-      ? (error as InstanceType<typeof UVE>).httpStatusCode
-      : undefined;
-
-    const { ListConfigurationValidator: validator } =
-      await import('@/services/lists/ListConfigurationValidator.js').catch(
-        () => ({ ListConfigurationValidator: null })
-      );
-    const categorized = validator ? validator.categorizeError(error) : null;
-
-    const errorMessage = categorized
-      ? `${categorized.message} (Next step: ${categorized.suggested_next_step})`
-      : error instanceof Error
-        ? error.message
-        : 'Unknown error';
-
-    const responseData = hasResponseData(error) ? error.response.data : {};
-    if (status) {
-      (responseData as Record<string, unknown>).status = status;
-    }
-
-    return createErrorResult(
-      new Error(errorMessage),
-      `/lists/${listId}`,
-      'PATCH',
-      responseData
-    );
+    return handleListToolError(error, `/lists/${listId}`, 'PATCH');
   }
 }

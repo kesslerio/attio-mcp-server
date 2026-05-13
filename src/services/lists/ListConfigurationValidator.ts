@@ -15,6 +15,7 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { AttioApiError } from '@/errors/api-errors.js';
 import { expandTemplate } from './list-templates.js';
 import {
   IMMUTABLE_LIST_FIELDS,
@@ -225,10 +226,11 @@ export class ListConfigurationValidator {
       };
     }
 
-    // Check for unsupported input patterns
+    // Check for unsupported input patterns — prefer HTTP status 400 over string matching
+    const httpStatus = extractStatus(error);
     if (
+      httpStatus === 400 ||
       message.includes('Cannot find attribute') ||
-      message.includes('Invalid') ||
       message.includes('is required') ||
       message.includes('must be')
     ) {
@@ -254,12 +256,11 @@ export class ListConfigurationValidator {
  */
 function extractStatus(error: unknown): number | undefined {
   if (!error) return undefined;
+  // Check AttioApiError subclasses first (AuthorizationError, AuthenticationError, etc.)
+  if (error instanceof AttioApiError) return error.statusCode;
   if (typeof error === 'object' && 'response' in error) {
     const resp = (error as { response?: { status?: number } }).response;
     return resp?.status;
-  }
-  if (typeof error === 'object' && 'status' in error) {
-    return (error as { status: number }).status;
   }
   return undefined;
 }

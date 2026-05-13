@@ -8,7 +8,7 @@ import { getFieldSuggestions } from '@/handlers/tool-configs/universal/field-map
 import {
   UniversalValidationError,
   ErrorType,
-} from '@/handlers/tool-configs/universal/schemas.js';
+} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 
 export class ListCreateStrategy implements CreateStrategy {

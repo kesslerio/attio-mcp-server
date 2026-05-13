@@ -2,7 +2,7 @@ import { getFieldSuggestions } from '@/handlers/tool-configs/universal/field-map
 import {
   UniversalValidationError,
   ErrorType,
-} from '@/handlers/tool-configs/universal/schemas.js';
+} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { updateList } from '@/objects/lists.js';
 import type { AttioList } from '@/types/attio.js';
 import type { UpdateStrategy } from '@/services/update/strategies/BaseUpdateStrategy.js';
