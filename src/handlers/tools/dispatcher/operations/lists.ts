@@ -1277,6 +1277,16 @@ export async function handleCreateListOperation(
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
+    // Preserve 4xx status for validation errors (PR #1196 review)
+    const { UniversalValidationError: UVE } =
+      await import('@/handlers/tool-configs/universal/errors/validation-errors.js').catch(
+        () => ({ UniversalValidationError: null as never })
+      );
+    const isUserError = UVE && error instanceof UVE;
+    const status = isUserError
+      ? (error as InstanceType<typeof UVE>).httpStatusCode
+      : undefined;
+
     // Categorize the error for actionable guidance
     const { ListConfigurationValidator: validator } =
       await import('@/services/lists/ListConfigurationValidator.js').catch(
@@ -1290,11 +1300,16 @@ export async function handleCreateListOperation(
         ? error.message
         : 'Unknown error';
 
+    const responseData = hasResponseData(error) ? error.response.data : {};
+    if (status) {
+      (responseData as Record<string, unknown>).status = status;
+    }
+
     return createErrorResult(
       new Error(errorMessage),
       '/lists',
       'POST',
-      hasResponseData(error) ? error.response.data : {}
+      responseData
     );
   }
 }
@@ -1372,6 +1387,16 @@ export async function handleUpdateListConfigurationOperation(
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
+    // Preserve 4xx status for validation errors (PR #1196 review)
+    const { UniversalValidationError: UVE } =
+      await import('@/handlers/tool-configs/universal/errors/validation-errors.js').catch(
+        () => ({ UniversalValidationError: null as never })
+      );
+    const isUserError = UVE && error instanceof UVE;
+    const status = isUserError
+      ? (error as InstanceType<typeof UVE>).httpStatusCode
+      : undefined;
+
     const { ListConfigurationValidator: validator } =
       await import('@/services/lists/ListConfigurationValidator.js').catch(
         () => ({ ListConfigurationValidator: null })
@@ -1384,11 +1409,16 @@ export async function handleUpdateListConfigurationOperation(
         ? error.message
         : 'Unknown error';
 
+    const responseData = hasResponseData(error) ? error.response.data : {};
+    if (status) {
+      (responseData as Record<string, unknown>).status = status;
+    }
+
     return createErrorResult(
       new Error(errorMessage),
       `/lists/${listId}`,
       'PATCH',
-      hasResponseData(error) ? error.response.data : {}
+      responseData
     );
   }
 }

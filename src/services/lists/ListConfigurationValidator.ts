@@ -46,28 +46,42 @@ async function getWorkspaceObjects(): Promise<string[]> {
   }
 
   const client = getLazyAttioClient();
+  const PAGE_LIMIT = 200;
+  const allSlugs: string[] = [];
+  let offset = 0;
+
   try {
-    const response = await client.get('/objects', {
-      params: { limit: 200 },
-    });
+    // Paginate to handle workspaces with >200 objects (PR #1196 review)
+    let hasMore = true;
+    while (hasMore) {
+      const response = await client.get('/objects', {
+        params: { limit: PAGE_LIMIT, offset },
+      });
 
-    const data = response?.data;
-    const list = Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data)
-        ? data
-        : data?.objects || [];
+      const data = response?.data;
+      const page = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+          ? data
+          : data?.objects || [];
 
-    const slugs = list
-      .filter((pd: unknown) => pd != null)
-      .map((pd: Record<string, unknown>) =>
-        String(pd.api_slug || pd.slug || pd.id)
-      )
-      .filter(Boolean);
+      const slugs = page
+        .filter((pd: unknown) => pd != null)
+        .map((pd: Record<string, unknown>) =>
+          String(pd.api_slug || pd.slug || pd.id)
+        )
+        .filter(Boolean);
 
-    cachedObjects = { slugs, expiresAt: now + CACHE_TTL_MS };
-    log.debug('Fetched workspace objects', { count: slugs.length });
-    return slugs;
+      allSlugs.push(...slugs);
+      offset += PAGE_LIMIT;
+
+      // If we got fewer than PAGE_LIMIT, we've reached the end
+      hasMore = page.length >= PAGE_LIMIT;
+    }
+
+    cachedObjects = { slugs: allSlugs, expiresAt: now + CACHE_TTL_MS };
+    log.debug('Fetched workspace objects', { count: allSlugs.length });
+    return allSlugs;
   } catch (error: unknown) {
     log.warn('Failed to fetch workspace objects', {
       error: error instanceof Error ? error.message : String(error),

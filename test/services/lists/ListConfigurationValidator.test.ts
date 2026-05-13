@@ -107,6 +107,41 @@ describe('ListConfigurationValidator', () => {
       // Only one API call due to caching
       expect(mockGet).toHaveBeenCalledTimes(1);
     });
+
+    it('paginates when workspace has >200 objects', async () => {
+      // First page: 200 items (full page → hasMore)
+      const page1 = Array.from({ length: 200 }, (_, i) => ({
+        api_slug: `obj_${i}`,
+      }));
+      // Second page: 5 items (partial → done)
+      const page2 = [
+        { api_slug: 'companies' },
+        { api_slug: 'people' },
+        { api_slug: 'deals' },
+        { api_slug: 'custom_obj_1' },
+        { api_slug: 'custom_obj_2' },
+      ];
+
+      const mockGet = vi
+        .fn()
+        .mockResolvedValueOnce({ data: { data: page1 } })
+        .mockResolvedValueOnce({ data: { data: page2 } });
+
+      vi.mocked(getLazyAttioClient).mockReturnValue({
+        get: mockGet,
+      } as never);
+
+      const result =
+        await ListConfigurationValidator.validateParentObject('companies');
+      expect(result).toBe('companies');
+
+      // Two API calls: page 1 + page 2
+      expect(mockGet).toHaveBeenCalledTimes(2);
+      // Verify offset was passed for pagination
+      expect(mockGet).toHaveBeenNthCalledWith(2, '/objects', {
+        params: { limit: 200, offset: 200 },
+      });
+    });
   });
 
   // --- detectImmutableFields ---
