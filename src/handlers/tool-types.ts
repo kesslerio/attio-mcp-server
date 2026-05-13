@@ -87,6 +87,19 @@ export interface ListActionToolConfig extends ToolConfig {
   idParams?: string[];
 }
 
+// Create list tool configuration
+export interface CreateListToolConfig extends ToolConfig {
+  handler: (attributes: Record<string, unknown>) => Promise<AttioList>;
+}
+
+// Update list configuration tool configuration
+export interface UpdateListConfigurationToolConfig extends ToolConfig {
+  handler: (
+    listId: string,
+    attributes: Record<string, unknown>
+  ) => Promise<AttioList>;
+}
+
 // Prompts tool configuration
 export interface PromptsToolConfig extends ToolConfig {
   handler: (req: Request, res: Response) => Promise<void>;

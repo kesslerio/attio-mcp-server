@@ -42,7 +42,11 @@ import {
   handleNotesOperation,
   handleCreateNoteOperation,
 } from '@/handlers/tools/dispatcher/operations/notes.js';
-import { handleGetListsOperation } from '@/handlers/tools/dispatcher/operations/lists.js';
+import {
+  handleGetListsOperation,
+  handleCreateListOperation,
+  handleUpdateListConfigurationOperation,
+} from '@/handlers/tools/dispatcher/operations/lists.js';
 
 // Import CRUD operation handlers
 import {
@@ -97,6 +101,8 @@ import {
   NotesToolConfig,
   CreateNoteToolConfig,
   GetListsToolConfig,
+  CreateListToolConfig,
+  UpdateListConfigurationToolConfig,
 } from '@/handlers/tool-types.js';
 
 /**
@@ -312,6 +318,16 @@ export async function executeToolRequest(request: CallToolRequest) {
       result = await handleGetListsOperation(
         request,
         toolConfig as GetListsToolConfig
+      );
+    } else if (toolType === 'createList') {
+      result = await handleCreateListOperation(
+        request,
+        toolConfig as CreateListToolConfig
+      );
+    } else if (toolType === 'updateListConfiguration') {
+      result = await handleUpdateListConfigurationOperation(
+        request,
+        toolConfig as UpdateListConfigurationToolConfig
       );
 
       // Handle CRUD operations (from emergency fix)

@@ -9,10 +9,19 @@ import {
   UniversalValidationError,
   ErrorType,
 } from '@/handlers/tool-configs/universal/schemas.js';
+import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 
 export class ListCreateStrategy implements CreateStrategy {
   async create(params: CreateStrategyParams): Promise<AttioList> {
     const { values, resourceType } = params;
+
+    // Validate parent_object against workspace objects (Issue #1195)
+    if (values.parent_object && typeof values.parent_object === 'string') {
+      await ListConfigurationValidator.validateParentObject(
+        values.parent_object as string
+      );
+    }
+
     try {
       const list = await createList(values);
       return list;
