@@ -8,13 +8,13 @@
     "url": "https://github.com/kesslerio/attio-mcp-server",
     "source": "github"
   },
-  "version": "1.6.0",
+  "version": "1.6.1",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "attio-mcp",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "transport": {
         "type": "stdio"
       },

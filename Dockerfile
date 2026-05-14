@@ -4,24 +4,24 @@
 # =============================================================================
 # Build Stage
 # =============================================================================
-FROM node:20-slim AS builder
+FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
 # Copy package files first for better layer caching
-COPY package*.json ./
+COPY package.json bun.lock ./
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build the project
-RUN npm run build
+RUN bun run build
 
 # Prune devDependencies for production
-RUN npm prune --production
+RUN bun install --frozen-lockfile --production
 
 # =============================================================================
 # Production Stage

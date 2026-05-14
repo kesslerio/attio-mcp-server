@@ -102,10 +102,12 @@ jobs:
           node --version
           npm --version
 
-      - name: Publish to NPM with trusted publishing
+      - name: Publish to NPM with provenance
         if: steps.check.outputs.should_publish == 'true'
+        # --provenance generates a Sigstore attestation linking the package to this CI build.
         # Requires npm Trusted Publisher configuration for this repository/workflow.
-        run: npm publish --access public
+        # See: https://docs.npmjs.com/generating-provenance-statements
+        run: npm publish --access public --provenance
 
   publish-registry:
     needs: publish-npm
