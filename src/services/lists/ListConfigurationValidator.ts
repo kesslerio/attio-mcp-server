@@ -232,7 +232,8 @@ export class ListConfigurationValidator {
       httpStatus === 400 ||
       message.includes('Cannot find attribute') ||
       message.includes('is required') ||
-      message.includes('must be')
+      message.includes('must be') ||
+      message.startsWith('Invalid list attributes') // wrapped 400 from base.ts
     ) {
       return {
         category: ListErrorCategory.UNSUPPORTED_INPUT,
