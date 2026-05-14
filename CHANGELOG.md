@@ -7,16 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-05-14
+
+**TL;DR for Users**: New dedicated list configuration tools, npm provenance for supply chain verification, and Docker build fix.
+
 ### Added
 
 - **`create-list` tool** (#1195, #1196) - Dedicated list creation with template expansion (`sales_pipeline`, `recruiting_tracker`, `support_queue`), parent-object validation against workspace objects, and dry-run preview
 - **`update-list-configuration` tool** (#1195, #1196) - Dedicated list update with immutable field detection (rejects `parent_object` changes), dry-run preview, and categorized error guidance
 - Shared `ListConfigurationValidator` for parent-object validation, immutable field detection, template expansion, and error categorization — consumed by both dedicated tools and universal create/update strategies (#1195)
+- **npm provenance publishing** — every release is now cryptographically linked to the GitHub Actions build and source commit via Sigstore, enabling supply chain verification with `npm view attio-mcp --json | jq .attestations`
+- `.npmrc` with `save-exact` and `strict-peer-dependencies` for safer installs
 
 ### Changed
 
 - Universal list create and update paths now validate `parent_object` and detect immutable fields before API calls (#1195)
 - List error categorization prefers HTTP status codes over fragile string matching (#1196)
+- Docker build stage now uses `oven/bun:1` instead of `node:20-slim` for consistency with the project's package manager
 
 ## [1.6.0] - 2026-05-05
 
@@ -949,7 +956,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.0...v1.4.1
