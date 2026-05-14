@@ -22,6 +22,8 @@ import {
   ToolConfig,
   GetListEntriesToolConfig,
   ListActionToolConfig,
+  CreateListToolConfig,
+  UpdateListConfigurationToolConfig,
 } from '../tool-types.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
@@ -198,6 +200,31 @@ export const listsToolConfigs = {
       return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,
+
+  // Dedicated list configuration tools (Issue #1195)
+  createList: {
+    name: 'create-list',
+    type: 'createList' as const,
+    handler: () => {
+      // Placeholder - actual routing happens in dispatcher
+      throw new Error('Direct handler call not supported - use dispatcher');
+    },
+    formatResult: (result: unknown) => {
+      return JSON.stringify(result);
+    },
+  } as CreateListToolConfig,
+
+  updateListConfiguration: {
+    name: 'update-list-configuration',
+    type: 'updateListConfiguration' as const,
+    handler: () => {
+      // Placeholder - actual routing happens in dispatcher
+      throw new Error('Direct handler call not supported - use dispatcher');
+    },
+    formatResult: (result: unknown) => {
+      return JSON.stringify(result);
+    },
+  } as UpdateListConfigurationToolConfig,
 };
 
 // Lists tool definitions
@@ -985,6 +1012,95 @@ ${formatToolDescription({
         },
       },
       required: ['listId', 'recordId'],
+      additionalProperties: false,
+    },
+  },
+  // Dedicated list configuration tools (Issue #1195)
+  {
+    name: 'create-list',
+    description: formatToolDescription({
+      capability:
+        'Create a new CRM list (sales pipeline, recruiting tracker, support queue). Supports templates for quick setup with smart defaults.',
+      boundaries: 'update existing lists or manage list entries.',
+      constraints:
+        'Requires name and parent_object. Template expansion fills defaults before validation. Dry-run mode previews without creating.',
+      recoveryHint:
+        'Use get-lists to verify the list was created. Use update-list-configuration to modify after creation.',
+    }),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Name of the list to create',
+          example: 'My Sales Pipeline',
+        },
+        parent_object: {
+          type: 'string',
+          description:
+            'Object type this list is for (e.g., "companies", "people"). Auto-validated against workspace objects.',
+          example: 'companies',
+        },
+        description: {
+          type: 'string',
+          description: 'Optional description for the list',
+        },
+        template: {
+          type: 'string',
+          description:
+            'Optional template name for smart defaults. Expands before validation so errors reference actual values.',
+          enum: ['sales_pipeline', 'recruiting_tracker', 'support_queue'],
+        },
+        attributes: {
+          type: 'object',
+          description:
+            'Additional list attributes (e.g., stages, custom fields). Merged onto template defaults if template is specified.',
+          additionalProperties: true,
+        },
+        dry_run: {
+          type: 'boolean',
+          description:
+            'Preview the creation without committing. Returns normalized preview of what would be created.',
+          default: false,
+        },
+      },
+      required: ['name', 'parent_object'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'update-list-configuration',
+    description: formatToolDescription({
+      capability:
+        'Update configuration of an existing list (name, description, custom fields). Detects immutable fields and provides clear errors.',
+      boundaries: 'change parent_object (immutable) or manage list entries.',
+      constraints:
+        'Requires listId. Immutable fields (parent_object) are rejected before the API call. Dry-run mode previews changes.',
+      recoveryHint:
+        'Use get-list-details to inspect current configuration. Use create-list for a different parent_object.',
+    }),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        listId: {
+          type: 'string',
+          description: 'UUID of the list to update',
+          example: '550e8400-e29b-41d4-a716-446655440000',
+        },
+        attributes: {
+          type: 'object',
+          description:
+            'Attributes to update. Immutable fields (parent_object) will be rejected with a clear error.',
+          additionalProperties: true,
+        },
+        dry_run: {
+          type: 'boolean',
+          description:
+            'Preview the update without committing. Returns normalized preview of what would change.',
+          default: false,
+        },
+      },
+      required: ['listId', 'attributes'],
       additionalProperties: false,
     },
   },

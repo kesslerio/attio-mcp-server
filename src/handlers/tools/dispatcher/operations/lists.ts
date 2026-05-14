@@ -22,10 +22,41 @@ import {
 } from '../../../../objects/lists/entries.js';
 import { ListEntryFilters } from '../../../../api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
+import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
+import { createList, updateList } from '@/objects/lists/base.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { AttioApiError } from '@/errors/api-errors.js';
 
 // Deprecation metadata constants (Issue #1071)
 const DEPRECATION_VERSION = 'v2.0.0';
 const MIGRATION_GUIDE_PATH = '/docs/migration/v2-list-tools.md';
+
+/**
+ * Shared error handler for list configuration tool catch blocks.
+ * Preserves 4xx status for validation errors and categorizes for actionable guidance.
+ */
+function handleListToolError(
+  error: unknown,
+  path: string,
+  method: string
+): ReturnType<typeof createErrorResult> {
+  const isUserError = error instanceof UniversalValidationError;
+  const status = isUserError ? error.httpStatusCode : undefined;
+
+  const categorized = ListConfigurationValidator.categorizeError(error);
+  const errorMessage = categorized
+    ? `${categorized.message} (Next step: ${categorized.suggested_next_step})`
+    : error instanceof Error
+      ? error.message
+      : 'Unknown error';
+
+  const responseData = hasResponseData(error) ? error.response.data : {};
+  if (status) {
+    (responseData as Record<string, unknown>).status = status;
+  }
+
+  return createErrorResult(new Error(errorMessage), path, method, responseData);
+}
 
 /**
  * Handle getLists operations
@@ -1174,5 +1205,176 @@ export async function handleGetRecordListMembershipsOperation(
       'GET',
       hasResponseData(error) ? error.response.data : {}
     );
+  }
+}
+
+/**
+ * Handle createList operations (Issue #1195)
+ *
+ * Dedicated create-list tool with smart defaults:
+ * - Template expansion before validation
+ * - Parent-object auto-resolution
+ * - Dry-run mode
+ * - Normalized response
+ */
+export async function handleCreateListOperation(
+  request: CallToolRequest,
+  toolConfig: ToolConfig
+) {
+  const params = request.params.arguments || {};
+  const name = params.name as string;
+  const parentObject = params.parent_object as string;
+  const description = params.description as string | undefined;
+  const templateName = params.template as string | undefined;
+  const attributes = params.attributes as Record<string, unknown> | undefined;
+  const dryRun = (params.dry_run as boolean) ?? false;
+
+  // Validate required parameters
+  if (!name) {
+    return createErrorResult(
+      new Error('name parameter is required'),
+      '/lists',
+      'POST',
+      { status: 400, message: 'Missing required parameter: name' }
+    );
+  }
+  if (!parentObject) {
+    return createErrorResult(
+      new Error('parent_object parameter is required'),
+      '/lists',
+      'POST',
+      { status: 400, message: 'Missing required parameter: parent_object' }
+    );
+  }
+
+  try {
+    // Build attributes: start with explicit params, merge template, then caller attributes
+    let listAttributes: Record<string, unknown> = {
+      name,
+      parent_object: parentObject,
+    };
+
+    if (description) {
+      listAttributes.description = description;
+    }
+
+    // Template expansion happens before validation (R8)
+    if (templateName) {
+      const overrides = { ...listAttributes, ...attributes };
+      listAttributes = ListConfigurationValidator.expandTemplate(
+        templateName,
+        overrides
+      );
+    } else if (attributes) {
+      listAttributes = { ...listAttributes, ...attributes };
+    }
+
+    // Validate parent_object against workspace objects
+    await ListConfigurationValidator.validateParentObject(
+      listAttributes.parent_object as string
+    );
+
+    // Dry-run: return preview without API call
+    if (dryRun) {
+      const preview = ListConfigurationValidator.normalizeResponse(
+        {
+          ...listAttributes,
+          id: { list_id: 'dry-run-preview' },
+          title: listAttributes.name as string,
+          object_slug: listAttributes.parent_object as string,
+          workspace_id: 'preview',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as import('@/types/attio.js').AttioList,
+        true
+      );
+      const formattedResult = toolConfig.formatResult
+        ? toolConfig.formatResult(preview)
+        : JSON.stringify(preview);
+      return formatResponse(formattedResult);
+    }
+
+    // Create the list via the API
+    const result = await createList(listAttributes);
+    const normalized = ListConfigurationValidator.normalizeResponse(result);
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(normalized)
+      : JSON.stringify(normalized);
+
+    return formatResponse(formattedResult);
+  } catch (error: unknown) {
+    return handleListToolError(error, '/lists', 'POST');
+  }
+}
+
+/**
+ * Handle updateListConfiguration operations (Issue #1195)
+ *
+ * Dedicated update-list-configuration tool with:
+ * - Immutable field detection (rejects parent_object)
+ * - Dry-run mode
+ * - Normalized response
+ */
+export async function handleUpdateListConfigurationOperation(
+  request: CallToolRequest,
+  toolConfig: ToolConfig
+) {
+  const params = request.params.arguments || {};
+  const listId = params.listId as string;
+  const attributes = params.attributes as Record<string, unknown>;
+  const dryRun = (params.dry_run as boolean) ?? false;
+
+  // Validate required parameters
+  if (!listId) {
+    return createErrorResult(
+      new Error('listId parameter is required'),
+      '/lists',
+      'PATCH',
+      { status: 400, message: 'Missing required parameter: listId' }
+    );
+  }
+  if (!attributes || typeof attributes !== 'object') {
+    return createErrorResult(
+      new Error('attributes parameter is required and must be an object'),
+      `/lists/${listId}`,
+      'PATCH',
+      { status: 400, message: 'Missing or invalid attributes parameter' }
+    );
+  }
+
+  try {
+    // Detect immutable fields before API call
+    ListConfigurationValidator.detectImmutableFields(attributes);
+
+    // Dry-run: return preview without API call
+    if (dryRun) {
+      const preview = ListConfigurationValidator.normalizeResponse(
+        {
+          ...attributes,
+          id: { list_id: listId },
+          title: (attributes.name as string) || 'Preview',
+          object_slug: (attributes.parent_object as string) || '',
+          workspace_id: 'preview',
+          created_at: '',
+          updated_at: new Date().toISOString(),
+        } as import('@/types/attio.js').AttioList,
+        true
+      );
+      const formattedResult = toolConfig.formatResult
+        ? toolConfig.formatResult(preview)
+        : JSON.stringify(preview);
+      return formatResponse(formattedResult);
+    }
+
+    // Update the list via the API
+    const result = await updateList(listId, attributes);
+    const normalized = ListConfigurationValidator.normalizeResponse(result);
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(normalized)
+      : JSON.stringify(normalized);
+
+    return formatResponse(formattedResult);
+  } catch (error: unknown) {
+    return handleListToolError(error, `/lists/${listId}`, 'PATCH');
   }
 }
