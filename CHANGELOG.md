@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`create-list` tool** (#1195, #1196) - Dedicated list creation with template expansion (`sales_pipeline`, `recruiting_tracker`, `support_queue`), parent-object validation against workspace objects, and dry-run preview
+- **`update-list-configuration` tool** (#1195, #1196) - Dedicated list update with immutable field detection (rejects `parent_object` changes), dry-run preview, and categorized error guidance
+- Shared `ListConfigurationValidator` for parent-object validation, immutable field detection, template expansion, and error categorization — consumed by both dedicated tools and universal create/update strategies (#1195)
+
+### Changed
+
+- Universal list create and update paths now validate `parent_object` and detect immutable fields before API calls (#1195)
+- List error categorization prefers HTTP status codes over fragile string matching (#1196)
+
 ## [1.6.0] - 2026-05-05
 
 **TL;DR for Users**: This release makes common company and deal writes easier, completes universal record support for custom objects, and fixes workspace-member lookups returned by list tools.
