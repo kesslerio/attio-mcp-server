@@ -5,6 +5,7 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
 [![GitHub Release](https://img.shields.io/github/v/release/kesslerio/attio-mcp-server)](https://github.com/kesslerio/attio-mcp-server/releases)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kesslerio/attio-mcp-server)
+[![npm provenance](https://img.shields.io/npm/attio-mcp/provenance)](https://www.npmjs.com/package/attio-mcp)
 
 A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.com/), providing **complete CRM surface coverage**. This server enables AI assistants like Claude and ChatGPT to interact directly with your entire Attio workspace through natural language—manage Deals, Tasks, Lists, People, Companies, Records, and Notes without falling back to raw API calls.
 
@@ -734,6 +735,24 @@ Deal stages are specific to your workspace. Check your Attio workspace settings 
 - **No Data Storage**: Direct API passthrough with no local data retention
 - **Open Source**: Full transparency with Apache 2.0 license
 - **Optional On-Premises**: Deploy in your own infrastructure
+- **npm Provenance**: Published with [Sigstore provenance](https://docs.npmjs.com/generating-provenance-statements) — every release is cryptographically linked to the GitHub Actions build and source commit
+
+### Supply Chain Verification
+
+This package is published with npm provenance, creating a verifiable chain from source code to published artifact. Verify a release:
+
+```sh
+# Check provenance attestation on any published version
+npm view attio-mcp --json | jq .attestations
+
+# With pnpm (v10+), enforce trust policy at install time
+# pnpm trustPolicy: no-downgrade blocks packages published with weaker credentials
+```
+
+For maximum supply chain protection, install with [pnpm v10+](https://pnpm.io) which enforces:
+
+- **`trustPolicy: no-downgrade`** — blocks versions published with weaker credentials than prior versions
+- **`minimumReleaseAge`** — cooldown period before new versions can be installed
 
 ## 📚 Documentation
 
