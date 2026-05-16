@@ -130,30 +130,37 @@ jobs:
               per_page: 100
             });
 
-            // Find most recent Claude response (for follow-up context)
+            const trustedAssociations = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+
+            const isTrustedCommentAuthor = (comment) =>
+              comment.user?.type === 'Bot' || trustedAssociations.has(comment.author_association);
+
+            // Find most recent trusted Claude response (for follow-up context)
             const claudeResponses = allComments
               .filter(c => c.body.includes('<!-- claude-command-response -->'))
+              .filter(isTrustedCommentAuthor)
               .reverse(); // Most recent first
 
             const previousAnalysis = claudeResponses.length > 0
               ? claudeResponses[0].body.replace('<!-- claude-command-response -->\n', '').slice(0, 8000)
               : '';
 
-            // Get recent user comments (last 5, excluding triggering comment and bot comments)
+            // Get recent trusted comments (last 5, excluding triggering comment and Claude responses)
             const recentComments = allComments
               .filter(c => c.id !== commentId) // Exclude triggering comment
-              .filter(c => c.user.type !== 'Bot') // Exclude bot comments
+              .filter(isTrustedCommentAuthor) // Include maintainers/collaborators/bots only
               .filter(c => !c.body.includes('<!-- claude-command-response -->')) // Exclude previous Claude responses
               .slice(-5) // Get last 5 user comments
               .map(c => ({
                 author: c.user.login,
+                association: c.author_association,
                 created_at: c.created_at,
                 body: c.body.slice(0, 2000) // Limit each comment to 2000 chars
               }));
 
             const recentCommentsFormatted = recentComments.length > 0
               ? recentComments.map(c =>
-                  `**@${c.author}** (${new Date(c.created_at).toISOString().split('T')[0]}):\n${c.body}\n`
+                  `**@${c.author}** [${c.association}] (${new Date(c.created_at).toISOString().split('T')[0]}):\n${c.body}\n`
                 ).join('\n---\n\n')
               : '';
 
