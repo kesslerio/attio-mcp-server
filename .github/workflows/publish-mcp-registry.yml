@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag to publish (e.g., v1.4.0)'
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -24,12 +18,7 @@ jobs:
     steps:
       - name: Determine version
         id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
+        run: echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,11 +38,6 @@ jobs:
           # Validate versions match
           if [ "$PKG_VERSION" != "$SERVER_VERSION" ]; then
             echo "::error::Version mismatch: package.json=$PKG_VERSION, server.json=$SERVER_VERSION"
-            exit 1
-          fi
-
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$PKG_VERSION" != "$TAG_VERSION_STRIPPED" ]; then
-            echo "::error::Version mismatch: package.json=$PKG_VERSION, input tag=$TAG_VERSION_STRIPPED"
             exit 1
           fi
 
@@ -115,12 +99,7 @@ jobs:
     steps:
       - name: Determine version
         id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
+        run: echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         uses: actions/checkout@v4
