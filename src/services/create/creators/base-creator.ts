@@ -341,7 +341,7 @@ export abstract class BaseCreator implements ResourceCreator {
       {
         status,
         errorBody: data,
-        requestPayload: payload,
+        hasRequestPayload: Boolean(payload),
       }
     );
 
