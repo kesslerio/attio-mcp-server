@@ -32,7 +32,7 @@ vi.mock('@/utils/filters/index.js', () => ({
   createContentSearchQuery: vi.fn(() => ({ filter: { test: 'content' } })),
 }));
 
-import * as AttioClientModule from '@/api/attio-client.js';
+import * as LazyClientModule from '@/api/lazy-client.js';
 import { createTimeframeQuery } from '@/utils/filters/index.js';
 
 describe('QueryApiService', () => {
@@ -53,7 +53,7 @@ describe('QueryApiService', () => {
       const mockPost = vi
         .fn()
         .mockResolvedValue({ data: { data: mockRecords } });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -76,7 +76,7 @@ describe('QueryApiService', () => {
       const mockPost = vi.fn().mockRejectedValue({
         response: { status: 404, data: { error: 'Not found' } },
       });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -93,7 +93,7 @@ describe('QueryApiService', () => {
       const mockPost = vi.fn().mockRejectedValue({
         response: { status: 401, data: { error: 'Unauthorized' } },
       });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -110,7 +110,7 @@ describe('QueryApiService', () => {
       const mockPost = vi.fn().mockRejectedValue({
         response: { status: 429, data: { error: 'Rate limited' } },
       });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -130,7 +130,7 @@ describe('QueryApiService', () => {
       const mockPost = vi
         .fn()
         .mockResolvedValue({ data: { data: mockRecords } });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -161,7 +161,7 @@ describe('QueryApiService', () => {
       const mockPost = vi.fn().mockRejectedValue({
         response: { status: 404, data: { error: 'Not found' } },
       });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -202,7 +202,7 @@ describe('QueryApiService', () => {
           },
         },
       });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -223,7 +223,7 @@ describe('QueryApiService', () => {
       const mockPost = vi
         .fn()
         .mockResolvedValue({ data: { data: mockRecords } });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -244,7 +244,7 @@ describe('QueryApiService', () => {
       const mockPost = vi
         .fn()
         .mockResolvedValue({ data: { data: mockRecords } });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -261,7 +261,7 @@ describe('QueryApiService', () => {
       const mockPost = vi
         .fn()
         .mockResolvedValue({ data: { data: mockRecords } });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 
@@ -278,7 +278,7 @@ describe('QueryApiService', () => {
       const mockPost = vi.fn().mockRejectedValue({
         response: { status: 500, data: { error: 'Server error' } },
       });
-      vi.mocked(AttioClientModule.getAttioClient).mockReturnValue({
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
         post: mockPost,
       } as any);
 

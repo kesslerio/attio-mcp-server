@@ -23,18 +23,13 @@ import {
   createContentSearchQuery,
 } from '@/utils/filters/index.js';
 import { RelationshipQuery, TimeframeQuery } from '@/utils/filters/types.js';
-import { getLazyAttioClient } from '@/api/lazy-client.js';
-import * as AttioClientModule from '@/api/attio-client.js';
 import type { AxiosInstance } from 'axios';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 
 /**
- * Resolve Query API client (prefers mocked version in tests)
+ * Resolve Query API client from context-aware lazy client.
  */
 function resolveQueryApiClient(): AxiosInstance {
-  const mod = AttioClientModule as { getAttioClient?: () => AxiosInstance };
-  if (typeof mod.getAttioClient === 'function') {
-    return mod.getAttioClient();
-  }
   return getLazyAttioClient();
 }
 
