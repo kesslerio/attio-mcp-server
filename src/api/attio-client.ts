@@ -429,7 +429,11 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     getContextApiKey() ??
     null;
 
-  if (apiInstance && currentApiKey && cachedClientApiKey !== currentApiKey) {
+  if (
+    (apiInstance || ClientCache.hasInstance()) &&
+    currentApiKey &&
+    cachedClientApiKey !== currentApiKey
+  ) {
     debug(
       'attio-client',
       'Detected API key/context change - rebuilding cached client'

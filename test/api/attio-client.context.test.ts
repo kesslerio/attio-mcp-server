@@ -3,6 +3,7 @@ import { clearClientCache } from '@/api/lazy-client.js';
 import { expectLogCallsToExclude } from '../utils/log-assertions.js';
 
 const originalApiKey = process.env.ATTIO_API_KEY;
+const originalAccessToken = process.env.ATTIO_ACCESS_TOKEN;
 const originalLogLevel = process.env.MCP_LOG_LEVEL;
 const { mockScopedDebug, mockScopedInfo, mockScopedWarn, mockScopedError } =
   vi.hoisted(() => ({
@@ -37,6 +38,7 @@ describe('Attio client context fallback', () => {
     mockScopedWarn.mockReset();
     mockScopedError.mockReset();
     delete process.env.ATTIO_API_KEY;
+    delete process.env.ATTIO_ACCESS_TOKEN;
     process.env.MCP_LOG_LEVEL = 'ERROR';
     vi.doMock('@/api/attio-client.js', async () => {
       const actual = await vi.importActual<
@@ -54,6 +56,12 @@ describe('Attio client context fallback', () => {
       process.env.ATTIO_API_KEY = originalApiKey;
     } else {
       delete process.env.ATTIO_API_KEY;
+    }
+
+    if (originalAccessToken) {
+      process.env.ATTIO_ACCESS_TOKEN = originalAccessToken;
+    } else {
+      delete process.env.ATTIO_ACCESS_TOKEN;
     }
 
     if (originalLogLevel) {
@@ -106,6 +114,47 @@ describe('Attio client context fallback', () => {
     const client = getAttioClient();
 
     expect(client.defaults.headers.Authorization).toBe('Bearer env-key-12345');
+  });
+
+  it('rebuilds cached clients when the context API key changes', async () => {
+    const { setGlobalContext } = await import('@/api/lazy-client.js');
+    const { getAttioClient } = await import('@/api/attio-client.js');
+
+    setGlobalContext({
+      getApiKey: () => 'tenant-a-key-12345',
+    });
+    const tenantAClient = getAttioClient();
+
+    setGlobalContext({
+      getApiKey: () => 'tenant-b-key-12345',
+    });
+    const tenantBClient = getAttioClient();
+
+    expect(tenantAClient.defaults.headers.Authorization).toBe(
+      'Bearer tenant-a-key-12345'
+    );
+    expect(tenantBClient.defaults.headers.Authorization).toBe(
+      'Bearer tenant-b-key-12345'
+    );
+    expect(tenantBClient).not.toBe(tenantAClient);
+  });
+
+  it('rebuilds cached clients when the environment access token changes', async () => {
+    const { getAttioClient } = await import('@/api/attio-client.js');
+
+    process.env.ATTIO_ACCESS_TOKEN = 'tenant-a-token-12345';
+    const tenantAClient = getAttioClient();
+
+    process.env.ATTIO_ACCESS_TOKEN = 'tenant-b-token-12345';
+    const tenantBClient = getAttioClient();
+
+    expect(tenantAClient.defaults.headers.Authorization).toBe(
+      'Bearer tenant-a-token-12345'
+    );
+    expect(tenantBClient.defaults.headers.Authorization).toBe(
+      'Bearer tenant-b-token-12345'
+    );
+    expect(tenantBClient).not.toBe(tenantAClient);
   });
 
   describe('Context getter exception handling', () => {
