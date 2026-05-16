@@ -839,6 +839,9 @@ You must provide parameters for exactly ONE mode per call.
 - Replaces: add-record-to-list → Use Mode 1 (recordId + objectType)
 - Replaces: remove-record-from-list → Use Mode 2 (entryId only)
 - Replaces: update-list-entry → Use Mode 3 (entryId + attributes)`,
+    annotations: {
+      readOnlyHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {

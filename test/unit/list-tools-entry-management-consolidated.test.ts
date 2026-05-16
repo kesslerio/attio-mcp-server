@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleManageListEntryOperation } from '../../src/handlers/tools/dispatcher/operations/lists.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ToolConfig } from '../../src/handlers/tool-types.js';
+import { listsToolDefinitions } from '../../src/handlers/tool-configs/lists.js';
 import { AttioListEntry } from '../../src/types/attio.js';
 
 // Mock the entry management functions
@@ -52,6 +53,14 @@ describe('Consolidated manage-list-entry Tool', () => {
     vi.mocked(addRecordToList).mockResolvedValue(mockListEntry);
     vi.mocked(removeRecordFromList).mockResolvedValue(true);
     vi.mocked(updateListEntry).mockResolvedValue(mockListEntry);
+  });
+
+  it('advertises manage-list-entry as a write-capable tool', () => {
+    const definition = listsToolDefinitions.find(
+      (tool) => tool.name === 'manage-list-entry'
+    );
+
+    expect(definition?.annotations?.readOnlyHint).toBe(false);
   });
 
   describe('Mode Detection', () => {
