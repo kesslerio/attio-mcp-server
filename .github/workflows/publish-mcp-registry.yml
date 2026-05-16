@@ -41,7 +41,6 @@ jobs:
             exit 1
           fi
 
-
       - name: Check if package exists on npm
         id: check
         run: |
