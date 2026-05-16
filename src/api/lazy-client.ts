@@ -33,6 +33,8 @@ export function getLazyAttioClient(config?: ClientConfig): AxiosInstance {
 
 export function setGlobalContext(context: Record<string, unknown>): void {
   setClientContext(context);
+  // Context changes may carry different credentials; invalidate stale cached client
+  ClientCache.clearInstance();
 }
 
 export function clearClientCache(): void {
