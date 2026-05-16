@@ -36,28 +36,24 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout trusted classifier scripts
-        uses: actions/checkout@v4
-        with:
-          ref: refs/heads/${{ github.event.repository.default_branch }}
-          persist-credentials: false
-          sparse-checkout: |
-            scripts/workflows/claude/
-          sparse-checkout-cone-mode: false
-
       - name: Detect review command
         id: classify
-        run: |
-          node scripts/workflows/claude/is-review-command.mjs > classify.json
-          cat classify.json
-          is_review=$(jq -r '.isReview // false' classify.json)
-          mode=$(jq -r '.mode // ""' classify.json)
-          rerun=$(jq -r '.rerun // false' classify.json)
-          echo "isReview=$is_review" >> "$GITHUB_OUTPUT"
-          echo "mode=$mode" >> "$GITHUB_OUTPUT"
-          echo "rerun=$rerun" >> "$GITHUB_OUTPUT"
-        env:
-          CLAUDE_TRIGGER_PHRASE: '@claude'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = (context.payload.comment?.body || context.payload.review?.body || '').toString();
+            const lc = body.toLowerCase();
+            const match = lc.match(/@claude\s*:?[\s]*([^\n]*)/);
+            const tokens = (match?.[1] || '').trim().split(/\s+/).filter(Boolean);
+
+            const isReview = lc.includes('@claude');
+            const mode = tokens.includes('ultra') ? 'ultra' : 'review';
+            const rerunTokens = new Set(['re-review', 'rereview', 'rerun', 're-run', 'again', 'refresh', 'recheck']);
+            const rerun = tokens.some(token => rerunTokens.has(token));
+
+            core.setOutput('isReview', String(isReview));
+            core.setOutput('mode', mode);
+            core.setOutput('rerun', String(rerun));
 
       - name: Exit if not review
         if: steps.classify.outputs.isReview != 'true'
