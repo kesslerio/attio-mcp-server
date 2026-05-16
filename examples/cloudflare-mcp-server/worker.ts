@@ -422,6 +422,48 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     return new Response('Missing authorization code', { status: 400 });
   }
 
+  // SECURITY: Require callback state to be a session issued by /oauth/authorize.
+  // Do not trust state payload from the callback itself.
+  if (!state) {
+    return new Response('Missing state parameter', { status: 400 });
+  }
+
+  const sessionDataStr = await env.TOKEN_STORE.get(`session:${state}`);
+  if (!sessionDataStr) {
+    console.warn(
+      'OAuth callback rejected: state was not issued by this worker',
+      state.substring(0, 8) + '...'
+    );
+    return new Response('Invalid or expired state', { status: 400 });
+  }
+
+  let clientRedirectUri: string | null = null;
+  let originalState: string | null = null;
+
+  try {
+    const sessionData = JSON.parse(sessionDataStr) as {
+      redirectUri?: string;
+      originalState?: string;
+    };
+    clientRedirectUri = sessionData.redirectUri || null;
+    originalState = sessionData.originalState || null;
+  } catch {
+    await env.TOKEN_STORE.delete(`session:${state}`);
+    return new Response('Invalid OAuth session state', { status: 400 });
+  }
+
+  // Clean up session data immediately after successful validation (single use)
+  await env.TOKEN_STORE.delete(`session:${state}`);
+
+  if (!clientRedirectUri || !isAllowedRedirectUri(clientRedirectUri, env)) {
+    console.warn(
+      'OAuth callback rejected due to invalid redirect_uri in session'
+    );
+    return new Response('Invalid redirect URI in OAuth session', {
+      status: 400,
+    });
+  }
+
   // Exchange code for tokens
   const tokenResponse = await fetch('https://app.attio.com/oauth/token', {
     method: 'POST',
@@ -518,39 +560,6 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   );
   await tokenStorage.storeToken(`auth:${authCode}`, storedToken);
   console.log('[OAuth Callback] Token stored with auth: prefix');
-
-  // Extract redirect_uri from encoded state (primary method)
-  // Fall back to KV lookup if state decoding fails
-  let clientRedirectUri: string | null = null;
-  let originalState: string | null = null;
-
-  if (state) {
-    // Try to decode state (base64url encoded JSON)
-    try {
-      const paddedState = state.replace(/-/g, '+').replace(/_/g, '/');
-      const statePayload = JSON.parse(atob(paddedState));
-      clientRedirectUri = statePayload.redirectUri || null;
-      originalState = statePayload.originalState || null;
-    } catch {
-      // State wasn't encoded, try KV lookup as fallback
-      const sessionDataStr = await env.TOKEN_STORE.get(`session:${state}`);
-      if (sessionDataStr) {
-        try {
-          const sessionData = JSON.parse(sessionDataStr) as {
-            redirectUri?: string;
-            originalState?: string;
-          };
-          clientRedirectUri = sessionData.redirectUri || null;
-          originalState = sessionData.originalState || null;
-        } catch {
-          // Ignore parse errors
-        }
-      }
-    }
-
-    // Clean up session data
-    await env.TOKEN_STORE.delete(`session:${state}`);
-  }
 
   // If we have a client redirect_uri, redirect back to the client with the auth code
   if (clientRedirectUri && clientRedirectUri !== `${baseUrl}/oauth/callback`) {
