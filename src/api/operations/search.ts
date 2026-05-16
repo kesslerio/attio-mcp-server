@@ -3,7 +3,7 @@
  * Handles basic and advanced search functionality
  */
 
-import { getLazyAttioClient } from '@api/lazy-client.js';
+import { getLazyAttioClient, getGlobalContext } from '@api/lazy-client.js';
 import { callWithRetry, RetryConfig } from '@api/operations/retry.js';
 import { ListEntryFilters } from '@api/operations/types.js';
 import { parseQuery, ParsedQuery } from '@api/operations/query-parser.js';
@@ -74,9 +74,34 @@ const searchCache = new LRUCache<string, AttioRecord[]>({
 function getCacheKey(
   objectType: ResourceType,
   query: string,
-  limit: number
+  limit: number,
+  tenantScope: string
 ): string {
-  return `${objectType}:${limit}:${query.toLowerCase()}`;
+  return `${tenantScope}:${objectType}:${limit}:${query.toLowerCase()}`;
+}
+
+function getTenantScope(): string {
+  const context = getGlobalContext() as
+    | {
+        ATTIO_API_KEY?: string;
+        ATTIO_ACCESS_TOKEN?: string;
+        workspaceId?: string;
+        smitheryUserId?: string;
+      }
+    | null;
+
+  const workspaceId =
+    typeof context?.workspaceId === 'string' ? context.workspaceId : '';
+  const smitheryUserId =
+    typeof context?.smitheryUserId === 'string' ? context.smitheryUserId : '';
+  const credential =
+    typeof context?.ATTIO_ACCESS_TOKEN === 'string'
+      ? context.ATTIO_ACCESS_TOKEN
+      : typeof context?.ATTIO_API_KEY === 'string'
+        ? context.ATTIO_API_KEY
+        : '';
+
+  return `${workspaceId}:${smitheryUserId}:${credential}`;
 }
 
 function normalizeDomainValue(value: string): string {
@@ -594,7 +619,7 @@ export async function searchObject<T extends AttioRecord>(
   const parsedQuery = trimmedQuery ? parseQuery(trimmedQuery) : null;
   const cacheKey =
     scoringEnabled && trimmedQuery
-      ? getCacheKey(objectType, trimmedQuery, baseLimit)
+      ? getCacheKey(objectType, trimmedQuery, baseLimit, getTenantScope())
       : null;
 
   if (scoringEnabled && cacheKey) {
