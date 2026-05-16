@@ -18,7 +18,6 @@ import type {
   SearchStrategyParams,
   StrategyDependencies,
 } from '@/services/search-strategies/interfaces.js';
-import { CachingService } from '@/services/CachingService.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import type { AttioRecord, UniversalRecordResult } from '@/types/attio.js';
 import { createScopedLogger, OperationType } from '@/utils/logger.js';
@@ -102,7 +101,6 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
       'tasks_search',
       OperationType.DATA_PROCESSING
     );
-    // Use CachingService for tasks data management
     const loadTasksData = async (): Promise<AttioRecord[]> => {
       try {
         if (!this.dependencies.taskFunction) {
@@ -130,15 +128,10 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     // SECURITY: Do not reuse task results across requests.
     // A process-global cache key can leak tasks across tenants in shared runtimes.
     // Until cache keys are scoped to authenticated tenant context, bypass shared caching.
-    const uncachedTaskKey = `tasks_request_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const { data: tasks, fromCache } = await CachingService.getOrLoadTasks(
-      loadTasksData,
-      uncachedTaskKey,
-      0
-    );
+    const tasks = await loadTasksData();
 
     // Performance warning for large datasets
-    if (!fromCache && tasks.length > 500) {
+    if (tasks.length > 500) {
       log.warn('PERFORMANCE WARNING: Large tasks load', {
         taskCount: tasks.length,
         recommendation:
@@ -147,15 +140,11 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     }
 
     // Log performance metrics
-    if (!fromCache) {
-      enhancedPerformanceTracker.markTiming(
-        perfId,
-        'attioApi',
-        performance.now() - apiStart
-      );
-    } else {
-      enhancedPerformanceTracker.markTiming(perfId, 'other', 1);
-    }
+    enhancedPerformanceTracker.markTiming(
+      perfId,
+      'attioApi',
+      performance.now() - apiStart
+    );
 
     // Handle empty dataset cleanly
     if (tasks.length === 0) {
@@ -194,7 +183,7 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
       enhancedPerformanceTracker.markTiming(
         perfId,
         'serialization',
-        fromCache ? 1 : performance.now() - apiStart
+        performance.now() - apiStart
       );
 
       return paginatedTasks;

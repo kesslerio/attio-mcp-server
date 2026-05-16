@@ -13,7 +13,6 @@ import {
 } from '../../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../../src/types/attio.js';
 import { StrategyDependencies } from '../../../src/services/search-strategies/interfaces.js';
-import { CachingService } from '../../../src/services/CachingService.js';
 import { UniversalUtilityService } from '../../../src/services/UniversalUtilityService.js';
 import { SearchUtilities } from '../../../src/services/search-utilities/SearchUtilities.js';
 import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
@@ -22,12 +21,6 @@ import { enhancedPerformanceTracker } from '../../../src/middleware/performance-
 vi.mock('../../../src/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     markTiming: vi.fn(),
-  },
-}));
-
-vi.mock('../../../src/services/CachingService.js', () => ({
-  CachingService: {
-    getOrLoadTasks: vi.fn(),
   },
 }));
 
@@ -92,10 +85,7 @@ describe('TaskSearchStrategy', () => {
       (task: AttioTask) => mockTaskRecord
     );
 
-    vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
-      data: [mockTaskRecord],
-      fromCache: false,
-    });
+    mockTaskFunction.mockResolvedValue([mockTask]);
   });
 
   afterEach(() => {
@@ -125,14 +115,11 @@ describe('TaskSearchStrategy', () => {
       });
 
       expect(results).toEqual([mockTaskRecord]);
-      expect(CachingService.getOrLoadTasks).toHaveBeenCalled();
+      expect(mockTaskFunction).toHaveBeenCalledOnce();
     });
 
     it('should handle empty task list', async () => {
-      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
-        data: [],
-        fromCache: false,
-      });
+      mockTaskFunction.mockResolvedValue([]);
 
       const results = await strategy.search({});
 
@@ -141,13 +128,6 @@ describe('TaskSearchStrategy', () => {
 
     it('should handle missing taskFunction gracefully', async () => {
       const strategyWithoutTask = new TaskSearchStrategy({});
-
-      vi.mocked(CachingService.getOrLoadTasks).mockImplementation(
-        async (loadFunction) => {
-          const data = await loadFunction();
-          return { data, fromCache: false };
-        }
-      );
 
       const results = await strategyWithoutTask.search({});
 
@@ -245,10 +225,10 @@ describe('TaskSearchStrategy', () => {
         { ...mockTaskRecord, id: { value: 'task-3' } },
       ];
 
-      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
-        data: multipleRecords,
-        fromCache: false,
-      });
+      mockTaskFunction.mockResolvedValue(multipleRecords);
+      vi.mocked(UniversalUtilityService.convertTaskToRecord).mockImplementation(
+        (task: AttioTask) => task as unknown as AttioRecord
+      );
     });
 
     it('should handle pagination correctly', async () => {
@@ -282,28 +262,19 @@ describe('TaskSearchStrategy', () => {
   });
 
   describe('performance optimization', () => {
-    it('should use cached data when available', async () => {
-      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
-        data: [mockTaskRecord],
-        fromCache: true,
-      });
-
+    it('should bypass shared task cache for tenant isolation', async () => {
       const results = await strategy.search({});
 
       expect(results).toEqual([mockTaskRecord]);
+      expect(mockTaskFunction).toHaveBeenCalledOnce();
       expect(enhancedPerformanceTracker.markTiming).toHaveBeenCalledWith(
         'tasks_search',
-        'other',
-        1
+        'attioApi',
+        expect.any(Number)
       );
     });
 
     it('should track API performance when not using cache', async () => {
-      vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
-        data: [mockTaskRecord],
-        fromCache: false,
-      });
-
       await strategy.search({});
 
       expect(enhancedPerformanceTracker.markTiming).toHaveBeenCalledWith(
@@ -316,13 +287,6 @@ describe('TaskSearchStrategy', () => {
 
   describe('error handling', () => {
     it('should handle API errors gracefully', async () => {
-      vi.mocked(CachingService.getOrLoadTasks).mockImplementation(
-        async (loadFunction) => {
-          const data = await loadFunction();
-          return { data, fromCache: false };
-        }
-      );
-
       mockTaskFunction.mockRejectedValue(new Error('API Error'));
 
       const results = await strategy.search({});
@@ -331,13 +295,6 @@ describe('TaskSearchStrategy', () => {
     });
 
     it('should handle non-array task response', async () => {
-      vi.mocked(CachingService.getOrLoadTasks).mockImplementation(
-        async (loadFunction) => {
-          const data = await loadFunction();
-          return { data, fromCache: false };
-        }
-      );
-
       mockTaskFunction.mockResolvedValue('invalid response' as any);
 
       const results = await strategy.search({});
