@@ -33,7 +33,6 @@ import type {
   SearchStrategyParams,
   StrategyDependencies,
 } from '@/services/search-strategies/interfaces.js';
-import { CachingService } from '@/services/CachingService.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import type {
   AttioNote,
@@ -46,7 +45,7 @@ import { createScopedLogger, OperationType } from '@/utils/logger.js';
 const NOTES_PERFORMANCE_WARNING_THRESHOLD = 2000;
 
 /**
- * Search strategy for notes with performance optimization, caching, and content search support
+ * Search strategy for notes with performance optimization and content search support
  *
  * IMPLEMENTATION NOTE:
  * The Attio Notes API (/notes endpoint) does not support native text search.
@@ -101,19 +100,10 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
   }
 
   /**
-   * Search notes with performance optimization, caching, and content search support
-   *
-   * PERFORMANCE-OPTIMIZED NOTES PAGINATION
+   * Search notes with performance monitoring and content search support.
    *
    * The Attio Notes API does not support native text search or advanced filtering.
-   * This implementation uses smart caching and performance monitoring to
-   * minimize the performance impact of loading all notes.
-   *
-   * Optimizations:
-   * - Smart caching with 30-second TTL to avoid repeated full loads
-   * - Performance warnings for large datasets (>500 notes)
-   * - Early termination for large offsets
-   * - Memory usage monitoring and cleanup
+   * This implementation fetches notes by parent filter and applies client-side filtering.
    */
   private async searchNotes(
     perfId: string,
@@ -133,7 +123,6 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
       OperationType.DATA_PROCESSING
     );
 
-    // Use CachingService for notes data management
     const loadNotesData = async (): Promise<AttioRecord[]> => {
       try {
         if (!this.dependencies.noteFunction) {
@@ -175,12 +164,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
       }
     };
 
-    // Generate cache key based on parent filters to prevent collisions
-    const cacheKey = CachingService.getNotesListCacheKey(filters);
-    const { data: notes, fromCache } = await CachingService.getOrLoadNotes(
-      loadNotesData,
-      cacheKey
-    );
+    // SECURITY: note results can include sensitive tenant data; avoid process-wide caching.
+    const notes = await loadNotesData();
+    const fromCache = false;
 
     // Performance warning for large datasets
     if (!fromCache && notes.length > NOTES_PERFORMANCE_WARNING_THRESHOLD) {
