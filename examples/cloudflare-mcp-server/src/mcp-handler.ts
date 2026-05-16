@@ -8,7 +8,7 @@
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { getToolsListPayload } from '../../../dist/utils/mcp-discovery.js';
 import { executeToolRequest } from '../../../dist/handlers/tools/dispatcher.js';
-import { ClientCache } from '../../../src/api/client-cache.js';
+import { ClientCache } from '../../../dist/api/client-cache.js';
 
 /**
  * MCP JSON-RPC request structure
