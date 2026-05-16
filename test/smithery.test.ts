@@ -194,4 +194,28 @@ describe('smithery debug-log hardening', () => {
     expect(server.getWorkspaceId()).toBe('workspace-123');
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
+
+  it('preserves operator tool mode only when config omits tool mode', async () => {
+    const { default: createServer } = await import('../src/smithery.js');
+
+    process.env.ATTIO_MCP_TOOL_MODE = 'search';
+    createServer({ config: { debug: false } });
+    expect(process.env.ATTIO_MCP_TOOL_MODE).toBe('search');
+
+    createServer({
+      config: {
+        ATTIO_MCP_TOOL_MODE: 'full',
+        debug: false,
+      },
+    });
+    expect(process.env.ATTIO_MCP_TOOL_MODE).toBeUndefined();
+
+    createServer({
+      config: {
+        ATTIO_MCP_TOOL_MODE: 'search',
+        debug: false,
+      },
+    });
+    expect(process.env.ATTIO_MCP_TOOL_MODE).toBe('search');
+  });
 });
