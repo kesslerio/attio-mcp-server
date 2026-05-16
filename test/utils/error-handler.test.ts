@@ -146,6 +146,26 @@ describe('error-handler', () => {
       expect(result.error.message).toBe('Test error');
       expect(result.error.type).toBe(ErrorType.UNKNOWN_ERROR);
     });
+
+    it('should not serialize raw unknown error objects into the response', () => {
+      const token = 'attio_secret_token';
+      const error = {
+        isAxiosError: true,
+        message: 'Network Error',
+        config: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      };
+
+      const result = createErrorResult(error, '/test/url', 'GET');
+      const serializedResult = JSON.stringify(result);
+
+      expect(serializedResult).not.toContain(token);
+      expect(serializedResult).not.toContain('Authorization');
+      expect(result.error.details?.rawError).toBe('Unknown error');
+    });
   });
 
   describe('formatErrorResponse', () => {
