@@ -100,21 +100,24 @@ export function createAttioClient(
 
   // Get API key from config, environment, or context
   // Supports both API keys and OAuth access tokens (Issue #928)
+  const contextApiKey = getContextApiKey();
   const apiKey =
     config.apiKey ??
+    contextApiKey ??
     process.env.ATTIO_API_KEY ??
     process.env.ATTIO_ACCESS_TOKEN ??
-    getContextApiKey() ??
     '';
 
   // Determine the source for better error messages
   const apiKeySource = config.apiKey
     ? 'config parameter'
-    : process.env.ATTIO_API_KEY
-      ? 'ATTIO_API_KEY environment variable'
-      : process.env.ATTIO_ACCESS_TOKEN
-        ? 'ATTIO_ACCESS_TOKEN environment variable'
-        : 'context configuration';
+    : contextApiKey
+      ? 'context configuration'
+      : process.env.ATTIO_API_KEY
+        ? 'ATTIO_API_KEY environment variable'
+        : process.env.ATTIO_ACCESS_TOKEN
+          ? 'ATTIO_ACCESS_TOKEN environment variable'
+          : 'provided configuration';
 
   // Validate API key using standardized validation
   validateAndThrowForApiKey(apiKey, apiKeySource);
