@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
   issues: write
   actions: read
 
@@ -214,10 +214,10 @@ jobs:
           github_token: ${{ github.token }}
           track_progress: true
           # No --max-turns = runs until completion (default action behavior)
-          # Full tool access for implementation
+          # Local edit/read access only; no repository mutation shell commands.
           claude_args: >-
             --model claude-sonnet-4-5
-            --allowedTools "Read,Edit,Write,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(rg:*),Bash(fd:*),Bash(cat:*),Bash(ls:*),Bash(head:*),Bash(tail:*),Bash(wc:*)"
+            --allowedTools "Read,Edit,Write,Bash(rg:*),Bash(cat:*),Bash(ls:*),Bash(head:*),Bash(tail:*),Bash(wc:*)"
           prompt: |
             You are Claude acting via GitHub Actions for the Attio MCP Server repository.
 
@@ -239,21 +239,19 @@ jobs:
             Follow the user's request above. If they ask you to implement something:
 
             1. **Read AGENTS.md first** - it contains project conventions and standards
-            2. **Create a feature branch**: `git checkout -b feature/issue-${{ steps.classify.outputs.issue }}-description`
-            3. **Implement the changes** following project standards
-            4. **Run quality gates**:
-               - `npm run test:offline` (fast unit tests)
-               - `npm run fix:all` (lint/format)
-               - `npx tsc --noEmit` (TypeScript check)
-            5. **Commit with conventional format**: `Type: Description #${{ steps.classify.outputs.issue }}`
-            6. **Push and create a PR**: `gh pr create --title "Type: Description" --body "Fixes #${{ steps.classify.outputs.issue }}"`
+            2. **Implement the changes locally** following project standards
+            3. **Run quality gates**:
+               - `bun run test:offline` (fast unit tests)
+               - `bun run fix:all` (lint/format)
+               - `bun run typecheck` (TypeScript check)
+            4. **Provide a clear patch summary** in your response
 
             If they ask for analysis/advice, provide helpful guidance without implementing.
 
             ## Project Standards (from AGENTS.md)
             - Commit format: `Type: Description #issue-number` where Type = Feature|Fix|Docs|Refactor|Test|Chore
             - Use `@/` path aliases instead of relative imports
-            - Run `npm run test:offline` for fast validation
+            - Run `bun run test:offline` for fast validation
             - ESLint warnings threshold: ≤1030
 
             ## Constraints
