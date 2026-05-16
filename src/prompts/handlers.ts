@@ -8,7 +8,7 @@ import {
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServerContext } from '@/server/createServer.js';
-import { setGlobalContext, withGlobalContext } from '@/api/lazy-client.js';
+import { withGlobalContext } from '@/api/lazy-client.js';
 import {
   getAllPrompts,
   getPromptById,
@@ -545,14 +545,9 @@ export function registerPromptHandlers(
   server: Server,
   context?: ServerContext
 ): void {
-  // Set the global context for lazy initialization if provided
-  if (context) {
-    setGlobalContext(context);
-  }
-
   // Register handler for prompts/list endpoint
-  server.setRequestHandler(ListPromptsRequestSchema, async () =>
-    withGlobalContext(context || {}, async () => {
+  server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    const listPrompts = async () => {
       const legacyPrompts = getPromptsListPayload().prompts;
       const v1Prompts = getAllPromptsV1().map((p) => ({
         name: p.metadata.name,
@@ -567,12 +562,14 @@ export function registerPromptHandlers(
       return {
         prompts: [...legacyPrompts, ...v1Prompts],
       };
-    })
-  );
+    };
+
+    return context ? withGlobalContext(context, listPrompts) : listPrompts();
+  });
 
   // Register handler for prompts/get endpoint
-  server.setRequestHandler(GetPromptRequestSchema, async (request) =>
-    withGlobalContext(context || {}, async () => {
+  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    const getPrompt = async () => {
       const promptName = request.params.name as string;
       const args = (request.params.arguments || {}) as Record<string, unknown>;
       const startTime = Date.now();
@@ -648,8 +645,10 @@ export function registerPromptHandlers(
           },
         ],
       };
-    })
-  );
+    };
+
+    return context ? withGlobalContext(context, getPrompt) : getPrompt();
+  });
 }
 function getRequestMetadata(req: Request, toolName: string) {
   const requestId =

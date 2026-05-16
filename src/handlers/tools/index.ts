@@ -15,7 +15,7 @@ import {
   OperationType,
 } from '@/utils/logger.js';
 import { ServerContext } from '@/server/createServer.js';
-import { setGlobalContext, withGlobalContext } from '@/api/lazy-client.js';
+import { withGlobalContext } from '@/api/lazy-client.js';
 
 // Import from modular components
 import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
@@ -140,11 +140,6 @@ export function registerToolHandlers(
   server: Server,
   context?: ServerContext
 ): void {
-  // Set the global context for lazy initialization if provided
-  if (context) {
-    setGlobalContext(context);
-  }
-
   // Handler for listing available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const { tools } = getToolsListPayload();
@@ -169,9 +164,11 @@ export function registerToolHandlers(
         const normalizedRequest = normalizeToolRequest(
           request as CallToolRequest | LooseCallToolRequest
         );
-        const result = (await withGlobalContext(context || {}, async () =>
-          executeToolRequest(normalizedRequest)
-        )) as CallToolResult;
+        const result = (await (context
+          ? withGlobalContext(context, async () =>
+              executeToolRequest(normalizedRequest)
+            )
+          : executeToolRequest(normalizedRequest))) as CallToolResult;
         return result;
       } catch (error: unknown) {
         warn(
