@@ -8,7 +8,7 @@ import {
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServerContext } from '@/server/createServer.js';
-import { setGlobalContext } from '@/api/lazy-client.js';
+import { setGlobalContext, withGlobalContext } from '@/api/lazy-client.js';
 import {
   getAllPrompts,
   getPromptById,
@@ -551,25 +551,28 @@ export function registerPromptHandlers(
   }
 
   // Register handler for prompts/list endpoint
-  server.setRequestHandler(ListPromptsRequestSchema, async () => {
-    const legacyPrompts = getPromptsListPayload().prompts;
-    const v1Prompts = getAllPromptsV1().map((p) => ({
-      name: p.metadata.name,
-      description: p.metadata.description,
-      arguments: p.arguments.map((arg) => ({
-        name: arg.name,
-        description: arg.description,
-        required: arg.required,
-      })),
-    }));
+  server.setRequestHandler(ListPromptsRequestSchema, async () =>
+    withGlobalContext(context || {}, async () => {
+      const legacyPrompts = getPromptsListPayload().prompts;
+      const v1Prompts = getAllPromptsV1().map((p) => ({
+        name: p.metadata.name,
+        description: p.metadata.description,
+        arguments: p.arguments.map((arg) => ({
+          name: arg.name,
+          description: arg.description,
+          required: arg.required,
+        })),
+      }));
 
-    return {
-      prompts: [...legacyPrompts, ...v1Prompts],
-    };
-  });
+      return {
+        prompts: [...legacyPrompts, ...v1Prompts],
+      };
+    })
+  );
 
   // Register handler for prompts/get endpoint
-  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+  server.setRequestHandler(GetPromptRequestSchema, async (request) =>
+    withGlobalContext(context || {}, async () => {
     const promptName = request.params.name as string;
     const args = (request.params.arguments || {}) as Record<string, unknown>;
     const startTime = Date.now();
@@ -633,19 +636,20 @@ export function registerPromptHandlers(
       throw new Error(`Prompt not found: ${promptName}`);
     }
 
-    return {
-      description: prompt.description,
-      messages: [
-        {
-          role: 'user',
-          content: {
-            type: 'text',
-            text: prompt.template,
+      return {
+        description: prompt.description,
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: prompt.template,
+            },
           },
-        },
-      ],
-    };
-  });
+        ],
+      };
+    })
+  );
 }
 function getRequestMetadata(req: Request, toolName: string) {
   const requestId =

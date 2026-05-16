@@ -15,7 +15,7 @@ import {
   OperationType,
 } from '@/utils/logger.js';
 import { ServerContext } from '@/server/createServer.js';
-import { setGlobalContext } from '@/api/lazy-client.js';
+import { setGlobalContext, withGlobalContext } from '@/api/lazy-client.js';
 
 // Import from modular components
 import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
@@ -169,8 +169,8 @@ export function registerToolHandlers(
         const normalizedRequest = normalizeToolRequest(
           request as CallToolRequest | LooseCallToolRequest
         );
-        const result = (await executeToolRequest(
-          normalizedRequest
+        const result = (await withGlobalContext(context || {}, async () =>
+          executeToolRequest(normalizedRequest)
         )) as CallToolResult;
         return result;
       } catch (error: unknown) {

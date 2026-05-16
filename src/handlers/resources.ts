@@ -9,7 +9,7 @@ import {
   ReadResourceResult,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServerContext } from '../server/createServer.js';
-import { setGlobalContext } from '../api/lazy-client.js';
+import { setGlobalContext, withGlobalContext } from '../api/lazy-client.js';
 import { createErrorResult } from '../utils/error-handler.js';
 import {
   listCompanies,
@@ -88,7 +88,8 @@ export function registerResourceHandlers(
   // Handler for listing resources (Companies, People, and Lists)
   server.setRequestHandler(
     ListResourcesRequestSchema,
-    async (_request): Promise<ListResourcesResult> => {
+    async (_request): Promise<ListResourcesResult> =>
+      withGlobalContext(context || {}, async (): Promise<ListResourcesResult> => {
       try {
         const resources = [];
 
@@ -133,13 +134,14 @@ export function registerResourceHandlers(
           {}
         ) as ListResourcesResult;
       }
-    }
+    })
   );
 
   // Handler for reading resource details (Companies, People, and Lists)
   server.setRequestHandler(
     ReadResourceRequestSchema,
-    async (request): Promise<ReadResourceResult> => {
+    async (request): Promise<ReadResourceResult> =>
+      withGlobalContext(context || {}, async (): Promise<ReadResourceResult> => {
       try {
         const uri = request.params.uri;
         const [resourceType, id] = parseResourceUri(uri);
@@ -222,6 +224,6 @@ export function registerResourceHandlers(
           {}
         ) as ReadResourceResult;
       }
-    }
+    })
   );
 }

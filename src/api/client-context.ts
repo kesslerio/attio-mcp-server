@@ -4,6 +4,7 @@
  */
 
 import { createScopedLogger } from '@/utils/logger.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 const logger = createScopedLogger('client-context');
 
@@ -13,6 +14,7 @@ let contextKey: object | null = null;
 
 // Fallback for simple context storage (legacy compatibility)
 let clientContext: Record<string, unknown> | null = null;
+const requestContextStorage = new AsyncLocalStorage<Record<string, unknown>>();
 
 // Cache for failed context getter attempts to avoid repeated exceptions
 const failedContextCache = new Map<string, NodeJS.Timeout>();
@@ -70,6 +72,11 @@ function clearFailedContextCache(): void {
  * Prioritizes WeakMap storage over fallback storage.
  */
 export function getClientContext(): Record<string, unknown> | null {
+  const requestContext = requestContextStorage.getStore();
+  if (requestContext) {
+    return requestContext;
+  }
+
   // Try WeakMap storage first
   if (contextKey && contextStorage.has(contextKey)) {
     return contextStorage.get(contextKey) || null;
@@ -77,6 +84,13 @@ export function getClientContext(): Record<string, unknown> | null {
 
   // Fallback to legacy storage
   return clientContext;
+}
+
+export async function runWithClientContext<T>(
+  context: Record<string, unknown>,
+  operation: () => Promise<T>
+): Promise<T> {
+  return await requestContextStorage.run(context, operation);
 }
 
 /**
