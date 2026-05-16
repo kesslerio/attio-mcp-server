@@ -208,6 +208,7 @@ export const batchOperationsSchema = {
     // New flexible format: operations array
     operations: {
       type: 'array' as const,
+      maxItems: 100,
       items: {
         type: 'object' as const,
         properties: {
