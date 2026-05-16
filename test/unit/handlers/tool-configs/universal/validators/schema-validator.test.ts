@@ -584,4 +584,23 @@ describe('validateUniversalToolParams', () => {
       });
     });
   });
+
+  describe('note operations - note_id validation', () => {
+    it('should reject traversal-style note_id values for update-note', () => {
+      expect(() =>
+        validateUniversalToolParams('update-note', {
+          note_id: '../objects/companies',
+          title: 'Updated note',
+        })
+      ).toThrow('Invalid note_id format');
+    });
+
+    it('should reject traversal-style note_id values for delete-note', () => {
+      expect(() =>
+        validateUniversalToolParams('delete-note', {
+          note_id: '../objects/companies',
+        })
+      ).toThrow('Invalid note_id format');
+    });
+  });
 });
