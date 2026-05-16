@@ -214,7 +214,7 @@ jobs:
           github_token: ${{ github.token }}
           track_progress: true
           # No --max-turns = runs until completion (default action behavior)
-          # Full tool access for implementation
+          # Local edit/read access only; no repository mutation shell commands.
           claude_args: >-
             --model claude-sonnet-4-5
             --allowedTools "Read,Edit,Write,Bash(rg:*),Bash(cat:*),Bash(ls:*),Bash(head:*),Bash(tail:*),Bash(wc:*)"
@@ -251,7 +251,7 @@ jobs:
             ## Project Standards (from AGENTS.md)
             - Commit format: `Type: Description #issue-number` where Type = Feature|Fix|Docs|Refactor|Test|Chore
             - Use `@/` path aliases instead of relative imports
-            - Run `npm run test:offline` for fast validation
+            - Run `bun run test:offline` for fast validation
             - ESLint warnings threshold: ≤1030
 
             ## Constraints
