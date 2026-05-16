@@ -68,16 +68,10 @@ export default function createServer({
   process.env.MCP_SERVER_MODE = 'true';
 
   // CRITICAL: Tool mode configuration (Issue #869 final fix)
-  // Do NOT set environment variables - Smithery manages them at container level
-  // If user didn't provide ATTIO_MCP_TOOL_MODE, ensure env var is not set
-  // This allows isSearchOnlyMode() to return false (full tool access)
-  if (!config?.ATTIO_MCP_TOOL_MODE) {
-    delete process.env.ATTIO_MCP_TOOL_MODE;
-  } else if (config.ATTIO_MCP_TOOL_MODE === 'search') {
+  // Preserve operator-provided ATTIO_MCP_TOOL_MODE when config omits tool mode.
+  // Only apply explicit search mode from Smithery config.
+  if (config?.ATTIO_MCP_TOOL_MODE === 'search') {
     process.env.ATTIO_MCP_TOOL_MODE = 'search';
-  } else {
-    // User explicitly set 'full' mode
-    delete process.env.ATTIO_MCP_TOOL_MODE;
   }
 
   // Create the MCP server with a context that provides access to config
