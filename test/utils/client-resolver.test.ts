@@ -239,7 +239,7 @@ describe('Client Resolver', () => {
   });
 
   describe('environment precedence', () => {
-    it('prefers environment variable over context API key', async () => {
+    it('prefers context API key over environment variable', async () => {
       const mockClient = createMockClient();
       const createAttioClient = vi.fn().mockReturnValue(mockClient);
       mockAttioModule({ createAttioClient });
@@ -251,10 +251,10 @@ describe('Client Resolver', () => {
 
       // After fix in e75725b3, createAttioClient is called with config object (not string)
       expect(createAttioClient).toHaveBeenCalledWith({
-        apiKey: 'env-key-12345',
+        apiKey: 'context-key',
         bypassCache: true,
       });
-      expect(createAttioClient).not.toHaveBeenCalledWith('context-key');
+      expect(createAttioClient).not.toHaveBeenCalledWith('env-key-12345');
     });
 
     it('does not cache resolved clients between calls', async () => {
@@ -312,7 +312,7 @@ describe('Client Resolver', () => {
       ]);
     });
 
-    it('uses ATTIO_ACCESS_TOKEN when ATTIO_API_KEY is absent', async () => {
+    it('uses context API key before ATTIO_ACCESS_TOKEN', async () => {
       const mockClient = createMockClient();
       const createAttioClient = vi.fn().mockReturnValue(mockClient);
       mockAttioModule({ createAttioClient });
@@ -324,10 +324,10 @@ describe('Client Resolver', () => {
 
       expect(client).toBe(mockClient);
       expect(createAttioClient).toHaveBeenCalledWith({
-        apiKey: 'access-token-12345',
+        apiKey: 'context-key-12345',
         bypassCache: true,
       });
-      expect(createAttioClient).not.toHaveBeenCalledWith('context-key-12345');
+      expect(createAttioClient).not.toHaveBeenCalledWith('access-token-12345');
     });
 
     it('does not serialize createAttioClient failure details in debug logs', async () => {

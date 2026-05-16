@@ -72,9 +72,9 @@ function assertAxiosInstance(
 
 function resolveApiKey(): string | undefined {
   return (
+    getContextApiKey() ||
     process.env.ATTIO_API_KEY ||
-    process.env.ATTIO_ACCESS_TOKEN ||
-    getContextApiKey()
+    process.env.ATTIO_ACCESS_TOKEN
   );
 }
 
@@ -96,6 +96,7 @@ export function resolveAttioClient(): AxiosInstance {
   const resolvedApiKey = resolveApiKey();
 
   // Prefer unified factory with explicit credentials and cache bypass
+  // so request-scoped context credentials are honored in shared deployments.
   if (typeof mod.createAttioClient === 'function') {
     logger.debug(
       'Using createAttioClient() with explicit apiKey and bypassCache'
@@ -117,6 +118,14 @@ export function resolveAttioClient(): AxiosInstance {
       assertAxiosInstance(client, 'createAttioClient(config)');
       return client;
     }
+  }
+
+  // Backward-compatibility fallback for older module interfaces.
+  if (typeof mod.getAttioClient === 'function') {
+    logger.debug('Fallback to getAttioClient()');
+    const client = mod.getAttioClient();
+    assertAxiosInstance(client, 'getAttioClient()');
+    return client;
   }
 
   // Last resort: buildAttioClient

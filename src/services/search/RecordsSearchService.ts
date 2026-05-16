@@ -9,7 +9,6 @@ import type { AxiosInstance } from 'axios';
 
 import type { UniversalRecord } from '@/types/attio.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
-import * as AttioClientModule from '@/api/attio-client.js';
 import { listObjectRecords } from '@/objects/records/index.js';
 import { ValidationService } from '@/services/ValidationService.js';
 import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
@@ -24,13 +23,9 @@ import {
 } from '@/errors/api-errors.js';
 
 /**
- * Resolve API client (prefers mocked version in tests)
+ * Resolve API client from context-aware lazy client.
  */
 function resolveApiClient(): AxiosInstance {
-  const mod = AttioClientModule as { getAttioClient?: () => AxiosInstance };
-  if (typeof mod.getAttioClient === 'function') {
-    return mod.getAttioClient();
-  }
   return getLazyAttioClient();
 }
 
