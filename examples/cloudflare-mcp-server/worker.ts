@@ -456,8 +456,12 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   await env.TOKEN_STORE.delete(`session:${state}`);
 
   if (!clientRedirectUri || !isAllowedRedirectUri(clientRedirectUri, env)) {
-    console.warn('OAuth callback rejected due to invalid redirect_uri in session');
-    return new Response('Invalid redirect URI in OAuth session', { status: 400 });
+    console.warn(
+      'OAuth callback rejected due to invalid redirect_uri in session'
+    );
+    return new Response('Invalid redirect URI in OAuth session', {
+      status: 400,
+    });
   }
 
   // Exchange code for tokens
