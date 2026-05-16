@@ -127,8 +127,15 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
       }
     };
 
-    const { data: tasks, fromCache } =
-      await CachingService.getOrLoadTasks(loadTasksData);
+    // SECURITY: Do not reuse task results across requests.
+    // A process-global cache key can leak tasks across tenants in shared runtimes.
+    // Until cache keys are scoped to authenticated tenant context, bypass shared caching.
+    const uncachedTaskKey = `tasks_request_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const { data: tasks, fromCache } = await CachingService.getOrLoadTasks(
+      loadTasksData,
+      uncachedTaskKey,
+      0
+    );
 
     // Performance warning for large datasets
     if (!fromCache && tasks.length > 500) {
