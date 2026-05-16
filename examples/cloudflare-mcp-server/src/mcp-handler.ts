@@ -8,6 +8,7 @@
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { getToolsListPayload } from '../../../dist/utils/mcp-discovery.js';
 import { executeToolRequest } from '../../../dist/handlers/tools/dispatcher.js';
+import { ClientCache } from '../../../dist/api/client-cache.js';
 
 /**
  * MCP JSON-RPC request structure
@@ -71,6 +72,26 @@ const CAPABILITIES = {
 /**
  * MCP error codes
  */
+
+let toolExecutionLock: Promise<void> = Promise.resolve();
+
+async function runToolCallWithLock<T>(work: () => Promise<T>): Promise<T> {
+  const previousLock = toolExecutionLock;
+  let releaseLock: () => void = () => undefined;
+
+  toolExecutionLock = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+
+  await previousLock;
+
+  try {
+    return await work();
+  } finally {
+    releaseLock();
+  }
+}
+
 const ErrorCodes = {
   ParseError: -32700,
   InvalidRequest: -32600,
@@ -149,34 +170,50 @@ export function createMcpHandler(config: { attioToken: string }) {
       };
     }
 
-    // Inject per-request token for dispatcher
-    const previousToken = process.env.ATTIO_API_KEY;
-    process.env.ATTIO_API_KEY = attioToken;
+    return runToolCallWithLock(async () => {
+      // Clear shared client cache before injecting per-request credentials
+      ClientCache.clearInstance();
 
-    try {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name,
-          arguments: args || {},
-        },
-      };
+      const previousApiKey = process.env.ATTIO_API_KEY;
+      const previousAccessToken = process.env.ATTIO_ACCESS_TOKEN;
 
-      const result = await executeToolRequest(request);
+      process.env.ATTIO_API_KEY = attioToken;
+      process.env.ATTIO_ACCESS_TOKEN = attioToken;
 
-      // Return dispatcher result directly - structuredOutput handles normalization
-      return {
-        content: (result as any).content,
-        isError: (result as any).isError,
-        error: (result as any).error,
-      };
-    } finally {
-      if (previousToken === undefined) {
-        delete process.env.ATTIO_API_KEY;
-      } else {
-        process.env.ATTIO_API_KEY = previousToken;
+      try {
+        const request: CallToolRequest = {
+          method: 'tools/call',
+          params: {
+            name,
+            arguments: args || {},
+          },
+        };
+
+        const result = await executeToolRequest(request);
+
+        // Return dispatcher result directly - structuredOutput handles normalization
+        return {
+          content: (result as any).content,
+          isError: (result as any).isError,
+          error: (result as any).error,
+        };
+      } finally {
+        // Ensure no per-request credentials remain cached after execution
+        ClientCache.clearInstance();
+
+        if (previousApiKey === undefined) {
+          delete process.env.ATTIO_API_KEY;
+        } else {
+          process.env.ATTIO_API_KEY = previousApiKey;
+        }
+
+        if (previousAccessToken === undefined) {
+          delete process.env.ATTIO_ACCESS_TOKEN;
+        } else {
+          process.env.ATTIO_ACCESS_TOKEN = previousAccessToken;
+        }
       }
-    }
+    });
   }
 
   /**
