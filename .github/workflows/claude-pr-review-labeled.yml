@@ -289,18 +289,14 @@ jobs:
             echo '[]' > "$SCOPE_DIR/ring0.json"
             echo '[]' > "$SCOPE_DIR/ring1.json"
             echo '[]' > "$SCOPE_DIR/alias-resolutions.json"
-            cat > "$SCOPE_DIR/scope-summary.json" <<'JSON'
-          {"ring0Count":0,"ring1Count":0,"deletionsCount":0,"fallback":true,"reason":"missing-sha"}
-          JSON
+            jq -n '{ring0Count:0,ring1Count:0,deletionsCount:0,fallback:true,reason:"missing-sha"}' > "$SCOPE_DIR/scope-summary.json"
             exit 0
           fi
 
           mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "$base_sha...$head_sha" || true)
           mapfile -t deleted_files < <(git diff --name-only --diff-filter=D "$base_sha...$head_sha" || true)
 
-          printf '%s
-' "${changed_files[@]:-}" | jq -R -s 'split("
-") | map(select(length>0)) | unique' > "$SCOPE_DIR/ring0.json"
+          printf '%s\n' "${changed_files[@]:-}" | jq -R -s 'split("\n") | map(select(length>0)) | unique' > "$SCOPE_DIR/ring0.json"
           echo '[]' > "$SCOPE_DIR/ring1.json"
           echo '[]' > "$SCOPE_DIR/alias-resolutions.json"
 
@@ -317,7 +313,13 @@ jobs:
           ring0_count=$(jq 'length' "$SCOPE_DIR/ring0.json")
           deletions_count=${#deleted_files[@]}
 
-          jq -n             --argjson ring0 "$ring0_count"             --argjson deletions "$deletions_count"             --arg base "$base_sha"             --arg head "$head_sha"             '{ring0Count:$ring0, ring1Count:0, deletionsCount:$deletions, fallback:true, baseRef:$base, headRef:$head}'             > "$SCOPE_DIR/scope-summary.json"
+          jq -n \
+            --argjson ring0 "$ring0_count" \
+            --argjson deletions "$deletions_count" \
+            --arg base "$base_sha" \
+            --arg head "$head_sha" \
+            '{ring0Count:$ring0, ring1Count:0, deletionsCount:$deletions, fallback:true, baseRef:$base, headRef:$head}' \
+            > "$SCOPE_DIR/scope-summary.json"
 
       - name: Apply sparse checkout scope
         if: steps.decide.outputs.internal == 'true' && (steps.haslabel.outputs.has == 'true' || github.event_name == 'workflow_dispatch')
