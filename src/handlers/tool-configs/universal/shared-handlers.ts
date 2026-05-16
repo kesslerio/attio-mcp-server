@@ -281,6 +281,11 @@ export async function handleUniversalDeleteNote(
 export async function handleUniversalCreate(
   params: UniversalCreateParams
 ): Promise<UniversalRecord> {
+  if (params.resource_type === UniversalResourceType.LISTS) {
+    throw new Error(
+      'resource_type "lists" is not supported by universal create-record. Use dedicated list tools for administrative list operations.'
+    );
+  }
   return UniversalCreateService.createRecord(params);
 }
 
@@ -290,6 +295,11 @@ export async function handleUniversalCreate(
 export async function handleUniversalUpdate(
   params: UniversalUpdateParams
 ): Promise<UniversalRecord> {
+  if (params.resource_type === UniversalResourceType.LISTS) {
+    throw new Error(
+      'resource_type "lists" is not supported by universal update-record. Use dedicated list tools for administrative list operations.'
+    );
+  }
   return UniversalUpdateService.updateRecord(params);
 }
 
@@ -299,6 +309,11 @@ export async function handleUniversalUpdate(
 export async function handleUniversalDelete(
   params: UniversalDeleteParams
 ): Promise<{ success: boolean; record_id: string }> {
+  if (params.resource_type === UniversalResourceType.LISTS) {
+    throw new Error(
+      'resource_type "lists" is not supported by universal delete-record. Use dedicated list tools for administrative list operations.'
+    );
+  }
   return UniversalDeleteService.deleteRecord(params);
 }
 
