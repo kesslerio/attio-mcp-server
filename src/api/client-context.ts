@@ -90,7 +90,7 @@ export async function runWithClientContext<T>(
   context: Record<string, unknown>,
   operation: () => Promise<T>
 ): Promise<T> {
-  return await requestContextStorage.run(context, operation);
+  return await requestContextStorage.run({ ...context }, operation);
 }
 
 /**

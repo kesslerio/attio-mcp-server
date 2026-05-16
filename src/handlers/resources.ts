@@ -9,7 +9,7 @@ import {
   ReadResourceResult,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServerContext } from '../server/createServer.js';
-import { setGlobalContext, withGlobalContext } from '../api/lazy-client.js';
+import { withGlobalContext } from '../api/lazy-client.js';
 import { createErrorResult } from '../utils/error-handler.js';
 import {
   listCompanies,
@@ -81,155 +81,155 @@ export function registerResourceHandlers(
   server: Server,
   context?: ServerContext
 ): void {
-  // Set the global context for lazy initialization if provided
-  if (context) {
-    setGlobalContext(context);
-  }
   // Handler for listing resources (Companies, People, and Lists)
   server.setRequestHandler(
     ListResourcesRequestSchema,
-    async (_request): Promise<ListResourcesResult> =>
-      withGlobalContext(
-        context || {},
-        async (): Promise<ListResourcesResult> => {
+    async (_request): Promise<ListResourcesResult> => {
+      const buildResources = async (): Promise<ListResourcesResult> => {
+        try {
+          const resources = [];
+
           try {
-            const resources = [];
-
-            try {
-              const companies = await listCompanies();
-              resources.push(
-                ...companies.map((company) =>
-                  formatRecordAsResource(company, ResourceType.COMPANIES)
-                )
-              );
-            } catch {
-              // Capability scans should still work even if company listing fails.
-            }
-
-            try {
-              const people = await listPeople();
-              resources.push(
-                ...people.map((person) =>
-                  formatRecordAsResource(person, ResourceType.PEOPLE)
-                )
-              );
-            } catch {
-              // Capability scans should still work even if people listing fails.
-            }
-
-            try {
-              const lists = await getLists();
-              const safeLists = Array.isArray(lists) ? lists : [];
-              resources.push(
-                ...safeLists.map((list) => formatListAsResource(list))
-              );
-            } catch {
-              // Capability scans should still work even if list listing fails.
-            }
-
-            return { resources };
-          } catch (error: unknown) {
-            return createErrorResult(
-              error instanceof Error ? error : new Error('Unknown error'),
-              'unknown',
-              'unknown',
-              {}
-            ) as ListResourcesResult;
+            const companies = await listCompanies();
+            resources.push(
+              ...companies.map((company) =>
+                formatRecordAsResource(company, ResourceType.COMPANIES)
+              )
+            );
+          } catch {
+            // Capability scans should still work even if company listing fails.
           }
+
+          try {
+            const people = await listPeople();
+            resources.push(
+              ...people.map((person) =>
+                formatRecordAsResource(person, ResourceType.PEOPLE)
+              )
+            );
+          } catch {
+            // Capability scans should still work even if people listing fails.
+          }
+
+          try {
+            const lists = await getLists();
+            const safeLists = Array.isArray(lists) ? lists : [];
+            resources.push(
+              ...safeLists.map((list) => formatListAsResource(list))
+            );
+          } catch {
+            // Capability scans should still work even if list listing fails.
+          }
+
+          return { resources };
+        } catch (error: unknown) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error('Unknown error'),
+            'unknown',
+            'unknown',
+            {}
+          ) as ListResourcesResult;
         }
-      )
+      };
+
+      return context
+        ? withGlobalContext(context, buildResources)
+        : buildResources();
+    }
   );
 
   // Handler for reading resource details (Companies, People, and Lists)
   server.setRequestHandler(
     ReadResourceRequestSchema,
-    async (request): Promise<ReadResourceResult> =>
-      withGlobalContext(
-        context || {},
-        async (): Promise<ReadResourceResult> => {
-          try {
-            const uri = request.params.uri;
-            const [resourceType, id] = parseResourceUri(uri);
+    async (request): Promise<ReadResourceResult> => {
+      const readResource = async (): Promise<ReadResourceResult> => {
+        try {
+          const uri = request.params.uri;
+          const [resourceType, id] = parseResourceUri(uri);
 
-            switch (resourceType) {
-              case ResourceType.PEOPLE:
-                try {
-                  const person = await getPersonDetails(id);
+          switch (resourceType) {
+            case ResourceType.PEOPLE:
+              try {
+                const person = await getPersonDetails(id);
 
-                  return {
-                    contents: [
-                      {
-                        uri,
-                        text: JSON.stringify(person, null, 2),
-                        mimeType: 'application/json',
-                      },
-                    ],
-                  };
-                } catch (error: unknown) {
-                  return createErrorResult(
-                    error instanceof Error ? error : new Error('Unknown error'),
-                    `/objects/people/${id}`,
-                    'GET',
-                    (error as ApiError).response?.data || {}
-                  ) as ReadResourceResult;
-                }
+                return {
+                  contents: [
+                    {
+                      uri,
+                      text: JSON.stringify(person, null, 2),
+                      mimeType: 'application/json',
+                    },
+                  ],
+                };
+              } catch (error: unknown) {
+                return createErrorResult(
+                  error instanceof Error ? error : new Error('Unknown error'),
+                  `/objects/people/${id}`,
+                  'GET',
+                  (error as ApiError).response?.data || {}
+                ) as ReadResourceResult;
+              }
 
-              case ResourceType.LISTS:
-                try {
-                  const list = await getListDetails(id);
+            case ResourceType.LISTS:
+              try {
+                const list = await getListDetails(id);
 
-                  return {
-                    contents: [
-                      {
-                        uri,
-                        text: JSON.stringify(list, null, 2),
-                        mimeType: 'application/json',
-                      },
-                    ],
-                  };
-                } catch (error: unknown) {
-                  return createErrorResult(
-                    error instanceof Error ? error : new Error('Unknown error'),
-                    `/lists/${id}`,
-                    'GET',
-                    (error as ApiError).response?.data || {}
-                  ) as ReadResourceResult;
-                }
+                return {
+                  contents: [
+                    {
+                      uri,
+                      text: JSON.stringify(list, null, 2),
+                      mimeType: 'application/json',
+                    },
+                  ],
+                };
+              } catch (error: unknown) {
+                return createErrorResult(
+                  error instanceof Error ? error : new Error('Unknown error'),
+                  `/lists/${id}`,
+                  'GET',
+                  (error as ApiError).response?.data || {}
+                ) as ReadResourceResult;
+              }
 
-              case ResourceType.COMPANIES:
-                try {
-                  const company = await getCompanyDetails(id);
+            case ResourceType.COMPANIES:
+              try {
+                const company = await getCompanyDetails(id);
 
-                  return {
-                    contents: [
-                      {
-                        uri,
-                        text: JSON.stringify(company, null, 2),
-                        mimeType: 'application/json',
-                      },
-                    ],
-                  };
-                } catch (error: unknown) {
-                  return createErrorResult(
-                    error instanceof Error ? error : new Error('Unknown error'),
-                    `/objects/companies/${id}`,
-                    'GET',
-                    (error as ApiError).response?.data || {}
-                  ) as ReadResourceResult;
-                }
+                return {
+                  contents: [
+                    {
+                      uri,
+                      text: JSON.stringify(company, null, 2),
+                      mimeType: 'application/json',
+                    },
+                  ],
+                };
+              } catch (error: unknown) {
+                return createErrorResult(
+                  error instanceof Error ? error : new Error('Unknown error'),
+                  `/objects/companies/${id}`,
+                  'GET',
+                  (error as ApiError).response?.data || {}
+                ) as ReadResourceResult;
+              }
 
-              default:
-                throw new Error(`Unsupported resource type: ${resourceType}`);
-            }
-          } catch (error: unknown) {
-            return createErrorResult(
-              error instanceof Error ? error : new Error('Unknown error'),
-              request.params.uri,
-              'GET',
-              {}
-            ) as ReadResourceResult;
+            default:
+              throw new Error(`Unsupported resource type: ${resourceType}`);
           }
+        } catch (error: unknown) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error('Unknown error'),
+            request.params.uri,
+            'GET',
+            {}
+          ) as ReadResourceResult;
         }
-      )
+      };
+
+      return context
+        ? withGlobalContext(context, readResource)
+        : readResource();
+    }
   );
 }

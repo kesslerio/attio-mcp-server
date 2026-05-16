@@ -37,6 +37,13 @@ export function setGlobalContext(context: Record<string, unknown>): void {
   ClientCache.clearInstance();
 }
 
+export async function withServerContext<T>(
+  context: Record<string, unknown>,
+  fn: () => Promise<T>
+): Promise<T> {
+  return runWithClientContext(context, fn);
+}
+
 export function clearClientCache(): void {
   // Use unified cache clearing
   clearAllCaches();
