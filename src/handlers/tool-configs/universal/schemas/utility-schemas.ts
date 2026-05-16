@@ -63,7 +63,11 @@ export const getNotesSchema = {
 export const updateNoteSchema = {
   type: 'object' as const,
   properties: {
-    note_id: { type: 'string' as const, description: 'Note ID to update' },
+    note_id: {
+      type: 'string' as const,
+      pattern: '^[a-zA-Z0-9_-]+$',
+      description: 'Note ID to update',
+    },
     title: { type: 'string' as const, description: 'New title' },
     content: { type: 'string' as const, description: 'New content' },
   },
@@ -91,7 +95,11 @@ export const searchNotesSchema = {
 export const deleteNoteSchema = {
   type: 'object' as const,
   properties: {
-    note_id: { type: 'string' as const, description: 'Note ID to delete' },
+    note_id: {
+      type: 'string' as const,
+      pattern: '^[a-zA-Z0-9_-]+$',
+      description: 'Note ID to delete',
+    },
   },
   required: ['note_id' as const],
   additionalProperties: false,

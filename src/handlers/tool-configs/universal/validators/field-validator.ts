@@ -147,6 +147,7 @@ export function validateIdFields(params: SanitizedObject): void {
     'company_id',
     'person_id',
     'list_id',
+    'note_id',
   ];
   for (const field of idFields) {
     if (
