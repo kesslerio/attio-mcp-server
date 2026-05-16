@@ -86,17 +86,22 @@ describe('Client Resolver', () => {
   });
 
   describe('resolveAttioClient', () => {
-    it('prioritises getAttioClient() when available', async () => {
+    it('uses createAttioClient() with explicit API key and bypassCache', async () => {
       const mockClient = createMockClient();
-      const getAttioClient = vi.fn().mockReturnValue(mockClient);
-      mockAttioModule({ getAttioClient });
-      mockContextModule(undefined);
+      const createAttioClient = vi.fn().mockReturnValue(mockClient);
+      const getAttioClient = vi.fn();
+      mockAttioModule({ createAttioClient, getAttioClient });
+      mockContextModule('context-key-123');
 
       const { resolveAttioClient } = await importResolver();
       const client = resolveAttioClient();
 
       expect(client).toBe(mockClient);
-      expect(getAttioClient).toHaveBeenCalledTimes(1);
+      expect(createAttioClient).toHaveBeenCalledWith({
+        apiKey: 'context-key-123',
+        bypassCache: true,
+      });
+      expect(getAttioClient).not.toHaveBeenCalled();
     });
 
     it('falls back to createAttioClient() when getAttioClient is absent', async () => {
@@ -111,7 +116,10 @@ describe('Client Resolver', () => {
 
       expect(client).toBe(mockClient);
       // After fix in e75725b3, createAttioClient is called with config object (not string)
-      expect(createAttioClient).toHaveBeenCalledWith({});
+      expect(createAttioClient).toHaveBeenCalledWith({
+        apiKey: 'test-key-12345',
+        bypassCache: true,
+      });
     });
 
     it('falls back to buildAttioClient() when other factories missing', async () => {
@@ -139,7 +147,10 @@ describe('Client Resolver', () => {
 
       expect(client).toBe(mockClient);
       // After fix in e75725b3, createAttioClient is called with config object (not string)
-      expect(createAttioClient).toHaveBeenCalledWith({});
+      expect(createAttioClient).toHaveBeenCalledWith({
+        apiKey: 'context-key-123',
+        bypassCache: true,
+      });
     });
 
     it('throws descriptive error when no factories available', async () => {
@@ -227,7 +238,10 @@ describe('Client Resolver', () => {
       resolveAttioClient();
 
       // After fix in e75725b3, createAttioClient is called with config object (not string)
-      expect(createAttioClient).toHaveBeenCalledWith({});
+      expect(createAttioClient).toHaveBeenCalledWith({
+        apiKey: 'env-key-12345',
+        bypassCache: true,
+      });
       expect(createAttioClient).not.toHaveBeenCalledWith('context-key');
     });
 

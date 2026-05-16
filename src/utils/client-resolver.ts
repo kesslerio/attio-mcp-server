@@ -16,7 +16,7 @@ const logger = createScopedLogger('client-resolver');
  */
 interface AttioClientFactories {
   getAttioClient?(): AxiosInstance | unknown;
-  createAttioClient?(apiKey: string): AxiosInstance | unknown;
+  createAttioClient?(config: ClientConfig): AxiosInstance | unknown;
   buildAttioClient?(config: { apiKey: string }): AxiosInstance | unknown;
   [key: string]: unknown;
 }
@@ -72,10 +72,10 @@ function assertAxiosInstance(
 
 /**
  * Resolves an Attio client instance using the unified interface.
- * Uses getAttioClient() which handles caching, environment detection, and strategy pattern.
  *
- * This simplification fixes Issue #904 client initialization validation failures by using
- * the proven getAttioClient() code path instead of attempting multiple factory methods.
+ * Security note: this resolver must always honor the current request context key.
+ * Therefore it creates a fresh client with an explicitly resolved API key and
+ * bypasses process-global caches that may hold another tenant's credentials.
  */
 export function resolveAttioClient(): AxiosInstance {
   const mod = AttioClientModule as AttioClientFactories;
@@ -85,27 +85,20 @@ export function resolveAttioClient(): AxiosInstance {
     logger.debug('Credential resolution attempted');
   }
 
-  // Use getAttioClient() - it handles all the complexity:
-  // - Caching (ClientCache and legacy apiInstance)
-  // - Environment detection (E2E, test, production modes)
-  // - Strategy pattern (ProductionClientStrategy, E2EClientStrategy, etc.)
-  // - API key resolution (env, context, config)
-  // This is the proven code path used throughout the codebase
-  if (typeof mod.getAttioClient === 'function') {
-    logger.debug('Using getAttioClient()');
-    const client = mod.getAttioClient();
-    assertAxiosInstance(client, 'getAttioClient()');
-    return client;
-  }
+  // Resolve API key from current context/environment first
+  const contextApiKey = getContextApiKey();
+  const envApiKey = process.env.ATTIO_API_KEY;
+  const resolvedApiKey = envApiKey || contextApiKey;
 
-  // Fallback to createAttioClient with config object
+  // Prefer unified factory with explicit credentials and cache bypass
   if (typeof mod.createAttioClient === 'function') {
-    logger.debug('Fallback to createAttioClient(config)');
+    logger.debug('Using createAttioClient() with explicit apiKey and bypassCache');
     try {
-      const config: ClientConfig = {};
-      const client = (
-        mod.createAttioClient as (config: ClientConfig) => AxiosInstance
-      )(config);
+      const config: ClientConfig = {
+        apiKey: resolvedApiKey,
+        bypassCache: true,
+      };
+      const client = mod.createAttioClient(config);
       assertAxiosInstance(client, 'createAttioClient(config)');
       return client;
     } catch (_error) {
