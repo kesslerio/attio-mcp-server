@@ -38,34 +38,36 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout trusted classifier scripts
-        uses: actions/checkout@v4
-        with:
-          ref: refs/heads/${{ github.event.repository.default_branch }}
-          persist-credentials: false
-          sparse-checkout: |
-            scripts/workflows/claude/
-          sparse-checkout-cone-mode: false
-
       - name: Classify command
         id: classify
-        run: |
-          node scripts/workflows/claude/parse-command.mjs > classify.json
-          cat classify.json
-          should_run=$(jq -r '.shouldRun // false' classify.json)
-          command_type=$(jq -r '.command.type // ""' classify.json)
-          is_maintainer=$(jq -r '.isMaintainer // false' classify.json)
-          issue=$(jq -r '.issue // ""' classify.json)
-          actor=$(jq -r '.actor // ""' classify.json)
-          association=$(jq -r '.association // ""' classify.json)
-          echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
-          echo "command_type=$command_type" >> "$GITHUB_OUTPUT"
-          echo "is_maintainer=$is_maintainer" >> "$GITHUB_OUTPUT"
-          echo "issue=$issue" >> "$GITHUB_OUTPUT"
-          echo "actor=$actor" >> "$GITHUB_OUTPUT"
-          echo "association=$association" >> "$GITHUB_OUTPUT"
-        env:
-          CLAUDE_TRIGGER_PHRASE: '@claude'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const trigger = '@claude';
+            const event = context.payload;
+            const eventName = context.eventName;
+            const body = eventName === 'issue_comment'
+              ? (event.comment?.body || '')
+              : `${event.issue?.title || ''}\n${event.issue?.body || ''}`;
+
+            const shouldRun = body.includes(trigger);
+            const tokens = (body.toLowerCase().match(/@claude\s*:?[\s]+([^\n]*)/)?.[1] || '')
+              .trim()
+              .split(/\s+/)
+              .filter(Boolean);
+            const commandType = tokens.includes('review') ? 'review' : 'command';
+
+            const association = eventName === 'issue_comment'
+              ? (event.comment?.author_association || 'NONE')
+              : (event.issue?.author_association || 'NONE');
+            const isMaintainer = ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(association);
+
+            core.setOutput('should_run', String(shouldRun));
+            core.setOutput('command_type', commandType);
+            core.setOutput('is_maintainer', String(isMaintainer));
+            core.setOutput('issue', String(event.issue?.number || ''));
+            core.setOutput('actor', context.actor || '');
+            core.setOutput('association', association);
 
       - name: Skip non-command events
         if: steps.classify.outputs.should_run != 'true'
