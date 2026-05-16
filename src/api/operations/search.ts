@@ -3,6 +3,8 @@
  * Handles basic and advanced search functionality
  */
 
+import { scryptSync } from 'crypto';
+
 import { getLazyAttioClient, getGlobalContext } from '@api/lazy-client.js';
 import { callWithRetry, RetryConfig } from '@api/operations/retry.js';
 import { ListEntryFilters } from '@api/operations/types.js';
@@ -81,14 +83,12 @@ function getCacheKey(
 }
 
 function getTenantScope(): string {
-  const context = getGlobalContext() as
-    | {
-        ATTIO_API_KEY?: string;
-        ATTIO_ACCESS_TOKEN?: string;
-        workspaceId?: string;
-        smitheryUserId?: string;
-      }
-    | null;
+  const context = getGlobalContext() as {
+    ATTIO_API_KEY?: string;
+    ATTIO_ACCESS_TOKEN?: string;
+    workspaceId?: string;
+    smitheryUserId?: string;
+  } | null;
 
   const workspaceId =
     typeof context?.workspaceId === 'string' ? context.workspaceId : '';
@@ -100,8 +100,13 @@ function getTenantScope(): string {
       : typeof context?.ATTIO_API_KEY === 'string'
         ? context.ATTIO_API_KEY
         : '';
+  const credentialHash = credential
+    ? scryptSync(credential, 'attio-mcp-search-cache-scope-v1', 32).toString(
+        'hex'
+      )
+    : '';
 
-  return `${workspaceId}:${smitheryUserId}:${credential}`;
+  return `${workspaceId}:${smitheryUserId}:${credentialHash}`;
 }
 
 function normalizeDomainValue(value: string): string {
