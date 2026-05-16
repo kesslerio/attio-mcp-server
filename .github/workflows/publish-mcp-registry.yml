@@ -7,11 +7,13 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     outputs:
       should_publish: ${{ steps.check.outputs.should_publish }}
       package_version: ${{ steps.extract.outputs.version }}
@@ -91,11 +93,14 @@ jobs:
         # --provenance generates a Sigstore attestation linking the package to this CI build.
         # Requires npm Trusted Publisher configuration for this repository/workflow.
         # See: https://docs.npmjs.com/generating-provenance-statements
-        run: npm publish --access public --provenance
+        run: npm publish --ignore-scripts --access public --provenance
 
   publish-registry:
     needs: publish-npm
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Determine version
         id: version
