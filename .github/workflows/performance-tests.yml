@@ -144,7 +144,6 @@ jobs:
 
       - name: Run performance tests on PR branch
         env:
-          ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
           NODE_ENV: test
         run: |
           bun run test test/performance/regression.test.ts > pr-performance.txt 2>&1 || true
@@ -162,7 +161,6 @@ jobs:
 
       - name: Run performance tests on base branch
         env:
-          ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
           NODE_ENV: test
         run: |
           bun run test test/performance/regression.test.ts > base-performance.txt 2>&1 || true
