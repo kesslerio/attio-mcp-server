@@ -70,6 +70,14 @@ function assertAxiosInstance(
   }
 }
 
+function resolveApiKey(): string | undefined {
+  return (
+    process.env.ATTIO_API_KEY ||
+    process.env.ATTIO_ACCESS_TOKEN ||
+    getContextApiKey()
+  );
+}
+
 /**
  * Resolves an Attio client instance using the unified interface.
  *
@@ -85,34 +93,34 @@ export function resolveAttioClient(): AxiosInstance {
     logger.debug('Credential resolution attempted');
   }
 
-  // Resolve API key from current context/environment first
-  const contextApiKey = getContextApiKey();
-  const envApiKey = process.env.ATTIO_API_KEY;
-  const resolvedApiKey = envApiKey || contextApiKey;
+  const resolvedApiKey = resolveApiKey();
 
   // Prefer unified factory with explicit credentials and cache bypass
   if (typeof mod.createAttioClient === 'function') {
-    logger.debug('Using createAttioClient() with explicit apiKey and bypassCache');
+    logger.debug(
+      'Using createAttioClient() with explicit apiKey and bypassCache'
+    );
+    let client: AxiosInstance | unknown;
     try {
       const config: ClientConfig = {
         apiKey: resolvedApiKey,
         bypassCache: true,
       };
-      const client = mod.createAttioClient(config);
-      assertAxiosInstance(client, 'createAttioClient(config)');
-      return client;
+      client = mod.createAttioClient(config);
     } catch (_error) {
       logger.debug('createAttioClient failed');
       // Continue to last resort
+      client = undefined;
+    }
+
+    if (client !== undefined) {
+      assertAxiosInstance(client, 'createAttioClient(config)');
+      return client;
     }
   }
 
   // Last resort: buildAttioClient
   if (typeof mod.buildAttioClient === 'function') {
-    const contextApiKey = getContextApiKey();
-    const envApiKey = process.env.ATTIO_API_KEY;
-    const resolvedApiKey = envApiKey || contextApiKey;
-
     if (!resolvedApiKey) {
       throw new Error(
         'Attio API key is required for client initialization. Please set ATTIO_API_KEY environment variable.'

@@ -3,6 +3,7 @@ import type { AxiosInstance } from 'axios';
 import { expectLogCallsToExclude } from '../utils/log-assertions.js';
 
 const originalApiKey = process.env.ATTIO_API_KEY;
+const originalAccessToken = process.env.ATTIO_ACCESS_TOKEN;
 const originalLogLevel = process.env.MCP_LOG_LEVEL;
 const { mockScopedDebug, mockScopedInfo, mockScopedWarn, mockScopedError } =
   vi.hoisted(() => ({
@@ -68,6 +69,7 @@ describe('Client Resolver', () => {
     mockScopedWarn.mockReset();
     mockScopedError.mockReset();
     delete process.env.ATTIO_API_KEY;
+    delete process.env.ATTIO_ACCESS_TOKEN;
     delete process.env.MCP_LOG_LEVEL;
   });
 
@@ -76,6 +78,12 @@ describe('Client Resolver', () => {
       process.env.ATTIO_API_KEY = originalApiKey;
     } else {
       delete process.env.ATTIO_API_KEY;
+    }
+
+    if (originalAccessToken) {
+      process.env.ATTIO_ACCESS_TOKEN = originalAccessToken;
+    } else {
+      delete process.env.ATTIO_ACCESS_TOKEN;
     }
 
     if (originalLogLevel) {
@@ -207,19 +215,23 @@ describe('Client Resolver', () => {
   describe('getValidatedAttioClient', () => {
     it('returns client when resolution succeeds', async () => {
       const mockClient = createMockClient();
-      const getAttioClient = vi.fn().mockReturnValue(mockClient);
-      mockAttioModule({ getAttioClient });
-      mockContextModule(undefined);
+      const createAttioClient = vi.fn().mockReturnValue(mockClient);
+      mockAttioModule({ createAttioClient });
+      mockContextModule('context-key-123');
 
       const { getValidatedAttioClient } = await importResolver();
       const client = getValidatedAttioClient();
       expect(client).toBe(mockClient);
+      expect(createAttioClient).toHaveBeenCalledWith({
+        apiKey: 'context-key-123',
+        bypassCache: true,
+      });
     });
 
     it('throws when resolved client is invalid', async () => {
-      const getAttioClient = vi.fn().mockReturnValue({});
-      mockAttioModule({ getAttioClient });
-      mockContextModule(undefined);
+      const createAttioClient = vi.fn().mockReturnValue({});
+      mockAttioModule({ createAttioClient });
+      mockContextModule('context-key-123');
 
       const { getValidatedAttioClient } = await importResolver();
       expect(() => getValidatedAttioClient()).toThrow(/invalid Axios client/);
@@ -248,13 +260,13 @@ describe('Client Resolver', () => {
     it('does not cache resolved clients between calls', async () => {
       const mockClient1 = createMockClient();
       const mockClient2 = createMockClient();
-      const getAttioClient = vi
+      const createAttioClient = vi
         .fn()
         .mockReturnValueOnce(mockClient1)
         .mockReturnValueOnce(mockClient2);
 
-      mockAttioModule({ getAttioClient });
-      mockContextModule(undefined);
+      mockAttioModule({ createAttioClient });
+      mockContextModule('context-key-123');
 
       const { resolveAttioClient } = await importResolver();
       const client1 = resolveAttioClient();
@@ -262,13 +274,21 @@ describe('Client Resolver', () => {
 
       expect(client1).toBe(mockClient1);
       expect(client2).toBe(mockClient2);
-      expect(getAttioClient).toHaveBeenCalledTimes(2);
+      expect(createAttioClient).toHaveBeenCalledTimes(2);
+      expect(createAttioClient).toHaveBeenNthCalledWith(1, {
+        apiKey: 'context-key-123',
+        bypassCache: true,
+      });
+      expect(createAttioClient).toHaveBeenNthCalledWith(2, {
+        apiKey: 'context-key-123',
+        bypassCache: true,
+      });
     });
 
     it('logs only a message when debug credential resolution is enabled', async () => {
       const mockClient = createMockClient();
-      const getAttioClient = vi.fn().mockReturnValue(mockClient);
-      mockAttioModule({ getAttioClient });
+      const createAttioClient = vi.fn().mockReturnValue(mockClient);
+      mockAttioModule({ createAttioClient });
       mockContextModule('context-key-12345');
       process.env.ATTIO_API_KEY = 'env-key-12345';
       process.env.MCP_LOG_LEVEL = 'DEBUG';
@@ -290,6 +310,24 @@ describe('Client Resolver', () => {
         'env-key-12345',
         'context-key-12345',
       ]);
+    });
+
+    it('uses ATTIO_ACCESS_TOKEN when ATTIO_API_KEY is absent', async () => {
+      const mockClient = createMockClient();
+      const createAttioClient = vi.fn().mockReturnValue(mockClient);
+      mockAttioModule({ createAttioClient });
+      mockContextModule('context-key-12345');
+      process.env.ATTIO_ACCESS_TOKEN = 'access-token-12345';
+
+      const { resolveAttioClient } = await importResolver();
+      const client = resolveAttioClient();
+
+      expect(client).toBe(mockClient);
+      expect(createAttioClient).toHaveBeenCalledWith({
+        apiKey: 'access-token-12345',
+        bypassCache: true,
+      });
+      expect(createAttioClient).not.toHaveBeenCalledWith('context-key-12345');
     });
 
     it('does not serialize createAttioClient failure details in debug logs', async () => {
