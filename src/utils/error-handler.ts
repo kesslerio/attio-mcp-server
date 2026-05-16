@@ -511,7 +511,7 @@ export function createErrorResult(
     status: responseData.status || 'Unknown',
     headers: responseData.headers || {},
     data: responseData.data || {},
-    rawError: typeof error === 'object' ? JSON.stringify(error) : String(error),
+    rawError: normalizedError.message,
   };
 
   return formatErrorResponse(normalizedError, errorType, errorDetails);
