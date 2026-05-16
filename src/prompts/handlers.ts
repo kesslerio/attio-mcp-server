@@ -573,68 +573,68 @@ export function registerPromptHandlers(
   // Register handler for prompts/get endpoint
   server.setRequestHandler(GetPromptRequestSchema, async (request) =>
     withGlobalContext(context || {}, async () => {
-    const promptName = request.params.name as string;
-    const args = (request.params.arguments || {}) as Record<string, unknown>;
-    const startTime = Date.now();
+      const promptName = request.params.name as string;
+      const args = (request.params.arguments || {}) as Record<string, unknown>;
+      const startTime = Date.now();
 
-    // Check if this is a v1 prompt
-    if (isV1Prompt(promptName)) {
-      const promptDef = getPromptV1ByName(promptName);
+      // Check if this is a v1 prompt
+      if (isV1Prompt(promptName)) {
+        const promptDef = getPromptV1ByName(promptName);
 
-      if (!promptDef) {
+        if (!promptDef) {
+          throw new Error(`Prompt not found: ${promptName}`);
+        }
+
+        // Validate arguments
+        const validation = validateArguments(args, promptDef.arguments);
+        if (!validation.success) {
+          const error = createValidationError(validation.errors);
+          throw new Error(error.message);
+        }
+
+        // Build messages
+        const messages = promptDef.buildMessages(validation.data);
+
+        // Check token budget
+        const budgetCheck = await checkTokenBudget(promptName, messages);
+        if (!budgetCheck.withinBudget) {
+          const error = createBudgetExceededError(budgetCheck);
+          throw new Error(error.message);
+        }
+
+        // Calculate token metadata
+        const tokenMetadata = await calculatePromptTokens(messages);
+
+        // Log telemetry
+        const telemetryEvent = createTelemetryEvent(
+          promptName,
+          tokenMetadata,
+          messages.length,
+          startTime,
+          false // budget not exceeded (already checked above)
+        );
+        logPromptTelemetry(telemetryEvent);
+
+        // Build response
+        const response: Record<string, unknown> = {
+          description: promptDef.metadata.description,
+          messages: messages,
+        };
+
+        // Add dev metadata if enabled
+        if (isDevMetaEnabled()) {
+          response._meta = tokenMetadata;
+        }
+
+        return response;
+      }
+
+      // Handle legacy Handlebars prompts
+      const prompt = getPromptById(promptName);
+
+      if (!prompt) {
         throw new Error(`Prompt not found: ${promptName}`);
       }
-
-      // Validate arguments
-      const validation = validateArguments(args, promptDef.arguments);
-      if (!validation.success) {
-        const error = createValidationError(validation.errors);
-        throw new Error(error.message);
-      }
-
-      // Build messages
-      const messages = promptDef.buildMessages(validation.data);
-
-      // Check token budget
-      const budgetCheck = await checkTokenBudget(promptName, messages);
-      if (!budgetCheck.withinBudget) {
-        const error = createBudgetExceededError(budgetCheck);
-        throw new Error(error.message);
-      }
-
-      // Calculate token metadata
-      const tokenMetadata = await calculatePromptTokens(messages);
-
-      // Log telemetry
-      const telemetryEvent = createTelemetryEvent(
-        promptName,
-        tokenMetadata,
-        messages.length,
-        startTime,
-        false // budget not exceeded (already checked above)
-      );
-      logPromptTelemetry(telemetryEvent);
-
-      // Build response
-      const response: Record<string, unknown> = {
-        description: promptDef.metadata.description,
-        messages: messages,
-      };
-
-      // Add dev metadata if enabled
-      if (isDevMetaEnabled()) {
-        response._meta = tokenMetadata;
-      }
-
-      return response;
-    }
-
-    // Handle legacy Handlebars prompts
-    const prompt = getPromptById(promptName);
-
-    if (!prompt) {
-      throw new Error(`Prompt not found: ${promptName}`);
-    }
 
       return {
         description: prompt.description,
