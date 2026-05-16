@@ -80,6 +80,16 @@ async function executeCreateBatch(
     );
   }
 
+  const validation = validateBatchOperation({
+    items: records,
+    operationType: 'create',
+    resourceType,
+    checkPayload: true,
+  });
+  if (!validation.isValid) {
+    throw new Error(validation.error);
+  }
+
   const delayMs = process.env.NODE_ENV === 'test' ? TEST_DELAY_MS : 0;
 
   const operations = await processRecordChunks(
