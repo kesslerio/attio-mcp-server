@@ -6,7 +6,11 @@
 import { AxiosInstance } from 'axios';
 import { createAttioClient } from './attio-client.js';
 import { ClientCache, clearAllCaches } from './client-cache.js';
-import { getClientContext, setClientContext } from './client-context.js';
+import {
+  getClientContext,
+  runWithClientContext,
+  setClientContext,
+} from './client-context.js';
 import { ClientConfig } from './client-config.js';
 
 export function getLazyAttioClient(config?: ClientConfig): AxiosInstance {
@@ -38,4 +42,11 @@ export function clearClientCache(): void {
 
 export function getGlobalContext(): Record<string, unknown> | null {
   return getClientContext();
+}
+
+export async function withGlobalContext<T>(
+  context: Record<string, unknown>,
+  operation: () => Promise<T>
+): Promise<T> {
+  return await runWithClientContext(context, operation);
 }

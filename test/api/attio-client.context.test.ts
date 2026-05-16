@@ -201,6 +201,43 @@ describe('Attio client context fallback', () => {
   });
 
   describe('Enhanced context functionality', () => {
+    it('isolates overlapping request contexts', async () => {
+      const { setGlobalContext, withGlobalContext } =
+        await import('@/api/lazy-client.js');
+      const { getContextApiKey } =
+        await import('../../src/api/client-context.js');
+
+      setGlobalContext({
+        ATTIO_API_KEY: 'global-key-12345',
+      });
+
+      const tenantA = withGlobalContext(
+        { ATTIO_API_KEY: 'tenant-a-key-12345' },
+        async () => {
+          expect(getContextApiKey()).toBe('tenant-a-key-12345');
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          expect(getContextApiKey()).toBe('tenant-a-key-12345');
+          return getContextApiKey();
+        }
+      );
+
+      const tenantB = withGlobalContext(
+        { ATTIO_API_KEY: 'tenant-b-key-12345' },
+        async () => {
+          expect(getContextApiKey()).toBe('tenant-b-key-12345');
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          expect(getContextApiKey()).toBe('tenant-b-key-12345');
+          return getContextApiKey();
+        }
+      );
+
+      await expect(Promise.all([tenantA, tenantB])).resolves.toEqual([
+        'tenant-a-key-12345',
+        'tenant-b-key-12345',
+      ]);
+      expect(getContextApiKey()).toBe('global-key-12345');
+    });
+
     it('should provide context statistics for debugging', async () => {
       const { setGlobalContext } = await import('@/api/lazy-client.js');
       const { getContextStats } =
