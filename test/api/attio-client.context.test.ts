@@ -122,18 +122,20 @@ describe('Attio client context fallback', () => {
     );
   });
 
-  it('prefers environment variable over context when both are provided', async () => {
+  it('prefers context credential over environment variable when both are provided', async () => {
     process.env.ATTIO_API_KEY = 'env-key-12345';
 
     const { setGlobalContext } = await import('@/api/lazy-client.js');
     setGlobalContext({
-      getApiKey: () => 'context-key-ignored-12345',
+      getApiKey: () => 'context-key-12345',
     });
 
     const { getAttioClient } = await import('@/api/attio-client.js');
     const client = getAttioClient();
 
-    expect(client.defaults.headers.Authorization).toBe('Bearer env-key-12345');
+    expect(client.defaults.headers.Authorization).toBe(
+      'Bearer context-key-12345'
+    );
   });
 
   it('rebuilds cached clients when the context API key changes', async () => {
