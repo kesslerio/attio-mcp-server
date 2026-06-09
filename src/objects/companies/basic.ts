@@ -3,7 +3,11 @@
  */
 import { getLazyAttioClient } from '@api/lazy-client.js';
 import { getObjectDetails, listObjects } from '@api/operations/index.js';
-import { ResourceType, Company, RecordAttributes } from '@shared-types/attio.js';
+import {
+  ResourceType,
+  Company,
+  RecordAttributes,
+} from '@shared-types/attio.js';
 import { CompanyUpdateInput } from '@shared-types/company-types.js';
 import { CompanyAttributes } from './types.js';
 import { CompanyValidator } from '@/validators/company-validator.js';
@@ -286,7 +290,7 @@ export async function createCompany(
           attributes.name !== null &&
           'value' in (attributes.name as Record<string, unknown>)
             ? (attributes.name as { value: string }).value
-            : (attributes.name ?? '');
+            : attributes.name ?? '';
 
         try {
           const api = getLazyAttioClient();
@@ -302,8 +306,7 @@ export async function createCompany(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            const { createScopedLogger } =
-              await import('@utils/logger.js');
+            const { createScopedLogger } = await import('@utils/logger.js');
             createScopedLogger('companies.basic', 'createCompany').debug(
               'Query fallback response',
               {
@@ -327,8 +330,7 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              const { createScopedLogger } =
-                await import('@utils/logger.js');
+              const { createScopedLogger } = await import('@utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').info(
                 'Found existing company via query fallback',
                 { foundCompany }
@@ -341,7 +343,9 @@ export async function createCompany(
           ) {
             // For testing: Create a mock company result when API returns empty
             // This allows integration tests to proceed when Attio API is not working properly
-            const mockCompanyId = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const mockCompanyId = `comp_${Date.now()}_${Math.random()
+              .toString(36)
+              .substr(2, 9)}`;
 
             // Create mock with proper Attio API structure
             const mockAttributes = {
@@ -365,8 +369,7 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              const { createScopedLogger } =
-                await import('@utils/logger.js');
+              const { createScopedLogger } = await import('@utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').debug(
                 'Created mock company result for testing',
                 { result }
@@ -378,8 +381,7 @@ export async function createCompany(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            const { createScopedLogger } =
-              await import('@utils/logger.js');
+            const { createScopedLogger } = await import('@utils/logger.js');
             createScopedLogger('companies.basic', 'createCompany').error(
               'Query fallback failed during company creation',
               queryError instanceof Error ? queryError : undefined
@@ -391,7 +393,9 @@ export async function createCompany(
               process.env.NODE_ENV === 'test') &&
             nameValue
           ) {
-            const mockCompanyId = `comp_fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const mockCompanyId = `comp_fallback_${Date.now()}_${Math.random()
+              .toString(36)
+              .substr(2, 9)}`;
 
             const mockAttributes = {
               name: nameValue,
@@ -414,8 +418,7 @@ export async function createCompany(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              const { createScopedLogger } =
-                await import('@utils/logger.js');
+              const { createScopedLogger } = await import('@utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').warn(
                 'Created emergency mock company result after query failure',
                 { result }
@@ -428,7 +431,9 @@ export async function createCompany(
         process.env.NODE_ENV === 'test'
       ) {
         // If no name is provided but we're in test mode, create a mock anyway
-        const mockCompanyId = `comp_noname_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const mockCompanyId = `comp_noname_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
 
         const mockAttributes = {
           name: 'Test Company (No Name Provided)',
@@ -465,7 +470,9 @@ export async function createCompany(
         throw new CompanyOperationError(
           'create',
           undefined,
-          `API returned invalid company record without proper ID structure. Response: ${JSON.stringify(result)}`
+          `API returned invalid company record without proper ID structure. Response: ${JSON.stringify(
+            result
+          )}`
         );
       }
     }
@@ -474,7 +481,9 @@ export async function createCompany(
       throw new CompanyOperationError(
         'create',
         undefined,
-        `API returned invalid company record without values object. Response: ${JSON.stringify(result)}`
+        `API returned invalid company record without values object. Response: ${JSON.stringify(
+          result
+        )}`
       );
     }
 
@@ -500,7 +509,9 @@ export async function createCompany(
 
       // Last resort: Create a mock structure if we're in test mode
       if (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') {
-        const emergencyMockId = `comp_emergency_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const emergencyMockId = `comp_emergency_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
         result = {
           ...result,
           id: {
@@ -524,7 +535,9 @@ export async function createCompany(
         throw new CompanyOperationError(
           'create',
           undefined,
-          `CRITICAL: Company record still missing ID structure after all fallback attempts. Response: ${JSON.stringify(result)}`
+          `CRITICAL: Company record still missing ID structure after all fallback attempts. Response: ${JSON.stringify(
+            result
+          )}`
         );
       }
     }

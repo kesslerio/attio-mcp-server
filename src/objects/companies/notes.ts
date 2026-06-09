@@ -2,10 +2,7 @@
  * Note operations for companies
  */
 import { getLazyAttioClient } from '@api/lazy-client.js';
-import {
-  getObjectNotes,
-  createObjectNote,
-} from '@api/operations/index.js';
+import { getObjectNotes, createObjectNote } from '@api/operations/index.js';
 import { ResourceType, AttioNote } from '@shared-types/attio.js';
 
 interface HttpErrorLike {

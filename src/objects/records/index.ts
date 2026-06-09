@@ -164,8 +164,7 @@ export async function createObjectRecord<T extends AttioRecord>(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            const { createScopedLogger } =
-              await import('@utils/logger.js');
+            const { createScopedLogger } = await import('@utils/logger.js');
             createScopedLogger('objects.records', 'createObjectRecord').info(
               'Found existing company via query fallback',
               { foundRecord }
@@ -290,7 +289,9 @@ export async function createObjectRecord<T extends AttioRecord>(
             !looksLikeCreatedRecord)
         ) {
           throw new Error(
-            `Create operation returned empty or invalid response. Response structure: ${JSON.stringify(response?.data)}`
+            `Create operation returned empty or invalid response. Response structure: ${JSON.stringify(
+              response?.data
+            )}`
           );
         }
 
@@ -319,7 +320,10 @@ export async function createObjectRecord<T extends AttioRecord>(
             body.data.values?.domain &&
             typeof body.data.values.domain === 'string'
           ) {
-            body.data.values.domain = `${body.data.values.domain.replace(/\.$/, '')}-${suffix}`;
+            body.data.values.domain = `${body.data.values.domain.replace(
+              /\.$/,
+              ''
+            )}-${suffix}`;
           } else if (
             Array.isArray(body.data.values?.domains) &&
             body.data.values.domains[0] &&
