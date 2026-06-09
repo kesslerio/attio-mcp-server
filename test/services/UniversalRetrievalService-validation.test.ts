@@ -3,13 +3,13 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Inline mocks matching this file's specifiers
-vi.mock('../../src/services/CachingService.js', () => ({
+vi.mock('@services/CachingService.js', () => ({
   CachingService: { isCached404: vi.fn(), cache404Response: vi.fn() },
 }));
-vi.mock('../../src/services/ValidationService.js', () => ({
+vi.mock('@services/ValidationService.js', () => ({
   ValidationService: { validateUUID: vi.fn() },
 }));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
+vi.mock('@/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     startOperation: vi.fn(() => 'perf-123'),
     markTiming: vi.fn(),
@@ -18,10 +18,10 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
     endOperation: vi.fn(),
   },
 }));
-vi.mock('../../src/services/create/index.js', () => ({
+vi.mock('@services/create/index.js', () => ({
   shouldUseMockData: vi.fn(() => false),
 }));
-vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
+vi.mock('@utils/validation/uuid-validation.js', () => ({
   isValidUUID: vi.fn(() => true),
   createRecordNotFoundError: vi.fn(
     () =>
@@ -34,7 +34,7 @@ vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
       })()
   ),
 }));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
+vi.mock('@/errors/enhanced-api-errors.js', () => ({
   ErrorEnhancer: {
     autoEnhance: (e: any) => e,
     getErrorMessage: (e: any) => (e && e.message) || String(e),
@@ -61,24 +61,24 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
     }
   },
 }));
-vi.mock('../../src/objects/companies/index.js', () => ({
+vi.mock('@/objects/companies/index.js', () => ({
   getCompanyDetails: vi.fn(),
 }));
 vi.mock('@/objects/lists.js', () => ({ getListDetails: vi.fn() }));
-vi.mock('../../src/objects/tasks.js', () => ({ getTask: vi.fn() }));
-vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
-import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
-import { CachingService } from '../../src/services/CachingService.js';
-import { shouldUseMockData } from '../../src/services/create/index.js';
-import { createRecordNotFoundError } from '../../src/utils/validation/uuid-validation.js';
-import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
-import { getCompanyDetails } from '../../src/objects/companies/index.js';
-import * as tasks from '../../src/objects/tasks.js';
+vi.mock('@/objects/tasks.js', () => ({ getTask: vi.fn() }));
+vi.mock('@/objects/notes.js', () => ({ getNote: vi.fn() }));
+import { UniversalRetrievalService } from '@services/UniversalRetrievalService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
+import { CachingService } from '@services/CachingService.js';
+import { shouldUseMockData } from '@services/create/index.js';
+import { createRecordNotFoundError } from '@utils/validation/uuid-validation.js';
+import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
+import { getCompanyDetails } from '@/objects/companies/index.js';
+import * as tasks from '@/objects/tasks.js';
 import * as lists from '@/objects/lists.js';
-import * as companies from '../../src/objects/companies/index.js';
-import * as notes from '../../src/objects/notes.js';
+import * as companies from '@/objects/companies/index.js';
+import * as notes from '@/objects/notes.js';
 
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
