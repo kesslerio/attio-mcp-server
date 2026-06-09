@@ -1,12 +1,12 @@
 /**
  * Note operations for companies
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@api/lazy-client.js';
 import {
   getObjectNotes,
   createObjectNote,
-} from '../../api/operations/index.js';
-import { ResourceType, AttioNote } from '../../types/attio.js';
+} from '@api/operations/index.js';
+import { ResourceType, AttioNote } from '@shared-types/attio.js';
 
 interface HttpErrorLike {
   response?: {
@@ -76,7 +76,7 @@ export async function getCompanyNotes(
       }
 
       if (process.env.NODE_ENV === 'development') {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.notes', 'getCompanyNotes').debug(
           'Extracted company ID from URI',
           { companyId, companyIdOrUri }
@@ -87,7 +87,7 @@ export async function getCompanyNotes(
       companyId = companyIdOrUri;
 
       if (process.env.NODE_ENV === 'development') {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.notes', 'getCompanyNotes').debug(
           'Using direct company ID',
           { companyId }
@@ -110,7 +110,7 @@ export async function getCompanyNotes(
       );
     } catch (error: unknown) {
       if (process.env.NODE_ENV === 'development') {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.notes', 'getCompanyNotes').error(
           'Unified operation failed',
           error instanceof Error ? error : new Error(String(error))
@@ -123,7 +123,7 @@ export async function getCompanyNotes(
         const path = `/notes?limit=${limit}&offset=${offset}&parent_object=companies&parent_record_id=${companyId}`;
 
         if (process.env.NODE_ENV === 'development') {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.notes', 'getCompanyNotes').warn(
             'Trying direct API call',
             { path }
@@ -137,7 +137,7 @@ export async function getCompanyNotes(
         return notes;
       } catch (directError: unknown) {
         if (process.env.NODE_ENV === 'development') {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.notes', 'getCompanyNotes').error(
             'All attempts failed',
             new Error('All attempts failed'),
@@ -220,7 +220,7 @@ export async function createCompanyNote(
       }
 
       if (process.env.NODE_ENV === 'development') {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.notes', 'createCompanyNote').debug(
           'Extracted company ID from URI',
           { companyId, companyIdOrUri }
@@ -231,7 +231,7 @@ export async function createCompanyNote(
       companyId = companyIdOrUri;
 
       if (process.env.NODE_ENV === 'development') {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.notes', 'createCompanyNote').debug(
           'Using direct company ID',
           { companyId }
@@ -254,7 +254,7 @@ export async function createCompanyNote(
       );
     } catch (error: unknown) {
       if (process.env.NODE_ENV === 'development') {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.notes', 'createCompanyNote').error(
           'Unified operation failed',
           error instanceof Error ? error : new Error(String(error))
@@ -267,7 +267,7 @@ export async function createCompanyNote(
         const path = 'notes';
 
         if (process.env.NODE_ENV === 'development') {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.notes', 'createCompanyNote').warn(
             'Trying direct API call',
             { path }
@@ -290,7 +290,7 @@ export async function createCompanyNote(
         return createdNote;
       } catch (directError: unknown) {
         if (process.env.NODE_ENV === 'development') {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.notes', 'createCompanyNote').error(
             'All attempts failed',
             new Error('All attempts failed'),

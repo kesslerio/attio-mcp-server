@@ -1,30 +1,30 @@
 /**
  * Basic CRUD operations for companies
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
-import { getObjectDetails, listObjects } from '../../api/operations/index.js';
-import { ResourceType, Company, RecordAttributes } from '../../types/attio.js';
-import { CompanyUpdateInput } from '../../types/company-types.js';
+import { getLazyAttioClient } from '@api/lazy-client.js';
+import { getObjectDetails, listObjects } from '@api/operations/index.js';
+import { ResourceType, Company, RecordAttributes } from '@shared-types/attio.js';
+import { CompanyUpdateInput } from '@shared-types/company-types.js';
 import { CompanyAttributes } from './types.js';
-import { CompanyValidator } from '../../validators/company-validator.js';
+import { CompanyValidator } from '@/validators/company-validator.js';
 import {
   CompanyOperationError,
   InvalidCompanyDataError,
-} from '../../errors/company-errors.js';
+} from '@errors/company-errors.js';
 import {
   createObjectWithDynamicFields,
   updateObjectWithDynamicFields,
   updateObjectAttributeWithDynamicFields,
   deleteObjectWithValidation,
-} from '../base-operations.js';
-import { findPersonReference } from '../../utils/person-lookup.js';
+} from '@/objects/base-operations.js';
+import { findPersonReference } from '@utils/person-lookup.js';
 import {
   setMockCompany,
   createMockCompanyWithApiStructure,
   updateMockCompany,
   getMockCompany,
-} from '../../utils/mock-state.js';
-import { CompanyFieldValue } from '../../types/tool-types.js';
+} from '@utils/mock-state.js';
+import { CompanyFieldValue } from '@shared-types/tool-types.js';
 
 /**
  * Lists companies sorted by most recent interaction
@@ -78,7 +78,7 @@ export async function getCompanyDetails(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.basic', 'getCompanyDetails').debug(
           'Returning company from shared mock state',
           {
@@ -100,7 +100,7 @@ export async function getCompanyDetails(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      const { createScopedLogger } = await import('../../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       createScopedLogger('companies.basic', 'getCompanyDetails').debug(
         'Returning static mock company (not found in shared state)',
         {
@@ -217,7 +217,7 @@ export async function createCompany(
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    const { createScopedLogger } = await import('../../utils/logger.js');
+    const { createScopedLogger } = await import('@utils/logger.js');
     createScopedLogger('companies.basic', 'createCompany').debug(
       'Input attributes',
       { attributes }
@@ -236,7 +236,7 @@ export async function createCompany(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      const { createScopedLogger } = await import('../../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       createScopedLogger('companies.basic', 'createCompany').debug(
         'Result from createObjectWithDynamicFields',
         {
@@ -263,7 +263,7 @@ export async function createCompany(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.basic', 'createCompany').warn(
           'Invalid ID structure detected, attempting fallback',
           {
@@ -303,7 +303,7 @@ export async function createCompany(
             process.env.E2E_MODE === 'true'
           ) {
             const { createScopedLogger } =
-              await import('../../utils/logger.js');
+              await import('@utils/logger.js');
             createScopedLogger('companies.basic', 'createCompany').debug(
               'Query fallback response',
               {
@@ -328,7 +328,7 @@ export async function createCompany(
               process.env.E2E_MODE === 'true'
             ) {
               const { createScopedLogger } =
-                await import('../../utils/logger.js');
+                await import('@utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').info(
                 'Found existing company via query fallback',
                 { foundCompany }
@@ -366,7 +366,7 @@ export async function createCompany(
               process.env.E2E_MODE === 'true'
             ) {
               const { createScopedLogger } =
-                await import('../../utils/logger.js');
+                await import('@utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').debug(
                 'Created mock company result for testing',
                 { result }
@@ -379,7 +379,7 @@ export async function createCompany(
             process.env.E2E_MODE === 'true'
           ) {
             const { createScopedLogger } =
-              await import('../../utils/logger.js');
+              await import('@utils/logger.js');
             createScopedLogger('companies.basic', 'createCompany').error(
               'Query fallback failed during company creation',
               queryError instanceof Error ? queryError : undefined
@@ -415,7 +415,7 @@ export async function createCompany(
               process.env.E2E_MODE === 'true'
             ) {
               const { createScopedLogger } =
-                await import('../../utils/logger.js');
+                await import('@utils/logger.js');
               createScopedLogger('companies.basic', 'createCompany').warn(
                 'Created emergency mock company result after query failure',
                 { result }
@@ -452,7 +452,7 @@ export async function createCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.basic', 'createCompany').warn(
             'Created mock company result without name for testing',
             { result }
@@ -484,7 +484,7 @@ export async function createCompany(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        const { createScopedLogger } = await import('../../utils/logger.js');
+        const { createScopedLogger } = await import('@utils/logger.js');
         createScopedLogger('companies.basic', 'createCompany').error(
           'CRITICAL: Result still missing ID structure before return',
           undefined,
@@ -514,7 +514,7 @@ export async function createCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.basic', 'createCompany').warn(
             'EMERGENCY: Created last-resort mock ID structure',
             { result }
@@ -533,7 +533,7 @@ export async function createCompany(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      const { createScopedLogger } = await import('../../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       createScopedLogger('companies.basic', 'createCompany').debug(
         'Returning valid company record',
         {
@@ -550,7 +550,7 @@ export async function createCompany(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      const { createScopedLogger } = await import('../../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       const logger = createScopedLogger('companies.basic', 'createCompany');
       logger.error('Error caught', error);
       logger.debug('Error type', { type: typeof error });
@@ -620,7 +620,7 @@ export async function updateCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.basic', 'updateCompany').debug(
             'Updated mock company in shared state',
             {
@@ -648,7 +648,7 @@ export async function updateCompany(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@utils/logger.js');
           createScopedLogger('companies.basic', 'updateCompany').debug(
             'Created new mock company in shared state (not found)',
             { mockUpdatedCompany }
