@@ -15,29 +15,29 @@ Universal tools provide consistent operations across all resource types (compani
 
 | Need to...                  | Use This Tool                    | Key Parameters                            |
 | --------------------------- | -------------------------------- | ----------------------------------------- |
-| **Search any resource**     | `records.search`                 | `resource_type`, `query`                  |
-| **Get record details**      | `records.get_details`            | `resource_type`, `record_id`              |
-| **Create new record**       | `create-record`                  | `resource_type`, `record_data`            |
-| **Update existing record**  | `update-record`                  | `resource_type`, `record_id`, `updates`   |
-| **Delete record**           | `delete-record`                  | `resource_type`, `record_id`              |
-| **Complex searches**        | `records.search_advanced`        | `resource_type`, `filters`                |
-| **Cross-resource searches** | `records.search_by_relationship` | `resource_type`, `related_resource_type`  |
-| **Content-based searches**  | `records.search_by_content`      | `resource_type`, `content_query`          |
-| **Time-based searches**     | `records.search_by_timeframe`    | `resource_type`, `date_range`             |
-| **Bulk operations**         | `records.batch`                  | `operation_type`, `records`               |
-| **Get attributes**          | `records.get_attributes`         | `resource_type`, `record_id`              |
-| **Discover schema**         | `records.discover_attributes`    | `resource_type`                           |
-| **Get specialized info**    | `records.get_info`               | `resource_type`, `record_id`, `info_type` |
+| **Search any resource**     | `search_records`                 | `resource_type`, `query`                  |
+| **Get record details**      | `get_record_details`             | `resource_type`, `record_id`              |
+| **Create new record**       | `create_record`                  | `resource_type`, `record_data`            |
+| **Update existing record**  | `update_record`                  | `resource_type`, `record_id`, `updates`   |
+| **Delete record**           | `delete_record`                  | `resource_type`, `record_id`              |
+| **Complex searches**        | `search_records_advanced`        | `resource_type`, `filters`                |
+| **Cross-resource searches** | `search_records_by_relationship` | `resource_type`, `related_resource_type`  |
+| **Content-based searches**  | `search_records_by_content`      | `resource_type`, `content_query`          |
+| **Time-based searches**     | `search_records_by_timeframe`    | `resource_type`, `date_range`             |
+| **Bulk operations**         | `batch_records`                  | `operation_type`, `records`               |
+| **Get attributes**          | `get_record_attributes`          | `resource_type`, `record_id`              |
+| **Discover schema**         | `discover_record_attributes`     | `resource_type`                           |
+| **Get specialized info**    | `get_record_info`                | `resource_type`, `record_id`, `info_type` |
 
 ## 🛠 Core Operations (8 Tools)
 
-### 1. `records.search`
+### 1. `search_records`
 
 **Universal search across all resource types**
 
 ```typescript
 {
-  "name": "records.search",
+  "name": "search_records",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "query": "search term",
@@ -53,13 +53,13 @@ Universal tools provide consistent operations across all resource types (compani
 - Find people by email: `resource_type: "people", query: "john@example.com"`
 - Find tasks by title: `resource_type: "tasks", query: "follow up"`
 
-### 2. `records.get_details`
+### 2. `get_record_details`
 
 **Get comprehensive information for any record type**
 
 ```typescript
 {
-  "name": "records.get_details",
+  "name": "get_record_details",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "record_id": "record_123456",
@@ -68,13 +68,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 3. `create-record`
+### 3. `create_record`
 
 **Create new records of any supported type**
 
 ```typescript
 {
-  "name": "create-record",
+  "name": "create_record",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "record_data": {
@@ -86,13 +86,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 4. `update-record`
+### 4. `update_record`
 
 **Update existing records**
 
 ```typescript
 {
-  "name": "update-record",
+  "name": "update_record",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "record_id": "record_123456",
@@ -104,13 +104,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 5. `delete-record`
+### 5. `delete_record`
 
 **Delete records safely**
 
 ```typescript
 {
-  "name": "delete-record",
+  "name": "delete_record",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "record_id": "record_123456",
@@ -119,13 +119,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 6. `records.get_attributes`
+### 6. `get_record_attributes`
 
 **Get all attributes for a specific record**
 
 ```typescript
 {
-  "name": "records.get_attributes",
+  "name": "get_record_attributes",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "record_id": "record_123456",
@@ -134,13 +134,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 7. `records.discover_attributes`
+### 7. `discover_record_attributes`
 
 **Discover available attributes for a resource type**
 
 ```typescript
 {
-  "name": "records.discover_attributes",
+  "name": "discover_record_attributes",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "include_schema": true // Optional: include attribute schemas
@@ -148,13 +148,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 8. `records.get_info`
+### 8. `get_record_info`
 
 **Get specialized information (contact, business, social)**
 
 ```typescript
 {
-  "name": "records.get_info",
+  "name": "get_record_info",
   "arguments": {
     "resource_type": "companies" | "people",
     "record_id": "record_123456",
@@ -165,13 +165,13 @@ Universal tools provide consistent operations across all resource types (compani
 
 ## 🚀 Advanced Operations (5 Tools)
 
-### 9. `records.search_advanced`
+### 9. `search_records_advanced`
 
 **Complex searches with sorting and advanced filtering**
 
 ```typescript
 {
-  "name": "records.search_advanced",
+  "name": "search_records_advanced",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "filters": {
@@ -195,13 +195,13 @@ Universal tools provide consistent operations across all resource types (compani
 - `$in`, `$nin` (arrays)
 - `$and`, `$or` (logical)
 
-### 10. `records.search_by_relationship`
+### 10. `search_records_by_relationship`
 
 **Cross-resource relationship searches**
 
 ```typescript
 {
-  "name": "records.search_by_relationship",
+  "name": "search_records_by_relationship",
   "arguments": {
     "resource_type": "people",
     "related_resource_type": "companies",
@@ -213,13 +213,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 11. `records.search_by_content`
+### 11. `search_records_by_content`
 
 **Content-based searches (notes, activity)**
 
 ```typescript
 {
-  "name": "records.search_by_content",
+  "name": "search_records_by_content",
   "arguments": {
     "resource_type": "companies" | "people",
     "content_query": "quarterly review",
@@ -232,13 +232,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 12. `records.search_by_timeframe`
+### 12. `search_records_by_timeframe`
 
 **Time-based searches with date ranges**
 
 ```typescript
 {
-  "name": "records.search_by_timeframe",
+  "name": "search_records_by_timeframe",
   "arguments": {
     "resource_type": "companies" | "people" | "tasks",
     "date_field": "created_at" | "updated_at" | "last_contacted",
@@ -251,13 +251,13 @@ Universal tools provide consistent operations across all resource types (compani
 }
 ```
 
-### 13. `records.batch`
+### 13. `batch_records`
 
 **Bulk operations on multiple records**
 
 ```typescript
 {
-  "name": "records.batch",
+  "name": "batch_records",
   "arguments": {
     "operation_type": "create" | "update" | "delete" | "search",
     "resource_type": "companies" | "people" | "tasks" | "records",
@@ -295,44 +295,44 @@ Generic records with custom attributes defined in your Attio workspace
 
 ### For Simple Operations
 
-- **Basic search**: Use `records.search`
-- **Get details**: Use `records.get_details`
-- **CRUD operations**: Use `create-record`, `update-record`, `delete-record`
+- **Basic search**: Use `search_records`
+- **Get details**: Use `get_record_details`
+- **CRUD operations**: Use `create_record`, `update_record`, `delete_record`
 
 ### For Complex Searches
 
-- **Multi-criteria**: Use `records.search_advanced`
-- **Cross-resource**: Use `records.search_by_relationship`
-- **Content-based**: Use `records.search_by_content`
-- **Time-based**: Use `records.search_by_timeframe`
+- **Multi-criteria**: Use `search_records_advanced`
+- **Cross-resource**: Use `search_records_by_relationship`
+- **Content-based**: Use `search_records_by_content`
+- **Time-based**: Use `search_records_by_timeframe`
 
 ### For Bulk Operations
 
-- **Multiple records**: Use `records.batch`
-- **Schema discovery**: Use `records.discover_attributes`
-- **Specialized info**: Use `records.get_info`
+- **Multiple records**: Use `batch_records`
+- **Schema discovery**: Use `discover_record_attributes`
+- **Specialized info**: Use `get_record_info`
 
 ## 🔄 Migration from Individual Tools
 
 All previous individual tools have been consolidated:
 
-| Old Pattern                         | New Universal Pattern                                       |
-| ----------------------------------- | ----------------------------------------------------------- |
-| `search-companies`                  | `records.search` with `resource_type: "companies"`          |
-| `search-people`                     | `records.search` with `resource_type: "people"`             |
-| `get-company-details`               | `records.get_details` with `resource_type: "companies"`     |
-| `create-person`                     | `create-record` with `resource_type: "people"`              |
-| `records.search_advanced-companies` | `records.search_advanced` with `resource_type: "companies"` |
+| Old Pattern                 | New Universal Pattern                                       |
+| --------------------------- | ----------------------------------------------------------- |
+| `search-companies`          | `search_records` with `resource_type: "companies"`          |
+| `search-people`             | `search_records` with `resource_type: "people"`             |
+| `get-company-details`       | `get_record_details` with `resource_type: "companies"`      |
+| `create-person`             | `create_record` with `resource_type: "people"`              |
+| `advanced-search-companies` | `search_records_advanced` with `resource_type: "companies"` |
 
 **Complete Migration Guide**: See [Migration Guide](../universal-tools/migration-guide.md) for all 40+ tool mappings.
 
 ## 🚀 Best Practices
 
-1. **Start with Basic Tools**: Use `records.search` and `records.get_details` for most operations
+1. **Start with Basic Tools**: Use `search_records` and `get_record_details` for most operations
 2. **Use Appropriate Resource Types**: Always specify the correct `resource_type`
-3. **Leverage Advanced Search**: Use `records.search_advanced` for complex filtering
-4. **Batch for Efficiency**: Use `records.batch` for multiple records
-5. **Discover Schema**: Use `records.discover_attributes` to understand available fields
+3. **Leverage Advanced Search**: Use `search_records_advanced` for complex filtering
+4. **Batch for Efficiency**: Use `batch_records` for multiple records
+5. **Discover Schema**: Use `discover_record_attributes` to understand available fields
 6. **Handle Errors**: All tools include comprehensive error handling
 
 ## 🔗 Additional Resources

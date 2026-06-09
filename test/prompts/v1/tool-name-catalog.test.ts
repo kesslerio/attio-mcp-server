@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { findToolConfig } from '@/handlers/tools/registry.js';
-import { getToolAliasRegistry } from '@/config/tool-aliases.js';
 import { getAllPromptsV1 } from '@/prompts/v1/index.js';
 import { PromptMessage, TextContent } from '@/prompts/v1/types.js';
 
@@ -51,7 +50,9 @@ const SAMPLE_ARGS_BY_PROMPT: Record<string, Record<string, unknown>> = {
 
 const NON_TOOL_TOKENS = new Set(['target', 'search:']);
 
-const TOOL_TOKEN_PATTERN = /^[a-z][a-z0-9_-]*(?:\.[a-z][a-z0-9_-]*)?$/;
+const TOOL_TOKEN_PATTERN = /^[a-z][a-z0-9_-]*(?:\.[a-z][a-z0-9_-]*)*$/;
+const STALE_TOOL_TOKEN_PATTERN =
+  /\b(?:records_query|tasks\.create|records\.update|records\.search|records\.discover_attributes|web\.search|web\.fetch|notes\.create|deals\.list|get-lists|add-record-to-list)\b/g;
 
 function textFromMessages(messages: PromptMessage[]): string {
   return messages
@@ -69,8 +70,20 @@ function extractBacktickedTokens(text: string): string[] {
   );
 }
 
-function resolvesAsTool(token: string): boolean {
-  return Boolean(findToolConfig(token) || getToolAliasRegistry()[token]);
+function extractStaleToolTokens(text: string): string[] {
+  return Array.from(
+    text.matchAll(STALE_TOOL_TOKEN_PATTERN),
+    (match) => match[0]
+  );
+}
+
+function resolveTokens(tokens: string[]): Map<string, boolean> {
+  return new Map(
+    Array.from(new Set(tokens), (token) => [
+      token,
+      Boolean(findToolConfig(token)),
+    ])
+  );
 }
 
 describe('v1 prompt tool-name catalog', () => {
@@ -86,13 +99,15 @@ describe('v1 prompt tool-name catalog', () => {
 
       const text = textFromMessages(prompt.buildMessages(sampleArgs));
       const tokens = extractBacktickedTokens(text);
+      const toolTokens = tokens.filter((token) => !NON_TOOL_TOKENS.has(token));
+      const resolvedTokens = resolveTokens(toolTokens);
 
-      for (const token of tokens) {
-        if (NON_TOOL_TOKENS.has(token)) {
-          continue;
-        }
+      for (const token of extractStaleToolTokens(text)) {
+        unresolved.push({ prompt: prompt.metadata.name, token });
+      }
 
-        if (!resolvesAsTool(token)) {
+      for (const token of toolTokens) {
+        if (!resolvedTokens.get(token)) {
           unresolved.push({ prompt: prompt.metadata.name, token });
         }
       }

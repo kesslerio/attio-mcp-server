@@ -63,11 +63,12 @@ Steps:
    - If starts with "search:": call \`search_records\` with the right resource_type to resolve
    If ambiguous, disambiguate with user.
 
-2. Resolve list: If "${validated.list}" is not a UUID, call \`get-lists\` to find list by name (exact match).
+2. Resolve list: If "${validated.list}" is not a UUID, call \`search_records\` with resource_type="lists" to find one list by exact name.
 
-3. Call \`add-record-to-list\` with:
+3. Call \`manage-list-entry\` with Mode 1 (add) parameters:
    - List ID from step 2
    - Each record ID from step 1
+   - objectType matching each record's resource type
 
 ${validated.dry_run ? 'DRY RUN MODE: Output proposed tool call as JSON only. Do NOT execute write.' : 'Execute the list addition after showing proposed action.'}
 
