@@ -13,21 +13,21 @@ Universal tools provide consistent operations across all resource types (compani
 
 ## 📚 Quick Navigation
 
-| Need to...                  | Use This Tool                    | Key Parameters                            |
-| --------------------------- | -------------------------------- | ----------------------------------------- |
-| **Search any resource**     | `search_records`                 | `resource_type`, `query`                  |
-| **Get record details**      | `get_record_details`             | `resource_type`, `record_id`              |
-| **Create new record**       | `create_record`                  | `resource_type`, `record_data`            |
-| **Update existing record**  | `update_record`                  | `resource_type`, `record_id`, `updates`   |
-| **Delete record**           | `delete_record`                  | `resource_type`, `record_id`              |
-| **Complex searches**        | `search_records_advanced`        | `resource_type`, `filters`                |
-| **Cross-resource searches** | `search_records_by_relationship` | `resource_type`, `related_resource_type`  |
-| **Content-based searches**  | `search_records_by_content`      | `resource_type`, `content_query`          |
-| **Time-based searches**     | `search_records_by_timeframe`    | `resource_type`, `date_range`             |
-| **Bulk operations**         | `batch_records`                  | `operation_type`, `records`               |
-| **Get attributes**          | `get_record_attributes`          | `resource_type`, `record_id`              |
-| **Discover schema**         | `discover_record_attributes`     | `resource_type`                           |
-| **Get specialized info**    | `get_record_info`                | `resource_type`, `record_id`, `info_type` |
+| Need to...                  | Use This Tool                    | Key Parameters                                  |
+| --------------------------- | -------------------------------- | ----------------------------------------------- |
+| **Search any resource**     | `search_records`                 | `resource_type`, `query`                        |
+| **Get record details**      | `get_record_details`             | `resource_type`, `record_id`                    |
+| **Create new record**       | `create_record`                  | `resource_type`, `record_data`                  |
+| **Update existing record**  | `update_record`                  | `resource_type`, `record_id`, `record_data`     |
+| **Delete record**           | `delete_record`                  | `resource_type`, `record_id`                    |
+| **Complex searches**        | `search_records_advanced`        | `resource_type`, `filters`                      |
+| **Cross-resource searches** | `search_records_by_relationship` | `relationship_type`, `source_id`                |
+| **Content-based searches**  | `search_records_by_content`      | `resource_type`, `content_type`, `search_query` |
+| **Time-based searches**     | `search_records_by_timeframe`    | `resource_type`, `date_range`                   |
+| **Bulk operations**         | `batch_records`                  | `operation_type`, `records`                     |
+| **Get attributes**          | `get_record_attributes`          | `resource_type`, `record_id`                    |
+| **Discover schema**         | `discover_record_attributes`     | `resource_type`                                 |
+| **Get specialized info**    | `get_record_info`                | `resource_type`, `record_id`, `info_type`       |
 
 ## 🛠 Core Operations (8 Tools)
 
