@@ -66,12 +66,12 @@ export function buildMeetingPrepMessages(
   const instructions = `Goal: Create a 360° meeting prep sheet for ${validated.target}.
 
 Steps:
-1. Resolve target: If starts with "search:", call \`records_query\` to find one Person or Company record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
+1. Resolve target: If starts with "search:", call \`search_records\` with resource_type="people" or resource_type="companies" to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
 
 2. Gather context (call these in parallel):
-   - \`notes.list\` for the record (last 5 notes)
-   - \`tasks.list\` for the record (open tasks only)
-   - \`deals.list\` for related deals (active deals)
+   - \`list_notes\` for the record (last 5 notes)
+   - \`search_records\` with resource_type="tasks" for open tasks
+   - \`search_records\` with resource_type="deals" for related active deals
 
 3. Output format=${validated.format}:
    - If table: Markdown sections: "Contact Info", "Recent Notes", "Open Tasks", "Active Deals", "Suggested Agenda"

@@ -60,14 +60,14 @@ export function buildAddToListMessages(
 Steps:
 1. Resolve records: Parse "${validated.records}" (comma-separated). For each:
    - If URL or ID: use directly
-   - If starts with "search:": call \`records_query\` to resolve
+   - If starts with "search:": call \`search_records\` with the right resource_type to resolve
    If ambiguous, disambiguate with user.
 
-2. Resolve list: If "${validated.list}" is not a UUID, call \`lists.list\` to find list by name (exact match).
+2. Resolve list: If "${validated.list}" is not a UUID, call \`get-lists\` to find list by name (exact match).
 
-3. Call \`lists.add_entries\` (or \`entries.create\`) with:
+3. Call \`add-record-to-list\` with:
    - List ID from step 2
-   - Record IDs from step 1 (array)
+   - Each record ID from step 1
 
 ${validated.dry_run ? 'DRY RUN MODE: Output proposed tool call as JSON only. Do NOT execute write.' : 'Execute the list addition after showing proposed action.'}
 

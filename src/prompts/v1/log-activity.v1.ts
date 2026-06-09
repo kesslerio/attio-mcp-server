@@ -92,15 +92,15 @@ export function buildLogActivityMessages(
   const instructions = `You are a CRM assistant. Log a ${validated.type} activity to "${validated.target}".
 
 Steps:
-1. Resolve target: If starts with "search:", call \`records_query\` to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
+1. Resolve target: If starts with "search:", call \`search_records\` with the right resource_type to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
 
-2. Create activity note: Call \`notes.create\` (or appropriate write tool) with:
+2. Create activity note: Call \`create_note\` (or appropriate write tool) with:
    - Type: ${validated.type}
    - Summary: "${validated.summary}"
    - Visibility: ${validated.visibility}
    - Link to resolved record
 
-3. ${validated.create_follow_up ? 'Suggest a concrete follow-up task and, only on approval, call `tasks.create`.' : 'No follow-up task needed.'}
+3. ${validated.create_follow_up ? 'Suggest a concrete follow-up task and, only on approval, call `create_record` with resource_type="tasks".' : 'No follow-up task needed.'}
 
 ${validated.dry_run ? 'DRY RUN MODE: Output proposed tool calls as JSON only. Do NOT execute writes.' : 'Execute the writes after showing proposed actions.'}
 

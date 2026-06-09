@@ -13,9 +13,11 @@ GET /prompts/list
 Lists all available prompts or filters by category.
 
 **Parameters:**
+
 - `category` (optional): Filter prompts by category (e.g., "people", "companies", "lists", "notes")
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -50,6 +52,7 @@ GET /prompts/categories
 Lists all available prompt categories.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -66,9 +69,11 @@ GET /prompts/:id
 Gets details for a specific prompt.
 
 **Parameters:**
+
 - `id`: ID of the prompt to get details for
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -100,9 +105,11 @@ POST /prompts/:id/execute
 Executes a prompt with provided parameters.
 
 **Parameters:**
+
 - `id`: ID of the prompt to execute
 
 **Request Body:**
+
 ```json
 {
   "parameters": {
@@ -114,6 +121,7 @@ Executes a prompt with provided parameters.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -131,6 +139,7 @@ The MCP Prompts API includes templates for the following categories:
 ### People
 
 Prompts for working with people records in Attio:
+
 - Create a new person
 - Find a person by email
 - Update person details
@@ -139,6 +148,7 @@ Prompts for working with people records in Attio:
 ### Companies
 
 Prompts for working with company records in Attio:
+
 - Create a new company
 - Find a company by name
 - Update company details
@@ -147,6 +157,7 @@ Prompts for working with company records in Attio:
 ### Lists
 
 Prompts for working with lists in Attio:
+
 - Create a new list
 - Add a record to a list
 - Remove a record from a list
@@ -156,6 +167,7 @@ Prompts for working with lists in Attio:
 ### Notes
 
 Prompts for working with notes in Attio:
+
 - Create a new note
 - Get notes for a record
 - Update a note
@@ -190,14 +202,18 @@ After collecting the necessary parameters, Claude can use the `prompts/execute` 
 ## Extending Prompts
 
 To add new prompt templates, you can extend the templates in the following files:
+
 - `src/prompts/templates/people.ts`
 - `src/prompts/templates/companies.ts`
 - `src/prompts/templates/lists.ts`
 - `src/prompts/templates/notes.ts`
 
 Each template should include:
+
 - A unique ID
 - A title and description
 - A category
 - A list of parameters with types, descriptions, and whether they are required
 - A template string using Handlebars syntax
+
+Prompt instructions that mention MCP tools should use names exposed by the active registry. Prefer canonical universal names such as `search_records`, `get_record_details`, `create_record`, and `update_record`; use exposed compatibility tools such as `search` and `fetch` only when the prompt is intentionally using that compatibility surface. Do not introduce dotted pseudo-tool names in prompt text.

@@ -72,7 +72,7 @@ const buildMissingDealStageMessage = async (
     return (
       `Required field "stage" is missing for deals.\n\n` +
       `Common stage values: ${preview}${hasMore}\n\n` +
-      `For the full list, call: records_get_attribute_options(resource_type="deals", attribute="stage").`
+      `For the full list, call: get_record_attribute_options(resource_type="deals", attribute="stage").`
     );
   } catch (err) {
     sanitizedLog(
@@ -88,7 +88,7 @@ const buildMissingDealStageMessage = async (
     );
     return (
       `Required field "stage" is missing for deals.\n\n` +
-      `Call records_get_attribute_options(resource_type="deals", attribute="stage") to retrieve valid stage values, then retry.`
+      `Call get_record_attribute_options(resource_type="deals", attribute="stage") to retrieve valid stage values, then retry.`
     );
   }
 };

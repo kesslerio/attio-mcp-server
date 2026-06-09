@@ -32,11 +32,11 @@ export const advancedOperationsToolDefinitions = {
     description: formatToolDescription({
       capability:
         'Search companies, people, deals, or tasks with complex nested filters (e.g., find deals by owner+stage, companies by industry+location).',
-      boundaries: 'mutate records; use records.update or records.delete.',
+      boundaries: 'mutate records; use update_record or delete_record.',
       constraints:
         'Supports filter groups, scoring, pagination, and up to 100 items. Requires resource_type parameter.',
       recoveryHint:
-        'If filters fail, fetch valid attributes via records.discover_attributes.',
+        'If filters fail, fetch valid attributes via discover_record_attributes.',
     }),
     inputSchema: advancedSearchSchema,
     annotations: {
@@ -51,7 +51,7 @@ export const advancedOperationsToolDefinitions = {
         'Search records using relationship anchors (list, company, people).',
       boundaries: 'modify memberships; use list tools for writes.',
       constraints: 'Requires resource_type and related resource identifier.',
-      recoveryHint: 'Use records.search to resolve IDs before calling.',
+      recoveryHint: 'Use search_records to resolve IDs before calling.',
     }),
     inputSchema: searchByRelationshipSchema,
     annotations: {
@@ -67,7 +67,7 @@ export const advancedOperationsToolDefinitions = {
       constraints:
         'Requires resource_type and content_query; optional fields array.',
       recoveryHint:
-        'Narrow scope with fields or switch to records.search_advanced.',
+        'Narrow scope with fields or switch to search_records_advanced.',
     }),
     inputSchema: searchByContentSchema,
     annotations: {
@@ -84,7 +84,7 @@ export const advancedOperationsToolDefinitions = {
       constraints:
         'Requires resource_type; provide timeframe or explicit date boundaries.',
       recoveryHint:
-        'Call records.search if timeframe filters are too restrictive.',
+        'Call search_records if timeframe filters are too restrictive.',
     }),
     inputSchema: searchByTimeframeSchema,
     annotations: {
@@ -102,7 +102,7 @@ export const advancedOperationsToolDefinitions = {
       constraints:
         'Use scoped single-record tools for one company or deal write. operation_type must be specified for legacy payloads; operations arrays must use explicit create/update/delete entries.',
       recoveryHint:
-        'Run records.search first to stage IDs or payloads for batching.',
+        'Run search_records first to stage IDs or payloads for batching.',
     }),
     inputSchema: batchOperationsSchema,
     annotations: {
