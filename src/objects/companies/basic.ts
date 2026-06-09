@@ -290,7 +290,7 @@ export async function createCompany(
           attributes.name !== null &&
           'value' in (attributes.name as Record<string, unknown>)
             ? (attributes.name as { value: string }).value
-            : attributes.name ?? '';
+            : (attributes.name ?? '');
 
         try {
           const api = getLazyAttioClient();
