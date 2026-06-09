@@ -23,7 +23,7 @@ Universal tools provide consistent operations across all resource types (compani
 | **Complex searches**        | `search_records_advanced`        | `resource_type`, `filters`                      |
 | **Cross-resource searches** | `search_records_by_relationship` | `relationship_type`, `source_id`                |
 | **Content-based searches**  | `search_records_by_content`      | `resource_type`, `content_type`, `search_query` |
-| **Time-based searches**     | `search_records_by_timeframe`    | `resource_type`, `date_range`                   |
+| **Time-based searches**     | `search_records_by_timeframe`    | `resource_type`, `start_date`, `end_date`       |
 | **Bulk operations**         | `batch_records`                  | `operation_type`, `records`                     |
 | **Get attributes**          | `get_record_attributes`          | `resource_type`, `record_id`                    |
 | **Discover schema**         | `discover_record_attributes`     | `resource_type`                                 |
@@ -175,12 +175,19 @@ Universal tools provide consistent operations across all resource types (compani
   "arguments": {
     "resource_type": "companies" | "people" | "tasks" | "records",
     "filters": {
-      "name": { "$contains": "tech" },
-      "employees": { "$gte": 50 },
-      "$or": [
-        { "industry": "Technology" },
-        { "industry": "Software" }
-      ]
+      "filters": [
+        {
+          "attribute": { "slug": "name" },
+          "condition": "contains",
+          "value": "tech"
+        },
+        {
+          "attribute": { "slug": "employees" },
+          "condition": "gte",
+          "value": 50
+        }
+      ],
+      "matchAny": false
     },
     "sort": [{ "name": "asc" }],
     "limit": 50
@@ -190,10 +197,10 @@ Universal tools provide consistent operations across all resource types (compani
 
 **Filter Operators:**
 
-- `$contains`, `$starts_with`, `$ends_with` (text)
-- `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` (comparisons)
-- `$in`, `$nin` (arrays)
-- `$and`, `$or` (logical)
+- `contains`, `starts_with`, `ends_with` (text)
+- `equals`, `gt`, `gte`, `lt`, `lte` (comparisons)
+- `is_empty`, `is_not_empty` (presence)
+- `matchAny: true` for OR logic across filters
 
 ### 10. `search_records_by_relationship`
 
@@ -203,12 +210,10 @@ Universal tools provide consistent operations across all resource types (compani
 {
   "name": "search_records_by_relationship",
   "arguments": {
-    "resource_type": "people",
-    "related_resource_type": "companies",
-    "relationship_filter": {
-      "company_name": { "$contains": "acme" }
-    },
-    "include_related": true
+    "relationship_type": "company_to_people",
+    "source_id": "company_record_id",
+    "target_resource_type": "people",
+    "limit": 50
   }
 }
 ```
@@ -222,12 +227,9 @@ Universal tools provide consistent operations across all resource types (compani
   "name": "search_records_by_content",
   "arguments": {
     "resource_type": "companies" | "people",
-    "content_query": "quarterly review",
-    "content_types": ["notes", "activities"],
-    "date_range": {
-      "start": "2023-01-01",
-      "end": "2023-12-31"
-    }
+    "content_type": "notes" | "activity" | "interactions",
+    "search_query": "quarterly review",
+    "limit": 20
   }
 }
 ```
@@ -242,11 +244,8 @@ Universal tools provide consistent operations across all resource types (compani
   "arguments": {
     "resource_type": "companies" | "people" | "tasks",
     "date_field": "created_at" | "updated_at" | "last_contacted",
-    "date_range": {
-      "start": "2023-01-01",
-      "end": "2023-12-31"
-    },
-    "relative_range": "last_30_days" // Alternative to absolute dates
+    "start_date": "2023-01-01",
+    "end_date": "2023-12-31"
   }
 }
 ```
