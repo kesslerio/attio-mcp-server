@@ -124,7 +124,7 @@ ${icpContext}
 Steps:
 1) Resolve \`target\`: If starts with \`search:\`, call \`search_records\` with resource_type="people" or resource_type="companies" to find one record (prefer exact domain/email + title+company). If multiple, list up to 5 for disambiguation and STOP.
 
-2) Build a tiny web plan (token-light): At most ${validated.limit_web} pages total. Prioritize: company homepage (domain), LinkedIn company page, product/pricing page. Call \`search\` only if domain is unknown; otherwise skip search. Call \`fetch\` and extract readable text only (strip nav/boilerplate). Truncate each page to the first ~${WEB_RESEARCH_LIMITS.maxWordsPerPage} words.
+2) Build a tiny web plan (token-light): At most ${validated.limit_web} pages total. Prioritize: company homepage (domain), LinkedIn company page, product/pricing page. Use the host assistant's web browsing/search capability only when available; do not use Attio MCP search/fetch tools for external webpages. Extract readable text only (strip nav/boilerplate). Truncate each page to the first ~${WEB_RESEARCH_LIMITS.maxWordsPerPage} words.
 
 3) Extract key facts for ${validated.framework.toUpperCase()}:
    - Firmographic: industry, employee bucket, region; ICP match

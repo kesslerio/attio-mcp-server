@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getToolAliasRegistry } from '@/config/tool-aliases.js';
 import { findToolConfig } from '@/handlers/tools/registry.js';
 import { getAllPromptsV1 } from '@/prompts/v1/index.js';
 import { PromptMessage, TextContent } from '@/prompts/v1/types.js';
@@ -49,6 +50,7 @@ const SAMPLE_ARGS_BY_PROMPT: Record<string, Record<string, unknown>> = {
 };
 
 const NON_TOOL_TOKENS = new Set(['target', 'search:']);
+const DEPRECATED_TOOL_ALIASES = new Set(Object.keys(getToolAliasRegistry()));
 
 const TOOL_TOKEN_PATTERN = /^[a-z][a-z0-9_-]*(?:\.[a-z][a-z0-9_-]*)*$/;
 const STALE_TOOL_TOKEN_PATTERN =
@@ -107,6 +109,11 @@ describe('v1 prompt tool-name catalog', () => {
       }
 
       for (const token of toolTokens) {
+        if (DEPRECATED_TOOL_ALIASES.has(token)) {
+          unresolved.push({ prompt: prompt.metadata.name, token });
+          continue;
+        }
+
         if (!resolvedTokens.get(token)) {
           unresolved.push({ prompt: prompt.metadata.name, token });
         }

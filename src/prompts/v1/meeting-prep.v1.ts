@@ -70,7 +70,7 @@ Steps:
 
 2. Gather context (call these in parallel):
    - \`list_notes\` for the record (last 5 notes)
-   - \`search_records\` with resource_type="tasks" for open tasks
+   - \`search_records\` with resource_type="tasks" for candidate tasks, then keep only open/not-completed statuses from the returned task fields
    - \`search_records\` with resource_type="deals" for related active deals
 
 3. Output format=${validated.format}:
