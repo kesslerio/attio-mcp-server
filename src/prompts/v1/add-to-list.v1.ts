@@ -66,9 +66,9 @@ Steps:
 
 2. Resolve list: If "${validated.list}" is not a UUID, call \`search_records\` with resource_type="lists" to find one list by exact name.
 
-3. Call \`manage-list-entry\` with Mode 1 (add) parameters:
+3. For each resolved record, call \`manage-list-entry\` once with Mode 1 (add) parameters:
    - List ID from step 2
-   - Each record ID from step 1
+   - One recordId from step 1
    - objectType matching each record's supported resource type ("companies" or "people")
 
 ${validated.dry_run ? 'DRY RUN MODE: Output proposed tool call as JSON only. Do NOT execute write.' : 'Execute the list addition after showing proposed action.'}
@@ -94,7 +94,7 @@ export const addToListPrompt: PromptV1Definition = {
     name: 'add_to_list.v1',
     title: 'Add records to list',
     description:
-      'Add person/company/deal(s) to a chosen List by exact name or ID.',
+      'Add person/company record(s) to a chosen List by exact name or ID.',
     category: 'workflow',
     version: 'v1',
   },

@@ -94,11 +94,12 @@ export function buildLogActivityMessages(
 Steps:
 1. Resolve target: If starts with "search:", call \`search_records\` with the right resource_type to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
 
-2. Create activity note: Call \`create_note\` (or appropriate write tool) with:
-   - Type: ${validated.type}
-   - Summary: "${validated.summary}"
-   - Visibility: ${validated.visibility}
-   - Link to resolved record
+2. Create activity note: Call \`create_note\` with:
+   - resource_type: resolved target resource type
+   - record_id: resolved target record ID
+   - title: "${validated.type}: activity"
+   - content: "${validated.summary}" plus "Visibility: ${validated.visibility}"
+   - format: "plaintext"
 
 3. ${validated.create_follow_up ? 'Suggest a concrete follow-up task and, only on approval, call `create_record` with resource_type="tasks".' : 'No follow-up task needed.'}
 

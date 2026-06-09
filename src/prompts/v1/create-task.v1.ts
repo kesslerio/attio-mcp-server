@@ -115,8 +115,8 @@ export function buildCreateTaskMessages(
 ${targetResolution ? '2' : '1'}. Call \`create_record\` with resource_type="tasks" and record_data:
    - title, content (required)
    - assignees: [owner]
-   - deadline: parsed due_date (if provided)
-   - linked_records: [resolved target] (if provided)
+   - deadline_at: parsed due_date (if provided)
+   - linked_records: [{ target_object: resolved target resource type, target_record_id: resolved target record ID }] (if provided)
 
 ${validated.dry_run ? 'DRY RUN MODE: Output proposed tool call as JSON only. Do NOT execute write.' : 'Execute the task creation after showing proposed action.'}
 

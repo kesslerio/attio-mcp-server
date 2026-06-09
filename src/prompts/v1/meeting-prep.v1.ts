@@ -70,8 +70,9 @@ Steps:
 
 2. Gather context (call these in parallel):
    - \`list_notes\` for the record (last 5 notes)
-   - \`search_records\` with resource_type="tasks" for candidate tasks, then keep only open/not-completed statuses from the returned task fields
-   - \`search_records\` with resource_type="deals" for related active deals
+   - \`get_record_details\` for the resolved record with relationships included when supported
+   - \`search_records\` with resource_type="tasks" for candidate tasks, then keep only open/not-completed tasks whose linked_records or related record fields reference the resolved record ID
+   - \`search_records\` with resource_type="deals" for candidate deals, then keep only active deals whose associated people/company fields reference the resolved record ID
 
 3. Output format=${validated.format}:
    - If table: Markdown sections: "Contact Info", "Recent Notes", "Open Tasks", "Active Deals", "Suggested Agenda"
