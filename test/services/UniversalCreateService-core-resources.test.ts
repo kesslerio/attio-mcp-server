@@ -2,16 +2,16 @@
  * Split: UniversalCreateService core resources (companies, people, lists)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
+vi.mock('@services/ValidationService.js', () => ({
   ValidationService: {
     truncateSuggestions: vi.fn((s: string[]) => s),
     validateEmailAddresses: vi.fn(),
   },
 }));
-vi.mock('../../src/services/UniversalUtilityService.js', () => ({
+vi.mock('@services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: { convertTaskToRecord: vi.fn() },
 }));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
+vi.mock('@handlers/tool-configs/universal/field-mapper.js', () => ({
   mapRecordFields: vi.fn(),
   validateResourceType: vi.fn(),
   getFieldSuggestions: vi.fn(),
@@ -25,17 +25,17 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
     lists: { validFields: ['name', 'description'] },
   },
 }));
-vi.mock('../../src/utils/validation-utils.js', () => ({
+vi.mock('@utils/validation-utils.js', () => ({
   validateRecordFields: vi.fn(),
 }));
-vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
+vi.mock('@utils/attribute-format-helpers.js', () => ({
   convertAttributeFormats: vi.fn((type: string, data: any) => data),
   getFormatErrorHelp: vi.fn(
     (type: string, field: string, message: string) => `Enhanced: ${message}`
   ),
   validatePeopleAttributesPrePost: vi.fn(),
 }));
-vi.mock('../../src/config/deal-defaults.js', () => ({
+vi.mock('@config/deal-defaults.js', () => ({
   applyDealDefaultsWithValidation: vi.fn(),
   getDealDefaults: vi.fn(() => ({ stage: 'default-stage' })),
   validateDealInput: vi.fn(() => ({
@@ -44,10 +44,10 @@ vi.mock('../../src/config/deal-defaults.js', () => ({
     warnings: [],
   })),
 }));
-vi.mock('../../src/utils/normalization/people-normalization.js', () => ({
+vi.mock('@utils/normalization/people-normalization.js', () => ({
   PeopleDataNormalizer: { normalizePeopleData: vi.fn((d: any) => d) },
 }));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
+vi.mock('@errors/enhanced-api-errors.js', () => ({
   EnhancedApiError: vi
     .fn()
     .mockImplementation(
@@ -73,7 +73,7 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
   },
   ErrorEnhancer: { autoEnhance: vi.fn((e: any) => e) },
 }));
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('@utils/logger.js', () => ({
   debug: vi.fn(),
   createScopedLogger: vi.fn(() => ({
     debug: vi.fn(),
@@ -83,12 +83,12 @@ vi.mock('../../src/utils/logger.js', () => ({
   })),
   OperationType: { API_CALL: 'api_call' },
 }));
-vi.mock('../../src/objects/companies/index.js', () => ({
+vi.mock('@/objects/companies/index.js', () => ({
   createCompany: vi.fn(),
 }));
-vi.mock('../../src/objects/lists.js', () => ({ createList: vi.fn() }));
-vi.mock('../../src/objects/people/index.js', () => ({ createPerson: vi.fn() }));
-vi.mock('../../src/objects/records/index.js', () => ({
+vi.mock('@/objects/lists.js', () => ({ createList: vi.fn() }));
+vi.mock('@/objects/people/index.js', () => ({ createPerson: vi.fn() }));
+vi.mock('@/objects/records/index.js', () => ({
   createObjectRecord: vi.fn(),
 }));
 // Mock the create service factory to return a mock service
@@ -102,23 +102,23 @@ const mockCreateService = {
   updateTask: vi.fn(),
 };
 
-vi.mock('../../src/services/create/index.js', () => ({
+vi.mock('@services/create/index.js', () => ({
   getCreateService: vi.fn(() => mockCreateService),
   shouldUseMockData: vi.fn(() => true),
 }));
 
-import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../../src/types/attio.js';
-import { ValidationService } from '../../src/services/ValidationService.js';
-import { PeopleDataNormalizer } from '../../src/utils/normalization/people-normalization.js';
-import { convertAttributeFormats } from '../../src/utils/attribute-format-helpers.js';
-import { createList } from '../../src/objects/lists.js';
-import { getCreateService } from '../../src/services/create/index.js';
+import { UniversalCreateService } from '@services/UniversalCreateService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@shared-types/attio.js';
+import { ValidationService } from '@services/ValidationService.js';
+import { PeopleDataNormalizer } from '@utils/normalization/people-normalization.js';
+import { convertAttributeFormats } from '@utils/attribute-format-helpers.js';
+import { createList } from '@/objects/lists.js';
+import { getCreateService } from '@services/create/index.js';
 import {
   validateFields,
   mapRecordFields,
-} from '../../src/handlers/tool-configs/universal/field-mapper.js';
+} from '@handlers/tool-configs/universal/field-mapper.js';
 
 describe('UniversalCreateService', () => {
   beforeEach(() => {
