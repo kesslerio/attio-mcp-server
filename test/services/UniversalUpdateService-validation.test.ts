@@ -89,10 +89,7 @@ import {
   validateResourceType,
 } from '@handlers/tool-configs/universal/field-mapper.js';
 import { validateRecordFields } from '@utils/validation-utils.js';
-import {
-  getCreateService,
-  shouldUseMockData,
-} from '@services/create/index.js';
+import { getCreateService, shouldUseMockData } from '@services/create/index.js';
 import * as tasks from '@/objects/tasks.js';
 // Ensure enhanced validation is disabled for these unit tests
 beforeEach(() => {
