@@ -2,21 +2,21 @@
  * Split: UniversalUpdateService validation & error handling
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/objects/tasks.js', () => ({
+vi.mock('@/objects/tasks.js', () => ({
   getTask: vi.fn(),
   updateTask: vi.fn(),
 }));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
+vi.mock('@handlers/tool-configs/universal/field-mapper.js', () => ({
   mapRecordFields: vi.fn(),
   mapTaskFields: vi.fn((_: string, i: any) => i),
   validateResourceType: vi.fn(),
   getFieldSuggestions: vi.fn(),
   validateFields: vi.fn(),
 }));
-vi.mock('../../src/utils/validation-utils.js', () => ({
+vi.mock('@utils/validation-utils.js', () => ({
   validateRecordFields: vi.fn(),
 }));
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('@utils/logger.js', () => ({
   debug: vi.fn(),
   error: vi.fn(),
   info: vi.fn(),
@@ -53,14 +53,14 @@ const mockCreateService = {
   updateTask: vi.fn(),
 };
 
-vi.mock('../../src/services/create/index.js', () => ({
+vi.mock('@services/create/index.js', () => ({
   getCreateService: vi.fn(() => mockCreateService),
   shouldUseMockData: vi.fn(() => true),
 }));
-vi.mock('../../src/objects/companies/index.js', () => ({
+vi.mock('@/objects/companies/index.js', () => ({
   updateCompany: vi.fn(() => ({ id: { record_id: 'comp_123' }, values: {} })),
 }));
-vi.mock('../../src/objects/lists.js', () => ({
+vi.mock('@/objects/lists.js', () => ({
   updateList: vi.fn(() => ({
     id: { list_id: 'list_123' },
     title: 'Test List',
@@ -71,29 +71,29 @@ vi.mock('../../src/objects/lists.js', () => ({
     updated_at: '2024-01-01T00:00:00Z',
   })),
 }));
-vi.mock('../../src/objects/people-write.js', () => ({
+vi.mock('@/objects/people-write.js', () => ({
   updatePerson: vi.fn(() => ({ id: { record_id: 'person_123' }, values: {} })),
 }));
-vi.mock('../../src/objects/records/index.js', () => ({
+vi.mock('@/objects/records/index.js', () => ({
   updateObjectRecord: vi.fn(() => ({
     id: { record_id: 'record_123' },
     values: {},
   })),
 }));
-import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalUpdateService } from '@services/UniversalUpdateService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
 import {
   getFieldSuggestions,
   mapRecordFields,
   validateFields,
   validateResourceType,
-} from '../../src/handlers/tool-configs/universal/field-mapper.js';
-import { validateRecordFields } from '../../src/utils/validation-utils.js';
+} from '@handlers/tool-configs/universal/field-mapper.js';
+import { validateRecordFields } from '@utils/validation-utils.js';
 import {
   getCreateService,
   shouldUseMockData,
-} from '../../src/services/create/index.js';
-import * as tasks from '../../src/objects/tasks.js';
+} from '@services/create/index.js';
+import * as tasks from '@/objects/tasks.js';
 // Ensure enhanced validation is disabled for these unit tests
 beforeEach(() => {
   delete process.env.ENABLE_ENHANCED_VALIDATION;
@@ -148,7 +148,7 @@ describe('UniversalUpdateService', () => {
       } as any);
 
       // Mock the debug logger to verify structured logging is used
-      const { debug } = await import('../../src/utils/logger.js');
+      const { debug } = await import('@utils/logger.js');
       const debugSpy = vi.mocked(debug);
 
       mockCreateService.updateTask.mockResolvedValue({
@@ -215,7 +215,7 @@ describe('UniversalUpdateService', () => {
     it('should handle attribute not found errors with suggestions', async () => {
       // Simulate downstream update error
       const { updateCompany } =
-        await import('../../src/objects/companies/index.js');
+        await import('@/objects/companies/index.js');
       vi.mocked(updateCompany as any).mockRejectedValue(
         new Error('Cannot find attribute with slug/ID "invalid_field"')
       );
@@ -458,7 +458,7 @@ describe('UniversalUpdateService', () => {
     it('should handle empty record data', async () => {
       // Reset the updateCompany mock from previous tests
       const { updateCompany } =
-        await import('../../src/objects/companies/index.js');
+        await import('@/objects/companies/index.js');
       vi.mocked(updateCompany).mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: {},
