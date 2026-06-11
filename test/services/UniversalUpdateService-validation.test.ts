@@ -214,8 +214,7 @@ describe('UniversalUpdateService', () => {
 
     it('should handle attribute not found errors with suggestions', async () => {
       // Simulate downstream update error
-      const { updateCompany } =
-        await import('@/objects/companies/index.js');
+      const { updateCompany } = await import('@/objects/companies/index.js');
       vi.mocked(updateCompany as any).mockRejectedValue(
         new Error('Cannot find attribute with slug/ID "invalid_field"')
       );
@@ -457,8 +456,7 @@ describe('UniversalUpdateService', () => {
 
     it('should handle empty record data', async () => {
       // Reset the updateCompany mock from previous tests
-      const { updateCompany } =
-        await import('@/objects/companies/index.js');
+      const { updateCompany } = await import('@/objects/companies/index.js');
       vi.mocked(updateCompany).mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: {},
