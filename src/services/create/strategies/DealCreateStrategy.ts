@@ -1,4 +1,4 @@
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord } from '@shared-types/attio.js';
 import type {
   CreateStrategy,
   CreateStrategyParams,
@@ -6,11 +6,11 @@ import type {
 import {
   applyDealDefaultsWithValidation,
   validateDealInput,
-} from '../../../config/deal-defaults.js';
-import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
-import { createObjectRecord as createObjectRecordApi } from '../../../objects/records/index.js';
-import { getDealDefaults } from '../../../config/deal-defaults.js';
-import { debug } from '../../../utils/logger.js';
+} from '@config/deal-defaults.js';
+import { convertAttributeFormats } from '@utils/attribute-format-helpers.js';
+import { createObjectRecord as createObjectRecordApi } from '@/objects/records/index.js';
+import { getDealDefaults } from '@config/deal-defaults.js';
+import { debug } from '@utils/logger.js';
 
 export class DealCreateStrategy implements CreateStrategy {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {

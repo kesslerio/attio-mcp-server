@@ -6,10 +6,10 @@
  */
 
 import type { CreateService } from './types.js';
-import type { AttioRecord } from '../../types/attio.js';
-import type { E2EMeta, UnknownRecord } from '../../types/service-types.js';
-import { extractRecordId } from '../../utils/validation/uuid-validation.js';
-import { isValidId } from '../../utils/validation.js';
+import type { AttioRecord } from '@shared-types/attio.js';
+import type { E2EMeta, UnknownRecord } from '@shared-types/service-types.js';
+import { extractRecordId } from '@utils/validation/uuid-validation.js';
+import { isValidId } from '@utils/validation.js';
 import { generateMockId } from './extractor.js';
 
 /**
@@ -76,7 +76,7 @@ export class MockCreateService implements CreateService {
     // Issue #480 compatible mock task
     try {
       const { logTaskDebug, sanitizePayload } =
-        await import('../../utils/task-debug.js');
+        await import('@utils/task-debug.js');
       logTaskDebug(
         'mock.createTask',
         'Incoming taskData',
@@ -151,7 +151,7 @@ export class MockCreateService implements CreateService {
 
     try {
       const { logTaskDebug, inspectTaskRecordShape } =
-        await import('../../utils/task-debug.js');
+        await import('@utils/task-debug.js');
       logTaskDebug(
         'mock.createTask',
         'Returning mock task',
@@ -256,7 +256,7 @@ export class MockCreateService implements CreateService {
 
     try {
       const { logTaskDebug, inspectTaskRecordShape } =
-        await import('../../utils/task-debug.js');
+        await import('@utils/task-debug.js');
       logTaskDebug(
         'mock.updateTask',
         'Returning updated mock task',
