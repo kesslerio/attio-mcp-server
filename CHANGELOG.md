@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-06-16] - Daily Update
+
+### Changed
+
+- Migrated alias imports across dispatcher operations, create strategies, update strategies, and test files for improved import consistency (#745)
+
 ## [1.6.1] - 2026-05-14
 
 **TL;DR for Users**: New dedicated list configuration tools, npm provenance for supply chain verification, and Docker build fix.
