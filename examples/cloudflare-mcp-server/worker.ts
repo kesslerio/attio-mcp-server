@@ -30,6 +30,11 @@ import { createMcpHandler } from './src/mcp-handler.js';
 // bounding how long a revoked token can linger; clients re-authenticate once it elapses.
 const DEFAULT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
+// Short lifetime for the one-time `auth:<code>` record. The authorization code is
+// exchanged immediately at /oauth/token, so it must not stay redeemable for the
+// full session lifetime if it leaks (history/logs) or is never exchanged.
+const AUTH_CODE_TTL_SECONDS = 10 * 60; // 10 minutes
+
 export interface Env {
   // Attio OAuth credentials
   ATTIO_CLIENT_ID: string;
@@ -568,7 +573,13 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     '[OAuth Callback] Storing token with auth code:',
     authCode.substring(0, 8) + '...'
   );
-  await tokenStorage.storeToken(`auth:${authCode}`, storedToken);
+  // One-time auth code: force a short KV TTL even though storedToken carries the
+  // long session lifetime (reused when the session token is minted at /oauth/token).
+  await tokenStorage.storeToken(
+    `auth:${authCode}`,
+    storedToken,
+    AUTH_CODE_TTL_SECONDS
+  );
   console.log('[OAuth Callback] Token stored with auth: prefix');
 
   // If we have a client redirect_uri, redirect back to the client with the auth code
@@ -810,6 +821,59 @@ async function handleToken(
 
   const data = await response.json();
 
+  // Wrap a successful Attio token exchange (refresh_token grant, or a direct Attio
+  // code) in a worker-issued session token, mirroring the authorization-code path.
+  // /mcp now rejects bearers with no KV session, so returning Attio's raw token here
+  // would make the very next /mcp call fail with 401.
+  const attioTokens = data as {
+    access_token?: string;
+    refresh_token?: string;
+    token_type?: string;
+    expires_in?: number;
+  };
+  if (
+    response.ok &&
+    env.TOKEN_STORE &&
+    env.TOKEN_ENCRYPTION_KEY &&
+    typeof attioTokens.access_token === 'string'
+  ) {
+    const tokenStorage = createTokenStorage({
+      kv: env.TOKEN_STORE,
+      encryptionKey: env.TOKEN_ENCRYPTION_KEY,
+    });
+    const refreshedToken: StoredToken = {
+      accessToken: attioTokens.access_token,
+      refreshToken: attioTokens.refresh_token,
+      expiresAt:
+        Math.floor(Date.now() / 1000) +
+        (attioTokens.expires_in || DEFAULT_SESSION_TTL_SECONDS),
+      tokenType: attioTokens.token_type || 'Bearer',
+    };
+    const sessionToken = generateRandomString(32);
+    await tokenStorage.storeToken(`session:${sessionToken}`, refreshedToken);
+
+    return new Response(
+      JSON.stringify({
+        access_token: sessionToken,
+        token_type: 'Bearer',
+        expires_in: Math.max(
+          0,
+          refreshedToken.expiresAt - Math.floor(Date.now() / 1000)
+        ),
+        ...(refreshedToken.refreshToken && {
+          refresh_token: refreshedToken.refreshToken,
+        }),
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders(origin),
+        },
+      }
+    );
+  }
+
   return new Response(JSON.stringify(data), {
     status: response.status,
     headers: {
@@ -866,6 +930,8 @@ async function handleRegister(
 
 // Handler: MCP endpoint
 async function handleMcp(request: Request, env: Env): Promise<Response> {
+  const origin = request.headers.get('Origin') || undefined;
+
   // Extract authorization token
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -883,6 +949,7 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
         headers: {
           'Content-Type': 'application/json',
           'WWW-Authenticate': 'Bearer',
+          ...corsHeaders(origin),
         },
       }
     );
@@ -944,6 +1011,7 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
           headers: {
             'Content-Type': 'application/json',
             'WWW-Authenticate': 'Bearer',
+            ...corsHeaders(origin),
           },
         }
       );
@@ -965,7 +1033,7 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
       }),
       {
         status: 503,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
       }
     );
   }
