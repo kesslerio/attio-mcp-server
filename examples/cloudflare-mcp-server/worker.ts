@@ -22,6 +22,19 @@
 import { createTokenStorage, type StoredToken } from './src/token-storage.js';
 import { createMcpHandler } from './src/mcp-handler.js';
 
+// Session lifetime used when Attio's token response omits `expires_in`.
+// Attio OAuth access tokens are long-lived and Attio returns no `expires_in`,
+// so the previous 1-hour default expired the KV session->token mapping ~1h after
+// connecting -- after which every /mcp call 401'd because the worker forwarded an
+// orphaned session token to Attio. 30 days keeps the connection stable while still
+// bounding how long a revoked token can linger; clients re-authenticate once it elapses.
+const DEFAULT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+
+// Short lifetime for the one-time `auth:<code>` record. The authorization code is
+// exchanged immediately at /oauth/token, so it must not stay redeemable for the
+// full session lifetime if it leaks (history/logs) or is never exchanged.
+const AUTH_CODE_TTL_SECONDS = 10 * 60; // 10 minutes
+
 export interface Env {
   // Attio OAuth credentials
   ATTIO_CLIENT_ID: string;
@@ -180,6 +193,54 @@ function getProtectedResourceMetadata(workerUrl: string): object {
       'object:read',
     ],
   };
+}
+
+// Build a StoredToken from an Attio /oauth/token response, stamped with the worker
+// session lifetime. Attio's OAuth tokens are non-expiring (no expires_in), so the
+// session TTL falls back to DEFAULT_SESSION_TTL_SECONDS.
+function storedTokenFromAttio(attio: {
+  access_token: string;
+  refresh_token?: string;
+  token_type?: string;
+  expires_in?: number;
+}): StoredToken {
+  return {
+    accessToken: attio.access_token,
+    refreshToken: attio.refresh_token,
+    expiresAt:
+      Math.floor(Date.now() / 1000) +
+      (attio.expires_in || DEFAULT_SESSION_TTL_SECONDS),
+    tokenType: attio.token_type || 'Bearer',
+  };
+}
+
+// Mint a worker-issued session token for a stored Attio token and return the OAuth
+// token response. The session token is the Bearer clients send at /mcp; /mcp rejects
+// any bearer that does not resolve to a session here.
+async function mintSessionResponse(
+  tokenStorage: ReturnType<typeof createTokenStorage>,
+  storedToken: StoredToken,
+  origin?: string
+): Promise<Response> {
+  const sessionToken = generateRandomString(32);
+  await tokenStorage.storeToken(`session:${sessionToken}`, storedToken);
+  return new Response(
+    JSON.stringify({
+      access_token: sessionToken,
+      token_type: 'Bearer',
+      expires_in: Math.max(
+        0,
+        storedToken.expiresAt - Math.floor(Date.now() / 1000)
+      ),
+      ...(storedToken.refreshToken && {
+        refresh_token: storedToken.refreshToken,
+      }),
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+    }
+  );
 }
 
 export default {
@@ -545,12 +606,7 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     encryptionKey: env.TOKEN_ENCRYPTION_KEY,
   });
 
-  const storedToken: StoredToken = {
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token,
-    expiresAt: Math.floor(Date.now() / 1000) + (tokens.expires_in || 3600),
-    tokenType: tokens.token_type || 'Bearer',
-  };
+  const storedToken = storedTokenFromAttio(tokens);
 
   // SECURITY: Store with auth: prefix - only valid at /oauth/token endpoint
   // Auth codes are one-time use and cannot be used directly at /mcp
@@ -558,7 +614,13 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     '[OAuth Callback] Storing token with auth code:',
     authCode.substring(0, 8) + '...'
   );
-  await tokenStorage.storeToken(`auth:${authCode}`, storedToken);
+  // One-time auth code: force a short KV TTL even though storedToken carries the
+  // long session lifetime (reused when the session token is minted at /oauth/token).
+  await tokenStorage.storeToken(
+    `auth:${authCode}`,
+    storedToken,
+    AUTH_CODE_TTL_SECONDS
+  );
   console.log('[OAuth Callback] Token stored with auth: prefix');
 
   // If we have a client redirect_uri, redirect back to the client with the auth code
@@ -623,12 +685,12 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
           }
 
           <h4>Token Info</h4>
-          <pre>Expires in: ${tokens.expires_in || 3600} seconds
+          <pre>Expires in: ${tokens.expires_in || DEFAULT_SESSION_TTL_SECONDS} seconds
 Token length: ${tokens.access_token.length} chars</pre>
         </div>
 
         <p style="margin-top: 30px; color: #666;">
-          Expires in: ${tokens.expires_in || 3600} seconds
+          Expires in: ${tokens.expires_in || DEFAULT_SESSION_TTL_SECONDS} seconds
           ${state ? ` | Session: ${state.substring(0, 8)}...` : ''}
         </p>
       </body>
@@ -711,36 +773,8 @@ async function handleToken(
         await tokenStorage.deleteToken(`auth:${code}`);
         console.log('[Token Exchange] Auth code deleted (one-time use)');
 
-        // SECURITY: Generate a separate session token for MCP access
-        // This session token is what the client uses at /mcp endpoint
-        const sessionToken = generateRandomString(32);
-        await tokenStorage.storeToken(`session:${sessionToken}`, storedToken);
-        console.log(
-          '[Token Exchange] Session token created:',
-          sessionToken.substring(0, 8) + '...'
-        );
-
-        // Return session token (not the raw Attio token)
-        // Client uses this session token as Bearer token for /mcp
-        const response = {
-          access_token: sessionToken,
-          token_type: 'Bearer',
-          expires_in: Math.max(
-            0,
-            storedToken.expiresAt - Math.floor(Date.now() / 1000)
-          ),
-          ...(storedToken.refreshToken && {
-            refresh_token: storedToken.refreshToken,
-          }),
-        };
-
-        return new Response(JSON.stringify(response), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders(origin),
-          },
-        });
+        // Mint a session token (not the raw Attio token) for use at /mcp
+        return mintSessionResponse(tokenStorage, storedToken, origin);
       }
     }
 
@@ -800,6 +834,38 @@ async function handleToken(
 
   const data = await response.json();
 
+  // Wrap a successful Attio token exchange (refresh_token grant or a direct Attio
+  // code) in a worker-issued session token, mirroring the authorization-code path.
+  // /mcp rejects bearers with no KV session, so returning Attio's raw token here
+  // would make the very next /mcp call fail with 401.
+  const { access_token, refresh_token, token_type, expires_in } = data as {
+    access_token?: string;
+    refresh_token?: string;
+    token_type?: string;
+    expires_in?: number;
+  };
+  if (
+    response.ok &&
+    env.TOKEN_STORE &&
+    env.TOKEN_ENCRYPTION_KEY &&
+    typeof access_token === 'string'
+  ) {
+    const tokenStorage = createTokenStorage({
+      kv: env.TOKEN_STORE,
+      encryptionKey: env.TOKEN_ENCRYPTION_KEY,
+    });
+    return mintSessionResponse(
+      tokenStorage,
+      storedTokenFromAttio({
+        access_token,
+        refresh_token,
+        token_type,
+        expires_in,
+      }),
+      origin
+    );
+  }
+
   return new Response(JSON.stringify(data), {
     status: response.status,
     headers: {
@@ -856,6 +922,8 @@ async function handleRegister(
 
 // Handler: MCP endpoint
 async function handleMcp(request: Request, env: Env): Promise<Response> {
+  const origin = request.headers.get('Origin') || undefined;
+
   // Extract authorization token
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -873,6 +941,7 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
         headers: {
           'Content-Type': 'application/json',
           'WWW-Authenticate': 'Bearer',
+          ...corsHeaders(origin),
         },
       }
     );
@@ -880,8 +949,10 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
 
   const token = authHeader.substring(7); // Remove "Bearer "
 
-  // SECURITY: Only accept session tokens (issued after token exchange)
-  // Auth codes (auth: prefix) are NOT valid here - must go through /oauth/token first
+  // SECURITY: Only accept session tokens (issued after token exchange).
+  // Auth codes (auth: prefix) are NOT valid here - must go through /oauth/token first.
+  // When token storage is configured, an unresolved token is rejected below rather
+  // than forwarded to Attio, so a valid worker-issued session is required for /mcp.
   let attioToken = token;
 
   if (env.TOKEN_STORE && env.TOKEN_ENCRYPTION_KEY) {
@@ -913,9 +984,50 @@ async function handleMcp(request: Request, env: Env): Promise<Response> {
       }
     }
 
-    if (storedToken) {
-      attioToken = storedToken.accessToken;
+    if (!storedToken) {
+      // No valid session in KV (expired, revoked, or never issued). Do NOT fall
+      // through to forwarding the caller's raw bearer to Attio -- that bypasses the
+      // per-caller auth gate and yields a confusing downstream 401. Require re-auth.
+      return new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: null,
+          error: {
+            code: -32600,
+            message:
+              'Invalid or expired session token - re-authenticate via the OAuth flow',
+          },
+        }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'WWW-Authenticate': 'Bearer',
+            ...corsHeaders(origin),
+          },
+        }
+      );
     }
+
+    attioToken = storedToken.accessToken;
+  } else {
+    // Token storage is required to authenticate the caller's session. Without it
+    // we cannot validate the bearer, so refuse rather than forward the raw token
+    // to Attio (which would make a misconfigured worker an open proxy).
+    return new Response(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32600,
+          message: 'Server misconfigured: token storage unavailable',
+        },
+      }),
+      {
+        status: 503,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      }
+    );
   }
 
   // Create MCP handler with the token
