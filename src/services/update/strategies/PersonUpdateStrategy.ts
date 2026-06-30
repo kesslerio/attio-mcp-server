@@ -1,13 +1,13 @@
-import type { AttioRecord } from '../../../types/attio.js';
-import type { PersonAttributes } from '../../../objects/people/types.js';
-import { updatePerson } from '../../../objects/people-write.js';
-import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
+import type { AttioRecord } from '@shared-types/attio.js';
+import type { PersonAttributes } from '@/objects/people/types.js';
+import { updatePerson } from '@/objects/people-write.js';
+import { getFieldSuggestions } from '@handlers/tool-configs/universal/field-mapper.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../../../handlers/tool-configs/universal/schemas.js';
+} from '@handlers/tool-configs/universal/schemas.js';
 import type { UpdateStrategy } from './BaseUpdateStrategy.js';
-import { ValidationService } from '../../ValidationService.js';
+import { ValidationService } from '@services/ValidationService.js';
 
 /**
  * PersonUpdateStrategy - Handles updates for People (with email validation)
