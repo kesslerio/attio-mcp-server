@@ -89,6 +89,16 @@ function normalizeUrl(url: string): string {
   return url.replace(/\/+$/, '');
 }
 
+// Escape user-controlled values before interpolating them into HTML responses.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Known MCP client hostnames (exact match required)
 const KNOWN_MCP_CLIENT_HOSTS = [
   'claude.ai', // Claude.ai
@@ -467,8 +477,8 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
         <head><title>OAuth Error</title></head>
         <body style="font-family: system-ui; text-align: center; padding: 50px;">
           <h1>Authentication Failed</h1>
-          <p>Error: ${error}</p>
-          <p>${url.searchParams.get('error_description') || ''}</p>
+          <p>Error: ${escapeHtml(error)}</p>
+          <p>${escapeHtml(url.searchParams.get('error_description') || '')}</p>
         </body>
       </html>
     `,
@@ -672,25 +682,25 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
           <p>Your tokens have been securely stored. For security, only previews are shown below.</p>
 
           <h4>Access Token (Preview)</h4>
-          <div class="token-box">${tokens.access_token.substring(0, 12)}...${tokens.access_token.slice(-8)}</div>
+          <div class="token-box">${escapeHtml(tokens.access_token.substring(0, 12))}...${escapeHtml(tokens.access_token.slice(-8))}</div>
           <p style="font-size: 12px; color: #666;">Token stored securely in KV. Use the server URL above to authenticate.</p>
 
           ${
             tokens.refresh_token
               ? `
           <h4>Refresh Token (Preview)</h4>
-          <div class="token-box">${tokens.refresh_token.substring(0, 12)}...${tokens.refresh_token.slice(-8)}</div>
+          <div class="token-box">${escapeHtml(tokens.refresh_token.substring(0, 12))}...${escapeHtml(tokens.refresh_token.slice(-8))}</div>
           `
               : ''
           }
 
           <h4>Token Info</h4>
-          <pre>Expires in: ${tokens.expires_in || DEFAULT_SESSION_TTL_SECONDS} seconds
+          <pre>Expires in: ${escapeHtml(String(tokens.expires_in || DEFAULT_SESSION_TTL_SECONDS))} seconds
 Token length: ${tokens.access_token.length} chars</pre>
         </div>
 
         <p style="margin-top: 30px; color: #666;">
-          Expires in: ${tokens.expires_in || DEFAULT_SESSION_TTL_SECONDS} seconds
+          Expires in: ${escapeHtml(String(tokens.expires_in || DEFAULT_SESSION_TTL_SECONDS))} seconds
           ${state ? ` | Session: ${state.substring(0, 8)}...` : ''}
         </p>
       </body>
