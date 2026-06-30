@@ -195,6 +195,54 @@ function getProtectedResourceMetadata(workerUrl: string): object {
   };
 }
 
+// Build a StoredToken from an Attio /oauth/token response, stamped with the worker
+// session lifetime. Attio's OAuth tokens are non-expiring (no expires_in), so the
+// session TTL falls back to DEFAULT_SESSION_TTL_SECONDS.
+function storedTokenFromAttio(attio: {
+  access_token: string;
+  refresh_token?: string;
+  token_type?: string;
+  expires_in?: number;
+}): StoredToken {
+  return {
+    accessToken: attio.access_token,
+    refreshToken: attio.refresh_token,
+    expiresAt:
+      Math.floor(Date.now() / 1000) +
+      (attio.expires_in || DEFAULT_SESSION_TTL_SECONDS),
+    tokenType: attio.token_type || 'Bearer',
+  };
+}
+
+// Mint a worker-issued session token for a stored Attio token and return the OAuth
+// token response. The session token is the Bearer clients send at /mcp; /mcp rejects
+// any bearer that does not resolve to a session here.
+async function mintSessionResponse(
+  tokenStorage: ReturnType<typeof createTokenStorage>,
+  storedToken: StoredToken,
+  origin?: string
+): Promise<Response> {
+  const sessionToken = generateRandomString(32);
+  await tokenStorage.storeToken(`session:${sessionToken}`, storedToken);
+  return new Response(
+    JSON.stringify({
+      access_token: sessionToken,
+      token_type: 'Bearer',
+      expires_in: Math.max(
+        0,
+        storedToken.expiresAt - Math.floor(Date.now() / 1000)
+      ),
+      ...(storedToken.refreshToken && {
+        refresh_token: storedToken.refreshToken,
+      }),
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+    }
+  );
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -558,14 +606,7 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     encryptionKey: env.TOKEN_ENCRYPTION_KEY,
   });
 
-  const storedToken: StoredToken = {
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token,
-    expiresAt:
-      Math.floor(Date.now() / 1000) +
-      (tokens.expires_in || DEFAULT_SESSION_TTL_SECONDS),
-    tokenType: tokens.token_type || 'Bearer',
-  };
+  const storedToken = storedTokenFromAttio(tokens);
 
   // SECURITY: Store with auth: prefix - only valid at /oauth/token endpoint
   // Auth codes are one-time use and cannot be used directly at /mcp
@@ -732,36 +773,8 @@ async function handleToken(
         await tokenStorage.deleteToken(`auth:${code}`);
         console.log('[Token Exchange] Auth code deleted (one-time use)');
 
-        // SECURITY: Generate a separate session token for MCP access
-        // This session token is what the client uses at /mcp endpoint
-        const sessionToken = generateRandomString(32);
-        await tokenStorage.storeToken(`session:${sessionToken}`, storedToken);
-        console.log(
-          '[Token Exchange] Session token created:',
-          sessionToken.substring(0, 8) + '...'
-        );
-
-        // Return session token (not the raw Attio token)
-        // Client uses this session token as Bearer token for /mcp
-        const response = {
-          access_token: sessionToken,
-          token_type: 'Bearer',
-          expires_in: Math.max(
-            0,
-            storedToken.expiresAt - Math.floor(Date.now() / 1000)
-          ),
-          ...(storedToken.refreshToken && {
-            refresh_token: storedToken.refreshToken,
-          }),
-        };
-
-        return new Response(JSON.stringify(response), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders(origin),
-          },
-        });
+        // Mint a session token (not the raw Attio token) for use at /mcp
+        return mintSessionResponse(tokenStorage, storedToken, origin);
       }
     }
 
@@ -821,11 +834,11 @@ async function handleToken(
 
   const data = await response.json();
 
-  // Wrap a successful Attio token exchange (refresh_token grant, or a direct Attio
+  // Wrap a successful Attio token exchange (refresh_token grant or a direct Attio
   // code) in a worker-issued session token, mirroring the authorization-code path.
-  // /mcp now rejects bearers with no KV session, so returning Attio's raw token here
+  // /mcp rejects bearers with no KV session, so returning Attio's raw token here
   // would make the very next /mcp call fail with 401.
-  const attioTokens = data as {
+  const { access_token, refresh_token, token_type, expires_in } = data as {
     access_token?: string;
     refresh_token?: string;
     token_type?: string;
@@ -835,42 +848,21 @@ async function handleToken(
     response.ok &&
     env.TOKEN_STORE &&
     env.TOKEN_ENCRYPTION_KEY &&
-    typeof attioTokens.access_token === 'string'
+    typeof access_token === 'string'
   ) {
     const tokenStorage = createTokenStorage({
       kv: env.TOKEN_STORE,
       encryptionKey: env.TOKEN_ENCRYPTION_KEY,
     });
-    const refreshedToken: StoredToken = {
-      accessToken: attioTokens.access_token,
-      refreshToken: attioTokens.refresh_token,
-      expiresAt:
-        Math.floor(Date.now() / 1000) +
-        (attioTokens.expires_in || DEFAULT_SESSION_TTL_SECONDS),
-      tokenType: attioTokens.token_type || 'Bearer',
-    };
-    const sessionToken = generateRandomString(32);
-    await tokenStorage.storeToken(`session:${sessionToken}`, refreshedToken);
-
-    return new Response(
-      JSON.stringify({
-        access_token: sessionToken,
-        token_type: 'Bearer',
-        expires_in: Math.max(
-          0,
-          refreshedToken.expiresAt - Math.floor(Date.now() / 1000)
-        ),
-        ...(refreshedToken.refreshToken && {
-          refresh_token: refreshedToken.refreshToken,
-        }),
+    return mintSessionResponse(
+      tokenStorage,
+      storedTokenFromAttio({
+        access_token,
+        refresh_token,
+        token_type,
+        expires_in,
       }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders(origin),
-        },
-      }
+      origin
     );
   }
 
