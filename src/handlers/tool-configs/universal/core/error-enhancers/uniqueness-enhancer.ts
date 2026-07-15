@@ -119,7 +119,7 @@ function formatUniquenessErrorMessage(
     `EXISTING RECORD ID: ${recordId}\n\n` +
     `OPTIONS:\n` +
     `1. Update existing: update-record(resource_type="${resourceType}", record_id="${recordId}", record_data={...})\n` +
-    `2. View existing: records_get_details(resource_type="${resourceType}", record_id="${recordId}")\n` +
+    `2. View existing: get_record_details(resource_type="${resourceType}", record_id="${recordId}")\n` +
     `3. Use a different ${field} value`
   );
 }

@@ -80,7 +80,7 @@ export function buildDealSearchMessages(
 ): PromptMessage[] {
   const validated = DealSearchArgs.parse(args);
 
-  const instructions = `Call \`records_query\` for object='deals' with filters derived from "${validated.query}".
+  const instructions = `Call \`search_records\` with resource_type="deals" and filters derived from "${validated.query}".
 
 Output format=${validated.format}:
 - If table: Markdown table with columns: id, name, stage, value, close_date, owner, company (max ${validated.limit} rows)

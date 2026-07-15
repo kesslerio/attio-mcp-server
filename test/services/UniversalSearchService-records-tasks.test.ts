@@ -2,23 +2,23 @@
  * Split: UniversalSearchService records/tasks
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
+vi.mock('@services/ValidationService.js', () => ({
   ValidationService: {
     validatePaginationParameters: vi.fn(),
     validateFiltersSchema: vi.fn(),
     validateUUIDForSearch: vi.fn().mockReturnValue(true),
   },
 }));
-vi.mock('../../src/services/CachingService.js', () => ({
+vi.mock('@services/CachingService.js', () => ({
   CachingService: {
     getOrLoadTasks: vi.fn().mockResolvedValue({ data: [], fromCache: false }),
     getCachedTasks: vi.fn(),
   },
 }));
-vi.mock('../../src/services/UniversalUtilityService.js', () => ({
+vi.mock('@services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: { convertTaskToRecord: vi.fn() },
 }));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
+vi.mock('@/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     startOperation: vi.fn(() => 'perf-123'),
     markTiming: vi.fn(),
@@ -27,21 +27,21 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
     endOperation: vi.fn(),
   },
 }));
-vi.mock('../../src/objects/records/index.js', () => ({
+vi.mock('@/objects/records/index.js', () => ({
   listObjectRecords: vi.fn(),
 }));
-vi.mock('../../src/objects/tasks.js', () => ({ listTasks: vi.fn() }));
-vi.mock('../../src/services/MockService.js', () => ({
+vi.mock('@/objects/tasks.js', () => ({ listTasks: vi.fn() }));
+vi.mock('@services/MockService.js', () => ({
   MockService: { isUsingMockData: vi.fn().mockReturnValue(false) },
 }));
 
-import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord, AttioTask } from '../../src/types/attio.js';
-import { listObjectRecords } from '../../src/objects/records/index.js';
-import { listTasks } from '../../src/objects/tasks.js';
-import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
-import { CachingService } from '../../src/services/CachingService.js';
+import { UniversalSearchService } from '@services/UniversalSearchService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord, AttioTask } from '@shared-types/attio.js';
+import { listObjectRecords } from '@/objects/records/index.js';
+import { listTasks } from '@/objects/tasks.js';
+import { UniversalUtilityService } from '@services/UniversalUtilityService.js';
+import { CachingService } from '@services/CachingService.js';
 
 describe('UniversalSearchService - records/tasks', () => {
   beforeEach(() => vi.clearAllMocks());

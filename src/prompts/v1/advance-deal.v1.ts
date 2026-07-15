@@ -70,13 +70,13 @@ export function buildAdvanceDealMessages(
   const instructions = `You are a CRM assistant. Advance deal "${validated.deal}" to stage "${validated.target_stage}".
 
 Steps:
-1. Resolve deal: If starts with "search:", call \`records_query\` to find one deal. If multiple matches, disambiguate.
+1. Resolve deal: If starts with "search:", call \`search_records\` with resource_type="deals" to find one deal. If multiple matches, disambiguate.
 
-2. Call \`deals.update\` (or \`records.update\` for object='deals') with:
+2. Call \`update_record\` with resource_type="deals" and:
    - Record ID from step 1
-   - stage: "${validated.target_stage}"
+   - record_data.stage: "${validated.target_stage}"
 
-3. ${validated.create_task ? 'Suggest a concrete next-action task based on the new stage and, only on approval, call `tasks.create`.' : 'No follow-up task needed.'}
+3. ${validated.create_task ? 'Suggest a concrete next-action task based on the new stage and, only on approval, call `create_record` with resource_type="tasks".' : 'No follow-up task needed.'}
 
 ${validated.dry_run ? 'DRY RUN MODE: Output proposed tool calls as JSON only. Do NOT execute writes.' : 'Execute the stage change after showing proposed action.'}
 

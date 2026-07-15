@@ -5,10 +5,10 @@
  * Provides universal delete functionality across all resource types.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/types.js';
-import { isValidId } from '../utils/validation.js';
-import { debug } from '../utils/logger.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import type { UniversalDeleteParams } from '@handlers/tool-configs/universal/types.js';
+import { isValidId } from '@utils/validation.js';
+import { debug } from '@utils/logger.js';
 
 // Import shared type definitions and utilities
 import {
@@ -16,17 +16,17 @@ import {
   createNotFoundError,
   type TaskError,
   type ApiErrorWithResponse,
-} from '../types/universal-service-types.js';
+} from '@shared-types/universal-service-types.js';
 
 // Import delete functions for each resource type
-import { deleteCompany } from '../objects/companies/index.js';
-import { deletePerson } from '../objects/people-write.js';
-import { deleteList } from '../objects/lists.js';
-import { deleteObjectRecord } from '../objects/records/index.js';
-import { deleteTask, getTask } from '../objects/tasks.js';
-import { deleteNote } from '../objects/notes.js';
+import { deleteCompany } from '@/objects/companies/index.js';
+import { deletePerson } from '@/objects/people-write.js';
+import { deleteList } from '@/objects/lists.js';
+import { deleteObjectRecord } from '@/objects/records/index.js';
+import { deleteTask, getTask } from '@/objects/tasks.js';
+import { deleteNote } from '@/objects/notes.js';
 import { shouldUseMockData } from './create/index.js';
-import { isConfiguredCustomObjectResourceType } from '../utils/resource-type-detection.js';
+import { isConfiguredCustomObjectResourceType } from '@utils/resource-type-detection.js';
 
 /**
  * UniversalDeleteService provides centralized record deletion functionality
