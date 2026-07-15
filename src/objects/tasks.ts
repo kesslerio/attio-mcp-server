@@ -5,16 +5,16 @@ import {
   updateTask as apiUpdate,
   linkRecordToTask as apiLink,
   unlinkRecordFromTask as apiUnlink,
-} from '../api/operations/index.js';
-import { AttioTask } from '../types/attio.js';
-import { isValidId } from '../utils/validation.js';
-import { shouldUseMockData } from '../services/create/index.js';
-import { deleteTask as apiDelete } from '../api/operations/index.js';
+} from '@api/operations/index.js';
+import { AttioTask } from '@shared-types/attio.js';
+import { isValidId } from '@utils/validation.js';
+import { shouldUseMockData } from '@services/create/index.js';
+import { deleteTask as apiDelete } from '@api/operations/index.js';
 import {
   getErrorStatus,
   getErrorMessage,
   getErrorCode,
-} from '../types/error-interfaces.js';
+} from '@shared-types/error-interfaces.js';
 
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 
@@ -51,7 +51,7 @@ export async function createTask(
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      const { createScopedLogger } = await import('../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       createScopedLogger('objects.tasks', 'createTask').debug(
         'Using mock data for task creation'
       );
@@ -131,7 +131,7 @@ export async function updateTask(
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      const { createScopedLogger } = await import('../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       createScopedLogger('objects.tasks', 'updateTask').debug(
         'Using mock data for task update'
       );
@@ -188,7 +188,7 @@ export async function deleteTask(taskId: string): Promise<boolean> {
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      const { createScopedLogger } = await import('../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       createScopedLogger('objects.tasks', 'deleteTask').debug(
         'Using mock data for task deletion'
       );
@@ -232,7 +232,7 @@ export async function linkRecordToTask(
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      const { createScopedLogger } = await import('../utils/logger.js');
+      const { createScopedLogger } = await import('@utils/logger.js');
       createScopedLogger('objects.tasks', 'linkTaskRecord').debug(
         'Using mock data for task-record linking'
       );

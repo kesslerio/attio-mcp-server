@@ -101,7 +101,7 @@ describe('required-fields-enhancer', () => {
       expect(result).toContain('"MQL"');
       expect(result).toContain('"SQL"');
       expect(result).toContain('"Opportunity"');
-      expect(result).toContain('records_get_attribute_options');
+      expect(result).toContain('get_record_attribute_options');
       expect(mockGetOptions).toHaveBeenCalledWith('deals', 'stage');
     });
 
@@ -144,7 +144,7 @@ describe('required-fields-enhancer', () => {
       const result = await requiredFieldsEnhancer.enhance(error, context);
 
       expect(result).toContain('Required field "stage" is missing for deals');
-      expect(result).toContain('records_get_attribute_options');
+      expect(result).toContain('get_record_attribute_options');
       expect(result).not.toContain('Common stage values');
     });
 

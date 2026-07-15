@@ -98,7 +98,7 @@ describe('attribute-enhancer', () => {
       expect(result).toContain('Attribute "compny_name" does not exist');
       expect(result).toContain('Did you mean:');
       expect(result).toContain('"company_name"');
-      expect(result).toContain('records_discover_attributes');
+      expect(result).toContain('discover_record_attributes');
       expect(result).toContain('resource_type: "companies"');
       expect(mockHandleUniversalDiscoverAttributes).toHaveBeenCalledWith(
         'companies'
@@ -184,7 +184,7 @@ describe('attribute-enhancer', () => {
 
       expect(result).toContain('Attribute "xyz_abc_123" does not exist');
       expect(result).not.toContain('Did you mean:');
-      expect(result).toContain('records_discover_attributes');
+      expect(result).toContain('discover_record_attributes');
     });
 
     it('should be case-insensitive when finding similar attributes', async () => {
@@ -255,7 +255,7 @@ describe('attribute-enhancer', () => {
         'Attribute "completely_different_field" does not exist'
       );
       expect(result).not.toContain('Did you mean:');
-      expect(result).toContain('records_discover_attributes');
+      expect(result).toContain('discover_record_attributes');
     });
 
     it('should fallback when handleUniversalDiscoverAttributes fails', async () => {
@@ -273,7 +273,7 @@ describe('attribute-enhancer', () => {
 
       expect(result).toContain('Attribute "test" does not exist on companies');
       expect(result).not.toContain('Did you mean:');
-      expect(result).toContain('records_discover_attributes');
+      expect(result).toContain('discover_record_attributes');
     });
 
     it('should return null when pattern does not match', async () => {
@@ -306,7 +306,7 @@ describe('attribute-enhancer', () => {
 
       expect(result).toContain('Attribute "test" does not exist');
       expect(result).not.toContain('Did you mean:');
-      expect(result).toContain('records_discover_attributes');
+      expect(result).toContain('discover_record_attributes');
     });
 
     it('should handle attributes with missing name/title/api_slug', async () => {

@@ -136,7 +136,7 @@
     },
     {
       "name": "create-note",
-      "description": "Create note for companies, people, or deals. | WRITE: requires approval | Does not: update or delete notes; creates only. | Requires resource_type, record_id, title, content. | If errors occur: If record not found, use records_search first.",
+      "description": "Create note for companies, people, or deals. | WRITE: requires approval | Does not: update or delete notes; creates only. | Requires resource_type, record_id, title, content. | If errors occur: If record not found, use search_records first.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -341,7 +341,7 @@
     },
     {
       "name": "filter-list-entries-by-parent",
-      "description": "Filter entries by parent record attributes (industry, role). | Does not: search multiple lists or modify records. | Requires listId, parentObjectType, parentAttributeSlug, condition, value. | If errors occur: Use records_discover_attributes for valid slugs.",
+      "description": "Filter entries by parent record attributes (industry, role). | Does not: search multiple lists or modify records. | Requires listId, parentObjectType, parentAttributeSlug, condition, value. | If errors occur: Use discover_record_attributes for valid slugs.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -491,7 +491,7 @@
     },
     {
       "name": "get-record-list-memberships",
-      "description": "Find all lists containing a specific company or person record. | Does not: modify list memberships or retrieve list entries. | Requires recordId; processes 5 lists in parallel by default (max 20). | If errors occur: If record not found, verify recordId with records_search first.",
+      "description": "Find all lists containing a specific company or person record. | Does not: modify list memberships or retrieve list entries. | Requires recordId; processes 5 lists in parallel by default (max 20). | If errors occur: If record not found, verify recordId with search_records first.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -544,7 +544,7 @@
     },
     {
       "name": "list-notes",
-      "description": "Retrieve notes for a record with timestamps. | Does not: create or modify notes; read-only. | Requires resource_type, record_id; sorted by creation date. | If errors occur: If empty, verify record has notes with records_get_details.",
+      "description": "Retrieve notes for a record with timestamps. | Does not: create or modify notes; read-only. | Requires resource_type, record_id; sorted by creation date. | If errors occur: If empty, verify record has notes with get_record_details.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -628,7 +628,7 @@
     },
     {
       "name": "records_batch",
-      "description": "Execute batched record operations (create/update/delete/get/search). | WRITE: requires approval | Does not: ignore approval guardrails; hosts may require confirmation. | operation_type must be specified; enforce per-operation limits. | If errors occur: Run records.search first to stage IDs or payloads for batching.",
+      "description": "Execute batched record operations (create/update/delete/get/search). | WRITE: requires approval | Does not: ignore approval guardrails; hosts may require confirmation. | operation_type must be specified; enforce per-operation limits. | If errors occur: Run search_records first to stage IDs or payloads for batching.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -767,7 +767,7 @@
     },
     {
       "name": "records_get_attributes",
-      "description": "Retrieve attribute metadata for a given resource type. | Does not: modify schema definitions or record data. | Requires resource_type; optional categories narrows groups. | If errors occur: Use records.discover_attributes for grouped schema discovery.",
+      "description": "Retrieve attribute metadata for a given resource type. | Does not: modify schema definitions or record data. | Requires resource_type; optional categories narrows groups. | If errors occur: Use discover_record_attributes for grouped schema discovery.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -819,7 +819,7 @@
     },
     {
       "name": "records_get_details",
-      "description": "Fetch a single record with enriched attribute formatting. | Does not: search or filter result sets; use records.search* tools instead. | Requires resource_type and record_id; optional fields filter output. | If errors occur: Validate record IDs with records.search before retrying.",
+      "description": "Fetch a single record with enriched attribute formatting. | Does not: search or filter result sets; use search_records tools instead. | Requires resource_type and record_id; optional fields filter output. | If errors occur: Validate record IDs with search_records before retrying.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -865,7 +865,7 @@
     },
     {
       "name": "records_get_info",
-      "description": "Retrieve enriched info subsets (contact, business, social) for a record. | Does not: search lists of records or mutate data. | Requires resource_type, record_id, and info_type (contact|business|social). | If errors occur: Use records.get_details if you need the full record payload.",
+      "description": "Retrieve enriched info subsets (contact, business, social) for a record. | Does not: search lists of records or mutate data. | Requires resource_type, record_id, and info_type (contact|business|social). | If errors occur: Use get_record_details if you need the full record payload.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -903,7 +903,7 @@
     },
     {
       "name": "records_search",
-      "description": "Search across companies, people, tasks, and records | Does not: create or modify records | Returns max 100 results (default: 10) | If errors occur: use records.discover_attributes to find searchable fields",
+      "description": "Search across companies, people, tasks, and records | Does not: create or modify records | Returns max 100 results (default: 10) | If errors occur: use discover_record_attributes to find searchable fields",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1033,7 +1033,7 @@
     },
     {
       "name": "records_search_advanced",
-      "description": "Run complex searches with nested filters across resource types. | Does not: mutate records; use records.update or records.delete. | Supports filter groups, scoring, pagination, and up to 100 items. | If errors occur: If filters fail, fetch valid attributes via records.discover_attributes.",
+      "description": "Run complex searches with nested filters across resource types. | Does not: mutate records; use update_record or delete_record. | Supports filter groups, scoring, pagination, and up to 100 items. | If errors occur: If filters fail, fetch valid attributes via discover_record_attributes.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1110,7 +1110,7 @@
     },
     {
       "name": "records_search_batch",
-      "description": "Execute multiple searches in parallel and return grouped results. | Does not: mutate or import data; use records.batch for write operations. | Provide queries array (1–10 items recommended) and resource_type. | If errors occur: If queries fail, retry individually using records.search.",
+      "description": "Execute multiple searches in parallel and return grouped results. | Does not: mutate or import data; use batch_records for write operations. | Provide queries array (1–10 items recommended) and resource_type. | If errors occur: If queries fail, retry individually using search_records.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1164,7 +1164,7 @@
     },
     {
       "name": "records_search_by_content",
-      "description": "Search record content (notes, activity, communications). | Does not: modify note content or attachments. | Requires resource_type and content_query; optional fields array. | If errors occur: Narrow scope with fields or switch to records.search_advanced.",
+      "description": "Search record content (notes, activity, communications). | Does not: modify note content or attachments. | Requires resource_type and content_query; optional fields array. | If errors occur: Narrow scope with fields or switch to search_records_advanced.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1222,7 +1222,7 @@
     },
     {
       "name": "records_search_by_relationship",
-      "description": "Search records using relationship anchors (list, company, people). | Does not: modify memberships; use list tools for writes. | Requires resource_type and related resource identifier. | If errors occur: Use records.search to resolve IDs before calling.",
+      "description": "Search records using relationship anchors (list, company, people). | Does not: modify memberships; use list tools for writes. | Requires resource_type and related resource identifier. | If errors occur: Use search_records to resolve IDs before calling.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1291,7 +1291,7 @@
     },
     {
       "name": "records_search_by_timeframe",
-      "description": "Filter records by creation, update, or interaction timeframes. | Does not: modify lifecycle state or scheduling follow-ups. | Requires resource_type; provide timeframe or explicit date boundaries. | If errors occur: Call records.search if timeframe filters are too restrictive.",
+      "description": "Filter records by creation, update, or interaction timeframes. | Does not: modify lifecycle state or scheduling follow-ups. | Requires resource_type; provide timeframe or explicit date boundaries. | If errors occur: Call search_records if timeframe filters are too restrictive.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1376,7 +1376,7 @@
     },
     {
       "name": "search",
-      "description": "Simple search by query string across companies, people, lists, and tasks. For advanced filtering, date ranges, or relationships, use records.search instead.",
+      "description": "Simple search by query string across companies, people, lists, and tasks. For advanced filtering, date ranges, or relationships, use search_records instead.",
       "inputSchema": {
         "type": "object",
         "properties": {

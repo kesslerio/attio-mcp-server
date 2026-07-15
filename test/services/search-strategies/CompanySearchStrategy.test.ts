@@ -6,21 +6,21 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Mock searchObject before importing CompanySearchStrategy
-vi.mock('../../../src/api/operations/search.js', () => ({
+vi.mock('@api/operations/search.js', () => ({
   searchObject: vi.fn(),
 }));
 
-import { CompanySearchStrategy } from '../../../src/services/search-strategies/CompanySearchStrategy.js';
+import { CompanySearchStrategy } from '@services/search-strategies/CompanySearchStrategy.js';
 import {
   SearchType,
   MatchType,
   SortType,
   UniversalResourceType,
-} from '../../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../../../src/types/attio.js';
-import { StrategyDependencies } from '../../../src/services/search-strategies/interfaces.js';
-import { FilterValidationError } from '../../../src/errors/api-errors.js';
-import { searchObject } from '../../../src/api/operations/search.js';
+} from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@shared-types/attio.js';
+import { StrategyDependencies } from '@services/search-strategies/interfaces.js';
+import { FilterValidationError } from '@errors/api-errors.js';
+import { searchObject } from '@api/operations/search.js';
 
 describe('CompanySearchStrategy', () => {
   let strategy: CompanySearchStrategy;
