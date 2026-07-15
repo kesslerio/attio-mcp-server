@@ -266,7 +266,7 @@ export const getAttributesDefinition = {
     boundaries: 'modify schema definitions or record data.',
     constraints: 'Requires resource_type; optional categories narrows groups.',
     recoveryHint:
-      'Use records.discover_attributes for grouped schema discovery.',
+      'Use discover_record_attributes for grouped schema discovery.',
   }),
   inputSchema: getAttributesSchema,
   annotations: {

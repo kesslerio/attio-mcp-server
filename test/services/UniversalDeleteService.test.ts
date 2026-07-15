@@ -6,35 +6,35 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UniversalDeleteService } from '../../src/services/UniversalDeleteService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalDeleteService } from '@services/UniversalDeleteService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
 
 // Mock the dependencies
-vi.mock('../../src/objects/companies/index.js', () => ({
+vi.mock('@/objects/companies/index.js', () => ({
   deleteCompany: vi.fn(),
 }));
 
-vi.mock('../../src/objects/people-write.js', () => ({
+vi.mock('@/objects/people-write.js', () => ({
   deletePerson: vi.fn(),
 }));
 
-vi.mock('../../src/objects/lists.js', () => ({
+vi.mock('@/objects/lists.js', () => ({
   deleteList: vi.fn(),
 }));
 
-vi.mock('../../src/objects/records/index.js', () => ({
+vi.mock('@/objects/records/index.js', () => ({
   deleteObjectRecord: vi.fn(),
 }));
 
-vi.mock('../../src/objects/tasks.js', () => ({
+vi.mock('@/objects/tasks.js', () => ({
   deleteTask: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('@utils/validation.js', () => ({
   isValidId: vi.fn(),
 }));
 
-vi.mock('../../src/services/create/index.js', () => ({
+vi.mock('@services/create/index.js', () => ({
   shouldUseMockData: vi.fn(),
 }));
 
@@ -50,13 +50,13 @@ vi.mock('@/utils/config-loader.js', () => ({
   })),
 }));
 
-import { deleteCompany } from '../../src/objects/companies/index.js';
-import { deletePerson } from '../../src/objects/people-write.js';
-import { deleteList } from '../../src/objects/lists.js';
-import { deleteObjectRecord } from '../../src/objects/records/index.js';
-import { deleteTask } from '../../src/objects/tasks.js';
-import { isValidId } from '../../src/utils/validation.js';
-import { shouldUseMockData } from '../../src/services/create/index.js';
+import { deleteCompany } from '@/objects/companies/index.js';
+import { deletePerson } from '@/objects/people-write.js';
+import { deleteList } from '@/objects/lists.js';
+import { deleteObjectRecord } from '@/objects/records/index.js';
+import { deleteTask } from '@/objects/tasks.js';
+import { isValidId } from '@utils/validation.js';
+import { shouldUseMockData } from '@services/create/index.js';
 
 describe('UniversalDeleteService', () => {
   beforeEach(() => {

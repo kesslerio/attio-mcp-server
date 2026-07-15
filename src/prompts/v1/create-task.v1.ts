@@ -99,7 +99,7 @@ export function buildCreateTaskMessages(
   const validated = CreateTaskArgs.parse(args);
 
   const targetResolution = validated.target
-    ? `\n1. Resolve target: If target="${validated.target}" starts with "search:", call \`records_query\` to find one record. If multiple matches, disambiguate.`
+    ? `\n1. Resolve target: If target="${validated.target}" starts with "search:", call \`search_records\` with the right resource_type to find one record. If multiple matches, disambiguate.`
     : '';
 
   const dueDateParsing = validated.due_date
@@ -112,11 +112,11 @@ export function buildCreateTaskMessages(
 - Priority: ${validated.priority}
 - Owner: ${validated.owner}${dueDateParsing}${targetResolution}
 
-${targetResolution ? '2' : '1'}. Call \`tasks.create\` with:
+${targetResolution ? '2' : '1'}. Call \`create_record\` with resource_type="tasks" and record_data:
    - title, content (required)
    - assignees: [owner]
-   - deadline: parsed due_date (if provided)
-   - linked_records: [resolved target] (if provided)
+   - deadline_at: parsed due_date (if provided)
+   - linked_records: [{ target_object: resolved target resource type, target_record_id: resolved target record ID }] (if provided)
 
 ${validated.dry_run ? 'DRY RUN MODE: Output proposed tool call as JSON only. Do NOT execute write.' : 'Execute the task creation after showing proposed action.'}
 

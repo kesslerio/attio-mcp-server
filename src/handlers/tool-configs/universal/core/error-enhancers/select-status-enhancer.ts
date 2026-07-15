@@ -48,7 +48,7 @@ const enhanceSelectStatusError = async (
           return `Value is not valid for ${attributeType} attribute "${selectErr.field}" on ${resourceType}.
 Expected one of: ${validList}${hasMore}
 
-Next step: Call records_get_attribute_options with
+Next step: Call get_record_attribute_options with
   resource_type: "${resourceType}"
   attribute: "${selectErr.field}"
 to list all valid values, then retry.`;
@@ -65,7 +65,7 @@ to list all valid values, then retry.`;
             }
           );
           return `Value is not valid for attribute "${selectErr.field}" on ${resourceType}.
-Next step: Call records_get_attribute_options with
+Next step: Call get_record_attribute_options with
   resource_type: "${resourceType}"
   attribute: "${selectErr.field}"
 to see valid options, then retry.`;
@@ -102,7 +102,7 @@ to see valid options, then retry.`;
         return (
           `Value "${invalidValue}" is not valid for ${attributeType} attribute "${fieldName}" on ${resourceType}.\n\n` +
           `Valid options: ${validList}${hasMore}\n\n` +
-          `Next step: Call records_get_attribute_options with\n` +
+          `Next step: Call get_record_attribute_options with\n` +
           `  resource_type: "${resourceType}"\n` +
           `  attribute: "${fieldName}"\n` +
           `to list all valid values, then retry.`
@@ -121,7 +121,7 @@ to see valid options, then retry.`;
         );
         return (
           `Value "${invalidValue}" is not valid for attribute "${fieldName}" on ${resourceType}.\n\n` +
-          `Next step: Call records_get_attribute_options with\n` +
+          `Next step: Call get_record_attribute_options with\n` +
           `  resource_type: "${resourceType}"\n` +
           `  attribute: "${fieldName}"\n` +
           `to see valid options, then retry.`
@@ -133,7 +133,7 @@ to see valid options, then retry.`;
   // Couldn't match to a specific field, return generic hint
   return (
     `Value "${invalidValue}" is not valid for an attribute on ${resourceType}.\n\n` +
-    `Next step: Use records_get_attribute_options to discover valid options for the attribute.`
+    `Next step: Use get_record_attribute_options to discover valid options for the attribute.`
   );
 };
 

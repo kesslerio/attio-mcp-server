@@ -1,18 +1,18 @@
-import type { AttioRecord } from '../../../types/attio.js';
+import type { AttioRecord } from '@shared-types/attio.js';
 import type {
   CreateStrategy,
   CreateStrategyParams,
 } from './BaseCreateStrategy.js';
-import { getCreateService } from '../../create/index.js';
-import { ValidationService } from '../../ValidationService.js';
-import { getFieldSuggestions } from '../../../handlers/tool-configs/universal/field-mapper.js';
+import { getCreateService } from '@services/create/index.js';
+import { ValidationService } from '@services/ValidationService.js';
+import { getFieldSuggestions } from '@handlers/tool-configs/universal/field-mapper.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../../../handlers/tool-configs/universal/schemas.js';
-import type { PersonCreateAttributes } from '../../../types/attio.js';
-import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
-import { convertAttributeFormats } from '../../../utils/attribute-format-helpers.js';
+} from '@handlers/tool-configs/universal/schemas.js';
+import type { PersonCreateAttributes } from '@shared-types/attio.js';
+import { PeopleDataNormalizer } from '@utils/normalization/people-normalization.js';
+import { convertAttributeFormats } from '@utils/attribute-format-helpers.js';
 
 export class PersonCreateStrategy implements CreateStrategy<AttioRecord> {
   async create(params: CreateStrategyParams): Promise<AttioRecord> {

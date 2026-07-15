@@ -4,33 +4,33 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
+import { UniversalSearchService } from '@services/UniversalSearchService.js';
 import {
   UniversalResourceType,
   SearchType,
   MatchType,
   SortType,
-} from '../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord, AttioTask, AttioList } from '../../src/types/attio.js';
+} from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord, AttioTask, AttioList } from '@shared-types/attio.js';
 
 // Mock the imported modules
-vi.mock('../../src/objects/companies/index.js', () => ({
+vi.mock('@/objects/companies/index.js', () => ({
   advancedSearchCompanies: vi.fn(),
 }));
 
-vi.mock('../../src/objects/people/index.js', () => ({
+vi.mock('@/objects/people/index.js', () => ({
   advancedSearchPeople: vi.fn(),
 }));
 
-vi.mock('../../src/objects/tasks.js', () => ({
+vi.mock('@/objects/tasks.js', () => ({
   listTasks: vi.fn(),
 }));
 
-vi.mock('../../src/objects/lists.js', () => ({
+vi.mock('@/objects/lists.js', () => ({
   searchLists: vi.fn(),
 }));
 
-vi.mock('../../src/services/CachingService.js', () => ({
+vi.mock('@services/CachingService.js', () => ({
   CachingService: {
     getOrLoadTasks: vi.fn().mockImplementation(async (loadFn) => {
       const data = await loadFn();
@@ -39,7 +39,7 @@ vi.mock('../../src/services/CachingService.js', () => ({
   },
 }));
 
-vi.mock('../../src/services/UniversalUtilityService.js', () => ({
+vi.mock('@services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: {
     convertTaskToRecord: vi.fn().mockImplementation((task) => ({
       id: { record_id: task.id.task_id, task_id: task.id.task_id },
@@ -55,17 +55,17 @@ vi.mock('../../src/services/UniversalUtilityService.js', () => ({
   },
 }));
 
-vi.mock('../../src/services/create/index.js', () => ({
+vi.mock('@services/create/index.js', () => ({
   shouldUseMockData: vi.fn(() => false),
 }));
 
-vi.mock('../../src/api/attio-client.js', () => ({
+vi.mock('@api/attio-client.js', () => ({
   getAttioClient: vi.fn(() => ({
     post: vi.fn(),
   })),
 }));
 
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
+vi.mock('@/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     startOperation: vi.fn(() => 'test-perf-id'),
     markApiStart: vi.fn(() => Date.now()),
@@ -75,15 +75,15 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
   },
 }));
 
-vi.mock('../../src/api/operations/search.js', () => ({
+vi.mock('@api/operations/search.js', () => ({
   searchObject: vi.fn(),
 }));
 
-import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
-import { advancedSearchPeople } from '../../src/objects/people/index.js';
-import { listTasks } from '../../src/objects/tasks.js';
-import { searchLists } from '../../src/objects/lists.js';
-import { searchObject } from '../../src/api/operations/search.js';
+import { advancedSearchCompanies } from '@/objects/companies/index.js';
+import { advancedSearchPeople } from '@/objects/people/index.js';
+import { listTasks } from '@/objects/tasks.js';
+import { searchLists } from '@/objects/lists.js';
+import { searchObject } from '@api/operations/search.js';
 
 describe('Content Search Functionality', () => {
   beforeEach(() => {

@@ -3,16 +3,16 @@
  */
 // Local mocks (must match specifiers used below)
 import { vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
+vi.mock('@services/ValidationService.js', () => ({
   ValidationService: { validateUUID: vi.fn() },
 }));
-vi.mock('../../src/services/CachingService.js', () => ({
+vi.mock('@services/CachingService.js', () => ({
   CachingService: { isCached404: vi.fn(), cache404Response: vi.fn() },
 }));
-vi.mock('../../src/services/UniversalUtilityService.js', () => ({
+vi.mock('@services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: { convertTaskToRecord: vi.fn() },
 }));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
+vi.mock('@/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     startOperation: vi.fn(() => 'perf-123'),
     markTiming: vi.fn(),
@@ -21,13 +21,13 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
     endOperation: vi.fn(),
   },
 }));
-vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
+vi.mock('@utils/validation/uuid-validation.js', () => ({
   createRecordNotFoundError: vi.fn(
     (recordId: string, resourceType: string) =>
       new Error(`${resourceType} record not found: ${recordId}`)
   ),
 }));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
+vi.mock('@/errors/enhanced-api-errors.js', () => ({
   ErrorEnhancer: {
     autoEnhance: vi.fn((e) => e),
     getErrorMessage: vi.fn((e) => (e as any).message),
@@ -53,19 +53,19 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
     }
   },
 }));
-vi.mock('../../src/objects/companies/index.js', () => ({
+vi.mock('@/objects/companies/index.js', () => ({
   getCompanyDetails: vi.fn(),
 }));
-vi.mock('../../src/objects/people/index.js', () => ({
+vi.mock('@/objects/people/index.js', () => ({
   getPersonDetails: vi.fn(),
 }));
 vi.mock('@/objects/lists.js', () => ({ getListDetails: vi.fn() }));
-vi.mock('../../src/objects/records/index.js', () => ({
+vi.mock('@/objects/records/index.js', () => ({
   getObjectRecord: vi.fn(),
 }));
-vi.mock('../../src/objects/tasks.js', () => ({ getTask: vi.fn() }));
-vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
-vi.mock('../../src/services/create/index.js', () => ({
+vi.mock('@/objects/tasks.js', () => ({ getTask: vi.fn() }));
+vi.mock('@/objects/notes.js', () => ({ getNote: vi.fn() }));
+vi.mock('@services/create/index.js', () => ({
   shouldUseMockData: vi.fn(),
 }));
 vi.mock('@/utils/config-loader.js', () => ({
@@ -80,18 +80,18 @@ vi.mock('@/utils/config-loader.js', () => ({
   })),
 }));
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord, AttioTask } from '../../src/types/attio.js';
-import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
-import { CachingService } from '../../src/services/CachingService.js';
-import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
-import { getCompanyDetails } from '../../src/objects/companies/index.js';
-import { getPersonDetails } from '../../src/objects/people/index.js';
+import { UniversalRetrievalService } from '@services/UniversalRetrievalService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord, AttioTask } from '@shared-types/attio.js';
+import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
+import { CachingService } from '@services/CachingService.js';
+import { UniversalUtilityService } from '@services/UniversalUtilityService.js';
+import { getCompanyDetails } from '@/objects/companies/index.js';
+import { getPersonDetails } from '@/objects/people/index.js';
 import * as lists from '@/objects/lists.js';
-import { getObjectRecord } from '../../src/objects/records/index.js';
-import * as tasks from '../../src/objects/tasks.js';
-import { shouldUseMockData } from '../../src/services/create/index.js';
+import { getObjectRecord } from '@/objects/records/index.js';
+import * as tasks from '@/objects/tasks.js';
+import { shouldUseMockData } from '@services/create/index.js';
 
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
