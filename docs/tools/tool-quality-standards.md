@@ -4,7 +4,8 @@ This guide captures the engineering guardrails introduced in Issue #776 Phase 0.
 
 ## 1. Naming & Aliases
 
-- **Verb-first pattern**: Follow `<resource>.<action>` (e.g., `people.search`, `deals.update_stage`). See `src/handlers/tools/standards/index.ts` for the template.
+- **Canonical pattern**: Prefer verb-first snake_case names exposed by the active registry (e.g., `search_records`, `update_record`, `discover_record_attributes`). See `src/constants/tool-names.ts` for canonical universal names and `src/handlers/tools/registry.ts` for the exposed tool surface.
+- **Prompt-facing examples**: Bundled prompts and docs should teach canonical exposed names, not deprecated aliases or dotted pseudo-tools.
 - **Alias registry**: `src/config/tool-aliases.ts` holds deprecated → canonical mappings.
   - Aliases are enabled by default; set `MCP_DISABLE_TOOL_ALIASES=true` to disable at runtime.
   - Every alias entry must document `target`, optional `reason`, and planned `removal` release.
@@ -30,7 +31,7 @@ This guide captures the engineering guardrails introduced in Issue #776 Phase 0.
 
 ## 4. Automation & CI
 
-- **Schema linter**: `npm run lint:tools` executes `scripts/tool-schema-lint.ts` against all tool definitions.
+- **Schema linter**: `bun run lint:tools` executes `scripts/tool-schema-lint.ts` against all tool definitions.
   - Default mode records errors but exits 0; set `MCP_TOOL_LINT_MODE=strict` locally/CI to fail on violations.
   - Phase 1+ must drive error count toward zero as tools are remediated.
 - **Discovery snapshot**: `scripts/generate-tools-snapshot.ts` writes `docs/tools/tool-discovery-baseline.json` for golden tests and quick diffing.
@@ -48,7 +49,7 @@ This guide captures the engineering guardrails introduced in Issue #776 Phase 0.
 - [ ] Update descriptions with capability/boundary/recovery segments.
 - [ ] Ensure schemas declare `additionalProperties`, examples, enums, and pagination hints as needed.
 - [ ] Add/update tests (golden discovery snapshot, routing smoke tests, targeted unit suites).
-- [ ] Run `npm run lint:tools` (consider `MCP_TOOL_LINT_MODE=strict`) and resolve new violations.
+- [ ] Run `bun run lint:tools` (consider `MCP_TOOL_LINT_MODE=strict`) and resolve new violations.
 - [ ] Update documentation (developer guide, migration notes) and reference acceptance criteria in PR.
 
 Keep this document tight; revise it at the end of each phase after we harden additional quality gates.

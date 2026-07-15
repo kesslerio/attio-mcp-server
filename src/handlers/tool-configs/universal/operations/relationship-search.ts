@@ -80,7 +80,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
           throw new Error(
             `Task relationship search (${relationship_type}) is not currently available. ` +
               `This feature requires enhanced API filtering capabilities. ` +
-              `As a workaround, you can use the 'records_search' tool with resource_type='tasks' to find all tasks, ` +
+              `As a workaround, you can use the 'search_records' tool with resource_type='tasks' to find all tasks, ` +
               `then filter the results programmatically.`
           );
 

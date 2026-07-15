@@ -216,10 +216,10 @@ export const getRecordDetailsDefinition = {
   description: formatToolDescription({
     capability: 'Fetch a single record with enriched attribute formatting.',
     boundaries:
-      'search or filter result sets; use records.search* tools instead.',
+      'search or filter result sets; use search_records tools instead.',
     constraints:
       'Requires resource_type and record_id; optional fields filter output.',
-    recoveryHint: 'Validate record IDs with records.search before retrying.',
+    recoveryHint: 'Validate record IDs with search_records before retrying.',
   }),
   inputSchema: getRecordDetailsSchema,
   annotations: {

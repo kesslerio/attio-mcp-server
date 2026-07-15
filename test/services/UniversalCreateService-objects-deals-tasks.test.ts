@@ -2,13 +2,13 @@
  * Split: UniversalCreateService objects/deals/tasks operations
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
+vi.mock('@services/ValidationService.js', () => ({
   ValidationService: {
     truncateSuggestions: vi.fn((s: string[]) => s),
     validateEmailAddresses: vi.fn(),
   },
 }));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
+vi.mock('@handlers/tool-configs/universal/field-mapper.js', () => ({
   mapRecordFields: vi.fn(),
   validateResourceType: vi.fn(),
   getFieldSuggestions: vi.fn(),
@@ -18,16 +18,16 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
   ),
   FIELD_MAPPINGS: {},
 }));
-vi.mock('../../src/utils/validation-utils.js', () => ({
+vi.mock('@utils/validation-utils.js', () => ({
   validateRecordFields: vi.fn(),
 }));
-vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
+vi.mock('@utils/attribute-format-helpers.js', () => ({
   convertAttributeFormats: vi.fn((t: string, d: any) => d),
   getFormatErrorHelp: vi.fn(
     (t: string, f: string, m: string) => `Enhanced: ${m}`
   ),
 }));
-vi.mock('../../src/config/deal-defaults.js', () => ({
+vi.mock('@config/deal-defaults.js', () => ({
   applyDealDefaultsWithValidation: vi.fn(),
   applyDealDefaultsWithValidationLegacy: vi.fn(),
   getDealDefaults: vi.fn(() => ({ stage: 'default-stage' })),
@@ -37,7 +37,7 @@ vi.mock('../../src/config/deal-defaults.js', () => ({
     warnings: [],
   })),
 }));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
+vi.mock('@errors/enhanced-api-errors.js', () => ({
   EnhancedApiError: vi
     .fn()
     .mockImplementation(
@@ -62,7 +62,7 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
     ),
   },
 }));
-vi.mock('../../src/objects/records/index.js', () => ({
+vi.mock('@/objects/records/index.js', () => ({
   createObjectRecord: vi.fn(),
 }));
 vi.mock('@/utils/config-loader.js', () => ({
@@ -87,26 +87,26 @@ const mockCreateService = {
   updateTask: vi.fn(),
 };
 
-vi.mock('../../src/services/create/index.js', () => ({
+vi.mock('@services/create/index.js', () => ({
   getCreateService: vi.fn(() => mockCreateService),
   shouldUseMockData: vi.fn(() => true),
 }));
 
-import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../../src/types/attio.js';
+import { UniversalCreateService } from '@services/UniversalCreateService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@shared-types/attio.js';
 import {
   applyDealDefaultsWithValidation,
   validateDealInput,
-} from '../../src/config/deal-defaults.js';
-import { createObjectRecord } from '../../src/objects/records/index.js';
-import { getCreateService } from '../../src/services/create/index.js';
+} from '@config/deal-defaults.js';
+import { createObjectRecord } from '@/objects/records/index.js';
+import { getCreateService } from '@services/create/index.js';
 import {
   mapRecordFields,
   getFieldSuggestions,
   validateFields,
-} from '../../src/handlers/tool-configs/universal/field-mapper.js';
-import { getFormatErrorHelp } from '../../src/utils/attribute-format-helpers.js';
+} from '@handlers/tool-configs/universal/field-mapper.js';
+import { getFormatErrorHelp } from '@utils/attribute-format-helpers.js';
 
 describe('UniversalCreateService', () => {
   beforeEach(() => {

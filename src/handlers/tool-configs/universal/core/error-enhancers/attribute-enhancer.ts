@@ -115,7 +115,7 @@ const enhanceAttributeNotFoundError = async (
       message += `Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?\n\n`;
     }
 
-    message += `Next step: Call records_discover_attributes with\n`;
+    message += `Next step: Call discover_record_attributes with\n`;
     message += `  resource_type: "${resourceType}"\n`;
     message += `to see all valid attributes.`;
 
@@ -134,7 +134,7 @@ const enhanceAttributeNotFoundError = async (
     );
     return (
       `Attribute "${invalidAttr}" does not exist on ${resourceType}.\n\n` +
-      `Next step: Use records_discover_attributes to see valid attributes.`
+      `Next step: Use discover_record_attributes to see valid attributes.`
     );
   }
 };

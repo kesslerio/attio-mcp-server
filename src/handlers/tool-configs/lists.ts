@@ -253,7 +253,7 @@ export const listsToolDefinitions = [
       constraints:
         'Requires recordId; processes 5 lists in parallel by default (max 20).',
       recoveryHint:
-        'If record not found, verify recordId with records_search first.',
+        'If record not found, verify recordId with search_records first.',
     }),
     inputSchema: {
       type: 'object',
@@ -900,7 +900,7 @@ ${formatToolDescription({
   boundaries: 'search multiple lists or modify records.',
   constraints:
     'Requires listId, parentObjectType, parentAttributeSlug, condition, value.',
-  recoveryHint: 'Use records_discover_attributes for valid slugs.',
+  recoveryHint: 'Use discover_record_attributes for valid slugs.',
 })}`,
     inputSchema: {
       type: 'object',
