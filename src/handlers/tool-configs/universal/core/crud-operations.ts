@@ -315,7 +315,7 @@ export const createRecordDefinition = {
       'Requires resource_type plus record_data that matches discover_record_attributes output.',
     requiresApproval: true,
     recoveryHint:
-      'If validation fails, call records_discover_attributes to confirm required fields and enums. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options before retrying.',
+      'If validation fails, call discover_record_attributes to confirm required fields and enums. If a select/status value is rejected, call get_record_attribute_options for that attribute to list valid options before retrying.',
   }),
   inputSchema: createRecordSchema,
   annotations: {
@@ -334,7 +334,7 @@ export const updateRecordDefinition = {
       'Requires resource_type, record_id, and record_data; supports partial updates with schema validation.',
     requiresApproval: true,
     recoveryHint:
-      'Call records_get_details first to inspect the latest values before editing. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options.',
+      'Call get_record_details first to inspect the latest values before editing. If a select/status value is rejected, call get_record_attribute_options for that attribute to list valid options.',
   }),
   inputSchema: updateRecordSchema,
   annotations: {
@@ -354,7 +354,7 @@ export const deleteRecordDefinition = {
       'Requires record_id and resource_type; operation is irreversible once confirmed.',
     requiresApproval: true,
     recoveryHint:
-      'If uncertain, fetch with records_get_details to confirm the target before deletion.',
+      'If uncertain, fetch with get_record_details to confirm the target before deletion.',
   }),
   inputSchema: deleteRecordSchema,
   annotations: {

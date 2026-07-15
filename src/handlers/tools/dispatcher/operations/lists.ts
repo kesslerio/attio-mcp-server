@@ -5,22 +5,22 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ToolConfig, GetListsToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
-import { hasResponseData } from '../../error-types.js';
+import { createErrorResult } from '@utils/error-handler.js';
+import { ToolConfig, GetListsToolConfig } from '@handlers/tool-types.js';
+import { formatResponse } from '@handlers/tools/formatters.js';
+import { hasResponseData } from '@handlers/tools/error-types.js';
 import {
   filterListEntries,
   advancedFilterListEntries,
   filterListEntriesByParent,
   filterListEntriesByParentId,
-} from '../../../../objects/lists/filtering.js';
+} from '@/objects/lists/filtering.js';
 import {
   addRecordToList,
   removeRecordFromList,
   updateListEntry,
-} from '../../../../objects/lists/entries.js';
-import { ListEntryFilters } from '../../../../api/operations/index.js';
+} from '@/objects/lists/entries.js';
+import { ListEntryFilters } from '@api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { createList, updateList } from '@/objects/lists/base.js';
