@@ -143,7 +143,7 @@ describe('uniqueness-enhancer', () => {
         'update-record(resource_type="companies", record_id="comp-789"'
       );
       expect(result).toContain(
-        'records_get_details(resource_type="companies", record_id="comp-789"'
+        'get_record_details(resource_type="companies", record_id="comp-789"'
       );
     });
 

@@ -68,7 +68,7 @@ import {
  *
  * @example
  * createErrorResult(
- *   "Missing required field: stage. Valid options: MQL, SQL, Demo. Use records_get_attribute_options to see all.",
+ *   "Missing required field: stage. Valid options: MQL, SQL, Demo. Use get_record_attribute_options to see all.",
  *   "validation_error",
  *   { context: { operation: "create", resourceType: "deals" } }
  * )

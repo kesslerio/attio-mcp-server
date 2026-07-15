@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/kesslerio-attio-mcp-server-badge.png)](https://mseep.ai/app/kesslerio-attio-mcp-server)
+
 # Attio MCP Server
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)

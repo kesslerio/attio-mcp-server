@@ -110,7 +110,7 @@ describe('select-status-enhancer', () => {
         'Value "Invalid" is not valid for select attribute "status" on companies'
       );
       expect(result).toContain('Valid options: Active, Inactive, Pending');
-      expect(result).toContain('records_get_attribute_options');
+      expect(result).toContain('get_record_attribute_options');
       expect(result).toContain('resource_type: "companies"');
       expect(result).toContain('attribute: "status"');
       expect(mockGetOptions).toHaveBeenCalledWith('companies', 'status');
@@ -181,7 +181,7 @@ describe('select-status-enhancer', () => {
       expect(result).not.toBeNull();
       expect(result).toContain('Value is not valid for attribute "status"');
       expect(result).not.toContain('Valid options:');
-      expect(result).toContain('records_get_attribute_options');
+      expect(result).toContain('get_record_attribute_options');
     });
   });
 
@@ -248,7 +248,7 @@ describe('select-status-enhancer', () => {
       expect(result).toContain('Value "Test" is not valid');
       expect(result).toContain('an attribute on companies');
       expect(result).not.toContain('attribute "');
-      expect(result).toContain('records_get_attribute_options');
+      expect(result).toContain('get_record_attribute_options');
     });
 
     it('should return null when no recordData', async () => {

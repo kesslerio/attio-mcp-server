@@ -22,7 +22,7 @@ function getRequiredFieldErrorMessage(
   if (resourceType === UniversalResourceType.DEALS && fieldName === 'stage') {
     // Don't hard-code stage examples - they vary by workspace
     // Instead, guide users to discover valid options
-    return `${baseMessage}. Tip: Use records_get_attribute_options(resource_type="deals", attribute="stage") to see valid stages for your workspace.`;
+    return `${baseMessage}. Tip: Use get_record_attribute_options(resource_type="deals", attribute="stage") to see valid stages for your workspace.`;
   }
 
   if (resourceType === UniversalResourceType.DEALS && fieldName === 'name') {
