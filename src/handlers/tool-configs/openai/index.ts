@@ -142,11 +142,11 @@ export const openAiToolDefinitions = {
       capability:
         'Run lightweight compatibility search across companies, people, lists, and tasks for ChatGPT MCP.',
       boundaries:
-        'support complex filters, batch queries, or return rich record payloads (use records_search* tools).',
+        'support complex filters, batch queries, or return rich record payloads (use search_records* tools).',
       constraints:
         'Requires query string (min 1 char); optional type filter; limit up to 25 results per call.',
       recoveryHint:
-        'When you need pagination or attribute filtering, switch to records_search or records_search_advanced.',
+        'When you need pagination or attribute filtering, switch to search_records or search_records_advanced.',
     }),
     inputSchema: searchInputSchema,
     annotations: {

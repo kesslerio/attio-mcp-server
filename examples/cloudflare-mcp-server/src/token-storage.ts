@@ -135,14 +135,22 @@ export function createTokenStorage(config: TokenStorageConfig) {
     /**
      * Store a token for a user
      */
-    async storeToken(userId: string, token: StoredToken): Promise<void> {
+    async storeToken(
+      userId: string,
+      token: StoredToken,
+      ttlSeconds?: number
+    ): Promise<void> {
       const encrypted = await encryptToken(token, encryptionKey);
 
-      // Calculate TTL based on token expiry (with 5 minute buffer)
-      const ttl = Math.max(
-        60, // Minimum 1 minute
-        Math.floor(token.expiresAt - Date.now() / 1000 + 300)
-      );
+      // Explicit ttlSeconds wins (e.g. short-lived auth codes); otherwise derive
+      // the TTL from the token expiry with a 5-minute buffer.
+      const ttl =
+        ttlSeconds != null
+          ? Math.max(60, Math.floor(ttlSeconds))
+          : Math.max(
+              60, // Minimum 1 minute
+              Math.floor(token.expiresAt - Date.now() / 1000 + 300)
+            );
 
       await kv.put(`token:${userId}`, JSON.stringify(encrypted), {
         expirationTtl: ttl,

@@ -4,33 +4,33 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { TaskSearchStrategy } from '../../../src/services/search-strategies/TaskSearchStrategy.js';
+import { TaskSearchStrategy } from '@services/search-strategies/TaskSearchStrategy.js';
 import {
   SearchType,
   MatchType,
   SortType,
   UniversalResourceType,
-} from '../../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord, AttioTask } from '../../../src/types/attio.js';
-import { StrategyDependencies } from '../../../src/services/search-strategies/interfaces.js';
-import { UniversalUtilityService } from '../../../src/services/UniversalUtilityService.js';
-import { SearchUtilities } from '../../../src/services/search-utilities/SearchUtilities.js';
-import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
+} from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord, AttioTask } from '@shared-types/attio.js';
+import { StrategyDependencies } from '@services/search-strategies/interfaces.js';
+import { UniversalUtilityService } from '@services/UniversalUtilityService.js';
+import { SearchUtilities } from '@services/search-utilities/SearchUtilities.js';
+import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
 
 // Mock dependencies
-vi.mock('../../../src/middleware/performance-enhanced.js', () => ({
+vi.mock('@/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     markTiming: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/services/UniversalUtilityService.js', () => ({
+vi.mock('@services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: {
     convertTaskToRecord: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/services/search-utilities/SearchUtilities.js', () => ({
+vi.mock('@services/search-utilities/SearchUtilities.js', () => ({
   SearchUtilities: {
     getTaskFieldValue: vi.fn(),
     rankByRelevance: vi.fn(),
