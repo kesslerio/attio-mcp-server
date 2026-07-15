@@ -173,7 +173,7 @@ export const createNoteDefinition = {
     requiresApproval: true,
     constraints:
       'Requires resource_type, record_id, title, content. Set format="markdown" for rich formatting: headings (# ## ###), lists (- or 1.), nested bullets (2-space indent), bold (**text**), code blocks. Use \\n for line breaks.',
-    recoveryHint: 'If record not found, use records_search first.',
+    recoveryHint: 'If record not found, use search_records first.',
   }),
   inputSchema: createNoteSchema,
   annotations: {
@@ -188,7 +188,7 @@ export const listNotesDefinition = {
     capability: 'Retrieve notes for a record with timestamps.',
     boundaries: 'create or modify notes; read-only.',
     constraints: 'Requires resource_type, record_id; sorted by creation date.',
-    recoveryHint: 'If empty, verify record has notes with records_get_details.',
+    recoveryHint: 'If empty, verify record has notes with get_record_details.',
   }),
   inputSchema: listNotesSchema,
   annotations: {

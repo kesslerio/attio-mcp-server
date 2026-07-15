@@ -8,6 +8,7 @@ type PostMock = ReturnType<typeof vi.fn>;
 const postMock: PostMock = vi.fn();
 
 vi.mock('@api/lazy-client.js', () => ({
+  getGlobalContext: () => null,
   getLazyAttioClient: () => ({
     post: postMock,
   }),

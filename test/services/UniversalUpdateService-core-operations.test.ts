@@ -3,23 +3,23 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Inline mocks (must match specifiers in this file)
-vi.mock('../../src/objects/companies/index.js', () => ({
+vi.mock('@/objects/companies/index.js', () => ({
   updateCompany: vi.fn(),
 }));
-vi.mock('../../src/objects/lists.js', () => ({ updateList: vi.fn() }));
-vi.mock('../../src/objects/people-write.js', () => ({ updatePerson: vi.fn() }));
-vi.mock('../../src/objects/records/index.js', () => ({
+vi.mock('@/objects/lists.js', () => ({ updateList: vi.fn() }));
+vi.mock('@/objects/people-write.js', () => ({ updatePerson: vi.fn() }));
+vi.mock('@/objects/records/index.js', () => ({
   updateObjectRecord: vi.fn(),
 }));
-vi.mock('../../src/config/deal-defaults.js', () => ({
+vi.mock('@config/deal-defaults.js', () => ({
   applyDealDefaultsWithValidation: vi.fn(),
   applyDealDefaultsWithValidationLegacy: vi.fn(),
 }));
-vi.mock('../../src/objects/tasks.js', () => ({
+vi.mock('@/objects/tasks.js', () => ({
   getTask: vi.fn(),
   updateTask: vi.fn(),
 }));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
+vi.mock('@handlers/tool-configs/universal/field-mapper.js', () => ({
   mapRecordFields: vi.fn(),
   mapTaskFields: vi.fn((_: string, i: any) => i),
   validateResourceType: vi.fn(),
@@ -29,16 +29,16 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
     () => 'companies, people, lists, records, deals, tasks'
   ),
 }));
-vi.mock('../../src/utils/validation-utils.js', () => ({
+vi.mock('@utils/validation-utils.js', () => ({
   validateRecordFields: vi.fn(),
 }));
-vi.mock('../../src/services/ValidationService.js', () => ({
+vi.mock('@services/ValidationService.js', () => ({
   ValidationService: {
     truncateSuggestions: vi.fn((s: string[]) => s),
     validateEmailAddresses: vi.fn(),
   },
 }));
-vi.mock('../../src/services/MockService.js', () => ({
+vi.mock('@services/MockService.js', () => ({
   MockService: {
     updateTask: vi.fn(),
     isUsingMockData: vi.fn().mockReturnValue(true),
@@ -55,24 +55,24 @@ vi.mock('@/utils/config-loader.js', () => ({
     },
   })),
 }));
-import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../../src/types/attio.js';
-import { updateCompany } from '../../src/objects/companies/index.js';
-import { updateList } from '../../src/objects/lists.js';
-import { updatePerson } from '../../src/objects/people-write.js';
-import { updateObjectRecord } from '../../src/objects/records/index.js';
+import { UniversalUpdateService } from '@services/UniversalUpdateService.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import { AttioRecord } from '@shared-types/attio.js';
+import { updateCompany } from '@/objects/companies/index.js';
+import { updateList } from '@/objects/lists.js';
+import { updatePerson } from '@/objects/people-write.js';
+import { updateObjectRecord } from '@/objects/records/index.js';
 import {
   applyDealDefaultsWithValidation,
   applyDealDefaultsWithValidationLegacy,
-} from '../../src/config/deal-defaults.js';
-import { ValidationService } from '../../src/services/ValidationService.js';
-import { MockService } from '../../src/services/MockService.js';
+} from '@config/deal-defaults.js';
+import { ValidationService } from '@services/ValidationService.js';
+import { MockService } from '@services/MockService.js';
 import {
   mapRecordFields,
   validateFields,
-} from '../../src/handlers/tool-configs/universal/field-mapper.js';
-import { validateRecordFields } from '../../src/utils/validation-utils.js';
+} from '@handlers/tool-configs/universal/field-mapper.js';
+import { validateRecordFields } from '@utils/validation-utils.js';
 
 describe('UniversalUpdateService', () => {
   beforeEach(() => {

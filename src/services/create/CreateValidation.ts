@@ -1,12 +1,12 @@
-import type { AttioRecord } from '../../types/attio.js';
-import { UniversalResourceType } from '../../handlers/tool-configs/universal/types.js';
-import { shouldUseMockData } from '../create/index.js';
-import { UniversalUtilityService } from '../UniversalUtilityService.js';
-import { getObjectRecord } from '../../objects/records/index.js';
-import { getTask } from '../../objects/tasks.js';
-import { getCompanyDetails } from '../../objects/companies/index.js';
-import { getPersonDetails } from '../../objects/people/basic.js';
-import { getListDetails } from '../../objects/lists.js';
+import type { AttioRecord } from '@shared-types/attio.js';
+import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
+import { shouldUseMockData } from '@services/create/index.js';
+import { UniversalUtilityService } from '@services/UniversalUtilityService.js';
+import { getObjectRecord } from '@/objects/records/index.js';
+import { getTask } from '@/objects/tasks.js';
+import { getCompanyDetails } from '@/objects/companies/index.js';
+import { getPersonDetails } from '@/objects/people/basic.js';
+import { getListDetails } from '@/objects/lists.js';
 
 interface ListDetailsResponse {
   id: {

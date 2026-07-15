@@ -215,10 +215,10 @@ export const batchSearchToolDefinition = {
     capability:
       'Execute multiple searches in parallel and return grouped results.',
     boundaries:
-      'mutate or import data; use records.batch for write operations.',
+      'mutate or import data; use batch_records for write operations.',
     constraints:
       'Provide queries array (1–10 items recommended) and resource_type.',
-    recoveryHint: 'If queries fail, retry individually using records.search.',
+    recoveryHint: 'If queries fail, retry individually using search_records.',
   }),
   inputSchema: batchSearchSchema,
   annotations: {

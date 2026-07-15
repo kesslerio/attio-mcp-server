@@ -5,12 +5,12 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../../utils/error-handler.js';
-import { parseResourceUri } from '../../../../utils/uri-parser.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { DetailsToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
-import { hasResponseData } from '../../error-types.js';
+import { createErrorResult } from '@utils/error-handler.js';
+import { parseResourceUri } from '@utils/uri-parser.js';
+import { ResourceType } from '@shared-types/attio.js';
+import { DetailsToolConfig } from '@handlers/tool-types.js';
+import { formatResponse } from '@handlers/tools/formatters.js';
+import { hasResponseData } from '@handlers/tools/error-types.js';
 
 /**
  * Handle details operations
