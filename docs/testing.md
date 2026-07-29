@@ -43,13 +43,13 @@ cp .env.test.example .env.test
 
 # 3. Edit .env.test with your workspace-specific IDs
 # Or run the setup script to create test data:
-npm run setup:test-data
+bun run setup:test-data
 
 # 4. Run all tests
-npm test
+bun run test
 
 # 5. Run integration tests only
-npm run test:integration
+bun run test:integration
 ```
 
 ## Test Types
@@ -60,13 +60,13 @@ Unit tests run without requiring an API connection and test individual functions
 
 ```bash
 # Run all unit tests
-npm test
+bun run test
 
 # Run unit tests in watch mode
-npm test:watch
+bun run test:watch
 
 # Run offline tests only (no API calls)
-npm test:offline
+bun run test:offline
 ```
 
 ### Integration Tests (IT-XXX)
@@ -79,13 +79,13 @@ Integration tests make real API calls to verify individual API operations, edge 
 
 ```bash
 # Run all integration tests
-npm run test:integration
+bun run test:integration
 
 # Run specific integration test
-npm run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
+bun run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
 
 # Run integration tests in watch mode
-npm run test:integration:watch
+bun run test:integration:watch
 ```
 
 **Documentation:**
@@ -103,13 +103,13 @@ End-to-end tests validate complete user workflows through the MCP protocol, test
 
 ```bash
 # Run all E2E tests
-npm run test:e2e
+bun run test:e2e
 
 # Run MCP protocol tests
-npm run test:e2e:mcp
+bun run test:mcp
 
 # Run with diagnostics
-npm run e2e:diagnose
+bun run e2e:diagnose
 ```
 
 **Documentation:**
@@ -125,7 +125,7 @@ npm run e2e:diagnose
 | **Protocol**    | Direct Attio API                      | MCP → Attio API                                 |
 | **Numbering**   | IT-001, IT-105, IT-201...             | TC-001, TC-L01, TC-D01...                       |
 | **Examples**    | Rate limiting, batch CRUD, validation | Search workflow, deal creation, list management |
-| **Run Command** | `npm run test:integration`            | `npm run test:e2e`                              |
+| **Run Command** | `bun run test:integration`            | `bun run test:e2e`                              |
 
 ## Setting Up Integration Tests
 
@@ -166,7 +166,7 @@ Integration tests need specific records in your workspace to test against. You h
 Run the setup script to create test data in your workspace:
 
 ```bash
-npm run setup:test-data
+bun run setup:test-data
 ```
 
 This will:
@@ -188,10 +188,10 @@ To find IDs for existing records:
 
    ```bash
    # Build the project first
-   npm run build
+   bun run build
 
    # Discover available resources
-   npm run discover
+   bun run discover
    ```
 
 ## Running Tests
@@ -200,36 +200,36 @@ To find IDs for existing records:
 
 ```bash
 # Run all tests once
-npm test
+bun run test
 
 # Run tests in watch mode
-npm test:watch
+bun run test:watch
 
 # Run tests with coverage
-npm test:coverage
+bun run test:coverage
 ```
 
 ### Integration Tests Only
 
 ```bash
 # Run all integration tests
-npm run test:integration
+bun run test:integration
 
 # Run a specific integration test file
-npm run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
+bun run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
 
 # Run integration tests matching a pattern
-npm run test:integration -- -t "should add record to list"
+bun run test:integration -- -t "should add record to list"
 ```
 
 ### Offline Tests Only
 
 ```bash
 # Run tests that don't require API access
-npm test:offline
+bun run test:offline
 
 # Watch mode for offline tests
-npm test:watch:offline
+bun run test:watch:offline
 ```
 
 ## Test Configuration
@@ -294,14 +294,14 @@ ATTIO_API_KEY=your_actual_api_key
 
 1. Check that `.env.test` exists
 2. Verify it contains the required IDs
-3. Run `npm run setup:test-data` to create test data
+3. Run `bun run setup:test-data` to create test data
 
 #### "Record not found" errors
 
 The test records may have been deleted. Either:
 
 - Update `.env.test` with new IDs
-- Run `npm run setup:test-data` to create new test records
+- Run `bun run setup:test-data` to create new test records
 
 #### Rate limiting errors
 
@@ -315,10 +315,10 @@ The tests include retry logic, but if you see rate limiting:
 
 ```bash
 # Run tests with verbose output
-npm test -- --reporter=verbose
+bun run test -- --reporter=verbose
 
 # Run a single test with debugging
-npm test -- test/integration/lists/add-record-to-list.integration.test.ts --reporter=verbose
+bun run test -- test/integration/lists/add-record-to-list.integration.test.ts --reporter=verbose
 
 # Check test configuration
 cat .env.test
@@ -374,9 +374,9 @@ env:
 
 ### 4. Performance Tips
 
-- Run offline tests during development: `npm test:offline`
-- Use watch mode for faster feedback: `npm test:watch:offline`
-- Run integration tests before commits: `npm run test:integration`
+- Run offline tests during development: `bun run test:offline`
+- Use watch mode for faster feedback: `bun run test:watch:offline`
+- Run integration tests before commits: `bun run test:integration`
 - Consider using separate test workspaces for parallel CI runs
 
 ## Advanced Topics
@@ -433,3 +433,37 @@ When adding new integration tests:
 5. Ensure tests clean up after themselves
 
 For more information, see the main [README](../README.md) and [Contributing Guide](../CONTRIBUTING.md).
+
+## E2E Diagnostics (#545 & #568)
+
+Use after failures for deep-dive debugging; not during passing cycles.
+
+- `bun run e2e:diagnose` — Enhanced test runner with standardized env
+- `bun run e2e:diagnose:core` — Core-workflows focus
+- `bun run e2e:analyze` — Enhanced analysis with anomaly detection
+- `bun run e2e:analyze:trends` — 14-day trend analysis
+- `bun run e2e:analyze -- --latest --stdout` — Latest only
+- `bun run e2e:analyze -- --basic --stdout` — Simple mode
+- `bun run e2e:health` — Env health (0–100), `--fix` to attempt auto-fix
+
+### Quick path
+
+```bash
+./scripts/e2e-diagnostics.sh --suite core-workflows --json --verbose
+bun run e2e:analyze -- --latest --stdout
+```
+
+### Manual fallback (no bail, capture logs)
+
+```bash
+TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
+  bunx vitest run test/e2e/suites/core-workflows.e2e.test.ts --reporter=verbose --reporter=json --bail=0 \
+  |& tee test-results/e2e-console.core-workflows.realapi.full.log
+```
+
+Grep examples (when needed)
+
+```bash
+rg -n "tasks\.createTask|tasks\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced*actor" \
+  test-results/e2e-*-$(date +%Y%m%d)_*.log
+```

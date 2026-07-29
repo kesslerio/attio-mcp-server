@@ -11,15 +11,15 @@
 bun run typecheck
 
 # 3. Run tests
-bun run test -- -t "test name"     # Single suite
-bun run test:file -- "glob"        # Specific files
+bun run test -- -t "test name"          # Single suite
+bun run test:single "path/to.test.ts"   # Specific files (no watch)
 
 # 4. Lint before committing
-bun run lint:file -- "file1.ts"    # Specific files
-bun run lint                        # All files
+bun run lint:src                    # src/ only (lint:test for test/)
+bun run lint:check                  # Full cached lint
 
 # 5. Before creating PR
-bun run lint:claude && bun run test
+bun run lint:check && bun run test
 ```
 
 ## STYLE & TOKEN BUDGET
@@ -32,7 +32,7 @@ bun run lint:claude && bun run test
 
 ## TL;DR / Quick Start
 
-- **Pre‑commit must pass**: lint → format → build → `test:offline` → TS check (tests). No `--no-verify` unless justified.
+- **Pre‑commit/pre‑push**: see **Quality Gates** below (lint-staged on commit; typecheck + fast tests on push). No `--no-verify` unless justified.
 - **Run the right tests**: see the Test Matrix below (unit, integration, e2e, smoke, performance, affected, offline, ci-json).
 - **Logging**: structured `logger.*` only in `src/`; include `toolName,userId,requestId`; **no secrets/PII**.
 - **`formatResult`**: returns **string**; no env branching; wrap in `try/catch` + `createErrorResult`.
@@ -133,37 +133,7 @@ Avoid top‑level `oneOf`/`allOf`/`anyOf` in tool `inputSchema` due to client/In
 
 ## E2E Diagnostics (#545 & #568)
 
-**Use after failures for deep‑dive debugging; not during passing cycles.**
-
-- `bun run e2e:diagnose` — Enhanced test runner with standardized env
-- `bun run e2e:diagnose:core` — Core‑workflows focus
-- `bun run e2e:analyze` — Enhanced analysis with anomaly detection
-- `bun run e2e:analyze:trends` — 14‑day trend analysis
-- `bun run e2e:analyze -- --latest --stdout` — Latest only
-- `bun run e2e:analyze -- --basic --stdout` — Simple mode
-- `bun run e2e:health` — Env health (0–100), `--fix` to attempt auto‑fix
-
-**Quick path**
-
-```bash
-./scripts/e2e-diagnostics.sh --suite core-workflows --json --verbose
-bun run e2e:analyze -- --latest --stdout
-```
-
-**Manual fallback** (no bail, capture logs)
-
-```bash
-TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
-  bunx vitest run test/e2e/suites/core-workflows.e2e.test.ts --reporter=verbose --reporter=json --bail=0 \
-  |& tee test-results/e2e-console.core-workflows.realapi.full.log
-```
-
-Grep examples (when needed)
-
-```bash
-rg -n "tasks\.createTask|tasks\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced*actor" \
-  test-results/e2e-*-$(date +%Y%m%d)_*.log
-```
+**Use after failures for deep‑dive debugging; not during passing cycles.** Full command reference (diagnose/analyze/health, quick path, manual fallback): see `docs/testing.md` → **E2E Diagnostics**.
 
 ### Policy: E2E ≠ Mocks
 
@@ -199,8 +169,6 @@ PIPELINE STAGES:
 4. **Build Verification**: Ensure artifacts created correctly
 5. **Security Audit**: Dependency vulnerability scanning
 
-> This section replaces older CI/CD variants; remove any duplicate CI/CD sections below.
-
 ## Git Workflow & Issue/PR Policy
 
 ### GIT WORKFLOW COMMANDS
@@ -228,30 +196,12 @@ RULE: Update CHANGELOG before merge | WHEN: Merging any PR with user-facing chan
 - `Tests`: exact commands run (copy/pasteable).
 - `AI Assistance`: used/not used, testing level, prompt/session log link, and "I understand this code."
 
-### ISSUE WORKFLOW [MANDATORY CHECKLIST]
-
-1. `git branch --show-current` - Verify location
-2. `git checkout main` - Start from main
-3. `git pull origin main` - Get latest
-4. `git checkout -b feature/issue-{num}-{desc}` - Create issue branch
-5. `git status` - Verify clean state
-6. [Do work]
-7. `git commit -m "Type: Description #issue-num"` - Reference issue
-8. `git push -u origin HEAD` - Push branch
-9. `gh pr create -R kesslerio/attio-mcp-server` - Create PR
-10. **After merge**: Delete branch via GitHub UI or `git push origin --delete branch-name`
-
 ### ISSUE CREATION
 
 SEARCH FIRST: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`
 CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P2,type:bug,area:core"`
 
-**Required Labels** (Enforced by Issue Hygiene Automation):
-
-- **Priority**: P0(Critical), P1(High), P2(Medium), P3(Low), P4(Minor), P5(Trivial) - exactly one required
-- **Type**: bug, feature, enhancement, documentation, test, refactor, chore, ci, dependencies - exactly one required
-- **Status**: status:untriaged, status:ready, status:in-progress, status:blocked, status:needs-info, status:review - exactly one required
-- **Area**: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging - at least one required
+**Required Labels** (Enforced by Issue Hygiene Automation): exactly one **Priority** (`P0`–`P5`), exactly one **Type**, exactly one **Status** (`status:*`), at least one **Area** (`area:*`). List the current label set with `gh label list --repo kesslerio/attio-mcp-server` — do not work from memory; the repo carries both bare (`bug`) and namespaced (`type:bug`) type labels; prefer the namespaced `type:*` form (current practice).
 
 **Acceptance Criteria**: Required for P0-P2, optional for P3-P5. Format: `### Acceptance Criteria` with `- [ ]` checklist items.
 
@@ -266,21 +216,9 @@ CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P
 
 Use Clear Thought MCP. **Introspect tools** first. Typical pattern: call `clear_thought` with operations like `sequential_thinking`, `mental_model`, `decision_framework`. (Variants exist across forks.)
 
-## Attio API Cheatsheet
+## Attio API — KEY IDS
 
-- Objects: `GET /v2/objects`
-- Attributes: `GET /v2/objects/{object}/attributes`
-- Records: `GET/POST/PATCH /v2/objects/{object}/records[/{id}]`
-- Lists: `GET /v2/lists`
-
-**Verify attributes**
-
-```bash
-curl -H "Authorization: Bearer $ATTIO_API_KEY" https://api.attio.com/v2/objects/companies/attributes \
-| jq -r '.data[] | "\(.api_slug) - \(.title)"'
-```
-
-### KEY IDS
+For endpoint shapes, use the official Attio API docs (Context7 first, per Documentation Search Workflow). Workspace-specific IDs that cannot be looked up:
 
 - Prospecting List: `88709359-01f6-478b-ba66-c07347891b6f`
 - Prospecting Stage: `f78ef71e-9306-4c37-90d6-e83550326228`
@@ -288,9 +226,8 @@ curl -H "Authorization: Bearer $ATTIO_API_KEY" https://api.attio.com/v2/objects/
 
 ## ANY TYPE REDUCTION STRATEGY (PR #483 Progress)
 
-RULE: Progressive `any` reduction | WHEN: Writing TypeScript | DO: Use Record<string, unknown> over any | ELSE: Warning count increases
-CURRENT: 395 warnings (improved from 957) | TARGET: <350 this sprint | GOAL: <200 in 3 months
-RECOMMENDED: Use `Record<string, unknown>` instead of `Record<string, any>` for better type safety
+RULE: Progressive `any` reduction | WHEN: Writing TypeScript | DO: Use `Record<string, unknown>` over `any` | ELSE: Warning count increases
+CURRENT THRESHOLDS: see `.github/lint-baseline.json` (baseline) and the **Quality Gates** CI threshold — do not hardcode counts here
 COMMON PATTERNS:
 
 - API responses: `Record<string, unknown>` or specific interface
@@ -301,8 +238,8 @@ COMMON PATTERNS:
 ## DEBUG UTILITIES
 
 RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: Check `scripts/debug/README.md` | ELSE: Slower debugging cycles
-KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
-USAGE: `node scripts/debug/[script-name].js` (requires `bun run build` first)
+KEY SCRIPTS: `validation/debug-field-mapping.js` (field transforms), `format/test-formatresult-compliance.js` (Issue #483 compliance) — see `scripts/debug/README.md` for the current index
+USAGE: `node scripts/debug/<subdir>/<script-name>.js` (requires `bun run build` first)
 
 ## RELEASE PROCESS
 
@@ -322,25 +259,7 @@ RULE: Changelogs for humans | WHEN: Updating CHANGELOG.md | DO: Clear, user-focu
 ## MCP TOOL TESTING
 
 RULE: Validate MCP tools with real API calls | WHEN: MCP tool changes | DO: Use mcp-test-client for end-to-end validation | ELSE: Production failures
-SETUP: `bun add --dev mcp-test-client` (already installed)
-USAGE: Create test in `test/mcp/` directory:
-
-```typescript
-import { MCPTestClient } from 'mcp-test-client';
-
-const client = new MCPTestClient({
-  serverCommand: 'node',
-  serverArgs: ['./dist/index.js'],
-});
-await client.init();
-
-await client.assertToolCall('search-records', params, (result) => {
-  expect(result.isError).toBeFalsy();
-  // Validate real API responses
-});
-
-await client.cleanup();
-```
+USAGE: Create the test under `test/e2e/mcp/<category>/` following the existing `*.mcp.test.ts` files there (e.g. `test/e2e/mcp/core-operations/create-records.mcp.test.ts`) — that is the directory `vitest.config.mcp.ts` discovers; run with `bun run test:mcp`. Tests placed in `test/mcp/` are NOT picked up by `test:mcp`.
 
 ## Safety & Data Hygiene
 
@@ -356,10 +275,3 @@ await client.cleanup();
 ## GITHUB CLI ADVANCED USAGE
 
 RULE: GitHub URL Access | WHEN: Reading GitHub URLs (issues, PRs, comments) | DO: Use `gh api` or `gh <resource> view` commands instead of WebFetch | ELSE: Access restrictions and incomplete data
-**Workflow Operations**: `gh workflow run workflow.yml` | `gh run list` | `gh run watch <run-id>` | `gh run rerun <run-id>`
-**API Direct Access**: `gh api repos/:owner/:repo/issues -F title="Bug" -F body="Details"` (POST) | `gh api repos/:owner/:repo/pulls/123 --method PATCH -F state=closed`
-**Comment Access**: `gh api repos/:owner/:repo/issues/comments/<comment-id>` | `gh pr view <number> --json comments --jq '.comments[].body'`
-**JSON Output**: `gh pr list --json number,title,state --jq '.[] | select(.state=="OPEN")'` | `gh issue list --json number,title --template '{{range .}}#{{.number}} {{.title}}{{"\n"}}{{end}}'`
-**Secret Management**: `gh secret set SECRET_NAME` | `gh secret list` | `gh variable set VAR_NAME --body "value"`
-**Useful Aliases**: `gh alias set prc 'pr create --title "$1" --body "$2" -R kesslerio/attio-mcp-server'` | `gh alias set iv 'issue view --json body --jq .body'`
-**Batch Operations**: `gh issue list --state open --json number | jq -r '.[].number' | xargs -I {} gh issue close {}`

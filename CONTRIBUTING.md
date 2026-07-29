@@ -29,14 +29,14 @@ Run the repository validation flow:
 ```bash
 bun run typecheck
 bun run test
-bun run lint
+bun run lint:check
 ```
 
 Run narrower commands for targeted updates when appropriate:
 
 ```bash
-bun run test:file -- "glob"
-bun run lint:file -- "file1.ts"
+bun run test:single "path/to.test.ts"
+bun run lint:src        # or lint:test for test/ files
 ```
 
 ## AI-assisted contributions
