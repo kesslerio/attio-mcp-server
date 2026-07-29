@@ -148,7 +148,7 @@ echo "Log directory: $LOG_DIR"
 echo "Timestamp: $TIMESTAMP"
 
 # Build vitest command
-VITEST_CMD="node --env-file=.env ./node_modules/vitest/vitest.mjs run --config vitest.config.e2e.ts"
+VITEST_CMD="node --env-file=.env ./node_modules/vitest/vitest.mjs run --config configs/vitest/vitest.config.e2e.ts"
 
 # Add reporters
 if [[ "$JSON_OUTPUT" == true ]]; then

@@ -259,7 +259,7 @@ RULE: Changelogs for humans | WHEN: Updating CHANGELOG.md | DO: Clear, user-focu
 ## MCP TOOL TESTING
 
 RULE: Validate MCP tools with real API calls | WHEN: MCP tool changes | DO: Use mcp-test-client for end-to-end validation | ELSE: Production failures
-USAGE: Create a test in `test/mcp/` following the existing `*.mcp.test.ts` files there (e.g. `test/mcp/search-ranking.mcp.test.ts`); run with `bun run test:mcp`.
+USAGE: Create the test under `test/e2e/mcp/<category>/` following the existing `*.mcp.test.ts` files there (e.g. `test/e2e/mcp/core-operations/create-records.mcp.test.ts`) — that is the directory `vitest.config.mcp.ts` discovers; run with `bun run test:mcp`. Tests placed in `test/mcp/` are NOT picked up by `test:mcp`.
 
 ## Safety & Data Hygiene
 
