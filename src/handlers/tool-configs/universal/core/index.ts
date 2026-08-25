@@ -46,6 +46,10 @@ import {
   getRecordInteractionsConfig,
   getRecordInteractionsDefinition,
 } from './interaction-operations.js';
+import {
+  mergeRecordsConfig,
+  mergeRecordsDefinition,
+} from './merge-operations.js';
 
 export const coreOperationsToolConfigs = {
   create_note: createNoteConfig,
@@ -64,6 +68,7 @@ export const coreOperationsToolConfigs = {
   get_record_attribute_options: getAttributeOptionsConfig,
   get_record_info: getDetailedInfoConfig,
   get_record_interactions: getRecordInteractionsConfig,
+  merge_records: mergeRecordsConfig,
 };
 
 export const coreOperationsToolDefinitions = {
@@ -83,6 +88,7 @@ export const coreOperationsToolDefinitions = {
   create_note: createNoteDefinition,
   list_notes: listNotesDefinition,
   get_record_interactions: getRecordInteractionsDefinition,
+  merge_records: mergeRecordsDefinition,
 };
 
 export {
@@ -106,4 +112,6 @@ export {
   createNoteConfig,
   listNotesConfig,
   getRecordInteractionsConfig,
+  mergeRecordsConfig,
+  mergeRecordsDefinition,
 };

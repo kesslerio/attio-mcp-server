@@ -320,6 +320,42 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
+  merge_records: (p) => {
+    if (!p.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'deals'` }
+      );
+    }
+    if (!p.record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_id',
+        ErrorType.USER_ERROR,
+        { field: 'record_id', example: `record_id: 'deal_uuid'` }
+      );
+    }
+    if (!p.secondary_record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: secondary_record_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'secondary_record_id',
+          example: `secondary_record_id: 'deal_uuid'`,
+        }
+      );
+    }
+    for (const field of ['keep_from_leftover', 'skip_leftover_attributes']) {
+      if (p[field] !== undefined && !Array.isArray(p[field])) {
+        throw new UniversalValidationError(
+          `${field} must be an array of attribute slugs`,
+          ErrorType.USER_ERROR,
+          { field }
+        );
+      }
+    }
+    return p;
+  },
   create_note: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
@@ -512,6 +548,7 @@ const TOOLS_WITH_DYNAMIC_RESOURCE_TYPES = new Set([
   'create_record',
   'update_record',
   'delete_record',
+  'merge_records',
 ]);
 
 function validateStandardResourceType(resourceType: string): string {

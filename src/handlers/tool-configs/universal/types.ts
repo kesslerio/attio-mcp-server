@@ -259,6 +259,17 @@ export interface UniversalDeleteParams {
   record_id: string;
 }
 
+export interface MergeRecordsParams {
+  resource_type: string;
+  record_id: string;
+  secondary_record_id: string;
+  dry_run?: boolean;
+  confirm?: boolean;
+  keep_from_leftover?: string[];
+  skip_leftover_attributes?: string[];
+  override_linked_mismatch?: boolean;
+}
+
 /**
  * Universal attributes parameters
  */

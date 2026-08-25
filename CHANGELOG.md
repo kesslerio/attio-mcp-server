@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`merge_records` universal tool** — dry-runs a deals-only leftover-versus-live field plan, then requires explicit confirmation before patching, clearing, and native-merging into a new survivor record (#1264)
+
 ### Fixed
 
 - **Date-parser relative ranges are host-timezone stable** — `parseRelativeDate` now uses UTC calendar helpers (aligned with `timeframe-utils`), so week/month fixtures no longer flip under Asia/Tokyo and similar offsets (#1253)

@@ -18,6 +18,34 @@ import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
+export interface MergeInProgressRecord {
+  id: { record_id: string };
+  values: Record<string, unknown>;
+  merge_in_progress: true;
+  message: string;
+}
+
+export function isMergeInProgressError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const response = (error as { response?: { status?: number; data?: unknown } })
+    .response;
+  if (response?.status !== 404) return false;
+
+  const responseData = response.data;
+  if (!responseData || typeof responseData !== 'object') return false;
+  const data = responseData as Record<string, unknown>;
+  const nestedError = data.error;
+  const code = [
+    data.code,
+    data.type,
+    data.status,
+    typeof nestedError === 'object' && nestedError
+      ? (nestedError as Record<string, unknown>).code
+      : undefined,
+  ].find((value): value is string => typeof value === 'string');
+  return code === 'merge_in_progress' || code === 'merge-in-progress';
+}
+
 /**
  * Issue #1068: Lists returned in list-native format (UniversalRecord)
  */
@@ -36,6 +64,15 @@ export const getRecordDetailsConfig: UniversalToolConfig<
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
+      if (isMergeInProgressError(error)) {
+        return {
+          id: { record_id: params.record_id },
+          values: {},
+          merge_in_progress: true,
+          message:
+            'Attio is still applying this merge. The record is not missing; retry later.',
+        } as unknown as UniversalRecordResult;
+      }
       return await handleSearchError(
         error,
         params.resource_type,
@@ -47,6 +84,14 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!record) {
       return 'Record not found';
+    }
+
+    if (
+      typeof record === 'object' &&
+      (record as Record<string, unknown>).merge_in_progress === true
+    ) {
+      const recordId = String(record.id?.record_id || 'unknown');
+      return `⏳ Merge is still in progress for deal ${recordId}; it is not missing. Retry get_record_details later.`;
     }
 
     const resourceTypeName = getSingularResourceLabel(resourceType);
