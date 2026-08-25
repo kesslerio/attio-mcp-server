@@ -21,10 +21,8 @@ vi.mock('@/services/UniversalUpdateService.js', () => ({
   UniversalUpdateService: { updateRecordWithValidation },
 }));
 
-import {
-  executeDealMerge,
-  loadDealMergePlan,
-} from '@/services/merge/deal-merge-executor.js';
+import { buildDealMergePlan } from '@/services/merge/deal-merge-planner.js';
+import { executeDealMerge } from '@/services/merge/deal-merge-executor.js';
 
 const PRIMARY_ID = '11111111-1111-4111-8111-111111111111';
 const LEFTOVER_ID = '22222222-2222-4222-8222-222222222222';
@@ -32,6 +30,22 @@ const NEW_ID = '33333333-3333-4333-8333-333333333333';
 
 function deal(recordId: string, values: Record<string, unknown>): AttioRecord {
   return { id: { record_id: recordId }, values };
+}
+
+function fingerprintFor(
+  primaryValues: Record<string, unknown> = {},
+  includeConsent = true
+): string {
+  const secondaryValues: Record<string, unknown> = {
+    website: [{ value: 'https://example.com' }],
+  };
+  if (includeConsent) {
+    secondaryValues.consent_to_contact = [{ value: false }];
+  }
+  return buildDealMergePlan(
+    deal(PRIMARY_ID, { website: [], ...primaryValues }),
+    deal(LEFTOVER_ID, secondaryValues)
+  ).fingerprint;
 }
 
 function arrangeDeals(
@@ -69,6 +83,7 @@ describe('deal merge executor', () => {
       leftover_record_id: LEFTOVER_ID,
       keep_from_leftover: ['website'],
       skip_leftover_attributes: ['consent_to_contact'],
+      plan_fingerprint: fingerprintFor(),
     });
 
     expect(updateRecordWithValidation).toHaveBeenCalledWith(
@@ -106,6 +121,7 @@ describe('deal merge executor', () => {
       leftover_record_id: LEFTOVER_ID,
       keep_from_leftover: [],
       skip_leftover_attributes: [],
+      plan_fingerprint: fingerprintFor({}, false),
     });
 
     expect(result).toMatchObject({
@@ -128,17 +144,13 @@ describe('deal merge executor', () => {
         leftover_record_id: LEFTOVER_ID,
         keep_from_leftover: [],
         skip_leftover_attributes: ['consent_to_contact'],
+        plan_fingerprint: fingerprintFor(),
       })
     ).rejects.toThrow('already cleared');
     expect(mergeRecords).toHaveBeenCalledTimes(1);
   });
 
   it('refuses a stale expected plan before any patch, clear, or merge', async () => {
-    arrangeDeals();
-    const expectedPlan = await loadDealMergePlan(PRIMARY_ID, LEFTOVER_ID);
-    vi.clearAllMocks();
-    arrangeDeals();
-    getRecord.mockReset();
     getRecord
       .mockResolvedValueOnce(deal(PRIMARY_ID, { website: [] }))
       .mockResolvedValueOnce(
@@ -149,15 +161,13 @@ describe('deal merge executor', () => {
       );
 
     await expect(
-      executeDealMerge(
-        {
-          primary_record_id: PRIMARY_ID,
-          leftover_record_id: LEFTOVER_ID,
-          keep_from_leftover: [],
-          skip_leftover_attributes: ['consent_to_contact'],
-        },
-        expectedPlan
-      )
+      executeDealMerge({
+        primary_record_id: PRIMARY_ID,
+        leftover_record_id: LEFTOVER_ID,
+        keep_from_leftover: [],
+        skip_leftover_attributes: ['consent_to_contact'],
+        plan_fingerprint: fingerprintFor(),
+      })
     ).rejects.toThrow('changed');
     expect(updateRecordWithValidation).not.toHaveBeenCalled();
     expect(overwriteRecordAttributes).not.toHaveBeenCalled();

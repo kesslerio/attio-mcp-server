@@ -28,29 +28,6 @@ export type MergeRecordsResult =
   | DealMergeDryRunResult
   | DealMergeExecutionResult;
 
-const dryRunPlans = new Map<string, DealMergePlan>();
-const MAX_CACHED_PLANS = 100;
-
-function planCacheKey(params: MergeRecordsParams): string {
-  return `${params.record_id}:${params.secondary_record_id}`;
-}
-
-function rememberPlan(params: MergeRecordsParams, plan: DealMergePlan): void {
-  if (dryRunPlans.size >= MAX_CACHED_PLANS) {
-    const oldestKey = dryRunPlans.keys().next().value;
-    if (oldestKey) dryRunPlans.delete(oldestKey);
-  }
-  dryRunPlans.set(planCacheKey(params), plan);
-}
-
-function getCachedPlan(params: MergeRecordsParams): DealMergePlan | undefined {
-  return dryRunPlans.get(planCacheKey(params));
-}
-
-function discardCachedPlan(params: MergeRecordsParams): void {
-  dryRunPlans.delete(planCacheKey(params));
-}
-
 function isMergeRecordsResult(value: unknown): value is MergeRecordsResult {
   if (!value || typeof value !== 'object') return false;
   const mode = (value as { mode?: unknown }).mode;
@@ -85,6 +62,7 @@ function formatMergeRecordsResult(result: unknown): string {
           ? 'none'
           : formatFieldSlugs(plan.linked_mismatches)
       }`,
+      `Plan fingerprint: ${plan.fingerprint}`,
     ].join('\n');
   }
 
@@ -129,6 +107,13 @@ function normalizeParams(
     }
   }
 
+  if (
+    params.plan_fingerprint !== undefined &&
+    typeof params.plan_fingerprint !== 'string'
+  ) {
+    throw new Error('plan_fingerprint must be a string');
+  }
+
   return {
     resource_type: params.resource_type,
     record_id: params.record_id,
@@ -138,6 +123,7 @@ function normalizeParams(
     keep_from_leftover: params.keep_from_leftover ?? [],
     skip_leftover_attributes: params.skip_leftover_attributes ?? [],
     override_linked_mismatch: params.override_linked_mismatch ?? false,
+    plan_fingerprint: params.plan_fingerprint ?? '',
   };
 }
 
@@ -192,28 +178,28 @@ export const mergeRecordsConfig: UniversalToolConfig<
           params.record_id,
           params.secondary_record_id
         );
-        rememberPlan(params, plan);
         return {
           mode: 'dry_run',
           plan,
           message:
-            'Dry-run only: no deal was patched, cleared, or merged. Review dangerous fills and linked mismatches before confirming.',
+            'Dry-run only: no deal was patched, cleared, or merged. Review dangerous fills and linked mismatches, then execute with this plan fingerprint.',
         };
       }
 
-      const expectedPlan = getCachedPlan(params);
-      const result = await executeDealMerge(
-        {
-          primary_record_id: params.record_id,
-          leftover_record_id: params.secondary_record_id,
-          keep_from_leftover: params.keep_from_leftover,
-          skip_leftover_attributes: params.skip_leftover_attributes,
-          override_linked_mismatch: params.override_linked_mismatch,
-        },
-        expectedPlan
-      );
-      discardCachedPlan(params);
-      return result;
+      if (!params.plan_fingerprint) {
+        throw new Error(
+          'Execute requires plan_fingerprint from the dry-run field plan so the pair can be re-diffed'
+        );
+      }
+
+      return executeDealMerge({
+        primary_record_id: params.record_id,
+        leftover_record_id: params.secondary_record_id,
+        keep_from_leftover: params.keep_from_leftover,
+        skip_leftover_attributes: params.skip_leftover_attributes,
+        override_linked_mismatch: params.override_linked_mismatch,
+        plan_fingerprint: params.plan_fingerprint,
+      });
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         TOOL_NAMES.MERGE_RECORDS,
@@ -246,7 +232,7 @@ export const mergeRecordsDefinition = {
     boundaries:
       'merge people or companies, merge more than one pair, or retry an indeterminate native merge',
     constraints:
-      'Dry-run defaults to true. Execute requires dry_run=false and confirm=true, returns a new record id, and is not idempotent',
+      'Dry-run defaults to true. Execute requires dry_run=false, confirm=true, and plan_fingerprint from that dry-run',
     requiresApproval: true,
     recoveryHint:
       'For HTTP 202, wait and call get_record_details with new_record_id later; both original ids are unreadable after native merge',

@@ -354,6 +354,16 @@ const toolValidators: Record<string, ToolValidator> = {
         );
       }
     }
+    if (
+      p.plan_fingerprint !== undefined &&
+      typeof p.plan_fingerprint !== 'string'
+    ) {
+      throw new UniversalValidationError(
+        'plan_fingerprint must be a string from the dry-run field plan',
+        ErrorType.USER_ERROR,
+        { field: 'plan_fingerprint' }
+      );
+    }
     return p;
   },
   create_note: (p) => {

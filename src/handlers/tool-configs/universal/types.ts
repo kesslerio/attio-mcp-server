@@ -268,6 +268,7 @@ export interface MergeRecordsParams {
   keep_from_leftover?: string[];
   skip_leftover_attributes?: string[];
   override_linked_mismatch?: boolean;
+  plan_fingerprint?: string;
 }
 
 /**

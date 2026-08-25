@@ -20,6 +20,7 @@ export interface DealMergeExecutionParams extends DealMergeChoiceOptions {
   leftover_record_id: string;
   keep_from_leftover: string[];
   skip_leftover_attributes: string[];
+  plan_fingerprint: string;
 }
 
 export interface DealMergeExecutionResult {
@@ -49,17 +50,17 @@ export async function loadDealMergePlan(
  * surfaced as an indeterminate, already-cleared state.
  */
 export async function executeDealMerge(
-  params: DealMergeExecutionParams,
-  expectedPlan?: DealMergePlan
+  params: DealMergeExecutionParams
 ): Promise<DealMergeExecutionResult> {
   const currentPlan = await loadDealMergePlan(
     params.primary_record_id,
     params.leftover_record_id
   );
 
-  if (expectedPlan) {
-    assertDealMergePlanFresh(expectedPlan, currentPlan);
-  }
+  assertDealMergePlanFresh(
+    { fingerprint: params.plan_fingerprint },
+    currentPlan
+  );
 
   validateDealMergeChoices(
     currentPlan,

@@ -44,6 +44,11 @@ export const mergeRecordsSchema = {
       description:
         'Explicitly allow differing associated person/company records',
     },
+    plan_fingerprint: {
+      type: 'string' as const,
+      description:
+        'Fingerprint from the dry-run field plan. Required to execute so the pair can be re-diffed',
+    },
   },
   required: [
     'resource_type' as const,

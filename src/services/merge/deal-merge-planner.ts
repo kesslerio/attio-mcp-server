@@ -264,12 +264,11 @@ export const planDealMerge = buildDealMergePlan;
 
 /** Refuse to execute a resolution set against a changed flagged plan. */
 export function assertDealMergePlanFresh(
-  expectedPlan: DealMergePlan,
+  expectedPlan: Pick<DealMergePlan, 'fingerprint'>,
   currentPlan: DealMergePlan
 ): void {
   if (
-    expectedPlan.primary_record_id !== currentPlan.primary_record_id ||
-    expectedPlan.leftover_record_id !== currentPlan.leftover_record_id ||
+    !expectedPlan.fingerprint ||
     expectedPlan.fingerprint !== currentPlan.fingerprint
   ) {
     throw new Error(

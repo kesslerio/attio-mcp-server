@@ -110,8 +110,20 @@ describe('merge_records tool surface', () => {
     expect(executeDealMerge).not.toHaveBeenCalled();
   });
 
+  it('requires plan_fingerprint to execute so freshness cannot be skipped', async () => {
+    await expect(
+      mergeRecordsConfig.handler({
+        resource_type: 'deals',
+        record_id: PRIMARY_ID,
+        secondary_record_id: LEFTOVER_ID,
+        dry_run: false,
+        confirm: true,
+      })
+    ).rejects.toThrow('plan_fingerprint');
+    expect(executeDealMerge).not.toHaveBeenCalled();
+  });
+
   it('passes explicit execute choices through the dual gate', async () => {
-    loadDealMergePlan.mockResolvedValueOnce(plan);
     executeDealMerge.mockResolvedValueOnce({
       mode: 'complete',
       status: 200,
@@ -121,11 +133,6 @@ describe('merge_records tool surface', () => {
       plan,
     });
 
-    await mergeRecordsConfig.handler({
-      resource_type: 'deals',
-      record_id: PRIMARY_ID,
-      secondary_record_id: LEFTOVER_ID,
-    });
     const result = await mergeRecordsConfig.handler({
       resource_type: 'deals',
       record_id: PRIMARY_ID,
@@ -135,19 +142,18 @@ describe('merge_records tool surface', () => {
       keep_from_leftover: ['website'],
       skip_leftover_attributes: ['consent_to_contact'],
       override_linked_mismatch: true,
+      plan_fingerprint: plan.fingerprint,
     });
 
     expect(result).toMatchObject({ mode: 'complete', status: 200 });
-    expect(executeDealMerge).toHaveBeenCalledWith(
-      {
-        primary_record_id: PRIMARY_ID,
-        leftover_record_id: LEFTOVER_ID,
-        keep_from_leftover: ['website'],
-        skip_leftover_attributes: ['consent_to_contact'],
-        override_linked_mismatch: true,
-      },
-      plan
-    );
+    expect(executeDealMerge).toHaveBeenCalledWith({
+      primary_record_id: PRIMARY_ID,
+      leftover_record_id: LEFTOVER_ID,
+      keep_from_leftover: ['website'],
+      skip_leftover_attributes: ['consent_to_contact'],
+      override_linked_mismatch: true,
+      plan_fingerprint: plan.fingerprint,
+    });
   });
 
   it('marks the definition as statically destructive and avoids forbidden schema combinators', () => {

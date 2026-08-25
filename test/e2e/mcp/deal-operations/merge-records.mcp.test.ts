@@ -118,6 +118,18 @@ function extractUuid(result: unknown): string | null {
   return recordIdMatch?.[1] || null;
 }
 
+function extractFingerprint(result: unknown): string | null {
+  const structuredFingerprint = (
+    result as { structuredContent?: { plan?: { fingerprint?: unknown } } }
+  ).structuredContent?.plan?.fingerprint;
+  if (typeof structuredFingerprint === 'string' && structuredFingerprint) {
+    return structuredFingerprint;
+  }
+
+  const match = resultText(result).match(/^Plan fingerprint: (.+)$/m);
+  return match?.[1]?.trim() || null;
+}
+
 describe('merge_records MCP e2e', () => {
   let client: LiveMcpTestClient | null = null;
   let stageUuid: string | null = null;
@@ -185,7 +197,7 @@ describe('merge_records MCP e2e', () => {
       });
 
       expect((result as McpResult).isError).toBeFalsy();
-      expect(resultText(result).toLowerCase()).toContain('dry_run');
+      expect(resultText(result).toLowerCase()).toContain('dry-run');
 
       const primaryRead = await client.callTool('get_record_details', {
         resource_type: 'deals',
@@ -215,6 +227,8 @@ describe('merge_records MCP e2e', () => {
         secondary_record_id: leftoverId,
       });
       expect((preview as McpResult).isError).toBeFalsy();
+      const planFingerprint = extractFingerprint(preview);
+      expect(planFingerprint).toBeTruthy();
 
       const result = await client.callTool('merge_records', {
         resource_type: 'deals',
@@ -222,11 +236,12 @@ describe('merge_records MCP e2e', () => {
         secondary_record_id: leftoverId,
         dry_run: false,
         confirm: true,
+        plan_fingerprint: planFingerprint,
       });
 
       expect((result as McpResult).isError).toBeFalsy();
       const text = resultText(result);
-      expect(text).toContain('new_record_id');
+      expect(text).toMatch(/New record ID:/i);
       const newRecordId = extractUuid(result);
       if (newRecordId) createdDealIds.push(newRecordId);
     }
