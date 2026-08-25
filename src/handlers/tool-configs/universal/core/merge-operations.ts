@@ -1,3 +1,4 @@
+import { TOOL_NAMES } from '@/constants/tool-names.js';
 import type {
   MergeRecordsParams,
   UniversalToolConfig,
@@ -48,6 +49,58 @@ function getCachedPlan(params: MergeRecordsParams): DealMergePlan | undefined {
 
 function discardCachedPlan(params: MergeRecordsParams): void {
   dryRunPlans.delete(planCacheKey(params));
+}
+
+function isMergeRecordsResult(value: unknown): value is MergeRecordsResult {
+  if (!value || typeof value !== 'object') return false;
+  const mode = (value as { mode?: unknown }).mode;
+  return mode === 'dry_run' || mode === 'complete' || mode === 'wait';
+}
+
+function formatFieldSlugs(
+  fields: Array<{ slug?: string; attribute?: string }>
+): string {
+  if (fields.length === 0) return 'none';
+  return fields
+    .map((field) => field.slug || field.attribute || 'unknown')
+    .join(', ');
+}
+
+function formatMergeRecordsResult(result: unknown): string {
+  if (!isMergeRecordsResult(result)) {
+    return 'No merge result';
+  }
+
+  if (result.mode === 'dry_run') {
+    const plan = result.plan;
+    return [
+      result.message,
+      `Primary: ${plan.primary_record_id}`,
+      `Leftover: ${plan.leftover_record_id}`,
+      `Fills: ${formatFieldSlugs(plan.fills)}`,
+      `Conflicts: ${formatFieldSlugs(plan.conflicts)}`,
+      `Dangerous empty-primary fills: ${formatFieldSlugs(plan.dangerous_fills)}`,
+      `Linked mismatches: ${
+        plan.linked_mismatches.length === 0
+          ? 'none'
+          : formatFieldSlugs(plan.linked_mismatches)
+      }`,
+    ].join('\n');
+  }
+
+  const headline =
+    result.mode === 'wait'
+      ? 'Deal merge is in progress. Do not poll here; retry get_record_details later.'
+      : 'Deal merge complete.';
+
+  return [
+    headline,
+    `New record ID: ${result.new_record_id}`,
+    result.message,
+    result.warning,
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
 }
 
 function normalizeParams(
@@ -114,14 +167,14 @@ export const mergeRecordsConfig: UniversalToolConfig<
   MergeRecordsParams,
   MergeRecordsResult
 > = {
-  name: 'merge_records',
+  name: TOOL_NAMES.MERGE_RECORDS,
   handler: async (
     rawParams: MergeRecordsParams
   ): Promise<MergeRecordsResult> => {
     try {
       const params = normalizeParams(
         validateUniversalToolParams(
-          'merge_records',
+          TOOL_NAMES.MERGE_RECORDS,
           rawParams
         ) as MergeRecordsParams
       );
@@ -162,17 +215,20 @@ export const mergeRecordsConfig: UniversalToolConfig<
       discardCachedPlan(params);
       return result;
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError('merge_records', 'deals', error);
+      throw ErrorService.createUniversalError(
+        TOOL_NAMES.MERGE_RECORDS,
+        'deals',
+        error
+      );
     }
   },
   formatResult: (result: MergeRecordsResult): string => {
     try {
-      if (!result) return 'No merge result';
-      return JSON.stringify(result, null, 2);
+      return formatMergeRecordsResult(result);
     } catch (error: unknown) {
       const fallback = createErrorResult(
         error instanceof Error ? error : new Error(String(error)),
-        'merge_records#format',
+        `${TOOL_NAMES.MERGE_RECORDS}#format`,
         'FORMAT'
       ) as { content?: Array<{ text?: string }> };
       return fallback.content?.[0]?.text || 'Error formatting merge result';
@@ -183,7 +239,7 @@ export const mergeRecordsConfig: UniversalToolConfig<
 };
 
 export const mergeRecordsDefinition = {
-  name: 'merge_records',
+  name: TOOL_NAMES.MERGE_RECORDS,
   description: formatToolDescription({
     capability:
       'Preview and, after explicit confirmation, safely merge two Attio deal records using the native beta merge operation',

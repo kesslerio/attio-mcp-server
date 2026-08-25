@@ -173,6 +173,11 @@ describe('merge_records tool surface', () => {
     expect(mergeRecordsConfig.formatResult(result)).toContain(
       'Do not poll here'
     );
-    expect(mergeRecordsConfig.formatResult(result)).toContain('new_record_id');
+    expect(mergeRecordsConfig.formatResult(result)).toContain(
+      '33333333-3333-4333-8333-333333333333'
+    );
+    expect(mergeRecordsConfig.formatResult(result).trim().startsWith('{')).toBe(
+      false
+    );
   });
 });

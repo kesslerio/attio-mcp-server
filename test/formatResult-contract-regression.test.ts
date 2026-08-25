@@ -34,6 +34,7 @@ const UNIVERSAL_TOOL_CONFIGS = [
   { name: 'create-record', config: coreOpsConfig.createRecordConfig },
   { name: 'update-record', config: coreOpsConfig.updateRecordConfig },
   { name: 'delete-record', config: coreOpsConfig.deleteRecordConfig },
+  { name: 'merge-records', config: coreOpsConfig.mergeRecordsConfig },
   { name: 'get-attributes', config: coreOpsConfig.getAttributesConfig },
   { name: 'get-detailed-info', config: coreOpsConfig.getDetailedInfoConfig },
   { name: 'advanced-search', config: advancedOpsConfig.advancedSearchConfig },
