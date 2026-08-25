@@ -11,10 +11,6 @@ export default defineConfig({
       'test/handlers/tool-configs/universal/integration-*.test.ts',
       'test/handlers/tool-configs/universal/performance-*.test.ts',
     ],
-    // Pin UTC so local Date helpers + toISOString() calendar fixtures match across hosts (#1253)
-    env: {
-      TZ: 'UTC',
-    },
     globals: true,
     testTimeout: 30000,
     setupFiles: ['./test/setup.ts'],

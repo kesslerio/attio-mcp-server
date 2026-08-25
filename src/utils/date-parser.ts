@@ -1,6 +1,9 @@
 /**
  * Date parsing utilities for natural language date expressions
  * Supports relative dates like "last week", "this month", etc.
+ *
+ * Calendar boundaries use UTC so results are host-timezone stable
+ * (same policy as timeframe-utils).
  */
 
 /**
@@ -29,6 +32,61 @@ export interface DateRange {
 }
 
 /**
+ * Format a Date as YYYY-MM-DD from its UTC calendar components.
+ */
+function toISODate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Monday 00:00:00.000 UTC of the week containing `date`. */
+function startOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+  d.setUTCDate(diff);
+  return startOfDay(d);
+}
+
+/** Sunday 00:00:00.000 UTC of the week containing `date`. */
+function endOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? 0 : 7);
+  d.setUTCDate(diff);
+  return startOfDay(d);
+}
+
+function startOfMonth(date: Date): Date {
+  const d = new Date(date);
+  d.setUTCDate(1);
+  return startOfDay(d);
+}
+
+function endOfMonth(date: Date): Date {
+  const d = new Date(date);
+  d.setUTCMonth(d.getUTCMonth() + 1, 0);
+  return startOfDay(d);
+}
+
+function startOfYear(date: Date): Date {
+  const d = new Date(date);
+  d.setUTCMonth(0, 1);
+  return startOfDay(d);
+}
+
+function endOfYear(date: Date): Date {
+  const d = new Date(date);
+  d.setUTCMonth(11, 31);
+  return startOfDay(d);
+}
+
+/**
  * Parse a relative date expression into a date range
  * @param expression Natural language date expression
  * @returns DateRange object with start and end dates
@@ -37,64 +95,6 @@ export interface DateRange {
 export function parseRelativeDate(expression: string): DateRange {
   const normalized = expression.toLowerCase().trim();
   const now = new Date();
-
-  // Helper to format date as ISO string (YYYY-MM-DD)
-  const toISODate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-  };
-
-  // Helper to get start of day
-  const startOfDay = (date: Date): Date => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  };
-
-  // Helper to get start of week (Monday)
-  const startOfWeek = (date: Date): Date => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return startOfDay(d);
-  };
-
-  // Helper to get end of week (Sunday)
-  const endOfWeek = (date: Date): Date => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? 0 : 7);
-    d.setDate(diff);
-    return startOfDay(d);
-  };
-
-  // Helper to get start of month
-  const startOfMonth = (date: Date): Date => {
-    const d = new Date(date);
-    d.setDate(1);
-    return startOfDay(d);
-  };
-
-  // Helper to get end of month (last day of month)
-  const endOfMonth = (date: Date): Date => {
-    const d = new Date(date);
-    d.setMonth(d.getMonth() + 1, 0);
-    return startOfDay(d);
-  };
-
-  // Helper to get start of year
-  const startOfYear = (date: Date): Date => {
-    const d = new Date(date);
-    d.setMonth(0, 1);
-    return startOfDay(d);
-  };
-
-  // Helper to get end of year
-  const endOfYear = (date: Date): Date => {
-    const d = new Date(date);
-    d.setMonth(11, 31);
-    return startOfDay(d);
-  };
 
   // Parse specific relative dates
   switch (normalized) {
@@ -108,7 +108,7 @@ export function parseRelativeDate(expression: string): DateRange {
 
     case 'yesterday': {
       const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setUTCDate(yesterday.getUTCDate() - 1);
       const startYesterday = startOfDay(yesterday);
       return {
         start: toISODate(startYesterday),
@@ -125,7 +125,7 @@ export function parseRelativeDate(expression: string): DateRange {
 
     case 'last week': {
       const lastWeek = new Date(now);
-      lastWeek.setDate(lastWeek.getDate() - 7);
+      lastWeek.setUTCDate(lastWeek.getUTCDate() - 7);
       return {
         start: toISODate(startOfWeek(lastWeek)),
         end: toISODate(endOfWeek(lastWeek)),
@@ -141,7 +141,7 @@ export function parseRelativeDate(expression: string): DateRange {
 
     case 'last month': {
       const lastMonth = new Date(now);
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      lastMonth.setUTCMonth(lastMonth.getUTCMonth() - 1);
       return {
         start: toISODate(startOfMonth(lastMonth)),
         end: toISODate(endOfMonth(lastMonth)),
@@ -157,7 +157,7 @@ export function parseRelativeDate(expression: string): DateRange {
 
     case 'last year': {
       const lastYear = new Date(now);
-      lastYear.setFullYear(lastYear.getFullYear() - 1);
+      lastYear.setUTCFullYear(lastYear.getUTCFullYear() - 1);
       return {
         start: toISODate(startOfYear(lastYear)),
         end: toISODate(endOfYear(lastYear)),
@@ -170,7 +170,7 @@ export function parseRelativeDate(expression: string): DateRange {
   if (lastNDaysMatch) {
     const days = parseInt(lastNDaysMatch[1], 10);
     const startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - days);
+    startDate.setUTCDate(startDate.getUTCDate() - days);
     return {
       start: toISODate(startOfDay(startDate)),
       end: toISODate(startOfDay(now)),
@@ -181,7 +181,7 @@ export function parseRelativeDate(expression: string): DateRange {
   if (lastNWeeksMatch) {
     const weeks = parseInt(lastNWeeksMatch[1], 10);
     const startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - weeks * 7);
+    startDate.setUTCDate(startDate.getUTCDate() - weeks * 7);
     return {
       start: toISODate(startOfDay(startDate)),
       end: toISODate(startOfDay(now)),
@@ -192,7 +192,7 @@ export function parseRelativeDate(expression: string): DateRange {
   if (lastNMonthsMatch) {
     const months = parseInt(lastNMonthsMatch[1], 10);
     const startDate = new Date(now);
-    startDate.setMonth(startDate.getMonth() - months);
+    startDate.setUTCMonth(startDate.getUTCMonth() - months);
     return {
       start: toISODate(startOfDay(startDate)),
       end: toISODate(startOfDay(now)),
@@ -240,10 +240,14 @@ export function normalizeDate(dateInput: string): string | null {
     return range.start;
   }
 
-  // Try to parse as a regular date
+  // Try to parse as a regular date. Prefer local Y-M-D so wall-clock
+  // inputs like "March 15, 2024" keep that calendar day on every host.
   const date = new Date(dateInput);
   if (!isNaN(date.getTime())) {
-    return date.toISOString().split('T')[0];
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   return null;

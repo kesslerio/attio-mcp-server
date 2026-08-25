@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Date-parser unit tests no longer fail on non-UTC hosts** — vitest default and offline configs pin `TZ=UTC` so hardcoded week/month calendar fixtures stay stable under Asia/Tokyo and similar offsets (#1253)
+- **Date-parser relative ranges are host-timezone stable** — `parseRelativeDate` now uses UTC calendar helpers (aligned with `timeframe-utils`), so week/month fixtures no longer flip under Asia/Tokyo and similar offsets (#1253)
 - **Cloudflare Worker remote MCP: connector dropped to `401` ~1 hour after connecting** (`examples/cloudflare-mcp-server`). The worker stored each KV session→token mapping with a 1-hour expiry derived from `expires_in || 3600`, but Attio's OAuth tokens are long-lived and return no `expires_in`, so sessions self-expired ~1h after connect. The worker then forwarded the orphaned session token to Attio and every `/mcp` call failed. Sessions now use a 30-day lifetime when Attio omits `expires_in`, and an unresolved session token returns `401`/re-authenticate instead of being forwarded to Attio (which also closes a per-caller-auth bypass on the miss path)
 
 ## [2026-06-16] - Daily Update
