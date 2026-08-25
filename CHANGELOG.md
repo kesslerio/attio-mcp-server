@@ -7,14 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-25
+
+**TL;DR for Users**: Safe deals-only `merge_records`, Cloudflare remote MCP sessions that no longer drop after an hour, and tenant/OAuth security hardening.
+
 ### Added
 
-- **`merge_records` universal tool** — dry-runs a deals-only leftover-versus-live field plan, then requires explicit confirmation before patching, clearing, and native-merging into a new survivor record (#1264)
+- **`merge_records` universal tool** — dry-runs a deals-only leftover-versus-live field plan, then requires explicit confirmation and the dry-run fingerprint before patching, clearing, and native-merging into a new survivor record (#1264)
 
 ### Fixed
 
 - **Date-parser relative ranges are host-timezone stable** — `parseRelativeDate` now uses UTC calendar helpers (aligned with `timeframe-utils`), so week/month fixtures no longer flip under Asia/Tokyo and similar offsets (#1253)
-- **Cloudflare Worker remote MCP: connector dropped to `401` ~1 hour after connecting** (`examples/cloudflare-mcp-server`). The worker stored each KV session→token mapping with a 1-hour expiry derived from `expires_in || 3600`, but Attio's OAuth tokens are long-lived and return no `expires_in`, so sessions self-expired ~1h after connect. The worker then forwarded the orphaned session token to Attio and every `/mcp` call failed. Sessions now use a 30-day lifetime when Attio omits `expires_in`, and an unresolved session token returns `401`/re-authenticate instead of being forwarded to Attio (which also closes a per-caller-auth bypass on the miss path)
+- **Cloudflare Worker remote MCP: connector dropped to `401` ~1 hour after connecting** (`examples/cloudflare-mcp-server`). Sessions now use a 30-day lifetime when Attio omits `expires_in`, and an unresolved session token returns `401`/re-authenticate instead of being forwarded to Attio (#1241)
+
+### Security
+
+- Isolate Attio client, search, task, and note caches per request/tenant so credentials and results cannot leak across sessions (#403)
+- Block list mutations through generic CRUD, require `note_id` validation on note write/delete, restore batch operation safety limits, and mark `manage-list-entry` as a write tool
+- Stop forwarding unresolved Cloudflare session tokens and isolate Worker tool auth per request; validate OAuth callback state and escape user-controlled callback HTML (#1241, #1243)
+- Sanitize create/API error logging so raw Axios payloads are not serialized into client responses
+- Harden GitHub Actions, Claude, and publish workflows against untrusted PR/issue context and over-scoped credentials
 
 ## [2026-06-16] - Daily Update
 
@@ -971,7 +983,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.4.1...v1.5.0
