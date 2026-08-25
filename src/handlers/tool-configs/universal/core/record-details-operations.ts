@@ -17,6 +17,14 @@ import { handleUniversalGetDetails } from '@/handlers/tool-configs/universal/sha
 import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import { isMergeInProgressError } from '@/services/merge/merge-in-progress.js';
+
+export interface MergeInProgressRecord {
+  id: { record_id: string };
+  values: Record<string, unknown>;
+  merge_in_progress: true;
+  message: string;
+}
 
 /**
  * Issue #1068: Lists returned in list-native format (UniversalRecord)
@@ -36,6 +44,15 @@ export const getRecordDetailsConfig: UniversalToolConfig<
       );
       return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
+      if (isMergeInProgressError(error)) {
+        return {
+          id: { record_id: params.record_id },
+          values: {},
+          merge_in_progress: true,
+          message:
+            'Attio is still applying this merge. The record is not missing; retry later.',
+        } as unknown as UniversalRecordResult;
+      }
       return await handleSearchError(
         error,
         params.resource_type,
@@ -47,6 +64,14 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     const resourceType = extractResourceTypeFromFormatArgs(args);
     if (!record) {
       return 'Record not found';
+    }
+
+    if (
+      typeof record === 'object' &&
+      (record as Record<string, unknown>).merge_in_progress === true
+    ) {
+      const recordId = String(record.id?.record_id || 'unknown');
+      return `⏳ Merge is still in progress for deal ${recordId}; it is not missing. Retry get_record_details later.`;
     }
 
     const resourceTypeName = getSingularResourceLabel(resourceType);

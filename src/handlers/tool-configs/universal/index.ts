@@ -144,7 +144,7 @@ export const universalToolDefinitions = {
 };
 
 /**
- * Core universal operations (13 tools)
+ * Core universal operations (14 tools)
  * These consolidate the majority of CRUD and basic search operations
  */
 export const coreUniversalTools = [
@@ -161,6 +161,7 @@ export const coreUniversalTools = [
   'discover_record_attributes',
   'get_record_info',
   'get_record_interactions',
+  'merge_records',
 ];
 
 /**

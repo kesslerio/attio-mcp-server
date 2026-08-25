@@ -47,6 +47,7 @@ import { getObjectRecord } from '@/objects/records/index.js';
 import { getTask } from '@/objects/tasks.js';
 import { getNote, normalizeNoteResponse } from '@/objects/notes.js';
 import { isConfiguredCustomObjectResourceType } from '@/utils/resource-type-detection.js';
+import { isMergeInProgressError } from '@/services/merge/merge-in-progress.js';
 
 /**
  * UniversalRetrievalService provides centralized record retrieval functionality
@@ -197,6 +198,22 @@ export class UniversalRetrievalService {
       return result;
     } catch (apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
+
+      if (isMergeInProgressError(apiError)) {
+        enhancedPerformanceTracker.endOperation(
+          perfId,
+          true,
+          'Merge still in progress',
+          202
+        );
+        return {
+          id: { record_id },
+          values: {},
+          merge_in_progress: true,
+          message:
+            'Attio is still applying this merge. The record is not missing; retry later.',
+        } as unknown as AttioRecord;
+      }
 
       // Handle EnhancedApiError instances directly - preserve them through the chain
       if (isEnhancedApiError(apiError)) {

@@ -93,6 +93,7 @@ describe('Tool Name Consistency Validation', () => {
         'create',
         'update',
         'delete',
+        'merge',
         'batch',
         'discover',
         'list',

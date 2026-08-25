@@ -25,6 +25,7 @@ export {
   updateRecordSchema,
   deleteRecordSchema,
 } from './schemas/core-schemas.js';
+export { mergeRecordsSchema } from './schemas/merge-schemas.js';
 
 // Validation-related schemas (attributes)
 export {

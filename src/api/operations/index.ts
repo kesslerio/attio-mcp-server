@@ -35,6 +35,8 @@ export {
   listRecords,
 } from './crud.js';
 
+export { mergeRecords, overwriteRecordAttributes } from './merge.js';
+
 // Re-export all notes operations
 export { getObjectNotes, createObjectNote } from './notes.js';
 
