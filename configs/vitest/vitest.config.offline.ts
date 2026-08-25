@@ -30,6 +30,10 @@ export default defineConfig({
     globals: true,
     testTimeout: 10000,
     setupFiles: ['./test/setup.ts'],
+    // Pin UTC so local Date helpers + toISOString() calendar fixtures match across hosts (#1253)
+    env: {
+      TZ: 'UTC',
+    },
     pool: 'forks',
     poolOptions: {
       forks: {
