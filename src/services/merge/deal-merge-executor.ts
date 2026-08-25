@@ -80,10 +80,7 @@ export async function executeDealMerge(
   }
 
   let leftoverCleared = false;
-  const clears = getDealMergeClears(
-    currentPlan,
-    params.skip_leftover_attributes
-  );
+  const clears = getDealMergeClears(params.skip_leftover_attributes);
   try {
     if (Object.keys(clears).length > 0) {
       const clearResult = await overwriteRecordAttributes(

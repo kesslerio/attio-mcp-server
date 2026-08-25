@@ -9,7 +9,6 @@ export type DealMergeFieldKind = 'fill' | 'conflict' | 'dangerous_empty_fill';
 
 export interface DealMergeField {
   attribute: string;
-  slug: string;
   kind: DealMergeFieldKind;
   primary_value: unknown;
   leftover_value: unknown;
@@ -18,15 +17,12 @@ export interface DealMergeField {
 
 export interface DealLinkedMismatch {
   attribute: string;
-  slug: string;
   primary_value: unknown;
   leftover_value: unknown;
 }
 
 export interface DealMergePlan {
   primary_record_id: string;
-  live_record_id: string;
-  secondary_record_id: string;
   leftover_record_id: string;
   fills: DealMergeField[];
   conflicts: DealMergeField[];
@@ -130,7 +126,6 @@ function makeField(
 ): DealMergeField {
   return {
     attribute,
-    slug: attribute,
     kind,
     primary_value: primaryValue,
     leftover_value: leftoverValue,
@@ -192,7 +187,6 @@ export function buildDealMergePlan(
       if (linkedValuesDiffer(primaryValue, leftoverValue)) {
         linkedMismatches.push({
           attribute,
-          slug: attribute,
           primary_value: primaryValue,
           leftover_value: leftoverValue,
         });
@@ -241,8 +235,6 @@ export function buildDealMergePlan(
 
   const planWithoutFingerprint: Omit<DealMergePlan, 'fingerprint'> = {
     primary_record_id: primaryRecordId,
-    live_record_id: primaryRecordId,
-    secondary_record_id: leftoverRecordId,
     leftover_record_id: leftoverRecordId,
     fills,
     conflicts,
@@ -259,8 +251,6 @@ export function buildDealMergePlan(
     ),
   };
 }
-
-export const planDealMerge = buildDealMergePlan;
 
 /** Refuse to execute a resolution set against a changed flagged plan. */
 export function assertDealMergePlanFresh(
@@ -362,7 +352,6 @@ export function getDealMergePatch(
 }
 
 export function getDealMergeClears(
-  plan: DealMergePlan,
   skipLeftoverAttributes: string[]
 ): Record<string, []> {
   return Object.fromEntries(

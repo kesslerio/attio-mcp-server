@@ -34,13 +34,9 @@ function isMergeRecordsResult(value: unknown): value is MergeRecordsResult {
   return mode === 'dry_run' || mode === 'complete' || mode === 'wait';
 }
 
-function formatFieldSlugs(
-  fields: Array<{ slug?: string; attribute?: string }>
-): string {
+function formatFieldSlugs(fields: Array<{ attribute?: string }>): string {
   if (fields.length === 0) return 'none';
-  return fields
-    .map((field) => field.slug || field.attribute || 'unknown')
-    .join(', ');
+  return fields.map((field) => field.attribute || 'unknown').join(', ');
 }
 
 function formatMergeRecordsResult(result: unknown): string {

@@ -17,33 +17,13 @@ import { handleUniversalGetDetails } from '@/handlers/tool-configs/universal/sha
 import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import { isMergeInProgressError } from '@/services/merge/merge-in-progress.js';
 
 export interface MergeInProgressRecord {
   id: { record_id: string };
   values: Record<string, unknown>;
   merge_in_progress: true;
   message: string;
-}
-
-export function isMergeInProgressError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false;
-  const response = (error as { response?: { status?: number; data?: unknown } })
-    .response;
-  if (response?.status !== 404) return false;
-
-  const responseData = response.data;
-  if (!responseData || typeof responseData !== 'object') return false;
-  const data = responseData as Record<string, unknown>;
-  const nestedError = data.error;
-  const code = [
-    data.code,
-    data.type,
-    data.status,
-    typeof nestedError === 'object' && nestedError
-      ? (nestedError as Record<string, unknown>).code
-      : undefined,
-  ].find((value): value is string => typeof value === 'string');
-  return code === 'merge_in_progress' || code === 'merge-in-progress';
 }
 
 /**

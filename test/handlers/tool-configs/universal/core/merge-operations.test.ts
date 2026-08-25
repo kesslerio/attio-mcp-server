@@ -21,8 +21,6 @@ const LEFTOVER_ID = '22222222-2222-4222-8222-222222222222';
 
 const plan = {
   primary_record_id: PRIMARY_ID,
-  live_record_id: PRIMARY_ID,
-  secondary_record_id: LEFTOVER_ID,
   leftover_record_id: LEFTOVER_ID,
   fills: [],
   conflicts: [],
