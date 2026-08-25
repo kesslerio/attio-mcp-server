@@ -184,6 +184,11 @@ describe('Date Parser Utilities', () => {
       expect(normalizeDate('15-Mar-2024')).toBe('2024-03-15');
     });
 
+    it('should keep ISO datetime calendar day in UTC', () => {
+      expect(normalizeDate('2024-03-15T00:00:00Z')).toBe('2024-03-15');
+      expect(normalizeDate('2024-03-15T12:00:00.000Z')).toBe('2024-03-15');
+    });
+
     it('should return null for invalid dates', () => {
       expect(normalizeDate('invalid')).toBe(null);
       expect(normalizeDate('not a date')).toBe(null);
