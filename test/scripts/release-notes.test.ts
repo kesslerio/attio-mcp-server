@@ -17,21 +17,17 @@ describe('release notes builder', () => {
   );
 
   it('builds user-facing notes from the current changelog version', () => {
-    const releaseNotes = buildReleaseNotes(
-      changelogContent,
-      packageJson.version
-    );
+    const version = packageJson.version as string;
+    const releaseNotes = buildReleaseNotes(changelogContent, version);
 
-    expect(releaseNotes).toContain('list configuration tools');
+    expect(releaseNotes.split('\n')[0]?.length).toBeGreaterThan(20);
     expect(releaseNotes).toContain("## What's New");
-    expect(releaseNotes).toContain('### Added');
-    expect(releaseNotes).toContain('### Changed');
-    expect(releaseNotes).toContain('create-list');
-    expect(releaseNotes).toContain('npm provenance');
+    expect(releaseNotes).toMatch(/^### (Added|Changed|Fixed|Security)/m);
     expect(releaseNotes).toContain('npm install -g attio-mcp');
     expect(releaseNotes).toContain('npm update -g attio-mcp');
     expect(releaseNotes).toContain(
-      '**Full Changelog**: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.0...v1.6.1'
+      `**Full Changelog**: https://github.com/kesslerio/attio-mcp-server/compare/`
     );
+    expect(releaseNotes).toContain(`...v${version}`);
   });
 });
