@@ -240,17 +240,22 @@ export function normalizeDate(dateInput: string): string | null {
     return range.start;
   }
 
-  // Try to parse as a regular date. Prefer local Y-M-D so wall-clock
-  // inputs like "March 15, 2024" keep that calendar day on every host.
+  // Try to parse as a regular date.
   const date = new Date(dateInput);
-  if (!isNaN(date.getTime())) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+  if (isNaN(date.getTime())) {
+    return null;
   }
 
-  return null;
+  // ISO datetimes/instants (…T…): UTC calendar day — host-stable.
+  // Wall-clock strings ("March 15, 2024", "2024/03/15"): local calendar day.
+  if (/^\d{4}-\d{2}-\d{2}T/i.test(dateInput.trim())) {
+    return date.toISOString().split('T')[0];
+  }
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 /**
