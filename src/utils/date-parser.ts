@@ -227,7 +227,8 @@ export function isRelativeDate(expression: string): boolean {
  * @returns ISO date string or null if invalid
  */
 export function normalizeDate(dateInput: string): string | null {
-  // Check if it's already an ISO date (YYYY-MM-DD)
+  // Bare YYYY-MM-DD: return as-is. Never parse+reformat — Date('YYYY-MM-DD')
+  // is UTC midnight and local getters would shift the day on negative offsets.
   const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (isoDateRegex.test(dateInput)) {
     return dateInput;
