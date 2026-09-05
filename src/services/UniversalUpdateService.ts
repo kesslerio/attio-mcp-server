@@ -369,6 +369,16 @@ export class UniversalUpdateService {
           suggestions: dealValidation.suggestions,
         });
       } catch (error: unknown) {
+        // Issue #1277: An explicit update with an invalid stage must surface
+        // the error to the user, not be downgraded to a warning. Re-throw
+        // deliberate user errors (invalid stage) so the update fails loudly;
+        // only genuine API/network failures degrade to a warning.
+        if (
+          error instanceof UniversalValidationError &&
+          error.errorType === ErrorType.USER_ERROR
+        ) {
+          throw error;
+        }
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         validationResult.warnings.push(

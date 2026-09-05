@@ -80,6 +80,10 @@ vi.mock('@/objects/records/index.js', () => ({
     values: {},
   })),
 }));
+vi.mock('@/config/deal-defaults.js', () => ({
+  applyDealDefaultsWithValidation: vi.fn(),
+}));
+import { applyDealDefaultsWithValidation } from '@/config/deal-defaults.js';
 import { UniversalUpdateService } from '@services/UniversalUpdateService.js';
 import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
 import {
@@ -475,6 +479,49 @@ describe('UniversalUpdateService', () => {
       });
       expect(result).toBeDefined();
       expect(result.id).toMatchObject({ record_id: 'comp_123' });
+    });
+  });
+
+  describe('Deal stage validation (Issue #1277)', () => {
+    it('should re-throw UniversalValidationError on update with invalid stage', async () => {
+      // Issue #1277: an explicit update with an invalid stage must surface the
+      // error to the user, not be downgraded to a warning and sent to Attio.
+      const { UniversalValidationError, ErrorType } =
+        await import('@/handlers/tool-configs/universal/errors/validation-errors.js');
+      const stageError = new UniversalValidationError(
+        'Deal stage "Not Qualified (MQL > SQL)" not found',
+        ErrorType.USER_ERROR,
+        { field: 'stage' }
+      );
+      vi.mocked(applyDealDefaultsWithValidation).mockRejectedValue(stageError);
+
+      await expect(
+        UniversalUpdateService.updateRecordWithValidation({
+          resource_type: UniversalResourceType.DEALS,
+          record_id: 'deal_123',
+          record_data: { stage: 'Not Qualified (MQL > SQL)' },
+        })
+      ).rejects.toThrow(stageError);
+    });
+
+    it('should downgrade genuine API failures to warnings, not throw', async () => {
+      // A transient Attio API failure should NOT turn into a thrown error on
+      // update; it should degrade to a warning (graceful fallback).
+      const apiError = new Error('Failed to fetch deal stages from API');
+      vi.mocked(applyDealDefaultsWithValidation).mockRejectedValue(apiError);
+
+      const { updateObjectRecord } = await import('@/objects/records/index.js');
+      vi.mocked(updateObjectRecord).mockResolvedValue({
+        id: { record_id: 'deal_123' },
+        values: {},
+      } as any);
+
+      const result = await UniversalUpdateService.updateRecordWithValidation({
+        resource_type: UniversalResourceType.DEALS,
+        record_id: 'deal_123',
+        record_data: { stage: 'Not Qualified (MQL > SQL)' },
+      });
+      expect(result).toBeDefined();
     });
   });
 });

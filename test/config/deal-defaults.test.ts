@@ -104,6 +104,20 @@ describe('Deal Defaults - PR #389 Fix', () => {
       expect(result.dealData.name).toEqual([{ value: 'Test Deal' }]);
       expect(result.dealData.stage).toEqual([{ status: 'MQL' }]);
     });
+
+    it('should throw instead of falling back to default stage on update', async () => {
+      // Issue #1277: an explicit update must never silently substitute
+      // ATTIO_DEFAULT_DEAL_STAGE when stage resolution fails.
+      const dealData = {
+        name: 'Test Deal',
+        stage: 'Not Qualified (MQL > SQL)', // Valid stage title with ">" (not in mock)
+        value: 1000,
+      };
+
+      await expect(
+        applyDealDefaultsWithValidation(dealData, false, { isUpdate: true })
+      ).rejects.toThrow(/Deal stage "Not Qualified \(MQL > SQL\)" not found/);
+    });
   });
 
   describe('validateDealStage', () => {

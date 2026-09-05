@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Deal stage titles with `>` are preserved** — `InputSanitizer` no longer strips standalone angle brackets, so values like `Not Qualified (MQL > SQL)` reach Attio byte-for-byte, and an explicit update with an invalid stage now returns an error instead of silently falling back to `ATTIO_DEFAULT_DEAL_STAGE` (#1277)
+
 ## [1.7.0] - 2026-08-25
 
 **TL;DR for Users**: Safe deals-only `merge_records`, Cloudflare remote MCP sessions that no longer drop after an hour, and tenant/OAuth security hardening.
