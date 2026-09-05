@@ -41,8 +41,10 @@ export class InputSanitizer {
     s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
     // Remove HTML tags
     s = s.replace(/<\/?[^>]+>/g, '');
-    // Final safety: remove any remaining angle brackets to prevent partial tags
-    s = s.replace(/[<>]/g, '');
+    // NOTE: Do NOT strip standalone angle brackets here. The HTML tag regex
+    // above already removes complete tags, and the script regex handles
+    // <script> tags. Stripping [<>] unconditionally corrupts legitimate data
+    // such as "MQL > SQL" (Issue #1277). Standalone < / > are inert HTML.
     return s;
   }
 

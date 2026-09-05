@@ -36,6 +36,21 @@ describe('InputSanitizer', () => {
       expect(result).toBe('alert("xss")safe');
       expect(result).not.toContain('<script>');
     });
+
+    it('should preserve legitimate angle brackets in data values', () => {
+      // Issue #1277: ">" in a deal stage title must survive sanitization
+      const input = 'Not Qualified (MQL > SQL)';
+      const result = InputSanitizer.sanitizeString(input);
+      expect(result).toBe('Not Qualified (MQL > SQL)');
+      expect(result).toContain('>');
+    });
+
+    it('should preserve legitimate angle brackets in single-line values', () => {
+      const input = 'Route: Not Qualified (MQL > SQL). Reason: x';
+      const result = InputSanitizer.sanitizeString(input);
+      expect(result).toBe('Route: Not Qualified (MQL > SQL). Reason: x');
+      expect(result).toContain('>');
+    });
   });
 
   describe('sanitizeMultilineString', () => {
@@ -81,6 +96,14 @@ describe('InputSanitizer', () => {
       expect(result).not.toContain('<b>');
       expect(result).toContain('\n'); // Still has newlines
       expect(result).toContain('Safe line');
+    });
+
+    it('should preserve legitimate angle brackets in multiline content', () => {
+      // Issue #1277: note content with ">" must survive sanitization
+      const input = 'Route: Not Qualified (MQL > SQL). Reason: x';
+      const result = InputSanitizer.sanitizeMultilineString(input);
+      expect(result).toBe('Route: Not Qualified (MQL > SQL). Reason: x');
+      expect(result).toContain('>');
     });
 
     it('should handle Windows-style line endings (CRLF)', () => {

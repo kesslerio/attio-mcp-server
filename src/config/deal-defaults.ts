@@ -493,7 +493,8 @@ function getStageSuggestions(
  */
 export async function validateDealStage(
   stage: string | undefined,
-  skipApiCall: boolean = false
+  skipApiCall: boolean = false,
+  isUpdate: boolean = false
 ): Promise<DealStageValidationResult> {
   if (!stage) {
     return {
@@ -572,6 +573,25 @@ export async function validateDealStage(
       ],
     };
 
+    // Issue #1277: An explicit update must never silently substitute
+    // ATTIO_DEFAULT_DEAL_STAGE when stage resolution fails. Defaulting is a
+    // create-time behavior; on update, surface the failure as an explicit error.
+    if (isUpdate) {
+      const { UniversalValidationError, ErrorType } =
+        await import('../handlers/tool-configs/universal/schemas.js');
+      throw new UniversalValidationError(
+        `Deal stage "${stage}" not found. Available stages: ${availableStagesText}`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'stage',
+          suggestion:
+            stageSuggestions.length > 0
+              ? `Did you mean "${stageSuggestions[0]}"? Available stages: ${availableStagesText}`
+              : `Use one of the available stages: ${availableStagesText}`,
+        }
+      );
+    }
+
     // If strict validation is enabled, throw an error instead of silent fallback
     // WARNING: This environment variable changes runtime behavior
     // Production Impact: Previously working deals may start failing
@@ -597,6 +617,11 @@ export async function validateDealStage(
     return result;
   } catch (err: unknown) {
     error('deal-defaults', 'Stage validation failed', err);
+    // Issue #1277: On update, a stage resolution failure must surface as an
+    // explicit error, not be swallowed into a silent fallback.
+    if (isUpdate) {
+      throw err;
+    }
     return {
       validatedStage: stage, // Return original stage if validation fails
       warnings: [
@@ -661,9 +686,11 @@ export async function applyDealDefaultsWithValidation(
     dealData.stage[0]?.status
   ) {
     // Pass skipValidation flag to validateDealStage to control API calls
+    // Pass isUpdate so update-path failures throw instead of silent fallback (#1277)
     const stageValidation = await validateDealStage(
       dealData.stage[0].status,
-      skipValidation // Skip API calls when in error paths
+      skipValidation, // Skip API calls when in error paths
+      options?.isUpdate ?? false
     );
 
     if (stageValidation.validatedStage) {
