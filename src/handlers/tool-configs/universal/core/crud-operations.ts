@@ -13,6 +13,10 @@ import {
   validateUniversalToolParams,
 } from '@/handlers/tool-configs/universal/schemas.js';
 import {
+  UniversalValidationError,
+  ErrorType,
+} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import {
   handleUniversalCreate,
   handleUniversalUpdate,
   handleUniversalDelete,
@@ -191,7 +195,18 @@ export const updateRecordConfig: UniversalToolConfig<
               actualValues: enhancedResult.validation.actualValues,
             },
           };
-        } catch {
+        } catch (error: unknown) {
+          // Issue #1277: An explicit update with an invalid stage must surface
+          // the error to the user, not be downgraded to a silent fallback to
+          // handleUniversalUpdate (which would send the unvalidated stage to
+          // Attio). Re-throw deliberate user errors; only genuine API/network
+          // failures degrade to the standard update path.
+          if (
+            error instanceof UniversalValidationError &&
+            error.errorType === ErrorType.USER_ERROR
+          ) {
+            throw error;
+          }
           const standardResult = await handleUniversalUpdate(sanitizedParams);
           result = { ...standardResult };
         }

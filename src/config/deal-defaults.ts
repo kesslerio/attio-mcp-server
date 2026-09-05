@@ -49,6 +49,7 @@
 
 import { warn, error } from '../utils/logger.js';
 import { isValidUUID } from '@/utils/validation/uuid-validation.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 
 export interface DealDefaults {
   stage?: string;
@@ -618,8 +619,11 @@ export async function validateDealStage(
   } catch (err: unknown) {
     error('deal-defaults', 'Stage validation failed', err);
     // Issue #1277: On update, a stage resolution failure must surface as an
-    // explicit error, not be swallowed into a silent fallback.
-    if (isUpdate) {
+    // explicit error, not be swallowed into a silent fallback. Only re-throw
+    // the deliberate UniversalValidationError (invalid stage); keep the
+    // graceful fallback for genuine API/network failures so a transient Attio
+    // outage does not turn into a thrown error.
+    if (isUpdate && err instanceof UniversalValidationError) {
       throw err;
     }
     return {

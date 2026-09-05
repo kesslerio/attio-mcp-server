@@ -35,6 +35,7 @@ import {
   type CrudErrorContext,
   type ErrorEnhancer,
 } from './error-enhancers/index.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 
 /**
  * Create enhanced error result for CRUD operations
@@ -328,6 +329,20 @@ export const handleUpdateError = async (
       )}`;
     }
 
+    const errorResult = createErrorResult(errorMessage, 'validation_error', {
+      context,
+    });
+    throw errorResult;
+  }
+
+  // Issue #1277: Surface deliberate UniversalValidationError (invalid stage /
+  // invalid value) with its own message and suggestion, not as a generic
+  // "Record not found" or "update failed" error.
+  if (error instanceof UniversalValidationError) {
+    let errorMessage = error.message;
+    if (error.suggestion) {
+      errorMessage += `\n\n${error.suggestion}`;
+    }
     const errorResult = createErrorResult(errorMessage, 'validation_error', {
       context,
     });
