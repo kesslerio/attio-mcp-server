@@ -27,6 +27,7 @@ export const LISTS_FIELD_MAPPING: FieldMapping = {
     'parent_object',
     'api_slug',
     'workspace_id',
+    'workspace_access',
     'workspace_member_access',
   ],
   commonMistakes: {

@@ -1048,6 +1048,32 @@ ${formatToolDescription({
           type: 'string',
           description: 'Optional description for the list',
         },
+        workspace_access: {
+          type: 'string',
+          description:
+            'Workspace-wide access level for this list. Values: full-access, read-and-write, read-only, or "null" (private list; access granted only via workspace_member_access — sent to Attio as JSON null). New lists must have workspace_access=full-access or at least one member with full-access. Omitting both access fields defaults to full-access.',
+          enum: ['full-access', 'read-and-write', 'read-only', 'null'],
+        },
+        workspace_member_access: {
+          type: 'array',
+          description:
+            'Access granted to specific workspace members. Each entry grants a member a level. Member-level access can add access above the workspace default but cannot reduce it below workspace_access.',
+          items: {
+            type: 'object',
+            properties: {
+              workspace_member_id: {
+                type: 'string',
+                description: 'UUID of the workspace member to grant access to.',
+              },
+              level: {
+                type: 'string',
+                description: 'Access level for the member.',
+                enum: ['full-access', 'read-and-write', 'read-only'],
+              },
+            },
+            required: ['workspace_member_id', 'level'],
+          },
+        },
         template: {
           type: 'string',
           description:
@@ -1057,7 +1083,7 @@ ${formatToolDescription({
         attributes: {
           type: 'object',
           description:
-            'Additional list attributes (e.g., stages, custom fields). Merged onto template defaults if template is specified.',
+            'Additional list attributes (e.g., stages, custom fields). Merged onto template defaults if template is specified. Explicit first-class fields (workspace_access, workspace_member_access) take precedence over same-named keys here.',
           additionalProperties: true,
         },
         dry_run: {
@@ -1093,8 +1119,34 @@ ${formatToolDescription({
         attributes: {
           type: 'object',
           description:
-            'Attributes to update. Immutable fields (parent_object) will be rejected with a clear error.',
+            'Attributes to update. Immutable fields (parent_object) will be rejected with a clear error. Explicit first-class fields (workspace_access, workspace_member_access) take precedence over same-named keys here.',
           additionalProperties: true,
+        },
+        workspace_access: {
+          type: 'string',
+          description:
+            'Workspace-wide access level for this list. Values: full-access, read-and-write, read-only, or "null" (private list; access granted only via workspace_member_access — sent to Attio as JSON null). Lists must retain workspace_access=full-access or at least one member with full-access (enforced by Attio on update).',
+          enum: ['full-access', 'read-and-write', 'read-only', 'null'],
+        },
+        workspace_member_access: {
+          type: 'array',
+          description:
+            'Access granted to specific workspace members. Each entry grants a member a level. Member-level access can add access above the workspace default but cannot reduce it below workspace_access.',
+          items: {
+            type: 'object',
+            properties: {
+              workspace_member_id: {
+                type: 'string',
+                description: 'UUID of the workspace member to grant access to.',
+              },
+              level: {
+                type: 'string',
+                description: 'Access level for the member.',
+                enum: ['full-access', 'read-and-write', 'read-only'],
+              },
+            },
+            required: ['workspace_member_id', 'level'],
+          },
         },
         dry_run: {
           type: 'boolean',

@@ -210,7 +210,10 @@ describe('UniversalCreateService', () => {
         record_data: { values: { name: 'Test List' } },
       });
 
-      expect(createList).toHaveBeenCalledWith({ name: 'Test List' });
+      expect(createList).toHaveBeenCalledWith({
+        name: 'Test List',
+        workspace_access: 'full-access',
+      });
       expect(result).toEqual(mockList);
     });
   });

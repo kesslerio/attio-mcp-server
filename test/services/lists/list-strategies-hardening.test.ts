@@ -71,6 +71,7 @@ describe('ListCreateStrategy (hardened)', () => {
     expect(createList).toHaveBeenCalledWith({
       name: 'Test',
       parent_object: 'companies',
+      workspace_access: 'full-access',
     });
   });
 
@@ -116,6 +117,84 @@ describe('ListCreateStrategy (hardened)', () => {
     expect(result).toBeDefined();
     // Workspace objects should NOT have been fetched
     expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it('enforces the create-time full-access invariant before API call (Issue #1148)', async () => {
+    const mockGet = vi.fn().mockResolvedValue({
+      data: { data: [{ api_slug: 'companies' }] },
+    });
+    vi.mocked(getLazyAttioClient).mockReturnValue({
+      get: mockGet,
+      post: vi.fn(),
+      patch: vi.fn(),
+    } as never);
+
+    await expect(
+      strategy.create({
+        values: {
+          name: 'Test',
+          parent_object: 'companies',
+          workspace_member_access: [
+            { workspace_member_id: 'member-1', level: 'read-only' },
+          ],
+        },
+        resourceType: 'lists',
+      })
+    ).rejects.toThrow('full-access');
+
+    expect(createList).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid workspace_access shape before API call (Issue #1148)', async () => {
+    const mockGet = vi.fn().mockResolvedValue({
+      data: { data: [{ api_slug: 'companies' }] },
+    });
+    vi.mocked(getLazyAttioClient).mockReturnValue({
+      get: mockGet,
+      post: vi.fn(),
+      patch: vi.fn(),
+    } as never);
+
+    await expect(
+      strategy.create({
+        values: {
+          name: 'Test',
+          parent_object: 'companies',
+          workspace_access: 'invalid-level',
+        },
+        resourceType: 'lists',
+      })
+    ).rejects.toThrow('Invalid workspace_access');
+
+    expect(createList).not.toHaveBeenCalled();
+  });
+
+  it('normalizes the string "null" sentinel to JSON null before API call (Issue #1148)', async () => {
+    const mockGet = vi.fn().mockResolvedValue({
+      data: { data: [{ api_slug: 'companies' }] },
+    });
+    vi.mocked(getLazyAttioClient).mockReturnValue({
+      get: mockGet,
+      post: vi.fn(),
+      patch: vi.fn(),
+    } as never);
+    vi.mocked(createList).mockResolvedValue(mockList);
+
+    await strategy.create({
+      values: {
+        name: 'Private',
+        parent_object: 'companies',
+        workspace_access: 'null',
+        workspace_member_access: [
+          { workspace_member_id: 'member-1', level: 'full-access' },
+        ],
+      },
+      resourceType: 'lists',
+    });
+
+    expect(createList).toHaveBeenCalledWith(
+      expect.objectContaining({ workspace_access: null })
+    );
   });
 });
 
@@ -170,5 +249,40 @@ describe('ListUpdateStrategy (hardened)', () => {
     await expect(
       strategy.update('list-789', { bad_field: 'value' }, 'lists')
     ).rejects.toThrow('Cannot find attribute');
+  });
+
+  it('rejects malformed workspace_member_access shape before API call (Issue #1148)', async () => {
+    await expect(
+      strategy.update(
+        'list-789',
+        { workspace_member_access: 'not-an-array' },
+        'lists'
+      )
+    ).rejects.toThrow('must be an array');
+
+    expect(updateList).not.toHaveBeenCalled();
+  });
+
+  it('normalizes the string "null" sentinel to JSON null before API call (Issue #1148)', async () => {
+    vi.mocked(updateList).mockResolvedValue(mockList);
+
+    await strategy.update('list-789', { workspace_access: 'null' }, 'lists');
+
+    expect(updateList).toHaveBeenCalledWith(
+      'list-789',
+      expect.objectContaining({ workspace_access: null })
+    );
+  });
+
+  it('does NOT enforce the create-time invariant on update (stateless, R6)', async () => {
+    vi.mocked(updateList).mockResolvedValue(mockList);
+
+    await expect(
+      strategy.update('list-789', { workspace_access: 'read-only' }, 'lists')
+    ).resolves.toBeDefined();
+    expect(updateList).toHaveBeenCalledWith(
+      'list-789',
+      expect.objectContaining({ workspace_access: 'read-only' })
+    );
   });
 });

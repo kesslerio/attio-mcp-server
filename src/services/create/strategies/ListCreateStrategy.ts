@@ -15,15 +15,33 @@ export class ListCreateStrategy implements CreateStrategy {
   async create(params: CreateStrategyParams): Promise<AttioList> {
     const { values, resourceType } = params;
 
+    // Apply the full-access default when neither access field is provided (R3)
+    const createValues: Record<string, unknown> = { ...values };
+    ListConfigurationValidator.normalizeWorkspaceAccess(createValues);
+    if (
+      createValues.workspace_access === undefined &&
+      createValues.workspace_member_access === undefined
+    ) {
+      createValues.workspace_access = 'full-access';
+    }
+
     // Validate parent_object against workspace objects (Issue #1195)
-    if (values.parent_object && typeof values.parent_object === 'string') {
+    if (
+      createValues.parent_object &&
+      typeof createValues.parent_object === 'string'
+    ) {
       await ListConfigurationValidator.validateParentObject(
-        values.parent_object as string
+        createValues.parent_object as string
       );
     }
 
+    // Validate access-control fields (Issue #1148) — enforce create-time invariant
+    ListConfigurationValidator.validateAccessControls(createValues, {
+      enforceFullAccessInvariant: true,
+    });
+
     try {
-      const list = await createList(values);
+      const list = await createList(createValues);
       return list;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

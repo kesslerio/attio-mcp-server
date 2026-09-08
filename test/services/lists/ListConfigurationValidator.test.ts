@@ -186,6 +186,82 @@ describe('ListConfigurationValidator', () => {
     });
   });
 
+  // --- validateAccessControls ---
+
+  describe('validateAccessControls', () => {
+    it('passes with workspace_access full-access', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls(
+          { workspace_access: 'full-access' },
+          { enforceFullAccessInvariant: true }
+        )
+      ).not.toThrow();
+    });
+
+    it('passes with a member entry level full-access', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls(
+          {
+            workspace_member_access: [
+              { workspace_member_id: 'member-1', level: 'full-access' },
+            ],
+          },
+          { enforceFullAccessInvariant: true }
+        )
+      ).not.toThrow();
+    });
+
+    it('rejects invalid workspace_access value', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls({
+          workspace_access: 'invalid-level',
+        })
+      ).toThrow('Invalid workspace_access');
+    });
+
+    it('rejects malformed workspace_member_access entry', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls({
+          workspace_member_access: [{ workspace_member_id: 'member-1' }],
+        })
+      ).toThrow('Invalid workspace_member_access entry');
+    });
+
+    it('rejects workspace_member_access that is not an array', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls({
+          workspace_member_access: 'not-an-array',
+        })
+      ).toThrow('must be an array');
+    });
+
+    it('rejects create-time invariant when no full-access grantee exists', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls(
+          { workspace_access: 'read-only' },
+          { enforceFullAccessInvariant: true }
+        )
+      ).toThrow('full-access');
+    });
+
+    it('does not enforce invariant when option is omitted', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls({
+          workspace_access: 'read-only',
+        })
+      ).not.toThrow();
+    });
+
+    it('handles null/undefined attributes gracefully', () => {
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls(null as never)
+      ).not.toThrow();
+      expect(() =>
+        ListConfigurationValidator.validateAccessControls(undefined as never)
+      ).not.toThrow();
+    });
+  });
+
   // --- expandTemplate ---
 
   describe('expandTemplate', () => {
@@ -268,6 +344,35 @@ describe('ListConfigurationValidator', () => {
       expect(result.suggested_next_step).toContain('permissions');
     });
 
+    it('categorizes 403 with billing_error code as plan_gating', () => {
+      const error = {
+        message: 'Billing error',
+        response: { status: 403, data: { code: 'billing_error' } },
+      };
+      const result = ListConfigurationValidator.categorizeError(error);
+      expect(result.category).toBe(ListErrorCategory.PLAN_GATING);
+      expect(result.suggested_next_step).toContain('plan');
+    });
+
+    it('categorizes 403 with insufficient_scopes code as permission_failure', () => {
+      const error = {
+        message: 'Insufficient scopes',
+        response: { status: 403, data: { code: 'insufficient_scopes' } },
+      };
+      const result = ListConfigurationValidator.categorizeError(error);
+      expect(result.category).toBe(ListErrorCategory.PERMISSION_FAILURE);
+      expect(result.suggested_next_step).toContain('permissions');
+    });
+
+    it('categorizes 403 with no code as permission_failure fallback', () => {
+      const error = {
+        message: 'Forbidden',
+        response: { status: 403, data: {} },
+      };
+      const result = ListConfigurationValidator.categorizeError(error);
+      expect(result.category).toBe(ListErrorCategory.PERMISSION_FAILURE);
+    });
+
     it('categorizes 401 as token_scope', () => {
       const error = { message: 'Unauthorized', response: { status: 401 } };
       const result = ListConfigurationValidator.categorizeError(error);
@@ -300,6 +405,65 @@ describe('ListConfigurationValidator', () => {
       const error = new AttioApiError('Forbidden', 403, '/lists', 'POST');
       const result = ListConfigurationValidator.categorizeError(error);
       expect(result.category).toBe(ListErrorCategory.PERMISSION_FAILURE);
+    });
+
+    it('categorizes AttioApiError with billing_error details as plan_gating', async () => {
+      const { AttioApiError } = await import('@/errors/api-errors.js');
+      const error = new AttioApiError('Billing error', 403, '/lists', 'POST', {
+        code: 'billing_error',
+      });
+      const result = ListConfigurationValidator.categorizeError(error);
+      expect(result.category).toBe(ListErrorCategory.PLAN_GATING);
+    });
+
+    it('categorizes UniversalValidationError as unsupported_input, never the retry default (Issue #1148)', async () => {
+      const { UniversalValidationError, ErrorType } =
+        await import('@/handlers/tool-configs/universal/errors/validation-errors.js');
+      const error = new UniversalValidationError(
+        'Invalid workspace_access value "bad".',
+        ErrorType.USER_ERROR,
+        { suggestion: 'Valid values: full-access, read-and-write, read-only.' }
+      );
+      const result = ListConfigurationValidator.categorizeError(error);
+      expect(result.category).toBe(ListErrorCategory.UNSUPPORTED_INPUT);
+      expect(result.message).toContain('Valid values');
+      expect(result.suggested_next_step).not.toContain('Retry the operation');
+    });
+
+    it('preserves PERMISSION_FAILURE for codeless 403 on response-shaped errors (no regression)', () => {
+      const error = { message: 'Forbidden', response: { status: 403 } };
+      const result = ListConfigurationValidator.categorizeError(error);
+      expect(result.category).toBe(ListErrorCategory.PERMISSION_FAILURE);
+    });
+  });
+
+  // --- normalizeWorkspaceAccess (Issue #1148, R2) ---
+
+  describe('normalizeWorkspaceAccess', () => {
+    it('converts the string "null" sentinel to JSON null', () => {
+      const attrs: Record<string, unknown> = { workspace_access: 'null' };
+      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect(attrs.workspace_access).toBeNull();
+    });
+
+    it('leaves real JSON null untouched', () => {
+      const attrs: Record<string, unknown> = { workspace_access: null };
+      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect(attrs.workspace_access).toBeNull();
+    });
+
+    it('leaves valid enum strings untouched', () => {
+      const attrs: Record<string, unknown> = {
+        workspace_access: 'read-and-write',
+      };
+      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect(attrs.workspace_access).toBe('read-and-write');
+    });
+
+    it('is a no-op when workspace_access is absent', () => {
+      const attrs: Record<string, unknown> = { name: 'x' };
+      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect('workspace_access' in attrs).toBe(false);
     });
   });
 });

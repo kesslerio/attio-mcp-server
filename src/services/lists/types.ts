@@ -32,6 +32,7 @@ export enum ListErrorCategory {
   UNSUPPORTED_INPUT = 'unsupported_input',
   TOKEN_SCOPE = 'token_scope',
   PERMISSION_FAILURE = 'permission_failure',
+  PLAN_GATING = 'plan_gating',
   API_FAILURE = 'api_failure',
 }
 

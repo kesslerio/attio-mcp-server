@@ -23,6 +23,12 @@ export class ListUpdateStrategy implements UpdateStrategy {
     // Detect immutable fields before API call (Issue #1195)
     ListConfigurationValidator.detectImmutableFields(values);
 
+    // Normalize the private-list 'null' sentinel to JSON null (R2)
+    ListConfigurationValidator.normalizeWorkspaceAccess(values);
+
+    // Validate access-control field shapes (Issue #1148) — stateless, no invariant
+    ListConfigurationValidator.validateAccessControls(values);
+
     try {
       const list = await updateList(recordId, values);
       return {

@@ -25,7 +25,6 @@ import { warn, OperationType } from '@/utils/logger.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { createList, updateList } from '@/objects/lists/base.js';
 import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
-import { AttioApiError } from '@/errors/api-errors.js';
 
 // Deprecation metadata constants (Issue #1071)
 const DEPRECATION_VERSION = 'v2.0.0';
@@ -45,7 +44,7 @@ function handleListToolError(
 
   const categorized = ListConfigurationValidator.categorizeError(error);
   const errorMessage = categorized
-    ? `${categorized.message} (Next step: ${categorized.suggested_next_step})`
+    ? `${categorized.message} (Next step: ${categorized.suggested_next_step}) [category: ${categorized.category}]`
     : error instanceof Error
       ? error.message
       : 'Unknown error';
@@ -1225,6 +1224,10 @@ export async function handleCreateListOperation(
   const name = params.name as string;
   const parentObject = params.parent_object as string;
   const description = params.description as string | undefined;
+  const workspaceAccess = params.workspace_access as string | undefined;
+  const workspaceMemberAccess = params.workspace_member_access as
+    | Array<{ workspace_member_id: string; level: string }>
+    | undefined;
   const templateName = params.template as string | undefined;
   const attributes = params.attributes as Record<string, unknown> | undefined;
   const dryRun = (params.dry_run as boolean) ?? false;
@@ -1258,21 +1261,49 @@ export async function handleCreateListOperation(
       listAttributes.description = description;
     }
 
+    // Merge first-class access-control fields (Issue #1148). Precedence:
+    // explicit first-class params win over same-named keys in `attributes`
+    // (mirrors update-list-configuration).
+    if (workspaceAccess !== undefined) {
+      listAttributes.workspace_access = workspaceAccess;
+    }
+    if (workspaceMemberAccess !== undefined) {
+      listAttributes.workspace_member_access = workspaceMemberAccess;
+    }
+
     // Template expansion happens before validation (R8)
     if (templateName) {
-      const overrides = { ...listAttributes, ...attributes };
+      const overrides = { ...attributes, ...listAttributes };
       listAttributes = ListConfigurationValidator.expandTemplate(
         templateName,
         overrides
       );
     } else if (attributes) {
-      listAttributes = { ...listAttributes, ...attributes };
+      listAttributes = { ...attributes, ...listAttributes };
+    }
+
+    // Default to workspace-wide full-access when neither access field is
+    // provided on ANY surface (R3) — computed after the merge so configs
+    // supplied via the attributes bag are not misdetected as empty.
+    if (
+      listAttributes.workspace_access === undefined &&
+      listAttributes.workspace_member_access === undefined
+    ) {
+      listAttributes.workspace_access = 'full-access';
     }
 
     // Validate parent_object against workspace objects
     await ListConfigurationValidator.validateParentObject(
       listAttributes.parent_object as string
     );
+
+    // Normalize the private-list 'null' sentinel to JSON null (R2)
+    ListConfigurationValidator.normalizeWorkspaceAccess(listAttributes);
+
+    // Validate access-control fields (Issue #1148) — enforce create-time invariant
+    ListConfigurationValidator.validateAccessControls(listAttributes, {
+      enforceFullAccessInvariant: true,
+    });
 
     // Dry-run: return preview without API call
     if (dryRun) {
@@ -1322,6 +1353,10 @@ export async function handleUpdateListConfigurationOperation(
   const params = request.params.arguments || {};
   const listId = params.listId as string;
   const attributes = params.attributes as Record<string, unknown>;
+  const workspaceAccess = params.workspace_access as string | undefined;
+  const workspaceMemberAccess = params.workspace_member_access as
+    | Array<{ workspace_member_id: string; level: string }>
+    | undefined;
   const dryRun = (params.dry_run as boolean) ?? false;
 
   // Validate required parameters
@@ -1343,17 +1378,34 @@ export async function handleUpdateListConfigurationOperation(
   }
 
   try {
+    // Merge first-class access-control fields into attributes (Issue #1148).
+    // Precedence matches create: explicit first-class params win over
+    // same-named keys in `attributes`.
+    const mergedAttributes: Record<string, unknown> = { ...attributes };
+    if (workspaceAccess !== undefined) {
+      mergedAttributes.workspace_access = workspaceAccess;
+    }
+    if (workspaceMemberAccess !== undefined) {
+      mergedAttributes.workspace_member_access = workspaceMemberAccess;
+    }
+
     // Detect immutable fields before API call
-    ListConfigurationValidator.detectImmutableFields(attributes);
+    ListConfigurationValidator.detectImmutableFields(mergedAttributes);
+
+    // Normalize the private-list 'null' sentinel to JSON null (R2)
+    ListConfigurationValidator.normalizeWorkspaceAccess(mergedAttributes);
+
+    // Validate access-control field shapes (Issue #1148) — stateless, no invariant
+    ListConfigurationValidator.validateAccessControls(mergedAttributes);
 
     // Dry-run: return preview without API call
     if (dryRun) {
       const preview = ListConfigurationValidator.normalizeResponse(
         {
-          ...attributes,
+          ...mergedAttributes,
           id: { list_id: listId },
-          title: (attributes.name as string) || 'Preview',
-          object_slug: (attributes.parent_object as string) || '',
+          title: (mergedAttributes.name as string) || 'Preview',
+          object_slug: (mergedAttributes.parent_object as string) || '',
           workspace_id: 'preview',
           created_at: '',
           updated_at: new Date().toISOString(),
@@ -1367,7 +1419,7 @@ export async function handleUpdateListConfigurationOperation(
     }
 
     // Update the list via the API
-    const result = await updateList(listId, attributes);
+    const result = await updateList(listId, mergedAttributes);
     const normalized = ListConfigurationValidator.normalizeResponse(result);
     const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(normalized)

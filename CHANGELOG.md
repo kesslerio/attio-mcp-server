@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **List access controls are now first-class tool inputs** — `create-list` and `update-list-configuration` accept `workspace_access` and `workspace_member_access` directly, with client-side shape validation, the create-time full-access-grantee invariant, and a `plan_gating` error category that distinguishes Attio 403 `billing_error` (plan limit) from `insufficient_scopes` (permission) failures (#1148)
+
 ### Fixed
 
+- **List 403 errors keep their Attio error code** — `createList`/`updateList` no longer flatten 403 responses into message-only errors, so agents get plan-upgrade or token-scope guidance instead of "Retry the operation"; client-side access validation failures are likewise categorized as `unsupported_input` instead of unexpected API failures (#1148)
 - **Deal stage titles with `>` are preserved** — `InputSanitizer` no longer strips standalone angle brackets, so values like `Not Qualified (MQL > SQL)` reach Attio byte-for-byte, and an explicit update with an invalid stage now returns an error instead of silently falling back to `ATTIO_DEFAULT_DEAL_STAGE` (#1277)
 
 ## [1.7.0] - 2026-08-25

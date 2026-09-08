@@ -7,6 +7,7 @@ import {
   getListDetails as getGenericListDetails,
 } from '../../api/operations/index.js';
 import { EnhancedApiError } from '../../errors/enhanced-api-errors.js';
+import { AttioApiError } from '../../errors/api-errors.js';
 import {
   getErrorMessage,
   getErrorStatus,
@@ -171,7 +172,17 @@ export async function createList(
         }`
       );
     } else if (hasErrorResponse(error) && error.response?.status === 403) {
-      throw new Error('Insufficient permissions to create list');
+      // Preserve HTTP status + Attio error code (e.g. billing_error vs
+      // insufficient_scopes) so categorizeError can distinguish plan gating
+      // from permission failures instead of receiving a flattened Error.
+      throw new AttioApiError(
+        'Insufficient permissions to create list',
+        403,
+        path,
+        'POST',
+        (error.response?.data as Record<string, unknown>) || {},
+        error instanceof Error ? error : undefined
+      );
     }
 
     throw error;
@@ -240,7 +251,15 @@ export async function updateList(
         }`
       );
     } else if (hasErrorResponse(error) && error.response?.status === 403) {
-      throw new Error(`Insufficient permissions to update list ${listId}`);
+      // Preserve status + Attio error code for categorizeError (see createList).
+      throw new AttioApiError(
+        `Insufficient permissions to update list ${listId}`,
+        403,
+        path,
+        'PATCH',
+        (error.response?.data as Record<string, unknown>) || {},
+        error instanceof Error ? error : undefined
+      );
     }
 
     throw error;
