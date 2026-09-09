@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.8.0] - 2026-09-08
+
+**TL;DR for Users**: Agents can now configure Attio list sharing (workspace and member-level access) directly through the list tools, and get error guidance that distinguishes plan limits from permission failures. (#1148)
 
 ### Added
 
@@ -21,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **List 403 errors keep their Attio error code** — `createList`/`updateList` no longer flatten 403 responses into message-only errors, so agents get plan-upgrade or token-scope guidance instead of "Retry the operation"; client-side access validation failures are likewise categorized as `unsupported_input` instead of unexpected API failures (#1148)
 - **Deal stage titles with `>` are preserved** — `InputSanitizer` no longer strips standalone angle brackets, so values like `Not Qualified (MQL > SQL)` reach Attio byte-for-byte, and an explicit update with an invalid stage now returns an error instead of silently falling back to `ATTIO_DEFAULT_DEAL_STAGE` (#1277)
+
+## [Unreleased]
 
 ## [1.7.0] - 2026-08-25
 
@@ -998,7 +1002,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...v1.6.0
