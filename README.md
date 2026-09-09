@@ -74,13 +74,17 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **Advanced Filtering**: Multi-attribute search with universal filtering
 - **Bulk Operations**: Efficiently manage contacts with universal batch operations
 
-### 📋 **Lists & Pipeline Management** (4 Tools + 8 Deprecated)
+### 📋 **Lists & Pipeline Management** (6 Tools + 8 Deprecated)
 
 - **Active Tools**: 4 consolidated tools with auto-mode detection ([Migration Guide](./docs/migration/v2-list-tools.md))
   - `filter-list-entries` - Unified filtering with 4 modes
   - `manage-list-entry` - Unified entry management with 3 modes
   - `get-list-entries` - Retrieve list entries
   - `get-record-list-memberships` - Find record's list memberships
+- **List Configuration Tools** (dedicated; universal `create_record`/`update_record` reject `resource_type: "lists"`):
+  - `create-list` - Create lists with first-class access controls: `workspace_access` (`full-access` \| `read-and-write` \| `read-only` \| `"null"` for a private list) and `workspace_member_access` (per-member grants). Omitting both access fields defaults the new list to workspace-wide **full access**; new lists must keep at least one full-access grantee.
+  - `update-list-configuration` - Update name, custom fields, and the same access controls. Member-level grants can raise access above the workspace default but never lower it below `workspace_access`.
+  - Errors distinguish `plan_gating` (workspace plan does not support the requested access configuration) from `permission_failure` (token/workspace permissions) and `unsupported_input` (malformed access config), each with a suggested next step.
 - **Deprecated (v2.0.0 removal)**: 8 legacy tools replaced by consolidated versions
 - **Pipeline Operations**: Move deals through sales stages
 - **Smart Segmentation**: Create and manage targeted contact lists

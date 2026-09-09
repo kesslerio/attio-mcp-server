@@ -282,6 +282,9 @@ export async function handleUniversalCreate(
   params: UniversalCreateParams
 ): Promise<UniversalRecord> {
   if (params.resource_type === UniversalResourceType.LISTS) {
+    // List access controls (workspace_access, workspace_member_access) ship
+    // on the dedicated list tools; the strategy wiring stays live for the
+    // moment this gate is lifted.
     throw new Error(
       'resource_type "lists" is not supported by universal create-record. Use dedicated list tools for administrative list operations.'
     );
@@ -296,6 +299,7 @@ export async function handleUniversalUpdate(
   params: UniversalUpdateParams
 ): Promise<UniversalRecord> {
   if (params.resource_type === UniversalResourceType.LISTS) {
+    // Dedicated list tools own list access controls (see create gate above).
     throw new Error(
       'resource_type "lists" is not supported by universal update-record. Use dedicated list tools for administrative list operations.'
     );

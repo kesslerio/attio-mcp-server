@@ -16,15 +16,17 @@ export class AttioApiError extends Error {
    * @param statusCode - HTTP status code
    * @param endpoint - API endpoint that was called
    * @param details - Additional error details
+   * @param cause - Optional underlying error (ES2022 Error.cause)
    */
   constructor(
     message: string,
     public readonly statusCode: number,
     public readonly endpoint: string,
     public readonly method: string,
-    public readonly details?: Record<string, unknown>
+    public readonly details?: Record<string, unknown>,
+    cause?: unknown
   ) {
-    super(message);
+    super(message, cause !== undefined ? { cause } : undefined);
     this.name = 'AttioApiError';
 
     // This line is needed to properly capture the stack trace in derived classes

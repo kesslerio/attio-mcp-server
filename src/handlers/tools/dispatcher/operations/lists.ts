@@ -24,8 +24,10 @@ import { ListEntryFilters } from '@api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { createList, updateList } from '@/objects/lists/base.js';
-import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
-import { AttioApiError } from '@/errors/api-errors.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 
 // Deprecation metadata constants (Issue #1071)
 const DEPRECATION_VERSION = 'v2.0.0';
@@ -40,19 +42,25 @@ function handleListToolError(
   path: string,
   method: string
 ): ReturnType<typeof createErrorResult> {
-  const isUserError = error instanceof UniversalValidationError;
-  const status = isUserError ? error.httpStatusCode : undefined;
-
   const categorized = ListConfigurationValidator.categorizeError(error);
   const errorMessage = categorized
-    ? `${categorized.message} (Next step: ${categorized.suggested_next_step})`
+    ? `${categorized.message} (Next step: ${categorized.suggested_next_step}) [category: ${categorized.category}]`
     : error instanceof Error
       ? error.message
       : 'Unknown error';
 
-  const responseData = hasResponseData(error) ? error.response.data : {};
-  if (status) {
-    (responseData as Record<string, unknown>).status = status;
+  // Structured classification travels in the payload so agents can branch
+  // without parsing prose. Copy of any real response data (never the
+  // original object) plus status flags for client-side rejections.
+  const responseData: Record<string, unknown> = hasResponseData(error)
+    ? { ...error.response.data }
+    : {};
+  if (categorized?.api_error_status) {
+    responseData.status = categorized.api_error_status;
+    responseData.validation = true;
+  }
+  if (categorized) {
+    responseData.error_category = categorized.category;
   }
 
   return createErrorResult(new Error(errorMessage), path, method, responseData);
@@ -1225,6 +1233,10 @@ export async function handleCreateListOperation(
   const name = params.name as string;
   const parentObject = params.parent_object as string;
   const description = params.description as string | undefined;
+  const workspaceAccess = params.workspace_access as string | undefined;
+  const workspaceMemberAccess = params.workspace_member_access as
+    | Array<{ workspace_member_id: string; level: string }>
+    | undefined;
   const templateName = params.template as string | undefined;
   const attributes = params.attributes as Record<string, unknown> | undefined;
   const dryRun = (params.dry_run as boolean) ?? false;
@@ -1248,7 +1260,26 @@ export async function handleCreateListOperation(
   }
 
   try {
-    // Build attributes: start with explicit params, merge template, then caller attributes
+    // Build attributes from explicit params. Access-field collisions with
+    // the attributes bag are rejected up front (Issue #1148): an ambiguous
+    // dual supply must never resolve by merge order.
+    if (
+      attributes &&
+      ((workspaceAccess !== undefined && 'workspace_access' in attributes) ||
+        (workspaceMemberAccess !== undefined &&
+          'workspace_member_access' in attributes))
+    ) {
+      throw new UniversalValidationError(
+        'workspace_access/workspace_member_access supplied both as first-class params and inside the attributes bag.',
+        ErrorType.USER_ERROR,
+        {
+          suggestion:
+            'Supply list access controls either as top-level tool params or in the attributes bag, not both.',
+          field: 'workspace_access',
+        }
+      );
+    }
+
     let listAttributes: Record<string, unknown> = {
       name,
       parent_object: parentObject,
@@ -1258,20 +1289,46 @@ export async function handleCreateListOperation(
       listAttributes.description = description;
     }
 
-    // Template expansion happens before validation (R8)
+    // Merge first-class access-control fields (Issue #1148)
+    if (workspaceAccess !== undefined) {
+      listAttributes.workspace_access = workspaceAccess;
+    }
+    if (workspaceMemberAccess !== undefined) {
+      listAttributes.workspace_member_access = workspaceMemberAccess;
+    }
+
+    // Template expansion happens before validation (R8). Attributes merge
+    // under explicit params so first-class values win on collision; access
+    // collisions cannot occur (guarded above), and other keys keep the
+    // historical bag-wins semantics.
     if (templateName) {
       const overrides = { ...listAttributes, ...attributes };
       listAttributes = ListConfigurationValidator.expandTemplate(
         templateName,
         overrides
       );
+      // Re-assert explicitly supplied access params so a caller's own access
+      // values always win over template-provided attributes.
+      if (workspaceAccess !== undefined) {
+        listAttributes.workspace_access = workspaceAccess;
+      }
+      if (workspaceMemberAccess !== undefined) {
+        listAttributes.workspace_member_access = workspaceMemberAccess;
+      }
     } else if (attributes) {
-      listAttributes = { ...listAttributes, ...attributes };
+      listAttributes = { ...attributes, ...listAttributes };
     }
 
     // Validate parent_object against workspace objects
     await ListConfigurationValidator.validateParentObject(
       listAttributes.parent_object as string
+    );
+
+    // Shared access policy: full-access default (R3, computed after the
+    // merge) -> 'null' sentinel normalization (R2) -> shape + invariant
+    listAttributes = ListConfigurationValidator.applyAccessDefaults(
+      listAttributes,
+      { surface: 'create' }
     );
 
     // Dry-run: return preview without API call
@@ -1322,6 +1379,10 @@ export async function handleUpdateListConfigurationOperation(
   const params = request.params.arguments || {};
   const listId = params.listId as string;
   const attributes = params.attributes as Record<string, unknown>;
+  const workspaceAccess = params.workspace_access as string | undefined;
+  const workspaceMemberAccess = params.workspace_member_access as
+    | Array<{ workspace_member_id: string; level: string }>
+    | undefined;
   const dryRun = (params.dry_run as boolean) ?? false;
 
   // Validate required parameters
@@ -1343,17 +1404,52 @@ export async function handleUpdateListConfigurationOperation(
   }
 
   try {
+    // Reject ambiguous dual supply of access controls up front (Issue #1148),
+    // mirroring create-list-configuration: same-named keys in the attributes
+    // bag and as first-class params are never resolved by merge order.
+    if (
+      (workspaceAccess !== undefined && 'workspace_access' in attributes) ||
+      (workspaceMemberAccess !== undefined &&
+        'workspace_member_access' in attributes)
+    ) {
+      throw new UniversalValidationError(
+        'workspace_access/workspace_member_access supplied both as first-class params and inside the attributes bag.',
+        ErrorType.USER_ERROR,
+        {
+          suggestion:
+            'Supply list access controls either as top-level tool params or in the attributes bag, not both.',
+          field: 'workspace_access',
+        }
+      );
+    }
+
+    // Merge first-class access-control fields into attributes (Issue #1148)
+    let mergedAttributes: Record<string, unknown> = { ...attributes };
+    if (workspaceAccess !== undefined) {
+      mergedAttributes.workspace_access = workspaceAccess;
+    }
+    if (workspaceMemberAccess !== undefined) {
+      mergedAttributes.workspace_member_access = workspaceMemberAccess;
+    }
+
     // Detect immutable fields before API call
-    ListConfigurationValidator.detectImmutableFields(attributes);
+    ListConfigurationValidator.detectImmutableFields(mergedAttributes);
+
+    // Shared access policy: 'null' sentinel normalization (R2) -> stateless
+    // shape validation (update: no full-access invariant, R6)
+    mergedAttributes = ListConfigurationValidator.applyAccessDefaults(
+      mergedAttributes,
+      { surface: 'update' }
+    );
 
     // Dry-run: return preview without API call
     if (dryRun) {
       const preview = ListConfigurationValidator.normalizeResponse(
         {
-          ...attributes,
+          ...mergedAttributes,
           id: { list_id: listId },
-          title: (attributes.name as string) || 'Preview',
-          object_slug: (attributes.parent_object as string) || '',
+          title: (mergedAttributes.name as string) || 'Preview',
+          object_slug: (mergedAttributes.parent_object as string) || '',
           workspace_id: 'preview',
           created_at: '',
           updated_at: new Date().toISOString(),
@@ -1367,7 +1463,7 @@ export async function handleUpdateListConfigurationOperation(
     }
 
     // Update the list via the API
-    const result = await updateList(listId, attributes);
+    const result = await updateList(listId, mergedAttributes);
     const normalized = ListConfigurationValidator.normalizeResponse(result);
     const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(normalized)

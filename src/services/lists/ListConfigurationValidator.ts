@@ -5,6 +5,8 @@
  * Provides:
  * - validateParentObject: auto-resolve valid parent objects from workspace
  * - detectImmutableFields: reject attempts to update immutable fields
+ * - validateAccessControls: client-side shape/invariant checks for access fields
+ * - normalizeWorkspaceAccess: map the string 'null' sentinel to JSON null
  * - expandTemplate: delegate to list-templates.ts
  * - normalizeResponse: extract consistent agent-friendly shape
  * - categorizeError: map Attio API errors to actionable categories
@@ -16,6 +18,7 @@ import {
   ErrorType,
 } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { AttioApiError } from '@/errors/api-errors.js';
+import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import { expandTemplate } from './list-templates.js';
 import {
   IMMUTABLE_LIST_FIELDS,
@@ -26,6 +29,24 @@ import type { NormalizedListResponse, CategorizedListError } from './types.js';
 import type { AttioList } from '@/types/attio.js';
 
 const log = createScopedLogger('services.lists', 'ListConfigurationValidator');
+
+/**
+ * Valid workspace_access enum values (Attio list access API).
+ */
+const VALID_WORKSPACE_ACCESS_LEVELS = [
+  'full-access',
+  'read-and-write',
+  'read-only',
+];
+
+/**
+ * Valid workspace_member_access level enum values (Attio list access API).
+ */
+const VALID_MEMBER_ACCESS_LEVELS = [
+  'full-access',
+  'read-and-write',
+  'read-only',
+];
 
 /**
  * In-memory cache for workspace object slugs.
@@ -177,6 +198,143 @@ export class ListConfigurationValidator {
   }
 
   /**
+   * Normalize the private-list 'null' sentinel before the payload reaches
+   * Attio (Issue #1148, R2). The MCP string-only enum can express JSON null
+   * only as the literal string 'null'; the API requires real null.
+   * Returns a NEW attributes object with workspace_access normalized —
+   * callers must use the returned value; input is never mutated.
+   */
+  static normalizeWorkspaceAccess(
+    attributes: Record<string, unknown>
+  ): Record<string, unknown> {
+    if (attributes && attributes.workspace_access === 'null') {
+      return { ...attributes, workspace_access: null };
+    }
+    return attributes;
+  }
+
+  /**
+   * Shared access-policy seam for list create/update (Issue #1148).
+   * Single source of truth for the documented order:
+   *   1. full-access default (create only): when NEITHER access field was
+   *      provided on any surface, inject workspace_access='full-access'
+   *   2. 'null' sentinel normalization (string 'null' -> JSON null)
+   *   3. stateless shape + invariant validation
+   * Returns the (possibly new) attributes object to hand to the wire call.
+   */
+  static applyAccessDefaults(
+    attributes: Record<string, unknown>,
+    options: { surface: 'create' | 'update' }
+  ): Record<string, unknown> {
+    let next = attributes;
+    if (
+      options.surface === 'create' &&
+      next.workspace_access === undefined &&
+      next.workspace_member_access === undefined
+    ) {
+      next = { ...next, workspace_access: 'full-access' };
+    }
+    next = ListConfigurationValidator.normalizeWorkspaceAccess(next);
+    ListConfigurationValidator.validateAccessControls(next, {
+      enforceFullAccessInvariant: options.surface === 'create',
+    });
+    return next;
+  }
+
+  /**
+   * Validate access-control fields for list create/update (Issue #1148).
+   * Checks deterministic rules only: access-level enum values, member-entry
+   * shape, and the create-time full-access invariant. Stateless — never reads
+   * the list's current access state.
+   *
+   * @throws UniversalValidationError if an access-control rule is violated
+   */
+  static validateAccessControls(
+    attributes: Record<string, unknown>,
+    options: { enforceFullAccessInvariant?: boolean } = {}
+  ): void {
+    if (!attributes || typeof attributes !== 'object') return;
+
+    const workspaceAccess = attributes.workspace_access;
+    const memberAccess = attributes.workspace_member_access;
+
+    // Validate workspace_access enum value (sentinel 'null' is normalized to
+    // JSON null by applyAccessDefaults/normalizeWorkspaceAccess BEFORE this
+    // check runs, so only real Attio enum values plus null are accepted here)
+    if (
+      workspaceAccess !== undefined &&
+      workspaceAccess !== null &&
+      !VALID_WORKSPACE_ACCESS_LEVELS.includes(workspaceAccess as string)
+    ) {
+      throw new UniversalValidationError(
+        `Invalid workspace_access value "${String(workspaceAccess)}".`,
+        ErrorType.USER_ERROR,
+        {
+          suggestion:
+            'Valid values: full-access, read-and-write, read-only, or null (private list).',
+          field: 'workspace_access',
+        }
+      );
+    }
+
+    // Validate workspace_member_access shape
+    if (memberAccess !== undefined) {
+      if (!Array.isArray(memberAccess)) {
+        throw new UniversalValidationError(
+          'workspace_member_access must be an array of member access entries.',
+          ErrorType.USER_ERROR,
+          {
+            suggestion:
+              'Provide an array of { workspace_member_id, level } objects.',
+            field: 'workspace_member_access',
+          }
+        );
+      }
+      for (const entry of memberAccess as Array<Record<string, unknown>>) {
+        if (
+          !entry ||
+          typeof entry !== 'object' ||
+          typeof entry.workspace_member_id !== 'string' ||
+          !isValidUUID(entry.workspace_member_id) ||
+          !VALID_MEMBER_ACCESS_LEVELS.includes(String(entry.level))
+        ) {
+          throw new UniversalValidationError(
+            'Invalid workspace_member_access entry. Each entry must have a workspace_member_id (UUID) and a valid level.',
+            ErrorType.USER_ERROR,
+            {
+              suggestion:
+                'Each entry must be { workspace_member_id: UUID string, level: full-access | read-and-write | read-only }.',
+              field: 'workspace_member_access',
+            }
+          );
+        }
+      }
+    }
+
+    // Enforce the create-time full-access invariant (create only)
+    if (options.enforceFullAccessInvariant) {
+      const hasWorkspaceFullAccess = workspaceAccess === 'full-access';
+      const hasMemberFullAccess = Array.isArray(memberAccess)
+        ? (memberAccess as Array<Record<string, unknown>>).some(
+            (entry) => entry.level === 'full-access'
+          )
+        : false;
+
+      if (!hasWorkspaceFullAccess && !hasMemberFullAccess) {
+        throw new UniversalValidationError(
+          'A new list must have workspace_access set to full-access or at least one workspace_member_access entry with level full-access.',
+          ErrorType.USER_ERROR,
+          {
+            suggestion:
+              'Set workspace_access to "full-access", or add a workspace_member_access entry with level "full-access".',
+            field: 'workspace_access',
+          }
+        );
+      }
+    }
+  }
+
+  /**
    * Expand a template by merging caller overrides onto template defaults.
    * Delegates to list-templates.ts.
    *
@@ -208,10 +366,36 @@ export class ListConfigurationValidator {
     const message = error instanceof Error ? error.message : String(error);
     const status = extractStatus(error);
 
+    // Client-side input rejections (including validateAccessControls) are
+    // deterministic: classify as UNSUPPORTED_INPUT with actionable guidance
+    // instead of falling through to the retry-inviting API_FAILURE default.
+    // Guarded on missing status so a UVE that ever wraps a real API error
+    // keeps the status-driven plan_gating/permission_failure distinction.
+    if (error instanceof UniversalValidationError && status === undefined) {
+      return {
+        category: ListErrorCategory.UNSUPPORTED_INPUT,
+        message: error.suggestion ? `${message} ${error.suggestion}` : message,
+        suggested_next_step:
+          'Check your input parameters against the list schema. Use get-list-details to inspect valid attributes.',
+        api_error_status: error.httpStatusCode,
+      };
+    }
+
     if (status === 403) {
+      const code = extractErrorCode(error);
+      if (code === 'billing_error') {
+        return {
+          category: ListErrorCategory.PLAN_GATING,
+          message,
+          api_error_status: status,
+          suggested_next_step:
+            'Your workspace plan does not support the requested list access configuration. Upgrade the plan, contact sales, or use a supported access configuration (e.g., workspace_access set to full-access).',
+        };
+      }
       return {
         category: ListErrorCategory.PERMISSION_FAILURE,
         message,
+        api_error_status: status,
         suggested_next_step:
           'Verify your API token has the required scope for this operation. Check workspace permissions or contact an admin.',
       };
@@ -221,15 +405,26 @@ export class ListConfigurationValidator {
       return {
         category: ListErrorCategory.TOKEN_SCOPE,
         message,
+        api_error_status: status,
         suggested_next_step:
           'Your API token may be invalid or expired. Re-authenticate and try again.',
       };
     }
 
-    // Check for unsupported input patterns — prefer HTTP status 400 over string matching
-    const httpStatus = extractStatus(error);
+    // Any other status resolved from the error (e.g. 404, 400) is a
+    // deterministic input/resource error — never the retry-inviting default
+    if (status) {
+      return {
+        category: ListErrorCategory.UNSUPPORTED_INPUT,
+        message,
+        api_error_status: status,
+        suggested_next_step:
+          'Check your input parameters against the list schema. Use get-list-details to inspect valid attributes.',
+      };
+    }
+
+    // Check for unsupported input patterns — string matching (no HTTP status resolved)
     if (
-      httpStatus === 400 ||
       message.includes('Cannot find attribute') ||
       message.includes('is required') ||
       message.includes('must be') ||
@@ -262,6 +457,32 @@ function extractStatus(error: unknown): number | undefined {
   if (typeof error === 'object' && 'response' in error) {
     const resp = (error as { response?: { status?: number } }).response;
     return resp?.status;
+  }
+  return undefined;
+}
+
+/**
+ * Extract the Attio structured error code from an error body.
+ * Attio 403 responses carry a `code` field (e.g., `billing_error`,
+ * `insufficient_scopes`) that distinguishes plan/billing gating from
+ * permission failures. Returns undefined when no code is present.
+ */
+function extractErrorCode(error: unknown): string | undefined {
+  if (!error) return undefined;
+  // AttioApiError subclasses may carry the code in their body/details
+  if (error instanceof AttioApiError) {
+    const details = (error as unknown as { details?: { code?: string } })
+      .details;
+    if (details?.code) return details.code;
+  }
+  if (typeof error === 'object' && 'response' in error) {
+    const resp = (error as { response?: { data?: { code?: string } } })
+      .response;
+    const data = resp?.data;
+    if (typeof data === 'object' && data !== null && 'code' in data) {
+      const code = data.code;
+      if (typeof code === 'string') return code;
+    }
   }
   return undefined;
 }

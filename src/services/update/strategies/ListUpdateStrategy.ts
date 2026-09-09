@@ -23,8 +23,16 @@ export class ListUpdateStrategy implements UpdateStrategy {
     // Detect immutable fields before API call (Issue #1195)
     ListConfigurationValidator.detectImmutableFields(values);
 
+    // Shared access policy (Issue #1148): 'null' sentinel normalization (R2)
+    // -> stateless shape validation. Working copy — caller's `values` is
+    // never mutated.
+    const updateValues = ListConfigurationValidator.applyAccessDefaults(
+      { ...values },
+      { surface: 'update' }
+    );
+
     try {
-      const list = await updateList(recordId, values);
+      const list = await updateList(recordId, updateValues);
       return {
         ...list,
         id: {

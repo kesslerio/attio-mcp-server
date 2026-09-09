@@ -32,6 +32,7 @@ export enum ListErrorCategory {
   UNSUPPORTED_INPUT = 'unsupported_input',
   TOKEN_SCOPE = 'token_scope',
   PERMISSION_FAILURE = 'permission_failure',
+  PLAN_GATING = 'plan_gating',
   API_FAILURE = 'api_failure',
 }
 
@@ -42,6 +43,8 @@ export interface CategorizedListError {
   category: ListErrorCategory;
   message: string;
   suggested_next_step: string;
+  /** HTTP status associated with the error (client rejection or API status) */
+  api_error_status?: number;
 }
 
 /**

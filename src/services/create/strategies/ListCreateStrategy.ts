@@ -15,15 +15,26 @@ export class ListCreateStrategy implements CreateStrategy {
   async create(params: CreateStrategyParams): Promise<AttioList> {
     const { values, resourceType } = params;
 
+    // Shared access policy (Issue #1148): full-access default when neither
+    // field is provided (R3) -> 'null' sentinel normalization (R2) -> shape
+    // + create-time invariant. Input is never mutated (working copy).
+    const createValues = ListConfigurationValidator.applyAccessDefaults(
+      { ...values },
+      { surface: 'create' }
+    );
+
     // Validate parent_object against workspace objects (Issue #1195)
-    if (values.parent_object && typeof values.parent_object === 'string') {
+    if (
+      createValues.parent_object &&
+      typeof createValues.parent_object === 'string'
+    ) {
       await ListConfigurationValidator.validateParentObject(
-        values.parent_object as string
+        createValues.parent_object as string
       );
     }
 
     try {
-      const list = await createList(values);
+      const list = await createList(createValues);
       return list;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
