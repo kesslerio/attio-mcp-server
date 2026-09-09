@@ -24,7 +24,10 @@ import { ListEntryFilters } from '@api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { createList, updateList } from '@/objects/lists/base.js';
-import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 
 // Deprecation metadata constants (Issue #1071)
 const DEPRECATION_VERSION = 'v2.0.0';
@@ -39,9 +42,6 @@ function handleListToolError(
   path: string,
   method: string
 ): ReturnType<typeof createErrorResult> {
-  const isUserError = error instanceof UniversalValidationError;
-  const status = isUserError ? error.httpStatusCode : undefined;
-
   const categorized = ListConfigurationValidator.categorizeError(error);
   const errorMessage = categorized
     ? `${categorized.message} (Next step: ${categorized.suggested_next_step}) [category: ${categorized.category}]`
@@ -49,9 +49,18 @@ function handleListToolError(
       ? error.message
       : 'Unknown error';
 
-  const responseData = hasResponseData(error) ? error.response.data : {};
-  if (status) {
-    (responseData as Record<string, unknown>).status = status;
+  // Structured classification travels in the payload so agents can branch
+  // without parsing prose. Copy of any real response data (never the
+  // original object) plus status flags for client-side rejections.
+  const responseData: Record<string, unknown> = hasResponseData(error)
+    ? { ...error.response.data }
+    : {};
+  if (categorized?.api_error_status) {
+    responseData.status = categorized.api_error_status;
+    responseData.validation = true;
+  }
+  if (categorized) {
+    responseData.error_category = categorized.category;
   }
 
   return createErrorResult(new Error(errorMessage), path, method, responseData);
@@ -1251,7 +1260,26 @@ export async function handleCreateListOperation(
   }
 
   try {
-    // Build attributes: start with explicit params, merge template, then caller attributes
+    // Build attributes from explicit params. Access-field collisions with
+    // the attributes bag are rejected up front (Issue #1148): an ambiguous
+    // dual supply must never resolve by merge order.
+    if (
+      attributes &&
+      ((workspaceAccess !== undefined && 'workspace_access' in attributes) ||
+        (workspaceMemberAccess !== undefined &&
+          'workspace_member_access' in attributes))
+    ) {
+      throw new UniversalValidationError(
+        'workspace_access/workspace_member_access supplied both as first-class params and inside the attributes bag.',
+        ErrorType.USER_ERROR,
+        {
+          suggestion:
+            'Supply list access controls either as top-level tool params or in the attributes bag, not both.',
+          field: 'workspace_access',
+        }
+      );
+    }
+
     let listAttributes: Record<string, unknown> = {
       name,
       parent_object: parentObject,
@@ -1261,9 +1289,7 @@ export async function handleCreateListOperation(
       listAttributes.description = description;
     }
 
-    // Merge first-class access-control fields (Issue #1148). Precedence:
-    // explicit first-class params win over same-named keys in `attributes`
-    // (mirrors update-list-configuration).
+    // Merge first-class access-control fields (Issue #1148)
     if (workspaceAccess !== undefined) {
       listAttributes.workspace_access = workspaceAccess;
     }
@@ -1271,25 +1297,26 @@ export async function handleCreateListOperation(
       listAttributes.workspace_member_access = workspaceMemberAccess;
     }
 
-    // Template expansion happens before validation (R8)
+    // Template expansion happens before validation (R8). Attributes merge
+    // under explicit params so first-class values win on collision; access
+    // collisions cannot occur (guarded above), and other keys keep the
+    // historical bag-wins semantics.
     if (templateName) {
-      const overrides = { ...attributes, ...listAttributes };
+      const overrides = { ...listAttributes, ...attributes };
       listAttributes = ListConfigurationValidator.expandTemplate(
         templateName,
         overrides
       );
+      // Re-assert explicitly supplied access params so a caller's own access
+      // values always win over template-provided attributes.
+      if (workspaceAccess !== undefined) {
+        listAttributes.workspace_access = workspaceAccess;
+      }
+      if (workspaceMemberAccess !== undefined) {
+        listAttributes.workspace_member_access = workspaceMemberAccess;
+      }
     } else if (attributes) {
       listAttributes = { ...attributes, ...listAttributes };
-    }
-
-    // Default to workspace-wide full-access when neither access field is
-    // provided on ANY surface (R3) — computed after the merge so configs
-    // supplied via the attributes bag are not misdetected as empty.
-    if (
-      listAttributes.workspace_access === undefined &&
-      listAttributes.workspace_member_access === undefined
-    ) {
-      listAttributes.workspace_access = 'full-access';
     }
 
     // Validate parent_object against workspace objects
@@ -1297,13 +1324,12 @@ export async function handleCreateListOperation(
       listAttributes.parent_object as string
     );
 
-    // Normalize the private-list 'null' sentinel to JSON null (R2)
-    ListConfigurationValidator.normalizeWorkspaceAccess(listAttributes);
-
-    // Validate access-control fields (Issue #1148) — enforce create-time invariant
-    ListConfigurationValidator.validateAccessControls(listAttributes, {
-      enforceFullAccessInvariant: true,
-    });
+    // Shared access policy: full-access default (R3, computed after the
+    // merge) -> 'null' sentinel normalization (R2) -> shape + invariant
+    listAttributes = ListConfigurationValidator.applyAccessDefaults(
+      listAttributes,
+      { surface: 'create' }
+    );
 
     // Dry-run: return preview without API call
     if (dryRun) {
@@ -1378,10 +1404,27 @@ export async function handleUpdateListConfigurationOperation(
   }
 
   try {
-    // Merge first-class access-control fields into attributes (Issue #1148).
-    // Precedence matches create: explicit first-class params win over
-    // same-named keys in `attributes`.
-    const mergedAttributes: Record<string, unknown> = { ...attributes };
+    // Reject ambiguous dual supply of access controls up front (Issue #1148),
+    // mirroring create-list-configuration: same-named keys in the attributes
+    // bag and as first-class params are never resolved by merge order.
+    if (
+      (workspaceAccess !== undefined && 'workspace_access' in attributes) ||
+      (workspaceMemberAccess !== undefined &&
+        'workspace_member_access' in attributes)
+    ) {
+      throw new UniversalValidationError(
+        'workspace_access/workspace_member_access supplied both as first-class params and inside the attributes bag.',
+        ErrorType.USER_ERROR,
+        {
+          suggestion:
+            'Supply list access controls either as top-level tool params or in the attributes bag, not both.',
+          field: 'workspace_access',
+        }
+      );
+    }
+
+    // Merge first-class access-control fields into attributes (Issue #1148)
+    let mergedAttributes: Record<string, unknown> = { ...attributes };
     if (workspaceAccess !== undefined) {
       mergedAttributes.workspace_access = workspaceAccess;
     }
@@ -1392,11 +1435,12 @@ export async function handleUpdateListConfigurationOperation(
     // Detect immutable fields before API call
     ListConfigurationValidator.detectImmutableFields(mergedAttributes);
 
-    // Normalize the private-list 'null' sentinel to JSON null (R2)
-    ListConfigurationValidator.normalizeWorkspaceAccess(mergedAttributes);
-
-    // Validate access-control field shapes (Issue #1148) — stateless, no invariant
-    ListConfigurationValidator.validateAccessControls(mergedAttributes);
+    // Shared access policy: 'null' sentinel normalization (R2) -> stateless
+    // shape validation (update: no full-access invariant, R6)
+    mergedAttributes = ListConfigurationValidator.applyAccessDefaults(
+      mergedAttributes,
+      { surface: 'update' }
+    );
 
     // Dry-run: return preview without API call
     if (dryRun) {

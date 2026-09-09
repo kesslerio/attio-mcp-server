@@ -43,6 +43,8 @@ export interface CategorizedListError {
   category: ListErrorCategory;
   message: string;
   suggested_next_step: string;
+  /** HTTP status associated with the error (client rejection or API status) */
+  api_error_status?: number;
 }
 
 /**

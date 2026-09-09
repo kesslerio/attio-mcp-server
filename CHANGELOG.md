@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **List access controls are now first-class tool inputs** — `create-list` and `update-list-configuration` accept `workspace_access` and `workspace_member_access` directly, with client-side shape validation, the create-time full-access-grantee invariant, and a `plan_gating` error category that distinguishes Attio 403 `billing_error` (plan limit) from `insufficient_scopes` (permission) failures (#1148)
+- **List tool errors carry a structured `error_category`** in the response payload (plus `status`/`validation` flags) so agents can branch programmatically instead of parsing prose (#1148)
+
+### Changed
+
+- **Supplying list access controls both as first-class params and inside the `attributes` bag is now rejected** with `unsupported_input` instead of resolving by merge order (#1148)
+- **List create/404/400 errors surface as `AttioApiError`** with the HTTP status and allow-listed Attio error fields (raw response bodies are no longer forwarded to error serializers) (#1148)
 
 ### Fixed
 

@@ -191,7 +191,10 @@ describe('handleCreateListOperation', () => {
         name: 'My List',
         parent_object: 'companies',
         workspace_member_access: [
-          { workspace_member_id: 'member-1', level: 'full-access' },
+          {
+            workspace_member_id: '11111111-1111-4111-8111-111111111111',
+            level: 'full-access',
+          },
         ],
       }),
       mockToolConfig
@@ -199,7 +202,10 @@ describe('handleCreateListOperation', () => {
     expect(createList).toHaveBeenCalledWith(
       expect.objectContaining({
         workspace_member_access: [
-          { workspace_member_id: 'member-1', level: 'full-access' },
+          {
+            workspace_member_id: '11111111-1111-4111-8111-111111111111',
+            level: 'full-access',
+          },
         ],
       })
     );
@@ -409,7 +415,10 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         name: 'No Grantee',
         parent_object: 'companies',
         workspace_member_access: [
-          { workspace_member_id: 'member-1', level: 'read-only' },
+          {
+            workspace_member_id: '11111111-1111-4111-8111-111111111111',
+            level: 'read-only',
+          },
         ],
       }),
       mockToolConfig
@@ -438,7 +447,10 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         parent_object: 'companies',
         attributes: {
           workspace_member_access: [
-            { workspace_member_id: 'member-1', level: 'full-access' },
+            {
+              workspace_member_id: '11111111-1111-4111-8111-111111111111',
+              level: 'full-access',
+            },
           ],
         },
       }),
@@ -452,18 +464,8 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
     expect(payload.workspace_member_access).toBeDefined();
   });
 
-  it('first-class workspace_access wins over attributes-bag value (create)', async () => {
-    vi.mocked(createList).mockResolvedValue({
-      id: { list_id: 'prec-1' },
-      title: 'Prec',
-      name: 'Prec',
-      object_slug: 'companies',
-      workspace_id: 'ws-1',
-      created_at: '2024-01-01',
-      updated_at: '2024-01-01',
-    });
-
-    await handleCreateListOperation(
+  it('rejects dual-source workspace_access (first-class + attributes bag) before any API call', async () => {
+    const result = await handleCreateListOperation(
       makeRequest('create-list', {
         name: 'Prec',
         parent_object: 'companies',
@@ -472,9 +474,13 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
       }),
       mockToolConfig
     );
-    expect(createList).toHaveBeenCalledWith(
-      expect.objectContaining({ workspace_access: 'full-access' })
+    const text = (result as { content: Array<{ text: string }> }).content[0]
+      .text;
+    expect(text).toContain(
+      'both as first-class params and inside the attributes bag'
     );
+    expect(text).toContain('unsupported_input');
+    expect(createList).not.toHaveBeenCalled();
   });
 
   it('normalizes the string "null" sentinel to JSON null on the wire (create)', async () => {
@@ -494,7 +500,10 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         parent_object: 'companies',
         workspace_access: 'null',
         workspace_member_access: [
-          { workspace_member_id: 'member-1', level: 'full-access' },
+          {
+            workspace_member_id: '11111111-1111-4111-8111-111111111111',
+            level: 'full-access',
+          },
         ],
       }),
       mockToolConfig
@@ -603,18 +612,8 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
     );
   });
 
-  it('first-class workspace_access wins over attributes-bag value (update)', async () => {
-    vi.mocked(updateList).mockResolvedValue({
-      id: { list_id: 'list-1' },
-      title: 'X',
-      name: 'X',
-      object_slug: 'companies',
-      workspace_id: 'ws-1',
-      created_at: '2024-01-01',
-      updated_at: '2024-01-02',
-    });
-
-    await handleUpdateListConfigurationOperation(
+  it('rejects dual-source workspace_access (first-class + attributes bag) before any API call', async () => {
+    const result = await handleUpdateListConfigurationOperation(
       makeRequest('update-list-configuration', {
         listId: 'list-1',
         attributes: { workspace_access: 'read-only' },
@@ -622,10 +621,62 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
       }),
       mockToolConfig
     );
-    expect(updateList).toHaveBeenCalledWith(
-      'list-1',
-      expect.objectContaining({ workspace_access: 'read-and-write' })
+    const text = (result as { content: Array<{ text: string }> }).content[0]
+      .text;
+    expect(text).toContain(
+      'both as first-class params and inside the attributes bag'
     );
+    expect(text).toContain('unsupported_input');
+    expect(updateList).not.toHaveBeenCalled();
+  });
+
+  it('dry-run preview equals the live createList payload (access fields)', async () => {
+    setupWorkspaceObjects(['companies']);
+    const accessArgs = {
+      listId: 'list-1',
+      attributes: {},
+      workspace_access: 'null',
+      workspace_member_access: [
+        {
+          workspace_member_id: '11111111-1111-4111-8111-111111111111',
+          level: 'full-access',
+        },
+      ],
+      dry_run: true,
+    };
+    const previewResult = await handleUpdateListConfigurationOperation(
+      makeRequest('update-list-configuration', accessArgs),
+      mockToolConfig
+    );
+    const preview = JSON.parse(
+      (previewResult as { content: Array<{ text: string }> }).content[0].text
+    );
+
+    vi.mocked(updateList).mockResolvedValue({
+      id: { list_id: 'list-1' },
+      title: 'Private',
+      name: 'Private',
+      object_slug: 'companies',
+      workspace_id: 'ws-1',
+      created_at: '2024-01-01',
+      updated_at: '2024-01-02',
+    });
+    await handleUpdateListConfigurationOperation(
+      makeRequest('update-list-configuration', {
+        ...accessArgs,
+        dry_run: false,
+      }),
+      mockToolConfig
+    );
+    const livePayload = vi.mocked(updateList).mock.calls[0][1] as Record<
+      string,
+      unknown
+    >;
+    expect(livePayload.workspace_access).toBeNull();
+    expect(preview.fields_summary?.workspace_access).toBe(
+      livePayload.workspace_access
+    );
+    expect(preview.dry_run).toBe(true);
   });
 
   it('routes a real updateList AttioApiError 403 billing through the chain', async () => {

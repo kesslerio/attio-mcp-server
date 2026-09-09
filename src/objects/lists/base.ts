@@ -7,7 +7,8 @@ import {
   getListDetails as getGenericListDetails,
 } from '../../api/operations/index.js';
 import { EnhancedApiError } from '../../errors/enhanced-api-errors.js';
-import { AttioApiError } from '../../errors/api-errors.js';
+import { AttioApiError } from '@/errors/api-errors.js';
+import { safeErrorDetails } from '@/types/attio-error-body.js';
 import {
   getErrorMessage,
   getErrorStatus,
@@ -166,22 +167,32 @@ export async function createList(
     }
 
     if (hasErrorResponse(error) && error.response?.status === 400) {
-      throw new Error(
-        `Invalid list attributes: ${
-          error instanceof Error ? error.message : 'Bad request'
-        }`
+      // Preserve status + allow-listed body so categorizeError reports a
+      // deterministic input error (not the retry-inviting default) (Issue #1148).
+      const body = safeErrorDetails(error.response?.data);
+      throw new AttioApiError(
+        `Invalid list attributes: ${body.message ?? (error instanceof Error ? error.message : 'Bad request')}`,
+        400,
+        path,
+        'POST',
+        body,
+        error instanceof Error ? new Error(error.message) : undefined
       );
     } else if (hasErrorResponse(error) && error.response?.status === 403) {
       // Preserve HTTP status + Attio error code (e.g. billing_error vs
       // insufficient_scopes) so categorizeError can distinguish plan gating
       // from permission failures instead of receiving a flattened Error.
+      // Details are allow-listed (AttioErrorBody); cause carries only the
+      // message so the raw axios response never reaches serializers/logs.
+      const body = safeErrorDetails(error.response?.data);
       throw new AttioApiError(
-        'Insufficient permissions to create list',
+        'Insufficient permissions to create list' +
+          (body.message ? `: ${body.message}` : ''),
         403,
         path,
         'POST',
-        (error.response?.data as Record<string, unknown>) || {},
-        error instanceof Error ? error : undefined
+        body,
+        error instanceof Error ? new Error(error.message) : undefined
       );
     }
 
@@ -243,22 +254,37 @@ export async function updateList(
     }
 
     if (hasErrorResponse(error) && error.response?.status === 404) {
-      throw new Error(`List ${listId} not found`);
+      const body = safeErrorDetails(error.response?.data);
+      throw new AttioApiError(
+        `List ${listId} not found`,
+        404,
+        path,
+        'PATCH',
+        body,
+        error instanceof Error ? new Error(error.message) : undefined
+      );
     } else if (hasErrorResponse(error) && error.response?.status === 400) {
-      throw new Error(
-        `Invalid list attributes: ${
-          error instanceof Error ? error.message : 'Bad request'
-        }`
+      // Preserve status + allow-listed body (see createList) (Issue #1148).
+      const body = safeErrorDetails(error.response?.data);
+      throw new AttioApiError(
+        `Invalid list attributes: ${body.message ?? (error instanceof Error ? error.message : 'Bad request')}`,
+        400,
+        path,
+        'PATCH',
+        body,
+        error instanceof Error ? new Error(error.message) : undefined
       );
     } else if (hasErrorResponse(error) && error.response?.status === 403) {
       // Preserve status + Attio error code for categorizeError (see createList).
+      const body = safeErrorDetails(error.response?.data);
       throw new AttioApiError(
-        `Insufficient permissions to update list ${listId}`,
+        `Insufficient permissions to update list ${listId}` +
+          (body.message ? `: ${body.message}` : ''),
         403,
         path,
         'PATCH',
-        (error.response?.data as Record<string, unknown>) || {},
-        error instanceof Error ? error : undefined
+        body,
+        error instanceof Error ? new Error(error.message) : undefined
       );
     }
 

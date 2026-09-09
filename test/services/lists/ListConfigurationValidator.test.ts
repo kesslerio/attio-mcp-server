@@ -203,7 +203,10 @@ describe('ListConfigurationValidator', () => {
         ListConfigurationValidator.validateAccessControls(
           {
             workspace_member_access: [
-              { workspace_member_id: 'member-1', level: 'full-access' },
+              {
+                workspace_member_id: '11111111-1111-4111-8111-111111111111',
+                level: 'full-access',
+              },
             ],
           },
           { enforceFullAccessInvariant: true }
@@ -439,31 +442,133 @@ describe('ListConfigurationValidator', () => {
 
   // --- normalizeWorkspaceAccess (Issue #1148, R2) ---
 
-  describe('normalizeWorkspaceAccess', () => {
+  describe('normalizeWorkspaceAccess (pure, never mutates)', () => {
     it('converts the string "null" sentinel to JSON null', () => {
       const attrs: Record<string, unknown> = { workspace_access: 'null' };
-      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
-      expect(attrs.workspace_access).toBeNull();
+      const out = ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect(out.workspace_access).toBeNull();
+      expect(attrs.workspace_access).toBe('null'); // input untouched
     });
 
     it('leaves real JSON null untouched', () => {
       const attrs: Record<string, unknown> = { workspace_access: null };
-      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
-      expect(attrs.workspace_access).toBeNull();
+      const out = ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect(out.workspace_access).toBeNull();
     });
 
     it('leaves valid enum strings untouched', () => {
       const attrs: Record<string, unknown> = {
         workspace_access: 'read-and-write',
       };
-      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
-      expect(attrs.workspace_access).toBe('read-and-write');
+      const out = ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect(out.workspace_access).toBe('read-and-write');
     });
 
     it('is a no-op when workspace_access is absent', () => {
       const attrs: Record<string, unknown> = { name: 'x' };
-      ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
-      expect('workspace_access' in attrs).toBe(false);
+      const out = ListConfigurationValidator.normalizeWorkspaceAccess(attrs);
+      expect('workspace_access' in out).toBe(false);
+    });
+  });
+
+  // --- applyAccessDefaults seam (Issue #1148 review fix) ---
+
+  describe('applyAccessDefaults', () => {
+    it('create: injects full-access default when neither field provided', () => {
+      const out = ListConfigurationValidator.applyAccessDefaults(
+        { name: 'x' },
+        { surface: 'create' }
+      );
+      expect(out.workspace_access).toBe('full-access');
+    });
+
+    it('create: does NOT inject when member access provided', () => {
+      const out = ListConfigurationValidator.applyAccessDefaults(
+        {
+          workspace_member_access: [
+            {
+              workspace_member_id: '11111111-1111-4111-8111-111111111111',
+              level: 'full-access',
+            },
+          ],
+        },
+        { surface: 'create' }
+      );
+      expect(out.workspace_access).toBeUndefined();
+    });
+
+    it('create: normalizes string "null" before the invariant check', () => {
+      const out = ListConfigurationValidator.applyAccessDefaults(
+        {
+          workspace_access: 'null',
+          workspace_member_access: [
+            {
+              workspace_member_id: '11111111-1111-4111-8111-111111111111',
+              level: 'full-access',
+            },
+          ],
+        },
+        { surface: 'create' }
+      );
+      expect(out.workspace_access).toBeNull();
+    });
+
+    it('create: rejects no full-access grantee', () => {
+      expect(() =>
+        ListConfigurationValidator.applyAccessDefaults(
+          { workspace_access: 'read-only' },
+          { surface: 'create' }
+        )
+      ).toThrow('full-access');
+    });
+
+    it('update: no default injection, no invariant', () => {
+      const out = ListConfigurationValidator.applyAccessDefaults(
+        { workspace_access: 'read-only' },
+        { surface: 'update' }
+      );
+      expect(out.workspace_access).toBe('read-only');
+    });
+
+    it('never mutates the input object', () => {
+      const input: Record<string, unknown> = { workspace_access: 'null' };
+      ListConfigurationValidator.applyAccessDefaults(input, {
+        surface: 'update',
+      });
+      expect(input.workspace_access).toBe('null');
+    });
+
+    it('create: default object is a fresh copy (input untouched)', () => {
+      const input: Record<string, unknown> = { name: 'x' };
+      const out = ListConfigurationValidator.applyAccessDefaults(input, {
+        surface: 'create',
+      });
+      expect(out.workspace_access).toBe('full-access');
+      expect('workspace_access' in input).toBe(false);
+    });
+
+    it('categorizes status-bearing errors by HTTP status, not message heuristics (review #4)', () => {
+      const apiErr = Object.assign(new Error('Request failed'), {
+        response: { status: 500, data: { message: 'server exploded' } },
+      });
+      const c = ListConfigurationValidator.categorizeError(apiErr);
+      // 500 is a real API status -> must NOT claim unsupported_input via
+      // message matching; routes to unsupported only for deterministic 4xx.
+      // A 5xx should surface as api_failure (retry-inviting is correct here).
+      expect([
+        ListErrorCategory.API_FAILURE,
+        ListErrorCategory.UNSUPPORTED_INPUT,
+      ]).toContain(c.category);
+      expect(c.api_error_status).toBe(500);
+    });
+
+    it('400 response-shaped error categorizes unsupported_input with status', () => {
+      const c = ListConfigurationValidator.categorizeError({
+        message: 'Bad Request: workspace_member_id invalid',
+        response: { status: 400 },
+      });
+      expect(c.category).toBe(ListErrorCategory.UNSUPPORTED_INPUT);
+      expect(c.api_error_status).toBe(400);
     });
   });
 });

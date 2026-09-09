@@ -62,33 +62,45 @@ describe.skipIf(!runIntegrationTests)(
       createdListIds.push(result.id.list_id);
     });
 
-    it('classifies a real 403 from createList with a structured code (no generic-error flattening)', async () => {
-      // Unknown member id triggers an API-level rejection that createList
-      // must surface with status + code intact for categorizeError.
+    it('classifies a real plan-gating 403 through createList with structured status and code', async () => {
+      // Restricted access on a plan without advanced list sharing returns a
+      // 403 billing_error. When the plan DOES support it, the create succeeds
+      // and the 403 branch cannot be exercised live (skip, do not fake-pass).
+      const { listWorkspaceMembers } =
+        await import('@src/api/operations/workspace-members.js');
+      const members = await listWorkspaceMembers(undefined, 1, 1);
+      const memberId = members[0]?.id?.workspace_member_id;
+      if (!memberId) {
+        // No member resolvable for this token — cannot reach the 403 branch
+        return;
+      }
+      let err: unknown;
       try {
-        await createList({
+        const result = await createList({
           name: `IT-1148-403probe-${Date.now()}`,
           parent_object: 'companies',
+          workspace_access: 'read-only',
           workspace_member_access: [
-            {
-              workspace_member_id: '00000000-0000-0000-0000-000000000000',
-              level: 'full-access',
-            },
+            { workspace_member_id: memberId, level: 'full-access' },
           ],
         });
-        // If the API tolerated the unknown member (unlikely), nothing to assert.
+        // Plan supports restricted access: nothing to assert for the 403 path.
+        expect(result.id?.list_id).toBeTruthy();
         return;
-      } catch (err) {
-        const categorization = ListConfigurationValidator.categorizeError(err);
-        // The classification must never degrade to the retry-inviting
-        // API_FAILURE default for an authentication/authorization error.
-        expect([
-          ListErrorCategory.PERMISSION_FAILURE,
-          ListErrorCategory.PLAN_GATING,
-          ListErrorCategory.TOKEN_SCOPE,
-          ListErrorCategory.UNSUPPORTED_INPUT,
-        ]).toContain(categorization.category);
+      } catch (e) {
+        err = e;
       }
+      const { AttioApiError } = await import('@/errors/api-errors.js');
+      expect(err).toBeInstanceOf(AttioApiError);
+      expect((err as AttioApiError).statusCode).toBe(403);
+      const categorization = ListConfigurationValidator.categorizeError(err);
+      // Must be a genuine 403 classification, never the API_FAILURE default
+      expect([
+        ListErrorCategory.PERMISSION_FAILURE,
+        ListErrorCategory.PLAN_GATING,
+      ]).toContain(categorization.category);
+      expect(categorization.api_error_status).toBe(403);
+      expect((err as AttioApiError).details?.code).toBeTruthy();
     });
   }
 );

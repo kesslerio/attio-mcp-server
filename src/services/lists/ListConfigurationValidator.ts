@@ -18,6 +18,7 @@ import {
   ErrorType,
 } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { AttioApiError } from '@/errors/api-errors.js';
+import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import { expandTemplate } from './list-templates.js';
 import {
   IMMUTABLE_LIST_FIELDS,
@@ -36,7 +37,6 @@ const VALID_WORKSPACE_ACCESS_LEVELS = [
   'full-access',
   'read-and-write',
   'read-only',
-  'null',
 ];
 
 /**
@@ -201,12 +201,44 @@ export class ListConfigurationValidator {
    * Normalize the private-list 'null' sentinel before the payload reaches
    * Attio (Issue #1148, R2). The MCP string-only enum can express JSON null
    * only as the literal string 'null'; the API requires real null.
-   * Mutates `attributes.workspace_access` in place when it equals 'null'.
+   * Returns a NEW attributes object with workspace_access normalized —
+   * callers must use the returned value; input is never mutated.
    */
-  static normalizeWorkspaceAccess(attributes: Record<string, unknown>): void {
+  static normalizeWorkspaceAccess(
+    attributes: Record<string, unknown>
+  ): Record<string, unknown> {
     if (attributes && attributes.workspace_access === 'null') {
-      attributes.workspace_access = null;
+      return { ...attributes, workspace_access: null };
     }
+    return attributes;
+  }
+
+  /**
+   * Shared access-policy seam for list create/update (Issue #1148).
+   * Single source of truth for the documented order:
+   *   1. full-access default (create only): when NEITHER access field was
+   *      provided on any surface, inject workspace_access='full-access'
+   *   2. 'null' sentinel normalization (string 'null' -> JSON null)
+   *   3. stateless shape + invariant validation
+   * Returns the (possibly new) attributes object to hand to the wire call.
+   */
+  static applyAccessDefaults(
+    attributes: Record<string, unknown>,
+    options: { surface: 'create' | 'update' }
+  ): Record<string, unknown> {
+    let next = attributes;
+    if (
+      options.surface === 'create' &&
+      next.workspace_access === undefined &&
+      next.workspace_member_access === undefined
+    ) {
+      next = { ...next, workspace_access: 'full-access' };
+    }
+    next = ListConfigurationValidator.normalizeWorkspaceAccess(next);
+    ListConfigurationValidator.validateAccessControls(next, {
+      enforceFullAccessInvariant: options.surface === 'create',
+    });
+    return next;
   }
 
   /**
@@ -226,7 +258,9 @@ export class ListConfigurationValidator {
     const workspaceAccess = attributes.workspace_access;
     const memberAccess = attributes.workspace_member_access;
 
-    // Validate workspace_access enum value
+    // Validate workspace_access enum value (sentinel 'null' is normalized to
+    // JSON null by applyAccessDefaults/normalizeWorkspaceAccess BEFORE this
+    // check runs, so only real Attio enum values plus null are accepted here)
     if (
       workspaceAccess !== undefined &&
       workspaceAccess !== null &&
@@ -261,14 +295,15 @@ export class ListConfigurationValidator {
           !entry ||
           typeof entry !== 'object' ||
           typeof entry.workspace_member_id !== 'string' ||
+          !isValidUUID(entry.workspace_member_id) ||
           !VALID_MEMBER_ACCESS_LEVELS.includes(String(entry.level))
         ) {
           throw new UniversalValidationError(
-            'Invalid workspace_member_access entry. Each entry must have a workspace_member_id and a valid level.',
+            'Invalid workspace_member_access entry. Each entry must have a workspace_member_id (UUID) and a valid level.',
             ErrorType.USER_ERROR,
             {
               suggestion:
-                'Each entry must be { workspace_member_id: string, level: full-access | read-and-write | read-only }.',
+                'Each entry must be { workspace_member_id: UUID string, level: full-access | read-and-write | read-only }.',
               field: 'workspace_member_access',
             }
           );
@@ -334,12 +369,15 @@ export class ListConfigurationValidator {
     // Client-side input rejections (including validateAccessControls) are
     // deterministic: classify as UNSUPPORTED_INPUT with actionable guidance
     // instead of falling through to the retry-inviting API_FAILURE default.
-    if (error instanceof UniversalValidationError) {
+    // Guarded on missing status so a UVE that ever wraps a real API error
+    // keeps the status-driven plan_gating/permission_failure distinction.
+    if (error instanceof UniversalValidationError && status === undefined) {
       return {
         category: ListErrorCategory.UNSUPPORTED_INPUT,
         message: error.suggestion ? `${message} ${error.suggestion}` : message,
         suggested_next_step:
           'Check your input parameters against the list schema. Use get-list-details to inspect valid attributes.',
+        api_error_status: error.httpStatusCode,
       };
     }
 
@@ -349,6 +387,7 @@ export class ListConfigurationValidator {
         return {
           category: ListErrorCategory.PLAN_GATING,
           message,
+          api_error_status: status,
           suggested_next_step:
             'Your workspace plan does not support the requested list access configuration. Upgrade the plan, contact sales, or use a supported access configuration (e.g., workspace_access set to full-access).',
         };
@@ -356,6 +395,7 @@ export class ListConfigurationValidator {
       return {
         category: ListErrorCategory.PERMISSION_FAILURE,
         message,
+        api_error_status: status,
         suggested_next_step:
           'Verify your API token has the required scope for this operation. Check workspace permissions or contact an admin.',
       };
@@ -365,15 +405,26 @@ export class ListConfigurationValidator {
       return {
         category: ListErrorCategory.TOKEN_SCOPE,
         message,
+        api_error_status: status,
         suggested_next_step:
           'Your API token may be invalid or expired. Re-authenticate and try again.',
       };
     }
 
-    // Check for unsupported input patterns — prefer HTTP status 400 over string matching
-    const httpStatus = extractStatus(error);
+    // Any other status resolved from the error (e.g. 404, 400) is a
+    // deterministic input/resource error — never the retry-inviting default
+    if (status) {
+      return {
+        category: ListErrorCategory.UNSUPPORTED_INPUT,
+        message,
+        api_error_status: status,
+        suggested_next_step:
+          'Check your input parameters against the list schema. Use get-list-details to inspect valid attributes.',
+      };
+    }
+
+    // Check for unsupported input patterns — string matching (no HTTP status resolved)
     if (
-      httpStatus === 400 ||
       message.includes('Cannot find attribute') ||
       message.includes('is required') ||
       message.includes('must be') ||

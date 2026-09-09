@@ -135,7 +135,10 @@ describe('ListCreateStrategy (hardened)', () => {
           name: 'Test',
           parent_object: 'companies',
           workspace_member_access: [
-            { workspace_member_id: 'member-1', level: 'read-only' },
+            {
+              workspace_member_id: '11111111-1111-4111-8111-111111111111',
+              level: 'read-only',
+            },
           ],
         },
         resourceType: 'lists',
@@ -186,7 +189,10 @@ describe('ListCreateStrategy (hardened)', () => {
         parent_object: 'companies',
         workspace_access: 'null',
         workspace_member_access: [
-          { workspace_member_id: 'member-1', level: 'full-access' },
+          {
+            workspace_member_id: '11111111-1111-4111-8111-111111111111',
+            level: 'full-access',
+          },
         ],
       },
       resourceType: 'lists',

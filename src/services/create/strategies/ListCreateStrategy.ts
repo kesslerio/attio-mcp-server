@@ -15,15 +15,13 @@ export class ListCreateStrategy implements CreateStrategy {
   async create(params: CreateStrategyParams): Promise<AttioList> {
     const { values, resourceType } = params;
 
-    // Apply the full-access default when neither access field is provided (R3)
-    const createValues: Record<string, unknown> = { ...values };
-    ListConfigurationValidator.normalizeWorkspaceAccess(createValues);
-    if (
-      createValues.workspace_access === undefined &&
-      createValues.workspace_member_access === undefined
-    ) {
-      createValues.workspace_access = 'full-access';
-    }
+    // Shared access policy (Issue #1148): full-access default when neither
+    // field is provided (R3) -> 'null' sentinel normalization (R2) -> shape
+    // + create-time invariant. Input is never mutated (working copy).
+    const createValues = ListConfigurationValidator.applyAccessDefaults(
+      { ...values },
+      { surface: 'create' }
+    );
 
     // Validate parent_object against workspace objects (Issue #1195)
     if (
@@ -34,11 +32,6 @@ export class ListCreateStrategy implements CreateStrategy {
         createValues.parent_object as string
       );
     }
-
-    // Validate access-control fields (Issue #1148) — enforce create-time invariant
-    ListConfigurationValidator.validateAccessControls(createValues, {
-      enforceFullAccessInvariant: true,
-    });
 
     try {
       const list = await createList(createValues);
