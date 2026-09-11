@@ -92,6 +92,7 @@ describe('Tool Name Consistency Validation', () => {
         'get',
         'create',
         'update',
+        'upsert', // Issue #1191: create-or-update primitive
         'delete',
         'merge',
         'batch',

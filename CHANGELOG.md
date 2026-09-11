@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`upsert_record` universal tool** — idempotent create-or-update by exact attribute match (email, domain, or any unique slug) with `dry_run`, `create_if_missing`, and ambiguous-match protection that reports candidate record ids without writing, preventing duplicate records in enrichment and sync workflows (#1191)
 - **List access controls are now first-class tool inputs** — `create-list` and `update-list-configuration` accept `workspace_access` and `workspace_member_access` directly, with client-side shape validation, the create-time full-access-grantee invariant, and a `plan_gating` error category that distinguishes Attio 403 `billing_error` (plan limit) from `insufficient_scopes` (permission) failures (#1148)
 - **List tool errors carry a structured `error_category`** in the response payload (plus `status`/`validation` flags) so agents can branch programmatically instead of parsing prose (#1148)
 

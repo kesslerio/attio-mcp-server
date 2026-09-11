@@ -15,6 +15,10 @@ import {
   deleteRecordDefinition,
 } from './crud-operations.js';
 import {
+  upsertRecordConfig,
+  upsertRecordDefinition,
+} from './upsert-operations.js';
+import {
   createCompanyConfig,
   updateCompanyConfig,
   createDealConfig,
@@ -62,6 +66,7 @@ export const coreOperationsToolConfigs = {
   update_deal: updateDealConfig,
   create_record: createRecordConfig,
   update_record: updateRecordConfig,
+  upsert_record: upsertRecordConfig,
   delete_record: deleteRecordConfig,
   get_record_attributes: getAttributesConfig,
   discover_record_attributes: discoverAttributesConfig,
@@ -80,6 +85,7 @@ export const coreOperationsToolDefinitions = {
   update_deal: updateDealDefinition,
   create_record: createRecordDefinition,
   update_record: updateRecordDefinition,
+  upsert_record: upsertRecordDefinition,
   delete_record: deleteRecordDefinition,
   get_record_attributes: getAttributesDefinition,
   discover_record_attributes: discoverAttributesDefinition,
@@ -104,6 +110,8 @@ export {
   updateDealDefinition,
   createRecordConfig,
   updateRecordConfig,
+  upsertRecordConfig,
+  upsertRecordDefinition,
   deleteRecordConfig,
   getAttributesConfig,
   discoverAttributesConfig,
