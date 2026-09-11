@@ -144,7 +144,7 @@ export const universalToolDefinitions = {
 };
 
 /**
- * Core universal operations (14 tools)
+ * Core universal operations (15 tools)
  * These consolidate the majority of CRUD and basic search operations
  */
 export const coreUniversalTools = [
@@ -156,6 +156,7 @@ export const coreUniversalTools = [
   'update_deal',
   'create_record',
   'update_record',
+  'upsert_record',
   'delete_record',
   'get_record_attributes',
   'discover_record_attributes',

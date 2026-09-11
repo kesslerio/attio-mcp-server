@@ -51,6 +51,7 @@ export const TOOL_NAMES = {
   // CRUD tools
   CREATE_RECORD: 'create_record',
   UPDATE_RECORD: 'update_record',
+  UPSERT_RECORD: 'upsert_record',
   DELETE_RECORD: 'delete_record',
   MERGE_RECORDS: 'merge_records',
   CREATE_COMPANY: 'create_company',

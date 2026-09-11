@@ -322,6 +322,55 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
+  upsert_record: (p) => {
+    if (!p.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'people'` }
+      );
+    }
+    const match = p.match as Record<string, unknown> | undefined;
+    if (
+      !match ||
+      typeof match !== 'object' ||
+      Array.isArray(match) ||
+      typeof match.attribute !== 'string' ||
+      match.attribute.trim().length === 0 ||
+      typeof match.value !== 'string' ||
+      match.value.trim().length === 0
+    ) {
+      throw new UniversalValidationError(
+        'Invalid or missing parameter: match',
+        ErrorType.USER_ERROR,
+        {
+          field: 'match',
+          suggestion:
+            'match must be { attribute, value } with non-empty strings, used to exact-match the existing record',
+          example: `match: { attribute: 'email_addresses', value: 'jane@acme.com' }`,
+        }
+      );
+    }
+    if (
+      !p.values ||
+      typeof p.values !== 'object' ||
+      Array.isArray(p.values) ||
+      Object.keys(p.values as Record<string, unknown>).length === 0
+    ) {
+      throw new UniversalValidationError(
+        p.values
+          ? 'Parameter values must be a non-empty object'
+          : 'Missing required parameter: values',
+        ErrorType.USER_ERROR,
+        {
+          field: 'values',
+          suggestion: 'Attributes to set on create or update',
+          example: `values: { name: 'Jane Doe' }`,
+        }
+      );
+    }
+    return p;
+  },
   merge_records: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
@@ -559,6 +608,7 @@ const TOOLS_WITH_DYNAMIC_RESOURCE_TYPES = new Set([
   'records_get_details',
   'create_record',
   'update_record',
+  'upsert_record',
   'delete_record',
   'merge_records',
 ]);
