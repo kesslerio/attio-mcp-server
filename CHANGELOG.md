@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Install scripts are now source-safe** — `install-claude-desktop.sh` runs its installer flow only when executed, not when sourced, so function-level tests and shell sourcing no longer trigger a live install run
 - **List 403 errors keep their Attio error code** — `createList`/`updateList` no longer flatten 403 responses into message-only errors, so agents get plan-upgrade or token-scope guidance instead of "Retry the operation"; client-side access validation failures are likewise categorized as `unsupported_input` instead of unexpected API failures (#1148)
 - **Deal stage titles with `>` are preserved** — `InputSanitizer` no longer strips standalone angle brackets, so values like `Not Qualified (MQL > SQL)` reach Attio byte-for-byte, and an explicit update with an invalid stage now returns an error instead of silently falling back to `ATTIO_DEFAULT_DEAL_STAGE` (#1277)
 
