@@ -259,6 +259,21 @@ export interface UniversalDeleteParams {
   record_id: string;
 }
 
+/**
+ * Universal upsert (create-or-update) record parameters (Issue #1191)
+ */
+export interface UniversalUpsertParams {
+  resource_type: string;
+  match: {
+    attribute: string;
+    value: string;
+  };
+  values: Record<string, unknown>;
+  record_id?: string;
+  create_if_missing?: boolean;
+  dry_run?: boolean;
+}
+
 export interface MergeRecordsParams {
   resource_type: string;
   record_id: string;
