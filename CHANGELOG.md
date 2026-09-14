@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `bun run cleanup:test-data:lists` — dry-run/delete shortcut for the new lists resource
-- Unit coverage for the cleanup fetchers, creator filter, and deleter endpoint routing (`test/scripts/cleanup-resources.test.ts`)
+- Unit coverage for the cleanup fetchers, creator filter, deleter endpoint routing, and the mass-deletion safety gate (`test/scripts/cleanup-resources.test.ts`, `test/scripts/cleanup-safety-gate.test.ts`)
 
 ## [1.7.0] - 2026-08-25
 
