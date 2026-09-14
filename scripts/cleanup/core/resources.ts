@@ -5,18 +5,13 @@
  * /objects/{slug}/records API. tasks and lists are Attio first-class
  * resources with their own endpoints and dedicated fetchers.
  */
-import { AxiosInstance } from 'axios';
-import { ResourceSummary, ResourceType } from './types.js';
-import { DeletionOptions } from '../deleters/batch-deleter.js';
+import { RegistryResource, ResourceSummary, ResourceType } from './types.js';
 import { fetchTasksByCreator } from '../fetchers/tasks.js';
 import { fetchCompaniesByCreator } from '../fetchers/companies.js';
 import { fetchPeopleByCreator } from '../fetchers/people.js';
 import { fetchDealsByCreator } from '../fetchers/deals.js';
 import { fetchListsByCreator } from '../fetchers/lists.js';
-import {
-  processResource,
-  ProcessResourceConfig,
-} from '../processors/resource-processor.js';
+import { ProcessResourceConfig } from '../processors/resource-processor.js';
 import { filterTestCompanies } from '../filters/safe-companies.js';
 import {
   describeCompany,
@@ -25,7 +20,6 @@ import {
   describePerson,
   describeTask,
 } from '../utils/record-describer.js';
-import { logInfo } from './utils.js';
 
 export const DEFAULT_RESOURCES: string[] = [
   'tasks',
@@ -43,7 +37,7 @@ export const DEFAULT_RESOURCES: string[] = [
  * workspace-wide notes sweep is impossible by design. Requests for notes
  * get an explanatory notice instead of the old 404.
  */
-export const SUPPORTED_RESOURCES: ResourceType[] = [
+export const SUPPORTED_RESOURCES: readonly string[] = [
   'tasks',
   'companies',
   'people',
@@ -52,7 +46,47 @@ export const SUPPORTED_RESOURCES: ResourceType[] = [
   'lists',
 ];
 
-const STANDARD_DEFAULT_PATTERNS = [
+/**
+ * Narrow a CLI-supplied resource string to the handled union.
+ * Fail-closed: an unrecognized value returns false and the caller skips it
+ * (pre-refactor behavior — never default-throw mid-run after deletions).
+ */
+export function isRegistryResource(value: string): value is RegistryResource {
+  return (SUPPORTED_RESOURCES as readonly string[]).includes(value);
+}
+
+/**
+ * Explanatory notice for `--resources notes`, logged by the safety chain
+ * in core/orchestrator.ts when a pass encounters the notes resource.
+ *
+ * Attio only lists notes per parent record: GET /v2/notes without
+ * parent_object + parent_record_id filters returns an empty array
+ * (verified in issue #888), so a workspace-wide notes sweep is impossible
+ * and cleanup is not wired for them.
+ */
+export const NOTES_UNSUPPORTED_NOTICE =
+  'ℹ️ NOTES: cleanup is skipped — Attio lists notes only per parent record ' +
+  '(GET /v2/notes requires parent_object + parent_record_id filters; an ' +
+  'unfiltered query returns no notes). Delete notes through the MCP ' +
+  "delete_record tool with resource_type: 'notes' instead.";
+
+// Companies/people keep Sample*/Example* (pre-#620 behavior): broader than
+// the deals/lists set, so their pattern net catches more test-shaped names.
+const OBJECT_DEFAULT_PATTERNS = [
+  '*test*',
+  '*Test*',
+  '*TEST*',
+  'TEST_*',
+  'E2E_*',
+  'QA_*',
+  'Demo*',
+  'Mock*',
+  'Temp*',
+  'Sample*',
+  'Example*',
+];
+
+const DEAL_DEFAULT_PATTERNS = [
   '*test*',
   '*Test*',
   '*TEST*',
@@ -100,7 +134,7 @@ export function buildResourceConfig(
         label: 'companies',
         fetchRecords: async (client) =>
           (await fetchCompaniesByCreator(client, apiToken)).records,
-        defaultPatterns: STANDARD_DEFAULT_PATTERNS,
+        defaultPatterns: OBJECT_DEFAULT_PATTERNS,
         describeRecord: describeCompany,
         protect: (matched) => {
           const { safe, toDelete } = filterTestCompanies(matched);
@@ -113,7 +147,7 @@ export function buildResourceConfig(
         label: 'people',
         fetchRecords: async (client) =>
           (await fetchPeopleByCreator(client, apiToken)).records,
-        defaultPatterns: STANDARD_DEFAULT_PATTERNS,
+        defaultPatterns: OBJECT_DEFAULT_PATTERNS,
         describeRecord: describePerson,
       };
     case 'deals':
@@ -122,7 +156,7 @@ export function buildResourceConfig(
         label: 'deals',
         fetchRecords: async (client) =>
           (await fetchDealsByCreator(client, apiToken)).records,
-        defaultPatterns: STANDARD_DEFAULT_PATTERNS,
+        defaultPatterns: DEAL_DEFAULT_PATTERNS,
         describeRecord: describeDeal,
       };
     case 'lists':
@@ -131,34 +165,10 @@ export function buildResourceConfig(
         label: 'lists',
         fetchRecords: async (client) =>
           (await fetchListsByCreator(client, apiToken)).records,
-        defaultPatterns: STANDARD_DEFAULT_PATTERNS,
+        defaultPatterns: DEAL_DEFAULT_PATTERNS,
         describeRecord: describeList,
       };
     default:
       throw new Error(`Unsupported resource type: ${resourceType}`);
   }
-}
-
-/**
- * Process one resource type end-to-end: fetch → filter → delete → summary.
- */
-export async function processResourceType(
-  client: AxiosInstance,
-  resourceType: ResourceType,
-  apiToken: string,
-  patterns: string[],
-  deletionOptions: DeletionOptions
-): Promise<ResourceSummary> {
-  if (resourceType === 'notes') {
-    logInfo(
-      'ℹ️ NOTES: cleanup is skipped — Attio lists notes only per parent record ' +
-        '(GET /v2/notes requires parent_object + parent_record_id filters; an ' +
-        'unfiltered query returns no notes). Delete notes through the MCP ' +
-        'delete_note tool instead.'
-    );
-    return { type: 'notes', found: 0, deleted: 0, errors: 0, items: [] };
-  }
-
-  const config = buildResourceConfig(resourceType, apiToken);
-  return processResource(client, apiToken, patterns, deletionOptions, config);
 }

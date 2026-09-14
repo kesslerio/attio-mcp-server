@@ -8,7 +8,13 @@ import { extractRecordId, extractRecordName } from '../core/utils.js';
 const workspace = () => process.env.ATTIO_WORKSPACE_SLUG || 'workspace';
 
 export function describeTask(record: AttioRecord): string {
-  const name = extractRecordName(record, 'tasks');
+  // Task fields first: extractRecordName's values.name early-return can shadow
+  // the task content branches (pre-refactor behavior parity).
+  const name =
+    record.content_plaintext ||
+    record.content ||
+    record.title ||
+    extractRecordName(record, 'tasks');
   const id = record.id?.task_id || record.id;
   return `${name} (${id})`;
 }

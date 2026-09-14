@@ -4,7 +4,8 @@
  * Notes are first-class Attio resources under /v2/notes — NOT object records.
  * Fetching them via /objects/notes/records/query 404s with
  * "No Object was found for path param slug 'notes'".
- */ import { AxiosInstance } from 'axios';
+ */
+import { AxiosInstance } from 'axios';
 import { AttioRecord, FetchResult } from '../core/types.js';
 import { logInfo, logError, delay } from '../core/utils.js';
 import { filterRecordsByCreator } from '../filters/creator-filter.js';
@@ -15,7 +16,7 @@ const RATE_LIMIT_DELAY = 250; // ms between requests
 const DEFAULT_MAX_PAGES = 100;
 
 /**
- * Fetch notes with offset/cursor pagination.
+ * Fetch notes with offset pagination.
  *
  * Attio limitation (issue #888, verified in test/e2e/mcp/note-operations/
  * note-search-validation.mcp.test.ts): GET /v2/notes WITHOUT parent_object /
@@ -48,19 +49,17 @@ export async function fetchAllNotes(
   let page = 0;
   let hasMore = true;
   let offset = 0;
-  let nextCursor: string | undefined;
 
   try {
     while (hasMore && page < maxPages) {
+      // Offset pagination only — matching fetchers/generic.ts: Attio's
+      // notes endpoint does not return usable cursor metadata.
       const params: Record<string, number | string> = {
         limit: pageSize,
         offset,
         parent_object: parentScope.parent_object,
         parent_record_id: parentScope.parent_record_id,
       };
-      if (nextCursor) {
-        params.cursor = nextCursor;
-      }
 
       logInfo(`Fetching notes page ${page + 1}`, { offset, pageSize });
 
@@ -82,15 +81,10 @@ export async function fetchAllNotes(
 
       allRecords.push(...data);
 
-      if (data.length < pageSize) {
-        hasMore = false;
-      } else {
+      // Short page = end of results (same termination rule as generic.ts).
+      hasMore = data.length >= pageSize;
+      if (hasMore) {
         offset += data.length;
-      }
-
-      // Cursor pagination support (Attio may return meta.next_cursor)
-      if (response.data?.meta?.next_cursor) {
-        nextCursor = response.data.meta.next_cursor;
       }
 
       logInfo(`Fetched ${data.length} notes`, {
@@ -106,6 +100,13 @@ export async function fetchAllNotes(
       }
     }
 
+    if (hasMore && page >= maxPages) {
+      logInfo(`⚠️ WARNING: notes fetch stopped at page limit (${maxPages})`, {
+        recordsFetched: allRecords.length,
+        recommendation: 'Increase maxPages option if you need all records',
+      });
+    }
+
     logInfo('Note fetch completed', {
       totalRecords: allRecords.length,
       totalPages: page,
@@ -116,7 +117,6 @@ export async function fetchAllNotes(
       records: allRecords,
       total: allRecords.length,
       hasMore,
-      nextCursor,
     };
   } catch (error: any) {
     logError('Failed to fetch notes', {

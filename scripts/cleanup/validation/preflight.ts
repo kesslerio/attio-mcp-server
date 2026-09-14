@@ -9,7 +9,7 @@ import { logError } from '../core/utils.js';
  */
 export function validateRunInputs(resources: string[]): void {
   const invalid = resources.filter(
-    (r) => !SUPPORTED_RESOURCES.includes(r as never)
+    (r) => !(SUPPORTED_RESOURCES as readonly string[]).includes(r)
   );
   if (invalid.length > 0) {
     logError(`Unsupported resource types: ${invalid.join(', ')}`);

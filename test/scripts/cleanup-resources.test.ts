@@ -16,6 +16,11 @@ import {
 } from '../../scripts/cleanup/fetchers/lists.js';
 import { isCreatedOrUpdatedByApiToken } from '../../scripts/cleanup/filters/creator-filter.js';
 import { batchDeleteRecords } from '../../scripts/cleanup/deleters/batch-deleter.js';
+import { AttioRecord } from '../../scripts/cleanup/core/types.js';
+import {
+  ListMockFactory,
+  CompanyMockFactory,
+} from '../../test/utils/mock-factories/index.js';
 
 const TOKEN = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
@@ -125,7 +130,7 @@ describe('cleanup lists fetcher (#620)', () => {
     const client = mockClient({
       get: vi.fn().mockResolvedValue({
         status: 200,
-        data: { data: [{ id: { list_id: 'list_1' }, name: 'Test List' }] },
+        data: { data: [ListMockFactory.create({ name: 'Test List' })] },
       }),
     });
 
@@ -211,16 +216,64 @@ describe('creator filter shapes', () => {
   });
 });
 
+describe('notes pipeline pagination (#620 review)', () => {
+  it('a short final page reports hasMore false even when it lands on maxPages', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue({
+        status: 200,
+        data: { data: [{ id: { note_id: 'note_short' } }] },
+      }),
+    });
+
+    const result = await fetchAllNotes(
+      client,
+      { parent_object: 'companies', parent_record_id: 'rec_1' },
+      { pageSize: 100, maxPages: 1, rateLimit: 0 }
+    );
+
+    expect(result.hasMore).toBe(false);
+    expect(result.records).toHaveLength(1);
+  });
+
+  it('offset-only pagination: no cursor param is ever sent', async () => {
+    const full = [{ id: { note_id: 'n1' } }, { id: { note_id: 'n2' } }];
+    const client = mockClient({
+      get: vi
+        .fn()
+        .mockResolvedValueOnce({ status: 200, data: { data: full } })
+        .mockResolvedValueOnce({
+          status: 200,
+          data: { data: [{ id: { note_id: 'n3' } }] },
+        }),
+    });
+
+    await fetchAllNotes(
+      client,
+      { parent_object: 'companies', parent_record_id: 'rec_1' },
+      { pageSize: 2, rateLimit: 0 }
+    );
+
+    const clientGet = client.get as ReturnType<typeof vi.fn>;
+    for (const call of clientGet.mock.calls) {
+      expect(call[1].params).not.toHaveProperty('cursor');
+    }
+    expect(clientGet.mock.calls[1][1].params.offset).toBe(2);
+  });
+});
+
 describe('batch deleter endpoints (#620)', () => {
   it('deletes lists via DELETE /lists/{id}', async () => {
     const client = mockClient();
+    const list = ListMockFactory.create({ name: 'Test List' });
     await batchDeleteRecords(
       client,
-      [{ id: { list_id: 'list_1' }, name: 'Test List' }],
+      [list as unknown as AttioRecord],
       'lists',
       deletionOptions
     );
-    expect(client.delete).toHaveBeenCalledWith('/lists/list_1');
+    expect(client.delete).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/lists\/[0-9a-f-]+$/)
+    );
   });
 
   it('deletes notes via DELETE /notes/{id}', async () => {
@@ -236,19 +289,15 @@ describe('batch deleter endpoints (#620)', () => {
 
   it('still deletes standard objects via the objects API', async () => {
     const client = mockClient();
+    const company = CompanyMockFactory.create({ name: 'Test Co' });
     await batchDeleteRecords(
       client,
-      [
-        {
-          id: { record_id: 'rec_1' },
-          values: { name: [{ value: 'Test Co' }] },
-        },
-      ],
+      [company as unknown as AttioRecord],
       'companies',
       deletionOptions
     );
     expect(client.delete).toHaveBeenCalledWith(
-      '/objects/companies/records/rec_1'
+      expect.stringMatching(/^\/objects\/companies\/records\/[0-9a-f-]+$/)
     );
   });
 

@@ -20,9 +20,19 @@ const CLEANUP_MAX_PAGES = 1000; // Allow up to 500k records (1000 * 500)
 export type ResourceType = StandardResource;
 
 /**
+ * Fail-closed check for the generic objects pipeline. The public entry
+ * points refuse anything else, so an unrecognized slug can never reach
+ * /objects/{slug}/records (which 404s for first-class resources — the
+ * root cause of issue #620).
+ */
+export function isStandardResource(value: string): value is StandardResource {
+  return ['companies', 'people', 'deals'].includes(value);
+}
+
+/**
  * Fetch all records of a given resource type with pagination
  */
-export async function fetchAllResources(
+async function fetchAllResources(
   client: AxiosInstance,
   resourceType: ResourceType,
   options: {
@@ -31,6 +41,15 @@ export async function fetchAllResources(
     rateLimit?: number;
   } = {}
 ): Promise<FetchResult> {
+  // Fail-closed: refuse anything but standard object slugs — a first-class
+  // resource has no /objects/{slug}/records and would 404 (#620).
+  if (!isStandardResource(resourceType)) {
+    throw new Error(
+      `Refusing to fetch '${resourceType}' through the generic objects pipeline: ` +
+        'tasks, notes, and lists are first-class Attio resources with dedicated fetchers (issue #620).'
+    );
+  }
+
   const {
     pageSize = DEFAULT_PAGE_SIZE,
     maxPages = CLEANUP_MAX_PAGES,
@@ -173,49 +192,4 @@ export async function fetchResourcesByCreator(
   // Fetch all resources first, then filter client-side via the shared filter.
   const result = await fetchAllResources(client, resourceType, options);
   return filterRecordsByCreator(result, apiToken, resourceType);
-}
-
-/**
- * Process resources in batches for memory efficiency
- */
-export async function processResources(
-  client: AxiosInstance,
-  resourceType: ResourceType,
-  processor: (resources: AttioRecord[]) => Promise<void>,
-  options: {
-    batchSize?: number;
-    apiToken?: string;
-  } = {}
-): Promise<void> {
-  const { batchSize = 50, apiToken } = options;
-
-  logInfo(`Starting ${resourceType} processing`, {
-    batchSize,
-    hasApiTokenFilter: !!apiToken,
-  });
-
-  try {
-    const fetchResult = apiToken
-      ? await fetchResourcesByCreator(client, resourceType, apiToken)
-      : await fetchAllResources(client, resourceType);
-
-    const batches = chunk(fetchResult.records, batchSize);
-
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      logInfo(`Processing ${resourceType} batch ${i + 1}/${batches.length}`, {
-        batchSize: batch.length,
-      });
-
-      await processor(batch);
-    }
-
-    logInfo(`${resourceType} processing completed`, {
-      totalRecords: fetchResult.total,
-      totalBatches: batches.length,
-    });
-  } catch (error) {
-    logError(`${resourceType} processing failed`, error);
-    throw error;
-  }
 }

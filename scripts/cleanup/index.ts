@@ -10,7 +10,8 @@
  * - tasks — GET /tasks, DELETE /tasks/{id}
  * - lists — GET /lists, DELETE /lists/{id} (list resources, not memberships)
  * - notes — unsupported here: Attio only lists notes per parent record
- *   (unfiltered GET /v2/notes returns nothing); use the MCP delete_note tool
+ *   (unfiltered GET /v2/notes returns nothing); delete notes via the MCP
+ *   delete_record tool with resource_type 'notes'
  *
  * Implementation lives in ./core (cli, preflight, orchestrator, main),
  * ./fetchers, ./filters, ./processors, ./deleters, and ./utils.
@@ -36,7 +37,13 @@ async function main(): Promise<void> {
       '🛡️  SAFETY: Only deletes data created by your MCP server API token\n'
     );
 
-    await runCleanupWithSafety(options);
+    const result = await runCleanupWithSafety(options);
+
+    if (options.dryRun && result.totalFound > 0) {
+      console.log('\n💡 To perform actual deletion, run with --live flag');
+    }
+
+    process.exit(result.success ? 0 : 1);
   } catch (error: any) {
     console.error('\n❌ Fatal error:', error.message);
     try {

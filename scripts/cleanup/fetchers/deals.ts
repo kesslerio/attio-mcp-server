@@ -1,28 +1,15 @@
 /**
- * Deal fetching and processing for cleanup operations
+ * Deals fetching for cleanup operations.
+ *
+ * Thin wrapper over the generic objects pipeline (issue #620 refactor):
+ * creator filtering happens here, pattern filtering in the processor.
  */
 import { AxiosInstance } from 'axios';
-import { AttioRecord, FetchResult } from '../core/types.js';
-import { logInfo } from '../core/utils.js';
-import { fetchResourcesByCreator, processResources } from './generic.js';
+import { FetchResult } from '../core/types.js';
+import { fetchResourcesByCreator } from './generic.js';
 
 /**
- * Fetch all deals with pagination
- */
-export async function fetchAllDeals(
-  client: AxiosInstance,
-  options: {
-    pageSize?: number;
-    maxPages?: number;
-    rateLimit?: number;
-  } = {}
-): Promise<FetchResult> {
-  const { fetchAllResources } = await import('./generic.js');
-  return fetchAllResources(client, 'deals', options);
-}
-
-/**
- * Fetch deals with filtering by created_by API token
+ * Fetch deals filtered by created_by API token.
  */
 export async function fetchDealsByCreator(
   client: AxiosInstance,
@@ -32,23 +19,5 @@ export async function fetchDealsByCreator(
     maxPages?: number;
   } = {}
 ): Promise<FetchResult> {
-  logInfo('Fetching deals filtered by API token creator', { 
-    apiToken: apiToken.substring(0, 8) + '...'
-  });
-
   return fetchResourcesByCreator(client, 'deals', apiToken, options);
-}
-
-/**
- * Process deals in batches for memory efficiency
- */
-export async function processDeals(
-  client: AxiosInstance,
-  processor: (deals: AttioRecord[]) => Promise<void>,
-  options: {
-    batchSize?: number;
-    apiToken?: string;
-  } = {}
-): Promise<void> {
-  return processResources(client, 'deals', processor, options);
 }

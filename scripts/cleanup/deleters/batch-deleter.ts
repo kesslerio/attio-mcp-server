@@ -1,5 +1,18 @@
 /**
- * Batch deletion operations for cleanup scripts
+ * Batch deletion — the single dispatch point for cleanup deletions
+ * (issue #620).
+ *
+ * All batch deletion flows through deleteSingleRecord; per-resource
+ * behavior lives ONLY in the resource switch below. Endpoints by resource:
+ *
+ * - tasks                        → DELETE /tasks/{id}
+ * - notes                        → DELETE /notes/{id}   (first-class
+ *                                  resource — no object exists for 'notes')
+ * - lists                        → DELETE /lists/{id}   (the list resource
+ *                                  itself, not a list membership —
+ *                                  DELETE /lists/{list}/entries is a
+ *                                  different endpoint and never used here)
+ * - companies / people / deals   → DELETE /objects/{slug}/records/{id}
  */
 import { AxiosInstance } from 'axios';
 import { AttioRecord, ResourceType, ResourceSummary } from '../core/types.js';
