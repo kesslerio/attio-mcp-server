@@ -28,6 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Test-data cleanup script no longer 404s on lists and notes** — lists are fetched via `GET /v2/lists` and deleted via `DELETE /v2/lists/{id}` (list resources, not object records), and notes requests exit with an explanatory notice instead of hitting the nonexistent `notes` object slug (#620)
+
+### Changed
+
+- **Cleanup script refactored into focused modules** — the 680-line `scripts/cleanup/index.ts` entry point is now a 55-line wrapper over `core/` (cli, preflight, orchestrator, resources, main), `processors/`, and `utils/`; per-resource fetch/filter/delete logic shares one safety pipeline (API-token filter → pattern filter → dry-run /tmp reports → batch delete) (#620)
+
+### Added
+
+- `bun run cleanup:test-data:lists` — dry-run/delete shortcut for the new lists resource
+- Unit coverage for the cleanup fetchers, creator filter, and deleter endpoint routing (`test/scripts/cleanup-resources.test.ts`)
+
 ## [1.7.0] - 2026-08-25
 
 **TL;DR for Users**: Safe deals-only `merge_records`, Cloudflare remote MCP sessions that no longer drop after an hour, and tenant/OAuth security hardening.
