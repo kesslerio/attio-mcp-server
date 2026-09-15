@@ -1,6 +1,6 @@
 {
   "name": "attio-mcp",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "AI-powered access to Attio CRM. Manage contacts, companies, deals, tasks, and notes. Search records, update pipelines, and automate workflows for sales and GTM teams.",
   "mcpName": "io.github.kesslerio/attio-mcp-server",
   "main": "dist/smithery.js",
@@ -149,6 +149,7 @@
     "cleanup:test-data:companies": "bun run cleanup:test-data -- --resources=companies",
     "cleanup:test-data:people": "bun run cleanup:test-data -- --resources=people",
     "cleanup:test-data:deals": "bun run cleanup:test-data -- --resources=deals",
+    "cleanup:test-data:lists": "bun run cleanup:test-data -- --resources=lists",
     "cleanup:test-data:verbose": "tsx scripts/cleanup/index.ts --verbose",
     "cleanup:test-data:pattern": "tsx scripts/cleanup/index.ts --pattern=\"TEST_*,E2E_*\"",
     "oauth:setup": "tsx scripts/attio-oauth.ts",
