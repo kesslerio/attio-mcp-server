@@ -321,7 +321,10 @@ function classifyToolExecutionError(
     const details = item.details as Record<string, unknown> | undefined;
     const context = item.context as Record<string, unknown> | undefined;
     current =
-      item.cause ?? item.original ?? details?.original ?? context?.originalError;
+      item.cause ??
+      item.original ??
+      details?.original ??
+      context?.originalError;
   }
   for (const item of chain.reverse()) {
     if (executionErrorCodes.includes(item.code as ExecutionErrorCode))

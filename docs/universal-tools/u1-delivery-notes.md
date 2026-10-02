@@ -1,14 +1,9 @@
 # U1 delivery evidence and verification scope
 
-The current native result contract follows KTD4: `search_records` and
-`get_record_details` publish a sanitized envelope in `structuredContent` and
-serialize that same envelope in `content[0].text` on both success and execution
-failure. Successful search includes `data`, `count`, and `next_cursor`; successful
-details includes `data`. Failures include `error` with sanitized `code`, `message`,
-and `retryable`. Optional prose follows in `content[1]`.
-`MCP_TEXT_RESULTS=false` skips companion prose and leaves exactly one envelope
-JSON block for either outcome. Connector `search` and `fetch` retain their
-approved success formats and use the shared failure ordering.
+The current native result contract follows KTD4; the authoritative
+[structured-results contract](developer-guide.md#structured-results-v2-boundary-a)
+describes success and failure envelopes, JSON-text ordering, companion prose,
+and connector compatibility.
 
 The captured verification plan is historical evidence. Its native JSON
 compatibility projection and prose opt-out deferral claims were superseded by

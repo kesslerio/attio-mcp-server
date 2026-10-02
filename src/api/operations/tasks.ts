@@ -155,8 +155,11 @@ export async function listTasks(
   const tasks = res?.data?.data;
   if (
     !Array.isArray(tasks) ||
-    tasks.some((task) => !task || typeof task !== 'object' || Array.isArray(task))
-  ) throw new ResultEncodingError();
+    tasks.some(
+      (task) => !task || typeof task !== 'object' || Array.isArray(task)
+    )
+  )
+    throw new ResultEncodingError();
   return tasks.map((task) => transformTaskResponse(task));
 }
 

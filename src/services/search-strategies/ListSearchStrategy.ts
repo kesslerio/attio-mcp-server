@@ -82,8 +82,7 @@ export class ListSearchStrategy extends BaseSearchStrategy {
 
     // For content search, fetch all lists and apply pagination after filtering
     // For regular search, pass offset to the list function
-    const requestOffset =
-      search_type === SearchType.CONTENT ? 0 : offset || 0;
+    const requestOffset = search_type === SearchType.CONTENT ? 0 : offset || 0;
 
     const lists = await this.dependencies.listFunction(
       searchQuery,
@@ -208,5 +207,4 @@ export class ListSearchStrategy extends BaseSearchStrategy {
 
     return filteredRecords;
   }
-
 }

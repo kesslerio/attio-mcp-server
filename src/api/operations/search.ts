@@ -657,14 +657,19 @@ export async function searchObject<T extends AttioRecord>(
       });
 
       try {
-        const fastResponse = await callWithRetry(async () => {
-          return api.post<AttioListResponse<T>>(path, {
-            filter: candidate.filter,
-            limit: candidateLimit,
-          });
-        }, retryConfig, { uncertainMutation: false });
+        const fastResponse = await callWithRetry(
+          async () => {
+            return api.post<AttioListResponse<T>>(path, {
+              filter: candidate.filter,
+              limit: candidateLimit,
+            });
+          },
+          retryConfig,
+          { uncertainMutation: false }
+        );
 
-        if (!Array.isArray(fastResponse?.data?.data)) throw new ResultEncodingError();
+        if (!Array.isArray(fastResponse?.data?.data))
+          throw new ResultEncodingError();
         const fastData = fastResponse.data.data as AttioRecord[];
 
         logger.debug('[FastPath] Received results', {
@@ -743,7 +748,11 @@ export async function searchObject<T extends AttioRecord>(
 
     const fallbackFilter = buildORFallbackFilter(objectType, parsedQuery);
     const fallbackResponse = await callWithRetry(
-      () => api.post<AttioListResponse<T>>(path, { filter: fallbackFilter, limit: fetchLimit }),
+      () =>
+        api.post<AttioListResponse<T>>(path, {
+          filter: fallbackFilter,
+          limit: fetchLimit,
+        }),
       retryConfig,
       { uncertainMutation: false }
     );
@@ -901,26 +910,30 @@ export async function advancedSearchObject<T extends AttioRecord>(
     return body;
   };
 
-  const response = await callWithRetry(async () => {
-    try {
-      const requestBody = await createRequestBody();
-      return await api.post<AttioListResponse<T>>(path, requestBody);
-    } catch (err) {
-      // If the error is a FilterValidationError, rethrow it unchanged
-      // Tests expect this specific error type to bubble up
-      if (
-        err instanceof FilterValidationError ||
-        (err as Record<string, unknown>)?.name === 'FilterValidationError'
-      ) {
-        throw err;
-      }
+  const response = await callWithRetry(
+    async () => {
+      try {
+        const requestBody = await createRequestBody();
+        return await api.post<AttioListResponse<T>>(path, requestBody);
+      } catch (err) {
+        // If the error is a FilterValidationError, rethrow it unchanged
+        // Tests expect this specific error type to bubble up
+        if (
+          err instanceof FilterValidationError ||
+          (err as Record<string, unknown>)?.name === 'FilterValidationError'
+        ) {
+          throw err;
+        }
 
-      // For all other errors, enhance them for consistency
-      throw ErrorEnhancer.ensureEnhanced(err, {
-        resourceType: objectType,
-      });
-    }
-  }, retryConfig, { uncertainMutation: false });
+        // For all other errors, enhance them for consistency
+        throw ErrorEnhancer.ensureEnhanced(err, {
+          resourceType: objectType,
+        });
+      }
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
   if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
   return response.data.data;
 }
@@ -941,20 +954,24 @@ export async function listObjects<T extends AttioRecord>(
   const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
-  const response = await callWithRetry(async () => {
-    const body: ListRequestBody = {
-      limit: limit || 20,
-      sorts: [
-        {
-          attribute: 'last_interaction',
-          field: 'interacted_at',
-          direction: 'desc',
-        },
-      ],
-    };
+  const response = await callWithRetry(
+    async () => {
+      const body: ListRequestBody = {
+        limit: limit || 20,
+        sorts: [
+          {
+            attribute: 'last_interaction',
+            field: 'interacted_at',
+            direction: 'desc',
+          },
+        ],
+      };
 
-    return api.post<AttioListResponse<T>>(path, body);
-  }, retryConfig, { uncertainMutation: false });
+      return api.post<AttioListResponse<T>>(path, body);
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
   if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
   return response.data.data;
 }

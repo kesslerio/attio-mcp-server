@@ -9,13 +9,10 @@ import { ToolConfig } from '@handlers/tool-types.js';
 import {
   extractRecordIds,
   extractSingleRecordId,
-  analyzeRelationshipState,
-  executeWithRetry,
   type TeamMember,
 } from '@utils/relationship-helpers.js';
 import { getCompanyDetails } from '@src/objects/companies/index.js';
-import { getPersonDetails, updatePerson } from '@src/objects/people/index.js';
-import { updateCompany } from '@src/objects/companies/index.js';
+import { getPersonDetails } from '@src/objects/people/index.js';
 import { RelationshipStateAnalyzer } from '@/handlers/tool-configs/relationships/state-analyzer.js';
 import { RelationshipValidator } from '@/handlers/tool-configs/relationships/validators.js';
 import { RelationshipOperationExecutor } from '@/handlers/tool-configs/relationships/operation-executors.js';
@@ -306,7 +303,7 @@ async function getCompanyTeam(companyId: string): Promise<PersonInfo[]> {
             ? personName
             : `${personName} ⚠️ (inconsistent - company field: ${personCompanyId || 'none'})`,
         });
-      } catch (personError) {
+      } catch (_personError) {
         // Person might not exist or be accessible
         result.push({
           id: memberId,

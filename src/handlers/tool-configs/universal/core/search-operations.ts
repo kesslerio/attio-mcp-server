@@ -69,7 +69,7 @@ export const searchRecordsConfig: UniversalToolConfig<
 
     const formattedResults = recordsArray
       .map((record, index) => {
-        let identifier = 'Unnamed';
+        let identifier: string;
 
         // Extract ID with list_id fallback (Issue #1068 - lists use list_id)
         let id = String(

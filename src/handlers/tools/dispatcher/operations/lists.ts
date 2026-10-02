@@ -63,7 +63,12 @@ function handleListToolError(
     responseData.error_category = categorized.category;
   }
 
-  return createErrorResult(new Error(errorMessage, { cause: error }), path, method, responseData);
+  return createErrorResult(
+    new Error(errorMessage, { cause: error }),
+    path,
+    method,
+    responseData
+  );
 }
 
 /**

@@ -76,6 +76,7 @@ function sleep(ms: number): Promise<void> {
  *
  * @param error - Error to check
  * @param config - Retry configuration
+ * @param options - Defaults to uncertain-mutation handling; only known reads may opt out
  * @returns Whether the error should trigger a retry
  */
 export function isRetryableError(
@@ -89,7 +90,7 @@ export function isRetryableError(
     })
   )
     return false;
-  // Network errors should be retried
+  // Only eligible, explicitly identified reads reach this transport retry path.
   if (!error.response) {
     return true;
   }
@@ -110,6 +111,7 @@ export function isRetryableError(
  *
  * @param fn - Function that returns a promise for the API call
  * @param config - Retry configuration
+ * @param options - Defaults to uncertain-mutation handling; only known reads may opt out
  * @returns Promise that resolves with the API response
  */
 export async function callWithRetry<T>(

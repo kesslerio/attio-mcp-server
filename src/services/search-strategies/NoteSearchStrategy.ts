@@ -34,7 +34,6 @@ import type {
   SearchStrategyParams,
   StrategyDependencies,
 } from '@/services/search-strategies/interfaces.js';
-import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import type {
   AttioNote,
   AttioRecord,

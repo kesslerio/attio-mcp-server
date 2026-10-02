@@ -96,28 +96,25 @@ unsupported values, sanitizer fallbacks, and changed domain data produce
 `RESULT_ENCODING_FAILED`, with `isError: true` and `retryable: false`. A prose
 formatter failure leaves completed machine data successful.
 
-Execution errors use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`,
-`PERMISSION_DENIED`, `NOT_FOUND`, `RATE_LIMITED`, `UPSTREAM_UNAVAILABLE`,
-`INVALID_CURSOR` (reserved for continuation), `RESULT_ENCODING_FAILED`, and
-`INTERNAL_ERROR`. Messages retain sanitized guidance and correlation references.
+Execution errors use the stable codes defined by
+[`executionErrorCodes`](../../src/handlers/tools/result-schemas.ts);
+`INVALID_CURSOR` is reserved for continuation. Messages retain sanitized guidance
+and correlation references.
 Read rate limits and upstream outages may be retryable; uncertain write outcomes
-are non-retryable and require readback before another write. The retry layer
-defaults to uncertain mutation handling; explicitly identified reads retain their
-retry policy. Writes do not retry automatically, and fallback
-writes stop after transport failures or uncertain completion. Unknown tools and
+are non-retryable and require readback before another write. The execution
+`retryable` field does not trigger a server retry; see
+[API call retry logic](../api/error-handling.md#api-call-retry-logic) for automatic
+retry and mutation fallback rules. Unknown tools and
 malformed MCP requests remain protocol errors rather than execution results.
 
-U2 retains the standing R9 acceptance item: replay-proofing of legacy mutation
-owners lands with U2. That writes-family unit will move post-write decoding out
-of retry callbacks and complete the mutation controls and composable IDs across
-task, record, and list mutation owners. U1 supplies the retry and fallback guards.
+See [U1 delivery scope](u1-delivery-notes.md) for verification evidence and the
+remaining U2 mutation-owner work.
 
 Other families retain their existing successful text contracts and do not yet
 advertise output schemas; their boundary-owned failures use the same structured
 error envelope. Connector and health success projections remain unchanged.
-`MCP_TEXT_RESULTS=false` skips optional prose formatting for `search_records`
-and `get_record_details`. Their structured results and the required JSON
-envelope in `content[0]` remain available. Prose is enabled by default.
+Prose is enabled by default; the opt-out described above also applies to
+boundary-owned failures in other families.
 
 Verify deterministic contracts with
 `bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts`.
@@ -852,46 +849,8 @@ export class ResourceNotFoundError extends UniversalToolError {
 
 ### Error Recovery Strategies
 
-```typescript
-// src/handlers/tool-configs/universal/error-recovery.ts
-export async function withRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  backoffMs: number = 1000
-): Promise<T> {
-  let lastError: Error;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (attempt === maxRetries) break;
-
-      // Exponential backoff
-      const delay = backoffMs * Math.pow(2, attempt - 1);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-
-  throw lastError!;
-}
-
-// Usage
-export async function handleUniversalCreate(
-  params: UniversalCreateParams
-): Promise<AttioRecord> {
-  return await withRetry(
-    async () => {
-      // Actual creation logic
-      return await createRecord(params);
-    },
-    3,
-    500
-  );
-}
-```
+Use the shared [API call retry logic](../api/error-handling.md#api-call-retry-logic)
+instead of wrapping mutation handlers in a generic retry loop.
 
 ## Contribution Guidelines
 

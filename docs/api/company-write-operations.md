@@ -18,7 +18,7 @@ This document provides comprehensive documentation for company write operations 
 
 ## Overview
 
-Company write operations allow you to create, update, and delete company records in Attio. All operations include automatic retry logic with exponential backoff and comprehensive error handling.
+Company write operations allow you to create, update, and delete company records in Attio. See [API call retry logic](./error-handling.md#api-call-retry-logic) for mutation retry and recovery constraints.
 
 ## Operations
 
@@ -276,26 +276,8 @@ try {
 
 ## Rate Limiting
 
-All operations include automatic rate limit handling:
-
-- **Retry Logic**: Automatic retry with exponential backoff
-- **Default Configuration**:
-  - Max retries: 3
-  - Initial delay: 1 second
-  - Max delay: 10 seconds
-  - Retryable status codes: 408, 429, 500, 502, 503, 504
-
-### Custom Retry Configuration
-
-```javascript
-// Custom retry config (not yet exposed in public API)
-const retryConfig = {
-  maxRetries: 5,
-  initialDelay: 2000,
-  maxDelay: 30000,
-  useExponentialBackoff: true,
-};
-```
+See [API call retry logic](./error-handling.md#api-call-retry-logic) for
+rate-limit handling and mutation recovery constraints.
 
 ## Field Validation
 
@@ -376,20 +358,9 @@ await updateCompany(id, {
 
 ### 2. Handle Errors Gracefully
 
-```javascript
-async function safeCreateCompany(data) {
-  try {
-    return await createCompany(data);
-  } catch (error) {
-    if (error.message.includes('rate limit')) {
-      // Wait and retry
-      await sleep(5000);
-      return await createCompany(data);
-    }
-    throw error;
-  }
-}
-```
+Use the [MCP execution-error contract](../universal-tools/developer-guide.md#structured-results-v2-boundary-a)
+to classify failures. Follow the [mutation recovery constraints](./error-handling.md#api-call-retry-logic)
+before considering another create call.
 
 ### 3. Validate Before Operations
 

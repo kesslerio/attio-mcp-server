@@ -131,10 +131,17 @@ export class UniversalUtilityService {
         content: task.content,
         status: task.status,
         ...(task.assignee != null
-          ? { assignee: typeof task.assignee === 'string' ? task.assignee : task.assignee.id }
+          ? {
+              assignee:
+                typeof task.assignee === 'string'
+                  ? task.assignee
+                  : task.assignee.id,
+            }
           : {}),
         ...(task.due_date !== undefined ? { due_date: task.due_date } : {}),
-        ...(task.linked_records !== undefined ? { linked_records: task.linked_records } : {}),
+        ...(task.linked_records !== undefined
+          ? { linked_records: task.linked_records }
+          : {}),
       },
       created_at: task.created_at,
       ...(task.updated_at !== undefined ? { updated_at: task.updated_at } : {}),
@@ -149,7 +156,8 @@ export class UniversalUtilityService {
 
     // Add assignee as simple string (corrected after API verification)
     if (task.assignee != null) {
-      const assignee = typeof task.assignee === 'string' ? task.assignee : task.assignee.id;
+      const assignee =
+        typeof task.assignee === 'string' ? task.assignee : task.assignee.id;
       Object.assign(flatFields, { assignee, assignee_id: assignee });
     }
 

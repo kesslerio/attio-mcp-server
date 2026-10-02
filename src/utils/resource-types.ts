@@ -29,11 +29,14 @@ export function canonicalizeResourceType(rt: unknown): string {
   const validTypes = getValidResourceTypes();
 
   if (!validTypes.includes(value)) {
-    throw Object.assign(new Error(
-      `Invalid resource_type: ${value}. Must be one of: ${validTypes.join(
-        ', '
-      )}`
-    ), { code: 'VALIDATION_ERROR' });
+    throw Object.assign(
+      new Error(
+        `Invalid resource_type: ${value}. Must be one of: ${validTypes.join(
+          ', '
+        )}`
+      ),
+      { code: 'VALIDATION_ERROR' }
+    );
   }
 
   return value;

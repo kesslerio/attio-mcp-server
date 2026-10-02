@@ -188,7 +188,6 @@ export abstract class BaseCreator implements ResourceCreator {
    */
   protected async attemptRecovery(
     context: ResourceCreatorContext,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _normalizedInput?: JsonObject
   ): Promise<AttioRecord> {
     const recoveryOptions = this.getRecoveryOptions();
@@ -347,7 +346,9 @@ export abstract class BaseCreator implements ResourceCreator {
 
     throw this.createEnhancedError(
       new Error(
-        detailMessage || error?.message || `${this.resourceType} creation error`,
+        detailMessage ||
+          error?.message ||
+          `${this.resourceType} creation error`,
         { cause: err }
       ),
       context,

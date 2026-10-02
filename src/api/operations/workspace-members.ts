@@ -30,28 +30,32 @@ export async function listWorkspaceMembers(
 
   const path = `/workspace_members?${params.toString()}`;
 
-  return callWithRetry(async () => {
-    debug(
-      'workspace-members.listWorkspaceMembers',
-      'Fetching workspace members',
-      { path, search, page, pageSize },
-      'listWorkspaceMembers',
-      OperationType.API_CALL
-    );
+  return callWithRetry(
+    async () => {
+      debug(
+        'workspace-members.listWorkspaceMembers',
+        'Fetching workspace members',
+        { path, search, page, pageSize },
+        'listWorkspaceMembers',
+        OperationType.API_CALL
+      );
 
-    const res = await api.get<AttioListResponse<AttioWorkspaceMember>>(path);
-    const members = res?.data?.data || [];
+      const res = await api.get<AttioListResponse<AttioWorkspaceMember>>(path);
+      const members = res?.data?.data || [];
 
-    debug(
-      'workspace-members.listWorkspaceMembers',
-      'Workspace members fetched',
-      { count: members.length },
-      'listWorkspaceMembers',
-      OperationType.API_CALL
-    );
+      debug(
+        'workspace-members.listWorkspaceMembers',
+        'Workspace members fetched',
+        { count: members.length },
+        'listWorkspaceMembers',
+        OperationType.API_CALL
+      );
 
-    return members;
-  }, retryConfig, { uncertainMutation: false });
+      return members;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -70,28 +74,32 @@ export async function searchWorkspaceMembers(
 
   const path = `/workspace_members?${params.toString()}`;
 
-  return callWithRetry(async () => {
-    debug(
-      'workspace-members.searchWorkspaceMembers',
-      'Searching workspace members',
-      { query },
-      'searchWorkspaceMembers',
-      OperationType.API_CALL
-    );
+  return callWithRetry(
+    async () => {
+      debug(
+        'workspace-members.searchWorkspaceMembers',
+        'Searching workspace members',
+        { query },
+        'searchWorkspaceMembers',
+        OperationType.API_CALL
+      );
 
-    const res = await api.get<AttioListResponse<AttioWorkspaceMember>>(path);
-    const members = res?.data?.data || [];
+      const res = await api.get<AttioListResponse<AttioWorkspaceMember>>(path);
+      const members = res?.data?.data || [];
 
-    debug(
-      'workspace-members.searchWorkspaceMembers',
-      'Workspace members search completed',
-      { query, count: members.length },
-      'searchWorkspaceMembers',
-      OperationType.API_CALL
-    );
+      debug(
+        'workspace-members.searchWorkspaceMembers',
+        'Workspace members search completed',
+        { query, count: members.length },
+        'searchWorkspaceMembers',
+        OperationType.API_CALL
+      );
 
-    return members;
-  }, retryConfig, { uncertainMutation: false });
+      return members;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -108,25 +116,29 @@ export async function getWorkspaceMember(
   const api = resolveAttioClient();
   const path = `/workspace_members/${memberId}`;
 
-  return callWithRetry(async () => {
-    debug(
-      'workspace-members.getWorkspaceMember',
-      'Fetching workspace member',
-      { memberId },
-      'getWorkspaceMember',
-      OperationType.API_CALL
-    );
-
-    const res = await api.get<{ data: AttioWorkspaceMember }>(path);
-
-    if (!res?.data?.data) {
-      throw new Error(
-        `Workspace member '${memberId}' not found in current workspace`
+  return callWithRetry(
+    async () => {
+      debug(
+        'workspace-members.getWorkspaceMember',
+        'Fetching workspace member',
+        { memberId },
+        'getWorkspaceMember',
+        OperationType.API_CALL
       );
-    }
 
-    return res.data.data;
-  }, retryConfig, { uncertainMutation: false });
+      const res = await api.get<{ data: AttioWorkspaceMember }>(path);
+
+      if (!res?.data?.data) {
+        throw new Error(
+          `Workspace member '${memberId}' not found in current workspace`
+        );
+      }
+
+      return res.data.data;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**

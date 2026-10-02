@@ -188,10 +188,15 @@ export async function getObjectDetails<T extends AttioRecord>(
     }
   }
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
-    return (response?.data?.data || response?.data) as T;
-  }, options?.retryConfig, { uncertainMutation: false });
+  return callWithRetry(
+    async () => {
+      const response: AxiosResponse<AttioSingleResponse<T>> =
+        await api.get(path);
+      return (response?.data?.data || response?.data) as T;
+    },
+    options?.retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -375,10 +380,15 @@ export async function getRecord<T extends AttioRecord>(
     path += `?${params.toString()}`;
   }
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
-    return (response?.data?.data || response?.data) as T;
-  }, retryConfig, { uncertainMutation: false });
+  return callWithRetry(
+    async () => {
+      const response: AxiosResponse<AttioSingleResponse<T>> =
+        await api.get(path);
+      return (response?.data?.data || response?.data) as T;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**

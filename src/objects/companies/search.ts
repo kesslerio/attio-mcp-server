@@ -12,11 +12,7 @@ import {
   ListEntryFilters,
 } from '@/api/operations/index.js';
 import { createScopedLogger } from '@/utils/logger.js';
-import {
-  ResourceType,
-  Company,
-  FilterConditionType,
-} from '@/types/attio.js';
+import { ResourceType, Company, FilterConditionType } from '@/types/attio.js';
 import {
   FilterValidationError,
   FilterErrorCategory,

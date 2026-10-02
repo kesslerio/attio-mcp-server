@@ -393,7 +393,13 @@ export function createApiErrorFromAxiosError(
       }
 
       return Object.defineProperty(
-        new ResourceNotFoundError(formattedType, resourceId, endpoint, method, details),
+        new ResourceNotFoundError(
+          formattedType,
+          resourceId,
+          endpoint,
+          method,
+          details
+        ),
         'cause',
         { value: error }
       );

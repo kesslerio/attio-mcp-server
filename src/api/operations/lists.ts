@@ -78,10 +78,14 @@ export async function getListDetails(
   const api = getLazyAttioClient();
   const path = `/lists/${listId}`;
 
-  return callWithRetry(async () => {
-    const response = await api.get<AttioSingleResponse<AttioList>>(path);
-    return (response?.data?.data || response?.data) as AttioList;
-  }, retryConfig, { uncertainMutation: false });
+  return callWithRetry(
+    async () => {
+      const response = await api.get<AttioSingleResponse<AttioList>>(path);
+      return (response?.data?.data || response?.data) as AttioList;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -101,7 +105,6 @@ export async function getListEntries(
   filters?: ListEntryFilters,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry[]> {
-
   // Input validation - make sure we have a valid listId
   if (!listId) {
     throw new UniversalValidationError('Invalid list ID: No ID provided');
@@ -200,26 +203,30 @@ export async function getListEntries(
   };
 
   // Call primary endpoint directly (Option A simplification)
-  return callWithRetry(async () => {
-    const path = `/lists/${listId}/entries/query`;
-    const requestBody = await createRequestBody();
+  return callWithRetry(
+    async () => {
+      const path = `/lists/${listId}/entries/query`;
+      const requestBody = await createRequestBody();
 
-    logOperation('Primary endpoint attempt', {
-      path,
-      requestBody: JSON.stringify(requestBody),
-    });
+      logOperation('Primary endpoint attempt', {
+        path,
+        requestBody: JSON.stringify(requestBody),
+      });
 
-    const response = await api.post<AttioListResponse<AttioListEntry>>(
-      path,
-      requestBody
-    );
+      const response = await api.post<AttioListResponse<AttioListEntry>>(
+        path,
+        requestBody
+      );
 
-    logOperation('Primary endpoint successful', {
-      resultCount: response.data?.data?.length || 0,
-    });
+      logOperation('Primary endpoint successful', {
+        resultCount: response.data?.data?.length || 0,
+      });
 
-    return processListEntries(response.data?.data || []);
-  }, retryConfig, { uncertainMutation: false });
+      return processListEntries(response.data?.data || []);
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**

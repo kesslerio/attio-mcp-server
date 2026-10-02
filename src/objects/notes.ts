@@ -145,10 +145,10 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
     // The /notes endpoint accepts filters (parent_object, parent_record_id)
     // and returns an empty array when no notes exist.
     const response = await api.get('/notes', { params: query });
-    const res = (response?.data as {
+    const res = response?.data as {
       data?: AttioNote[];
       meta?: { next_cursor?: string };
-    });
+    };
     if (!Array.isArray(res?.data)) throw new ResultEncodingError();
     return { data: res.data, meta: res.meta };
   } catch (error: unknown) {
@@ -287,8 +287,12 @@ export function normalizeNoteResponse(note: AttioNote): {
     resource_type: 'notes',
     values: {
       ...(title !== null ? { title } : {}),
-      ...(contentMarkdown !== null ? { content_markdown: contentMarkdown } : {}),
-      ...(contentPlaintext !== null ? { content_plaintext: contentPlaintext } : {}),
+      ...(contentMarkdown !== null
+        ? { content_markdown: contentMarkdown }
+        : {}),
+      ...(contentPlaintext !== null
+        ? { content_plaintext: contentPlaintext }
+        : {}),
       parent_object: parentObject,
       parent_record_id: parentRecordId,
       created_at: createdAt,

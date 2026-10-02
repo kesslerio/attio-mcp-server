@@ -76,7 +76,9 @@ export async function searchPeople(query: string): Promise<Person[]> {
         { cause: error }
       );
     }
-    throw new Error(`Failed to search people: ${errorMessage}`, { cause: error });
+    throw new Error(`Failed to search people: ${errorMessage}`, {
+      cause: error,
+    });
   }
 }
 
@@ -107,7 +109,9 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
         { cause: error }
       );
     }
-    throw new Error(`Failed to search people by query: ${errorMessage}`, { cause: error });
+    throw new Error(`Failed to search people by query: ${errorMessage}`, {
+      cause: error,
+    });
   }
 }
 
@@ -138,7 +142,9 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
         { cause: error }
       );
     }
-    throw new Error(`Failed to search people by email: ${errorMessage}`, { cause: error });
+    throw new Error(`Failed to search people by email: ${errorMessage}`, {
+      cause: error,
+    });
   }
 }
 
@@ -155,7 +161,9 @@ export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
     return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to search people by phone: ${errorMessage}`, { cause: error });
+    throw new Error(`Failed to search people by phone: ${errorMessage}`, {
+      cause: error,
+    });
   }
 }
 
@@ -196,7 +204,9 @@ export async function advancedSearchPeople(
         if (error instanceof FilterValidationError) {
           throw error;
         }
-        throw new FilterValidationError(`Invalid limit: ${error}`, undefined, { cause: error });
+        throw new FilterValidationError(`Invalid limit: ${error}`, undefined, {
+          cause: error,
+        });
       }
     }
 
@@ -210,7 +220,9 @@ export async function advancedSearchPeople(
         if (error instanceof FilterValidationError) {
           throw error;
         }
-        throw new FilterValidationError(`Invalid offset: ${error}`, undefined, { cause: error });
+        throw new FilterValidationError(`Invalid offset: ${error}`, undefined, {
+          cause: error,
+        });
       }
     }
 
@@ -262,7 +274,9 @@ export async function searchPeopleByCreationDate(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new FilterValidationError(`Invalid date range: ${error}`, undefined, { cause: error });
+    throw new FilterValidationError(`Invalid date range: ${error}`, undefined, {
+      cause: error,
+    });
   }
 
   const filters = createCreatedDateFilter(dateRange);
@@ -286,7 +300,9 @@ export async function searchPeopleByModificationDate(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new FilterValidationError(`Invalid date range: ${error}`, undefined, { cause: error });
+    throw new FilterValidationError(`Invalid date range: ${error}`, undefined, {
+      cause: error,
+    });
   }
 
   const filters = createModifiedDateFilter(dateRange);
@@ -313,7 +329,11 @@ export async function searchPeopleByLastInteraction(
       if (error instanceof FilterValidationError) {
         throw error;
       }
-      throw new FilterValidationError(`Invalid date range: ${error}`, undefined, { cause: error });
+      throw new FilterValidationError(
+        `Invalid date range: ${error}`,
+        undefined,
+        { cause: error }
+      );
     }
 
     const filters = createLastInteractionFilter(dateRange, interactionType);
@@ -352,7 +372,11 @@ export async function searchPeopleByActivity(
       if (error instanceof FilterValidationError) {
         throw error;
       }
-      throw new FilterValidationError(`Invalid activity filter: ${error}`, undefined, { cause: error });
+      throw new FilterValidationError(
+        `Invalid activity filter: ${error}`,
+        undefined,
+        { cause: error }
+      );
     }
 
     const filters = createActivityFilter(activityFilter);
@@ -368,6 +392,8 @@ export async function searchPeopleByActivity(
         { cause: error }
       );
     }
-    throw new Error(`Failed to search people by activity: ${errorMessage}`, { cause: error });
+    throw new Error(`Failed to search people by activity: ${errorMessage}`, {
+      cause: error,
+    });
   }
 }

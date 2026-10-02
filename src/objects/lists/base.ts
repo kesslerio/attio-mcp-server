@@ -10,14 +10,15 @@ import {
 import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
 import { AttioApiError } from '@/errors/api-errors.js';
 import { safeErrorDetails } from '@/types/attio-error-body.js';
-import {
-  getErrorMessage,
-  getErrorStatus,
-} from '@/types/error-interfaces.js';
+import { getErrorMessage, getErrorStatus } from '@/types/error-interfaces.js';
 import { hasErrorResponse } from '@/types/list-types.js';
 import { createScopedLogger, OperationType } from '@/utils/logger.js';
 import type { AttioList } from '@/types/attio.js';
-import { asListArray, ensureListShape, extract } from '@/objects/lists/shared.js';
+import {
+  asListArray,
+  ensureListShape,
+  extract,
+} from '@/objects/lists/shared.js';
 
 /**
  * Gets all lists in the workspace.

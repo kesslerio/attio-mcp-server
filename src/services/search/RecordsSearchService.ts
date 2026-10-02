@@ -108,7 +108,7 @@ export class RecordsSearchService {
     // Issue #935: Forward filters to request body (was silently dropped before)
     if (filters && Object.keys(filters).length > 0) {
       // Exclude list_membership from filter object as it's handled separately
-      const { list_membership, ...remainingFilters } = filters;
+      const { list_membership: _listMembership, ...remainingFilters } = filters;
       if (Object.keys(remainingFilters).length > 0) {
         requestBody.filter = remainingFilters;
       }

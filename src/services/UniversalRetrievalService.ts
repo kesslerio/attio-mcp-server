@@ -255,9 +255,12 @@ export class UniversalRetrievalService {
         );
 
         // URS suite expects createRecordNotFoundError for generic 404s
-        throw Object.assign(createRecordNotFoundError(record_id, resource_type), {
-          cause: apiError,
-        });
+        throw Object.assign(
+          createRecordNotFoundError(record_id, resource_type),
+          {
+            cause: apiError,
+          }
+        );
       }
 
       if (statusCode === 400) {
@@ -548,9 +551,12 @@ export class UniversalRetrievalService {
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response(resource_type, record_id);
         // URS test expects createRecordNotFoundError for consistent message
-        throw Object.assign(createRecordNotFoundError(record_id, resource_type), {
-          cause: error,
-        });
+        throw Object.assign(
+          createRecordNotFoundError(record_id, resource_type),
+          {
+            cause: error,
+          }
+        );
       }
 
       // Re-throw other errors to avoid masking legitimate issues
@@ -584,9 +590,12 @@ export class UniversalRetrievalService {
         if (httpError.status === 404) {
           // Cache legitimate 404s and create EnhancedApiError
           CachingService.cache404Response('notes', noteId);
-          const notFoundError = new Error(`Note with ID "${noteId}" not found.`, {
-            cause: error,
-          });
+          const notFoundError = new Error(
+            `Note with ID "${noteId}" not found.`,
+            {
+              cause: error,
+            }
+          );
           (notFoundError as Error & { statusCode?: number }).statusCode = 404;
           throw ensureEnhanced(notFoundError, {
             endpoint: `/notes/${noteId}`,
@@ -640,7 +649,9 @@ export class UniversalRetrievalService {
         ...(attioData.created_at !== undefined
           ? { created_at: attioData.created_at }
           : {}),
-        ...(attioData.updated_at !== undefined ? { updated_at: attioData.updated_at } : {}),
+        ...(attioData.updated_at !== undefined
+          ? { updated_at: attioData.updated_at }
+          : {}),
         values: {},
       };
 

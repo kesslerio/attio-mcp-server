@@ -61,13 +61,17 @@ export const listsToolConfigs = {
     handler: async (listId: string, limit?: number, offset?: number) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        throw Object.assign(new Error(`Invalid list_id: must be a UUID. Got: ${listId}`), {
-          code: 'VALIDATION_ERROR',
-        });
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await getListEntries(listId, limit, offset);
     },
-    formatResult: (results: AttioListEntry[]) => JSON.stringify(Array.isArray(results) ? results : []),
+    formatResult: (results: AttioListEntry[]) =>
+      JSON.stringify(Array.isArray(results) ? results : []),
   } as GetListEntriesToolConfig,
   filterListEntries: {
     name: 'filter-list-entries',
@@ -96,9 +100,12 @@ export const listsToolConfigs = {
     ) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        throw Object.assign(new Error(`Invalid list_id: must be a UUID. Got: ${listId}`), {
-          code: 'VALIDATION_ERROR',
-        });
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await addRecordToList(listId, recordId, objectType, values);
     },
@@ -110,9 +117,12 @@ export const listsToolConfigs = {
     handler: async (listId: string, entryId: string) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        throw Object.assign(new Error(`Invalid list_id: must be a UUID. Got: ${listId}`), {
-          code: 'VALIDATION_ERROR',
-        });
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await removeRecordFromList(listId, entryId);
     },

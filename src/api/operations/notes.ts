@@ -32,10 +32,14 @@ export async function getObjectNotes(
   const api = getLazyAttioClient();
   const path = `/notes?limit=${limit}&offset=${offset}&parent_object=${objectType}&parent_record_id=${recordId}`;
 
-  return callWithRetry(async () => {
-    const response = await api.get<AttioListResponse<AttioNote>>(path);
-    return response?.data?.data || [];
-  }, retryConfig, { uncertainMutation: false });
+  return callWithRetry(
+    async () => {
+      const response = await api.get<AttioListResponse<AttioNote>>(path);
+      return response?.data?.data || [];
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**

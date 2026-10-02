@@ -68,9 +68,7 @@ export function buildStructuredToolResult(
     throw new ResultEncodingError();
   }
 
-  const content: CallToolResult['content'] = [
-    { type: 'text', text: json },
-  ];
+  const content: CallToolResult['content'] = [{ type: 'text', text: json }];
   if (process.env.MCP_TEXT_RESULTS !== 'false' && config.formatResult) {
     try {
       // Preserve the existing formatter arguments and default-enabled prose.
