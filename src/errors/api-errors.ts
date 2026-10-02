@@ -3,7 +3,7 @@
  * Includes specialized error types for API interactions and validation
  */
 
-import { sanitizeErrorMessage } from '../utils/error-sanitizer.js';
+import { sanitizeErrorMessage } from '@/utils/error-sanitizer.js';
 
 /**
  * Base class for all Attio API errors
@@ -454,9 +454,10 @@ export class FilterValidationError extends Error {
    */
   constructor(
     message: string,
-    public readonly category: FilterErrorCategory = FilterErrorCategory.STRUCTURE
+    public readonly category: FilterErrorCategory = FilterErrorCategory.STRUCTURE,
+    options?: ErrorOptions
   ) {
-    super(message);
+    super(message, options);
     this.name = 'FilterValidationError';
 
     // This line is needed to properly capture the stack trace

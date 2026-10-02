@@ -1,22 +1,22 @@
 /**
  * Task operations for Attio
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
-import { getValidatedAttioClient } from '../../utils/client-resolver.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { getValidatedAttioClient } from '@/utils/client-resolver.js';
 import type { AxiosInstance } from 'axios';
 import {
   AttioTask,
   AttioListResponse,
   AttioSingleResponse,
-} from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
-import { debug, OperationType } from '../../utils/logger.js';
+} from '@/types/attio.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
+import { TaskCreateData, TaskUpdateData } from '@/types/api-operations.js';
+import { debug, OperationType } from '@/utils/logger.js';
 import {
   logTaskDebug,
   sanitizePayload,
   inspectTaskRecordShape,
-} from '../../utils/task-debug.js';
+} from '@/utils/task-debug.js';
 
 /**
  * Helper function to transform Attio API task response to internal format
@@ -514,7 +514,8 @@ function resolveAttioClient(): AxiosInstance {
       return getLazyAttioClient();
     } catch {
       throw new Error(
-        `Could not initialize Attio client: ${error instanceof Error ? error.message : String(error)}`
+        `Could not initialize Attio client: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }

@@ -13,7 +13,7 @@ import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/sear
 import { createRecordConfig } from '@/handlers/tool-configs/universal/core/crud-operations.js';
 import { getGlobalContext } from '@/api/lazy-client.js';
 import { getLogContext } from '@/utils/logger.js';
-import { CompanyMockFactory } from '@test/utils/mock-factories/index.js';
+import { CompanyMockFactory, ListMockFactory } from '@test/utils/mock-factories/index.js';
 import * as companyOperations from '@/objects/companies/index.js';
 import * as listOperations from '@/objects/lists.js';
 import * as listBase from '@/objects/lists/base.js';
@@ -24,6 +24,13 @@ import * as noteOperations from '@/objects/notes.js';
 import * as lazyClient from '@/api/lazy-client.js';
 import { StrategyFactory } from '@/services/search/StrategyFactory.js';
 import { TaskSearchStrategy } from '@/services/search-strategies/TaskSearchStrategy.js';
+import { clearAllCaches, ClientCache } from '@/api/client-cache.js';
+import * as attioClientModule from '@/api/attio-client.js';
+import * as retryOperations from '@/api/operations/retry.js';
+import { CompanySearchStrategy } from '@/services/search-strategies/CompanySearchStrategy.js';
+import { DealSearchStrategy } from '@/services/search-strategies/DealSearchStrategy.js';
+import { PeopleSearchStrategy } from '@/services/search-strategies/PeopleSearchStrategy.js';
+import { ListSearchStrategy } from '@/services/search-strategies/ListSearchStrategy.js';
 import { NoteSearchStrategy } from '@/services/search-strategies/NoteSearchStrategy.js';
 import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import { UniversalRetrievalService } from '@/services/UniversalRetrievalService.js';
@@ -60,6 +67,8 @@ describe('structured tool protocol', () => {
     await server.close();
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    clearAllCaches();
+    StrategyFactory.clearStrategies();
   });
 
   it('lists a schema and composes search identifiers into details over tools/call', async () => {
@@ -327,6 +336,151 @@ describe('structured tool protocol', () => {
     }
     for (const method of Object.values(api)) expect(method).toHaveBeenCalledTimes(2);
   });
+
+  it.each(['absent', 'undefined', 0, 12] as const)(
+    'serializes native list search and details with entry_count=%s',
+    async (entryCount) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      const list = ListMockFactory.create();
+      delete list.entry_count;
+      if (entryCount !== 'absent') {
+        list.entry_count = entryCount === 'undefined' ? undefined : entryCount;
+      }
+      const api = {
+        get: vi.fn()
+          .mockResolvedValueOnce({ data: { data: [list] } })
+          .mockResolvedValueOnce({ data: { data: list } }),
+      };
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(
+        new ListSearchStrategy({ listFunction: listOperations.searchLists })
+      );
+      const search = await client.callTool({
+        name: 'search_records', arguments: { resource_type: 'lists' },
+      });
+      const details = await client.callTool({
+        name: 'get_record_details',
+        arguments: { resource_type: 'lists', record_id: list.id.list_id },
+      });
+      expect(search).toMatchObject({
+        isError: false,
+        structuredContent: { data: [{ id: { list_id: list.id.list_id } }], count: 1, next_cursor: null },
+      });
+      expect(details).toMatchObject({
+        isError: false, structuredContent: { data: { id: { list_id: list.id.list_id } } },
+      });
+      const found = (search.structuredContent?.data as Array<Record<string, unknown>>)[0];
+      for (const record of [found, details.structuredContent?.data]) {
+        if (typeof entryCount === 'number') expect(record).toHaveProperty('entry_count', entryCount);
+        else expect(record).not.toHaveProperty('entry_count');
+      }
+      expect(api.get).toHaveBeenCalledTimes(2);
+    }
+  );
+
+  it.each(['tasks', 'people'] as const)(
+    'preserves missing credentials through native %s reads and connectors',
+    async (resourceType) => {
+      const actual = await vi.importActual<typeof import('@/api/attio-client.js')>('@/api/attio-client.js');
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      vi.stubEnv('ATTIO_API_KEY', undefined);
+      vi.stubEnv('ATTIO_ACCESS_TOKEN', undefined);
+      clearAllCaches();
+      StrategyFactory.clearStrategies();
+      vi.spyOn(attioClientModule, 'createAttioClient').mockImplementation(actual.createAttioClient);
+      vi.spyOn(attioClientModule, 'getAttioClient').mockImplementation(actual.getAttioClient);
+      const id = CompanyMockFactory.create().id.record_id;
+      for (const [name, args] of [
+        ['search_records', { resource_type: resourceType }],
+        ['get_record_details', { resource_type: resourceType, record_id: id }],
+        ['search', { type: resourceType, query: 'Company' }],
+        ['fetch', { id: `${resourceType}:${id}` }],
+      ] as const) {
+        clearAllCaches();
+        expect(ClientCache.hasInstance()).toBe(false);
+        const result = await client.callTool({ name, arguments: args });
+        expect(result).toMatchObject({
+          isError: true,
+          structuredContent: { error: { code: 'UNAUTHENTICATED', retryable: false } },
+        });
+        expect(ClientCache.hasInstance()).toBe(false);
+      }
+    }
+  );
+
+  it.each(['tasks', 'people'] as const)(
+    'retains native %s upstream classifications and successful empty reads',
+    async (resourceType) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      StrategyFactory.clearStrategies();
+      clearAllCaches();
+      const api = { defaults: {}, get: vi.fn(), post: vi.fn() };
+      vi.spyOn(attioClientModule, 'createAttioClient').mockReturnValue(api as never);
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      vi.spyOn(retryOperations, 'callWithRetry').mockImplementation(async (operation) => operation());
+      for (const [status, code, retryable] of [
+        [403, 'PERMISSION_DENIED', false], [404, 'NOT_FOUND', false],
+        [429, 'RATE_LIMITED', true], [503, 'UPSTREAM_UNAVAILABLE', true],
+      ] as const) {
+        const id = CompanyMockFactory.create().id.record_id;
+        const failure = new EnhancedApiError('Native read failed', status, `/${resourceType}`, 'GET');
+        api.get.mockRejectedValue(failure);
+        api.post.mockRejectedValue(failure);
+        for (const [name, args] of [
+          ['search_records', { resource_type: resourceType }],
+          ['get_record_details', { resource_type: resourceType, record_id: id }],
+          ['search', { type: resourceType, query: 'Company' }],
+          ['fetch', { id: `${resourceType}:${id}` }],
+        ] as const) {
+          const result = await client.callTool({ name, arguments: args });
+          expect(result).toMatchObject({
+            isError: true, structuredContent: { error: { code, retryable } },
+          });
+        }
+      }
+      api.get.mockResolvedValue({ data: { data: [] } });
+      api.post.mockResolvedValue({ data: { data: [] } });
+      const empty = await client.callTool({
+        name: 'search_records', arguments: { resource_type: resourceType },
+      });
+      expect(empty).toMatchObject({
+        isError: false, structuredContent: { data: [], count: 0, next_cursor: null },
+      });
+      const connector = await client.callTool({
+        name: 'search', arguments: { type: resourceType, query: 'Company' },
+      });
+      expect(connector.isError).toBe(false);
+      expect(JSON.parse(connector.content[0].text as string)).toEqual({ results: [] });
+    }
+  );
+
+  it.each(['companies', 'people', 'deals'] as const)(
+    'propagates %s empty-filter failures and preserves empty success',
+    async (resourceType) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      const upstream = vi.fn().mockRejectedValueOnce(
+        new EnhancedApiError('Read denied', 403, `/${resourceType}`, 'POST')
+      );
+      const strategy = resourceType === 'companies'
+        ? new CompanySearchStrategy({ advancedSearchFunction: upstream })
+        : resourceType === 'people'
+          ? new PeopleSearchStrategy({ paginatedSearchFunction: upstream })
+          : new DealSearchStrategy({ advancedSearchFunction: upstream });
+      vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
+      const args = { resource_type: resourceType };
+      const failed = await client.callTool({ name: 'search_records', arguments: args });
+      expect(failed).toMatchObject({
+        isError: true,
+        structuredContent: { error: { code: 'PERMISSION_DENIED', retryable: false } },
+      });
+      upstream.mockResolvedValueOnce(resourceType === 'people' ? { results: [] } : []);
+      const empty = await client.callTool({ name: 'search_records', arguments: args });
+      expect(empty).toMatchObject({
+        isError: false, structuredContent: { data: [], count: 0, next_cursor: null },
+      });
+      expect(upstream).toHaveBeenCalledTimes(2);
+    }
+  );
 
   it('keeps unknown tools and malformed requests as protocol errors', async () => {
     await expect(

@@ -1,8 +1,8 @@
 /**
  * Shared utilities for list operations.
  */
-import { AttioList } from '../../types/attio.js';
-import { getErrorStatus } from '../../types/error-interfaces.js';
+import { AttioList } from '@/types/attio.js';
+import { getErrorStatus } from '@/types/error-interfaces.js';
 
 /**
  * Extract data from response, handling axios, fetch, and mock response shapes.
@@ -64,8 +64,9 @@ export function ensureListShape(raw: unknown): AttioList {
   const resolvedName =
     typeof value.name === 'string' ? value.name : resolvedTitle;
 
+  const { entry_count, ...fields } = value;
   return {
-    ...value,
+    ...fields,
     id: { list_id: resolvedListId },
     title: resolvedTitle,
     name: resolvedName,
@@ -75,8 +76,7 @@ export function ensureListShape(raw: unknown): AttioList {
     workspace_id: resolvedWorkspaceId,
     created_at: typeof value.created_at === 'string' ? value.created_at : '',
     updated_at: typeof value.updated_at === 'string' ? value.updated_at : '',
-    entry_count:
-      typeof value.entry_count === 'number' ? value.entry_count : undefined,
+    ...(typeof entry_count === 'number' ? { entry_count } : {}),
   } as AttioList;
 }
 

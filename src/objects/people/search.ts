@@ -1,36 +1,36 @@
 /**
  * Search functionality for People
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   searchObject,
   advancedSearchObject,
   ListEntryFilters,
-} from '../../api/operations/index.js';
+} from '@/api/operations/index.js';
 import {
   ResourceType,
   Person,
   DateRange,
   InteractionType,
   ActivityFilter,
-} from '../../types/attio.js';
+} from '@/types/attio.js';
 import {
   createCreatedDateFilter,
   createModifiedDateFilter,
   createLastInteractionFilter,
   createActivityFilter,
-} from '../../utils/filters/index.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
+} from '@/utils/filters/index.js';
+import { FilterValidationError } from '@/errors/api-errors.js';
 import {
   validateDateRange,
   validateActivityFilter,
   validateNumericParam,
-} from '../../utils/filters/index.js';
+} from '@/utils/filters/index.js';
 import {
   PaginatedResponse,
   createPaginatedResponse,
-} from '../../utils/pagination.js';
-import { isValidEmail } from '../../utils/validation/email-validation.js';
+} from '@/utils/pagination.js';
+import { isValidEmail } from '@/utils/validation/email-validation.js';
 
 /**
  * Searches for people by name, email, or phone number
@@ -69,10 +69,12 @@ export async function searchPeople(query: string): Promise<Person[]> {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
-        `Search validation failed: ${errorMessage}`
+        `Search validation failed: ${errorMessage}`,
+        undefined,
+        { cause: error }
       );
     }
-    throw new Error(`Failed to search people: ${errorMessage}`);
+    throw new Error(`Failed to search people: ${errorMessage}`, { cause: error });
   }
 }
 
@@ -98,10 +100,12 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
-        `Search validation failed: ${errorMessage}`
+        `Search validation failed: ${errorMessage}`,
+        undefined,
+        { cause: error }
       );
     }
-    throw new Error(`Failed to search people by query: ${errorMessage}`);
+    throw new Error(`Failed to search people by query: ${errorMessage}`, { cause: error });
   }
 }
 
@@ -127,10 +131,12 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
-        `Email search validation failed: ${errorMessage}`
+        `Email search validation failed: ${errorMessage}`,
+        undefined,
+        { cause: error }
       );
     }
-    throw new Error(`Failed to search people by email: ${errorMessage}`);
+    throw new Error(`Failed to search people by email: ${errorMessage}`, { cause: error });
   }
 }
 
@@ -147,7 +153,7 @@ export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
     return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to search people by phone: ${errorMessage}`);
+    throw new Error(`Failed to search people by phone: ${errorMessage}`, { cause: error });
   }
 }
 
@@ -188,7 +194,7 @@ export async function advancedSearchPeople(
         if (error instanceof FilterValidationError) {
           throw error;
         }
-        throw new FilterValidationError(`Invalid limit: ${error}`);
+        throw new FilterValidationError(`Invalid limit: ${error}`, undefined, { cause: error });
       }
     }
 
@@ -202,7 +208,7 @@ export async function advancedSearchPeople(
         if (error instanceof FilterValidationError) {
           throw error;
         }
-        throw new FilterValidationError(`Invalid offset: ${error}`);
+        throw new FilterValidationError(`Invalid offset: ${error}`, undefined, { cause: error });
       }
     }
 
@@ -227,11 +233,14 @@ export async function advancedSearchPeople(
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
-        `Advanced search validation failed: ${errorMessage}`
+        `Advanced search validation failed: ${errorMessage}`,
+        undefined,
+        { cause: error }
       );
     }
     throw new Error(
-      `Failed to perform advanced people search: ${errorMessage}`
+      `Failed to perform advanced people search: ${errorMessage}`,
+      { cause: error }
     );
   }
 }
@@ -251,7 +260,7 @@ export async function searchPeopleByCreationDate(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new FilterValidationError(`Invalid date range: ${error}`);
+    throw new FilterValidationError(`Invalid date range: ${error}`, undefined, { cause: error });
   }
 
   const filters = createCreatedDateFilter(dateRange);
@@ -275,7 +284,7 @@ export async function searchPeopleByModificationDate(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new FilterValidationError(`Invalid date range: ${error}`);
+    throw new FilterValidationError(`Invalid date range: ${error}`, undefined, { cause: error });
   }
 
   const filters = createModifiedDateFilter(dateRange);
@@ -302,7 +311,7 @@ export async function searchPeopleByLastInteraction(
       if (error instanceof FilterValidationError) {
         throw error;
       }
-      throw new FilterValidationError(`Invalid date range: ${error}`);
+      throw new FilterValidationError(`Invalid date range: ${error}`, undefined, { cause: error });
     }
 
     const filters = createLastInteractionFilter(dateRange, interactionType);
@@ -313,11 +322,14 @@ export async function searchPeopleByLastInteraction(
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
-        `Last interaction search validation failed: ${errorMessage}`
+        `Last interaction search validation failed: ${errorMessage}`,
+        undefined,
+        { cause: error }
       );
     }
     throw new Error(
-      `Failed to search people by last interaction: ${errorMessage}`
+      `Failed to search people by last interaction: ${errorMessage}`,
+      { cause: error }
     );
   }
 }
@@ -338,7 +350,7 @@ export async function searchPeopleByActivity(
       if (error instanceof FilterValidationError) {
         throw error;
       }
-      throw new FilterValidationError(`Invalid activity filter: ${error}`);
+      throw new FilterValidationError(`Invalid activity filter: ${error}`, undefined, { cause: error });
     }
 
     const filters = createActivityFilter(activityFilter);
@@ -349,9 +361,11 @@ export async function searchPeopleByActivity(
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
-        `Activity search validation failed: ${errorMessage}`
+        `Activity search validation failed: ${errorMessage}`,
+        undefined,
+        { cause: error }
       );
     }
-    throw new Error(`Failed to search people by activity: ${errorMessage}`);
+    throw new Error(`Failed to search people by activity: ${errorMessage}`, { cause: error });
   }
 }

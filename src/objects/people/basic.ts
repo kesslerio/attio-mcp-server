@@ -1,21 +1,21 @@
 /**
  * Basic CRUD operations for People
  */
-import { listObjects, getObjectDetails } from '../../api/operations/index.js';
-import { ResourceType, Person } from '../../types/attio.js';
-import { isValidId } from '../../utils/validation.js';
+import { listObjects, getObjectDetails } from '@/api/operations/index.js';
+import { ResourceType, Person } from '@/types/attio.js';
+import { isValidId } from '@/utils/validation.js';
 import {
   createObjectWithDynamicFields,
   updateObjectWithDynamicFields,
   updateObjectAttributeWithDynamicFields,
   deleteObjectWithValidation,
-} from '../base-operations.js';
+} from '@/objects/base-operations.js';
 import {
   PersonValidator,
   InvalidPersonDataError,
   PersonOperationError,
   PersonAttributes,
-} from './types.js';
+} from '@/objects/people/types.js';
 
 /**
  * Creates a new person in Attio
@@ -73,7 +73,8 @@ export async function createPerson(
     throw new PersonOperationError(
       'create',
       undefined,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
+      { cause: error }
     );
   }
 }
@@ -114,7 +115,8 @@ export async function updatePerson(
     throw new PersonOperationError(
       'update',
       personId,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
+      { cause: error }
     );
   }
 }
@@ -169,7 +171,8 @@ export async function updatePersonAttribute(
     throw new PersonOperationError(
       'update attribute',
       personId,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
+      { cause: error }
     );
   }
 }
@@ -201,7 +204,8 @@ export async function deletePerson(personId: string): Promise<boolean> {
     throw new PersonOperationError(
       'delete',
       personId,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
+      { cause: error }
     );
   }
 }
@@ -227,7 +231,8 @@ export async function getPersonDetails(personId: string): Promise<Person> {
     throw new Error(
       `Failed to get person details: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
+      { cause: error }
     );
   }
 }
@@ -254,7 +259,8 @@ export async function listPeople(limit: number = 20): Promise<Person[]> {
     throw new Error(
       `Failed to list people: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
+      { cause: error }
     );
   }
 }
