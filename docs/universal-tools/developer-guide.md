@@ -61,6 +61,63 @@ export const toolConfig: UniversalToolConfig = {
 };
 ```
 
+### Structured results (v2 boundary A)
+
+`search_records` and `get_record_details` publish `outputSchema` through
+`tools/list`. Their `tools/call` results include `structuredContent` with a stable
+envelope. Existing JSON text in `content[0]` and human-readable formatter output
+in `content[1]` remain compatible. A final text block serializes the new envelope
+for MCP clients that consume JSON text:
+
+```typescript
+// search_records
+{ data: records, count: records.length, next_cursor: null }
+// get_record_details (including task, list, and custom-object details)
+{ data: record }
+// execution failures
+{ error: { code: 'PERMISSION_DENIED', message: '...', retryable: false } }
+```
+
+For example, migrate a details consumer from parsing `content[0].text` to reading
+`result.structuredContent.data.id.record_id`. Existing details JSON text keeps
+its top-level record fields, and existing search JSON text keeps `data` and
+`count`; the final JSON text block matches `structuredContent`. Prose formatting
+remains unchanged. Search counts describe the
+returned array. `next_cursor` is currently always null: continuation support is
+a later delivery, and null does not guarantee an unbounded search was complete.
+
+The config owns its adapter and paired runtime/discovery schemas. The shared
+result boundary validates JSON-compatible adapter data, sanitizes it, then
+validates the final envelope before reporting success. Missing identifiers,
+unsupported values, sanitizer fallbacks, and changed domain data produce
+`RESULT_ENCODING_FAILED`, with `isError: true` and `retryable: false`. A prose
+formatter failure leaves completed machine data successful.
+
+Execution errors use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`,
+`PERMISSION_DENIED`, `NOT_FOUND`, `RATE_LIMITED`, `UPSTREAM_UNAVAILABLE`,
+`INVALID_CURSOR` (reserved for continuation), `RESULT_ENCODING_FAILED`, and
+`INTERNAL_ERROR`. Messages retain sanitized guidance and correlation references.
+Read rate limits and upstream outages may be retryable; uncertain write outcomes
+are non-retryable and require readback before another write. The boundary never
+replays an operation. Unknown tools and malformed MCP requests remain protocol
+errors rather than execution results.
+
+Other families retain their existing successful text contracts and do not yet
+advertise output schemas; their boundary-owned failures use the same structured
+error envelope. Connector and health success projections remain unchanged.
+`MCP_TEXT_RESULTS` has no effect in this delivery: default prose behavior,
+including when that variable is `false`, remains intact until its separate
+opt-out implementation.
+
+Verify deterministic contracts with
+`bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts`.
+After `bun run build`, run
+`bun run test:mcp test/e2e/mcp/core-operations/structured-results.mcp.test.ts`
+for real stdio discovery/error serialization. Its read-only Attio composition
+case requires `ATTIO_API_KEY` or `ATTIO_ACCESS_TOKEN` and a readable company.
+The test uses the installed SDK directly because `mcp-test-client@1.0.1` strips
+`structuredContent` and `isError` and does not close its stdio transport.
+
 ### formatResult Architecture Update (PR #483)
 
 **CRITICAL CHANGE**: All formatResult functions now use consistent `: string` return types:

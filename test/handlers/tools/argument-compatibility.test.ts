@@ -6,12 +6,12 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { registerToolHandlers } from '../../../src/handlers/tools/index.js';
+import { registerToolHandlers } from '@/handlers/tools/index.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 // Mock the dispatcher
-vi.mock('../../../src/handlers/tools/dispatcher.js', () => ({
+vi.mock('@/handlers/tools/dispatcher.js', () => ({
   executeToolRequest: vi.fn().mockResolvedValue({
     content: [{ type: 'text', text: 'Mocked response' }],
   }),
@@ -109,7 +109,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
     it('should preserve properly wrapped arguments without modification using universal tools', async () => {
       const { executeToolRequest } =
-        await import('../../../src/handlers/tools/dispatcher.js');
+        await import('@/handlers/tools/dispatcher.js');
       const mockedExecute = vi.mocked(executeToolRequest);
 
       const request: any = {
@@ -136,7 +136,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
     it('should wrap loose arguments correctly using universal tools', async () => {
       const { executeToolRequest } =
-        await import('../../../src/handlers/tools/dispatcher.js');
+        await import('@/handlers/tools/dispatcher.js');
       const mockedExecute = vi.mocked(executeToolRequest);
 
       const request = {
@@ -192,7 +192,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
     it('should not wrap arguments if they already exist using universal tools', async () => {
       const { executeToolRequest } =
-        await import('../../../src/handlers/tools/dispatcher.js');
+        await import('@/handlers/tools/dispatcher.js');
       const mockedExecute = vi.mocked(executeToolRequest);
 
       const request = {
@@ -221,11 +221,9 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
         },
       } as any;
 
-      const result = await requestHandler(request);
-
-      expect(result.isError).toBe(true);
-      expect(result.error?.type).toBe('normalization_error');
-      expect(result.error?.message).toContain('missing params or tool name');
+      await expect(requestHandler(request)).rejects.toMatchObject({
+        code: -32602,
+      });
     });
 
     it('should reject oversized arguments using universal tools', async () => {

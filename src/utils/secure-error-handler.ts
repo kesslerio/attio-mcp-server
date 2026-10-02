@@ -15,7 +15,11 @@ import {
   ensureError,
   getErrorStatus,
 } from '@/utils/error-utilities.js';
-import { sanitizeMcpResponse } from '@/utils/json-serializer.js';
+import {
+  executionErrorSchema,
+  executionErrorCodes,
+  type ExecutionErrorCode,
+} from '@/handlers/tools/result-schemas.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 const DEFAULT_STATUS_CODE = 500;
@@ -78,7 +82,7 @@ const isAxiosLike = (error: unknown): error is AxiosErrorLike =>
 
 const resolveStatusCode = (
   error: unknown,
-  fallback: number | undefined = DEFAULT_STATUS_CODE
+  fallback: number | undefined = undefined
 ): number | undefined => {
   // Utilities know how to extract statuses from Axios, Attio API, and our wrapped
   // StructuredHttpError instances. Always check them first to respect that
@@ -295,6 +299,70 @@ export interface SecureToolErrorOptions extends SecureErrorResponseOptions {
   fallbackMessage?: string;
   includeReferenceInMessage?: boolean;
   clientMessage?: string;
+  uncertainMutation?: boolean;
+}
+
+function classifyToolExecutionError(
+  error: unknown,
+  errorType?: string
+): ExecutionErrorCode {
+  // Wrappers retain context, while the deepest cause retains the API status.
+  const chain: Record<string, unknown>[] = [];
+  let current = error;
+  for (
+    let depth = 0;
+    depth < 8 && current && typeof current === 'object';
+    depth++
+  ) {
+    if (chain.includes(current as Record<string, unknown>)) break;
+    const item = current as Record<string, unknown>;
+    chain.push(item);
+    const details = item.details as Record<string, unknown> | undefined;
+    current = item.cause ?? item.original ?? details?.original;
+  }
+  for (const item of chain.reverse()) {
+    if (executionErrorCodes.includes(item.code as ExecutionErrorCode))
+      return item.code as ExecutionErrorCode;
+    const status =
+      resolveStatusCode(item, undefined) ??
+      (typeof item.code === 'number' ? item.code : undefined);
+    if (status === 400 || status === 422) return 'VALIDATION_ERROR';
+    if (status === 401) return 'UNAUTHENTICATED';
+    if (status === 403) return 'PERMISSION_DENIED';
+    if (status === 404) return 'NOT_FOUND';
+    if (status === 429) return 'RATE_LIMITED';
+    if (status && status >= 500) return 'UPSTREAM_UNAVAILABLE';
+    if (
+      ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'].includes(
+        String(item.code)
+      ) ||
+      item.name === 'timeout_error'
+    )
+      return 'UPSTREAM_UNAVAILABLE';
+    if (
+      /(?:api key|credentials?).*(?:required|missing|not configured)/i.test(
+        getErrorMessage(item)
+      )
+    )
+      return 'UNAUTHENTICATED';
+    if (
+      item.errorType === 'USER_ERROR' ||
+      ['ZodError', 'validation_error', 'invalid_filter_error'].includes(
+        String(item.name)
+      )
+    )
+      return 'VALIDATION_ERROR';
+  }
+  if (errorType === 'normalization_error') return 'VALIDATION_ERROR';
+  if (errorType === 'authorization_error') return 'PERMISSION_DENIED';
+  if (
+    errorType === 'authentication_error' ||
+    /(?:api key|credentials?).*(?:required|missing|not configured)/i.test(
+      getErrorMessage(error)
+    )
+  )
+    return 'UNAUTHENTICATED';
+  return 'INTERNAL_ERROR';
 }
 
 /**
@@ -346,7 +414,7 @@ export function createSecureErrorResponse(
   // Otherwise, sanitize the error
   const sanitized = createSanitizedError(
     error as Error | string | Record<string, unknown>,
-    resolveStatusCode(error, undefined),
+    resolveStatusCode(error, DEFAULT_STATUS_CODE),
     {
       module: context.module || 'unknown',
       operation: context.operation || 'unknown',
@@ -387,6 +455,7 @@ export function createSecureToolErrorResult(
     fallbackMessage = 'Tool execution failed',
     includeReferenceInMessage = true,
     clientMessage,
+    uncertainMutation = false,
     ...context
   } = options;
 
@@ -396,8 +465,9 @@ export function createSecureToolErrorResult(
     requestId,
   });
 
-  const baseMessage =
-    clientMessage ?? secureResponse.error.message ?? fallbackMessage;
+  const baseMessage = clientMessage
+    ? sanitizeErrorMessage(clientMessage, { logOriginal: false })
+    : (secureResponse.error.message ?? fallbackMessage);
   const referenceLine =
     includeReferenceInMessage && correlationId
       ? `\nReference ID: ${correlationId}`
@@ -428,6 +498,17 @@ export function createSecureToolErrorResult(
   }
 
   const contentMessage = `${baseMessage}${referenceLine}${guidanceLine}`.trim();
+  const code = classifyToolExecutionError(error, context.errorType);
+  const retryable =
+    !uncertainMutation &&
+    ['RATE_LIMITED', 'UPSTREAM_UNAVAILABLE'].includes(code);
+  const structuredContent = executionErrorSchema.parse({
+    error: {
+      code,
+      message: `${code === 'RESULT_ENCODING_FAILED' ? 'The tool completed but its result could not be encoded. Read back the result before retrying a write.' + referenceLine : contentMessage}${uncertainMutation && ['UPSTREAM_UNAVAILABLE', 'INTERNAL_ERROR', 'RESULT_ENCODING_FAILED'].includes(code) ? '\nCompletion may be uncertain. Read back the result before retrying a write.' : ''}`,
+      retryable,
+    },
+  });
 
   const result: CallToolResult = {
     content: [
@@ -437,10 +518,12 @@ export function createSecureToolErrorResult(
       },
     ],
     isError: true,
+    structuredContent,
     error: errorPayload as Record<string, unknown>,
   };
 
-  return sanitizeMcpResponse(result) as CallToolResult;
+  // This payload contains only our own JSON primitives; no upstream body or stack.
+  return result;
 }
 
 /**

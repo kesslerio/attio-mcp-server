@@ -7,19 +7,30 @@ import {
   AttioNote,
   AttioList,
   AttioListEntry,
-} from '../types/attio.js';
-import { ListEntryFilters } from '../api/operations/index.js';
+} from '@/types/attio.js';
+import { ListEntryFilters } from '@/api/operations/index.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { z } from 'zod';
 
 // Base tool configuration interface
 export interface ToolConfig {
   name: string;
+  /** Only migrated adapters advertise a validated result contract. */
+  outputSchema?: Tool['outputSchema'];
+  resultSchema?: z.ZodType;
+  /** Preserve existing JSON text indices while adding the envelope on the wire. */
+  compatibilityOutput?: (
+    envelope: Record<string, unknown>
+  ) => Record<string, unknown>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: any; // Keep as any for compatibility with existing tool configs
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatResult?: (results: any) => string;
   /**
    * Optional function to return normalized structured data alongside text.
-   * When defined, dispatcher returns dual content:
+   * With resultSchema/outputSchema, the shared boundary also validates and
+   * publishes this envelope as structuredContent. Pending family migrations
+   * retain the legacy dual content:
    * - content[0]: JSON.stringify(structuredOutput result) - for programmatic parsing
    * - content[1]: formatResult text - for human readability
    * This enables tests and clients to receive structured JSON without breaking
