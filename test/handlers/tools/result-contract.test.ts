@@ -15,6 +15,9 @@ import { getRecordDetailsConfig } from '@/handlers/tool-configs/universal/core/r
 import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/search-operations.js';
 import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 import * as serializer from '@/utils/json-serializer.js';
+import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
+import { normalizeNoteResponse } from '@/objects/notes.js';
+import type { AttioNote } from '@/types/attio.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import {
   CompanyMockFactory,
@@ -30,7 +33,7 @@ afterEach(() => {
 
 describe('result contract serialization', () => {
   it.each([undefined, '', 'true', 'false'])(
-    'preserves prose and machine output under text setting %s until the opt-out delivery',
+    'preserves machine output and honors text setting %s',
     (setting) => {
       vi.stubEnv('MCP_TEXT_RESULTS', setting);
       const record = CompanyMockFactory.create();
@@ -40,8 +43,8 @@ describe('result contract serialization', () => {
         record,
         { resource_type: 'companies' }
       );
-      expect(formatter).toHaveBeenCalledOnce();
-      expect(result.content).toHaveLength(3);
+      expect(formatter).toHaveBeenCalledTimes(setting === 'false' ? 0 : 1);
+      expect(result.content).toHaveLength(setting === 'false' ? 2 : 3);
       expect(JSON.parse(result.content[0].text as string)).toEqual(
         result.structuredContent?.data
       );
@@ -54,6 +57,64 @@ describe('result contract serialization', () => {
       ).toEqual(result.structuredContent);
     }
   );
+
+  it.each([getRecordDetailsConfig, searchRecordsConfig])(
+    'keeps %s machine projections equal when optional prose is disabled',
+    (config) => {
+      const record = CompanyMockFactory.create();
+      const raw = config === searchRecordsConfig ? [record] : record;
+      const formatter = vi.fn(() => 'Optional prose');
+      vi.stubEnv('MCP_TEXT_RESULTS', 'true');
+      const enabled = buildStructuredToolResult({ ...config, formatResult: formatter }, raw, {});
+      vi.stubEnv('MCP_TEXT_RESULTS', 'false');
+      const disabled = buildStructuredToolResult({ ...config, formatResult: formatter }, raw, {});
+      expect(formatter).toHaveBeenCalledOnce();
+      expect(disabled.structuredContent).toEqual(enabled.structuredContent);
+      expect(disabled.content).toEqual(enabled.content.filter((block) => block.text !== 'Optional prose'));
+    }
+  );
+
+  it.each([false, true])('serializes converted tasks with optional fields present=%s', (assigned) => {
+    const task = TaskMockFactory.create(assigned ? {
+      assignee_id: 'assignee-id', due_date: '2026-10-02', linked_records: [],
+    } : {});
+    delete task.id.workspace_id;
+    const record = UniversalUtilityService.convertTaskToRecord(task);
+    for (const [config, raw] of [
+      [getRecordDetailsConfig, record], [searchRecordsConfig, [record]],
+    ] as const) {
+      const result = buildStructuredToolResult(config, raw, { resource_type: 'tasks' });
+      const data = result.structuredContent?.data;
+      const encoded = Array.isArray(data) ? data[0] : data;
+      expect(encoded).toMatchObject({ id: { task_id: task.id.task_id }, values: { content: task.content } });
+      expect(config.resultSchema!.safeParse(JSON.parse(JSON.stringify(result.structuredContent))).success).toBe(true);
+      if (assigned) {
+        expect(encoded).toMatchObject({ assignee_id: 'assignee-id', values: { assignee: 'assignee-id', due_date: '2026-10-02', linked_records: [] } });
+      } else {
+        expect(encoded.values).not.toHaveProperty('assignee');
+        expect(encoded.values).not.toHaveProperty('due_date');
+        expect(encoded).not.toHaveProperty('assignee_id');
+      }
+    }
+  });
+
+  it('serializes normalized notes with absent or populated optional content', () => {
+    const id = CompanyMockFactory.create().id.record_id;
+    for (const fields of [{}, { title: 'Notes', content: 'Keep this CRM body.' }]) {
+      const note = { id, parent_object: 'companies', parent_record_id: id, created_at: '2026-10-02', ...fields } as AttioNote;
+      const record = normalizeNoteResponse(note);
+      const result = buildStructuredToolResult(getRecordDetailsConfig, record, { resource_type: 'notes' });
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent).toMatchObject({ data: { id: { record_id: id }, raw: note } });
+      if ('content' in fields) {
+        expect(result.structuredContent).toMatchObject({ data: { values: { content_markdown: fields.content } } });
+      } else {
+        expect(record.values).not.toHaveProperty('title');
+        expect(record.values).not.toHaveProperty('content_markdown');
+        expect(record.values).not.toHaveProperty('content_plaintext');
+      }
+    }
+  });
 
   it('returns validated success when a companion formatter fails after completion', () => {
     const record = CompanyMockFactory.create();

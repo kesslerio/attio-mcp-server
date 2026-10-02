@@ -105,9 +105,9 @@ errors rather than execution results.
 Other families retain their existing successful text contracts and do not yet
 advertise output schemas; their boundary-owned failures use the same structured
 error envelope. Connector and health success projections remain unchanged.
-`MCP_TEXT_RESULTS` has no effect in this delivery: default prose behavior,
-including when that variable is `false`, remains intact until its separate
-opt-out implementation.
+`MCP_TEXT_RESULTS=false` skips optional prose formatting for `search_records`
+and `get_record_details`. Their structured results and required JSON text
+projections remain available. Prose is enabled by default.
 
 Verify deterministic contracts with
 `bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts`.

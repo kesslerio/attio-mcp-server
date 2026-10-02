@@ -5,10 +5,10 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '@utils/error-handler.js';
-import { ToolConfig, GetListsToolConfig } from '@handlers/tool-types.js';
-import { formatResponse } from '@handlers/tools/formatters.js';
-import { hasResponseData } from '@handlers/tools/error-types.js';
+import { createErrorResult } from '@/utils/error-handler.js';
+import { ToolConfig, GetListsToolConfig } from '@/handlers/tool-types.js';
+import { formatResponse } from '@/handlers/tools/formatters.js';
+import { hasResponseData } from '@/handlers/tools/error-types.js';
 import {
   filterListEntries,
   advancedFilterListEntries,
@@ -20,7 +20,7 @@ import {
   removeRecordFromList,
   updateListEntry,
 } from '@/objects/lists/entries.js';
-import { ListEntryFilters } from '@api/operations/index.js';
+import { ListEntryFilters } from '@/api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { createList, updateList } from '@/objects/lists/base.js';
@@ -63,7 +63,7 @@ function handleListToolError(
     responseData.error_category = categorized.category;
   }
 
-  return createErrorResult(new Error(errorMessage), path, method, responseData);
+  return createErrorResult(new Error(errorMessage, { cause: error }), path, method, responseData);
 }
 
 /**
@@ -95,7 +95,7 @@ export async function handleGetListsOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       '/lists',
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -173,7 +173,7 @@ export async function handleAddRecordToListOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/records`,
       'POST',
       hasResponseData(error) ? error.response.data : {}
@@ -233,7 +233,7 @@ export async function handleRemoveRecordFromListOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries/${entryId}`,
       'DELETE',
       hasResponseData(error) ? error.response.data : {}
@@ -303,7 +303,7 @@ export async function handleUpdateListEntryOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries/${entryId}`,
       'PUT',
       hasResponseData(error) ? error.response.data : {}
@@ -530,7 +530,7 @@ export async function handleManageListEntryOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       httpMethod,
       hasResponseData(error) ? error.response.data : {}
@@ -641,7 +641,7 @@ export async function handleFilterListEntriesByParentOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -710,7 +710,7 @@ export async function handleFilterListEntriesByParentIdOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -760,7 +760,7 @@ export async function handleGetListDetailsOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -798,7 +798,7 @@ export async function handleGetListEntriesOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1099,7 +1099,7 @@ export async function handleFilterListEntriesOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1161,7 +1161,7 @@ export async function handleAdvancedFilterListEntriesOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1208,7 +1208,7 @@ export async function handleGetRecordListMembershipsOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       '/lists/memberships',
       'GET',
       hasResponseData(error) ? error.response.data : {}

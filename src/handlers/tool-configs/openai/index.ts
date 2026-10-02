@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { ToolConfig } from '../../tool-types.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
 import {
   OpenAiCompatibilityService,
   OpenAiSearchParams,
-} from '../../../services/OpenAiCompatibilityService.js';
+} from '@/services/OpenAiCompatibilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 const searchParamsValidator = z.object({
@@ -52,69 +52,31 @@ const fetchInputSchema = {
 };
 
 async function handleSearch(params: unknown) {
-  try {
-    const validated = searchParamsValidator.parse(params) as OpenAiSearchParams;
-    const results = await OpenAiCompatibilityService.search(validated);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({ results }),
-        },
-      ],
-      isError: false,
-    };
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown search error';
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Search failed: ${message}`,
-        },
-      ],
-      isError: true,
-      error: {
-        code: 400,
-        message,
-        type: 'openai_search_error',
+  const validated = searchParamsValidator.parse(params) as OpenAiSearchParams;
+  const results = await OpenAiCompatibilityService.search(validated);
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({ results }),
       },
-    };
-  }
+    ],
+    isError: false,
+  };
 }
 
 async function handleFetch(params: unknown) {
-  try {
-    const validated = fetchParamsValidator.parse(params);
-    const result = await OpenAiCompatibilityService.fetch(validated.id);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result),
-        },
-      ],
-      isError: false,
-    };
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown fetch error';
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Fetch failed: ${message}`,
-        },
-      ],
-      isError: true,
-      error: {
-        code: 400,
-        message,
-        type: 'openai_fetch_error',
+  const validated = fetchParamsValidator.parse(params);
+  const result = await OpenAiCompatibilityService.fetch(validated.id);
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify(result),
       },
-    };
-  }
+    ],
+    isError: false,
+  };
 }
 
 const searchToolConfig: ToolConfig = {

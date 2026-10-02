@@ -1,10 +1,10 @@
 /**
  * Error handling utility for creating consistent error responses
  */
-import { AttioErrorResponse } from '../types/attio.js';
-import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
-import { enhanceErrorMessage } from './error-examples.js';
-import { createScopedLogger, OperationType } from './logger.js';
+import { AttioErrorResponse } from '@/types/attio.js';
+import { safeJsonStringify, sanitizeMcpResponse } from '@/utils/json-serializer.js';
+import { enhanceErrorMessage } from '@/utils/error-examples.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
 
 /**
  * Enum for categorizing different types of errors
@@ -391,7 +391,12 @@ export function formatErrorResponse(
   };
 
   // Sanitize the final error response to ensure it's MCP-compatible
-  return sanitizeMcpResponse(errorResponse);
+  const result = sanitizeMcpResponse(errorResponse);
+  if (result && typeof result === 'object' && 'error' in result &&
+      result.error && typeof result.error === 'object') {
+    Object.defineProperty(result.error, 'cause', { value: normalizedError });
+  }
+  return result;
 }
 
 /**
@@ -404,7 +409,7 @@ export function formatErrorResponse(
  * @returns Formatted error result
  */
 export function createErrorResult(
-  error: Error | Record<string, unknown>,
+  error: unknown,
   url: string,
   method: string,
   responseData: AttioErrorResponse & {
@@ -421,7 +426,7 @@ export function createErrorResult(
   const normalizedError =
     error instanceof Error
       ? error
-      : new Error(typeof error === 'string' ? error : 'Unknown error');
+      : new Error(typeof error === 'string' ? error : 'Unknown error', { cause: error });
 
   if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
     log.debug('Processing error result', {
@@ -455,6 +460,7 @@ export function createErrorResult(
         responseData
       ) as AttioApiError;
 
+      Object.defineProperty(apiError, 'cause', { value: normalizedError });
       const errorDetails = {
         status: apiError.status,
         method: apiError.method,

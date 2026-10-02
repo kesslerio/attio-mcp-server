@@ -5,19 +5,19 @@
  * They link to records via parent_object + parent_record_id
  */
 
-import { getLazyAttioClient } from '../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import type { AttioNote } from '../types/attio.js';
-import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
-import { debug } from '../utils/logger.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
+import type { AttioNote } from '@/types/attio.js';
+import { createRecordNotFoundError } from '@/utils/validation/uuid-validation.js';
+import { debug } from '@/utils/logger.js';
 import {
   getErrorStatus,
   getErrorMessage,
   HttpErrorLike,
-} from '../types/error-interfaces.js';
+} from '@/types/error-interfaces.js';
 
 /**
  * Create note body for Attio API
@@ -286,9 +286,9 @@ export function normalizeNoteResponse(note: AttioNote): {
     id: { record_id: derivedRecordId },
     resource_type: 'notes',
     values: {
-      title: title ?? undefined,
-      content_markdown: contentMarkdown ?? undefined,
-      content_plaintext: contentPlaintext ?? undefined,
+      ...(title !== null ? { title } : {}),
+      ...(contentMarkdown !== null ? { content_markdown: contentMarkdown } : {}),
+      ...(contentPlaintext !== null ? { content_plaintext: contentPlaintext } : {}),
       parent_object: parentObject,
       parent_record_id: parentRecordId,
       created_at: createdAt,

@@ -80,7 +80,7 @@ export function buildStructuredToolResult(
   const content: CallToolResult['content'] = [
     { type: 'text', text: compatibilityJson },
   ];
-  if (config.formatResult) {
+  if (process.env.MCP_TEXT_RESULTS !== 'false' && config.formatResult) {
     try {
       // Preserve the existing formatter arguments and default-enabled prose.
       const formatter = config.formatResult as (

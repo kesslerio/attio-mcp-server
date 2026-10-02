@@ -14,6 +14,13 @@ import { createRecordConfig } from '@/handlers/tool-configs/universal/core/crud-
 import { getGlobalContext } from '@/api/lazy-client.js';
 import { getLogContext } from '@/utils/logger.js';
 import { CompanyMockFactory } from '@test/utils/mock-factories/index.js';
+import * as companyOperations from '@/objects/companies/index.js';
+import * as listOperations from '@/objects/lists.js';
+import * as listBase from '@/objects/lists/base.js';
+import { listsToolConfigs } from '@/handlers/tool-configs/lists.js';
+import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
+import { OpenAiCompatibilityService } from '@/services/OpenAiCompatibilityService.js';
+import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
 import type { UniversalRecordResult } from '@/types/attio.js';
 
 describe('structured tool protocol', () => {
@@ -96,6 +103,96 @@ describe('structured tool protocol', () => {
     expect(JSON.parse(details.content[2].text as string)).toEqual(
       details.structuredContent
     );
+  });
+
+  it('serializes field-filtered details without an optional updated timestamp', async () => {
+    const record = CompanyMockFactory.create();
+    delete record.updated_at;
+    vi.spyOn(companyOperations, 'getCompanyDetails').mockResolvedValue(record);
+    const result = await client.callTool({ name: 'get_record_details', arguments: {
+      resource_type: 'companies', record_id: record.id.record_id, fields: ['name'],
+    } });
+    expect(result).toMatchObject({ isError: false, structuredContent: { data: { id: record.id, values: { name: expect.anything() } } } });
+    expect(result.structuredContent?.data).not.toHaveProperty('updated_at');
+  });
+
+  it('rejects unsupported resource types before the handler', async () => {
+    const handler = vi.spyOn(searchRecordsConfig, 'handler');
+    const result = await client.callTool({ name: 'search_records', arguments: { resource_type: 'unsupported-resource' } });
+    expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'VALIDATION_ERROR', retryable: false } } });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [400, 'VALIDATION_ERROR', false], [401, 'UNAUTHENTICATED', false],
+    [403, 'PERMISSION_DENIED', false], [404, 'NOT_FOUND', false],
+    [429, 'RATE_LIMITED', true], [503, 'UPSTREAM_UNAVAILABLE', true],
+  ] as const)('preserves original status %s through connector and list wrappers', async (status, code, retryable) => {
+    const error = new EnhancedApiError('Upstream call failed', status, '/lists', 'GET');
+    vi.spyOn(OpenAiCompatibilityService, 'search').mockRejectedValue(error);
+    vi.spyOn(OpenAiCompatibilityService, 'fetch').mockRejectedValue(error);
+    vi.spyOn(listOperations, 'getListEntries').mockRejectedValue(error);
+    const id = CompanyMockFactory.create().id.record_id;
+    for (const [name, args] of [
+      ['search', { query: 'company' }], ['fetch', { id: `companies:${id}` }], ['get-list-entries', { listId: id }],
+    ] as const) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result).toMatchObject({ isError: true, structuredContent: { error: { code, retryable } } });
+    }
+  });
+
+  it.each([['search', { query: '' }], ['fetch', { id: '' }]] as const)(
+    'keeps connector %s input errors classified as validation', async (name, args) => {
+      const search = vi.spyOn(OpenAiCompatibilityService, 'search');
+      const fetch = vi.spyOn(OpenAiCompatibilityService, 'fetch');
+      const result = await client.callTool({ name, arguments: args });
+      expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'VALIDATION_ERROR', retryable: false } } });
+      expect(search).not.toHaveBeenCalled();
+      expect(fetch).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([400, 403, 429, 503])('preserves status %s through list configuration error categorization', async (status) => {
+    vi.spyOn(ListConfigurationValidator, 'validateParentObject').mockResolvedValue(undefined);
+    vi.spyOn(listBase, 'createList').mockRejectedValue(new EnhancedApiError('List creation failed', status, '/lists', 'POST'));
+    const result = await client.callTool({ name: 'create-list', arguments: { name: 'Test list', parent_object: 'companies' } });
+    const code = { 400: 'VALIDATION_ERROR', 403: 'PERMISSION_DENIED', 429: 'RATE_LIMITED', 503: 'UPSTREAM_UNAVAILABLE' }[status];
+    expect(result).toMatchObject({ isError: true, structuredContent: { error: { code, retryable: false } } });
+  });
+
+  it.each(['get-list-entries', 'add-record-to-list', 'remove-record-from-list'])(
+    'rejects invalid list IDs in %s without formatting or mutation', async (name) => {
+      const read = vi.spyOn(listOperations, 'getListEntries');
+      const add = vi.spyOn(listOperations, 'addRecordToList');
+      const remove = vi.spyOn(listOperations, 'removeRecordFromList');
+      const entriesFormatter = vi.spyOn(listsToolConfigs.getListEntries, 'formatResult');
+      const addFormatter = vi.spyOn(listsToolConfigs.addRecordToList, 'formatResult');
+      const result = await client.callTool({ name, arguments: { listId: 'not-a-uuid', recordId: 'record-id', entryId: 'entry-id', objectType: 'companies' } });
+      expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'VALIDATION_ERROR', retryable: false } } });
+      for (const spy of [read, add, remove, entriesFormatter, addFormatter]) expect(spy).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['true', 'false'])('preserves valid list and connector successes under prose setting %s', async (setting) => {
+    vi.stubEnv('MCP_TEXT_RESULTS', setting);
+    const record = CompanyMockFactory.create();
+    const id = record.id.record_id;
+    vi.spyOn(listOperations, 'getListEntries').mockResolvedValue([]);
+    vi.spyOn(listOperations, 'addRecordToList').mockResolvedValue({ id: { entry_id: id } } as never);
+    const remove = vi.spyOn(listOperations, 'removeRecordFromList').mockResolvedValue(true);
+    vi.spyOn(OpenAiCompatibilityService, 'search').mockResolvedValue([]);
+    vi.spyOn(OpenAiCompatibilityService, 'fetch').mockResolvedValue({ id: `companies:${id}`, title: 'Company', text: 'Content', url: 'https://app.attio.com' } as never);
+    for (const [name, args] of [
+      ['get-list-entries', { listId: id }], ['add-record-to-list', { listId: id, recordId: id, objectType: 'companies' }],
+      ['remove-record-from-list', { listId: id, entryId: id }], ['search', { query: 'company' }], ['fetch', { id: `companies:${id}` }],
+    ] as const) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError).toBe(false);
+      expect(result.content.length).toBeGreaterThan(0);
+      if (name === 'search') expect(JSON.parse(result.content[0].text as string)).toEqual({ results: [] });
+      if (name === 'fetch') expect(JSON.parse(result.content[0].text as string)).toMatchObject({ id: `companies:${id}` });
+    }
+    expect(remove).toHaveBeenCalledOnce();
   });
 
   it('keeps unknown tools and malformed requests as protocol errors', async () => {
