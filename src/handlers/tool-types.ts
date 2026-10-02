@@ -18,10 +18,6 @@ export interface ToolConfig {
   /** Only migrated adapters advertise a validated result contract. */
   outputSchema?: Tool['outputSchema'];
   resultSchema?: z.ZodType;
-  /** Preserve existing JSON text indices while adding the envelope on the wire. */
-  compatibilityOutput?: (
-    envelope: Record<string, unknown>
-  ) => Record<string, unknown>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: any; // Keep as any for compatibility with existing tool configs
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -29,7 +29,6 @@ export const searchRecordsConfig: UniversalToolConfig<
 > = {
   name: 'search_records',
   ...recordSearchResultContract,
-  compatibilityOutput: ({ data, count }) => ({ data, count }),
   handler: async (
     params: UniversalSearchParams
   ): Promise<UniversalRecordResult[]> => {

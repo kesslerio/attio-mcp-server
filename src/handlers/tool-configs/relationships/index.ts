@@ -16,10 +16,10 @@ import {
 import { getCompanyDetails } from '@src/objects/companies/index.js';
 import { getPersonDetails, updatePerson } from '@src/objects/people/index.js';
 import { updateCompany } from '@src/objects/companies/index.js';
-import { RelationshipStateAnalyzer } from './state-analyzer.js';
-import { RelationshipValidator } from './validators.js';
-import { RelationshipOperationExecutor } from './operation-executors.js';
-import { getTypedErrorMessage } from '../universal/typed-error-handling.js';
+import { RelationshipStateAnalyzer } from '@/handlers/tool-configs/relationships/state-analyzer.js';
+import { RelationshipValidator } from '@/handlers/tool-configs/relationships/validators.js';
+import { RelationshipOperationExecutor } from '@/handlers/tool-configs/relationships/operation-executors.js';
+import { getTypedErrorMessage } from '@/handlers/tool-configs/universal/typed-error-handling.js';
 
 // Relationship result interfaces
 interface RelationshipOperationResult {
@@ -378,6 +378,7 @@ export const relationshipToolConfigs = {
 export const relationshipToolDefinitions = [
   {
     name: 'link-person-to-company',
+    annotations: { readOnlyHint: false },
     description:
       "Bidirectionally link a person to a company. Updates both the company's team field and the person's company field. Handles relationship inconsistencies and prevents conflicts with existing company assignments.",
     inputSchema: {
@@ -397,6 +398,7 @@ export const relationshipToolDefinitions = [
   },
   {
     name: 'unlink-person-from-company',
+    annotations: { readOnlyHint: false },
     description:
       "Bidirectionally unlink a person from a company. Updates both the company's team field and the person's company field. Handles partial relationships and inconsistencies gracefully.",
     inputSchema: {

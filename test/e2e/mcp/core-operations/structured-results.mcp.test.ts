@@ -127,6 +127,9 @@ describe('U1 structured results over MCP stdio', () => {
       }>;
       expect(search!.structuredContent!.count).toBe(data.length);
       expect(search!.structuredContent!.next_cursor).toBeNull();
+      expect(JSON.parse(search!.content[0].text as string)).toEqual(
+        search!.structuredContent
+      );
       expect(
         data.length,
         'Live acceptance requires at least one readable company'
@@ -140,7 +143,7 @@ describe('U1 structured results over MCP stdio', () => {
           expect(result.structuredContent).toMatchObject({
             data: { id: { record_id: data[0].id.record_id } },
           });
-          expect(JSON.parse(result.content.at(-1)!.text as string)).toEqual(
+          expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent
           );
         }

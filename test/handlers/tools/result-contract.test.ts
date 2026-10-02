@@ -49,13 +49,16 @@ describe('result contract serialization', () => {
         { resource_type: 'companies' }
       );
       expect(formatter).toHaveBeenCalledTimes(setting === 'false' ? 0 : 1);
-      expect(result.content).toHaveLength(setting === 'false' ? 2 : 3);
+      expect(result.content).toHaveLength(setting === 'false' ? 1 : 2);
       expect(JSON.parse(result.content[0].text as string)).toEqual(
-        result.structuredContent?.data
+        { data: record }
       );
-      expect(JSON.parse(result.content.at(-1)!.text as string)).toEqual(
-        result.structuredContent
-      );
+      expect(result.content[0]).toEqual({
+        type: 'text', text: JSON.stringify(result.structuredContent),
+      });
+      if (setting !== 'false') {
+        expect(result.content[1]).toEqual({ type: 'text', text: 'Company details' });
+      }
       expect(
         CallToolResultSchema.parse(JSON.parse(JSON.stringify(result)))
           .structuredContent
@@ -64,7 +67,7 @@ describe('result contract serialization', () => {
   );
 
   it.each([getRecordDetailsConfig, searchRecordsConfig])(
-    'keeps %s machine projections equal when optional prose is disabled',
+    'keeps %s envelopes equal when optional prose is disabled',
     (config) => {
       const record = CompanyMockFactory.create();
       const raw = config === searchRecordsConfig ? [record] : record;
@@ -75,6 +78,13 @@ describe('result contract serialization', () => {
       const disabled = buildStructuredToolResult({ ...config, formatResult: formatter }, raw, {});
       expect(formatter).toHaveBeenCalledOnce();
       expect(disabled.structuredContent).toEqual(enabled.structuredContent);
+      expect(disabled.content).toHaveLength(1);
+      expect(enabled.content).toHaveLength(2);
+      expect(JSON.parse(disabled.content[0].text as string)).toEqual(
+        config === searchRecordsConfig
+          ? { data: [record], count: 1, next_cursor: null }
+          : { data: record }
+      );
       expect(disabled.content).toEqual(enabled.content.filter((block) => block.text !== 'Optional prose'));
     }
   );
@@ -133,7 +143,7 @@ describe('result contract serialization', () => {
     );
     expect(result.isError).toBe(false);
     expect(result.structuredContent).toMatchObject({ data: { id: record.id } });
-    expect(result.content).toHaveLength(2);
+    expect(result.content).toHaveLength(1);
     expect(formatter).toHaveBeenCalledOnce();
   });
 

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AxiosError } from 'axios';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -112,17 +113,18 @@ describe('structured tool protocol', () => {
     expect(details.structuredContent).toMatchObject({
       data: { id: record.id },
     });
-    expect(details.content).toHaveLength(3);
+    expect(details.content).toHaveLength(2);
+    expect(search.content).toHaveLength(2);
     expect(JSON.parse(details.content[0].text as string)).toEqual(
-      details.structuredContent?.data
+      { data: record }
     );
     expect(JSON.parse(search.content[0].text as string)).toEqual({
       data: search.structuredContent?.data,
       count: 1,
+      next_cursor: null,
     });
-    expect(JSON.parse(details.content[2].text as string)).toEqual(
-      details.structuredContent
-    );
+    expect(details.content[0].text).toBe(JSON.stringify(details.structuredContent));
+    expect(search.content[0].text).toBe(JSON.stringify(search.structuredContent));
   });
 
   it('serializes field-filtered details without an optional updated timestamp', async () => {
@@ -455,6 +457,78 @@ describe('structured tool protocol', () => {
       });
       expect(connector.isError).toBe(false);
       expect(JSON.parse(connector.content[0].text as string)).toEqual({ results: [] });
+    }
+  );
+
+  it.each(['lists', 'tasks', 'notes'] as const)(
+    'preserves native Axios failures through %s details and applicable fetch calls',
+    async (resourceType) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      clearAllCaches();
+      const api = { defaults: {}, get: vi.fn() };
+      vi.spyOn(attioClientModule, 'createAttioClient').mockReturnValue(api as never);
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      vi.spyOn(retryOperations, 'callWithRetry').mockImplementation(async (fn) => fn());
+      for (const [status, code, retryable] of [
+        [400, 'VALIDATION_ERROR', false],
+        [401, 'UNAUTHENTICATED', false],
+        [403, 'PERMISSION_DENIED', false],
+        [404, 'NOT_FOUND', false],
+        [429, 'RATE_LIMITED', true],
+        [503, 'UPSTREAM_UNAVAILABLE', true],
+      ] as const) {
+        const failure = new AxiosError(
+          'Request rejected',
+          'ERR_BAD_RESPONSE',
+          undefined,
+          undefined,
+          {
+            status,
+            statusText: 'Rejected',
+            data: { message: 'Request rejected' },
+            headers: {},
+            config: { headers: {} },
+          } as never
+        );
+        expect(failure.status).toBe(status);
+        api.get.mockRejectedValue(failure);
+        for (const name of resourceType === 'notes'
+          ? ['get_record_details']
+          : ['get_record_details', 'fetch']) {
+          const id = CompanyMockFactory.create().id.record_id;
+          const result = await client.callTool({
+            name,
+            arguments: name === 'fetch'
+              ? { id: `${resourceType}:${id}` }
+              : { resource_type: resourceType, record_id: id },
+          });
+          expect(result).toMatchObject({
+            isError: true,
+            structuredContent: { error: { code, retryable } },
+          });
+          expect(api.get).toHaveBeenCalledWith(expect.stringContaining(id));
+        }
+      }
+      const id = CompanyMockFactory.create().id.record_id;
+      const record = resourceType === 'lists'
+        ? ListMockFactory.create({ id: { list_id: id } })
+        : resourceType === 'tasks'
+          ? TaskMockFactory.create({ id: { task_id: id, record_id: id } })
+          : {
+              id,
+              title: 'Native note',
+              content: 'Keep the body',
+              created_at: '2026-10-02',
+            };
+      api.get.mockResolvedValue({ data: { data: record } });
+      const success = await client.callTool({
+        name: 'get_record_details',
+        arguments: { resource_type: resourceType, record_id: id },
+      });
+      expect(success.isError).toBe(false);
+      expect(JSON.parse(success.content[0].text as string)).toEqual(
+        success.structuredContent
+      );
     }
   );
 

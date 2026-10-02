@@ -65,9 +65,9 @@ export const toolConfig: UniversalToolConfig = {
 
 `search_records` and `get_record_details` publish `outputSchema` through
 `tools/list`. Their `tools/call` results include `structuredContent` with a stable
-envelope. Existing JSON text in `content[0]` and human-readable formatter output
-in `content[1]` remain compatible. A final text block serializes the new envelope
-for MCP clients that consume JSON text:
+envelope. `content[0].text` serializes the final sanitized structured envelope
+for MCP clients that consume JSON text. Optional human-readable formatter output
+follows in `content[1]`:
 
 ```typescript
 // search_records
@@ -78,11 +78,11 @@ for MCP clients that consume JSON text:
 { error: { code: 'PERMISSION_DENIED', message: '...', retryable: false } }
 ```
 
-For example, migrate a details consumer from parsing `content[0].text` to reading
-`result.structuredContent.data.id.record_id`. Existing details JSON text keeps
-its top-level record fields, and existing search JSON text keeps `data` and
-`count`; the final JSON text block matches `structuredContent`. Prose formatting
-remains unchanged. Search counts describe the
+For example, read a record identifier from
+`result.structuredContent.data.id.record_id`, or from
+`JSON.parse(result.content[0].text).data.id.record_id`. Details JSON text retains
+the `data` wrapper; search JSON text includes `data`, `count`, and `next_cursor`.
+There is no third JSON block. Search counts describe the
 returned array. `next_cursor` is currently always null: continuation support is
 a later delivery, and null does not guarantee an unbounded search was complete.
 
@@ -113,8 +113,8 @@ Other families retain their existing successful text contracts and do not yet
 advertise output schemas; their boundary-owned failures use the same structured
 error envelope. Connector and health success projections remain unchanged.
 `MCP_TEXT_RESULTS=false` skips optional prose formatting for `search_records`
-and `get_record_details`. Their structured results and required JSON text
-projections remain available. Prose is enabled by default.
+and `get_record_details`. Their structured results and the required JSON
+envelope in `content[0]` remain available. Prose is enabled by default.
 
 Verify deterministic contracts with
 `bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts`.

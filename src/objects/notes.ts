@@ -188,7 +188,9 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
     });
 
     if (getErrorStatus(error) === 404) {
-      throw createRecordNotFoundError(noteId, 'note');
+      throw Object.assign(createRecordNotFoundError(noteId, 'note'), {
+        cause: error,
+      });
     }
 
     throw error;

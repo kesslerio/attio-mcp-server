@@ -255,7 +255,9 @@ export class UniversalRetrievalService {
         );
 
         // URS suite expects createRecordNotFoundError for generic 404s
-        throw createRecordNotFoundError(record_id, resource_type);
+        throw Object.assign(createRecordNotFoundError(record_id, resource_type), {
+          cause: apiError,
+        });
       }
 
       if (statusCode === 400) {
@@ -267,7 +269,9 @@ export class UniversalRetrievalService {
         );
 
         // Create and throw enhanced error
-        const error = new Error(`Invalid record_id format: ${record_id}`);
+        const error = new Error(`Invalid record_id format: ${record_id}`, {
+          cause: apiError,
+        });
         (error as unknown as Record<string, unknown>).statusCode = 400;
         throw ensureEnhanced(error, {
           endpoint: `/${resource_type}/${record_id}`,
@@ -291,7 +295,7 @@ export class UniversalRetrievalService {
         );
         const status = Number(errorObj.status) || 500;
         enhancedPerformanceTracker.endOperation(perfId, false, message, status);
-        const error = new Error(message);
+        const error = new Error(message, { cause: apiError });
         (error as unknown as Record<string, unknown>).statusCode = status;
         throw ensureEnhanced(error, {
           endpoint: `/${resource_type}/${record_id}`,
@@ -304,7 +308,9 @@ export class UniversalRetrievalService {
       // For HTTP errors, use ErrorEnhancer to auto-enhance
       if (Number.isFinite(statusCode)) {
         const error =
-          apiError instanceof Error ? apiError : new Error(String(apiError));
+          apiError instanceof Error
+            ? apiError
+            : new Error(String(apiError), { cause: apiError });
         const enhancedError = ErrorEnhancer.autoEnhance(
           error,
           resource_type,
@@ -430,6 +436,7 @@ export class UniversalRetrievalService {
           // Legitimate 404 from API - return legacy format
           throw {
             status: 404,
+            cause: error,
             body: {
               code: 'not_found',
               message: `List record with ID "${record_id}" not found.`,
@@ -437,11 +444,7 @@ export class UniversalRetrievalService {
           };
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : `HTTP Error ${httpError.status}`;
-        throw withEnumerableMessage(new Error(errorMessage));
+        throw error;
       }
 
       // For non-HTTP errors, treat as not found only if it's a typical not-found error
@@ -451,6 +454,7 @@ export class UniversalRetrievalService {
         // Return legacy format for test compatibility
         throw {
           status: 404,
+          cause: error,
           body: {
             code: 'not_found',
             message: `List record with ID "${record_id}" not found.`,
@@ -520,13 +524,14 @@ export class UniversalRetrievalService {
         if (httpError.status === 404) {
           // Cache legitimate 404s and create EnhancedApiError
           CachingService.cache404Response(resource_type, record_id);
-          const error = new Error(
+          const notFoundError = new Error(
             `${
               resource_type.charAt(0).toUpperCase() + resource_type.slice(1, -1)
-            } record with ID "${record_id}" not found.`
+            } record with ID "${record_id}" not found.`,
+            { cause: error }
           );
-          (error as Error & { statusCode?: number }).statusCode = 404;
-          throw ensureEnhanced(error, {
+          (notFoundError as Error & { statusCode?: number }).statusCode = 404;
+          throw ensureEnhanced(notFoundError, {
             endpoint: `/${resource_type}/${record_id}`,
             method: 'GET',
             resourceType: resource_type,
@@ -534,11 +539,7 @@ export class UniversalRetrievalService {
           });
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : `HTTP Error ${httpError.status}`;
-        throw withEnumerableMessage(new Error(errorMessage));
+        throw error;
       }
 
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
@@ -547,7 +548,9 @@ export class UniversalRetrievalService {
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response(resource_type, record_id);
         // URS test expects createRecordNotFoundError for consistent message
-        throw createRecordNotFoundError(record_id, resource_type);
+        throw Object.assign(createRecordNotFoundError(record_id, resource_type), {
+          cause: error,
+        });
       }
 
       // Re-throw other errors to avoid masking legitimate issues
@@ -581,9 +584,11 @@ export class UniversalRetrievalService {
         if (httpError.status === 404) {
           // Cache legitimate 404s and create EnhancedApiError
           CachingService.cache404Response('notes', noteId);
-          const error = new Error(`Note with ID "${noteId}" not found.`);
-          (error as Error & { statusCode?: number }).statusCode = 404;
-          throw ensureEnhanced(error, {
+          const notFoundError = new Error(`Note with ID "${noteId}" not found.`, {
+            cause: error,
+          });
+          (notFoundError as Error & { statusCode?: number }).statusCode = 404;
+          throw ensureEnhanced(notFoundError, {
             endpoint: `/notes/${noteId}`,
             method: 'GET',
             resourceType: 'notes',
@@ -591,11 +596,7 @@ export class UniversalRetrievalService {
           });
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : `HTTP Error ${httpError.status}`;
-        throw withEnumerableMessage(new Error(errorMessage));
+        throw error;
       }
 
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
@@ -606,6 +607,7 @@ export class UniversalRetrievalService {
         // Return legacy format for test compatibility
         throw {
           status: 404,
+          cause: error,
           body: {
             code: 'not_found',
             message: `Note with ID "${noteId}" not found.`,

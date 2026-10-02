@@ -36,7 +36,6 @@ export const getRecordDetailsConfig: UniversalToolConfig<
 > = {
   name: 'get_record_details',
   ...recordDetailsResultContract,
-  compatibilityOutput: ({ data }) => data as Record<string, unknown>,
   handler: async (
     params: UniversalRecordDetailsParams
   ): Promise<UniversalRecordResult> => {

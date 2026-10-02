@@ -68,17 +68,8 @@ export function buildStructuredToolResult(
     throw new ResultEncodingError();
   }
 
-  let compatibilityJson = json;
-  try {
-    if (config.compatibilityOutput)
-      compatibilityJson = JSON.stringify(
-        config.compatibilityOutput(structuredContent)
-      );
-  } catch {
-    throw new ResultEncodingError();
-  }
   const content: CallToolResult['content'] = [
-    { type: 'text', text: compatibilityJson },
+    { type: 'text', text: json },
   ];
   if (process.env.MCP_TEXT_RESULTS !== 'false' && config.formatResult) {
     try {
@@ -97,9 +88,6 @@ export function buildStructuredToolResult(
       });
     }
   }
-  // Existing clients retain content[0] JSON and content[1] prose. The additive
-  // block satisfies MCP's serialized structured-content compatibility rule.
-  if (compatibilityJson !== json) content.push({ type: 'text', text: json });
   return { content, structuredContent, isError: false };
 }
 
