@@ -86,11 +86,12 @@ export interface GetListEntriesToolConfig extends ToolConfig {
 }
 
 // List action tool configuration
-export interface ListActionToolConfig extends ToolConfig {
+export interface ListActionToolConfig<TResult = AttioRecord | AttioListEntry>
+  extends ToolConfig {
   handler: (
     listId: string,
     recordId: string
-  ) => Promise<AttioRecord | AttioListEntry>;
+  ) => Promise<TResult>;
   idParams?: string[];
 }
 

@@ -117,7 +117,7 @@ export const listsToolConfigs = {
       return await removeRecordFromList(listId, entryId);
     },
     idParams: ['listId', 'entryId'],
-  } as ListActionToolConfig,
+  } as ListActionToolConfig<boolean>,
   updateListEntry: {
     name: 'update-list-entry',
     handler: updateListEntry,
