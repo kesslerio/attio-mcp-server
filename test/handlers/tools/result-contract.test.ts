@@ -41,7 +41,7 @@ describe('result contract serialization', () => {
     'preserves machine output and honors text setting %s',
     (setting) => {
       vi.stubEnv('MCP_TEXT_RESULTS', setting);
-      const record = CompanyMockFactory.create();
+      const record = CompanyMockFactory.create({ name: 'Envelope Company' });
       const formatter = vi.fn(() => 'Company details');
       const result = buildStructuredToolResult(
         { ...getRecordDetailsConfig, formatResult: formatter },
@@ -51,7 +51,12 @@ describe('result contract serialization', () => {
       expect(formatter).toHaveBeenCalledTimes(setting === 'false' ? 0 : 1);
       expect(result.content).toHaveLength(setting === 'false' ? 1 : 2);
       expect(JSON.parse(result.content[0].text as string)).toEqual(
-        { data: record }
+        {
+          data: {
+            ...record,
+            values: { ...record.values, name: 'Envelope Company' },
+          },
+        }
       );
       expect(result.content[0]).toEqual({
         type: 'text', text: JSON.stringify(result.structuredContent),
@@ -66,9 +71,12 @@ describe('result contract serialization', () => {
     }
   );
 
-  it.each([getRecordDetailsConfig, searchRecordsConfig])(
+  it.each([
+    ['details', getRecordDetailsConfig],
+    ['search', searchRecordsConfig],
+  ] as const)(
     'keeps %s envelopes equal when optional prose is disabled',
-    (config) => {
+    (_name, config) => {
       const record = CompanyMockFactory.create();
       const raw = config === searchRecordsConfig ? [record] : record;
       const formatter = vi.fn(() => 'Optional prose');

@@ -42,6 +42,13 @@ import { UniversalRetrievalService } from '@/services/UniversalRetrievalService.
 import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
 import type { AttioNote, UniversalRecordResult } from '@/types/attio.js';
 
+// Native-path assertions must reach the API layer rather than setup's object mocks.
+vi.hoisted(() => vi.resetModules());
+vi.unmock('@/objects/companies/index.js');
+vi.unmock('@/objects/people/search.js');
+vi.unmock('@/objects/people/index.js');
+vi.unmock('@/objects/people-write.js');
+
 describe('structured tool protocol', () => {
   let client: Client;
   let server: Server;
@@ -116,7 +123,12 @@ describe('structured tool protocol', () => {
     expect(details.content).toHaveLength(2);
     expect(search.content).toHaveLength(2);
     expect(JSON.parse(details.content[0].text as string)).toEqual(
-      { data: record }
+      {
+        data: {
+          ...record,
+          values: { ...record.values, name: 'Contract Company' },
+        },
+      }
     );
     expect(JSON.parse(search.content[0].text as string)).toEqual({
       data: search.structuredContent?.data,
