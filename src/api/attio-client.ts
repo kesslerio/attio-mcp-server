@@ -4,20 +4,20 @@
  */
 import axios, { AxiosInstance } from 'axios';
 import { debug, error, OperationType } from '@/utils/logger.js';
-import { getContextApiKey, validateApiKey } from './client-context.js';
+import { getContextApiKey, validateApiKey } from '@/api/client-context.js';
 import {
   AttioAttributeSchema,
   AttioSelectOption,
   AttioStatusOption,
-} from './types.js';
-import { configureStandardInterceptors } from './client-interceptors.js';
+} from '@/api/types.js';
+import { configureStandardInterceptors } from '@/api/client-interceptors.js';
 import {
   ClientConfig,
   ClientMode,
   EnvironmentModeHandler,
-} from './client-config.js';
-import { ClientStrategyFactory } from './client-strategies.js';
-import { ClientCache } from './client-cache.js';
+} from '@/api/client-config.js';
+import { ClientStrategyFactory } from '@/api/client-strategies.js';
+import { ClientCache } from '@/api/client-cache.js';
 
 // Module identification for debugging (compatible with both ESM and CJS)
 const MODULE_FILE = 'attio-client';
@@ -43,21 +43,30 @@ function validateAndThrowForApiKey(
   source: string = 'provided'
 ): asserts apiKey is string {
   if (!apiKey || typeof apiKey !== 'string') {
-    throw new Error(
-      `Invalid API key: API key must be a non-empty string (source: ${source})`
+    throw Object.assign(
+      new Error(
+        `Invalid API key: API key must be a non-empty string (source: ${source})`
+      ),
+      { code: 'UNAUTHENTICATED' }
     );
   }
 
   if (!validateApiKey(apiKey)) {
-    throw new Error(
-      `Invalid API key format: API key contains invalid characters or whitespace (source: ${source})`
+    throw Object.assign(
+      new Error(
+        `Invalid API key format: API key contains invalid characters or whitespace (source: ${source})`
+      ),
+      { code: 'UNAUTHENTICATED' }
     );
   }
 
   // Basic length validation - Attio API keys should be a reasonable length
   if (apiKey.length < 10) {
-    throw new Error(
-      `Invalid API key: API key appears to be too short (source: ${source})`
+    throw Object.assign(
+      new Error(
+        `Invalid API key: API key appears to be too short (source: ${source})`
+      ),
+      { code: 'UNAUTHENTICATED' }
     );
   }
 }
@@ -479,7 +488,8 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
         ? validationError.message
         : String(validationError);
     throw new Error(
-      `API client not initialized and no valid API key or access token available. ${errorMessage} Call initializeAttioClient first or set ATTIO_API_KEY (or ATTIO_ACCESS_TOKEN for OAuth) environment variable.`
+      `API client not initialized and no valid API key or access token available. ${errorMessage} Call initializeAttioClient first or set ATTIO_API_KEY (or ATTIO_ACCESS_TOKEN for OAuth) environment variable.`,
+      { cause: validationError }
     );
   }
 }

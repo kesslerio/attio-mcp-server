@@ -64,57 +64,52 @@ export class ListSearchStrategy extends BaseSearchStrategy {
       return [];
     }
 
-    try {
-      // For content search, fetch all lists to enable client-side filtering
-      let searchQuery = '';
-      let requestLimit = limit || 10;
+    // For content search, fetch all lists to enable client-side filtering
+    let searchQuery = '';
+    let requestLimit = limit || 10;
 
-      if (search_type === SearchType.CONTENT && query && query.trim()) {
-        // Fetch more lists for client-side filtering
-        searchQuery = '';
-        requestLimit = CONTENT_SEARCH_FETCH_LIMIT; // Increased to allow for filtering
-      } else if (query && query.trim().length > 0) {
-        searchQuery = query;
-      }
+    if (search_type === SearchType.CONTENT && query && query.trim()) {
+      // Fetch more lists for client-side filtering
+      searchQuery = '';
+      requestLimit = CONTENT_SEARCH_FETCH_LIMIT; // Increased to allow for filtering
+    } else if (query && query.trim().length > 0) {
+      searchQuery = query;
+    }
 
-      if (!this.dependencies.listFunction) {
-        throw new Error('Lists search function not available');
-      }
+    if (!this.dependencies.listFunction) {
+      throw new Error('Lists search function not available');
+    }
 
-      // For content search, fetch all lists and apply pagination after filtering
-      // For regular search, pass offset to the list function
-      const requestOffset =
-        search_type === SearchType.CONTENT ? 0 : offset || 0;
+    // For content search, fetch all lists and apply pagination after filtering
+    // For regular search, pass offset to the list function
+    const requestOffset = search_type === SearchType.CONTENT ? 0 : offset || 0;
 
-      const lists = await this.dependencies.listFunction(
-        searchQuery,
-        requestLimit,
-        requestOffset
+    const lists = await this.dependencies.listFunction(
+      searchQuery,
+      requestLimit,
+      requestOffset
+    );
+
+    // Normalize list shapes for list-native handling
+    let records = this.normalizeLists(lists);
+
+    // Apply content search filtering if requested
+    if (search_type === SearchType.CONTENT && query && query.trim()) {
+      records = this.applyContentSearch(
+        records,
+        query.trim(),
+        fields,
+        match_type,
+        sort
       );
 
-      // Normalize list shapes for list-native handling
-      let records = this.normalizeLists(lists);
-
-      // Apply content search filtering if requested
-      if (search_type === SearchType.CONTENT && query && query.trim()) {
-        records = this.applyContentSearch(
-          records,
-          query.trim(),
-          fields,
-          match_type,
-          sort
-        );
-
-        // Apply pagination to filtered results
-        const start = offset || 0;
-        const end = start + (limit || 10);
-        return records.slice(start, end);
-      }
-
-      return records;
-    } catch (error: unknown) {
-      return this.handleListSearchError(error);
+      // Apply pagination to filtered results
+      const start = offset || 0;
+      const end = start + (limit || 10);
+      return records.slice(start, end);
     }
+
+    return records;
   }
 
   /**
@@ -211,30 +206,5 @@ export class ListSearchStrategy extends BaseSearchStrategy {
     }
 
     return filteredRecords;
-  }
-
-  /**
-   * Handle list search errors gracefully
-   */
-  private handleListSearchError(error: unknown): UniversalRecordResult[] {
-    // Handle benign status codes (404/204) by returning empty success
-    if (error && typeof error === 'object' && 'status' in error) {
-      const statusError = error as { status?: number };
-      if (statusError.status === 404 || statusError.status === 204) {
-        // Lists discovery should never fail - return empty array for benign errors
-        return [];
-      }
-    }
-
-    // Check error message for common "not found" scenarios
-    if (error && typeof error === 'object' && 'message' in error) {
-      const message = String(error.message).toLowerCase();
-      if (message.includes('not found') || message.includes('no lists')) {
-        return [];
-      }
-    }
-
-    // For other errors (network/transport), bubble them up
-    throw error;
   }
 }

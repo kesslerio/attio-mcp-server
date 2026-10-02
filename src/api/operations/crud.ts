@@ -4,7 +4,8 @@
  */
 
 import { AxiosResponse } from 'axios';
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   AttioRecord,
   ResourceType,
@@ -13,10 +14,10 @@ import {
   RecordCreateParams,
   RecordUpdateParams,
   RecordListParams,
-} from '../../types/attio.js';
-import { secureValidateFields } from '../../utils/validation/field-validation.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { OperationType, createScopedLogger } from '../../utils/logger.js';
+} from '@/types/attio.js';
+import { secureValidateFields } from '@/utils/validation/field-validation.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
+import { OperationType, createScopedLogger } from '@/utils/logger.js';
 
 // Create scoped logger for CRUD operations
 const logger = createScopedLogger(
@@ -187,10 +188,15 @@ export async function getObjectDetails<T extends AttioRecord>(
     }
   }
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
-    return (response?.data?.data || response?.data) as T;
-  }, options?.retryConfig);
+  return callWithRetry(
+    async () => {
+      const response: AxiosResponse<AttioSingleResponse<T>> =
+        await api.get(path);
+      return (response?.data?.data || response?.data) as T;
+    },
+    options?.retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -374,10 +380,15 @@ export async function getRecord<T extends AttioRecord>(
     path += `?${params.toString()}`;
   }
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
-    return (response?.data?.data || response?.data) as T;
-  }, retryConfig);
+  return callWithRetry(
+    async () => {
+      const response: AxiosResponse<AttioSingleResponse<T>> =
+        await api.get(path);
+      return (response?.data?.data || response?.data) as T;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -648,16 +659,18 @@ export async function listRecords<T extends AttioRecord>(
     queryParams.toString() ? '?' + queryParams.toString() : ''
   }`;
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioListResponse<T>> = await api.get(path);
-    // Ensure we always return an array, never undefined/null/objects
-    const items = Array.isArray(response?.data?.data)
-      ? response.data.data
-      : Array.isArray(response?.data?.records)
-        ? response.data.records
-        : Array.isArray(response?.data)
-          ? response.data
-          : [];
-    return items;
-  }, retryConfig);
+  const response = await callWithRetry(
+    () => api.get<AttioListResponse<T>>(path),
+    retryConfig,
+    { uncertainMutation: false }
+  );
+  const items = Array.isArray(response?.data?.data)
+    ? response.data.data
+    : Array.isArray(response?.data?.records)
+      ? response.data.records
+      : Array.isArray(response?.data)
+        ? response.data
+        : undefined;
+  if (!Array.isArray(items)) throw new ResultEncodingError();
+  return items;
 }

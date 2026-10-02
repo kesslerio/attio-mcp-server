@@ -1,8 +1,8 @@
 /**
  * Lists-related tool configurations
  */
-import { AttioList, AttioListEntry } from '../../types/attio.js';
-import { isValidUUID } from '../../utils/validation/uuid-validation.js';
+import { AttioList, AttioListEntry } from '@/types/attio.js';
+import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import {
   getLists,
   getListDetails,
@@ -16,7 +16,7 @@ import {
   filterListEntriesByParent,
   filterListEntriesByParentId,
   ListMembership,
-} from '../../objects/lists.js';
+} from '@/objects/lists.js';
 import {
   GetListsToolConfig,
   ToolConfig,
@@ -24,7 +24,7 @@ import {
   ListActionToolConfig,
   CreateListToolConfig,
   UpdateListConfigurationToolConfig,
-} from '../tool-types.js';
+} from '@/handlers/tool-types.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 // Lists tool configurations
@@ -61,31 +61,17 @@ export const listsToolConfigs = {
     handler: async (listId: string, limit?: number, offset?: number) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
-            },
-          ],
-        };
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await getListEntries(listId, limit, offset);
     },
-    formatResult: (
-      results:
-        | AttioListEntry[]
-        | { isError: boolean; content: Array<Record<string, unknown>> }
-    ) => {
-      // Handle validation error response
-      if (results && typeof results === 'object' && 'isError' in results) {
-        return 'Error: Invalid list ID';
-      }
-
-      // Return JSON string
-      return JSON.stringify(Array.isArray(results) ? results : []);
-    },
+    formatResult: (results: AttioListEntry[]) =>
+      JSON.stringify(Array.isArray(results) ? results : []),
   } as GetListEntriesToolConfig,
   filterListEntries: {
     name: 'filter-list-entries',
@@ -114,51 +100,34 @@ export const listsToolConfigs = {
     ) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
-            },
-          ],
-        };
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await addRecordToList(listId, recordId, objectType, values);
     },
     idParams: ['listId', 'recordId'],
-    formatResult: (
-      result:
-        | AttioListEntry
-        | { isError: boolean; content: Array<Record<string, unknown>> }
-    ) => {
-      // Handle validation error response
-      if (result && typeof result === 'object' && 'isError' in result) {
-        return 'Error: Invalid list ID';
-      }
-      // Return JSON string
-      return JSON.stringify(result);
-    },
+    formatResult: (result: AttioListEntry) => JSON.stringify(result),
   } as ToolConfig,
   removeRecordFromList: {
     name: 'remove-record-from-list',
     handler: async (listId: string, entryId: string) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
-            },
-          ],
-        };
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await removeRecordFromList(listId, entryId);
     },
     idParams: ['listId', 'entryId'],
-  } as ListActionToolConfig,
+  } as ListActionToolConfig<boolean>,
   updateListEntry: {
     name: 'update-list-entry',
     handler: updateListEntry,

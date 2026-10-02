@@ -1,22 +1,24 @@
 /**
  * Core list CRUD operations.
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   getAllLists as getGenericLists,
   getListDetails as getGenericListDetails,
-} from '../../api/operations/index.js';
-import { EnhancedApiError } from '../../errors/enhanced-api-errors.js';
+} from '@/api/operations/index.js';
+import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
 import { AttioApiError } from '@/errors/api-errors.js';
 import { safeErrorDetails } from '@/types/attio-error-body.js';
+import { getErrorMessage, getErrorStatus } from '@/types/error-interfaces.js';
+import { hasErrorResponse } from '@/types/list-types.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
+import type { AttioList } from '@/types/attio.js';
 import {
-  getErrorMessage,
-  getErrorStatus,
-} from '../../types/error-interfaces.js';
-import { hasErrorResponse } from '../../types/list-types.js';
-import { createScopedLogger, OperationType } from '../../utils/logger.js';
-import type { AttioList } from '../../types/attio.js';
-import { asListArray, ensureListShape, extract } from './shared.js';
+  asListArray,
+  ensureListShape,
+  extract,
+} from '@/objects/lists/shared.js';
 
 /**
  * Gets all lists in the workspace.
@@ -25,89 +27,16 @@ export async function getLists(
   objectSlug?: string,
   limit: number = 20
 ): Promise<AttioList[]> {
-  try {
-    const lists = await getGenericLists(objectSlug, limit);
-    // Always normalize list shapes to extract workspace_id from id objects
-    return asListArray(lists);
-  } catch (error: unknown) {
-    const errorMessage = getErrorMessage(error) ?? 'Unknown error';
-    if (process.env.NODE_ENV === 'development') {
-      createScopedLogger('objects.lists', 'getLists').warn(
-        'Generic getLists failed',
-        { errorMessage }
-      );
-    }
-
-    const api = getLazyAttioClient();
-    let path = `/lists?limit=${limit}`;
-
-    if (objectSlug) {
-      path += `&objectSlug=${objectSlug}`;
-    }
-
-    const response = await api.get(path);
-    return asListArray(extract<AttioList[]>(response));
-  }
+  const lists = await getGenericLists(objectSlug, limit);
+  return asListArray(lists);
 }
 
 /**
  * Gets details for a specific list.
  */
 export async function getListDetails(listId: string): Promise<AttioList> {
-  try {
-    const list = await getGenericListDetails(listId);
-    // Always normalize the list shape to extract workspace_id from id object
-    return ensureListShape(list);
-  } catch (error: unknown) {
-    const errorMessage = getErrorMessage(error) ?? 'Unknown error';
-    if (process.env.NODE_ENV === 'development') {
-      createScopedLogger('objects.lists', 'getListDetails').warn(
-        'Generic getListDetails failed',
-        { errorMessage }
-      );
-    }
-
-    const api = getLazyAttioClient();
-    const path = `/lists/${listId}`;
-
-    try {
-      const response = await api.get(path);
-      const extracted = extract<AttioList>(response);
-      return ensureListShape(extracted);
-    } catch (apiError: unknown) {
-      const status = getErrorStatus(apiError);
-      if (status === 404) {
-        throw new EnhancedApiError('Record not found', 404, path, 'GET', {
-          resourceType: 'lists',
-          recordId: String(listId),
-          httpStatus: 404,
-          documentationHint: 'Use search-lists to find valid list IDs.',
-        });
-      }
-      if (status === 422) {
-        const { InvalidRequestError } =
-          await import('../../errors/api-errors.js');
-        throw new InvalidRequestError(
-          'Invalid parameter(s) for list operation',
-          '/lists',
-          'GET'
-        );
-      }
-
-      const code = typeof status === 'number' ? status : 500;
-      throw new EnhancedApiError(
-        getErrorMessage(apiError) ?? 'List retrieval failed',
-        code,
-        path,
-        'GET',
-        {
-          resourceType: 'lists',
-          recordId: String(listId),
-          httpStatus: code,
-        }
-      );
-    }
-  }
+  const list = await getGenericListDetails(listId);
+  return ensureListShape(list);
 }
 
 /**
@@ -117,15 +46,17 @@ export async function createList(
   attributes: Record<string, unknown>
 ): Promise<AttioList> {
   if (!attributes || typeof attributes !== 'object') {
-    throw new Error('Invalid attributes: Must be a non-empty object');
+    throw new UniversalValidationError(
+      'Invalid attributes: Must be a non-empty object'
+    );
   }
 
   if (!attributes.name) {
-    throw new Error('List name is required');
+    throw new UniversalValidationError('List name is required');
   }
 
   if (!attributes.parent_object) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Parent object type is required (e.g., "companies", "people")'
     );
   }
@@ -208,11 +139,15 @@ export async function updateList(
   attributes: Record<string, unknown>
 ): Promise<AttioList> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!attributes || typeof attributes !== 'object') {
-    throw new Error('Invalid attributes: Must be a non-empty object');
+    throw new UniversalValidationError(
+      'Invalid attributes: Must be a non-empty object'
+    );
   }
 
   const api = getLazyAttioClient();
@@ -297,7 +232,9 @@ export async function updateList(
  */
 export async function deleteList(listId: string): Promise<boolean> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   const api = getLazyAttioClient();

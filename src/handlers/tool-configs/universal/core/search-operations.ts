@@ -13,7 +13,8 @@ import {
   validateUniversalToolParams,
   searchRecordsSchema,
 } from '@/handlers/tool-configs/universal/schemas.js';
-import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
+import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
+import { ErrorService } from '@/services/ErrorService.js';
 import { handleUniversalSearch } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
@@ -27,6 +28,7 @@ export const searchRecordsConfig: UniversalToolConfig<
   UniversalRecordResult[]
 > = {
   name: 'search_records',
+  ...recordSearchResultContract,
   handler: async (
     params: UniversalSearchParams
   ): Promise<UniversalRecordResult[]> => {
@@ -37,10 +39,10 @@ export const searchRecordsConfig: UniversalToolConfig<
       );
       return await handleUniversalSearch(sanitizedParams);
     } catch (error: unknown) {
-      return await handleSearchError(
-        error,
+      throw ErrorService.createUniversalError(
+        'search',
         params.resource_type,
-        params as unknown as Record<string, unknown>
+        error
       );
     }
   },
@@ -67,7 +69,7 @@ export const searchRecordsConfig: UniversalToolConfig<
 
     const formattedResults = recordsArray
       .map((record, index) => {
-        let identifier = 'Unnamed';
+        let identifier: string;
 
         // Extract ID with list_id fallback (Issue #1068 - lists use list_id)
         let id = String(
@@ -168,10 +170,12 @@ export const searchRecordsConfig: UniversalToolConfig<
     results: UniversalRecordResult[] | { data: UniversalRecordResult[] }
   ): Record<string, unknown> => {
     // Return the raw records array for JSON parsing
-    const recordsArray = Array.isArray(results)
-      ? results
-      : (results?.data ?? []);
-    return { data: recordsArray, count: recordsArray.length };
+    const recordsArray = Array.isArray(results) ? results : results?.data;
+    return {
+      data: recordsArray,
+      count: recordsArray?.length,
+      next_cursor: null,
+    };
   },
 };
 

@@ -689,14 +689,8 @@ Use correct operators for date filtering:
 
 ### Error Response Format
 
-```typescript
-{
-  error: string,           // Error message
-  code: string,           // Error code
-  resource_type?: string, // Resource type if applicable
-  operation?: string      // Operation that failed
-}
-```
+See the authoritative [structured-results contract](developer-guide.md#structured-results-v2-boundary-a)
+for execution-error envelopes and protocol-error semantics.
 
 ## Testing and Mock Data
 

@@ -2,14 +2,17 @@ import {
   ErrorType,
   HttpStatusCode,
   UniversalValidationError,
-} from '../errors/validation-errors.js';
-import { UniversalResourceType } from '../types.js';
-import { SanitizedObject, SanitizedValue } from '../schemas/common/types.js';
+} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import {
+  SanitizedObject,
+  SanitizedValue,
+} from '@/handlers/tool-configs/universal/schemas/common/types.js';
 import {
   suggestResourceType,
   validateIdFields,
   validatePaginationParams,
-} from './field-validator.js';
+} from '@/handlers/tool-configs/universal/validators/field-validator.js';
 import {
   canonicalizeResourceType,
   getValidResourceTypes,
@@ -687,7 +690,13 @@ export function validateUniversalToolParams(
       ? validateDynamicSearchResourceType(resourceType)
       : validateStandardResourceType(resourceType);
   }
-  const validator = toolValidators[toolName];
+  // The currently advertised read names must enforce the same required fields
+  // as their historical validator keys before routing to an Attio service.
+  const readValidatorNames: Record<string, string> = {
+    search_records: 'records_search',
+    get_record_details: 'records_get_details',
+  };
+  const validator = toolValidators[readValidatorNames[toolName] ?? toolName];
   if (validator) return validator(sanitizedParams);
   return sanitizedParams;
 }

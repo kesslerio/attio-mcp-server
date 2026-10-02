@@ -1,22 +1,23 @@
 /**
  * Task operations for Attio
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
-import { getValidatedAttioClient } from '../../utils/client-resolver.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
+import { getValidatedAttioClient } from '@/utils/client-resolver.js';
 import type { AxiosInstance } from 'axios';
 import {
   AttioTask,
   AttioListResponse,
   AttioSingleResponse,
-} from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
-import { debug, OperationType } from '../../utils/logger.js';
+} from '@/types/attio.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
+import { TaskCreateData, TaskUpdateData } from '@/types/api-operations.js';
+import { debug, OperationType } from '@/utils/logger.js';
 import {
   logTaskDebug,
   sanitizePayload,
   inspectTaskRecordShape,
-} from '../../utils/task-debug.js';
+} from '@/utils/task-debug.js';
 
 /**
  * Helper function to transform Attio API task response to internal format
@@ -56,7 +57,7 @@ function extractTaskFromResponse(res: Record<string, unknown>): AttioTask {
     // Direct task object in data
     return data as unknown as AttioTask;
   } else {
-    throw new Error('Invalid API response structure: missing task data');
+    throw new ResultEncodingError();
   }
 }
 
@@ -146,12 +147,20 @@ export async function listTasks(
   if (status) params.append('status', status);
   if (assigneeId) params.append('assignee', assigneeId);
   const path = `/tasks?${params.toString()}`;
-  return callWithRetry(async () => {
-    const res = await api.get<AttioListResponse<AttioTask>>(path);
-    const tasks = res?.data?.data || [];
-    // Transform each task in the response for backward compatibility
-    return tasks.map((task) => transformTaskResponse(task));
-  }, retryConfig);
+  const res = await callWithRetry(
+    () => api.get<AttioListResponse<AttioTask>>(path),
+    retryConfig,
+    { uncertainMutation: false }
+  );
+  const tasks = res?.data?.data;
+  if (
+    !Array.isArray(tasks) ||
+    tasks.some(
+      (task) => !task || typeof task !== 'object' || Array.isArray(task)
+    )
+  )
+    throw new ResultEncodingError();
+  return tasks.map((task) => transformTaskResponse(task));
 }
 
 export async function getTask(
@@ -160,13 +169,18 @@ export async function getTask(
 ): Promise<AttioTask> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
-  return callWithRetry(async () => {
-    const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    const task = extractTaskFromResponse(
-      res as unknown as Record<string, unknown>
-    );
-    return transformTaskResponse(task);
-  }, retryConfig);
+  const res = await callWithRetry(
+    () => api.get<AttioSingleResponse<AttioTask>>(path),
+    retryConfig,
+    { uncertainMutation: false }
+  );
+  const task = extractTaskFromResponse(
+    res as unknown as Record<string, unknown>
+  );
+  if (!task || typeof task !== 'object' || Array.isArray(task)) {
+    throw new ResultEncodingError();
+  }
+  return transformTaskResponse(task);
 }
 
 export async function createTask(
@@ -514,7 +528,8 @@ function resolveAttioClient(): AxiosInstance {
       return getLazyAttioClient();
     } catch {
       throw new Error(
-        `Could not initialize Attio client: ${error instanceof Error ? error.message : String(error)}`
+        `Could not initialize Attio client: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }

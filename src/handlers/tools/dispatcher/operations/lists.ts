@@ -5,10 +5,10 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '@utils/error-handler.js';
-import { ToolConfig, GetListsToolConfig } from '@handlers/tool-types.js';
-import { formatResponse } from '@handlers/tools/formatters.js';
-import { hasResponseData } from '@handlers/tools/error-types.js';
+import { createErrorResult } from '@/utils/error-handler.js';
+import { ToolConfig, GetListsToolConfig } from '@/handlers/tool-types.js';
+import { formatResponse } from '@/handlers/tools/formatters.js';
+import { hasResponseData } from '@/handlers/tools/error-types.js';
 import {
   filterListEntries,
   advancedFilterListEntries,
@@ -20,7 +20,7 @@ import {
   removeRecordFromList,
   updateListEntry,
 } from '@/objects/lists/entries.js';
-import { ListEntryFilters } from '@api/operations/index.js';
+import { ListEntryFilters } from '@/api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { createList, updateList } from '@/objects/lists/base.js';
@@ -63,7 +63,12 @@ function handleListToolError(
     responseData.error_category = categorized.category;
   }
 
-  return createErrorResult(new Error(errorMessage), path, method, responseData);
+  return createErrorResult(
+    new Error(errorMessage, { cause: error }),
+    path,
+    method,
+    responseData
+  );
 }
 
 /**
@@ -95,7 +100,7 @@ export async function handleGetListsOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       '/lists',
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -173,7 +178,7 @@ export async function handleAddRecordToListOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/records`,
       'POST',
       hasResponseData(error) ? error.response.data : {}
@@ -233,7 +238,7 @@ export async function handleRemoveRecordFromListOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries/${entryId}`,
       'DELETE',
       hasResponseData(error) ? error.response.data : {}
@@ -303,7 +308,7 @@ export async function handleUpdateListEntryOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries/${entryId}`,
       'PUT',
       hasResponseData(error) ? error.response.data : {}
@@ -348,21 +353,21 @@ function detectManagementMode(params: Record<string, unknown>): ManagementMode {
   if (modesDetected === 0) {
     // Provide more helpful error messages for common edge cases
     if (hasRecordId && !hasObjectType) {
-      throw new Error(
+      throw new UniversalValidationError(
         'Mode 1 (Add) requires both recordId AND objectType.\n' +
           'You provided recordId but missing objectType (must be "companies" or "people").\n' +
           'Example: { listId: "...", recordId: "...", objectType: "companies" }'
       );
     }
     if (hasObjectType && !hasRecordId) {
-      throw new Error(
+      throw new UniversalValidationError(
         'Mode 1 (Add) requires both recordId AND objectType.\n' +
           'You provided objectType but missing recordId.\n' +
           'Example: { listId: "...", recordId: "...", objectType: "companies" }'
       );
     }
 
-    throw new Error(
+    throw new UniversalValidationError(
       'No management mode detected. Must provide parameters for one of:\n' +
         '  - Mode 1 (Add): recordId, objectType, [initialValues]\n' +
         '  - Mode 2 (Remove): entryId (only)\n' +
@@ -372,7 +377,7 @@ function detectManagementMode(params: Record<string, unknown>): ManagementMode {
   }
 
   if (modesDetected > 1) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Multiple management modes detected. Provide parameters for exactly ONE mode.\n' +
         'See tool description for details on parameter requirements for each mode.'
     );
@@ -530,7 +535,7 @@ export async function handleManageListEntryOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       httpMethod,
       hasResponseData(error) ? error.response.data : {}
@@ -641,7 +646,7 @@ export async function handleFilterListEntriesByParentOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -710,7 +715,7 @@ export async function handleFilterListEntriesByParentIdOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -760,7 +765,7 @@ export async function handleGetListDetailsOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -798,7 +803,7 @@ export async function handleGetListEntriesOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -848,7 +853,7 @@ function detectFilterMode(params: Record<string, unknown>): FilterMode {
   ].filter(Boolean).length;
 
   if (modesDetected === 0) {
-    throw new Error(
+    throw new UniversalValidationError(
       'No filter mode detected. Must provide parameters for one of:\n' +
         '  - Mode 1 (Simple): attributeSlug, condition, value\n' +
         '  - Mode 2 (Advanced): filters (object with filters array)\n' +
@@ -859,7 +864,7 @@ function detectFilterMode(params: Record<string, unknown>): FilterMode {
   }
 
   if (modesDetected > 1) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Multiple filter modes detected. Provide parameters for exactly ONE mode.\n' +
         'See tool description for details on parameter requirements for each mode.'
     );
@@ -1099,7 +1104,7 @@ export async function handleFilterListEntriesOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1161,7 +1166,7 @@ export async function handleAdvancedFilterListEntriesOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1208,7 +1213,7 @@ export async function handleGetRecordListMembershipsOperation(
     return formatResponse(formattedResult);
   } catch (error: unknown) {
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       '/lists/memberships',
       'GET',
       hasResponseData(error) ? error.response.data : {}

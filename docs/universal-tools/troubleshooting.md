@@ -14,9 +14,8 @@ The following issues have been **RESOLVED** and should no longer affect universa
 
 ### ✅ API Response Structure Issues Fixed
 
-**Issue**: Inconsistent API response handling causing tool failures  
-**Status**: **RESOLVED** - Robust fallback pattern: `response?.data?.data || response?.data || []`  
-**Impact**: 100% reliability for all resource types
+Current response validation and encoding-failure behavior are documented in the
+[structured-results contract](developer-guide.md#structured-results-v2-boundary-a).
 
 ### ✅ Email Validation Consistency Fixed
 

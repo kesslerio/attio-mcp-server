@@ -7,23 +7,24 @@ import {
   AttioNote,
   AttioList,
   AttioListEntry,
-} from '../types/attio.js';
-import { ListEntryFilters } from '../api/operations/index.js';
+} from '@/types/attio.js';
+import { ListEntryFilters } from '@/api/operations/index.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { z } from 'zod';
 
 // Base tool configuration interface
 export interface ToolConfig {
   name: string;
+  /** Only migrated adapters advertise a validated result contract. */
+  outputSchema?: Tool['outputSchema'];
+  resultSchema?: z.ZodType;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: any; // Keep as any for compatibility with existing tool configs
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatResult?: (results: any) => string;
   /**
-   * Optional function to return normalized structured data alongside text.
-   * When defined, dispatcher returns dual content:
-   * - content[0]: JSON.stringify(structuredOutput result) - for programmatic parsing
-   * - content[1]: formatResult text - for human readability
-   * This enables tests and clients to receive structured JSON without breaking
-   * the existing string-only formatResult contract.
+   * Adapter-owned normalization before the shared result boundary validates
+   * and publishes the envelope. Pending migrations retain legacy text output.
    */
 
   structuredOutput?: (
@@ -79,11 +80,10 @@ export interface GetListEntriesToolConfig extends ToolConfig {
 }
 
 // List action tool configuration
-export interface ListActionToolConfig extends ToolConfig {
-  handler: (
-    listId: string,
-    recordId: string
-  ) => Promise<AttioRecord | AttioListEntry>;
+export interface ListActionToolConfig<
+  TResult = AttioRecord | AttioListEntry,
+> extends ToolConfig {
+  handler: (listId: string, recordId: string) => Promise<TResult>;
   idParams?: string[];
 }
 

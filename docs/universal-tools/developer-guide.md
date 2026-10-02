@@ -61,6 +61,70 @@ export const toolConfig: UniversalToolConfig = {
 };
 ```
 
+### Structured results (v2 boundary A)
+
+`search_records` and `get_record_details` publish `outputSchema` through
+`tools/list`. Their `tools/call` results include `structuredContent` with a stable
+envelope. For both success and execution failure, `content[0].text` serializes
+the final sanitized structured envelope for MCP clients that consume JSON text.
+Optional human-readable prose follows in `content[1]`. With
+`MCP_TEXT_RESULTS=false`, only the envelope JSON remains:
+
+```typescript
+// search_records
+{ data: records, count: records.length, next_cursor: null }
+// get_record_details (including task, list, and custom-object details)
+{ data: record }
+// execution failures
+{ error: { code: 'PERMISSION_DENIED', message: '...', retryable: false } }
+```
+
+For example, read a record identifier from
+`result.structuredContent.data.id.record_id`, or from
+`JSON.parse(result.content[0].text).data.id.record_id`. Details JSON text retains
+the `data` wrapper; search JSON text includes `data`, `count`, and `next_cursor`.
+For a failed call, read `JSON.parse(result.content[0].text).error`; it contains
+the same sanitized `code`, `message`, and `retryable` as `structuredContent.error`.
+There is no third JSON block. Search counts describe the
+returned array. `next_cursor` is currently always null: continuation support is
+a later delivery, and null does not guarantee an unbounded search was complete.
+
+The config owns its adapter and paired runtime/discovery schemas. The shared
+result boundary validates JSON-compatible adapter data, sanitizes it, then
+validates the final envelope before reporting success. Missing identifiers,
+unsupported values, sanitizer fallbacks, and changed domain data produce
+`RESULT_ENCODING_FAILED`, with `isError: true` and `retryable: false`. A prose
+formatter failure leaves completed machine data successful.
+
+Execution errors use the stable codes defined by
+[`executionErrorCodes`](../../src/handlers/tools/result-schemas.ts);
+`INVALID_CURSOR` is reserved for continuation. Messages retain sanitized guidance
+and correlation references.
+Read rate limits and upstream outages may be retryable; uncertain write outcomes
+are non-retryable and require readback before another write. The execution
+`retryable` field does not trigger a server retry; see
+[API call retry logic](../api/error-handling.md#api-call-retry-logic) for automatic
+retry and mutation fallback rules. Unknown tools and
+malformed MCP requests remain protocol errors rather than execution results.
+
+See [U1 delivery scope](u1-delivery-notes.md) for verification evidence and the
+remaining U2 mutation-owner work.
+
+Other families retain their existing successful text contracts and do not yet
+advertise output schemas; their boundary-owned failures use the same structured
+error envelope. Connector and health success projections remain unchanged.
+Prose is enabled by default; the opt-out described above also applies to
+boundary-owned failures in other families.
+
+Verify deterministic contracts with
+`bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts`.
+After `bun run build`, run
+`bun run test:mcp test/e2e/mcp/core-operations/structured-results.mcp.test.ts`
+for real stdio discovery/error serialization. Its read-only Attio composition
+case requires `ATTIO_API_KEY` or `ATTIO_ACCESS_TOKEN` and a readable company.
+The test uses the installed SDK directly because `mcp-test-client@1.0.1` strips
+`structuredContent` and `isError` and does not close its stdio transport.
+
 ### formatResult Architecture Update (PR #483)
 
 **CRITICAL CHANGE**: All formatResult functions now use consistent `: string` return types:
@@ -785,46 +849,8 @@ export class ResourceNotFoundError extends UniversalToolError {
 
 ### Error Recovery Strategies
 
-```typescript
-// src/handlers/tool-configs/universal/error-recovery.ts
-export async function withRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  backoffMs: number = 1000
-): Promise<T> {
-  let lastError: Error;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (attempt === maxRetries) break;
-
-      // Exponential backoff
-      const delay = backoffMs * Math.pow(2, attempt - 1);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-
-  throw lastError!;
-}
-
-// Usage
-export async function handleUniversalCreate(
-  params: UniversalCreateParams
-): Promise<AttioRecord> {
-  return await withRetry(
-    async () => {
-      // Actual creation logic
-      return await createRecord(params);
-    },
-    3,
-    500
-  );
-}
-```
+Use the shared [API call retry logic](../api/error-handling.md#api-call-retry-logic)
+instead of wrapping mutation handlers in a generic retry loop.
 
 ## Contribution Guidelines
 

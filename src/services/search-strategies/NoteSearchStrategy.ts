@@ -19,6 +19,7 @@
  */
 
 import { performance } from 'perf_hooks';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 import {
   SearchType,
@@ -33,7 +34,6 @@ import type {
   SearchStrategyParams,
   StrategyDependencies,
 } from '@/services/search-strategies/interfaces.js';
-import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import type {
   AttioNote,
   AttioRecord,
@@ -143,24 +143,21 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         }
 
         const notesResponse = await this.dependencies.noteFunction(queryParams);
-        const notesList = notesResponse.data || [];
+        const notesList = notesResponse?.data;
 
         // Convert notes to records and ensure it's always an array
         if (!Array.isArray(notesList)) {
           log.warn('NOTES API WARNING: listNotes() returned non-array value', {
             returnedType: typeof notesList,
           });
-          return [];
-        } else {
-          // Convert AttioNote[] to UniversalRecordResult[]
-          // Cast to AttioNote[] since we know the API returns notes
-          return (notesList as AttioNote[]).map((note) =>
-            this.convertNoteToRecord(note)
-          );
+          throw new ResultEncodingError();
         }
+        return (notesList as AttioNote[]).map((note) =>
+          this.convertNoteToRecord(note)
+        );
       } catch (error: unknown) {
         log.error('Failed to load notes from API', error);
-        return []; // Fallback to empty array
+        throw error;
       }
     };
 
@@ -312,7 +309,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         parent_object: note.parent_object || '',
         parent_record_id: note.parent_record_id || '',
         created_at: note.created_at || '',
-        created_by_actor: note.created_by_actor,
+        ...(note.created_by_actor !== undefined
+          ? { created_by_actor: note.created_by_actor }
+          : {}),
       },
     };
 

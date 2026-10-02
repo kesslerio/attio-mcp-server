@@ -128,7 +128,10 @@ export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY
  * @param toolName - The name of the tool
  * @returns Tool configuration or undefined if not found
  */
-export function findToolConfig(toolName: string): ToolConfigResult | undefined {
+export function findToolConfig(
+  toolName: string,
+  options: { enforceMode?: boolean } = {}
+): ToolConfigResult | undefined {
   // Debug logging for tool lookup in development
   const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
 
@@ -202,7 +205,7 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
           });
         }
 
-        if (isToolAllowed(canonicalToolName)) {
+        if (options.enforceMode === false || isToolAllowed(canonicalToolName)) {
           return {
             resourceType: resourceType as ResourceType,
             toolConfig: config as ToolConfig,
@@ -226,7 +229,7 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
           });
         }
 
-        if (isToolAllowed(canonicalToolName)) {
+        if (options.enforceMode === false || isToolAllowed(canonicalToolName)) {
           return {
             resourceType: 'UNIVERSAL' as const,
             toolConfig: config as ToolConfig,
@@ -250,7 +253,7 @@ export function findToolConfig(toolName: string): ToolConfigResult | undefined {
           });
         }
 
-        if (isToolAllowed(canonicalToolName)) {
+        if (options.enforceMode === false || isToolAllowed(canonicalToolName)) {
           return {
             resourceType: 'GENERAL' as const,
             toolConfig: config as ToolConfig,

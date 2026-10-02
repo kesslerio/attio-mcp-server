@@ -7,18 +7,21 @@ import {
   ListToolsRequestSchema,
   CallToolRequest,
   CallToolResult,
+  McpError,
+  ErrorCode,
 } from '@modelcontextprotocol/sdk/types.js';
 import {
   warn,
   clearLogContext,
   getLogContext,
+  withLogContext,
   OperationType,
 } from '@/utils/logger.js';
 import { ServerContext } from '@/server/createServer.js';
 import { withGlobalContext } from '@/api/lazy-client.js';
 
 // Import from modular components
-import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
+import { findToolConfig } from '@/handlers/tools/registry.js';
 import { getToolsListPayload } from '@/utils/mcp-discovery.js';
 import { executeToolRequest } from '@/handlers/tools/dispatcher.js';
 import { initializeToolContext } from '@/handlers/tools/dispatcher/logging.js';
@@ -151,71 +154,87 @@ export function registerToolHandlers(
   // Handler for calling tools
   server.setRequestHandler(
     CallToolRequestSchema,
-    async (request): Promise<CallToolResult> => {
-      const toolName =
-        typeof request.params?.name === 'string'
-          ? request.params.name
-          : 'unknown_tool';
-      const correlationId = initializeToolContext(toolName);
+    async (request, extra): Promise<CallToolResult> =>
+      withLogContext(
+        {
+          requestId:
+            extra?.requestId === undefined
+              ? undefined
+              : String(extra.requestId),
+        },
+        async () => {
+          const toolName =
+            typeof request.params?.name === 'string'
+              ? request.params.name
+              : 'unknown_tool';
+          if (!findToolConfig(toolName, { enforceMode: false })) {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              `Tool not found: ${toolName}`
+            );
+          }
+          const correlationId = initializeToolContext(toolName);
 
-      try {
-        // Normalize request to handle missing arguments wrapper (Issue #344)
-        // Cast is safe because we're handling the protocol mismatch
-        const normalizedRequest = normalizeToolRequest(
-          request as CallToolRequest | LooseCallToolRequest
-        );
-        const result = (await (context
-          ? withGlobalContext(context, async () =>
-              executeToolRequest(normalizedRequest)
-            )
-          : executeToolRequest(normalizedRequest))) as CallToolResult;
-        return result;
-      } catch (error: unknown) {
-        warn(
-          'tool:normalization',
-          'Tool request failed before execution',
-          {
-            tool: toolName,
-            correlationId,
-            errorMessage:
-              error instanceof Error ? error.message : String(error),
-          },
-          'call_tool',
-          OperationType.TOOL_EXECUTION
-        );
+          try {
+            // Normalize request to handle missing arguments wrapper (Issue #344)
+            // Cast is safe because we're handling the protocol mismatch
+            const normalizedRequest = normalizeToolRequest(
+              request as CallToolRequest | LooseCallToolRequest
+            );
+            const result = (await (context
+              ? withGlobalContext(context, async () =>
+                  executeToolRequest(normalizedRequest)
+                )
+              : executeToolRequest(normalizedRequest))) as CallToolResult;
+            return result;
+          } catch (error: unknown) {
+            if (error instanceof McpError) throw error;
+            warn(
+              'tool:normalization',
+              'Tool request failed before execution',
+              {
+                tool: toolName,
+                correlationId,
+                errorMessage:
+                  error instanceof Error ? error.message : String(error),
+              },
+              'call_tool',
+              OperationType.TOOL_EXECUTION
+            );
 
-        const { requestId, userId } = getLogContext();
-        return createSecureToolErrorResult(error, {
-          module: 'handlers.tools',
-          operation: `callTool:${toolName}`,
-          resourceType: toolName,
-          correlationId,
-          requestId,
-          userId,
-          errorType: 'normalization_error',
-          clientMessage:
-            error instanceof Error
-              ? error.message
-              : 'Tool request normalization failed',
-          fallbackMessage: 'Tool request normalization failed',
-          suggestion:
-            'Ensure the MCP request includes a tool name and wraps arguments inside the "arguments" object.',
-        });
-      } finally {
-        clearLogContext();
-      }
-    }
+            const { requestId, userId } = getLogContext();
+            return createSecureToolErrorResult(error, {
+              module: 'handlers.tools',
+              operation: `callTool:${toolName}`,
+              resourceType: toolName,
+              correlationId,
+              requestId,
+              userId,
+              errorType: 'normalization_error',
+              clientMessage:
+                error instanceof Error
+                  ? error.message
+                  : 'Tool request normalization failed',
+              fallbackMessage: 'Tool request normalization failed',
+              suggestion:
+                'Ensure the MCP request includes a tool name and wraps arguments inside the "arguments" object.',
+            });
+          } finally {
+            clearLogContext();
+          }
+        }
+      )
   );
 }
 
 // Re-export commonly used components for backward compatibility
-export { TOOL_DEFINITIONS, TOOL_CONFIGS } from './registry.js';
-export { findToolConfig } from './registry.js';
-export { executeToolRequest } from './dispatcher.js';
+export { TOOL_DEFINITIONS, TOOL_CONFIGS } from '@/handlers/tools/registry.js';
+export { findToolConfig } from '@/handlers/tools/registry.js';
+export { executeToolRequest } from '@/handlers/tools/dispatcher.js';
 export {
   formatSearchResults,
   formatRecordDetails,
   formatListEntries,
   formatBatchResults,
   formatResponse,
-} from './formatters.js';
+} from '@/handlers/tools/formatters.js';

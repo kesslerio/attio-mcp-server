@@ -3,27 +3,28 @@
  * Handles list management and list entry operations
  */
 
-import { getLazyAttioClient } from '../../api/lazy-client.js';
-import { createScopedLogger } from '../../utils/logger.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
+import { createScopedLogger } from '@/utils/logger.js';
 import {
   AttioList,
   AttioListEntry,
   AttioListResponse,
   AttioSingleResponse,
-} from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { ListEntryFilters } from './types.js';
+} from '@/types/attio.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
+import { ListEntryFilters } from '@/api/operations/types.js';
 import {
   processListEntries,
   transformFiltersToApiFormat,
-} from '../../utils/record-utils.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
+} from '@/utils/record-utils.js';
+import { FilterValidationError } from '@/errors/api-errors.js';
 import {
   SearchRequestBody,
   LogDetails,
-  ValidationErrorDetails,
   ListErrorResponse,
-} from '../../types/api-operations.js';
+} from '@/types/api-operations.js';
 
 /**
  * Gets all lists in the workspace
@@ -45,20 +46,22 @@ export async function getAllLists(
     path += `&objectSlug=${objectSlug}`;
   }
 
-  return callWithRetry(async () => {
-    const response = await api.get<AttioListResponse<AttioList>>(path);
-    // Ensure we always return an array, never undefined/null/objects - handle multiple shape variants
-    const items = Array.isArray(response?.data?.data)
-      ? response.data.data
-      : Array.isArray(response?.data?.lists)
-        ? response.data.lists
-        : Array.isArray(response?.data?.items)
-          ? response.data.items
-          : Array.isArray(response?.data)
-            ? response.data
-            : [];
-    return items;
-  }, retryConfig);
+  const response = await callWithRetry(
+    () => api.get<AttioListResponse<AttioList>>(path),
+    retryConfig,
+    { uncertainMutation: false }
+  );
+  const items = Array.isArray(response?.data?.data)
+    ? response.data.data
+    : Array.isArray(response?.data?.lists)
+      ? response.data.lists
+      : Array.isArray(response?.data?.items)
+        ? response.data.items
+        : Array.isArray(response?.data)
+          ? response.data
+          : undefined;
+  if (!Array.isArray(items)) throw new ResultEncodingError();
+  return items;
 }
 
 /**
@@ -75,10 +78,14 @@ export async function getListDetails(
   const api = getLazyAttioClient();
   const path = `/lists/${listId}`;
 
-  return callWithRetry(async () => {
-    const response = await api.get<AttioSingleResponse<AttioList>>(path);
-    return (response?.data?.data || response?.data) as AttioList;
-  }, retryConfig);
+  return callWithRetry(
+    async () => {
+      const response = await api.get<AttioSingleResponse<AttioList>>(path);
+      return (response?.data?.data || response?.data) as AttioList;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -98,12 +105,12 @@ export async function getListEntries(
   filters?: ListEntryFilters,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry[]> {
-  const api = getLazyAttioClient();
-
   // Input validation - make sure we have a valid listId
   if (!listId) {
-    throw new Error('Invalid list ID: No ID provided');
+    throw new UniversalValidationError('Invalid list ID: No ID provided');
   }
+
+  const api = getLazyAttioClient();
 
   // Coerce input parameters to ensure proper types
   const safeLimit = typeof limit === 'number' ? limit : undefined;
@@ -158,7 +165,11 @@ export async function getListEntries(
         }
 
         // Rethrow with more context
-        throw new Error(`Filter validation failed: ${error.message}`);
+        throw new UniversalValidationError(
+          `Filter validation failed: ${error.message}`,
+          undefined,
+          { cause: error }
+        );
       }
       throw error; // Rethrow other errors
     }
@@ -192,26 +203,30 @@ export async function getListEntries(
   };
 
   // Call primary endpoint directly (Option A simplification)
-  return callWithRetry(async () => {
-    const path = `/lists/${listId}/entries/query`;
-    const requestBody = await createRequestBody();
+  return callWithRetry(
+    async () => {
+      const path = `/lists/${listId}/entries/query`;
+      const requestBody = await createRequestBody();
 
-    logOperation('Primary endpoint attempt', {
-      path,
-      requestBody: JSON.stringify(requestBody),
-    });
+      logOperation('Primary endpoint attempt', {
+        path,
+        requestBody: JSON.stringify(requestBody),
+      });
 
-    const response = await api.post<AttioListResponse<AttioListEntry>>(
-      path,
-      requestBody
-    );
+      const response = await api.post<AttioListResponse<AttioListEntry>>(
+        path,
+        requestBody
+      );
 
-    logOperation('Primary endpoint successful', {
-      resultCount: response.data?.data?.length || 0,
-    });
+      logOperation('Primary endpoint successful', {
+        resultCount: response.data?.data?.length || 0,
+      });
 
-    return processListEntries(response.data?.data || []);
-  }, retryConfig);
+      return processListEntries(response.data?.data || []);
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -231,17 +246,22 @@ export async function addRecordToList(
   initialValues?: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
-  const api = getLazyAttioClient();
   const path = `/lists/${listId}/entries`;
 
   // Input validation to ensure required parameters
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!recordId || typeof recordId !== 'string') {
-    throw new Error('Invalid record ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid record ID: Must be a non-empty string'
+    );
   }
+
+  const api = getLazyAttioClient();
 
   // Default object type to 'companies' if not specified
   const safeObjectType = objectType || 'companies';
@@ -293,23 +313,6 @@ export async function addRecordToList(
         });
       }
 
-      // Add more context to the error message
-      if (listError.response?.status === 400) {
-        const validationErrors =
-          listError.response?.data?.validation_errors || [];
-        const errorDetails = validationErrors
-          .map(
-            (e: ValidationErrorDetails) => `${e.path.join('.')}: ${e.message}`
-          )
-          .join('; ');
-
-        throw new Error(
-          `Validation error adding record to list: ${
-            errorDetails || listError.message
-          }`
-        );
-      }
-
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }
@@ -331,16 +334,19 @@ export async function updateListEntry(
   attributes: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
-  const api = getLazyAttioClient();
   const path = `/lists/${listId}/entries/${entryId}`;
 
   // Input validation
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!entryId || typeof entryId !== 'string') {
-    throw new Error('Invalid entry ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid entry ID: Must be a non-empty string'
+    );
   }
 
   if (
@@ -348,8 +354,12 @@ export async function updateListEntry(
     typeof attributes !== 'object' ||
     Array.isArray(attributes)
   ) {
-    throw new Error('Invalid attributes: Must be a non-empty object');
+    throw new UniversalValidationError(
+      'Invalid attributes: Must be a non-empty object'
+    );
   }
+
+  const api = getLazyAttioClient();
 
   return callWithRetry(async () => {
     const log = createScopedLogger('lists.operations', 'updateListEntry');
@@ -385,21 +395,6 @@ export async function updateListEntry(
         });
       }
 
-      // Add more specific error types based on status codes
-      if (updateError.response?.status === 404) {
-        throw new Error(`List entry ${entryId} not found in list ${listId}`);
-      } else if (updateError.response?.status === 400) {
-        throw new Error(
-          `Invalid attributes for list entry update: ${
-            updateError.response?.data?.message || 'Bad request'
-          }`
-        );
-      } else if (updateError.response?.status === 403) {
-        throw new Error(
-          `Insufficient permissions to update list entry ${entryId} in list ${listId}`
-        );
-      }
-
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }
@@ -419,6 +414,17 @@ export async function removeRecordFromList(
   entryId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
+  if (!listId || typeof listId !== 'string') {
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
+  }
+  if (!entryId || typeof entryId !== 'string') {
+    throw new UniversalValidationError(
+      'Invalid entry ID: Must be a non-empty string'
+    );
+  }
+
   const api = getLazyAttioClient();
   const path = `/lists/${listId}/entries/${entryId}`;
 

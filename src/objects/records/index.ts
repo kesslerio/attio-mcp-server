@@ -1,7 +1,9 @@
 /**
  * Record-related functionality
  */
+import { isMutationCompletionUncertain } from '@/utils/secure-error-handler.js';
 import { getLazyAttioClient } from '@api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   createRecord,
   getRecord,
@@ -194,6 +196,7 @@ export async function createObjectRecord<T extends AttioRecord>(
 
     return result;
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     if (
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
@@ -208,8 +211,6 @@ export async function createObjectRecord<T extends AttioRecord>(
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
-    } else if (typeof error === 'string') {
-      throw new Error(error);
     }
 
     // Fallback implementation in case the core function fails
@@ -297,6 +298,7 @@ export async function createObjectRecord<T extends AttioRecord>(
 
         return result;
       } catch (err: unknown) {
+        if (isMutationCompletionUncertain(err)) throw err;
         const status = getErrorStatus(err);
         const messageFallback = getErrorMessage(err) ?? '';
         const msg = String(
@@ -417,6 +419,7 @@ export async function updateObjectRecord<T extends AttioRecord>(
       attributes,
     });
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -484,6 +487,7 @@ export async function deleteObjectRecord(
     // Use the core API function
     return await deleteRecord(objectSlug, recordId, objectId);
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -580,7 +584,8 @@ export async function listObjectRecords<T extends AttioRecord>(
       }`;
 
       const response = await api.get(path);
-      return response.data.data || [];
+      if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+      return response.data.data;
     } catch (fallbackError) {
       throw fallbackError instanceof Error
         ? fallbackError
@@ -631,6 +636,7 @@ export async function batchCreateObjectRecords<T extends AttioRecord>(
       },
     };
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -719,6 +725,7 @@ export async function batchUpdateObjectRecords<T extends AttioRecord>(
       },
     };
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;

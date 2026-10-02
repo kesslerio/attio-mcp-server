@@ -1,7 +1,11 @@
 /**
  * Core dispatcher module - main tool execution dispatcher with modular operation handlers
  */
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequest,
+  McpError,
+  ErrorCode,
+} from '@modelcontextprotocol/sdk/types.js';
 import { ResourceType } from '@/types/attio.js';
 
 // Import utilities
@@ -25,7 +29,13 @@ import {
   OperationType,
   getLogContext,
 } from '@/utils/logger.js';
-import { sanitizeMcpResponse } from '@/utils/json-serializer.js';
+import {
+  buildStructuredToolResult,
+  finalizeLegacyToolResult,
+  ResultEncodingError,
+} from '@/handlers/tools/result-contract.js';
+import { isToolAllowed } from '@/config/tool-mode.js';
+import { getToolsListPayload } from '@/utils/mcp-discovery.js';
 import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 
 // Import operation handlers
@@ -120,6 +130,16 @@ import { canonicalizeResourceType } from '@/handlers/tools/dispatcher/utils.js';
 export async function executeToolRequest(request: CallToolRequest) {
   const toolName = request.params.name;
 
+  const toolInfo = findToolConfig(toolName, { enforceMode: false });
+  if (!toolInfo) {
+    logToolConfigError(toolName, 'Tool configuration not found');
+    throw new McpError(ErrorCode.InvalidParams, `Tool not found: ${toolName}`);
+  }
+  const readOnly =
+    getToolsListPayload().tools.find(
+      (tool) => tool.name === toolInfo.toolConfig.name
+    )?.annotations?.readOnlyHint === true;
+
   // Initialize logging context for this tool execution
   initializeToolContext(toolName);
   let timer: PerformanceTimer | undefined;
@@ -129,11 +149,11 @@ export async function executeToolRequest(request: CallToolRequest) {
   // This dispatcher expects normalized requests with proper arguments structure
 
   try {
-    const toolInfo = findToolConfig(toolName);
-
-    if (!toolInfo) {
-      logToolConfigError(toolName, 'Tool configuration not found');
-      throw new Error(`Tool not found: ${toolName}`);
+    if (!isToolAllowed(toolInfo.toolConfig.name)) {
+      throw Object.assign(
+        new Error('Tool is not permitted in the current mode'),
+        { status: 403 }
+      );
     }
 
     const { resourceType, toolConfig } = toolInfo;
@@ -168,22 +188,35 @@ export async function executeToolRequest(request: CallToolRequest) {
         args as Record<string, unknown>
       );
 
-      // If a tool already returned an MCP-shaped object, stop double-wrapping
-      const isMcpResponseLike = (
-        value: unknown
-      ): value is {
-        content: unknown;
-        isError: boolean;
-      } =>
-        typeof value === 'object' &&
-        value !== null &&
-        'content' in value &&
-        'isError' in value;
+      if (
+        rawResult &&
+        typeof rawResult === 'object' &&
+        'content' in rawResult &&
+        'isError' in rawResult &&
+        rawResult.isError === true
+      ) {
+        return finalizeLegacyToolResult(rawResult, toolName, readOnly);
+      }
 
-      if (isMcpResponseLike(rawResult)) {
-        const sanitized = sanitizeMcpResponse(rawResult);
-        logToolSuccess(toolName, toolType, sanitized, timer);
-        return sanitized; // skip detection/formatting, it's already MCP
+      if (toolConfig.resultSchema) {
+        const structured = buildStructuredToolResult(
+          toolConfig,
+          rawResult,
+          args
+        );
+        logToolSuccess(toolName, toolType, structured, timer);
+        return structured;
+      }
+
+      // Non-migrated MCP success projections retain their compatibility channel.
+      // Failures still pass through the shared structured error boundary.
+      if (
+        rawResult &&
+        typeof rawResult === 'object' &&
+        'content' in rawResult &&
+        'isError' in rawResult
+      ) {
+        return finalizeLegacyToolResult(rawResult, toolName, readOnly);
       }
 
       // Format the result using the tool's formatResult if available
@@ -201,9 +234,9 @@ export async function executeToolRequest(request: CallToolRequest) {
             args?.info_type
           );
         } catch {
-          formattedResult = (toolConfig.formatResult as FormatResultFunction)(
-            rawResult
-          );
+          // The handler already completed; never convert a formatter failure
+          // into a retryable execution error or invoke the handler again.
+          formattedResult = JSON.stringify(rawResult, null, 2);
         }
       } else {
         formattedResult = JSON.stringify(rawResult, null, 2);
@@ -212,18 +245,22 @@ export async function executeToolRequest(request: CallToolRequest) {
       // If structuredOutput is defined, return dual content for programmatic parsing
       // content[0]: JSON string for parsing, content[1]: human-readable text
       if (toolConfig.structuredOutput) {
-        const resourceTypeArg = args?.resource_type as string | undefined;
-        const structured = toolConfig.structuredOutput(
-          rawResult,
-          resourceTypeArg
-        );
-        result = {
-          content: [
-            { type: 'text', text: JSON.stringify(structured) },
-            { type: 'text', text: formattedResult },
-          ],
-          isError: false,
-        };
+        try {
+          const resourceTypeArg = args?.resource_type as string | undefined;
+          const structured = toolConfig.structuredOutput(
+            rawResult,
+            resourceTypeArg
+          );
+          result = {
+            content: [
+              { type: 'text', text: JSON.stringify(structured) },
+              { type: 'text', text: formattedResult },
+            ],
+            isError: false,
+          };
+        } catch {
+          throw new ResultEncodingError();
+        }
       } else {
         result = {
           content: [{ type: 'text', text: formattedResult }],
@@ -494,8 +531,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     logToolSuccess(toolName, toolType, result, timer);
 
     // Ensure the response is safely serializable
-    const sanitizedResult = sanitizeMcpResponse(result);
-    return sanitizedResult;
+    return finalizeLegacyToolResult(result, toolName, readOnly);
   } catch (error: unknown) {
     // Get additional error details for better debugging
     const errorDetails = {
@@ -530,6 +566,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     const { correlationId, requestId, userId } = getLogContext();
     return createSecureToolErrorResult(error, {
       module: 'handlers.tools.dispatcher',
+      uncertainMutation: !readOnly,
       operation: `execute:${toolName}`,
       resourceType: toolType,
       correlationId,
