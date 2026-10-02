@@ -635,7 +635,9 @@ export class UniversalRetrievalService {
       const attioData = data as AttioRecord;
       const filtered: AttioRecord = {
         id: attioData.id,
-        created_at: attioData.created_at,
+        ...(attioData.created_at !== undefined
+          ? { created_at: attioData.created_at }
+          : {}),
         ...(attioData.updated_at !== undefined ? { updated_at: attioData.updated_at } : {}),
         values: {},
       };

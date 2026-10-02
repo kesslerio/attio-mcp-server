@@ -20,8 +20,15 @@ import * as listBase from '@/objects/lists/base.js';
 import { listsToolConfigs } from '@/handlers/tool-configs/lists.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { OpenAiCompatibilityService } from '@/services/OpenAiCompatibilityService.js';
+import * as noteOperations from '@/objects/notes.js';
+import * as lazyClient from '@/api/lazy-client.js';
+import { StrategyFactory } from '@/services/search/StrategyFactory.js';
+import { TaskSearchStrategy } from '@/services/search-strategies/TaskSearchStrategy.js';
+import { NoteSearchStrategy } from '@/services/search-strategies/NoteSearchStrategy.js';
+import { UniversalSearchService } from '@/services/UniversalSearchService.js';
+import { UniversalRetrievalService } from '@/services/UniversalRetrievalService.js';
 import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
-import type { UniversalRecordResult } from '@/types/attio.js';
+import type { AttioNote, UniversalRecordResult } from '@/types/attio.js';
 
 describe('structured tool protocol', () => {
   let client: Client;
@@ -193,6 +200,132 @@ describe('structured tool protocol', () => {
       if (name === 'fetch') expect(JSON.parse(result.content[0].text as string)).toMatchObject({ id: `companies:${id}` });
     }
     expect(remove).toHaveBeenCalledOnce();
+  });
+
+  it('serializes filtered notes without inventing a top-level timestamp', async () => {
+    const id = CompanyMockFactory.create().id.record_id;
+    vi.spyOn(noteOperations, 'getNote').mockResolvedValue({
+      data: { id, title: 'Note title', content: 'CRM content' } as AttioNote,
+    });
+    const result = await client.callTool({
+      name: 'get_record_details',
+      arguments: { resource_type: 'notes', record_id: id, fields: ['title'] },
+    });
+    expect(result).toMatchObject({
+      isError: false,
+      structuredContent: { data: { id: { record_id: id }, values: { title: 'Note title' } } },
+    });
+    expect(result.structuredContent?.data).not.toHaveProperty('created_at');
+  });
+
+  it.each([false, true])('serializes searched notes with optional actor present=%s', async (withActor) => {
+    const id = CompanyMockFactory.create().id.record_id;
+    const actor = { id: 'actor-id', type: 'workspace-member' };
+    const strategy = new NoteSearchStrategy({ noteFunction: vi.fn().mockResolvedValue({
+      data: [{ id, title: 'Note title', content: 'CRM content', ...(withActor ? { created_by_actor: actor } : {}) }],
+    }) });
+    vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
+    const result = await client.callTool({ name: 'search_records', arguments: { resource_type: 'notes' } });
+    expect(result).toMatchObject({
+      isError: false,
+      structuredContent: { data: [{ id: { note_id: id }, values: { content_markdown: 'CRM content' } }], count: 1, next_cursor: null },
+    });
+    const record = (result.structuredContent?.data as Array<{ values: Record<string, unknown> }>)[0];
+    if (withActor) expect(record.values.created_by_actor).toEqual(actor);
+    else expect(record.values).not.toHaveProperty('created_by_actor');
+  });
+
+  it.each(['tasks', 'notes'] as const)('propagates %s search failures and preserves genuine empty pages', async (resourceType) => {
+    const upstream = vi.fn();
+    const strategy = resourceType === 'tasks'
+      ? new TaskSearchStrategy({ taskFunction: upstream })
+      : new NoteSearchStrategy({ noteFunction: upstream });
+    vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
+    for (const [status, code, retryable] of [[403, 'PERMISSION_DENIED', false], [503, 'UPSTREAM_UNAVAILABLE', true]] as const) {
+      upstream.mockRejectedValueOnce(new EnhancedApiError('Search failed', status, `/${resourceType}`, 'GET'));
+      const result = await client.callTool({ name: 'search_records', arguments: { resource_type: resourceType } });
+      expect(result).toMatchObject({ isError: true, structuredContent: { error: { code, retryable } } });
+      expect(result.content.length).toBeGreaterThan(0);
+      expect(result.structuredContent).not.toHaveProperty('data');
+    }
+    upstream.mockResolvedValueOnce(resourceType === 'tasks' ? [] : { data: [] });
+    const empty = await client.callTool({ name: 'search_records', arguments: { resource_type: resourceType } });
+    expect(empty).toMatchObject({ isError: false, structuredContent: { data: [], count: 0, next_cursor: null } });
+    expect(upstream).toHaveBeenCalledTimes(3);
+  });
+
+  it.each(['tasks', 'notes'] as const)('rejects malformed %s search responses', async (resourceType) => {
+    const upstream = vi.fn().mockResolvedValue(resourceType === 'tasks' ? {} : { data: {} });
+    const strategy = resourceType === 'tasks'
+      ? new TaskSearchStrategy({ taskFunction: upstream })
+      : new NoteSearchStrategy({ noteFunction: upstream });
+    vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
+    const result = await client.callTool({ name: 'search_records', arguments: { resource_type: resourceType } });
+    expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'RESULT_ENCODING_FAILED', retryable: false } } });
+    expect(upstream).toHaveBeenCalledOnce();
+  });
+
+  it('classifies actual missing credentials through the details enhancement path', async () => {
+    const actual = await vi.importActual<typeof import('@/api/attio-client.js')>('@/api/attio-client.js');
+    const id = CompanyMockFactory.create().id.record_id;
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockImplementation(() => actual.createAttioClient({ apiKey: '' }));
+    const result = await client.callTool({ name: 'get_record_details', arguments: { resource_type: 'companies', record_id: id } });
+    expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'UNAUTHENTICATED', retryable: false } } });
+  });
+
+  it.each([
+    ['fetch', { id: 'companies' }], ['fetch', { id: 'companies:' }],
+    ['fetch', { id: 'unsupported:record-id' }], ['search', { query: ' ' }],
+  ] as const)('rejects semantic connector input for %s before a domain call', async (name, args) => {
+    const search = vi.spyOn(UniversalSearchService, 'searchRecords');
+    const details = vi.spyOn(UniversalRetrievalService, 'getRecordDetails');
+    const result = await client.callTool({ name, arguments: args });
+    expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'VALIDATION_ERROR', retryable: false } } });
+    expect(search).not.toHaveBeenCalled();
+    expect(details).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['add-record-to-list', { recordId: 42, objectType: 'companies' }],
+    ['add-record-to-list', { recordId: 'record-id', objectType: 'unsupported' }],
+    ['update-list-entry', { entryId: 42, attributes: {} }],
+    ['update-list-entry', { entryId: 'entry-id', attributes: [] }],
+    ['remove-record-from-list', { entryId: 42 }],
+    ['manage-list-entry', { listId: 42, recordId: 'record-id', objectType: 'companies' }],
+    ['manage-list-entry', { recordId: 'record-id', objectType: 'unsupported' }],
+    ['manage-list-entry', { entryId: 42, attributes: {} }],
+    ['manage-list-entry', { entryId: 'entry-id', attributes: [] }],
+    ['manage-list-entry', { entryId: 42 }],
+    ['manage-list-entry', { recordId: 'record-id' }],
+  ] as const)('rejects semantic list input for %s before any request', async (name, args) => {
+    const api = { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() };
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+    const result = await client.callTool({ name, arguments: { listId: CompanyMockFactory.create().id.record_id, ...args } });
+    expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'VALIDATION_ERROR', retryable: false } } });
+    for (const method of Object.values(api)) expect(method).not.toHaveBeenCalled();
+  });
+
+  it('keeps valid list add, update, and remove paths successful', async () => {
+    const id = CompanyMockFactory.create().id.record_id;
+    const entry = { id: { entry_id: id, list_id: id } };
+    const api = {
+      post: vi.fn().mockResolvedValue({ data: { data: entry } }),
+      patch: vi.fn().mockResolvedValue({ data: { data: entry } }),
+      delete: vi.fn().mockResolvedValue({ data: {} }),
+    };
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+    for (const [name, args] of [
+      ['add-record-to-list', { recordId: id, objectType: 'companies' }],
+      ['update-list-entry', { entryId: id, attributes: { stage: 'New' } }],
+      ['remove-record-from-list', { entryId: id }],
+      ['manage-list-entry', { recordId: id, objectType: 'companies' }],
+      ['manage-list-entry', { entryId: id, attributes: { stage: 'New' } }],
+      ['manage-list-entry', { entryId: id }],
+    ] as const) {
+      const result = await client.callTool({ name, arguments: { listId: id, ...args } });
+      expect(result.isError).toBe(false);
+    }
+    for (const method of Object.values(api)) expect(method).toHaveBeenCalledTimes(2);
   });
 
   it('keeps unknown tools and malformed requests as protocol errors', async () => {

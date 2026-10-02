@@ -18,6 +18,11 @@ import * as serializer from '@/utils/json-serializer.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { normalizeNoteResponse } from '@/objects/notes.js';
 import type { AttioNote } from '@/types/attio.js';
+import { ErrorEnhancer } from '@/errors/enhanced-api-errors.js';
+import { filterListEntriesByParent } from '@/objects/lists/filtering.js';
+import * as genericLists from '@/api/operations/lists.js';
+import * as lazyClient from '@/api/lazy-client.js';
+import { createErrorResult } from '@/utils/error-handler.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import {
   CompanyMockFactory,
@@ -319,6 +324,47 @@ describe('execution error contracts', () => {
       ).toBe(true);
     }
   );
+
+  it.each(['', 'short', 'invalid key with spaces'])(
+    'preserves typed credential rejection through client signatures and enhancement',
+    async (apiKey) => {
+      const actual = await vi.importActual<typeof import('@/api/attio-client.js')>('@/api/attio-client.js');
+      for (const create of [
+        () => actual.createAttioClient({ apiKey }),
+        () => actual.createLegacyAttioClient(apiKey),
+      ]) {
+        let failure: unknown;
+        try { create(); } catch (error) { failure = error; }
+        expect(failure).toMatchObject({ code: 'UNAUTHENTICATED' });
+        const enhanced = ErrorEnhancer.enhance(failure as Error);
+        const result = createSecureToolErrorResult(ErrorService.createUniversalError('get details', 'companies', enhanced));
+        expect(result).toMatchObject({ isError: true, structuredContent: { error: { code: 'UNAUTHENTICATED', retryable: false } } });
+      }
+    }
+  );
+
+  it.each([
+    [400, 'VALIDATION_ERROR'], [403, 'PERMISSION_DENIED'],
+    [404, 'NOT_FOUND'], [503, 'UPSTREAM_UNAVAILABLE'],
+  ] as const)('retains original HTTP %s failures through native list operations', async (status, code) => {
+    const original = Object.assign(new Error('List request failed'), { response: { status, data: {} } });
+    const api = { post: vi.fn().mockRejectedValue(original), patch: vi.fn().mockRejectedValue(original) };
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+    const id = CompanyMockFactory.create().id.record_id;
+    for (const operation of [
+      () => genericLists.addRecordToList(id, id, 'companies', {}, { maxRetries: 0 }),
+      () => genericLists.updateListEntry(id, id, { stage: 'New' }, { maxRetries: 0 }),
+      () => filterListEntriesByParent(id, 'companies', 'name', 'equals', 'Company'),
+    ]) {
+      const error = await operation().catch((failure: unknown) => failure);
+      expect(error).toBe(original);
+      const projected = createErrorResult(error, `/lists/${id}/entries`, 'POST');
+      const result = finalizeLegacyToolResult(projected, 'manage-list-entry', false);
+      expect(result).toMatchObject({ isError: true, structuredContent: { error: { code, retryable: false } } });
+    }
+    expect(api.post).toHaveBeenCalledTimes(2);
+    expect(api.patch).toHaveBeenCalledOnce();
+  });
 
   it('classifies missing credentials, input validation, unknown failures, and network errors', () => {
     for (const [error, code] of [

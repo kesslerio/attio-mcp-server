@@ -1,20 +1,20 @@
 /**
  * List entry operations.
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   getListEntries as getGenericListEntries,
   addRecordToList as addGenericRecordToList,
   updateListEntry as updateGenericListEntry,
   removeRecordFromList as removeGenericRecordFromList,
   ListEntryFilters,
-} from '../../api/operations/index.js';
-import type { AttioListEntry } from '../../types/attio.js';
-import { ResourceType } from '../../types/attio.js';
-import { ListEntryValues, hasErrorResponse } from '../../types/list-types.js';
-import { createScopedLogger } from '../../utils/logger.js';
-import { getErrorMessage } from '../../types/error-interfaces.js';
-import { extract } from './shared.js';
+} from '@/api/operations/index.js';
+import type { AttioListEntry } from '@/types/attio.js';
+import { ResourceType } from '@/types/attio.js';
+import { ListEntryValues, hasErrorResponse } from '@/types/list-types.js';
+import { createScopedLogger } from '@/utils/logger.js';
+import { extract } from '@/objects/lists/shared.js';
 
 interface ListEntryCreatePayload {
   data: {
@@ -46,22 +46,26 @@ export async function addRecordToList(
   initialValues?: ListEntryValues
 ): Promise<AttioListEntry> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!recordId || typeof recordId !== 'string') {
-    throw new Error('Invalid record ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid record ID: Must be a non-empty string'
+    );
   }
 
   if (!objectType || typeof objectType !== 'string') {
-    throw new Error(
+    throw new UniversalValidationError(
       'Object type is required: Must be a non-empty string (e.g., "companies", "people")'
     );
   }
 
   if (!Object.values(ResourceType).includes(objectType as ResourceType)) {
     const validTypes = Object.values(ResourceType).join(', ');
-    throw new Error(
+    throw new UniversalValidationError(
       `Invalid object type: "${objectType}". Must be one of: ${validTypes}`
     );
   }
@@ -144,27 +148,6 @@ export async function addRecordToList(
         });
       }
 
-      if (
-        hasErrorResponse(fallbackError) &&
-        fallbackError.response?.status === 400
-      ) {
-        const validationErrors =
-          fallbackError.response?.data?.validation_errors || [];
-        const errorDetails = validationErrors
-          .map((validationError) => {
-            return `${validationError.path?.join('.') || 'unknown'}: ${
-              validationError.message || 'unknown'
-            }`;
-          })
-          .join('; ');
-
-        throw new Error(
-          `Validation error adding record to list: ${
-            errorDetails || getErrorMessage(fallbackError) || 'Unknown error'
-          }`
-        );
-      }
-
       throw fallbackError;
     }
   }
@@ -179,11 +162,15 @@ export async function updateListEntry(
   attributes: Record<string, unknown>
 ): Promise<AttioListEntry> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!entryId || typeof entryId !== 'string') {
-    throw new Error('Invalid entry ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid entry ID: Must be a non-empty string'
+    );
   }
 
   if (
@@ -191,7 +178,9 @@ export async function updateListEntry(
     typeof attributes !== 'object' ||
     Array.isArray(attributes)
   ) {
-    throw new Error('Invalid attributes: Must be a non-empty object');
+    throw new UniversalValidationError(
+      'Invalid attributes: Must be a non-empty object'
+    );
   }
 
   try {
@@ -238,6 +227,17 @@ export async function removeRecordFromList(
   listId: string,
   entryId: string
 ): Promise<boolean> {
+  if (!listId || typeof listId !== 'string') {
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
+  }
+  if (!entryId || typeof entryId !== 'string') {
+    throw new UniversalValidationError(
+      'Invalid entry ID: Must be a non-empty string'
+    );
+  }
+
   try {
     return await removeGenericRecordFromList(listId, entryId);
   } catch (error: unknown) {

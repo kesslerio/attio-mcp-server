@@ -348,21 +348,21 @@ function detectManagementMode(params: Record<string, unknown>): ManagementMode {
   if (modesDetected === 0) {
     // Provide more helpful error messages for common edge cases
     if (hasRecordId && !hasObjectType) {
-      throw new Error(
+      throw new UniversalValidationError(
         'Mode 1 (Add) requires both recordId AND objectType.\n' +
           'You provided recordId but missing objectType (must be "companies" or "people").\n' +
           'Example: { listId: "...", recordId: "...", objectType: "companies" }'
       );
     }
     if (hasObjectType && !hasRecordId) {
-      throw new Error(
+      throw new UniversalValidationError(
         'Mode 1 (Add) requires both recordId AND objectType.\n' +
           'You provided objectType but missing recordId.\n' +
           'Example: { listId: "...", recordId: "...", objectType: "companies" }'
       );
     }
 
-    throw new Error(
+    throw new UniversalValidationError(
       'No management mode detected. Must provide parameters for one of:\n' +
         '  - Mode 1 (Add): recordId, objectType, [initialValues]\n' +
         '  - Mode 2 (Remove): entryId (only)\n' +
@@ -372,7 +372,7 @@ function detectManagementMode(params: Record<string, unknown>): ManagementMode {
   }
 
   if (modesDetected > 1) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Multiple management modes detected. Provide parameters for exactly ONE mode.\n' +
         'See tool description for details on parameter requirements for each mode.'
     );
@@ -848,7 +848,7 @@ function detectFilterMode(params: Record<string, unknown>): FilterMode {
   ].filter(Boolean).length;
 
   if (modesDetected === 0) {
-    throw new Error(
+    throw new UniversalValidationError(
       'No filter mode detected. Must provide parameters for one of:\n' +
         '  - Mode 1 (Simple): attributeSlug, condition, value\n' +
         '  - Mode 2 (Advanced): filters (object with filters array)\n' +
@@ -859,7 +859,7 @@ function detectFilterMode(params: Record<string, unknown>): FilterMode {
   }
 
   if (modesDetected > 1) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Multiple filter modes detected. Provide parameters for exactly ONE mode.\n' +
         'See tool description for details on parameter requirements for each mode.'
     );

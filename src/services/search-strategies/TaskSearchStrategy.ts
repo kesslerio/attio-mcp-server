@@ -4,6 +4,7 @@
  */
 
 import { performance } from 'perf_hooks';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 import {
   SearchType,
@@ -114,14 +115,12 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
           log.warn('TASKS API WARNING: listTasks() returned non-array value', {
             returnedType: typeof tasksList,
           });
-          return [];
-        } else {
-          // Convert AttioTask[] to UniversalRecordResult[]
-          return tasksList.map(UniversalUtilityService.convertTaskToRecord);
+          throw new ResultEncodingError();
         }
+        return tasksList.map(UniversalUtilityService.convertTaskToRecord);
       } catch (error: unknown) {
         log.error('Failed to load tasks from API', error);
-        return []; // Fallback to empty array
+        throw error;
       }
     };
 

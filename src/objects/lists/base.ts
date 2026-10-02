@@ -1,22 +1,23 @@
 /**
  * Core list CRUD operations.
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   getAllLists as getGenericLists,
   getListDetails as getGenericListDetails,
-} from '../../api/operations/index.js';
-import { EnhancedApiError } from '../../errors/enhanced-api-errors.js';
+} from '@/api/operations/index.js';
+import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
 import { AttioApiError } from '@/errors/api-errors.js';
 import { safeErrorDetails } from '@/types/attio-error-body.js';
 import {
   getErrorMessage,
   getErrorStatus,
-} from '../../types/error-interfaces.js';
-import { hasErrorResponse } from '../../types/list-types.js';
-import { createScopedLogger, OperationType } from '../../utils/logger.js';
-import type { AttioList } from '../../types/attio.js';
-import { asListArray, ensureListShape, extract } from './shared.js';
+} from '@/types/error-interfaces.js';
+import { hasErrorResponse } from '@/types/list-types.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
+import type { AttioList } from '@/types/attio.js';
+import { asListArray, ensureListShape, extract } from '@/objects/lists/shared.js';
 
 /**
  * Gets all lists in the workspace.
@@ -117,15 +118,17 @@ export async function createList(
   attributes: Record<string, unknown>
 ): Promise<AttioList> {
   if (!attributes || typeof attributes !== 'object') {
-    throw new Error('Invalid attributes: Must be a non-empty object');
+    throw new UniversalValidationError(
+      'Invalid attributes: Must be a non-empty object'
+    );
   }
 
   if (!attributes.name) {
-    throw new Error('List name is required');
+    throw new UniversalValidationError('List name is required');
   }
 
   if (!attributes.parent_object) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Parent object type is required (e.g., "companies", "people")'
     );
   }
@@ -208,11 +211,15 @@ export async function updateList(
   attributes: Record<string, unknown>
 ): Promise<AttioList> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!attributes || typeof attributes !== 'object') {
-    throw new Error('Invalid attributes: Must be a non-empty object');
+    throw new UniversalValidationError(
+      'Invalid attributes: Must be a non-empty object'
+    );
   }
 
   const api = getLazyAttioClient();
@@ -297,7 +304,9 @@ export async function updateList(
  */
 export async function deleteList(listId: string): Promise<boolean> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   const api = getLazyAttioClient();
