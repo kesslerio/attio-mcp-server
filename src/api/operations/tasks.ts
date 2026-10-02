@@ -2,6 +2,7 @@
  * Task operations for Attio
  */
 import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import { getValidatedAttioClient } from '@/utils/client-resolver.js';
 import type { AxiosInstance } from 'axios';
 import {
@@ -56,7 +57,7 @@ function extractTaskFromResponse(res: Record<string, unknown>): AttioTask {
     // Direct task object in data
     return data as unknown as AttioTask;
   } else {
-    throw new Error('Invalid API response structure: missing task data');
+    throw new ResultEncodingError();
   }
 }
 
@@ -146,12 +147,16 @@ export async function listTasks(
   if (status) params.append('status', status);
   if (assigneeId) params.append('assignee', assigneeId);
   const path = `/tasks?${params.toString()}`;
-  return callWithRetry(async () => {
-    const res = await api.get<AttioListResponse<AttioTask>>(path);
-    const tasks = res?.data?.data || [];
-    // Transform each task in the response for backward compatibility
-    return tasks.map((task) => transformTaskResponse(task));
-  }, retryConfig);
+  const res = await callWithRetry(
+    () => api.get<AttioListResponse<AttioTask>>(path),
+    retryConfig
+  );
+  const tasks = res?.data?.data;
+  if (
+    !Array.isArray(tasks) ||
+    tasks.some((task) => !task || typeof task !== 'object' || Array.isArray(task))
+  ) throw new ResultEncodingError();
+  return tasks.map((task) => transformTaskResponse(task));
 }
 
 export async function getTask(
@@ -160,13 +165,17 @@ export async function getTask(
 ): Promise<AttioTask> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
-  return callWithRetry(async () => {
-    const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    const task = extractTaskFromResponse(
-      res as unknown as Record<string, unknown>
-    );
-    return transformTaskResponse(task);
-  }, retryConfig);
+  const res = await callWithRetry(
+    () => api.get<AttioSingleResponse<AttioTask>>(path),
+    retryConfig
+  );
+  const task = extractTaskFromResponse(
+    res as unknown as Record<string, unknown>
+  );
+  if (!task || typeof task !== 'object' || Array.isArray(task)) {
+    throw new ResultEncodingError();
+  }
+  return transformTaskResponse(task);
 }
 
 export async function createTask(

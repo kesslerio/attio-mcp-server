@@ -5,6 +5,7 @@
 
 import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import { createScopedLogger } from '@/utils/logger.js';
 import {
   AttioList,
@@ -45,20 +46,21 @@ export async function getAllLists(
     path += `&objectSlug=${objectSlug}`;
   }
 
-  return callWithRetry(async () => {
-    const response = await api.get<AttioListResponse<AttioList>>(path);
-    // Ensure we always return an array, never undefined/null/objects - handle multiple shape variants
-    const items = Array.isArray(response?.data?.data)
-      ? response.data.data
-      : Array.isArray(response?.data?.lists)
-        ? response.data.lists
-        : Array.isArray(response?.data?.items)
-          ? response.data.items
-          : Array.isArray(response?.data)
-            ? response.data
-            : [];
-    return items;
-  }, retryConfig);
+  const response = await callWithRetry(
+    () => api.get<AttioListResponse<AttioList>>(path),
+    retryConfig
+  );
+  const items = Array.isArray(response?.data?.data)
+    ? response.data.data
+    : Array.isArray(response?.data?.lists)
+      ? response.data.lists
+      : Array.isArray(response?.data?.items)
+        ? response.data.items
+        : Array.isArray(response?.data)
+          ? response.data
+          : undefined;
+  if (!Array.isArray(items)) throw new ResultEncodingError();
+  return items;
 }
 
 /**

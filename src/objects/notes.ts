@@ -6,6 +6,7 @@
  */
 
 import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   UniversalValidationError,
   ErrorType,
@@ -147,18 +148,13 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
     const res = (response?.data as {
       data?: AttioNote[];
       meta?: { next_cursor?: string };
-    }) ?? { data: [] };
-    const items = Array.isArray(res.data) ? res.data : [];
-    return { data: items, meta: res.meta };
+    });
+    if (!Array.isArray(res?.data)) throw new ResultEncodingError();
+    return { data: res.data, meta: res.meta };
   } catch (error: unknown) {
     debug('notes', 'List notes failed', {
       error: getErrorMessage(error) || 'Unknown error',
     });
-    // Prefer returning an empty list on benign 404s for list operations
-    const status = getErrorStatus(error);
-    if (status === 404) {
-      return { data: [], meta: undefined };
-    }
     throw error;
   }
 }
@@ -183,10 +179,7 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
     const response = await api.get(`/notes/${noteId}`);
     const data = response?.data as { data: AttioNote } | undefined;
     if (!data) {
-      throw new UniversalValidationError(
-        'Note lookup returned empty response',
-        ErrorType.SYSTEM_ERROR
-      );
+      throw new ResultEncodingError();
     }
     return data;
   } catch (error: unknown) {
@@ -254,6 +247,9 @@ export function normalizeNoteResponse(note: AttioNote): {
   };
   raw: AttioNote;
 } {
+  if (!note || typeof note !== 'object' || Array.isArray(note)) {
+    throw new ResultEncodingError();
+  }
   const noteRecord = note as Record<string, unknown>;
   const meetingIdField =
     'meeting_id' in noteRecord ? noteRecord.meeting_id : undefined;
@@ -272,8 +268,10 @@ export function normalizeNoteResponse(note: AttioNote): {
     note.note_id ??
     idObject?.record_id ??
     idObject?.note_id ??
-    idObject?.id ??
-    'unknown';
+    idObject?.id;
+  if (typeof derivedRecordId !== 'string' || !derivedRecordId.trim()) {
+    throw new ResultEncodingError();
+  }
 
   const title = note.title ?? null;
   const contentMarkdown = note.content_markdown ?? note.content ?? null;

@@ -1,3 +1,4 @@
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 /**
  * Search functionality for People
  */
@@ -64,7 +65,8 @@ export async function searchPeople(query: string): Promise<Person[]> {
       limit: 50,
     });
 
-    return response.data.data || [];
+    if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+    return response.data.data;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {

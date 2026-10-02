@@ -7,16 +7,8 @@
 
 import type { UniversalRecord } from '@/types/attio.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
-import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
-import {
-  AuthenticationError,
-  AuthorizationError,
-  NetworkError,
-  RateLimitError,
-  ServerError,
-  ResourceNotFoundError,
-  createApiErrorFromAxiosError,
-} from '@/errors/api-errors.js';
+import { createApiErrorFromAxiosError } from '@/errors/api-errors.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   createRelationshipQuery,
   createTimeframeQuery,
@@ -31,74 +23,6 @@ import { getLazyAttioClient } from '@/api/lazy-client.js';
  */
 function resolveQueryApiClient(): AxiosInstance {
   return getLazyAttioClient();
-}
-
-/**
- * Handle Query API errors consistently across methods
- * Issue #935: Extracted to reduce code duplication
- */
-function handleQueryApiError(
-  error: unknown,
-  path: string,
-  context: {
-    resourceType: string;
-    operation: string;
-    metadata?: Record<string, unknown>;
-  }
-): UniversalRecord[] {
-  const apiError = createApiErrorFromAxiosError(error, path, 'POST');
-
-  // Re-throw critical errors that should bubble up
-  if (
-    apiError instanceof AuthenticationError ||
-    apiError instanceof AuthorizationError ||
-    apiError instanceof NetworkError ||
-    apiError instanceof RateLimitError ||
-    apiError instanceof ServerError
-  ) {
-    throw apiError;
-  }
-
-  // Handle not found gracefully - return empty results
-  if (apiError instanceof ResourceNotFoundError) {
-    debug(
-      'QueryApiService',
-      `No results for ${context.operation}`,
-      context.metadata
-    );
-    return [];
-  }
-
-  // Log and return empty for other errors
-  createScopedLogger(
-    'QueryApiService',
-    context.operation,
-    OperationType.API_CALL
-  ).error(`${context.operation} failed for ${context.resourceType}`, error);
-  return [];
-}
-
-function getAxiosErrorDetails(error: unknown): {
-  status?: number;
-  message?: string;
-  code?: string;
-} {
-  const errorObject = error as {
-    response?: {
-      status?: number;
-      data?: {
-        message?: string;
-        code?: string;
-      };
-    };
-    message?: string;
-  };
-
-  return {
-    status: errorObject.response?.status,
-    message: errorObject.response?.data?.message ?? errorObject.message,
-    code: errorObject.response?.data?.code,
-  };
 }
 
 function assertSupportedTimeframeQuery(
@@ -153,13 +77,10 @@ export class QueryApiService {
       };
 
       const response = await client.post(path, requestBody);
-      return response?.data?.data || [];
+      if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+      return response.data.data;
     } catch (error: unknown) {
-      return handleQueryApiError(error, path, {
-        resourceType: sourceResourceType,
-        operation: 'searchByRelationship',
-        metadata: { targetResourceType, targetRecordId },
-      });
+      throw createApiErrorFromAxiosError(error, path, 'POST');
     }
   }
 
@@ -186,23 +107,10 @@ export class QueryApiService {
       };
 
       const response = await client.post(path, requestBody);
-      return response?.data?.data || [];
+      if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+      return response.data.data;
     } catch (error: unknown) {
-      const { status, message } = getAxiosErrorDetails(error);
-
-      if (status === 400) {
-        throw new Error(
-          `Timeframe query rejected by Attio for ${resourceType}: ${
-            message || 'invalid timeframe filter'
-          }`
-        );
-      }
-
-      return handleQueryApiError(error, path, {
-        resourceType,
-        operation: 'searchByTimeframe',
-        metadata: { timeframeConfig },
-      });
+      throw createApiErrorFromAxiosError(error, path, 'POST');
     }
   }
 
@@ -244,13 +152,10 @@ export class QueryApiService {
       };
 
       const response = await client.post(path, requestBody);
-      return response?.data?.data || [];
+      if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+      return response.data.data;
     } catch (error: unknown) {
-      return handleQueryApiError(error, path, {
-        resourceType,
-        operation: 'searchByContent',
-        metadata: { query, fields },
-      });
+      throw createApiErrorFromAxiosError(error, path, 'POST');
     }
   }
 }

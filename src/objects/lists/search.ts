@@ -1,8 +1,8 @@
 /**
  * List search operations.
  */
-import type { AttioList } from '../../types/attio.js';
-import { getLists } from './base.js';
+import type { AttioList } from '@/types/attio.js';
+import { getLists } from '@/objects/lists/base.js';
 
 export async function searchLists(
   query: string,
@@ -10,12 +10,9 @@ export async function searchLists(
   offset: number = 0
 ): Promise<AttioList[]> {
   const allLists = await getLists(undefined, 100);
-  const listsArray = Array.isArray(allLists) ? allLists : [];
 
   const lowerQuery = query.toLowerCase();
-  const filtered = listsArray.filter((list) => {
-    if (!list || typeof list !== 'object') return false;
-
+  const filtered = allLists.filter((list) => {
     const name = (list.name || '').toLowerCase();
     const description = (list.description || '').toLowerCase();
     return name.includes(lowerQuery) || description.includes(lowerQuery);

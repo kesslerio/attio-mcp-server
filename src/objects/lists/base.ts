@@ -26,89 +26,16 @@ export async function getLists(
   objectSlug?: string,
   limit: number = 20
 ): Promise<AttioList[]> {
-  try {
-    const lists = await getGenericLists(objectSlug, limit);
-    // Always normalize list shapes to extract workspace_id from id objects
-    return asListArray(lists);
-  } catch (error: unknown) {
-    const errorMessage = getErrorMessage(error) ?? 'Unknown error';
-    if (process.env.NODE_ENV === 'development') {
-      createScopedLogger('objects.lists', 'getLists').warn(
-        'Generic getLists failed',
-        { errorMessage }
-      );
-    }
-
-    const api = getLazyAttioClient();
-    let path = `/lists?limit=${limit}`;
-
-    if (objectSlug) {
-      path += `&objectSlug=${objectSlug}`;
-    }
-
-    const response = await api.get(path);
-    return asListArray(extract<AttioList[]>(response));
-  }
+  const lists = await getGenericLists(objectSlug, limit);
+  return asListArray(lists);
 }
 
 /**
  * Gets details for a specific list.
  */
 export async function getListDetails(listId: string): Promise<AttioList> {
-  try {
-    const list = await getGenericListDetails(listId);
-    // Always normalize the list shape to extract workspace_id from id object
-    return ensureListShape(list);
-  } catch (error: unknown) {
-    const errorMessage = getErrorMessage(error) ?? 'Unknown error';
-    if (process.env.NODE_ENV === 'development') {
-      createScopedLogger('objects.lists', 'getListDetails').warn(
-        'Generic getListDetails failed',
-        { errorMessage }
-      );
-    }
-
-    const api = getLazyAttioClient();
-    const path = `/lists/${listId}`;
-
-    try {
-      const response = await api.get(path);
-      const extracted = extract<AttioList>(response);
-      return ensureListShape(extracted);
-    } catch (apiError: unknown) {
-      const status = getErrorStatus(apiError);
-      if (status === 404) {
-        throw new EnhancedApiError('Record not found', 404, path, 'GET', {
-          resourceType: 'lists',
-          recordId: String(listId),
-          httpStatus: 404,
-          documentationHint: 'Use search-lists to find valid list IDs.',
-        });
-      }
-      if (status === 422) {
-        const { InvalidRequestError } =
-          await import('../../errors/api-errors.js');
-        throw new InvalidRequestError(
-          'Invalid parameter(s) for list operation',
-          '/lists',
-          'GET'
-        );
-      }
-
-      const code = typeof status === 'number' ? status : 500;
-      throw new EnhancedApiError(
-        getErrorMessage(apiError) ?? 'List retrieval failed',
-        code,
-        path,
-        'GET',
-        {
-          resourceType: 'lists',
-          recordId: String(listId),
-          httpStatus: code,
-        }
-      );
-    }
-  }
+  const list = await getGenericListDetails(listId);
+  return ensureListShape(list);
 }
 
 /**

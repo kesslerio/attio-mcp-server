@@ -2,6 +2,7 @@
  * Record-related functionality
  */
 import { getLazyAttioClient } from '@api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   createRecord,
   getRecord,
@@ -580,7 +581,8 @@ export async function listObjectRecords<T extends AttioRecord>(
       }`;
 
       const response = await api.get(path);
-      return response.data.data || [];
+      if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+      return response.data.data;
     } catch (fallbackError) {
       throw fallbackError instanceof Error
         ? fallbackError

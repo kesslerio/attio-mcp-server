@@ -18,13 +18,13 @@ import {
   AttioListResponse,
 } from '@shared-types/attio.js';
 import {
-  ApiError,
   SearchRequestBody,
   ListRequestBody,
 } from '@shared-types/api-operations.js';
 import { LRUCache } from 'lru-cache';
-import { scoreAndRank } from '../../services/search-utilities/SearchScorer.js';
-import { createScopedLogger } from '../../utils/logger.js';
+import { scoreAndRank } from '@/services/search-utilities/SearchScorer.js';
+import { createScopedLogger } from '@/utils/logger.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 const logger = createScopedLogger('api.operations', 'search');
 
@@ -664,9 +664,8 @@ export async function searchObject<T extends AttioRecord>(
           });
         }, retryConfig);
 
-        const fastData = Array.isArray(fastResponse?.data?.data)
-          ? (fastResponse?.data?.data as AttioRecord[])
-          : [];
+        if (!Array.isArray(fastResponse?.data?.data)) throw new ResultEncodingError();
+        const fastData = fastResponse.data.data as AttioRecord[];
 
         logger.debug('[FastPath] Received results', {
           count: fastData.length,
@@ -706,6 +705,7 @@ export async function searchObject<T extends AttioRecord>(
 
         return truncatedFast as unknown as T[];
       } catch (error) {
+        if (error instanceof ResultEncodingError) throw error;
         logger.debug('[FastPath] Error executing candidate', {
           kind: candidate.kind,
           strategy: candidate.strategy,
@@ -722,65 +722,55 @@ export async function searchObject<T extends AttioRecord>(
     ? Math.max(minimumFetch, baseLimit * multiplier)
     : baseLimit;
 
-  return callWithRetry(async () => {
-    try {
-      const response = await api.post<AttioListResponse<T>>(path, {
-        filter,
-        limit: fetchLimit,
-      });
-      const rawData = response?.data?.data;
-      let data = Array.isArray(rawData) ? (rawData as AttioRecord[]) : [];
+  const response = await callWithRetry(
+    () => api.post<AttioListResponse<T>>(path, { filter, limit: fetchLimit }),
+    retryConfig
+  );
+  const rawData = response?.data?.data;
+  if (!Array.isArray(rawData)) throw new ResultEncodingError();
+  let data = rawData as AttioRecord[];
 
-      // OR-only fallback when AND-of-OR returns zero results (#885 recall fix)
-      // This handles over-constrained queries like "Beauty Glow Aesthetics Frisco"
-      // where some tokens don't exist but the record should still match
-      // Runs regardless of scoring state - scoring only affects ranking, not recall
-      if (data.length === 0 && parsedQuery) {
-        logger.debug('[Fallback] Zero results from AND-of-OR, trying OR-only', {
-          query: trimmedQuery,
-          objectType,
-        });
+  // OR-only fallback when AND-of-OR returns zero results (#885 recall fix)
+  // This handles over-constrained queries like "Beauty Glow Aesthetics Frisco"
+  // where some tokens don't exist but the record should still match
+  // Runs regardless of scoring state - scoring only affects ranking, not recall
+  if (data.length === 0 && parsedQuery) {
+    logger.debug('[Fallback] Zero results from AND-of-OR, trying OR-only', {
+      query: trimmedQuery,
+      objectType,
+    });
 
-        const fallbackFilter = buildORFallbackFilter(objectType, parsedQuery);
-        const fallbackResponse = await api.post<AttioListResponse<T>>(path, {
-          filter: fallbackFilter,
-          limit: fetchLimit,
-        });
-        const fallbackRawData = fallbackResponse?.data?.data;
-        data = Array.isArray(fallbackRawData)
-          ? (fallbackRawData as AttioRecord[])
-          : [];
+    const fallbackFilter = buildORFallbackFilter(objectType, parsedQuery);
+    const fallbackResponse = await callWithRetry(
+      () => api.post<AttioListResponse<T>>(path, { filter: fallbackFilter, limit: fetchLimit }),
+      retryConfig
+    );
+    const fallbackRawData = fallbackResponse?.data?.data;
+    if (!Array.isArray(fallbackRawData)) throw new ResultEncodingError();
+    data = fallbackRawData as AttioRecord[];
 
-        logger.debug('[Fallback] OR-only results', {
-          count: data.length,
-        });
-      }
+    logger.debug('[Fallback] OR-only results', {
+      count: data.length,
+    });
+  }
 
-      if (!scoringEnabled || data.length <= 1) {
-        const truncated = data.slice(0, baseLimit);
-        return truncated as unknown as T[];
-      }
+  if (!scoringEnabled || data.length <= 1) {
+    const truncated = data.slice(0, baseLimit);
+    return truncated as unknown as T[];
+  }
 
-      const ranked = scoreAndRank(
-        trimmedQuery,
-        data,
-        parsedQuery ?? undefined
-      ) as AttioRecord[];
-      const truncated = ranked.slice(0, baseLimit);
+  const ranked = scoreAndRank(
+    trimmedQuery,
+    data,
+    parsedQuery ?? undefined
+  ) as AttioRecord[];
+  const truncated = ranked.slice(0, baseLimit);
 
-      if (cacheKey) {
-        searchCache.set(cacheKey, truncated);
-      }
+  if (cacheKey) {
+    searchCache.set(cacheKey, truncated);
+  }
 
-      return truncated as unknown as T[];
-    } catch (error: unknown) {
-      const apiError = error as ApiError;
-      if (apiError.response && apiError.response.status === 404) {
-        throw new Error(`No ${objectType} found matching '${query}'`);
-      }
-      throw error;
-    }
-  }, retryConfig);
+  return truncated as unknown as T[];
 }
 
 /**
@@ -819,7 +809,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
       // If filters is undefined, return body without filter
       if (!filters) {
         if (process.env.NODE_ENV === 'development') {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@/utils/logger.js');
           createScopedLogger('operations.search', 'advancedSearchObject').debug(
             'No filters provided, using default parameters only'
           );
@@ -829,7 +819,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
 
       // Import validation utilities dynamically to avoid circular dependencies
       const { validateFilters } =
-        await import('../../utils/filters/validation-utils.js');
+        await import('@/utils/filters/validation-utils.js');
 
       // Use centralized validation with consistent error messages
       try {
@@ -859,7 +849,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
 
         // Log filter transformation for debugging in development
         if (process.env.NODE_ENV === 'development') {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@/utils/logger.js');
           createScopedLogger('operations.search', 'advancedSearchObject').debug(
             'Transformed filters',
             {
@@ -876,7 +866,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
       if (err instanceof FilterValidationError) {
         // Log the full details for debugging
         if (process.env.NODE_ENV === 'development') {
-          const { createScopedLogger } = await import('../../utils/logger.js');
+          const { createScopedLogger } = await import('@/utils/logger.js');
           createScopedLogger('operations.search', 'advancedSearchObject').warn(
             'Filter validation error',
             {
@@ -909,19 +899,10 @@ export async function advancedSearchObject<T extends AttioRecord>(
     return body;
   };
 
-  return callWithRetry(async () => {
+  const response = await callWithRetry(async () => {
     try {
       const requestBody = await createRequestBody();
-      const response = await api.post<AttioListResponse<T>>(path, requestBody);
-      const data = response?.data?.data;
-
-      // Ensure we always return an array, never boolean or other types
-      if (Array.isArray(data)) {
-        return data;
-      }
-
-      // Return empty array if data is null, undefined, or not an array
-      return [];
+      return await api.post<AttioListResponse<T>>(path, requestBody);
     } catch (err) {
       // If the error is a FilterValidationError, rethrow it unchanged
       // Tests expect this specific error type to bubble up
@@ -938,6 +919,8 @@ export async function advancedSearchObject<T extends AttioRecord>(
       });
     }
   }, retryConfig);
+  if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+  return response.data.data;
 }
 
 /**
@@ -956,7 +939,7 @@ export async function listObjects<T extends AttioRecord>(
   const api = getLazyAttioClient();
   const path = `/objects/${objectType}/records/query`;
 
-  return callWithRetry(async () => {
+  const response = await callWithRetry(async () => {
     const body: ListRequestBody = {
       limit: limit || 20,
       sorts: [
@@ -968,14 +951,8 @@ export async function listObjects<T extends AttioRecord>(
       ],
     };
 
-    const response = await api.post<AttioListResponse<T>>(path, body);
-    let result = response?.data?.data || [];
-
-    // BUGFIX: Handle case where API returns {} instead of [] for empty results
-    if (result && typeof result === 'object' && !Array.isArray(result)) {
-      result = [];
-    }
-
-    return result;
+    return api.post<AttioListResponse<T>>(path, body);
   }, retryConfig);
+  if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+  return response.data.data;
 }

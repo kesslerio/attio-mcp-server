@@ -13,7 +13,7 @@ import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/sear
 import { createRecordConfig } from '@/handlers/tool-configs/universal/core/crud-operations.js';
 import { getGlobalContext } from '@/api/lazy-client.js';
 import { getLogContext } from '@/utils/logger.js';
-import { CompanyMockFactory, ListMockFactory } from '@test/utils/mock-factories/index.js';
+import { CompanyMockFactory, ListMockFactory, TaskMockFactory } from '@test/utils/mock-factories/index.js';
 import * as companyOperations from '@/objects/companies/index.js';
 import * as listOperations from '@/objects/lists.js';
 import * as listBase from '@/objects/lists/base.js';
@@ -32,6 +32,10 @@ import { DealSearchStrategy } from '@/services/search-strategies/DealSearchStrat
 import { PeopleSearchStrategy } from '@/services/search-strategies/PeopleSearchStrategy.js';
 import { ListSearchStrategy } from '@/services/search-strategies/ListSearchStrategy.js';
 import { NoteSearchStrategy } from '@/services/search-strategies/NoteSearchStrategy.js';
+import { RecordsSearchService } from '@/services/search/RecordsSearchService.js';
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
+import * as searchOperations from '@/api/operations/search.js';
+import { ResourceType } from '@/types/attio.js';
 import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import { UniversalRetrievalService } from '@/services/UniversalRetrievalService.js';
 import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
@@ -479,6 +483,215 @@ describe('structured tool protocol', () => {
         isError: false, structuredContent: { data: [], count: 0, next_cursor: null },
       });
       expect(upstream).toHaveBeenCalledTimes(2);
+    }
+  );
+
+  it('serializes null assignees through native task search and details', async () => {
+    vi.stubEnv('USE_MOCK_DATA', 'false');
+    clearAllCaches();
+    StrategyFactory.clearStrategies();
+    const task = { ...TaskMockFactory.create(), assignee: null };
+    const api = {
+      defaults: {},
+      get: vi.fn()
+        .mockResolvedValueOnce({ data: { data: [task] } })
+        .mockResolvedValueOnce({ data: { data: task } }),
+    };
+    vi.spyOn(attioClientModule, 'createAttioClient').mockReturnValue(api as never);
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+    const search = await client.callTool({
+      name: 'search_records', arguments: { resource_type: 'tasks' },
+    });
+    const details = await client.callTool({
+      name: 'get_record_details',
+      arguments: { resource_type: 'tasks', record_id: task.id.task_id },
+    });
+    expect(search).toMatchObject({
+      isError: false,
+      structuredContent: { data: [{ id: { task_id: task.id.task_id } }], count: 1, next_cursor: null },
+    });
+    expect(details).toMatchObject({
+      isError: false, structuredContent: { data: { id: { task_id: task.id.task_id } } },
+    });
+    const found = (search.structuredContent?.data as Array<Record<string, unknown>>)[0];
+    for (const record of [found, details.structuredContent?.data as Record<string, unknown>]) {
+      expect(record).not.toHaveProperty('assignee');
+      expect(record).not.toHaveProperty('assignee_id');
+      expect(record.values).not.toHaveProperty('assignee');
+      expect(record.values).toHaveProperty('content', task.content);
+    }
+    expect(api.get).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(['tasks', 'notes', 'lists', 'companies', 'people', 'deals', 'records'] as const)(
+    'rejects malformed native %s collections and accepts empty data',
+    async (resourceType) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      clearAllCaches();
+      StrategyFactory.clearStrategies();
+      const api = { defaults: {}, get: vi.fn(), post: vi.fn() };
+      vi.spyOn(attioClientModule, 'createAttioClient').mockReturnValue(api as never);
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      for (const payload of [undefined, {}, { data: {} }, { data: null }, { data: false }]) {
+        api.get.mockReset().mockResolvedValue({ data: payload });
+        api.post.mockReset().mockResolvedValue({ data: payload });
+        const result = await client.callTool({
+          name: 'search_records', arguments: { resource_type: resourceType },
+        });
+        expect(result).toMatchObject({
+          isError: true,
+          structuredContent: { error: { code: 'RESULT_ENCODING_FAILED', retryable: false } },
+        });
+        expect(result.structuredContent).not.toHaveProperty('data');
+        expect(api.get.mock.calls.length + api.post.mock.calls.length).toBe(1);
+      }
+      api.get.mockReset().mockResolvedValue({ data: { data: [] } });
+      api.post.mockReset().mockResolvedValue({ data: { data: [] } });
+      expect(await client.callTool({
+        name: 'search_records', arguments: { resource_type: resourceType },
+      })).toMatchObject({
+        isError: false, structuredContent: { data: [], count: 0, next_cursor: null },
+      });
+    }
+  );
+
+  it.each(['data', 'lists', 'items', 'raw'] as const)(
+    'preserves the native list collection alias %s and real identity', async (alias) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      StrategyFactory.clearStrategies();
+      const list = ListMockFactory.create();
+      const api = { get: vi.fn() };
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      for (const data of [[], [list]]) {
+        api.get.mockResolvedValue({ data: alias === 'raw' ? data : { [alias]: data } });
+        expect(await client.callTool({
+          name: 'search_records', arguments: { resource_type: 'lists' },
+        })).toMatchObject({
+          isError: false,
+          structuredContent: { data: data.length ? [{ id: { list_id: list.id.list_id } }] : [], count: data.length, next_cursor: null },
+        });
+      }
+      expect(api.get).toHaveBeenCalledTimes(2);
+    }
+  );
+
+  it.each(['lists', 'notes', 'tasks'] as const)(
+    'rejects native %s details without fabricating identity', async (resourceType) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      clearAllCaches();
+      const api = { defaults: {}, get: vi.fn().mockResolvedValue({ data: { data: {} } }) };
+      vi.spyOn(attioClientModule, 'createAttioClient').mockReturnValue(api as never);
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      expect(await client.callTool({
+        name: 'get_record_details',
+        arguments: { resource_type: resourceType, record_id: CompanyMockFactory.create().id.record_id },
+      })).toMatchObject({
+        isError: true,
+        structuredContent: { error: { code: 'RESULT_ENCODING_FAILED', retryable: false } },
+      });
+      expect(api.get).toHaveBeenCalledOnce();
+    }
+  );
+
+  it.each(['timeframe', 'relationship', 'content'] as const)(
+    'preserves credentials, failures and native response shape in %s queries', async (kind) => {
+      const actual = await vi.importActual<typeof import('@/api/attio-client.js')>('@/api/attio-client.js');
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      vi.stubEnv('ATTIO_API_KEY', undefined);
+      vi.stubEnv('ATTIO_ACCESS_TOKEN', undefined);
+      clearAllCaches();
+      const factory = vi.spyOn(attioClientModule, 'createAttioClient').mockImplementation(actual.createAttioClient);
+      vi.spyOn(attioClientModule, 'getAttioClient').mockImplementation(actual.getAttioClient);
+      const args = {
+        resource_type: 'companies',
+        ...(kind === 'timeframe' ? { created_after: '2026-10-01T00:00:00Z' }
+          : kind === 'relationship' ? {
+            search_type: 'relationship', relationship_target_type: 'people',
+            relationship_target_id: CompanyMockFactory.create().id.record_id,
+          } : { search_type: 'content', query: 'Company', content_fields: ['name'] }),
+      };
+      expect(ClientCache.hasInstance()).toBe(false);
+      expect(await client.callTool({ name: 'search_records', arguments: args })).toMatchObject({
+        isError: true, structuredContent: { error: { code: 'UNAUTHENTICATED', retryable: false } },
+      });
+      expect(ClientCache.hasInstance()).toBe(false);
+      const api = { defaults: {}, post: vi.fn() };
+      factory.mockReturnValue(api as never);
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      for (const [status, code, retryable] of [
+        [400, 'VALIDATION_ERROR', false], [403, 'PERMISSION_DENIED', false],
+        [404, 'NOT_FOUND', false], [429, 'RATE_LIMITED', true], [503, 'UPSTREAM_UNAVAILABLE', true],
+      ] as const) {
+        api.post.mockRejectedValue({ response: { status, data: { message: 'Query rejected' } } });
+        expect(await client.callTool({ name: 'search_records', arguments: args })).toMatchObject({
+          isError: true, structuredContent: { error: { code, retryable } },
+        });
+      }
+      api.post.mockReset().mockResolvedValue({ data: { data: {} } });
+      expect(await client.callTool({ name: 'search_records', arguments: args })).toMatchObject({
+        isError: true, structuredContent: { error: { code: 'RESULT_ENCODING_FAILED', retryable: false } },
+      });
+      expect(api.post).toHaveBeenCalledOnce();
+      api.post.mockResolvedValue({ data: { data: [] } });
+      expect(await client.callTool({ name: 'search_records', arguments: args })).toMatchObject({
+        isError: false, structuredContent: { data: [], count: 0, next_cursor: null },
+      });
+    }
+  );
+
+  it('preserves custom-object credentials, causes, malformed results and empty success', async () => {
+    const actual = await vi.importActual<typeof import('@/api/attio-client.js')>('@/api/attio-client.js');
+    vi.stubEnv('ATTIO_API_KEY', undefined);
+    vi.stubEnv('ATTIO_ACCESS_TOKEN', undefined);
+    clearAllCaches();
+    vi.spyOn(attioClientModule, 'createAttioClient').mockImplementation(actual.createAttioClient);
+    vi.spyOn(attioClientModule, 'getAttioClient').mockImplementation(actual.getAttioClient);
+    const credentialFailure = await RecordsSearchService.searchCustomObject('funds').catch((error: unknown) => error);
+    expect(createSecureToolErrorResult(credentialFailure)).toMatchObject({
+      isError: true, structuredContent: { error: { code: 'UNAUTHENTICATED', retryable: false } },
+    });
+    const api = { post: vi.fn() };
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+    for (const [status, code, retryable] of [
+      [400, 'VALIDATION_ERROR', false], [403, 'PERMISSION_DENIED', false],
+      [404, 'NOT_FOUND', false], [429, 'RATE_LIMITED', true], [503, 'UPSTREAM_UNAVAILABLE', true],
+    ] as const) {
+      const failure = { response: { status, data: { message: 'Query rejected' } } };
+      api.post.mockRejectedValue(failure);
+      try {
+        await RecordsSearchService.searchCustomObject('funds');
+        expect.fail('Expected custom-object search to reject');
+      } catch (error) {
+        expect(error).toHaveProperty('cause', failure);
+        expect(createSecureToolErrorResult(error)).toMatchObject({
+          isError: true, structuredContent: { error: { code, retryable } },
+        });
+      }
+    }
+    api.post.mockReset().mockResolvedValue({ data: {} });
+    await expect(RecordsSearchService.searchCustomObject('funds')).rejects.toMatchObject({
+      cause: { code: 'RESULT_ENCODING_FAILED' },
+    });
+    expect(api.post).toHaveBeenCalledOnce();
+    api.post.mockResolvedValue({ data: { data: [] } });
+    await expect(RecordsSearchService.searchCustomObject('funds')).resolves.toEqual([]);
+  });
+
+  it.each(['fast', 'primary', 'recall', 'advanced', 'list'] as const)(
+    'rejects malformed record responses in the native %s path', async (path) => {
+      const api = { post: vi.fn().mockResolvedValue({ data: { data: {} } }) };
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      const query = path === 'fast' ? `${CompanyMockFactory.create().id.record_id}.com` : path === 'recall' ? 'Company Example' : '';
+      if (path === 'recall') {
+        api.post.mockResolvedValueOnce({ data: { data: [] } })
+          .mockResolvedValueOnce({ data: { data: [] } })
+          .mockResolvedValueOnce({ data: { data: [] } });
+      }
+      const operation = path === 'advanced' ? searchOperations.advancedSearchObject(ResourceType.COMPANIES)
+        : path === 'list' ? searchOperations.listObjects(ResourceType.COMPANIES)
+          : searchOperations.searchObject(ResourceType.COMPANIES, query);
+      await expect(operation).rejects.toMatchObject({ code: 'RESULT_ENCODING_FAILED' });
+      expect(api.post).toHaveBeenCalledTimes(path === 'recall' ? 4 : 1);
     }
   );
 
