@@ -536,8 +536,11 @@ export function createSecureToolErrorResult(
     content: [
       {
         type: 'text' as const,
-        text: contentMessage,
+        text: JSON.stringify(structuredContent),
       },
+      ...(process.env.MCP_TEXT_RESULTS === 'false'
+        ? []
+        : [{ type: 'text' as const, text: structuredContent.error.message }]),
     ],
     isError: true,
     structuredContent,

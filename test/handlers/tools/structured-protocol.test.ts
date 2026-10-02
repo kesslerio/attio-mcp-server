@@ -806,42 +806,94 @@ describe('structured tool protocol', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('returns execution validation errors before a domain call, including normalization failures', async () => {
-    const result = await client.callTool({
-      name: 'get_record_details',
-      arguments: { resource_type: 'companies' },
-    });
-    expect(result).toMatchObject({
-      isError: true,
-      structuredContent: {
-        error: { code: 'VALIDATION_ERROR', retryable: false },
-      },
-    });
-    const handler = vi.spyOn(searchRecordsConfig, 'handler');
-    const oversized = await client.callTool({
-      name: 'search_records',
-      arguments: {
-        resource_type: 'companies',
-        query: 'x'.repeat(1024 * 1024 + 1),
-      },
-    });
-    expect(oversized).toMatchObject({
-      isError: true,
-      structuredContent: {
-        error: { code: 'VALIDATION_ERROR', retryable: false },
-      },
-    });
-    expect(handler).not.toHaveBeenCalled();
-    const { tools } = await client.listTools();
-    const schema = tools.find(
-      (tool) => tool.name === 'get_record_details'
-    )!.outputSchema!;
-    expect(
-      new AjvJsonSchemaValidator().getValidator(schema)(
-        result.structuredContent
-      ).valid
-    ).toBe(true);
-  });
+  it.each(['true', 'false'])(
+    'serializes validation and normalization failure envelopes first with prose setting %s',
+    async (setting) => {
+      vi.stubEnv('MCP_TEXT_RESULTS', setting);
+      const result = await client.callTool({
+        name: 'get_record_details',
+        arguments: { resource_type: 'companies' },
+      });
+      expect(result).toMatchObject({
+        isError: true,
+        structuredContent: {
+          error: { code: 'VALIDATION_ERROR', retryable: false },
+        },
+      });
+      const handler = vi.spyOn(searchRecordsConfig, 'handler');
+      const oversized = await client.callTool({
+        name: 'search_records',
+        arguments: {
+          resource_type: 'companies',
+          query: 'x'.repeat(1024 * 1024 + 1),
+        },
+      });
+      expect(oversized).toMatchObject({
+        isError: true,
+        structuredContent: {
+          error: { code: 'VALIDATION_ERROR', retryable: false },
+        },
+      });
+      expect(handler).not.toHaveBeenCalled();
+      for (const failure of [result, oversized]) {
+        expect(JSON.parse(failure.content[0].text as string)).toEqual(
+          failure.structuredContent
+        );
+        expect(failure.content).toHaveLength(setting === 'false' ? 1 : 2);
+      }
+      const { tools } = await client.listTools();
+      const schema = tools.find(
+        (tool) => tool.name === 'get_record_details'
+      )!.outputSchema!;
+      expect(
+        new AjvJsonSchemaValidator().getValidator(schema)(
+          result.structuredContent
+        ).valid
+      ).toBe(true);
+    }
+  );
+
+  it.each(['true', 'false'])(
+    'serializes search validation and detail 403 envelopes first with prose setting %s',
+    async (setting) => {
+      vi.stubEnv('MCP_TEXT_RESULTS', setting);
+      const searchService = vi.spyOn(UniversalSearchService, 'searchRecords');
+      const search = await client.callTool({ name: 'search_records', arguments: {} });
+      expect(search).toMatchObject({
+        isError: true,
+        structuredContent: { error: { code: 'VALIDATION_ERROR', retryable: false } },
+      });
+      expect(searchService).not.toHaveBeenCalled();
+      const record = CompanyMockFactory.create();
+      const upstream = vi.spyOn(companyOperations, 'getCompanyDetails').mockRejectedValue(
+        new AxiosError('Read denied', 'ERR_BAD_RESPONSE', undefined, undefined, {
+          status: 403,
+          statusText: 'Forbidden',
+          data: { message: 'Read denied' },
+          headers: {},
+          config: { headers: {} },
+        } as never)
+      );
+      const details = await client.callTool({
+        name: 'get_record_details',
+        arguments: { resource_type: 'companies', record_id: record.id.record_id },
+      });
+      expect(details).toMatchObject({
+        isError: true,
+        structuredContent: { error: { code: 'PERMISSION_DENIED', retryable: false } },
+      });
+      expect(upstream).toHaveBeenCalledOnce();
+      for (const failure of [search, details]) {
+        const envelope = JSON.parse(failure.content[0].text as string);
+        expect(envelope).toEqual(failure.structuredContent);
+        expect(envelope.error).toMatchObject({ message: expect.any(String), retryable: false });
+        expect(failure.content).toHaveLength(setting === 'false' ? 1 : 2);
+        if (setting !== 'false') {
+          expect(failure.content[1]).toEqual({ type: 'text', text: envelope.error.message });
+        }
+      }
+    }
+  );
 
   it('completes a handler once even when its companion formatter throws', async () => {
     const record = CompanyMockFactory.create();
@@ -862,28 +914,36 @@ describe('structured tool protocol', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 
-  it('prevents prebuilt MCP results from bypassing the representative contract', async () => {
-    const handler = vi.spyOn(getRecordDetailsConfig, 'handler');
-    handler.mockResolvedValueOnce({
-      content: [],
-      isError: true,
-      error: { code: 403, message: 'Denied' },
-    } as unknown as UniversalRecordResult);
-    handler.mockResolvedValueOnce({
-      content: [{ type: 'text', text: 'invalid success' }],
-      isError: false,
-    } as unknown as UniversalRecordResult);
-    for (const code of ['PERMISSION_DENIED', 'RESULT_ENCODING_FAILED']) {
-      const result = await client.callTool({
-        name: 'get_record_details',
-        arguments: { resource_type: 'companies', record_id: 'test-id' },
-      });
-      expect(result).toMatchObject({
+  it.each(['true', 'false'])(
+    'serializes returned and encoding failures with prose setting %s',
+    async (setting) => {
+      vi.stubEnv('MCP_TEXT_RESULTS', setting);
+      const handler = vi.spyOn(getRecordDetailsConfig, 'handler');
+      handler.mockResolvedValueOnce({
+        content: [],
         isError: true,
-        structuredContent: { error: { code, retryable: false } },
-      });
+        error: { code: 403, message: 'Denied' },
+      } as unknown as UniversalRecordResult);
+      handler.mockResolvedValueOnce({
+        content: [{ type: 'text', text: 'invalid success' }],
+        isError: false,
+      } as unknown as UniversalRecordResult);
+      for (const code of ['PERMISSION_DENIED', 'RESULT_ENCODING_FAILED']) {
+        const result = await client.callTool({
+          name: 'get_record_details',
+          arguments: { resource_type: 'companies', record_id: 'test-id' },
+        });
+        expect(result).toMatchObject({
+          isError: true,
+          structuredContent: { error: { code, retryable: false } },
+        });
+        expect(JSON.parse(result.content[0].text as string)).toEqual(
+          result.structuredContent
+        );
+        expect(result.content).toHaveLength(setting === 'false' ? 1 : 2);
+      }
     }
-  });
+  );
 
   it.each(['ECONNABORTED', 'EHOSTUNREACH', 'ENETUNREACH'])(
     'publishes %s as a retryable read failure through native timeframe search',

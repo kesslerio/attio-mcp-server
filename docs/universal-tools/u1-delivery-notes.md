@@ -2,10 +2,13 @@
 
 The current native result contract follows KTD4: `search_records` and
 `get_record_details` publish a sanitized envelope in `structuredContent` and
-serialize that same envelope in `content[0].text`. Search includes `data`,
-`count`, and `next_cursor`; details includes `data`. Optional prose follows in
-`content[1]`. `MCP_TEXT_RESULTS=false` skips the prose formatter and leaves one
-JSON block. Connector `search` and `fetch` retain their approved success formats.
+serialize that same envelope in `content[0].text` on both success and execution
+failure. Successful search includes `data`, `count`, and `next_cursor`; successful
+details includes `data`. Failures include `error` with sanitized `code`, `message`,
+and `retryable`. Optional prose follows in `content[1]`.
+`MCP_TEXT_RESULTS=false` skips companion prose and leaves exactly one envelope
+JSON block for either outcome. Connector `search` and `fetch` retain their
+approved success formats and use the shared failure ordering.
 
 The captured verification plan is historical evidence. Its native JSON
 compatibility projection and prose opt-out deferral claims were superseded by
@@ -14,7 +17,8 @@ the recorded Firstmate decisions. Neither describes the current implementation.
 Focused behavior coverage includes native Axios failures through list, task,
 and note details, applicable connector fetch calls, legacy relationship mutation
 annotations and uncertain outcomes, fresh mode denial, envelope-first MCP
-serialization, prose opt-out, formatter failure, and transport-observable
+serialization for validation, upstream, normalization, returned, and encoding
+failures, prose opt-out, formatter failure, and transport-observable
 mutation replay guards.
 
 Revised-head verification awaits the pipeline Test step. Earlier focused test

@@ -65,9 +65,10 @@ export const toolConfig: UniversalToolConfig = {
 
 `search_records` and `get_record_details` publish `outputSchema` through
 `tools/list`. Their `tools/call` results include `structuredContent` with a stable
-envelope. `content[0].text` serializes the final sanitized structured envelope
-for MCP clients that consume JSON text. Optional human-readable formatter output
-follows in `content[1]`:
+envelope. For both success and execution failure, `content[0].text` serializes
+the final sanitized structured envelope for MCP clients that consume JSON text.
+Optional human-readable prose follows in `content[1]`. With
+`MCP_TEXT_RESULTS=false`, only the envelope JSON remains:
 
 ```typescript
 // search_records
@@ -82,6 +83,8 @@ For example, read a record identifier from
 `result.structuredContent.data.id.record_id`, or from
 `JSON.parse(result.content[0].text).data.id.record_id`. Details JSON text retains
 the `data` wrapper; search JSON text includes `data`, `count`, and `next_cursor`.
+For a failed call, read `JSON.parse(result.content[0].text).error`; it contains
+the same sanitized `code`, `message`, and `retryable` as `structuredContent.error`.
 There is no third JSON block. Search counts describe the
 returned array. `next_cursor` is currently always null: continuation support is
 a later delivery, and null does not guarantee an unbounded search was complete.
