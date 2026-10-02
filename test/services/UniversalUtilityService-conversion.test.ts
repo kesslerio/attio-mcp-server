@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { AttioTask } from '@/types/attio.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 describe('UniversalUtilityService', () => {
   describe('convertTaskToRecord', () => {
@@ -159,7 +160,7 @@ describe('UniversalUtilityService', () => {
 
       expect(() => {
         UniversalUtilityService.convertTaskToRecord(task as AttioTask);
-      }).toThrow();
+      }).toThrow(ResultEncodingError);
     });
 
     it('should handle missing id in task', () => {
@@ -175,7 +176,7 @@ describe('UniversalUtilityService', () => {
 
       expect(() => {
         UniversalUtilityService.convertTaskToRecord(task as AttioTask);
-      }).toThrow('Task missing id property');
+      }).toThrow(ResultEncodingError);
     });
   });
 });

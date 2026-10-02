@@ -71,14 +71,18 @@ vi.mock('@handlers/tool-configs/universal/core/error-utils.js', async () => {
   };
 });
 
-vi.mock('@utils/logger.js', () => ({
-  createScopedLogger: vi.fn(() => ({
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  })),
-}));
+vi.mock('@/utils/logger.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/logger.js')>();
+  return {
+    ...actual,
+    createScopedLogger: vi.fn(() => ({
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+    })),
+  };
+});
 
 const importSharedHandlers = async () =>
   import('@handlers/tool-configs/universal/shared-handlers.js');
