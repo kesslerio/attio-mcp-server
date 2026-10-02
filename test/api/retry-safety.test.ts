@@ -33,30 +33,35 @@ describe('uncertain completion and transport retry policy', () => {
     'ECONNABORTED',
     'EHOSTUNREACH',
     'ENETUNREACH',
-  ])('classifies raw and wrapped %s failures for reads and uncertain writes', (code) => {
-    const original = Object.assign(new Error('Transport request failed'), { code });
-    const wrapped = createApiErrorFromAxiosError(
-      original,
-      '/objects/companies/records/query',
-      'POST'
-    );
-    for (const error of [original, wrapped]) {
-      expect(createSecureToolErrorResult(error)).toMatchObject({
-        isError: true,
-        structuredContent: {
-          error: { code: 'UPSTREAM_UNAVAILABLE', retryable: true },
-        },
+  ])(
+    'classifies raw and wrapped %s failures for reads and uncertain writes',
+    (code) => {
+      const original = Object.assign(new Error('Transport request failed'), {
+        code,
       });
-      expect(
-        createSecureToolErrorResult(error, { uncertainMutation: true })
-      ).toMatchObject({
-        isError: true,
-        structuredContent: {
-          error: { code: 'UPSTREAM_UNAVAILABLE', retryable: false },
-        },
-      });
+      const wrapped = createApiErrorFromAxiosError(
+        original,
+        '/objects/companies/records/query',
+        'POST'
+      );
+      for (const error of [original, wrapped]) {
+        expect(createSecureToolErrorResult(error)).toMatchObject({
+          isError: true,
+          structuredContent: {
+            error: { code: 'UPSTREAM_UNAVAILABLE', retryable: true },
+          },
+        });
+        expect(
+          createSecureToolErrorResult(error, { uncertainMutation: true })
+        ).toMatchObject({
+          isError: true,
+          structuredContent: {
+            error: { code: 'UPSTREAM_UNAVAILABLE', retryable: false },
+          },
+        });
+      }
     }
-  });
+  );
 
   it('recognizes a NetworkError without a cause code', () => {
     const error = new NetworkError(
@@ -77,10 +82,13 @@ describe('uncertain completion and transport retry policy', () => {
     async (code) => {
       clearAllCaches();
       const task = TaskMockFactory.create();
-      const failure = Object.assign(new Error('Transport request failed'), { code });
+      const failure = Object.assign(new Error('Transport request failed'), {
+        code,
+      });
       const api = {
         defaults: {},
-        get: vi.fn()
+        get: vi
+          .fn()
           .mockRejectedValueOnce(failure)
           .mockResolvedValue({ data: { data: [task] } }),
         post: vi.fn().mockRejectedValue(failure),
@@ -101,12 +109,16 @@ describe('uncertain completion and transport retry policy', () => {
   it.each(['no-response', 'encoding', 'server-response'])(
     'does not retry uncertain callbacks with %s failures',
     async (kind) => {
-      const error = kind === 'encoding'
-        ? new ResultEncodingError()
-        : kind === 'server-response'
-          ? { response: { status: 503 }, message: 'Unavailable' }
-          : Object.assign(new Error('Response lost'), { code: 'ECONNABORTED' });
-      const operation = vi.fn()
+      const error =
+        kind === 'encoding'
+          ? new ResultEncodingError()
+          : kind === 'server-response'
+            ? { response: { status: 503 }, message: 'Unavailable' }
+            : Object.assign(new Error('Response lost'), {
+                code: 'ECONNABORTED',
+              });
+      const operation = vi
+        .fn()
         .mockRejectedValueOnce(error)
         .mockResolvedValue('duplicate');
       await expect(callWithRetry(operation, immediate)).rejects.toBe(error);
@@ -132,54 +144,78 @@ describe('uncertain completion and transport retry policy', () => {
     'record-delete',
     'record-batch-create',
     'record-batch-update',
-  ] as const)('blocks %s fallback writes after uncertain completion', async (operation) => {
-    const id = CompanyMockFactory.create().id.record_id;
-    for (const failure of [
-      { code: 'ECONNABORTED', message: 'Response lost' },
-      new ResultEncodingError(),
-      { response: { status: 503 }, message: 'Unavailable' },
-      { response: {}, message: 'Unknown completion' },
-      { response: { status: 200 }, message: 'Invalid successful payload' },
-    ]) {
-      const api = {
-        post: vi.fn().mockRejectedValueOnce(failure).mockResolvedValue({ data: {} }),
-        patch: vi.fn().mockRejectedValueOnce(failure).mockResolvedValue({ data: {} }),
-        delete: vi.fn().mockRejectedValueOnce(failure).mockResolvedValue({ data: {} }),
-      };
-      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
-      const calls = {
-        'list-add': () => listOperations.addRecordToList(id, id, 'companies'),
-        'list-update': () => listOperations.updateListEntry(id, id, { stage: 'New' }),
-        'list-remove': () => listOperations.removeRecordFromList(id, id),
-        'record-create': () => recordOperations.createObjectRecord(
-          'companies', { name: 'Uncertain' }
-        ),
-        'record-update': () => recordOperations.updateObjectRecord(
-          'companies', id, { name: 'Uncertain' }
-        ),
-        'record-delete': () => recordOperations.deleteObjectRecord('companies', id),
-        'record-batch-create': () => recordOperations.batchCreateObjectRecords(
-          'companies', [{ name: 'Uncertain' }]
-        ),
-        'record-batch-update': () => recordOperations.batchUpdateObjectRecords(
-          'companies', [{ id, attributes: { name: 'Uncertain' } }]
-        ),
-      };
-      await expect(calls[operation]()).rejects.toBe(failure);
-      expect(
-        api.post.mock.calls.length +
-        api.patch.mock.calls.length +
-        api.delete.mock.calls.length
-      ).toBe(1);
+  ] as const)(
+    'blocks %s fallback writes after uncertain completion',
+    async (operation) => {
+      const id = CompanyMockFactory.create().id.record_id;
+      for (const failure of [
+        { code: 'ECONNABORTED', message: 'Response lost' },
+        new ResultEncodingError(),
+        { response: { status: 503 }, message: 'Unavailable' },
+        { response: {}, message: 'Unknown completion' },
+        { response: { status: 200 }, message: 'Invalid successful payload' },
+      ]) {
+        const api = {
+          post: vi
+            .fn()
+            .mockRejectedValueOnce(failure)
+            .mockResolvedValue({ data: {} }),
+          patch: vi
+            .fn()
+            .mockRejectedValueOnce(failure)
+            .mockResolvedValue({ data: {} }),
+          delete: vi
+            .fn()
+            .mockRejectedValueOnce(failure)
+            .mockResolvedValue({ data: {} }),
+        };
+        vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(
+          api as never
+        );
+        const calls = {
+          'list-add': () => listOperations.addRecordToList(id, id, 'companies'),
+          'list-update': () =>
+            listOperations.updateListEntry(id, id, { stage: 'New' }),
+          'list-remove': () => listOperations.removeRecordFromList(id, id),
+          'record-create': () =>
+            recordOperations.createObjectRecord('companies', {
+              name: 'Uncertain',
+            }),
+          'record-update': () =>
+            recordOperations.updateObjectRecord('companies', id, {
+              name: 'Uncertain',
+            }),
+          'record-delete': () =>
+            recordOperations.deleteObjectRecord('companies', id),
+          'record-batch-create': () =>
+            recordOperations.batchCreateObjectRecords('companies', [
+              { name: 'Uncertain' },
+            ]),
+          'record-batch-update': () =>
+            recordOperations.batchUpdateObjectRecords('companies', [
+              { id, attributes: { name: 'Uncertain' } },
+            ]),
+        };
+        await expect(calls[operation]()).rejects.toBe(failure);
+        expect(
+          api.post.mock.calls.length +
+            api.patch.mock.calls.length +
+            api.delete.mock.calls.length
+        ).toBe(1);
+      }
     }
-  });
+  );
 
   it('keeps the definite list rejection compatibility fallback reachable', async () => {
     const id = CompanyMockFactory.create().id.record_id;
     const entry = { id: { entry_id: id }, parent_record_id: id };
     const api = {
-      post: vi.fn()
-        .mockRejectedValueOnce({ response: { status: 400 }, message: 'Rejected payload' })
+      post: vi
+        .fn()
+        .mockRejectedValueOnce({
+          response: { status: 400 },
+          message: 'Rejected payload',
+        })
         .mockResolvedValueOnce({ data: { data: entry } }),
     };
     vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);

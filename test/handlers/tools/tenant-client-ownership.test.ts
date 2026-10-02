@@ -27,7 +27,9 @@ describe('native MCP tenant client ownership', () => {
   const workspaceB = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
   async function listen(server: Server): Promise<number> {
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    await new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', resolve)
+    );
     return (server.address() as AddressInfo).port;
   }
 
@@ -48,9 +50,12 @@ describe('native MCP tenant client ownership', () => {
     vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'full');
 
     upstream = createHttpServer((req, res) => {
-      const owner = req.headers.authorization === 'Bearer disposable-tenant-a'
-        ? 'a'
-        : req.headers.authorization === 'Bearer disposable-tenant-b' ? 'b' : 'unknown';
+      const owner =
+        req.headers.authorization === 'Bearer disposable-tenant-a'
+          ? 'a'
+          : req.headers.authorization === 'Bearer disposable-tenant-b'
+            ? 'b'
+            : 'unknown';
       requests.push(owner);
       res.setHeader('Content-Type', 'application/json');
       if (owner === 'unknown' || (denyB && owner === 'b')) {
@@ -58,17 +63,27 @@ describe('native MCP tenant client ownership', () => {
         res.end(JSON.stringify({ message: 'Workspace access denied' }));
         return;
       }
-      res.end(JSON.stringify({
-        data: {
-          ...record,
-          id: { ...record.id, workspace_id: owner === 'a' ? workspaceA : workspaceB },
-        },
-      }));
+      res.end(
+        JSON.stringify({
+          data: {
+            ...record,
+            id: {
+              ...record.id,
+              workspace_id: owner === 'a' ? workspaceA : workspaceB,
+            },
+          },
+        })
+      );
     });
-    vi.stubEnv('ATTIO_BASE_URL', `http://127.0.0.1:${await listen(upstream)}/v2`);
+    vi.stubEnv(
+      'ATTIO_BASE_URL',
+      `http://127.0.0.1:${await listen(upstream)}/v2`
+    );
 
     for (const tenant of ['a', 'b']) {
-      const server = createServer({ getApiKey: () => `disposable-tenant-${tenant}` });
+      const server = createServer({
+        getApiKey: () => `disposable-tenant-${tenant}`,
+      });
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: randomUUID,
         enableJsonResponse: true,
@@ -85,9 +100,11 @@ describe('native MCP tenant client ownership', () => {
     for (const tenant of ['a', 'b']) {
       const client = new Client({ name: `tenant-${tenant}`, version: '1' });
       clients.push(client);
-      await client.connect(new StreamableHTTPClientTransport(
-        new URL(`http://127.0.0.1:${port}/${tenant}`)
-      ));
+      await client.connect(
+        new StreamableHTTPClientTransport(
+          new URL(`http://127.0.0.1:${port}/${tenant}`)
+        )
+      );
     }
   });
 
@@ -103,30 +120,49 @@ describe('native MCP tenant client ownership', () => {
     vi.unstubAllEnvs();
   });
 
-  it.each([false, true])('honors tenant B access after A warms the cache (denied=%s)', async (denied) => {
-    const args = { resource_type: 'companies', record_id: record.id.record_id };
-    const details = (client: Client) => client.callTool({
-      name: 'get_record_details', arguments: args,
-    });
-    const warm = await details(clients[0]);
-    expect(warm.structuredContent?.data).toMatchObject({ id: { workspace_id: workspaceA } });
-    requests.length = 0;
-    denyB = denied;
-
-    const [resultA, resultB] = await Promise.all(clients.map(details));
-    expect(requests.sort()).toEqual(['a', 'b']);
-    expect(resultA.isError).toBe(false);
-    expect(resultA.structuredContent?.data).toMatchObject({ id: { workspace_id: workspaceA } });
-    if (denied) {
-      expect(resultB).toMatchObject({
-        isError: true,
-        structuredContent: { error: { code: 'PERMISSION_DENIED', retryable: false } },
+  it.each([false, true])(
+    'honors tenant B access after A warms the cache (denied=%s)',
+    async (denied) => {
+      const args = {
+        resource_type: 'companies',
+        record_id: record.id.record_id,
+      };
+      const details = (client: Client) =>
+        client.callTool({
+          name: 'get_record_details',
+          arguments: args,
+        });
+      const warm = await details(clients[0]);
+      expect(warm.structuredContent?.data).toMatchObject({
+        id: { workspace_id: workspaceA },
       });
-      expect(resultB.structuredContent).not.toHaveProperty('data');
-    } else {
-      expect(resultB.isError).toBe(false);
-      expect(resultB.structuredContent?.data).toMatchObject({ id: { workspace_id: workspaceB } });
+      requests.length = 0;
+      denyB = denied;
+
+      const [resultA, resultB] = await Promise.all(clients.map(details));
+      expect(requests.sort()).toEqual(['a', 'b']);
+      expect(resultA.isError).toBe(false);
+      expect(resultA.structuredContent?.data).toMatchObject({
+        id: { workspace_id: workspaceA },
+      });
+      if (denied) {
+        expect(resultB).toMatchObject({
+          isError: true,
+          structuredContent: {
+            error: { code: 'PERMISSION_DENIED', retryable: false },
+          },
+        });
+        expect(resultB.structuredContent).not.toHaveProperty('data');
+      } else {
+        expect(resultB.isError).toBe(false);
+        expect(resultB.structuredContent?.data).toMatchObject({
+          id: { workspace_id: workspaceB },
+        });
+      }
+      expect(args).toEqual({
+        resource_type: 'companies',
+        record_id: record.id.record_id,
+      });
     }
-    expect(args).toEqual({ resource_type: 'companies', record_id: record.id.record_id });
-  });
+  );
 });

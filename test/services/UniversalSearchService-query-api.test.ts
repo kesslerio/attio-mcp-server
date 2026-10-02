@@ -319,7 +319,9 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         relationship_target_id: 'invalid_id',
       };
 
-      await expect(UniversalSearchService.searchRecords(params)).rejects.toThrow('API Error: Invalid relationship');
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow('API Error: Invalid relationship');
     });
 
     it('propagates API failures for content search', async () => {
@@ -332,7 +334,9 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         content_fields: ['name'],
       };
 
-      await expect(UniversalSearchService.searchRecords(params)).rejects.toThrow('API Error: Invalid query');
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow('API Error: Invalid query');
     });
 
     it('propagates API failures for timeframe search', async () => {
@@ -346,7 +350,9 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         date_operator: 'greater_than',
       };
 
-      await expect(UniversalSearchService.searchRecords(params)).rejects.toThrow('API Error: Invalid date format');
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow('API Error: Invalid date format');
     });
 
     it('should surface invalid timeframe filter errors instead of masking them as empty results', async () => {

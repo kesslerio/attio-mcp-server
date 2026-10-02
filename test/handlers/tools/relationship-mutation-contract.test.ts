@@ -14,8 +14,8 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { CompanyMockFactory } from '@test/utils/mock-factories/index.js';
 
 describe('legacy relationship mutation contracts', () => {
-  let registerToolHandlers: typeof import('@/handlers/tools/index.js')['registerToolHandlers'];
-  let configs: typeof import('@/handlers/tool-configs/relationships/index.js')['relationshipToolConfigs'];
+  let registerToolHandlers: (typeof import('@/handlers/tools/index.js'))['registerToolHandlers'];
+  let configs: (typeof import('@/handlers/tool-configs/relationships/index.js'))['relationshipToolConfigs'];
   let client: Client;
   let server: Server;
 
@@ -35,7 +35,8 @@ describe('legacy relationship mutation contracts', () => {
     );
     registerToolHandlers(server);
     client = new Client({ name: 'relationship-client', version: '1' });
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     await server.connect(serverTransport);
     await client.connect(clientTransport);
   });
@@ -56,10 +57,13 @@ describe('legacy relationship mutation contracts', () => {
     async (key) => {
       const config = configs[key];
       const { tools } = await client.listTools();
-      expect(tools.find((tool) => tool.name === config.name)?.annotations)
-        .toMatchObject({ readOnlyHint: false });
+      expect(
+        tools.find((tool) => tool.name === config.name)?.annotations
+      ).toMatchObject({ readOnlyHint: false });
       const handler = vi.spyOn(config, 'handler').mockRejectedValue(
-        Object.assign(new Error('Relationship update timeout'), { code: 'ECONNABORTED' })
+        Object.assign(new Error('Relationship update timeout'), {
+          code: 'ECONNABORTED',
+        })
       );
       const id = CompanyMockFactory.create().id.record_id;
       const result = await client.callTool({
@@ -86,25 +90,34 @@ describe('legacy relationship mutation contracts', () => {
       const config = configs[key];
       const id = CompanyMockFactory.create().id.record_id;
       const handler = vi.spyOn(config, 'handler').mockResolvedValue({
-        success: true, message: 'Relationship updated', personId: id, companyId: id,
+        success: true,
+        message: 'Relationship updated',
+        personId: id,
+        companyId: id,
       });
       const args = { personId: id, companyId: id };
-      expect(await client.callTool({ name: config.name, arguments: args }))
-        .toMatchObject({ isError: false });
+      expect(
+        await client.callTool({ name: config.name, arguments: args })
+      ).toMatchObject({ isError: false });
       expect(handler).toHaveBeenCalledOnce();
       handler.mockClear();
       vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'search');
-      expect((await client.listTools()).tools.map((tool) => tool.name))
-        .not.toContain(config.name);
-      expect(await client.callTool({ name: config.name, arguments: args }))
-        .toMatchObject({
-          isError: true,
-          structuredContent: { error: { code: 'PERMISSION_DENIED', retryable: false } },
-        });
+      expect(
+        (await client.listTools()).tools.map((tool) => tool.name)
+      ).not.toContain(config.name);
+      expect(
+        await client.callTool({ name: config.name, arguments: args })
+      ).toMatchObject({
+        isError: true,
+        structuredContent: {
+          error: { code: 'PERMISSION_DENIED', retryable: false },
+        },
+      });
       expect(handler).not.toHaveBeenCalled();
       vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'full');
-      expect(await client.callTool({ name: config.name, arguments: args }))
-        .toMatchObject({ isError: false });
+      expect(
+        await client.callTool({ name: config.name, arguments: args })
+      ).toMatchObject({ isError: false });
       expect(handler).toHaveBeenCalledOnce();
     }
   );
@@ -113,20 +126,33 @@ describe('legacy relationship mutation contracts', () => {
     'retains retryable read failures and successful %s calls',
     async (key) => {
       const config = configs[key];
-      expect((await client.listTools()).tools.find((tool) => tool.name === config.name)?.annotations)
-        .toMatchObject({ readOnlyHint: true });
-      const handler = vi.spyOn(config, 'handler').mockRejectedValueOnce(
-        Object.assign(new Error('Relationship read timeout'), { code: 'ECONNABORTED' })
-      ).mockResolvedValueOnce([]);
+      expect(
+        (await client.listTools()).tools.find(
+          (tool) => tool.name === config.name
+        )?.annotations
+      ).toMatchObject({ readOnlyHint: true });
+      const handler = vi
+        .spyOn(config, 'handler')
+        .mockRejectedValueOnce(
+          Object.assign(new Error('Relationship read timeout'), {
+            code: 'ECONNABORTED',
+          })
+        )
+        .mockResolvedValueOnce([]);
       const id = CompanyMockFactory.create().id.record_id;
-      const args = key === 'getPersonCompanies' ? { personId: id } : { companyId: id };
-      expect(await client.callTool({ name: config.name, arguments: args }))
-        .toMatchObject({
-          isError: true,
-          structuredContent: { error: { code: 'UPSTREAM_UNAVAILABLE', retryable: true } },
-        });
-      expect(await client.callTool({ name: config.name, arguments: args }))
-        .toMatchObject({ isError: false });
+      const args =
+        key === 'getPersonCompanies' ? { personId: id } : { companyId: id };
+      expect(
+        await client.callTool({ name: config.name, arguments: args })
+      ).toMatchObject({
+        isError: true,
+        structuredContent: {
+          error: { code: 'UPSTREAM_UNAVAILABLE', retryable: true },
+        },
+      });
+      expect(
+        await client.callTool({ name: config.name, arguments: args })
+      ).toMatchObject({ isError: false });
       expect(handler).toHaveBeenCalledTimes(2);
     }
   );
