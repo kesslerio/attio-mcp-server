@@ -1,12 +1,12 @@
 /**
  * Workspace Members operations for Attio
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
-import { getValidatedAttioClient } from '../../utils/client-resolver.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { getValidatedAttioClient } from '@/utils/client-resolver.js';
 import type { AxiosInstance } from 'axios';
-import { AttioWorkspaceMember, AttioListResponse } from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { debug, OperationType } from '../../utils/logger.js';
+import { AttioWorkspaceMember, AttioListResponse } from '@/types/attio.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
+import { debug, OperationType } from '@/utils/logger.js';
 
 /**
  * List workspace members with pagination and search
@@ -51,7 +51,7 @@ export async function listWorkspaceMembers(
     );
 
     return members;
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
 }
 
 /**
@@ -91,7 +91,7 @@ export async function searchWorkspaceMembers(
     );
 
     return members;
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
 }
 
 /**
@@ -126,7 +126,7 @@ export async function getWorkspaceMember(
     }
 
     return res.data.data;
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
 }
 
 /**

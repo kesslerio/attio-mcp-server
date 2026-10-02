@@ -48,7 +48,8 @@ export async function getAllLists(
 
   const response = await callWithRetry(
     () => api.get<AttioListResponse<AttioList>>(path),
-    retryConfig
+    retryConfig,
+    { uncertainMutation: false }
   );
   const items = Array.isArray(response?.data?.data)
     ? response.data.data
@@ -80,7 +81,7 @@ export async function getListDetails(
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<AttioList>>(path);
     return (response?.data?.data || response?.data) as AttioList;
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
 }
 
 /**
@@ -218,7 +219,7 @@ export async function getListEntries(
     });
 
     return processListEntries(response.data?.data || []);
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
 }
 
 /**

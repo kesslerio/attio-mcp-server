@@ -12,16 +12,16 @@ import type {
   ResourceCreatorContext,
   ResourceCreatorError,
   RecoveryOptions,
-} from './types.js';
-import { EnhancedApiError } from '../../../errors/enhanced-api-errors.js';
-import { extractRecordId } from '../../../utils/validation/uuid-validation.js';
+} from '@/services/create/creators/types.js';
+import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
+import { extractRecordId } from '@/utils/validation/uuid-validation.js';
 import {
   extractAttioRecord,
   assertLooksLikeCreated,
   isTestRun,
   debugRecordShape,
-} from '../extractor.js';
-import { validateRequiredArrayField } from '../validators.js';
+} from '@/services/create/extractor.js';
+import { validateRequiredArrayField } from '@/services/create/validators.js';
 
 /**
  * Abstract base class for resource creators
@@ -347,7 +347,8 @@ export abstract class BaseCreator implements ResourceCreator {
 
     throw this.createEnhancedError(
       new Error(
-        detailMessage || error?.message || `${this.resourceType} creation error`
+        detailMessage || error?.message || `${this.resourceType} creation error`,
+        { cause: err }
       ),
       context,
       status

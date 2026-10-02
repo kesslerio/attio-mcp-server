@@ -3,8 +3,12 @@
  * Handles retryable errors with configurable backoff strategies
  */
 
-import { ApiError } from '../../types/api-operations.js';
-import { createScopedLogger } from '../../utils/logger.js';
+import { ApiError } from '@/types/api-operations.js';
+import { createScopedLogger } from '@/utils/logger.js';
+import {
+  isToolExecutionRetryable,
+  type SecureToolErrorOptions,
+} from '@/utils/secure-error-handler.js';
 
 /**
  * Configuration options for API call retry
@@ -76,8 +80,15 @@ function sleep(ms: number): Promise<void> {
  */
 export function isRetryableError(
   error: ApiError,
-  config: RetryConfig
+  config: RetryConfig,
+  options: Pick<SecureToolErrorOptions, 'uncertainMutation'> = {}
 ): boolean {
+  if (
+    !isToolExecutionRetryable(error, {
+      uncertainMutation: options.uncertainMutation !== false,
+    })
+  )
+    return false;
   // Network errors should be retried
   if (!error.response) {
     return true;
@@ -103,7 +114,8 @@ export function isRetryableError(
  */
 export async function callWithRetry<T>(
   fn: () => Promise<T>,
-  config: Partial<RetryConfig> = {}
+  config: Partial<RetryConfig> = {},
+  options: Pick<SecureToolErrorOptions, 'uncertainMutation'> = {}
 ): Promise<T> {
   // Merge with default config
   const retryConfig: RetryConfig = {
@@ -123,7 +135,7 @@ export async function callWithRetry<T>(
       // Check if we should retry
       if (
         attempt >= retryConfig.maxRetries ||
-        !isRetryableError(error as ApiError, retryConfig)
+        !isRetryableError(error as ApiError, retryConfig, options)
       ) {
         throw error;
       }

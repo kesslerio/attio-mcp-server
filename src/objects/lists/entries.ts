@@ -1,6 +1,7 @@
 /**
  * List entry operations.
  */
+import { isMutationCompletionUncertain } from '@/utils/secure-error-handler.js';
 import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
@@ -80,6 +81,7 @@ export async function addRecordToList(
       initialValues
     );
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     if (process.env.NODE_ENV === 'development') {
       const log = createScopedLogger('objects.lists', 'addRecordToList');
       log.warn(
@@ -186,6 +188,7 @@ export async function updateListEntry(
   try {
     return await updateGenericListEntry(listId, entryId, attributes);
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     if (process.env.NODE_ENV === 'development') {
       const log = createScopedLogger('objects.lists', 'updateListEntry');
       log.warn('Generic updateListEntry failed; falling back', {
@@ -241,6 +244,7 @@ export async function removeRecordFromList(
   try {
     return await removeGenericRecordFromList(listId, entryId);
   } catch (error: unknown) {
+    if (isMutationCompletionUncertain(error)) throw error;
     if (process.env.NODE_ENV === 'development') {
       createScopedLogger('objects.lists', 'removeRecordFromList').warn(
         'Generic removeRecordFromList failed',

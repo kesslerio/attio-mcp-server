@@ -149,7 +149,8 @@ export async function listTasks(
   const path = `/tasks?${params.toString()}`;
   const res = await callWithRetry(
     () => api.get<AttioListResponse<AttioTask>>(path),
-    retryConfig
+    retryConfig,
+    { uncertainMutation: false }
   );
   const tasks = res?.data?.data;
   if (
@@ -167,7 +168,8 @@ export async function getTask(
   const path = `/tasks/${taskId}`;
   const res = await callWithRetry(
     () => api.get<AttioSingleResponse<AttioTask>>(path),
-    retryConfig
+    retryConfig,
+    { uncertainMutation: false }
   );
   const task = extractTaskFromResponse(
     res as unknown as Record<string, unknown>

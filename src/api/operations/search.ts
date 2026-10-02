@@ -662,7 +662,7 @@ export async function searchObject<T extends AttioRecord>(
             filter: candidate.filter,
             limit: candidateLimit,
           });
-        }, retryConfig);
+        }, retryConfig, { uncertainMutation: false });
 
         if (!Array.isArray(fastResponse?.data?.data)) throw new ResultEncodingError();
         const fastData = fastResponse.data.data as AttioRecord[];
@@ -724,7 +724,8 @@ export async function searchObject<T extends AttioRecord>(
 
   const response = await callWithRetry(
     () => api.post<AttioListResponse<T>>(path, { filter, limit: fetchLimit }),
-    retryConfig
+    retryConfig,
+    { uncertainMutation: false }
   );
   const rawData = response?.data?.data;
   if (!Array.isArray(rawData)) throw new ResultEncodingError();
@@ -743,7 +744,8 @@ export async function searchObject<T extends AttioRecord>(
     const fallbackFilter = buildORFallbackFilter(objectType, parsedQuery);
     const fallbackResponse = await callWithRetry(
       () => api.post<AttioListResponse<T>>(path, { filter: fallbackFilter, limit: fetchLimit }),
-      retryConfig
+      retryConfig,
+      { uncertainMutation: false }
     );
     const fallbackRawData = fallbackResponse?.data?.data;
     if (!Array.isArray(fallbackRawData)) throw new ResultEncodingError();
@@ -918,7 +920,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
         resourceType: objectType,
       });
     }
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
   if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
   return response.data.data;
 }
@@ -952,7 +954,7 @@ export async function listObjects<T extends AttioRecord>(
     };
 
     return api.post<AttioListResponse<T>>(path, body);
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
   if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
   return response.data.data;
 }

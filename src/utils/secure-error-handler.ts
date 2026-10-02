@@ -21,6 +21,7 @@ import {
   type ExecutionErrorCode,
 } from '@/handlers/tools/result-schemas.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { NetworkError } from '@/errors/api-errors.js';
 
 const DEFAULT_STATUS_CODE = 500;
 
@@ -334,12 +335,7 @@ function classifyToolExecutionError(
     if (status === 404) return 'NOT_FOUND';
     if (status === 429) return 'RATE_LIMITED';
     if (status && status >= 500) return 'UPSTREAM_UNAVAILABLE';
-    if (
-      ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'].includes(
-        String(item.code)
-      ) ||
-      item.name === 'timeout_error'
-    )
+    if (NetworkError.isNetworkError(item) || item.name === 'timeout_error')
       return 'UPSTREAM_UNAVAILABLE';
     if (
       /(?:api key|credentials?).*(?:required|missing|not configured)/i.test(
@@ -365,6 +361,29 @@ function classifyToolExecutionError(
   )
     return 'UNAUTHENTICATED';
   return 'INTERNAL_ERROR';
+}
+
+export function isToolExecutionRetryable(
+  error: unknown,
+  options: Pick<SecureToolErrorOptions, 'uncertainMutation' | 'errorType'> = {}
+): boolean {
+  return (
+    !options.uncertainMutation &&
+    ['RATE_LIMITED', 'UPSTREAM_UNAVAILABLE'].includes(
+      classifyToolExecutionError(error, options.errorType)
+    )
+  );
+}
+
+export function isMutationCompletionUncertain(error: unknown): boolean {
+  const status =
+    error && typeof error === 'object'
+      ? (error as AxiosErrorLike).response?.status
+      : undefined;
+  return (
+    !(typeof status === 'number' && status >= 400 && status < 500) ||
+    classifyToolExecutionError(error) === 'RESULT_ENCODING_FAILED'
+  );
 }
 
 /**
@@ -501,9 +520,10 @@ export function createSecureToolErrorResult(
 
   const contentMessage = `${baseMessage}${referenceLine}${guidanceLine}`.trim();
   const code = classifyToolExecutionError(error, context.errorType);
-  const retryable =
-    !uncertainMutation &&
-    ['RATE_LIMITED', 'UPSTREAM_UNAVAILABLE'].includes(code);
+  const retryable = isToolExecutionRetryable(error, {
+    uncertainMutation,
+    errorType: context.errorType,
+  });
   const structuredContent = executionErrorSchema.parse({
     error: {
       code,

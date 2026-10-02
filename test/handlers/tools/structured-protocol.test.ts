@@ -811,6 +811,112 @@ describe('structured tool protocol', () => {
     }
   });
 
+  it.each(['ECONNABORTED', 'EHOSTUNREACH', 'ENETUNREACH'])(
+    'publishes %s as a retryable read failure through native timeframe search',
+    async (code) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      const failure = Object.assign(new Error('Transport request failed'), { code });
+      const api = { post: vi.fn().mockRejectedValue(failure) };
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      const result = await client.callTool({
+        name: 'search_records',
+        arguments: {
+          resource_type: 'companies',
+          created_after: '2026-10-01T00:00:00Z',
+        },
+      });
+      expect(result).toMatchObject({
+        isError: true,
+        structuredContent: {
+          error: { code: 'UPSTREAM_UNAVAILABLE', retryable: true },
+        },
+      });
+      expect(api.post).toHaveBeenCalledOnce();
+    }
+  );
+
+  it.each(['malformed', 'ECONNABORTED', 'EHOSTUNREACH', 'ENETUNREACH'])(
+    'does not replay a native committed task POST after %s completion',
+    async (outcome) => {
+      vi.stubEnv('USE_MOCK_DATA', 'false');
+      vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
+      clearAllCaches();
+      const committed = [TaskMockFactory.create({ content: 'Transport commit' })];
+      const writes: typeof committed = [];
+      const api = {
+        defaults: {},
+        get: vi.fn(),
+        post: vi.fn().mockImplementation(async () => {
+          writes.push(committed[0]);
+          if (writes.length === 1) {
+            if (outcome === 'malformed') return { data: {} };
+            throw Object.assign(new Error('Transport response was lost'), {
+              code: outcome,
+            });
+          }
+          return { data: { data: committed[0] } };
+        }),
+      };
+      vi.spyOn(attioClientModule, 'createAttioClient').mockReturnValue(api as never);
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+      const result = await client.callTool({
+        name: 'create_record',
+        arguments: {
+          resource_type: 'tasks',
+          record_data: { content: 'Transport commit' },
+        },
+      });
+      expect(result).toMatchObject({
+        isError: true,
+        structuredContent: {
+          error: {
+            code: outcome === 'malformed'
+              ? 'RESULT_ENCODING_FAILED'
+              : 'UPSTREAM_UNAVAILABLE',
+            retryable: false,
+            message: expect.stringContaining('Completion may be uncertain'),
+          },
+        },
+      });
+      expect(api.post).toHaveBeenCalledOnce();
+      expect(api.get).not.toHaveBeenCalled();
+      expect(writes).toEqual(committed);
+    }
+  );
+
+  it('executes a successful native task POST once and blocks a denied task POST', async () => {
+    vi.stubEnv('USE_MOCK_DATA', 'false');
+    vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
+    clearAllCaches();
+    const task = TaskMockFactory.create({ content: 'Transport success' });
+    const api = {
+      defaults: {},
+      get: vi.fn(),
+      post: vi.fn().mockResolvedValue({ data: { data: task } }),
+    };
+    vi.spyOn(attioClientModule, 'createAttioClient').mockReturnValue(api as never);
+    vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
+    const args = {
+      resource_type: 'tasks',
+      record_data: { content: 'Transport success' },
+    };
+    expect(
+      await client.callTool({ name: 'create_record', arguments: args })
+    ).toMatchObject({ isError: false });
+    expect(api.post).toHaveBeenCalledOnce();
+    api.post.mockClear();
+    vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'search');
+    expect(
+      await client.callTool({ name: 'create_record', arguments: args })
+    ).toMatchObject({
+      isError: true,
+      structuredContent: {
+        error: { code: 'PERMISSION_DENIED', retryable: false },
+      },
+    });
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('keeps a completed legacy write successful when its prose fails, and never replays an encoding failure', async () => {
     const record = CompanyMockFactory.create();
     const handler = vi

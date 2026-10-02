@@ -35,7 +35,7 @@ export async function getObjectNotes(
   return callWithRetry(async () => {
     const response = await api.get<AttioListResponse<AttioNote>>(path);
     return response?.data?.data || [];
-  }, retryConfig);
+  }, retryConfig, { uncertainMutation: false });
 }
 
 /**

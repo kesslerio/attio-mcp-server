@@ -98,9 +98,16 @@ Execution errors use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`,
 `INVALID_CURSOR` (reserved for continuation), `RESULT_ENCODING_FAILED`, and
 `INTERNAL_ERROR`. Messages retain sanitized guidance and correlation references.
 Read rate limits and upstream outages may be retryable; uncertain write outcomes
-are non-retryable and require readback before another write. The boundary never
-replays an operation. Unknown tools and malformed MCP requests remain protocol
-errors rather than execution results.
+are non-retryable and require readback before another write. The retry layer
+defaults to uncertain mutation handling; explicitly identified reads retain their
+retry policy. Writes do not retry automatically, and fallback
+writes stop after transport failures or uncertain completion. Unknown tools and
+malformed MCP requests remain protocol errors rather than execution results.
+
+U2 retains the standing R9 acceptance item: replay-proofing of legacy mutation
+owners lands with U2. That writes-family unit will move post-write decoding out
+of retry callbacks and complete the mutation controls and composable IDs across
+task, record, and list mutation owners. U1 supplies the retry and fallback guards.
 
 Other families retain their existing successful text contracts and do not yet
 advertise output schemas; their boundary-owned failures use the same structured
