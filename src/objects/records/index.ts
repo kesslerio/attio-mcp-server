@@ -289,11 +289,7 @@ export async function createObjectRecord<T extends AttioRecord>(
             Object.keys(recordCandidate ?? {}).length === 0 &&
             !looksLikeCreatedRecord)
         ) {
-          throw new Error(
-            `Create operation returned empty or invalid response. Response structure: ${JSON.stringify(
-              response?.data
-            )}`
-          );
+          throw new ResultEncodingError();
         }
 
         return result;
@@ -436,13 +432,7 @@ export async function updateObjectRecord<T extends AttioRecord>(
 
       // Add null guards to prevent undefined → {} conversion
       if (!response || !response.data) {
-        throw {
-          status: 500,
-          body: {
-            code: 'invalid_response',
-            message: `Invalid API response for record update: ${recordId}`,
-          },
-        };
+        throw new ResultEncodingError();
       }
 
       const result = response.data.data || response.data;
@@ -452,13 +442,7 @@ export async function updateObjectRecord<T extends AttioRecord>(
         !result ||
         (typeof result === 'object' && Object.keys(result).length === 0)
       ) {
-        throw {
-          status: 404,
-          body: {
-            code: 'not_found',
-            message: `Record with ID "${recordId}" not found for update.`,
-          },
-        };
+        throw new ResultEncodingError();
       }
 
       return result;
@@ -776,4 +760,7 @@ export async function batchUpdateObjectRecords<T extends AttioRecord>(
 }
 
 // Re-export formatting utilities
-export { formatRecordAttribute, formatRecordAttributes } from './formatters.js';
+export {
+  formatRecordAttribute,
+  formatRecordAttributes,
+} from '@/objects/records/formatters.js';

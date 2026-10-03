@@ -1,3 +1,4 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * Core list CRUD operations.
  */
@@ -85,8 +86,9 @@ export async function createList(
       ).info('Create list success', { data: response.data });
     }
 
-    const extracted = extract<AttioList>(response);
-    return ensureListShape(extracted);
+    return decodeMutationResult(() =>
+      ensureListShape(extract<AttioList>(response))
+    );
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       const log = createScopedLogger('objects.lists', 'createList');
@@ -177,7 +179,7 @@ export async function updateList(
       ).info('Update list success', { data: response.data });
     }
 
-    return extract<AttioList>(response);
+    return decodeMutationResult(() => extract<AttioList>(response));
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       const log = createScopedLogger('objects.lists', 'updateList');

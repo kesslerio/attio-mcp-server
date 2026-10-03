@@ -1,3 +1,4 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * List operations for Attio
  * Handles list management and list entry operations
@@ -266,57 +267,56 @@ export async function addRecordToList(
   // Default object type to 'companies' if not specified
   const safeObjectType = objectType || 'companies';
 
-  return callWithRetry(async () => {
-    const log = createScopedLogger('lists.operations', 'addRecordToList');
-    try {
-      // Construct proper API payload according to Attio API requirements
-      // The API expects parent_record_id, parent_object, and entry_values (required, even if empty)
-      const payload = {
-        data: {
-          parent_record_id: recordId,
-          parent_object: safeObjectType,
-          // entry_values is required by the API, use empty object if no initial values provided
-          entry_values: initialValues || {},
-        },
-      };
+  const log = createScopedLogger('lists.operations', 'addRecordToList');
+  try {
+    // Construct proper API payload according to Attio API requirements
+    // The API expects parent_record_id, parent_object, and entry_values (required, even if empty)
+    const payload = {
+      data: {
+        parent_record_id: recordId,
+        parent_object: safeObjectType,
+        // entry_values is required by the API, use empty object if no initial values provided
+        entry_values: initialValues || {},
+      },
+    };
 
-      if (process.env.NODE_ENV === 'development') {
-        log.info('Adding record to list', {
-          path,
-          listId,
-          recordId,
-          safeObjectType,
-          initialValues: initialValues ?? null,
-          payload,
-        });
-      }
-
-      const response = await api.post<AttioSingleResponse<AttioListEntry>>(
+    if (process.env.NODE_ENV === 'development') {
+      log.info('Adding record to list', {
         path,
-        payload
-      );
+        listId,
+        recordId,
+        safeObjectType,
+        initialValues: initialValues ?? null,
+        payload,
+      });
+    }
 
+    const response = await callWithRetry(
+      () => api.post<AttioSingleResponse<AttioListEntry>>(path, payload),
+      retryConfig
+    );
+    return decodeMutationResult(async () => {
       if (process.env.NODE_ENV === 'development') {
         log.info('Add record success', { data: response.data });
       }
 
       return response?.data?.data || response?.data;
-    } catch (error: unknown) {
-      const listError = error as ListErrorResponse;
-      // Enhanced error logging with detailed information
-      if (process.env.NODE_ENV === 'development') {
-        log.warn('Add record error', {
-          message: listError.message || 'Unknown error',
-          status: listError.response?.status,
-          data: listError.response?.data || {},
-          validationErrors: listError.response?.data?.validation_errors,
-        });
-      }
-
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
+    });
+  } catch (error: unknown) {
+    const listError = error as ListErrorResponse;
+    // Enhanced error logging with detailed information
+    if (process.env.NODE_ENV === 'development') {
+      log.warn('Add record error', {
+        message: listError.message || 'Unknown error',
+        status: listError.response?.status,
+        data: listError.response?.data || {},
+        validationErrors: listError.response?.data?.validation_errors,
+      });
     }
-  }, retryConfig);
+
+    // Let upstream handlers create specific, rich error objects.
+    throw error;
+  }
 }
 
 /**
@@ -361,44 +361,44 @@ export async function updateListEntry(
 
   const api = getLazyAttioClient();
 
-  return callWithRetry(async () => {
-    const log = createScopedLogger('lists.operations', 'updateListEntry');
-    try {
-      if (process.env.NODE_ENV === 'development') {
-        log.info('Updating list entry', { path, listId, entryId, attributes });
-      }
+  const log = createScopedLogger('lists.operations', 'updateListEntry');
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      log.info('Updating list entry', { path, listId, entryId, attributes });
+    }
 
-      // Attio API expects updates to list entries in the 'data.entry_values' structure
-      // This is specific to list entries, different from record updates in crud.ts
-      const response = await api.patch<AttioSingleResponse<AttioListEntry>>(
-        path,
-        {
+    // Attio API expects updates to list entries in the 'data.entry_values' structure
+    // This is specific to list entries, different from record updates in crud.ts
+    const response = await callWithRetry(
+      () =>
+        api.patch<AttioSingleResponse<AttioListEntry>>(path, {
           data: {
             entry_values: attributes,
           },
-        }
-      );
-
+        }),
+      retryConfig
+    );
+    return decodeMutationResult(async () => {
       if (process.env.NODE_ENV === 'development') {
         log.info('Update list entry success', { data: response.data });
       }
 
       return response?.data?.data || response?.data;
-    } catch (error: unknown) {
-      const updateError = error as ListErrorResponse;
-      // Enhanced error logging with specific error types
-      if (process.env.NODE_ENV === 'development') {
-        log.warn('Update list entry error', {
-          message: updateError.message || 'Unknown error',
-          status: updateError.response?.status,
-          data: updateError.response?.data || {},
-        });
-      }
-
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
+    });
+  } catch (error: unknown) {
+    const updateError = error as ListErrorResponse;
+    // Enhanced error logging with specific error types
+    if (process.env.NODE_ENV === 'development') {
+      log.warn('Update list entry error', {
+        message: updateError.message || 'Unknown error',
+        status: updateError.response?.status,
+        data: updateError.response?.data || {},
+      });
     }
-  }, retryConfig);
+
+    // Let upstream handlers create specific, rich error objects.
+    throw error;
+  }
 }
 
 /**
@@ -428,8 +428,6 @@ export async function removeRecordFromList(
   const api = getLazyAttioClient();
   const path = `/lists/${listId}/entries/${entryId}`;
 
-  return callWithRetry(async () => {
-    await api.delete(path);
-    return true;
-  }, retryConfig);
+  await callWithRetry(() => api.delete(path), retryConfig);
+  return true;
 }

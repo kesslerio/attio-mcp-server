@@ -39,7 +39,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **High Performance**: 89.7% speed improvement with 227KB memory reduction (PR #483)
 - **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
 - **Clean Architecture**: Complete production-test separation with mock factory pattern
-- **Structured Read Results**: See the [result contract and prose opt-out](./docs/universal-tools/developer-guide.md#structured-results-v2-boundary-a) for programmatic search and record-detail clients
+- **Structured Read Results**: See the [result contract and prose opt-out](./docs/universal-tools/developer-guide.md#structured-results-v2-boundary-a) for programmatic search, record-detail, core-write, and note clients
 - **Scoped Tool Policy**: Add scoped default tools only when the workflow is frequent, a generic write can mutate the wrong object class, and the scoped tool removes a model decision instead of merely renaming a universal call
 
 ### 📊 **Feature Implementation Status**

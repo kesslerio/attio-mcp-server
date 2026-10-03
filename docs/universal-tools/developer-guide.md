@@ -108,7 +108,30 @@ retry and mutation fallback rules. Unknown tools and
 malformed MCP requests remain protocol errors rather than execution results.
 
 See [U1 delivery scope](u1-delivery-notes.md) for verification evidence and the
-remaining U2 mutation-owner work.
+the historical U2 handoff. U2 now separates post-write decoding from transport retry callbacks and rejects uncertain fallback writes.
+
+### Structured core writes and notes (v2 boundary B)
+
+`create_record`, `update_record`, `delete_record`, `upsert_record`,
+`create_company`, `update_company`, `create_deal`, `update_deal`, `merge_records`,
+`create_note`, and `list_notes` also advertise output schemas and use the shared
+validated result boundary. Prose stays enabled by default and retains its existing
+format. `MCP_TEXT_RESULTS=false` removes only the companion prose.
+
+Create/update and create-note results preserve their existing JSON projections:
+record identifiers are in `structuredContent.id` (including `task_id`, `list_id`,
+and `note_id`). Delete results contain `{ success: true, record_id }`.
+Upsert preserves `action`, optional `planned_action` and `record_id`,
+`matched_on`, `changed_fields`, and optional `concurrent_duplicates`.
+Merge preserves its dry-run plan/fingerprint, or its `complete`/`wait` mode,
+status, `new_record_id`, and original IDs. Notes lists use
+`{ data: notes, count: notes.length, next_cursor: null }`.
+
+Mutation transport retries contain only the HTTP request. Decoding runs afterward;
+unusable completed responses produce `RESULT_ENCODING_FAILED`. Network or server
+failures never trigger a second mutation or a fallback write. Read back uncertain
+results before deciding whether to write again. Merge confirmation, plan freshness,
+upsert dry-run, and scoped resource controls remain enforced by their handlers.
 
 Other families retain their existing successful text contracts and do not yet
 advertise output schemas; their boundary-owned failures use the same structured
@@ -117,7 +140,7 @@ Prose is enabled by default; the opt-out described above also applies to
 boundary-owned failures in other families.
 
 Verify deterministic contracts with
-`bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts`.
+`bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts test/handlers/tools/structured-writes-protocol.test.ts test/api/retry-safety.test.ts`.
 After `bun run build`, run
 `bun run test:mcp test/e2e/mcp/core-operations/structured-results.mcp.test.ts`
 for real stdio discovery/error serialization. Its read-only Attio composition

@@ -9,7 +9,7 @@ import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 
 // This starts the built server over stdio; no in-process API mocks are injected.
-describe('U1 structured results over MCP stdio', () => {
+describe('structured results over MCP stdio', () => {
   // mcp-test-client 1.0.1 strips structuredContent and isError, and its cleanup
   // does not close the transport. Use the resolved SDK for this wire assertion.
   const client = new Client({ name: 'structured-results-test', version: '1' });
@@ -62,7 +62,21 @@ describe('U1 structured results over MCP stdio', () => {
   }
 
   it('publishes representative schemas through real tools/list serialization', () => {
-    for (const name of ['search_records', 'get_record_details']) {
+    for (const name of [
+      'search_records',
+      'get_record_details',
+      'create_record',
+      'update_record',
+      'delete_record',
+      'create_company',
+      'update_company',
+      'create_deal',
+      'update_deal',
+      'upsert_record',
+      'merge_records',
+      'create_note',
+      'list_notes',
+    ]) {
       const tool = tools.find((item) => item.name === name)!;
       expect(tool.outputSchema).toMatchObject({ type: 'object' });
       const validate = new AjvJsonSchemaValidator().getValidator(
@@ -88,12 +102,23 @@ describe('U1 structured results over MCP stdio', () => {
         }).valid
       ).toBe(false);
     }
-    expect(
-      tools.find((tool) => tool.name === 'create_record')?.outputSchema
-    ).toBeUndefined();
   });
 
-  it.each(['search_records', 'get_record_details'])(
+  it.each([
+    'search_records',
+    'get_record_details',
+    'create_record',
+    'update_record',
+    'delete_record',
+    'create_company',
+    'update_company',
+    'create_deal',
+    'update_deal',
+    'upsert_record',
+    'merge_records',
+    'create_note',
+    'list_notes',
+  ])(
     'serializes %s execution errors against the advertised schema',
     async (name) => {
       await assertToolCall(name, {}, (result) => {
@@ -105,6 +130,9 @@ describe('U1 structured results over MCP stdio', () => {
         });
         validateResult(name, result);
         expect(result.content[0].type).toBe('text');
+        expect(
+          JSON.parse((result.content[0] as { text: string }).text)
+        ).toEqual(result.structuredContent);
       });
     }
   );

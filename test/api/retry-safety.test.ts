@@ -1,3 +1,5 @@
+import { createServer } from 'node:http';
+import axios from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { callWithRetry } from '@/api/operations/retry.js';
 import * as taskOperations from '@/api/operations/tasks.js';
@@ -202,6 +204,53 @@ describe('uncertain completion and transport retry policy', () => {
             api.patch.mock.calls.length +
             api.delete.mock.calls.length
         ).toBe(1);
+      }
+    }
+  );
+
+  it.each(['lost-response', 'invalid-response'] as const)(
+    'fires exactly one real HTTP POST after %s on a legacy record mutation',
+    async (kind) => {
+      let posts = 0;
+      const server = createServer((request, response) => {
+        if (request.method === 'POST') posts++;
+        request.resume();
+        request.on('end', () => {
+          if (kind === 'lost-response') request.socket.destroy();
+          else {
+            response.writeHead(200, { 'content-type': 'application/json' });
+            response.end(
+              JSON.stringify({ data: 'unusable completed response' })
+            );
+          }
+        });
+      });
+      await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve)
+      );
+      const address = server.address();
+      if (!address || typeof address === 'string')
+        throw new Error('No test port');
+      const api = axios.create({
+        baseURL: `http://127.0.0.1:${address.port}`,
+        timeout: 1000,
+      });
+      vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api);
+      try {
+        await expect(
+          recordOperations.createObjectRecord('companies', {
+            name: 'Uncertain',
+          })
+        ).rejects.toMatchObject({
+          code:
+            kind === 'lost-response' ? 'ECONNRESET' : 'RESULT_ENCODING_FAILED',
+        });
+        expect(posts).toBe(1);
+      } finally {
+        server.closeAllConnections();
+        await new Promise<void>((resolve, reject) =>
+          server.close((error) => (error ? reject(error) : resolve()))
+        );
       }
     }
   );

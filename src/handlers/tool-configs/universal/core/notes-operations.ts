@@ -1,4 +1,8 @@
 import {
+  recordWriteResultContract,
+  recordSearchResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import {
   UniversalToolConfig,
   UniversalCreateNoteParams,
   UniversalGetNotesParams,
@@ -27,6 +31,7 @@ export const createNoteConfig: UniversalToolConfig<
   Record<string, unknown>
 > = {
   name: 'create_note',
+  ...recordWriteResultContract,
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown>> => {
@@ -95,12 +100,13 @@ export const createNoteConfig: UniversalToolConfig<
     return {
       ...note,
       // Keep original id (object) - don't replace with extracted string
-      title: title || note.title,
+      title: title || note.title || '',
       content:
         content ||
         note.content ||
         note.content_markdown ||
-        note.content_plaintext,
+        note.content_plaintext ||
+        '',
     };
   },
 };
@@ -110,6 +116,12 @@ export const listNotesConfig: UniversalToolConfig<
   Record<string, unknown>[]
 > = {
   name: 'list_notes',
+  ...recordSearchResultContract,
+  structuredOutput: (notes) => ({
+    data: notes,
+    count: notes.length,
+    next_cursor: null,
+  }),
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown>[]> => {
