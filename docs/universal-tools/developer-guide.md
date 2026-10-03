@@ -107,31 +107,29 @@ are non-retryable and require readback before another write. The execution
 retry and mutation fallback rules. Unknown tools and
 malformed MCP requests remain protocol errors rather than execution results.
 
-See [U1 delivery scope](u1-delivery-notes.md) for verification evidence and the
-the historical U2 handoff. U2 now separates post-write decoding from transport retry callbacks and rejects uncertain fallback writes.
+See [U1 delivery scope](u1-delivery-notes.md) for historical verification evidence.
 
 ### Structured core writes and notes (v2 boundary B)
 
 `create_record`, `update_record`, `delete_record`, `upsert_record`,
 `create_company`, `update_company`, `create_deal`, `update_deal`, `merge_records`,
 `create_note`, and `list_notes` also advertise output schemas and use the shared
-validated result boundary. Prose stays enabled by default and retains its existing
-format. `MCP_TEXT_RESULTS=false` removes only the companion prose.
+validated result boundary, including the JSON-text ordering and prose opt-out
+described above.
 
 Create/update and create-note results preserve their existing JSON projections:
 record identifiers are in `structuredContent.id` (including `task_id`, `list_id`,
 and `note_id`). Delete results contain `{ success: true, record_id }`.
-Upsert preserves `action`, optional `planned_action` and `record_id`,
-`matched_on`, `changed_fields`, and optional `concurrent_duplicates`.
+Upsert preserves `action`, optional `planned_action`, `record_id` (required except
+for dry runs), `matched_on`, `changed_fields`, and optional `concurrent_duplicates`.
 Merge preserves its dry-run plan/fingerprint, or its `complete`/`wait` mode,
 status, `new_record_id`, and original IDs. Notes lists use
 `{ data: notes, count: notes.length, next_cursor: null }`.
 
-Mutation transport retries contain only the HTTP request. Decoding runs afterward;
-unusable completed responses produce `RESULT_ENCODING_FAILED`. Network or server
-failures never trigger a second mutation or a fallback write. Read back uncertain
-results before deciding whether to write again. Merge confirmation, plan freshness,
-upsert dry-run, and scoped resource controls remain enforced by their handlers.
+See [API call retry logic](../api/error-handling.md#api-call-retry-logic) for
+post-write decoding and uncertain-mutation recovery. Merge confirmation, plan
+freshness, upsert dry-run, and scoped resource controls remain enforced by their
+handlers.
 
 Other families retain their existing successful text contracts and do not yet
 advertise output schemas; their boundary-owned failures use the same structured

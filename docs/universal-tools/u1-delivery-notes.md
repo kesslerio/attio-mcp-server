@@ -29,6 +29,7 @@ The real stdio discovery/error and read composition test remains at
 remains skipped pending an Attio API key. No live mutations are authorized for
 verification.
 
-U2 retains the standing R9 acceptance item: replay-proofing of legacy mutation
-owners lands with U2, including post-write decoding relocation and mutation-owner
-restructuring. U1's uncertainty retry and fallback guards remain in place.
+For the current U2 result boundary, see
+[structured core writes and notes](developer-guide.md#structured-core-writes-and-notes-v2-boundary-b).
+The [API call retry logic](../api/error-handling.md#api-call-retry-logic)
+owns the mutation replay and recovery constraints.
