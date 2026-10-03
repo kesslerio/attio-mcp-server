@@ -24,20 +24,8 @@ enum UniversalResourceType {
 
 ## formatResult Architecture (Updated PR #483)
 
-**IMPORTANT**: All universal tools now use consistent `formatResult` functions that always return strings. This eliminates dual-mode behavior and improves performance by 89.7%.
-
-### Consistent formatResult Contract
-
-```typescript
-// All formatResult functions follow this pattern
-formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResourceType): string
-
-// Performance optimized with:
-// - No environment-dependent behavior
-// - Type-safe Record<string, unknown> patterns
-// - Memory-efficient string templates
-// - 59% ESLint warning reduction (957→395)
-```
+See the [formatter contract](developer-guide.md#formatresult-architecture-update-pr-483)
+for companion prose formatting.
 
 ## Core Universal Tools (8 tools)
 
@@ -779,35 +767,6 @@ Use special mock IDs to test error handling:
 
 ## Structured universal read and batch results (v2 U3)
 
-The universal read families now advertise an `outputSchema` and return validated
-machine data in `structuredContent`. The first text block is a JSON copy of that
-same envelope; default companion prose can be disabled with `MCP_TEXT_RESULTS=false`.
-
-| Family | Success envelope |
-| --- | --- |
-| Basic, advanced, relationship, content, timeframe search | `{data: records[], count, next_cursor: null}` |
-| Attribute metadata/discovery returned as an array | `{data: attributes[], count}` |
-| Grouped metadata or record attribute maps | `{data: native_metadata}` |
-| Attribute options | `{data: options[], count, attribute_type: "select" | "status"}` |
-| Detailed info | `{data: native_record}` |
-| Interaction metadata | `{data: {record_id, resource_type, record_name, interactions}}` |
-| Batch operations and batch search | `{data: outcomes[], count, summary: {total, successful, failed}}` |
-
-Counts measure this response. Empty collections remain arrays. Search cursors are
-currently null; U3 does not add continuation tokens. Metadata/options/interactions
-and batches have no continuation cursor. Native list fields, option IDs/titles,
-record identifiers, and interaction dates/owner metadata remain domain data.
-Grouped discovery preserves mappings and excludes generated usage guidance.
-
-Batch outcomes retain input order and their zero-based `index`, plus `query` or
-`record_id` where supplied. Each outcome has either `success: true` with `result`,
-or `success: false` with `error: {code, message, retryable}`. A completed batch has
-`isError: false`, even if every item failed. Legacy batch search now retains query
-outcomes instead of flattening records and dropping failures. Batch search is
-read-only; `batch_records` remains write-capable and requires existing host controls.
-
-A whole-call failure has only `{error: {code, message, retryable}}` in structured
-data, with `isError: true`; its JSON payload precedes any prose. Unsupported
-attributes/domain failures use the same stable error boundary. Batch writes are
-never replayed after a result-encoding or companion-formatting failure; uncertain
-completion requires readback before a caller considers retrying.
+See the authoritative [structured universal reads and batches contract](developer-guide.md#structured-universal-reads-and-batches-v2-boundary-c)
+for output schemas, per-family projections, ordered batch outcomes, and recovery
+semantics.
