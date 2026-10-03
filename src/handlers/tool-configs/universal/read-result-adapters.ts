@@ -48,14 +48,19 @@ export function normalizeMetadata(result: unknown): Record<string, unknown> {
   if (Array.isArray(result)) return { data: result, count: result.length };
   if (!result || typeof result !== 'object')
     throw new Error('Invalid metadata result');
-  // `note` is service-generated usage guidance on grouped discovery. A record
-  // attribute named note remains intact in record-value maps.
-  const value = result as Record<string, unknown>;
-  if (Array.isArray(value.attributes) && typeof value.mappings === 'object') {
+  return { data: result };
+}
+
+export function normalizeDiscoveryMetadata(
+  result: unknown
+): Record<string, unknown> {
+  const normalized = normalizeMetadata(result);
+  const value = normalized.data as Record<string, unknown>;
+  if (!Array.isArray(value) && typeof value.note === 'string') {
     const { note, ...data } = value;
     return { data };
   }
-  return { data: result };
+  return normalized;
 }
 
 const batchOutcome = z.object({

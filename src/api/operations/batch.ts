@@ -208,7 +208,7 @@ export async function executeBatchOperations<T, R>(
   // Process each chunk
   for (const chunk of chunks) {
     // Process operations in the current chunk
-    await Promise.all(
+    const results = await Promise.all(
       chunk.map(async (operation) => {
         const result: BatchItemResult<R> = {
           id: operation.id,
@@ -241,10 +241,10 @@ export async function executeBatchOperations<T, R>(
           }
         }
 
-        // Add result to batch response
-        batchResponse.results.push(result);
+        return result;
       })
     );
+    batchResponse.results.push(...results);
   }
 
   return batchResponse;

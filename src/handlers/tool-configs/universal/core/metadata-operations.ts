@@ -5,6 +5,7 @@ import {
 import {
   assertReadSuccess,
   normalizeMetadata,
+  normalizeDiscoveryMetadata,
 } from '@/handlers/tool-configs/universal/read-result-adapters.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import {
@@ -150,7 +151,7 @@ export const discoverAttributesConfig: UniversalToolConfig<
 > = {
   name: 'discover_record_attributes',
   ...metadataResultContract,
-  structuredOutput: normalizeMetadata,
+  structuredOutput: normalizeDiscoveryMetadata,
   handler: async (params: {
     resource_type: UniversalResourceType;
     categories?: string[];

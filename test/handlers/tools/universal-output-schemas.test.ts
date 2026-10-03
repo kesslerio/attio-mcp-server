@@ -285,6 +285,63 @@ describe('universal read and batch output schemas over serialized MCP', () => {
     }
   );
 
+  it.each(['people', 'deals'])(
+    'preserves %s attribute maps with discovery field collisions over MCP',
+    async (resourceType) => {
+      const attributes = {
+        attributes: [{ value: 'A' }],
+        mappings: [{ value: 'B' }],
+        note: [{ value: 'Keep me' }],
+      };
+      vi.spyOn(
+        universalToolConfigs.get_record_attributes,
+        'handler'
+      ).mockResolvedValueOnce(attributes);
+      const result = await client.callTool({
+        name: 'get_record_attributes',
+        arguments: {
+          resource_type: resourceType,
+          record_id: record.id.record_id,
+        },
+      });
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent).toEqual({ data: attributes });
+      expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual({
+        data: attributes,
+      });
+    }
+  );
+
+  it('removes discovery guidance while preserving grouped metadata and note bodies', async () => {
+    const grouped = {
+      attributes: [attribute],
+      mappings: { Stage: 'stage' },
+      count: 1,
+    };
+    const handler = vi.spyOn(
+      universalToolConfigs.discover_record_attributes,
+      'handler'
+    );
+    for (const note of ['Usage guidance', [{ value: 'Keep this note body' }]]) {
+      handler.mockResolvedValueOnce({ ...grouped, note });
+      const result = await client.callTool({
+        name: 'discover_record_attributes',
+        arguments: { resource_type: 'deals' },
+      });
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent).toEqual({
+        data: typeof note === 'string' ? grouped : { ...grouped, note },
+      });
+    }
+    expect(
+      buildStructuredToolResult(
+        universalToolConfigs.get_record_attributes,
+        { ...grouped, note: 'CRM note body' },
+        { resource_type: 'people' }
+      ).structuredContent
+    ).toEqual({ data: { ...grouped, note: 'CRM note body' } });
+  });
+
   it('distinguishes arrays, explicit wrappers, attribute maps, and documented service errors', () => {
     expect(normalizeRecordCollection([record])).toEqual(
       normalizeRecordCollection({ data: [record] })
@@ -315,7 +372,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
         mappings: {},
         note: 'Usage guidance',
       })
-    ).toEqual({ data: { attributes: [], mappings: {} } });
+    ).toEqual({ data: { attributes: [], mappings: {}, note: 'Usage guidance' } });
   });
 
   it('keeps read-only batch search distinct from mutation-capable batching', async () => {
