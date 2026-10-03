@@ -372,7 +372,9 @@ describe('universal read and batch output schemas over serialized MCP', () => {
         mappings: {},
         note: 'Usage guidance',
       })
-    ).toEqual({ data: { attributes: [], mappings: {}, note: 'Usage guidance' } });
+    ).toEqual({
+      data: { attributes: [], mappings: {}, note: 'Usage guidance' },
+    });
   });
 
   it('keeps read-only batch search distinct from mutation-capable batching', async () => {

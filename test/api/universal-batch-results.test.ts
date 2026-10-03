@@ -43,8 +43,7 @@ describe('universal batch search result ownership', () => {
             })
         )
         .mockImplementationOnce(
-          () =>
-            new Promise((resolve) => setTimeout(() => resolve([second]), 1))
+          () => new Promise((resolve) => setTimeout(() => resolve([second]), 1))
         );
       const pending = universalBatchSearch(resourceType, queries, undefined, {
         retryConfig: { maxRetries: 0 },
@@ -63,7 +62,11 @@ describe('universal batch search result ownership', () => {
           { index: 1, query: queries[1], success: true, result: [second] },
         ],
         count: 2,
-        summary: { total: 2, successful: denied ? 1 : 2, failed: denied ? 1 : 0 },
+        summary: {
+          total: 2,
+          successful: denied ? 1 : 2,
+          failed: denied ? 1 : 0,
+        },
       });
       expect(search).toHaveBeenCalledTimes(2);
       expect(search.mock.calls.map((call) => call[1])).toEqual(queries);

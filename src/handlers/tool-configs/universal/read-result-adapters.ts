@@ -57,7 +57,7 @@ export function normalizeDiscoveryMetadata(
   const normalized = normalizeMetadata(result);
   const value = normalized.data as Record<string, unknown>;
   if (!Array.isArray(value) && typeof value.note === 'string') {
-    const { note, ...data } = value;
+    const { note: _note, ...data } = value;
     return { data };
   }
   return normalized;
