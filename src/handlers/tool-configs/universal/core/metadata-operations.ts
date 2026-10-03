@@ -1,21 +1,30 @@
 import {
+  metadataResultContract,
+  attributeOptionsResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import {
+  assertReadSuccess,
+  normalizeMetadata,
+} from '@/handlers/tool-configs/universal/read-result-adapters.js';
+import { ErrorService } from '@/services/ErrorService.js';
+import {
   UniversalToolConfig,
   UniversalAttributesParams,
   UniversalResourceType,
   UniversalGetAttributeOptionsParams,
-} from '../types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 import {
   getAttributesSchema,
   discoverAttributesSchema,
   getAttributeOptionsSchema,
   validateUniversalToolParams,
-} from '../schemas.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
 import {
   handleUniversalGetAttributes,
   handleUniversalDiscoverAttributes,
   handleUniversalGetAttributeOptions,
   getSingularResourceType,
-} from '../shared-handlers.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import type { AttributeOptionsResult } from '@/services/metadata/index.js';
 
@@ -42,6 +51,8 @@ export const getAttributesConfig: UniversalToolConfig<
   Record<string, unknown> | { error: string; success: boolean }
 > = {
   name: 'get_record_attributes',
+  ...metadataResultContract,
+  structuredOutput: normalizeMetadata,
   handler: async (
     params: UniversalAttributesParams
   ): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
@@ -50,11 +61,15 @@ export const getAttributesConfig: UniversalToolConfig<
         'get_record_attributes',
         params
       );
-      return await handleUniversalGetAttributes(sanitizedParams);
+      return assertReadSuccess(
+        await handleUniversalGetAttributes(sanitizedParams)
+      );
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return { error: errorMessage, success: false };
+      throw ErrorService.createUniversalError(
+        'metadata',
+        params?.resource_type ?? '',
+        error
+      );
     }
   },
   formatResult: (
@@ -134,6 +149,8 @@ export const discoverAttributesConfig: UniversalToolConfig<
   Record<string, unknown> | { error: string; success: boolean }
 > = {
   name: 'discover_record_attributes',
+  ...metadataResultContract,
+  structuredOutput: normalizeMetadata,
   handler: async (params: {
     resource_type: UniversalResourceType;
     categories?: string[];
@@ -145,16 +162,17 @@ export const discoverAttributesConfig: UniversalToolConfig<
         'discover_record_attributes',
         params
       );
-      return await handleUniversalDiscoverAttributes(
-        sanitizedParams.resource_type,
-        {
+      return assertReadSuccess(
+        await handleUniversalDiscoverAttributes(sanitizedParams.resource_type, {
           categories: sanitizedParams.categories,
-        }
+        })
       );
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return { error: errorMessage, success: false };
+      throw ErrorService.createUniversalError(
+        'metadata',
+        params?.resource_type ?? '',
+        error
+      );
     }
   },
   formatResult: (schema: unknown, ...args: unknown[]): string => {
@@ -302,6 +320,17 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
   AttributeOptionsResult | { error: string; success: boolean }
 > = {
   name: 'get_record_attribute_options',
+  ...attributeOptionsResultContract,
+  structuredOutput: (result) => {
+    assertReadSuccess(result);
+    if (!('options' in result))
+      throw new Error('Invalid attribute options result');
+    return {
+      data: result.options,
+      count: result.options.length,
+      attribute_type: result.attributeType,
+    };
+  },
   handler: async (
     params: UniversalGetAttributeOptionsParams
   ): Promise<AttributeOptionsResult | { error: string; success: boolean }> => {
@@ -313,10 +342,11 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
       lastGetAttributeOptionsParams = sanitizedParams;
       return await handleUniversalGetAttributeOptions(sanitizedParams);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      lastGetAttributeOptionsParams = params;
-      return { error: errorMessage, success: false };
+      throw ErrorService.createUniversalError(
+        'metadata',
+        params?.resource_type ?? '',
+        error
+      );
     }
   },
   formatResult: (

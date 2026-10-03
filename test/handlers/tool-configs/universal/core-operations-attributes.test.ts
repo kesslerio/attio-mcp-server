@@ -12,7 +12,7 @@ import {
   getDetailedInfoConfig,
   searchRecordsConfig,
   getRecordDetailsConfig,
-} from '../../../../src/handlers/tool-configs/universal/core/index.js';
+} from '@/handlers/tool-configs/universal/core/index.js';
 
 // Import types
 import {
@@ -20,7 +20,7 @@ import {
   DetailedInfoType,
   UniversalAttributesParams,
   UniversalDetailedInfoParams,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 
 describe('Universal Core Operations Attributes Tests', () => {
   beforeEach(async () => {
@@ -29,6 +29,29 @@ describe('Universal Core Operations Attributes Tests', () => {
 
   afterEach(() => {
     cleanupMocks();
+  });
+
+  it('rejects documented metadata service failures before formatting', async () => {
+    const { handleUniversalGetAttributes, handleUniversalDiscoverAttributes } =
+      await import('@/handlers/tool-configs/universal/shared-handlers.js');
+    vi.mocked(handleUniversalGetAttributes).mockResolvedValue({
+      error: 'Attribute not found',
+      success: false,
+    });
+    vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue({
+      status: 403,
+      body: { message: 'Access denied' },
+    });
+    await expect(
+      getAttributesConfig.handler({
+        resource_type: UniversalResourceType.COMPANIES,
+      })
+    ).rejects.toThrow('Attribute not found');
+    await expect(
+      discoverAttributesConfig.handler({
+        resource_type: UniversalResourceType.COMPANIES,
+      })
+    ).rejects.toThrow('Access denied');
   });
 
   describe('records_get_attributes tool', () => {
@@ -40,7 +63,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       ];
 
       const { handleUniversalGetAttributes } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalGetAttributes).mockResolvedValue(mockAttributes);
 
       const params: UniversalAttributesParams = {
@@ -62,7 +85,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       ];
 
       const { getSingularResourceType } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getAttributesConfig.formatResult as any)(
@@ -81,7 +104,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       };
 
       const { getSingularResourceType } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getAttributesConfig.formatResult as any)(
@@ -102,7 +125,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       ];
 
       const { handleUniversalDiscoverAttributes } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue(
         mockSchema as any
       );
@@ -124,7 +147,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       ];
 
       const { getSingularResourceType } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (discoverAttributesConfig.formatResult as any)(
@@ -148,7 +171,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       };
 
       const { handleUniversalGetDetailedInfo } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalGetDetailedInfo).mockResolvedValue(mockInfo);
 
       const params: UniversalDetailedInfoParams = {
@@ -174,7 +197,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       };
 
       const { getSingularResourceType } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getDetailedInfoConfig.formatResult as any)(
@@ -197,7 +220,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       };
 
       const { getSingularResourceType } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getDetailedInfoConfig.formatResult as any)(
@@ -321,7 +344,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         };
 
         const { getSingularResourceType } =
-          await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+          await import('@/handlers/tool-configs/universal/shared-handlers.js');
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
         const formatted = (getRecordDetailsConfig.formatResult as any)(
@@ -343,7 +366,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         };
 
         const { getSingularResourceType } =
-          await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+          await import('@/handlers/tool-configs/universal/shared-handlers.js');
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
         const formatted = (getRecordDetailsConfig.formatResult as any)(
@@ -365,7 +388,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         };
 
         const { getSingularResourceType } =
-          await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+          await import('@/handlers/tool-configs/universal/shared-handlers.js');
         vi.mocked(getSingularResourceType).mockReturnValue('record');
 
         const formatted = (getRecordDetailsConfig.formatResult as any)(

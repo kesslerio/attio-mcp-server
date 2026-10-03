@@ -1,3 +1,5 @@
+import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
+import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
 /**
  * Timeframe search tool configuration
  */
@@ -97,6 +99,8 @@ export const searchByTimeframeConfig: UniversalToolConfig<
   UniversalRecordResult[]
 > = {
   name: 'search_records_by_timeframe',
+  ...recordSearchResultContract,
+  structuredOutput: normalizeRecordCollection,
   handler: async (
     params: TimeframeSearchParams
   ): Promise<UniversalRecordResult[]> => {

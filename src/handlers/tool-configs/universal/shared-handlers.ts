@@ -575,9 +575,12 @@ export async function handleUniversalGetAttributeOptions(
   // Lists require both list_id and attribute_slug - not yet supported via this tool
   // TODO: Add list_id parameter to support list attributes (see plan Phase 3B)
   if (resource_type === UniversalResourceType.LISTS) {
-    throw new Error(
-      'get_record_attribute_options does not yet support list attributes. ' +
-        'Use get-list-details to inspect list attribute schemas instead.'
+    throw Object.assign(
+      new Error(
+        'get_record_attribute_options does not yet support list attributes. ' +
+          'Use get-list-details to inspect list attribute schemas instead.'
+      ),
+      { code: 'VALIDATION_ERROR' }
     );
   }
 

@@ -1,3 +1,5 @@
+import { batchResultContract } from '@/handlers/tools/result-schemas.js';
+import { normalizeBatch } from '@/handlers/tool-configs/universal/read-result-adapters.js';
 /**
  * Batch operations tool configuration
  */
@@ -6,19 +8,21 @@ import {
   UniversalToolConfig,
   UniversalResourceType,
   BatchOperationType,
-} from '../types.js';
-import { validateUniversalToolParams } from '../schemas.js';
-import { ErrorService } from '../../../../services/ErrorService.js';
-import { formatBatchResult } from './batch-format.js';
-import { executeOperationsArray } from './operations-array.js';
-import { executeLegacyBatch } from './legacy-handlers.js';
-import type { JsonObject } from '../../../../types/attio.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
+import { ErrorService } from '@/services/ErrorService.js';
+import { formatBatchResult } from '@/handlers/tool-configs/universal/operations/batch-format.js';
+import { executeOperationsArray } from '@/handlers/tool-configs/universal/operations/operations-array.js';
+import { executeLegacyBatch } from '@/handlers/tool-configs/universal/operations/legacy-handlers.js';
+import type { JsonObject } from '@/types/attio.js';
 
 export const batchOperationsConfig: UniversalToolConfig<
   Record<string, unknown>,
   Record<string, unknown> | Record<string, unknown>[]
 > = {
   name: 'batch_records',
+  ...batchResultContract,
+  structuredOutput: (result) => normalizeBatch(result),
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown> | Record<string, unknown>[]> => {
@@ -33,10 +37,10 @@ export const batchOperationsConfig: UniversalToolConfig<
       const operations = sanitizedParams.operations as JsonObject[] | undefined;
 
       if (operations && operations.length > 0) {
-        return executeOperationsArray(resourceType, operations);
+        return await executeOperationsArray(resourceType, operations);
       }
 
-      return executeLegacyBatch({
+      return await executeLegacyBatch({
         resourceType,
         params: sanitizedParams,
       });
@@ -53,8 +57,17 @@ export const batchOperationsConfig: UniversalToolConfig<
     results: Record<string, unknown> | Record<string, unknown>[],
     ...args: unknown[]
   ) => {
-    const operationType = args[0] as BatchOperationType | undefined;
-    const resourceType = args[1] as UniversalResourceType | undefined;
+    const first = args[0];
+    const params =
+      first && typeof first === 'object'
+        ? (first as Record<string, unknown>)
+        : undefined;
+    const operationType = (params ? params.operation_type : first) as
+      | BatchOperationType
+      | undefined;
+    const resourceType = (params ? params.resource_type : args[1]) as
+      | UniversalResourceType
+      | undefined;
     return formatBatchResult(
       results as
         | Record<string, unknown>
