@@ -176,3 +176,137 @@ export const mergeResultContract = resultContract(
     }),
   ])
 );
+
+// Universal read families preserve native maps/groups rather than guessing that
+// any object with a `data` property is an API wrapper.
+const attributeDataSchema = z
+  .object({
+    id: z.union([identifier, z.record(z.string(), z.json())]).optional(),
+    api_slug: z.string().optional(),
+    title: z.string().optional(),
+    name: z.string().optional(),
+    type: z.string().optional(),
+  })
+  .catchall(z.json());
+const metadataDataSchema = z
+  .object({
+    attributes: z.array(attributeDataSchema).optional(),
+    all: z.array(attributeDataSchema).optional(),
+    standard: z.array(z.union([z.string(), attributeDataSchema])).optional(),
+    custom: z.array(z.union([z.string(), attributeDataSchema])).optional(),
+    mappings: z.record(z.string(), z.string()).optional(),
+    resource_type: z.string().optional(),
+    count: z.number().int().nonnegative().optional(),
+  })
+  .catchall(z.json());
+export const metadataResultContract = resultContract(
+  z.union([
+    z.strictObject({
+      data: z.array(attributeDataSchema),
+      count: z.number().int().nonnegative(),
+    }),
+    z.strictObject({
+      data: z.union([metadataDataSchema, z.record(z.string(), z.json())]),
+    }),
+  ])
+);
+const optionDataSchema = z
+  .object({
+    id: z.union([identifier, z.record(z.string(), z.json())]).optional(),
+    title: z.string(),
+    value: z.string().optional(),
+    is_archived: z.boolean().optional(),
+    status_type: z.string().optional(),
+  })
+  .catchall(z.json());
+export const attributeOptionsResultContract = resultContract(
+  z.strictObject({
+    data: z.array(optionDataSchema),
+    count: z.number().int().nonnegative(),
+    attribute_type: z.enum(['select', 'status']),
+  })
+);
+export const detailedInfoResultContract = resultContract(
+  z.strictObject({
+    data: recordDataSchema,
+  })
+);
+const interactionDataSchema = z.strictObject({
+  date: z.string().nullable(),
+  interaction_type: z.string().nullable(),
+  owner_actor_type: z.string().nullable(),
+  owner_actor_id: z.string().nullable(),
+});
+export const interactionsResultContract = resultContract(
+  z.strictObject({
+    data: z.strictObject({
+      record_id: identifier,
+      resource_type: identifier,
+      record_name: z.string().nullable(),
+      interactions: z.record(z.string(), interactionDataSchema.nullable()),
+    }),
+  })
+);
+const batchItemContext = {
+  index: z.number().int().nonnegative(),
+  query: z.string().optional(),
+  record_id: identifier.optional(),
+};
+const batchItemSchema = z.union([
+  z.strictObject({
+    ...batchItemContext,
+    success: z.literal(true),
+    result: z.union([
+      recordDataSchema,
+      z.array(recordDataSchema),
+      z.strictObject({
+        success: z.literal(true),
+        record_id: identifier,
+      }),
+    ]),
+  }),
+  z.strictObject({
+    ...batchItemContext,
+    success: z.literal(false),
+    error: executionErrorSchema.shape.error,
+  }),
+]);
+export const batchResultContract = resultContract(
+  z.strictObject({
+    data: z.array(batchItemSchema),
+    count: z.number().int().nonnegative(),
+    summary: z.strictObject({
+      total: z.number().int().nonnegative(),
+      successful: z.number().int().nonnegative(),
+      failed: z.number().int().nonnegative(),
+    }),
+  })
+);
+// Search successes always contain record arrays; writes/get/delete cannot pass
+// as batch-search successes even though both families retain per-item errors.
+export const batchSearchResultContract = resultContract(
+  z.strictObject({
+    data: z.array(
+      z.union([
+        z.strictObject({
+          ...batchItemContext,
+          query: z.string(),
+          success: z.literal(true),
+          result: z.array(recordDataSchema),
+        }),
+        z.strictObject({
+          ...batchItemContext,
+          query: z.string(),
+          success: z.literal(false),
+          error: executionErrorSchema.shape.error,
+        }),
+      ])
+    ),
+    count: z.number().int().nonnegative(),
+    summary: z.strictObject({
+      total: z.number().int().nonnegative(),
+      successful: z.number().int().nonnegative(),
+      failed: z.number().int().nonnegative(),
+    }),
+  })
+);

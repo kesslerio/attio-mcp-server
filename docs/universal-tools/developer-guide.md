@@ -131,14 +131,46 @@ post-write decoding and uncertain-mutation recovery. Merge confirmation, plan
 freshness, upsert dry-run, and scoped resource controls remain enforced by their
 handlers.
 
-Other families retain their existing successful text contracts and do not yet
-advertise output schemas; their boundary-owned failures use the same structured
-error envelope. Connector and health success projections remain unchanged.
-Prose is enabled by default; the opt-out described above also applies to
-boundary-owned failures in other families.
+### Structured universal reads and batches (v2 boundary C)
+
+The remaining universal search, metadata, detailed-info, interaction, and batch
+families also advertise output schemas and use the shared validated result
+boundary, including the JSON-text ordering, prose opt-out, and execution errors
+described above. Exact runtime and discovery schemas are derived together from
+[`result-schemas.ts`](../../src/handlers/tools/result-schemas.ts); the read and
+batch projections are owned by
+[`read-result-adapters.ts`](../../src/handlers/tool-configs/universal/read-result-adapters.ts)
+and each tool's `structuredOutput` adapter.
+
+Advanced, relationship, content, and timeframe searches use the same collection
+envelope as `search_records`. Metadata arrays include a response count; grouped
+metadata and record attribute maps retain their native structure inside `data`.
+Only discovery removes its service-generated string usage guidance; record
+attribute maps and note bodies remain domain data. Attribute options retain
+their IDs and titles inside `data`, with a response count and `attribute_type`
+(`select` or `status`). Detailed info wraps the native record in `data`.
+Interactions wrap record identity/name and interaction aggregates in `data`,
+preserving dates and owner metadata. These metadata, options, interaction, and
+batch envelopes have no continuation cursor.
+
+`batch_records` and `batch_search_records` return per-input outcomes in `data`,
+with a response count and a summary of total, successful, and failed items.
+Outcomes retain input order and a zero-based `index`, including duplicate search
+queries, plus `query` or `record_id` where supplied. Successful items carry
+`result`; failed items carry the shared sanitized error fields. A completed batch
+has `isError: false`, even if every item failed; a whole-call failure uses only
+the shared error envelope and has `isError: true`. Legacy batch search now
+retains query outcomes instead of flattening records and dropping failures.
+Batch search is read-only; `batch_records` remains write-capable and requires
+existing host controls. Batch writes are never replayed after result encoding or
+companion formatting fails; uncertain completion requires readback before retry.
+
+Connector and health success projections remain unchanged. Families without
+output schemas retain their successful text contracts; their boundary-owned
+failures use the shared structured error envelope and prose opt-out above.
 
 Verify deterministic contracts with
-`bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts test/handlers/tools/structured-writes-protocol.test.ts test/api/retry-safety.test.ts`.
+`bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts test/handlers/tools/structured-writes-protocol.test.ts test/handlers/tools/universal-output-schemas.test.ts test/api/universal-batch-results.test.ts test/api/retry-safety.test.ts`.
 After `bun run build`, run
 `bun run test:mcp test/e2e/mcp/core-operations/structured-results.mcp.test.ts`
 for real stdio discovery/error serialization. Its read-only Attio composition

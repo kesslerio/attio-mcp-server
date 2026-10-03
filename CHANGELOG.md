@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Universal read, metadata, interaction, and batch tools now return validated structured results; batch searches retain ordered query outcomes and item failures — see the [result contract](docs/universal-tools/developer-guide.md#structured-universal-reads-and-batches-v2-boundary-c)
 - **Cleanup script refactored into focused modules** — the 680-line `scripts/cleanup/index.ts` entry point is now a 55-line wrapper over `core/` (cli, preflight, orchestrator, resources, main), `processors/`, and `utils/`; per-resource fetch/filter/delete logic shares one safety pipeline (API-token filter → pattern filter → dry-run /tmp reports → batch delete) (#620)
 
 ### Added

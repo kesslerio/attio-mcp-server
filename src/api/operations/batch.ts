@@ -1,3 +1,4 @@
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * Batch operations for Attio API
@@ -207,7 +208,7 @@ export async function executeBatchOperations<T, R>(
   // Process each chunk
   for (const chunk of chunks) {
     // Process operations in the current chunk
-    await Promise.all(
+    const results = await Promise.all(
       chunk.map(async (operation) => {
         const result: BatchItemResult<R> = {
           id: operation.id,
@@ -240,10 +241,10 @@ export async function executeBatchOperations<T, R>(
           }
         }
 
-        // Add result to batch response
-        batchResponse.results.push(result);
+        return result;
       })
     );
+    batchResponse.results.push(...results);
   }
 
   return batchResponse;
@@ -334,6 +335,7 @@ export interface UniversalBatchSearchResult {
   query: string;
   result?: UniversalRecordResult[];
   error?: string;
+  error_details?: unknown;
 }
 
 /**
@@ -469,6 +471,12 @@ export async function universalBatchSearch(
         : result.error instanceof Error
           ? result.error.message
           : String(result.error),
+      ...(!result.success
+        ? {
+            error_details: createSecureToolErrorResult(result.error)
+              .structuredContent!.error,
+          }
+        : {}),
     }));
 
     // Log performance metrics
@@ -490,13 +498,9 @@ export async function universalBatchSearch(
       durationMs: Number(duration.toFixed(2)),
     });
 
-    // If batch operation fails completely, return error for all queries
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return queries.map((query) => ({
-      success: false,
-      query,
-      error: errorMessage,
-    }));
+    // Per-query failures are captured by the item executor. A failure of the
+    // batch itself must reach the shared whole-call error boundary.
+    throw error;
   }
 }
 
@@ -513,46 +517,31 @@ async function handleUniversalResourceTypeBatchSearch(
     filters?: Record<string, unknown>;
   }
 ): Promise<UniversalBatchSearchResult[]> {
-  const results: UniversalBatchSearchResult[] = [];
-
-  // Process each query independently with error isolation
-  await Promise.allSettled(
-    queries.map(async (query) => {
+  // Promise.all preserves input position, even for duplicate queries whose
+  // independent calls complete in a different order.
+  return Promise.all(
+    queries.map(async (query): Promise<UniversalBatchSearchResult> => {
       try {
-        // Dynamic import to avoid circular dependency
         const { UniversalSearchService } =
-          await import('../../services/UniversalSearchService.js');
-        const searchResult = await UniversalSearchService.searchRecords({
+          await import('@/services/UniversalSearchService.js');
+        const result = await UniversalSearchService.searchRecords({
           resource_type: resourceType,
           query,
           filters: searchParams.filters,
           limit: searchParams.limit,
           offset: searchParams.offset,
         } as UniversalSearchParams);
-
-        results.push({
-          success: true,
-          query,
-          result: searchResult,
-        });
+        return { success: true, query, result };
       } catch (error: unknown) {
-        results.push({
+        return {
           success: false,
           query,
           error: error instanceof Error ? error.message : String(error),
-        });
+          error_details:
+            createSecureToolErrorResult(error).structuredContent!.error,
+        };
       }
     })
-  );
-
-  // Ensure results are in the same order as queries
-  return queries.map(
-    (query) =>
-      results.find((r) => r.query === query) || {
-        success: false,
-        query,
-        error: 'Query processing failed',
-      }
   );
 }
 

@@ -137,6 +137,37 @@ describe('structured results over MCP stdio', () => {
     }
   );
 
+  it.each([
+    'search_records_advanced',
+    'search_records_by_relationship',
+    'search_records_by_content',
+    'search_records_by_timeframe',
+    'get_record_attributes',
+    'discover_record_attributes',
+    'get_record_attribute_options',
+    'get_record_info',
+    'get_record_interactions',
+    'batch_records',
+    'batch_search_records',
+  ])(
+    'advertises and validates %s read/batch execution errors over stdio',
+    async (name) => {
+      expect(
+        tools.find((tool) => tool.name === name)!.outputSchema
+      ).toBeDefined();
+      await assertToolCall(name, {}, (result) => {
+        expect(result.isError).toBe(true);
+        expect(result.structuredContent).toMatchObject({
+          error: { code: 'VALIDATION_ERROR', retryable: false },
+        });
+        validateResult(name, result);
+        expect(JSON.parse(result.content[0].text as string)).toEqual(
+          result.structuredContent
+        );
+      });
+    }
+  );
+
   it.skipIf(!process.env.ATTIO_API_KEY && !process.env.ATTIO_ACCESS_TOKEN)(
     'composes live read-only search and details using structured identifiers',
     async () => {
@@ -176,6 +207,57 @@ describe('structured results over MCP stdio', () => {
           );
         }
       );
+      // Read-only U3 acceptance: no fixture mutation or cleanup is needed.
+      for (const [name, args] of [
+        [
+          'get_record_info',
+          {
+            resource_type: 'companies',
+            record_id: data[0].id.record_id,
+            info_type: 'contact',
+          },
+        ],
+        [
+          'get_record_interactions',
+          { resource_type: 'companies', record_id: data[0].id.record_id },
+        ],
+        [
+          'get_record_attributes',
+          { resource_type: 'companies', record_id: data[0].id.record_id },
+        ],
+        ['discover_record_attributes', { resource_type: 'tasks' }],
+        [
+          'batch_search_records',
+          {
+            resource_type: 'lists',
+            queries: ['structured acceptance', 'structured acceptance'],
+            limit: 1,
+          },
+        ],
+        [
+          'batch_records',
+          {
+            resource_type: 'companies',
+            operation_type: 'get',
+            record_ids: [data[0].id.record_id],
+          },
+        ],
+      ] as const) {
+        await assertToolCall(name, args, (result) => {
+          expect(result.isError).toBe(false);
+          validateResult(name, result);
+          if (name === 'batch_records' || name === 'batch_search_records') {
+            expect(
+              (
+                result.structuredContent!.data as Array<{ success: boolean }>
+              ).every((item) => item.success)
+            ).toBe(true);
+          }
+          expect(JSON.parse(result.content[0].text as string)).toEqual(
+            result.structuredContent
+          );
+        });
+      }
     }
   );
 });

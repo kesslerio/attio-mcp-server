@@ -1,3 +1,5 @@
+import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
+import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
 /**
  * Advanced universal search tool configuration
  */
@@ -30,6 +32,8 @@ export const advancedSearchConfig: UniversalToolConfig<
   UniversalRecordResult[]
 > = {
   name: 'search_records_advanced',
+  ...recordSearchResultContract,
+  structuredOutput: normalizeRecordCollection,
   handler: async (
     params: AdvancedSearchParams
   ): Promise<UniversalRecordResult[]> => {

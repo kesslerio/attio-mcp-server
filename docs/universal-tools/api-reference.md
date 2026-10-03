@@ -24,20 +24,8 @@ enum UniversalResourceType {
 
 ## formatResult Architecture (Updated PR #483)
 
-**IMPORTANT**: All universal tools now use consistent `formatResult` functions that always return strings. This eliminates dual-mode behavior and improves performance by 89.7%.
-
-### Consistent formatResult Contract
-
-```typescript
-// All formatResult functions follow this pattern
-formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResourceType): string
-
-// Performance optimized with:
-// - No environment-dependent behavior
-// - Type-safe Record<string, unknown> patterns
-// - Memory-efficient string templates
-// - 59% ESLint warning reduction (957→395)
-```
+See the [formatter contract](developer-guide.md#formatresult-architecture-update-pr-483)
+for companion prose formatting.
 
 ## Core Universal Tools (8 tools)
 
@@ -776,3 +764,9 @@ Use special mock IDs to test error handling:
 - **Need examples?** → Check [User Guide](user-guide.md)
 - **Having issues?** → Visit [Troubleshooting](troubleshooting.md)
 - **Want to extend?** → Review [Developer Guide](developer-guide.md)
+
+## Structured universal read and batch results (v2 U3)
+
+See the authoritative [structured universal reads and batches contract](developer-guide.md#structured-universal-reads-and-batches-v2-boundary-c)
+for output schemas, per-family projections, ordered batch outcomes, and recovery
+semantics.

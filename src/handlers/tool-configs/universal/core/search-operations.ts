@@ -1,3 +1,4 @@
+import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
 import {
   UniversalToolConfig,
   UniversalSearchParams,
@@ -41,7 +42,7 @@ export const searchRecordsConfig: UniversalToolConfig<
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         'search',
-        params.resource_type,
+        params?.resource_type ?? '',
         error
       );
     }
@@ -166,17 +167,7 @@ export const searchRecordsConfig: UniversalToolConfig<
 
     return `Found ${recordsArray.length} ${typeName}:\n${formattedResults}`;
   },
-  structuredOutput: (
-    results: UniversalRecordResult[] | { data: UniversalRecordResult[] }
-  ): Record<string, unknown> => {
-    // Return the raw records array for JSON parsing
-    const recordsArray = Array.isArray(results) ? results : results?.data;
-    return {
-      data: recordsArray,
-      count: recordsArray?.length,
-      next_cursor: null,
-    };
-  },
+  structuredOutput: normalizeRecordCollection,
 };
 
 export const searchRecordsDefinition = {

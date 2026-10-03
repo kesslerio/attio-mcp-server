@@ -1,3 +1,9 @@
+import { getAttributeOptionsSchema } from '@/handlers/tool-configs/universal/schemas/validation-schemas.js';
+import { getRecordInteractionsSchema } from '@/handlers/tool-configs/universal/schemas/core-schemas.js';
+import {
+  searchByRelationshipSchema,
+  searchByContentSchema,
+} from '@/handlers/tool-configs/universal/schemas/advanced-schemas.js';
 import {
   ErrorType,
   HttpStatusCode,
@@ -695,7 +701,30 @@ export function validateUniversalToolParams(
   const readValidatorNames: Record<string, string> = {
     search_records: 'records_search',
     get_record_details: 'records_get_details',
+    get_record_attributes: 'records_get_attributes',
+    discover_record_attributes: 'records_discover_attributes',
+    get_record_info: 'records_get_info',
+    search_records_advanced: 'records_search',
+    search_records_by_timeframe: 'records_search',
+    batch_search_records: 'records_search',
+    batch_records: 'records_batch',
   };
+  const requiredReadFields: Record<string, readonly string[]> = {
+    get_record_attribute_options: getAttributeOptionsSchema.required,
+    get_record_interactions: getRecordInteractionsSchema.required,
+    search_records_by_relationship: searchByRelationshipSchema.required,
+    search_records_by_content: searchByContentSchema.required,
+  };
+  for (const field of requiredReadFields[toolName] ?? []) {
+    const value = sanitizedParams[field];
+    if (value === undefined || value === null || value === '') {
+      throw new UniversalValidationError(
+        `Missing required parameter: ${field}`,
+        ErrorType.USER_ERROR,
+        { field }
+      );
+    }
+  }
   const validator = toolValidators[readValidatorNames[toolName] ?? toolName];
   if (validator) return validator(sanitizedParams);
   return sanitizedParams;
