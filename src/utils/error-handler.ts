@@ -1,3 +1,4 @@
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 /**
  * Error handling utility for creating consistent error responses
  */
@@ -373,16 +374,36 @@ export function formatErrorResponse(
   }
 
   // Return properly formatted MCP error response
+  const envelope = createSecureToolErrorResult(
+    {
+      message: normalizedError.message,
+      status: errorCode,
+      cause: normalizedError,
+    },
+    {
+      errorType: type,
+      uncertainMutation:
+        typeof details?.method === 'string' &&
+        !['GET', 'HEAD'].includes(details.method.toUpperCase()),
+    }
+  );
   const errorResponse = {
+    structuredContent: envelope.structuredContent,
     content: [
-      {
-        type: 'text',
-        text: `ERROR [${type}]: ${errorMessage}${helpfulTip}${
-          safeDetails
-            ? '\n\nDetails: ' + safeJsonStringify(safeDetails, { indent: 0 })
-            : ''
-        }`,
-      },
+      envelope.content[0],
+      ...(process.env.MCP_TEXT_RESULTS === 'false'
+        ? []
+        : [
+            {
+              type: 'text',
+              text: `ERROR [${type}]: ${errorMessage}${helpfulTip}${
+                safeDetails
+                  ? '\n\nDetails: ' +
+                    safeJsonStringify(safeDetails, { indent: 0 })
+                  : ''
+              }`,
+            },
+          ]),
     ],
     isError: true,
     error: {

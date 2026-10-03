@@ -1,3 +1,4 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * CRUD operations for Attio objects
  * Handles create, read, update, and delete operations
@@ -214,31 +215,31 @@ export async function createRecord<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records`;
 
-  return callWithRetry(async () => {
-    // Debug log the request being made
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.E2E_MODE === 'true'
-    ) {
-      logger.debug('Making API request for createRecord', {
-        path,
-        requestBody: {
-          data: {
-            values: params.attributes,
-          },
-        },
-      });
-    }
-
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.post(
+  // Debug log the request being made
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.E2E_MODE === 'true'
+  ) {
+    logger.debug('Making API request for createRecord', {
       path,
-      {
+      requestBody: {
         data: {
           values: params.attributes,
         },
-      }
-    );
+      },
+    });
+  }
 
+  const response: AxiosResponse<AttioSingleResponse<T>> = await callWithRetry(
+    () =>
+      api.post(path, {
+        data: {
+          values: params.attributes,
+        },
+      }),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     // Debug log the full response
     if (
       process.env.NODE_ENV === 'development' ||
@@ -348,7 +349,7 @@ export async function createRecord<T extends AttioRecord>(
       // If fallback didn't work, rethrow original error
       throw error;
     }
-  }, retryConfig);
+  });
 }
 
 /**
@@ -406,35 +407,34 @@ export async function updateRecord<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/${params.recordId}`;
 
-  return callWithRetry(async () => {
-    // Debug log the request being made
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.E2E_MODE === 'true'
-    ) {
-      logger.debug('Making API request for updateRecord', {
-        path,
-        recordId: params.recordId,
-        requestBody: {
-          data: {
-            values: params.attributes,
-          },
-        },
-      });
-    }
-
-    // The API expects 'data.values' structure
-    const payload = {
-      data: {
-        values: params.attributes,
-      },
-    };
-
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.patch(
+  // Debug log the request being made
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.E2E_MODE === 'true'
+  ) {
+    logger.debug('Making API request for updateRecord', {
       path,
-      payload
-    );
+      recordId: params.recordId,
+      requestBody: {
+        data: {
+          values: params.attributes,
+        },
+      },
+    });
+  }
 
+  // The API expects 'data.values' structure
+  const payload = {
+    data: {
+      values: params.attributes,
+    },
+  };
+
+  const response: AxiosResponse<AttioSingleResponse<T>> = await callWithRetry(
+    () => api.patch(path, payload),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     // Debug log the full response
     if (
       process.env.NODE_ENV === 'development' ||
@@ -586,7 +586,7 @@ export async function updateRecord<T extends AttioRecord>(
       // If fallback didn't work, rethrow original error
       throw error;
     }
-  }, retryConfig);
+  });
 }
 
 /**
@@ -608,10 +608,8 @@ export async function deleteRecord(
   const objectPath = getObjectPath(objectSlug, objectId);
   const path = `${objectPath}/records/${recordId}`;
 
-  return callWithRetry(async () => {
-    await api.delete(path);
-    return true;
-  }, retryConfig);
+  await callWithRetry(() => api.delete(path), retryConfig);
+  return true;
 }
 
 /**

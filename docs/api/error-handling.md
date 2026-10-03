@@ -271,6 +271,13 @@ retried automatically; fallback writes stop after transport failures or uncertai
 completion. Read back an uncertain write before considering another mutation.
 Only operations explicitly identified as reads may use automatic retries.
 
+Core record, task, list-entry, note, and batch write callbacks contain only the
+HTTP request; response decoding runs after the transport retry scope has ended.
+Decoding failures produce `RESULT_ENCODING_FAILED` and cannot enter a fallback
+write path. See [`decodeMutationResult`](../../src/api/operations/mutation-result.ts)
+and the transport replay regression coverage in
+[`retry-safety.test.ts`](../../test/api/retry-safety.test.ts).
+
 For a read, pass `{ uncertainMutation: false }` as the third argument:
 
 ```typescript

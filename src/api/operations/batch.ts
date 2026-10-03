@@ -1,3 +1,4 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * Batch operations for Attio API
  * Handles bulk operations with chunking and error handling
@@ -5,7 +6,7 @@
  * Enhanced for Issue #471: Batch Search Operations Support
  */
 
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   AttioRecord,
   UniversalRecordResult,
@@ -13,28 +14,32 @@ import {
   AttioListResponse,
   RecordBatchCreateParams,
   RecordBatchUpdateParams,
-} from '../../types/attio.js';
+} from '@/types/attio.js';
 import {
   BatchRequestItem,
   BatchItemResult,
   BatchResponse,
   BatchConfig,
-} from './types.js';
-import { callWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from './retry.js';
-import { searchObject } from './search.js';
-import { getObjectDetails } from './crud.js';
+} from '@/api/operations/types.js';
+import {
+  callWithRetry,
+  RetryConfig,
+  DEFAULT_RETRY_CONFIG,
+} from '@/api/operations/retry.js';
+import { searchObject } from '@/api/operations/search.js';
+import { getObjectDetails } from '@/api/operations/crud.js';
 import {
   validateBatchSize,
   validatePayloadSize,
-} from '../../utils/batch-validation.js';
-import { getBatchSizeLimit } from '../../config/security-limits.js';
-import { createScopedLogger, OperationType } from '../../utils/logger.js';
+} from '@/utils/batch-validation.js';
+import { getBatchSizeLimit } from '@/config/security-limits.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
 
 // Import universal types for enhanced batch search support
 import {
   UniversalResourceType,
   UniversalSearchParams,
-} from '../../handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 
 // Note: UniversalSearchService is imported dynamically to avoid circular dependency
 // (UniversalSearchService imports from api/operations which includes this file)
@@ -81,15 +86,18 @@ export async function batchCreateRecords<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
 
-  return callWithRetry(async () => {
-    const response = await api.post<AttioListResponse<T>>(path, {
-      records: params.records.map((record) => ({
-        attributes: record.attributes,
-      })),
-    });
-
+  const response = await callWithRetry(
+    () =>
+      api.post<AttioListResponse<T>>(path, {
+        records: params.records.map((record) => ({
+          attributes: record.attributes,
+        })),
+      }),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     return response?.data?.data || [];
-  }, retryConfig);
+  });
 }
 
 /**
@@ -125,16 +133,19 @@ export async function batchUpdateRecords<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
 
-  return callWithRetry(async () => {
-    const response = await api.patch<AttioListResponse<T>>(path, {
-      records: params.records.map((record) => ({
-        id: record.id,
-        attributes: record.attributes,
-      })),
-    });
-
+  const response = await callWithRetry(
+    () =>
+      api.patch<AttioListResponse<T>>(path, {
+        records: params.records.map((record) => ({
+          id: record.id,
+          attributes: record.attributes,
+        })),
+      }),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     return response?.data?.data || [];
-  }, retryConfig);
+  });
 }
 
 /**

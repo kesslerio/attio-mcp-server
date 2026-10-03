@@ -324,10 +324,29 @@ describe('Core Operations Workflow Integration', () => {
           record_id: recordId,
           record_data: recordData,
         };
-        await updateRecordConfig.handler(updateParams);
-        expect(mockHandlers.handleUniversalUpdate).toHaveBeenCalledWith(
-          expect.objectContaining({ resource_type: resourceType })
-        );
+        if (resourceType === UniversalResourceType.DEALS) {
+          const { UniversalUpdateService } =
+            await import('@/services/UniversalUpdateService.js');
+          vi.mocked(
+            UniversalUpdateService.updateRecordWithValidation
+          ).mockResolvedValue({
+            record: mockRecord,
+            validation: { warnings: [], suggestions: [], actualValues: {} },
+          });
+          const result = await updateRecordConfig.handler(updateParams);
+          expect(result).toMatchObject(mockRecord);
+          expect(
+            UniversalUpdateService.updateRecordWithValidation
+          ).toHaveBeenCalledExactlyOnceWith(updateParams);
+          expect(mockHandlers.handleUniversalUpdate).not.toHaveBeenCalled();
+        } else {
+          expect(await updateRecordConfig.handler(updateParams)).toEqual(
+            mockRecord
+          );
+          expect(mockHandlers.handleUniversalUpdate).toHaveBeenCalledWith(
+            updateParams
+          );
+        }
 
         // Test Delete
         const deleteParams = {

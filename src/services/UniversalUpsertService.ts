@@ -198,7 +198,7 @@ function buildPlannedResult(
     action: 'dry_run',
     planned_action: plannedAction,
     resource_type: params.resource_type,
-    record_id: recordId,
+    ...(recordId ? { record_id: recordId } : {}),
     matched_on: matchedOn,
     changed_fields: changedFields,
     message:

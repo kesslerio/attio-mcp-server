@@ -1,3 +1,4 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * Task operations for Attio
  */
@@ -287,41 +288,41 @@ export async function createTask(
     data: dataPayload,
   };
 
-  return callWithRetry(async () => {
-    logTaskDebug(
-      'createTask',
-      'Prepared create payload',
-      sanitizePayload({ path, payload: requestPayload })
-    );
+  logTaskDebug(
+    'createTask',
+    'Prepared create payload',
+    sanitizePayload({ path, payload: requestPayload })
+  );
 
+  debug(
+    'tasks.createTask',
+    'Creating task',
+    { path, hasLinkedRecords: linkedRecords.length > 0 },
+    'createTask',
+    OperationType.API_CALL
+  );
+
+  let res;
+  try {
+    res = await callWithRetry(
+      () => api.post<AttioSingleResponse<AttioTask>>(path, requestPayload),
+      retryConfig
+    );
+  } catch (err) {
     debug(
       'tasks.createTask',
-      'Creating task',
-      { path, hasLinkedRecords: linkedRecords.length > 0 },
+      'API call failed',
+      {
+        errorMessage: err instanceof Error ? err.message : String(err),
+        isAxiosError: err && typeof err === 'object' && 'isAxiosError' in err,
+      },
       'createTask',
       OperationType.API_CALL
     );
+    throw err;
+  }
 
-    let res;
-    try {
-      res = await api.post<AttioSingleResponse<AttioTask>>(
-        path,
-        requestPayload
-      );
-    } catch (err) {
-      debug(
-        'tasks.createTask',
-        'API call failed',
-        {
-          errorMessage: err instanceof Error ? err.message : String(err),
-          isAxiosError: err && typeof err === 'object' && 'isAxiosError' in err,
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-      throw err;
-    }
-
+  return decodeMutationResult(async () => {
     // Handle response validation
     if (!res) {
       debug(
@@ -359,7 +360,7 @@ export async function createTask(
       inspectTaskRecordShape(transformed)
     );
     return transformed;
-  }, retryConfig);
+  });
 }
 
 export async function updateTask(
@@ -432,25 +433,26 @@ export async function updateTask(
 
   // Wrap in Attio envelope as per API requirements
   const requestPayload = { data };
-  return callWithRetry(async () => {
-    // Debug request for tracing
-    debug(
-      'tasks.updateTask',
-      'PATCH payload',
-      { path, payload: requestPayload },
-      'updateTask',
-      OperationType.API_CALL
-    );
-    logTaskDebug(
-      'updateTask',
-      'Prepared update payload',
-      sanitizePayload({ path, payload: requestPayload })
-    );
 
-    const res = await api.patch<AttioSingleResponse<AttioTask>>(
-      path,
-      requestPayload
-    );
+  // Debug request for tracing
+  debug(
+    'tasks.updateTask',
+    'PATCH payload',
+    { path, payload: requestPayload },
+    'updateTask',
+    OperationType.API_CALL
+  );
+  logTaskDebug(
+    'updateTask',
+    'Prepared update payload',
+    sanitizePayload({ path, payload: requestPayload })
+  );
+
+  const res = await callWithRetry(
+    () => api.patch<AttioSingleResponse<AttioTask>>(path, requestPayload),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     const task = extractTaskFromResponse(
       res as unknown as Record<string, unknown>
     );
@@ -473,7 +475,7 @@ export async function updateTask(
     );
 
     return transformed;
-  }, retryConfig);
+  });
 }
 
 export async function deleteTask(
@@ -482,10 +484,9 @@ export async function deleteTask(
 ): Promise<boolean> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
-  return callWithRetry(async () => {
-    await api.delete(path);
-    return true;
-  }, retryConfig);
+
+  await callWithRetry(() => api.delete(path), retryConfig);
+  return true;
 }
 
 export async function linkRecordToTask(
@@ -495,10 +496,11 @@ export async function linkRecordToTask(
 ): Promise<boolean> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}/linked-records`;
-  return callWithRetry(async () => {
-    await api.post(path, { record_id: recordId });
-    return true;
-  }, retryConfig);
+  await callWithRetry(
+    () => api.post(path, { record_id: recordId }),
+    retryConfig
+  );
+  return true;
 }
 
 export async function unlinkRecordFromTask(
@@ -508,10 +510,8 @@ export async function unlinkRecordFromTask(
 ): Promise<boolean> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}/linked-records/${recordId}`;
-  return callWithRetry(async () => {
-    await api.delete(path);
-    return true;
-  }, retryConfig);
+  await callWithRetry(() => api.delete(path), retryConfig);
+  return true;
 }
 
 /**

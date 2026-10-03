@@ -3,11 +3,11 @@
  */
 
 import { expect, describe, it, beforeEach, vi } from 'vitest';
-import { addRecordToList } from '../../src/objects/lists.js';
-import * as attioClient from '../../src/api/attio-client.js';
-import * as lazyClient from '../../src/api/lazy-client.js';
-import * as apiOperations from '../../src/api/operations/lists.js';
-import { ResourceType } from '../../src/types/attio.js';
+import { addRecordToList } from '@/objects/lists.js';
+import * as attioClient from '@/api/attio-client.js';
+import * as lazyClient from '@/api/lazy-client.js';
+import * as apiOperations from '@/api/operations/lists.js';
+import { ResourceType } from '@/types/attio.js';
 
 describe('addRecordToList Tests', () => {
   beforeEach(() => {
@@ -34,7 +34,9 @@ describe('addRecordToList Tests', () => {
 
     // Mock the generic function to throw so we test the fallback
     vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
-      new Error('Test error')
+      Object.assign(new Error('Rejected payload'), {
+        response: { status: 400 },
+      })
     );
 
     // Call the function
@@ -85,7 +87,9 @@ describe('addRecordToList Tests', () => {
 
     // Mock the generic function to throw so we test the fallback
     vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
-      new Error('Test error')
+      Object.assign(new Error('Rejected payload'), {
+        response: { status: 400 },
+      })
     );
 
     // Call the function with objectType but no initialValues
@@ -203,7 +207,9 @@ describe('addRecordToList Tests', () => {
 
     // Mock the generic function to throw so we test the fallback
     vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
-      new Error('Test error')
+      Object.assign(new Error('Rejected payload'), {
+        response: { status: 400 },
+      })
     );
 
     // Call the function with required objectType parameter
@@ -211,9 +217,22 @@ describe('addRecordToList Tests', () => {
     const recordId = 'invalid-id';
     const objectType = 'companies';
 
-    // Should throw with formatted validation errors
-    await expect(addRecordToList(listId, recordId, objectType)).rejects.toThrow(
-      'Validation error adding record to list: data.parent_record_id: Invalid record ID format; data.parent_object: Invalid object type'
-    );
+    // Preserve upstream rejection details for the tool error boundary.
+    await expect(
+      addRecordToList(listId, recordId, objectType)
+    ).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: {
+          validation_errors: [
+            {
+              path: ['data', 'parent_record_id'],
+              message: 'Invalid record ID format',
+            },
+            { path: ['data', 'parent_object'], message: 'Invalid object type' },
+          ],
+        },
+      },
+    });
   });
 });

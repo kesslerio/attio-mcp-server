@@ -1,4 +1,8 @@
 import {
+  recordWriteResultContract,
+  recordDeleteResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import {
   UniversalToolConfig,
   UniversalCreateParams,
   UniversalUpdateParams,
@@ -12,10 +16,6 @@ import {
   deleteRecordSchema,
   validateUniversalToolParams,
 } from '@/handlers/tool-configs/universal/schemas.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import {
   handleUniversalCreate,
   handleUniversalUpdate,
@@ -81,6 +81,7 @@ export const createRecordConfig: UniversalToolConfig<
   UniversalRecord
 > = {
   name: 'create_record',
+  ...recordWriteResultContract,
   handler: async (params: UniversalCreateParams): Promise<UniversalRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
@@ -99,7 +100,7 @@ export const createRecordConfig: UniversalToolConfig<
       try {
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } =
-            await import('../../../../utils/task-debug.js');
+            await import('@/utils/task-debug.js');
           logTaskDebug('mcp.create_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
@@ -163,6 +164,7 @@ export const updateRecordConfig: UniversalToolConfig<
   UniversalRecord
 > = {
   name: 'update_record',
+  ...recordWriteResultContract,
   handler: async (params: UniversalUpdateParams): Promise<UniversalRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
@@ -179,37 +181,20 @@ export const updateRecordConfig: UniversalToolConfig<
 
       let result: UniversalRecord;
       if (sanitizedParams.resource_type === 'deals') {
-        try {
-          const { UniversalUpdateService } =
-            await import('../../../../services/UniversalUpdateService.js');
-          const enhancedResult =
-            await UniversalUpdateService.updateRecordWithValidation(
-              sanitizedParams
-            );
-
-          result = {
-            ...enhancedResult.record,
-            validationMetadata: {
-              warnings: enhancedResult.validation.warnings,
-              suggestions: enhancedResult.validation.suggestions,
-              actualValues: enhancedResult.validation.actualValues,
-            },
-          };
-        } catch (error: unknown) {
-          // Issue #1277: An explicit update with an invalid stage must surface
-          // the error to the user, not be downgraded to a silent fallback to
-          // handleUniversalUpdate (which would send the unvalidated stage to
-          // Attio). Re-throw deliberate user errors; only genuine API/network
-          // failures degrade to the standard update path.
-          if (
-            error instanceof UniversalValidationError &&
-            error.errorType === ErrorType.USER_ERROR
-          ) {
-            throw error;
-          }
-          const standardResult = await handleUniversalUpdate(sanitizedParams);
-          result = { ...standardResult };
-        }
+        const { UniversalUpdateService } =
+          await import('@/services/UniversalUpdateService.js');
+        const enhancedResult =
+          await UniversalUpdateService.updateRecordWithValidation(
+            sanitizedParams
+          );
+        result = {
+          ...enhancedResult.record,
+          validationMetadata: {
+            warnings: enhancedResult.validation.warnings,
+            suggestions: enhancedResult.validation.suggestions,
+            actualValues: enhancedResult.validation.actualValues,
+          },
+        };
       } else {
         const standardResult = await handleUniversalUpdate(sanitizedParams);
         result = { ...standardResult };
@@ -218,7 +203,7 @@ export const updateRecordConfig: UniversalToolConfig<
       try {
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } =
-            await import('../../../../utils/task-debug.js');
+            await import('@/utils/task-debug.js');
           logTaskDebug('mcp.update_record', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
@@ -284,6 +269,8 @@ export const deleteRecordConfig: UniversalToolConfig<
   { success: boolean; record_id: string }
 > = {
   name: 'delete_record',
+  ...recordDeleteResultContract,
+  structuredOutput: (result) => ({ ...result }),
   handler: async (
     params: UniversalDeleteParams
   ): Promise<{ success: boolean; record_id: string }> => {

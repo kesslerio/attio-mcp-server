@@ -1,3 +1,4 @@
+import { mergeResultContract } from '@/handlers/tools/result-schemas.js';
 import { TOOL_NAMES } from '@/constants/tool-names.js';
 import type {
   MergeRecordsParams,
@@ -150,6 +151,7 @@ export const mergeRecordsConfig: UniversalToolConfig<
   MergeRecordsResult
 > = {
   name: TOOL_NAMES.MERGE_RECORDS,
+  ...mergeResultContract,
   handler: async (
     rawParams: MergeRecordsParams
   ): Promise<MergeRecordsResult> => {

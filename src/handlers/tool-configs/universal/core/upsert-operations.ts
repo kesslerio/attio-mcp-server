@@ -1,3 +1,4 @@
+import { upsertResultContract } from '@/handlers/tools/result-schemas.js';
 import {
   UniversalToolConfig,
   UniversalUpsertParams,
@@ -82,6 +83,7 @@ export const upsertRecordConfig: UniversalToolConfig<
   UpsertResult
 > = {
   name: 'upsert_record',
+  ...upsertResultContract,
   handler: async (params: UniversalUpsertParams): Promise<UpsertResult> => {
     try {
       const sanitizedParams = validateUniversalToolParams(

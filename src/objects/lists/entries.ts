@@ -1,3 +1,4 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * List entry operations.
  */
@@ -127,7 +128,7 @@ export async function addRecordToList(
         });
       }
 
-      return extract<AttioListEntry>(response);
+      return decodeMutationResult(() => extract<AttioListEntry>(response));
     } catch (fallbackError: unknown) {
       if (process.env.NODE_ENV === 'development') {
         const log = createScopedLogger('objects.lists', 'addRecordToList');
@@ -219,7 +220,7 @@ export async function updateListEntry(
       });
     }
 
-    return extract<AttioListEntry>(response);
+    return decodeMutationResult(() => extract<AttioListEntry>(response));
   }
 }
 
