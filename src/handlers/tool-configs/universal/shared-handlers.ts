@@ -46,6 +46,7 @@ import {
   issueNextCursor,
   rejectCursorWithOffset,
   resolveCollectionCursor,
+  splitLookaheadPage,
 } from '@/handlers/tools/result-cursor.js';
 
 // Import existing handlers by resource type
@@ -64,7 +65,7 @@ import { debug, error as logError, OperationType } from '@/utils/logger.js';
 // Note: Using direct Attio API client calls instead of object-specific note functions
 
 // Import Attio API client for direct note operations
-import { unwrapAttio, normalizeNotes } from '@/utils/attio-response.js';
+import { normalizeNotes } from '@/utils/attio-response.js';
 
 /**
  * Universal search handler - delegates to UniversalSearchService
@@ -210,32 +211,28 @@ export async function handleUniversalGetNotesPage(
       };
     }
 
-    // Prefer object-layer helper which handles Attio response shape.
-    // The native upstream cursor (when the endpoint supplies one) is the
-    // reliable continuation evidence; there is no lookahead fetch here.
-    const response = await listNotes({
-      parent_object: resource_type,
-      parent_record_id: record_id,
-      limit,
-      offset: requestOffset,
-      ...(upstreamCursor ? { cursor: upstreamCursor } : {}),
-    });
-    const rawList = unwrapAttio<JsonObject>(response);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
-    const noteArray: any[] = Array.isArray(rawList)
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
-        (rawList as any[])
-      : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure
-        ((rawList as any)?.data as any[]) || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- normalizeNotes expects any[] for flexible note processing
-    const notes = normalizeNotes(noteArray as any[]);
+    const collected: JsonObject[] = [];
+    let nextUpstreamCursor: string | undefined;
+    while (collected.length < limit + 1) {
+      const fetchSize = Math.min(limit + 1 - collected.length, 50);
+      const response = await listNotes({
+        parent_object: resource_type,
+        parent_record_id: record_id,
+        limit: fetchSize,
+        offset: requestOffset + collected.length,
+        ...(upstreamCursor && collected.length === 0 ? { cursor: upstreamCursor } : {}),
+      });
+      collected.push(...normalizeNotes(response.data as Parameters<typeof normalizeNotes>[0]));
+      nextUpstreamCursor = response.meta?.next_cursor;
+      if (response.data.length < fetchSize || nextUpstreamCursor) break;
+    }
+    const { page: notes, hasMore } = splitLookaheadPage(collected, limit);
     const issued = issueNextCursor({
       scope,
       pageSize: limit,
       offset: requestOffset + notes.length,
-      // A native upstream cursor is direct evidence of more results.
-      hasMore: Boolean(response.meta?.next_cursor),
-      upstreamCursor: response.meta?.next_cursor ?? undefined,
+      hasMore: hasMore || Boolean(nextUpstreamCursor),
+      upstreamCursor: collected.length <= limit ? nextUpstreamCursor : undefined,
     });
     return {
       data: notes,

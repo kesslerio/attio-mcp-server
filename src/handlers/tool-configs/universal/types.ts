@@ -193,6 +193,8 @@ export interface UniversalSearchParams {
   filters?: ListEntryFilters;
   limit?: number;
   offset?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
   /**
    * U5 continuation (KTD6). An opaque sealed token issued by a previous page;
    * rejected together with an explicit offset and verified against the

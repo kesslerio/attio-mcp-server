@@ -6,6 +6,9 @@ import { workspaceMembersToolConfigs } from '@/handlers/tool-configs/workspace-m
 import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
 import { RecordsSearchService } from '@/services/search/RecordsSearchService.js';
+import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/search-operations.js';
+import { NoteSearchStrategy } from '@/services/search-strategies/NoteSearchStrategy.js';
+import { handleGetListsOperation } from '@/handlers/tools/dispatcher/operations/lists.js';
 import { advancedSearchConfig } from '@/handlers/tool-configs/universal/operations/advanced-search.js';
 import { searchByTimeframeConfig } from '@/handlers/tool-configs/universal/operations/timeframe-search.js';
 import { listNotesConfig } from '@/handlers/tool-configs/universal/core/notes-operations.js';
@@ -54,6 +57,52 @@ describe('U5 review pagination invariants', () => {
     const second = await UniversalSearchService.searchRecordsPage({ resource_type: companies, limit: 100, cursor: first.next_cursor! });
     expect(second.data).toEqual(records.slice(100));
     expect(second.next_cursor).toBeNull();
+  });
+
+  it.each([
+    [UniversalResourceType.COMPANIES, 20],
+    [UniversalResourceType.DEALS, 20],
+    [UniversalResourceType.PEOPLE, 100],
+  ] as const)('preserves omitted limits across basic and advanced %s searches', async (resource_type, pageSize) => {
+    const records = Array.from({ length: pageSize + 1 }, () => CompanyMockFactory.create());
+    const route = vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ limit = 10, offset = 0 }) => records.slice(offset, offset + limit));
+    for (const config of [searchRecordsConfig, advancedSearchConfig]) {
+      route.mockClear();
+      const first = await config.handler({ resource_type }) as { data: unknown[]; next_cursor: string };
+      expect(first.data).toHaveLength(pageSize);
+      expect(first.next_cursor).toBeTruthy();
+      expect(route.mock.calls[0][0].limit).toBe(Math.min(pageSize + 1, 100));
+      const second = await config.handler({ resource_type, limit: pageSize, cursor: first.next_cursor });
+      expect(second).toMatchObject({ data: records.slice(pageSize), next_cursor: null });
+    }
+  });
+
+  it('preserves custom-object, generic-record, query-route, and timeframe-tool defaults', async () => {
+    const route = vi.spyOn(SearchCoordinator, 'executeSearch').mockResolvedValue([]);
+    await UniversalSearchService.searchRecordsPage({ resource_type: 'funds' as UniversalResourceType });
+    expect(route.mock.calls.at(-1)![0].limit).toBe(21);
+    await UniversalSearchService.searchRecordsPage({ resource_type: UniversalResourceType.RECORDS });
+    expect(route.mock.calls.at(-1)![0].limit).toBe(11);
+    await UniversalSearchService.searchRecordsPage({ resource_type: companies, search_type: SearchType.TIMEFRAME, timeframe_attribute: 'created_at', start_date: '2026-01-01' });
+    expect(route.mock.calls.at(-1)![0].limit).toBe(11);
+    await searchByTimeframeConfig.handler({ resource_type: companies, start_date: '2026-01-01', end_date: '2026-02-01' });
+    expect(route.mock.calls.at(-1)![0].limit).toBe(21);
+  });
+
+  it.each([
+    ['name', 'asc', 'name', 'desc'],
+    ['name', 'desc', 'name', 'asc'],
+    ['name', 'asc', 'created_at', 'asc'],
+  ] as const)('rejects changed advanced sorts from %s %s to %s %s before fetching', async (sort_by, sort_order, changedBy, changedOrder) => {
+    const records = Array.from({ length: 3 }, () => CompanyMockFactory.create());
+    const route = vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ limit = 10, offset = 0 }) => records.slice(offset, offset + limit));
+    const params = { resource_type: companies, limit: 2, sort_by, sort_order };
+    const first = await advancedSearchConfig.handler(params) as { next_cursor: string };
+    expect(first.next_cursor).toBeTruthy();
+    route.mockClear();
+    await expect(advancedSearchConfig.handler({ ...params, sort_by: changedBy, sort_order: changedOrder, cursor: first.next_cursor })).rejects.toThrow(/cursor/i);
+    expect(route).not.toHaveBeenCalled();
+    expect(await advancedSearchConfig.handler({ ...params, cursor: first.next_cursor })).toMatchObject({ data: records.slice(2), next_cursor: null });
   });
 
   it('uses the exact offset on generic records instead of rounding to a page', async () => {
@@ -118,10 +167,52 @@ describe('U5 review pagination invariants', () => {
     expect(first).toMatchObject({ data: [expect.objectContaining({ title: 'Note' })], next_cursor: expect.any(String) });
     const cursor = (first as { next_cursor: string }).next_cursor;
     expect(await listNotesConfig.handler({ resource_type: companies, record_id: recordId, limit: 1, cursor })).toMatchObject({ next_cursor: null });
-    expect(listNotes).toHaveBeenLastCalledWith(expect.objectContaining({ cursor: 'native-next', limit: 1 }));
+    expect(listNotes).toHaveBeenLastCalledWith(expect.objectContaining({ cursor: 'native-next', limit: 2 }));
     vi.mocked(listNotes).mockClear();
     await expect(listNotesConfig.handler({ resource_type: companies, record_id: recordId, limit: 1, cursor, offset: 0 })).rejects.toThrow(/offset/i);
     expect(listNotes).not.toHaveBeenCalled();
+  });
+
+  it.each([20, 50, 100])('proves notes continuation at page size %i without native metadata', async (limit) => {
+    const notes = Array.from({ length: limit + 1 }, (_, index) => ({ id: { note_id: `note-${index}` }, title: `Note ${index}` }));
+    vi.mocked(listNotes).mockReset().mockImplementation(async ({ limit: fetchSize = 10, offset = 0 }) => ({ data: notes.slice(offset, offset + fetchSize) }));
+    const first = await listNotesConfig.handler({ resource_type: companies, record_id: recordId, limit }) as { data: Array<{ title: string }>; next_cursor: string };
+    expect(first.data).toHaveLength(limit);
+    expect(first.next_cursor).toBeTruthy();
+    expect(vi.mocked(listNotes).mock.calls.every(([args]) => args.limit! <= 50)).toBe(true);
+    if (limit >= 50) expect(listNotes).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 1, offset: limit }));
+    expect(await listNotesConfig.handler({ resource_type: companies, record_id: recordId, limit, cursor: first.next_cursor })).toMatchObject({ data: [expect.objectContaining({ title: `Note ${limit}` })], next_cursor: null });
+  });
+
+  it.each([20, 50, 100])('proves final full notes pages at page size %i are exhausted', async (limit) => {
+    const notes = Array.from({ length: limit }, (_, index) => ({ title: `Note ${index}` }));
+    vi.mocked(listNotes).mockReset().mockImplementation(async ({ limit: fetchSize = 10, offset = 0 }) => ({ data: notes.slice(offset, offset + fetchSize) }));
+    expect(await listNotesConfig.handler({ resource_type: companies, record_id: recordId, limit })).toMatchObject({ data: notes.map((note) => expect.objectContaining(note)), next_cursor: null, pagination: { supported: true, truncated: false } });
+  });
+
+  it.each([9, 10])('discloses completeness of a %i-note bounded inventory', async (count) => {
+    const notes = Array.from({ length: count }, (_, index) => ({ id: { note_id: `note-${index}` }, title: `Note ${index}` }));
+    const strategy = new NoteSearchStrategy({ noteFunction: vi.fn().mockResolvedValue({ data: notes }) });
+    const result = await strategy.search({ limit: 20 });
+    expect(result).toHaveLength(count);
+    expect((result as { truncated?: boolean }).truncated).toBe(count === 10);
+  });
+
+  it.each([99, 100])('discloses completeness of a %i-entry membership page', async (count) => {
+    const entries = Array.from({ length: count }, (_, index) => ({ list_id: recordId, entry_id: `entry-${index}` }));
+    api.get.mockResolvedValue({ data: { data: entries } });
+    const result = normalizeListMemberships(await getRecordListMemberships(recordId, 'companies'));
+    expect(result.count).toBe(count);
+    expect(result.pagination).toEqual({ supported: false, truncated: count === 100 });
+  });
+
+  it('ignores unadvertised directory controls and rejects directory continuation', async () => {
+    api.get.mockResolvedValue({ data: { data: [] } });
+    await handleGetListsOperation({ method: 'tools/call', params: { name: 'get-lists', arguments: { objectSlug: 'people', limit: 1 } } }, listsToolConfigs.getLists);
+    expect(api.get).toHaveBeenCalledWith('/lists?limit=20');
+    api.get.mockClear();
+    await expect(listsToolConfigs.getLists.handler('unsupported-token')).rejects.toThrow(InvalidCursorError);
+    expect(api.get).not.toHaveBeenCalled();
   });
 
   it('preserves list-entry envelopes from initial through final pages', async () => {

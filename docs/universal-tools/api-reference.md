@@ -46,7 +46,7 @@ for companion prose formatting.
   fields?: string[],                 // Fields to search (content search only)
   match_type?: 'exact' | 'partial' | 'fuzzy', // Match type (default: 'partial')
   sort?: 'relevance' | 'created' | 'modified' | 'name', // Sort order (default: 'name')
-  limit?: number,                    // Max results (1-100, default: 10)
+  limit?: number,                    // Max results (1-100; record-query defaults vary)
   offset?: number,                   // Pagination offset (default: 0)
   cursor?: string                    // Opaque sealed continuation token (U5); never with offset
 }
@@ -591,7 +591,7 @@ caller's current credentials before any Attio request.
 
 **Supported continuation** (offset-backed query paths): `search_records`,
 `search_records_advanced`, `search_records_by_timeframe`, `list_notes`, and
-`get-list-entries`. Supported record query and list-entry paths fetch one lookahead item ahead of the returned page; notes use native upstream cursors,
+`get-list-entries`. Supported record query and list-entry paths fetch one lookahead item ahead of the returned page; notes use bounded offset lookahead and preserve native cursors when provided,
 so a token is only issued on reliable continuation evidence and a returned
 page never drops the sentinel item — the next page refetches it.
 
@@ -600,7 +600,9 @@ page never drops the sentinel item — the next page refetches it.
 means results were withheld or upstream completeness could not be established;
 `truncated: false` affirms no bounded results were withheld. On these families
 null never proves the upstream dataset was complete. Caps are documented per
-tool: `search_records` caps pages at 100 items (default 10); `lists_list`
+tool: `search_records` caps pages at 100 items; companies, deals, and custom
+objects default to 20, people to 100, and generic records and relationship/timeframe
+query routes to 10. `search_records_by_timeframe` defaults to 20. `lists_list`
 and `list-workspace-members` return their (bounded) directory pages;
 ranked text/content searches and task/list/note aggregates do not support continuation;
 attribute metadata inventories are finite per object.
@@ -777,7 +779,8 @@ Use special mock IDs to test error handling:
 ### Pagination
 
 - Use `limit` and `offset` for large result sets
-- Default limit is 10, maximum is 100
+- Record-query limits default to 20 for companies/deals/custom objects, 100 for people, and 10 for generic records and relationship/timeframe routes; maximum is 100
+- `search_records_by_timeframe` retains its separate default of 20
 - For batch operations, maximum limit is 50
 
 ### Batch Operations

@@ -241,7 +241,9 @@ describe('codemode composition with safe continuation', () => {
     vi.spyOn(
       membersConfig.workspaceMembersToolConfigs.listWorkspaceMembers,
       'handler'
-    ).mockResolvedValueOnce([mockMember]);
+    ).mockResolvedValueOnce(
+      Object.defineProperty([mockMember], 'truncated', { value: false })
+    );
     const memberValidator = validatorFor('list-workspace-members');
     const members = await call('list-workspace-members', {});
     expect(members.isError).toBe(false);

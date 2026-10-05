@@ -60,8 +60,6 @@ import {
  * any Attio request (KTD6) instead of silently returning the first page.
  */
 async function handleGetListsCursorAware(
-  objectSlug?: string,
-  limit?: number,
   cursor?: unknown
 ): Promise<AttioList[]> {
   if (typeof cursor === 'string' && cursor.length > 0) {
@@ -69,7 +67,7 @@ async function handleGetListsCursorAware(
       'lists_list is a finite bounded collection and does not support continuation cursors'
     );
   }
-  return getLists(objectSlug, limit);
+  return getLists();
 }
 
 /**

@@ -78,11 +78,7 @@ export interface CreateNoteToolConfig extends ToolConfig {
 
 // Lists tool configuration
 export interface GetListsToolConfig extends ToolConfig {
-  handler: (
-    objectSlug?: string,
-    limit?: number,
-    cursor?: unknown
-  ) => Promise<AttioList[]>;
+  handler: (cursor?: unknown) => Promise<AttioList[]>;
 }
 
 // List entries tool configuration

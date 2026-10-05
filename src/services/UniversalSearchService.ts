@@ -48,11 +48,6 @@ export interface UniversalRecordCollectionPage {
 }
 
 /**
- * Internal default page size matching the long-standing search default.
- */
-const DEFAULT_PAGE_SIZE = 10;
-
-/**
  * A cursor pins its issuing page size; replaying it with a different page
  * size would silently reshuffle the live view, so it fails before any call.
  */
@@ -80,6 +75,8 @@ function searchContinuationScope(operation: string, params: {
   fields?: string[];
   match_type?: unknown;
   sort?: unknown;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
   search_type?: unknown;
   relationship_target_type?: unknown;
   relationship_target_id?: unknown;
@@ -143,13 +140,17 @@ export class UniversalSearchService {
     operation: 'records_search' | 'records_search_advanced' | 'records_search_by_timeframe' = 'records_search'
   ): Promise<UniversalRecordCollectionPage> {
     rejectCursorWithOffset({ cursor: params.cursor, offset: params.offset });
-    const pageSize = params.limit ?? DEFAULT_PAGE_SIZE;
-    ValidationService.validatePaginationParameters({ limit: pageSize, offset: params.offset });
-    const scope = searchContinuationScope(operation, params);
     const dateConversion = convertDateParamsToTimeframeQuery(params);
     const isQueryRoute = params.search_type === SearchType.RELATIONSHIP ||
       params.search_type === SearchType.TIMEFRAME || Boolean(dateConversion) ||
       Boolean(params.timeframe_attribute && (params.start_date || params.end_date));
+    const pageSize = params.limit ?? (
+      isQueryRoute || params.resource_type === UniversalResourceType.RECORDS
+        ? 10
+        : params.resource_type === UniversalResourceType.PEOPLE ? 100 : 20
+    );
+    ValidationService.validatePaginationParameters({ limit: pageSize, offset: params.offset });
+    const scope = searchContinuationScope(operation, { ...params, limit: pageSize });
     const supported = isQueryRoute || (
       ![UniversalResourceType.TASKS, UniversalResourceType.LISTS, UniversalResourceType.NOTES].includes(params.resource_type) &&
       params.search_type !== SearchType.CONTENT && !params.query?.trim()

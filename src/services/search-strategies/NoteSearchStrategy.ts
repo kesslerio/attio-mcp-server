@@ -154,7 +154,7 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         }
         return Object.defineProperty((notesList as AttioNote[]).map((note) =>
           this.convertNoteToRecord(note)
-        ), 'truncated', { value: Boolean(notesResponse.meta?.next_cursor) });
+        ), 'truncated', { value: Boolean(notesResponse.meta?.next_cursor) || notesList.length >= 10 });
       } catch (error: unknown) {
         log.error('Failed to load notes from API', error);
         throw error;

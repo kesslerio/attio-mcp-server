@@ -592,11 +592,12 @@ were withheld.
   passing the token back as `cursor` with the same `limit`, resource, filters,
   and sorts. Never send `offset` together with `cursor`.
 - Treat a non-null token as the only "more pages" signal; a null token means
-  the collection is exhausted for that query.
+  the collection is exhausted for that query only when `pagination.supported`
+  is true and `pagination.truncated` is false.
 - On bounded families (`lists_list`, `list-workspace-members`, attribute
   metadata, connector `search`), read `pagination.truncated` instead of
-  guessing completeness: `truncated: true` means the tool hit its disclosed cap
-  and withheld results; `truncated: false` affirms nothing was withheld.
+  guessing completeness: `truncated: true` means results were withheld or
+  upstream completeness could not be established; `truncated: false` affirms nothing was withheld.
 - Handle the stable `INVALID_CURSOR` execution error by starting over from a
   fresh first page; cursors expire after 30 minutes, die with the server
   process, and are rejected before any API call when the query, page size, or

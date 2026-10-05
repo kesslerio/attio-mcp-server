@@ -108,11 +108,7 @@ export async function handleGetListsOperation(
 
   try {
     const args = (request.params?.arguments ?? {}) as Record<string, unknown>;
-    const lists = await toolConfig.handler(
-      typeof args.objectSlug === 'string' ? args.objectSlug : undefined,
-      typeof args.limit === 'number' ? args.limit : undefined,
-      args.cursor
-    );
+    const lists = await toolConfig.handler(args.cursor);
     return listToolResult(toolConfig, request, lists);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.

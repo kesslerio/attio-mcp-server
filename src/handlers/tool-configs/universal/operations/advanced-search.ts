@@ -100,6 +100,8 @@ export const advancedSearchConfig: UniversalToolConfig<
         resource_type,
         query: sanitizedParams.query,
         filters,
+        sort_by: sanitizedParams.sort_by,
+        sort_order: sanitizedParams.sort_order,
         limit: sanitizedParams.limit,
         offset: sanitizedParams.offset,
         ...(typeof sanitizedParams.cursor === 'string' &&

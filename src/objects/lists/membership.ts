@@ -51,6 +51,8 @@ export async function getRecordListMemberships(
           ? (response.data.data as Array<Record<string, unknown>>)
           : [];
 
+        truncated ||= rawEntries.length >= 100;
+
         for (const entry of rawEntries) {
           const listId =
             (entry.list_id as string | undefined) ||
