@@ -78,10 +78,10 @@ For accounts without Developer Mode, configure `ATTIO_MCP_TOOL_MODE: 'search'` a
 
 When this mode is active, the server will only advertise:
 
-| Tool                              | Behaviour                                                                                                |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `search`                          | Delegates to the universal search service and returns JSON-encoded results in a single text content item |
-| `fetch`                           | Retrieves the full record payload for a search result ID                                                 |
+| Tool               | Behaviour                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| `search`           | Delegates to the universal search service and returns JSON-encoded results in a single text content item |
+| `fetch`            | Retrieves the full record payload for a search result ID                                                 |
 | `aaa-health-check` | Simple readiness probes                                                                                  |
 
 All other tools are filtered out at registry time and ignored by the dispatcher. This is ideal for accounts without Developer Mode or for a constrained roll-out.

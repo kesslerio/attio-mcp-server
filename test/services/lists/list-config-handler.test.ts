@@ -57,7 +57,6 @@ function getErrorProse(result: unknown, code = 'VALIDATION_ERROR'): string {
   return response.content[1].text;
 }
 
-
 function setupWorkspaceObjects(slugs: string[]) {
   const mockGet = vi.fn().mockResolvedValue({
     data: { data: slugs.map((s) => ({ api_slug: s })) },

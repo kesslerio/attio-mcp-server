@@ -389,7 +389,11 @@ describe('Consolidated manage-list-entry Tool', () => {
       );
 
       expect(result.isError).toBeFalsy();
-      expect(result.structuredContent).toEqual({ success: true, list_id: mockListId, entry_id: mockEntryId });
+      expect(result.structuredContent).toEqual({
+        success: true,
+        list_id: mockListId,
+        entry_id: mockEntryId,
+      });
     });
   });
 

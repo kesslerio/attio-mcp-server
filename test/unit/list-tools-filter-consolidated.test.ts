@@ -704,7 +704,11 @@ describe('Consolidated filter-list-entries Tool', () => {
         50,
         0
       );
-      expect(result.structuredContent).toEqual({ data: mockListEntries, count: 1, next_cursor: null });
+      expect(result.structuredContent).toEqual({
+        data: mockListEntries,
+        count: 1,
+        next_cursor: null,
+      });
     });
 
     it('should return the shared envelope and JSON companion', async () => {
@@ -729,7 +733,9 @@ describe('Consolidated filter-list-entries Tool', () => {
       expect(result.isError).toBeFalsy();
       expect(result.content).toHaveLength(2);
       expect(result.content[0].type).toBe('text');
-      expect(JSON.parse(result.content[0].text as string)).toEqual(result.structuredContent);
+      expect(JSON.parse(result.content[0].text as string)).toEqual(
+        result.structuredContent
+      );
       expect(result.content[1].text).toBe(JSON.stringify(mockListEntries));
     });
   });

@@ -50,7 +50,6 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
   });
 
   describe('Entry Management Tools', () => {
-
     it('should warn when add-record-to-list is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
@@ -66,7 +65,12 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       // The handler will fail without proper mocks, but we only care about the warning
       try {
-        await handleAddRecordToListOperation(request, { ...listsToolConfigs.addRecordToList, handler: vi.fn().mockResolvedValue({ id: { entry_id: 'entry_456', list_id: 'list_123' } }) });
+        await handleAddRecordToListOperation(request, {
+          ...listsToolConfigs.addRecordToList,
+          handler: vi.fn().mockResolvedValue({
+            id: { entry_id: 'entry_456', list_id: 'list_123' },
+          }),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -97,7 +101,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleRemoveRecordFromListOperation(request, { ...listsToolConfigs.removeRecordFromList, handler: vi.fn().mockResolvedValue(true) });
+        await handleRemoveRecordFromListOperation(request, {
+          ...listsToolConfigs.removeRecordFromList,
+          handler: vi.fn().mockResolvedValue(true),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -129,7 +136,12 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleUpdateListEntryOperation(request, { ...listsToolConfigs.updateListEntry, handler: vi.fn().mockResolvedValue({ id: { entry_id: 'entry_456', list_id: 'list_123' } }) });
+        await handleUpdateListEntryOperation(request, {
+          ...listsToolConfigs.updateListEntry,
+          handler: vi.fn().mockResolvedValue({
+            id: { entry_id: 'entry_456', list_id: 'list_123' },
+          }),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -149,7 +161,6 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
   });
 
   describe('Filter Tools', () => {
-
     it('should warn when advanced-filter-list-entries is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
@@ -165,7 +176,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleAdvancedFilterListEntriesOperation(request, { ...listsToolConfigs.advancedFilterListEntries, handler: vi.fn().mockResolvedValue([]) });
+        await handleAdvancedFilterListEntriesOperation(request, {
+          ...listsToolConfigs.advancedFilterListEntries,
+          handler: vi.fn().mockResolvedValue([]),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -199,7 +213,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleFilterListEntriesByParentOperation(request, { ...listsToolConfigs.filterListEntriesByParent, handler: vi.fn().mockResolvedValue([]) });
+        await handleFilterListEntriesByParentOperation(request, {
+          ...listsToolConfigs.filterListEntriesByParent,
+          handler: vi.fn().mockResolvedValue([]),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -230,10 +247,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleFilterListEntriesByParentIdOperation(
-          request,
-          { ...listsToolConfigs.filterListEntriesByParentId, handler: vi.fn().mockResolvedValue([]) }
-        );
+        await handleFilterListEntriesByParentIdOperation(request, {
+          ...listsToolConfigs.filterListEntriesByParentId,
+          handler: vi.fn().mockResolvedValue([]),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -253,7 +270,6 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
   });
 
   describe('List Discovery Tools', () => {
-
     it('should warn when get-lists is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
@@ -266,7 +282,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleGetListsOperation(request, { ...listsToolConfigs.getLists, handler: vi.fn().mockResolvedValue([]) });
+        await handleGetListsOperation(request, {
+          ...listsToolConfigs.getLists,
+          handler: vi.fn().mockResolvedValue([]),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -296,7 +315,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleGetListDetailsOperation(request, { ...listsToolConfigs.getListDetails, handler: vi.fn().mockResolvedValue({ id: { list_id: 'list_123' } }) });
+        await handleGetListDetailsOperation(request, {
+          ...listsToolConfigs.getListDetails,
+          handler: vi.fn().mockResolvedValue({ id: { list_id: 'list_123' } }),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -316,7 +338,6 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
   });
 
   describe('Warning Properties', () => {
-
     it('should include migration guide path in all warnings', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
@@ -331,7 +352,12 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleAddRecordToListOperation(request, { ...listsToolConfigs.addRecordToList, handler: vi.fn().mockResolvedValue({ id: { entry_id: 'entry_456', list_id: 'list_123' } }) });
+        await handleAddRecordToListOperation(request, {
+          ...listsToolConfigs.addRecordToList,
+          handler: vi.fn().mockResolvedValue({
+            id: { entry_id: 'entry_456', list_id: 'list_123' },
+          }),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -361,7 +387,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       };
 
       try {
-        await handleRemoveRecordFromListOperation(request, { ...listsToolConfigs.removeRecordFromList, handler: vi.fn().mockResolvedValue(true) });
+        await handleRemoveRecordFromListOperation(request, {
+          ...listsToolConfigs.removeRecordFromList,
+          handler: vi.fn().mockResolvedValue(true),
+        });
       } catch {
         // Ignore execution errors
       }
@@ -380,7 +409,6 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
   describe('Deprecation Behavior', () => {
     it('should emit warning on every invocation', async () => {
-
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
@@ -396,7 +424,12 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       // Call the handler 3 times
       for (let i = 0; i < 3; i++) {
         try {
-          await handleAddRecordToListOperation(request, { ...listsToolConfigs.addRecordToList, handler: vi.fn().mockResolvedValue({ id: { entry_id: 'entry_456', list_id: 'list_123' } }) });
+          await handleAddRecordToListOperation(request, {
+            ...listsToolConfigs.addRecordToList,
+            handler: vi.fn().mockResolvedValue({
+              id: { entry_id: 'entry_456', list_id: 'list_123' },
+            }),
+          });
         } catch {
           // Ignore execution errors
         }
@@ -407,7 +440,6 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
     });
 
     it('should warn before attempting tool execution', async () => {
-
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
@@ -420,7 +452,10 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       // The warning should be emitted before execution
       try {
-        await handleGetListsOperation(request, { ...listsToolConfigs.getLists, handler: vi.fn().mockResolvedValue([]) });
+        await handleGetListsOperation(request, {
+          ...listsToolConfigs.getLists,
+          handler: vi.fn().mockResolvedValue([]),
+        });
       } catch {
         // Ignore execution errors
       }
