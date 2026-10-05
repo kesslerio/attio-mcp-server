@@ -75,6 +75,7 @@ function searchContinuationScope(
   operation: string,
   params: {
     resource_type: string;
+    limit: number;
     query?: string;
     filters?: unknown;
     fields?: string[];
