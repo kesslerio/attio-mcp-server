@@ -90,7 +90,8 @@ describe('structured pagination over MCP stdio', () => {
 
   it.skipIf(!hasCredentials)(
     'composes two live pages on the records query path via sealed continuation',
-    async () => {
+    async (context) => {
+      const firstIds = new Set<string>();
       let firstToken: string | undefined;
       await assertToolCall(
         'search_records',
@@ -98,7 +99,7 @@ describe('structured pagination over MCP stdio', () => {
         (result) => {
           expect(result.isError).toBe(false);
           const structured = result.structuredContent as {
-            data: unknown[];
+            data: Array<{ id: { record_id: string } }>;
             count: number;
             next_cursor: string | null;
           };
@@ -109,12 +110,16 @@ describe('structured pagination over MCP stdio', () => {
           expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent
           );
+          for (const record of structured.data) firstIds.add(record.id.record_id);
           firstToken = structured.next_cursor ?? undefined;
         }
       );
       // Live workspaces may legitimately be tiny; only continue when the
       // server disclosed a token, which itself is reliable evidence.
-      if (!firstToken) return;
+      if (!firstToken) {
+        context.skip('Two-page live evidence unavailable: this workspace has fewer than two matching records');
+        return;
+      }
       await assertToolCall(
         'search_records',
         { resource_type: 'companies', limit: 1, cursor: firstToken },
@@ -131,7 +136,8 @@ describe('structured pagination over MCP stdio', () => {
             validator('search_records')(result.structuredContent).valid
           ).toBe(true);
           expect(structured.count).toBe(structured.data.length);
-          // Page two of a company query: ids differ from a fresh page one.
+          expect(structured.data.length).toBeGreaterThan(0);
+          for (const record of structured.data) expect(firstIds.has(record.id.record_id)).toBe(false);
           expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent
           );

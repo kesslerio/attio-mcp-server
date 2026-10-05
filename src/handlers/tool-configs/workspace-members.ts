@@ -1,11 +1,11 @@
-import { AttioWorkspaceMember } from '../../types/attio.js';
+import { AttioWorkspaceMember } from '@/types/attio.js';
 import { z } from 'zod';
 import {
   listWorkspaceMembers,
   searchWorkspaceMembers,
   getWorkspaceMember,
-} from '../../objects/workspace-members.js';
-import { ToolConfig } from '../tool-types.js';
+} from '@/objects/workspace-members.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
 import {
   workspaceMemberCollectionResultContract,
   workspaceMemberDataSchema,
@@ -22,7 +22,7 @@ function normalizeMemberCollection(result: unknown): Record<string, unknown> {
     data,
     count: data.length,
     next_cursor: null,
-    pagination: boundedPaginationMetadata(false),
+    pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
   };
 }
 

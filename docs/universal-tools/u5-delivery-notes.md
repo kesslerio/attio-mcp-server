@@ -17,7 +17,7 @@ attribute metadata.
 Focused verification command:
 
 ```sh
-bun run test:single test/handlers/tools/result-cursor.test.ts test/handlers/tools/codemode-composition.test.ts
+bun run test:single test/handlers/tools/result-cursor.test.ts test/handlers/tools/codemode-composition.test.ts test/handlers/tools/u5-review-regressions.test.ts
 ```
 
 The real stdio pagination test is

@@ -39,12 +39,14 @@ export async function getRecordListMemberships(
       : ['companies', 'people', 'deals'];
     const maxTypes = Math.max(1, batchSize);
     const typesToQuery = objectTypes.slice(0, maxTypes);
+    let truncated = !objectType || typesToQuery.length < objectTypes.length;
 
     for (const objType of typesToQuery) {
       try {
         const response = await api.get(
           `/objects/${objType}/records/${recordId}/entries`
         );
+        truncated ||= Boolean(response?.data?.meta?.next_cursor) || !Array.isArray(response?.data?.data);
         const rawEntries = Array.isArray(response?.data?.data)
           ? (response.data.data as Array<Record<string, unknown>>)
           : [];
@@ -88,6 +90,7 @@ export async function getRecordListMemberships(
         if (isNotFoundError(error)) {
           continue;
         }
+        truncated = true;
         if (process.env.NODE_ENV === 'development') {
           createScopedLogger('lists', 'getRecordListMemberships').warn(
             `Error checking ${objType} entries for record ${recordId}`,
@@ -97,7 +100,7 @@ export async function getRecordListMemberships(
       }
     }
 
-    return memberships;
+    return Object.defineProperty(memberships, 'truncated', { value: truncated });
   } catch (error: unknown) {
     if (isNotFoundError(error)) {
       return [];

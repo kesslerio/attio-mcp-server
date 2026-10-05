@@ -99,7 +99,7 @@ const searchToolConfig: ToolConfig = {
       next_cursor: null,
       // Connector search is a relevance-ranked provider, not a stable page
       // sequence; disclose the bound instead of fabricating continuation.
-      pagination: boundedPaginationMetadata(false),
+      pagination: boundedPaginationMetadata((results as { truncated?: boolean }).truncated ?? true),
     };
   },
   textProjection: searchTextProjection,

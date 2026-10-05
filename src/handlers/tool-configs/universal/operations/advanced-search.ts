@@ -94,7 +94,7 @@ export const advancedSearchConfig: UniversalToolConfig<
 
       // Delegate to universal search handler defined elsewhere
       // We intentionally avoid importing the handler here to keep concerns separated
-      const { handleUniversalSearch, handleUniversalSearchPage } =
+      const { handleUniversalSearchPage } =
         await import('@/handlers/tool-configs/universal/shared-handlers.js');
       const searchParams = {
         resource_type,
@@ -107,13 +107,7 @@ export const advancedSearchConfig: UniversalToolConfig<
           ? { cursor: sanitizedParams.cursor }
           : {}),
       };
-      if (
-        typeof sanitizedParams.cursor === 'string' &&
-        sanitizedParams.cursor.length > 0
-      ) {
-        return await handleUniversalSearchPage(searchParams);
-      }
-      return await handleUniversalSearch(searchParams);
+      return await handleUniversalSearchPage(searchParams, 'records_search_advanced');
     } catch (error: unknown) {
       const ctx = (params as { resource_type?: unknown })?.resource_type
         ? String((params as { resource_type: unknown }).resource_type)

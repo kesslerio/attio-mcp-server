@@ -53,7 +53,6 @@ import {
   resolveCollectionCursor,
   splitLookaheadPage,
 } from '@/handlers/tools/result-cursor.js';
-import { getListEntriesPage } from '@/objects/lists/entries.js';
 
 /**
  * lists_list reports a finite, bounded directory. A cursor argument is a
@@ -82,39 +81,33 @@ async function handleListEntriesCursorPage(input: {
   listId: string;
   limit?: number;
   offset?: number;
-  cursor: string;
-  filters?: unknown;
-}): Promise<
-  | AttioListEntry[]
-  | {
-      data: AttioListEntry[];
-      next_cursor: string | null;
-      pagination: { supported: boolean; truncated: boolean };
-    }
-> {
+  cursor?: string;
+}): Promise<{
+  data: AttioListEntry[];
+  next_cursor: string | null;
+  pagination: { supported: boolean; truncated: boolean };
+}> {
   rejectCursorWithOffset({ cursor: input.cursor, offset: input.offset });
   const pageSize = input.limit ?? 20;
   const scope = {
     operation: 'list_entries_list',
     resource: input.listId,
-    query: input.filters ?? null,
+    query: null,
   };
-  const resolved = resolveCollectionCursor(input.cursor, scope);
-  if (resolved.pageSize !== pageSize) {
-    throw new InvalidCursorError(
-      'Continuation cursor page size does not match this request'
-    );
+  let offset = input.offset ?? 0;
+  if (input.cursor) {
+    const resolved = resolveCollectionCursor(input.cursor, scope);
+    if (resolved.pageSize !== pageSize) {
+      throw new InvalidCursorError('Continuation cursor page size does not match this request');
+    }
+    offset = resolved.offset;
   }
-  const page = await getListEntriesPage(
-    input.listId,
-    pageSize + 1,
-    resolved.offset
-  );
+  const page = await getListEntries(input.listId, pageSize + 1, offset);
   const { page: entries, hasMore } = splitLookaheadPage(page, pageSize);
   const issued = issueNextCursor({
     scope,
     pageSize,
-    offset: resolved.offset + entries.length,
+    offset: offset + entries.length,
     hasMore,
   });
   return {
@@ -177,14 +170,11 @@ export const listsToolConfigs = {
           }
         );
       }
-      // U5: cursor-bearing calls continue through the entries seam (KTD6).
-      if (typeof cursor === 'string' && cursor.length > 0) {
-        return handleListEntriesCursorPage({ listId, limit, offset, cursor });
-      }
-      return await getListEntries(listId, limit, offset);
+      return handleListEntriesCursorPage({ listId, limit, offset,
+        cursor: typeof cursor === 'string' ? cursor : undefined });
     },
-    formatResult: (results: AttioListEntry[]) =>
-      JSON.stringify(Array.isArray(results) ? results : []),
+    formatResult: (results: AttioListEntry[] | { data: AttioListEntry[] }) =>
+      JSON.stringify(Array.isArray(results) ? results : results.data),
   } as GetListEntriesToolConfig,
   filterListEntries: {
     name: 'filter-list-entries',

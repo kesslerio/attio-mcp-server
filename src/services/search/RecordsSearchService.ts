@@ -9,7 +9,6 @@ import type { AxiosInstance } from 'axios';
 
 import type { UniversalRecord } from '@/types/attio.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
-import { listObjectRecords } from '@/objects/records/index.js';
 import { ValidationService } from '@/services/ValidationService.js';
 import { createScopedLogger, OperationType } from '@/utils/logger.js';
 import { createApiErrorFromAxiosError } from '@/errors/api-errors.js';
@@ -34,23 +33,7 @@ export class RecordsSearchService {
     offset?: number,
     filters?: Record<string, unknown>
   ): Promise<UniversalRecord[]> {
-    // Handle list_membership filters - invalid UUID should return empty array
-    if (filters?.list_membership) {
-      const listId = String(filters.list_membership);
-      if (!ValidationService.validateUUIDForSearch(listId)) {
-        return []; // Return empty success for invalid UUID
-      }
-      createScopedLogger(
-        'RecordsSearchService',
-        'searchRecordsObjectType',
-        OperationType.DATA_PROCESSING
-      ).warn('list_membership filter not yet supported in listObjectRecords');
-    }
-
-    return await listObjectRecords('records', {
-      pageSize: limit,
-      page: Math.floor((offset || 0) / (limit || 10)) + 1,
-    });
+    return this.searchCustomObject('records', limit ?? 10, offset, filters);
   }
 
   /**

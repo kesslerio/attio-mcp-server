@@ -99,7 +99,7 @@ describe('codemode composition with safe continuation', () => {
     });
     expect(first.isError).toBe(false);
     expect(searchPage).toHaveBeenCalledWith(
-      expect.objectContaining({ limit: 3, offset: 0 })
+      expect.objectContaining({ limit: 3, offset: 0 }), undefined
     );
     expect(first.structuredContent).toMatchObject({
       count: 2,
@@ -124,7 +124,7 @@ describe('codemode composition with safe continuation', () => {
         limit: 3,
         offset: 2,
         cursor: expect.anything(),
-      })
+      }), undefined
     );
     expect(second.structuredContent).toMatchObject({
       count: 1,

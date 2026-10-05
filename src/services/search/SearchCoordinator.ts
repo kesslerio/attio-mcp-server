@@ -26,6 +26,7 @@ export interface SearchRoutingParams {
   filters?: Record<string, unknown>;
   limit?: number;
   offset?: number;
+  upstreamCursor?: string;
   search_type?: SearchType;
   fields?: string[];
   match_type?: MatchType;
@@ -81,6 +82,7 @@ export class SearchCoordinator {
       filters,
       limit,
       offset,
+      upstreamCursor,
       search_type,
       fields,
       match_type,
@@ -104,9 +106,10 @@ export class SearchCoordinator {
             relationship_target_type,
             relationship_target_id,
             limit,
-            offset
+            offset,
+            upstreamCursor
           );
-          return related.data;
+          return Object.defineProperty(related.data, 'upstreamCursor', { value: related.upstreamCursor ?? undefined });
         }
         throw new Error(
           'Relationship search requires target_type and target_id parameters'
@@ -129,9 +132,10 @@ export class SearchCoordinator {
             resource_type,
             timeframeConfig,
             limit,
-            offset
+            offset,
+            upstreamCursor
           );
-          return page.data;
+          return Object.defineProperty(page.data, 'upstreamCursor', { value: page.upstreamCursor ?? undefined });
         }
         throw new Error(
           'Timeframe search requires timeframe_attribute parameter'

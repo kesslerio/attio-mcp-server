@@ -29,7 +29,9 @@ export async function getLists(
   limit: number = 20
 ): Promise<AttioList[]> {
   const lists = await getGenericLists(objectSlug, limit);
-  return asListArray(lists);
+  return Object.defineProperty(asListArray(lists), 'truncated', {
+    value: (lists as AttioList[] & { truncated?: boolean }).truncated ?? true,
+  });
 }
 
 /**

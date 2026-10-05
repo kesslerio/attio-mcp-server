@@ -86,6 +86,7 @@ export class OpenAiCompatibilityService {
     const perTypeLimit = Math.max(1, Math.ceil(limit / resourceTypes.length));
 
     const aggregated: OpenAiSearchResult[] = [];
+    let truncated = false;
 
     for (const resourceType of resourceTypes) {
       const searchParams: UniversalSearchParams = {
@@ -97,7 +98,9 @@ export class OpenAiCompatibilityService {
         sort: SortType.RELEVANCE,
       };
 
-      const records = await UniversalSearchService.searchRecords(searchParams);
+      const page = await UniversalSearchService.searchRecordsPage(searchParams);
+      const records = page.data;
+      truncated ||= page.pagination.truncated;
       aggregated.push(
         ...records.map((record) =>
           transformRecordToSearchResult(resourceType, record)
@@ -105,7 +108,9 @@ export class OpenAiCompatibilityService {
       );
     }
 
-    return aggregated.slice(0, limit);
+    return Object.defineProperty(aggregated.slice(0, limit), 'truncated', {
+      value: truncated || aggregated.length > limit,
+    });
   }
 
   static async fetch(id: string): Promise<OpenAiFetchResult> {

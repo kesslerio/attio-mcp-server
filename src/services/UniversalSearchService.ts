@@ -73,7 +73,7 @@ function pageSizeViaCursorCheck(
  * sorts, projections, and the resolved page size). Raw values are never
  * encoded — the cursor module reduces them to keyed fingerprints.
  */
-function searchContinuationScope(params: {
+function searchContinuationScope(operation: string, params: {
   resource_type: string;
   query?: string;
   filters?: unknown;
@@ -104,7 +104,7 @@ function searchContinuationScope(params: {
 } {
   const { resource_type, ...rest } = params;
   return {
-    operation: 'records_search',
+    operation,
     resource: resource_type,
     // The cursor itself and the paging position are not part of the query
     // identity: continuation must re-verify the exact filters/sorts/page size
@@ -139,34 +139,47 @@ export class UniversalSearchService {
    * never dropped).
    */
   static async searchRecordsPage(
-    params: UniversalSearchParams
+    params: UniversalSearchParams,
+    operation: 'records_search' | 'records_search_advanced' | 'records_search_by_timeframe' = 'records_search'
   ): Promise<UniversalRecordCollectionPage> {
     rejectCursorWithOffset({ cursor: params.cursor, offset: params.offset });
     const pageSize = params.limit ?? DEFAULT_PAGE_SIZE;
-    const scope = searchContinuationScope(params);
+    ValidationService.validatePaginationParameters({ limit: pageSize, offset: params.offset });
+    const scope = searchContinuationScope(operation, params);
+    const dateConversion = convertDateParamsToTimeframeQuery(params);
+    const isQueryRoute = params.search_type === SearchType.RELATIONSHIP ||
+      params.search_type === SearchType.TIMEFRAME || Boolean(dateConversion) ||
+      Boolean(params.timeframe_attribute && (params.start_date || params.end_date));
+    const supported = isQueryRoute || (
+      ![UniversalResourceType.TASKS, UniversalResourceType.LISTS, UniversalResourceType.NOTES].includes(params.resource_type) &&
+      params.search_type !== SearchType.CONTENT && !params.query?.trim()
+    );
+    if (!supported) {
+      if (params.cursor) throw new InvalidCursorError('This search does not support continuation cursors');
+      const data = await this.searchRecords(params);
+      return { data, next_cursor: null, pagination: { supported: false, truncated: (data as UniversalRecordResult[] & { truncated?: boolean }).truncated ?? true } };
+    }
 
     let offset = params.offset ?? 0;
     let upstreamCursor: string | undefined;
     if (params.cursor) {
       const resolved = resolveCollectionCursor(params.cursor, scope);
       offset = resolved.offset;
-      pageSizeViaCursorCheck(resolved.pageSize, pageSize);
       upstreamCursor = resolved.upstreamCursor;
+      pageSizeViaCursorCheck(resolved.pageSize, pageSize);
     }
 
-    // Offset-backed live view: fetch one extra item as continuation evidence.
-    const lookahead = await this.searchRecords({
-      ...params,
-      limit: pageSize + 1,
-      offset,
-    });
-    const { page, hasMore } = splitLookaheadPage(lookahead, pageSize);
+    const fetched = await this.searchRecords({ ...params, limit: Math.min(pageSize + 1, 100), offset }, upstreamCursor);
+    const { page, hasMore: lookaheadMore } = splitLookaheadPage(fetched, pageSize);
+    const nextUpstreamCursor = fetched.length <= pageSize ? (fetched as UniversalRecordResult[] & { upstreamCursor?: string }).upstreamCursor : undefined;
+    const hasMore = Boolean(nextUpstreamCursor) || lookaheadMore || (pageSize === 100 && page.length === pageSize &&
+      (await this.searchRecords({ ...params, limit: 1, offset: offset + page.length })).length > 0);
     const issued = issueNextCursor({
       scope,
       pageSize,
       offset: offset + page.length,
-      hasMore: hasMore || Boolean(upstreamCursor),
-      upstreamCursor,
+      hasMore,
+      upstreamCursor: nextUpstreamCursor,
     });
     return {
       data: page,
@@ -179,7 +192,8 @@ export class UniversalSearchService {
    * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
    */
   static async searchRecords(
-    params: UniversalSearchParams
+    params: UniversalSearchParams,
+    upstreamCursor?: string
   ): Promise<UniversalRecordResult[]> {
     const {
       resource_type,
@@ -312,6 +326,7 @@ export class UniversalSearchService {
         filters,
         limit,
         offset,
+        upstreamCursor,
         search_type: finalSearchType,
         fields,
         match_type,
@@ -365,6 +380,7 @@ export class UniversalSearchService {
       filters?: Record<string, unknown>;
       limit?: number;
       offset?: number;
+      upstreamCursor?: string;
       search_type?: SearchType;
       fields?: string[];
       match_type?: MatchType;

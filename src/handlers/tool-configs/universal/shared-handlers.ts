@@ -82,13 +82,14 @@ export async function handleUniversalSearch(
  * the sealed next cursor for the shared boundary to publish.
  */
 export async function handleUniversalSearchPage(
-  params: UniversalSearchParams
+  params: UniversalSearchParams,
+  operation: 'records_search' | 'records_search_advanced' | 'records_search_by_timeframe' = 'records_search'
 ): Promise<{
   data: UniversalRecordResult[];
   next_cursor: string | null;
   pagination: { supported: boolean; truncated: boolean };
 }> {
-  return UniversalSearchService.searchRecordsPage(params);
+  return UniversalSearchService.searchRecordsPage(params, operation);
 }
 
 /**
@@ -155,16 +156,6 @@ export async function handleUniversalCreateNote(
 }
 
 /**
- * Universal get notes handler - uses Attio notes API directly
- */
-export async function handleUniversalGetNotes(
-  params: UniversalGetNotesParams
-): Promise<JsonObject[]> {
-  const page = await handleUniversalGetNotesPage(params);
-  return page.data;
-}
-
-/**
  * Continuation-aware notes page (U5/KTD6).
  *
  * The /notes endpoint carries a native cursor in meta.next_cursor; it is
@@ -181,7 +172,7 @@ export async function handleUniversalGetNotesPage(
 }> {
   const { resource_type, record_id, limit = 20, offset = 0, cursor } = params;
 
-  rejectCursorWithOffset({ cursor, offset });
+  rejectCursorWithOffset(params);
   const scope = {
     operation: 'notes_list',
     resource: resource_type ?? 'notes',
@@ -243,7 +234,7 @@ export async function handleUniversalGetNotesPage(
       pageSize: limit,
       offset: requestOffset + notes.length,
       // A native upstream cursor is direct evidence of more results.
-      hasMore: Boolean(response.meta?.next_cursor) || notes.length >= limit,
+      hasMore: Boolean(response.meta?.next_cursor),
       upstreamCursor: response.meta?.next_cursor ?? undefined,
     });
     return {
@@ -273,15 +264,6 @@ export async function handleUniversalGetNotesPage(
       }: ${semanticMessage}`
     );
   }
-}
-
-/**
- * Universal list notes handler - alias for get notes
- */
-export async function handleUniversalListNotes(
-  params: UniversalGetNotesParams
-): Promise<JsonObject[]> {
-  return handleUniversalGetNotes(params);
 }
 
 /**

@@ -80,7 +80,8 @@ export class QueryApiService {
     targetResourceType: UniversalResourceType,
     targetRecordId: string,
     limit?: number,
-    offset?: number
+    offset?: number,
+    cursor?: string
   ): Promise<QueryPage<UniversalRecord>> {
     const relationshipQuery: RelationshipQuery = {
       sourceObjectType: sourceResourceType,
@@ -98,7 +99,7 @@ export class QueryApiService {
       const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
-        offset: offset || 0,
+        ...(cursor ? { cursor } : { offset: offset || 0 }),
       };
 
       const response = await client.post(path, requestBody);
@@ -115,7 +116,8 @@ export class QueryApiService {
     resourceType: UniversalResourceType,
     timeframeConfig: TimeframeQuery,
     limit?: number,
-    offset?: number
+    offset?: number,
+    cursor?: string
   ): Promise<QueryPage<UniversalRecord>> {
     assertSupportedTimeframeQuery(resourceType, timeframeConfig);
 
@@ -127,7 +129,7 @@ export class QueryApiService {
       const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
-        offset: offset || 0,
+        ...(cursor ? { cursor } : { offset: offset || 0 }),
       };
 
       const response = await client.post(path, requestBody);

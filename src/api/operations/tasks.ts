@@ -161,7 +161,9 @@ export async function listTasks(
     )
   )
     throw new ResultEncodingError();
-  return tasks.map((task) => transformTaskResponse(task));
+  return Object.defineProperty(tasks.map((task) => transformTaskResponse(task)), 'truncated', {
+    value: Boolean(res?.data?.has_more || res?.data?.next_cursor || res?.data?.pagination?.next_cursor || (res?.data?.meta as { next_cursor?: string } | undefined)?.next_cursor) || tasks.length >= pageSize || page > 1,
+  });
 }
 
 export async function getTask(

@@ -14,7 +14,6 @@ import {
 } from '@/handlers/tool-configs/universal/schemas.js';
 import {
   handleUniversalCreateNote,
-  handleUniversalGetNotes,
   handleUniversalGetNotesPage,
 } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { ErrorService } from '@/services/ErrorService.js';
@@ -183,16 +182,7 @@ export const listNotesConfig: UniversalToolConfig<
         );
       }
 
-      // U5 (KTD6): cursor-bearing calls page through the continuation-aware
-      // seam so the sealed token and native upstream cursor stay bound to the
-      // caller's scope; legacy offset calls keep their existing path.
-      if (
-        typeof sanitizedParams.cursor === 'string' &&
-        sanitizedParams.cursor.length > 0
-      ) {
-        return await handleUniversalGetNotesPage(sanitizedParams);
-      }
-      return await handleUniversalGetNotes(sanitizedParams);
+      return await handleUniversalGetNotesPage(sanitizedParams);
     } catch (error: unknown) {
       throw ErrorService.createUniversalError('list_notes', 'notes', error);
     }

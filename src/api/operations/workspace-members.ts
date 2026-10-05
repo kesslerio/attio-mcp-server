@@ -51,7 +51,9 @@ export async function listWorkspaceMembers(
         OperationType.API_CALL
       );
 
-      return members;
+      return Object.defineProperty([...members], 'truncated', {
+        value: Boolean((res?.data?.meta as { next_cursor?: string } | undefined)?.next_cursor || res?.data?.pagination?.next_cursor || res?.data?.next_cursor || res?.data?.has_more) || members.length >= pageSize || page > 1,
+      });
     },
     retryConfig,
     { uncertainMutation: false }
@@ -95,7 +97,9 @@ export async function searchWorkspaceMembers(
         OperationType.API_CALL
       );
 
-      return members;
+      return Object.defineProperty([...members], 'truncated', {
+        value: Boolean((res?.data?.meta as { next_cursor?: string } | undefined)?.next_cursor || res?.data?.pagination?.next_cursor || res?.data?.next_cursor || res?.data?.has_more) || members.length >= 25,
+      });
     },
     retryConfig,
     { uncertainMutation: false }

@@ -72,7 +72,8 @@ describe('SearchCoordinator', () => {
         UniversalResourceType.PEOPLE,
         'target-uuid',
         10,
-        0
+        0,
+        undefined
       );
     });
 
@@ -113,6 +114,7 @@ describe('SearchCoordinator', () => {
           operator: 'between',
         }),
         undefined,
+        undefined,
         undefined
       );
     });
@@ -134,6 +136,7 @@ describe('SearchCoordinator', () => {
           operator: 'greater_than',
         }),
         undefined,
+        undefined,
         undefined
       );
     });
@@ -154,6 +157,7 @@ describe('SearchCoordinator', () => {
           endDate: '2024-12-31',
           operator: 'less_than',
         }),
+        undefined,
         undefined,
         undefined
       );

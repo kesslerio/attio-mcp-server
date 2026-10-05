@@ -354,12 +354,6 @@ export interface RelationshipSearchParams {
   listId?: string;
   limit?: number;
   offset?: number;
-  /**
-   * U5 continuation (KTD6). An opaque sealed token issued by a previous page;
-   * rejected together with an explicit offset and verified against the
-   * caller's credential scope and query shape before any Attio request.
-   */
-  cursor?: string;
 }
 
 /**
@@ -371,12 +365,6 @@ export interface ContentSearchParams {
   search_query: string;
   limit?: number;
   offset?: number;
-  /**
-   * U5 continuation (KTD6). An opaque sealed token issued by a previous page;
-   * rejected together with an explicit offset and verified against the
-   * caller's credential scope and query shape before any Attio request.
-   */
-  cursor?: string;
 }
 
 /**

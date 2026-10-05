@@ -591,17 +591,18 @@ caller's current credentials before any Attio request.
 
 **Supported continuation** (offset-backed query paths): `search_records`,
 `search_records_advanced`, `search_records_by_timeframe`, `list_notes`, and
-`get-list-entries`. These fetch one lookahead item ahead of the returned page,
+`get-list-entries`. Supported record query and list-entry paths fetch one lookahead item ahead of the returned page; notes use native upstream cursors,
 so a token is only issued on reliable continuation evidence and a returned
 page never drops the sentinel item — the next page refetches it.
 
 **Bounded families** (finite or ranked) return `next_cursor: null` plus
 `pagination: { supported: false, truncated: <boolean> }`. `truncated: true`
-means the tool reached its cap and withheld results it could not fetch;
+means results were withheld or upstream completeness could not be established;
 `truncated: false` affirms no bounded results were withheld. On these families
 null never proves the upstream dataset was complete. Caps are documented per
 tool: `search_records` caps pages at 100 items (default 10); `lists_list`
 and `list-workspace-members` return their (bounded) directory pages;
+ranked text/content searches and task/list/note aggregates do not support continuation;
 attribute metadata inventories are finite per object.
 
 Continuation rules:

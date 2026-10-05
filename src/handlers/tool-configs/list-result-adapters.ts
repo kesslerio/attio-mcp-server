@@ -59,7 +59,7 @@ export function normalizeListCollection(
     data,
     count: data.length,
     next_cursor: null,
-    pagination: boundedPaginationMetadata(false),
+    pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
   };
 }
 
@@ -82,8 +82,17 @@ function entryCollectionEnvelope(
 export function normalizeListEntryCollection(
   result: unknown
 ): Record<string, unknown> {
-  const data = z.array(listEntryDataSchema).parse(result).map(normalizeEntry);
-  return entryCollectionEnvelope(data);
+  if (Array.isArray(result)) {
+    return entryCollectionEnvelope(z.array(listEntryDataSchema).parse(result).map(normalizeEntry));
+  }
+  const envelope = z.strictObject({
+    data: z.array(listEntryDataSchema),
+    next_cursor: z.string().max(512).nullable(),
+    pagination: z.strictObject({ supported: z.boolean(), truncated: z.boolean() }),
+  }).parse(result);
+  return entryCollectionEnvelope(envelope.data.map(normalizeEntry), {
+    next_cursor: envelope.next_cursor, pagination: envelope.pagination,
+  });
 }
 
 export function normalizeListEntry(
@@ -141,7 +150,7 @@ export function normalizeListMemberships(
     data,
     count: data.length,
     next_cursor: null,
-    pagination: boundedPaginationMetadata(false),
+    pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
   };
 }
 

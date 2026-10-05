@@ -62,7 +62,9 @@ export async function getAllLists(
           ? response.data
           : undefined;
   if (!Array.isArray(items)) throw new ResultEncodingError();
-  return items;
+  return Object.defineProperty([...items], 'truncated', {
+    value: Boolean((response?.data?.meta as { next_cursor?: string } | undefined)?.next_cursor || response?.data?.pagination?.next_cursor || response?.data?.next_cursor || response?.data?.has_more) || items.length >= limit,
+  });
 }
 
 /**

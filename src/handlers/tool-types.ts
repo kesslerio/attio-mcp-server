@@ -87,7 +87,11 @@ export interface GetListsToolConfig extends ToolConfig {
 
 // List entries tool configuration
 export interface GetListEntriesToolConfig extends ToolConfig {
-  handler: (listId: string) => Promise<AttioListEntry[]>;
+  handler: (listId: string, limit?: number, offset?: number, filters?: unknown, cursor?: unknown) => Promise<{
+    data: AttioListEntry[];
+    next_cursor: string | null;
+    pagination: { supported: boolean; truncated: boolean };
+  }>;
 }
 
 // List action tool configuration
