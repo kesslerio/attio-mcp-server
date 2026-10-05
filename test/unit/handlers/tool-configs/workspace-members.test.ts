@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { workspaceMembersToolConfigs } from '@/handlers/tool-configs/workspace-members.js';
+import { buildStructuredToolResult } from '@/handlers/tools/result-contract.js';
+import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
   listWorkspaceMembers,
   searchWorkspaceMembers,
@@ -116,5 +119,88 @@ describe('workspaceMembersToolConfigs', () => {
     expect(formatted).toContain('Workspace Member Details:');
     expect(formatted).toContain('- Name: Martin Kessler');
     expect(formatted).toContain('- ID: d28a35f1-5788-49f9-a320-6c8c353147d8');
+  });
+
+  describe('structured envelopes (U4)', () => {
+    const call = async (
+      key: keyof typeof workspaceMembersToolConfigs,
+      args: Record<string, unknown>
+    ) => {
+      const config = workspaceMembersToolConfigs[key];
+      const raw = await (config.handler as (a: unknown) => Promise<unknown>)(
+        args
+      );
+      const result = buildStructuredToolResult(
+        config,
+        raw,
+        args
+      ) as CallToolResult & { structuredContent: Record<string, unknown> };
+      expect(
+        new AjvJsonSchemaValidator().getValidator(config.outputSchema!)(
+          result.structuredContent
+        ).valid
+      ).toBe(true);
+      return result;
+    };
+
+    it('publishes the roster as a collection with the native member id', async () => {
+      vi.mocked(listWorkspaceMembers).mockResolvedValue([mockMember]);
+
+      const result = await call('listWorkspaceMembers', {});
+
+      expect(result.structuredContent).toEqual({
+        data: [mockMember],
+        count: 1,
+        next_cursor: null,
+      });
+      expect(JSON.parse(result.content[0].text as string)).toEqual(
+        result.structuredContent
+      );
+      // Prose follows the machine channel rather than replacing it.
+      expect(result.content[1]?.text).toContain('Found 1 workspace members');
+    });
+
+    it('keeps an empty search a collection rather than an error', async () => {
+      vi.mocked(searchWorkspaceMembers).mockResolvedValue([]);
+
+      const result = await call('searchWorkspaceMembers', { query: 'nobody' });
+
+      expect(result.structuredContent).toEqual({
+        data: [],
+        count: 0,
+        next_cursor: null,
+      });
+    });
+
+    it('publishes a single member with workspace_member_id retained', async () => {
+      vi.mocked(getWorkspaceMember).mockResolvedValue(mockMember);
+
+      const result = await call('getWorkspaceMember', {
+        memberId: mockMember.id.workspace_member_id,
+      });
+
+      expect(result.structuredContent).toEqual({ data: mockMember });
+      expect(
+        (
+          result.structuredContent as {
+            data: { id: { workspace_member_id: string } };
+          }
+        ).data.id.workspace_member_id
+      ).toBe('d28a35f1-5788-49f9-a320-6c8c353147d8');
+    });
+
+    it('reports an unknown member as a structured failure, never empty success', () => {
+      expect(() =>
+        workspaceMembersToolConfigs.getWorkspaceMember.structuredOutput?.(
+          undefined
+        )
+      ).toThrow('Workspace member not found');
+      try {
+        workspaceMembersToolConfigs.getWorkspaceMember.structuredOutput?.(null);
+        expect.unreachable('expected a not-found failure');
+      } catch (error) {
+        expect((error as { status?: number }).status).toBe(404);
+      }
+    });
   });
 });

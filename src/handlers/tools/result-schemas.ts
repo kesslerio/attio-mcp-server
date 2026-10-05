@@ -282,6 +282,200 @@ export const batchResultContract = resultContract(
     }),
   })
 );
+/**
+ * U4 surface coverage: lists, workspace members, health/diagnostics, and the
+ * connector pair reuse the same envelope helpers as every other family.
+ */
+function collection(data: z.ZodType) {
+  return z.strictObject({
+    data: z.array(data),
+    count: z.number().int().nonnegative(),
+    next_cursor: z.null(),
+  });
+}
+
+function singular(data: z.ZodType) {
+  return z.strictObject({ data });
+}
+
+const listIdentifier = z.object({ list_id: identifier }).catchall(z.json());
+
+export const listDataSchema = z
+  .object({
+    id: listIdentifier,
+    title: z.string().optional(),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    object_slug: z.string().optional(),
+    workspace_id: identifier.optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional(),
+    entry_count: z.number().int().nonnegative().optional(),
+  })
+  .catchall(z.json());
+
+export const listEntryDataSchema = z
+  .object({
+    id: z
+      .object({ entry_id: identifier.optional() })
+      .catchall(z.json())
+      .optional(),
+    entry_id: identifier.optional(),
+    list_id: identifier.optional(),
+    record_id: identifier.optional(),
+    parent_record_id: identifier.optional(),
+    target_object: z.string().optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional(),
+    values: z.record(z.string(), z.json()).optional(),
+  })
+  .catchall(z.json())
+  .refine(
+    (entry) =>
+      Boolean(
+        entry.list_id ||
+        entry.entry_id ||
+        (entry.id && typeof entry.id.entry_id === 'string')
+      ),
+    'A list entry must retain list_id or entry_id'
+  );
+
+/** List configuration writes report the normalized flat projection. */
+export const listConfigDataSchema = z.strictObject({
+  list_id: identifier,
+  name: z.string(),
+  parent_object: z.string(),
+  fields_summary: z.record(z.string(), z.json()),
+  dry_run: z.boolean().optional(),
+});
+
+/** Membership outcomes keep the camelCase domain shape callers already read. */
+export const listMembershipDataSchema = z.strictObject({
+  listId: identifier,
+  listName: z.string(),
+  entryId: identifier,
+  entryValues: z.record(z.string(), z.json()).optional(),
+});
+
+export const listCollectionResultContract = resultContract(
+  collection(listDataSchema)
+);
+export const listDetailsResultContract = resultContract(
+  singular(listDataSchema)
+);
+export const listEntryCollectionResultContract = resultContract(
+  collection(listEntryDataSchema)
+);
+export const listEntryResultContract = resultContract(
+  singular(listEntryDataSchema)
+);
+export const listEntryDeleteResultContract = resultContract(
+  z.strictObject({
+    success: z.literal(true),
+    list_id: identifier,
+    entry_id: identifier,
+  })
+);
+// Add/update return the entry; remove returns the affected identifiers only.
+export const listEntryMutationResultContract = resultContract(
+  z.union([
+    singular(listEntryDataSchema),
+    z.strictObject({
+      success: z.literal(true),
+      list_id: identifier,
+      entry_id: identifier,
+    }),
+  ])
+);
+export const listMembershipCollectionResultContract = resultContract(
+  collection(listMembershipDataSchema)
+);
+export const listConfigResultContract = resultContract(
+  singular(listConfigDataSchema)
+);
+
+export const workspaceMemberDataSchema = z
+  .object({
+    id: z.object({ workspace_member_id: identifier }).catchall(z.json()),
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
+    email_address: z.string().optional(),
+    avatar_url: z.string().optional(),
+    access_level: z.string().optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional(),
+  })
+  .catchall(z.json());
+
+export const workspaceMemberCollectionResultContract = resultContract(
+  collection(workspaceMemberDataSchema)
+);
+export const workspaceMemberResultContract = resultContract(
+  singular(workspaceMemberDataSchema)
+);
+
+// Health and static diagnostics stay credential-free and secret-free (KTD5).
+export const healthDataSchema = z.strictObject({
+  ok: z.literal(true),
+  name: identifier,
+  environment: z.string(),
+  timestamp: z.string(),
+  needs_api_key: z.boolean(),
+  echo: z.string().optional(),
+});
+
+export const healthResultContract = resultContract(singular(healthDataSchema));
+
+export const diagnosticsDataSchema = z.strictObject({
+  timestamp: z.string(),
+  runtime: z.strictObject({
+    platform: z.string(),
+    nodeVersion: z.string(),
+    startCommand: z.string(),
+  }),
+  environment: z.strictObject({
+    hasAttioWorkspaceId: z.boolean(),
+    mcpLogLevel: z.string(),
+    mcpServerMode: z.string(),
+    attioMcpToolMode: z.string(),
+    nodeEnv: z.string(),
+  }),
+  context: z.strictObject({
+    hasContext: z.boolean(),
+    hasWeakMapStorage: z.boolean(),
+    hasFallbackStorage: z.boolean(),
+  }),
+});
+
+export const diagnosticsResultContract = resultContract(
+  singular(diagnosticsDataSchema)
+);
+
+const connectorItemSchema = z.strictObject({
+  id: identifier,
+  title: z.string(),
+  url: z.string(),
+  snippet: z.string().optional(),
+  metadata: z.record(z.string(), z.json()).optional(),
+});
+
+export const connectorItemDataSchema = connectorItemSchema;
+
+export const connectorFetchDataSchema = z.strictObject({
+  id: identifier,
+  title: z.string(),
+  url: z.string(),
+  text: z.string(),
+  metadata: z.record(z.string(), z.json()).optional(),
+});
+
+export const connectorSearchResultContract = resultContract(
+  collection(connectorItemSchema)
+);
+export const connectorFetchResultContract = resultContract(
+  singular(connectorFetchDataSchema)
+);
+
 // Search successes always contain record arrays; writes/get/delete cannot pass
 // as batch-search successes even though both families retain per-item errors.
 export const batchSearchResultContract = resultContract(

@@ -88,6 +88,33 @@ All other tools are filtered out at registry time and ignored by the dispatcher.
 
 Unset the variable (or set it to any value other than `search`) to restore the full tool catalogue.
 
+### Connector result shapes
+
+`search` and `fetch` keep their historical text contract: `content[0].text` is the
+JSON document a connector parses — `{ "results": [...] }` for `search`, and the
+record document (with `text` holding the record body) for `fetch`. That channel is
+the only content block either tool emits, under both `MCP_TEXT_RESULTS` settings,
+because it already carries the payload rather than prose.
+
+Both tools additionally publish the shared structured envelope in
+`structuredContent`, and both advertise an `outputSchema` through `tools/list`:
+
+```typescript
+// search
+{ data: [{ id, title, url, snippet?, metadata? }], count: data.length, next_cursor: null }
+// fetch
+{ data: { id, title, url, text, metadata? } }
+// any failure (bad arguments, missing credentials, upstream denial)
+{ error: { code: 'VALIDATION_ERROR', message: '...', retryable: false } }
+```
+
+`structuredContent.data` and the text document describe the same items, so an
+integration may migrate from `JSON.parse(content[0].text).results` to
+`structuredContent.data` at its own pace. Reference identifiers are unchanged:
+pass a `search` item's `id` to `fetch` unchanged. Failures now report
+`isError: true` with a sanitized `error.code`/`message`/`retryable` instead of a
+text-only message.
+
 ---
 
 ## 4. Testing Matrix

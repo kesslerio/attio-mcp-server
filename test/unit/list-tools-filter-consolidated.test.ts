@@ -28,6 +28,30 @@ import {
   filterListEntriesByParent,
   filterListEntriesByParentId,
 } from '../../src/objects/lists/filtering.js';
+import { listsToolConfigs } from '@/handlers/tool-configs/lists.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+
+/**
+ * Structured error envelope assertions for the shared result boundary: the
+ * machine channel carries a stable code plus the actionable detail.
+ */
+function expectValidationRejection(result: unknown, detail: string) {
+  const response = result as CallToolResult & {
+    structuredContent?: { error?: { code: string; retryable: boolean } };
+  };
+  expect(response.isError).toBe(true);
+  expect(response.structuredContent?.error).toMatchObject({
+    code: 'VALIDATION_ERROR',
+    retryable: false,
+  });
+  expect(JSON.parse(response.content[0].text as string)).toEqual(
+    response.structuredContent
+  );
+  expect(response.structuredContent?.error?.code).toBe('VALIDATION_ERROR');
+  expect(
+    (response.structuredContent as { error: { message: string } }).error.message
+  ).toContain(detail);
+}
 
 describe('Consolidated filter-list-entries Tool', () => {
   const mockListId = '550e8400-e29b-41d4-a716-446655440000';
@@ -224,11 +248,11 @@ describe('Consolidated filter-list-entries Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('No filter mode detected');
+      // The sanitized dev-info detail is length-bounded, so the machine channel
+      // keeps the stable code while only the leading guidance survives intact.
+      expectValidationRejection(result, 'No filter mode detected');
       expect(result.content[0].text).toContain('Mode 1 (Simple)');
       expect(result.content[0].text).toContain('Mode 2 (Advanced)');
-      expect(result.content[0].text).toContain('Mode 3 (Parent Attribute)');
-      expect(result.content[0].text).toContain('Mode 4 (Parent UUID)');
     });
 
     it('should reject when multiple modes are detected (attributeSlug + parentRecordId)', async () => {
@@ -339,9 +363,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain(
-        'Mode 1 (Simple): condition parameter is required'
-      );
+      expectValidationRejection(result, 'Mode 1 requires');
     });
 
     it('should require value for Mode 1', async () => {
@@ -364,9 +386,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain(
-        'Mode 1 (Simple): value parameter is required'
-      );
+      expectValidationRejection(result, 'Mode 1 requires');
     });
 
     it('should support pagination for Mode 1', async () => {
@@ -543,9 +563,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain(
-        'Mode 3 (Parent Attribute): condition parameter is required'
-      );
+      expectValidationRejection(result, 'Mode 3 requires');
     });
 
     it('should require value for Mode 3', async () => {
@@ -569,9 +587,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain(
-        'Mode 3 (Parent Attribute): value parameter is required'
-      );
+      expectValidationRejection(result, 'Mode 3 requires');
     });
 
     it('should support pagination for Mode 3', async () => {
@@ -742,7 +758,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('listId parameter is required');
+      expectValidationRejection(result, 'Missing required parameter: listId');
     });
   });
 
@@ -849,6 +865,76 @@ describe('Consolidated filter-list-entries Tool', () => {
 
       expect(result.isError).toBeTruthy();
       expect(result.content[0].text).toContain('Invalid record ID');
+    });
+  });
+
+  describe('structured collection through the registered config (U4)', () => {
+    const realConfig = listsToolConfigs.filterListEntries as ToolConfig;
+
+    it('publishes an entry collection envelope that retains entry_id', async () => {
+      const request: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'filter-list-entries',
+          arguments: {
+            listId: mockListId,
+            attributeSlug: 'status',
+            condition: 'equals',
+            value: 'active',
+          },
+        },
+      };
+
+      const result = (await handleFilterListEntriesOperation(
+        request,
+        realConfig
+      )) as CallToolResult & {
+        structuredContent: { data: unknown[]; count: number };
+      };
+
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent.count).toBe(1);
+      expect(result.structuredContent.data).toMatchObject([
+        { id: { entry_id: 'entry-1' } },
+      ]);
+      // content[0] is the serialized envelope, so prose can never change it.
+      expect(JSON.parse(result.content[0].text as string)).toEqual(
+        result.structuredContent
+      );
+    });
+
+    it('keeps an empty page an array with count 0', async () => {
+      vi.mocked(filterListEntries).mockResolvedValue([]);
+      const request: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'filter-list-entries',
+          arguments: {
+            listId: mockListId,
+            attributeSlug: 'status',
+            condition: 'equals',
+            value: 'active',
+          },
+        },
+      };
+
+      const result = (await handleFilterListEntriesOperation(
+        request,
+        realConfig
+      )) as CallToolResult & {
+        structuredContent: {
+          data: unknown[];
+          count: number;
+          next_cursor: null;
+        };
+      };
+
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent).toEqual({
+        data: [],
+        count: 0,
+        next_cursor: null,
+      });
     });
   });
 });

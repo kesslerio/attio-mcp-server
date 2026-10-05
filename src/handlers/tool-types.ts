@@ -29,8 +29,15 @@ export interface ToolConfig {
 
   structuredOutput?: (
     results: any,
-    resourceType?: string
+    resourceType?: string,
+    args?: Record<string, unknown>
   ) => Record<string, unknown>;
+  /**
+   * Connector-only override for content[0]. Documents that must keep a
+   * documented JSON text shape supply their projection derived from the
+   * validated envelope instead of the envelope serialization itself (KTD4).
+   */
+  textProjection?: (structured: Record<string, unknown>) => string;
 }
 
 // Search tool configuration

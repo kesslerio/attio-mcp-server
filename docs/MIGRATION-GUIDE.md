@@ -521,3 +521,88 @@ See the complete **[List Tools Migration Guide](./migration/v2-list-tools.md)** 
 - Visual comparisons
 - Testing instructions
 - FAQ
+
+---
+
+## Migration 4: Structured Results for Lists, Members, Diagnostics, and Connectors
+
+Every tool in the default catalogue now publishes `structuredContent` through one
+shared result boundary. For list, workspace-member, and static diagnostic tools
+this changes what `content[0].text` contains, so clients that parsed it directly
+need one small adjustment. Tool names and input arguments are unchanged.
+
+### List tools
+
+**Before**: `content[0].text` was a bare JSON array or object.
+
+```json
+[
+  { "id": { "list_id": "0f2c…" }, "title": "Pipeline", "object_slug": "companies" }
+]
+```
+
+**After**: `content[0].text` serializes the same envelope the tool advertises, and
+`structuredContent` carries the identical object.
+
+```json
+{
+  "data": [
+    { "id": { "list_id": "0f2c…" }, "title": "Pipeline", "object_slug": "companies" }
+  ],
+  "count": 1,
+  "next_cursor": null
+}
+```
+
+- List and entry collections gained `count`; the items themselves are unchanged,
+  so read `data[i].id.list_id` / `data[i].id.entry_id` where you previously read
+  `[i].id.list_id` / `[i].id.entry_id`.
+- Entry writes keep the entry in `data` and always carry `list_id`, even when the
+  Attio response omits it.
+- `remove-record-from-list` and `manage-list-entry` in remove mode now report
+  `{ "success": true, "list_id": "…", "entry_id": "…" }` instead of `true`.
+- `create-list` and `update-list-configuration` report the normalized projection
+  in `data` (`list_id`, `name`, `parent_object`, `fields_summary`, and `dry_run`
+  for previews).
+- Failures no longer look like successful text: `isError` is `true` and
+  `JSON.parse(content[0].text).error` gives a stable `code`, a sanitized
+  `message`, and `retryable`. An invalid list UUID, a narrowed access scope, or a
+  denied write all fail before any mutation, so a denied write is never replayed.
+- `next_cursor` is always `null` in this release; a null cursor is not evidence
+  that a bounded collection was returned complete.
+
+### Workspace member tools
+
+`list-workspace-members` and `search-workspace-members` publish
+`{ data, count, next_cursor: null }`; `get-workspace-member` publishes
+`{ data: member }` with `id.workspace_member_id` retained. A lookup for an
+unknown member now returns a `NOT_FOUND` error envelope instead of a
+"Workspace member not found." string with `isError: false`, so branch on
+`isError` or `structuredContent.error` rather than on prose.
+
+### Health and diagnostics
+
+`aaa-health-check` and `smithery_debug_config` return their payload in `data`
+(for example `structuredContent.data.environment.mcpServerMode`) instead of a
+hand-built JSON string, and still need no Attio credentials and expose no secrets.
+
+### Connector `search` and `fetch`
+
+These two keep the exact JSON document ChatGPT's connector already parses in
+`content[0]`: `{ "results": [...] }` for `search`, the record document for
+`fetch`. They additionally publish the shared envelope in `structuredContent`
+(`{ data, count, next_cursor }` and `{ data }`), so new consumers should read
+`structuredContent` and treat the text document as the compatibility channel.
+Reference identifiers are unchanged: `fetch` accepts the `id` emitted by
+`search`, and `structuredContent.data.text` retains the document text.
+
+### Verifying a client
+
+```bash
+# Advertise the schemas your mode permits, then compare against your parser.
+curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  | jq '.result.tools[] | select(.name | test("list|workspace-member")) | {name, outputSchema}'
+```
+
+See the [developer guide](./universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d)
+for the full envelope reference.

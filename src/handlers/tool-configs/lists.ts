@@ -25,12 +25,34 @@ import {
   CreateListToolConfig,
   UpdateListConfigurationToolConfig,
 } from '@/handlers/tool-types.js';
+import {
+  listCollectionResultContract,
+  listConfigResultContract,
+  listDetailsResultContract,
+  listEntryCollectionResultContract,
+  listEntryDeleteResultContract,
+  listEntryMutationResultContract,
+  listEntryResultContract,
+  listMembershipCollectionResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import {
+  normalizeListCollection,
+  normalizeListConfig,
+  normalizeListDetails,
+  normalizeListEntry,
+  normalizeListEntryCollection,
+  normalizeListEntryDelete,
+  normalizeListEntryMutation,
+  normalizeListMemberships,
+} from '@/handlers/tool-configs/list-result-adapters.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 // Lists tool configurations
 export const listsToolConfigs = {
   getLists: {
     name: 'get-lists',
+    ...listCollectionResultContract,
+    structuredOutput: normalizeListCollection,
     handler: getLists,
     formatResult: (results: AttioList[]) => {
       // Return JSON string - dispatcher will convert to JSON content
@@ -39,6 +61,8 @@ export const listsToolConfigs = {
   } as GetListsToolConfig,
   getRecordListMemberships: {
     name: 'get-record-list-memberships',
+    ...listMembershipCollectionResultContract,
+    structuredOutput: normalizeListMemberships,
     handler: getRecordListMemberships,
     formatResult: (results: ListMembership[] | null | undefined) => {
       // Return JSON string - dispatcher will convert to JSON content
@@ -47,6 +71,8 @@ export const listsToolConfigs = {
   } as ToolConfig,
   getListDetails: {
     name: 'get-list-details',
+    ...listDetailsResultContract,
+    structuredOutput: normalizeListDetails,
     handler: async (listId: string) => {
       // Let Attio API decide if list ID is valid (supports UUIDs and slugs)
       return await getListDetails(listId);
@@ -58,6 +84,8 @@ export const listsToolConfigs = {
   } as ToolConfig,
   getListEntries: {
     name: 'get-list-entries',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: async (listId: string, limit?: number, offset?: number) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
@@ -75,6 +103,8 @@ export const listsToolConfigs = {
   } as GetListEntriesToolConfig,
   filterListEntries: {
     name: 'filter-list-entries',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: filterListEntries,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -84,6 +114,8 @@ export const listsToolConfigs = {
 
   advancedFilterListEntries: {
     name: 'advanced-filter-list-entries',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: advancedFilterListEntries,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -92,6 +124,8 @@ export const listsToolConfigs = {
   } as ToolConfig,
   addRecordToList: {
     name: 'add-record-to-list',
+    ...listEntryResultContract,
+    structuredOutput: normalizeListEntry,
     handler: async (
       listId: string,
       recordId: string,
@@ -114,6 +148,8 @@ export const listsToolConfigs = {
   } as ToolConfig,
   removeRecordFromList: {
     name: 'remove-record-from-list',
+    ...listEntryDeleteResultContract,
+    structuredOutput: normalizeListEntryDelete,
     handler: async (listId: string, entryId: string) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
@@ -130,6 +166,8 @@ export const listsToolConfigs = {
   } as ListActionToolConfig<boolean>,
   updateListEntry: {
     name: 'update-list-entry',
+    ...listEntryResultContract,
+    structuredOutput: normalizeListEntry,
     handler: updateListEntry,
     formatResult: (result: AttioListEntry) => {
       // Return JSON string
@@ -140,6 +178,8 @@ export const listsToolConfigs = {
   manageListEntry: {
     name: 'manage-list-entry',
     type: 'manageListEntry' as const,
+    ...listEntryMutationResultContract,
+    structuredOutput: normalizeListEntryMutation,
     handler: () => {
       // Placeholder - actual routing happens in dispatcher
       throw new Error('Direct handler call not supported - use dispatcher');
@@ -154,6 +194,8 @@ export const listsToolConfigs = {
 
   filterListEntriesByParent: {
     name: 'filter-list-entries-by-parent',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: filterListEntriesByParent,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -163,6 +205,8 @@ export const listsToolConfigs = {
 
   filterListEntriesByParentId: {
     name: 'filter-list-entries-by-parent-id',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: filterListEntriesByParentId,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -174,6 +218,8 @@ export const listsToolConfigs = {
   createList: {
     name: 'create-list',
     type: 'createList' as const,
+    ...listConfigResultContract,
+    structuredOutput: normalizeListConfig,
     handler: () => {
       // Placeholder - actual routing happens in dispatcher
       throw new Error('Direct handler call not supported - use dispatcher');
@@ -186,6 +232,8 @@ export const listsToolConfigs = {
   updateListConfiguration: {
     name: 'update-list-configuration',
     type: 'updateListConfiguration' as const,
+    ...listConfigResultContract,
+    structuredOutput: normalizeListConfig,
     handler: () => {
       // Placeholder - actual routing happens in dispatcher
       throw new Error('Direct handler call not supported - use dispatcher');
