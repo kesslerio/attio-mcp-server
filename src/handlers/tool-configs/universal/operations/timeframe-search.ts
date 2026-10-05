@@ -236,18 +236,21 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       // Create the filter object with the expected structure (legacy compatibility)
       const filters = { filters: dateFilters } as Record<string, unknown>;
 
-      return await handleUniversalSearchPage({
-        resource_type,
-        query: '',
-        filters,
-        timeframe_attribute: timestampField,
-        start_date: startIso,
-        end_date: endIso,
-        date_operator: timeframeOperator,
-        limit: limit ?? 20,
-        offset: sanitizedParams.offset,
-        cursor: sanitizedParams.cursor,
-      }, 'records_search_by_timeframe');
+      return await handleUniversalSearchPage(
+        {
+          resource_type,
+          query: '',
+          filters,
+          timeframe_attribute: timestampField,
+          start_date: startIso,
+          end_date: endIso,
+          date_operator: timeframeOperator,
+          limit: limit ?? 20,
+          offset: sanitizedParams.offset,
+          cursor: sanitizedParams.cursor,
+        },
+        'records_search_by_timeframe'
+      );
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         'search_records_by_timeframe',

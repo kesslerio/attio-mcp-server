@@ -109,7 +109,10 @@ export const advancedSearchConfig: UniversalToolConfig<
           ? { cursor: sanitizedParams.cursor }
           : {}),
       };
-      return await handleUniversalSearchPage(searchParams, 'records_search_advanced');
+      return await handleUniversalSearchPage(
+        searchParams,
+        'records_search_advanced'
+      );
     } catch (error: unknown) {
       const ctx = (params as { resource_type?: unknown })?.resource_type
         ? String((params as { resource_type: unknown }).resource_type)

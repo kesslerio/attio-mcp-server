@@ -46,7 +46,9 @@ export async function getRecordListMemberships(
         const response = await api.get(
           `/objects/${objType}/records/${recordId}/entries`
         );
-        truncated ||= Boolean(response?.data?.meta?.next_cursor) || !Array.isArray(response?.data?.data);
+        truncated ||=
+          Boolean(response?.data?.meta?.next_cursor) ||
+          !Array.isArray(response?.data?.data);
         const rawEntries = Array.isArray(response?.data?.data)
           ? (response.data.data as Array<Record<string, unknown>>)
           : [];
@@ -102,7 +104,9 @@ export async function getRecordListMemberships(
       }
     }
 
-    return Object.defineProperty(memberships, 'truncated', { value: truncated });
+    return Object.defineProperty(memberships, 'truncated', {
+      value: truncated,
+    });
   } catch (error: unknown) {
     if (isNotFoundError(error)) {
       return [];

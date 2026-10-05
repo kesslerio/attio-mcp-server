@@ -2,8 +2,9 @@
 
 The Tasks API allows you to manage tasks within Attio through Universal Tools with `resource_type: 'tasks'`. Tasks can be assigned to users, linked to records, and scheduled with due dates.
 
-⚠️ **Known Limitations**: 
-- Tasks pagination uses in-memory handling due to API endpoint limitations
+⚠️ **Known Limitations**:
+
+- For task search bounds and completeness disclosures, see [Collection Continuation](../universal-tools/api-reference.md#collection-continuation-u5)
 - `/objects/tasks/attributes` endpoint has limited functionality (handled with fallback patterns)
 
 > **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate task operations into 14 powerful tools with `resource_type: 'tasks'`. All task operations are fully implemented and tested.
@@ -11,11 +12,13 @@ The Tasks API allows you to manage tasks within Attio through Universal Tools wi
 ## ✅ Recent Improvements
 
 ### Tasks Attribute Discovery Fixed
+
 The MCP server now includes **special handling for tasks attributes** due to the missing `/objects/tasks/attributes` endpoint in the Attio API. The server provides predefined attribute metadata for consistent field filtering and validation.
 
 **Supported Task Attributes**:
+
 - `content` (text) - Task description/content
-- `status` (select) - Task status (todo, done, cancelled)  
+- `status` (select) - Task status (todo, done, cancelled)
 - `due_date` (date) - Task due date
 - `assignee` (person) - Assigned workspace member
 - `linked_records` (record) - Associated CRM records
@@ -27,6 +30,7 @@ This enhancement ensures **100% compatibility** with universal tools and field f
 ## Required Scopes
 
 Most task operations require the following scopes:
+
 - `task:read` - For reading tasks
 - `task:read-write` - For creating, updating, or deleting tasks
 - `object_configuration:read` - For accessing object configurations
@@ -45,13 +49,13 @@ Lists all tasks. Results are sorted by creation date, from oldest to newest.
 
 #### Query Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| page      | number | Page number to retrieve (starting at 1) |
-| pageSize  | number | Number of items per page (default 25, max 100) |
-| assignee  | string | Filter tasks by assignee ID |
+| Parameter | Type   | Description                                          |
+| --------- | ------ | ---------------------------------------------------- |
+| page      | number | Page number to retrieve (starting at 1)              |
+| pageSize  | number | Number of items per page (default 25, max 100)       |
+| assignee  | string | Filter tasks by assignee ID                          |
 | status    | string | Filter tasks by status ("todo", "done", "cancelled") |
-| dueDate   | string | Filter tasks by due date in ISO 8601 format |
+| dueDate   | string | Filter tasks by due date in ISO 8601 format          |
 
 #### Response
 
@@ -116,15 +120,15 @@ Creates a new task.
 }
 ```
 
-| Field           | Type     | Description | Required |
-|-----------------|----------|-------------|----------|
-| content         | string   | The task content/description | Yes |
-| assignee        | object   | The user assigned to the task | No |
-| assignee.id     | string   | The ID of the assigned user | If assignee is provided |
-| assignee.type   | string   | The type of the assignee (workspace-member) | If assignee is provided |
-| due_date        | string   | The due date in ISO 8601 format | No |
-| linked_records  | array    | List of records to link the task to | No |
-| linked_records[].id | string | The ID of the record to link | If linked_records is provided |
+| Field               | Type   | Description                                 | Required                      |
+| ------------------- | ------ | ------------------------------------------- | ----------------------------- |
+| content             | string | The task content/description                | Yes                           |
+| assignee            | object | The user assigned to the task               | No                            |
+| assignee.id         | string | The ID of the assigned user                 | If assignee is provided       |
+| assignee.type       | string | The type of the assignee (workspace-member) | If assignee is provided       |
+| due_date            | string | The due date in ISO 8601 format             | No                            |
+| linked_records      | array  | List of records to link the task to         | No                            |
+| linked_records[].id | string | The ID of the record to link                | If linked_records is provided |
 
 #### Response
 
@@ -140,8 +144,8 @@ Retrieves a specific task by ID.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                    |
+| --------- | ------ | ------------------------------ |
 | task_id   | string | The ID of the task to retrieve |
 
 #### Response
@@ -158,8 +162,8 @@ Updates a specific task.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                  |
+| --------- | ------ | ---------------------------- |
 | task_id   | string | The ID of the task to update |
 
 #### Request Body
@@ -172,13 +176,13 @@ Updates a specific task.
 }
 ```
 
-| Field           | Type     | Description |
-|-----------------|----------|-------------|
-| content         | string   | The updated task content |
-| status          | string   | The task status ("todo", "done", "cancelled") |
-| assignee        | object   | The updated assignee |
-| due_date        | string   | The updated due date in ISO 8601 format |
-| linked_records  | array    | Updated list of linked records |
+| Field          | Type   | Description                                   |
+| -------------- | ------ | --------------------------------------------- |
+| content        | string | The updated task content                      |
+| status         | string | The task status ("todo", "done", "cancelled") |
+| assignee       | object | The updated assignee                          |
+| due_date       | string | The updated due date in ISO 8601 format       |
+| linked_records | array  | Updated list of linked records                |
 
 #### Response
 
@@ -194,8 +198,8 @@ Deletes a specific task.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description                  |
+| --------- | ------ | ---------------------------- |
 | task_id   | string | The ID of the task to delete |
 
 #### Response
@@ -212,8 +216,8 @@ Links a record to a specific task.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
+| Parameter | Type   | Description        |
+| --------- | ------ | ------------------ |
 | task_id   | string | The ID of the task |
 
 #### Request Body
@@ -238,9 +242,9 @@ Unlinks a record from a specific task.
 
 #### Path Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| task_id   | string | The ID of the task |
+| Parameter | Type   | Description                    |
+| --------- | ------ | ------------------------------ |
+| task_id   | string | The ID of the task             |
 | record_id | string | The ID of the record to unlink |
 
 #### Response
@@ -275,15 +279,15 @@ async function listTasks() {
   try {
     const response = await axios.get('https://api.attio.com/v2/tasks', {
       headers: {
-        'Authorization': 'Bearer YOUR_API_KEY'
+        Authorization: 'Bearer YOUR_API_KEY',
       },
       params: {
-        'page': 1,
-        'pageSize': 10,
-        'status': 'todo'
-      }
+        page: 1,
+        pageSize: 10,
+        status: 'todo',
+      },
     });
-    
+
     console.log(response.data);
   } catch (error) {
     console.error(error);

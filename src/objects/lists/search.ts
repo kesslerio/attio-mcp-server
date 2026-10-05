@@ -18,7 +18,15 @@ export async function searchLists(
     return name.includes(lowerQuery) || description.includes(lowerQuery);
   });
 
-  return Object.defineProperty(filtered.slice(offset, offset + limit), 'truncated', {
-    value: (allLists as AttioList[] & { truncated?: boolean }).truncated !== false || offset > 0 || filtered.length > offset + limit,
-  });
+  return Object.defineProperty(
+    filtered.slice(offset, offset + limit),
+    'truncated',
+    {
+      value:
+        (allLists as AttioList[] & { truncated?: boolean }).truncated !==
+          false ||
+        offset > 0 ||
+        filtered.length > offset + limit,
+    }
+  );
 }

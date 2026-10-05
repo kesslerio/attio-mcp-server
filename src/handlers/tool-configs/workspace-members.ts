@@ -22,7 +22,9 @@ function normalizeMemberCollection(result: unknown): Record<string, unknown> {
     data,
     count: data.length,
     next_cursor: null,
-    pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
+    pagination: boundedPaginationMetadata(
+      (result as { truncated?: boolean }).truncated ?? true
+    ),
   };
 }
 

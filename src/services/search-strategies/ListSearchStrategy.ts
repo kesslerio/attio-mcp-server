@@ -92,7 +92,8 @@ export class ListSearchStrategy extends BaseSearchStrategy {
 
     // Normalize list shapes for list-native handling
     let records = this.normalizeLists(lists);
-    const upstreamTruncated = (lists as AttioList[] & { truncated?: boolean }).truncated ?? true;
+    const upstreamTruncated =
+      (lists as AttioList[] & { truncated?: boolean }).truncated ?? true;
 
     // Apply content search filtering if requested
     if (search_type === SearchType.CONTENT && query && query.trim()) {
@@ -112,7 +113,9 @@ export class ListSearchStrategy extends BaseSearchStrategy {
       });
     }
 
-    return Object.defineProperty(records, 'truncated', { value: upstreamTruncated });
+    return Object.defineProperty(records, 'truncated', {
+      value: upstreamTruncated,
+    });
   }
 
   /**

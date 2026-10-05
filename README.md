@@ -203,7 +203,7 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 ### **Current Limitations**
 
 - **Field Parameter Filtering**: Tasks endpoint `/objects/tasks/attributes` has limitations, handled with fallback patterns
-- **Pagination**: Tasks pagination uses in-memory handling due to API constraints
+- **Pagination**: See the [collection continuation contract](./docs/universal-tools/api-reference.md#collection-continuation-u5) for supported paths and bounded task results
 
 ### **API Compatibility**
 
@@ -222,7 +222,7 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 ### **Performance Considerations**
 
 - **Batch Operations**: Optimized with chunking, rate limiting, and error recovery
-- **Large Datasets**: Automatic pagination and field filtering for optimal performance
+- **Large Datasets**: Compose supported collection pages using the [continuation contract](./docs/universal-tools/api-reference.md#collection-continuation-u5)
 - **Rate Limiting**: Built-in protection against API rate limits with exponential backoff
 
 For detailed troubleshooting and solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) and [GitHub Issues](https://github.com/kesslerio/attio-mcp-server/issues).

@@ -84,7 +84,10 @@ export async function handleUniversalSearch(
  */
 export async function handleUniversalSearchPage(
   params: UniversalSearchParams,
-  operation: 'records_search' | 'records_search_advanced' | 'records_search_by_timeframe' = 'records_search'
+  operation:
+    | 'records_search'
+    | 'records_search_advanced'
+    | 'records_search_by_timeframe' = 'records_search'
 ): Promise<{
   data: UniversalRecordResult[];
   next_cursor: string | null;
@@ -220,9 +223,13 @@ export async function handleUniversalGetNotesPage(
         parent_record_id: record_id,
         limit: fetchSize,
         offset: requestOffset + collected.length,
-        ...(upstreamCursor && collected.length === 0 ? { cursor: upstreamCursor } : {}),
+        ...(upstreamCursor && collected.length === 0
+          ? { cursor: upstreamCursor }
+          : {}),
       });
-      collected.push(...normalizeNotes(response.data as Parameters<typeof normalizeNotes>[0]));
+      collected.push(
+        ...normalizeNotes(response.data as Parameters<typeof normalizeNotes>[0])
+      );
       nextUpstreamCursor = response.meta?.next_cursor;
       if (response.data.length < fetchSize || nextUpstreamCursor) break;
     }
@@ -232,7 +239,8 @@ export async function handleUniversalGetNotesPage(
       pageSize: limit,
       offset: requestOffset + notes.length,
       hasMore: hasMore || Boolean(nextUpstreamCursor),
-      upstreamCursor: collected.length <= limit ? nextUpstreamCursor : undefined,
+      upstreamCursor:
+        collected.length <= limit ? nextUpstreamCursor : undefined,
     });
     return {
       data: notes,

@@ -48,7 +48,7 @@ for companion prose formatting.
   sort?: 'relevance' | 'created' | 'modified' | 'name', // Sort order (default: 'name')
   limit?: number,                    // Max results (1-100; record-query defaults vary)
   offset?: number,                   // Pagination offset (default: 0)
-  cursor?: string                    // Opaque sealed continuation token (U5); never with offset
+  cursor?: string                    // See Collection Continuation
 }
 ```
 
@@ -373,8 +373,9 @@ await client.callTool('records.get_info', {
   filters?: object,                  // Advanced filter conditions
   sort_by?: string,                  // Field to sort by
   sort_order?: 'asc' | 'desc',      // Sort direction
-  limit?: number,                    // Max results (1-100, default: 10)
-  offset?: number                    // Pagination offset (default: 0)
+  limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
+  offset?: number,                   // Pagination offset (default: 0)
+  cursor?: string                    // See Collection Continuation
 }
 ```
 
@@ -482,8 +483,9 @@ await client.callTool('records.search_by_content', {
   start_date?: string,               // ISO 8601 or relative date (e.g., "last 7 days")
   end_date?: string,                 // ISO 8601 or relative date (e.g., "yesterday")
   preset?: string,                   // Date preset or relative expression (e.g., "this_month", "last 30 days")
-  limit?: number,                    // Max results (1-100, default: 10)
-  offset?: number                    // Pagination offset (default: 0)
+  limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
+  offset?: number,                   // Pagination offset (default: 0)
+  cursor?: string                    // See Collection Continuation
 }
 ```
 
@@ -586,8 +588,11 @@ versioned token sealed with authenticated encryption under an ephemeral server
 key; it is bound to the effective credential scope, the canonical operation,
 the resource, the query shape (filters, sorts, projections), and the page size.
 Tokens expire after 30 minutes, become invalid when the server restarts, and
-grant no permission — every continuation is re-authorized against the
-caller's current credentials before any Attio request.
+grant no permission: verification uses the caller's current credential scope
+before any Attio request, and Attio still authorizes that request. Tokens are
+bounded to 512 characters. A non-null token is the continuation signal. A null
+token means exhaustion only when `pagination.supported` is true and
+`pagination.truncated` is false.
 
 **Supported continuation** (offset-backed query paths): `search_records`,
 `search_records_advanced`, `search_records_by_timeframe`, `list_notes`, and
@@ -604,7 +609,9 @@ means results were withheld or upstream completeness could not be established;
 null never proves the upstream dataset was complete. Caps are documented per
 tool: `search_records` caps pages at 100 items; companies, deals, and custom
 objects default to 20, people to 100, and generic records and relationship/timeframe
-query routes to 10. `search_records_by_timeframe` defaults to 20. `lists_list`
+query routes within `search_records` to 10. `search_records_by_timeframe` and
+`list_notes` default to 20; notes accept up to 100 per returned page.
+`get-list-entries` defaults to 20. `get-lists`
 and `list-workspace-members` return their complete directory inventories;
 ranked text/content searches and task/list/note aggregates do not support continuation;
 attribute metadata inventories are finite per object. Task searches disclose slices
@@ -615,11 +622,12 @@ Continuation rules:
 
 - Pass the sealed token back as `cursor` on the next call; never combine
   `cursor` with `offset` (the request is rejected before any API call).
-- Reuse the token only for the same query: same resource, filters, sorts, and
+- Reuse the token only for the same query: same resource, filters, sorts, projections, and
   page size. A mismatch fails with the stable `INVALID_CURSOR` code before any
-  Attio request.
+  Attio request. Start again from a fresh first page after this error.
 - Offset pagination is a live view, not a snapshot: concurrent writes can
-  shift or repeat items across pages.
+  shift or repeat items across pages. Deduplicate by record identifier when
+  your consumer needs stability.
 - Tokens carry no raw credentials or filter values — only keyed fingerprints —
   and a token issued under one tenant's credentials fails under another's.
 
@@ -783,8 +791,7 @@ Use special mock IDs to test error handling:
 ### Pagination
 
 - Use `limit` and `offset` for large result sets
-- Record-query limits default to 20 for companies/deals/custom objects, 100 for people, and 10 for generic records and relationship/timeframe routes; maximum is 100
-- `search_records_by_timeframe` retains its separate default of 20
+- See [Collection Continuation](#collection-continuation-u5) for limits and defaults
 - For batch operations, maximum limit is 50
 
 ### Batch Operations

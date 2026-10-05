@@ -3,10 +3,10 @@
  *
  * Continuation tokens are opaque, versioned, length-bounded strings sealed
  * with authenticated encryption under an ephemeral per-process server key.
- * They carry only a next offset plus keyed fingerprints of the effective
- * credential scope and the query shape; raw credentials, filters, and upstream
- * payloads are never encoded or logged. Tokens expire, die with the process
- * (restart), and are re-verified against the caller's current scope before any
+ * They carry the next offset, optional sealed upstream continuation, and keyed
+ * fingerprints of the effective credential scope and query shape. Raw
+ * credentials and filter values are never encoded or logged. Tokens expire,
+ * die with the process (restart), and are re-verified against the caller's scope before any
  * Attio request, so a valid cursor can never widen access or cross tenants.
  *
  * Tokens grant no permission and never substitute for fresh authorization.
@@ -202,7 +202,7 @@ function scopeFingerprint(scope: CursorScope): string {
 }
 
 export interface IssuedCollectionCursor {
-  /** Opaque next-page token, or null when the collection is exhausted. */
+  /** Opaque next-page token; interpret null together with pagination metadata. */
   next_cursor: string | null;
   /** Machine-readable truncation disclosure for this page. */
   pagination: CollectionPaginationMetadata;
@@ -211,7 +211,7 @@ export interface IssuedCollectionCursor {
 export interface CollectionPaginationMetadata {
   /** Whether this collection supports safe continuation at all. */
   supported: boolean;
-  /** Whether this response omitted results the tool could not fetch. */
+  /** Results were withheld or upstream completeness could not be established. */
   truncated: boolean;
 }
 

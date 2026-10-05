@@ -96,7 +96,9 @@ async function handleListEntriesCursorPage(input: {
   if (input.cursor) {
     const resolved = resolveCollectionCursor(input.cursor, scope);
     if (resolved.pageSize !== pageSize) {
-      throw new InvalidCursorError('Continuation cursor page size does not match this request');
+      throw new InvalidCursorError(
+        'Continuation cursor page size does not match this request'
+      );
     }
     offset = resolved.offset;
   }
@@ -168,8 +170,12 @@ export const listsToolConfigs = {
           }
         );
       }
-      return handleListEntriesCursorPage({ listId, limit, offset,
-        cursor: typeof cursor === 'string' ? cursor : undefined });
+      return handleListEntriesCursorPage({
+        listId,
+        limit,
+        offset,
+        cursor: typeof cursor === 'string' ? cursor : undefined,
+      });
     },
     formatResult: (results: AttioListEntry[] | { data: AttioListEntry[] }) =>
       JSON.stringify(Array.isArray(results) ? results : results.data),

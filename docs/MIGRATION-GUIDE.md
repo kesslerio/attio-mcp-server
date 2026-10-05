@@ -574,37 +574,12 @@ Collection tools gain machine-readable pagination state. The envelope fields
 `next_cursor` was always null, and null said nothing about whether results
 were withheld.
 
-### After (U5)
-
-```json
-{
-  "data": [{ "id": { "record_id": "..." } }],
-  "count": 1,
-  "next_cursor": "1Tzk4…(opaque sealed token, ≤512 chars)",
-  "pagination": { "supported": true, "truncated": false }
-}
-```
-
 ### Updating a client
 
-- On supported families (`search_records`, `search_records_advanced`,
-  `search_records_by_timeframe`, `list_notes`, `get-list-entries`), continue by
-  passing the token back as `cursor` with the same `limit`, resource, filters,
-  and sorts. Never send `offset` together with `cursor`.
-- Treat a non-null token as the only "more pages" signal; a null token means
-  the collection is exhausted for that query only when `pagination.supported`
-  is true and `pagination.truncated` is false.
-- On bounded families (`lists_list`, `list-workspace-members`, attribute
-  metadata, connector `search`), read `pagination.truncated` instead of
-  guessing completeness: `truncated: true` means results were withheld or
-  upstream completeness could not be established; `truncated: false` affirms nothing was withheld.
-- Handle the stable `INVALID_CURSOR` execution error by starting over from a
-  fresh first page; cursors expire after 30 minutes, die with the server
-  process, and are rejected before any API call when the query, page size, or
-  credential scope changed.
-- Offset pagination remains a live view: concurrent writes can shift or repeat
-  items between pages. Deduplicate by record identifier if your consumer needs
-  stability.
+Read [Collection Continuation](universal-tools/api-reference.md#collection-continuation-u5)
+for supported query paths, bounded-result disclosures, cursor replay rules,
+limits, and expiration. Clients consuming the old envelope must accept the
+additional `pagination` field and a non-null `next_cursor` on supported paths.
 
 ### Verifying a client
 

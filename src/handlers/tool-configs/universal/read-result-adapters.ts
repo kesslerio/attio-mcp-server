@@ -53,7 +53,9 @@ export function normalizeRecordCollection(
       data: result,
       count: result.length,
       next_cursor: null,
-      pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
+      pagination: boundedPaginationMetadata(
+        (result as { truncated?: boolean }).truncated ?? true
+      ),
     };
   }
   const envelope = recordsWrapper.parse(result);

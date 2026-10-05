@@ -109,7 +109,9 @@ export class SearchCoordinator {
             offset,
             upstreamCursor
           );
-          return Object.defineProperty(related.data, 'upstreamCursor', { value: related.upstreamCursor ?? undefined });
+          return Object.defineProperty(related.data, 'upstreamCursor', {
+            value: related.upstreamCursor ?? undefined,
+          });
         }
         throw new Error(
           'Relationship search requires target_type and target_id parameters'
@@ -135,7 +137,9 @@ export class SearchCoordinator {
             offset,
             upstreamCursor
           );
-          return Object.defineProperty(page.data, 'upstreamCursor', { value: page.upstreamCursor ?? undefined });
+          return Object.defineProperty(page.data, 'upstreamCursor', {
+            value: page.upstreamCursor ?? undefined,
+          });
         }
         throw new Error(
           'Timeframe search requires timeframe_attribute parameter'

@@ -787,7 +787,13 @@ export async function handleGetListEntriesOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, limit, offset, filters, cursor);
+    const result = await toolConfig.handler(
+      listId,
+      limit,
+      offset,
+      filters,
+      cursor
+    );
     return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.

@@ -18,7 +18,10 @@ import type { UniversalRecordResult } from '@/types/attio.js';
 import { debug } from '@/utils/logger.js';
 
 // Import services
-import { ValidationService, MAX_PAGINATION_OFFSET } from '@/services/ValidationService.js';
+import {
+  ValidationService,
+  MAX_PAGINATION_OFFSET,
+} from '@/services/ValidationService.js';
 import { CachingService } from '@/services/CachingService.js';
 
 // Import performance tracking
@@ -68,33 +71,36 @@ function pageSizeViaCursorCheck(
  * sorts, projections, and the resolved page size). Raw values are never
  * encoded — the cursor module reduces them to keyed fingerprints.
  */
-function searchContinuationScope(operation: string, params: {
-  resource_type: string;
-  query?: string;
-  filters?: unknown;
-  fields?: string[];
-  match_type?: unknown;
-  sort?: unknown;
-  sort_by?: string;
-  sort_order?: 'asc' | 'desc';
-  search_type?: unknown;
-  relationship_target_type?: unknown;
-  relationship_target_id?: unknown;
-  timeframe_attribute?: unknown;
-  start_date?: unknown;
-  end_date?: unknown;
-  date_operator?: unknown;
-  content_fields?: unknown;
-  use_or_logic?: unknown;
-  date_from?: unknown;
-  date_to?: unknown;
-  created_after?: unknown;
-  created_before?: unknown;
-  updated_after?: unknown;
-  updated_before?: unknown;
-  timeframe?: unknown;
-  date_field?: unknown;
-}): {
+function searchContinuationScope(
+  operation: string,
+  params: {
+    resource_type: string;
+    query?: string;
+    filters?: unknown;
+    fields?: string[];
+    match_type?: unknown;
+    sort?: unknown;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
+    search_type?: unknown;
+    relationship_target_type?: unknown;
+    relationship_target_id?: unknown;
+    timeframe_attribute?: unknown;
+    start_date?: unknown;
+    end_date?: unknown;
+    date_operator?: unknown;
+    content_fields?: unknown;
+    use_or_logic?: unknown;
+    date_from?: unknown;
+    date_to?: unknown;
+    created_after?: unknown;
+    created_before?: unknown;
+    updated_after?: unknown;
+    updated_before?: unknown;
+    timeframe?: unknown;
+    date_field?: unknown;
+  }
+): {
   operation: string;
   resource: string;
   query: Record<string, unknown>;
@@ -132,33 +138,66 @@ export class UniversalSearchService {
    * expiry, and cross-tenant replay all fail with INVALID_CURSOR offline.
    * Offset-backed paths fetch one lookahead item so a next cursor is only
    * issued on reliable continuation evidence, and the returned page always
-   * contains exactly the requested items (the sentinel is refetched later,
+   * contains at most the requested number of items (the sentinel is refetched later,
    * never dropped).
    */
   static async searchRecordsPage(
     params: UniversalSearchParams,
-    operation: 'records_search' | 'records_search_advanced' | 'records_search_by_timeframe' = 'records_search'
+    operation:
+      | 'records_search'
+      | 'records_search_advanced'
+      | 'records_search_by_timeframe' = 'records_search'
   ): Promise<UniversalRecordCollectionPage> {
     rejectCursorWithOffset({ cursor: params.cursor, offset: params.offset });
     const dateConversion = convertDateParamsToTimeframeQuery(params);
-    const isQueryRoute = params.search_type === SearchType.RELATIONSHIP ||
-      params.search_type === SearchType.TIMEFRAME || Boolean(dateConversion) ||
-      Boolean(params.timeframe_attribute && (params.start_date || params.end_date));
-    const pageSize = params.limit ?? (
-      isQueryRoute || params.resource_type === UniversalResourceType.RECORDS
+    const isQueryRoute =
+      params.search_type === SearchType.RELATIONSHIP ||
+      params.search_type === SearchType.TIMEFRAME ||
+      Boolean(dateConversion) ||
+      Boolean(
+        params.timeframe_attribute && (params.start_date || params.end_date)
+      );
+    const pageSize =
+      params.limit ??
+      (isQueryRoute || params.resource_type === UniversalResourceType.RECORDS
         ? 10
-        : params.resource_type === UniversalResourceType.PEOPLE ? 100 : 20
-    );
-    ValidationService.validatePaginationParameters({ limit: pageSize, offset: params.offset });
-    const scope = searchContinuationScope(operation, { ...params, ...dateConversion, limit: pageSize });
-    const supported = isQueryRoute || (
-      ![UniversalResourceType.TASKS, UniversalResourceType.LISTS, UniversalResourceType.NOTES].includes(params.resource_type) &&
-      params.search_type !== SearchType.CONTENT && !params.query?.trim()
-    );
+        : params.resource_type === UniversalResourceType.PEOPLE
+          ? 100
+          : 20);
+    ValidationService.validatePaginationParameters({
+      limit: pageSize,
+      offset: params.offset,
+    });
+    const scope = searchContinuationScope(operation, {
+      ...params,
+      ...dateConversion,
+      limit: pageSize,
+    });
+    const supported =
+      isQueryRoute ||
+      (![
+        UniversalResourceType.TASKS,
+        UniversalResourceType.LISTS,
+        UniversalResourceType.NOTES,
+      ].includes(params.resource_type) &&
+        params.search_type !== SearchType.CONTENT &&
+        !params.query?.trim());
     if (!supported) {
-      if (params.cursor) throw new InvalidCursorError('This search does not support continuation cursors');
+      if (params.cursor)
+        throw new InvalidCursorError(
+          'This search does not support continuation cursors'
+        );
       const data = await this.searchRecords(params);
-      return { data, next_cursor: null, pagination: { supported: false, truncated: (data as UniversalRecordResult[] & { truncated?: boolean }).truncated ?? true } };
+      return {
+        data,
+        next_cursor: null,
+        pagination: {
+          supported: false,
+          truncated:
+            (data as UniversalRecordResult[] & { truncated?: boolean })
+              .truncated ?? true,
+        },
+      };
     }
 
     let offset = params.offset ?? 0;
@@ -166,18 +205,46 @@ export class UniversalSearchService {
     if (params.cursor) {
       const resolved = resolveCollectionCursor(params.cursor, scope);
       offset = resolved.offset;
-      if (offset > MAX_PAGINATION_OFFSET) throw new InvalidCursorError('Cursor offset exceeds the supported pagination range');
+      if (offset > MAX_PAGINATION_OFFSET)
+        throw new InvalidCursorError(
+          'Cursor offset exceeds the supported pagination range'
+        );
       upstreamCursor = resolved.upstreamCursor;
       pageSizeViaCursorCheck(resolved.pageSize, pageSize);
     }
 
-    const fetched = await this.executeSearch({ ...params, limit: Math.min(pageSize + 1, 100), offset }, upstreamCursor, dateConversion);
-    const { page, hasMore: lookaheadMore } = splitLookaheadPage(fetched, pageSize);
-    const nextUpstreamCursor = fetched.length <= pageSize ? (fetched as UniversalRecordResult[] & { upstreamCursor?: string }).upstreamCursor : undefined;
-    const hasMore = Boolean(nextUpstreamCursor) || lookaheadMore || (pageSize === 100 && page.length === pageSize &&
-      (await this.executeSearch({ ...params, limit: 1, offset: offset + page.length }, undefined, dateConversion)).length > 0);
+    const fetched = await this.executeSearch(
+      { ...params, limit: Math.min(pageSize + 1, 100), offset },
+      upstreamCursor,
+      dateConversion
+    );
+    const { page, hasMore: lookaheadMore } = splitLookaheadPage(
+      fetched,
+      pageSize
+    );
+    const nextUpstreamCursor =
+      fetched.length <= pageSize
+        ? (fetched as UniversalRecordResult[] & { upstreamCursor?: string })
+            .upstreamCursor
+        : undefined;
+    const hasMore =
+      Boolean(nextUpstreamCursor) ||
+      lookaheadMore ||
+      (pageSize === 100 &&
+        page.length === pageSize &&
+        (
+          await this.executeSearch(
+            { ...params, limit: 1, offset: offset + page.length },
+            undefined,
+            dateConversion
+          )
+        ).length > 0);
     if (hasMore && offset + page.length > MAX_PAGINATION_OFFSET) {
-      return { data: page, next_cursor: null, pagination: { supported: true, truncated: true } };
+      return {
+        data: page,
+        next_cursor: null,
+        pagination: { supported: true, truncated: true },
+      };
     }
     const issued = issueNextCursor({
       scope,
@@ -207,7 +274,9 @@ export class UniversalSearchService {
   private static async executeSearch(
     params: UniversalSearchParams,
     upstreamCursor?: string,
-    resolvedDateConversion?: ReturnType<typeof convertDateParamsToTimeframeQuery>
+    resolvedDateConversion?: ReturnType<
+      typeof convertDateParamsToTimeframeQuery
+    >
   ): Promise<UniversalRecordResult[]> {
     const {
       resource_type,
@@ -278,16 +347,19 @@ export class UniversalSearchService {
     };
 
     try {
-      const dateConversion = resolvedDateConversion === undefined ? convertDateParamsToTimeframeQuery({
-        date_from,
-        date_to,
-        created_after,
-        created_before,
-        updated_after,
-        updated_before,
-        timeframe,
-        date_field,
-      }) : resolvedDateConversion;
+      const dateConversion =
+        resolvedDateConversion === undefined
+          ? convertDateParamsToTimeframeQuery({
+              date_from,
+              date_to,
+              created_after,
+              created_before,
+              updated_after,
+              updated_before,
+              timeframe,
+              date_field,
+            })
+          : resolvedDateConversion;
 
       if (dateConversion) {
         // Use converted parameters, prioritizing user-friendly parameters

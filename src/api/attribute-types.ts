@@ -70,9 +70,7 @@ export interface AttioAttributeMetadata {
  * eager edge here would re-order that graph at import time.
  */
 async function credentialCacheScope(): Promise<string> {
-  const { resolveCredentialScope } = await import(
-    '@/utils/client-resolver.js'
-  );
+  const { resolveCredentialScope } = await import('@/utils/client-resolver.js');
   const resolved = getContextApiKey() || resolveCredentialScope();
   return createHash('sha256')
     .update(resolved ?? '<no-credential>')
@@ -385,17 +383,14 @@ export async function getAttributeTypeInfo(
 }
 
 /**
- * Clears the attribute cache for a specific object type or all types
+ * Clears all object metadata across every credential scope.
  *
- * @param objectSlug - Optional object type to clear (clears all if not provided)
+ * @param objectSlug - Retained for compatibility; clearing always invalidates all types
  */
 export function clearAttributeCache(objectSlug?: string): void {
   const cache = getAttributeCache();
   if (objectSlug) {
-    // Clear every credential scope: stale metadata must not survive a
-    // credential change on this process.
-    // Stale metadata must not survive a credential change on this process.
-    // Synchronous cache clearing covers every credential scope.
+    // Synchronous invalidation covers every credential scope.
     cache.clear();
   } else {
     cache.clear();

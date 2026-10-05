@@ -59,7 +59,9 @@ export function normalizeListCollection(
     data,
     count: data.length,
     next_cursor: null,
-    pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
+    pagination: boundedPaginationMetadata(
+      (result as { truncated?: boolean }).truncated ?? true
+    ),
   };
 }
 
@@ -83,17 +85,28 @@ export function normalizeListEntryCollection(
   result: unknown
 ): Record<string, unknown> {
   if (Array.isArray(result)) {
-    return entryCollectionEnvelope(z.array(listEntryDataSchema).parse(result).map(normalizeEntry), {
-      pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
-    });
+    return entryCollectionEnvelope(
+      z.array(listEntryDataSchema).parse(result).map(normalizeEntry),
+      {
+        pagination: boundedPaginationMetadata(
+          (result as { truncated?: boolean }).truncated ?? true
+        ),
+      }
+    );
   }
-  const envelope = z.strictObject({
-    data: z.array(listEntryDataSchema),
-    next_cursor: z.string().max(512).nullable(),
-    pagination: z.strictObject({ supported: z.boolean(), truncated: z.boolean() }),
-  }).parse(result);
+  const envelope = z
+    .strictObject({
+      data: z.array(listEntryDataSchema),
+      next_cursor: z.string().max(512).nullable(),
+      pagination: z.strictObject({
+        supported: z.boolean(),
+        truncated: z.boolean(),
+      }),
+    })
+    .parse(result);
   return entryCollectionEnvelope(envelope.data.map(normalizeEntry), {
-    next_cursor: envelope.next_cursor, pagination: envelope.pagination,
+    next_cursor: envelope.next_cursor,
+    pagination: envelope.pagination,
   });
 }
 
@@ -152,7 +165,9 @@ export function normalizeListMemberships(
     data,
     count: data.length,
     next_cursor: null,
-    pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
+    pagination: boundedPaginationMetadata(
+      (result as { truncated?: boolean }).truncated ?? true
+    ),
   };
 }
 

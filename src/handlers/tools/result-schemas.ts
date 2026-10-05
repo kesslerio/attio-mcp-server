@@ -302,10 +302,7 @@ function collection(data: z.ZodType) {
   return z.strictObject({
     data: z.array(data),
     count: z.number().int().nonnegative(),
-    next_cursor: z
-      .string()
-      .max(512)
-      .nullable(),
+    next_cursor: z.string().max(512).nullable(),
     pagination: paginationMetadataSchema.optional(),
   });
 }

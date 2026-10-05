@@ -72,7 +72,7 @@ Optional human-readable prose follows in `content[1]`. With
 
 ```typescript
 // search_records
-{ data: records, count: records.length, next_cursor: null }
+{ data: records, count: records.length, next_cursor, pagination }
 // get_record_details (including task, list, and custom-object details)
 { data: record }
 // execution failures
@@ -127,8 +127,7 @@ and `note_id`). Delete results contain `{ success: true, record_id }`.
 Upsert preserves `action`, optional `planned_action`, `record_id` (required except
 for dry runs), `matched_on`, `changed_fields`, and optional `concurrent_duplicates`.
 Merge preserves its dry-run plan/fingerprint, or its `complete`/`wait` mode,
-status, `new_record_id`, and original IDs. Notes lists use
-`{ data: notes, count: notes.length, next_cursor: null }`.
+status, `new_record_id`, and original IDs. Notes lists use the [collection envelope](api-reference.md#collection-continuation-u5).
 
 See [API call retry logic](../api/error-handling.md#api-call-retry-logic) for
 post-write decoding and uncertain-mutation recovery. Merge confirmation, plan
@@ -154,8 +153,9 @@ attribute maps and note bodies remain domain data. Attribute options retain
 their IDs and titles inside `data`, with a response count and `attribute_type`
 (`select` or `status`). Detailed info wraps the native record in `data`.
 Interactions wrap record identity/name and interaction aggregates in `data`,
-preserving dates and owner metadata. These metadata, options, interaction, and
-batch envelopes have no continuation cursor.
+preserving dates and owner metadata. Metadata and options also include `pagination` disclosures as defined by the
+[collection contract](api-reference.md#collection-continuation-u5). Metadata,
+options, interaction, and batch envelopes have no continuation cursor.
 
 `batch_records` and `batch_search_records` return per-input outcomes in `data`,
 with a response count and a summary of total, successful, and failed items.

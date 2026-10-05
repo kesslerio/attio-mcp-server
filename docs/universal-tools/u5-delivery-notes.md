@@ -1,18 +1,10 @@
 # U5 delivery scope and verification
 
-The collection continuation contract follows KTD6: opaque, versioned, sealed
-tokens bound to the caller's credential scope, canonical operation, resource,
-query shape, and page size; verified before any Attio request; expiring after
-30 minutes and dying with the server process. Supported families page through
-`UniversalSearchService.searchRecordsPage` (records search paths),
-`handleUniversalGetNotesPage` (notes, preserving the native upstream cursor
-sealed inside the token), and the list-entries cursor seam. Bounded or ranked
-families disclose `pagination: { supported: false, truncated: <boolean> }`
-instead of fabricating continuation.
-
-Attribute metadata caches are keyed by a credential fingerprint (U5 request
-isolation): two tenant contexts sharing a process cannot read each other's
-attribute metadata.
+The [Collection Continuation contract](api-reference.md#collection-continuation-u5)
+owns supported paths, token scope, and bounded-result disclosures. The cursor
+implementation is [`result-cursor.ts`](../../src/handlers/tools/result-cursor.ts).
+Credential-scoped attribute cache ownership is explained beside
+[`credentialCacheScope`](../../src/api/attribute-types.ts).
 
 Focused verification command:
 
