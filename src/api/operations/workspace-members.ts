@@ -52,7 +52,7 @@ export async function listWorkspaceMembers(
       );
 
       return Object.defineProperty([...members], 'truncated', {
-        value: Boolean((res?.data?.meta as { next_cursor?: string } | undefined)?.next_cursor || res?.data?.pagination?.next_cursor || res?.data?.next_cursor || res?.data?.has_more) || members.length >= pageSize || page > 1,
+        value: false,
       });
     },
     retryConfig,
@@ -98,7 +98,7 @@ export async function searchWorkspaceMembers(
       );
 
       return Object.defineProperty([...members], 'truncated', {
-        value: Boolean((res?.data?.meta as { next_cursor?: string } | undefined)?.next_cursor || res?.data?.pagination?.next_cursor || res?.data?.next_cursor || res?.data?.has_more) || members.length >= 25,
+        value: false,
       });
     },
     retryConfig,

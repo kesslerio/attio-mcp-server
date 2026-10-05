@@ -13,7 +13,7 @@ import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { registerToolHandlers } from '@/handlers/tools/index.js';
 import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/search-operations.js';
 import { getRecordDetailsConfig } from '@/handlers/tool-configs/universal/core/record-details-operations.js';
-import { UniversalSearchService } from '@/services/UniversalSearchService.js';
+import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
 import { StrategyFactory } from '@/services/search/StrategyFactory.js';
 import { clearAllCaches } from '@/api/client-cache.js';
 import { rotateCursorServerKey } from '@/handlers/tools/result-cursor.js';
@@ -88,7 +88,7 @@ describe('codemode composition with safe continuation', () => {
     const pageTwo = [CompanyMockFactory.create({ name: 'Page Two A' })];
     // Offset-backed seam: page one fetches 2+1 (lookahead proves more).
     const searchPage = vi
-      .spyOn(UniversalSearchService, 'searchRecords')
+      .spyOn(SearchCoordinator, 'executeSearch')
       .mockResolvedValueOnce([...pageOne, pageTwo[0]])
       .mockResolvedValueOnce(pageTwo);
     const searchValidator = validatorFor('search_records');
@@ -99,7 +99,7 @@ describe('codemode composition with safe continuation', () => {
     });
     expect(first.isError).toBe(false);
     expect(searchPage).toHaveBeenCalledWith(
-      expect.objectContaining({ limit: 3, offset: 0 }), undefined
+      expect.objectContaining({ limit: 3, offset: 0 })
     );
     expect(first.structuredContent).toMatchObject({
       count: 2,
@@ -123,8 +123,7 @@ describe('codemode composition with safe continuation', () => {
       expect.objectContaining({
         limit: 3,
         offset: 2,
-        cursor: expect.anything(),
-      }), undefined
+      })
     );
     expect(second.structuredContent).toMatchObject({
       count: 1,
@@ -153,7 +152,7 @@ describe('codemode composition with safe continuation', () => {
 
   it('rejects stale cursors offline with INVALID_CURSOR before any Attio request', async () => {
     const searchPage = vi
-      .spyOn(UniversalSearchService, 'searchRecords')
+      .spyOn(SearchCoordinator, 'executeSearch')
       .mockResolvedValue([
         CompanyMockFactory.create(),
         CompanyMockFactory.create(),
@@ -188,7 +187,7 @@ describe('codemode composition with safe continuation', () => {
   });
 
   it('rejects a cursor replayed for a changed query and branches on denied calls', async () => {
-    vi.spyOn(UniversalSearchService, 'searchRecords').mockResolvedValue([
+    vi.spyOn(SearchCoordinator, 'executeSearch').mockResolvedValue([
       CompanyMockFactory.create(),
       CompanyMockFactory.create(),
       CompanyMockFactory.create(),

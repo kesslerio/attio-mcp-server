@@ -1,12 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AxiosInstance } from 'axios';
-import { listWorkspaceMembers as listMemberPage } from '@/api/operations/workspace-members.js';
+import { listWorkspaceMembers as listMemberPage, searchWorkspaceMembers } from '@/api/operations/workspace-members.js';
 import * as clientResolver from '@/utils/client-resolver.js';
 import { workspaceMembersToolConfigs } from '@/handlers/tool-configs/workspace-members.js';
 import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
 import { RecordsSearchService } from '@/services/search/RecordsSearchService.js';
 import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/search-operations.js';
+import { listTasks as listTaskInventory } from '@/api/operations/tasks.js';
+import { TaskSearchStrategy } from '@/services/search-strategies/TaskSearchStrategy.js';
+import { StrategyFactory } from '@/services/search/StrategyFactory.js';
 import { NoteSearchStrategy } from '@/services/search-strategies/NoteSearchStrategy.js';
 import { handleGetListsOperation } from '@/handlers/tools/dispatcher/operations/lists.js';
 import { advancedSearchConfig } from '@/handlers/tool-configs/universal/operations/advanced-search.js';
@@ -19,10 +22,10 @@ import { getLists } from '@/objects/lists/base.js';
 import { listNotes } from '@/objects/notes.js';
 import { getObjectAttributeMetadata, clearAttributeCache } from '@/api/attribute-types.js';
 import { runWithClientContext, getContextApiKey } from '@/api/client-context.js';
-import { InvalidCursorError, rotateCursorServerKey } from '@/handlers/tools/result-cursor.js';
+import { InvalidCursorError, rotateCursorServerKey, issueNextCursor } from '@/handlers/tools/result-cursor.js';
 import { OpenAiCompatibilityService } from '@/services/OpenAiCompatibilityService.js';
 import { openAiToolConfigs } from '@/handlers/tool-configs/openai/index.js';
-import { CompanyMockFactory, ListMockFactory } from '@test/utils/mock-factories/index.js';
+import { CompanyMockFactory, ListMockFactory, TaskMockFactory } from '@test/utils/mock-factories/index.js';
 import { UniversalResourceType, SearchType } from '@/handlers/tool-configs/universal/types.js';
 
 vi.hoisted(() => vi.resetModules());
@@ -57,6 +60,38 @@ describe('U5 review pagination invariants', () => {
     const second = await UniversalSearchService.searchRecordsPage({ resource_type: companies, limit: 100, cursor: first.next_cursor! });
     expect(second.data).toEqual(records.slice(100));
     expect(second.next_cursor).toBeNull();
+  });
+
+  it.each(['basic', 'advanced', 'timeframe'] as const)('preserves maximum-offset pages through %s lookahead', async (family) => {
+    const records = CompanyMockFactory.createMultiple(101);
+    const route = vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ limit = 10, offset = 0 }) => records.slice(offset - 10000, offset - 10000 + limit));
+    const config = family === 'basic' ? searchRecordsConfig : family === 'advanced' ? advancedSearchConfig : searchByTimeframeConfig;
+    const result = await config.handler({ resource_type: companies, limit: 100, offset: 10000, ...(family === 'timeframe' ? { start_date: '2026-01-01', end_date: '2026-02-01' } : {}) });
+    expect(result).toMatchObject({ data: records.slice(0, 100), next_cursor: null, pagination: { supported: true, truncated: true } });
+    expect(route.mock.calls.map(([args]) => args.offset)).toEqual([10000, 10100]);
+  });
+
+  it('allows cursor advancement to the offset cap and discloses results beyond it', async () => {
+    const records = CompanyMockFactory.createMultiple(201);
+    vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ limit = 10, offset = 0 }) => records.slice(offset - 9900, offset - 9900 + limit));
+    const first = await UniversalSearchService.searchRecordsPage({ resource_type: companies, limit: 100, offset: 9900 });
+    expect(first.next_cursor).toBeTruthy();
+    const second = await UniversalSearchService.searchRecordsPage({ resource_type: companies, limit: 100, cursor: first.next_cursor! });
+    expect(second).toMatchObject({ data: records.slice(100, 200), next_cursor: null, pagination: { supported: true, truncated: true } });
+  });
+
+  it('proves exhaustion at the offset cap without issuing a cursor', async () => {
+    const records = CompanyMockFactory.createMultiple(100);
+    vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ offset = 0 }) => offset === 10000 ? records : []);
+    expect(await UniversalSearchService.searchRecordsPage({ resource_type: companies, limit: 100, offset: 10000 })).toMatchObject({ data: records, next_cursor: null, pagination: { supported: true, truncated: false } });
+  });
+
+  it('rejects explicit and sealed offsets beyond the public cap before fetching', async () => {
+    const route = vi.spyOn(SearchCoordinator, 'executeSearch');
+    await expect(UniversalSearchService.searchRecords({ resource_type: companies, limit: 100, offset: 10001 })).rejects.toThrow('offset must not exceed');
+    const cursor = issueNextCursor({ scope: { operation: 'records_search', resource: companies, query: { limit: 100 } }, pageSize: 100, offset: 10001, hasMore: true }).next_cursor!;
+    await expect(UniversalSearchService.searchRecordsPage({ resource_type: companies, limit: 100, cursor })).rejects.toBeInstanceOf(InvalidCursorError);
+    expect(route).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -226,10 +261,11 @@ describe('U5 review pagination invariants', () => {
     expect((second.data as unknown[])[0]).toMatchObject({ id: entries[2].id });
   });
 
-  it('carries list-directory caps and failed membership evidence to adapters', async () => {
+  it('carries complete list inventories and failed membership evidence to adapters', async () => {
     const list = ListMockFactory.create();
-    api.get.mockResolvedValueOnce({ data: { data: [list] } });
-    expect(normalizeListCollection(await getLists(undefined, 1)).pagination).toEqual({ supported: false, truncated: true });
+    const directory = ListMockFactory.createMultiple(25);
+    api.get.mockResolvedValueOnce({ data: { data: directory } });
+    expect(normalizeListCollection(await getLists(undefined, 1))).toMatchObject({ count: 25, pagination: { supported: false, truncated: false } });
     api.get.mockResolvedValueOnce({ data: { data: [list] } });
     expect(normalizeListCollection(await getLists(undefined, 2)).pagination).toEqual({ supported: false, truncated: false });
     api.get.mockRejectedValueOnce(new Error('Denied'));
@@ -238,14 +274,44 @@ describe('U5 review pagination invariants', () => {
     expect(normalizeListMemberships(await getRecordListMemberships(recordId, 'companies')).pagination).toEqual({ supported: false, truncated: false });
   });
 
-  it('discloses withheld member pages while affirming a complete initial directory', async () => {
+  it('affirms complete member directories regardless of legacy page parameters', async () => {
     vi.spyOn(clientResolver, 'getValidatedAttioClient').mockReturnValue(api as unknown as AxiosInstance);
-    const member = { id: { workspace_member_id: recordId }, email_address: 'member@example.test' };
-    api.get.mockResolvedValue({ data: { data: [member] } });
+    const members = Array.from({ length: 25 }, () => ({ id: { workspace_member_id: recordId }, email_address: 'member@example.test' }));
+    api.get.mockResolvedValue({ data: { data: members } });
     const normalize = workspaceMembersToolConfigs.listWorkspaceMembers.structuredOutput!;
-    expect(normalize(await listMemberPage(undefined, 1, 1))).toMatchObject({ pagination: { supported: false, truncated: true } });
-    expect(normalize(await listMemberPage(undefined, 2, 2))).toMatchObject({ pagination: { supported: false, truncated: true } });
-    expect(normalize(await listMemberPage(undefined, 1, 2))).toMatchObject({ pagination: { supported: false, truncated: false } });
+    for (const page of [1, 2]) {
+      expect(normalize(await listMemberPage(undefined, page, 25))).toMatchObject({ count: 25, pagination: { supported: false, truncated: false } });
+    }
+    expect(normalize(await searchWorkspaceMembers('member'))).toMatchObject({ count: 25, pagination: { supported: false, truncated: false } });
+  });
+
+  it('preserves completeness of task inventories and discloses subsequent search slices', async () => {
+    vi.spyOn(clientResolver, 'getValidatedAttioClient').mockReturnValue(api as unknown as AxiosInstance);
+    const tasks = TaskMockFactory.createMultiple(30);
+    api.get.mockResolvedValue({ data: { data: tasks } });
+    const strategy = new TaskSearchStrategy({ taskFunction: listTaskInventory });
+    vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
+    const complete = await UniversalSearchService.searchRecordsPage({ resource_type: UniversalResourceType.TASKS, limit: 100 });
+    expect(complete).toMatchObject({ next_cursor: null, pagination: { supported: false, truncated: false } });
+    expect(complete.data).toHaveLength(30);
+    const sliced = await UniversalSearchService.searchRecordsPage({ resource_type: UniversalResourceType.TASKS, limit: 10 });
+    expect(sliced.data).toHaveLength(10);
+    expect(sliced.pagination).toEqual({ supported: false, truncated: true });
+  });
+
+  it.each([500, 501])('probes the actual task inventory bound for %s tasks', async (count) => {
+    vi.spyOn(clientResolver, 'getValidatedAttioClient').mockReturnValue(api as unknown as AxiosInstance);
+    const tasks = TaskMockFactory.createMultiple(count);
+    api.get.mockImplementation(async (path: string) => {
+      const params = new URL(path, 'https://api.attio.test').searchParams;
+      const offset = Number(params.get('offset') ?? 0);
+      const limit = Number(params.get('limit') ?? 500);
+      return { data: { data: tasks.slice(offset, offset + limit) } };
+    });
+    const result = await listTaskInventory();
+    expect(result).toHaveLength(500);
+    expect((result as typeof result & { truncated: boolean }).truncated).toBe(count > 500);
+    expect(api.get).toHaveBeenCalledTimes(2);
   });
 
   it('reports connector aggregation slices even when each resource is complete', async () => {

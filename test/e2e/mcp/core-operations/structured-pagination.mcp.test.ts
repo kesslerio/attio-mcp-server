@@ -242,10 +242,7 @@ describe('structured pagination over MCP stdio', () => {
         expect(structured.count).toBe(structured.data.length);
         expect(structured.next_cursor).toBeNull();
         expect(structured.pagination.supported).toBe(false);
-        expect(typeof structured.pagination.truncated).toBe('boolean');
-        if (structured.count >= 25) {
-          expect(structured.pagination.truncated).toBe(true);
-        }
+        expect(structured.pagination.truncated).toBe(false);
       });
     }
   );

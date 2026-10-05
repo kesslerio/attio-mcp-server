@@ -6,22 +6,24 @@
  */
 
 import { performance } from 'perf_hooks';
-import { isValidEmail } from '../utils/validation/email-validation.js';
-import { isValidId } from '../utils/validation.js';
+import { isValidEmail } from '@/utils/validation/email-validation.js';
+import { isValidId } from '@/utils/validation.js';
 import {
   isValidUUID,
   createInvalidUUIDError,
-} from '../utils/validation/uuid-validation.js';
-import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+} from '@/utils/validation/uuid-validation.js';
+import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import {
   validateFields,
   FIELD_MAPPINGS,
-} from '../handlers/tool-configs/universal/field-mapper.js';
+} from '@/handlers/tool-configs/universal/field-mapper.js';
+
+export const MAX_PAGINATION_OFFSET = 10000;
 
 /**
  * ValidationService provides centralized validation functionality for universal handlers
@@ -102,7 +104,7 @@ export class ValidationService {
   static validateOffsetParameter(
     offset: number | undefined,
     perfId?: string,
-    maxOffset: number = 10000
+    maxOffset: number = MAX_PAGINATION_OFFSET
   ): void {
     if (offset !== undefined) {
       if (!Number.isInteger(offset) || offset < 0) {
@@ -143,7 +145,7 @@ export class ValidationService {
     params: { limit?: number; offset?: number },
     perfId?: string,
     maxLimit: number = 100,
-    maxOffset: number = 10000
+    maxOffset: number = MAX_PAGINATION_OFFSET
   ): void {
     this.validateLimitParameter(params.limit, perfId, maxLimit);
     this.validateOffsetParameter(params.offset, perfId, maxOffset);

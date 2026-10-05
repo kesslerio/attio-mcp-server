@@ -161,8 +161,18 @@ export async function listTasks(
     )
   )
     throw new ResultEncodingError();
+  let truncated = false;
+  if (tasks.length >= 500) {
+    const probe = await callWithRetry(
+      () => api.get<AttioListResponse<AttioTask>>(`${path}&limit=1&offset=${tasks.length}`),
+      retryConfig,
+      { uncertainMutation: false }
+    );
+    if (!Array.isArray(probe?.data?.data)) throw new ResultEncodingError();
+    truncated = probe.data.data.length > 0;
+  }
   return Object.defineProperty(tasks.map((task) => transformTaskResponse(task)), 'truncated', {
-    value: Boolean(res?.data?.has_more || res?.data?.next_cursor || res?.data?.pagination?.next_cursor || (res?.data?.meta as { next_cursor?: string } | undefined)?.next_cursor) || tasks.length >= pageSize || page > 1,
+    value: truncated,
   });
 }
 

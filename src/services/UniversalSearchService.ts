@@ -18,7 +18,7 @@ import type { UniversalRecordResult } from '@/types/attio.js';
 import { debug } from '@/utils/logger.js';
 
 // Import services
-import { ValidationService } from '@/services/ValidationService.js';
+import { ValidationService, MAX_PAGINATION_OFFSET } from '@/services/ValidationService.js';
 import { CachingService } from '@/services/CachingService.js';
 
 // Import performance tracking
@@ -166,15 +166,19 @@ export class UniversalSearchService {
     if (params.cursor) {
       const resolved = resolveCollectionCursor(params.cursor, scope);
       offset = resolved.offset;
+      if (offset > MAX_PAGINATION_OFFSET) throw new InvalidCursorError('Cursor offset exceeds the supported pagination range');
       upstreamCursor = resolved.upstreamCursor;
       pageSizeViaCursorCheck(resolved.pageSize, pageSize);
     }
 
-    const fetched = await this.searchRecords({ ...params, limit: Math.min(pageSize + 1, 100), offset }, upstreamCursor);
+    const fetched = await this.executeSearch({ ...params, limit: Math.min(pageSize + 1, 100), offset }, upstreamCursor);
     const { page, hasMore: lookaheadMore } = splitLookaheadPage(fetched, pageSize);
     const nextUpstreamCursor = fetched.length <= pageSize ? (fetched as UniversalRecordResult[] & { upstreamCursor?: string }).upstreamCursor : undefined;
     const hasMore = Boolean(nextUpstreamCursor) || lookaheadMore || (pageSize === 100 && page.length === pageSize &&
-      (await this.searchRecords({ ...params, limit: 1, offset: offset + page.length })).length > 0);
+      (await this.executeSearch({ ...params, limit: 1, offset: offset + page.length })).length > 0);
+    if (hasMore && offset + page.length > MAX_PAGINATION_OFFSET) {
+      return { data: page, next_cursor: null, pagination: { supported: true, truncated: true } };
+    }
     const issued = issueNextCursor({
       scope,
       pageSize,
@@ -193,6 +197,14 @@ export class UniversalSearchService {
    * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
    */
   static async searchRecords(
+    params: UniversalSearchParams,
+    upstreamCursor?: string
+  ): Promise<UniversalRecordResult[]> {
+    ValidationService.validatePaginationParameters(params);
+    return this.executeSearch(params, upstreamCursor);
+  }
+
+  private static async executeSearch(
     params: UniversalSearchParams,
     upstreamCursor?: string
   ): Promise<UniversalRecordResult[]> {
@@ -246,9 +258,6 @@ export class UniversalSearchService {
 
     // Track validation timing
     const validationStart = performance.now();
-
-    // Validate pagination parameters using ValidationService
-    ValidationService.validatePaginationParameters({ limit, offset }, perfId);
 
     // Validate filter schema for malformed advanced filters
     ValidationService.validateFiltersSchema(filters);

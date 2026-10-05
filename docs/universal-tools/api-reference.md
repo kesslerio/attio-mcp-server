@@ -603,9 +603,11 @@ null never proves the upstream dataset was complete. Caps are documented per
 tool: `search_records` caps pages at 100 items; companies, deals, and custom
 objects default to 20, people to 100, and generic records and relationship/timeframe
 query routes to 10. `search_records_by_timeframe` defaults to 20. `lists_list`
-and `list-workspace-members` return their (bounded) directory pages;
+and `list-workspace-members` return their complete directory inventories;
 ranked text/content searches and task/list/note aggregates do not support continuation;
-attribute metadata inventories are finite per object.
+attribute metadata inventories are finite per object. Task searches disclose slices
+of the upstream inventory capped at 500 tasks. At the record offset cap of 10000,
+further results return no cursor and `truncated: true`.
 
 Continuation rules:
 
