@@ -25,6 +25,10 @@ import {
 import { openAiToolConfigs, openAiToolDefinitions } from '../openai/index.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import {
+  healthDataSchema,
+  healthResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import {
   smitheryDiagnosticsToolDefinition,
   smitheryDiagnosticsConfig,
 } from './smithery-diagnostics.js';
@@ -57,48 +61,27 @@ export const healthCheckToolDefinition = {
 
 export const healthCheckConfig = {
   name: 'aaa-health-check',
+  ...healthResultContract,
+  structuredOutput: (payload: unknown): Record<string, unknown> => ({
+    data: healthDataSchema.parse(payload),
+  }),
   handler: async (params: { [key: string]: unknown }) => {
     const payload = {
       ok: true,
       name: 'attio-mcp',
-      echo:
-        typeof params?.echo === 'string' ? (params.echo as string) : undefined,
+      ...(typeof params?.echo === 'string' ? { echo: params.echo } : {}),
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'production',
       needs_api_key: true,
     } as const;
 
-    // Return MCP-compliant text response (not JSON type)
-    // MCP SDK expects content type to be 'text', not 'json'
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(payload, null, 2),
-        },
-      ],
-      isError: false,
-    };
+    // The adapter owns the envelope; the handler returns the domain payload.
+    return payload;
   },
   formatResult: (res: Record<string, unknown>): string => {
-    const content = res?.content as Array<Record<string, unknown>> | undefined;
-    const textContent = content?.[0]?.text as string | undefined;
-
-    // Parse JSON from text content if available
-    let data: Record<string, unknown>;
-    if (textContent) {
-      try {
-        data = JSON.parse(textContent) as Record<string, unknown>;
-      } catch {
-        data = res;
-      }
-    } else {
-      data = res;
-    }
-
     const parts: string[] = ['✅ Server healthy'];
-    if (data?.echo) parts.push(`echo: ${String(data.echo)}`);
-    if (data?.environment) parts.push(`env: ${String(data.environment)}`);
+    if (res?.echo) parts.push(`echo: ${String(res.echo)}`);
+    if (res?.environment) parts.push(`env: ${String(res.environment)}`);
     return parts.join(' | ');
   },
 };

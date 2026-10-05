@@ -503,17 +503,20 @@ export async function executeToolRequest(request: CallToolRequest) {
       toolType === 'searchWorkspaceMembers' ||
       toolType === 'getWorkspaceMember'
     ) {
-      // Workspace member tools have simple handlers with formatResult
-      const rawResult = await (toolConfig as ToolConfig).handler(
-        request.params.arguments as unknown as Record<string, unknown>
-      );
-      const formattedResult =
-        toolConfig.formatResult?.(rawResult) ||
-        JSON.stringify(rawResult, null, 2);
-      result = {
-        content: [{ type: 'text', text: formattedResult }],
-        isError: false,
-      };
+      // Workspace member tools publish the same envelope as every other family.
+      const args = (request.params.arguments ?? {}) as Record<string, unknown>;
+      const rawResult = await (toolConfig as ToolConfig).handler(args);
+      if (toolConfig.resultSchema) {
+        result = buildStructuredToolResult(toolConfig, rawResult, args);
+      } else {
+        const formattedResult =
+          toolConfig.formatResult?.(rawResult) ||
+          JSON.stringify(rawResult, null, 2);
+        result = {
+          content: [{ type: 'text', text: formattedResult }],
+          isError: false,
+        };
+      }
 
       // Handle generic record operations
     } else if (toolType === 'list') {
@@ -525,6 +528,21 @@ export async function executeToolRequest(request: CallToolRequest) {
       throw new Error(
         `Tool handler not implemented for tool type: ${toolType}`
       );
+    }
+
+    // Families that publish through the shared boundary already carry a
+    // validated, sanitized envelope; re-sanitizing it would rewrite the very
+    // compatibility channel the contract defines. Failure results keep their
+    // existing path through the structured error boundary below.
+    if (
+      result &&
+      typeof result === 'object' &&
+      'structuredContent' in result &&
+      'isError' in result &&
+      result.isError === false
+    ) {
+      logToolSuccess(toolName, toolType, result, timer);
+      return result;
     }
 
     // Log successful execution

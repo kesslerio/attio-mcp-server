@@ -26,12 +26,14 @@ export function buildStructuredToolResult(
 ): CallToolResult {
   let structuredContent: Record<string, unknown>;
   let json: string;
+  let text: string;
   try {
     if (!config.resultSchema || !config.structuredOutput)
       throw new ResultEncodingError();
     const normalized = config.structuredOutput(
       rawResult,
-      args.resource_type as string | undefined
+      args.resource_type as string | undefined,
+      args
     );
     // Reject non-JSON values before sanitization can substitute success data.
     config.resultSchema.parse(normalized);
@@ -59,6 +61,12 @@ export function buildStructuredToolResult(
       throw new ResultEncodingError();
     }
     structuredContent = sanitized.structuredContent as Record<string, unknown>;
+    // Connector families keep their documented JSON text shape; every other
+    // family serializes the envelope itself into the compatibility channel.
+    text = config.textProjection
+      ? config.textProjection(structuredContent)
+      : json;
+    if (typeof text !== 'string') throw new ResultEncodingError();
     if (
       Array.isArray(structuredContent.data) &&
       structuredContent.count !== structuredContent.data.length
@@ -68,7 +76,7 @@ export function buildStructuredToolResult(
     throw new ResultEncodingError();
   }
 
-  const content: CallToolResult['content'] = [{ type: 'text', text: json }];
+  const content: CallToolResult['content'] = [{ type: 'text', text }];
   if (process.env.MCP_TEXT_RESULTS !== 'false' && config.formatResult) {
     try {
       // Preserve the existing formatter arguments and default-enabled prose.
@@ -78,7 +86,7 @@ export function buildStructuredToolResult(
         infoType: unknown
       ) => string;
       const prose = formatter(rawResult, args, args.info_type);
-      if (typeof prose === 'string')
+      if (typeof prose === 'string' && prose.length > 0)
         content.push({ type: 'text', text: prose });
     } catch {
       logger.warn('Companion formatting failed after tool completion', {
