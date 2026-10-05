@@ -65,7 +65,7 @@ describe('QueryApiService', () => {
         0
       );
 
-      expect(results).toEqual(mockRecords);
+      expect(results.data).toEqual(mockRecords);
       expect(mockPost).toHaveBeenCalledWith(
         '/objects/companies/records/query',
         expect.objectContaining({ limit: 10, offset: 0 })
@@ -86,7 +86,7 @@ describe('QueryApiService', () => {
         'invalid-uuid'
       );
 
-      expect(results).toEqual([]);
+      expect(results.data).toEqual([]);
     });
 
     it('should throw AuthenticationError on 401', async () => {
@@ -147,7 +147,7 @@ describe('QueryApiService', () => {
         0
       );
 
-      expect(results).toEqual(mockRecords);
+      expect(results.data).toEqual(mockRecords);
       expect(createTimeframeQuery).toHaveBeenCalledWith({
         resourceType: UniversalResourceType.COMPANIES,
         attribute: 'created_at',
@@ -174,7 +174,7 @@ describe('QueryApiService', () => {
         }
       );
 
-      expect(results).toEqual([]);
+      expect(results.data).toEqual([]);
     });
 
     it('should reject unsupported modified timeframe queries for people', async () => {
@@ -236,7 +236,7 @@ describe('QueryApiService', () => {
         0
       );
 
-      expect(results).toEqual(mockRecords);
+      expect(results.data).toEqual(mockRecords);
     });
 
     it('should use default fields when none provided', async () => {
@@ -253,7 +253,7 @@ describe('QueryApiService', () => {
         'test query'
       );
 
-      expect(results).toEqual(mockRecords);
+      expect(results.data).toEqual(mockRecords);
     });
 
     it('should use correct default fields for people', async () => {
@@ -270,7 +270,7 @@ describe('QueryApiService', () => {
         'john'
       );
 
-      expect(results).toEqual(mockRecords);
+      expect(results.data).toEqual(mockRecords);
     });
 
     it('should throw ServerError on 500', async () => {

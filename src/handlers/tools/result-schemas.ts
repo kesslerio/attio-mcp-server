@@ -30,6 +30,11 @@ export const executionErrorSchema = z.strictObject({
 });
 
 /** Runtime and discovery contracts are derived from the same field definitions. */
+export const paginationMetadataSchema = z.strictObject({
+  supported: z.boolean(),
+  truncated: z.boolean(),
+});
+
 function resultContract(success: z.ZodType) {
   const successJson = z.toJSONSchema(success, {
     target: 'draft-7',
@@ -94,7 +99,8 @@ export const recordSearchResultContract = resultContract(
   z.strictObject({
     data: z.array(recordDataSchema),
     count: z.number().int().nonnegative(),
-    next_cursor: z.null(),
+    next_cursor: z.string().max(512).nullable(),
+    pagination: paginationMetadataSchema.optional(),
   })
 );
 
@@ -204,9 +210,11 @@ export const metadataResultContract = resultContract(
     z.strictObject({
       data: z.array(attributeDataSchema),
       count: z.number().int().nonnegative(),
+      pagination: paginationMetadataSchema.optional(),
     }),
     z.strictObject({
       data: z.union([metadataDataSchema, z.record(z.string(), z.json())]),
+      pagination: paginationMetadataSchema.optional(),
     }),
   ])
 );
@@ -285,12 +293,20 @@ export const batchResultContract = resultContract(
 /**
  * U4 surface coverage: lists, workspace members, health/diagnostics, and the
  * connector pair reuse the same envelope helpers as every other family.
+ *
+ * U5 continuation (KTD6): `next_cursor` carries an opaque sealed token for
+ * supported families or null, and `pagination` discloses whether continuation
+ * is supported at all plus whether this response omitted bounded results.
  */
 function collection(data: z.ZodType) {
   return z.strictObject({
     data: z.array(data),
     count: z.number().int().nonnegative(),
-    next_cursor: z.null(),
+    next_cursor: z
+      .string()
+      .max(512)
+      .nullable(),
+    pagination: paginationMetadataSchema.optional(),
   });
 }
 

@@ -47,7 +47,8 @@ for companion prose formatting.
   match_type?: 'exact' | 'partial' | 'fuzzy', // Match type (default: 'partial')
   sort?: 'relevance' | 'created' | 'modified' | 'name', // Sort order (default: 'name')
   limit?: number,                    // Max results (1-100, default: 10)
-  offset?: number                    // Pagination offset (default: 0)
+  offset?: number,                   // Pagination offset (default: 0)
+  cursor?: string                    // Opaque sealed continuation token (U5); never with offset
 }
 ```
 
@@ -576,6 +577,44 @@ await client.callTool('records.batch', {
   limit: 50,
 });
 ```
+
+## Collection Continuation (U5)
+
+Collection tools return a `{ data, count, next_cursor, pagination? }`
+envelope. `count` measures this response. `next_cursor` is an opaque,
+versioned token sealed with authenticated encryption under an ephemeral server
+key; it is bound to the effective credential scope, the canonical operation,
+the resource, the query shape (filters, sorts, projections), and the page size.
+Tokens expire after 30 minutes, become invalid when the server restarts, and
+grant no permission — every continuation is re-authorized against the
+caller's current credentials before any Attio request.
+
+**Supported continuation** (offset-backed query paths): `search_records`,
+`search_records_advanced`, `search_records_by_timeframe`, `list_notes`, and
+`get-list-entries`. These fetch one lookahead item ahead of the returned page,
+so a token is only issued on reliable continuation evidence and a returned
+page never drops the sentinel item — the next page refetches it.
+
+**Bounded families** (finite or ranked) return `next_cursor: null` plus
+`pagination: { supported: false, truncated: <boolean> }`. `truncated: true`
+means the tool reached its cap and withheld results it could not fetch;
+`truncated: false` affirms no bounded results were withheld. On these families
+null never proves the upstream dataset was complete. Caps are documented per
+tool: `search_records` caps pages at 100 items (default 10); `lists_list`
+and `list-workspace-members` return their (bounded) directory pages;
+attribute metadata inventories are finite per object.
+
+Continuation rules:
+
+- Pass the sealed token back as `cursor` on the next call; never combine
+  `cursor` with `offset` (the request is rejected before any API call).
+- Reuse the token only for the same query: same resource, filters, sorts, and
+  page size. A mismatch fails with the stable `INVALID_CURSOR` code before any
+  Attio request.
+- Offset pagination is a live view, not a snapshot: concurrent writes can
+  shift or repeat items across pages.
+- Tokens carry no raw credentials or filter values — only keyed fingerprints —
+  and a token issued under one tenant's credentials fails under another's.
 
 ## Parameter Validation Rules
 

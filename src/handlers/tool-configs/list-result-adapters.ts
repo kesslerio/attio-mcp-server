@@ -12,6 +12,7 @@ import {
   listEntryDataSchema,
   listMembershipDataSchema,
 } from '@/handlers/tools/result-schemas.js';
+import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
 
 function omitAbsentFields(
   value: Record<string, unknown>
@@ -52,18 +53,37 @@ export function normalizeListCollection(
   result: unknown
 ): Record<string, unknown> {
   const data = z.array(listDataSchema).parse(result).map(omitAbsentFields);
-  return { data, count: data.length, next_cursor: null };
+  // The directory page itself is finite; the per-page cap is documented by
+  // the tool description (default 20).
+  return {
+    data,
+    count: data.length,
+    next_cursor: null,
+    pagination: boundedPaginationMetadata(false),
+  };
 }
 
 export function normalizeListDetails(result: unknown): Record<string, unknown> {
   return { data: omitAbsentFields(listDataSchema.parse(result)) };
 }
 
+function entryCollectionEnvelope(
+  data: ReturnType<typeof normalizeEntry>[],
+  continuation?: Record<string, unknown>
+): Record<string, unknown> {
+  return {
+    data,
+    count: data.length,
+    next_cursor: null,
+    ...(continuation ?? {}),
+  };
+}
+
 export function normalizeListEntryCollection(
   result: unknown
 ): Record<string, unknown> {
   const data = z.array(listEntryDataSchema).parse(result).map(normalizeEntry);
-  return { data, count: data.length, next_cursor: null };
+  return entryCollectionEnvelope(data);
 }
 
 export function normalizeListEntry(
@@ -116,7 +136,13 @@ export function normalizeListMemberships(
     .array(listMembershipDataSchema)
     .parse(result)
     .map(omitAbsentFields);
-  return { data, count: data.length, next_cursor: null };
+  // Memberships derive from the record's list entries, a bounded per-record set.
+  return {
+    data,
+    count: data.length,
+    next_cursor: null,
+    pagination: boundedPaginationMetadata(false),
+  };
 }
 
 /** List configuration writes publish the normalized flat projection. */

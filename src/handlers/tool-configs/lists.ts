@@ -46,6 +46,83 @@ import {
   normalizeListMemberships,
 } from '@/handlers/tool-configs/list-result-adapters.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import {
+  InvalidCursorError,
+  issueNextCursor,
+  rejectCursorWithOffset,
+  resolveCollectionCursor,
+  splitLookaheadPage,
+} from '@/handlers/tools/result-cursor.js';
+import { getListEntriesPage } from '@/objects/lists/entries.js';
+
+/**
+ * lists_list reports a finite, bounded directory. A cursor argument is a
+ * continuation request against a family that cannot continue: reject it before
+ * any Attio request (KTD6) instead of silently returning the first page.
+ */
+async function handleGetListsCursorAware(
+  objectSlug?: string,
+  limit?: number,
+  cursor?: unknown
+): Promise<AttioList[]> {
+  if (typeof cursor === 'string' && cursor.length > 0) {
+    throw new InvalidCursorError(
+      'lists_list is a finite bounded collection and does not support continuation cursors'
+    );
+  }
+  return getLists(objectSlug, limit);
+}
+
+/**
+ * U5 continuation page for list entries (KTD6): offset-backed body pagination
+ * with a one-item lookahead. The cursor is verified against the caller's
+ * credential scope and list scope before any Attio request.
+ */
+async function handleListEntriesCursorPage(input: {
+  listId: string;
+  limit?: number;
+  offset?: number;
+  cursor: string;
+  filters?: unknown;
+}): Promise<
+  | AttioListEntry[]
+  | {
+      data: AttioListEntry[];
+      next_cursor: string | null;
+      pagination: { supported: boolean; truncated: boolean };
+    }
+> {
+  rejectCursorWithOffset({ cursor: input.cursor, offset: input.offset });
+  const pageSize = input.limit ?? 20;
+  const scope = {
+    operation: 'list_entries_list',
+    resource: input.listId,
+    query: input.filters ?? null,
+  };
+  const resolved = resolveCollectionCursor(input.cursor, scope);
+  if (resolved.pageSize !== pageSize) {
+    throw new InvalidCursorError(
+      'Continuation cursor page size does not match this request'
+    );
+  }
+  const page = await getListEntriesPage(
+    input.listId,
+    pageSize + 1,
+    resolved.offset
+  );
+  const { page: entries, hasMore } = splitLookaheadPage(page, pageSize);
+  const issued = issueNextCursor({
+    scope,
+    pageSize,
+    offset: resolved.offset + entries.length,
+    hasMore,
+  });
+  return {
+    data: entries,
+    next_cursor: issued.next_cursor,
+    pagination: issued.pagination,
+  };
+}
 
 // Lists tool configurations
 export const listsToolConfigs = {
@@ -53,7 +130,7 @@ export const listsToolConfigs = {
     name: 'get-lists',
     ...listCollectionResultContract,
     structuredOutput: normalizeListCollection,
-    handler: getLists,
+    handler: handleGetListsCursorAware,
     formatResult: (results: AttioList[]) => {
       return JSON.stringify(Array.isArray(results) ? results : []);
     },
@@ -84,7 +161,13 @@ export const listsToolConfigs = {
     name: 'get-list-entries',
     ...listEntryCollectionResultContract,
     structuredOutput: normalizeListEntryCollection,
-    handler: async (listId: string, limit?: number, offset?: number) => {
+    handler: async (
+      listId: string,
+      limit?: number,
+      offset?: number,
+      _filters?: unknown,
+      cursor?: unknown
+    ) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
         throw Object.assign(
@@ -93,6 +176,10 @@ export const listsToolConfigs = {
             code: 'VALIDATION_ERROR',
           }
         );
+      }
+      // U5: cursor-bearing calls continue through the entries seam (KTD6).
+      if (typeof cursor === 'string' && cursor.length > 0) {
+        return handleListEntriesCursorPage({ listId, limit, offset, cursor });
       }
       return await getListEntries(listId, limit, offset);
     },
@@ -332,7 +419,7 @@ export const listsToolDefinitions = [
         'Retrieve all records in a list with pagination (companies, people in pipelines).',
       boundaries: 'filter entries or modify list memberships.',
       constraints:
-        'Requires list UUID (not slug); default limit 20, max per page varies by API.',
+        'Requires list UUID (not slug); default limit 20, max per page varies by API. Pass the sealed next_cursor from a previous page to continue this exact list query; never combine cursor with offset.',
       recoveryHint:
         'Use filter-list-entries for attribute-based filtering instead.',
     }),
@@ -353,6 +440,12 @@ export const listsToolDefinitions = [
           type: 'number',
           description: 'Number of entries to skip for pagination (default: 0)',
           example: 0,
+        },
+        cursor: {
+          type: 'string',
+          maxLength: 512,
+          description:
+            'Opaque continuation token from a previous page of this exact list query. Never combine with offset.',
         },
       },
       required: ['listId'],

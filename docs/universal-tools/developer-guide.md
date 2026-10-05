@@ -86,8 +86,12 @@ the `data` wrapper; search JSON text includes `data`, `count`, and `next_cursor`
 For a failed call, read `JSON.parse(result.content[0].text).error`; it contains
 the same sanitized `code`, `message`, and `retryable` as `structuredContent.error`.
 There is no third JSON block. Search counts describe the
-returned array. `next_cursor` is currently always null: continuation support is
-a later delivery, and null does not guarantee an unbounded search was complete.
+returned array. `next_cursor` carries an opaque sealed continuation token on
+supported families (U5) or null; see
+[Collection Continuation](api-reference.md#collection-continuation-u5) for the
+token contract. On bounded families the `pagination` disclosure states whether
+the tool withheld capped results, and null there never guarantees an unbounded
+search was complete.
 
 The config owns its adapter and paired runtime/discovery schemas. The shared
 result boundary validates JSON-compatible adapter data, sanitizes it, then
@@ -226,8 +230,11 @@ them as null. Exact runtime and discovery schemas are generated together from
 [`result-schemas.ts`](../../src/handlers/tools/result-schemas.ts); use MCP
 `tools/list` for the current catalogue and each tool's advertised `outputSchema`.
 
-`next_cursor` remains `null` for every collection in this boundary; continuation
-is a later delivery, and `null` does not claim a bounded result set was complete.
+`next_cursor` stays `null` for every collection in this boundary unless U5
+continuation is supported for that family; bounded families disclose their cap
+and truncation state through the `pagination` metadata (see
+[Collection Continuation](api-reference.md#collection-continuation-u5)), and
+`null` alone never claims a bounded result set was complete.
 
 ### formatResult Architecture Update (PR #483)
 

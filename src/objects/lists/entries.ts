@@ -39,6 +39,20 @@ export async function getListEntries(
 }
 
 /**
+ * U5 lookahead fetch for continuation (KTD6): retrieves one page plus the
+ * lookahead evidence item. The generic API call itself performs no lookahead,
+ * so callers ask for pageSize+1 and split via the result-cursor helpers.
+ */
+export async function getListEntriesPage(
+  listId: string,
+  limit: number,
+  offset: number,
+  filters?: ListEntryFilters
+): Promise<AttioListEntry[]> {
+  return getGenericListEntries(listId, limit, offset, filters);
+}
+
+/**
  * Adds a record to a list.
  */
 export async function addRecordToList(

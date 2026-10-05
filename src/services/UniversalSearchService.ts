@@ -29,6 +29,97 @@ import { convertDateParamsToTimeframeQuery } from '@/utils/filters/timeframe-uti
 
 // Issue #935: Search routing delegated to SearchCoordinator
 import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
+import {
+  InvalidCursorError,
+  issueNextCursor,
+  rejectCursorWithOffset,
+  resolveCollectionCursor,
+  splitLookaheadPage,
+  type IssuedCollectionCursor,
+} from '@/handlers/tools/result-cursor.js';
+
+/**
+ * A queried collection page plus its U5 continuation evidence (KTD6).
+ */
+export interface UniversalRecordCollectionPage {
+  data: UniversalRecordResult[];
+  next_cursor: string | null;
+  pagination: IssuedCollectionCursor['pagination'];
+}
+
+/**
+ * Internal default page size matching the long-standing search default.
+ */
+const DEFAULT_PAGE_SIZE = 10;
+
+/**
+ * A cursor pins its issuing page size; replaying it with a different page
+ * size would silently reshuffle the live view, so it fails before any call.
+ */
+function pageSizeViaCursorCheck(
+  cursorPageSize: number,
+  requested: number
+): void {
+  if (cursorPageSize !== requested) {
+    throw new InvalidCursorError(
+      'Continuation cursor page size does not match this request'
+    );
+  }
+}
+
+/**
+ * Keyed fingerprint inputs for the record-search continuation scope: the
+ * canonical operation, resource, and the effective query shape (filters,
+ * sorts, projections, and the resolved page size). Raw values are never
+ * encoded — the cursor module reduces them to keyed fingerprints.
+ */
+function searchContinuationScope(params: {
+  resource_type: string;
+  query?: string;
+  filters?: unknown;
+  fields?: string[];
+  match_type?: unknown;
+  sort?: unknown;
+  search_type?: unknown;
+  relationship_target_type?: unknown;
+  relationship_target_id?: unknown;
+  timeframe_attribute?: unknown;
+  start_date?: unknown;
+  end_date?: unknown;
+  date_operator?: unknown;
+  content_fields?: unknown;
+  use_or_logic?: unknown;
+  date_from?: unknown;
+  date_to?: unknown;
+  created_after?: unknown;
+  created_before?: unknown;
+  updated_after?: unknown;
+  updated_before?: unknown;
+  timeframe?: unknown;
+  date_field?: unknown;
+}): {
+  operation: string;
+  resource: string;
+  query: Record<string, unknown>;
+} {
+  const { resource_type, ...rest } = params;
+  return {
+    operation: 'records_search',
+    resource: resource_type,
+    // The cursor itself and the paging position are not part of the query
+    // identity: continuation must re-verify the exact filters/sorts/page size
+    // while advancing through pages of the same query.
+    query: Object.fromEntries(
+      Object.entries(rest).filter(
+        ([key, value]) =>
+          key !== 'cursor' &&
+          key !== 'offset' &&
+          value !== undefined &&
+          !(key === 'query' && value === '')
+      )
+    ),
+  };
+}
 
 /**
  * UniversalSearchService provides centralized record search functionality
@@ -36,6 +127,53 @@ import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
  * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
  */
 export class UniversalSearchService {
+  /**
+   * Continuation-aware page fetch for collection tools (U5/KTD6).
+   *
+   * A client-supplied cursor is verified against the caller's credential scope
+   * and query shape BEFORE any Attio request; tampering, changed filters,
+   * expiry, and cross-tenant replay all fail with INVALID_CURSOR offline.
+   * Offset-backed paths fetch one lookahead item so a next cursor is only
+   * issued on reliable continuation evidence, and the returned page always
+   * contains exactly the requested items (the sentinel is refetched later,
+   * never dropped).
+   */
+  static async searchRecordsPage(
+    params: UniversalSearchParams
+  ): Promise<UniversalRecordCollectionPage> {
+    rejectCursorWithOffset({ cursor: params.cursor, offset: params.offset });
+    const pageSize = params.limit ?? DEFAULT_PAGE_SIZE;
+    const scope = searchContinuationScope(params);
+
+    let offset = params.offset ?? 0;
+    let upstreamCursor: string | undefined;
+    if (params.cursor) {
+      const resolved = resolveCollectionCursor(params.cursor, scope);
+      offset = resolved.offset;
+      pageSizeViaCursorCheck(resolved.pageSize, pageSize);
+      upstreamCursor = resolved.upstreamCursor;
+    }
+
+    // Offset-backed live view: fetch one extra item as continuation evidence.
+    const lookahead = await this.searchRecords({
+      ...params,
+      limit: pageSize + 1,
+      offset,
+    });
+    const { page, hasMore } = splitLookaheadPage(lookahead, pageSize);
+    const issued = issueNextCursor({
+      scope,
+      pageSize,
+      offset: offset + page.length,
+      hasMore: hasMore || Boolean(upstreamCursor),
+      upstreamCursor,
+    });
+    return {
+      data: page,
+      next_cursor: issued.next_cursor,
+      pagination: issued.pagination,
+    };
+  }
   /**
    * Universal search handler with performance tracking
    * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
@@ -49,6 +187,7 @@ export class UniversalSearchService {
       filters,
       limit,
       offset,
+      cursor: _cursor,
       search_type = SearchType.BASIC,
       fields,
       match_type = MatchType.PARTIAL,

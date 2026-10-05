@@ -21,6 +21,7 @@ export const mockSharedHandlers = () => {
     '../../../../../src/handlers/tool-configs/universal/shared-handlers.js',
     () => ({
       handleUniversalSearch: vi.fn(),
+      handleUniversalSearchPage: vi.fn(),
       handleUniversalGetDetails: vi.fn(),
       handleUniversalCreate: vi.fn(),
       handleUniversalUpdate: vi.fn(),
@@ -244,6 +245,7 @@ export const setupMockHandlers = async () => {
     await import('../../../../../src/handlers/tool-configs/universal/shared-handlers.js');
   const {
     handleUniversalSearch,
+    handleUniversalSearchPage,
     handleUniversalGetDetails,
     handleUniversalCreate,
     handleUniversalUpdate,
@@ -281,6 +283,18 @@ export const setupMockHandlers = async () => {
     }
     return [];
   });
+  // U5: search_records now pages through searchRecordsPage; mirror the
+  // handleUniversalSearch default so existing tests keep their fixtures.
+  vi.mocked(handleUniversalSearchPage).mockImplementation(
+    async (args: any) => {
+      const page = await vi.mocked(handleUniversalSearch)(args);
+      return {
+        data: page,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      };
+    }
+  );
   vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as any);
   vi.mocked(handleUniversalCreate).mockResolvedValue({} as any);
   vi.mocked(handleUniversalUpdate).mockResolvedValue({} as any);

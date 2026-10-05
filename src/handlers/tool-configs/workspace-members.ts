@@ -11,12 +11,19 @@ import {
   workspaceMemberDataSchema,
   workspaceMemberResultContract,
 } from '@/handlers/tools/result-schemas.js';
+import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /** Member responses always publish the native workspace_member_id identifier. */
 function normalizeMemberCollection(result: unknown): Record<string, unknown> {
+  // Lists expose their whole (already bounded) member directory per request.
   const data = z.array(workspaceMemberDataSchema).parse(result);
-  return { data, count: data.length, next_cursor: null };
+  return {
+    data,
+    count: data.length,
+    next_cursor: null,
+    pagination: boundedPaginationMetadata(false),
+  };
 }
 
 function normalizeMember(result: unknown): Record<string, unknown> {

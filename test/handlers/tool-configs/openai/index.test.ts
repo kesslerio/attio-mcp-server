@@ -49,6 +49,7 @@ describe('OpenAI tool handlers', () => {
       data: [searchItem],
       count: 1,
       next_cursor: null,
+      pagination: { supported: false, truncated: false },
     });
     // ChatGPT parses content[0] as its documented { results: [...] } document.
     expect(JSON.parse(response.content[0].text as string)).toEqual({

@@ -41,7 +41,7 @@ describe('Universal Core Operations Search Tests', () => {
         },
       ];
 
-      const { handleUniversalSearch } =
+      const { handleUniversalSearch, handleUniversalSearchPage } =
         await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockResolvedValue(mockResults);
 
@@ -51,8 +51,14 @@ describe('Universal Core Operations Search Tests', () => {
       };
 
       const result = await searchRecordsConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
+      // U5: the handler pages through the continuation seam and returns the
+      // envelope with the raw page under `data`.
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
+      expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledWith(params);
     });
 
     it('should search people successfully', async () => {
@@ -66,7 +72,7 @@ describe('Universal Core Operations Search Tests', () => {
         },
       ];
 
-      const { handleUniversalSearch } =
+      const { handleUniversalSearch, handleUniversalSearchPage } =
         await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockResolvedValue(mockResults);
 
@@ -77,8 +83,12 @@ describe('Universal Core Operations Search Tests', () => {
       };
 
       const result = await searchRecordsConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
+      expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledWith(params);
     });
 
     it('should handle search errors properly', async () => {
@@ -245,9 +255,13 @@ describe('Universal Core Operations Search Tests', () => {
 
   describe('Cross-resource type validation', () => {
     it('should handle all resource types for search', async () => {
-      const { handleUniversalSearch } =
+      const { handleUniversalSearchPage } =
         await import('@/handlers/tool-configs/universal/shared-handlers.js');
-      vi.mocked(handleUniversalSearch).mockResolvedValue([]);
+      vi.mocked(handleUniversalSearchPage).mockResolvedValue({
+        data: [],
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
 
       const resourceTypes = [
         UniversalResourceType.COMPANIES,
@@ -265,10 +279,12 @@ describe('Universal Core Operations Search Tests', () => {
         };
 
         await searchRecordsConfig.handler(params);
-        expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
+        expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledWith(
+          params
+        );
       }
 
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledTimes(6);
     });
 
     it('should handle all resource types for CRUD operations', async () => {

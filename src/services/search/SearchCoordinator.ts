@@ -99,13 +99,14 @@ export class SearchCoordinator {
     switch (search_type) {
       case SearchType.RELATIONSHIP:
         if (relationship_target_type && relationship_target_id) {
-          return QueryApiService.searchByRelationship(
+          const related = await QueryApiService.searchByRelationship(
             resource_type,
             relationship_target_type,
             relationship_target_id,
             limit,
             offset
           );
+          return related.data;
         }
         throw new Error(
           'Relationship search requires target_type and target_id parameters'
@@ -124,12 +125,13 @@ export class SearchCoordinator {
               date_operator
             ),
           };
-          return QueryApiService.searchByTimeframe(
+          const page = await QueryApiService.searchByTimeframe(
             resource_type,
             timeframeConfig,
             limit,
             offset
           );
+          return page.data;
         }
         throw new Error(
           'Timeframe search requires timeframe_attribute parameter'
@@ -141,7 +143,7 @@ export class SearchCoordinator {
           if (!query) {
             throw new Error('Content search requires query parameter');
           }
-          return QueryApiService.searchByContent(
+          const contentPage = await QueryApiService.searchByContent(
             resource_type,
             query,
             content_fields,
@@ -149,6 +151,7 @@ export class SearchCoordinator {
             limit,
             offset
           );
+          return contentPage.data;
         }
         // Fall through to strategy-based content search
         break;

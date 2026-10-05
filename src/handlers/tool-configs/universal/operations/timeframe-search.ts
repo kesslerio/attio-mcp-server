@@ -96,19 +96,31 @@ function resolveDateOperator(
 
 export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
-  UniversalRecordResult[]
+  | UniversalRecordResult[]
+  | {
+      data: UniversalRecordResult[];
+      next_cursor?: string | null;
+      pagination?: Record<string, unknown>;
+    }
 > = {
   name: 'search_records_by_timeframe',
   ...recordSearchResultContract,
   structuredOutput: normalizeRecordCollection,
   handler: async (
     params: TimeframeSearchParams
-  ): Promise<UniversalRecordResult[]> => {
+  ): Promise<
+    | UniversalRecordResult[]
+    | {
+        data: UniversalRecordResult[];
+        next_cursor?: string | null;
+        pagination?: Record<string, unknown>;
+      }
+  > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_by_timeframe',
         params
-      );
+      ) as TimeframeSearchParams;
 
       const {
         resource_type,
@@ -225,6 +237,28 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       // Create the filter object with the expected structure (legacy compatibility)
       const filters = { filters: dateFilters } as Record<string, unknown>;
 
+      // U5: cursor continuation pages through the same query seam (KTD6).
+      if (
+        typeof sanitizedParams.cursor === 'string' &&
+        sanitizedParams.cursor.length > 0
+      ) {
+        const { handleUniversalSearchPage } =
+          await import('@/handlers/tool-configs/universal/shared-handlers.js');
+        const { cursor: _cursor, ...rest } = sanitizedParams;
+        void _cursor;
+        return await handleUniversalSearchPage({
+          resource_type,
+          query: '',
+          filters,
+          timeframe_attribute: timestampField,
+          start_date: startIso,
+          end_date: endIso,
+          date_operator: timeframeOperator,
+          limit: rest.limit,
+          cursor: sanitizedParams.cursor,
+        });
+      }
+
       // Use the universal search handler; pass timeframe params explicitly so the
       // UniversalSearchService can FORCE Query API routing for date comparisons
       return await handleUniversalSearch({
@@ -247,7 +281,17 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
+  formatResult: (
+    results:
+      | UniversalRecordResult[]
+      | {
+          data: UniversalRecordResult[];
+          next_cursor?: string | null;
+          pagination?: Record<string, unknown>;
+        },
+    ...args: unknown[]
+  ) => {
+    const records = Array.isArray(results) ? results : (results.data ?? []);
     const timeframeType = extractTimeframeTypeFromFormatArgs(args);
     const firstArgResourceType = extractResourceTypeFromFormatArgs(args);
     const resourceType =
@@ -256,14 +300,14 @@ export const searchByTimeframeConfig: UniversalToolConfig<
           ? args[1]
           : undefined
         : firstArgResourceType;
-    if (!Array.isArray(results)) {
+    if (!Array.isArray(records)) {
       return 'Found 0 records (timeframe search)\nTip: Ensure your workspace has data in the requested date range.';
     }
 
     const timeframeName = timeframeType
       ? timeframeType.replace(/_/g, ' ')
       : 'timeframe';
-    const resourceCount = results.length;
+    const resourceCount = records.length;
     const resourceTypeName = resourceType
       ? resourceCount === 1
         ? getSingularResourceLabel(resourceType)
@@ -273,8 +317,8 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         : 'records';
 
     return `Found ${
-      results.length
-    } ${resourceTypeName} by ${timeframeName}:\n${results
+      records.length
+    } ${resourceTypeName} by ${timeframeName}:\n${records
       .map((record: Record<string, unknown>, index: number) => {
         const values = isAttioRecord(record as UniversalRecordResult)
           ? ((record as { values?: Record<string, unknown> }).values as Record<

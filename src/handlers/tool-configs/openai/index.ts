@@ -11,6 +11,7 @@ import {
   connectorItemDataSchema,
   connectorSearchResultContract,
 } from '@/handlers/tools/result-schemas.js';
+import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
 
 const searchParamsValidator = z.object({
   query: z.string().min(1, 'Query is required'),
@@ -92,7 +93,14 @@ const searchToolConfig: ToolConfig = {
           Object.entries(item).filter(([, value]) => value !== undefined)
         )
       );
-    return { data, count: data.length, next_cursor: null };
+    return {
+      data,
+      count: data.length,
+      next_cursor: null,
+      // Connector search is a relevance-ranked provider, not a stable page
+      // sequence; disclose the bound instead of fabricating continuation.
+      pagination: boundedPaginationMetadata(false),
+    };
   },
   textProjection: searchTextProjection,
   handler: handleSearch,

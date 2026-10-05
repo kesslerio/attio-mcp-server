@@ -4,6 +4,7 @@ import {
   executionErrorSchema,
   recordDataSchema,
 } from '@/handlers/tools/result-schemas.js';
+import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
 
 /** Only documented service-error shapes are failures, not CRM attribute keys. */
 export function assertReadSuccess<T>(result: T): T {
@@ -32,23 +33,52 @@ export function assertReadSuccess<T>(result: T): T {
   return result;
 }
 
-const recordsWrapper = z.strictObject({ data: z.array(recordDataSchema) });
+const recordsWrapper = z.strictObject({
+  data: z.array(recordDataSchema),
+  next_cursor: z.string().max(512).nullable().optional(),
+  pagination: z
+    .strictObject({ supported: z.boolean(), truncated: z.boolean() })
+    .optional(),
+});
+/**
+ * Collection adapter: bare arrays stay cursor-less legacy input; envelope
+ * input preserves the continuation evidence issued by the query seam (U5).
+ */
 export function normalizeRecordCollection(
   result: unknown
 ): Record<string, unknown> {
   assertReadSuccess(result);
-  const data = Array.isArray(result)
-    ? result
-    : recordsWrapper.parse(result).data;
-  return { data, count: data.length, next_cursor: null };
+  if (Array.isArray(result)) {
+    return { data: result, count: result.length, next_cursor: null };
+  }
+  const envelope = recordsWrapper.parse(result);
+  return {
+    data: envelope.data,
+    count: envelope.data.length,
+    ...(envelope.next_cursor !== undefined
+      ? { next_cursor: envelope.next_cursor }
+      : { next_cursor: null }),
+    ...(envelope.pagination ? { pagination: envelope.pagination } : {}),
+  };
 }
 
+/**
+ * Metadata collections are finite attribute inventories: the tool discloses
+ * that continuation is unsupported while affirming no bounded results were
+ * withheld (KTD6).
+ */
 export function normalizeMetadata(result: unknown): Record<string, unknown> {
   assertReadSuccess(result);
-  if (Array.isArray(result)) return { data: result, count: result.length };
+  if (Array.isArray(result)) {
+    return {
+      data: result,
+      count: result.length,
+      pagination: boundedPaginationMetadata(false),
+    };
+  }
   if (!result || typeof result !== 'object')
     throw new Error('Invalid metadata result');
-  return { data: result };
+  return { data: result, pagination: boundedPaginationMetadata(false) };
 }
 
 export function normalizeDiscoveryMetadata(
@@ -58,7 +88,7 @@ export function normalizeDiscoveryMetadata(
   const value = normalized.data as Record<string, unknown>;
   if (!Array.isArray(value) && typeof value.note === 'string') {
     const { note: _note, ...data } = value;
-    return { data };
+    return { data, pagination: normalized.pagination };
   }
   return normalized;
 }

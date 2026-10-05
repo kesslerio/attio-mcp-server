@@ -41,6 +41,12 @@ import {
   type AttributeOptionsResult,
 } from '@/services/metadata/index.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
+import {
+  InvalidCursorError,
+  issueNextCursor,
+  rejectCursorWithOffset,
+  resolveCollectionCursor,
+} from '@/handlers/tools/result-cursor.js';
 
 // Import existing handlers by resource type
 
@@ -68,6 +74,21 @@ export async function handleUniversalSearch(
   params: UniversalSearchParams
 ): Promise<UniversalRecordResult[]> {
   return UniversalSearchService.searchRecords(params);
+}
+
+/**
+ * Continuation-aware search page handler (U5/KTD6). Cursor-bearing calls
+ * resolve, verify, and page through the service seam; the envelope carries
+ * the sealed next cursor for the shared boundary to publish.
+ */
+export async function handleUniversalSearchPage(
+  params: UniversalSearchParams
+): Promise<{
+  data: UniversalRecordResult[];
+  next_cursor: string | null;
+  pagination: { supported: boolean; truncated: boolean };
+}> {
+  return UniversalSearchService.searchRecordsPage(params);
 }
 
 /**
@@ -139,7 +160,45 @@ export async function handleUniversalCreateNote(
 export async function handleUniversalGetNotes(
   params: UniversalGetNotesParams
 ): Promise<JsonObject[]> {
-  const { resource_type, record_id, limit = 20, offset = 0 } = params;
+  const page = await handleUniversalGetNotesPage(params);
+  return page.data;
+}
+
+/**
+ * Continuation-aware notes page (U5/KTD6).
+ *
+ * The /notes endpoint carries a native cursor in meta.next_cursor; it is
+ * preserved sealed inside the issued token and replayed upstream on the next
+ * page. Cursor+offset combinations are rejected and cursors are verified
+ * against the caller's credential scope and record scope before any request.
+ */
+export async function handleUniversalGetNotesPage(
+  params: UniversalGetNotesParams
+): Promise<{
+  data: JsonObject[];
+  next_cursor: string | null;
+  pagination: { supported: boolean; truncated: boolean };
+}> {
+  const { resource_type, record_id, limit = 20, offset = 0, cursor } = params;
+
+  rejectCursorWithOffset({ cursor, offset });
+  const scope = {
+    operation: 'notes_list',
+    resource: resource_type ?? 'notes',
+    query: { record_id: record_id ?? null },
+  };
+  let upstreamCursor: string | undefined;
+  let requestOffset = offset;
+  if (cursor) {
+    const resolved = resolveCollectionCursor(cursor, scope);
+    if (resolved.pageSize !== limit) {
+      throw new InvalidCursorError(
+        'Continuation cursor page size does not match this request'
+      );
+    }
+    requestOffset = resolved.offset;
+    upstreamCursor = resolved.upstreamCursor;
+  }
 
   // Validate key inputs early for clearer messages
   if (!resource_type || !record_id) {
@@ -153,15 +212,22 @@ export async function handleUniversalGetNotes(
       process.env.E2E_MODE === 'true' &&
       process.env.USE_MOCK_DATA !== 'false'
     ) {
-      return [];
+      return {
+        data: [],
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      };
     }
 
-    // Prefer object-layer helper which handles Attio response shape
+    // Prefer object-layer helper which handles Attio response shape.
+    // The native upstream cursor (when the endpoint supplies one) is the
+    // reliable continuation evidence; there is no lookahead fetch here.
     const response = await listNotes({
       parent_object: resource_type,
       parent_record_id: record_id,
       limit,
-      offset,
+      offset: requestOffset,
+      ...(upstreamCursor ? { cursor: upstreamCursor } : {}),
     });
     const rawList = unwrapAttio<JsonObject>(response);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
@@ -171,7 +237,20 @@ export async function handleUniversalGetNotes(
       : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure
         ((rawList as any)?.data as any[]) || [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- normalizeNotes expects any[] for flexible note processing
-    return normalizeNotes(noteArray as any[]);
+    const notes = normalizeNotes(noteArray as any[]);
+    const issued = issueNextCursor({
+      scope,
+      pageSize: limit,
+      offset: requestOffset + notes.length,
+      // A native upstream cursor is direct evidence of more results.
+      hasMore: Boolean(response.meta?.next_cursor) || notes.length >= limit,
+      upstreamCursor: response.meta?.next_cursor ?? undefined,
+    });
+    return {
+      data: notes,
+      next_cursor: issued.next_cursor,
+      pagination: issued.pagination,
+    };
   } catch (error: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error object structure varies, need flexible access
     const anyErr = error as any;

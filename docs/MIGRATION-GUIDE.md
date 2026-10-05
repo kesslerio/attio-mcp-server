@@ -556,3 +556,59 @@ limitations; boundary A in that guide owns error handling and prose opt-out.
 curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
   | jq '.result.tools[] | select(.name | test("list|workspace-member")) | {name, outputSchema}'
 ```
+
+---
+
+## Migration 5: Collection Continuation (U5)
+
+Collection tools gain machine-readable pagination state. The envelope fields
+`data` and `count` are unchanged; `next_cursor` may now carry a token, and a
+`pagination` disclosure may accompany it.
+
+### Before (phase one)
+
+```json
+{ "data": [], "count": 0, "next_cursor": null }
+```
+
+`next_cursor` was always null, and null said nothing about whether results
+were withheld.
+
+### After (U5)
+
+```json
+{
+  "data": [{ "id": { "record_id": "..." } }],
+  "count": 1,
+  "next_cursor": "1Tzk4…(opaque sealed token, ≤512 chars)",
+  "pagination": { "supported": true, "truncated": false }
+}
+```
+
+### Updating a client
+
+- On supported families (`search_records`, `search_records_advanced`,
+  `search_records_by_timeframe`, `list_notes`, `get-list-entries`), continue by
+  passing the token back as `cursor` with the same `limit`, resource, filters,
+  and sorts. Never send `offset` together with `cursor`.
+- Treat a non-null token as the only "more pages" signal; a null token means
+  the collection is exhausted for that query.
+- On bounded families (`lists_list`, `list-workspace-members`, attribute
+  metadata, connector `search`), read `pagination.truncated` instead of
+  guessing completeness: `truncated: true` means the tool hit its disclosed cap
+  and withheld results; `truncated: false` affirms nothing was withheld.
+- Handle the stable `INVALID_CURSOR` execution error by starting over from a
+  fresh first page; cursors expire after 30 minutes, die with the server
+  process, and are rejected before any API call when the query, page size, or
+  credential scope changed.
+- Offset pagination remains a live view: concurrent writes can shift or repeat
+  items between pages. Deduplicate by record identifier if your consumer needs
+  stability.
+
+### Verifying a client
+
+```bash
+# Confirm the cursor input and pagination-aware output schema are advertised.
+curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  | jq '.result.tools[] | select(.name == "search_records") | {inputSchema: .inputSchema.properties.cursor, outputSchema: .outputSchema}'
+```
