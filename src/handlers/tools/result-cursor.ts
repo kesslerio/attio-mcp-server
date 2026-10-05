@@ -173,9 +173,12 @@ export function credentialScopeFingerprint(): string {
   // Same request-context/environment precedence as the Attio client resolver.
   const resolved = getContextApiKey() || resolveCredentialScope();
   const { fingerprint } = ensureCursorKeys();
-  return createHmac('sha256', fingerprint)
-    .update(resolved ?? '<no-credential>')
-    .digest('base64url');
+  return (
+    createHmac('sha256', fingerprint)
+      // codeql[js/insufficient-password-hash] CWE-916 / alert 142: API-key scope fingerprint for cursor ownership, not password storage; raw credentials are never encoded or logged.
+      .update(resolved ?? '<no-credential>')
+      .digest('base64url')
+  );
 }
 
 export interface CursorScope {

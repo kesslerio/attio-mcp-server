@@ -72,10 +72,13 @@ export interface AttioAttributeMetadata {
 async function credentialCacheScope(): Promise<string> {
   const { resolveCredentialScope } = await import('@/utils/client-resolver.js');
   const resolved = getContextApiKey() || resolveCredentialScope();
-  return createHash('sha256')
-    .update(resolved ?? '<no-credential>')
-    .digest('hex')
-    .slice(0, 16);
+  return (
+    createHash('sha256')
+      // codeql[js/insufficient-password-hash] CWE-916 / alert 141: API-key scope fingerprint for cache isolation, not password storage; raw credentials are never cached or logged.
+      .update(resolved ?? '<no-credential>')
+      .digest('hex')
+      .slice(0, 16)
+  );
 }
 
 /**
