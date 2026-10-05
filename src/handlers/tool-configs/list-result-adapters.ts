@@ -53,8 +53,8 @@ export function normalizeListCollection(
   result: unknown
 ): Record<string, unknown> {
   const data = z.array(listDataSchema).parse(result).map(omitAbsentFields);
-  // The directory page itself is finite; the per-page cap is documented by
-  // the tool description (default 20).
+  // Preserve the producer's completeness evidence; missing evidence cannot
+  // establish that the directory inventory is complete.
   return {
     data,
     count: data.length,
