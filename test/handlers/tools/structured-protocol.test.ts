@@ -136,6 +136,7 @@ describe('structured tool protocol', () => {
       data: search.structuredContent?.data,
       count: 1,
       next_cursor: null,
+      pagination: { supported: false, truncated: true },
     });
     expect(details.content[0].text).toBe(
       JSON.stringify(details.structuredContent)
