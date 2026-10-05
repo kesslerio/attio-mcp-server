@@ -84,9 +84,14 @@ const searchToolConfig: ToolConfig = {
   name: 'search',
   ...connectorSearchResultContract,
   structuredOutput: (results: unknown): Record<string, unknown> => {
-    const data = z.array(connectorItemDataSchema).parse(results).map((item) =>
-      Object.fromEntries(Object.entries(item).filter(([, value]) => value !== undefined))
-    );
+    const data = z
+      .array(connectorItemDataSchema)
+      .parse(results)
+      .map((item) =>
+        Object.fromEntries(
+          Object.entries(item).filter(([, value]) => value !== undefined)
+        )
+      );
     return { data, count: data.length, next_cursor: null };
   },
   textProjection: searchTextProjection,

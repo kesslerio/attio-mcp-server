@@ -13,7 +13,9 @@ import {
   listMembershipDataSchema,
 } from '@/handlers/tools/result-schemas.js';
 
-function omitAbsentFields(value: Record<string, unknown>): Record<string, unknown> {
+function omitAbsentFields(
+  value: Record<string, unknown>
+): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(value).filter(([, field]) => field !== undefined)
   );
@@ -46,9 +48,7 @@ function requiredArg(
 }
 
 /** A list collection is always an array of list objects; empty stays an array. */
-export function normalizeListCollection(
-  result: unknown
-): Record<string, unknown> {
+export function normalizeListCollection(result: unknown): Record<string, unknown> {
   const data = z.array(listDataSchema).parse(result).map(omitAbsentFields);
   return { data, count: data.length, next_cursor: null };
 }
@@ -110,7 +110,10 @@ export function normalizeListEntryMutation(
 export function normalizeListMemberships(
   result: unknown
 ): Record<string, unknown> {
-  const data = z.array(listMembershipDataSchema).parse(result).map(omitAbsentFields);
+  const data = z
+    .array(listMembershipDataSchema)
+    .parse(result)
+    .map(omitAbsentFields);
   return { data, count: data.length, next_cursor: null };
 }
 

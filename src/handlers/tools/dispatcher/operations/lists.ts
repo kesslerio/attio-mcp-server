@@ -528,8 +528,6 @@ export async function handleManageListEntryOperation(
       }
     }
 
-    // Format result based on mode
-    // Add and Update return AttioListEntry, Remove returns boolean
     return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.
@@ -638,7 +636,6 @@ export async function handleFilterListEntriesByParentOperation(
       offset
     );
 
-    // Format the result using the configured formatter
     return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.
@@ -705,7 +702,6 @@ export async function handleFilterListEntriesByParentIdOperation(
     // Call the handler function with all parameters
     const result = await toolConfig.handler(listId, recordId, limit, offset);
 
-    // Format the result using the configured formatter
     return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.
@@ -1088,7 +1084,6 @@ export async function handleFilterListEntriesOperation(
       }
     }
 
-    // Format result using tool config formatter
     return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.

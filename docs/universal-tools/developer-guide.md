@@ -166,8 +166,9 @@ existing host controls. Batch writes are never replayed after result encoding or
 companion formatting fails; uncertain completion requires readback before retry.
 
 Connector and list/member/diagnostic families are covered by the next boundary;
-see below. Families without output schemas retain their successful text
-contracts; their boundary-owned failures use the shared structured error
+see below. Deprecated resource-specific configurations enabled by
+`DISABLE_UNIVERSAL_TOOLS=true` may retain successful text contracts without
+output schemas; their boundary-owned failures use the shared structured error
 envelope and prose opt-out above.
 
 Verify deterministic contracts with
@@ -182,16 +183,15 @@ The test uses the installed SDK directly because `mcp-test-client@1.0.1` strips
 ### Structured surface coverage (v2 boundary D)
 
 Every tool in the default catalogue now advertises an output schema and publishes
-its results through the shared validated boundary, so there is no remaining
-success path that reports machine data as prose only. Coverage is verified against
-the registry itself (not a hand-maintained list) by
+its results through the shared validated boundary. Coverage checks every tool
+discovered from the registry and verifies the program's inventory ledger in
 `test/handlers/tools/catalog-output-coverage.test.ts`.
 
 List tools keep their native identifier nesting. List collections and list
 details use `{ data: lists, count, next_cursor: null }` and `{ data: list }`,
 with `id.list_id` retained; entry queries and entry writes use the entry
-collection/entry envelopes, retaining `id.entry_id` and filling `list_id` from
-the request when the Attio response omits it. Removals report
+collection/entry envelopes, retaining `id.entry_id`. Entry writes fill `list_id`
+from the request when the Attio response omits it. Removals report
 `{ success: true, list_id, entry_id }` rather than a bare `true`, matching the
 record delete shape, so a caller can verify which entry the outcome describes.
 `manage-list-entry` publishes either the written entry or the removal outcome,
@@ -202,9 +202,9 @@ outcomes keep their camelCase domain shape (`listId`, `listName`, `entryId`,
 optional `entryValues`) inside a collection envelope.
 
 Workspace member tools publish `{ data: members, count, next_cursor: null }` and
-`{ data: member }`, preserving `id.workspace_member_id`. A member lookup that
-returns nothing is now a `NOT_FOUND` execution failure instead of an empty
-success string.
+`{ data: member }`, preserving `id.workspace_member_id` and allowing a null
+`avatar_url`. A member lookup that returns nothing is now a `NOT_FOUND` execution
+failure instead of a not-found success string.
 
 `aaa-health-check` and `smithery_debug_config` return their payload in `data`
 instead of hand-building an MCP text block, so both stay schema-valid with no
@@ -216,8 +216,15 @@ ChatGPT already parses — `{ "results": [...] }` for `search`, the record docum
 for `fetch` — while `structuredContent` carries the shared envelope
 (`{ data, count, next_cursor }` and `{ data }`). The projection is derived from
 the validated envelope, never re-parsed from formatted prose, and connector
-results carry no prose companion under either `MCP_TEXT_RESULTS` setting because
-the text channel already holds the payload.
+successes carry no prose companion under either `MCP_TEXT_RESULTS` setting because
+the text channel already holds the payload. Failures use the shared error envelope
+in both `structuredContent` and `content[0].text`, with `isError: true`; error
+codes depend on the failure as described in boundary A above.
+
+List and connector adapters omit absent optional fields rather than publishing
+them as null. Exact runtime and discovery schemas are generated together from
+[`result-schemas.ts`](../../src/handlers/tools/result-schemas.ts); use MCP
+`tools/list` for the current catalogue and each tool's advertised `outputSchema`.
 
 `next_cursor` remains `null` for every collection in this boundary; continuation
 is a later delivery, and `null` does not claim a bounded result set was complete.

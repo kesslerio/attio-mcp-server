@@ -360,9 +360,7 @@ export const listMembershipDataSchema = z.strictObject({
 export const listCollectionResultContract = resultContract(
   collection(listDataSchema)
 );
-export const listDetailsResultContract = resultContract(
-  singular(listDataSchema)
-);
+export const listDetailsResultContract = resultContract(singular(listDataSchema));
 export const listEntryCollectionResultContract = resultContract(
   collection(listEntryDataSchema)
 );

@@ -55,7 +55,6 @@ export const listsToolConfigs = {
     structuredOutput: normalizeListCollection,
     handler: getLists,
     formatResult: (results: AttioList[]) => {
-      // Return JSON string - dispatcher will convert to JSON content
       return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as GetListsToolConfig,
@@ -65,7 +64,6 @@ export const listsToolConfigs = {
     structuredOutput: normalizeListMemberships,
     handler: getRecordListMemberships,
     formatResult: (results: ListMembership[] | null | undefined) => {
-      // Return JSON string - dispatcher will convert to JSON content
       return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,

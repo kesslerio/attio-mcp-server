@@ -39,7 +39,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **High Performance**: 89.7% speed improvement with 227KB memory reduction (PR #483)
 - **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
 - **Clean Architecture**: Complete production-test separation with mock factory pattern
-- **Structured Results**: See the [result contract and prose opt-out](./docs/universal-tools/developer-guide.md#structured-results-v2-boundary-a) for programmatic search, metadata, interaction, batch, record-detail, core-write, and note clients
+- **Structured Results**: Every default tool advertises a validated output schema; see the [result contract](./docs/universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d) for list, member, diagnostic, and connector outputs, and the preceding sections for universal outputs and prose opt-out
 - **Scoped Tool Policy**: Add scoped default tools only when the workflow is frequent, a generic write can mutate the wrong object class, and the scoped tool removes a model decision instead of merely renaming a universal call
 
 ### 📊 **Feature Implementation Status**
@@ -214,7 +214,7 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 ### 🤝 **OpenAI MCP Compatibility**
 
 - **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
-- **Full Tool Access (Default)**: All 41 tools are exposed by default (26 universal/OpenAI + 12 list + 3 workspace member). Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
+- **Full Tool Access (Default)**: The complete catalogue is exposed by default; use MCP `tools/list` for the current inventory. Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
 - **Search-Only Mode**: To restrict to read-only tools (`search`, `fetch`, `aaa-health-check`), explicitly configure `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery dashboard when Developer Mode is unavailable.
 - **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
 - **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.
