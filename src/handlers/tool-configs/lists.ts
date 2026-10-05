@@ -409,13 +409,11 @@ export const listsToolDefinitions = [
   {
     name: 'get-list-entries',
     description: formatToolDescription({
-      capability:
-        'Retrieve all records in a list with pagination (companies, people in pipelines).',
+      capability: 'Retrieve records in a list with pagination.',
       boundaries: 'filter entries or modify list memberships.',
       constraints:
-        'Requires list UUID (not slug); default limit 20, max per page varies by API. Pass the sealed next_cursor from a previous page to continue this exact list query; never combine cursor with offset.',
-      recoveryHint:
-        'Use filter-list-entries for attribute-based filtering instead.',
+        'Requires list UUID, not slug; default limit 20, API page caps apply. Continue the same query with next_cursor; never combine cursor with offset.',
+      recoveryHint: 'Use filter-list-entries for filtering.',
     }),
     inputSchema: {
       type: 'object',

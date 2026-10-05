@@ -110,14 +110,17 @@ describe('structured pagination over MCP stdio', () => {
           expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent
           );
-          for (const record of structured.data) firstIds.add(record.id.record_id);
+          for (const record of structured.data)
+            firstIds.add(record.id.record_id);
           firstToken = structured.next_cursor ?? undefined;
         }
       );
       // Live workspaces may legitimately be tiny; only continue when the
       // server disclosed a token, which itself is reliable evidence.
       if (!firstToken) {
-        context.skip('Two-page live evidence unavailable: this workspace has fewer than two matching records');
+        context.skip(
+          'Two-page live evidence unavailable: this workspace has fewer than two matching records'
+        );
         return;
       }
       await assertToolCall(
@@ -137,7 +140,8 @@ describe('structured pagination over MCP stdio', () => {
           ).toBe(true);
           expect(structured.count).toBe(structured.data.length);
           expect(structured.data.length).toBeGreaterThan(0);
-          for (const record of structured.data) expect(firstIds.has(record.id.record_id)).toBe(false);
+          for (const record of structured.data)
+            expect(firstIds.has(record.id.record_id)).toBe(false);
           expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent
           );
@@ -160,7 +164,9 @@ describe('structured pagination over MCP stdio', () => {
         }
       );
       if (!token) {
-        context.skip('Live denial evidence unavailable: this workspace has fewer than two matching records');
+        context.skip(
+          'Live denial evidence unavailable: this workspace has fewer than two matching records'
+        );
         return;
       }
       const raw = Buffer.from(token.slice(1), 'base64url');
@@ -203,7 +209,9 @@ describe('structured pagination over MCP stdio', () => {
         }
       );
       if (!token) {
-        context.skip('Live denial evidence unavailable: this workspace has fewer than two matching records');
+        context.skip(
+          'Live denial evidence unavailable: this workspace has fewer than two matching records'
+        );
         return;
       }
       await assertToolCall(
