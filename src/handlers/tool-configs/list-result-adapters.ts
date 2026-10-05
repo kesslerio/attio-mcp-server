@@ -13,6 +13,19 @@ import {
   listMembershipDataSchema,
 } from '@/handlers/tools/result-schemas.js';
 
+function omitAbsentFields(value: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, field]) => field !== undefined)
+  );
+}
+
+function normalizeEntry(entry: z.infer<typeof listEntryDataSchema>) {
+  return omitAbsentFields({
+    ...entry,
+    ...(entry.id ? { id: omitAbsentFields(entry.id) } : {}),
+  });
+}
+
 function requiredArg(
   args: Record<string, unknown> | undefined,
   field: string,
@@ -36,18 +49,18 @@ function requiredArg(
 export function normalizeListCollection(
   result: unknown
 ): Record<string, unknown> {
-  const data = z.array(listDataSchema).parse(result);
+  const data = z.array(listDataSchema).parse(result).map(omitAbsentFields);
   return { data, count: data.length, next_cursor: null };
 }
 
 export function normalizeListDetails(result: unknown): Record<string, unknown> {
-  return { data: listDataSchema.parse(result) };
+  return { data: omitAbsentFields(listDataSchema.parse(result)) };
 }
 
 export function normalizeListEntryCollection(
   result: unknown
 ): Record<string, unknown> {
-  const data = z.array(listEntryDataSchema).parse(result);
+  const data = z.array(listEntryDataSchema).parse(result).map(normalizeEntry);
   return { data, count: data.length, next_cursor: null };
 }
 
@@ -56,7 +69,7 @@ export function normalizeListEntry(
   _resourceType?: string,
   args?: Record<string, unknown>
 ): Record<string, unknown> {
-  const entry = listEntryDataSchema.parse(result);
+  const entry = normalizeEntry(listEntryDataSchema.parse(result));
   // Entries created through the parent-record routes may omit list_id; keep the
   // requested identifier so the result stays composable into follow-up calls.
   const listId =
@@ -97,11 +110,11 @@ export function normalizeListEntryMutation(
 export function normalizeListMemberships(
   result: unknown
 ): Record<string, unknown> {
-  const data = z.array(listMembershipDataSchema).parse(result);
+  const data = z.array(listMembershipDataSchema).parse(result).map(omitAbsentFields);
   return { data, count: data.length, next_cursor: null };
 }
 
 /** List configuration writes publish the normalized flat projection. */
 export function normalizeListConfig(result: unknown): Record<string, unknown> {
-  return { data: listConfigDataSchema.parse(result) };
+  return { data: omitAbsentFields(listConfigDataSchema.parse(result)) };
 }

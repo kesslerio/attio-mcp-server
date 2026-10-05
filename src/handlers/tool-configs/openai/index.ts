@@ -84,7 +84,9 @@ const searchToolConfig: ToolConfig = {
   name: 'search',
   ...connectorSearchResultContract,
   structuredOutput: (results: unknown): Record<string, unknown> => {
-    const data = z.array(connectorItemDataSchema).parse(results);
+    const data = z.array(connectorItemDataSchema).parse(results).map((item) =>
+      Object.fromEntries(Object.entries(item).filter(([, value]) => value !== undefined))
+    );
     return { data, count: data.length, next_cursor: null };
   },
   textProjection: searchTextProjection,
@@ -97,7 +99,11 @@ const fetchToolConfig: ToolConfig = {
   name: 'fetch',
   ...connectorFetchResultContract,
   structuredOutput: (result: unknown): Record<string, unknown> => ({
-    data: connectorFetchDataSchema.parse(result),
+    data: Object.fromEntries(
+      Object.entries(connectorFetchDataSchema.parse(result)).filter(
+        ([, value]) => value !== undefined
+      )
+    ),
   }),
   textProjection: fetchTextProjection,
   handler: handleFetch,

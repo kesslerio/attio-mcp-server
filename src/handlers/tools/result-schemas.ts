@@ -400,7 +400,7 @@ export const workspaceMemberDataSchema = z
     first_name: z.string().optional(),
     last_name: z.string().optional(),
     email_address: z.string().optional(),
-    avatar_url: z.string().optional(),
+    avatar_url: z.string().nullable().optional(),
     access_level: z.string().optional(),
     created_at: z.string().optional(),
     updated_at: z.string().optional(),

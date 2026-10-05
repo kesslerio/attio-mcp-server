@@ -9,13 +9,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleFilterListEntriesOperation } from '../../src/handlers/tools/dispatcher/operations/lists.js';
+import { handleFilterListEntriesOperation } from '@/handlers/tools/dispatcher/operations/lists.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { ToolConfig } from '../../src/handlers/tool-types.js';
-import { AttioListEntry } from '../../src/types/attio.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
+import { AttioListEntry } from '@/types/attio.js';
 
 // Mock the filtering functions
-vi.mock('../../src/objects/lists/filtering.js', () => ({
+vi.mock('@/objects/lists/filtering.js', () => ({
   filterListEntries: vi.fn(),
   advancedFilterListEntries: vi.fn(),
   filterListEntriesByParent: vi.fn(),
@@ -27,7 +27,7 @@ import {
   advancedFilterListEntries,
   filterListEntriesByParent,
   filterListEntriesByParentId,
-} from '../../src/objects/lists/filtering.js';
+} from '@/objects/lists/filtering.js';
 import { listsToolConfigs } from '@/handlers/tool-configs/lists.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
@@ -57,11 +57,7 @@ describe('Consolidated filter-list-entries Tool', () => {
   const mockListId = '550e8400-e29b-41d4-a716-446655440000';
   const mockRecordId = '660e8400-e29b-41d4-a716-446655440001';
 
-  const mockToolConfig: ToolConfig = {
-    name: 'filter-list-entries',
-    handler: vi.fn(),
-    formatResult: vi.fn((result) => JSON.stringify(result)),
-  };
+  const mockToolConfig = listsToolConfigs.filterListEntries;
 
   const mockListEntries: AttioListEntry[] = [
     {
@@ -708,10 +704,10 @@ describe('Consolidated filter-list-entries Tool', () => {
         50,
         0
       );
-      expect(mockToolConfig.formatResult).toHaveBeenCalledWith(mockListEntries);
+      expect(result.structuredContent).toEqual({ data: mockListEntries, count: 1, next_cursor: null });
     });
 
-    it('should return the same result format as legacy tool', async () => {
+    it('should return the shared envelope and JSON companion', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
@@ -731,9 +727,10 @@ describe('Consolidated filter-list-entries Tool', () => {
       );
 
       expect(result.isError).toBeFalsy();
-      expect(result.content).toHaveLength(1);
+      expect(result.content).toHaveLength(2);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toBe(JSON.stringify(mockListEntries));
+      expect(JSON.parse(result.content[0].text as string)).toEqual(result.structuredContent);
+      expect(result.content[1].text).toBe(JSON.stringify(mockListEntries));
     });
   });
 

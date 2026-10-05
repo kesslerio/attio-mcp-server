@@ -11,7 +11,6 @@ import {
   buildStructuredToolResult,
   ResultEncodingError,
 } from '@/handlers/tools/result-contract.js';
-import { formatResponse } from '@/handlers/tools/formatters.js';
 import { hasResponseData } from '@/handlers/tools/error-types.js';
 import {
   filterListEntries,
@@ -37,24 +36,12 @@ import {
 const DEPRECATION_VERSION = 'v2.0.0';
 const MIGRATION_GUIDE_PATH = '/docs/migration/v2-list-tools.md';
 
-/**
- * Shared success path for list tools (U4).
- *
- * Every registered list definition carries an adapter, so the domain outcome
- * goes through the shared result boundary; the legacy projection remains only
- * for call sites that supply an unmigrated config object.
- */
 function listToolResult(
   toolConfig: ToolConfig,
   request: CallToolRequest,
   rawResult: unknown
 ) {
   const args = (request.params.arguments ?? {}) as Record<string, unknown>;
-  if (!toolConfig.resultSchema || !toolConfig.structuredOutput) {
-    return formatResponse(
-      toolConfig.formatResult ? toolConfig.formatResult(rawResult) : rawResult
-    );
-  }
   return buildStructuredToolResult(toolConfig, rawResult, args);
 }
 
