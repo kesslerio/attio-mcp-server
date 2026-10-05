@@ -6,6 +6,9 @@ import { workspaceMembersToolConfigs } from '@/handlers/tool-configs/workspace-m
 import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
 import { RecordsSearchService } from '@/services/search/RecordsSearchService.js';
+import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
+import { searchByContentConfig } from '@/handlers/tool-configs/universal/operations/content-search.js';
+import { searchByRelationshipConfig } from '@/handlers/tool-configs/universal/operations/relationship-search.js';
 import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/search-operations.js';
 import { listTasks as listTaskInventory } from '@/api/operations/tasks.js';
 import { TaskSearchStrategy } from '@/services/search-strategies/TaskSearchStrategy.js';
@@ -44,12 +47,64 @@ beforeEach(() => {
   api.get.mockReset();
   api.post.mockReset();
 });
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); clearAttributeCache(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); clearAttributeCache(); });
 
 const companies = UniversalResourceType.COMPANIES;
 const recordId = 'd28a35f1-5788-49f9-a320-6c8c353147d8';
 
 describe('U5 review pagination invariants', () => {
+  it.each([searchByContentConfig, searchByRelationshipConfig])('discloses bounded record evidence through $name', (config) => {
+    const records = [CompanyMockFactory.create()];
+    expect(config.structuredOutput!(records)).toMatchObject({ count: 1, next_cursor: null, pagination: { supported: false, truncated: true } });
+    Object.defineProperty(records, 'truncated', { value: false });
+    expect(config.structuredOutput!(records)).toMatchObject({ count: 1, next_cursor: null, pagination: { supported: false, truncated: false } });
+  });
+
+  it('discloses missing envelope evidence and preserves supported page evidence', () => {
+    const data = [CompanyMockFactory.create()];
+    expect(normalizeRecordCollection({ data })).toMatchObject({ next_cursor: null, pagination: { supported: false, truncated: true } });
+    expect(normalizeRecordCollection({ data, next_cursor: 'sealed-token', pagination: { supported: true, truncated: false } })).toMatchObject({ next_cursor: 'sealed-token', pagination: { supported: true, truncated: false } });
+  });
+
+  it.each(['filterListEntries', 'advancedFilterListEntries', 'filterListEntriesByParent', 'filterListEntriesByParentId'] as const)('discloses bounded entry evidence through %s', (name) => {
+    const entries: unknown[] = [];
+    expect(listsToolConfigs[name].structuredOutput!(entries)).toMatchObject({ count: 0, next_cursor: null, pagination: { supported: false, truncated: true } });
+    Object.defineProperty(entries, 'truncated', { value: false });
+    expect(listsToolConfigs[name].structuredOutput!(entries)).toMatchObject({ count: 0, next_cursor: null, pagination: { supported: false, truncated: false } });
+  });
+
+  it.each(['records_search', 'records_search_advanced'] as const)('binds resolved relative dates for %s replay', async (operation) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-05T23:59:00Z'));
+    const records = CompanyMockFactory.createMultiple(3);
+    const route = vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ limit = 10, offset = 0 }) => records.slice(offset, offset + limit));
+    const params = { resource_type: companies, timeframe: 'today' as const, limit: 2 };
+    const first = await UniversalSearchService.searchRecordsPage(params, operation);
+    expect(route.mock.calls[0][0]).toMatchObject({ start_date: '2026-10-05T00:00:00.000Z', end_date: '2026-10-05T23:59:59.999Z' });
+    expect(first.next_cursor).toBeTruthy();
+    const second = await UniversalSearchService.searchRecordsPage({ ...params, cursor: first.next_cursor! }, operation);
+    expect(second.data).toEqual(records.slice(2));
+    vi.setSystemTime(new Date('2026-10-06T00:01:00Z'));
+    route.mockClear();
+    await expect(UniversalSearchService.searchRecordsPage({ ...params, cursor: first.next_cursor! }, operation)).rejects.toBeInstanceOf(InvalidCursorError);
+    expect(route).not.toHaveBeenCalled();
+  });
+
+  it('uses one resolved date predicate for a page and its maximum-size probe', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-05T23:59:00Z'));
+    const records = CompanyMockFactory.createMultiple(101);
+    const route = vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ limit = 10, offset = 0 }) => {
+      vi.setSystemTime(new Date('2026-10-06T00:01:00Z'));
+      return records.slice(offset, offset + limit);
+    });
+    const result = await UniversalSearchService.searchRecordsPage({ resource_type: companies, timeframe: 'today', limit: 100 });
+    expect(result.data).toEqual(records.slice(0, 100));
+    expect(result.next_cursor).toBeTruthy();
+    expect(route.mock.calls).toHaveLength(2);
+    for (const [request] of route.mock.calls) expect(request).toMatchObject({ start_date: '2026-10-05T00:00:00.000Z', end_date: '2026-10-05T23:59:59.999Z' });
+  });
+
   it('composes exact emitted offsets at the public maximum page size', async () => {
     const records = Array.from({ length: 101 }, () => CompanyMockFactory.create());
     const route = vi.spyOn(SearchCoordinator, 'executeSearch').mockImplementation(async ({ limit = 10, offset = 0 }) => records.slice(offset, offset + limit));

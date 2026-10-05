@@ -49,7 +49,12 @@ export function normalizeRecordCollection(
 ): Record<string, unknown> {
   assertReadSuccess(result);
   if (Array.isArray(result)) {
-    return { data: result, count: result.length, next_cursor: null };
+    return {
+      data: result,
+      count: result.length,
+      next_cursor: null,
+      pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
+    };
   }
   const envelope = recordsWrapper.parse(result);
   return {
@@ -58,7 +63,7 @@ export function normalizeRecordCollection(
     ...(envelope.next_cursor !== undefined
       ? { next_cursor: envelope.next_cursor }
       : { next_cursor: null }),
-    ...(envelope.pagination ? { pagination: envelope.pagination } : {}),
+    pagination: envelope.pagination ?? boundedPaginationMetadata(true),
   };
 }
 

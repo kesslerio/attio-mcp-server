@@ -593,7 +593,9 @@ caller's current credentials before any Attio request.
 `search_records_advanced`, `search_records_by_timeframe`, `list_notes`, and
 `get-list-entries`. Supported record query and list-entry paths fetch one lookahead item ahead of the returned page; notes use bounded offset lookahead and preserve native cursors when provided,
 so a token is only issued on reliable continuation evidence and a returned
-page never drops the sentinel item — the next page refetches it.
+page never drops the sentinel item — the next page refetches it. Relative date
+queries bind their resolved dates; replay is rejected when the relative range
+resolves to different dates.
 
 **Bounded families** (finite or ranked) return `next_cursor: null` plus
 `pagination: { supported: false, truncated: <boolean> }`. `truncated: true`

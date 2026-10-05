@@ -69,13 +69,13 @@ export function normalizeListDetails(result: unknown): Record<string, unknown> {
 
 function entryCollectionEnvelope(
   data: ReturnType<typeof normalizeEntry>[],
-  continuation?: Record<string, unknown>
+  continuation: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     data,
     count: data.length,
     next_cursor: null,
-    ...(continuation ?? {}),
+    ...continuation,
   };
 }
 
@@ -83,7 +83,9 @@ export function normalizeListEntryCollection(
   result: unknown
 ): Record<string, unknown> {
   if (Array.isArray(result)) {
-    return entryCollectionEnvelope(z.array(listEntryDataSchema).parse(result).map(normalizeEntry));
+    return entryCollectionEnvelope(z.array(listEntryDataSchema).parse(result).map(normalizeEntry), {
+      pagination: boundedPaginationMetadata((result as { truncated?: boolean }).truncated ?? true),
+    });
   }
   const envelope = z.strictObject({
     data: z.array(listEntryDataSchema),

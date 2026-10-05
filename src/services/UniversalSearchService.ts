@@ -150,7 +150,7 @@ export class UniversalSearchService {
         : params.resource_type === UniversalResourceType.PEOPLE ? 100 : 20
     );
     ValidationService.validatePaginationParameters({ limit: pageSize, offset: params.offset });
-    const scope = searchContinuationScope(operation, { ...params, limit: pageSize });
+    const scope = searchContinuationScope(operation, { ...params, ...dateConversion, limit: pageSize });
     const supported = isQueryRoute || (
       ![UniversalResourceType.TASKS, UniversalResourceType.LISTS, UniversalResourceType.NOTES].includes(params.resource_type) &&
       params.search_type !== SearchType.CONTENT && !params.query?.trim()
@@ -171,11 +171,11 @@ export class UniversalSearchService {
       pageSizeViaCursorCheck(resolved.pageSize, pageSize);
     }
 
-    const fetched = await this.executeSearch({ ...params, limit: Math.min(pageSize + 1, 100), offset }, upstreamCursor);
+    const fetched = await this.executeSearch({ ...params, limit: Math.min(pageSize + 1, 100), offset }, upstreamCursor, dateConversion);
     const { page, hasMore: lookaheadMore } = splitLookaheadPage(fetched, pageSize);
     const nextUpstreamCursor = fetched.length <= pageSize ? (fetched as UniversalRecordResult[] & { upstreamCursor?: string }).upstreamCursor : undefined;
     const hasMore = Boolean(nextUpstreamCursor) || lookaheadMore || (pageSize === 100 && page.length === pageSize &&
-      (await this.executeSearch({ ...params, limit: 1, offset: offset + page.length })).length > 0);
+      (await this.executeSearch({ ...params, limit: 1, offset: offset + page.length }, undefined, dateConversion)).length > 0);
     if (hasMore && offset + page.length > MAX_PAGINATION_OFFSET) {
       return { data: page, next_cursor: null, pagination: { supported: true, truncated: true } };
     }
@@ -206,7 +206,8 @@ export class UniversalSearchService {
 
   private static async executeSearch(
     params: UniversalSearchParams,
-    upstreamCursor?: string
+    upstreamCursor?: string,
+    resolvedDateConversion?: ReturnType<typeof convertDateParamsToTimeframeQuery>
   ): Promise<UniversalRecordResult[]> {
     const {
       resource_type,
@@ -277,7 +278,7 @@ export class UniversalSearchService {
     };
 
     try {
-      const dateConversion = convertDateParamsToTimeframeQuery({
+      const dateConversion = resolvedDateConversion === undefined ? convertDateParamsToTimeframeQuery({
         date_from,
         date_to,
         created_after,
@@ -286,7 +287,7 @@ export class UniversalSearchService {
         updated_before,
         timeframe,
         date_field,
-      });
+      }) : resolvedDateConversion;
 
       if (dateConversion) {
         // Use converted parameters, prioritizing user-friendly parameters
