@@ -160,7 +160,7 @@ export const createCompanyDefinition = {
       'Requires record_data with company attribute API slugs such as name, domains, or website.',
     requiresApproval: true,
     recoveryHint:
-      'If fields are rejected, call discover_record_attributes with resource_type companies.',
+      'If fields are rejected, call records_discover_attributes with resource_type companies.',
   }),
   inputSchema: scopedCreateSchema('Company', [
     {
@@ -187,7 +187,7 @@ export const updateCompanyDefinition = {
       'Requires record_id and record_data with company attribute API slugs.',
     requiresApproval: true,
     recoveryHint:
-      'Call get_record_details or search_records for companies first to confirm the target company ID.',
+      'Call records_get_details or records_search for companies first to confirm the target company ID.',
   }),
   inputSchema: scopedUpdateSchema('Company', [
     {
@@ -214,7 +214,7 @@ export const createDealDefinition = {
       'Requires record_data with deal attribute API slugs such as name, stage, value, owner, or associated company/person references.',
     requiresApproval: true,
     recoveryHint:
-      'If stage or owner values are rejected, call discover_record_attributes or get_record_attribute_options for deals.',
+      'If stage or owner values are rejected, call records_discover_attributes or records_get_attribute_options for deals.',
   }),
   inputSchema: scopedCreateSchema('Deal', [
     {
@@ -243,7 +243,7 @@ export const updateDealDefinition = {
       'Requires record_id and record_data with deal attribute API slugs.',
     requiresApproval: true,
     recoveryHint:
-      'Call search_records for deals first to confirm the target deal ID and current stage.',
+      'Call records_search for deals first to confirm the target deal ID and current stage.',
   }),
   inputSchema: scopedUpdateSchema('Deal', [
     {

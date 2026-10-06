@@ -24,10 +24,10 @@ describe('Timeframe Search MCP Tool Validation', () => {
   });
 
   describe('Tool Discovery', () => {
-    it('should list search-records tool', async () => {
+    it('should list records_search tool', async () => {
       const tools = await client.listTools();
 
-      const searchTool = tools.find((tool) => tool.name === 'search-records');
+      const searchTool = tools.find((tool) => tool.name === 'records_search');
       expect(searchTool).toBeDefined();
       expect(searchTool?.description).toContain('search');
     });
@@ -36,7 +36,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
   describe('Basic Timeframe Search Tests', () => {
     it('should handle yesterday timeframe search for companies', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -69,7 +69,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
 
     it('should handle last_7_days timeframe search for people', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -100,7 +100,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
 
     it('should handle custom date range search for tasks', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'tasks',
           search_type: 'timeframe',
@@ -133,7 +133,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
 
     it('should handle single date comparison with greater_than', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -164,7 +164,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
 
     it('should handle single date comparison with less_than', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -197,7 +197,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
   describe('Error Handling Validation', () => {
     it('should handle invalid date formats gracefully', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -231,7 +231,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
 
     it('should handle missing required parameters', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -261,7 +261,7 @@ describe('Timeframe Search MCP Tool Validation', () => {
       // This test just ensures no structure errors occur
       // The actual API calls will show in logs if Query API is used correctly
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',

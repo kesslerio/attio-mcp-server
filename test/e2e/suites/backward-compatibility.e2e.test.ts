@@ -1,12 +1,11 @@
 /**
- * E2E Backward Compatibility Test
+ * E2E backward compatibility for the v2 resource-first catalog.
  *
- * Verifies that deprecated tool names (kebab-case and noun-verb patterns)
- * continue to work via the alias system until their planned removal in v2.0.0.
- *
- * This ensures existing integrations won't break during the transition period.
+ * Prior default-catalog names still call the canonical tool through v2.x.
+ * Removed pre-v2 names (kebab spellings that were never the default catalog,
+ * and records_search_batch) do not resolve. Aliases do not change arguments.
  */
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { E2ETestBase } from '../setup.js';
 import { E2EAssertions } from '../utils/assertions.js';
 import { CompanyFactory } from '../fixtures/index.js';
@@ -17,6 +16,7 @@ import {
 } from '../utils/enhanced-tool-caller.js';
 import { startTestSuite, endTestSuite } from '../utils/logger.js';
 import { resolveToolName } from '@/config/tool-aliases.js';
+import { REMOVED_PRE_V2_TOOL_ALIASES } from '@/constants/tool-names.js';
 
 function asToolResponse(response: unknown): McpToolResponse {
   return response as McpToolResponse;
@@ -40,9 +40,8 @@ describe.skipIf(
     });
     console.error('🚀 Starting Backward Compatibility E2E');
 
-    // Create a test company for operations
     const companyResponse = asToolResponse(
-      await callUniversalTool('create_record', {
+      await callUniversalTool('records_create', {
         resource_type: 'companies',
         record_data: CompanyFactory.create() as any,
       })
@@ -53,9 +52,8 @@ describe.skipIf(
   }, 120000);
 
   afterAll(async () => {
-    // Cleanup test company
     if (testCompanyId) {
-      await callUniversalTool('delete_record', {
+      await callUniversalTool('records_delete', {
         resource_type: 'companies',
         record_id: testCompanyId,
       });
@@ -65,144 +63,129 @@ describe.skipIf(
   }, 60000);
 
   describe('Alias Resolution System', () => {
-    it('should resolve kebab-case alias to snake_case target', () => {
-      const resolution = resolveToolName('search-records');
-      expect(resolution.name).toBe('search_records');
-      expect(resolution.alias).toBeDefined();
-      expect(resolution.alias?.alias).toBe('search-records');
-      expect(resolution.alias?.definition.target).toBe('search_records');
-      expect(resolution.alias?.definition.removal).toBe('v2.0.0');
-      expect(resolution.alias?.definition.reason).toContain('#1039');
-    });
-
-    it('should resolve noun-verb alias to verb-first target', () => {
-      const resolution = resolveToolName('records_search');
-      expect(resolution.name).toBe('search_records');
-      expect(resolution.alias).toBeDefined();
-      expect(resolution.alias?.alias).toBe('records_search');
-      expect(resolution.alias?.definition.target).toBe('search_records');
-      expect(resolution.alias?.definition.removal).toBe('v2.0.0');
-    });
-
-    it('should return canonical name unchanged', () => {
+    it('resolves a prior default name to its canonical target', () => {
       const resolution = resolveToolName('search_records');
-      expect(resolution.name).toBe('search_records');
+      expect(resolution.name).toBe('records_search');
+      expect(resolution.alias?.alias).toBe('search_records');
+      expect(resolution.alias?.definition.target).toBe('records_search');
+      expect(resolution.alias?.definition.removal).toBe('v3.0.0');
+      expect(resolution.alias?.definition.reason ?? '').not.toContain('#1039');
+    });
+
+    it('leaves canonical names unchanged', () => {
+      const resolution = resolveToolName('records_search');
+      expect(resolution.name).toBe('records_search');
       expect(resolution.alias).toBeUndefined();
+    });
+
+    it('does not resolve removed pre-v2 names', () => {
+      for (const removed of [
+        'search-records',
+        'create-record',
+        'advanced-search',
+        'batch-operations',
+        'create-note',
+        'list-notes',
+        'smithery-debug-config',
+        'records_search_batch',
+      ]) {
+        expect(REMOVED_PRE_V2_TOOL_ALIASES).toContain(removed);
+        const resolution = resolveToolName(removed);
+        expect(resolution.name).toBe(removed);
+        expect(resolution.alias).toBeUndefined();
+      }
     });
   });
 
   describe('CRUD Tool Aliases', () => {
-    it('should work with kebab-case create-record alias', async () => {
+    it('creates a company through the create_record alias', async () => {
       const companyData = CompanyFactory.create() as any;
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('create-record', {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('create_record', {
           resource_type: 'companies',
           record_data: companyData,
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
-      const company = E2EAssertions.expectMcpData(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
+      const company = E2EAssertions.expectMcpData(aliasResponse);
       E2EAssertions.expectCompanyRecord(company);
 
-      // Cleanup
-      await callUniversalTool('delete_record', {
+      await callUniversalTool('records_delete', {
         resource_type: 'companies',
         record_id: company.id.record_id,
       });
     }, 60000);
 
-    it('should work with kebab-case get-record-details alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('get-record-details', {
+    it('reads a company through the get_record_details alias', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('get_record_details', {
           resource_type: 'companies',
           record_id: testCompanyId,
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
-      const company = E2EAssertions.expectMcpData(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
+      const company = E2EAssertions.expectMcpData(aliasResponse);
       expect(company.id.record_id).toBe(testCompanyId);
     }, 60000);
 
-    it('should work with kebab-case update-record alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('update-record', {
+    it('updates a company through the update_record alias', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('update_record', {
           resource_type: 'companies',
           record_id: testCompanyId,
           record_data: {
-            description: 'Updated via kebab-case alias',
+            description: 'Updated via prior-name alias',
           },
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
     }, 60000);
   });
 
   describe('Search Tool Aliases', () => {
-    it('should work with kebab-case search-records alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('search-records', {
+    it('searches through the search_records alias', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('search_records', {
           resource_type: 'companies',
           limit: 5,
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
-      const data = E2EAssertions.expectMcpData(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
+      const data = E2EAssertions.expectMcpData(aliasResponse);
       expect(data).toHaveProperty('records');
     }, 60000);
 
-    it('should work with noun-verb records_search alias', async () => {
-      const nounVerbResponse = asToolResponse(
-        await callUniversalTool('records_search', {
-          resource_type: 'companies',
-          limit: 5,
-        })
-      );
-
-      E2EAssertions.expectMcpSuccess(nounVerbResponse);
-      const data = E2EAssertions.expectMcpData(nounVerbResponse);
-      expect(data).toHaveProperty('records');
-    }, 60000);
-
-    it('should produce identical results for all search name variants', async () => {
+    it('returns records for the canonical name and the prior name', async () => {
       const params = { resource_type: 'companies', limit: 3 };
 
-      const [canonicalResponse, kebabResponse, nounVerbResponse] =
-        await Promise.all([
-          callUniversalTool('search_records', params),
-          callUniversalTool('search-records', params),
-          callUniversalTool('records_search', params),
-        ]);
+      const [canonicalResponse, aliasResponse] = await Promise.all([
+        callUniversalTool('records_search', params),
+        callUniversalTool('search_records', params),
+      ]);
 
-      // All should succeed
       E2EAssertions.expectMcpSuccess(asToolResponse(canonicalResponse));
-      E2EAssertions.expectMcpSuccess(asToolResponse(kebabResponse));
-      E2EAssertions.expectMcpSuccess(asToolResponse(nounVerbResponse));
+      E2EAssertions.expectMcpSuccess(asToolResponse(aliasResponse));
 
-      // All should return records
       const canonicalData = E2EAssertions.expectMcpData(
         asToolResponse(canonicalResponse)
       );
-      const kebabData = E2EAssertions.expectMcpData(
-        asToolResponse(kebabResponse)
-      );
-      const nounVerbData = E2EAssertions.expectMcpData(
-        asToolResponse(nounVerbResponse)
+      const aliasData = E2EAssertions.expectMcpData(
+        asToolResponse(aliasResponse)
       );
 
       expect(canonicalData).toHaveProperty('records');
-      expect(kebabData).toHaveProperty('records');
-      expect(nounVerbData).toHaveProperty('records');
+      expect(aliasData).toHaveProperty('records');
     }, 60000);
   });
 
-  describe('Advanced Operation Aliases', () => {
-    it('should work with kebab-case advanced-search alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('advanced-search', {
+  describe('Advanced, metadata, and batch aliases', () => {
+    it('runs advanced search through search_records_advanced', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('search_records_advanced', {
           resource_type: 'companies',
           filters: [
             {
@@ -214,55 +197,34 @@ describe.skipIf(
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
     }, 60000);
 
-    it('should work with noun-verb records_search_advanced alias', async () => {
-      const nounVerbResponse = asToolResponse(
-        await callUniversalTool('records_search_advanced', {
-          resource_type: 'companies',
-          filters: [
-            {
-              attribute: 'name',
-              operator: 'contains',
-              value: 'Test',
-            },
-          ],
-        })
-      );
-
-      E2EAssertions.expectMcpSuccess(nounVerbResponse);
-    }, 60000);
-  });
-
-  describe('Metadata Tool Aliases', () => {
-    it('should work with noun-verb records_get_attributes alias', async () => {
-      const nounVerbResponse = asToolResponse(
-        await callUniversalTool('records_get_attributes', {
+    it('reads attributes through get_record_attributes', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('get_record_attributes', {
           resource_type: 'companies',
         })
       );
 
-      E2EAssertions.expectMcpSuccess(nounVerbResponse);
-      const data = E2EAssertions.expectMcpData(nounVerbResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
+      const data = E2EAssertions.expectMcpData(aliasResponse);
       expect(data).toHaveProperty('attributes');
     }, 60000);
 
-    it('should work with noun-verb records_discover_attributes alias', async () => {
-      const nounVerbResponse = asToolResponse(
-        await callUniversalTool('records_discover_attributes', {
+    it('discovers attributes through discover_record_attributes', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('discover_record_attributes', {
           resource_type: 'companies',
         })
       );
 
-      E2EAssertions.expectMcpSuccess(nounVerbResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
     }, 60000);
-  });
 
-  describe('Batch Operation Aliases', () => {
-    it('should work with kebab-case batch-operations alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('batch-operations', {
+    it('creates through the batch_records alias', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('batch_records', {
           resource_type: 'companies',
           operations: [
             {
@@ -273,37 +235,11 @@ describe.skipIf(
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
 
-      // Cleanup created company
-      const data = E2EAssertions.expectMcpData(kebabResponse);
+      const data = E2EAssertions.expectMcpData(aliasResponse);
       if (data.results?.[0]?.data?.id?.record_id) {
-        await callUniversalTool('delete_record', {
-          resource_type: 'companies',
-          record_id: data.results[0].data.id.record_id,
-        });
-      }
-    }, 60000);
-
-    it('should work with noun-verb records_batch alias', async () => {
-      const nounVerbResponse = asToolResponse(
-        await callUniversalTool('records_batch', {
-          resource_type: 'companies',
-          operations: [
-            {
-              operation: 'create',
-              record_data: CompanyFactory.create() as any,
-            },
-          ],
-        })
-      );
-
-      E2EAssertions.expectMcpSuccess(nounVerbResponse);
-
-      // Cleanup created company
-      const data = E2EAssertions.expectMcpData(nounVerbResponse);
-      if (data.results?.[0]?.data?.id?.record_id) {
-        await callUniversalTool('delete_record', {
+        await callUniversalTool('records_delete', {
           resource_type: 'companies',
           record_id: data.results[0].data.id.record_id,
         });
@@ -311,43 +247,41 @@ describe.skipIf(
     }, 60000);
   });
 
-  describe('Note Tool Aliases', () => {
-    it('should work with kebab-case create-note alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('create-note', {
+  describe('Note and diagnostic aliases', () => {
+    it('creates a note through create_note', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('create_note', {
           resource_type: 'companies',
           record_id: testCompanyId,
-          title: 'Test note via kebab-case alias',
-          content: 'This note was created using the kebab-case alias',
+          title: 'Test note via prior-name alias',
+          content: 'This note was created using the prior default name',
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
     }, 60000);
 
-    it('should work with kebab-case list-notes alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('list-notes', {
+    it('lists notes through list_notes', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('list_notes', {
           resource_type: 'companies',
           record_id: testCompanyId,
         })
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
-      const data = E2EAssertions.expectMcpData(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
+      const data = E2EAssertions.expectMcpData(aliasResponse);
       expect(data).toHaveProperty('notes');
     }, 60000);
-  });
 
-  describe('Diagnostic Tool Aliases', () => {
-    it('should work with kebab-case smithery-debug-config alias', async () => {
-      const kebabResponse = asToolResponse(
-        await callUniversalTool('smithery-debug-config', {})
+    it('reads diagnostics through smithery_debug_config', async () => {
+      const aliasResponse = asToolResponse(
+        await callUniversalTool('smithery_debug_config', {})
       );
 
-      E2EAssertions.expectMcpSuccess(kebabResponse);
+      E2EAssertions.expectMcpSuccess(aliasResponse);
 
-      const text = kebabResponse.content?.[0]?.text;
+      const text = aliasResponse.content?.[0]?.text;
       expect(typeof text).toBe('string');
       expect(text).not.toContain('hasAttioApiKey');
       expect(text).not.toContain('attioApiKeyLength');

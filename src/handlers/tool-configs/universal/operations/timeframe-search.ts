@@ -103,7 +103,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       pagination?: Record<string, unknown>;
     }
 > = {
-  name: 'search_records_by_timeframe',
+  name: 'records_search_by_timeframe',
   ...recordSearchResultContract,
   structuredOutput: normalizeRecordCollection,
   handler: async (
@@ -118,7 +118,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
   > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'search_records_by_timeframe',
+        'records_search_by_timeframe',
         params
       ) as TimeframeSearchParams;
 
@@ -253,7 +253,7 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       );
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'search_records_by_timeframe',
+        'records_search_by_timeframe',
         `${params.resource_type}:${params.timeframe_type || 'undefined'}`,
         error
       );

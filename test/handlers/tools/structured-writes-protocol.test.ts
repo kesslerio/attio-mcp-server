@@ -28,17 +28,17 @@ const upsert = {
   message: 'Created',
 };
 const cases = [
-  ['create_record', record],
-  ['update_record', record],
-  ['delete_record', { success: true, record_id: record.id.record_id }],
-  ['create_company', record],
-  ['update_company', record],
-  ['create_deal', record],
-  ['update_deal', record],
-  ['upsert_record', upsert],
-  ['merge_records', { mode: 'dry_run', plan, message: 'Preview' }],
-  ['create_note', note],
-  ['list_notes', [note]],
+  ['records_create', record],
+  ['records_update', record],
+  ['records_delete', { success: true, record_id: record.id.record_id }],
+  ['companies_create', record],
+  ['companies_update', record],
+  ['deals_create', record],
+  ['deals_update', record],
+  ['records_upsert', upsert],
+  ['records_merge', { mode: 'dry_run', plan, message: 'Preview' }],
+  ['notes_create', note],
+  ['notes_list', [note]],
 ] as const;
 
 describe('core writes over serialized MCP transport', () => {
@@ -116,7 +116,7 @@ describe('core writes over serialized MCP transport', () => {
       expect(result.structuredContent).toMatchObject({
         error: {
           code: 'UPSTREAM_UNAVAILABLE',
-          retryable: name === 'list_notes',
+          retryable: name === 'notes_list',
         },
       });
       expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual(
@@ -157,7 +157,7 @@ describe('core writes over serialized MCP transport', () => {
         record_data: { name: 'Updated' },
       };
       const result = await client.callTool({
-        name: 'update_record',
+        name: 'records_update',
         arguments: args,
       });
       expect(result).toMatchObject({
@@ -167,7 +167,7 @@ describe('core writes over serialized MCP transport', () => {
       expect(write.mock.calls.length + enhancedWrite.mock.calls.length).toBe(1);
       vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'search');
       const denied = await client.callTool({
-        name: 'update_record',
+        name: 'records_update',
         arguments: args,
       });
       expect(denied).toMatchObject({
@@ -182,7 +182,7 @@ describe('core writes over serialized MCP transport', () => {
 
   it('serializes an upsert preview without inventing a missing record identifier', async () => {
     vi.spyOn(
-      coreOperationsToolConfigs.upsert_record,
+      coreOperationsToolConfigs.records_upsert,
       'handler'
     ).mockResolvedValue({
       action: 'dry_run',
@@ -193,7 +193,7 @@ describe('core writes over serialized MCP transport', () => {
       message: 'Preview',
     });
     const result = await client.callTool({
-      name: 'upsert_record',
+      name: 'records_upsert',
       arguments: {},
     });
     expect(result).toMatchObject({
@@ -224,7 +224,7 @@ describe('core writes over serialized MCP transport', () => {
     expect(sparsePlan.dangerous_fills.length).toBeGreaterThan(0);
     expect(sparsePlan.linked_mismatches.length).toBeGreaterThan(0);
     vi.spyOn(
-      coreOperationsToolConfigs.merge_records,
+      coreOperationsToolConfigs.records_merge,
       'handler'
     ).mockResolvedValue({
       mode: 'dry_run',
@@ -232,7 +232,7 @@ describe('core writes over serialized MCP transport', () => {
       message: 'Review fills',
     });
     const result = await client.callTool({
-      name: 'merge_records',
+      name: 'records_merge',
       arguments: {},
     });
     expect(result).toMatchObject({
@@ -258,7 +258,7 @@ describe('core writes over serialized MCP transport', () => {
         Object.assign(new Error('Response lost'), { code: 'ECONNRESET' })
       );
     const result = await client.callTool({
-      name: 'update_deal',
+      name: 'deals_update',
       arguments: {
         record_id: record.id.record_id,
         record_data: { name: 'Updated' },
@@ -275,7 +275,7 @@ describe('core writes over serialized MCP transport', () => {
   it('preserves upsert actions and merge completion controls', async () => {
     for (const action of ['created', 'updated', 'noop', 'dry_run'] as const) {
       vi.spyOn(
-        coreOperationsToolConfigs.upsert_record,
+        coreOperationsToolConfigs.records_upsert,
         'handler'
       ).mockResolvedValue({
         ...upsert,
@@ -283,7 +283,7 @@ describe('core writes over serialized MCP transport', () => {
         planned_action: 'updated',
       } as never);
       const result = await client.callTool({
-        name: 'upsert_record',
+        name: 'records_upsert',
         arguments: {},
       });
       expect(result.structuredContent).toMatchObject({
@@ -294,7 +294,7 @@ describe('core writes over serialized MCP transport', () => {
     }
     for (const mode of ['complete', 'wait'] as const) {
       vi.spyOn(
-        coreOperationsToolConfigs.merge_records,
+        coreOperationsToolConfigs.records_merge,
         'handler'
       ).mockResolvedValue({
         mode,
@@ -305,7 +305,7 @@ describe('core writes over serialized MCP transport', () => {
         warning: 'Keep IDs',
       });
       const result = await client.callTool({
-        name: 'merge_records',
+        name: 'records_merge',
         arguments: {},
       });
       expect(result.isError).toBe(false);
@@ -319,10 +319,10 @@ describe('core writes over serialized MCP transport', () => {
 
   it('rejects malformed successful writes and failed-delete projections', async () => {
     for (const [name, raw] of [
-      ['create_record', { values: {} }],
-      ['upsert_record', { ...upsert, record_id: undefined }],
-      ['delete_record', { success: false, record_id: record.id.record_id }],
-      ['merge_records', { mode: 'complete', plan }],
+      ['records_create', { values: {} }],
+      ['records_upsert', { ...upsert, record_id: undefined }],
+      ['records_delete', { success: false, record_id: record.id.record_id }],
+      ['records_merge', { mode: 'complete', plan }],
     ] as const) {
       const handler = vi
         .spyOn(coreOperationsToolConfigs[name], 'handler')
@@ -340,7 +340,7 @@ describe('core writes over serialized MCP transport', () => {
 
   it('puts native details validation and returned legacy failures first', async () => {
     const invalid = await client.callTool({
-      name: 'get_record_details',
+      name: 'records_get_details',
       arguments: { resource_type: 'companies' },
     });
     expect(invalid.isError).toBe(true);
@@ -354,11 +354,11 @@ describe('core writes over serialized MCP transport', () => {
       { status: 400 }
     );
     vi.spyOn(
-      coreOperationsToolConfigs.create_record,
+      coreOperationsToolConfigs.records_create,
       'handler'
     ).mockResolvedValue(failure as never);
     const returned = await client.callTool({
-      name: 'create_record',
+      name: 'records_create',
       arguments: {},
     });
     expect(returned.isError).toBe(true);

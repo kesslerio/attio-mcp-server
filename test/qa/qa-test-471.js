@@ -7,8 +7,8 @@
  * and provides the performance improvements specified in the issue.
  * 
  * Test Coverage:
- * 1. New dedicated batch-search tool functionality
- * 2. Enhanced batch-operations tool with queries array support
+ * 1. New dedicated records_batch_search tool functionality
+ * 2. Enhanced records_batch tool with queries array support
  * 3. Performance comparison vs sequential searches
  * 4. Partial failure handling
  * 5. Support for different object types (companies, people, etc.)
@@ -93,11 +93,11 @@ class BatchSearchTester {
     
     this.log(`Simulating ${toolName} with params: ${JSON.stringify(params, null, 2)}`, 'info');
     
-    if (toolName === 'batch-search') {
+    if (toolName === 'records_batch_search') {
       return this.simulateBatchSearchResults(params);
-    } else if (toolName === 'batch-operations') {
+    } else if (toolName === 'records_batch') {
       return this.simulateBatchOperationsResults(params);
-    } else if (toolName === 'search-records') {
+    } else if (toolName === 'records_search') {
       return this.simulateSequentialSearchResults(params);
     }
     
@@ -105,7 +105,7 @@ class BatchSearchTester {
   }
 
   /**
-   * Simulate batch-search tool results
+   * Simulate records_batch_search tool results
    */
   simulateBatchSearchResults(params) {
     const { resource_type, queries, limit = 5 } = params;
@@ -119,7 +119,7 @@ class BatchSearchTester {
   }
 
   /**
-   * Simulate batch-operations tool results with queries array
+   * Simulate records_batch tool results with queries array
    */
   simulateBatchOperationsResults(params) {
     const { resource_type, operation_type, queries, limit = 5 } = params;
@@ -172,15 +172,15 @@ class BatchSearchTester {
   }
 
   /**
-   * Test 1: Dedicated batch-search tool functionality
+   * Test 1: Dedicated records_batch_search tool functionality
    */
   async testDedicatedBatchSearch() {
-    this.log('Testing dedicated batch-search tool...', 'info');
+    this.log('Testing dedicated records_batch_search tool...', 'info');
     
     try {
       const startTime = performance.now();
       
-      const result = await this.simulateToolCall('batch-search', {
+      const result = await this.simulateToolCall('records_batch_search', {
         resource_type: 'companies',
         queries: TEST_CONFIG.companyQueries,
         limit: TEST_CONFIG.resultLimit
@@ -198,7 +198,7 @@ class BatchSearchTester {
       const hasResults = result.some(r => r.success && Array.isArray(r.result) && r.result.length > 0);
       
       this.recordTest(
-        'Dedicated batch-search tool',
+        'Dedicated records_batch_search tool',
         isValidStructure && hasResults && duration < TEST_CONFIG.maxBatchTime,
         `Structure: ${isValidStructure}, Results: ${hasResults}, Time: ${duration.toFixed(2)}ms, Success rate: ${successCount}/${result.length}`
       );
@@ -206,21 +206,21 @@ class BatchSearchTester {
       return { duration, successCount, totalQueries: result.length };
       
     } catch (error) {
-      this.recordTest('Dedicated batch-search tool', false, `Error: ${error.message}`);
+      this.recordTest('Dedicated records_batch_search tool', false, `Error: ${error.message}`);
       return null;
     }
   }
 
   /**
-   * Test 2: Enhanced batch-operations tool with queries array
+   * Test 2: Enhanced records_batch tool with queries array
    */
   async testEnhancedBatchOperations() {
-    this.log('Testing enhanced batch-operations tool with queries array...', 'info');
+    this.log('Testing enhanced records_batch tool with queries array...', 'info');
     
     try {
       const startTime = performance.now();
       
-      const result = await this.simulateToolCall('batch-operations', {
+      const result = await this.simulateToolCall('records_batch', {
         resource_type: 'people',
         operation_type: 'search',
         queries: TEST_CONFIG.peopleQueries,
@@ -239,7 +239,7 @@ class BatchSearchTester {
       const hasResults = result.some(r => r.success && Array.isArray(r.result) && r.result.length > 0);
       
       this.recordTest(
-        'Enhanced batch-operations with queries array',
+        'Enhanced records_batch with queries array',
         isValidStructure && hasResults && duration < TEST_CONFIG.maxBatchTime,
         `Structure: ${isValidStructure}, Results: ${hasResults}, Time: ${duration.toFixed(2)}ms, Success rate: ${successCount}/${result.length}`
       );
@@ -247,19 +247,19 @@ class BatchSearchTester {
       return { duration, successCount, totalQueries: result.length };
       
     } catch (error) {
-      this.recordTest('Enhanced batch-operations with queries array', false, `Error: ${error.message}`);
+      this.recordTest('Enhanced records_batch with queries array', false, `Error: ${error.message}`);
       return null;
     }
   }
 
   /**
-   * Test 3: Backward compatibility - batch-operations without queries array
+   * Test 3: Backward compatibility - records_batch without queries array
    */
   async testBatchOperationsBackwardCompatibility() {
-    this.log('Testing batch-operations backward compatibility (no queries array)...', 'info');
+    this.log('Testing records_batch backward compatibility (no queries array)...', 'info');
     
     try {
-      const result = await this.simulateToolCall('batch-operations', {
+      const result = await this.simulateToolCall('records_batch', {
         resource_type: 'companies',
         operation_type: 'search',
         limit: TEST_CONFIG.resultLimit
@@ -289,7 +289,7 @@ class BatchSearchTester {
     try {
       // Test batch search performance
       const batchStartTime = performance.now();
-      await this.simulateToolCall('batch-search', {
+      await this.simulateToolCall('records_batch_search', {
         resource_type: 'companies',
         queries: TEST_CONFIG.companyQueries.slice(0, 3), // Use fewer queries for faster testing
         limit: TEST_CONFIG.resultLimit
@@ -300,7 +300,7 @@ class BatchSearchTester {
       // Test sequential search performance
       const sequentialStartTime = performance.now();
       for (const query of TEST_CONFIG.companyQueries.slice(0, 3)) {
-        await this.simulateToolCall('search-records', {
+        await this.simulateToolCall('records_search', {
           resource_type: 'companies',
           query,
           limit: TEST_CONFIG.resultLimit
@@ -339,7 +339,7 @@ class BatchSearchTester {
         'another-valid-query'
       ];
       
-      const result = await this.simulateToolCall('batch-search', {
+      const result = await this.simulateToolCall('records_batch_search', {
         resource_type: 'companies',
         queries: mixedQueries,
         limit: TEST_CONFIG.resultLimit
@@ -373,7 +373,7 @@ class BatchSearchTester {
       try {
         const queries = resourceType === 'companies' ? ['tech', 'software'] : ['test', 'sample'];
         
-        const result = await this.simulateToolCall('batch-search', {
+        const result = await this.simulateToolCall('records_batch_search', {
           resource_type: resourceType,
           queries,
           limit: 2
@@ -406,7 +406,7 @@ class BatchSearchTester {
     this.log('Testing response format validation...', 'info');
     
     try {
-      const result = await this.simulateToolCall('batch-search', {
+      const result = await this.simulateToolCall('records_batch_search', {
         resource_type: 'companies',
         queries: ['test-query-1', 'test-query-2'],
         limit: 3

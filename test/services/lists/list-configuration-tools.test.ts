@@ -1,5 +1,5 @@
 /**
- * Unit tests for create-list and update-list-configuration dedicated tools.
+ * Unit tests for lists_create and lists_update_configuration dedicated tools.
  * Tests the dispatcher handler logic via the ListConfigurationValidator integration.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -28,7 +28,7 @@ vi.mock('@/objects/lists/base.js', () => ({
 import { getLazyAttioClient } from '@/api/lazy-client.js';
 import { createList, updateList } from '@/objects/lists/base.js';
 
-describe('create-list tool logic', () => {
+describe('lists_create tool logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     invalidateObjectCache();
@@ -146,7 +146,7 @@ describe('create-list tool logic', () => {
   });
 });
 
-describe('update-list-configuration tool logic', () => {
+describe('lists_update_configuration tool logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     invalidateObjectCache();

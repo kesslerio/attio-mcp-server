@@ -41,9 +41,11 @@ jobs:
       - name: Analyze changed files
         id: changes
         run: |
-          # Get changed files
+          # Get changed files. The pulls/files API returns one page (30 files)
+          # unless paginated, and this list is alphabetical, so a large PR whose
+          # first page is docs was classified as docs-only and skipped core tests.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            changed_files=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.number }}/files --jq '.[].filename')
+            changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD)
           else
             changed_files=$(git diff --name-only HEAD~1 HEAD)
           fi

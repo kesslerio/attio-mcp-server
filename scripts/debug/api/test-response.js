@@ -8,7 +8,7 @@ async function testResponse() {
     const request = {
       method: 'tools/call',
       params: {
-        name: 'update-record',
+        name: 'records_update',
         arguments: {
           resource_type: 'companies',
           record_id: 'non-existent-id-12345',

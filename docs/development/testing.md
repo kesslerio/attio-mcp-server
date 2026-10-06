@@ -89,7 +89,7 @@ Integration tests make real API calls to verify that the MCP tools work correctl
 npm run test:integration
 
 # Run specific integration test
-npm run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
+npm run test:integration -- test/integration/lists/list_entries_add.integration.test.ts
 
 # Run integration tests in watch mode
 npm run test:integration:watch
@@ -186,7 +186,7 @@ The E2E framework covers all universal tools with real API integration:
 
 - `records.search` with pagination and filtering
 - `records.get_details` with field selection
-- `create-record`, `update-record`, `delete-record` with validation
+- `records_create`, `records_update`, `records_delete` with validation
 - `records.get_attributes`, `records.discover_attributes` with schema discovery
 - `records.get_info` with various info types
 
@@ -363,7 +363,7 @@ npm test:coverage
 npm run test:integration
 
 # Run a specific integration test file
-npm run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
+npm run test:integration -- test/integration/lists/list_entries_add.integration.test.ts
 
 # Run integration tests matching a pattern
 npm run test:integration -- -t "should add record to list"
@@ -465,7 +465,7 @@ The tests include retry logic, but if you see rate limiting:
 npm test -- --reporter=verbose
 
 # Run a single test with debugging
-npm test -- test/integration/lists/add-record-to-list.integration.test.ts --reporter=verbose
+npm test -- test/integration/lists/list_entries_add.integration.test.ts --reporter=verbose
 
 # Check test configuration
 cat .env.test

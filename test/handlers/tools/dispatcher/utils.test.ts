@@ -26,7 +26,7 @@ describe('Dispatcher Utils', () => {
   describe('normalizeToolMsg', () => {
     it('should strip tool execution prefix from error messages', () => {
       const msg =
-        "Error executing tool 'search-records': Invalid resource_type";
+        "Error executing tool 'records_search': Invalid resource_type";
       expect(normalizeToolMsg(msg)).toBe('Invalid resource_type');
     });
 

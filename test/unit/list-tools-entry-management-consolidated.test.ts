@@ -1,5 +1,5 @@
 /**
- * Unit tests for consolidated manage-list-entry tool
+ * Unit tests for consolidated list_entries_manage tool
  *
  * Tests the unified entry management tool with 3 parameter modes:
  * - Mode 1 (Add): Add record to list
@@ -49,7 +49,7 @@ import {
   updateListEntry,
 } from '@/objects/lists/entries.js';
 
-describe('Consolidated manage-list-entry Tool', () => {
+describe('Consolidated list_entries_manage Tool', () => {
   const mockListId = '550e8400-e29b-41d4-a716-446655440000';
   const mockRecordId = '660e8400-e29b-41d4-a716-446655440001';
   const mockEntryId = '770e8400-e29b-41d4-a716-446655440002';
@@ -73,9 +73,9 @@ describe('Consolidated manage-list-entry Tool', () => {
     vi.mocked(updateListEntry).mockResolvedValue(mockListEntry);
   });
 
-  it('advertises manage-list-entry as a write-capable tool', () => {
+  it('advertises list_entries_manage as a write-capable tool', () => {
     const definition = listsToolDefinitions.find(
-      (tool) => tool.name === 'manage-list-entry'
+      (tool) => tool.name === 'list_entries_manage'
     );
 
     expect(definition?.annotations?.readOnlyHint).toBe(false);
@@ -86,7 +86,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             recordId: mockRecordId,
@@ -116,7 +116,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -143,7 +143,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -170,7 +170,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
           },
@@ -197,7 +197,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             recordId: mockRecordId,
@@ -225,7 +225,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             objectType: 'companies',
@@ -252,7 +252,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             recordId: mockRecordId,
@@ -280,7 +280,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             recordId: mockRecordId,
@@ -308,7 +308,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             recordId: mockRecordId,
@@ -334,7 +334,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             // Missing entryId, and no other mode params
@@ -355,7 +355,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -375,7 +375,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -402,7 +402,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             attributes: { stage: 'Qualified' },
@@ -423,7 +423,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -445,7 +445,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -466,7 +466,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -488,7 +488,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -508,12 +508,12 @@ describe('Consolidated manage-list-entry Tool', () => {
   });
 
   describe('Backward Compatibility', () => {
-    it('should maintain 100% compatibility with add-record-to-list calls', async () => {
-      // Exact same structure as original add-record-to-list tool
+    it('should maintain 100% compatibility with list_entries_add calls', async () => {
+      // Exact same structure as original list_entries_add tool
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             recordId: mockRecordId,
@@ -537,12 +537,12 @@ describe('Consolidated manage-list-entry Tool', () => {
       );
     });
 
-    it('should maintain 100% compatibility with remove-record-from-list calls', async () => {
-      // Exact same structure as original remove-record-from-list tool
+    it('should maintain 100% compatibility with list_entries_remove calls', async () => {
+      // Exact same structure as original list_entries_remove tool
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -562,12 +562,12 @@ describe('Consolidated manage-list-entry Tool', () => {
       );
     });
 
-    it('should maintain 100% compatibility with update-list-entry calls', async () => {
-      // Exact same structure as original update-list-entry tool
+    it('should maintain 100% compatibility with list_entries_update calls', async () => {
+      // Exact same structure as original list_entries_update tool
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -597,7 +597,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             recordId: mockRecordId,
@@ -623,7 +623,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -648,7 +648,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             listId: mockListId,
             entryId: mockEntryId,
@@ -670,7 +670,7 @@ describe('Consolidated manage-list-entry Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'manage-list-entry',
+          name: 'list_entries_manage',
           arguments: {
             recordId: mockRecordId,
             objectType: 'companies',
@@ -694,7 +694,7 @@ describe('Consolidated manage-list-entry Tool', () => {
         {
           method: 'tools/call',
           params: {
-            name: 'manage-list-entry',
+            name: 'list_entries_manage',
             arguments: {
               listId: mockListId,
               entryId: mockEntryId,
@@ -723,7 +723,7 @@ describe('Consolidated manage-list-entry Tool', () => {
         {
           method: 'tools/call',
           params: {
-            name: 'manage-list-entry',
+            name: 'list_entries_manage',
             arguments: { listId: mockListId, entryId: mockEntryId },
           },
         } as CallToolRequest,

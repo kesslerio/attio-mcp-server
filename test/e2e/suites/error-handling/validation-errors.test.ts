@@ -24,7 +24,7 @@ export function validationErrorsTests(testCompanyId?: string) {
   describe('Invalid Parameters and Validation Errors', () => {
     it('should handle missing required parameters gracefully', async () => {
       // Test search without required resource_type
-      const response = (await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('records_search', {
         // Missing resource_type
         query: 'test',
       })) as McpToolResponse;
@@ -34,7 +34,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     });
 
     it('should validate resource_type parameter values', async () => {
-      const response = (await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('records_search', {
         resource_type: 'invalid_resource_type_12345',
         query: 'test',
       })) as McpToolResponse;
@@ -45,7 +45,7 @@ export function validationErrorsTests(testCompanyId?: string) {
 
     it('should handle invalid record IDs gracefully', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = (await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('records_get_details', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.generic,
       })) as McpToolResponse;
@@ -57,7 +57,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     });
 
     it('should validate limit parameters', async () => {
-      const response = (await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('records_search', {
         resource_type: 'companies',
         query: 'test',
         limit: -5, // Invalid negative limit
@@ -69,7 +69,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     });
 
     it('should handle malformed filter objects', async () => {
-      const response = (await callUniversalTool('advanced-search', {
+      const response = (await callUniversalTool('records_search_advanced', {
         resource_type: 'companies',
         filters: 'this_should_be_an_object_not_string' as unknown as any, // Invalid filter format
       })) as McpToolResponse;
@@ -87,7 +87,7 @@ export function validationErrorsTests(testCompanyId?: string) {
         email_address: errorScenarios.invalidFormats.email.malformed,
       };
 
-      const response = (await callUniversalTool('create_record', {
+      const response = (await callUniversalTool('records_create', {
         resource_type: 'people',
         record_data: personData,
       })) as McpToolResponse;
@@ -103,7 +103,7 @@ export function validationErrorsTests(testCompanyId?: string) {
         content: 'Test task with extremely long title',
       };
 
-      const response = (await callUniversalTool('create_record', {
+      const response = (await callUniversalTool('records_create', {
         resource_type: 'tasks',
         record_data: taskData,
       })) as McpToolResponse;
@@ -115,7 +115,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     it('should handle special characters and Unicode', async () => {
       const companyData = errorScenarios.unicodeData.company;
 
-      const response = (await callUniversalTool('create_record', {
+      const response = (await callUniversalTool('records_create', {
         resource_type: 'companies',
         record_data: companyData as any,
       })) as McpToolResponse;
@@ -127,7 +127,7 @@ export function validationErrorsTests(testCompanyId?: string) {
       if (hasValidContent(response)) {
         const recordId = extractRecordId(response);
         if (recordId) {
-          await callUniversalTool('delete_record', {
+          await callUniversalTool('records_delete', {
             resource_type: 'companies',
             record_id: recordId,
           }).catch(() => {});
@@ -138,7 +138,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     it('should handle null and undefined values', async () => {
       const companyData = errorDataGenerators.invalidCompany();
 
-      const response = (await callUniversalTool('create_record', {
+      const response = (await callUniversalTool('records_create', {
         resource_type: 'companies',
         record_data: companyData as any,
       })) as McpToolResponse;
@@ -153,7 +153,7 @@ export function validationErrorsTests(testCompanyId?: string) {
         due_date: errorScenarios.invalidFormats.dates.invalid,
       };
 
-      const response = (await callUniversalTool('create_record', {
+      const response = (await callUniversalTool('records_create', {
         resource_type: 'tasks',
         record_data: taskData,
       })) as McpToolResponse;
@@ -165,7 +165,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     it('should handle malformed JSON in parameters', async () => {
       // This test might be limited by the TypeScript interface,
       // but we can test edge cases within valid structure
-      const response = (await callUniversalTool('create_record', {
+      const response = (await callUniversalTool('records_create', {
         resource_type: 'companies',
         record_data: errorScenarios.malformedData.company as any,
       })) as McpToolResponse;
@@ -176,7 +176,7 @@ export function validationErrorsTests(testCompanyId?: string) {
       if (hasValidContent(response)) {
         const recordId = extractRecordId(response);
         if (recordId) {
-          await callUniversalTool('delete_record', {
+          await callUniversalTool('records_delete', {
             resource_type: 'companies',
             record_id: recordId,
           }).catch(() => {});
@@ -185,7 +185,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     });
 
     it('should handle memory-intensive operations', async () => {
-      const response = (await callNotesTool('create_note', {
+      const response = (await callNotesTool('notes_create', {
         resource_type: 'companies',
         record_id: testCompanyId || 'test_id',
         title: errorScenarios.memoryIntensive.largeNote.title,

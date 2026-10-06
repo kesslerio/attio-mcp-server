@@ -321,10 +321,14 @@ describe('Universal Core Operations Search Tests', () => {
   });
 
   describe('legacy alias compatibility', () => {
-    it('resolves search-records alias to records.search', () => {
-      const resolution = resolveToolName('search-records');
-      expect(resolution.name).toBe('search_records');
-      expect(resolution.alias?.alias).toBe('search-records');
+    it('resolves the prior default name and drops the removed kebab alias', () => {
+      const removed = resolveToolName('search-records');
+      expect(removed.name).toBe('search-records');
+      expect(removed.alias).toBeUndefined();
+
+      const prior = resolveToolName('search_records');
+      expect(prior.name).toBe('records_search');
+      expect(prior.alias?.alias).toBe('search_records');
     });
   });
 });

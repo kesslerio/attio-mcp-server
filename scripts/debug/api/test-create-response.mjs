@@ -1,10 +1,10 @@
 import { coreOperationsToolConfigs } from '../../dist/handlers/tool-configs/universal/core/index.js';
 
 async function test() {
-  console.log('Testing create-record response structure...');
+  console.log('Testing records_create response structure...');
 
   try {
-    const result = await coreOperationsToolConfigs['create-record'].handler({
+    const result = await coreOperationsToolConfigs['records_create'].handler({
       resource_type: 'companies',
       record_data: {
         name: `Test Company ${Date.now()}`,
@@ -19,7 +19,7 @@ async function test() {
 
     // Clean up
     if (result?.id?.record_id) {
-      await coreOperationsToolConfigs['delete-record'].handler({
+      await coreOperationsToolConfigs['records_delete'].handler({
         resource_type: 'companies',
         record_id: result.id.record_id,
       });

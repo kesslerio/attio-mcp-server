@@ -68,7 +68,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'deals',
           query: '',
@@ -89,7 +89,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'deals',
           date_field: 'updated_at',
@@ -109,7 +109,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'tasks',
           date_field: 'due_date',
@@ -129,7 +129,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'companies',
           date_field: 'created_at',
@@ -151,7 +151,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'deals',
           filters: {
@@ -178,7 +178,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: '',
@@ -200,7 +200,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'deals',
           query: 'competitor',
@@ -220,7 +220,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'deals',
           filters: {
@@ -246,7 +246,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'deals',
           filters: {
@@ -275,7 +275,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'deals',
           date_field: 'updated_at',
@@ -295,7 +295,7 @@ describe('Sales Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'people',
           date_field: 'updated_at',

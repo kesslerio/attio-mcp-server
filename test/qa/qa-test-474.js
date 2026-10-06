@@ -35,7 +35,7 @@ async function testContentSearch() {
     ];
     
     for (const company of companies) {
-      const record = await mcp.callTool('create-record', {
+      const record = await mcp.callTool('records_create', {
         resource_type: 'companies',
         record_data: company
       });
@@ -57,7 +57,7 @@ async function testContentSearch() {
     ];
     
     for (const person of people) {
-      const record = await mcp.callTool('create-record', {
+      const record = await mcp.callTool('records_create', {
         resource_type: 'people',
         record_data: person
       });
@@ -73,7 +73,7 @@ async function testContentSearch() {
   // Test 1: Basic content search
   console.log('Test 1: Basic Content Search');
   try {
-    const result = await mcp.callTool('search-records', {
+    const result = await mcp.callTool('records_search', {
       resource_type: 'companies',
       query: 'artificial intelligence',
       search_type: 'content'
@@ -105,7 +105,7 @@ async function testContentSearch() {
   // Test 2: Cross-field content search
   console.log('\nTest 2: Cross-field Content Search');
   try {
-    const result = await mcp.callTool('search-records', {
+    const result = await mcp.callTool('records_search', {
       resource_type: 'companies',
       query: 'machine learning',
       search_type: 'content',
@@ -129,7 +129,7 @@ async function testContentSearch() {
   // Test 3: Partial match content search
   console.log('\nTest 3: Partial Match Content Search');
   try {
-    const result = await mcp.callTool('search-records', {
+    const result = await mcp.callTool('records_search', {
       resource_type: 'companies',
       query: 'automat',  // Partial word
       search_type: 'content',
@@ -156,7 +156,7 @@ async function testContentSearch() {
   // Test 4: Relevance ranking
   console.log('\nTest 4: Relevance Ranking');
   try {
-    const result = await mcp.callTool('search-records', {
+    const result = await mcp.callTool('records_search', {
       resource_type: 'companies',
       query: 'AI',
       search_type: 'content',
@@ -182,7 +182,7 @@ async function testContentSearch() {
   // Test 5: People content search
   console.log('\nTest 5: People Content Search');
   try {
-    const result = await mcp.callTool('search-records', {
+    const result = await mcp.callTool('records_search', {
       resource_type: 'people',
       query: 'neural networks',
       search_type: 'content'
@@ -209,7 +209,7 @@ async function testContentSearch() {
   console.log('\nCleanup: Removing test records');
   try {
     for (const record of testRecords) {
-      await mcp.callTool('delete-record', {
+      await mcp.callTool('records_delete', {
         resource_type: record.type,
         record_id: record.id.record_id
       });
@@ -229,7 +229,7 @@ const mcp = {
     // This would be replaced with actual MCP tool calls
     // For now, returning mock data for testing
     
-    if (toolName === 'create-record') {
+    if (toolName === 'records_create') {
       return {
         data: {
           id: { record_id: `test_${Date.now()}_${Math.random()}` },
@@ -238,7 +238,7 @@ const mcp = {
       };
     }
     
-    if (toolName === 'search-records') {
+    if (toolName === 'records_search') {
       // Mock search results based on query
       if (params.query?.includes('artificial intelligence')) {
         return {
@@ -312,7 +312,7 @@ const mcp = {
       return { data: [] };
     }
     
-    if (toolName === 'delete-record') {
+    if (toolName === 'records_delete') {
       return { success: true };
     }
     

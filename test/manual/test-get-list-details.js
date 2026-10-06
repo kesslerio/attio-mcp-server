@@ -1,8 +1,8 @@
 /**
- * Test for the get-list-details tool
+ * Test for the lists_get tool
  *
  * This test script directly calls the getListDetails function to identify issues
- * with the get-list-details MCP tool.
+ * with the lists_get MCP tool.
  */
 
 // Import the necessary modules
@@ -57,7 +57,7 @@ async function testGetListDetails() {
     try {
       const mockRequest = {
         params: {
-          name: 'get-list-details',
+          name: 'lists_get',
           arguments: {
             listId: listId,
           },

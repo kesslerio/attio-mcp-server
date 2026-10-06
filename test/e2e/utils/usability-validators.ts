@@ -49,7 +49,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 1) Invalid resource_type should suggest valid types (documentation clarity, parameter intuitiveness)
   {
-    const resp = (await callUniversalTool('search-records', {
+    const resp = (await callUniversalTool('records_search', {
       resource_type: 'invalid_resource_type_12345',
       query: 'test',
       limit: 1,
@@ -75,7 +75,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 2) Missing required parameter (e.g., people.create without email)
   {
-    const resp = (await callUniversalTool('create_record', {
+    const resp = (await callUniversalTool('records_create', {
       resource_type: 'people',
       record_data: { name: 'Only Name' },
     })) as McpToolResponse;
@@ -99,7 +99,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 3) Task title maps to content on create (discoverability)
   {
-    const resp = (await callTasksTool('create_record', {
+    const resp = (await callTasksTool('records_create', {
       resource_type: 'tasks',
       record_data: { title: 'Quick Task' },
     })) as McpToolResponse;
@@ -117,7 +117,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 4) Invalid record id clarity
   {
-    const resp = (await callUniversalTool('get-record-details', {
+    const resp = (await callUniversalTool('records_get_details', {
       resource_type: 'companies',
       record_id: 'definitely-not-a-uuid',
     })) as McpToolResponse;
@@ -139,7 +139,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 5) Unknown field name provides suggestions (companies.create with 'nam')
   {
-    const resp = (await callUniversalTool('create_record', {
+    const resp = (await callUniversalTool('records_create', {
       resource_type: 'companies',
       record_data: { nam: 'Acme Inc.' } as any,
     })) as McpToolResponse;
@@ -162,7 +162,7 @@ export async function runUsabilityChecks(): Promise<UsabilitySummary> {
 
   // 6) Partial field 'domain' is accepted or mapped (companies.create)
   {
-    const resp = (await callUniversalTool('create_record', {
+    const resp = (await callUniversalTool('records_create', {
       resource_type: 'companies',
       record_data: { name: 'Acme', domain: 'acme.com' } as any,
     })) as McpToolResponse;

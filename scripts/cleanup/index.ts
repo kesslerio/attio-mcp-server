@@ -11,7 +11,7 @@
  * - lists — GET /lists, DELETE /lists/{id} (list resources, not memberships)
  * - notes — unsupported here: Attio only lists notes per parent record
  *   (unfiltered GET /v2/notes returns nothing); delete notes via the MCP
- *   delete_record tool with resource_type 'notes'
+ *   records_delete tool with resource_type 'notes'
  *
  * Implementation lives in ./core (cli, preflight, orchestrator, main),
  * ./fetchers, ./filters, ./processors, ./deleters, and ./utils.

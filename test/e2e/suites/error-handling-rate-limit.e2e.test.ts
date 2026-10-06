@@ -11,7 +11,7 @@ describe.skip('Critical Error Handling E2E – Rate Limiting', () => {
     const requests = Array(5)
       .fill(null)
       .map(() =>
-        callUniversalTool('search-records', {
+        callUniversalTool('records_search', {
           resource_type: 'companies',
           query: 'test-rate-limit',
           limit: 1,

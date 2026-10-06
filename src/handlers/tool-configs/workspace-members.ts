@@ -95,7 +95,7 @@ const optionalNumber = (
 
 export const workspaceMembersToolConfigs = {
   listWorkspaceMembers: {
-    name: 'list-workspace-members',
+    name: 'workspace_members_list',
     ...workspaceMemberCollectionResultContract,
     structuredOutput: normalizeMemberCollection,
     handler: async (args: WorkspaceMemberToolArgs = {}) =>
@@ -109,7 +109,7 @@ export const workspaceMembersToolConfigs = {
   } as ToolConfig,
 
   searchWorkspaceMembers: {
-    name: 'search-workspace-members',
+    name: 'workspace_members_search',
     ...workspaceMemberCollectionResultContract,
     structuredOutput: normalizeMemberCollection,
     handler: async (args: WorkspaceMemberToolArgs = {}) =>
@@ -123,7 +123,7 @@ export const workspaceMembersToolConfigs = {
   } as ToolConfig,
 
   getWorkspaceMember: {
-    name: 'get-workspace-member',
+    name: 'workspace_members_get',
     ...workspaceMemberResultContract,
     structuredOutput: normalizeMember,
     handler: async (args: WorkspaceMemberToolArgs = {}) =>
@@ -152,14 +152,14 @@ export const workspaceMembersToolConfigs = {
 
 export const workspaceMembersToolDefinitions = [
   {
-    name: 'list-workspace-members',
+    name: 'workspace_members_list',
     description: formatToolDescription({
       capability:
         'List workspace members to plan assignments and access checks.',
       boundaries: 'change access levels or invite new members; read-only.',
       constraints:
         'Supports optional search, pagination (1-100 per page, default 25).',
-      recoveryHint: 'Use search-workspace-members for targeted lookups.',
+      recoveryHint: 'Use workspace_members_search for targeted lookups.',
     }),
     inputSchema: {
       type: 'object',
@@ -195,13 +195,13 @@ export const workspaceMembersToolDefinitions = [
     },
   },
   {
-    name: 'search-workspace-members',
+    name: 'workspace_members_search',
     description: formatToolDescription({
       capability: 'Search workspace members by name, email, or access role.',
       boundaries: 'modify member profiles or permissions; lookup only.',
       constraints: 'Requires query string (minimum 2 characters).',
       recoveryHint:
-        'If no results, list-workspace-members provides the full roster.',
+        'If no results, workspace_members_list provides the full roster.',
     }),
     inputSchema: {
       type: 'object',
@@ -222,7 +222,7 @@ export const workspaceMembersToolDefinitions = [
     },
   },
   {
-    name: 'get-workspace-member',
+    name: 'workspace_members_get',
     description: formatToolDescription({
       capability:
         'Retrieve profile and access details for one workspace member.',
@@ -230,7 +230,7 @@ export const workspaceMembersToolDefinitions = [
       constraints:
         'Requires workspace_member_id from list/search results; read-only.',
       recoveryHint:
-        'Use list-workspace-members to confirm the memberId before retrying.',
+        'Use workspace_members_list to confirm the memberId before retrying.',
     }),
     inputSchema: {
       type: 'object',

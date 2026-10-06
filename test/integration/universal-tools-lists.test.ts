@@ -12,8 +12,8 @@ import { getLists, getListDetails } from '@src/objects/lists/base.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 
 describe('Universal Tools - Lists Integration', () => {
-  describe('search_records (resource_type="lists") vs get-lists', () => {
-    it('should return same data format as get-lists', async () => {
+  describe('records_search (resource_type="lists") vs lists_list', () => {
+    it('should return same data format as lists_list', async () => {
       // Get lists using old tool
       const listsOldTool = await getLists();
 
@@ -139,7 +139,7 @@ describe('Universal Tools - Lists Integration', () => {
     });
   });
 
-  describe('get_record_details (resource_type="lists") vs get-list-details', () => {
+  describe('records_get_details (resource_type="lists") vs lists_get', () => {
     let testListId: string;
     let testListSlug: string;
 
@@ -226,7 +226,7 @@ describe('Universal Tools - Lists Integration', () => {
       expect(details).toHaveProperty('workspace_id');
 
       // Note: attributes field may not be returned by the basic list details API
-      // If attributes are needed, use a separate get-attributes call
+      // If attributes are needed, use a separate records_get_attributes call
     });
 
     it('should handle invalid list ID gracefully', async () => {
@@ -280,7 +280,7 @@ describe('Universal Tools - Lists Integration', () => {
   });
 
   describe('List-native format (Issue #1068)', () => {
-    it('should return list-native format from search_records (list_id only, no record_id)', async () => {
+    it('should return list-native format from records_search (list_id only, no record_id)', async () => {
       const lists = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,
         query: '',
@@ -307,7 +307,7 @@ describe('Universal Tools - Lists Integration', () => {
       }
     });
 
-    it('should return list-native format from get_record_details (list_id only, no record_id)', async () => {
+    it('should return list-native format from records_get_details (list_id only, no record_id)', async () => {
       const lists = await getLists();
       if (lists.length === 0) {
         console.warn('No lists available for testing');

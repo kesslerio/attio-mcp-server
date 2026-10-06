@@ -82,7 +82,7 @@ Integration tests make real API calls to verify individual API operations, edge 
 bun run test:integration
 
 # Run specific integration test
-bun run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
+bun run test:integration -- test/integration/lists/list_entries_add.integration.test.ts
 
 # Run integration tests in watch mode
 bun run test:integration:watch
@@ -216,7 +216,7 @@ bun run test:coverage
 bun run test:integration
 
 # Run a specific integration test file
-bun run test:integration -- test/integration/lists/add-record-to-list.integration.test.ts
+bun run test:integration -- test/integration/lists/list_entries_add.integration.test.ts
 
 # Run integration tests matching a pattern
 bun run test:integration -- -t "should add record to list"
@@ -318,7 +318,7 @@ The tests include retry logic, but if you see rate limiting:
 bun run test -- --reporter=verbose
 
 # Run a single test with debugging
-bun run test -- test/integration/lists/add-record-to-list.integration.test.ts --reporter=verbose
+bun run test -- test/integration/lists/list_entries_add.integration.test.ts --reporter=verbose
 
 # Check test configuration
 cat .env.test

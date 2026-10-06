@@ -4,7 +4,7 @@ This guide captures the engineering guardrails introduced in Issue #776 Phase 0.
 
 ## 1. Naming & Aliases
 
-- **Canonical pattern**: Prefer verb-first snake_case names exposed by the active registry (e.g., `search_records`, `update_record`, `discover_record_attributes`). See `src/constants/tool-names.ts` for canonical universal names and `src/handlers/tools/registry.ts` for the exposed tool surface.
+- **Canonical pattern**: Use the resource-first names in `src/constants/tool-names.ts` (for example `records_search`, `records_update`, `records_discover_attributes`). `search`, `fetch`, and `aaa-health-check` stay as they are. The exposed surface is `src/handlers/tools/registry.ts`.
 - **Prompt-facing examples**: Bundled prompts and docs should teach canonical exposed names, not deprecated aliases or dotted pseudo-tools.
 - **Alias registry**: `src/config/tool-aliases.ts` holds deprecated → canonical mappings.
   - Aliases are enabled by default; set `MCP_DISABLE_TOOL_ALIASES=true` to disable at runtime.
@@ -45,7 +45,7 @@ This guide captures the engineering guardrails introduced in Issue #776 Phase 0.
 
 ## 6. Checklist Before Modifying Tools
 
-- [ ] Update naming to fit the verb-first standard or register an alias.
+- [ ] Update naming to a canonical resource-first name, or add its prior name to the single migration map in `src/constants/tool-names.ts`.
 - [ ] Update descriptions with capability/boundary/recovery segments.
 - [ ] Ensure schemas declare `additionalProperties`, examples, enums, and pagination hints as needed.
 - [ ] Add/update tests (golden discovery snapshot, routing smoke tests, targeted unit suites).

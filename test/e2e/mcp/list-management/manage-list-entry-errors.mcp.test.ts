@@ -2,13 +2,13 @@
  * TC-010: Manage List Entry - Error Handling Tests
  * P1 Essential Test
  *
- * Validates error handling for the consolidated manage-list-entry tool:
+ * Validates error handling for the consolidated list_entries_manage tool:
  * - No mode detected (insufficient parameters)
  * - Multiple modes detected (conflicting parameters)
  * - Invalid list/entry IDs
  * - Invalid parameter types
  *
- * @see manage-list-entry.mcp.test.ts for happy path tests
+ * @see list_entries_manage.mcp.test.ts for happy path tests
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
@@ -34,7 +34,7 @@ class ManageListEntryErrorTest extends MCPTestBase {
     try {
       // Create a test company for error testing
       const companyData = TestDataFactory.createCompanyData('TC010E');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -48,7 +48,7 @@ class ManageListEntryErrorTest extends MCPTestBase {
       }
 
       // Discover an existing list
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -121,7 +121,7 @@ describe('TC-010: Manage List Entry - Error Handling', () => {
       }
 
       // Only provide listId - no recordId, entryId, or attributes
-      const result = await testCase.executeToolCall('manage-list-entry', {
+      const result = await testCase.executeToolCall('list_entries_manage', {
         listId,
       });
 
@@ -165,7 +165,7 @@ describe('TC-010: Manage List Entry - Error Handling', () => {
       }
 
       // Provide conflicting parameters (Mode 1 + Mode 3)
-      const result = await testCase.executeToolCall('manage-list-entry', {
+      const result = await testCase.executeToolCall('list_entries_manage', {
         listId,
         recordId: companyId,
         objectType: 'companies',
@@ -209,7 +209,7 @@ describe('TC-010: Manage List Entry - Error Handling', () => {
       }
 
       // Use a non-existent list ID
-      const result = await testCase.executeToolCall('manage-list-entry', {
+      const result = await testCase.executeToolCall('list_entries_manage', {
         listId: LIST_ENTRY_TEST_CONSTANTS.INVALID_UUID,
         recordId: companyId,
         objectType: 'companies',
@@ -260,7 +260,7 @@ describe('TC-010: Manage List Entry - Error Handling', () => {
       }
 
       // Provide recordId without objectType
-      const result = await testCase.executeToolCall('manage-list-entry', {
+      const result = await testCase.executeToolCall('list_entries_manage', {
         listId,
         recordId: companyId,
         // Missing: objectType
@@ -305,7 +305,7 @@ describe('TC-010: Manage List Entry - Error Handling', () => {
       }
 
       // Provide attributes as string instead of object
-      const result = await testCase.executeToolCall('manage-list-entry', {
+      const result = await testCase.executeToolCall('list_entries_manage', {
         listId,
         entryId: LIST_ENTRY_TEST_CONSTANTS.DUMMY_ENTRY_ID,
         attributes: 'invalid-string-instead-of-object',

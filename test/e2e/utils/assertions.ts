@@ -232,7 +232,7 @@ export class E2EAssertions {
   }
 
   /**
-   * Field filtering validation for get-record-details and get-attributes
+   * Field filtering validation for records_get_details and records_get_attributes
    */
   static expectFieldFiltering(
     response: McpToolResponse,
@@ -480,17 +480,17 @@ export class E2EAssertions {
     if (dataContent?.text) {
       const text = dataContent.text;
 
-      // Special handling for list-notes formatted output BEFORE trying JSON parse
+      // Special handling for notes_list formatted output BEFORE trying JSON parse
       // This avoids API contract violations for known formatted responses
       const listNotesMatch = /^Found (\d+) notes/i.exec(text);
       if (listNotesMatch) {
         const count = parseInt(listNotesMatch[1], 10);
 
-        // For list-notes, we know it returns formatted text, not JSON
+        // For notes_list, we know it returns formatted text, not JSON
         // Return an empty array to satisfy test structure expectations
         // Tests should validate list operations differently (e.g., by checking the formatted text)
         console.log(
-          `[E2E] Detected list-notes format with ${count} notes. Returning empty array for test compatibility.`
+          `[E2E] Detected notes_list format with ${count} notes. Returning empty array for test compatibility.`
         );
         return [] as unknown as McpResponseData;
       }
@@ -525,7 +525,7 @@ export class E2EAssertions {
         } as unknown as McpResponseData;
       }
 
-      // Pattern 2 (list-notes) is handled at the top of this block before JSON parsing
+      // Pattern 2 (notes_list) is handled at the top of this block before JSON parsing
 
       // Pattern 3: "✅ Successfully created company: Name (ID: uuid)" or similar
       // NOTE: This returns a MINIMAL, TEST-ONLY synthetic shape.

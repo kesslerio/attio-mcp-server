@@ -282,7 +282,7 @@ function migratePreset(oldPreset: string): string {
 
 ```typescript
 // ✅ All of these now work for deals (Issue #720)
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'deals',
   record_data: {
     values: {
@@ -340,7 +340,7 @@ await client.callTool('create-record', {
 
 ```typescript
 // ❌ Old way - required exact API field names
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'deals',
   record_data: {
     values: {
@@ -351,7 +351,7 @@ await client.callTool('create-record', {
 });
 
 // ✅ New way - use intuitive field names (Issue #720)
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'deals',
   record_data: {
     values: {
@@ -589,7 +589,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 { resource_type: 'tasks', record_id: 'task_123', fields: [] }  // Empty fields array
 ```
 
-**create-record**:
+**records_create**:
 
 ```typescript
 {
@@ -603,7 +603,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 { resource_type: 'people' }                        // Missing record_data
 ```
 
-**update-record**:
+**records_update**:
 
 ```typescript
 {
@@ -618,7 +618,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 { resource_type: 'people', updates: { name: 'John' } }              // Missing record_id
 ```
 
-**delete-record**:
+**records_delete**:
 
 ```typescript
 {

@@ -43,7 +43,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
   RelationshipSearchParams,
   UniversalRecord[]
 > = {
-  name: 'search_records_by_relationship',
+  name: 'records_search_by_relationship',
   ...recordSearchResultContract,
   structuredOutput: normalizeRecordCollection,
   handler: async (
@@ -51,7 +51,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
   ): Promise<UniversalRecord[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'search_records_by_relationship',
+        'records_search_by_relationship',
         params
       );
 
@@ -84,7 +84,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
           throw new Error(
             `Task relationship search (${relationship_type}) is not currently available. ` +
               `This feature requires enhanced API filtering capabilities. ` +
-              `As a workaround, you can use the 'search_records' tool with resource_type='tasks' to find all tasks, ` +
+              `As a workaround, you can use the 'records_search' tool with resource_type='tasks' to find all tasks, ` +
               `then filter the results programmatically.`
           );
 
@@ -102,7 +102,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
           // list_entries is not implemented as a relationship search - this should use list tools instead
           throw new Error(
             `List entries search is not supported via relationship search. ` +
-              `Use 'get-list-details' or list-specific tools to retrieve list entries.`
+              `Use 'lists_get' or list-specific tools to retrieve list entries.`
           );
         }
 
@@ -113,7 +113,7 @@ export const searchByRelationshipConfig: UniversalToolConfig<
       }
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'search_records_by_relationship',
+        'records_search_by_relationship',
         params?.relationship_type ?? '',
         error
       );

@@ -99,16 +99,16 @@ export async function handleBasicSearch(
   if (
     effectiveQuery === undefined &&
     domainFromArgs !== undefined &&
-    toolConfig.name === 'search-records'
+    toolConfig.name === 'records_search'
   ) {
     effectiveQuery = domainFromArgs;
     createScopedLogger(
       'handlers/tools/dispatcher/operations/search',
       'handleBasicSearch'
     ).warn(
-      `[handleBasicSearch] Tool 'search-records' was called with a 'domain' parameter instead of 'query'. ` +
+      `[handleBasicSearch] Tool 'records_search' was called with a 'domain' parameter instead of 'query'. ` +
         `Using the 'domain' value ("${effectiveQuery}") as the search query. ` +
-        `For clarity and future compatibility, please use the 'query' parameter for the 'search-records' tool, ` +
+        `For clarity and future compatibility, please use the 'query' parameter for the 'records_search' tool, ` +
         `or use domain-specific search parameters for explicit domain searches.`
     );
   }

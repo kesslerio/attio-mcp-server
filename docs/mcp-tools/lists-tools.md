@@ -4,7 +4,7 @@ The Attio MCP server provides several tools for working with lists in Attio:
 
 ## Available Tools
 
-### get-record-list-memberships
+### records_get_list_memberships
 
 Find all lists that a specific record (company, person, etc.) belongs to.
 
@@ -21,7 +21,7 @@ Find all lists that a specific record (company, person, etc.) belongs to.
 
 ```json
 {
-  "name": "get-record-list-memberships",
+  "name": "records_get_list_memberships",
   "arguments": {
     "recordId": "company_01abcdef"
   }
@@ -30,7 +30,7 @@ Find all lists that a specific record (company, person, etc.) belongs to.
 
 ```json
 {
-  "name": "get-record-list-memberships",
+  "name": "records_get_list_memberships",
   "arguments": {
     "recordId": "person_02ghijkl",
     "objectType": "people",
@@ -217,7 +217,7 @@ Get detailed information about a specific list.
 }
 ```
 
-### get-list-entries
+### list_entries_list
 
 Get entries for a specific list.
 
@@ -233,7 +233,7 @@ Get entries for a specific list.
 
 ```json
 {
-  "name": "get-list-entries",
+  "name": "list_entries_list",
   "arguments": {
     "id": "list_01abcdef",
     "limit": 5

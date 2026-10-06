@@ -13,9 +13,9 @@
  *
  * **Test Coverage**:
  * - Tests 1-6: Document that workspace-wide note search returns 0 results (API limitation)
- * - Tests 7-10: Verify that list-notes WITH parent filters works correctly
+ * - Tests 7-10: Verify that notes_list WITH parent filters works correctly
  *
- * **What Works**: list-notes tool with parent_object/parent_record_id filtering
+ * **What Works**: notes_list tool with parent_object/parent_record_id filtering
  * **What Doesn't Work**: Global workspace-wide note search without parent filters
  *
  * All tests are expected to PASS - they verify the current API behavior.
@@ -53,7 +53,7 @@ class NoteSearchValidationTest extends MCPTestBase {
     try {
       // Create test company
       const companyData = TestDataFactory.createCompanyData('TCN04');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -69,7 +69,7 @@ class NoteSearchValidationTest extends MCPTestBase {
 
       // Create test deal (for additional parent type testing)
       const dealData = TestDataFactory.createDealData('TCN04');
-      const dealResult = await this.executeToolCall('create_record', {
+      const dealResult = await this.executeToolCall('records_create', {
         resource_type: 'deals',
         record_data: dealData,
       });
@@ -85,7 +85,7 @@ class NoteSearchValidationTest extends MCPTestBase {
 
       // Create the exact note from Issue #888
       if (this.testCompanyId) {
-        const noteResult = await this.executeToolCall('create_note', {
+        const noteResult = await this.executeToolCall('notes_create', {
           resource_type: 'companies',
           record_id: this.testCompanyId,
           title: this.testNoteTitle,
@@ -371,7 +371,7 @@ describe('TC-N04: Note Search Validation - Issue #888 Fix', () => {
         passed = true;
         console.log('Skipping: Test company not available');
       } else {
-        const result = await testCase.executeToolCall('list_notes', {
+        const result = await testCase.executeToolCall('notes_list', {
           resource_type: 'companies',
           record_id: testCase.testCompanyId,
           limit: 10,
@@ -401,7 +401,7 @@ describe('TC-N04: Note Search Validation - Issue #888 Fix', () => {
         console.log('Skipping: Test deal not available');
       } else {
         // Create a note for the deal
-        const noteResult = await testCase.executeToolCall('create_note', {
+        const noteResult = await testCase.executeToolCall('notes_create', {
           resource_type: 'deals',
           record_id: testCase.testDealId,
           title: 'Deal Note for Testing',
@@ -409,7 +409,7 @@ describe('TC-N04: Note Search Validation - Issue #888 Fix', () => {
         });
 
         // Now list notes
-        const result = await testCase.executeToolCall('list_notes', {
+        const result = await testCase.executeToolCall('notes_list', {
           resource_type: 'deals',
           record_id: testCase.testDealId,
           limit: 10,

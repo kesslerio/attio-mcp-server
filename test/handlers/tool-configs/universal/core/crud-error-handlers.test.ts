@@ -314,7 +314,7 @@ describe('crud-error-handlers', () => {
         )
       ).rejects.toMatchObject({
         name: 'attribute_not_found',
-        message: expect.stringContaining('discover_record_attributes'),
+        message: expect.stringContaining('records_discover_attributes'),
       });
     });
   });
@@ -399,7 +399,7 @@ describe('crud-error-handlers', () => {
       ).rejects.toMatchObject({
         name: 'duplicate_error',
         message: expect.stringMatching(
-          /OPTIONS.*update-record.*get_record_details/s
+          /OPTIONS.*records_update.*records_get_details/s
         ),
       });
     });

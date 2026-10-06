@@ -28,7 +28,7 @@ export const LISTS_FIELD_MAPPING: FieldMapping = {
     'api_slug',
     'workspace_id',
     // Access controls for lists are wired through the dedicated
-    // create-list / update-list-configuration tools; the universal
+    // lists_create / lists_update_configuration tools; the universal
     // resource_type "lists" entry point is gated in shared-handlers.ts.
     // These entries stay current so field suggestions and mapping
     // validation match the dedicated tools if the gate is lifted.

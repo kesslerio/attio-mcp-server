@@ -61,7 +61,7 @@ describe('UniversalToolConfig Interface', () => {
       }
 
       const searchConfig: UniversalToolConfig<SearchParams, AttioRecord[]> = {
-        name: 'search-records',
+        name: 'records_search',
         handler: async (params: SearchParams): Promise<AttioRecord[]> => {
           return [
             {

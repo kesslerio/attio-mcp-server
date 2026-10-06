@@ -4,7 +4,7 @@
 
 Attio provides a powerful REST API that allows developers to build applications that read and write information to and from Attio workspaces. The API exchanges JSON over HTTPS and provides comprehensive access to Attio's core functionality.
 
-> **🚀 Universal Tools Available**: The MCP server provides Universal Tools that consolidate 40+ resource-specific operations into 26 discoverable tools (using MCP-compliant `snake_case`, verb-first naming where applicable). List-specific operations and workspace member management are available through 15 additional specialized tools (12 list tools + 3 workspace tools). This provides better performance, consistent APIs, and simplified integration.
+> **🚀 Universal Tools Available**: The MCP server provides Universal Tools that consolidate 40+ resource-specific operations into one resource-first catalog (`records_search`, `records_create`, and the other names in `src/constants/tool-names.ts`). List and workspace-member tools use the same vocabulary. `search`, `fetch`, and `aaa-health-check` are unchanged.
 
 ## Understanding the Model Context Protocol (MCP)
 
@@ -34,38 +34,38 @@ Claude can interact with Attio using **41 fully implemented tools** provided by 
 
 #### ✅ Core Universal Tools (13 tools)
 
-- **`search_records`** - Universal search across companies, people, records, and tasks
-- **`get_record_details`** - Retrieve detailed information for any record type
-- **`create_company`** - Create companies without selecting `resource_type`
-- **`update_company`** - Update companies without selecting `resource_type`
-- **`create_deal`** - Create deals without selecting `resource_type`
-- **`update_deal`** - Update deals without selecting `resource_type`
-- **`create_record`** - Create new records across all resource types
-- **`update_record`** - Update existing records with validation
-- **`delete_record`** - Delete records across all resource types
-- **`get_record_attributes`** - Get attribute definitions for resource types
-- **`discover_record_attributes`** - Discover available attributes with examples
-- **`get_record_info`** - Get specific info types (basic, contact, business, social)
-- **`get_record_interactions`** - Get interaction metadata for people and companies
+- **`records_search`** - Universal search across companies, people, records, and tasks
+- **`records_get_details`** - Retrieve detailed information for any record type
+- **`companies_create`** - Create companies without selecting `resource_type`
+- **`companies_update`** - Update companies without selecting `resource_type`
+- **`deals_create`** - Create deals without selecting `resource_type`
+- **`deals_update`** - Update deals without selecting `resource_type`
+- **`records_create`** - Create new records across all resource types
+- **`records_update`** - Update existing records with validation
+- **`records_delete`** - Delete records across all resource types
+- **`records_get_attributes`** - Get attribute definitions for resource types
+- **`records_discover_attributes`** - Discover available attributes with examples
+- **`records_get_info`** - Get specific info types (basic, contact, business, social)
+- **`records_get_interactions`** - Get interaction metadata for people and companies
 
 #### ✅ Advanced Universal Tools (6 tools)
 
-- **`search_records_advanced`** - Complex filtering with multiple conditions
-- **`search_records_by_relationship`** - Cross-resource relationship searches
-- **`search_records_by_content`** - Content-based searches (notes, activity)
-- **`search_records_by_timeframe`** - Time-based searches with date ranges
-- **`batch_records`** - Bulk operations for multiple records
-- **`batch_search_records`** - Bulk search operations
+- **`records_search_advanced`** - Complex filtering with multiple conditions
+- **`records_search_by_relationship`** - Cross-resource relationship searches
+- **`records_search_by_content`** - Content-based searches (notes, activity)
+- **`records_search_by_timeframe`** - Time-based searches with date ranges
+- **`records_batch`** - Bulk operations for multiple records
+- **`records_batch_search`** - Bulk search operations
 
 #### ✅ Note Tools (2 tools)
 
-- **`create_note`** - Create notes attached to any record type
-- **`list_notes`** - List notes for specific records
+- **`notes_create`** - Create notes attached to any record type
+- **`notes_list`** - List notes for specific records
 
 #### ✅ Utility Tools (2 tools)
 
-- **`get_record_attribute_options`** - Get valid options for select/status fields
-- **`smithery_debug_config`** - Debug tool for configuration validation
+- **`records_get_attribute_options`** - Get valid options for select/status fields
+- **`diagnostics_get`** - Debug tool for configuration validation
 
 #### ✅ Special Tools (3 tools)
 
@@ -77,11 +77,11 @@ Claude can interact with Attio using **41 fully implemented tools** provided by 
 
 List-specific tools are always exposed alongside universal tools (Issue #470 - "Lists are relationship containers"):
 
-- `get-lists`, `get-list-details`, `get-list-entries`
-- `filter-list-entries`, `advanced-filter-list-entries`
-- `add-record-to-list`, `remove-record-from-list`, `update-list-entry`, `manage-list-entry`
-- `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
-- `get-record-list-memberships`
+- `lists_list`, `lists_get`, `list_entries_list`
+- `list_entries_filter`, `list_entries_filter_advanced`
+- `list_entries_add`, `list_entries_remove`, `list_entries_update`, `list_entries_manage`
+- `list_entries_filter_by_parent`, `list_entries_filter_by_parent_id`
+- `records_get_list_memberships`
 
 These tools provide specialized list management capabilities beyond what universal tools offer. See [Lists API documentation](./lists.md) for details.
 
@@ -89,13 +89,13 @@ These tools provide specialized list management capabilities beyond what univers
 
 Workspace member tools are always exposed for user discovery (Issue #684):
 
-- `list-workspace-members` - Get all workspace members
-- `search-workspace-members` - Search workspace members by name or email
-- `get-workspace-member` - Get specific workspace member details
+- `workspace_members_list` - Get all workspace members
+- `workspace_members_search` - Search workspace members by name or email
+- `workspace_members_get` - Get specific workspace member details
 
 #### ⚠️ Legacy Tools (Deprecated)
 
-Old tool names (e.g., `records_search`, `create-record`) are deprecated but work via backward-compatible aliases until v2.0.0 (Q1 2026). Migration to new MCP-compliant names is recommended.
+Prior default-catalog names (for example `search_records` and `get-lists`) still call the canonical tool through v2.x. They are omitted from `tools/list`, they do not change arguments, and `MCP_DISABLE_TOOL_ALIASES=true` makes them fail. Historical names such as `create-record` and `search-records` do not resolve. See [MIGRATION-GUIDE.md](../MIGRATION-GUIDE.md).
 
 **Current Tools**: All 41 tools (26 universal/OpenAI + 12 list + 3 workspace member) are fully implemented and tested.
 

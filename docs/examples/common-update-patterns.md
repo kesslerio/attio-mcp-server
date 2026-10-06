@@ -462,7 +462,7 @@ Always include the country code:
 ## Tips for Success
 
 1. **Always use UUID format** for record IDs (e.g., `a1b2c3d4-e5f6-7890-abcd-ef1234567890`)
-2. **Check field names** using the `discover-attributes` tool before updating
+2. **Check field names** using the `records_discover_attributes` tool before updating
 3. **Use the correct key names** - many fields have specific naming conventions
 4. **Include country codes** for phone numbers
 5. **Use ISO date format** (YYYY-MM-DD) for date fields

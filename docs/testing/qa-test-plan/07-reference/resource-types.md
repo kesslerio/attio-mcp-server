@@ -246,7 +246,7 @@
 
 **Usage Notes:**
 - Field structure varies based on configuration
-- Use `get-attributes` to discover available fields
+- Use `records_get_attributes` to discover available fields
 - Validation rules depend on custom configuration
 
 ## Field Types & Formats

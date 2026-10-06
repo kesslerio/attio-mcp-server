@@ -34,7 +34,7 @@ function assertUpsertShape(params: UniversalUpsertParams): void {
 
   if (!hasMatch) {
     throw new Error(
-      'upsert_record requires match: { attribute, value } with non-empty strings (e.g. { attribute: "email", value: "jane@acme.com" })'
+      'records_upsert requires match: { attribute, value } with non-empty strings (e.g. { attribute: "email", value: "jane@acme.com" })'
     );
   }
 
@@ -46,7 +46,7 @@ function assertUpsertShape(params: UniversalUpsertParams): void {
     Object.keys(params.values).length === 0
   ) {
     throw new Error(
-      'upsert_record requires values: a non-empty object of attributes to set on create or update'
+      'records_upsert requires values: a non-empty object of attributes to set on create or update'
     );
   }
 
@@ -82,19 +82,19 @@ export const upsertRecordConfig: UniversalToolConfig<
   UniversalUpsertParams,
   UpsertResult
 > = {
-  name: 'upsert_record',
+  name: 'records_upsert',
   ...upsertResultContract,
   handler: async (params: UniversalUpsertParams): Promise<UpsertResult> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'upsert_record',
+        'records_upsert',
         params
       ) as UniversalUpsertParams;
       assertUpsertShape(sanitizedParams);
       return await UniversalUpsertService.upsertRecord(sanitizedParams);
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'upsert_record',
+        'records_upsert',
         params?.resource_type ?? 'unknown',
         error
       );
@@ -106,7 +106,7 @@ export const upsertRecordConfig: UniversalToolConfig<
     } catch (error: unknown) {
       const fallback = createErrorResult(
         error instanceof Error ? error : new Error(String(error)),
-        'upsert_record#format',
+        'records_upsert#format',
         'FORMAT'
       ) as { content?: Array<{ text?: string }> };
       return fallback.content?.[0]?.text || 'Error formatting upsert result';
@@ -117,7 +117,7 @@ export const upsertRecordConfig: UniversalToolConfig<
 };
 
 export const upsertRecordDefinition = {
-  name: 'upsert_record',
+  name: 'records_upsert',
   description: formatToolDescription({
     capability:
       'Idempotently create-or-update one Attio record by exact-matching a unique attribute (email for people, domains for companies, or any unique slug), preventing duplicate records during enrichment and sync',
@@ -127,7 +127,7 @@ export const upsertRecordDefinition = {
       'Requires resource_type, match { attribute, value }, and values; record_id optionally targets an existing record; multiple matches abort without writing; dry_run previews without writing',
     requiresApproval: true,
     recoveryHint:
-      'On an ambiguous-match error, inspect the reported record ids with get_record_details and update the intended one with update_record; call discover_record_attributes if the match attribute slug is unknown.',
+      'On an ambiguous-match error, inspect the reported record ids with records_get_details and update the intended one with records_update; call records_discover_attributes if the match attribute slug is unknown.',
   }),
   inputSchema: upsertRecordSchema,
   annotations: {

@@ -1,6 +1,6 @@
 /**
  * List Attio workspace members (email, workspace_member_id, workspace_id)
- * Usage: ATTIO_API_KEY=... node --import tsx scripts/debug/list-workspace-members.ts
+ * Usage: ATTIO_API_KEY=... node --import tsx scripts/debug/workspace_members_list.ts
  */
 import axios from 'axios';
 

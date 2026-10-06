@@ -60,7 +60,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
 
       try {
         const companyData = TestDataFactory.createCompanyData('TCAO03_company');
-        const companyResult = await testCase.executeToolCall('create_record', {
+        const companyResult = await testCase.executeToolCall('records_create', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -71,7 +71,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
         testCase.trackRecord('companies', companyId);
 
         const personData = TestDataFactory.createPersonData('TCAO03_person');
-        const personResult = await testCase.executeToolCall('create_record', {
+        const personResult = await testCase.executeToolCall('records_create', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -84,7 +84,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
         const dealData = TestDataFactory.createDealData('TCAO03_deal');
         dealData.associated_company = companyId;
         dealData.associated_people = [personId];
-        const dealResult = await testCase.executeToolCall('create_record', {
+        const dealResult = await testCase.executeToolCall('records_create', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -96,7 +96,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
         // We verify the API calls succeed without error rather than requiring specific results.
 
         const companyDeals = await testCase.executeToolCall(
-          'search-by-relationship',
+          'records_search_by_relationship',
           {
             relationship_type: 'company_to_deals',
             source_id: companyId,
@@ -111,7 +111,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
         expect(companyDealsSuccess).toBe(true);
 
         const companyPeople = await testCase.executeToolCall(
-          'search-by-relationship',
+          'records_search_by_relationship',
           {
             relationship_type: 'company_to_people',
             source_id: companyId,
@@ -126,7 +126,7 @@ describe('TC-AO03: Cross-Object Relationship Operations', () => {
         expect(companyPeopleSuccess).toBe(true);
 
         const personDeals = await testCase.executeToolCall(
-          'search-by-relationship',
+          'records_search_by_relationship',
           {
             relationship_type: 'person_to_deals',
             source_id: personId,

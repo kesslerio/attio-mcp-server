@@ -43,16 +43,16 @@ describe.skipIf(!hasApiKey)('Live smoke: list configuration tools', () => {
     invalidateObjectCache();
   });
 
-  it('create-list: basic creation', async () => {
+  it('lists_create: basic creation', async () => {
     const result = await executeToolRequest(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Smoke Test List',
         parent_object: 'companies',
         description: 'Created by smoke test - safe to delete',
       })
     );
     const text = getText(result);
-    console.log('create-list response:', text.substring(0, 500));
+    console.log('lists_create response:', text.substring(0, 500));
 
     expect(isError(result)).toBe(false);
     const match = text.match(/"list_id"\s*:\s*"([^"]+)"/);
@@ -61,9 +61,9 @@ describe.skipIf(!hasApiKey)('Live smoke: list configuration tools', () => {
     expect(text).toContain('companies');
   });
 
-  it('create-list: template dry-run', async () => {
+  it('lists_create: template dry-run', async () => {
     const result = await executeToolRequest(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Smoke Pipeline',
         parent_object: 'companies',
         template: 'sales_pipeline',
@@ -78,9 +78,9 @@ describe.skipIf(!hasApiKey)('Live smoke: list configuration tools', () => {
     expect(text).toContain('stages');
   });
 
-  it('create-list: invalid parent_object is rejected', async () => {
+  it('lists_create: invalid parent_object is rejected', async () => {
     const result = await executeToolRequest(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Bad List',
         parent_object: 'nonexistent_object_xyz',
       })
@@ -94,10 +94,10 @@ describe.skipIf(!hasApiKey)('Live smoke: list configuration tools', () => {
     );
   });
 
-  it('update-list-configuration: rename', async () => {
+  it('lists_update_configuration: rename', async () => {
     if (!createdListId) return;
     const result = await executeToolRequest(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: createdListId,
         attributes: { name: 'Smoke Test List (Updated)' },
       })
@@ -109,10 +109,10 @@ describe.skipIf(!hasApiKey)('Live smoke: list configuration tools', () => {
     expect(text).toContain('list_id');
   });
 
-  it('update-list-configuration: immutable field rejection', async () => {
+  it('lists_update_configuration: immutable field rejection', async () => {
     if (!createdListId) return;
     const result = await executeToolRequest(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: createdListId,
         attributes: { parent_object: 'people' },
       })
@@ -123,10 +123,10 @@ describe.skipIf(!hasApiKey)('Live smoke: list configuration tools', () => {
     expect(isError(result) || text.includes('immutable')).toBe(true);
   });
 
-  it('update-list-configuration: dry-run', async () => {
+  it('lists_update_configuration: dry-run', async () => {
     if (!createdListId) return;
     const result = await executeToolRequest(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: createdListId,
         attributes: { name: 'Dry Run Preview' },
         dry_run: true,
@@ -142,7 +142,7 @@ describe.skipIf(!hasApiKey)('Live smoke: list configuration tools', () => {
   it('cleanup: delete test list', async () => {
     if (!createdListId) return;
     const result = await executeToolRequest(
-      makeRequest('delete-record', {
+      makeRequest('records_delete', {
         resource_type: 'lists',
         record_id: createdListId,
       })

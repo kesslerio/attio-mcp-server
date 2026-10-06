@@ -40,7 +40,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
     // Clean up created test deals
     for (const dealId of createdDealIds) {
       try {
-        await client.callTool('delete-record', {
+        await client.callTool('records_delete', {
           resource_type: 'deals',
           record_id: dealId,
         });
@@ -56,7 +56,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
 
   describe('Edge Case Field Handling', () => {
     it('should handle empty string field names gracefully', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -79,7 +79,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
     });
 
     it('should validate case sensitivity in field mappings', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -103,7 +103,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
     });
 
     it('should handle null and undefined field values', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -123,7 +123,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
     });
 
     it('should handle whitespace-only field names', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -146,7 +146,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
 
     it('should handle extremely long field names', async () => {
       const longFieldName = 'a'.repeat(1000); // Very long field name
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -165,7 +165,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
     });
 
     it('should handle special characters in field names', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -187,7 +187,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
 
   describe('Value Type Edge Cases', () => {
     it('should handle numeric values as strings', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -205,7 +205,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
     });
 
     it('should handle boolean values in unexpected contexts', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -224,7 +224,7 @@ describe('Deals Field Mapping Edge Cases - Issue #720', () => {
     });
 
     it('should handle array values in string contexts', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {

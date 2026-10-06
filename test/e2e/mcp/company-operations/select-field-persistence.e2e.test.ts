@@ -36,7 +36,7 @@ describe('Select Field Persistence E2E (Issue #1045)', () => {
 
     // Create a test company for the persistence test
     const createResult = await client.assertToolCall(
-      'create_record',
+      'records_create',
       {
         resource_type: 'companies',
         record_data: {
@@ -62,7 +62,7 @@ describe('Select Field Persistence E2E (Issue #1045)', () => {
     // Update the company's b2b_segment field with a string value
     // The select-transformer should convert this to ["Healthcare / Hospital"] format
     const updateResult = await client.assertToolCall(
-      'update_record',
+      'records_update',
       {
         resource_type: 'companies',
         record_id: testCompanyId,
@@ -85,7 +85,7 @@ describe('Select Field Persistence E2E (Issue #1045)', () => {
 
     // Retrieve the company details to verify persistence
     const detailsResult = await client.assertToolCall(
-      'get_record_details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: testCompanyId,
@@ -110,7 +110,7 @@ describe('Select Field Persistence E2E (Issue #1045)', () => {
   it('should handle case-insensitive select values', async () => {
     // Test that the transformer's case-insensitive matching works with real API
     const updateResult = await client.assertToolCall(
-      'update_record',
+      'records_update',
       {
         resource_type: 'companies',
         record_id: testCompanyId,
@@ -131,7 +131,7 @@ describe('Select Field Persistence E2E (Issue #1045)', () => {
 
     // Verify the value persisted with proper title case
     const detailsResult = await client.assertToolCall(
-      'get_record_details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: testCompanyId,
@@ -150,7 +150,7 @@ describe('Select Field Persistence E2E (Issue #1045)', () => {
     // Clean up: delete the test company
     if (testCompanyId) {
       await client.assertToolCall(
-        'delete_record',
+        'records_delete',
         {
           resource_type: 'companies',
           record_id: testCompanyId,

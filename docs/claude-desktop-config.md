@@ -68,10 +68,10 @@ The attio-mcp-server automatically exposes all available tools without requiring
 - `create-person-note`: Add a new note to a person
 
 ### List Tools
-- `get-lists`: Get lists from Attio
-- `get-list-entries`: Get entries from a specific list
-- `add-record-to-list`: Add a record to a list
-- `remove-record-from-list`: Remove a record from a list
+- `lists_list`: Get lists from Attio
+- `list_entries_list`: Get entries from a specific list
+- `list_entries_add`: Add a record to a list
+- `list_entries_remove`: Remove a record from a list
 
 ## Troubleshooting
 

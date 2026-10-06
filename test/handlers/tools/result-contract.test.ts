@@ -334,7 +334,7 @@ describe('result contract serialization', () => {
       ).toThrow(ResultEncodingError);
       const result = finalizeLegacyToolResult(
         { content: [], isError: false },
-        'create_record',
+        'records_create',
         false
       );
       expect(result).toMatchObject({
@@ -488,7 +488,7 @@ describe('execution error contracts', () => {
         );
         const result = finalizeLegacyToolResult(
           projected,
-          'manage-list-entry',
+          'list_entries_manage',
           false
         );
         expect(result).toMatchObject({

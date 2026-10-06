@@ -42,13 +42,13 @@ function personRecord(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('upsert_record tool surface', () => {
+describe('records_upsert tool surface', () => {
   afterEach(() => {
     vi.resetAllMocks();
   });
 
   it('registers with write annotations and a schema without top-level combinators', () => {
-    expect(upsertRecordDefinition.name).toBe('upsert_record');
+    expect(upsertRecordDefinition.name).toBe('records_upsert');
     expect(upsertRecordDefinition.annotations).toEqual({
       readOnlyHint: false,
       destructiveHint: false,

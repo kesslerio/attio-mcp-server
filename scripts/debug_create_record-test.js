@@ -1,4 +1,4 @@
-// Developer aid script to quickly exercise create-record in E2E helpers
+// Developer aid script to quickly exercise records_create in E2E helpers
 // Usage: node scripts/debug_create_record-test.js
 import { callUniversalTool } from '../test/e2e/utils/enhanced-tool-caller.js';
 import { testDataGenerator } from '../test/e2e/fixtures/index.js';
@@ -7,7 +7,7 @@ async function debugCreateRecord() {
   const companyData = testDataGenerator.companies.basicCompany();
   console.log('Creating company with data:', JSON.stringify(companyData, null, 2));
 
-  const response = await callUniversalTool('create-record', {
+  const response = await callUniversalTool('records_create', {
     resource_type: 'companies',
     record_data: companyData,
   });

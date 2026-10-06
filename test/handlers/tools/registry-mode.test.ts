@@ -26,18 +26,18 @@ describe('findToolConfig in search-only mode', () => {
     const advertised = getToolsListPayload().tools.map((tool) => tool.name);
 
     for (const name of [
-      'get-lists',
-      'get-list-details',
-      'get-list-entries',
-      'filter-list-entries',
-      'get-record-list-memberships',
-      'add-record-to-list',
-      'manage-list-entry',
-      'create-list',
-      'update-list-configuration',
-      'list-workspace-members',
-      'search-workspace-members',
-      'get-workspace-member',
+      'lists_list',
+      'lists_get',
+      'list_entries_list',
+      'list_entries_filter',
+      'records_get_list_memberships',
+      'list_entries_add',
+      'list_entries_manage',
+      'lists_create',
+      'lists_update_configuration',
+      'workspace_members_list',
+      'workspace_members_search',
+      'workspace_members_get',
     ]) {
       expect(advertised, name).not.toContain(name);
       expect(findToolConfig(name), name).toBeUndefined();
@@ -49,13 +49,21 @@ describe('findToolConfig in search-only mode', () => {
 
     // Aliases resolve to canonical names before the mode filter runs, so an
     // alias can never widen search-only mode (AE5).
-    for (const name of ['get-lists', 'create-list', 'list-workspace-members']) {
+    for (const name of [
+      'lists_list',
+      'lists_create',
+      'workspace_members_list',
+    ]) {
       expect(findToolConfig(name), name).toBeUndefined();
     }
-    // A supported migration alias for a write tool stays rejected too.
-    expect(resolveToolName('create-record').name).toBe('create_record');
+    // A supported migration alias for a write resolves, then the allowlist
+    // rejects the canonical write. The removed kebab name does not resolve.
+    expect(resolveToolName('create_record').name).toBe('records_create');
+    expect(findToolConfig('create_record')).toBeUndefined();
+    expect(resolveToolName('create-record').name).toBe('create-record');
     expect(findToolConfig('create-record')).toBeUndefined();
     expect(findToolConfig('search_records')).toBeUndefined();
+    expect(findToolConfig('records_search')).toBeUndefined();
     // The compatibility pair remains callable in search-only mode.
     expect(findToolConfig('search')).toBeDefined();
     expect(findToolConfig('fetch')).toBeDefined();
@@ -73,8 +81,8 @@ describe('findToolConfig in search-only mode', () => {
       // Static diagnostics are part of the full catalogue, not the search
       // allowlist, so they appear as soon as mode stops narrowing.
       expect(
-        advertised.includes('smithery_debug_config'),
-        `smithery_debug_config in ${mode}`
+        advertised.includes('diagnostics_get'),
+        `diagnostics_get in ${mode}`
       ).toBe(mode !== 'search');
     }
   });

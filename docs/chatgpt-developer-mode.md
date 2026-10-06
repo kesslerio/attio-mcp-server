@@ -63,7 +63,7 @@ The server now publishes MCP safety annotations (`readOnlyHint`, `destructiveHin
 
 5. **Verification**:
    - ChatGPT will automatically auto-approve tools with `readOnlyHint: true` (e.g. `records.search`, `records.get_details`)
-   - Prompt for approval on write tools (`create-record`, `update-record`) and destructive tools (`delete-record`)
+   - Prompt for approval on write tools (`records_create`, `records_update`) and destructive tools (`records_delete`)
 
 ### Approval messaging tips
 
@@ -126,5 +126,5 @@ failure handling. Existing connector parsers can migrate at their own pace using
 ## 6. Next Steps
 
 - Monitor approval logs to verify the safety flow.
-- Add targeted UI messaging in ChatGPT descriptions for high-risk tools (`delete-record`, `batch-operations`).
+- Add targeted UI messaging in ChatGPT descriptions for high-risk tools (`records_delete`, `records_batch`).
 - Expand the test suite with real Developer Mode integration tests once mocked approval APIs become available.

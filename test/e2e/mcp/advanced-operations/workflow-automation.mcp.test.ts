@@ -61,7 +61,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
 
       try {
         const companyData = TestDataFactory.createCompanyData('TCAO02_company');
-        const companyResult = await testCase.executeToolCall('create_record', {
+        const companyResult = await testCase.executeToolCall('records_create', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -73,7 +73,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
 
         const personData = TestDataFactory.createPersonData('TCAO02_person');
         personData.company = companyId;
-        const personResult = await testCase.executeToolCall('create_record', {
+        const personResult = await testCase.executeToolCall('records_create', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -89,7 +89,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
           { target_object: 'people', target_record_id: personId },
         ];
 
-        const taskResult = await testCase.executeToolCall('create_record', {
+        const taskResult = await testCase.executeToolCall('records_create', {
           resource_type: 'tasks',
           record_data: taskData,
         });
@@ -99,7 +99,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
         // Note: Relationship searches may return 0 results if indexing is delayed
         // or the relationship type isn't supported. We verify calls succeed without error.
         const relationshipResult = await testCase.executeToolCall(
-          'search-by-relationship',
+          'records_search_by_relationship',
           {
             relationship_type: 'company_to_people',
             source_id: companyId,
@@ -116,7 +116,7 @@ describe('TC-AO02: Workflow Automation Coverage', () => {
           relationshipText.includes('relationship');
         expect(relationshipSuccess).toBe(true);
 
-        const taskSearch = await testCase.executeToolCall('search-records', {
+        const taskSearch = await testCase.executeToolCall('records_search', {
           resource_type: 'tasks',
           query: 'TCAO02_task',
           limit: 1,

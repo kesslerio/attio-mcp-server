@@ -57,7 +57,7 @@ describe.skipIf(
 
     it('should validate basic API connectivity', async () => {
       // Minimal API connectivity test
-      const response = await callUniversalTool('search-records', {
+      const response = await callUniversalTool('records_search', {
         resource_type: 'companies',
         query: 'smoke-test',
         limit: 1,
@@ -205,13 +205,13 @@ describe.skipIf(
 
     it('should validate minimal tool integration', async () => {
       // Quick validation that tools can be called without errors
-      const tools = ['search-records', 'get-record-details'];
+      const tools = ['records_search', 'records_get_details'];
 
       for (const tool of tools) {
         try {
           const response = await callUniversalTool(tool as any, {
             resource_type: 'companies',
-            ...(tool === 'search-records'
+            ...(tool === 'records_search'
               ? { query: 'minimal-test', limit: 1 }
               : { record_id: 'non-existent-test-id' }),
           });

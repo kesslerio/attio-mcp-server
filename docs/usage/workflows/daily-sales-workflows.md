@@ -10,9 +10,9 @@ _Transform your daily sales activities into a systematic, AI-driven process that
 
 ```
 Good morning! Create my dashboard using these queries:
-1. Use search-by-timeframe for deals updated yesterday
+1. Use records_search_by_timeframe for deals updated yesterday
 2. Use records.search with resource_type="companies" for prospects added yesterday
-3. Use advanced-search to find today's high-priority tasks
+3. Use records_search_advanced to find today's high-priority tasks
 4. Limit each section to top 10 items to avoid truncation
 
 Show: deal name, stage, value, next action, and urgency.

@@ -120,7 +120,7 @@ async function handleListEntriesCursorPage(input: {
 // Lists tool configurations
 export const listsToolConfigs = {
   getLists: {
-    name: 'get-lists',
+    name: 'lists_list',
     ...listCollectionResultContract,
     structuredOutput: normalizeListCollection,
     handler: handleGetListsCursorAware,
@@ -129,7 +129,7 @@ export const listsToolConfigs = {
     },
   } as GetListsToolConfig,
   getRecordListMemberships: {
-    name: 'get-record-list-memberships',
+    name: 'records_get_list_memberships',
     ...listMembershipCollectionResultContract,
     structuredOutput: normalizeListMemberships,
     handler: getRecordListMemberships,
@@ -138,7 +138,7 @@ export const listsToolConfigs = {
     },
   } as ToolConfig,
   getListDetails: {
-    name: 'get-list-details',
+    name: 'lists_get',
     ...listDetailsResultContract,
     structuredOutput: normalizeListDetails,
     handler: async (listId: string) => {
@@ -151,7 +151,7 @@ export const listsToolConfigs = {
     },
   } as ToolConfig,
   getListEntries: {
-    name: 'get-list-entries',
+    name: 'list_entries_list',
     ...listEntryCollectionResultContract,
     structuredOutput: normalizeListEntryCollection,
     handler: async (
@@ -181,7 +181,7 @@ export const listsToolConfigs = {
       JSON.stringify(Array.isArray(results) ? results : results.data),
   } as GetListEntriesToolConfig,
   filterListEntries: {
-    name: 'filter-list-entries',
+    name: 'list_entries_filter',
     ...listEntryCollectionResultContract,
     structuredOutput: normalizeListEntryCollection,
     handler: filterListEntries,
@@ -192,7 +192,7 @@ export const listsToolConfigs = {
   } as ToolConfig,
 
   advancedFilterListEntries: {
-    name: 'advanced-filter-list-entries',
+    name: 'list_entries_filter_advanced',
     ...listEntryCollectionResultContract,
     structuredOutput: normalizeListEntryCollection,
     handler: advancedFilterListEntries,
@@ -202,7 +202,7 @@ export const listsToolConfigs = {
     },
   } as ToolConfig,
   addRecordToList: {
-    name: 'add-record-to-list',
+    name: 'list_entries_add',
     ...listEntryResultContract,
     structuredOutput: normalizeListEntry,
     handler: async (
@@ -226,7 +226,7 @@ export const listsToolConfigs = {
     formatResult: (result: AttioListEntry) => JSON.stringify(result),
   } as ToolConfig,
   removeRecordFromList: {
-    name: 'remove-record-from-list',
+    name: 'list_entries_remove',
     ...listEntryDeleteResultContract,
     structuredOutput: normalizeListEntryDelete,
     handler: async (listId: string, entryId: string) => {
@@ -244,7 +244,7 @@ export const listsToolConfigs = {
     idParams: ['listId', 'entryId'],
   } as ListActionToolConfig<boolean>,
   updateListEntry: {
-    name: 'update-list-entry',
+    name: 'list_entries_update',
     ...listEntryResultContract,
     structuredOutput: normalizeListEntry,
     handler: updateListEntry,
@@ -255,7 +255,7 @@ export const listsToolConfigs = {
   } as ToolConfig,
 
   manageListEntry: {
-    name: 'manage-list-entry',
+    name: 'list_entries_manage',
     type: 'manageListEntry' as const,
     ...listEntryMutationResultContract,
     structuredOutput: normalizeListEntryMutation,
@@ -272,7 +272,7 @@ export const listsToolConfigs = {
   } as ListActionToolConfig,
 
   filterListEntriesByParent: {
-    name: 'filter-list-entries-by-parent',
+    name: 'list_entries_filter_by_parent',
     ...listEntryCollectionResultContract,
     structuredOutput: normalizeListEntryCollection,
     handler: filterListEntriesByParent,
@@ -283,7 +283,7 @@ export const listsToolConfigs = {
   } as ToolConfig,
 
   filterListEntriesByParentId: {
-    name: 'filter-list-entries-by-parent-id',
+    name: 'list_entries_filter_by_parent_id',
     ...listEntryCollectionResultContract,
     structuredOutput: normalizeListEntryCollection,
     handler: filterListEntriesByParentId,
@@ -295,7 +295,7 @@ export const listsToolConfigs = {
 
   // Dedicated list configuration tools (Issue #1195)
   createList: {
-    name: 'create-list',
+    name: 'lists_create',
     type: 'createList' as const,
     ...listConfigResultContract,
     structuredOutput: normalizeListConfig,
@@ -309,7 +309,7 @@ export const listsToolConfigs = {
   } as CreateListToolConfig,
 
   updateListConfiguration: {
-    name: 'update-list-configuration',
+    name: 'lists_update_configuration',
     type: 'updateListConfiguration' as const,
     ...listConfigResultContract,
     structuredOutput: normalizeListConfig,
@@ -326,13 +326,13 @@ export const listsToolConfigs = {
 // Lists tool definitions
 export const listsToolDefinitions = [
   {
-    name: 'get-lists',
+    name: 'lists_list',
     description: formatToolDescription({
       capability:
         'Retrieve all CRM lists (sales pipelines, lead stages, customer segments).',
       boundaries: 'create or modify lists, only reads existing lists.',
       constraints: 'Returns all lists visible to the authenticated workspace.',
-      recoveryHint: 'Use get-list-details to inspect individual list schemas.',
+      recoveryHint: 'Use lists_get to inspect individual list schemas.',
     }),
     inputSchema: {
       type: 'object',
@@ -341,7 +341,7 @@ export const listsToolDefinitions = [
     },
   },
   {
-    name: 'get-record-list-memberships',
+    name: 'records_get_list_memberships',
     description: formatToolDescription({
       capability:
         'Find all lists containing a specific company or person record.',
@@ -349,7 +349,7 @@ export const listsToolDefinitions = [
       constraints:
         'Requires recordId; processes 5 lists in parallel by default (max 20).',
       recoveryHint:
-        'If record not found, verify recordId with search_records first.',
+        'If record not found, verify recordId with records_search first.',
     }),
     inputSchema: {
       type: 'object',
@@ -384,14 +384,14 @@ export const listsToolDefinitions = [
     },
   },
   {
-    name: 'get-list-details',
+    name: 'lists_get',
     description: formatToolDescription({
       capability:
         'Retrieve schema and configuration for a specific list (stages, fields, attributes).',
       boundaries: 'modify list structure or retrieve list entries.',
       constraints: 'Requires valid list UUID or slug; accepts both formats.',
       recoveryHint:
-        'Use get-lists to discover available list IDs and slugs first.',
+        'Use lists_list to discover available list IDs and slugs first.',
     }),
     inputSchema: {
       type: 'object',
@@ -407,13 +407,13 @@ export const listsToolDefinitions = [
     },
   },
   {
-    name: 'get-list-entries',
+    name: 'list_entries_list',
     description: formatToolDescription({
       capability: 'Retrieve records in a list with pagination.',
       boundaries: 'filter entries or modify list memberships.',
       constraints:
         'Requires list UUID, not slug; default limit 20, API page caps apply. Continue the same query with next_cursor; never combine cursor with offset.',
-      recoveryHint: 'Use filter-list-entries for filtering.',
+      recoveryHint: 'Use list_entries_filter for filtering.',
     }),
     inputSchema: {
       type: 'object',
@@ -445,7 +445,7 @@ export const listsToolDefinitions = [
     },
   },
   {
-    name: 'filter-list-entries',
+    name: 'list_entries_filter',
     description: `Filter list entries with flexible parameter modes. Auto-detects mode based on parameters provided.
 
 **Mode 1 - Simple Filtering (Single Attribute):**
@@ -507,9 +507,9 @@ You must provide parameters for exactly ONE mode per call.
 All modes support optional 'limit' and 'offset' parameters for pagination.
 
 **Migration Guide:**
-- Replaces: advanced-filter-list-entries → Use Mode 2 (filters parameter)
-- Replaces: filter-list-entries-by-parent → Use Mode 3 (parentObjectType + parentAttributeSlug)
-- Replaces: filter-list-entries-by-parent-id → Use Mode 4 (parentRecordId)`,
+- Replaces: list_entries_filter_advanced → Use Mode 2 (filters parameter)
+- Replaces: list_entries_filter_by_parent → Use Mode 3 (parentObjectType + parentAttributeSlug)
+- Replaces: list_entries_filter_by_parent_id → Use Mode 4 (parentRecordId)`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -659,10 +659,10 @@ All modes support optional 'limit' and 'offset' parameters for pagination.
     },
   },
   {
-    name: 'advanced-filter-list-entries',
-    description: `[DEPRECATED] This tool has been consolidated into 'filter-list-entries'.
+    name: 'list_entries_filter_advanced',
+    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_filter'.
 
-Please use 'filter-list-entries' with Mode 2 (Advanced) parameters instead:
+Please use 'list_entries_filter' with Mode 2 (Advanced) parameters instead:
 - Pass a 'filters' object with 'filters' array and 'matchAny' flag
 - All functionality remains identical
 
@@ -674,7 +674,7 @@ ${formatToolDescription({
   capability: 'Filter entries with multi-condition queries (AND/OR logic).',
   boundaries: 'modify entries; read-only.',
   constraints: 'Requires listId, filters array; matchAny for OR logic.',
-  recoveryHint: 'Use filter-list-entries for single conditions.',
+  recoveryHint: 'Use list_entries_filter for single conditions.',
 })}`,
     inputSchema: {
       type: 'object',
@@ -764,10 +764,10 @@ ${formatToolDescription({
     },
   },
   {
-    name: 'add-record-to-list',
-    description: `[DEPRECATED] This tool has been consolidated into 'manage-list-entry'.
+    name: 'list_entries_add',
+    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_manage'.
 
-Please use 'manage-list-entry' with Mode 1 (Add) parameters instead:
+Please use 'list_entries_manage' with Mode 1 (Add) parameters instead:
 - Pass 'recordId', 'objectType', and optionally 'initialValues'
 - All functionality remains identical
 
@@ -778,7 +778,7 @@ ${formatToolDescription({
   boundaries: 'create records; record must exist first.',
   requiresApproval: true,
   constraints: 'Requires list UUID, record UUID, object type.',
-  recoveryHint: 'If not found, create record first with create-record.',
+  recoveryHint: 'If not found, create the record first with records_create.',
 })}`,
     inputSchema: {
       type: 'object',
@@ -811,10 +811,10 @@ ${formatToolDescription({
     },
   },
   {
-    name: 'remove-record-from-list',
-    description: `[DEPRECATED] This tool has been consolidated into 'manage-list-entry'.
+    name: 'list_entries_remove',
+    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_manage'.
 
-Please use 'manage-list-entry' with Mode 2 (Remove) parameters instead:
+Please use 'list_entries_manage' with Mode 2 (Remove) parameters instead:
 - Pass 'entryId' only (do not include 'attributes' or 'recordId')
 - All functionality remains identical
 
@@ -825,7 +825,7 @@ ${formatToolDescription({
   boundaries: 'delete underlying record; membership only.',
   requiresApproval: true,
   constraints: 'Requires list UUID, entry UUID (not record UUID).',
-  recoveryHint: 'Use get-list-entries to find entry UUID.',
+  recoveryHint: 'Use list_entries_list to find entry UUID.',
 })}`,
     inputSchema: {
       type: 'object',
@@ -846,10 +846,10 @@ ${formatToolDescription({
     },
   },
   {
-    name: 'update-list-entry',
-    description: `[DEPRECATED] This tool has been consolidated into 'manage-list-entry'.
+    name: 'list_entries_update',
+    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_manage'.
 
-Please use 'manage-list-entry' with Mode 3 (Update) parameters instead:
+Please use 'list_entries_manage' with Mode 3 (Update) parameters instead:
 - Pass 'entryId' and 'attributes' parameters
 - All functionality remains identical
 
@@ -857,10 +857,10 @@ This tool will be removed in version 2.0.0.
 
 ${formatToolDescription({
   capability: 'Update list entry attributes (stage, status, custom fields).',
-  boundaries: 'update record attributes; use update-record for that.',
+  boundaries: 'update record attributes; use records_update for that.',
   requiresApproval: true,
   constraints: 'Requires list UUID, entry UUID, attributes object.',
-  recoveryHint: 'Use get-list-details for valid attributes and values.',
+  recoveryHint: 'Use lists_get for valid attributes and values.',
 })}`,
     inputSchema: {
       type: 'object',
@@ -894,7 +894,7 @@ ${formatToolDescription({
     },
   },
   {
-    name: 'manage-list-entry',
+    name: 'list_entries_manage',
     description: `Manage list entries with flexible action modes. Auto-detects action based on parameters provided.
 
 **Mode 1 - Add Entry (Add record to list):**
@@ -936,9 +936,9 @@ The tool automatically detects which action to perform based on the parameters y
 You must provide parameters for exactly ONE mode per call.
 
 **Migration Guide:**
-- Replaces: add-record-to-list → Use Mode 1 (recordId + objectType)
-- Replaces: remove-record-from-list → Use Mode 2 (entryId only)
-- Replaces: update-list-entry → Use Mode 3 (entryId + attributes)`,
+- Replaces: list_entries_add → Use Mode 1 (recordId + objectType)
+- Replaces: list_entries_remove → Use Mode 2 (entryId only)
+- Replaces: list_entries_update → Use Mode 3 (entryId + attributes)`,
     annotations: {
       readOnlyHint: false,
     },
@@ -984,10 +984,10 @@ You must provide parameters for exactly ONE mode per call.
     },
   },
   {
-    name: 'filter-list-entries-by-parent',
-    description: `[DEPRECATED] This tool has been consolidated into 'filter-list-entries'.
+    name: 'list_entries_filter_by_parent',
+    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_filter'.
 
-Please use 'filter-list-entries' with Mode 3 (Parent Attribute) parameters instead:
+Please use 'list_entries_filter' with Mode 3 (Parent Attribute) parameters instead:
 - Pass 'parentObjectType', 'parentAttributeSlug', 'condition', and 'value'
 - All functionality remains identical
 
@@ -1000,7 +1000,7 @@ ${formatToolDescription({
   boundaries: 'search multiple lists or modify records.',
   constraints:
     'Requires listId, parentObjectType, parentAttributeSlug, condition, value.',
-  recoveryHint: 'Use discover_record_attributes for valid slugs.',
+  recoveryHint: 'Use records_discover_attributes for valid slugs.',
 })}`,
     inputSchema: {
       type: 'object',
@@ -1071,12 +1071,11 @@ ${formatToolDescription({
     },
   },
   {
-    name: 'filter-list-entries-by-parent-id',
-    description: `[DEPRECATED] This tool has been consolidated into 'filter-list-entries'.
+    name: 'list_entries_filter_by_parent_id',
+    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_filter'.
 
-Please use 'filter-list-entries' with Mode 4 (Parent UUID) parameters instead:
+Please use 'list_entries_filter' with Mode 4 (Parent UUID) parameters instead:
 - Pass 'parentRecordId' parameter
-- Note: Parameter renamed from 'recordId' to 'parentRecordId' for consistency
 - All functionality remains identical (fastest filtering mode)
 
 This tool will be removed in version 2.0.0.
@@ -1088,7 +1087,7 @@ ${formatToolDescription({
   boundaries: 'search multiple lists.',
   constraints:
     'Requires list UUID, record UUID; faster than attribute filtering.',
-  recoveryHint: 'Use get-record-list-memberships for workspace-wide search.',
+  recoveryHint: 'Use records_get_list_memberships for workspace-wide search.',
 })}`,
     inputSchema: {
       type: 'object',
@@ -1120,7 +1119,7 @@ ${formatToolDescription({
   },
   // Dedicated list configuration tools (Issue #1195)
   {
-    name: 'create-list',
+    name: 'lists_create',
     description: formatToolDescription({
       capability:
         'Create a new CRM list (sales pipeline, recruiting tracker, support queue). Supports templates for quick setup with smart defaults.',
@@ -1128,7 +1127,7 @@ ${formatToolDescription({
       constraints:
         'Requires name and parent_object. Template expansion fills defaults before validation. Dry-run mode previews without creating.',
       recoveryHint:
-        'Use get-lists to verify the list was created. Use update-list-configuration to modify after creation.',
+        'Use lists_list to verify the list was created. Use lists_update_configuration to modify after creation.',
     }),
     inputSchema: {
       type: 'object',
@@ -1198,7 +1197,7 @@ ${formatToolDescription({
     },
   },
   {
-    name: 'update-list-configuration',
+    name: 'lists_update_configuration',
     description: formatToolDescription({
       capability:
         'Update configuration of an existing list (name, description, custom fields). Detects immutable fields and provides clear errors.',
@@ -1206,7 +1205,7 @@ ${formatToolDescription({
       constraints:
         'Requires listId. Immutable fields (parent_object) are rejected before the API call. Dry-run mode previews changes.',
       recoveryHint:
-        'Use get-list-details to inspect current configuration. Use create-list for a different parent_object.',
+        'Use lists_get to inspect current configuration. Use lists_create for a different parent_object.',
     }),
     inputSchema: {
       type: 'object',

@@ -25,7 +25,7 @@ class ListErrorHandlingTest extends MCPTestBase {
   async setupTestData(): Promise<void> {
     try {
       // Get a valid list ID for testing
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -36,7 +36,7 @@ class ListErrorHandlingTest extends MCPTestBase {
 
       // Create a valid company for testing
       const companyData = TestDataFactory.createCompanyData('TC009');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -98,7 +98,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
       // Test with invalid UUID format
       const invalidId = 'invalid-list-id-123';
 
-      const result = await testCase.executeToolCall('get-list-entries', {
+      const result = await testCase.executeToolCall('list_entries_list', {
         listId: invalidId,
       });
 
@@ -111,7 +111,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
       // Test with non-existent valid UUID
       const nonExistentId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
-      const result2 = await testCase.executeToolCall('get-list-details', {
+      const result2 = await testCase.executeToolCall('lists_get', {
         listId: nonExistentId,
       });
 
@@ -147,7 +147,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
       // Test with invalid record ID
       const invalidRecordId = 'invalid-record-id';
 
-      const result = await testCase.executeToolCall('add-record-to-list', {
+      const result = await testCase.executeToolCall('list_entries_add', {
         listId: testCase['validListId'],
         recordId: invalidRecordId,
         objectType: 'companies',
@@ -160,7 +160,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
       expect(result).toBeDefined();
 
       // Test with missing object_type
-      const result2 = await testCase.executeToolCall('add-record-to-list', {
+      const result2 = await testCase.executeToolCall('list_entries_add', {
         listId: testCase['validListId'],
         recordId: testCase['validCompanyId'] || 'test-id',
         objectType: '', // Empty object type
@@ -204,7 +204,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
       };
 
       const result = await testCase.executeToolCall(
-        'advanced-filter-list-entries',
+        'list_entries_filter_advanced',
         {
           listId: testCase['validListId'],
           ...malformedFilter,
@@ -224,7 +224,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
       };
 
       const result2 = await testCase.executeToolCall(
-        'advanced-filter-list-entries',
+        'list_entries_filter_advanced',
         {
           listId: testCase['validListId'],
           ...invalidOperatorFilter,
@@ -245,7 +245,7 @@ describe('TC-009: List Error Handling - Edge Cases and Validation', () => {
       };
 
       const result3 = await testCase.executeToolCall(
-        'advanced-filter-list-entries',
+        'list_entries_filter_advanced',
         {
           listId: testCase['validListId'],
           ...complexFilter,

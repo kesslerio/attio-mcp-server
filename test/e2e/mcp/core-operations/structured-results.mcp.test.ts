@@ -63,19 +63,19 @@ describe('structured results over MCP stdio', () => {
 
   it('publishes representative schemas through real tools/list serialization', () => {
     for (const name of [
-      'search_records',
-      'get_record_details',
-      'create_record',
-      'update_record',
-      'delete_record',
-      'create_company',
-      'update_company',
-      'create_deal',
-      'update_deal',
-      'upsert_record',
-      'merge_records',
-      'create_note',
-      'list_notes',
+      'records_search',
+      'records_get_details',
+      'records_create',
+      'records_update',
+      'records_delete',
+      'companies_create',
+      'companies_update',
+      'deals_create',
+      'deals_update',
+      'records_upsert',
+      'records_merge',
+      'notes_create',
+      'notes_list',
     ]) {
       const tool = tools.find((item) => item.name === name)!;
       expect(tool.outputSchema).toMatchObject({ type: 'object' });
@@ -105,19 +105,19 @@ describe('structured results over MCP stdio', () => {
   });
 
   it.each([
-    'search_records',
-    'get_record_details',
-    'create_record',
-    'update_record',
-    'delete_record',
-    'create_company',
-    'update_company',
-    'create_deal',
-    'update_deal',
-    'upsert_record',
-    'merge_records',
-    'create_note',
-    'list_notes',
+    'records_search',
+    'records_get_details',
+    'records_create',
+    'records_update',
+    'records_delete',
+    'companies_create',
+    'companies_update',
+    'deals_create',
+    'deals_update',
+    'records_upsert',
+    'records_merge',
+    'notes_create',
+    'notes_list',
   ])(
     'serializes %s execution errors against the advertised schema',
     async (name) => {
@@ -138,17 +138,17 @@ describe('structured results over MCP stdio', () => {
   );
 
   it.each([
-    'search_records_advanced',
-    'search_records_by_relationship',
-    'search_records_by_content',
-    'search_records_by_timeframe',
-    'get_record_attributes',
-    'discover_record_attributes',
-    'get_record_attribute_options',
-    'get_record_info',
-    'get_record_interactions',
-    'batch_records',
-    'batch_search_records',
+    'records_search_advanced',
+    'records_search_by_relationship',
+    'records_search_by_content',
+    'records_search_by_timeframe',
+    'records_get_attributes',
+    'records_discover_attributes',
+    'records_get_attribute_options',
+    'records_get_info',
+    'records_get_interactions',
+    'records_batch',
+    'records_batch_search',
   ])(
     'advertises and validates %s read/batch execution errors over stdio',
     async (name) => {
@@ -173,14 +173,14 @@ describe('structured results over MCP stdio', () => {
     async () => {
       let search: CallToolResult | undefined;
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 1 },
         (result) => {
           search = result;
         }
       );
       expect(search?.isError).toBe(false);
-      validateResult('search_records', search!);
+      validateResult('records_search', search!);
       const data = search!.structuredContent!.data as Array<{
         id: { record_id: string };
       }>;
@@ -194,11 +194,11 @@ describe('structured results over MCP stdio', () => {
         'Live acceptance requires at least one readable company'
       ).toBeGreaterThan(0);
       await assertToolCall(
-        'get_record_details',
+        'records_get_details',
         { resource_type: 'companies', record_id: data[0].id.record_id },
         (result) => {
           expect(result.isError).toBe(false);
-          validateResult('get_record_details', result);
+          validateResult('records_get_details', result);
           expect(result.structuredContent).toMatchObject({
             data: { id: { record_id: data[0].id.record_id } },
           });
@@ -210,7 +210,7 @@ describe('structured results over MCP stdio', () => {
       // Read-only U3 acceptance: no fixture mutation or cleanup is needed.
       for (const [name, args] of [
         [
-          'get_record_info',
+          'records_get_info',
           {
             resource_type: 'companies',
             record_id: data[0].id.record_id,
@@ -218,16 +218,16 @@ describe('structured results over MCP stdio', () => {
           },
         ],
         [
-          'get_record_interactions',
+          'records_get_interactions',
           { resource_type: 'companies', record_id: data[0].id.record_id },
         ],
         [
-          'get_record_attributes',
+          'records_get_attributes',
           { resource_type: 'companies', record_id: data[0].id.record_id },
         ],
-        ['discover_record_attributes', { resource_type: 'tasks' }],
+        ['records_discover_attributes', { resource_type: 'tasks' }],
         [
-          'batch_search_records',
+          'records_batch_search',
           {
             resource_type: 'lists',
             queries: ['structured acceptance', 'structured acceptance'],
@@ -235,7 +235,7 @@ describe('structured results over MCP stdio', () => {
           },
         ],
         [
-          'batch_records',
+          'records_batch',
           {
             resource_type: 'companies',
             operation_type: 'get',
@@ -246,7 +246,7 @@ describe('structured results over MCP stdio', () => {
         await assertToolCall(name, args, (result) => {
           expect(result.isError).toBe(false);
           validateResult(name, result);
-          if (name === 'batch_records' || name === 'batch_search_records') {
+          if (name === 'records_batch' || name === 'records_batch_search') {
             expect(
               (
                 result.structuredContent!.data as Array<{ success: boolean }>

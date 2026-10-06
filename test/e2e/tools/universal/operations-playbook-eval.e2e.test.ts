@@ -167,7 +167,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'companies',
           filters: {
@@ -208,7 +208,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'companies',
           filters: {
@@ -247,7 +247,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'people',
           filters: {
@@ -273,7 +273,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'companies',
           date_field: 'created_at',
@@ -295,7 +295,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: 'inc',
@@ -314,7 +314,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           query: 'john',
@@ -327,11 +327,11 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find overdue tasks for reassignment (tasks do not support advanced search)', async () => {
-      // Tasks resource type does not support the search-by-timeframe tool
+      // Tasks resource type does not support the records_search_by_timeframe tool
       // This is a known limitation - tasks have their own API endpoints
       const result = createSkippedResult(
         'Review overdue tasks',
-        'Tasks do not support search-by-timeframe - use list-tasks instead'
+        'Tasks do not support records_search_by_timeframe - use list-tasks instead'
       );
       testResults.push(result);
       expect(result.skipped).toBe(true);
@@ -345,7 +345,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: '',
@@ -366,7 +366,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: '',
@@ -397,7 +397,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'people',
           filters: {
@@ -427,7 +427,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: 'inc',
@@ -463,7 +463,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'people',
           filters: {
@@ -509,7 +509,7 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'companies',
           filters: {
@@ -533,11 +533,11 @@ describe('Operations Playbook Validation Suite', () => {
     });
 
     it('should find tasks without due dates (tasks do not support advanced search)', async () => {
-      // Tasks resource type does not support advanced-search filters
+      // Tasks resource type does not support records_search_advanced filters
       // This is a known limitation - tasks have their own API structure
       const result = createSkippedResult(
         'Find tasks without due dates',
-        'Tasks do not support advanced-search - use list-tasks instead'
+        'Tasks do not support records_search_advanced - use list-tasks instead'
       );
       testResults.push(result);
       expect(result.skipped).toBe(true);

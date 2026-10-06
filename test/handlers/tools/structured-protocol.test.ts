@@ -93,9 +93,9 @@ describe('structured tool protocol', () => {
     vi.spyOn(getRecordDetailsConfig, 'handler').mockResolvedValue(record);
     const { tools } = await client.listTools();
     const validator = new AjvJsonSchemaValidator();
-    const searchTool = tools.find((tool) => tool.name === 'search_records')!;
+    const searchTool = tools.find((tool) => tool.name === 'records_search')!;
     const detailsTool = tools.find(
-      (tool) => tool.name === 'get_record_details'
+      (tool) => tool.name === 'records_get_details'
     )!;
     expect(searchTool.outputSchema).toBeDefined();
     expect(detailsTool.outputSchema).toBeDefined();
@@ -151,7 +151,7 @@ describe('structured tool protocol', () => {
     delete record.updated_at;
     vi.spyOn(companyOperations, 'getCompanyDetails').mockResolvedValue(record);
     const result = await client.callTool({
-      name: 'get_record_details',
+      name: 'records_get_details',
       arguments: {
         resource_type: 'companies',
         record_id: record.id.record_id,
@@ -170,7 +170,7 @@ describe('structured tool protocol', () => {
   it('rejects unsupported resource types before the handler', async () => {
     const handler = vi.spyOn(searchRecordsConfig, 'handler');
     const result = await client.callTool({
-      name: 'search_records',
+      name: 'records_search',
       arguments: { resource_type: 'unsupported-resource' },
     });
     expect(result).toMatchObject({
@@ -205,7 +205,7 @@ describe('structured tool protocol', () => {
       for (const [name, args] of [
         ['search', { query: 'company' }],
         ['fetch', { id: `companies:${id}` }],
-        ['get-list-entries', { listId: id }],
+        ['list_entries_list', { listId: id }],
       ] as const) {
         const result = await client.callTool({ name, arguments: args });
         expect(result).toMatchObject({
@@ -247,7 +247,7 @@ describe('structured tool protocol', () => {
         new EnhancedApiError('List creation failed', status, '/lists', 'POST')
       );
       const result = await client.callTool({
-        name: 'create-list',
+        name: 'lists_create',
         arguments: { name: 'Test list', parent_object: 'companies' },
       });
       const code = {
@@ -263,11 +263,7 @@ describe('structured tool protocol', () => {
     }
   );
 
-  it.each([
-    'get-list-entries',
-    'add-record-to-list',
-    'remove-record-from-list',
-  ])(
+  it.each(['list_entries_list', 'list_entries_add', 'list_entries_remove'])(
     'rejects invalid list IDs in %s without formatting or mutation',
     async (name) => {
       const read = vi.spyOn(listOperations, 'getListEntries');
@@ -322,12 +318,12 @@ describe('structured tool protocol', () => {
         url: 'https://app.attio.com',
       } as never);
       for (const [name, args] of [
-        ['get-list-entries', { listId: id }],
+        ['list_entries_list', { listId: id }],
         [
-          'add-record-to-list',
+          'list_entries_add',
           { listId: id, recordId: id, objectType: 'companies' },
         ],
-        ['remove-record-from-list', { listId: id, entryId: id }],
+        ['list_entries_remove', { listId: id, entryId: id }],
         ['search', { query: 'company' }],
         ['fetch', { id: `companies:${id}` }],
       ] as const) {
@@ -353,7 +349,7 @@ describe('structured tool protocol', () => {
       data: { id, title: 'Note title', content: 'CRM content' } as AttioNote,
     });
     const result = await client.callTool({
-      name: 'get_record_details',
+      name: 'records_get_details',
       arguments: { resource_type: 'notes', record_id: id, fields: ['title'] },
     });
     expect(result).toMatchObject({
@@ -384,7 +380,7 @@ describe('structured tool protocol', () => {
       });
       vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
       const result = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: { resource_type: 'notes' },
       });
       expect(result).toMatchObject({
@@ -432,7 +428,7 @@ describe('structured tool protocol', () => {
           )
         );
         const result = await client.callTool({
-          name: 'search_records',
+          name: 'records_search',
           arguments: { resource_type: resourceType },
         });
         expect(result).toMatchObject({
@@ -446,7 +442,7 @@ describe('structured tool protocol', () => {
         resourceType === 'tasks' ? [] : { data: [] }
       );
       const empty = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: { resource_type: resourceType },
       });
       expect(empty).toMatchObject({
@@ -469,7 +465,7 @@ describe('structured tool protocol', () => {
           : new NoteSearchStrategy({ noteFunction: upstream });
       vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
       const result = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: { resource_type: resourceType },
       });
       expect(result).toMatchObject({
@@ -491,7 +487,7 @@ describe('structured tool protocol', () => {
       actual.createAttioClient({ apiKey: '' })
     );
     const result = await client.callTool({
-      name: 'get_record_details',
+      name: 'records_get_details',
       arguments: { resource_type: 'companies', record_id: id },
     });
     expect(result).toMatchObject({
@@ -525,23 +521,23 @@ describe('structured tool protocol', () => {
   );
 
   it.each([
-    ['add-record-to-list', { recordId: 42, objectType: 'companies' }],
+    ['list_entries_add', { recordId: 42, objectType: 'companies' }],
+    ['list_entries_add', { recordId: 'record-id', objectType: 'unsupported' }],
+    ['list_entries_update', { entryId: 42, attributes: {} }],
+    ['list_entries_update', { entryId: 'entry-id', attributes: [] }],
+    ['list_entries_remove', { entryId: 42 }],
     [
-      'add-record-to-list',
-      { recordId: 'record-id', objectType: 'unsupported' },
-    ],
-    ['update-list-entry', { entryId: 42, attributes: {} }],
-    ['update-list-entry', { entryId: 'entry-id', attributes: [] }],
-    ['remove-record-from-list', { entryId: 42 }],
-    [
-      'manage-list-entry',
+      'list_entries_manage',
       { listId: 42, recordId: 'record-id', objectType: 'companies' },
     ],
-    ['manage-list-entry', { recordId: 'record-id', objectType: 'unsupported' }],
-    ['manage-list-entry', { entryId: 42, attributes: {} }],
-    ['manage-list-entry', { entryId: 'entry-id', attributes: [] }],
-    ['manage-list-entry', { entryId: 42 }],
-    ['manage-list-entry', { recordId: 'record-id' }],
+    [
+      'list_entries_manage',
+      { recordId: 'record-id', objectType: 'unsupported' },
+    ],
+    ['list_entries_manage', { entryId: 42, attributes: {} }],
+    ['list_entries_manage', { entryId: 'entry-id', attributes: [] }],
+    ['list_entries_manage', { entryId: 42 }],
+    ['list_entries_manage', { recordId: 'record-id' }],
   ] as const)(
     'rejects semantic list input for %s before any request',
     async (name, args) => {
@@ -580,12 +576,12 @@ describe('structured tool protocol', () => {
     };
     vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
     for (const [name, args] of [
-      ['add-record-to-list', { recordId: id, objectType: 'companies' }],
-      ['update-list-entry', { entryId: id, attributes: { stage: 'New' } }],
-      ['remove-record-from-list', { entryId: id }],
-      ['manage-list-entry', { recordId: id, objectType: 'companies' }],
-      ['manage-list-entry', { entryId: id, attributes: { stage: 'New' } }],
-      ['manage-list-entry', { entryId: id }],
+      ['list_entries_add', { recordId: id, objectType: 'companies' }],
+      ['list_entries_update', { entryId: id, attributes: { stage: 'New' } }],
+      ['list_entries_remove', { entryId: id }],
+      ['list_entries_manage', { recordId: id, objectType: 'companies' }],
+      ['list_entries_manage', { entryId: id, attributes: { stage: 'New' } }],
+      ['list_entries_manage', { entryId: id }],
     ] as const) {
       const result = await client.callTool({
         name,
@@ -617,11 +613,11 @@ describe('structured tool protocol', () => {
         new ListSearchStrategy({ listFunction: listOperations.searchLists })
       );
       const search = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: { resource_type: 'lists' },
       });
       const details = await client.callTool({
-        name: 'get_record_details',
+        name: 'records_get_details',
         arguments: { resource_type: 'lists', record_id: list.id.list_id },
       });
       expect(search).toMatchObject({
@@ -667,8 +663,8 @@ describe('structured tool protocol', () => {
       );
       const id = CompanyMockFactory.create().id.record_id;
       for (const [name, args] of [
-        ['search_records', { resource_type: resourceType }],
-        ['get_record_details', { resource_type: resourceType, record_id: id }],
+        ['records_search', { resource_type: resourceType }],
+        ['records_get_details', { resource_type: resourceType, record_id: id }],
         ['search', { type: resourceType, query: 'Company' }],
         ['fetch', { id: `${resourceType}:${id}` }],
       ] as const) {
@@ -716,9 +712,9 @@ describe('structured tool protocol', () => {
         api.get.mockRejectedValue(failure);
         api.post.mockRejectedValue(failure);
         for (const [name, args] of [
-          ['search_records', { resource_type: resourceType }],
+          ['records_search', { resource_type: resourceType }],
           [
-            'get_record_details',
+            'records_get_details',
             { resource_type: resourceType, record_id: id },
           ],
           ['search', { type: resourceType, query: 'Company' }],
@@ -734,7 +730,7 @@ describe('structured tool protocol', () => {
       api.get.mockResolvedValue({ data: { data: [] } });
       api.post.mockResolvedValue({ data: { data: [] } });
       const empty = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: { resource_type: resourceType },
       });
       expect(empty).toMatchObject({
@@ -789,8 +785,8 @@ describe('structured tool protocol', () => {
         expect(failure.status).toBe(status);
         api.get.mockRejectedValue(failure);
         for (const name of resourceType === 'notes'
-          ? ['get_record_details']
-          : ['get_record_details', 'fetch']) {
+          ? ['records_get_details']
+          : ['records_get_details', 'fetch']) {
           const id = CompanyMockFactory.create().id.record_id;
           const result = await client.callTool({
             name,
@@ -820,7 +816,7 @@ describe('structured tool protocol', () => {
               };
       api.get.mockResolvedValue({ data: { data: record } });
       const success = await client.callTool({
-        name: 'get_record_details',
+        name: 'records_get_details',
         arguments: { resource_type: resourceType, record_id: id },
       });
       expect(success.isError).toBe(false);
@@ -848,7 +844,7 @@ describe('structured tool protocol', () => {
       vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
       const args = { resource_type: resourceType };
       const failed = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: args,
       });
       expect(failed).toMatchObject({
@@ -861,7 +857,7 @@ describe('structured tool protocol', () => {
         resourceType === 'people' ? { results: [] } : []
       );
       const empty = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: args,
       });
       expect(empty).toMatchObject({
@@ -889,11 +885,11 @@ describe('structured tool protocol', () => {
     );
     vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
     const search = await client.callTool({
-      name: 'search_records',
+      name: 'records_search',
       arguments: { resource_type: 'tasks' },
     });
     const details = await client.callTool({
-      name: 'get_record_details',
+      name: 'records_get_details',
       arguments: { resource_type: 'tasks', record_id: task.id.task_id },
     });
     expect(search).toMatchObject({
@@ -952,7 +948,7 @@ describe('structured tool protocol', () => {
         api.get.mockReset().mockResolvedValue({ data: payload });
         api.post.mockReset().mockResolvedValue({ data: payload });
         const result = await client.callTool({
-          name: 'search_records',
+          name: 'records_search',
           arguments: { resource_type: resourceType },
         });
         expect(result).toMatchObject({
@@ -968,7 +964,7 @@ describe('structured tool protocol', () => {
       api.post.mockReset().mockResolvedValue({ data: { data: [] } });
       expect(
         await client.callTool({
-          name: 'search_records',
+          name: 'records_search',
           arguments: { resource_type: resourceType },
         })
       ).toMatchObject({
@@ -992,7 +988,7 @@ describe('structured tool protocol', () => {
         });
         expect(
           await client.callTool({
-            name: 'search_records',
+            name: 'records_search',
             arguments: { resource_type: 'lists' },
           })
         ).toMatchObject({
@@ -1023,7 +1019,7 @@ describe('structured tool protocol', () => {
       vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
       expect(
         await client.callTool({
-          name: 'get_record_details',
+          name: 'records_get_details',
           arguments: {
             resource_type: resourceType,
             record_id: CompanyMockFactory.create().id.record_id,
@@ -1074,7 +1070,7 @@ describe('structured tool protocol', () => {
       };
       expect(ClientCache.hasInstance()).toBe(false);
       expect(
-        await client.callTool({ name: 'search_records', arguments: args })
+        await client.callTool({ name: 'records_search', arguments: args })
       ).toMatchObject({
         isError: true,
         structuredContent: {
@@ -1096,7 +1092,7 @@ describe('structured tool protocol', () => {
           response: { status, data: { message: 'Query rejected' } },
         });
         expect(
-          await client.callTool({ name: 'search_records', arguments: args })
+          await client.callTool({ name: 'records_search', arguments: args })
         ).toMatchObject({
           isError: true,
           structuredContent: { error: { code, retryable } },
@@ -1104,7 +1100,7 @@ describe('structured tool protocol', () => {
       }
       api.post.mockReset().mockResolvedValue({ data: { data: {} } });
       expect(
-        await client.callTool({ name: 'search_records', arguments: args })
+        await client.callTool({ name: 'records_search', arguments: args })
       ).toMatchObject({
         isError: true,
         structuredContent: {
@@ -1114,7 +1110,7 @@ describe('structured tool protocol', () => {
       expect(api.post).toHaveBeenCalledOnce();
       api.post.mockResolvedValue({ data: { data: [] } });
       expect(
-        await client.callTool({ name: 'search_records', arguments: args })
+        await client.callTool({ name: 'records_search', arguments: args })
       ).toMatchObject({
         isError: false,
         structuredContent: { data: [], count: 0, next_cursor: null },
@@ -1233,7 +1229,7 @@ describe('structured tool protocol', () => {
       'search',
     ]);
     const result = await client.callTool({
-      name: 'create_record',
+      name: 'records_create',
       arguments: {
         resource_type: 'companies',
         record_data: { name: 'Denied' },
@@ -1253,7 +1249,7 @@ describe('structured tool protocol', () => {
     async (setting) => {
       vi.stubEnv('MCP_TEXT_RESULTS', setting);
       const result = await client.callTool({
-        name: 'get_record_details',
+        name: 'records_get_details',
         arguments: { resource_type: 'companies' },
       });
       expect(result).toMatchObject({
@@ -1264,7 +1260,7 @@ describe('structured tool protocol', () => {
       });
       const handler = vi.spyOn(searchRecordsConfig, 'handler');
       const oversized = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: {
           resource_type: 'companies',
           query: 'x'.repeat(1024 * 1024 + 1),
@@ -1285,7 +1281,7 @@ describe('structured tool protocol', () => {
       }
       const { tools } = await client.listTools();
       const schema = tools.find(
-        (tool) => tool.name === 'get_record_details'
+        (tool) => tool.name === 'records_get_details'
       )!.outputSchema!;
       expect(
         new AjvJsonSchemaValidator().getValidator(schema)(
@@ -1301,7 +1297,7 @@ describe('structured tool protocol', () => {
       vi.stubEnv('MCP_TEXT_RESULTS', setting);
       const searchService = vi.spyOn(UniversalSearchService, 'searchRecords');
       const search = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: {},
       });
       expect(search).toMatchObject({
@@ -1330,7 +1326,7 @@ describe('structured tool protocol', () => {
           )
         );
       const details = await client.callTool({
-        name: 'get_record_details',
+        name: 'records_get_details',
         arguments: {
           resource_type: 'companies',
           record_id: record.id.record_id,
@@ -1370,7 +1366,7 @@ describe('structured tool protocol', () => {
       throw new Error('Formatting failed');
     });
     const result = await client.callTool({
-      name: 'get_record_details',
+      name: 'records_get_details',
       arguments: { resource_type: 'companies', record_id: record.id.record_id },
     });
     expect(result).toMatchObject({
@@ -1396,7 +1392,7 @@ describe('structured tool protocol', () => {
       } as unknown as UniversalRecordResult);
       for (const code of ['PERMISSION_DENIED', 'RESULT_ENCODING_FAILED']) {
         const result = await client.callTool({
-          name: 'get_record_details',
+          name: 'records_get_details',
           arguments: { resource_type: 'companies', record_id: 'test-id' },
         });
         expect(result).toMatchObject({
@@ -1421,7 +1417,7 @@ describe('structured tool protocol', () => {
       const api = { post: vi.fn().mockRejectedValue(failure) };
       vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
       const result = await client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: {
           resource_type: 'companies',
           created_after: '2026-10-01T00:00:00Z',
@@ -1466,7 +1462,7 @@ describe('structured tool protocol', () => {
       );
       vi.spyOn(lazyClient, 'getLazyAttioClient').mockReturnValue(api as never);
       const result = await client.callTool({
-        name: 'create_record',
+        name: 'records_create',
         arguments: {
           resource_type: 'tasks',
           record_data: { content: 'Transport commit' },
@@ -1510,13 +1506,13 @@ describe('structured tool protocol', () => {
       record_data: { content: 'Transport success' },
     };
     expect(
-      await client.callTool({ name: 'create_record', arguments: args })
+      await client.callTool({ name: 'records_create', arguments: args })
     ).toMatchObject({ isError: false });
     expect(api.post).toHaveBeenCalledOnce();
     api.post.mockClear();
     vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'search');
     expect(
-      await client.callTool({ name: 'create_record', arguments: args })
+      await client.callTool({ name: 'records_create', arguments: args })
     ).toMatchObject({
       isError: true,
       structuredContent: {
@@ -1539,7 +1535,7 @@ describe('structured tool protocol', () => {
       record_data: { name: 'Contract Company' },
     };
     const completed = await client.callTool({
-      name: 'create_record',
+      name: 'records_create',
       arguments: args,
     });
     expect(completed.isError).toBe(false);
@@ -1548,7 +1544,7 @@ describe('structured tool protocol', () => {
       throw new Error('post-write encoding failed');
     });
     const failedEncoding = await client.callTool({
-      name: 'create_record',
+      name: 'records_create',
       arguments: args,
     });
     expect(failedEncoding).toMatchObject({
@@ -1607,12 +1603,12 @@ describe('structured tool protocol', () => {
     const argsA = { resource_type: 'companies', query: 'A' };
     try {
       const pendingA = client.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: argsA,
       });
       await entered;
       const resultB = await otherClient.callTool({
-        name: 'search_records',
+        name: 'records_search',
         arguments: { resource_type: 'companies', query: 'B' },
       });
       releaseA();

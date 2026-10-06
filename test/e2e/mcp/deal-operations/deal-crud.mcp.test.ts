@@ -56,14 +56,14 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
   });
 
   it('TC-D01: should create a deal with basic fields (name, stage, value)', async () => {
-    const testName = 'create_deal';
+    const testName = 'deals_create';
     let passed = false;
     let error: string | undefined;
 
     try {
       const dealData = TestDataFactory.createDealData('TCD01');
 
-      const result = await testCase.executeToolCall('create_record', {
+      const result = await testCase.executeToolCall('records_create', {
         resource_type: 'deals',
         record_data: dealData,
       });
@@ -94,7 +94,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
     try {
       if (!testDealId) {
         const dealData = TestDataFactory.createDealData('TCD02');
-        const createResult = await testCase.executeToolCall('create_record', {
+        const createResult = await testCase.executeToolCall('records_create', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -103,7 +103,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
         testCase.trackRecord('deals', testDealId);
       }
 
-      const result = await testCase.executeToolCall('get-record-details', {
+      const result = await testCase.executeToolCall('records_get_details', {
         resource_type: 'deals',
         record_id: testDealId,
       });
@@ -121,14 +121,14 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
   });
 
   it('TC-D03: should update deal fields (stage and value)', async () => {
-    const testName = 'update_deal';
+    const testName = 'deals_update';
     let passed = false;
     let error: string | undefined;
 
     try {
       if (!testDealId) {
         const dealData = TestDataFactory.createDealData('TCD03');
-        const createResult = await testCase.executeToolCall('create_record', {
+        const createResult = await testCase.executeToolCall('records_create', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -139,7 +139,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
 
       const updateData = TestDataFactory.createUpdateData('deals', 'TCD03');
 
-      const result = await testCase.executeToolCall('update_record', {
+      const result = await testCase.executeToolCall('records_update', {
         resource_type: 'deals',
         record_id: testDealId,
         record_data: updateData,
@@ -165,7 +165,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
     try {
       if (!testDealId) {
         const dealData = TestDataFactory.createDealData('TCD04');
-        const createResult = await testCase.executeToolCall('create_record', {
+        const createResult = await testCase.executeToolCall('records_create', {
           resource_type: 'deals',
           record_data: dealData,
         });
@@ -174,7 +174,7 @@ describe('TC-D01 to TC-D04: Deal CRUD Operations', () => {
         testCase.trackRecord('deals', testDealId);
       }
 
-      const result = await testCase.executeToolCall('delete_record', {
+      const result = await testCase.executeToolCall('records_delete', {
         resource_type: 'deals',
         record_id: testDealId,
       });

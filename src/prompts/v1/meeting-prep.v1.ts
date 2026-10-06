@@ -66,13 +66,13 @@ export function buildMeetingPrepMessages(
   const instructions = `Goal: Create a 360° meeting prep sheet for ${validated.target}.
 
 Steps:
-1. Resolve target: If starts with "search:", call \`search_records\` with resource_type="people" or resource_type="companies" to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
+1. Resolve target: If starts with "search:", call \`records_search\` with resource_type="people" or resource_type="companies" to find one record (prefer exact domain/email or name match). If multiple matches, list up to 5 for disambiguation and STOP.
 
 2. Gather context (call these in parallel):
-   - \`list_notes\` for the record (last 5 notes)
-   - \`get_record_details\` for the resolved record with relationships included when supported
-   - For tasks, paginate and accumulate \`search_records\` candidates, then keep only open/not-completed tasks whose linked_records or related record fields reference the resolved record ID
-   - For deals, prefer \`search_records_by_relationship\` from the resolved record; if relationship lookup is unavailable, paginate and accumulate \`search_records\` candidates before filtering by resolved record ID
+   - \`notes_list\` for the record (last 5 notes)
+   - \`records_get_details\` for the resolved record with relationships included when supported
+   - For tasks, paginate and accumulate \`records_search\` candidates, then keep only open/not-completed tasks whose linked_records or related record fields reference the resolved record ID
+   - For deals, prefer \`records_search_by_relationship\` from the resolved record; if relationship lookup is unavailable, paginate and accumulate \`records_search\` candidates before filtering by resolved record ID
    - Keep only active deals whose associated people/company fields reference the resolved record ID
 
 3. Output format=${validated.format}:

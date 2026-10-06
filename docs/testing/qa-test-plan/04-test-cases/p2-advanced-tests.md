@@ -29,7 +29,7 @@ Priority 2 tests validate advanced functionality including relationship queries,
 **Test Steps:**
 1. Find people associated with a company:
    ```bash
-   # PREFERRED: Use advanced-search with proper filter structure (after Issue #523 fix)
+   # PREFERRED: Use records_search_advanced with proper filter structure (after Issue #523 fix)
    mcp__attio__advanced-search resource_type="people" \
      filters='{"filter": {"path": ["company", "id"], "constraints": [{"operator": "equals", "value": "[COMPANY_ID]"}]}}'
    
@@ -73,7 +73,7 @@ Priority 2 tests validate advanced functionality including relationship queries,
 **Test Steps:**
 1. Search companies by content:
    ```bash
-   # PREFERRED: Use advanced-search with proper content path (after Issue #523 fix)
+   # PREFERRED: Use records_search_advanced with proper content path (after Issue #523 fix)
    mcp__attio__advanced-search resource_type="companies" \
      filters='{"filter": {"path": ["description"], "constraints": [{"operator": "contains", "value": "important client"}]}}'
    
@@ -117,7 +117,7 @@ Priority 2 tests validate advanced functionality including relationship queries,
 **Test Steps:**
 1. Search tasks by creation date:
    ```bash
-   # PREFERRED: Use advanced-search with date filter (after Issue #523 fix)
+   # PREFERRED: Use records_search_advanced with date filter (after Issue #523 fix)
    mcp__attio__advanced-search resource_type="tasks" \
      filters='[{"field": "created_at", "operator": ">=", "value": "2024-01-01"}, {"field": "created_at", "operator": "<=", "value": "2024-12-31"}]'
    

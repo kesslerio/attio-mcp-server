@@ -37,7 +37,7 @@ export const advancedSearchConfig: UniversalToolConfig<
   AdvancedSearchParams,
   AdvancedSearchRawResult
 > = {
-  name: 'search_records_advanced',
+  name: 'records_search_advanced',
   ...recordSearchResultContract,
   structuredOutput: normalizeRecordCollection,
   handler: async (
@@ -45,7 +45,7 @@ export const advancedSearchConfig: UniversalToolConfig<
   ): Promise<AdvancedSearchRawResult> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'search_records_advanced',
+        'records_search_advanced',
         params
       );
 
@@ -118,7 +118,7 @@ export const advancedSearchConfig: UniversalToolConfig<
         ? String((params as { resource_type: unknown }).resource_type)
         : '';
       throw ErrorService.createUniversalError(
-        'search_records_advanced',
+        'records_search_advanced',
         ctx,
         error
       );

@@ -165,7 +165,7 @@ export function createRecordNotFoundError(
       recordId,
       resourceType,
       httpStatus: 404,
-      documentationHint: `Use search-records to find valid ${resourceType} IDs.`,
+      documentationHint: `Use records_search to find valid ${resourceType} IDs.`,
     }
   );
 }

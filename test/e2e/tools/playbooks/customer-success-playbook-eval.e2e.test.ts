@@ -58,7 +58,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
         // Create demo company
         seededCompanyName = `Demo CS Co ${new Date().toISOString().replace(/[:.]/g, '-')}`;
         await client.assertToolCall(
-          'create_record',
+          'records_create',
           {
             resource_type: 'companies',
             record_data: { name: seededCompanyName },
@@ -66,9 +66,9 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
           () => true
         );
 
-        // Resolve created company ID via advanced-search by exact name
+        // Resolve created company ID via records_search_advanced by exact name
         await client.assertToolCall(
-          'advanced-search',
+          'records_search_advanced',
           {
             resource_type: 'companies',
             filters: {
@@ -99,7 +99,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
         if (resolvedCompanyId) {
           for (const phrase of seededNotePhrases) {
             await client.assertToolCall(
-              'create_record',
+              'records_create',
               {
                 resource_type: 'notes',
                 record_data: {
@@ -118,7 +118,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       // If not seeded or seed failed to provide an ID, try discovery fallback
       if (!resolvedCompanyId) {
         await client.assertToolCall(
-          'advanced-search',
+          'records_search_advanced',
           {
             resource_type: 'companies',
             filters: {
@@ -216,7 +216,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
     if (process.env.CS_E2E_SEED === 'true' && seededCompanyId) {
       try {
         await client.assertToolCall(
-          'delete_record',
+          'records_delete',
           { resource_type: 'companies', record_id: seededCompanyId },
           () => true
         );
@@ -240,7 +240,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: '',
@@ -261,7 +261,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: '',
@@ -285,7 +285,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'companies',
           timeframe_type: 'modified',
@@ -305,7 +305,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'create_record',
+        'records_create',
         {
           resource_type: 'tasks',
           record_data: {
@@ -333,7 +333,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'companies',
           filters: {
@@ -362,7 +362,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-relationship',
+        'records_search_by_relationship',
         {
           relationship_type: 'company_to_deals',
           source_id: TEST_CONSTANTS.FALLBACK_COMPANY_ID,
@@ -383,7 +383,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-relationship',
+        'records_search_by_relationship',
         {
           relationship_type: 'company_to_people',
           source_id: TEST_CONSTANTS.FALLBACK_COMPANY_ID,
@@ -404,7 +404,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'batch-operations',
+        'records_batch',
         {
           resource_type: 'tasks',
           operations: [
@@ -435,7 +435,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'get-detailed-info',
+        'records_get_info',
         {
           resource_type: 'companies',
           record_id: resolvedCompanyId || TEST_CONSTANTS.FALLBACK_COMPANY_ID,
@@ -455,7 +455,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'create_record',
+        'records_create',
         {
           resource_type: 'notes',
           record_data: {
@@ -482,7 +482,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       // Seed a note with matching keywords to make content search deterministic
       if (resolvedCompanyId) {
         await client.assertToolCall(
-          'create_record',
+          'records_create',
           {
             resource_type: 'notes',
             record_data: {
@@ -500,7 +500,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-content',
+        'records_search_by_content',
         {
           resource_type: 'notes',
           content_type: 'notes',
@@ -522,7 +522,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'list_notes',
+        'notes_list',
         {
           resource_type: 'companies',
           record_id: resolvedCompanyId || TEST_CONSTANTS.FALLBACK_COMPANY_ID,
@@ -550,7 +550,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'companies',
           timeframe_type: 'created',
@@ -570,7 +570,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'create_record',
+        'records_create',
         {
           resource_type: 'tasks',
           record_data: {
@@ -618,7 +618,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'companies',
           filters,
@@ -641,7 +641,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       // Seed a note with matching keywords for deterministic content search
       if (resolvedCompanyId) {
         await client.assertToolCall(
-          'create_record',
+          'records_create',
           {
             resource_type: 'notes',
             record_data: {
@@ -658,7 +658,7 @@ suiteFn('Customer Success Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-by-content',
+        'records_search_by_content',
         {
           resource_type: 'notes',
           content_type: 'notes',
@@ -991,7 +991,7 @@ This enhanced validation framework now provides:
 
 ---
 **Framework Version:** Enhanced Multi-level Validation v1.0
-**Previous Issues Resolved:** False positive detection for API errors (e.g., Test 3 search-by-timeframe 400 error)
+**Previous Issues Resolved:** False positive detection for API errors (e.g., Test 3 records_search_by_timeframe 400 error)
 `;
 
     writeFileSync(reportPath, report);

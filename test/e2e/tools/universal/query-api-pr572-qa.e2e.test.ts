@@ -34,7 +34,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
       const start = performance.now();
 
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'relationship',
@@ -68,7 +68,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
     it('should handle relationship search with path-based queries', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'relationship',
@@ -101,7 +101,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
       const start = performance.now();
 
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'content',
@@ -134,7 +134,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
     it('should handle content search across multiple fields', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'content',
@@ -166,7 +166,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
       const start = performance.now();
 
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -201,7 +201,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
 
     it('should handle timeframe search for tasks resource type', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'tasks',
           search_type: 'timeframe',
@@ -234,7 +234,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
     it('should maintain legacy behavior when content_fields not provided', async () => {
       // This should NOT use the new Query API since content_fields is not provided
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'basic',
@@ -257,7 +257,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
     it('should handle Query API routing when content_fields provided', async () => {
       // Test that the routing logic correctly chooses Query API when content_fields provided
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'basic',
@@ -280,7 +280,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
   describe('Error Handling Validation', () => {
     it('should handle invalid resource types gracefully', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'invalid-resource',
           search_type: 'basic',
@@ -308,7 +308,7 @@ describe('PR #572 Query API QA - MCP Tool Integration', () => {
       const start = performance.now();
 
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'content',

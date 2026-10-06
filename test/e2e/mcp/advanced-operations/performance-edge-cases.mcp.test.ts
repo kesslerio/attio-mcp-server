@@ -58,20 +58,23 @@ describe('TC-AO04: Performance Edge Case Validation', () => {
       let error: string | undefined;
 
       try {
-        const result = await testCase.executeToolCall('advanced-search', {
-          resource_type: 'companies',
-          filters: {
-            filters: [
-              {
-                attribute: { slug: 'name' },
-                condition: 'contains',
-                value: 'a',
-              },
-            ],
-          },
-          limit: 25,
-          offset: 0,
-        });
+        const result = await testCase.executeToolCall(
+          'records_search_advanced',
+          {
+            resource_type: 'companies',
+            filters: {
+              filters: [
+                {
+                  attribute: { slug: 'name' },
+                  condition: 'contains',
+                  value: 'a',
+                },
+              ],
+            },
+            limit: 25,
+            offset: 0,
+          }
+        );
 
         QAAssertions.assertSearchResults(result, 'companies', 1);
         const text = testCase.extractTextContent(result).toLowerCase();
@@ -101,7 +104,7 @@ describe('TC-AO04: Performance Edge Case Validation', () => {
         startDate.setFullYear(endDate.getFullYear() - 2);
 
         const timeframeResult = await testCase.executeToolCall(
-          'search-by-timeframe',
+          'records_search_by_timeframe',
           {
             resource_type: 'deals',
             timeframe_type: 'modified',
@@ -134,7 +137,7 @@ describe('TC-AO04: Performance Edge Case Validation', () => {
       let error: string | undefined;
 
       try {
-        const batchResult = await testCase.executeToolCall('batch-operations', {
+        const batchResult = await testCase.executeToolCall('records_batch', {
           resource_type: 'companies',
           operation_type: 'search',
           queries: ['Inc', 'Labs', 'Solutions'],

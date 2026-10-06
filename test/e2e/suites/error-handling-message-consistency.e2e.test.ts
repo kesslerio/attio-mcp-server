@@ -19,16 +19,16 @@ describe.skipIf(
     loadE2EConfig();
     await validateTestEnvironment();
     const errorResponses = await Promise.all([
-      callUniversalTool('get-record-details', {
+      callUniversalTool('records_get_details', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.generic,
       }),
-      callTasksTool('update_record', {
+      callTasksTool('records_update', {
         resource_type: 'tasks',
         record_id: errorScenarios.invalidIds.task,
         record_data: { status: 'completed' },
       }),
-      callNotesTool('list_notes', {
+      callNotesTool('notes_list', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.generic,
       }),
@@ -43,7 +43,7 @@ describe.skipIf(
   }, 60000);
 
   it('should provide helpful error messages', async () => {
-    const response = (await callUniversalTool('create_record', {
+    const response = (await callUniversalTool('records_create', {
       resource_type: 'people',
       record_data: { email_address: 'invalid-email-format' },
     })) as McpToolResponse;

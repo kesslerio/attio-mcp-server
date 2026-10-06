@@ -74,16 +74,13 @@ describe('TCAO01: Batch Operations Validation', () => {
             TestDataFactory.createCompanyData(`TCAO01_create_${index}`)
         );
 
-        const createResult = await testCase.executeToolCall(
-          'batch-operations',
-          {
-            resource_type: 'companies',
-            operations: companySpecs.map((payload) => ({
-              operation: 'create',
-              record_data: payload,
-            })),
-          }
-        );
+        const createResult = await testCase.executeToolCall('records_batch', {
+          resource_type: 'companies',
+          operations: companySpecs.map((payload) => ({
+            operation: 'create',
+            record_data: payload,
+          })),
+        });
 
         // Flexible assertion - check for batch completion without strict count
         const createText = testCase
@@ -120,7 +117,7 @@ describe('TCAO01: Batch Operations Validation', () => {
 
         expect(createdCompanyIds.length).toBe(companySpecs.length);
 
-        const getResult = await testCase.executeToolCall('batch-operations', {
+        const getResult = await testCase.executeToolCall('records_batch', {
           resource_type: 'companies',
           operation_type: 'get',
           record_ids: createdCompanyIds,
@@ -139,15 +136,12 @@ describe('TCAO01: Batch Operations Validation', () => {
         const searchQueries = companySpecs.map(
           (spec) => spec.name.split(' ')[0]
         );
-        const searchResult = await testCase.executeToolCall(
-          'batch-operations',
-          {
-            resource_type: 'companies',
-            operation_type: 'search',
-            queries: searchQueries,
-            limit: SMALL_BATCH_SIZE,
-          }
-        );
+        const searchResult = await testCase.executeToolCall('records_batch', {
+          resource_type: 'companies',
+          operation_type: 'search',
+          queries: searchQueries,
+          limit: SMALL_BATCH_SIZE,
+        });
 
         const searchText = testCase.extractTextContent(searchResult);
         // Flexible assertion - check for batch search completion
@@ -182,10 +176,13 @@ describe('TCAO01: Batch Operations Validation', () => {
           const companyData = TestDataFactory.createCompanyData(
             `TCAO01_update_${index}`
           );
-          const createResult = await testCase.executeToolCall('create_record', {
-            resource_type: 'companies',
-            record_data: companyData,
-          });
+          const createResult = await testCase.executeToolCall(
+            'records_create',
+            {
+              resource_type: 'companies',
+              record_data: companyData,
+            }
+          );
 
           const companyId = QAAssertions.assertRecordCreated(
             createResult,
@@ -195,19 +192,16 @@ describe('TCAO01: Batch Operations Validation', () => {
           seedRecords.push({ id: companyId, name: companyData.name });
         }
 
-        const updateResult = await testCase.executeToolCall(
-          'batch-operations',
-          {
-            resource_type: 'companies',
-            operations: seedRecords.map((record, index) => ({
-              operation: 'update',
-              record_data: {
-                id: record.id,
-                description: `Updated via batch operation ${index + 1}`,
-              },
-            })),
-          }
-        );
+        const updateResult = await testCase.executeToolCall('records_batch', {
+          resource_type: 'companies',
+          operations: seedRecords.map((record, index) => ({
+            operation: 'update',
+            record_data: {
+              id: record.id,
+              description: `Updated via batch operation ${index + 1}`,
+            },
+          })),
+        });
 
         // Flexible assertion - check for batch completion without strict count
         const updateText = testCase
@@ -224,10 +218,13 @@ describe('TCAO01: Batch Operations Validation', () => {
 
         for (let index = 0; index < seedRecords.length; index += 1) {
           const record = seedRecords[index];
-          const details = await testCase.executeToolCall('get-record-details', {
-            resource_type: 'companies',
-            record_id: record.id,
-          });
+          const details = await testCase.executeToolCall(
+            'records_get_details',
+            {
+              resource_type: 'companies',
+              record_id: record.id,
+            }
+          );
 
           const detailsText = testCase.extractTextContent(details);
           expect(detailsText).toContain(
@@ -259,10 +256,13 @@ describe('TCAO01: Batch Operations Validation', () => {
           const companyData = TestDataFactory.createCompanyData(
             `TCAO01_boundary_seed_${index}`
           );
-          const createResult = await testCase.executeToolCall('create_record', {
-            resource_type: 'companies',
-            record_data: companyData,
-          });
+          const createResult = await testCase.executeToolCall(
+            'records_create',
+            {
+              resource_type: 'companies',
+              record_data: companyData,
+            }
+          );
           const companyId = QAAssertions.assertRecordCreated(
             createResult,
             'companies'
@@ -276,7 +276,7 @@ describe('TCAO01: Batch Operations Validation', () => {
           (_, index) => seedCompanies[index % seedCompanies.length]
         );
 
-        const result = await testCase.executeToolCall('batch-operations', {
+        const result = await testCase.executeToolCall('records_batch', {
           resource_type: 'companies',
           operation_type: 'get',
           record_ids: recordIds,
@@ -320,7 +320,7 @@ describe('TCAO01: Batch Operations Validation', () => {
         );
 
         // API returns error in response content, not as exception
-        const result = await testCase.executeToolCall('batch-operations', {
+        const result = await testCase.executeToolCall('records_batch', {
           resource_type: 'companies',
           operation_type: 'create',
           records: oversizedPayload,
@@ -362,7 +362,7 @@ describe('TCAO01: Batch Operations Validation', () => {
         );
         const invalidCompany = { description: 'Missing required name field' };
 
-        const result = await testCase.executeToolCall('batch-operations', {
+        const result = await testCase.executeToolCall('records_batch', {
           resource_type: 'companies',
           operations: [
             {
@@ -423,10 +423,13 @@ describe('TCAO01: Batch Operations Validation', () => {
           const companyData = TestDataFactory.createCompanyData(
             `TCAO01_perf_seed_${index}`
           );
-          const createResult = await testCase.executeToolCall('create_record', {
-            resource_type: 'companies',
-            record_data: companyData,
-          });
+          const createResult = await testCase.executeToolCall(
+            'records_create',
+            {
+              resource_type: 'companies',
+              record_data: companyData,
+            }
+          );
           const companyId = QAAssertions.assertRecordCreated(
             createResult,
             'companies'
@@ -441,7 +444,7 @@ describe('TCAO01: Batch Operations Validation', () => {
         );
 
         const start = Date.now();
-        const result = await testCase.executeToolCall('batch-operations', {
+        const result = await testCase.executeToolCall('records_batch', {
           resource_type: 'companies',
           operation_type: 'get',
           record_ids: recordIds,

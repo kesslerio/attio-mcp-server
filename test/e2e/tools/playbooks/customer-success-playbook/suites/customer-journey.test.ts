@@ -37,7 +37,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
       if (SEED) {
         seededCompanyName = `Demo CS Co ${new Date().toISOString().replace(/[:.]/g, '-')}`;
         await client.assertToolCall(
-          'create_record',
+          'records_create',
           {
             resource_type: 'companies',
             record_data: { name: seededCompanyName },
@@ -55,7 +55,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
       }
       if (!resolvedCompanyId) {
         await client.assertToolCall(
-          'search-records',
+          'records_search',
           { resource_type: 'companies', query: '', limit: 1 },
           (result: ToolResult) => {
             const text =
@@ -124,7 +124,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-by-relationship',
+        'records_search_by_relationship',
         {
           relationship_type: 'company_to_deals',
           source_id: 'sample-company-id-123',
@@ -146,7 +146,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-by-relationship',
+        'records_search_by_relationship',
         {
           relationship_type: 'company_to_people',
           source_id: 'sample-company-id-123',
@@ -170,7 +170,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'batch-operations',
+        'records_batch',
         {
           resource_type: 'tasks',
           operations: [
@@ -200,7 +200,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'create_record',
+        'records_create',
         {
           resource_type: 'notes',
           record_data: {
@@ -229,7 +229,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'get-detailed-info',
+        'records_get_info',
         {
           resource_type: 'companies',
           record_id: resolvedCompanyId || 'sample-company-id-123',
@@ -249,7 +249,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
       // Seed a note with matching keywords to make content search deterministic
       if (resolvedCompanyId) {
         await client.assertToolCall(
-          'create_record',
+          'records_create',
           {
             resource_type: 'notes',
             record_data: {
@@ -268,7 +268,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-by-content',
+        'records_search_by_content',
         {
           resource_type: 'notes',
           content_type: 'notes',
@@ -291,7 +291,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'list_notes',
+        'notes_list',
         {
           resource_type: 'companies',
           record_id: resolvedCompanyId || 'sample-company-id-123',
@@ -320,7 +320,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'companies',
           timeframe_type: 'created',
@@ -341,7 +341,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'create_record',
+        'records_create',
         {
           resource_type: 'tasks',
           record_data: {
@@ -369,7 +369,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: seededCompanyName ? seededCompanyName : 'a',
@@ -390,7 +390,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
       // Seed a note with matching keywords for deterministic content search
       if (resolvedCompanyId) {
         await client.assertToolCall(
-          'create_record',
+          'records_create',
           {
             resource_type: 'notes',
             record_data: {
@@ -408,7 +408,7 @@ suiteFn('🎯 Customer Journey & Advanced Operations', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-by-content',
+        'records_search_by_content',
         {
           resource_type: 'notes',
           content_type: 'notes',

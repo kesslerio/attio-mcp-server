@@ -4,7 +4,7 @@
  * Relationship Schema Probe Script
  * 
  * Probes the Attio API to understand relationship structures,
- * endpoints, and supported operations for the search-by-relationship tool
+ * endpoints, and supported operations for the records_search_by_relationship tool
  */
 
 import { getAttioClient } from '../../dist/api/attio-client.js';

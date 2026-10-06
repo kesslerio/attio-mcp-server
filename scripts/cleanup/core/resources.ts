@@ -68,7 +68,7 @@ export const NOTES_UNSUPPORTED_NOTICE =
   'ℹ️ NOTES: cleanup is skipped — Attio lists notes only per parent record ' +
   '(GET /v2/notes requires parent_object + parent_record_id filters; an ' +
   'unfiltered query returns no notes). Delete notes through the MCP ' +
-  "delete_record tool with resource_type: 'notes' instead.";
+  "records_delete tool with resource_type: 'notes' instead.";
 
 // Companies/people keep Sample*/Example* (pre-#620 behavior): broader than
 // the deals/lists set, so their pattern net catches more test-shaped names.

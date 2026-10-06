@@ -1,7 +1,7 @@
 /**
  * Regression test for Issue #1043
  *
- * Ensures `create_record` for deals:
+ * Ensures `records_create` for deals:
  * - accepts a human-readable stage title (no `status_id` payload shape)
  * - does not reject UTM fields that exist in the workspace schema
  */
@@ -111,7 +111,7 @@ describe('Deal create: stage title + UTM fields - Issue #1043', () => {
 
     for (const dealId of createdDealIds) {
       try {
-        await client.callTool('delete_record', {
+        await client.callTool('records_delete', {
           resource_type: 'deals',
           record_id: dealId,
         });
@@ -145,7 +145,7 @@ describe('Deal create: stage title + UTM fields - Issue #1043', () => {
         values.utm_campaign = `issue_1043_${Date.now()}`;
       }
 
-      const createResult = await client.callTool('create_record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: { values },
       });

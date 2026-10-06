@@ -24,13 +24,13 @@ These tests have been moved from their original locations to separate legacy con
 
 This directory contains tests for deprecated tool names including:
 
-- `get-company-details` (now `get-record-details`)
-- `search-companies` (now `search-records`)
-- `search-people` (now `search-records`) 
-- `create-company` (now `create-record`)
-- `create-person` (now `create-record`)
-- `update-company` (now `update-record`)
-- `update-person` (now `update-record`)
+- `get-company-details` (now `records_get_details`)
+- `search-companies` (now `records_search`)
+- `search-people` (now `records_search`) 
+- `create-company` (now `records_create`)
+- `create-person` (now `records_create`)
+- `update-company` (now `records_update`)
+- `update-person` (now `records_update`)
 - `create-company-note` (deprecated)
 - `search-companies-by-domain` (deprecated)
 - `advanced-search-companies` (now unified search)

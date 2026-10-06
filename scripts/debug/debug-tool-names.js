@@ -219,47 +219,47 @@ function inferResourceType(toolName, sourceFile) {
 function suggestUniversalTool(toolName, category) {
   switch (category) {
     case 'CRUD':
-      if (toolName.startsWith('create-')) return 'create-record';
-      if (toolName.startsWith('update-')) return 'update-record';
-      if (toolName.startsWith('delete-')) return 'delete-record';
-      return 'create-record | update-record | delete-record';
+      if (toolName.startsWith('create-')) return 'records_create';
+      if (toolName.startsWith('update-')) return 'records_update';
+      if (toolName.startsWith('delete-')) return 'records_delete';
+      return 'records_create | records_update | records_delete';
       
     case 'Search':
-      if (toolName.includes('advanced')) return 'advanced-search';
-      return 'search-records';
+      if (toolName.includes('advanced')) return 'records_search_advanced';
+      return 'records_search';
       
     case 'Info':
-      return 'get-record-details';
+      return 'records_get_details';
       
     case 'Batch':
-      return 'batch-search (if searching) | create-record + update-record (if modifying)';
+      return 'records_batch_search (if searching) | records_create + records_update (if modifying)';
       
     case 'Notes':
-      if (toolName.includes('create') || toolName.includes('add')) return 'create-note';
-      if (toolName.includes('get') || toolName.includes('list')) return 'list-notes';
+      if (toolName.includes('create') || toolName.includes('add')) return 'notes_create';
+      if (toolName.includes('get') || toolName.includes('list')) return 'notes_list';
       if (toolName.includes('update')) return 'update-note';
       if (toolName.includes('delete')) return 'delete-note';
-      return 'create-note | list-notes | update-note | delete-note';
+      return 'notes_create | notes_list | update-note | delete-note';
       
     case 'Relationships':
-      return 'search-by-relationship | update-record (for linking/unlinking)';
+      return 'records_search_by_relationship | records_update (for linking/unlinking)';
       
     case 'Lists':
-      if (toolName.includes('entries')) return 'search-by-relationship';
-      if (toolName.includes('add') || toolName.includes('remove')) return 'update-record';
-      return 'search-records (for lists) | search-by-relationship (for entries)';
+      if (toolName.includes('entries')) return 'records_search_by_relationship';
+      if (toolName.includes('add') || toolName.includes('remove')) return 'records_update';
+      return 'records_search (for lists) | records_search_by_relationship (for entries)';
       
     case 'Attributes':
-      return 'get-record-details | update-record';
+      return 'records_get_details | records_update';
       
     case 'Prompts':
-      return 'search-records (with resource_type: "prompts")';
+      return 'records_search (with resource_type: "prompts")';
       
     case 'Filters':
-      return 'advanced-search';
+      return 'records_search_advanced';
       
     default:
-      return 'search-records | get-record-details | create-record | update-record';
+      return 'records_search | records_get_details | records_create | records_update';
   }
 }
 

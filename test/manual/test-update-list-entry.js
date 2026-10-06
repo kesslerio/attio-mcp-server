@@ -1,7 +1,7 @@
 /**
- * Manual test for the update-list-entry tool
+ * Manual test for the list_entries_update tool
  *
- * This script tests the new update-list-entry functionality for Issue #209
+ * This script tests the new list_entries_update functionality for Issue #209
  * which enables updating list entry stages for pipeline management.
  *
  * Instructions:
@@ -25,15 +25,15 @@ const COMPANY_ID =
 process.env.NODE_ENV = 'development'; // Enable debug logging
 
 /**
- * Test the update-list-entry tool with stage transition
+ * Test the list_entries_update tool with stage transition
  */
 async function testUpdateListEntryStage() {
-  console.log('=== Testing update-list-entry with stage transition ===');
+  console.log('=== Testing list_entries_update with stage transition ===');
 
   // Valid request to update stage from "Interested" to "Demo Scheduling"
   const updateRequest = {
     params: {
-      name: 'update-list-entry',
+      name: 'list_entries_update',
       arguments: {
         listId: LIST_ID,
         entryId: ENTRY_ID,
@@ -64,15 +64,15 @@ async function testUpdateListEntryStage() {
 }
 
 /**
- * Test the update-list-entry tool with missing parameters
+ * Test the list_entries_update tool with missing parameters
  */
 async function testMissingParameters() {
-  console.log('\n=== Testing update-list-entry with missing parameters ===');
+  console.log('\n=== Testing list_entries_update with missing parameters ===');
 
   // Invalid request missing entryId
   const invalidRequest = {
     params: {
-      name: 'update-list-entry',
+      name: 'list_entries_update',
       arguments: {
         listId: LIST_ID,
         attributes: {
@@ -95,15 +95,15 @@ async function testMissingParameters() {
 }
 
 /**
- * Test the filter-list-entries tool to verify it works
+ * Test the list_entries_filter tool to verify it works
  */
 async function testFilterListEntries() {
-  console.log('\n=== Testing filter-list-entries to verify fix ===');
+  console.log('\n=== Testing list_entries_filter to verify fix ===');
 
   // Valid request to filter by stage
   const filterRequest = {
     params: {
-      name: 'filter-list-entries',
+      name: 'list_entries_filter',
       arguments: {
         listId: LIST_ID,
         attributeSlug: 'stage',

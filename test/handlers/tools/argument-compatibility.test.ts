@@ -41,7 +41,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     it('should handle properly wrapped arguments (standard MCP format) with universal tools', async () => {
       const request: any = {
         params: {
-          name: 'search-records',
+          name: 'records_search',
           arguments: {
             resource_type: 'companies',
             query: 'Lenox Hill Plastic Surgery',
@@ -59,7 +59,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       // This is the problematic format from Issue #344 adapted for universal tools
       const request = {
         params: {
-          name: 'search-records',
+          name: 'records_search',
           resource_type: 'companies',
           query: 'Lenox Hill Plastic Surgery', // Arguments directly in params
         },
@@ -74,7 +74,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     it('should handle tools with minimal arguments using universal tools', async () => {
       const request: any = {
         params: {
-          name: 'get-record-details',
+          name: 'records_get_details',
           arguments: {
             resource_type: 'companies',
             // Could include record_id for specific record, but testing minimal args
@@ -91,7 +91,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     it('should handle multiple unwrapped arguments with universal tools', async () => {
       const request = {
         params: {
-          name: 'create-record',
+          name: 'records_create',
           // Multiple arguments directly in params
           resource_type: 'companies',
           record_data: {
@@ -114,7 +114,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       const request: any = {
         params: {
-          name: 'search-records',
+          name: 'records_search',
           arguments: {
             resource_type: 'companies',
             query: 'Test Query',
@@ -141,7 +141,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       const request = {
         params: {
-          name: 'search-records',
+          name: 'records_search',
           resource_type: 'companies',
           query: 'Test Query',
           limit: 10,
@@ -152,7 +152,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       // Verify the arguments were wrapped
       const calledWith = mockedExecute.mock.calls[0][0];
-      expect(calledWith.params.name).toBe('search-records');
+      expect(calledWith.params.name).toBe('records_search');
       expect(calledWith.params.arguments).toEqual({
         resource_type: 'companies',
         query: 'Test Query',
@@ -165,7 +165,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     it('should handle request with only name parameter using universal tools', async () => {
       const request = {
         params: {
-          name: 'get-record-details',
+          name: 'records_get_details',
           resource_type: 'companies', // Minimal args for universal tool
         },
       } as any;
@@ -179,7 +179,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     it('should handle malformed requests gracefully using universal tools', async () => {
       const request = {
         params: {
-          name: 'search-records',
+          name: 'records_search',
           // Missing required resource_type argument
         },
       } as any;
@@ -197,7 +197,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       const request = {
         params: {
-          name: 'search-records',
+          name: 'records_search',
           arguments: { resource_type: 'companies', query: 'Already wrapped' },
           query: 'Should be ignored', // This should be ignored
         },
@@ -230,7 +230,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       const largeString = 'x'.repeat(1024 * 1024 + 1); // Over 1MB
       const request = {
         params: {
-          name: 'search-records',
+          name: 'records_search',
           arguments: {
             resource_type: 'companies',
             query: largeString,

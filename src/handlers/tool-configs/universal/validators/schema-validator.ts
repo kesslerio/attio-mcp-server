@@ -24,6 +24,7 @@ import {
   getValidResourceTypes,
 } from '@/handlers/tools/dispatcher/utils.js';
 import { RecordDataNormalizer } from '@/utils/normalization/record-data-normalization.js';
+import { resolveToolName } from '@/config/tool-aliases.js';
 
 /**
  * Fields that should preserve newlines during sanitization.
@@ -237,8 +238,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  // Legacy CRUD tools (still using hyphenated names)
-  create_record: (p) => {
+  records_create: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -259,7 +259,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  update_record: (p) => {
+  records_update: (p) => {
     // Normalize input format - use normalized result directly (no leftover fields)
     const params = RecordDataNormalizer.needsNormalization(p)
       ? (RecordDataNormalizer.normalize(p) as SanitizedObject)
@@ -310,7 +310,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return params;
   },
-  delete_record: (p) => {
+  records_delete: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -331,7 +331,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  upsert_record: (p) => {
+  records_upsert: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -380,7 +380,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  merge_records: (p) => {
+  records_merge: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -426,7 +426,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  create_note: (p) => {
+  notes_create: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
         'Missing required parameter: resource_type',
@@ -582,7 +582,7 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
-  list_notes: (p) => {
+  notes_list: (p) => {
     const candidateParams = p as Record<string, unknown>;
     if (!p.record_id && typeof candidateParams.parent_record_id === 'string') {
       p.record_id = candidateParams.parent_record_id;
@@ -610,16 +610,15 @@ const toolValidators: Record<string, ToolValidator> = {
 };
 
 const TOOLS_WITH_DYNAMIC_RESOURCE_TYPES = new Set([
-  'search_records',
-  'search_records_advanced',
-  'search_records_by_timeframe',
-  'get_record_details',
+  'records_search',
+  'records_search_advanced',
+  'records_search_by_timeframe',
   'records_get_details',
-  'create_record',
-  'update_record',
-  'upsert_record',
-  'delete_record',
-  'merge_records',
+  'records_create',
+  'records_update',
+  'records_upsert',
+  'records_delete',
+  'records_merge',
 ]);
 
 function validateStandardResourceType(resourceType: string): string {
@@ -669,6 +668,9 @@ export function validateUniversalToolParams(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 ): any /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+  // Aliases share the canonical tool's validator. Resolution does not rewrite
+  // the payload; resource_type and other fields stay caller-supplied.
+  const resolvedName = resolveToolName(toolName).name;
   const sanitizedValue = InputSanitizer.sanitizeObject(params);
   if (
     !sanitizedValue ||
@@ -691,31 +693,27 @@ export function validateUniversalToolParams(
   if (sanitizedParams.resource_type) {
     const resourceType = String(sanitizedParams.resource_type);
     sanitizedParams.resource_type = TOOLS_WITH_DYNAMIC_RESOURCE_TYPES.has(
-      toolName
+      resolvedName
     )
       ? validateDynamicSearchResourceType(resourceType)
       : validateStandardResourceType(resourceType);
   }
-  // The currently advertised read names must enforce the same required fields
-  // as their historical validator keys before routing to an Attio service.
+  // Advanced and batch searches share the records_search required-field
+  // validator. The operation discriminant stays records_search; only the
+  // advertised tool name changed. Other tools use a validator keyed by
+  // their canonical name.
   const readValidatorNames: Record<string, string> = {
-    search_records: 'records_search',
-    get_record_details: 'records_get_details',
-    get_record_attributes: 'records_get_attributes',
-    discover_record_attributes: 'records_discover_attributes',
-    get_record_info: 'records_get_info',
-    search_records_advanced: 'records_search',
-    search_records_by_timeframe: 'records_search',
-    batch_search_records: 'records_search',
-    batch_records: 'records_batch',
+    records_search_advanced: 'records_search',
+    records_search_by_timeframe: 'records_search',
+    records_batch_search: 'records_search',
   };
   const requiredReadFields: Record<string, readonly string[]> = {
-    get_record_attribute_options: getAttributeOptionsSchema.required,
-    get_record_interactions: getRecordInteractionsSchema.required,
-    search_records_by_relationship: searchByRelationshipSchema.required,
-    search_records_by_content: searchByContentSchema.required,
+    records_get_attribute_options: getAttributeOptionsSchema.required,
+    records_get_interactions: getRecordInteractionsSchema.required,
+    records_search_by_relationship: searchByRelationshipSchema.required,
+    records_search_by_content: searchByContentSchema.required,
   };
-  for (const field of requiredReadFields[toolName] ?? []) {
+  for (const field of requiredReadFields[resolvedName] ?? []) {
     const value = sanitizedParams[field];
     if (value === undefined || value === null || value === '') {
       throw new UniversalValidationError(
@@ -725,7 +723,8 @@ export function validateUniversalToolParams(
       );
     }
   }
-  const validator = toolValidators[readValidatorNames[toolName] ?? toolName];
+  const validator =
+    toolValidators[readValidatorNames[resolvedName] ?? resolvedName];
   if (validator) return validator(sanitizedParams);
   return sanitizedParams;
 }

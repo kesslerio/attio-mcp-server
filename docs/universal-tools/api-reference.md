@@ -20,7 +20,7 @@ enum UniversalResourceType {
 }
 ```
 
-`search_records`, `search_records_advanced`, `search_records_by_timeframe`, `get_record_details`, `create_record`, `update_record`, and `delete_record` also accept custom object slugs discovered into the mapping configuration, such as `funds` or `investment_opportunities`.
+`records_search`, `records_search_advanced`, `records_search_by_timeframe`, `records_get_details`, `records_create`, `records_update`, and `records_delete` also accept custom object slugs discovered into the mapping configuration, such as `funds` or `investment_opportunities`.
 
 ## formatResult Architecture (Updated PR #483)
 
@@ -145,7 +145,7 @@ await client.callTool('records.get_details', {
 });
 ```
 
-### 3. create-record
+### 3. records_create
 
 **Description**: Create a new record of any supported type.
 
@@ -165,7 +165,7 @@ await client.callTool('records.get_details', {
 
 ```typescript
 // Create company
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'companies',
   record_data: {
     name: 'Acme Corp',
@@ -175,7 +175,7 @@ await client.callTool('create-record', {
 });
 
 // Create person
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'people',
   record_data: {
     name: 'John Doe',
@@ -186,7 +186,7 @@ await client.callTool('create-record', {
 });
 
 // Create a custom object record
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'funds',
   record_data: {
     name: 'Fund I',
@@ -195,7 +195,7 @@ await client.callTool('create-record', {
 });
 ```
 
-### 4. update-record
+### 4. records_update
 
 **Description**: Update an existing record of any supported type.
 
@@ -216,7 +216,7 @@ await client.callTool('create-record', {
 
 ```typescript
 // Update company
-await client.callTool('update-record', {
+await client.callTool('records_update', {
   resource_type: 'companies',
   record_id: 'comp_123',
   record_data: {
@@ -226,7 +226,7 @@ await client.callTool('update-record', {
 });
 
 // Update a custom object record
-await client.callTool('update-record', {
+await client.callTool('records_update', {
   resource_type: 'funds',
   record_id: 'fund_123',
   record_data: {
@@ -235,7 +235,7 @@ await client.callTool('update-record', {
 });
 ```
 
-### 5. delete-record
+### 5. records_delete
 
 **Description**: Delete a record of any supported type.
 
@@ -254,13 +254,13 @@ await client.callTool('update-record', {
 
 ```typescript
 // Delete company
-await client.callTool('delete-record', {
+await client.callTool('records_delete', {
   resource_type: 'companies',
   record_id: 'comp_123',
 });
 
 // Delete a custom object record
-await client.callTool('delete-record', {
+await client.callTool('records_delete', {
   resource_type: 'funds',
   record_id: 'fund_123',
 });
@@ -594,9 +594,9 @@ bounded to 512 characters. A non-null token is the continuation signal. A null
 token means exhaustion only when `pagination.supported` is true and
 `pagination.truncated` is false.
 
-**Supported continuation** (offset-backed query paths): `search_records`,
-`search_records_advanced`, `search_records_by_timeframe`, `list_notes`, and
-`get-list-entries`. Supported record query and list-entry paths fetch one lookahead item ahead of the returned page; notes use bounded offset lookahead and preserve native cursors when provided,
+**Supported continuation** (offset-backed query paths): `records_search`,
+`records_search_advanced`, `records_search_by_timeframe`, `notes_list`, and
+`list_entries_list`. Supported record query and list-entry paths fetch one lookahead item ahead of the returned page; notes use bounded offset lookahead and preserve native cursors when provided,
 so a token is only issued on reliable continuation evidence and a returned
 page never drops the sentinel item — the next page refetches it. Relative date
 queries bind their resolved dates; replay is rejected when the relative range
@@ -607,12 +607,12 @@ resolves to different dates.
 means results were withheld or upstream completeness could not be established;
 `truncated: false` affirms no bounded results were withheld. On these families
 null never proves the upstream dataset was complete. Caps are documented per
-tool: `search_records` caps pages at 100 items; companies, deals, and custom
+tool: `records_search` caps pages at 100 items; companies, deals, and custom
 objects default to 20, people to 100, and generic records and relationship/timeframe
-query routes within `search_records` to 10. `search_records_by_timeframe` and
-`list_notes` default to 20; notes accept up to 100 per returned page.
-`get-list-entries` defaults to 20. `get-lists`
-and `list-workspace-members` return their complete directory inventories;
+query routes within `records_search` to 10. `records_search_by_timeframe` and
+`notes_list` default to 20; notes accept up to 100 per returned page.
+`list_entries_list` defaults to 20. `lists_list`
+and `workspace_members_list` return their complete directory inventories;
 ranked text/content searches and task/list/note aggregates do not support continuation;
 attribute metadata inventories are finite per object. Task searches disclose slices
 of the upstream inventory capped at 500 tasks. At the record offset cap of 10000,
@@ -742,7 +742,7 @@ When running in test environment (`NODE_ENV=test` or `VITEST=true`), the univers
 
 ```typescript
 // Automatic mock data injection in test environment
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'tasks',
   data: { content: 'Test task' },
 });

@@ -6,17 +6,17 @@ The Lists API allows you to manage lists within Attio. Lists provide organized v
 
 The following 11 MCP tools are fully implemented and tested:
 
-1. `get-lists` - Get all CRM lists
-2. `get-list-details` - Get specific list configuration  
-3. `get-list-entries` - Get entries from a list with pagination
-4. `filter-list-entries` - Filter entries by single attribute
-5. `advanced-filter-list-entries` - Complex filtering with AND/OR logic
-6. `add-record-to-list` - Add records to lists
-7. `remove-record-from-list` - Remove records from lists
-8. `update-list-entry` - Update list entry attributes (e.g., stage changes)
-9. `filter-list-entries-by-parent` - Filter by parent record properties
-10. `filter-list-entries-by-parent-id` - Filter by specific parent record ID
-11. `get-record-list-memberships` - Find all lists containing a record
+1. `lists_list` - Get all CRM lists
+2. `lists_get` - Get specific list configuration  
+3. `list_entries_list` - Get entries from a list with pagination
+4. `list_entries_filter` - Filter entries by single attribute
+5. `list_entries_filter_advanced` - Complex filtering with AND/OR logic
+6. `list_entries_add` - Add records to lists
+7. `list_entries_remove` - Remove records from lists
+8. `list_entries_update` - Update list entry attributes (e.g., stage changes)
+9. `list_entries_filter_by_parent` - Filter by parent record properties
+10. `list_entries_filter_by_parent_id` - Filter by specific parent record ID
+11. `records_get_list_memberships` - Find all lists containing a record
 
 ## Using Lists with Claude
 
@@ -80,7 +80,7 @@ Example:
 Show me companies in the "Sales Pipeline" list where the company industry contains "Technology"
 ```
 
-The filter-list-entries tool supports these conditions:
+The list_entries_filter tool supports these conditions:
 - equals, not_equals - Exact match or non-match
 - contains, not_contains - Contains or doesn't contain a string
 - starts_with, ends_with - String starts or ends with value
@@ -101,7 +101,7 @@ Find companies in our "Enterprise Accounts" list that have industry equal to "Te
 Show me people in our "Sales Leads" list who have status equals "Hot Lead" AND have last contact date less than 7 days ago
 ```
 
-The advanced-filter-list-entries tool supports:
+The list_entries_filter_advanced tool supports:
 - Multiple filter conditions combined with AND/OR logic
 - Logical operators to create complex filter expressions
 - matchAny parameter to switch between AND/OR logic between all filters
@@ -671,7 +671,7 @@ createFilteredList();
 ### Using Advanced Filtering with MCP Tools
 
 ```javascript
-// Example of using the MCP advanced-filter-list-entries tool
+// Example of using the MCP list_entries_filter_advanced tool
 const advancedFilters = {
   filters: [
     {
@@ -695,7 +695,7 @@ const advancedFilters = {
 };
 
 // Usage with the MCP tool
-// advanced-filter-list-entries({
+// list_entries_filter_advanced({
 //   listId: "list_01defghijklmnopqrstuvwxy",
 //   filters: advancedFilters,
 //   limit: 50

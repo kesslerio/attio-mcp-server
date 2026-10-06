@@ -324,7 +324,7 @@ export async function validateFieldExistence(
             .join(', ')}?`;
         }
 
-        errorMessage += ` Use get-attributes to see all available fields for this resource type.`;
+        errorMessage += ` Use records_get_attributes to see all available fields for this resource type.`;
 
         return {
           isValid: false,

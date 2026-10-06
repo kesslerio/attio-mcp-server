@@ -486,12 +486,12 @@ export class QAAssertions {
         ? json
         : this.extractResultArray(json);
 
-      if (operation === 'get-lists' || operation === 'get-list-entries') {
+      if (operation === 'lists_list' || operation === 'list_entries_list') {
         expect(Array.isArray(arrayPayload)).toBeTruthy();
       }
     } else {
       expect(text).toBeTruthy();
-      if (operation === 'get-lists' || operation === 'get-list-entries') {
+      if (operation === 'lists_list' || operation === 'list_entries_list') {
         expect(
           text.trim().startsWith('[') || text.trim().startsWith('{')
         ).toBeTruthy();

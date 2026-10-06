@@ -20,7 +20,7 @@ async function debugSuccessfulResponse() {
     const request = {
       method: 'tools/call',
       params: {
-        name: 'update-record',
+        name: 'records_update',
         arguments: {
           resource_type: 'companies',
           record_id: 'non-existent-id-12345',
@@ -72,7 +72,7 @@ async function debugSuccessfulResponse() {
     const request = {
       method: 'tools/call',
       params: {
-        name: 'delete-record',
+        name: 'records_delete',
         arguments: {
           resource_type: 'companies',
           record_id: 'non-existent-id-12345',

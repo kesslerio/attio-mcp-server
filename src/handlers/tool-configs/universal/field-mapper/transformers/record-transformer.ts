@@ -82,7 +82,7 @@ export async function mapRecordFields(
 
         if (isDisplayName) {
           warnings.push(
-            `💡 Display name "${key}" mapped to API field "${mappedKey}". Tip: Use discover-attributes to see all display name mappings.`
+            `💡 Display name "${key}" mapped to API field "${mappedKey}". Tip: Use records_discover_attributes to see all display name mappings.`
           );
         } else {
           warnings.push(

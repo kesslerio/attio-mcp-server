@@ -63,7 +63,7 @@ export const toolConfig: UniversalToolConfig = {
 
 ### Structured results (v2 boundary A)
 
-`search_records` and `get_record_details` publish `outputSchema` through
+`records_search` and `records_get_details` publish `outputSchema` through
 `tools/list`. Their `tools/call` results include `structuredContent` with a stable
 envelope. For both success and execution failure, `content[0].text` serializes
 the final sanitized structured envelope for MCP clients that consume JSON text.
@@ -71,9 +71,9 @@ Optional human-readable prose follows in `content[1]`. With
 `MCP_TEXT_RESULTS=false`, only the envelope JSON remains:
 
 ```typescript
-// search_records
+// records_search
 { data: records, count: records.length, next_cursor, pagination }
-// get_record_details (including task, list, and custom-object details)
+// records_get_details (including task, list, and custom-object details)
 { data: record }
 // execution failures
 { error: { code: 'PERMISSION_DENIED', message: '...', retryable: false } }
@@ -115,13 +115,13 @@ See [U1 delivery scope](u1-delivery-notes.md) for historical verification eviden
 
 ### Structured core writes and notes (v2 boundary B)
 
-`create_record`, `update_record`, `delete_record`, `upsert_record`,
-`create_company`, `update_company`, `create_deal`, `update_deal`, `merge_records`,
-`create_note`, and `list_notes` also advertise output schemas and use the shared
+`records_create`, `records_update`, `records_delete`, `records_upsert`,
+`companies_create`, `companies_update`, `deals_create`, `deals_update`, `records_merge`,
+`notes_create`, and `notes_list` also advertise output schemas and use the shared
 validated result boundary, including the JSON-text ordering and prose opt-out
 described above.
 
-Create/update and create-note results preserve their existing JSON projections:
+Create/update and notes_create results preserve their existing JSON projections:
 record identifiers are in `structuredContent.id` (including `task_id`, `list_id`,
 and `note_id`). Delete results contain `{ success: true, record_id }`.
 Upsert preserves `action`, optional `planned_action`, `record_id` (required except
@@ -146,7 +146,7 @@ batch projections are owned by
 and each tool's `structuredOutput` adapter.
 
 Advanced, relationship, content, and timeframe searches use the same collection
-envelope as `search_records`. Metadata arrays include a response count; grouped
+envelope as `records_search`. Metadata arrays include a response count; grouped
 metadata and record attribute maps retain their native structure inside `data`.
 Only discovery removes its service-generated string usage guidance; record
 attribute maps and note bodies remain domain data. Attribute options retain
@@ -157,7 +157,7 @@ preserving dates and owner metadata. Metadata and options also include `paginati
 [collection contract](api-reference.md#collection-continuation-u5). Metadata,
 options, interaction, and batch envelopes have no continuation cursor.
 
-`batch_records` and `batch_search_records` return per-input outcomes in `data`,
+`records_batch` and `records_batch_search` return per-input outcomes in `data`,
 with a response count and a summary of total, successful, and failed items.
 Outcomes retain input order and a zero-based `index`, including duplicate search
 queries, plus `query` or `record_id` where supplied. Successful items carry
@@ -165,7 +165,7 @@ queries, plus `query` or `record_id` where supplied. Successful items carry
 has `isError: false`, even if every item failed; a whole-call failure uses only
 the shared error envelope and has `isError: true`. Legacy batch search now
 retains query outcomes instead of flattening records and dropping failures.
-Batch search is read-only; `batch_records` remains write-capable and requires
+Batch search is read-only; `records_batch` remains write-capable and requires
 existing host controls. Batch writes are never replayed after result encoding or
 companion formatting fails; uncertain completion requires readback before retry.
 
@@ -198,8 +198,8 @@ collection/entry envelopes, retaining `id.entry_id`. Entry writes fill `list_id`
 from the request when the Attio response omits it. Removals report
 `{ success: true, list_id, entry_id }` rather than a bare `true`, matching the
 record delete shape, so a caller can verify which entry the outcome describes.
-`manage-list-entry` publishes either the written entry or the removal outcome,
-depending on the detected mode. `create-list` and `update-list-configuration`
+`list_entries_manage` publishes either the written entry or the removal outcome,
+depending on the detected mode. `lists_create` and `lists_update_configuration`
 publish the normalized flat projection in `data` (`list_id`, `name`,
 `parent_object`, `fields_summary`, and `dry_run` for previews). Membership
 outcomes keep their camelCase domain shape (`listId`, `listName`, `entryId`,
@@ -210,7 +210,7 @@ Workspace member tools publish `{ data: members, count, next_cursor: null }` and
 `avatar_url`. A member lookup that returns nothing is now a `NOT_FOUND` execution
 failure instead of a not-found success string.
 
-`aaa-health-check` and `smithery_debug_config` return their payload in `data`
+`aaa-health-check` and `diagnostics_get` return their payload in `data`
 instead of hand-building an MCP text block, so both stay schema-valid with no
 Attio credentials configured and still expose no credential material.
 
@@ -519,9 +519,9 @@ export const duplicateRecordConfig: UniversalToolConfig = {
 export const coreOperationsToolConfigs = {
   'records.search': searchRecordsConfig,
   'records.get_details': getRecordDetailsConfig,
-  'create-record': createRecordConfig,
-  'update-record': updateRecordConfig,
-  'delete-record': deleteRecordConfig,
+  'records_create': createRecordConfig,
+  'records_update': updateRecordConfig,
+  'records_delete': deleteRecordConfig,
   'duplicate-record': duplicateRecordConfig, // New tool
   'records.get_attributes': getAttributesConfig,
   'records.discover_attributes': discoverAttributesConfig,
@@ -761,7 +761,7 @@ describe('Universal Tools Integration', () => {
 
   it('should handle complete CRUD workflow', async () => {
     // Create
-    const createResult = await universalToolConfigs['create-record'].handler({
+    const createResult = await universalToolConfigs['records_create'].handler({
       resource_type: 'companies',
       record_data: {
         name: 'Test Company',
@@ -783,7 +783,7 @@ describe('Universal Tools Integration', () => {
     expect(getResult.values.name[0].value).toBe('Test Company');
 
     // Update
-    const updateResult = await universalToolConfigs['update-record'].handler({
+    const updateResult = await universalToolConfigs['records_update'].handler({
       resource_type: 'companies',
       record_id: recordId,
       record_data: {
@@ -794,7 +794,7 @@ describe('Universal Tools Integration', () => {
     expect(updateResult.values.industry[0].value).toBe('Technology');
 
     // Delete
-    const deleteResult = await universalToolConfigs['delete-record'].handler({
+    const deleteResult = await universalToolConfigs['records_delete'].handler({
       resource_type: 'companies',
       record_id: recordId,
     });

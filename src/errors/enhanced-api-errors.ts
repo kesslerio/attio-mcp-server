@@ -176,7 +176,7 @@ export class EnhancedApiError extends AttioApiError {
     if (this.context?.isReadOnly && this.context?.field) {
       msg += ` Field '${this.context.field}' is read-only and cannot be modified. This is a system-managed field.`;
       if (this.context.resourceType) {
-        msg += ` Use get-attributes ${this.context.resourceType} --categories writable to see updatable fields.`;
+        msg += ` Use records_get_attributes ${this.context.resourceType} --categories writable to see updatable fields.`;
       }
     }
 
@@ -288,7 +288,7 @@ export const ErrorTemplates = {
         fieldType: 'select',
         validValues: validOptions,
         resourceType,
-        documentationHint: `Use get-attributes${
+        documentationHint: `Use records_get_attributes${
           resourceType ? ` ${resourceType}` : ''
         } to see all available values.`,
       }
@@ -307,7 +307,7 @@ export const ErrorTemplates = {
         field,
         resourceType,
         isReadOnly: true,
-        documentationHint: `Use get-attributes ${resourceType} --categories writable to see updatable fields.`,
+        documentationHint: `Use records_get_attributes ${resourceType} --categories writable to see updatable fields.`,
       }
     ),
 
@@ -324,7 +324,7 @@ export const ErrorTemplates = {
         field,
         suggestedFields: suggestions,
         resourceType,
-        documentationHint: `Use get-attributes ${resourceType} to see all available fields with their correct names.`,
+        documentationHint: `Use records_get_attributes ${resourceType} to see all available fields with their correct names.`,
       }
     ),
 
@@ -341,7 +341,7 @@ export const ErrorTemplates = {
         recordId,
         resourceType,
         httpStatus: 404,
-        documentationHint: `Use search-records to find valid ${resourceType} IDs.`,
+        documentationHint: `Use records_search to find valid ${resourceType} IDs.`,
       }
     ),
 

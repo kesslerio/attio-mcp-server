@@ -15,7 +15,7 @@ This directory contains Quality Assurance test scripts that validate specific Gi
 - ✅ Create-record can create new lists  
 - ✅ Update-record can modify lists
 - ✅ Delete-record can remove lists
-- ✅ Lists-specific operations (get-lists, add-record-to-list, etc.)
+- ✅ Lists-specific operations (lists_list, list_entries_add, etc.)
 
 **Success Criteria**: All 7 tests must pass with full tool availability
 

@@ -15,7 +15,7 @@ The MCP server provides enhanced filtering capabilities for company records thro
 - **`records.search`** with `resource_type: 'companies'` - Replaces `search-companies`
 - **`records.search_advanced`** with `resource_type: 'companies'` - Complex filtering with multiple conditions
 - **`records.get_details`** with `resource_type: 'companies'` - Replaces `get-company-details`
-- **`create-record`** with `resource_type: 'companies'` - Replaces `create-company`
+- **`records_create`** with `resource_type: 'companies'` - Replaces `create-company`
 - **`records.batch`** with `resource_type: 'companies'` - Bulk company operations
 
 **Features:**
@@ -524,7 +524,7 @@ await client.callTool('create-company', { record_data: {...} });
 // Single tools with resource_type parameter
 await client.callTool('records.search', { resource_type: 'companies', query: 'tech' });
 await client.callTool('records.get_details', { resource_type: 'companies', record_id: 'comp_123' });
-await client.callTool('create-record', { resource_type: 'companies', record_data: {...} });
+await client.callTool('records_create', { resource_type: 'companies', record_data: {...} });
 ```
 
 **See Also:**

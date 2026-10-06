@@ -29,7 +29,7 @@ describe('Universal Core Operations CRUD Tests', () => {
     cleanupMocks();
   });
 
-  describe('create-record tool', () => {
+  describe('records_create tool', () => {
     it('should create company successfully', async () => {
       const mockCreatedRecord = {
         id: { record_id: 'comp-new' },
@@ -130,7 +130,7 @@ describe('Universal Core Operations CRUD Tests', () => {
     });
   });
 
-  describe('update-record tool', () => {
+  describe('records_update tool', () => {
     it('should update company successfully', async () => {
       const mockUpdatedRecord = {
         id: { record_id: 'comp-1' },
@@ -204,7 +204,7 @@ describe('Universal Core Operations CRUD Tests', () => {
     });
   });
 
-  describe('delete-record tool', () => {
+  describe('records_delete tool', () => {
     it('should delete record successfully', async () => {
       const mockResult = {
         success: true,

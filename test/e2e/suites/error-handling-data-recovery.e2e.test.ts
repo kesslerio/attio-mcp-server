@@ -39,7 +39,7 @@ describe.skipIf(
       const companyData = testDataGenerator.companies.basicCompany();
       testCompanyId = await createTestRecord(
         (resourceType, data) =>
-          callUniversalTool('create_record', {
+          callUniversalTool('records_create', {
             resource_type: resourceType as any,
             record_data: data,
           }),
@@ -60,14 +60,14 @@ describe.skipIf(
 
   it('should handle incomplete transaction scenarios', async () => {
     const companyData = testDataGenerator.companies.basicCompany();
-    const createResponse = (await callUniversalTool('create_record', {
+    const createResponse = (await callUniversalTool('records_create', {
       resource_type: 'companies',
       record_data: companyData as any,
     })) as McpToolResponse;
     if (hasValidContent(createResponse)) {
       const companyId = extractRecordId(createResponse);
       if (companyId) {
-        const noteResponse = (await callNotesTool('create_note', {
+        const noteResponse = (await callNotesTool('notes_create', {
           resource_type: 'companies',
           record_id: companyId,
           title: 'Immediate Note',
@@ -75,7 +75,7 @@ describe.skipIf(
           format: 'markdown',
         })) as McpToolResponse;
         expect(noteResponse).toBeDefined();
-        await callUniversalTool('delete_record', {
+        await callUniversalTool('records_delete', {
           resource_type: 'companies',
           record_id: companyId,
         }).catch(() => {});
@@ -84,13 +84,13 @@ describe.skipIf(
   }, 60000);
 
   it('should handle error recovery gracefully', async () => {
-    const invalidResponse = (await callUniversalTool('get-record-details', {
+    const invalidResponse = (await callUniversalTool('records_get_details', {
       resource_type: 'companies',
       record_id: 'intentionally-invalid-id',
     })) as McpToolResponse;
     expect(invalidResponse.isError).toBe(true);
     if (testCompanyId) {
-      const validResponse = (await callUniversalTool('get-record-details', {
+      const validResponse = (await callUniversalTool('records_get_details', {
         resource_type: 'companies',
         record_id: testCompanyId,
       })) as McpToolResponse;

@@ -10,7 +10,7 @@
  *
  * describe('My Tool Tests', () => {
  *   it('should use snake_case', () => {
- *     ToolAssertions.expectSnakeCase('search_records'); // passes
+ *     ToolAssertions.expectSnakeCase('records_search'); // passes
  *     ToolAssertions.expectSnakeCase('search-records'); // fails
  *   });
  * });
@@ -34,7 +34,7 @@ export const ToolAssertions = {
    *
    * @example
    * ```typescript
-   * ToolAssertions.expectSnakeCase('search_records'); // ✓
+   * ToolAssertions.expectSnakeCase('records_search'); // ✓
    * ToolAssertions.expectSnakeCase('search-records'); // ✗
    * ```
    */
@@ -56,8 +56,8 @@ export const ToolAssertions = {
    * @example
    * ```typescript
    * const verbs = ['search', 'get', 'create'];
-   * ToolAssertions.expectVerbFirst('search_records', verbs); // ✓
-   * ToolAssertions.expectVerbFirst('records_search', verbs); // ✗
+   * ToolAssertions.expectVerbFirst('search_records', verbs); // passes this check
+   * ToolAssertions.expectVerbFirst('records_search', verbs); // fails this check
    * ```
    */
   expectVerbFirst(
@@ -84,7 +84,7 @@ export const ToolAssertions = {
    * @example
    * ```typescript
    * const registry = getToolAliasRegistry();
-   * ToolAssertions.expectAliasMapping(registry, 'search-records', 'search_records');
+   * ToolAssertions.expectAliasMapping(registry, 'search_records', 'records_search');
    * ```
    */
   expectAliasMapping(
@@ -146,7 +146,7 @@ export const ToolAssertions = {
    *
    * @example
    * ```typescript
-   * const defs = { search_records: { name: 'search_records', ... } };
+   * const defs = { records_search: { name: 'records_search', ... } };
    * ToolAssertions.expectDefinitionKeyMatch(defs);
    * ```
    */
@@ -172,7 +172,7 @@ export const ToolAssertions = {
    *
    * @example
    * ```typescript
-   * const tools = ['search_records', 'get_record'];
+   * const tools = ['records_search', 'get_record'];
    * const forbidden = ['records_search', 'record_get'];
    * ToolAssertions.expectNoForbiddenPatterns(tools, forbidden);
    * ```
@@ -200,8 +200,8 @@ export const ToolAssertions = {
    * @example
    * ```typescript
    * ToolAssertions.expectKebabToSnakeMappings(registry, {
-   *   'create-record': 'create_record',
-   *   'update-record': 'update_record'
+   *   'create-record': 'records_create',
+   *   'update-record': 'records_update'
    * });
    * ```
    */
@@ -223,8 +223,8 @@ export const ToolAssertions = {
    * @example
    * ```typescript
    * ToolAssertions.expectNounVerbToVerbFirstMappings(registry, {
-   *   'records_search': 'search_records',
-   *   'records_get_details': 'get_record_details'
+   *   'records_search': 'records_search',
+   *   'records_get_details': 'records_get_details'
    * });
    * ```
    */

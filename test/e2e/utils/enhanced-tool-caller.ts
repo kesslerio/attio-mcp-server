@@ -92,7 +92,7 @@ function preprocessParameters(
 ): ToolParameters {
   // Handle URI parameter for note creation tools
   if (
-    toolName === 'create_note' &&
+    toolName === 'notes_create' &&
     'uri' in parameters &&
     !('record_id' in parameters)
   ) {
@@ -147,7 +147,7 @@ export async function callToolWithEnhancements(
       process.env.E2E_MODE === 'true' &&
       process.env.USE_MOCK_DATA !== 'false' &&
       // Tools that provide E2E-safe fallbacks (no real API needed)
-      ['list_notes'].includes(toolName);
+      ['notes_list'].includes(toolName);
 
     if (
       !apiKeyStatus.available &&
@@ -389,8 +389,8 @@ export async function callTool(
 
   // Special handling for list operations to ensure array returns
   if (
-    result.toolName.includes('search-records') ||
-    result.toolName.includes('get-lists')
+    result.toolName.includes('records_search') ||
+    result.toolName.includes('lists_list')
   ) {
     if (!response.isError && result.content?.[0]?.text) {
       try {
@@ -485,7 +485,7 @@ export async function callUniversalTool(
 function isCreationTool(toolName: string): boolean {
   return (
     toolName.includes('create-') ||
-    toolName === 'create_record' ||
+    toolName === 'records_create' ||
     toolName.startsWith('create')
   );
 }
@@ -539,7 +539,7 @@ export async function validateTestEnvironment(): Promise<{
   if (apiKeyStatus.available) {
     try {
       const result = await callToolWithEnhancements(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: 'test',

@@ -400,7 +400,7 @@ Add new tools for working with Lists:
   },
 },
 {
-  name: "get-list-entries",
+  name: "list_entries_list",
   description: "Get entries from a specific list",
   inputSchema: {
     type: "object",
@@ -422,7 +422,7 @@ Add new tools for working with Lists:
   },
 },
 {
-  name: "add-record-to-list",
+  name: "list_entries_add",
   description: "Add a record to a list",
   inputSchema: {
     type: "object",
@@ -440,7 +440,7 @@ Add new tools for working with Lists:
   },
 },
 {
-  name: "remove-record-from-list",
+  name: "list_entries_remove",
   description: "Remove a record from a list",
   inputSchema: {
     type: "object",
@@ -508,7 +508,7 @@ if (toolName === 'list-lists') {
   }
 }
 
-if (toolName === 'get-list-entries') {
+if (toolName === 'list_entries_list') {
   const listId = request.params.arguments?.listId as string;
   const limit = (request.params.arguments?.limit as number) || 20;
   const offset = (request.params.arguments?.offset as number) || 0;
@@ -546,7 +546,7 @@ if (toolName === 'get-list-entries') {
   }
 }
 
-if (toolName === 'add-record-to-list') {
+if (toolName === 'list_entries_add') {
   const listId = request.params.arguments?.listId as string;
   const recordId = request.params.arguments?.recordId as string;
   const path = `/lists/${listId}/entries`;
@@ -575,7 +575,7 @@ if (toolName === 'add-record-to-list') {
   }
 }
 
-if (toolName === 'remove-record-from-list') {
+if (toolName === 'list_entries_remove') {
   const listId = request.params.arguments?.listId as string;
   const entryId = request.params.arguments?.entryId as string;
   const path = `/lists/${listId}/entries/${entryId}`;

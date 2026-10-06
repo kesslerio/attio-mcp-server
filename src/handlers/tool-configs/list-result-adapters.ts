@@ -142,7 +142,7 @@ export function normalizeListEntryDelete(
   };
 }
 
-/** manage-list-entry reports either the written entry or the removal outcome. */
+/** list_entries_manage reports either the written entry or the removal outcome. */
 export function normalizeListEntryMutation(
   result: unknown,
   resourceType?: string,

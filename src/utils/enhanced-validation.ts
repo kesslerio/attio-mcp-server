@@ -358,13 +358,23 @@ export function createEnhancedErrorResponse(
   }
 
   // Add operation-specific suggestions
-  if (operation === 'create-record' && validation.missingFields?.length) {
+  if (
+    (operation === 'records_create' ||
+      operation === 'create_record' ||
+      operation === 'create-record') &&
+    validation.missingFields?.length
+  ) {
     suggestions.push(
       'Ensure all required fields have values before creating a record'
     );
   }
 
-  if (operation === 'update-record' && validation.readOnlyFields?.length) {
+  if (
+    (operation === 'records_update' ||
+      operation === 'update_record' ||
+      operation === 'update-record') &&
+    validation.readOnlyFields?.length
+  ) {
     suggestions.push(
       'Use separate calls to update read-only fields if they support it, or remove them from the update'
     );

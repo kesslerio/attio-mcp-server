@@ -1,5 +1,5 @@
 /**
- * Handler-level tests for create-list and update-list-configuration tools.
+ * Handler-level tests for lists_create and lists_update_configuration tools.
  * Tests the actual dispatcher handler functions, not just the validator.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -76,7 +76,7 @@ describe('handleCreateListOperation', () => {
 
   it('returns error when name is missing', async () => {
     const result = await handleCreateListOperation(
-      makeRequest('create-list', { parent_object: 'companies' }),
+      makeRequest('lists_create', { parent_object: 'companies' }),
       listsToolConfigs.createList
     );
     const text = getErrorProse(result);
@@ -85,7 +85,7 @@ describe('handleCreateListOperation', () => {
 
   it('returns error when parent_object is missing', async () => {
     const result = await handleCreateListOperation(
-      makeRequest('create-list', { name: 'Test' }),
+      makeRequest('lists_create', { name: 'Test' }),
       listsToolConfigs.createList
     );
     const text = getErrorProse(result);
@@ -96,7 +96,7 @@ describe('handleCreateListOperation', () => {
     setupWorkspaceObjects(['companies', 'people']);
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Bad List',
         parent_object: 'nonexistent',
       }),
@@ -119,7 +119,7 @@ describe('handleCreateListOperation', () => {
     });
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'My List',
         parent_object: 'companies',
       }),
@@ -147,7 +147,7 @@ describe('handleCreateListOperation', () => {
     });
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'My List',
         parent_object: 'companies',
       }),
@@ -171,7 +171,7 @@ describe('handleCreateListOperation', () => {
     });
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'My List',
         parent_object: 'companies',
         workspace_access: 'full-access',
@@ -196,7 +196,7 @@ describe('handleCreateListOperation', () => {
     });
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'My List',
         parent_object: 'companies',
         workspace_member_access: [
@@ -224,7 +224,7 @@ describe('handleCreateListOperation', () => {
     setupWorkspaceObjects(['companies']);
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Pipeline',
         parent_object: 'companies',
         dry_run: true,
@@ -251,7 +251,7 @@ describe('handleCreateListOperation', () => {
     });
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Sales Pipeline',
         parent_object: 'companies',
         template: 'sales_pipeline',
@@ -275,7 +275,7 @@ describe('handleUpdateListConfigurationOperation', () => {
 
   it('returns error when listId is missing', async () => {
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         attributes: { name: 'New' },
       }),
       listsToolConfigs.updateListConfiguration
@@ -286,7 +286,7 @@ describe('handleUpdateListConfigurationOperation', () => {
 
   it('returns error when attributes are missing', async () => {
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', { listId: 'list-1' }),
+      makeRequest('lists_update_configuration', { listId: 'list-1' }),
       listsToolConfigs.updateListConfiguration
     );
     const text = getErrorProse(result);
@@ -295,7 +295,7 @@ describe('handleUpdateListConfigurationOperation', () => {
 
   it('rejects immutable field parent_object', async () => {
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: { parent_object: 'people', name: 'New' },
       }),
@@ -318,7 +318,7 @@ describe('handleUpdateListConfigurationOperation', () => {
     });
 
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: { name: 'Updated Name' },
       }),
@@ -343,7 +343,7 @@ describe('handleUpdateListConfigurationOperation', () => {
     });
 
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: { name: 'Updated Name' },
         workspace_access: 'read-only',
@@ -358,7 +358,7 @@ describe('handleUpdateListConfigurationOperation', () => {
 
   it('returns dry-run preview without API call', async () => {
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: { name: 'Preview' },
         dry_run: true,
@@ -384,7 +384,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
 
   it('rejects invalid workspace_access before any API call', async () => {
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Bad Access',
         parent_object: 'companies',
         workspace_access: 'invalid-level',
@@ -400,7 +400,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
 
   it('rejects non-array workspace_member_access before any API call', async () => {
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Bad Members',
         parent_object: 'companies',
         workspace_member_access: 'not-an-array',
@@ -415,7 +415,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
 
   it('enforces the create-time full-access invariant through the handler', async () => {
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'No Grantee',
         parent_object: 'companies',
         workspace_member_access: [
@@ -445,7 +445,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
     });
 
     await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Bag List',
         parent_object: 'companies',
         attributes: {
@@ -469,7 +469,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
 
   it('rejects dual-source workspace_access (first-class + attributes bag) before any API call', async () => {
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Prec',
         parent_object: 'companies',
         workspace_access: 'full-access',
@@ -497,7 +497,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
     });
 
     await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Private',
         parent_object: 'companies',
         workspace_access: 'null',
@@ -528,7 +528,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
     );
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Gated',
         parent_object: 'companies',
       }),
@@ -553,7 +553,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
     );
 
     const result = await handleCreateListOperation(
-      makeRequest('create-list', {
+      makeRequest('lists_create', {
         name: 'Forbidden',
         parent_object: 'companies',
       }),
@@ -574,7 +574,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
 
   it('rejects invalid workspace_access shape before any API call', async () => {
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: {},
         workspace_access: 'not-a-level',
@@ -599,7 +599,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
     });
 
     await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: { workspace_access: 'null' },
       }),
@@ -613,7 +613,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
 
   it('rejects dual-source workspace_access (first-class + attributes bag) before any API call', async () => {
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: { workspace_access: 'read-only' },
         workspace_access: 'read-and-write',
@@ -643,7 +643,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
       dry_run: true,
     };
     const previewResult = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', accessArgs),
+      makeRequest('lists_update_configuration', accessArgs),
       listsToolConfigs.updateListConfiguration
     );
     const preview = JSON.parse(
@@ -660,7 +660,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
       updated_at: '2024-01-02',
     });
     await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         ...accessArgs,
         dry_run: false,
       }),
@@ -690,7 +690,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
     );
 
     const result = await handleUpdateListConfigurationOperation(
-      makeRequest('update-list-configuration', {
+      makeRequest('lists_update_configuration', {
         listId: 'list-1',
         attributes: { workspace_access: 'read-only' },
       }),

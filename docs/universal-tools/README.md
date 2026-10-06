@@ -63,9 +63,9 @@ Universal tools are consolidated MCP operations that work across multiple resour
 
 - `records.search` - Find records with flexible filtering
 - `records.get_details` - Retrieve detailed record information
-- `create-record` - Create new records
-- `update-record` - Modify existing records
-- `delete-record` - Remove records
+- `records_create` - Create new records
+- `records_update` - Modify existing records
+- `records_delete` - Remove records
 - `records.get_attributes` - Retrieve record attributes
 - `records.discover_attributes` - Explore available attributes
 - `records.get_info` - Get specialized record information

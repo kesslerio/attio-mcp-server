@@ -90,7 +90,7 @@ Usability testing validates that the Attio MCP Server tools are intuitive and we
 **Task:** "Create a new company record and add a contact person"
 
 **Evaluation Points:**
-- Does agent know to use `get-attributes` first to discover fields?
+- Does agent know to use `records_get_attributes` first to discover fields?
 - Can they construct valid `record_data` without extensive trial and error?
 - Is the relationship between companies and people clear?
 

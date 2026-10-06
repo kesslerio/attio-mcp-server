@@ -116,7 +116,7 @@ export async function executeDealMerge(
         warning,
         plan: currentPlan,
         message:
-          'Attio is still applying the merge. Do not poll here; retry get_record_details with new_record_id later.',
+          'Attio is still applying the merge. Do not poll here; retry records_get_details with new_record_id later.',
       };
     }
 

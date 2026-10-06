@@ -248,7 +248,7 @@ workflow_steps:
 
 Then update `USE_CASES` in `skills/attio-skill-generator/scripts/generator.py`.
 
-> **Tool names:** Use canonical tool names (e.g., `records_search`, `records_get_details`) rather than aliases (`search-records`, `get-record-details`) to avoid deprecation drift.
+> **Tool names:** Use canonical tool names (e.g., `records_search`, `records_get_details`) rather than aliases (`records_search`, `records_get_details`) to avoid deprecation drift.
 
 ## Troubleshooting
 

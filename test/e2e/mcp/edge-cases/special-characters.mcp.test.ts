@@ -100,7 +100,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
         domains: [`special-${Date.now()}.chars.com`],
       };
 
-      const createResult = await this.executeToolCall('create_record', {
+      const createResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -125,7 +125,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
       expect(companyId).toBeTruthy();
       this.trackRecord('companies', companyId);
 
-      const detailsResult = await this.executeToolCall('get-record-details', {
+      const detailsResult = await this.executeToolCall('records_get_details', {
         resource_type: 'companies',
         record_id: companyId,
       });
@@ -137,7 +137,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
 
       const updatedDescription =
         'Updated “Smart Quotes” with O’Connor feedback &amp; <em>Résumé &amp; Co.</em> <script>alert("safety")</script> 🎯';
-      const updateResult = await this.executeToolCall('update_record', {
+      const updateResult = await this.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: companyId,
         record_data: { description: updatedDescription },
@@ -147,7 +147,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
       expect(updateResult.isError).toBeFalsy();
       expect(updateText.toLowerCase()).toContain('updated');
 
-      const updatedDetails = await this.executeToolCall('get-record-details', {
+      const updatedDetails = await this.executeToolCall('records_get_details', {
         resource_type: 'companies',
         record_id: companyId,
       });
@@ -177,7 +177,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
         'Lead "Innovation" Engineer &amp; Researcher — Unicode Ω Δ 🚀 &nbsp; Champion';
       personData.email_addresses = [`special.chars+${Date.now()}@example.com`];
 
-      const createResult = await this.executeToolCall('create_record', {
+      const createResult = await this.executeToolCall('records_create', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -201,7 +201,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
       expect(personId).toBeTruthy();
       this.trackRecord('people', personId);
 
-      const detailsResult = await this.executeToolCall('get-record-details', {
+      const detailsResult = await this.executeToolCall('records_get_details', {
         resource_type: 'people',
         record_id: personId,
       });
@@ -226,7 +226,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
       const parentCompanyData = TestDataFactory.createCompanyData(
         'TC_EC05_NOTE_PARENT'
       );
-      const parentResult = await this.executeToolCall('create_record', {
+      const parentResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: parentCompanyData,
       });
@@ -255,7 +255,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
         'International: こんにちは, привет, مرحبا, שלום.',
       ].join('\n');
 
-      const createNoteResult = await this.executeToolCall('create_note', {
+      const createNoteResult = await this.executeToolCall('notes_create', {
         resource_type: 'companies',
         record_id: parentCompanyId,
         title: noteTitle,
@@ -271,7 +271,7 @@ class SpecialCharacterHandlingTest extends EdgeCaseTestBase {
       expect(noteId).toBeTruthy();
       this.trackRecord('notes', noteId);
 
-      const listResult = await this.executeToolCall('list_notes', {
+      const listResult = await this.executeToolCall('notes_list', {
         resource_type: 'companies',
         record_id: parentCompanyId,
         limit: 5,

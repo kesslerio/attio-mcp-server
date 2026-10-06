@@ -26,7 +26,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
   describe("❌ Incorrect Usage (User's Failing Examples)", () => {
     it('❌ WRONG: timeframe + date_field (should return error or 0 results)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           timeframe: 'last_7_days',
           date_field: 'updated_at',
@@ -53,7 +53,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
 
     it('❌ WRONG: timeframe + date_field for this_week', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           timeframe: 'this_week',
           date_field: 'last_interaction',
@@ -80,7 +80,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
   describe('✅ Correct Usage', () => {
     it('✅ CORRECT: timeframe + timeframe_attribute', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -111,7 +111,7 @@ describe('Timeframe Search Parameter Usage Demo', () => {
 
     it('✅ CORRECT: timeframe + timeframe_attribute for last_interaction', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',

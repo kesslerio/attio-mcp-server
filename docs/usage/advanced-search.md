@@ -6,7 +6,7 @@ Build precise CRM queries with multi-criteria filtering using AND/OR logic.
 
 ## Filter Architecture
 
-This is the supported structure used by the `advanced-search` tool:
+This is the supported structure used by the `records_search_advanced` tool:
 
 ```json
 {

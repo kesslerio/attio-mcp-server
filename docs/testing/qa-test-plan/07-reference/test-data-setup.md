@@ -254,7 +254,7 @@ mcp__attio__records.search resource_type="deals" query="QA Test Deal" limit=10
 
 #### Issue: "Field not found" errors
 
-**Solution:** Re-run `get-attributes` and verify field names match exactly
+**Solution:** Re-run `records_get_attributes` and verify field names match exactly
 
 #### Issue: "Invalid format" errors
 
