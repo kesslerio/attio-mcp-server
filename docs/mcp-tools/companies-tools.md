@@ -1,7 +1,7 @@
 # ⚠️ DEPRECATED: Attio MCP Companies Tools
 
 > **🚨 IMPORTANT NOTICE**: These individual company tools have been **deprecated** and consolidated into universal tools.
-> 
+>
 > **📖 New Universal Tools**: Use [Universal Tools](../universal-tools/README.md) instead for better performance and consistency.
 >
 > **🔄 Migration**: See the [Migration Guide](../universal-tools/migration-guide.md) for complete mappings from these deprecated tools to their universal equivalents.
@@ -22,10 +22,10 @@ Search for companies by name.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| query     | string | Search term to match against company names | Yes |
-| limit     | number | Maximum number of results to return (default: 20) | No |
+| Parameter | Type   | Description                                       | Required |
+| --------- | ------ | ------------------------------------------------- | -------- |
+| query     | string | Search term to match against company names        | Yes      |
+| limit     | number | Maximum number of results to return (default: 20) | No       |
 
 #### Example Usage
 
@@ -98,9 +98,9 @@ Get detailed information about a specific company by ID.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | Company record ID | Yes |
+| Parameter | Type   | Description       | Required |
+| --------- | ------ | ----------------- | -------- |
+| id        | string | Company record ID | Yes      |
 
 #### Example Usage
 
@@ -135,7 +135,9 @@ Get detailed information about a specific company by ID.
         "industry": [{ "value": "Technology" }],
         "size": [{ "value": "100-500 employees" }],
         "address": [{ "value": "123 Main St, San Francisco, CA 94105" }],
-        "description": [{ "value": "Leading provider of innovative software solutions" }],
+        "description": [
+          { "value": "Leading provider of innovative software solutions" }
+        ],
         "year_founded": [{ "value": 2010 }]
       }
     }
@@ -149,11 +151,11 @@ Get notes associated with a specific company.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | Company record ID | Yes |
-| limit     | number | Maximum number of notes to return (default: 10) | No |
-| offset    | number | Number of notes to skip (default: 0) | No |
+| Parameter | Type   | Description                                     | Required |
+| --------- | ------ | ----------------------------------------------- | -------- |
+| id        | string | Company record ID                               | Yes      |
+| limit     | number | Maximum number of notes to return (default: 10) | No       |
+| offset    | number | Number of notes to skip (default: 0)            | No       |
 
 #### Example Usage
 
@@ -185,14 +187,20 @@ Get notes associated with a specific company.
         "title": "Partnership Discussion",
         "content": "Initial meeting with leadership team about strategic partnership.",
         "created_at": "2023-04-20T13:00:00Z",
-        "created_by": { "user_id": "user_01abcdef", "name": "Account Executive" }
+        "created_by": {
+          "user_id": "user_01abcdef",
+          "name": "Account Executive"
+        }
       },
       {
         "id": { "note_id": "note_02ghijkl" },
         "title": "Technical Integration",
         "content": "Discussed API integration options and timeline.",
         "created_at": "2023-05-05T15:30:00Z",
-        "created_by": { "user_id": "user_02ghijkl", "name": "Solutions Architect" }
+        "created_by": {
+          "user_id": "user_02ghijkl",
+          "name": "Solutions Architect"
+        }
       },
       {
         "id": { "note_id": "note_03mnopqr" },
@@ -216,11 +224,11 @@ Create a new note for a specific company.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | Company record ID | Yes |
-| title     | string | Note title | Yes |
-| content   | string | Note content | Yes |
+| Parameter | Type   | Description       | Required |
+| --------- | ------ | ----------------- | -------- |
+| id        | string | Company record ID | Yes      |
+| title     | string | Note title        | Yes      |
+| content   | string | Note content      | Yes      |
 
 #### Example Usage
 
@@ -267,29 +275,14 @@ The `search-companies` tool searches for companies by name using Attio's filter 
 ```typescript
 // For companies, search by name only
 filter = {
-  name: { "$contains": query }
+  name: { $contains: query },
 };
 ```
 
 ### Retry Logic
 
-All API calls include automatic retry logic with exponential backoff for handling transient errors:
-
-```typescript
-const result = await callWithRetry(
-  async () => {
-    // API call implementation
-  },
-  {
-    maxRetries: 3,
-    initialDelay: 1000,
-    maxDelay: 10000,
-    useExponentialBackoff: true
-  }
-);
-```
-
-This ensures robust operation even during network issues or API rate limiting.
+See [API call retry logic](../api/error-handling.md#api-call-retry-logic)
+for read retry eligibility and mutation recovery constraints.
 
 ### Response Formatting
 

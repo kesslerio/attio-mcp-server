@@ -44,6 +44,24 @@ export interface CleanupResult {
   duration: number;
 }
 
+/**
+ * Registry resource slugs. Standard objects are fetched and deleted via
+ * `/objects/{slug}/records...`; `tasks`, `notes`, and `lists` are Attio
+ * first-class resources with their own endpoints (issue #620).
+ */
+export type RegistryResource =
+  | 'companies'
+  | 'people'
+  | 'deals'
+  | 'tasks'
+  | 'notes'
+  | 'lists';
+
+/**
+ * Object-record slugs fetched/deleted through the generic objects API.
+ */
+export type StandardResource = 'companies' | 'people' | 'deals';
+
 export interface AttioRecord {
   id: any;
   created_by_actor?: {
@@ -64,7 +82,7 @@ export interface AttioRecord {
   [key: string]: any;
 }
 
-export type ResourceType = 'companies' | 'people' | 'deals' | 'tasks';
+export type ResourceType = RegistryResource;
 
 export interface FetchResult {
   records: AttioRecord[];

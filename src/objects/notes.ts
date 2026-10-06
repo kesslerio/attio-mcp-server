@@ -5,19 +5,20 @@
  * They link to records via parent_object + parent_record_id
  */
 
-import { getLazyAttioClient } from '../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import type { AttioNote } from '../types/attio.js';
-import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
-import { debug } from '../utils/logger.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
+import type { AttioNote } from '@/types/attio.js';
+import { createRecordNotFoundError } from '@/utils/validation/uuid-validation.js';
+import { debug } from '@/utils/logger.js';
 import {
   getErrorStatus,
   getErrorMessage,
   HttpErrorLike,
-} from '../types/error-interfaces.js';
+} from '@/types/error-interfaces.js';
 
 /**
  * Create note body for Attio API
@@ -144,21 +145,16 @@ export async function listNotes(query: ListNotesQuery = {}): Promise<{
     // The /notes endpoint accepts filters (parent_object, parent_record_id)
     // and returns an empty array when no notes exist.
     const response = await api.get('/notes', { params: query });
-    const res = (response?.data as {
+    const res = response?.data as {
       data?: AttioNote[];
       meta?: { next_cursor?: string };
-    }) ?? { data: [] };
-    const items = Array.isArray(res.data) ? res.data : [];
-    return { data: items, meta: res.meta };
+    };
+    if (!Array.isArray(res?.data)) throw new ResultEncodingError();
+    return { data: res.data, meta: res.meta };
   } catch (error: unknown) {
     debug('notes', 'List notes failed', {
       error: getErrorMessage(error) || 'Unknown error',
     });
-    // Prefer returning an empty list on benign 404s for list operations
-    const status = getErrorStatus(error);
-    if (status === 404) {
-      return { data: [], meta: undefined };
-    }
     throw error;
   }
 }
@@ -183,10 +179,7 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
     const response = await api.get(`/notes/${noteId}`);
     const data = response?.data as { data: AttioNote } | undefined;
     if (!data) {
-      throw new UniversalValidationError(
-        'Note lookup returned empty response',
-        ErrorType.SYSTEM_ERROR
-      );
+      throw new ResultEncodingError();
     }
     return data;
   } catch (error: unknown) {
@@ -195,7 +188,9 @@ export async function getNote(noteId: string): Promise<{ data: AttioNote }> {
     });
 
     if (getErrorStatus(error) === 404) {
-      throw createRecordNotFoundError(noteId, 'note');
+      throw Object.assign(createRecordNotFoundError(noteId, 'note'), {
+        cause: error,
+      });
     }
 
     throw error;
@@ -254,6 +249,9 @@ export function normalizeNoteResponse(note: AttioNote): {
   };
   raw: AttioNote;
 } {
+  if (!note || typeof note !== 'object' || Array.isArray(note)) {
+    throw new ResultEncodingError();
+  }
   const noteRecord = note as Record<string, unknown>;
   const meetingIdField =
     'meeting_id' in noteRecord ? noteRecord.meeting_id : undefined;
@@ -272,8 +270,10 @@ export function normalizeNoteResponse(note: AttioNote): {
     note.note_id ??
     idObject?.record_id ??
     idObject?.note_id ??
-    idObject?.id ??
-    'unknown';
+    idObject?.id;
+  if (typeof derivedRecordId !== 'string' || !derivedRecordId.trim()) {
+    throw new ResultEncodingError();
+  }
 
   const title = note.title ?? null;
   const contentMarkdown = note.content_markdown ?? note.content ?? null;
@@ -286,9 +286,13 @@ export function normalizeNoteResponse(note: AttioNote): {
     id: { record_id: derivedRecordId },
     resource_type: 'notes',
     values: {
-      title: title ?? undefined,
-      content_markdown: contentMarkdown ?? undefined,
-      content_plaintext: contentPlaintext ?? undefined,
+      ...(title !== null ? { title } : {}),
+      ...(contentMarkdown !== null
+        ? { content_markdown: contentMarkdown }
+        : {}),
+      ...(contentPlaintext !== null
+        ? { content_plaintext: contentPlaintext }
+        : {}),
       parent_object: parentObject,
       parent_record_id: parentRecordId,
       created_at: createdAt,

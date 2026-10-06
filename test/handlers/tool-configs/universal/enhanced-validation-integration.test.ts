@@ -6,53 +6,47 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { updateRecordConfig } from '../../../../src/handlers/tool-configs/universal/core/crud-operations.js';
-import type { ValidationMetadata } from '../../../../src/handlers/tool-configs/universal/core/utils.js';
+import { updateRecordConfig } from '@/handlers/tool-configs/universal/core/crud-operations.js';
+import type { ValidationMetadata } from '@/handlers/tool-configs/universal/core/utils.js';
 
 // Mock dependencies
-vi.mock('../../../../src/services/UniversalUpdateService.js', () => ({
+vi.mock('@/services/UniversalUpdateService.js', () => ({
   UniversalUpdateService: {
     updateRecordWithValidation: vi.fn(),
   },
 }));
 
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/shared-handlers.js',
-  () => ({
-    handleUniversalUpdate: vi.fn(),
-    getSingularResourceType: vi.fn((type) => {
-      const mapping: Record<string, string> = {
-        companies: 'company',
-        people: 'person',
-        deals: 'deal',
-        tasks: 'task',
-        notes: 'note',
-        lists: 'list',
-        records: 'record',
-      };
-      return mapping[type] ?? type;
-    }),
-  })
-);
-
-vi.mock(
-  '../../../../src/handlers/tool-configs/universal/schemas.js',
-  async () => {
-    const actual = await vi.importActual<
-      typeof import('../../../../src/handlers/tool-configs/universal/schemas.js')
-    >('../../../../src/handlers/tool-configs/universal/schemas.js');
-
-    return {
-      ...actual,
-      validateUniversalToolParams: vi.fn((toolName, params) => params),
-      CrossResourceValidator: {
-        validateRecordRelationships: vi.fn(),
-      },
+vi.mock('@/handlers/tool-configs/universal/shared-handlers.js', () => ({
+  handleUniversalUpdate: vi.fn(),
+  getSingularResourceType: vi.fn((type) => {
+    const mapping: Record<string, string> = {
+      companies: 'company',
+      people: 'person',
+      deals: 'deal',
+      tasks: 'task',
+      notes: 'note',
+      lists: 'list',
+      records: 'record',
     };
-  }
-);
+    return mapping[type] ?? type;
+  }),
+}));
 
-vi.mock('../../../../src/utils/logger.js', () => ({
+vi.mock('@/handlers/tool-configs/universal/schemas.js', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/handlers/tool-configs/universal/schemas.js')
+  >('@/handlers/tool-configs/universal/schemas.js');
+
+  return {
+    ...actual,
+    validateUniversalToolParams: vi.fn((toolName, params) => params),
+    CrossResourceValidator: {
+      validateRecordRelationships: vi.fn(),
+    },
+  };
+});
+
+vi.mock('@/utils/logger.js', () => ({
   createScopedLogger: vi.fn(() => ({
     error: vi.fn(),
     warn: vi.fn(),
@@ -70,13 +64,13 @@ describe('Enhanced Validation Integration', () => {
     vi.clearAllMocks();
 
     mockUniversalUpdateService = await vi.importMock(
-      '../../../../src/services/UniversalUpdateService.js'
+      '@/services/UniversalUpdateService.js'
     );
     mockSharedHandlers = await vi.importMock(
-      '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
+      '@/handlers/tool-configs/universal/shared-handlers.js'
     );
     mockCrudErrorHandlers = await vi.importMock(
-      '../../../../src/handlers/tool-configs/universal/core/error-utils.js'
+      '@/handlers/tool-configs/universal/core/error-utils.js'
     );
   });
 
@@ -187,21 +181,12 @@ describe('Enhanced Validation Integration', () => {
       expect(formatted).toContain('• amount: 100000');
     });
 
-    it('should handle deal validation service errors gracefully', async () => {
+    it('should propagate deal service errors without replaying the update', async () => {
       const dealData = { name: 'Test Deal' };
       const serviceError = new Error('Enhanced validation service error');
 
       mockUniversalUpdateService.UniversalUpdateService.updateRecordWithValidation.mockRejectedValue(
         serviceError
-      );
-
-      // Mock fallback to standard handler
-      const fallbackResult = {
-        id: { record_id: 'deal-789' },
-        values: { name: [{ value: 'Test Deal' }] },
-      };
-      mockSharedHandlers.handleUniversalUpdate.mockResolvedValue(
-        fallbackResult
       );
 
       const updateParams = {
@@ -210,12 +195,14 @@ describe('Enhanced Validation Integration', () => {
         record_data: dealData,
       };
 
-      const result = await updateRecordConfig.handler(updateParams);
-
-      expect(result).toEqual(fallbackResult);
-      expect(mockSharedHandlers.handleUniversalUpdate).toHaveBeenCalledWith(
-        updateParams
+      await expect(updateRecordConfig.handler(updateParams)).rejects.toThrow(
+        'Failed to update deal'
       );
+      expect(
+        mockUniversalUpdateService.UniversalUpdateService
+          .updateRecordWithValidation
+      ).toHaveBeenCalledExactlyOnceWith(updateParams);
+      expect(mockSharedHandlers.handleUniversalUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -410,19 +397,10 @@ describe('Enhanced Validation Integration', () => {
   });
 
   describe('Error Propagation Through Validation', () => {
-    it('should fallback to standard handler when enhanced validation fails', async () => {
+    it('should propagate validation failures without a standard update', async () => {
       const validationError = new Error('Field validation failed');
       mockUniversalUpdateService.UniversalUpdateService.updateRecordWithValidation.mockRejectedValue(
         validationError
-      );
-
-      const fallbackResult = {
-        id: { record_id: 'error-123' },
-        values: { name: [{ value: 'Error Test' }] },
-      };
-
-      mockSharedHandlers.handleUniversalUpdate.mockResolvedValue(
-        fallbackResult
       );
 
       const updateParams = {
@@ -431,16 +409,14 @@ describe('Enhanced Validation Integration', () => {
         record_data: { name: 'Error Test' },
       };
 
-      const result = await updateRecordConfig.handler(updateParams);
-
-      expect(result).toEqual(fallbackResult);
+      await expect(updateRecordConfig.handler(updateParams)).rejects.toThrow(
+        'Failed to update deal: Validation failed.'
+      );
       expect(
         mockUniversalUpdateService.UniversalUpdateService
           .updateRecordWithValidation
-      ).toHaveBeenCalledWith(updateParams);
-      expect(mockSharedHandlers.handleUniversalUpdate).toHaveBeenCalledWith(
-        updateParams
-      );
+      ).toHaveBeenCalledExactlyOnceWith(updateParams);
+      expect(mockSharedHandlers.handleUniversalUpdate).not.toHaveBeenCalled();
     });
   });
 });

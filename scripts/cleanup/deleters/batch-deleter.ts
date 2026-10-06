@@ -1,9 +1,30 @@
 /**
- * Batch deletion operations for cleanup scripts
+ * Batch deletion — the single dispatch point for cleanup deletions
+ * (issue #620).
+ *
+ * All batch deletion flows through deleteSingleRecord; per-resource
+ * behavior lives ONLY in the resource switch below. Endpoints by resource:
+ *
+ * - tasks                        → DELETE /tasks/{id}
+ * - notes                        → DELETE /notes/{id}   (first-class
+ *                                  resource — no object exists for 'notes')
+ * - lists                        → DELETE /lists/{id}   (the list resource
+ *                                  itself, not a list membership —
+ *                                  DELETE /lists/{list}/entries is a
+ *                                  different endpoint and never used here)
+ * - companies / people / deals   → DELETE /objects/{slug}/records/{id}
  */
 import { AxiosInstance } from 'axios';
 import { AttioRecord, ResourceType, ResourceSummary } from '../core/types.js';
-import { extractRecordId, extractRecordName, delay, chunk, logInfo, logError, logSuccess } from '../core/utils.js';
+import {
+  extractRecordId,
+  extractRecordName,
+  delay,
+  chunk,
+  logInfo,
+  logError,
+  logSuccess,
+} from '../core/utils.js';
 
 export interface DeletionOptions {
   parallel: number;
@@ -23,8 +44,8 @@ export interface DeletionResult {
  * Delete a single record
  */
 async function deleteSingleRecord(
-  client: AxiosInstance, 
-  record: AttioRecord, 
+  client: AxiosInstance,
+  record: AttioRecord,
   resourceType: ResourceType,
   dryRun: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
@@ -38,7 +59,7 @@ async function deleteSingleRecord(
 
   try {
     let endpoint: string;
-    
+
     switch (resourceType) {
       case 'companies':
         endpoint = `/objects/companies/records/${id}`;
@@ -52,27 +73,29 @@ async function deleteSingleRecord(
       case 'tasks':
         endpoint = `/tasks/${id}`;
         break;
+      // First-class resources with dedicated endpoints (issue #620).
+      // The object-record paths 404: "No Object was found for path param slug".
       case 'lists':
-        endpoint = `/objects/lists/records/${id}`;
+        endpoint = `/lists/${id}`;
         break;
       case 'notes':
-        endpoint = `/objects/notes/records/${id}`;
+        endpoint = `/notes/${id}`;
         break;
       default:
         throw new Error(`Unsupported resource type: ${resourceType}`);
     }
 
     const response = await client.delete(endpoint);
-    
+
     if (response.status === 200 || response.status === 204) {
       logSuccess(`Deleted ${resourceType}`, { id, name });
       return { success: true };
     }
-    
-    throw new Error(`Unexpected status code: ${response.status}`);
 
+    throw new Error(`Unexpected status code: ${response.status}`);
   } catch (error: any) {
-    const errorMsg = error?.response?.data?.message || error?.message || 'Unknown error';
+    const errorMsg =
+      error?.response?.data?.message || error?.message || 'Unknown error';
     logError(`Failed to delete ${resourceType}`, { id, name, error: errorMsg });
     return { success: false, error: errorMsg };
   }
@@ -89,12 +112,12 @@ export async function batchDeleteRecords(
 ): Promise<DeletionResult> {
   const startTime = Date.now();
   const { parallel, rateLimit, dryRun, continueOnError } = options;
-  
+
   logInfo(`Starting ${dryRun ? 'DRY RUN ' : ''}batch deletion`, {
     resourceType,
     count: records.length,
     parallel,
-    rateLimit
+    rateLimit,
   });
 
   if (records.length === 0) {
@@ -106,18 +129,18 @@ export async function batchDeleteRecords(
     successful: 0,
     failed: 0,
     errors: [],
-    duration: 0
+    duration: 0,
   };
 
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
-    
-    logInfo(`Processing ${resourceType} batch ${i + 1}/${batches.length}`, { 
-      batchSize: batch.length 
+
+    logInfo(`Processing ${resourceType} batch ${i + 1}/${batches.length}`, {
+      batchSize: batch.length,
     });
 
     // Process batch in parallel
-    const batchPromises = batch.map(record => 
+    const batchPromises = batch.map((record) =>
       deleteSingleRecord(client, record, resourceType, dryRun)
     );
 
@@ -127,7 +150,7 @@ export async function batchDeleteRecords(
     for (let j = 0; j < batchResults.length; j++) {
       const result = batchResults[j];
       const record = batch[j];
-      
+
       if (result.success) {
         results.successful++;
       } else {
@@ -135,11 +158,13 @@ export async function batchDeleteRecords(
         results.errors.push({
           id: extractRecordId(record, resourceType),
           name: extractRecordName(record, resourceType),
-          error: result.error || 'Unknown error'
+          error: result.error || 'Unknown error',
         });
 
         if (!continueOnError) {
-          throw new Error(`Deletion failed for ${extractRecordName(record, resourceType)}: ${result.error}`);
+          throw new Error(
+            `Deletion failed for ${extractRecordName(record, resourceType)}: ${result.error}`
+          );
         }
       }
     }
@@ -156,7 +181,7 @@ export async function batchDeleteRecords(
     resourceType,
     successful: results.successful,
     failed: results.failed,
-    duration: `${results.duration}ms`
+    duration: `${results.duration}ms`,
   });
 
   return results;
@@ -175,12 +200,12 @@ export function createResourceSummary(
     found: records.length,
     deleted: deletionResult.successful,
     errors: deletionResult.failed,
-    items: records.map(record => ({
+    items: records.map((record) => ({
       id: extractRecordId(record, resourceType),
       name: extractRecordName(record, resourceType),
       createdBy: record.created_by_actor?.id,
-      createdAt: record.created_at
-    }))
+      createdAt: record.created_at,
+    })),
   };
 }
 
@@ -188,15 +213,15 @@ export function createResourceSummary(
  * Display deletion summary
  */
 export function displayDeletionSummary(
-  summaries: ResourceSummary[], 
+  summaries: ResourceSummary[],
   dryRun: boolean = false
 ): void {
   const mode = dryRun ? 'DRY RUN' : 'LIVE';
   const action = dryRun ? 'Would delete' : 'Deleted';
-  
+
   console.log(`\n📊 ${mode} SUMMARY`);
   console.log('='.repeat(50));
-  
+
   let totalFound = 0;
   let totalDeleted = 0;
   let totalErrors = 0;

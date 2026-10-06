@@ -90,7 +90,7 @@ describe('error-handler', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain(
+      expect(result.content[1].text).toContain(
         `ERROR [${ErrorType.SERVER_ERROR}]: Test error`
       );
       expect(result.error.code).toBe(500);
@@ -112,6 +112,7 @@ describe('error-handler', () => {
 
       expect(result).toMatchObject({
         content: [
+          { type: 'text', text: expect.any(String) },
           {
             type: 'text',
             text: expect.stringContaining('ERROR'),
@@ -124,6 +125,11 @@ describe('error-handler', () => {
           type: ErrorType.VALIDATION_ERROR,
         },
       });
+
+      expect(JSON.parse(result.content[0].text)).toEqual(
+        result.structuredContent
+      );
+      expect(result.structuredContent?.error.code).toBe('VALIDATION_ERROR');
 
       // Check that the error type is properly set
       expect(result.error.type).toBe(ErrorType.VALIDATION_ERROR);
@@ -139,7 +145,7 @@ describe('error-handler', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain(
+      expect(result.content[1].text).toContain(
         `ERROR [${ErrorType.UNKNOWN_ERROR}]`
       );
       expect(result.error.code).toBe(500);
@@ -178,7 +184,7 @@ describe('error-handler', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain(
+      expect(result.content[1].text).toContain(
         `ERROR [${ErrorType.VALIDATION_ERROR}]`
       );
       expect(result.error.code).toBe(400);

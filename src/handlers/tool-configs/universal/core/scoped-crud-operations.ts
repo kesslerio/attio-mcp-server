@@ -1,3 +1,4 @@
+import { recordWriteResultContract } from '@/handlers/tools/result-schemas.js';
 import { TOOL_NAMES } from '@/constants/tool-names.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import type { UniversalRecord } from '@/types/attio.js';
@@ -7,8 +8,11 @@ import {
   UniversalResourceType,
   UniversalToolConfig,
   UniversalUpdateParams,
-} from '../types.js';
-import { createRecordConfig, updateRecordConfig } from './crud-operations.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import {
+  createRecordConfig,
+  updateRecordConfig,
+} from '@/handlers/tool-configs/universal/core/crud-operations.js';
 
 type ScopedCreateParams = Omit<UniversalCreateParams, 'resource_type'> & {
   resource_type?: unknown;
@@ -37,6 +41,7 @@ function scopedCreateConfig({
 > {
   return {
     name,
+    ...recordWriteResultContract,
     handler: (params: ScopedCreateParams) =>
       createRecordConfig.handler({
         resource_type: resourceType,
@@ -59,6 +64,7 @@ function scopedUpdateConfig({
 > {
   return {
     name,
+    ...recordWriteResultContract,
     handler: (params: ScopedUpdateParams) =>
       updateRecordConfig.handler({
         resource_type: resourceType,

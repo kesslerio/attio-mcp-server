@@ -1,3 +1,5 @@
+import { buildStructuredToolResult } from '@/handlers/tools/result-contract.js';
+import { CompanyMockFactory } from '@test/utils/mock-factories/index.js';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Hoist mocks to the top level
@@ -60,6 +62,52 @@ describe('Universal Advanced Operations - Batch Tests', () => {
   });
 
   describe('records_batch tool', () => {
+    it('retains input order and successful writes when another item fails, without replay after formatting', async () => {
+      const created = CompanyMockFactory.create();
+      const create = vi.mocked(sharedHandlers.handleUniversalCreate);
+      create.mockImplementation(async (params) => {
+        if (params.record_data.name === 'failed')
+          throw Object.assign(new Error('Network response lost'), {
+            code: 'ECONNRESET',
+          });
+        await Promise.resolve();
+        return created;
+      });
+      const raw = await batchOperationsConfig.handler({
+        resource_type: UniversalResourceType.COMPANIES,
+        operations: [
+          { operation: 'create', record_data: { name: 'created' } },
+          { operation: 'create', record_data: { name: 'failed' } },
+        ],
+      });
+      const result = buildStructuredToolResult(
+        {
+          ...batchOperationsConfig,
+          formatResult: () => {
+            throw new Error('Formatter failed');
+          },
+        },
+        raw,
+        {}
+      );
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent).toMatchObject({
+        data: [
+          { index: 0, success: true, result: created },
+          {
+            index: 1,
+            success: false,
+            error: { code: 'UPSTREAM_UNAVAILABLE', retryable: false },
+          },
+        ],
+        summary: { total: 2, successful: 1, failed: 1 },
+      });
+      expect(create).toHaveBeenCalledTimes(2);
+      expect(
+        create.mock.calls.map(([params]) => params.record_data.name)
+      ).toEqual(['created', 'failed']);
+    });
+
     it('should handle batch create operations', async () => {
       const mockHandleUniversalCreate = vi.mocked(
         sharedHandlers.handleUniversalCreate
@@ -205,7 +253,9 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       };
 
       const result: any = await batchOperationsConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual([
+        { index: 0, query: '', success: true, result: mockResults },
+      ]);
       expect(mockHandleUniversalSearch).toHaveBeenCalledWith({
         resource_type: UniversalResourceType.COMPANIES,
         limit: 50,

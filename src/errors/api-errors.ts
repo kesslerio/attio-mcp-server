@@ -3,7 +3,7 @@
  * Includes specialized error types for API interactions and validation
  */
 
-import { sanitizeErrorMessage } from '../utils/error-sanitizer.js';
+import { sanitizeErrorMessage } from '@/utils/error-sanitizer.js';
 
 /**
  * Base class for all Attio API errors
@@ -347,6 +347,9 @@ export function createApiErrorFromAxiosError(
   endpoint: string,
   method: string
 ): AttioApiError | NetworkError {
+  if (error instanceof AttioApiError || error instanceof NetworkError) {
+    return error;
+  }
   const axiosError = error as {
     response?: { status?: number; data?: { message?: string } };
     message?: string;
@@ -360,7 +363,7 @@ export function createApiErrorFromAxiosError(
     }
     // If no response but not a recognized network error, treat as generic API error
     const message = axiosError.message || 'Unknown API error';
-    return new AttioApiError(message, 500, endpoint, method, {});
+    return new AttioApiError(message, 500, endpoint, method, {}, error);
   }
 
   const statusCode = axiosError.response.status || 500;
@@ -389,22 +392,24 @@ export function createApiErrorFromAxiosError(
           resourceType.charAt(0).toUpperCase() + resourceType.slice(1, -1);
       }
 
-      return new ResourceNotFoundError(
-        formattedType,
-        resourceId,
-        endpoint,
-        method,
-        details
+      return Object.defineProperty(
+        new ResourceNotFoundError(
+          formattedType,
+          resourceId,
+          endpoint,
+          method,
+          details
+        ),
+        'cause',
+        { value: error }
       );
     }
   }
 
-  return createApiErrorFromStatus(
-    statusCode,
-    message,
-    endpoint,
-    method,
-    details
+  return Object.defineProperty(
+    createApiErrorFromStatus(statusCode, message, endpoint, method, details),
+    'cause',
+    { value: error }
   );
 }
 
@@ -454,9 +459,10 @@ export class FilterValidationError extends Error {
    */
   constructor(
     message: string,
-    public readonly category: FilterErrorCategory = FilterErrorCategory.STRUCTURE
+    public readonly category: FilterErrorCategory = FilterErrorCategory.STRUCTURE,
+    options?: ErrorOptions
   ) {
-    super(message);
+    super(message, options);
     this.name = 'FilterValidationError';
 
     // This line is needed to properly capture the stack trace

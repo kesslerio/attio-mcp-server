@@ -1,10 +1,17 @@
 import { z } from 'zod';
-import { ToolConfig } from '../../tool-types.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
 import {
   OpenAiCompatibilityService,
   OpenAiSearchParams,
-} from '../../../services/OpenAiCompatibilityService.js';
+} from '@/services/OpenAiCompatibilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import {
+  connectorFetchDataSchema,
+  connectorFetchResultContract,
+  connectorItemDataSchema,
+  connectorSearchResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
 
 const searchParamsValidator = z.object({
   query: z.string().min(1, 'Query is required'),
@@ -52,82 +59,70 @@ const fetchInputSchema = {
 };
 
 async function handleSearch(params: unknown) {
-  try {
-    const validated = searchParamsValidator.parse(params) as OpenAiSearchParams;
-    const results = await OpenAiCompatibilityService.search(validated);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({ results }),
-        },
-      ],
-      isError: false,
-    };
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown search error';
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Search failed: ${message}`,
-        },
-      ],
-      isError: true,
-      error: {
-        code: 400,
-        message,
-        type: 'openai_search_error',
-      },
-    };
-  }
+  const validated = searchParamsValidator.parse(params) as OpenAiSearchParams;
+  // The adapter owns the envelope; the handler returns the domain results.
+  return await OpenAiCompatibilityService.search(validated);
 }
 
 async function handleFetch(params: unknown) {
-  try {
-    const validated = fetchParamsValidator.parse(params);
-    const result = await OpenAiCompatibilityService.fetch(validated.id);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result),
-        },
-      ],
-      isError: false,
-    };
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown fetch error';
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Fetch failed: ${message}`,
-        },
-      ],
-      isError: true,
-      error: {
-        code: 400,
-        message,
-        type: 'openai_fetch_error',
-      },
-    };
-  }
+  const validated = fetchParamsValidator.parse(params);
+  return await OpenAiCompatibilityService.fetch(validated.id);
 }
+
+/**
+ * ChatGPT's connector contract parses the JSON document in content[0], so the
+ * text channel keeps its documented shape while structuredContent carries the
+ * shared envelope. The projection is derived from the validated envelope, never
+ * from formatted prose (KTD4).
+ */
+const searchTextProjection = (structured: Record<string, unknown>): string =>
+  JSON.stringify({ results: structured.data });
+
+const fetchTextProjection = (structured: Record<string, unknown>): string =>
+  JSON.stringify(structured.data);
 
 const searchToolConfig: ToolConfig = {
   name: 'search',
+  ...connectorSearchResultContract,
+  structuredOutput: (results: unknown): Record<string, unknown> => {
+    const data = z
+      .array(connectorItemDataSchema)
+      .parse(results)
+      .map((item) =>
+        Object.fromEntries(
+          Object.entries(item).filter(([, value]) => value !== undefined)
+        )
+      );
+    return {
+      data,
+      count: data.length,
+      next_cursor: null,
+      // Connector search is a relevance-ranked provider, not a stable page
+      // sequence; disclose the bound instead of fabricating continuation.
+      pagination: boundedPaginationMetadata(
+        (results as { truncated?: boolean }).truncated ?? true
+      ),
+    };
+  },
+  textProjection: searchTextProjection,
   handler: handleSearch,
-  formatResult: (result: { results?: unknown }) =>
-    JSON.stringify(result ?? {}, null, 2),
+  // No prose companion: the connector text channel already carries the payload.
+  formatResult: () => '',
 };
 
 const fetchToolConfig: ToolConfig = {
   name: 'fetch',
+  ...connectorFetchResultContract,
+  structuredOutput: (result: unknown): Record<string, unknown> => ({
+    data: Object.fromEntries(
+      Object.entries(connectorFetchDataSchema.parse(result)).filter(
+        ([, value]) => value !== undefined
+      )
+    ),
+  }),
+  textProjection: fetchTextProjection,
   handler: handleFetch,
-  formatResult: (result: unknown) => JSON.stringify(result ?? {}, null, 2),
+  formatResult: () => '',
 };
 
 export const openAiToolConfigs = {

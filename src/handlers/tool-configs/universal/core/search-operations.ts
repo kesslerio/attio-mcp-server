@@ -1,3 +1,4 @@
+import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
 import {
   UniversalToolConfig,
   UniversalSearchParams,
@@ -13,34 +14,52 @@ import {
   validateUniversalToolParams,
   searchRecordsSchema,
 } from '@/handlers/tool-configs/universal/schemas.js';
-import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
-import { handleUniversalSearch } from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
+import { ErrorService } from '@/services/ErrorService.js';
+import { handleUniversalSearchPage } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
  * Universal search records tool configuration.
  * Consolidates: search-companies, search-people, list-records, list-tasks.
  * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
+ * U5: cursor-bearing calls continue through searchRecordsPage (KTD6).
  */
 export const searchRecordsConfig: UniversalToolConfig<
   UniversalSearchParams,
-  UniversalRecordResult[]
+  | UniversalRecordResult[]
+  | {
+      data: UniversalRecordResult[];
+      next_cursor?: string | null;
+      pagination?: Record<string, unknown>;
+    }
 > = {
   name: 'search_records',
+  ...recordSearchResultContract,
   handler: async (
     params: UniversalSearchParams
-  ): Promise<UniversalRecordResult[]> => {
+  ): Promise<
+    | UniversalRecordResult[]
+    | {
+        data: UniversalRecordResult[];
+        next_cursor?: string | null;
+        pagination?: Record<string, unknown>;
+      }
+  > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records',
         params
-      );
-      return await handleUniversalSearch(sanitizedParams);
+      ) as UniversalSearchParams;
+      // U5 (KTD6): every collection call pages through the continuation seam so
+      // lookahead evidence exists on the first page too; a null next_cursor
+      // then means proven exhaustion, not unknown truncation.
+      return await handleUniversalSearchPage(sanitizedParams);
     } catch (error: unknown) {
-      return await handleSearchError(
-        error,
-        params.resource_type,
-        params as unknown as Record<string, unknown>
+      throw ErrorService.createUniversalError(
+        'search',
+        params?.resource_type ?? '',
+        error
       );
     }
   },
@@ -67,7 +86,7 @@ export const searchRecordsConfig: UniversalToolConfig<
 
     const formattedResults = recordsArray
       .map((record, index) => {
-        let identifier = 'Unnamed';
+        let identifier: string;
 
         // Extract ID with list_id fallback (Issue #1068 - lists use list_id)
         let id = String(
@@ -164,15 +183,7 @@ export const searchRecordsConfig: UniversalToolConfig<
 
     return `Found ${recordsArray.length} ${typeName}:\n${formattedResults}`;
   },
-  structuredOutput: (
-    results: UniversalRecordResult[] | { data: UniversalRecordResult[] }
-  ): Record<string, unknown> => {
-    // Return the raw records array for JSON parsing
-    const recordsArray = Array.isArray(results)
-      ? results
-      : (results?.data ?? []);
-    return { data: recordsArray, count: recordsArray.length };
-  },
+  structuredOutput: normalizeRecordCollection,
 };
 
 export const searchRecordsDefinition = {
@@ -180,7 +191,8 @@ export const searchRecordsDefinition = {
   description: formatToolDescription({
     capability: 'Search across companies, people, deals, tasks, and records',
     boundaries: 'create or modify records',
-    constraints: 'Returns max 100 results (default: 10)',
+    constraints:
+      'Returns max 100 results (default: 10). Pass the sealed next_cursor from a previous page to continue this exact query; never combine cursor with offset. Ranked relevance sorts are a bounded view, not a stable page sequence.',
     recoveryHint: 'use discover_record_attributes to find searchable fields',
   }),
   inputSchema: searchRecordsSchema,

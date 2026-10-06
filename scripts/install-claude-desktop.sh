@@ -283,5 +283,8 @@ main() {
     show_next_steps
 }
 
-# Run main function
-main "$@"
+# Run main function only when executed, not when sourced (install-scripts.test.ts
+# sources the script to unit-test individual functions).
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

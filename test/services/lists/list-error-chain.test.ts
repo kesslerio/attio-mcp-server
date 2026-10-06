@@ -18,6 +18,15 @@ import { createList, updateList } from '@/objects/lists/base.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { AttioApiError } from '@/errors/api-errors.js';
 import { ListErrorCategory } from '@/services/lists/types.js';
+import {
+  handleCreateListOperation,
+  handleGetListEntriesOperation,
+} from '@/handlers/tools/dispatcher/operations/lists.js';
+import { listsToolConfigs } from '@/handlers/tool-configs/lists.js';
+import type {
+  CallToolRequest,
+  CallToolResult,
+} from '@modelcontextprotocol/sdk/types.js';
 
 function axiosErrorWith(
   status: number,
@@ -222,5 +231,116 @@ describe('updateList 403/404 chain (real base.ts wrapper)', () => {
     const categorized = ListConfigurationValidator.categorizeError(err);
     expect(categorized.api_error_status).toBe(404);
     expect(categorized.category).not.toBe(ListErrorCategory.API_FAILURE);
+  });
+});
+
+/**
+ * U4: the same chain must surface as a KTD5 tool envelope, so a denied list
+ * write is observable as a failure instead of a formatted success string.
+ */
+describe('list tool envelope chain (U4)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const request = (args: Record<string, unknown>): CallToolRequest =>
+    ({
+      method: 'tools/call',
+      params: { name: 'create-list', arguments: args },
+    }) as CallToolRequest;
+
+  function asErrorEnvelope(result: unknown) {
+    const response = result as CallToolResult & {
+      structuredContent?: {
+        error?: { code: string; message: string; retryable: boolean };
+      };
+    };
+    expect(response.isError).toBe(true);
+    expect(JSON.parse(response.content[0].text as string)).toEqual(
+      response.structuredContent
+    );
+    return response.structuredContent!.error!;
+  }
+
+  function clientWith(options: {
+    objects?: string[];
+    post?: (err: unknown) => unknown;
+  }) {
+    const post = vi.fn();
+    if (options.post) post.mockImplementation(options.post);
+    const get = vi.fn().mockResolvedValue({
+      data: {
+        data: (options.objects ?? ['companies']).map((slug) => ({
+          api_slug: slug,
+        })),
+      },
+    });
+    vi.mocked(getLazyAttioClient).mockReturnValue({
+      get,
+      post,
+      patch: vi.fn(),
+    } as never);
+    return { get, post };
+  }
+
+  it('reports a plan-gated 403 as a non-retryable PERMISSION_DENIED envelope', async () => {
+    const err = axiosErrorWith(403, {
+      status_code: 403,
+      type: 'auth_error',
+      code: 'billing_error',
+      message: 'Your plan does not support member-level access',
+    });
+    const { post } = clientWith({
+      objects: ['companies'],
+      post: () => Promise.reject(err),
+    });
+
+    const result = await handleCreateListOperation(
+      request({ name: 'Gated', parent_object: 'companies' }),
+      listsToolConfigs.createList
+    );
+
+    const error = asErrorEnvelope(result);
+    expect(error.code).toBe('PERMISSION_DENIED');
+    // A denied write never invites a blind replay of a mutation.
+    expect(error.retryable).toBe(false);
+    expect(error.message).toContain('Next steps:');
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects an unknown parent object before any list is created', async () => {
+    const { post } = clientWith({ objects: ['companies'] });
+
+    const result = await handleCreateListOperation(
+      request({ name: 'Oops', parent_object: 'unicorns' }),
+      listsToolConfigs.createList
+    );
+
+    const error = asErrorEnvelope(result);
+    expect(error.code).toBe('VALIDATION_ERROR');
+    expect(error.retryable).toBe(false);
+    // Denied before mutation: no POST reached the Attio client.
+    expect(post).not.toHaveBeenCalled();
+  });
+  it('fails an invalid list UUID before any Attio request is made', async () => {
+    const { get, post } = clientWith({ objects: ['companies'] });
+
+    const result = await handleGetListEntriesOperation(
+      {
+        method: 'tools/call',
+        params: {
+          name: 'get-list-entries',
+          arguments: { listId: 'not-a-uuid' },
+        },
+      } as CallToolRequest,
+      listsToolConfigs.getListEntries
+    );
+
+    const error = asErrorEnvelope(result);
+    expect(error.code).toBe('VALIDATION_ERROR');
+    expect(error.retryable).toBe(false);
+    // Access narrowing happens client-side: nothing reached Attio.
+    expect(post).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
   });
 });

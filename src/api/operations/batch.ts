@@ -1,3 +1,5 @@
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * Batch operations for Attio API
  * Handles bulk operations with chunking and error handling
@@ -5,7 +7,7 @@
  * Enhanced for Issue #471: Batch Search Operations Support
  */
 
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   AttioRecord,
   UniversalRecordResult,
@@ -13,28 +15,32 @@ import {
   AttioListResponse,
   RecordBatchCreateParams,
   RecordBatchUpdateParams,
-} from '../../types/attio.js';
+} from '@/types/attio.js';
 import {
   BatchRequestItem,
   BatchItemResult,
   BatchResponse,
   BatchConfig,
-} from './types.js';
-import { callWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from './retry.js';
-import { searchObject } from './search.js';
-import { getObjectDetails } from './crud.js';
+} from '@/api/operations/types.js';
+import {
+  callWithRetry,
+  RetryConfig,
+  DEFAULT_RETRY_CONFIG,
+} from '@/api/operations/retry.js';
+import { searchObject } from '@/api/operations/search.js';
+import { getObjectDetails } from '@/api/operations/crud.js';
 import {
   validateBatchSize,
   validatePayloadSize,
-} from '../../utils/batch-validation.js';
-import { getBatchSizeLimit } from '../../config/security-limits.js';
-import { createScopedLogger, OperationType } from '../../utils/logger.js';
+} from '@/utils/batch-validation.js';
+import { getBatchSizeLimit } from '@/config/security-limits.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
 
 // Import universal types for enhanced batch search support
 import {
   UniversalResourceType,
   UniversalSearchParams,
-} from '../../handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 
 // Note: UniversalSearchService is imported dynamically to avoid circular dependency
 // (UniversalSearchService imports from api/operations which includes this file)
@@ -81,15 +87,18 @@ export async function batchCreateRecords<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
 
-  return callWithRetry(async () => {
-    const response = await api.post<AttioListResponse<T>>(path, {
-      records: params.records.map((record) => ({
-        attributes: record.attributes,
-      })),
-    });
-
+  const response = await callWithRetry(
+    () =>
+      api.post<AttioListResponse<T>>(path, {
+        records: params.records.map((record) => ({
+          attributes: record.attributes,
+        })),
+      }),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     return response?.data?.data || [];
-  }, retryConfig);
+  });
 }
 
 /**
@@ -125,16 +134,19 @@ export async function batchUpdateRecords<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
 
-  return callWithRetry(async () => {
-    const response = await api.patch<AttioListResponse<T>>(path, {
-      records: params.records.map((record) => ({
-        id: record.id,
-        attributes: record.attributes,
-      })),
-    });
-
+  const response = await callWithRetry(
+    () =>
+      api.patch<AttioListResponse<T>>(path, {
+        records: params.records.map((record) => ({
+          id: record.id,
+          attributes: record.attributes,
+        })),
+      }),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     return response?.data?.data || [];
-  }, retryConfig);
+  });
 }
 
 /**
@@ -196,7 +208,7 @@ export async function executeBatchOperations<T, R>(
   // Process each chunk
   for (const chunk of chunks) {
     // Process operations in the current chunk
-    await Promise.all(
+    const results = await Promise.all(
       chunk.map(async (operation) => {
         const result: BatchItemResult<R> = {
           id: operation.id,
@@ -229,10 +241,10 @@ export async function executeBatchOperations<T, R>(
           }
         }
 
-        // Add result to batch response
-        batchResponse.results.push(result);
+        return result;
       })
     );
+    batchResponse.results.push(...results);
   }
 
   return batchResponse;
@@ -323,6 +335,7 @@ export interface UniversalBatchSearchResult {
   query: string;
   result?: UniversalRecordResult[];
   error?: string;
+  error_details?: unknown;
 }
 
 /**
@@ -458,6 +471,12 @@ export async function universalBatchSearch(
         : result.error instanceof Error
           ? result.error.message
           : String(result.error),
+      ...(!result.success
+        ? {
+            error_details: createSecureToolErrorResult(result.error)
+              .structuredContent!.error,
+          }
+        : {}),
     }));
 
     // Log performance metrics
@@ -479,13 +498,9 @@ export async function universalBatchSearch(
       durationMs: Number(duration.toFixed(2)),
     });
 
-    // If batch operation fails completely, return error for all queries
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return queries.map((query) => ({
-      success: false,
-      query,
-      error: errorMessage,
-    }));
+    // Per-query failures are captured by the item executor. A failure of the
+    // batch itself must reach the shared whole-call error boundary.
+    throw error;
   }
 }
 
@@ -502,46 +517,31 @@ async function handleUniversalResourceTypeBatchSearch(
     filters?: Record<string, unknown>;
   }
 ): Promise<UniversalBatchSearchResult[]> {
-  const results: UniversalBatchSearchResult[] = [];
-
-  // Process each query independently with error isolation
-  await Promise.allSettled(
-    queries.map(async (query) => {
+  // Promise.all preserves input position, even for duplicate queries whose
+  // independent calls complete in a different order.
+  return Promise.all(
+    queries.map(async (query): Promise<UniversalBatchSearchResult> => {
       try {
-        // Dynamic import to avoid circular dependency
         const { UniversalSearchService } =
-          await import('../../services/UniversalSearchService.js');
-        const searchResult = await UniversalSearchService.searchRecords({
+          await import('@/services/UniversalSearchService.js');
+        const result = await UniversalSearchService.searchRecords({
           resource_type: resourceType,
           query,
           filters: searchParams.filters,
           limit: searchParams.limit,
           offset: searchParams.offset,
         } as UniversalSearchParams);
-
-        results.push({
-          success: true,
-          query,
-          result: searchResult,
-        });
+        return { success: true, query, result };
       } catch (error: unknown) {
-        results.push({
+        return {
           success: false,
           query,
           error: error instanceof Error ? error.message : String(error),
-        });
+          error_details:
+            createSecureToolErrorResult(error).structuredContent!.error,
+        };
       }
     })
-  );
-
-  // Ensure results are in the same order as queries
-  return queries.map(
-    (query) =>
-      results.find((r) => r.query === query) || {
-        success: false,
-        query,
-        error: 'Query processing failed',
-      }
   );
 }
 

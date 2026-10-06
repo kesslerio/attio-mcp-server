@@ -4,6 +4,7 @@
  * expect. All logic delegates to the existing universal services so we keep a
  * single behaviour surface for every client.
  */
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import { UniversalRetrievalService } from '@/services/UniversalRetrievalService.js';
 import {
@@ -71,7 +72,7 @@ export class OpenAiCompatibilityService {
   ): Promise<OpenAiSearchResult[]> {
     const query = params.query?.trim();
     if (!query) {
-      throw new Error('Query must be provided');
+      throw new UniversalValidationError('Query must be provided');
     }
 
     const typeKey = (
@@ -85,6 +86,7 @@ export class OpenAiCompatibilityService {
     const perTypeLimit = Math.max(1, Math.ceil(limit / resourceTypes.length));
 
     const aggregated: OpenAiSearchResult[] = [];
+    let truncated = false;
 
     for (const resourceType of resourceTypes) {
       const searchParams: UniversalSearchParams = {
@@ -96,7 +98,9 @@ export class OpenAiCompatibilityService {
         sort: SortType.RELEVANCE,
       };
 
-      const records = await UniversalSearchService.searchRecords(searchParams);
+      const page = await UniversalSearchService.searchRecordsPage(searchParams);
+      const records = page.data;
+      truncated ||= page.pagination.truncated;
       aggregated.push(
         ...records.map((record) =>
           transformRecordToSearchResult(resourceType, record)
@@ -104,7 +108,9 @@ export class OpenAiCompatibilityService {
       );
     }
 
-    return aggregated.slice(0, limit);
+    return Object.defineProperty(aggregated.slice(0, limit), 'truncated', {
+      value: truncated || aggregated.length > limit,
+    });
   }
 
   static async fetch(id: string): Promise<OpenAiFetchResult> {
@@ -124,7 +130,7 @@ function parseCompoundId(id: string): {
   recordId: string;
 } {
   if (!id || !id.includes(':')) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Expected identifier format "<resource_type>:<record_id>" (e.g. companies:1234)'
     );
   }
@@ -132,7 +138,7 @@ function parseCompoundId(id: string): {
   const [rawType, ...rest] = id.split(':');
   const recordId = rest.join(':');
   if (!recordId) {
-    throw new Error('Record identifier is missing');
+    throw new UniversalValidationError('Record identifier is missing');
   }
 
   const resourceType = normalizeResourceType(rawType);
@@ -150,7 +156,7 @@ function normalizeResourceType(value: string): UniversalResourceType {
     case 'tasks':
       return UniversalResourceType.TASKS;
     default:
-      throw new Error(`Unsupported resource type: ${value}`);
+      throw new UniversalValidationError(`Unsupported resource type: ${value}`);
   }
 }
 

@@ -1,15 +1,24 @@
+import { getAttributeOptionsSchema } from '@/handlers/tool-configs/universal/schemas/validation-schemas.js';
+import { getRecordInteractionsSchema } from '@/handlers/tool-configs/universal/schemas/core-schemas.js';
+import {
+  searchByRelationshipSchema,
+  searchByContentSchema,
+} from '@/handlers/tool-configs/universal/schemas/advanced-schemas.js';
 import {
   ErrorType,
   HttpStatusCode,
   UniversalValidationError,
-} from '../errors/validation-errors.js';
-import { UniversalResourceType } from '../types.js';
-import { SanitizedObject, SanitizedValue } from '../schemas/common/types.js';
+} from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
+import {
+  SanitizedObject,
+  SanitizedValue,
+} from '@/handlers/tool-configs/universal/schemas/common/types.js';
 import {
   suggestResourceType,
   validateIdFields,
   validatePaginationParams,
-} from './field-validator.js';
+} from '@/handlers/tool-configs/universal/validators/field-validator.js';
 import {
   canonicalizeResourceType,
   getValidResourceTypes,
@@ -322,6 +331,55 @@ const toolValidators: Record<string, ToolValidator> = {
     }
     return p;
   },
+  upsert_record: (p) => {
+    if (!p.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'people'` }
+      );
+    }
+    const match = p.match as Record<string, unknown> | undefined;
+    if (
+      !match ||
+      typeof match !== 'object' ||
+      Array.isArray(match) ||
+      typeof match.attribute !== 'string' ||
+      match.attribute.trim().length === 0 ||
+      typeof match.value !== 'string' ||
+      match.value.trim().length === 0
+    ) {
+      throw new UniversalValidationError(
+        'Invalid or missing parameter: match',
+        ErrorType.USER_ERROR,
+        {
+          field: 'match',
+          suggestion:
+            'match must be { attribute, value } with non-empty strings, used to exact-match the existing record',
+          example: `match: { attribute: 'email_addresses', value: 'jane@acme.com' }`,
+        }
+      );
+    }
+    if (
+      !p.values ||
+      typeof p.values !== 'object' ||
+      Array.isArray(p.values) ||
+      Object.keys(p.values as Record<string, unknown>).length === 0
+    ) {
+      throw new UniversalValidationError(
+        p.values
+          ? 'Parameter values must be a non-empty object'
+          : 'Missing required parameter: values',
+        ErrorType.USER_ERROR,
+        {
+          field: 'values',
+          suggestion: 'Attributes to set on create or update',
+          example: `values: { name: 'Jane Doe' }`,
+        }
+      );
+    }
+    return p;
+  },
   merge_records: (p) => {
     if (!p.resource_type) {
       throw new UniversalValidationError(
@@ -559,6 +617,7 @@ const TOOLS_WITH_DYNAMIC_RESOURCE_TYPES = new Set([
   'records_get_details',
   'create_record',
   'update_record',
+  'upsert_record',
   'delete_record',
   'merge_records',
 ]);
@@ -637,7 +696,36 @@ export function validateUniversalToolParams(
       ? validateDynamicSearchResourceType(resourceType)
       : validateStandardResourceType(resourceType);
   }
-  const validator = toolValidators[toolName];
+  // The currently advertised read names must enforce the same required fields
+  // as their historical validator keys before routing to an Attio service.
+  const readValidatorNames: Record<string, string> = {
+    search_records: 'records_search',
+    get_record_details: 'records_get_details',
+    get_record_attributes: 'records_get_attributes',
+    discover_record_attributes: 'records_discover_attributes',
+    get_record_info: 'records_get_info',
+    search_records_advanced: 'records_search',
+    search_records_by_timeframe: 'records_search',
+    batch_search_records: 'records_search',
+    batch_records: 'records_batch',
+  };
+  const requiredReadFields: Record<string, readonly string[]> = {
+    get_record_attribute_options: getAttributeOptionsSchema.required,
+    get_record_interactions: getRecordInteractionsSchema.required,
+    search_records_by_relationship: searchByRelationshipSchema.required,
+    search_records_by_content: searchByContentSchema.required,
+  };
+  for (const field of requiredReadFields[toolName] ?? []) {
+    const value = sanitizedParams[field];
+    if (value === undefined || value === null || value === '') {
+      throw new UniversalValidationError(
+        `Missing required parameter: ${field}`,
+        ErrorType.USER_ERROR,
+        { field }
+      );
+    }
+  }
+  const validator = toolValidators[readValidatorNames[toolName] ?? toolName];
   if (validator) return validator(sanitizedParams);
   return sanitizedParams;
 }

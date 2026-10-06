@@ -13,21 +13,22 @@ Universal tools provide consistent operations across all resource types (compani
 
 ## 📚 Quick Navigation
 
-| Need to...                  | Use This Tool                    | Key Parameters                                  |
-| --------------------------- | -------------------------------- | ----------------------------------------------- |
-| **Search any resource**     | `search_records`                 | `resource_type`, `query`                        |
-| **Get record details**      | `get_record_details`             | `resource_type`, `record_id`                    |
-| **Create new record**       | `create_record`                  | `resource_type`, `record_data`                  |
-| **Update existing record**  | `update_record`                  | `resource_type`, `record_id`, `record_data`     |
-| **Delete record**           | `delete_record`                  | `resource_type`, `record_id`                    |
-| **Complex searches**        | `search_records_advanced`        | `resource_type`, `filters`                      |
-| **Cross-resource searches** | `search_records_by_relationship` | `relationship_type`, `source_id`                |
-| **Content-based searches**  | `search_records_by_content`      | `resource_type`, `content_type`, `search_query` |
-| **Time-based searches**     | `search_records_by_timeframe`    | `resource_type`, `start_date`, `end_date`       |
-| **Bulk operations**         | `batch_records`                  | `operation_type`, `records`                     |
-| **Get attributes**          | `get_record_attributes`          | `resource_type`, `record_id`                    |
-| **Discover schema**         | `discover_record_attributes`     | `resource_type`                                 |
-| **Get specialized info**    | `get_record_info`                | `resource_type`, `record_id`, `info_type`       |
+| Need to...                      | Use This Tool                    | Key Parameters                                  |
+| ------------------------------- | -------------------------------- | ----------------------------------------------- |
+| **Search any resource**         | `search_records`                 | `resource_type`, `query`                        |
+| **Get record details**          | `get_record_details`             | `resource_type`, `record_id`                    |
+| **Create new record**           | `create_record`                  | `resource_type`, `record_data`                  |
+| **Update existing record**      | `update_record`                  | `resource_type`, `record_id`, `record_data`     |
+| **Idempotent create-or-update** | `upsert_record`                  | `resource_type`, `match`, `values`              |
+| **Delete record**               | `delete_record`                  | `resource_type`, `record_id`                    |
+| **Complex searches**            | `search_records_advanced`        | `resource_type`, `filters`                      |
+| **Cross-resource searches**     | `search_records_by_relationship` | `relationship_type`, `source_id`                |
+| **Content-based searches**      | `search_records_by_content`      | `resource_type`, `content_type`, `search_query` |
+| **Time-based searches**         | `search_records_by_timeframe`    | `resource_type`, `start_date`, `end_date`       |
+| **Bulk operations**             | `batch_records`                  | `operation_type`, `records`                     |
+| **Get attributes**              | `get_record_attributes`          | `resource_type`, `record_id`                    |
+| **Discover schema**             | `discover_record_attributes`     | `resource_type`                                 |
+| **Get specialized info**        | `get_record_info`                | `resource_type`, `record_id`, `info_type`       |
 
 ## 🛠 Core Operations (8 Tools)
 
@@ -103,6 +104,63 @@ Universal tools provide consistent operations across all resource types (compani
   }
 }
 ```
+
+### 4b. `upsert_record`
+
+**Create-or-update in one call (Issue #1191)**
+
+Exact-matches one attribute, updates the single match, creates when missing, and aborts without writing when the match is ambiguous. Ideal for enrichment, dedupe, sync, and lead-capture workflows where search-then-write races create duplicates.
+
+Person by email:
+
+```typescript
+{
+  "name": "upsert_record",
+  "arguments": {
+    "resource_type": "people",
+    "match": { "attribute": "email_addresses", "value": "jane@acme.com" },
+    "values": { "name": "Jane Doe", "job_title": "VP Engineering" }
+  }
+}
+```
+
+Company by domain:
+
+```typescript
+{
+  "name": "upsert_record",
+  "arguments": {
+    "resource_type": "companies",
+    "match": { "attribute": "domains", "value": "acme.com" },
+    "values": { "name": "Acme Corporation", "categories": ["Technology"] }
+  }
+}
+```
+
+Custom object by unique field, preview before writing:
+
+```typescript
+{
+  "name": "upsert_record",
+  "arguments": {
+    "resource_type": "projects",
+    "match": { "attribute": "project_code", "value": "PROJ-42" },
+    "values": { "status": "active" },
+    "dry_run": true
+  }
+}
+```
+
+Behavior notes:
+
+- `action` in the result is one of `created`, `updated`, `noop`, `dry_run` (with `planned_action`), plus `record_id` and `changed_fields`.
+- Match the attribute's real Attio slug — person emails live under `email_addresses` and company domains under `domains`; call `discover_record_attributes` if unsure. Match values are compared exactly (case-sensitive), so match the casing the record stores.
+- Multiple matches → error listing the candidate record ids; nothing is written. Use `update_record` on the intended record.
+- `create_if_missing: false` makes a no-match upsert fail instead of inserting.
+- `record_id` (UUID) optionally targets a known record directly; upsert never creates with a caller-provided id, and the targeted record is also brought in line with the match pair so later match-based upserts find it.
+- On create, the `match` pair fills any attribute `values` does not already set (`values` wins for the same attribute).
+- Lookups that fail, return a truncated match set, or hand back an unrelated record abort with an error instead of falling through to create — a flaky lookup can never mint the duplicate this tool exists to prevent.
+- Create-vs-update is not atomic (Attio has no uniqueness constraint). When a post-create re-check finds other records already on the match key, the result carries `concurrent_duplicates` with their ids for manual merge.
 
 ### 5. `delete_record`
 

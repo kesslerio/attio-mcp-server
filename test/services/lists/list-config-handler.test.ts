@@ -9,7 +9,7 @@ import {
 } from '@/handlers/tools/dispatcher/operations/lists.js';
 import { invalidateObjectCache } from '@/services/lists/ListConfigurationValidator.js';
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import type { ToolConfig } from '@/handlers/tool-types.js';
+import { listsToolConfigs } from '@/handlers/tool-configs/lists.js';
 
 // Mock the lazy client
 vi.mock('@/api/lazy-client.js', () => ({
@@ -39,11 +39,23 @@ function makeRequest(
   };
 }
 
-const mockToolConfig: ToolConfig = {
-  name: 'create-list',
-  handler: vi.fn(),
-  formatResult: (result: unknown) => JSON.stringify(result),
-};
+function getErrorProse(result: unknown, code = 'VALIDATION_ERROR'): string {
+  const response = result as {
+    isError: boolean;
+    structuredContent: { error: { code: string; retryable: boolean } };
+    content: Array<{ type: string; text: string }>;
+  };
+  expect(response.isError).toBe(true);
+  expect(response.content).toHaveLength(2);
+  expect(JSON.parse(response.content[0].text)).toEqual(
+    response.structuredContent
+  );
+  expect(response.structuredContent.error).toMatchObject({
+    code,
+    retryable: false,
+  });
+  return response.content[1].text;
+}
 
 function setupWorkspaceObjects(slugs: string[]) {
   const mockGet = vi.fn().mockResolvedValue({
@@ -65,20 +77,18 @@ describe('handleCreateListOperation', () => {
   it('returns error when name is missing', async () => {
     const result = await handleCreateListOperation(
       makeRequest('create-list', { parent_object: 'companies' }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('name parameter is required');
   });
 
   it('returns error when parent_object is missing', async () => {
     const result = await handleCreateListOperation(
       makeRequest('create-list', { name: 'Test' }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('parent_object parameter is required');
   });
 
@@ -90,10 +100,9 @@ describe('handleCreateListOperation', () => {
         name: 'Bad List',
         parent_object: 'nonexistent',
       }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('Invalid parent_object');
   });
 
@@ -114,7 +123,7 @@ describe('handleCreateListOperation', () => {
         name: 'My List',
         parent_object: 'companies',
       }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
     const text = (result as { content: Array<{ text: string }> }).content[0]
       .text;
@@ -142,7 +151,7 @@ describe('handleCreateListOperation', () => {
         name: 'My List',
         parent_object: 'companies',
       }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
     expect(createList).toHaveBeenCalledWith(
       expect.objectContaining({ workspace_access: 'full-access' })
@@ -167,7 +176,7 @@ describe('handleCreateListOperation', () => {
         parent_object: 'companies',
         workspace_access: 'full-access',
       }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
     expect(createList).toHaveBeenCalledWith(
       expect.objectContaining({ workspace_access: 'full-access' })
@@ -197,7 +206,7 @@ describe('handleCreateListOperation', () => {
           },
         ],
       }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
     expect(createList).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -220,7 +229,7 @@ describe('handleCreateListOperation', () => {
         parent_object: 'companies',
         dry_run: true,
       }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
     const text = (result as { content: Array<{ text: string }> }).content[0]
       .text;
@@ -247,7 +256,7 @@ describe('handleCreateListOperation', () => {
         parent_object: 'companies',
         template: 'sales_pipeline',
       }),
-      mockToolConfig
+      listsToolConfigs.createList
     );
     const text = (result as { content: Array<{ text: string }> }).content[0]
       .text;
@@ -269,20 +278,18 @@ describe('handleUpdateListConfigurationOperation', () => {
       makeRequest('update-list-configuration', {
         attributes: { name: 'New' },
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('listId parameter is required');
   });
 
   it('returns error when attributes are missing', async () => {
     const result = await handleUpdateListConfigurationOperation(
       makeRequest('update-list-configuration', { listId: 'list-1' }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('attributes parameter is required');
   });
 
@@ -292,10 +299,9 @@ describe('handleUpdateListConfigurationOperation', () => {
         listId: 'list-1',
         attributes: { parent_object: 'people', name: 'New' },
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('immutable');
     expect(updateList).not.toHaveBeenCalled();
   });
@@ -316,7 +322,7 @@ describe('handleUpdateListConfigurationOperation', () => {
         listId: 'list-1',
         attributes: { name: 'Updated Name' },
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     const text = (result as { content: Array<{ text: string }> }).content[0]
       .text;
@@ -342,7 +348,7 @@ describe('handleUpdateListConfigurationOperation', () => {
         attributes: { name: 'Updated Name' },
         workspace_access: 'read-only',
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     expect(updateList).toHaveBeenCalledWith('list-1', {
       name: 'Updated Name',
@@ -357,7 +363,7 @@ describe('handleUpdateListConfigurationOperation', () => {
         attributes: { name: 'Preview' },
         dry_run: true,
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     const text = (result as { content: Array<{ text: string }> }).content[0]
       .text;
@@ -383,10 +389,9 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         parent_object: 'companies',
         workspace_access: 'invalid-level',
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('Invalid workspace_access');
     expect(text).toContain('unsupported_input');
     expect(text).not.toContain('Retry the operation');
@@ -400,10 +405,9 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         parent_object: 'companies',
         workspace_member_access: 'not-an-array',
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('must be an array');
     expect(text).toContain('unsupported_input');
     expect(createList).not.toHaveBeenCalled();
@@ -421,10 +425,9 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
           },
         ],
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('full-access');
     expect(text).toContain('unsupported_input');
     expect(createList).not.toHaveBeenCalled();
@@ -454,7 +457,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
           ],
         },
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     const payload = vi.mocked(createList).mock.calls[0][0] as Record<
       string,
@@ -472,10 +475,9 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         workspace_access: 'full-access',
         attributes: { workspace_access: 'read-only' },
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain(
       'both as first-class params and inside the attributes bag'
     );
@@ -506,7 +508,7 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
           },
         ],
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     expect(createList).toHaveBeenCalledWith(
       expect.objectContaining({ workspace_access: null })
@@ -530,10 +532,9 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         name: 'Gated',
         parent_object: 'companies',
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result, 'PERMISSION_DENIED');
     expect(text).toContain('plan_gating');
     expect(text).toContain('plan');
     expect(text).not.toContain('Retry the operation');
@@ -556,10 +557,9 @@ describe('handleCreateListOperation access-control reject paths (Issue #1148)', 
         name: 'Forbidden',
         parent_object: 'companies',
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result, 'PERMISSION_DENIED');
     expect(text).toContain('permission_failure');
     expect(text).toContain('permissions');
     expect(text).not.toContain('Retry the operation');
@@ -579,10 +579,9 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
         attributes: {},
         workspace_access: 'not-a-level',
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain('Invalid workspace_access');
     expect(text).toContain('unsupported_input');
     expect(updateList).not.toHaveBeenCalled();
@@ -604,7 +603,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
         listId: 'list-1',
         attributes: { workspace_access: 'null' },
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     expect(updateList).toHaveBeenCalledWith(
       'list-1',
@@ -619,10 +618,9 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
         attributes: { workspace_access: 'read-only' },
         workspace_access: 'read-and-write',
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result);
     expect(text).toContain(
       'both as first-class params and inside the attributes bag'
     );
@@ -646,11 +644,11 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
     };
     const previewResult = await handleUpdateListConfigurationOperation(
       makeRequest('update-list-configuration', accessArgs),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     const preview = JSON.parse(
       (previewResult as { content: Array<{ text: string }> }).content[0].text
-    );
+    ).data;
 
     vi.mocked(updateList).mockResolvedValue({
       id: { list_id: 'list-1' },
@@ -666,7 +664,7 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
         ...accessArgs,
         dry_run: false,
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
     const livePayload = vi.mocked(updateList).mock.calls[0][1] as Record<
       string,
@@ -696,10 +694,9 @@ describe('handleUpdateListConfigurationOperation access-control paths (Issue #11
         listId: 'list-1',
         attributes: { workspace_access: 'read-only' },
       }),
-      mockToolConfig
+      listsToolConfigs.updateListConfiguration
     );
-    const text = (result as { content: Array<{ text: string }> }).content[0]
-      .text;
+    const text = getErrorProse(result, 'PERMISSION_DENIED');
     expect(text).toContain('plan_gating');
   });
 });

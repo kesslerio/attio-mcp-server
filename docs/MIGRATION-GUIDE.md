@@ -521,3 +521,70 @@ See the complete **[List Tools Migration Guide](./migration/v2-list-tools.md)** 
 - Visual comparisons
 - Testing instructions
 - FAQ
+
+---
+
+## Migration 4: Structured Results for Lists, Members, Diagnostics, and Connectors
+
+Tool names and input arguments are unchanged. Clients that parsed list, member,
+or diagnostic responses directly from `content[0].text` must switch to
+`structuredContent` or parse the envelope in that text block. The authoritative
+[structured surface contract](./universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d)
+owns the success projections, connector compatibility exception, and cursor
+limitations; boundary A in that guide owns error handling and prose opt-out.
+
+### Updating a client
+
+- For list collections, replace direct array indexing with `data[i]`; for list
+  details and entry writes, unwrap `data` before reading native identifiers.
+- For entry removals, replace checks for the bare boolean `true` with checks of
+  `success` and the affected list/entry identifiers.
+- For list configuration writes and previews, unwrap `data` before reading the
+  normalized configuration.
+- For workspace member collections and lookups, unwrap `data`. Replace matching
+  the "Workspace member not found." string with handling the `NOT_FOUND` error.
+- For health and diagnostics, unwrap `data` before reading the payload.
+- Connector clients may keep parsing their existing successful text documents,
+  or migrate search items and fetched records to `structuredContent.data`. Pass
+  search identifiers to fetch unchanged. Handle failures through `isError` and
+  the shared error envelope.
+
+### Verifying a client
+
+```bash
+# Advertise the schemas your mode permits, then compare against your parser.
+curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  | jq '.result.tools[] | select(.name | test("list|workspace-member")) | {name, outputSchema}'
+```
+
+---
+
+## Migration 5: Collection Continuation (U5)
+
+Collection tools gain machine-readable pagination state. The envelope fields
+`data` and `count` are unchanged; `next_cursor` may now carry a token, and a
+`pagination` disclosure may accompany it.
+
+### Before (phase one)
+
+```json
+{ "data": [], "count": 0, "next_cursor": null }
+```
+
+`next_cursor` was always null, and null said nothing about whether results
+were withheld.
+
+### Updating a client
+
+Read [Collection Continuation](universal-tools/api-reference.md#collection-continuation-u5)
+for supported query paths, bounded-result disclosures, cursor replay rules,
+limits, and expiration. Clients consuming the old envelope must accept the
+additional `pagination` field and a non-null `next_cursor` on supported paths.
+
+### Verifying a client
+
+```bash
+# Confirm the cursor input and pagination-aware output schema are advertised.
+curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  | jq '.result.tools[] | select(.name == "search_records") | {inputSchema: .inputSchema.properties.cursor, outputSchema: .outputSchema}'
+```

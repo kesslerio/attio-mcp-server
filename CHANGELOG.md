@@ -5,10 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.8.0] - 2026-09-08
+
+**TL;DR for Users**: Agents can now configure Attio list sharing (workspace and member-level access) directly through the list tools, and get error guidance that distinguishes plan limits from permission failures. (#1148)
 
 ### Added
 
+- **`upsert_record` universal tool** — idempotent create-or-update by exact attribute match (email, domain, or any unique slug) with `dry_run`, `create_if_missing`, and ambiguous-match protection that reports candidate record ids without writing, preventing duplicate records in enrichment and sync workflows (#1191)
 - **List access controls are now first-class tool inputs** — `create-list` and `update-list-configuration` accept `workspace_access` and `workspace_member_access` directly, with client-side shape validation, the create-time full-access-grantee invariant, and a `plan_gating` error category that distinguishes Attio 403 `billing_error` (plan limit) from `insufficient_scopes` (permission) failures (#1148)
 - **List tool errors carry a structured `error_category`** in the response payload (plus `status`/`validation` flags) so agents can branch programmatically instead of parsing prose (#1148)
 
@@ -19,8 +22,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Install scripts are now source-safe** — `install-claude-desktop.sh` runs its installer flow only when executed, not when sourced, so function-level tests and shell sourcing no longer trigger a live install run
 - **List 403 errors keep their Attio error code** — `createList`/`updateList` no longer flatten 403 responses into message-only errors, so agents get plan-upgrade or token-scope guidance instead of "Retry the operation"; client-side access validation failures are likewise categorized as `unsupported_input` instead of unexpected API failures (#1148)
 - **Deal stage titles with `>` are preserved** — `InputSanitizer` no longer strips standalone angle brackets, so values like `Not Qualified (MQL > SQL)` reach Attio byte-for-byte, and an explicit update with an invalid stage now returns an error instead of silently falling back to `ATTIO_DEFAULT_DEAL_STAGE` (#1277)
+
+## [Unreleased]
+
+### Fixed
+
+- **Test-data cleanup script no longer 404s on lists and notes** — lists are fetched via `GET /v2/lists` and deleted via `DELETE /v2/lists/{id}` (list resources, not object records), and notes requests exit with an explanatory notice instead of hitting the nonexistent `notes` object slug (#620)
+
+### Changed
+
+- **Every default tool now returns validated structured results** — list, workspace-member, diagnostic, and connector tools join the shared boundary; see the [result contract](docs/universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d) and [client migration checklist](docs/MIGRATION-GUIDE.md#updating-a-client)
+- Universal read, metadata, interaction, and batch tools now return validated structured results; batch searches retain ordered query outcomes and item failures — see the [result contract](docs/universal-tools/developer-guide.md#structured-universal-reads-and-batches-v2-boundary-c)
+- **Cleanup script refactored into focused modules** — the 680-line `scripts/cleanup/index.ts` entry point is now a 55-line wrapper over `core/` (cli, preflight, orchestrator, resources, main), `processors/`, and `utils/`; per-resource fetch/filter/delete logic shares one safety pipeline (API-token filter → pattern filter → dry-run /tmp reports → batch delete) (#620)
+
+### Added
+
+- `bun run cleanup:test-data:lists` — dry-run/delete shortcut for the new lists resource
+- Unit coverage for the cleanup fetchers, creator filter, deleter endpoint routing, and the mass-deletion safety gate (`test/scripts/cleanup-resources.test.ts`, `test/scripts/cleanup-safety-gate.test.ts`)
 
 ## [1.7.0] - 2026-08-25
 
@@ -998,7 +1019,8 @@ Users upgrading from v0.1.x should note:
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/kesslerio/attio-mcp-server/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/kesslerio/attio-mcp-server/compare/v1.5.0...v1.6.0

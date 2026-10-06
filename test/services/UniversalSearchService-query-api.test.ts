@@ -4,12 +4,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
+import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import {
   UniversalResourceType,
   SearchType,
-} from '../../src/handlers/tool-configs/universal/types.js';
-import type { UniversalSearchParams } from '../../src/handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import type { UniversalSearchParams } from '@/handlers/tool-configs/universal/types.js';
 
 // Mock the Attio client using global override mechanism
 const mockPost = vi.fn();
@@ -18,7 +18,7 @@ const mockClient = {
 };
 
 // Mock performance tracking
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
+vi.mock('@/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     startOperation: () => 'test-perf-id',
     markTiming: () => {},
@@ -29,7 +29,7 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
 }));
 
 // Mock validation service
-vi.mock('../../src/services/ValidationService.js', () => ({
+vi.mock('@/services/ValidationService.js', () => ({
   ValidationService: {
     validatePaginationParameters: () => {},
     validateFiltersSchema: () => {},
@@ -309,7 +309,7 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle API errors gracefully for relationship search', async () => {
+    it('propagates API failures for relationship search', async () => {
       mockPost.mockRejectedValue(new Error('API Error: Invalid relationship'));
 
       const params: UniversalSearchParams = {
@@ -319,36 +319,40 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         relationship_target_id: 'invalid_id',
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
-      expect(results).toEqual([]);
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow('API Error: Invalid relationship');
     });
 
-    it('should handle API errors gracefully for content search', async () => {
+    it('propagates API failures for content search', async () => {
       mockPost.mockRejectedValue(new Error('API Error: Invalid query'));
 
       const params: UniversalSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         search_type: SearchType.CONTENT,
         query: 'test query',
+        content_fields: ['name'],
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
-      expect(results).toEqual([]);
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow('API Error: Invalid query');
     });
 
-    it('should handle generic API errors gracefully for timeframe search', async () => {
+    it('propagates API failures for timeframe search', async () => {
       mockPost.mockRejectedValue(new Error('API Error: Invalid date format'));
 
       const params: UniversalSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         search_type: SearchType.TIMEFRAME,
         timeframe_attribute: 'created_at',
-        start_date: 'invalid-date',
+        start_date: '2026-10-01T00:00:00Z',
         date_operator: 'greater_than',
       };
 
-      const results = await UniversalSearchService.searchRecords(params);
-      expect(results).toEqual([]);
+      await expect(
+        UniversalSearchService.searchRecords(params)
+      ).rejects.toThrow('API Error: Invalid date format');
     });
 
     it('should surface invalid timeframe filter errors instead of masking them as empty results', async () => {

@@ -1,7 +1,7 @@
 # ⚠️ DEPRECATED: Attio MCP People Tools
 
 > **🚨 IMPORTANT NOTICE**: These individual people tools have been **deprecated** and consolidated into universal tools.
-> 
+>
 > **📖 New Universal Tools**: Use [Universal Tools](../universal-tools/README.md) instead for better performance and consistency.
 >
 > **🔄 Migration**: See the [Migration Guide](../universal-tools/migration-guide.md) for complete mappings from these deprecated tools to their universal equivalents.
@@ -22,10 +22,10 @@ Search for people by name, email, or phone number.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| query     | string | Search term to match against name, email, or phone fields | Yes |
-| limit     | number | Maximum number of results to return (default: 20) | No |
+| Parameter | Type   | Description                                               | Required |
+| --------- | ------ | --------------------------------------------------------- | -------- |
+| query     | string | Search term to match against name, email, or phone fields | Yes      |
+| limit     | number | Maximum number of results to return (default: 20)         | No       |
 
 #### Example Usage
 
@@ -70,10 +70,12 @@ Search for people by name, email, or phone number.
           "email": [{ "value": "john@example.com" }],
           "phone": [{ "value": "+1 (555) 123-4567" }],
           "job_title": [{ "value": "Software Engineer" }],
-          "company": [{ 
-            "id": { "record_id": "company_01abcdef" },
-            "values": { "name": [{ "value": "Acme Inc." }] }
-          }]
+          "company": [
+            {
+              "id": { "record_id": "company_01abcdef" },
+              "values": { "name": [{ "value": "Acme Inc." }] }
+            }
+          ]
         }
       },
       {
@@ -85,10 +87,12 @@ Search for people by name, email, or phone number.
           "email": [{ "value": "john@example.com" }],
           "phone": [{ "value": "+1 (555) 987-6543" }],
           "job_title": [{ "value": "Product Manager" }],
-          "company": [{ 
-            "id": { "record_id": "company_02ghijkl" },
-            "values": { "name": [{ "value": "Example Corp" }] }
-          }]
+          "company": [
+            {
+              "id": { "record_id": "company_02ghijkl" },
+              "values": { "name": [{ "value": "Example Corp" }] }
+            }
+          ]
         }
       }
     ],
@@ -106,9 +110,9 @@ Get detailed information about a specific person by ID.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | Person record ID | Yes |
+| Parameter | Type   | Description      | Required |
+| --------- | ------ | ---------------- | -------- |
+| id        | string | Person record ID | Yes      |
 
 #### Example Usage
 
@@ -142,10 +146,12 @@ Get detailed information about a specific person by ID.
         "email": [{ "value": "john@example.com" }],
         "phone": [{ "value": "+1 (555) 123-4567" }],
         "job_title": [{ "value": "Software Engineer" }],
-        "company": [{ 
-          "id": { "record_id": "company_01abcdef" },
-          "values": { "name": [{ "value": "Acme Inc." }] }
-        }],
+        "company": [
+          {
+            "id": { "record_id": "company_01abcdef" },
+            "values": { "name": [{ "value": "Acme Inc." }] }
+          }
+        ],
         "linkedin_url": [{ "value": "https://linkedin.com/in/johnsmith" }],
         "last_contacted": [{ "value": "2023-05-15" }]
       }
@@ -160,11 +166,11 @@ Get notes associated with a specific person.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | Person record ID | Yes |
-| limit     | number | Maximum number of notes to return (default: 10) | No |
-| offset    | number | Number of notes to skip (default: 0) | No |
+| Parameter | Type   | Description                                     | Required |
+| --------- | ------ | ----------------------------------------------- | -------- |
+| id        | string | Person record ID                                | Yes      |
+| limit     | number | Maximum number of notes to return (default: 10) | No       |
+| offset    | number | Number of notes to skip (default: 0)            | No       |
 
 #### Example Usage
 
@@ -220,11 +226,11 @@ Create a new note for a specific person.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | Person record ID | Yes |
-| title     | string | Note title | Yes |
-| content   | string | Note content | Yes |
+| Parameter | Type   | Description      | Required |
+| --------- | ------ | ---------------- | -------- |
+| id        | string | Person record ID | Yes      |
+| title     | string | Note title       | Yes      |
+| content   | string | Note content     | Yes      |
 
 #### Example Usage
 
@@ -277,38 +283,24 @@ This is implemented using Attio's filter API with the `$or` operator:
 ```typescript
 // For people, search by name, email, or phone
 filter = {
-  "$or": [
-    { name: { "$contains": query } },
-    { email: { "$contains": query } },
-    { phone: { "$contains": query } }
-  ]
+  $or: [
+    { name: { $contains: query } },
+    { email: { $contains: query } },
+    { phone: { $contains: query } },
+  ],
 };
 ```
 
 This enhancement makes it much easier to find people when you only have partial information, such as:
+
 - An email domain (e.g., "example.com")
 - A phone number with just the area code
 - A partial name
 
 ### Retry Logic
 
-All API calls include automatic retry logic with exponential backoff for handling transient errors:
-
-```typescript
-const result = await callWithRetry(
-  async () => {
-    // API call implementation
-  },
-  {
-    maxRetries: 3,
-    initialDelay: 1000,
-    maxDelay: 10000,
-    useExponentialBackoff: true
-  }
-);
-```
-
-This ensures robust operation even during network issues or API rate limiting.
+See [API call retry logic](../api/error-handling.md#api-call-retry-logic)
+for read retry eligibility and mutation recovery constraints.
 
 ### Response Formatting
 

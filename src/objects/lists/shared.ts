@@ -1,8 +1,9 @@
 /**
  * Shared utilities for list operations.
  */
-import { AttioList } from '../../types/attio.js';
-import { getErrorStatus } from '../../types/error-interfaces.js';
+import { AttioList } from '@/types/attio.js';
+import { getErrorStatus } from '@/types/error-interfaces.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 /**
  * Extract data from response, handling axios, fetch, and mock response shapes.
@@ -14,7 +15,7 @@ export function extract<T>(response: unknown): T {
       const inner = outer.data;
       if (typeof inner === 'object' && inner !== null && 'data' in inner) {
         const innerData = (inner as { data?: T }).data;
-        return (innerData ?? ({} as T)) as T;
+        return innerData as T;
       }
       return inner as T;
     }
@@ -26,10 +27,10 @@ export function extract<T>(response: unknown): T {
  * Ensure list shape with proper ID structure and fallback values.
  */
 export function ensureListShape(raw: unknown): AttioList {
-  const value: Record<string, unknown> =
-    typeof raw === 'object' && raw !== null
-      ? (raw as Record<string, unknown>)
-      : {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new ResultEncodingError();
+  }
+  const value = raw as Record<string, unknown>;
 
   let listId: string | undefined;
   let workspaceId: string | undefined;
@@ -53,7 +54,7 @@ export function ensureListShape(raw: unknown): AttioList {
     workspaceId = value.workspace_id;
   }
 
-  const resolvedListId = listId ?? crypto.randomUUID?.() ?? `tmp_${Date.now()}`;
+  if (!listId?.trim()) throw new ResultEncodingError();
   const resolvedWorkspaceId = workspaceId || '';
   const resolvedTitle =
     typeof value.title === 'string'
@@ -64,9 +65,10 @@ export function ensureListShape(raw: unknown): AttioList {
   const resolvedName =
     typeof value.name === 'string' ? value.name : resolvedTitle;
 
+  const { entry_count, ...fields } = value;
   return {
-    ...value,
-    id: { list_id: resolvedListId },
+    ...fields,
+    id: { list_id: listId },
     title: resolvedTitle,
     name: resolvedName,
     description: typeof value.description === 'string' ? value.description : '',
@@ -75,8 +77,7 @@ export function ensureListShape(raw: unknown): AttioList {
     workspace_id: resolvedWorkspaceId,
     created_at: typeof value.created_at === 'string' ? value.created_at : '',
     updated_at: typeof value.updated_at === 'string' ? value.updated_at : '',
-    entry_count:
-      typeof value.entry_count === 'number' ? value.entry_count : undefined,
+    ...(typeof entry_count === 'number' ? { entry_count } : {}),
   } as AttioList;
 }
 
@@ -84,7 +85,8 @@ export function ensureListShape(raw: unknown): AttioList {
  * Helper to convert raw data to proper list array format.
  */
 export function asListArray(raw: unknown): AttioList[] {
-  return Array.isArray(raw) ? raw.map((item) => ensureListShape(item)) : [];
+  if (!Array.isArray(raw)) throw new ResultEncodingError();
+  return raw.map((item) => ensureListShape(item));
 }
 
 export function isNotFoundError(error: unknown): boolean {

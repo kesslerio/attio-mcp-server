@@ -16,6 +16,7 @@ import { StrategyDependencies } from '@services/search-strategies/interfaces.js'
 import { UniversalUtilityService } from '@services/UniversalUtilityService.js';
 import { SearchUtilities } from '@services/search-utilities/SearchUtilities.js';
 import { enhancedPerformanceTracker } from '@/middleware/performance-enhanced.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 // Mock dependencies
 vi.mock('@/middleware/performance-enhanced.js', () => ({
@@ -126,12 +127,12 @@ describe('TaskSearchStrategy', () => {
       expect(results).toEqual([]);
     });
 
-    it('should handle missing taskFunction gracefully', async () => {
+    it('should reject a missing taskFunction', async () => {
       const strategyWithoutTask = new TaskSearchStrategy({});
 
-      const results = await strategyWithoutTask.search({});
-
-      expect(results).toEqual([]);
+      await expect(strategyWithoutTask.search({})).rejects.toThrow(
+        'Tasks list function not available'
+      );
     });
   });
 
@@ -286,20 +287,37 @@ describe('TaskSearchStrategy', () => {
   });
 
   describe('error handling', () => {
-    it('should handle API errors gracefully', async () => {
-      mockTaskFunction.mockRejectedValue(new Error('API Error'));
+    it.each([{}, { query: 'test', search_type: SearchType.CONTENT }])(
+      'should propagate the original API error for %j',
+      async (params) => {
+        const apiError = new Error('API Error');
+        mockTaskFunction.mockRejectedValue(apiError);
 
-      const results = await strategy.search({});
+        await expect(strategy.search(params)).rejects.toBe(apiError);
+      }
+    );
 
-      expect(results).toEqual([]);
-    });
+    it.each([undefined, null, {}, 'invalid response'])(
+      'should reject non-array task response %j',
+      async (response) => {
+        mockTaskFunction.mockResolvedValue(response);
 
-    it('should handle non-array task response', async () => {
-      mockTaskFunction.mockResolvedValue('invalid response' as any);
+        await expect(strategy.search({})).rejects.toThrow(ResultEncodingError);
+        expect(
+          UniversalUtilityService.convertTaskToRecord
+        ).not.toHaveBeenCalled();
+      }
+    );
 
-      const results = await strategy.search({});
+    it('should propagate task conversion failures', async () => {
+      const error = new ResultEncodingError();
+      vi.mocked(UniversalUtilityService.convertTaskToRecord).mockImplementation(
+        () => {
+          throw error;
+        }
+      );
 
-      expect(results).toEqual([]);
+      await expect(strategy.search({})).rejects.toBe(error);
     });
   });
 });

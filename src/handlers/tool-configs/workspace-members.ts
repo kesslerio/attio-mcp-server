@@ -1,11 +1,42 @@
-import { AttioWorkspaceMember } from '../../types/attio.js';
+import { AttioWorkspaceMember } from '@/types/attio.js';
+import { z } from 'zod';
 import {
   listWorkspaceMembers,
   searchWorkspaceMembers,
   getWorkspaceMember,
-} from '../../objects/workspace-members.js';
-import { ToolConfig } from '../tool-types.js';
+} from '@/objects/workspace-members.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
+import {
+  workspaceMemberCollectionResultContract,
+  workspaceMemberDataSchema,
+  workspaceMemberResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+
+/** Member responses always publish the native workspace_member_id identifier. */
+function normalizeMemberCollection(result: unknown): Record<string, unknown> {
+  // Lists expose their whole (already bounded) member directory per request.
+  const data = z.array(workspaceMemberDataSchema).parse(result);
+  return {
+    data,
+    count: data.length,
+    next_cursor: null,
+    pagination: boundedPaginationMetadata(
+      (result as { truncated?: boolean }).truncated ?? true
+    ),
+  };
+}
+
+function normalizeMember(result: unknown): Record<string, unknown> {
+  if (!result || typeof result !== 'object') {
+    // An absent member is a failure, never an empty success (KTD5).
+    throw Object.assign(new Error('Workspace member not found'), {
+      status: 404,
+    });
+  }
+  return { data: workspaceMemberDataSchema.parse(result) };
+}
 
 const formatWorkspaceMemberSummary = (member: AttioWorkspaceMember): string => {
   const name = [member.first_name, member.last_name].filter(Boolean).join(' ');
@@ -65,6 +96,8 @@ const optionalNumber = (
 export const workspaceMembersToolConfigs = {
   listWorkspaceMembers: {
     name: 'list-workspace-members',
+    ...workspaceMemberCollectionResultContract,
+    structuredOutput: normalizeMemberCollection,
     handler: async (args: WorkspaceMemberToolArgs = {}) =>
       listWorkspaceMembers(
         optionalString(args, 'search'),
@@ -77,6 +110,8 @@ export const workspaceMembersToolConfigs = {
 
   searchWorkspaceMembers: {
     name: 'search-workspace-members',
+    ...workspaceMemberCollectionResultContract,
+    structuredOutput: normalizeMemberCollection,
     handler: async (args: WorkspaceMemberToolArgs = {}) =>
       searchWorkspaceMembers(requiredString(args, 'query')),
     formatResult: (members: AttioWorkspaceMember[]) =>
@@ -89,6 +124,8 @@ export const workspaceMembersToolConfigs = {
 
   getWorkspaceMember: {
     name: 'get-workspace-member',
+    ...workspaceMemberResultContract,
+    structuredOutput: normalizeMember,
     handler: async (args: WorkspaceMemberToolArgs = {}) =>
       getWorkspaceMember(requiredString(args, 'memberId')),
     formatResult: (member: AttioWorkspaceMember | null | undefined) => {

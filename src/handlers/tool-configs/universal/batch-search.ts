@@ -1,3 +1,6 @@
+import { extractResourceTypeFromFormatArgs } from '@/handlers/tool-configs/universal/core/utils.js';
+import { batchSearchResultContract } from '@/handlers/tools/result-schemas.js';
+import { normalizeBatch } from '@/handlers/tool-configs/universal/read-result-adapters.js';
 /**
  * Dedicated batch search tool configuration
  * Provides a clean API for batch search operations with multiple queries
@@ -37,6 +40,8 @@ export interface BatchSearchParams {
  */
 export const batchSearchConfig = {
   name: 'batch_search_records',
+  ...batchSearchResultContract,
+  structuredOutput: (result: unknown) => normalizeBatch(result, true),
   handler: async (
     params: BatchSearchParams
   ): Promise<UniversalBatchSearchResult[]> => {
@@ -71,15 +76,16 @@ export const batchSearchConfig = {
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         'batch_search_records',
-        params.resource_type,
+        params?.resource_type ?? '',
         error
       );
     }
   },
   formatResult: (
     results: UniversalBatchSearchResult[] | unknown,
-    resourceType?: UniversalResourceType
+    resourceOrArgs?: UniversalResourceType | Record<string, unknown>
   ) => {
+    const resourceType = extractResourceTypeFromFormatArgs([resourceOrArgs]);
     if (!results || !Array.isArray(results)) {
       return 'Batch search failed or returned no results';
     }
@@ -88,7 +94,7 @@ export const batchSearchConfig = {
     const batchResults = results as UniversalBatchSearchResult[];
 
     const resourceTypeName = resourceType
-      ? formatResourceType(resourceType)
+      ? formatResourceType(resourceType as UniversalResourceType)
       : 'record';
 
     // Handle proper pluralization (reuse helper logic from core/index.ts)

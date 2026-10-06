@@ -14,9 +14,10 @@ import {
   getSingularResourceLabel,
 } from '@/handlers/tool-configs/universal/core/utils.js';
 import { handleUniversalGetDetails } from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { handleSearchError } from '@/handlers/tool-configs/universal/core/error-utils.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import { recordDetailsResultContract } from '@/handlers/tools/result-schemas.js';
+import { ErrorService } from '@/services/ErrorService.js';
 import { isMergeInProgressError } from '@/services/merge/merge-in-progress.js';
 
 export interface MergeInProgressRecord {
@@ -34,6 +35,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
   UniversalRecordResult
 > = {
   name: 'get_record_details',
+  ...recordDetailsResultContract,
   handler: async (
     params: UniversalRecordDetailsParams
   ): Promise<UniversalRecordResult> => {
@@ -53,10 +55,10 @@ export const getRecordDetailsConfig: UniversalToolConfig<
             'Attio is still applying this merge. The record is not missing; retry later.',
         } as unknown as UniversalRecordResult;
       }
-      return await handleSearchError(
-        error,
+      throw ErrorService.createUniversalError(
+        'get details',
         params.resource_type,
-        params as unknown as Record<string, unknown>
+        error
       );
     }
   },
@@ -216,7 +218,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
     record: UniversalRecordResult,
     resourceType?: string
   ): Record<string, unknown> => {
-    if (!record) return {};
+    if (!record) return { data: record };
 
     const result: Record<string, unknown> = { ...record };
 
@@ -232,7 +234,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
       }
     }
 
-    return result;
+    return { data: result };
   },
 };
 

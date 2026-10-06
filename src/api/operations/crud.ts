@@ -1,10 +1,12 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * CRUD operations for Attio objects
  * Handles create, read, update, and delete operations
  */
 
 import { AxiosResponse } from 'axios';
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   AttioRecord,
   ResourceType,
@@ -13,10 +15,10 @@ import {
   RecordCreateParams,
   RecordUpdateParams,
   RecordListParams,
-} from '../../types/attio.js';
-import { secureValidateFields } from '../../utils/validation/field-validation.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { OperationType, createScopedLogger } from '../../utils/logger.js';
+} from '@/types/attio.js';
+import { secureValidateFields } from '@/utils/validation/field-validation.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
+import { OperationType, createScopedLogger } from '@/utils/logger.js';
 
 // Create scoped logger for CRUD operations
 const logger = createScopedLogger(
@@ -187,10 +189,15 @@ export async function getObjectDetails<T extends AttioRecord>(
     }
   }
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
-    return (response?.data?.data || response?.data) as T;
-  }, options?.retryConfig);
+  return callWithRetry(
+    async () => {
+      const response: AxiosResponse<AttioSingleResponse<T>> =
+        await api.get(path);
+      return (response?.data?.data || response?.data) as T;
+    },
+    options?.retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -208,31 +215,31 @@ export async function createRecord<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records`;
 
-  return callWithRetry(async () => {
-    // Debug log the request being made
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.E2E_MODE === 'true'
-    ) {
-      logger.debug('Making API request for createRecord', {
-        path,
-        requestBody: {
-          data: {
-            values: params.attributes,
-          },
-        },
-      });
-    }
-
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.post(
+  // Debug log the request being made
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.E2E_MODE === 'true'
+  ) {
+    logger.debug('Making API request for createRecord', {
       path,
-      {
+      requestBody: {
         data: {
           values: params.attributes,
         },
-      }
-    );
+      },
+    });
+  }
 
+  const response: AxiosResponse<AttioSingleResponse<T>> = await callWithRetry(
+    () =>
+      api.post(path, {
+        data: {
+          values: params.attributes,
+        },
+      }),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     // Debug log the full response
     if (
       process.env.NODE_ENV === 'development' ||
@@ -342,7 +349,7 @@ export async function createRecord<T extends AttioRecord>(
       // If fallback didn't work, rethrow original error
       throw error;
     }
-  }, retryConfig);
+  });
 }
 
 /**
@@ -374,10 +381,15 @@ export async function getRecord<T extends AttioRecord>(
     path += `?${params.toString()}`;
   }
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.get(path);
-    return (response?.data?.data || response?.data) as T;
-  }, retryConfig);
+  return callWithRetry(
+    async () => {
+      const response: AxiosResponse<AttioSingleResponse<T>> =
+        await api.get(path);
+      return (response?.data?.data || response?.data) as T;
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -395,35 +407,34 @@ export async function updateRecord<T extends AttioRecord>(
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/${params.recordId}`;
 
-  return callWithRetry(async () => {
-    // Debug log the request being made
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.E2E_MODE === 'true'
-    ) {
-      logger.debug('Making API request for updateRecord', {
-        path,
-        recordId: params.recordId,
-        requestBody: {
-          data: {
-            values: params.attributes,
-          },
-        },
-      });
-    }
-
-    // The API expects 'data.values' structure
-    const payload = {
-      data: {
-        values: params.attributes,
-      },
-    };
-
-    const response: AxiosResponse<AttioSingleResponse<T>> = await api.patch(
+  // Debug log the request being made
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.E2E_MODE === 'true'
+  ) {
+    logger.debug('Making API request for updateRecord', {
       path,
-      payload
-    );
+      recordId: params.recordId,
+      requestBody: {
+        data: {
+          values: params.attributes,
+        },
+      },
+    });
+  }
 
+  // The API expects 'data.values' structure
+  const payload = {
+    data: {
+      values: params.attributes,
+    },
+  };
+
+  const response: AxiosResponse<AttioSingleResponse<T>> = await callWithRetry(
+    () => api.patch(path, payload),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     // Debug log the full response
     if (
       process.env.NODE_ENV === 'development' ||
@@ -575,7 +586,7 @@ export async function updateRecord<T extends AttioRecord>(
       // If fallback didn't work, rethrow original error
       throw error;
     }
-  }, retryConfig);
+  });
 }
 
 /**
@@ -597,10 +608,8 @@ export async function deleteRecord(
   const objectPath = getObjectPath(objectSlug, objectId);
   const path = `${objectPath}/records/${recordId}`;
 
-  return callWithRetry(async () => {
-    await api.delete(path);
-    return true;
-  }, retryConfig);
+  await callWithRetry(() => api.delete(path), retryConfig);
+  return true;
 }
 
 /**
@@ -648,16 +657,18 @@ export async function listRecords<T extends AttioRecord>(
     queryParams.toString() ? '?' + queryParams.toString() : ''
   }`;
 
-  return callWithRetry(async () => {
-    const response: AxiosResponse<AttioListResponse<T>> = await api.get(path);
-    // Ensure we always return an array, never undefined/null/objects
-    const items = Array.isArray(response?.data?.data)
-      ? response.data.data
-      : Array.isArray(response?.data?.records)
-        ? response.data.records
-        : Array.isArray(response?.data)
-          ? response.data
-          : [];
-    return items;
-  }, retryConfig);
+  const response = await callWithRetry(
+    () => api.get<AttioListResponse<T>>(path),
+    retryConfig,
+    { uncertainMutation: false }
+  );
+  const items = Array.isArray(response?.data?.data)
+    ? response.data.data
+    : Array.isArray(response?.data?.records)
+      ? response.data.records
+      : Array.isArray(response?.data)
+        ? response.data
+        : undefined;
+  if (!Array.isArray(items)) throw new ResultEncodingError();
+  return items;
 }

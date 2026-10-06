@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { safeJsonStringify } from '@/utils/json-serializer.js';
 import type { JsonObject } from '@/types/attio.js';
 import {
@@ -134,11 +135,25 @@ export const CURRENT_LOG_LEVEL = (() => {
  * Global log context storage
  */
 let globalContext: LogContext = {};
+const requestLogContext = new AsyncLocalStorage<LogContext>();
+
+/** Each tools/call owns its logging and error references through async work. */
+export function withLogContext<T>(
+  context: LogContext,
+  operation: () => Promise<T>
+): Promise<T> {
+  return requestLogContext.run({ ...context }, operation);
+}
 
 /**
  * Set global logging context for correlation tracking
  */
 export function setLogContext(context: Partial<LogContext>): void {
+  const requestContext = requestLogContext.getStore();
+  if (requestContext) {
+    Object.assign(requestContext, context);
+    return;
+  }
   globalContext = { ...globalContext, ...context };
 }
 
@@ -146,13 +161,19 @@ export function setLogContext(context: Partial<LogContext>): void {
  * Get current logging context
  */
 export function getLogContext(): LogContext {
-  return { ...globalContext };
+  return { ...(requestLogContext.getStore() ?? globalContext) };
 }
 
 /**
  * Clear logging context
  */
 export function clearLogContext(): void {
+  const requestContext = requestLogContext.getStore();
+  if (requestContext) {
+    for (const key of Object.keys(requestContext))
+      delete requestContext[key as keyof LogContext];
+    return;
+  }
   globalContext = {};
 }
 
@@ -174,16 +195,17 @@ function createLogMetadata(
   additionalMetadata?: JsonObject
 ): LogMetadata {
   const sanitizedMetadata = sanitizeMetadata(additionalMetadata);
+  const context = getLogContext();
   return {
     timestamp: new Date().toISOString(),
     level,
     module,
-    operation: operation || globalContext.operation,
-    operationType: operationType || globalContext.operationType,
-    correlationId: globalContext.correlationId,
-    sessionId: globalContext.sessionId,
-    requestId: globalContext.requestId,
-    userId: globalContext.userId,
+    operation: operation || context.operation,
+    operationType: operationType || context.operationType,
+    correlationId: context.correlationId,
+    sessionId: context.sessionId,
+    requestId: context.requestId,
+    userId: context.userId,
     ...(sanitizedMetadata || {}),
   };
 }

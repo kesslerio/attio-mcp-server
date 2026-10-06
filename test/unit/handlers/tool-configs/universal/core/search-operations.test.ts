@@ -5,9 +5,11 @@ vi.mock('@/utils/config-loader.js', () => ({
 }));
 
 const mockHandleUniversalSearch = vi.fn();
+const mockHandleUniversalSearchPage = vi.fn();
 
 vi.mock('@/handlers/tool-configs/universal/shared-handlers.js', () => ({
   handleUniversalSearch: mockHandleUniversalSearch,
+  handleUniversalSearchPage: mockHandleUniversalSearchPage,
 }));
 
 import { loadMappingConfig } from '@/utils/config-loader.js';
@@ -37,14 +39,18 @@ describe('searchRecordsConfig custom object support', () => {
   });
 
   it('passes canonicalized custom object slugs to the shared search handler', async () => {
-    mockHandleUniversalSearch.mockResolvedValueOnce([]);
+    mockHandleUniversalSearchPage.mockResolvedValueOnce({
+      data: [],
+      next_cursor: null,
+      pagination: { supported: true, truncated: false },
+    });
 
     await searchRecordsConfig.handler({
       resource_type: 'FUNDS',
       query: 'growth',
     } as never);
 
-    expect(mockHandleUniversalSearch).toHaveBeenCalledWith(
+    expect(mockHandleUniversalSearchPage).toHaveBeenCalledWith(
       expect.objectContaining({
         resource_type: 'funds',
         query: 'growth',

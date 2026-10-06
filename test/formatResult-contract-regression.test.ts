@@ -25,6 +25,20 @@ import {
   ListMockFactory,
 } from './utils/mock-factories/index.js';
 
+// upsert_record formats an UpsertResult, not a raw record; adapt the shared
+// mock record input into the shape its formatter expects.
+const upsertFormatAdapter = {
+  formatResult: (input: unknown): string =>
+    coreOpsConfig.upsertRecordConfig.formatResult({
+      action: 'updated',
+      resource_type: 'companies',
+      record_id: 'regression-test-id',
+      matched_on: { attribute: 'domains', value: 'acme.com' },
+      changed_fields: ['name'],
+      message: `Updated record for ${typeof input === 'object' && input ? 'object' : 'input'} input`,
+    }),
+};
+
 /**
  * All universal tool configurations that have formatResult functions
  */
@@ -35,6 +49,7 @@ const UNIVERSAL_TOOL_CONFIGS = [
   { name: 'update-record', config: coreOpsConfig.updateRecordConfig },
   { name: 'delete-record', config: coreOpsConfig.deleteRecordConfig },
   { name: 'merge-records', config: coreOpsConfig.mergeRecordsConfig },
+  { name: 'upsert-record', config: upsertFormatAdapter },
   { name: 'get-attributes', config: coreOpsConfig.getAttributesConfig },
   { name: 'get-detailed-info', config: coreOpsConfig.getDetailedInfoConfig },
   { name: 'advanced-search', config: advancedOpsConfig.advancedSearchConfig },
