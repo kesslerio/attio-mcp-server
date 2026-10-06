@@ -27,7 +27,7 @@ class ListOperationsTest extends MCPTestBase {
     try {
       // Create a test company first
       const companyData = TestDataFactory.createCompanyData('TC006');
-      const createResult = await this.executeToolCall('create_record', {
+      const createResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -92,9 +92,9 @@ describe('TC-006: List Operations - Basic List Management', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall('get-lists', {});
+      const result = await testCase.executeToolCall('lists_list', {});
 
-      QAAssertions.assertValidListResponse(result, 'get-lists');
+      QAAssertions.assertValidListResponse(result, 'lists_list');
 
       // Verify response contains array of lists
       const text = result.content?.[0]?.text || '';
@@ -120,7 +120,7 @@ describe('TC-006: List Operations - Basic List Management', () => {
 
     try {
       // First get lists to find a valid list ID
-      const listsResult = await testCase.executeToolCall('get-lists', {});
+      const listsResult = await testCase.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -132,11 +132,11 @@ describe('TC-006: List Operations - Basic List Management', () => {
 
       const testListId = lists[0].id?.list_id || lists[0].api_slug;
 
-      const result = await testCase.executeToolCall('get-list-details', {
+      const result = await testCase.executeToolCall('lists_get', {
         listId: testListId,
       });
 
-      QAAssertions.assertValidListResponse(result, 'get-list-details');
+      QAAssertions.assertValidListResponse(result, 'lists_get');
 
       // Verify response contains list details
       const text = result.content?.[0]?.text || '';
@@ -160,7 +160,7 @@ describe('TC-006: List Operations - Basic List Management', () => {
 
     try {
       // First get lists to find a valid list ID
-      const listsResult = await testCase.executeToolCall('get-lists', {});
+      const listsResult = await testCase.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -172,12 +172,12 @@ describe('TC-006: List Operations - Basic List Management', () => {
 
       const testListId = lists[0].id?.list_id || lists[0].api_slug;
 
-      const result = await testCase.executeToolCall('get-list-entries', {
+      const result = await testCase.executeToolCall('list_entries_list', {
         listId: testListId,
         limit: 10,
       });
 
-      QAAssertions.assertValidListResponse(result, 'get-list-entries');
+      QAAssertions.assertValidListResponse(result, 'list_entries_list');
 
       // Verify response contains array of entries
       const text = result.content?.[0]?.text || '';
@@ -207,7 +207,7 @@ describe('TC-006: List Operations - Basic List Management', () => {
 
     try {
       // First get lists to find a valid list ID
-      const listsResult = await testCase.executeToolCall('get-lists', {});
+      const listsResult = await testCase.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -220,22 +220,22 @@ describe('TC-006: List Operations - Basic List Management', () => {
       const testListId = lists[0].id?.list_id || lists[0].api_slug;
 
       // Test with pagination parameters
-      const result = await testCase.executeToolCall('get-list-entries', {
+      const result = await testCase.executeToolCall('list_entries_list', {
         listId: testListId,
         limit: 5,
         offset: 0,
       });
 
-      QAAssertions.assertValidListResponse(result, 'get-list-entries');
+      QAAssertions.assertValidListResponse(result, 'list_entries_list');
 
       // Test second page
-      const result2 = await testCase.executeToolCall('get-list-entries', {
+      const result2 = await testCase.executeToolCall('list_entries_list', {
         listId: testListId,
         limit: 5,
         offset: 5,
       });
 
-      QAAssertions.assertValidListResponse(result2, 'get-list-entries');
+      QAAssertions.assertValidListResponse(result2, 'list_entries_list');
 
       passed = true;
     } catch (e) {

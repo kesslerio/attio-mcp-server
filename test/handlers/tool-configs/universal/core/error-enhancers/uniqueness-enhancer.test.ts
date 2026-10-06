@@ -140,10 +140,10 @@ describe('uniqueness-enhancer', () => {
       const result = await uniquenessEnhancer.enhance(error, context);
 
       expect(result).toContain(
-        'update-record(resource_type="companies", record_id="comp-789"'
+        'records_update(resource_type="companies", record_id="comp-789"'
       );
       expect(result).toContain(
-        'get_record_details(resource_type="companies", record_id="comp-789"'
+        'records_get_details(resource_type="companies", record_id="comp-789"'
       );
     });
 

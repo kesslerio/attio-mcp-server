@@ -283,7 +283,7 @@ describe('UniversalRetrievalService', () => {
       });
 
       expect(enhancedPerformanceTracker.startOperation).toHaveBeenCalledWith(
-        'get-record-details',
+        'records_get_details',
         'get',
         { resourceType: UniversalResourceType.COMPANIES, recordId: 'comp_123' }
       );

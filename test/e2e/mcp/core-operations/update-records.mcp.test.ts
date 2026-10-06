@@ -43,7 +43,7 @@ describe('TC-004: Update Records - Data Modification', () => {
 
   beforeEach(async () => {
     const companyData = TestDataFactory.createCompanyData('TC004_SETUP');
-    const companyResult = await testCase.executeToolCall('create_record', {
+    const companyResult = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: companyData,
     });
@@ -53,7 +53,7 @@ describe('TC-004: Update Records - Data Modification', () => {
     if (companyId) testCase.trackRecord('companies', companyId);
 
     const personData = TestDataFactory.createPersonData('TC004_SETUP');
-    const personResult = await testCase.executeToolCall('create_record', {
+    const personResult = await testCase.executeToolCall('records_create', {
       resource_type: 'people',
       record_data: personData,
     });
@@ -63,7 +63,7 @@ describe('TC-004: Update Records - Data Modification', () => {
     if (personId) testCase.trackRecord('people', personId);
 
     const taskData = TestDataFactory.createTaskData('TC004_SETUP');
-    const taskResult = await testCase.executeToolCall('create_record', {
+    const taskResult = await testCase.executeToolCall('records_create', {
       resource_type: 'tasks',
       record_data: taskData,
     });
@@ -104,7 +104,7 @@ describe('TC-004: Update Records - Data Modification', () => {
         description: `Updated by TC004 at ${new Date().toISOString()}`,
       };
 
-      const result = await testCase.executeToolCall('update_record', {
+      const result = await testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: companyId,
         record_data: updateData,
@@ -119,7 +119,7 @@ describe('TC-004: Update Records - Data Modification', () => {
 
       // Verify the update persisted by fetching details
       const detailsResult = await testCase.executeToolCall(
-        'get-record-details',
+        'records_get_details',
         {
           resource_type: 'companies',
           record_id: companyId,
@@ -152,7 +152,7 @@ describe('TC-004: Update Records - Data Modification', () => {
         job_title: 'TC004 Updated Senior Engineer',
       };
 
-      const result = await testCase.executeToolCall('update_record', {
+      const result = await testCase.executeToolCall('records_update', {
         resource_type: 'people',
         record_id: personId,
         record_data: updateData,
@@ -185,7 +185,7 @@ describe('TC-004: Update Records - Data Modification', () => {
         is_completed: true,
       };
 
-      const result = await testCase.executeToolCall('update_record', {
+      const result = await testCase.executeToolCall('records_update', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: updateData,
@@ -218,7 +218,7 @@ describe('TC-004: Update Records - Data Modification', () => {
         deadline_at: futureDate.toISOString(),
       };
 
-      const result = await testCase.executeToolCall('update_record', {
+      const result = await testCase.executeToolCall('records_update', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: updateData,
@@ -243,7 +243,7 @@ describe('TC-004: Update Records - Data Modification', () => {
     try {
       const fakeId = 'NONEXISTENT_' + Date.now();
 
-      const result = await testCase.executeToolCall('update_record', {
+      const result = await testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: fakeId,
         record_data: {
@@ -281,7 +281,7 @@ describe('TC-004: Update Records - Data Modification', () => {
 
       // Get original details
       const originalDetails = await testCase.executeToolCall(
-        'get-record-details',
+        'records_get_details',
         {
           resource_type: 'companies',
           record_id: companyId,
@@ -294,7 +294,7 @@ describe('TC-004: Update Records - Data Modification', () => {
         size: 'large',
       };
 
-      await testCase.executeToolCall('update_record', {
+      await testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: companyId,
         record_data: updateData,
@@ -302,7 +302,7 @@ describe('TC-004: Update Records - Data Modification', () => {
 
       // Get updated details
       const updatedDetails = await testCase.executeToolCall(
-        'get-record-details',
+        'records_get_details',
         {
           resource_type: 'companies',
           record_id: companyId,

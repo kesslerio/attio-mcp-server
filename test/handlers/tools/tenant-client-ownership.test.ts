@@ -129,7 +129,7 @@ describe('native MCP tenant client ownership', () => {
       };
       const details = (client: Client) =>
         client.callTool({
-          name: 'get_record_details',
+          name: 'records_get_details',
           arguments: args,
         });
       const warm = await details(clients[0]);

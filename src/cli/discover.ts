@@ -136,6 +136,28 @@ yargs(hideBin(process.argv))
     },
     generateSkill
   )
+  .command(
+    'tools',
+    'List canonical MCP tool names from the same catalog as tools/list',
+    (yargs) => {
+      return yargs.option('json', {
+        description: 'Print the names as a JSON array',
+        type: 'boolean',
+        default: false,
+      });
+    },
+    async (argv) => {
+      const { listAdvertisedToolNames } = await import('./tool-catalog.js');
+      const names = listAdvertisedToolNames();
+      if (argv.json) {
+        process.stdout.write(`${JSON.stringify(names)}\n`);
+        return;
+      }
+      for (const name of names) {
+        process.stdout.write(`${name}\n`);
+      }
+    }
+  )
   /*
   // These commands will be implemented in future phases
   .command('objects', 'Discover object mappings', (yargs) => {

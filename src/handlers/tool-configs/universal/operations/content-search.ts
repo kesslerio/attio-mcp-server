@@ -27,7 +27,7 @@ export const searchByContentConfig: UniversalToolConfig<
   ContentSearchParams,
   UniversalRecordResult[]
 > = {
-  name: 'search_records_by_content',
+  name: 'records_search_by_content',
   ...recordSearchResultContract,
   structuredOutput: normalizeRecordCollection,
   handler: async (
@@ -35,7 +35,7 @@ export const searchByContentConfig: UniversalToolConfig<
   ): Promise<UniversalRecordResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'search_records_by_content',
+        'records_search_by_content',
         params
       );
 
@@ -77,8 +77,8 @@ export const searchByContentConfig: UniversalToolConfig<
 
       if (content_type === ContentSearchType.INTERACTIONS) {
         throw new Error(
-          `Interaction content search is not available via search_records_by_content. ` +
-            `Use get_record_interactions(resource_type, record_id) instead to fetch ` +
+          `Interaction content search is not available via records_search_by_content. ` +
+            `Use records_get_interactions(resource_type, record_id) instead to fetch ` +
             `interaction metadata (first/last email, calendar, interaction timestamps) ` +
             `for a specific person or company record.`
         );
@@ -105,7 +105,7 @@ export const searchByContentConfig: UniversalToolConfig<
       }
 
       throw ErrorService.createUniversalError(
-        'search_records_by_content',
+        'records_search_by_content',
         `${params.resource_type}:${params.content_type}`,
         error
       );

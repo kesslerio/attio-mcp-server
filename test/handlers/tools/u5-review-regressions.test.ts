@@ -775,7 +775,7 @@ describe('U5 review pagination invariants', () => {
       {
         method: 'tools/call',
         params: {
-          name: 'get-lists',
+          name: 'lists_list',
           arguments: { objectSlug: 'people', limit: 1 },
         },
       },

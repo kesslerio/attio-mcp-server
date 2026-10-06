@@ -62,21 +62,21 @@ describe('Universal Resource Types Validation', () => {
     };
 
     const formatResultFunctions = [
-      { name: 'search-records', fn: coreOps.searchRecordsConfig.formatResult },
+      { name: 'records_search', fn: coreOps.searchRecordsConfig.formatResult },
       {
-        name: 'get-record-details',
+        name: 'records_get_details',
         fn: coreOps.getRecordDetailsConfig.formatResult,
       },
-      { name: 'create-record', fn: coreOps.createRecordConfig.formatResult },
-      { name: 'update-record', fn: coreOps.updateRecordConfig.formatResult },
-      { name: 'delete-record', fn: coreOps.deleteRecordConfig.formatResult },
-      { name: 'get-attributes', fn: coreOps.getAttributesConfig.formatResult },
+      { name: 'records_create', fn: coreOps.createRecordConfig.formatResult },
+      { name: 'records_update', fn: coreOps.updateRecordConfig.formatResult },
+      { name: 'records_delete', fn: coreOps.deleteRecordConfig.formatResult },
+      { name: 'records_get_attributes', fn: coreOps.getAttributesConfig.formatResult },
       {
-        name: 'get-detailed-info',
+        name: 'records_get_info',
         fn: coreOps.getDetailedInfoConfig.formatResult,
       },
       {
-        name: 'advanced-search',
+        name: 'records_search_advanced',
         fn: advancedOps.advancedSearchConfig.formatResult,
       },
     ];
@@ -89,12 +89,12 @@ describe('Universal Resource Types Validation', () => {
           it(`should handle ${resourceType} resource type`, () => {
             // Choose appropriate mock data based on the function
             let mockData;
-            if (name === 'delete-record') {
+            if (name === 'records_delete') {
               // Delete functions expect { success: boolean; record_id: string }
               mockData = { success: true, record_id: 'test_123' };
             } else if (
-              name === 'search-records' ||
-              name === 'advanced-search'
+              name === 'records_search' ||
+              name === 'records_search_advanced'
             ) {
               // Search functions expect arrays
               mockData = [

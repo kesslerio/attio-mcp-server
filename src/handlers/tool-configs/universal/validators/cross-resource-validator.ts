@@ -147,7 +147,7 @@ export class CrossResourceValidator {
                     : 'Check your API connection and try again',
                 example:
                   error.type === 'not_found'
-                    ? `Try searching for companies first: search-records with resource_type: 'companies'`
+                    ? `Try searching for companies first: records_search with resource_type: 'companies'`
                     : undefined,
                 httpStatusCode: error.httpStatusCode,
               }

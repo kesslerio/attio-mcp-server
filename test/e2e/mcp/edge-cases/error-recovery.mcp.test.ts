@@ -36,7 +36,7 @@ class ErrorRecoveryTest extends EdgeCaseTestBase {
         const companyData = TestDataFactory.createCompanyData(
           `TC_EC04_Company_${i}`
         );
-        const companyResult = await this.executeToolCall('create_record', {
+        const companyResult = await this.executeToolCall('records_create', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -52,7 +52,7 @@ class ErrorRecoveryTest extends EdgeCaseTestBase {
       }
 
       // Get a valid list for recovery testing
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       const listsText = this.extractTextContent(listsResult);
       try {
         const lists = JSON.parse(listsText);
@@ -84,7 +84,7 @@ class ErrorRecoveryTest extends EdgeCaseTestBase {
       process.env.MCP_TEST_MAX_STRING_LENGTH || '10000',
       10
     );
-    const initialResult = await this.executeToolCall('search-records', {
+    const initialResult = await this.executeToolCall('records_search', {
       resource_type: 'companies',
       query: 'A'.repeat(queryLength), // Very long query that might timeout
       limit: 10000, // Large limit
@@ -93,7 +93,7 @@ class ErrorRecoveryTest extends EdgeCaseTestBase {
     const timeoutDuration = Date.now() - timeoutStart;
 
     // Recovery attempt with simpler operation
-    const recoveryResult = await this.executeToolCall('search-records', {
+    const recoveryResult = await this.executeToolCall('records_search', {
       resource_type: 'companies',
       query: 'TC_EC04',
       limit: 5,
@@ -110,13 +110,13 @@ class ErrorRecoveryTest extends EdgeCaseTestBase {
    */
   async testDependencyRecovery(): Promise<{ initial: any; recovery: any }> {
     // Reference non-existent dependent resource
-    const dependencyResult = await this.executeToolCall('get-record-details', {
+    const dependencyResult = await this.executeToolCall('records_get_details', {
       resource_type: 'companies',
       record_id: 'non-existent-company-id-12345',
     });
 
     // Recovery with valid operation
-    const recoveryResult = await this.executeToolCall('search-records', {
+    const recoveryResult = await this.executeToolCall('records_search', {
       resource_type: 'companies',
       query: 'TC_EC04',
       limit: 1,
@@ -186,7 +186,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     // Test the error recovery pattern
     const result = await testCase.executeExpectedFailureTest(
       'network_timeout_recovery',
-      'search-records',
+      'records_search',
       {
         resource_type: 'companies',
         query: 'B'.repeat(
@@ -221,7 +221,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     // Test creating record with potentially corrupted data
     const corruptionResult = await testCase.executeExpectedFailureTest(
       'partial_data_corruption',
-      'create_record',
+      'records_create',
       {
         resource_type: 'companies',
         record_data: corruptionScenario!.inputData,
@@ -234,7 +234,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Test recovery by attempting to create valid record after corruption
     const recoveryData = TestDataFactory.createCompanyData('TC_EC04_Recovery');
-    const recoveryResult = await testCase.executeToolCall('create_record', {
+    const recoveryResult = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: recoveryData,
     });
@@ -263,7 +263,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       TestDataFactory.trackRecord('companies', recoveryId);
 
       const verificationResult = await testCase.executeToolCall(
-        'get-record-details',
+        'records_get_details',
         {
           resource_type: 'companies',
           record_id: recoveryId,
@@ -273,7 +273,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       expect(
         testCase.validateEdgeCaseResponse(
           verificationResult,
-          'get-record-details after corruption recovery',
+          'records_get_details after corruption recovery',
           {
             expectError: false,
             successIndicators: [],
@@ -325,7 +325,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     if (testCase['validListId']) {
       const listDependencyResult = await testCase.executeExpectedFailureTest(
         'missing_list_dependency',
-        'add-record-to-list',
+        'list_entries_add',
         {
           listId: testCase['validListId'],
           recordId: 'non-existent-record-id-12345',
@@ -340,7 +340,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       // Recovery: Add valid record to list
       if (testCase['testCompanyIds'].length > 0) {
         const listRecoveryResult = await testCase.executeToolCall(
-          'add-record-to-list',
+          'list_entries_add',
           {
             listId: testCase['validListId'],
             recordId: testCase['testCompanyIds'][0],
@@ -351,7 +351,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
         const listHandled =
           testCase.validateEdgeCaseResponse(
             listRecoveryResult,
-            'add-record-to-list recovery after missing dependency (error)',
+            'list_entries_add recovery after missing dependency (error)',
             {
               expectError: true,
               errorIndicators: ['already exists', 'duplicate', 'error'],
@@ -359,7 +359,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
           ) ||
           testCase.validateEdgeCaseResponse(
             listRecoveryResult,
-            'add-record-to-list recovery after missing dependency (success)',
+            'list_entries_add recovery after missing dependency (success)',
             {
               expectError: false,
               successIndicators: [],
@@ -384,7 +384,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       // Step 1: Valid update
       {
         operation: () =>
-          testCase.executeToolCall('update_record', {
+          testCase.executeToolCall('records_update', {
             resource_type: 'companies',
             record_id: testCase['testCompanyIds'][0],
             updates: { description: 'Transaction step 1' },
@@ -394,7 +394,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       // Step 2: Invalid update (should fail)
       {
         operation: () =>
-          testCase.executeToolCall('update_record', {
+          testCase.executeToolCall('records_update', {
             resource_type: 'companies',
             record_id: 'invalid-id-that-does-not-exist',
             updates: { description: 'Transaction step 2' },
@@ -404,7 +404,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       // Step 3: Recovery operation
       {
         operation: () =>
-          testCase.executeToolCall('get-record-details', {
+          testCase.executeToolCall('records_get_details', {
             resource_type: 'companies',
             record_id: testCase['testCompanyIds'][0],
           }),
@@ -468,7 +468,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Verify data consistency after failed transaction
     const consistencyCheck = await testCase.executeToolCall(
-      'get-record-details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: testCase['testCompanyIds'][0],
@@ -482,7 +482,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
       consistencyResultText.includes('ID:');
     const consistencyValidated = testCase.validateEdgeCaseResponse(
       consistencyCheck,
-      'get-record-details consistency check after transaction',
+      'records_get_details consistency check after transaction',
       {
         expectError: false,
         successIndicators: [],
@@ -509,17 +509,17 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Rapid conflicting updates to create potential inconsistency
     const conflictingOperations = [
-      testCase.executeToolCall('update_record', {
+      testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: companyId,
         updates: { description: 'State A' },
       }),
-      testCase.executeToolCall('update_record', {
+      testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: companyId,
         updates: { description: 'State B' },
       }),
-      testCase.executeToolCall('update_record', {
+      testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: companyId,
         updates: { description: 'State C' },
@@ -542,7 +542,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Recovery: Verify final consistent state
     const recoveryResult = await testCase.executeToolCall(
-      'get-record-details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: companyId,
@@ -552,14 +552,14 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     const recoveryHandled =
       testCase.validateEdgeCaseResponse(
         recoveryResult,
-        'get-record-details after inconsistent state conflicts (error)',
+        'records_get_details after inconsistent state conflicts (error)',
         {
           expectError: true,
         }
       ) ||
       testCase.validateEdgeCaseResponse(
         recoveryResult,
-        'get-record-details after inconsistent state conflicts (success)',
+        'records_get_details after inconsistent state conflicts (success)',
         {
           expectError: false,
           successIndicators: [],
@@ -574,7 +574,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     expect(recoveryText).toContain(companyId);
 
     // Additional recovery test: fix inconsistent state with fresh update
-    const fixResult = await testCase.executeToolCall('update_record', {
+    const fixResult = await testCase.executeToolCall('records_update', {
       resource_type: 'companies',
       record_id: companyId,
       updates: { description: 'Consistent Recovery State' },
@@ -583,14 +583,14 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     const fixHandled =
       testCase.validateEdgeCaseResponse(
         fixResult,
-        'update-record fix for inconsistent state (error)',
+        'records_update fix for inconsistent state (error)',
         {
           expectError: true,
         }
       ) ||
       testCase.validateEdgeCaseResponse(
         fixResult,
-        'update-record fix for inconsistent state (success)',
+        'records_update fix for inconsistent state (success)',
         {
           expectError: false,
           successIndicators: [],
@@ -601,7 +601,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
 
     // Verify fix was applied
     const verifyFixResult = await testCase.executeToolCall(
-      'get-record-details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: companyId,
@@ -611,14 +611,14 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     const verifyHandled =
       testCase.validateEdgeCaseResponse(
         verifyFixResult,
-        'get-record-details verification after fix (error)',
+        'records_get_details verification after fix (error)',
         {
           expectError: true,
         }
       ) ||
       testCase.validateEdgeCaseResponse(
         verifyFixResult,
-        'get-record-details verification after fix (success)',
+        'records_get_details verification after fix (success)',
         {
           expectError: false,
           successIndicators: [],
@@ -635,22 +635,22 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     // Simulate cascading failures with multiple invalid operations
     const cascadingFailures = [
       // Invalid record creation
-      testCase.executeToolCall('create_record', {
+      testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: { name: null, invalid_field: 'test' },
       }),
       // Invalid record retrieval
-      testCase.executeToolCall('get-record-details', {
+      testCase.executeToolCall('records_get_details', {
         resource_type: 'companies',
         record_id: 'completely-invalid-id',
       }),
       // Invalid search
-      testCase.executeToolCall('search-records', {
+      testCase.executeToolCall('records_search', {
         resource_type: 'invalid_resource_type',
         query: null,
       }),
       // Invalid update
-      testCase.executeToolCall('update_record', {
+      testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: 'non-existent-id',
         updates: null,
@@ -673,9 +673,9 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     // System recovery: Verify system is still operational after cascading failures
     const recoveryOperations = [
       // Basic list operation
-      testCase.executeToolCall('get-lists', {}),
+      testCase.executeToolCall('lists_list', {}),
       // Simple search
-      testCase.executeToolCall('search-records', {
+      testCase.executeToolCall('records_search', {
         resource_type: 'companies',
         query: 'test',
         limit: 1,
@@ -685,7 +685,7 @@ describe('TC-EC04: Error Recovery Edge Cases', () => {
     if (testCase['validCompanyId']) {
       // Valid record retrieval
       recoveryOperations.push(
-        testCase.executeToolCall('get-record-details', {
+        testCase.executeToolCall('records_get_details', {
           resource_type: 'companies',
           record_id: testCase['validCompanyId'],
         })

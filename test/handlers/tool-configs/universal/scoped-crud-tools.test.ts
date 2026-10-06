@@ -68,10 +68,10 @@ describe('scoped CRUD universal tools', () => {
 
   it('registers scoped company and deal tools in core and universal catalogues', () => {
     const expectedNames = [
-      'create_company',
-      'update_company',
-      'create_deal',
-      'update_deal',
+      'companies_create',
+      'companies_update',
+      'deals_create',
+      'deals_update',
     ];
 
     for (const toolName of expectedNames) {
@@ -83,7 +83,7 @@ describe('scoped CRUD universal tools', () => {
     }
   });
 
-  it('create_company injects companies resource type and ignores caller override', async () => {
+  it('companies_create injects companies resource type and ignores caller override', async () => {
     const mockCreatedRecord = {
       id: { record_id: 'company-1' },
       values: { name: [{ value: 'Acme' }] },
@@ -108,7 +108,7 @@ describe('scoped CRUD universal tools', () => {
     });
   });
 
-  it('create_deal injects deals resource type and ignores caller override', async () => {
+  it('deals_create injects deals resource type and ignores caller override', async () => {
     const mockCreatedRecord = {
       id: { record_id: 'deal-1' },
       values: { name: [{ value: 'Expansion' }] },
@@ -133,7 +133,7 @@ describe('scoped CRUD universal tools', () => {
     });
   });
 
-  it('update_company injects companies resource type and ignores caller override', async () => {
+  it('companies_update injects companies resource type and ignores caller override', async () => {
     const mockUpdatedRecord = {
       id: { record_id: 'company-1' },
       values: { name: [{ value: 'Acme' }] },
@@ -160,7 +160,7 @@ describe('scoped CRUD universal tools', () => {
     });
   });
 
-  it('update_deal injects deals resource type and ignores caller override', async () => {
+  it('deals_update injects deals resource type and ignores caller override', async () => {
     const mockUpdatedRecord = {
       id: { record_id: 'deal-1' },
       values: { name: [{ value: 'Expansion' }] },
@@ -273,13 +273,13 @@ describe('scoped CRUD universal tools', () => {
   it('documents scoped and generic selection boundaries', () => {
     expect(createCompanyDefinition.description).toContain('Create one company');
     expect(updateDealDefinition.description).toContain('Update one deal');
-    expect(universalToolDefinitions.create_record.description).toContain(
-      'Prefer create_company or create_deal'
+    expect(universalToolDefinitions.records_create.description).toContain(
+      'Prefer companies_create or deals_create'
     );
-    expect(universalToolDefinitions.update_record.description).toContain(
-      'Prefer update_company or update_deal'
+    expect(universalToolDefinitions.records_update.description).toContain(
+      'Prefer companies_update or deals_update'
     );
-    expect(universalToolDefinitions.batch_records.description).toContain(
+    expect(universalToolDefinitions.records_batch.description).toContain(
       'Use scoped single-record tools for one company or deal write'
     );
   });

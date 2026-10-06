@@ -171,12 +171,12 @@ If you see "error code: 1042", check the [Troubleshooting](#troubleshooting) sec
 | `aaa-health-check`            | Verify server connectivity             |
 | `records_search`              | Search companies, people, deals, tasks |
 | `records_get_details`         | Get full record details                |
-| `create-record`               | Create new records                     |
-| `update-record`               | Update existing records                |
-| `delete-record`               | Delete records                         |
+| `records_create`               | Create new records                     |
+| `records_update`               | Update existing records                |
+| `records_delete`               | Delete records                         |
 | `records_discover_attributes` | Discover available attributes          |
-| `create-note`                 | Create notes on records                |
-| `list-notes`                  | List notes for a record                |
+| `notes_create`                 | Create notes on records                |
+| `notes_list`                  | List notes for a record                |
 
 ## Endpoints
 

@@ -130,7 +130,7 @@ function extractFingerprint(result: unknown): string | null {
   return match?.[1]?.trim() || null;
 }
 
-describe('merge_records MCP e2e', () => {
+describe('records_merge MCP e2e', () => {
   let client: LiveMcpTestClient | null = null;
   let stageUuid: string | null = null;
   const createdDealIds: string[] = [];
@@ -146,7 +146,7 @@ describe('merge_records MCP e2e', () => {
     if (!client) return;
     for (const recordId of createdDealIds) {
       try {
-        await client.callTool('delete_record', {
+        await client.callTool('records_delete', {
           resource_type: 'deals',
           record_id: recordId,
         });
@@ -159,7 +159,7 @@ describe('merge_records MCP e2e', () => {
 
   async function createDeal(label: string): Promise<string> {
     if (!client || !stageUuid) throw new Error('MCP e2e client is not ready');
-    const result = await client.callTool('create_record', {
+    const result = await client.callTool('records_create', {
       resource_type: 'deals',
       record_data: {
         values: {
@@ -174,7 +174,7 @@ describe('merge_records MCP e2e', () => {
     });
     expect((result as McpResult).isError).toBeFalsy();
     const recordId = extractUuid(result);
-    if (!recordId) throw new Error('create_record did not return a deal id');
+    if (!recordId) throw new Error('records_create did not return a deal id');
     createdDealIds.push(recordId);
     return recordId;
   }
@@ -190,7 +190,7 @@ describe('merge_records MCP e2e', () => {
       const leftoverId = await createDeal('DRY_LEFTOVER');
       expect(leftoverId).not.toBe(primaryId);
 
-      const result = await client.callTool('merge_records', {
+      const result = await client.callTool('records_merge', {
         resource_type: 'deals',
         record_id: primaryId,
         secondary_record_id: leftoverId,
@@ -199,11 +199,11 @@ describe('merge_records MCP e2e', () => {
       expect((result as McpResult).isError).toBeFalsy();
       expect(resultText(result).toLowerCase()).toContain('dry-run');
 
-      const primaryRead = await client.callTool('get_record_details', {
+      const primaryRead = await client.callTool('records_get_details', {
         resource_type: 'deals',
         record_id: primaryId,
       });
-      const leftoverRead = await client.callTool('get_record_details', {
+      const leftoverRead = await client.callTool('records_get_details', {
         resource_type: 'deals',
         record_id: leftoverId,
       });
@@ -221,7 +221,7 @@ describe('merge_records MCP e2e', () => {
       const leftoverId = await createDeal('EXEC_LEFTOVER');
       expect(leftoverId).not.toBe(primaryId);
 
-      const preview = await client.callTool('merge_records', {
+      const preview = await client.callTool('records_merge', {
         resource_type: 'deals',
         record_id: primaryId,
         secondary_record_id: leftoverId,
@@ -230,7 +230,7 @@ describe('merge_records MCP e2e', () => {
       const planFingerprint = extractFingerprint(preview);
       expect(planFingerprint).toBeTruthy();
 
-      const result = await client.callTool('merge_records', {
+      const result = await client.callTool('records_merge', {
         resource_type: 'deals',
         record_id: primaryId,
         secondary_record_id: leftoverId,

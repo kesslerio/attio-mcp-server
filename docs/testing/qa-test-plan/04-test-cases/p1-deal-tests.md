@@ -49,7 +49,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 #### TC-D01: Create Deal with Basic Fields
 
 - **Purpose**: Validate deal creation with required fields (name, stage, value)
-- **Method**: `create-record` tool with resource_type 'deals'
+- **Method**: `records_create` tool with resource_type 'deals'
 - **Test Data**: Generated via `TestDataFactory.createDealData()`
 - **Validation**: MCP response contains success confirmation and record ID
 - **Field Mappings Tested**:
@@ -67,7 +67,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 #### TC-D03: Update Deal Fields
 
 - **Purpose**: Validate deal field updates (stage and value)
-- **Method**: `update-record` tool with modified field values
+- **Method**: `records_update` tool with modified field values
 - **Test Data**: Generated via `TestDataFactory.createUpdateData('deals')`
 - **Validation**: MCP response confirms successful update
 - **Dependencies**: Requires successful TC-D01 execution
@@ -75,7 +75,7 @@ vitest test/e2e/mcp/deal-operations/ --watch
 #### TC-D04: Delete Deal Record
 
 - **Purpose**: Validate deal deletion functionality
-- **Method**: `delete-record` tool with deal ID
+- **Method**: `records_delete` tool with deal ID
 - **Validation**: MCP response confirms successful deletion
 - **Dependencies**: Requires successful TC-D01 execution
 
@@ -89,14 +89,14 @@ vitest test/e2e/mcp/deal-operations/ --watch
 
 - **Purpose**: Validate deal stage progression through pipeline
 - **Stages Tested**: Lead → Qualified → Proposal
-- **Method**: Sequential `update-record` calls with different stage values
+- **Method**: Sequential `records_update` calls with different stage values
 - **Pipeline Stages**: Lead, Qualified, Proposal, Negotiation, Closed Won, Closed Lost
 - **Validation**: Each stage update confirmed via MCP response
 
 #### TC-D06: Update Deal Value and Currency
 
 - **Purpose**: Validate deal value updates with different amounts
-- **Method**: Multiple `update-record` calls with varying values
+- **Method**: Multiple `records_update` calls with varying values
 - **Test Values**: 25000, 50000, 100000
 - **Validation**: Each value update confirmed via MCP response
 - **Currency Handling**: Automatic USD assignment per workspace settings

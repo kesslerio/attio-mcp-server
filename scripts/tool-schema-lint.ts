@@ -2,6 +2,7 @@
 
 import process from 'node:process';
 import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
+import { findAdvertisedNameViolations } from '@/constants/tool-names.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 interface Violation {
@@ -158,6 +159,12 @@ function main(): void {
     .map(validateTool)
     .flat()
     .filter((v) => Boolean(v));
+  violations.push(
+    ...findAdvertisedNameViolations(tools).map((violation) => ({
+      ...violation,
+      severity: 'error' as const,
+    }))
+  );
 
   const errors = violations.filter((v) => v.severity === 'error');
   const warnings = violations.filter((v) => v.severity === 'warn');

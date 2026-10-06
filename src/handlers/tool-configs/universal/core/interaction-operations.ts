@@ -103,7 +103,7 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
   GetRecordInteractionsParams,
   InteractionsResult
 > = {
-  name: 'get_record_interactions',
+  name: 'records_get_interactions',
   ...interactionsResultContract,
   structuredOutput: (result) => ({ data: result }),
   handler: async (
@@ -111,7 +111,7 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
   ): Promise<InteractionsResult> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'get_record_interactions',
+        'records_get_interactions',
         params
       );
 
@@ -125,7 +125,7 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
         throw Object.assign(
           new Error(
             `Interaction metadata is only available for people and companies, ` +
-              `not ${resource_type}. Use get_record_details for other resource types.`
+              `not ${resource_type}. Use records_get_details for other resource types.`
           ),
           { code: 'VALIDATION_ERROR' }
         );
@@ -168,7 +168,7 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
       }
 
       throw ErrorService.createUniversalError(
-        'get_record_interactions',
+        'records_get_interactions',
         params?.resource_type ?? '',
         error
       );
@@ -229,7 +229,7 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
       const err = error instanceof Error ? error : new Error(String(error));
       const fallback = createErrorResult(
         err,
-        'get_record_interactions#format',
+        'records_get_interactions#format',
         'FORMAT'
       ) as { content?: Array<{ type: string; text?: string }> };
       const message = fallback.content?.[0]?.text;
@@ -241,7 +241,7 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
 };
 
 export const getRecordInteractionsDefinition = {
-  name: 'get_record_interactions',
+  name: 'records_get_interactions',
   description: formatToolDescription({
     capability:
       'Fetch interaction metadata (first/last email, calendar, interaction timestamps and owners) for a person or company record.',
@@ -250,7 +250,7 @@ export const getRecordInteractionsDefinition = {
     constraints:
       'Requires resource_type (people or companies) and record_id. Returns system-generated interaction attributes.',
     recoveryHint:
-      'If no interactions found, verify the record exists with get_record_details. For activity content, use search_records_by_content with content_type=activity.',
+      'If no interactions found, verify the record exists with records_get_details. For activity content, use records_search_by_content with content_type=activity.',
   }),
   inputSchema: getRecordInteractionsSchema,
   annotations: {

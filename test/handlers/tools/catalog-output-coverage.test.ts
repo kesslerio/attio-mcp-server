@@ -20,61 +20,61 @@ import { smitheryDiagnosticsConfig } from '@/handlers/tool-configs/universal/smi
  */
 const UNIVERSAL_SURFACE = [
   'aaa-health-check',
-  'smithery_debug_config',
+  'diagnostics_get',
   'search',
   'fetch',
-  'search_records',
-  'get_record_details',
-  'create_record',
-  'update_record',
-  'upsert_record',
-  'delete_record',
-  'merge_records',
-  'create_company',
-  'update_company',
-  'create_deal',
-  'update_deal',
-  'get_record_attributes',
-  'discover_record_attributes',
-  'get_record_attribute_options',
-  'get_record_info',
-  'get_record_interactions',
-  'create_note',
-  'list_notes',
-  'search_records_advanced',
-  'search_records_by_relationship',
-  'search_records_by_content',
-  'search_records_by_timeframe',
-  'batch_records',
-  'batch_search_records',
+  'records_search',
+  'records_get_details',
+  'records_create',
+  'records_update',
+  'records_upsert',
+  'records_delete',
+  'records_merge',
+  'companies_create',
+  'companies_update',
+  'deals_create',
+  'deals_update',
+  'records_get_attributes',
+  'records_discover_attributes',
+  'records_get_attribute_options',
+  'records_get_info',
+  'records_get_interactions',
+  'notes_create',
+  'notes_list',
+  'records_search_advanced',
+  'records_search_by_relationship',
+  'records_search_by_content',
+  'records_search_by_timeframe',
+  'records_batch',
+  'records_batch_search',
 ];
 
 const LIST_SURFACE = [
-  'get-lists',
-  'get-record-list-memberships',
-  'get-list-details',
-  'get-list-entries',
-  'filter-list-entries',
-  'advanced-filter-list-entries',
-  'add-record-to-list',
-  'remove-record-from-list',
-  'update-list-entry',
-  'manage-list-entry',
-  'filter-list-entries-by-parent',
-  'filter-list-entries-by-parent-id',
-  'create-list',
-  'update-list-configuration',
+  'lists_list',
+  'records_get_list_memberships',
+  'lists_get',
+  'list_entries_list',
+  'list_entries_filter',
+  'list_entries_filter_advanced',
+  'list_entries_add',
+  'list_entries_remove',
+  'list_entries_update',
+  'list_entries_manage',
+  'list_entries_filter_by_parent',
+  'list_entries_filter_by_parent_id',
+  'lists_create',
+  'lists_update_configuration',
 ];
 
 const MEMBER_SURFACE = [
-  'list-workspace-members',
-  'search-workspace-members',
-  'get-workspace-member',
+  'workspace_members_list',
+  'workspace_members_search',
+  'workspace_members_get',
 ];
 
 const INVENTORY = [...UNIVERSAL_SURFACE, ...LIST_SURFACE, ...MEMBER_SURFACE];
 
-const STATIC_SURFACE = ['aaa-health-check', 'smithery_debug_config'];
+const STATIC_SURFACE = ['aaa-health-check', 'diagnostics_get'];
 
 describe('registered tool surface output-contract coverage', () => {
   let client: Client;
@@ -236,14 +236,14 @@ describe('registered tool surface output-contract coverage', () => {
     }
     // Read-only hints stay truthful so mode filters keep working off discovery.
     for (const name of [
-      'get-lists',
-      'get-list-details',
-      'get-list-entries',
-      'filter-list-entries',
-      'get-record-list-memberships',
-      'list-workspace-members',
-      'search-workspace-members',
-      'get-workspace-member',
+      'lists_list',
+      'lists_get',
+      'list_entries_list',
+      'list_entries_filter',
+      'records_get_list_memberships',
+      'workspace_members_list',
+      'workspace_members_search',
+      'workspace_members_get',
     ]) {
       expect(
         (byName.get(name)!.annotations as { readOnlyHint?: boolean })
@@ -252,12 +252,12 @@ describe('registered tool surface output-contract coverage', () => {
       ).toBe(true);
     }
     for (const name of [
-      'add-record-to-list',
-      'remove-record-from-list',
-      'update-list-entry',
-      'manage-list-entry',
-      'create-list',
-      'update-list-configuration',
+      'list_entries_add',
+      'list_entries_remove',
+      'list_entries_update',
+      'list_entries_manage',
+      'lists_create',
+      'lists_update_configuration',
     ]) {
       expect(
         (byName.get(name)!.annotations as { readOnlyHint?: boolean })

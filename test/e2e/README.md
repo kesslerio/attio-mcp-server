@@ -221,19 +221,19 @@ npm run e2e:cleanup:force
 
 ### Universal Tools (13 tools)
 
-- ✅ `search-records` - Search across all resource types
-- ✅ `get-record-details` - Get detailed record information
-- ✅ `create-record` - Create new records
-- ✅ `update-record` - Update existing records
-- ✅ `delete-record` - Delete records
-- ✅ `get-attributes` - Get record attributes
-- ✅ `discover-attributes` - Discover available attributes
-- ✅ `get-detailed-info` - Get specific info types (contact, business, etc.)
-- ✅ `advanced-search` - Advanced search with complex filters
-- ✅ `search-by-relationship` - Search by relationships
-- ✅ `search-by-content` - Search by content (notes, activity)
-- ✅ `search-by-timeframe` - Search by time-based criteria
-- ✅ `batch-operations` - Batch CRUD operations
+- ✅ `records_search` - Search across all resource types
+- ✅ `records_get_details` - Get detailed record information
+- ✅ `records_create` - Create new records
+- ✅ `records_update` - Update existing records
+- ✅ `records_delete` - Delete records
+- ✅ `records_get_attributes` - Get record attributes
+- ✅ `records_discover_attributes` - Discover available attributes
+- ✅ `records_get_info` - Get specific info types (contact, business, etc.)
+- ✅ `records_search_advanced` - Advanced search with complex filters
+- ✅ `records_search_by_relationship` - Search by relationships
+- ✅ `records_search_by_content` - Search by content (notes, activity)
+- ✅ `records_search_by_timeframe` - Search by time-based criteria
+- ✅ `records_batch` - Batch CRUD operations
 
 ### Legacy Tools
 
@@ -430,7 +430,7 @@ describe('Universal Tools E2E', () => {
     const companyData = CompanyFactory.create();
 
     // Your test implementation here
-    const response = await callMcpTool('create_record', {
+    const response = await callMcpTool('records_create', {
       resource_type: 'companies',
       record_data: companyData,
     });

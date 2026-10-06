@@ -33,20 +33,20 @@ Comprehensive reference for all 13 universal tools with detailed schemas and exa
 
 - `records.search` - Universal search across all resource types
 - `records.get_details` - Get detailed information for any record
-- `create-record` - Create records of any supported type
-- `update-record` - Update existing records
-- `delete-record` - Delete records
-- `get-attributes` - Get attributes for any resource type
-- `discover-attributes` - Discover available attributes
-- `get-detailed-info` - Get specialized information (contact, business, social)
+- `records_create` - Create records of any supported type
+- `records_update` - Update existing records
+- `records_delete` - Delete records
+- `records_get_attributes` - Get attributes for any resource type
+- `records_discover_attributes` - Discover available attributes
+- `records_get_info` - Get specialized information (contact, business, social)
 
 ### Advanced Operations (5 tools)
 
-- `advanced-search` - Complex searches with sorting and advanced filtering
-- `search-by-relationship` - Cross-resource relationship searches
-- `search-by-content` - Content-based searches (notes, activity)
-- `search-by-timeframe` - Time-based searches with date ranges
-- `batch-operations` - Bulk operations on multiple records
+- `records_search_advanced` - Complex searches with sorting and advanced filtering
+- `records_search_by_relationship` - Cross-resource relationship searches
+- `records_search_by_content` - Content-based searches (notes, activity)
+- `records_search_by_timeframe` - Time-based searches with date ranges
+- `records_batch` - Bulk operations on multiple records
 
 ## 🔗 Quick Navigation
 
@@ -92,7 +92,7 @@ await client.callTool('records.search', {
   resource_type: 'people',
   query: 'john',
 });
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'tasks',
   record_data: { title: 'Follow up' },
 });

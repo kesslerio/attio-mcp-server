@@ -263,8 +263,8 @@ describe('InputSanitizer', () => {
       expect(result.CONTENT).toBe('Line 3\nLine 4');
     });
 
-    it('should preserve markdown in create_note params structure', () => {
-      // Simulates the actual parameter structure used by create_note tool
+    it('should preserve markdown in notes_create params structure', () => {
+      // Simulates the actual parameter structure used by notes_create tool
       const input = {
         resource_type: 'companies',
         record_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -310,7 +310,7 @@ describe('validateUniversalToolParams', () => {
   });
 
   describe('search tool resource_type validation', () => {
-    it('accepts config-discovered custom objects for search_records', () => {
+    it('accepts config-discovered custom objects for records_search', () => {
       vi.mocked(loadMappingConfig).mockReturnValue({
         version: '1.0',
         mappings: {
@@ -328,7 +328,7 @@ describe('validateUniversalToolParams', () => {
         },
       });
 
-      const result = validateUniversalToolParams('search_records', {
+      const result = validateUniversalToolParams('records_search', {
         resource_type: 'FUNDS',
         query: 'growth',
       });
@@ -355,13 +355,13 @@ describe('validateUniversalToolParams', () => {
       });
 
       expect(
-        validateUniversalToolParams('search_records_advanced', {
+        validateUniversalToolParams('records_search_advanced', {
           resource_type: 'channels',
         }).resource_type
       ).toBe('channels');
 
       expect(
-        validateUniversalToolParams('search_records_by_timeframe', {
+        validateUniversalToolParams('records_search_by_timeframe', {
           resource_type: 'channels',
           start_date: '2025-01-01',
         }).resource_type
@@ -370,7 +370,7 @@ describe('validateUniversalToolParams', () => {
 
     it('still rejects unknown custom objects for search tools', () => {
       expect(() =>
-        validateUniversalToolParams('search_records', {
+        validateUniversalToolParams('records_search', {
           resource_type: 'unknown_object',
         })
       ).toThrow("Invalid resource_type: 'unknown_object'");
@@ -394,21 +394,21 @@ describe('validateUniversalToolParams', () => {
       });
 
       expect(
-        validateUniversalToolParams('get_record_details', {
+        validateUniversalToolParams('records_get_details', {
           resource_type: 'FUNDS',
           record_id: 'record_123',
         }).resource_type
       ).toBe('funds');
 
       expect(
-        validateUniversalToolParams('create_record', {
+        validateUniversalToolParams('records_create', {
           resource_type: 'funds',
           record_data: { name: 'Fund I' },
         }).resource_type
       ).toBe('funds');
 
       expect(
-        validateUniversalToolParams('update_record', {
+        validateUniversalToolParams('records_update', {
           resource_type: 'funds',
           record_id: 'record_123',
           record_data: { name: 'Fund II' },
@@ -416,7 +416,7 @@ describe('validateUniversalToolParams', () => {
       ).toBe('funds');
 
       expect(
-        validateUniversalToolParams('delete_record', {
+        validateUniversalToolParams('records_delete', {
           resource_type: 'funds',
           record_id: 'record_123',
         }).resource_type
@@ -442,18 +442,18 @@ describe('validateUniversalToolParams', () => {
 
       const cases = [
         {
-          toolName: 'get_record_details',
+          toolName: 'records_get_details',
           params: { resource_type: 'unknown_object', record_id: 'record_123' },
         },
         {
-          toolName: 'create_record',
+          toolName: 'records_create',
           params: {
             resource_type: 'unknown_object',
             record_data: { name: 'Unknown' },
           },
         },
         {
-          toolName: 'update_record',
+          toolName: 'records_update',
           params: {
             resource_type: 'unknown_object',
             record_id: 'record_123',
@@ -461,7 +461,7 @@ describe('validateUniversalToolParams', () => {
           },
         },
         {
-          toolName: 'delete_record',
+          toolName: 'records_delete',
           params: { resource_type: 'unknown_object', record_id: 'record_123' },
         },
       ];
@@ -474,14 +474,14 @@ describe('validateUniversalToolParams', () => {
     });
   });
 
-  describe('update_record - input normalization', () => {
+  describe('records_update - input normalization', () => {
     it('should normalize data field to record_data', () => {
       const params = {
         resource_type: 'companies',
         record_id: 'comp_123',
         data: { name: 'Test Company' },
       };
-      const result = validateUniversalToolParams('update_record', params);
+      const result = validateUniversalToolParams('records_update', params);
       expect(result.record_data).toEqual({ name: 'Test Company' });
     });
 
@@ -492,7 +492,7 @@ describe('validateUniversalToolParams', () => {
         name: 'Test Company',
         website: 'https://example.com',
       };
-      const result = validateUniversalToolParams('update_record', params);
+      const result = validateUniversalToolParams('records_update', params);
       expect(result.record_data).toEqual({
         name: 'Test Company',
         website: 'https://example.com',
@@ -510,7 +510,7 @@ describe('validateUniversalToolParams', () => {
       };
       const originalCopy = JSON.parse(JSON.stringify(original));
 
-      validateUniversalToolParams('update_record', original);
+      validateUniversalToolParams('records_update', original);
 
       // Original should be unchanged (except for sanitization of existing fields)
       expect(original.resource_type).toBe(originalCopy.resource_type);
@@ -518,7 +518,7 @@ describe('validateUniversalToolParams', () => {
     });
   });
 
-  describe('update_record - task immutability validation', () => {
+  describe('records_update - task immutability validation', () => {
     it('should reject task content updates at top level', () => {
       const params = {
         resource_type: 'tasks',
@@ -526,7 +526,7 @@ describe('validateUniversalToolParams', () => {
         record_data: { content: 'Updated content' },
       };
       expect(() =>
-        validateUniversalToolParams('update_record', params)
+        validateUniversalToolParams('records_update', params)
       ).toThrow('Task content is immutable');
     });
 
@@ -537,7 +537,7 @@ describe('validateUniversalToolParams', () => {
         record_data: { content_markdown: '# Updated' },
       };
       expect(() =>
-        validateUniversalToolParams('update_record', params)
+        validateUniversalToolParams('records_update', params)
       ).toThrow('Task content is immutable');
     });
 
@@ -548,7 +548,7 @@ describe('validateUniversalToolParams', () => {
         record_data: { content_plaintext: 'Plain text' },
       };
       expect(() =>
-        validateUniversalToolParams('update_record', params)
+        validateUniversalToolParams('records_update', params)
       ).toThrow('Task content is immutable');
     });
 
@@ -559,7 +559,7 @@ describe('validateUniversalToolParams', () => {
         record_data: { values: { content: 'Updated content' } },
       };
       expect(() =>
-        validateUniversalToolParams('update_record', params)
+        validateUniversalToolParams('records_update', params)
       ).toThrow('Task content is immutable');
     });
 
@@ -570,7 +570,7 @@ describe('validateUniversalToolParams', () => {
         record_data: { values: { content_markdown: '# Updated' } },
       };
       expect(() =>
-        validateUniversalToolParams('update_record', params)
+        validateUniversalToolParams('records_update', params)
       ).toThrow('Task content is immutable');
     });
 
@@ -581,7 +581,7 @@ describe('validateUniversalToolParams', () => {
         record_data: { values: { content_plaintext: 'Plain text' } },
       };
       expect(() =>
-        validateUniversalToolParams('update_record', params)
+        validateUniversalToolParams('records_update', params)
       ).toThrow('Task content is immutable');
     });
 
@@ -591,7 +591,7 @@ describe('validateUniversalToolParams', () => {
         record_id: 'task_123',
         record_data: { status: 'completed' },
       };
-      const result = validateUniversalToolParams('update_record', params);
+      const result = validateUniversalToolParams('records_update', params);
       expect(result.record_data).toEqual({ status: 'completed' });
     });
 
@@ -601,7 +601,7 @@ describe('validateUniversalToolParams', () => {
         record_id: 'task_123',
         record_data: { values: { status: 'completed', assignees: 'user_123' } },
       };
-      const result = validateUniversalToolParams('update_record', params);
+      const result = validateUniversalToolParams('records_update', params);
       expect(result.record_data).toEqual({
         values: { status: 'completed', assignees: 'user_123' },
       });

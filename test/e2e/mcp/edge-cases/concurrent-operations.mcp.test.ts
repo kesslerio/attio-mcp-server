@@ -49,7 +49,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
         const companyData = TestDataFactory.createCompanyData(
           `TC_EC03_Company_${i}_${Date.now()}`
         );
-        const companyResult = await this.executeToolCall('create_record', {
+        const companyResult = await this.executeToolCall('records_create', {
           resource_type: 'companies',
           record_data: companyData,
         });
@@ -76,7 +76,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
         const personData = TestDataFactory.createPersonData(
           `TC_EC03_Person_${i}`
         );
-        const personResult = await this.executeToolCall('create_record', {
+        const personResult = await this.executeToolCall('records_create', {
           resource_type: 'people',
           record_data: personData,
         });
@@ -93,7 +93,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
       }
 
       // Get a valid list for concurrent list operations
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       if (!listsResult.isError) {
         const listsText = this.extractTextContent(listsResult);
         try {
@@ -196,7 +196,7 @@ class ConcurrentOperationsTest extends EdgeCaseTestBase {
 
       const results = await Promise.allSettled(promises);
 
-      if (toolName === 'create_record') {
+      if (toolName === 'records_create') {
         results.forEach((settled, index) => {
           if (settled.status === 'fulfilled' && !settled.value.isError) {
             const responseText = this.extractTextContent(settled.value);
@@ -300,7 +300,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     const result = await testCase.executeConcurrencyTest(
       'simultaneous_record_creation',
-      'create_record',
+      'records_create',
       testCase.generateConcurrentCreateParams,
       config
     );
@@ -308,7 +308,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     expect(result.passed).toBe(true);
 
     // Verify no duplicate records with identical data
-    const searchResult = await testCase.executeToolCall('search-records', {
+    const searchResult = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       query: 'Concurrent Test Company',
       limit: 50,
@@ -345,7 +345,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     const identicalResult = await testCase.executeConcurrencyTest(
       'identical_data_creation',
-      'create_record',
+      'records_create',
       identicalDataParams,
       identicalDataConfig
     );
@@ -367,7 +367,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     const updatePromises = [];
     for (let i = 0; i < 6; i++) {
       updatePromises.push(
-        testCase.executeToolCall('update_record', {
+        testCase.executeToolCall('records_update', {
           resource_type: 'companies',
           record_id: targetCompanyId,
           updates: {
@@ -408,7 +408,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Verify final state consistency
     const finalStateResult = await testCase.executeToolCall(
-      'get-record-details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: targetCompanyId,
@@ -418,7 +418,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         finalStateResult,
-        'get-record-details after concurrent updates',
+        'records_get_details after concurrent updates',
         {
           expectError: false,
           successIndicators: [],
@@ -442,7 +442,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     const result = await testCase.executeConcurrencyTest(
       'rapid_successive_searches',
-      'search-records',
+      'records_search',
       testCase.generateConcurrentSearchParams,
       config
     );
@@ -465,7 +465,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     const identicalSearchResult = await testCase.executeConcurrencyTest(
       'identical_burst_searches',
-      'search-records',
+      'records_search',
       identicalSearchParams,
       identicalSearchConfig
     );
@@ -485,7 +485,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     const additionPromises = testCase['testCompanyIds']
       .slice(0, 3) // Reduced from 5 to match available test data
       .map((companyId, index) =>
-        testCase.executeToolCall('add-record-to-list', {
+        testCase.executeToolCall('list_entries_add', {
           listId: testCase['validListId'],
           recordId: companyId,
           objectType: 'companies',
@@ -529,7 +529,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
       const repeatedAddPromises = [];
       for (let i = 0; i < 4; i++) {
         repeatedAddPromises.push(
-          testCase.executeToolCall('add-record-to-list', {
+          testCase.executeToolCall('list_entries_add', {
             listId: testCase['validListId'],
             recordId: personId,
             objectType: 'people',
@@ -575,7 +575,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     for (let i = 0; i < 20; i++) {
       burstPromises.push(
-        testCase.executeToolCall('search-records', {
+        testCase.executeToolCall('records_search', {
           resource_type: 'companies',
           query: `rate_limit_test_${i}`,
           limit: 1,
@@ -626,7 +626,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
-      sustainedPromises.push(testCase.executeToolCall('get-lists', {}));
+      sustainedPromises.push(testCase.executeToolCall('lists_list', {}));
     }
 
     const sustainedResults = await Promise.allSettled(sustainedPromises);
@@ -636,10 +636,10 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     sustainedResults.forEach((result, index) => {
       expect(result.status).toBe('fulfilled'); // Should not throw exceptions
       if (result.status === 'fulfilled') {
-        // Each get-lists should either succeed OR be rate limited, not both
+        // Each lists_list should either succeed OR be rate limited, not both
         const hasSuccess = testCase.validateEdgeCaseResponse(
           result.value,
-          `sustained get-lists operation ${index} (success)`,
+          `sustained lists_list operation ${index} (success)`,
           {
             expectError: false,
             successIndicators: [],
@@ -648,7 +648,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
         );
         const hasError = testCase.validateEdgeCaseResponse(
           result.value,
-          `sustained get-lists operation ${index} (rate limited)`,
+          `sustained lists_list operation ${index} (rate limited)`,
           {
             expectError: true,
             errorIndicators: ['error', 'rate limit', 'throttled'],
@@ -670,7 +670,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Create operations
     complexWorkflowPromises.push(
-      testCase.executeToolCall('create_record', {
+      testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: testCase.generateConcurrentCreateParams()['record_data'],
       })
@@ -678,7 +678,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Update operations
     complexWorkflowPromises.push(
-      testCase.executeToolCall('update_record', {
+      testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: testCase['testCompanyIds'][0],
         updates: { description: `Complex workflow update ${Date.now()}` },
@@ -687,7 +687,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // List operations
     complexWorkflowPromises.push(
-      testCase.executeToolCall('add-record-to-list', {
+      testCase.executeToolCall('list_entries_add', {
         listId: testCase['validListId'],
         recordId: testCase['testCompanyIds'][1],
         objectType: 'companies',
@@ -696,7 +696,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Search operations
     complexWorkflowPromises.push(
-      testCase.executeToolCall('search-records', {
+      testCase.executeToolCall('records_search', {
         resource_type: 'companies',
         query: 'TC_EC03',
         limit: 10,
@@ -705,7 +705,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Details retrieval
     complexWorkflowPromises.push(
-      testCase.executeToolCall('get-record-details', {
+      testCase.executeToolCall('records_get_details', {
         resource_type: 'companies',
         record_id: testCase['testCompanyIds'][2],
       })
@@ -751,7 +751,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
 
     // Verify data consistency after complex operations
     const consistencyCheckResult = await testCase.executeToolCall(
-      'get-record-details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: testCase['testCompanyIds'][0],
@@ -761,7 +761,7 @@ describe('TC-EC03: Concurrent Operations Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         consistencyCheckResult,
-        'get-record-details consistency check after complex workflows',
+        'records_get_details consistency check after complex workflows',
         {
           expectError: false,
           successIndicators: [],

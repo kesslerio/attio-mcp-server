@@ -45,7 +45,7 @@ class NoteSearchTest extends MCPTestBase {
 
       // Create test company
       const companyData = TestDataFactory.createCompanyData('TCN03');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -61,7 +61,7 @@ class NoteSearchTest extends MCPTestBase {
 
       // Create test person
       const personData = TestDataFactory.createPersonData('TCN03');
-      const personResult = await this.executeToolCall('create_record', {
+      const personResult = await this.executeToolCall('records_create', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -121,9 +121,9 @@ class NoteSearchTest extends MCPTestBase {
 
     for (const noteSpec of notesToCreate) {
       try {
-        // Use universal create-note tool for all types
+        // Use universal notes_create tool for all types
 
-        const result = await this.executeToolCall('create_note', {
+        const result = await this.executeToolCall('notes_create', {
           resource_type: noteSpec.type === 'company' ? 'companies' : 'people',
           record_id: noteSpec.parentId,
           title: noteSpec.title,
@@ -161,7 +161,7 @@ class NoteSearchTest extends MCPTestBase {
     for (const noteId of this.createdNotes) {
       try {
         // Try to delete via universal delete if supported
-        await this.executeToolCall('delete_record', {
+        await this.executeToolCall('records_delete', {
           resource_type: 'notes',
           record_id: noteId,
         });
@@ -236,7 +236,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
       try {
         // Search for notes containing "quarterly" (should find meeting notes)
-        const result = await testCase.executeToolCall('search-by-content', {
+        const result = await testCase.executeToolCall('records_search_by_content', {
           resource_type: 'notes',
           content_type: 'notes',
           search_query: 'quarterly',
@@ -277,7 +277,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
           console.log('Skipping: Test company not available');
         } else {
           // Get first page of notes (limit 2)
-          const firstPageResult = await testCase.executeToolCall('list_notes', {
+          const firstPageResult = await testCase.executeToolCall('notes_list', {
             resource_type: 'companies',
             record_id: testCase.testCompanyId,
             limit: 2,
@@ -286,7 +286,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
           // Get second page of notes (limit 2, offset 2)
           const secondPageResult = await testCase.executeToolCall(
-            'list_notes',
+            'notes_list',
             {
               resource_type: 'companies',
               record_id: testCase.testCompanyId,
@@ -324,7 +324,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
         } else {
           // Get company notes
           const companyNotesResult = await testCase.executeToolCall(
-            'list_notes',
+            'notes_list',
             {
               resource_type: 'companies',
               record_id: testCase.testCompanyId,
@@ -334,7 +334,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
           // Get person notes
           const personNotesResult = await testCase.executeToolCall(
-            'list_notes',
+            'notes_list',
             {
               resource_type: 'people',
               record_id: testCase.testPersonId,
@@ -365,7 +365,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
       try {
         // Search for something that definitely doesn't exist
-        const result = await testCase.executeToolCall('search-by-content', {
+        const result = await testCase.executeToolCall('records_search_by_content', {
           resource_type: 'notes',
           content_type: 'notes',
           search_query: 'xyznonexistentquery123',
@@ -403,7 +403,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
       try {
         // Search for notes containing "technical" (should find technical discussion note)
-        const result = await testCase.executeToolCall('search-by-content', {
+        const result = await testCase.executeToolCall('records_search_by_content', {
           resource_type: 'notes',
           content_type: 'notes',
           search_query: 'technical',
@@ -419,7 +419,7 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
         expect(text.length).toBeGreaterThan(0);
 
         // Try another search term
-        const result2 = await testCase.executeToolCall('search-by-content', {
+        const result2 = await testCase.executeToolCall('records_search_by_content', {
           resource_type: 'notes',
           content_type: 'notes',
           search_query: 'meeting',

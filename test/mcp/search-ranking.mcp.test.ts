@@ -29,7 +29,7 @@ describe('Search Ranking and Performance - Issue #885', () => {
     it('should return "Olive Branch Clinic" as top result for exact name match', async () => {
       const startTime = Date.now();
 
-      const searchResult = await client.callTool('search-records', {
+      const searchResult = await client.callTool('records_search', {
         resource_type: 'companies',
         query: 'Olive Branch Clinic',
       });
@@ -66,7 +66,7 @@ describe('Search Ranking and Performance - Issue #885', () => {
     it('should return "Teara Young" as top result when searching by name and phone', async () => {
       const startTime = Date.now();
 
-      const searchResult = await client.callTool('search-records', {
+      const searchResult = await client.callTool('records_search', {
         resource_type: 'people',
         query: 'Teara Young 216-466-3111',
       });
@@ -101,7 +101,7 @@ describe('Search Ranking and Performance - Issue #885', () => {
     it('should find "Teara Young" when searching by phone only', async () => {
       const startTime = Date.now();
 
-      const searchResult = await client.callTool('search-records', {
+      const searchResult = await client.callTool('records_search', {
         resource_type: 'people',
         query: '216-466-3111',
       });

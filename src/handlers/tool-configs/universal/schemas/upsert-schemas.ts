@@ -12,7 +12,7 @@ export const upsertRecordSchema = {
         attribute: {
           type: 'string' as const,
           description:
-            'Attribute slug to exact-match. Use the real Attio slug (e.g., "email_addresses" for person emails, "domains" for company domains) - call discover_record_attributes if unsure.',
+            'Attribute slug to exact-match. Use the real Attio slug (e.g., "email_addresses" for person emails, "domains" for company domains) - call records_discover_attributes if unsure.',
         },
         value: {
           type: 'string' as const,

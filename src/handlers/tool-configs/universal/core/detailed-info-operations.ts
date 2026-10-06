@@ -20,16 +20,16 @@ export const getDetailedInfoConfig: UniversalToolConfig<
   UniversalDetailedInfoParams,
   Record<string, unknown>
 > = {
-  name: 'get_record_info',
+  name: 'records_get_info',
   ...detailedInfoResultContract,
   structuredOutput: (result) => ({ data: assertReadSuccess(result) }),
   handler: async (params: UniversalDetailedInfoParams) => {
     try {
-      const sanitized = validateUniversalToolParams('get_record_info', params);
+      const sanitized = validateUniversalToolParams('records_get_info', params);
       return assertReadSuccess(await handleUniversalGetDetailedInfo(sanitized));
     } catch (error) {
       throw ErrorService.createUniversalError(
-        'get_record_info',
+        'records_get_info',
         params?.resource_type ?? '',
         error
       );
@@ -97,14 +97,14 @@ export const getDetailedInfoConfig: UniversalToolConfig<
 };
 
 export const getDetailedInfoDefinition = {
-  name: 'get_record_info',
+  name: 'records_get_info',
   description: formatToolDescription({
     capability:
       'Retrieve enriched info subsets (contact, business, social) for a record.',
     boundaries: 'search lists of records or mutate data.',
     constraints:
       'Requires resource_type, record_id, and info_type (contact|business|social).',
-    recoveryHint: 'Use get_record_details if you need the full record payload.',
+    recoveryHint: 'Use records_get_details if you need the full record payload.',
   }),
   inputSchema: getDetailedInfoSchema,
   annotations: {

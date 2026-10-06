@@ -9,7 +9,7 @@ describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('Critical Error Handling E2E – Auth & Authorization', () => {
   it('handles authentication-like failures gracefully', async () => {
-    const response = (await callUniversalTool('search-records', {
+    const response = (await callUniversalTool('records_search', {
       resource_type: 'companies',
       query: '',
       limit: 1,

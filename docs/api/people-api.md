@@ -17,7 +17,7 @@ The MCP server provides enhanced filtering capabilities for people records throu
 - **`records.search`** with `resource_type: 'people'` - Replaces `search-people`
 - **`records.search_advanced`** with `resource_type: 'people'` - Complex filtering with multiple conditions
 - **`records.get_details`** with `resource_type: 'people'` - Replaces `get-person-details`
-- **`create-record`** with `resource_type: 'people'` - Replaces `create-person`
+- **`records_create`** with `resource_type: 'people'` - Replaces `create-person`
 - **`records.search_by_relationship`** - Find people by company relationships
 - **`records.search_by_timeframe`** - Time-based people searches
 

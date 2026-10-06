@@ -216,4 +216,4 @@ Each template should include:
 - A list of parameters with types, descriptions, and whether they are required
 - A template string using Handlebars syntax
 
-Prompt instructions that mention MCP tools should use names exposed by the active registry. Prefer canonical universal names such as `search_records`, `get_record_details`, `create_record`, and `update_record`; use exposed compatibility tools such as `search` and `fetch` only when the prompt is intentionally using that compatibility surface. Do not introduce dotted pseudo-tool names in prompt text.
+Prompt instructions that mention MCP tools should use names exposed by the active registry. Prefer canonical universal names such as `records_search`, `records_get_details`, `records_create`, and `records_update`; use exposed compatibility tools such as `search` and `fetch` only when the prompt is intentionally using that compatibility surface. Do not introduce dotted pseudo-tool names in prompt text.

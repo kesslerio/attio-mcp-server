@@ -207,7 +207,7 @@ workflow skill for my workspace
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              Correct MCP Tool Call                           │
-│   update-record with exact slugs and valid values            │
+│   records_update with exact slugs and valid values            │
 └─────────────────────────────────────────────────────────────┘
 ```
 

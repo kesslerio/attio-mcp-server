@@ -37,7 +37,7 @@ export interface SmitheryDiagnosticsPayload {
  * Tool definition for Smithery diagnostics
  */
 export const smitheryDiagnosticsToolDefinition = {
-  name: 'smithery_debug_config',
+  name: 'diagnostics_get',
   description: formatToolDescription({
     capability:
       'Retrieve non-sensitive diagnostic information about Smithery runtime configuration propagation.',
@@ -63,7 +63,7 @@ export const smitheryDiagnosticsToolDefinition = {
  * Handler for Smithery diagnostics tool
  */
 export const smitheryDiagnosticsConfig = {
-  name: 'smithery_debug_config',
+  name: 'diagnostics_get',
   ...diagnosticsResultContract,
   structuredOutput: (payload: unknown): Record<string, unknown> => ({
     data: diagnosticsDataSchema.parse(payload),

@@ -16,7 +16,7 @@ import { getRecordDetailsConfig } from '@/handlers/tool-configs/universal/core/r
 
 const RECORD_ID = '33333333-3333-4333-8333-333333333333';
 
-describe('get_record_details merge wait state', () => {
+describe('records_get_details merge wait state', () => {
   afterEach(() => vi.resetAllMocks());
 
   it('treats Attio merge_in_progress 404 as wait-not-missing', async () => {

@@ -31,7 +31,7 @@ class InputValidationTest extends EdgeCaseTestBase {
     try {
       // Create a valid company for testing
       const companyData = TestDataFactory.createCompanyData('TC_EC01');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -47,7 +47,7 @@ class InputValidationTest extends EdgeCaseTestBase {
       }
 
       // Get a valid list for testing
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       if (!listsResult.isError) {
         const listsText = this.extractTextContent(listsResult);
         try {
@@ -113,7 +113,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     // Test graceful handling - should respond without crashing
     const result = await testCase.executeExpectedFailureTest(
       'empty_required_fields',
-      'create_record',
+      'records_create',
       {
         resource_type: 'companies',
         record_data: emptyFieldsScenario!.inputData,
@@ -124,7 +124,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(result.passed).toBe(true);
 
     // Verify server handles invalid input properly with error validation
-    const response = await testCase.executeToolCall('create_record', {
+    const response = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: emptyFieldsScenario!.inputData,
     });
@@ -132,7 +132,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         response,
-        'create-record missing required fields',
+        'records_create missing required fields',
         {
           expectError: true,
           errorIndicators: ['error', 'required', 'missing', 'invalid'],
@@ -142,10 +142,10 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
   });
 
   it('should handle malformed UUID identifiers gracefully', async () => {
-    // Test invalid UUID in get-record-details - should handle gracefully
+    // Test invalid UUID in records_get_details - should handle gracefully
     const result = await testCase.executeExpectedFailureTest(
       'invalid_uuid_get_record',
-      'get-record-details',
+      'records_get_details',
       {
         resource_type: 'companies',
         record_id: 'not-a-valid-uuid-format',
@@ -159,7 +159,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     if (testCase['validListId']) {
       const listResult = await testCase.executeExpectedFailureTest(
         'invalid_uuid_list_operation',
-        'add-record-to-list',
+        'list_entries_add',
         {
           listId: testCase['validListId'],
           recordId: '123-invalid-uuid-format',
@@ -176,7 +176,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     // Test type mismatches in record creation
     const result = await testCase.executeExpectedFailureTest(
       'type_mismatch_validation',
-      'create_record',
+      'records_create',
       {
         resource_type: 'companies',
         record_data: {
@@ -191,7 +191,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(result.passed).toBe(true);
 
     // Test type mismatches in search parameters - should handle gracefully
-    const searchResponse = await testCase.executeToolCall('search-records', {
+    const searchResponse = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       query: 'test', // Keep query as string to avoid immediate rejection
       limit: -1, // Invalid limit
@@ -200,7 +200,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         searchResponse,
-        'search-records invalid limit',
+        'records_search invalid limit',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'limit', 'negative'],
@@ -213,7 +213,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     if (testCase['validListId']) {
       const result = await testCase.executeExpectedFailureTest(
         'malformed_json_filter',
-        'advanced-filter-list-entries',
+        'list_entries_filter_advanced',
         {
           listId: testCase['validListId'],
           filter: { $and: { $or: null } }, // Malformed filter
@@ -238,7 +238,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
 
     // Test that server handles injection attempts without crashing
     // Note: The API may correctly store and return data as-is (escaping happens at rendering)
-    const createResult = await testCase.executeToolCall('create_record', {
+    const createResult = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: injectionData,
     });
@@ -252,7 +252,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(serverHandledGracefully).toBe(true);
 
     // Test in search operations as well - should not crash
-    const searchResponse = await testCase.executeToolCall('search-records', {
+    const searchResponse = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       query: '<script>alert("test")</script>',
     });
@@ -266,7 +266,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     // Test deeply nested structures - should handle gracefully
     if (testCase['validListId']) {
       const complexResponse = await testCase.executeToolCall(
-        'advanced-filter-list-entries',
+        'list_entries_filter_advanced',
         {
           listId: testCase['validListId'],
           filter: {
@@ -282,7 +282,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       expect(
         testCase.validateEdgeCaseResponse(
           complexResponse,
-          'advanced-filter-list-entries with malformed nested filters',
+          'list_entries_filter_advanced with malformed nested filters',
           {
             expectError: true,
             errorIndicators: ['error', 'invalid', 'malformed'],
@@ -293,7 +293,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
 
     // Test invalid update operations with complex data
     if (testCase['validCompanyId']) {
-      const updateResponse = await testCase.executeToolCall('update_record', {
+      const updateResponse = await testCase.executeToolCall('records_update', {
         resource_type: 'companies',
         record_id: testCase['validCompanyId'],
         updates: {
@@ -305,7 +305,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       expect(
         testCase.validateEdgeCaseResponse(
           updateResponse,
-          'update-record with invalid fields',
+          'records_update with invalid fields',
           {
             expectError: true,
             errorIndicators: ['error', 'invalid', 'field'],
@@ -328,14 +328,14 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       },
     };
 
-    const edgeResponse = await testCase.executeToolCall('create_record', {
+    const edgeResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: edgeCaseData,
     });
 
     const edgeSuccess = testCase.validateEdgeCaseResponse(
       edgeResponse,
-      'create-record with mixed edge case data (success)',
+      'records_create with mixed edge case data (success)',
       {
         expectError: false,
         successIndicators: [],
@@ -344,7 +344,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     );
     const edgeError = testCase.validateEdgeCaseResponse(
       edgeResponse,
-      'create-record with mixed edge case data (error)',
+      'records_create with mixed edge case data (error)',
       {
         expectError: true,
       }
@@ -359,14 +359,14 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       attributes: {}, // Empty object
     };
 
-    const emptyResponse = await testCase.executeToolCall('create_record', {
+    const emptyResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: emptyCollectionsData,
     });
 
     const emptySuccess = testCase.validateEdgeCaseResponse(
       emptyResponse,
-      'create-record with empty collections (success)',
+      'records_create with empty collections (success)',
       {
         expectError: false,
         successIndicators: [],
@@ -375,7 +375,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     );
     const emptyError = testCase.validateEdgeCaseResponse(
       emptyResponse,
-      'create-record with empty collections (error)',
+      'records_create with empty collections (error)',
       {
         expectError: true,
       }
@@ -384,9 +384,9 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
   });
 
   it('should handle additional universal tools gracefully', async () => {
-    // Test get-attributes with invalid resource type
+    // Test records_get_attributes with invalid resource type
     const attributesResponse = await testCase.executeToolCall(
-      'get-attributes',
+      'records_get_attributes',
       {
         resource_type: 'invalid_resource_type',
       }
@@ -395,7 +395,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         attributesResponse,
-        'get-attributes with invalid resource type',
+        'records_get_attributes with invalid resource type',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'not found', 'unknown'],
@@ -403,9 +403,9 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       )
     ).toBe(true);
 
-    // Test discover-attributes with malformed parameters
+    // Test records_discover_attributes with malformed parameters
     const discoverResponse = await testCase.executeToolCall(
-      'discover-attributes',
+      'records_discover_attributes',
       {
         resource_type: 'companies',
         invalid_param: null,
@@ -415,7 +415,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         discoverResponse,
-        'discover-attributes with malformed parameters',
+        'records_discover_attributes with malformed parameters',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'unexpected', 'unknown'],
@@ -423,9 +423,9 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       )
     ).toBe(true);
 
-    // Test get-detailed-info with invalid ID
+    // Test records_get_info with invalid ID
     const detailedInfoResponse = await testCase.executeToolCall(
-      'get-detailed-info',
+      'records_get_info',
       {
         resource_type: 'companies',
         record_id: 'invalid-uuid-format',
@@ -435,7 +435,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         detailedInfoResponse,
-        'get-detailed-info with invalid UUID format',
+        'records_get_info with invalid UUID format',
         {
           expectError: true,
           errorIndicators: [
@@ -449,9 +449,9 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       )
     ).toBe(true);
 
-    // Test create-note with malformed data (if valid company exists)
+    // Test notes_create with malformed data (if valid company exists)
     if (testCase['validCompanyId']) {
-      const noteResponse = await testCase.executeToolCall('create_note', {
+      const noteResponse = await testCase.executeToolCall('notes_create', {
         parent_object: testCase['validCompanyId'],
         title: null, // Invalid title
         content: '',
@@ -460,7 +460,7 @@ describe('TC-EC01: Input Validation Edge Cases', () => {
       expect(
         testCase.validateEdgeCaseResponse(
           noteResponse,
-          'create-note with null title',
+          'notes_create with null title',
           {
             expectError: true,
             errorIndicators: [

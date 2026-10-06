@@ -191,7 +191,7 @@ This enhanced validation framework now provides:
 
 ---
 **Framework Version:** Enhanced Multi-level Validation v1.0
-**Previous Issues Resolved:** False positive detection for API errors (e.g., Test 3 search-by-timeframe 400 error)
+**Previous Issues Resolved:** False positive detection for API errors (e.g., Test 3 records_search_by_timeframe 400 error)
 `;
 
   writeFileSync(reportPath, report);

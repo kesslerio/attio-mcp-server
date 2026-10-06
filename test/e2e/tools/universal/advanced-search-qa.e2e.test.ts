@@ -36,7 +36,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
       const startTime = performance.now();
 
       await client.assertToolCall(
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'people',
           filters: {
@@ -101,7 +101,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
     it('should handle personal name attribute structure correctly', async () => {
       // Test to verify we can get detailed info that shows the personal name structure
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           limit: 1,
@@ -131,7 +131,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
       const startTime = performance.now();
 
       await client.assertToolCall(
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'people',
           filters: {
@@ -183,7 +183,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
       const startTime = performance.now();
 
       await client.assertToolCall(
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'people',
           filters: {
@@ -224,7 +224,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
       const startTime = performance.now();
 
       await client.assertToolCall(
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'companies',
           filters: {
@@ -270,7 +270,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
       const startTime = performance.now();
 
       await client.assertToolCall(
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'people',
           filters: {
@@ -312,7 +312,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
       const startTime = performance.now();
 
       await client.assertToolCall(
-        'advanced-search',
+        'records_search_advanced',
         {
           resource_type: 'companies',
           filters: {

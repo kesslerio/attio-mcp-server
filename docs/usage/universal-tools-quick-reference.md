@@ -11,9 +11,9 @@ The Attio MCP Server uses **14 universal tools** (68% reduction from 40+ tools) 
 | `records.search`                 | Basic search with filters          | companies, people, tasks, deals, custom object slugs |
 | `records.search_advanced`        | Multi-condition complex queries    | companies, people, tasks, deals, custom object slugs |
 | `records.get_details`            | Complete record information        | companies, people, tasks, deals, custom object slugs |
-| `create-record`                  | Create new records                 | companies, people, tasks, deals, custom object slugs |
-| `update-record`                  | Modify existing records            | companies, people, tasks, deals, custom object slugs |
-| `delete-record`                  | Remove records                     | companies, people, tasks, deals, custom object slugs |
+| `records_create`                  | Create new records                 | companies, people, tasks, deals, custom object slugs |
+| `records_update`                  | Modify existing records            | companies, people, tasks, deals, custom object slugs |
+| `records_delete`                  | Remove records                     | companies, people, tasks, deals, custom object slugs |
 | `records.get_attributes`         | Available fields for resource type | companies, people, tasks, deals                      |
 | `records.discover_attributes`    | Dynamic field discovery            | companies, people, tasks, deals                      |
 | `records.get_info`               | Structured info by type            | companies, people                                    |
@@ -70,9 +70,9 @@ Limit to 20 results to avoid truncation
 
 ```
 Get my sales pipeline status using these steps:
-1. Use get-lists to see all available pipelines
-2. For each pipeline, use get-list-entries to show current deals
-3. Use advanced-filter-list-entries for deals over $5,000
+1. Use lists_list to see all available pipelines
+2. For each pipeline, use list_entries_list to show current deals
+3. Use list_entries_filter_advanced for deals over $5,000
 4. Group by stage and calculate totals
 Limit each stage to top 10 deals by value
 ```
@@ -82,9 +82,9 @@ Limit each stage to top 10 deals by value
 ```
 Update pipeline position:
 1. Find the deal using records.search with resource_type="deals"
-2. Use update-list-entry to change stage from "Qualified" to "Proposal"
-3. Use add-record-to-list if moving between different pipelines
-4. Confirm the update with get-list-entries
+2. Use list_entries_update to change stage from "Qualified" to "Proposal"
+3. Use list_entries_add if moving between different pipelines
+4. Confirm the update with list_entries_list
 Include deal value and expected close date in the update
 ```
 
@@ -93,7 +93,7 @@ Include deal value and expected close date in the update
 #### **Create Tasks (Avoiding "Unnamed" Issue)**
 
 ```
-Create follow-up tasks using create-record:
+Create follow-up tasks using records_create:
 - Resource type: tasks
 - Content: "Follow up on demo with [Company Name] - discuss pricing"
 - Title: "Demo Follow-up: [Company Name]"
@@ -134,7 +134,7 @@ Build complete account map:
 1. Use records.get_details for the target company
 2. Use records.search_by_relationship to find all connected people
 3. Use records.search_by_content to find related notes and activities
-4. Use get-record-list-memberships to see which lists/pipelines they're in
+4. Use records_get_list_memberships to see which lists/pipelines they're in
 Present as organizational chart with contact details
 ```
 

@@ -49,7 +49,7 @@ export function createFieldValidationError(
     suggestions:
       suggestions.length > 0
         ? suggestions
-        : [`Use get-attributes to see valid fields for ${resourceType}`],
+        : [`Use records_get_attributes to see valid fields for ${resourceType}`],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
     context: { resource_type: resourceType, field_name: fieldName },
   };
@@ -73,7 +73,7 @@ export function createSelectOptionError(
       `Choose one of: ${validOptions.slice(0, 3).join(', ')}${
         validOptions.length > 3 ? '...' : ''
       }`,
-      'Use get-attributes to see all available options',
+      'Use records_get_attributes to see all available options',
     ],
     context: {
       field_name: fieldName,
@@ -105,7 +105,7 @@ export function createMultiSelectOptionError(
       `Valid options include: ${validOptions.slice(0, 5).join(', ')}${
         validOptions.length > 5 ? '...' : ''
       }`,
-      'Use get-attributes to see all available options',
+      'Use records_get_attributes to see all available options',
     ],
     context: {
       field_name: fieldName,
@@ -135,7 +135,7 @@ export function createReadOnlyFieldError(
       `Remove ${
         plural ? 'these fields' : 'this field'
       } from your update request`,
-      `Use get-attributes to see which fields are read-only for ${resourceType}`,
+      `Use records_get_attributes to see which fields are read-only for ${resourceType}`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
     context: {
@@ -164,7 +164,7 @@ export function createUnknownFieldError(
   }
 
   actionableSuggestions.push(
-    `Use get-attributes to see all available fields for ${resourceType}`
+    `Use records_get_attributes to see all available fields for ${resourceType}`
   );
 
   return {
@@ -196,7 +196,7 @@ export function createFieldTypeMismatchError(
     field: fieldName,
     suggestions: [
       `Convert the value to ${expectedType} format`,
-      `Check the field definition using get-attributes`,
+      `Check the field definition using records_get_attributes`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
     context: {
@@ -228,7 +228,7 @@ export function createRequiredFieldError(
       `Add ${
         plural ? 'these required fields' : 'this required field'
       } to your request`,
-      `Use get-attributes to see all required fields for ${resourceType}`,
+      `Use records_get_attributes to see all required fields for ${resourceType}`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
     context: {

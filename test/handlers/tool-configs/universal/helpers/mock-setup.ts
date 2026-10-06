@@ -283,7 +283,7 @@ export const setupMockHandlers = async () => {
     }
     return [];
   });
-  // U5: search_records now pages through searchRecordsPage; mirror the
+  // U5: records_search now pages through searchRecordsPage; mirror the
   // handleUniversalSearch default so existing tests keep their fixtures.
   vi.mocked(handleUniversalSearchPage).mockImplementation(async (args: any) => {
     const page = await vi.mocked(handleUniversalSearch)(args);

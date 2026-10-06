@@ -39,7 +39,7 @@ export interface BatchSearchParams {
  * Enhanced for Issue #471 with optimized batch API
  */
 export const batchSearchConfig = {
-  name: 'batch_search_records',
+  name: 'records_batch_search',
   ...batchSearchResultContract,
   structuredOutput: (result: unknown) => normalizeBatch(result, true),
   handler: async (
@@ -47,7 +47,7 @@ export const batchSearchConfig = {
   ): Promise<UniversalBatchSearchResult[]> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'batch_search_records',
+        'records_batch_search',
         params
       );
 
@@ -75,7 +75,7 @@ export const batchSearchConfig = {
       });
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
-        'batch_search_records',
+        'records_batch_search',
         params?.resource_type ?? '',
         error
       );
@@ -216,15 +216,15 @@ export const batchSearchSchema = {
  * Batch search tool definition for MCP protocol
  */
 export const batchSearchToolDefinition = {
-  name: 'batch_search_records',
+  name: 'records_batch_search',
   description: formatToolDescription({
     capability:
       'Execute multiple searches in parallel and return grouped results.',
     boundaries:
-      'mutate or import data; use batch_records for write operations.',
+      'mutate or import data; use records_batch for write operations.',
     constraints:
       'Provide queries array (1–10 items recommended) and resource_type.',
-    recoveryHint: 'If queries fail, retry individually using search_records.',
+    recoveryHint: 'If queries fail, retry individually using records_search.',
   }),
   inputSchema: batchSearchSchema,
   annotations: {

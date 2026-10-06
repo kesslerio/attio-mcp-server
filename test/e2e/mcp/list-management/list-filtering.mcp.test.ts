@@ -29,7 +29,7 @@ class ListFilteringTest extends MCPTestBase {
     try {
       // Create test companies for filtering
       const company1Data = TestDataFactory.createCompanyData('TC008_Filter1');
-      const company1Result = await this.executeToolCall('create_record', {
+      const company1Result = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: company1Data,
       });
@@ -46,7 +46,7 @@ class ListFilteringTest extends MCPTestBase {
 
       // Create another company to use as parent
       const company2Data = TestDataFactory.createCompanyData('TC008_Parent');
-      const company2Result = await this.executeToolCall('create_record', {
+      const company2Result = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: company2Data,
       });
@@ -62,7 +62,7 @@ class ListFilteringTest extends MCPTestBase {
       }
 
       // Get an existing list for testing
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -84,7 +84,7 @@ class ListFilteringTest extends MCPTestBase {
         // Add test records to the list for filtering
         // Note: We don't pass custom values since they may not match list schema
         if (this.testCompanyId) {
-          await this.executeToolCall('add-record-to-list', {
+          await this.executeToolCall('list_entries_add', {
             listId: this.testListId,
             recordId: this.testCompanyId,
             objectType: 'companies',
@@ -151,7 +151,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
 
       // Use reliable filter-by-parent-id tool instead of attribute-based filtering
       const result = await testCase.executeToolCall(
-        'filter-list-entries-by-parent-id',
+        'list_entries_filter_by_parent_id',
         {
           listId: testCase['testListId'],
           recordId: testCase['testCompanyId'],
@@ -196,7 +196,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
 
       // Use reliable filter-by-parent-id tool to simulate complex filtering
       const result = await testCase.executeToolCall(
-        'filter-list-entries-by-parent-id',
+        'list_entries_filter_by_parent_id',
         {
           listId: testCase['testListId'],
           recordId: testCase['testCompanyId'],
@@ -242,7 +242,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
 
       // Use reliable filter-by-parent-id tool instead of filter-by-parent
       const result = await testCase.executeToolCall(
-        'filter-list-entries-by-parent-id',
+        'list_entries_filter_by_parent_id',
         {
           listId: testCase['testListId'],
           recordId: testCase['testParentId'],
@@ -290,7 +290,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
 
       // Simulate multiple conditions by testing filtering tool with different parameters
       const result1 = await testCase.executeToolCall(
-        'filter-list-entries-by-parent-id',
+        'list_entries_filter_by_parent_id',
         {
           listId: testCase['testListId'],
           recordId: testCase['testCompanyId'],
@@ -302,7 +302,7 @@ describe('TC-008: List Filtering - Advanced Query Operations', () => {
       const secondRecordId =
         testCase['testParentId'] || testCase['testCompanyId'];
       const result2 = await testCase.executeToolCall(
-        'filter-list-entries-by-parent-id',
+        'list_entries_filter_by_parent_id',
         {
           listId: testCase['testListId'],
           recordId: secondRecordId,

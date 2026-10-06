@@ -29,7 +29,7 @@ class ListMembershipTest extends MCPTestBase {
     try {
       // Create a test company
       const companyData = TestDataFactory.createCompanyData('TC007');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -46,7 +46,7 @@ class ListMembershipTest extends MCPTestBase {
 
       // Create a test person
       const personData = TestDataFactory.createPersonData('TC007');
-      const personResult = await this.executeToolCall('create_record', {
+      const personResult = await this.executeToolCall('records_create', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -62,7 +62,7 @@ class ListMembershipTest extends MCPTestBase {
       }
 
       // Get an existing list to use for testing
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -83,7 +83,7 @@ class ListMembershipTest extends MCPTestBase {
     // Remove test records from list if added
     if (this.testListId && this.testEntryId) {
       try {
-        await this.executeToolCall('remove-record-from-list', {
+        await this.executeToolCall('list_entries_remove', {
           list_id: this.testListId,
           entry_id: this.testEntryId,
         });
@@ -141,7 +141,7 @@ describe('TC-007: List Membership - Record List Management', () => {
         return;
       }
 
-      const result = await testCase.executeToolCall('add-record-to-list', {
+      const result = await testCase.executeToolCall('list_entries_add', {
         listId: testCase['testListId'],
         recordId: testCase['testCompanyId'],
         objectType: 'companies',
@@ -204,7 +204,7 @@ describe('TC-007: List Membership - Record List Management', () => {
       }
 
       // First add the person to the list
-      const addResult = await testCase.executeToolCall('add-record-to-list', {
+      const addResult = await testCase.executeToolCall('list_entries_add', {
         listId: testCase['testListId'],
         recordId: testCase['testPersonId'],
         objectType: 'people',
@@ -218,14 +218,14 @@ describe('TC-007: List Membership - Record List Management', () => {
 
         // Now remove it
         const result = await testCase.executeToolCall(
-          'remove-record-from-list',
+          'list_entries_remove',
           {
             listId: testCase['testListId'],
             entryId: entryId,
           }
         );
 
-        QAAssertions.assertValidListResponse(result, 'remove-record-from-list');
+        QAAssertions.assertValidListResponse(result, 'list_entries_remove');
       }
 
       passed = true;
@@ -255,7 +255,7 @@ describe('TC-007: List Membership - Record List Management', () => {
         status: 'updated',
       };
 
-      const result = await testCase.executeToolCall('update-list-entry', {
+      const result = await testCase.executeToolCall('list_entries_update', {
         listId: testCase['testListId'],
         entryId: testCase['testEntryId'],
         values: updateData,
@@ -298,7 +298,7 @@ describe('TC-007: List Membership - Record List Management', () => {
       }
 
       const result = await testCase.executeToolCall(
-        'get-record-list-memberships',
+        'records_get_list_memberships',
         {
           recordId: testCase['testCompanyId'],
           objectType: 'companies',
@@ -307,7 +307,7 @@ describe('TC-007: List Membership - Record List Management', () => {
 
       QAAssertions.assertValidListResponse(
         result,
-        'get-record-list-memberships'
+        'records_get_list_memberships'
       );
 
       // Verify response is an array
@@ -345,7 +345,7 @@ describe('TC-007: List Membership - Record List Management', () => {
 
       // Add company
       const companyResult = await testCase.executeToolCall(
-        'add-record-to-list',
+        'list_entries_add',
         {
           listId: testCase['testListId'],
           recordId: testCase['testCompanyId'],
@@ -357,7 +357,7 @@ describe('TC-007: List Membership - Record List Management', () => {
 
       // Add person
       const personResult = await testCase.executeToolCall(
-        'add-record-to-list',
+        'list_entries_add',
         {
           listId: testCase['testListId'],
           recordId: testCase['testPersonId'],
@@ -373,11 +373,11 @@ describe('TC-007: List Membership - Record List Management', () => {
       }
 
       // Get list entries to verify batch addition
-      const entriesResult = await testCase.executeToolCall('get-list-entries', {
+      const entriesResult = await testCase.executeToolCall('list_entries_list', {
         listId: testCase['testListId'],
       });
 
-      QAAssertions.assertValidListResponse(entriesResult, 'get-list-entries');
+      QAAssertions.assertValidListResponse(entriesResult, 'list_entries_list');
 
       passed = true;
     } catch (e) {

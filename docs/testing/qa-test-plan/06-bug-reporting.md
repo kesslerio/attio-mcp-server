@@ -33,7 +33,7 @@ This document provides standardized templates and processes for documenting bugs
 **Examples:**
 
 - MCP server crashes when executing any tool
-- `create-record` tool corrupts existing data
+- `records_create` tool corrupts existing data
 - Authentication bypassed or credentials exposed
 - All search operations return server errors
 
@@ -49,7 +49,7 @@ This document provides standardized templates and processes for documenting bugs
 **Examples:**
 
 - `records.search` returns no results when data exists
-- `update-record` fails for all resource types
+- `records_update` fails for all resource types
 - Required fields not properly validated
 - Performance degradation >500% from baseline
 
@@ -157,16 +157,16 @@ When bugs are found, document them using this template:
 
 #### Critical Bug Example
 ```markdown
-## Bug Report - create-record - 2024-08-20
+## Bug Report - records_create - 2024-08-20
 
 **Bug ID:** BUG-2024-08-20-001
-**Tool:** create-record
+**Tool:** records_create
 **Severity:** Critical
 **Test Case:** TC-003
 **Priority Level:** P0
 
 ### Summary
-create-record tool crashes MCP server when creating company records
+records_create tool crashes MCP server when creating company records
 
 ### Expected Behavior
 Should create new company record and return confirmation with record ID
@@ -188,10 +188,10 @@ MCP server terminates with connection error, no record created
 #### Medium Bug Example
 
 ````markdown
-## Bug Report - advanced-search - 2024-08-20
+## Bug Report - records_search_advanced - 2024-08-20
 
 **Bug ID:** BUG-2024-08-20-002  
-**Tool:** advanced-search  
+**Tool:** records_search_advanced  
 **Severity:** Medium  
 **Test Case:** TC-009  
 **Priority Level:** P1

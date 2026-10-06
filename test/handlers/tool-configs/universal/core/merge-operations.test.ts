@@ -31,7 +31,7 @@ const plan = {
   fingerprint: 'fingerprint',
 } as DealMergePlan;
 
-describe('merge_records tool surface', () => {
+describe('records_merge tool surface', () => {
   afterEach(() => {
     vi.resetAllMocks();
   });

@@ -1,7 +1,7 @@
 /**
  * MCP Test for Issue #986: Status transformer should pass UUID strings through
  *
- * Verifies create-record accepts a status UUID string (stage) without attempting
+ * Verifies records_create accepts a status UUID string (stage) without attempting
  * title lookup or fallback.
  */
 
@@ -95,7 +95,7 @@ describe('Deal status UUID passthrough - Issue #986', () => {
 
     for (const dealId of createdDealIds) {
       try {
-        await client.callTool('delete_record', {
+        await client.callTool('records_delete', {
           resource_type: 'deals',
           record_id: dealId,
         });
@@ -117,7 +117,7 @@ describe('Deal status UUID passthrough - Issue #986', () => {
         throw new Error('MCP client or stage UUID not initialized');
       }
 
-      const createResult = await client.callTool('create_record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {

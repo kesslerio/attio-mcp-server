@@ -60,31 +60,31 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 
 ### 📊 **Company Management**
 
-- **Universal Search**: Find companies with `search_records` and `search_records_advanced`
-- **Scoped Writes**: Create and update companies with `create_company` and `update_company`
+- **Universal Search**: Find companies with `records_search` and `records_search_advanced`
+- **Scoped Writes**: Create and update companies with `companies_create` and `companies_update`
 - **Full CRUD**: Create, read, update, and delete with universal record operations when a scoped tool is not available
-- **Relationship Discovery**: Find companies through `search_records_by_relationship`
-- **Batch Operations**: Process hundreds of companies with `batch_records`
-- **Detailed Information**: Get contact, business, and social info with `get_record_info`
+- **Relationship Discovery**: Find companies through `records_search_by_relationship`
+- **Batch Operations**: Process hundreds of companies with `records_batch`
+- **Detailed Information**: Get contact, business, and social info with `records_get_info`
 
 ### 👥 **People Management**
 
 - **Universal Contact Search**: Find people by any criteria using universal search tools
-- **Relationship Tracking**: Link people to companies with `search_records_by_relationship`
-- **Activity Timeline**: Track interactions with `search_records_by_content` and `search_records_by_timeframe`
+- **Relationship Tracking**: Link people to companies with `records_search_by_relationship`
+- **Activity Timeline**: Track interactions with `records_search_by_content` and `records_search_by_timeframe`
 - **Advanced Filtering**: Multi-attribute search with universal filtering
 - **Bulk Operations**: Efficiently manage contacts with universal batch operations
 
 ### 📋 **Lists & Pipeline Management** (6 Tools + 8 Deprecated)
 
 - **Active Tools**: 4 consolidated tools with auto-mode detection ([Migration Guide](./docs/migration/v2-list-tools.md))
-  - `filter-list-entries` - Unified filtering with 4 modes
-  - `manage-list-entry` - Unified entry management with 3 modes
-  - `get-list-entries` - Retrieve list entries
-  - `get-record-list-memberships` - Find record's list memberships
-- **List Configuration Tools** (dedicated; universal `create_record`/`update_record` reject `resource_type: "lists"`):
-  - `create-list` - Create lists with first-class access controls: `workspace_access` (`full-access` \| `read-and-write` \| `read-only` \| `"null"` for a private list) and `workspace_member_access` (per-member grants). Omitting both access fields defaults the new list to workspace-wide **full access**; new lists must keep at least one full-access grantee.
-  - `update-list-configuration` - Update name, custom fields, and the same access controls. Member-level grants can raise access above the workspace default but never lower it below `workspace_access`.
+  - `list_entries_filter` - Unified filtering with 4 modes
+  - `list_entries_manage` - Unified entry management with 3 modes
+  - `list_entries_list` - Retrieve list entries
+  - `records_get_list_memberships` - Find record's list memberships
+- **List Configuration Tools** (dedicated; universal `records_create`/`records_update` reject `resource_type: "lists"`):
+  - `lists_create` - Create lists with first-class access controls: `workspace_access` (`full-access` \| `read-and-write` \| `read-only` \| `"null"` for a private list) and `workspace_member_access` (per-member grants). Omitting both access fields defaults the new list to workspace-wide **full access**; new lists must keep at least one full-access grantee.
+  - `lists_update_configuration` - Update name, custom fields, and the same access controls. Member-level grants can raise access above the workspace default but never lower it below `workspace_access`.
   - Errors distinguish `plan_gating` (workspace plan does not support the requested access configuration) from `permission_failure` (token/workspace permissions) and `unsupported_input` (malformed access config), each with a suggested next step.
 - **Deprecated (v2.0.0 removal)**: 8 legacy tools replaced by consolidated versions
 - **Pipeline Operations**: Move deals through sales stages
@@ -93,7 +93,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **Entry Management**: Add, remove, and update list memberships
 - **Deal Tracking**: Monitor opportunities and revenue pipeline
 - **Deal Defaults**: Configurable default stage, owner, and currency for streamlined deal creation
-- **Scoped Deal Writes**: Create and update deals with `create_deal` and `update_deal`
+- **Scoped Deal Writes**: Create and update deals with `deals_create` and `deals_update`
 
 ### ✅ **Task Management**
 
@@ -484,7 +484,7 @@ See [Cloudflare Worker Deployment Guide](./examples/cloudflare-mcp-server/README
 - **🔍 Select-field Transformer** (#1019) - Case-insensitive matching, partial matching, and UUID pass-through for select/status fields
 - **🛠️ Attio Skill Generator Meta-skill** (#1020) - Meta-skill for automatic workspace documentation
 - **📚 Universal Usage Guide Skill** (#1018) - Hand-crafted workflow patterns and error prevention
-- **⚙️ `get_record_attribute_options` tool** (#975) - Get valid options for select/status fields with enhanced error messages
+- **⚙️ `records_get_attribute_options` tool** (#975) - Get valid options for select/status fields with enhanced error messages
 - **📞 Phone validation** (#951) - Built-in phone number validation support
 - **⏱️ Configurable option fetch delay** - Rate limiting control via `--option-fetch-delay` flag
 
@@ -516,37 +516,22 @@ See [Cloudflare Worker Deployment Guide](./examples/cloudflare-mcp-server/README
 - UniversalUpdateService modularization (#984)
 - Select transformation type rename (#1055) - `select_title_to_array` for clarity
 
-## 🔄 Migration Guide
+## Tool names
 
-**Upgrading from v1.3.x or earlier?** Tool names have changed to follow MCP naming conventions.
+The server advertises one resource-first catalog. `search`, `fetch`, and `aaa-health-check` are unchanged.
 
-**Old names still work** via backward-compatible aliases, but will be removed in **v2.0.0 (Q1 2026)**.
+Prior default-catalog names still call the same tool through v2.x. They are not listed in `tools/list`, they do not change arguments, and `MCP_DISABLE_TOOL_ALIASES=true` makes them fail. They are removable in v3.0.0. Names that were never that default catalog, including `search-records`, `create-record`, and `records_search_batch`, fail immediately.
 
-### Tool Name Changes
+| Prior name | Canonical name |
+| --- | --- |
+| `search_records` | `records_search` |
+| `create_record` | `records_create` |
+| `get-lists` | `lists_list` |
+| `manage-list-entry` | `list_entries_manage` |
+| `get-workspace-member` | `workspace_members_get` |
+| `smithery_debug_config` | `diagnostics_get` |
 
-| Old Name (Deprecated)            | New Name (MCP-compliant)         | Notes              |
-| -------------------------------- | -------------------------------- | ------------------ |
-| `records_search`                 | `search_records`                 | Verb-first pattern |
-| `records_get_details`            | `get_record_details`             | Verb-first pattern |
-| `records_get_attributes`         | `get_record_attributes`          | Verb-first pattern |
-| `records_discover_attributes`    | `discover_record_attributes`     | Verb-first pattern |
-| `records_search_advanced`        | `search_records_advanced`        | Verb-first pattern |
-| `records_search_by_relationship` | `search_records_by_relationship` | Verb-first pattern |
-| `records_search_by_content`      | `search_records_by_content`      | Verb-first pattern |
-| `records_search_by_timeframe`    | `search_records_by_timeframe`    | Verb-first pattern |
-| `records_batch`                  | `batch_records`                  | Verb-first pattern |
-| `search-records`                 | `search_records`                 | snake_case format  |
-| `get-record-details`             | `get_record_details`             | snake_case format  |
-| `create-record`                  | `create_record`                  | snake_case format  |
-| `update-record`                  | `update_record`                  | snake_case format  |
-| `delete-record`                  | `delete_record`                  | snake_case format  |
-| `create-note`                    | `create_note`                    | snake_case format  |
-| `list-notes`                     | `list_notes`                     | snake_case format  |
-| `smithery-debug-config`          | `smithery_debug_config`          | snake_case format  |
-
-**Action Required:** Update your integrations to use new tool names before Q1 2026. See [MIGRATION-GUIDE.md](docs/MIGRATION-GUIDE.md) for the complete migration table.
-
----
+The full map is [MIGRATION-GUIDE.md](docs/MIGRATION-GUIDE.md) and `src/constants/tool-names.ts`.
 
 ## ⚡ Quick Start
 

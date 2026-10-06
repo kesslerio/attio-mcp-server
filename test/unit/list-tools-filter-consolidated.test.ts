@@ -1,5 +1,5 @@
 /**
- * Unit tests for consolidated filter-list-entries tool
+ * Unit tests for consolidated list_entries_filter tool
  *
  * Tests the unified filter tool with 4 parameter modes:
  * - Mode 1 (Simple): Single attribute filtering
@@ -53,7 +53,7 @@ function expectValidationRejection(result: unknown, detail: string) {
   ).toContain(detail);
 }
 
-describe('Consolidated filter-list-entries Tool', () => {
+describe('Consolidated list_entries_filter Tool', () => {
   const mockListId = '550e8400-e29b-41d4-a716-446655440000';
   const mockRecordId = '660e8400-e29b-41d4-a716-446655440001';
 
@@ -84,7 +84,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',
@@ -134,7 +134,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             filters,
@@ -164,7 +164,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentObjectType: 'companies',
@@ -200,7 +200,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentRecordId: mockRecordId,
@@ -230,7 +230,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             // No mode-specific parameters
@@ -255,7 +255,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',
@@ -282,7 +282,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             filters: {
@@ -320,7 +320,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             // Missing attributeSlug
@@ -343,7 +343,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',
@@ -366,7 +366,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',
@@ -389,7 +389,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',
@@ -430,7 +430,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             filters: {}, // Empty object (invalid - missing filters array)
@@ -464,7 +464,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             filters,
@@ -494,7 +494,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             // Missing parentObjectType
@@ -518,7 +518,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentObjectType: 'companies',
@@ -542,7 +542,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentObjectType: 'companies',
@@ -566,7 +566,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentObjectType: 'companies',
@@ -590,7 +590,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentObjectType: 'companies',
@@ -626,7 +626,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             // Missing parentRecordId (which is the only mode-specific param)
@@ -647,7 +647,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentRecordId: mockRecordId,
@@ -673,12 +673,12 @@ describe('Consolidated filter-list-entries Tool', () => {
   });
 
   describe('Backward Compatibility', () => {
-    it('should maintain 100% compatibility with original filter-list-entries calls', async () => {
-      // This is the exact same call structure as the original filter-list-entries tool
+    it('should maintain 100% compatibility with original list_entries_filter calls', async () => {
+      // This is the exact same call structure as the original list_entries_filter tool
       const originalCallStructure: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'stage',
@@ -715,7 +715,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',
@@ -745,7 +745,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             // Missing listId
             attributeSlug: 'status',
@@ -773,7 +773,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'invalid_slug',
@@ -799,7 +799,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             filters: {
@@ -826,7 +826,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentObjectType: 'companies',
@@ -853,7 +853,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             parentRecordId: 'invalid-uuid',
@@ -878,7 +878,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',
@@ -911,7 +911,7 @@ describe('Consolidated filter-list-entries Tool', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries',
+          name: 'list_entries_filter',
           arguments: {
             listId: mockListId,
             attributeSlug: 'status',

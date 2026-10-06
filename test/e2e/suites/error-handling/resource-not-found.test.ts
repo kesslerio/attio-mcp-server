@@ -16,7 +16,7 @@ export function resourceNotFoundTests() {
   describe('Resource Not Found Scenarios', () => {
     it('should handle company not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = (await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('records_get_details', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.company,
       })) as McpToolResponse;
@@ -29,7 +29,7 @@ export function resourceNotFoundTests() {
 
     it('should handle person not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = (await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('records_get_details', {
         resource_type: 'people',
         record_id: errorScenarios.invalidIds.person,
       })) as McpToolResponse;
@@ -41,9 +41,9 @@ export function resourceNotFoundTests() {
     });
 
     it('should handle task not found errors', async () => {
-      // Note: update-task actually calls update-record internally with resource_type: 'tasks'
+      // Note: update-task actually calls records_update internally with resource_type: 'tasks'
       // The error message might be different than expected
-      const response = (await callUniversalTool('update_record', {
+      const response = (await callUniversalTool('records_update', {
         resource_type: 'tasks',
         record_id: errorScenarios.invalidIds.task,
         record_data: {
@@ -59,7 +59,7 @@ export function resourceNotFoundTests() {
     });
 
     it('should handle list not found errors', async () => {
-      const response = (await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('records_get_details', {
         resource_type: 'lists',
         record_id: errorScenarios.invalidIds.list,
       })) as McpToolResponse;
@@ -71,7 +71,7 @@ export function resourceNotFoundTests() {
     });
 
     it('should handle note not found errors', async () => {
-      const response = (await callNotesTool('list_notes', {
+      const response = (await callNotesTool('notes_list', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.note,
         limit: 50,

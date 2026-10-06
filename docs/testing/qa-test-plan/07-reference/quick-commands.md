@@ -298,7 +298,7 @@ npm run cleanup:test-data:tasks -- --live
 
 1. **Check command syntax** if errors occur
 2. **Verify record IDs exist** before using in operations
-3. **Re-run get-attributes** if field errors occur
+3. **Re-run records_get_attributes** if field errors occur
 4. **Use records.get_details** to verify record state
 
 ### Efficiency Tips

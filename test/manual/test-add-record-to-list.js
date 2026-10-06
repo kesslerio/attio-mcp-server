@@ -1,8 +1,8 @@
 /**
- * Manual test for the add-record-to-list tool
+ * Manual test for the list_entries_add tool
  *
  * This script tests the fix for issue #157 which was related to a payload format issue
- * where the add-record-to-list tool was failing with 'Body payload validation error'.
+ * where the list_entries_add tool was failing with 'Body payload validation error'.
  *
  * Instructions:
  * 1. Set ATTIO_API_KEY environment variable
@@ -25,15 +25,15 @@ const COMPANY_ID =
 process.env.NODE_ENV = 'development'; // Enable debug logging
 
 /**
- * Test the add-record-to-list tool with valid parameters
+ * Test the list_entries_add tool with valid parameters
  */
 async function testValidAddRecordToList() {
-  console.log('=== Testing add-record-to-list with valid parameters ===');
+  console.log('=== Testing list_entries_add with valid parameters ===');
 
   // Valid request with both listId and recordId
   const validRequest = {
     params: {
-      name: 'add-record-to-list',
+      name: 'list_entries_add',
       arguments: {
         listId: LIST_ID,
         recordId: COMPANY_ID,
@@ -55,15 +55,15 @@ async function testValidAddRecordToList() {
 }
 
 /**
- * Test the add-record-to-list tool with missing listId parameter
+ * Test the list_entries_add tool with missing listId parameter
  */
 async function testMissingListId() {
-  console.log('\n=== Testing add-record-to-list with missing listId ===');
+  console.log('\n=== Testing list_entries_add with missing listId ===');
 
   // Invalid request missing listId
   const invalidRequest = {
     params: {
-      name: 'add-record-to-list',
+      name: 'list_entries_add',
       arguments: {
         recordId: COMPANY_ID,
       },
@@ -83,15 +83,15 @@ async function testMissingListId() {
 }
 
 /**
- * Test the add-record-to-list tool with missing recordId parameter
+ * Test the list_entries_add tool with missing recordId parameter
  */
 async function testMissingRecordId() {
-  console.log('\n=== Testing add-record-to-list with missing recordId ===');
+  console.log('\n=== Testing list_entries_add with missing recordId ===');
 
   // Invalid request missing recordId
   const invalidRequest = {
     params: {
-      name: 'add-record-to-list',
+      name: 'list_entries_add',
       arguments: {
         listId: LIST_ID,
       },

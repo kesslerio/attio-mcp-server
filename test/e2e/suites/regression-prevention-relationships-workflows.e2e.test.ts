@@ -57,7 +57,7 @@ describe.skipIf(
     async () => {
       let recordId: string | undefined;
       const companyData = testDataGenerator.companies.basicCompany();
-      const createResponse = (await callUniversalTool('create_record', {
+      const createResponse = (await callUniversalTool('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       } as any)) as McpToolResponse;
@@ -67,12 +67,12 @@ describe.skipIf(
       if (!recordId) return;
       testRecordIds.push(recordId);
 
-      const readResponse = (await callUniversalTool('get-record-details', {
+      const readResponse = (await callUniversalTool('records_get_details', {
         resource_type: 'companies',
         record_id: recordId,
       } as any)) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(readResponse);
-      // get-record-details returns data in content array, just verify success
+      // records_get_details returns data in content array, just verify success
       expect(readResponse.content).toBeDefined();
       expect(
         Array.isArray(readResponse.content)
@@ -80,14 +80,14 @@ describe.skipIf(
           : readResponse.content
       ).toBeTruthy();
 
-      const updateResponse = (await callUniversalTool('update_record', {
+      const updateResponse = (await callUniversalTool('records_update', {
         resource_type: 'companies',
         record_id: recordId,
         record_data: { description: 'Updated for CRUD workflow test' },
       } as any)) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(updateResponse);
 
-      const verifyResponse = (await callUniversalTool('get-record-details', {
+      const verifyResponse = (await callUniversalTool('records_get_details', {
         resource_type: 'companies',
         record_id: recordId,
       } as any)) as McpToolResponse;
@@ -110,7 +110,7 @@ describe.skipIf(
       const companyData = testDataGenerator.companies.basicCompany();
       const companyId = await createTestRecord(
         (resourceType, data) =>
-          callUniversalTool('create_record', {
+          callUniversalTool('records_create', {
             resource_type: resourceType as any,
             record_data: data,
           }),
@@ -125,7 +125,7 @@ describe.skipIf(
       }
       testRecordIds.push(companyId);
 
-      const taskResponse = await callTasksTool('create_record', {
+      const taskResponse = await callTasksTool('records_create', {
         resource_type: 'tasks',
         record_data: {
           content: 'Relationship integrity test task',
@@ -135,7 +135,7 @@ describe.skipIf(
       } as any);
       expect(taskResponse).toBeDefined();
 
-      const noteResponse = await callNotesTool('create_note', {
+      const noteResponse = await callNotesTool('notes_create', {
         resource_type: 'companies',
         record_id: companyId,
         title: 'Relationship integrity test note',
@@ -144,7 +144,7 @@ describe.skipIf(
       } as any);
       expect(noteResponse).toBeDefined();
 
-      const companyCheck = (await callUniversalTool('get-record-details', {
+      const companyCheck = (await callUniversalTool('records_get_details', {
         resource_type: 'companies',
         record_id: companyId,
       } as any)) as McpToolResponse;
@@ -168,7 +168,7 @@ describe.skipIf(
         {
           name: 'Required field validation',
           test: async () => {
-            const response = await callUniversalTool('create_record', {
+            const response = await callUniversalTool('records_create', {
               resource_type: 'companies',
               record_data: {
                 /* intentionally missing required fields to assert validation */
@@ -180,7 +180,7 @@ describe.skipIf(
         {
           name: 'Data type validation',
           test: async () => {
-            const response = await callUniversalTool('search-records', {
+            const response = await callUniversalTool('records_search', {
               resource_type: 'companies',
               query: 'validation-test',
               limit: 5,

@@ -42,7 +42,7 @@ try {
 // Test 2: Search for lists
 console.log('\nTest 2: Search Lists');
 try {
-  const searchTool = findToolConfig('search-records') || findToolConfig('get-lists');
+  const searchTool = findToolConfig('records_search') || findToolConfig('lists_list');
   if (searchTool) {
     console.log('✅ Lists search tool available');
   } else {
@@ -57,7 +57,7 @@ try {
 // Test 3: Get list details
 console.log('\nTest 3: Get List Details');
 try {
-  const detailsTool = findToolConfig('get-record-details') || findToolConfig('get-list-details');
+  const detailsTool = findToolConfig('records_get_details') || findToolConfig('lists_get');
   if (detailsTool) {
     console.log('✅ Get list details tool available');
   } else {
@@ -72,7 +72,7 @@ try {
 // Test 4: Create a new list
 console.log('\nTest 4: Create List');
 try {
-  const createTool = findToolConfig('create-record') || findToolConfig('create-list');
+  const createTool = findToolConfig('records_create') || findToolConfig('lists_create');
   if (createTool) {
     console.log('✅ List creation tool available');
   } else {
@@ -87,7 +87,7 @@ try {
 // Test 5: Update list
 console.log('\nTest 5: Update List');
 try {
-  const updateTool = findToolConfig('update-record') || findToolConfig('update-list');
+  const updateTool = findToolConfig('records_update') || findToolConfig('update-list');
   if (updateTool) {
     console.log('✅ List update tool available');
   } else {
@@ -102,7 +102,7 @@ try {
 // Test 6: Delete list
 console.log('\nTest 6: Delete List');
 try {
-  const deleteTool = findToolConfig('delete-record') || findToolConfig('delete-list');
+  const deleteTool = findToolConfig('records_delete') || findToolConfig('delete-list');
   if (deleteTool) {
     console.log('✅ List deletion tool available');
   } else {
@@ -117,11 +117,11 @@ try {
 // Test 7: Lists-specific operations
 console.log('\nTest 7: Lists-Specific Operations');
 const listSpecificTools = [
-  'get-lists',
-  'add-record-to-list', 
-  'remove-record-from-list',
-  'update-list-entry',
-  'get-list-entries'
+  'lists_list',
+  'list_entries_add', 
+  'list_entries_remove',
+  'list_entries_update',
+  'list_entries_list'
 ];
 
 let foundListTools = 0;

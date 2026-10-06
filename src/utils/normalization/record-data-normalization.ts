@@ -1,7 +1,7 @@
 /**
  * Record Data Input Normalization
  *
- * Handles normalization of record_data inputs for the update_record tool.
+ * Handles normalization of record_data inputs for the records_update tool.
  * Converts legacy input shapes (data field, flat fields) to standard format.
  *
  * Note: JSON string parsing and validation is handled by UniversalUpdateService,

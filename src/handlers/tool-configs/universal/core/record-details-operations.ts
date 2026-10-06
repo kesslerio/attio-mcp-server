@@ -34,14 +34,14 @@ export const getRecordDetailsConfig: UniversalToolConfig<
   UniversalRecordDetailsParams,
   UniversalRecordResult
 > = {
-  name: 'get_record_details',
+  name: 'records_get_details',
   ...recordDetailsResultContract,
   handler: async (
     params: UniversalRecordDetailsParams
   ): Promise<UniversalRecordResult> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'get_record_details',
+        'records_get_details',
         params
       );
       return await handleUniversalGetDetails(sanitizedParams);
@@ -73,7 +73,7 @@ export const getRecordDetailsConfig: UniversalToolConfig<
       (record as Record<string, unknown>).merge_in_progress === true
     ) {
       const recordId = String(record.id?.record_id || 'unknown');
-      return `⏳ Merge is still in progress for deal ${recordId}; it is not missing. Retry get_record_details later.`;
+      return `⏳ Merge is still in progress for deal ${recordId}; it is not missing. Retry records_get_details later.`;
     }
 
     const resourceTypeName = getSingularResourceLabel(resourceType);
@@ -239,14 +239,14 @@ export const getRecordDetailsConfig: UniversalToolConfig<
 };
 
 export const getRecordDetailsDefinition = {
-  name: 'get_record_details',
+  name: 'records_get_details',
   description: formatToolDescription({
     capability: 'Fetch a single record with enriched attribute formatting.',
     boundaries:
-      'search or filter result sets; use search_records tools instead.',
+      'search or filter result sets; use records_search tools instead.',
     constraints:
       'Requires resource_type and record_id; optional fields filter output.',
-    recoveryHint: 'Validate record IDs with search_records before retrying.',
+    recoveryHint: 'Validate record IDs with records_search before retrying.',
   }),
   inputSchema: getRecordDetailsSchema,
   annotations: {

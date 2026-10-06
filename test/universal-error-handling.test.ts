@@ -69,14 +69,15 @@ describe('Enhanced Universal Error Handling', () => {
       const params = { resource_type: 'company' }; // Missing 's'
 
       try {
-        validateUniversalToolParams('search-records', params);
+        validateUniversalToolParams('records_search', params);
         expect.fail('Should have thrown validation error');
       } catch (error: unknown) {
         const errorObj = ensureError(error);
         expect(errorObj).toBeInstanceOf(UniversalValidationError);
         const validationError = errorObj as UniversalValidationError;
         expect(validationError.suggestion).toContain('companies');
-        expect(validationError.example).toContain('companies, people');
+        expect(validationError.example).toContain('companies');
+        expect(validationError.example).toContain('people');
       }
     });
 
@@ -84,7 +85,7 @@ describe('Enhanced Universal Error Handling', () => {
       const params = { resource_type: UniversalResourceType.COMPANIES };
 
       try {
-        validateUniversalToolParams('create_record', params);
+        validateUniversalToolParams('records_create', params);
         expect.fail('Should have thrown validation error');
       } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
@@ -124,7 +125,7 @@ describe('Enhanced Universal Error Handling', () => {
         query: '  <script>alert(1)</script>Search Term  ',
       };
 
-      const sanitized = validateUniversalToolParams('search-records', params);
+      const sanitized = validateUniversalToolParams('records_search', params);
       expect(sanitized.query).toBe('alert(1)Search Term');
       expect(sanitized.resource_type).toBe(UniversalResourceType.COMPANIES);
     });
@@ -141,7 +142,7 @@ describe('Enhanced Universal Error Handling', () => {
 
       for (const testCase of testCases) {
         try {
-          validateUniversalToolParams('search-records', {
+          validateUniversalToolParams('records_search', {
             resource_type: testCase.input,
           });
           expect.fail(

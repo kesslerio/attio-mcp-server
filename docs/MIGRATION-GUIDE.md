@@ -2,121 +2,106 @@
 
 This guide covers three major migrations:
 
-1. **MCP-Compliant Naming** (#1039) - Universal tools using `snake_case`, verb-first format
+1. **Resource-first tool names** - one advertised catalog; prior default names stay call-only through v2.x
 2. **Legacy Tools → Universal Tools** (#1022) - Resource-specific tools consolidation
 3. **List Tools Consolidation** (#1059) - List-specific tools reduced from 11 → 4 tools
 
 ---
 
-## Migration 1: MCP-Compliant Naming (#1039)
+## Migration 1: Resource-first tool names
 
-**Status**: Old tool names deprecated (Q1 2026 removal target)
-**Issue**: #1039
+**Status**: Prior default-catalog names are call-only aliases through v2.x
+**Removal**: v3.0.0
 **Effective**: Current version
 
 ### Overview
 
-All universal tools have been renamed to follow MCP ecosystem standards:
+`tools/list`, CLI discovery, and the schema linter advertise one resource-first catalog. `search`, `fetch`, and `aaa-health-check` are unchanged.
 
-- **Format**: `snake_case` (not kebab-case)
-- **Pattern**: Verb-first (not noun-first)
-- **Examples**: `search_records`, `get_record_details`, `create_record`
+A prior default name still calls that same tool:
 
-### Why MCP-Compliant Naming?
+- Resolution only renames the tool. Arguments and `resource_type` stay as the caller sent them.
+- Alias names are not `tools/list` entries and are not suggested in tool descriptions or prompts.
+- Mode checks run after resolution, on the canonical name. In search-only mode the allowlist is `search`, `fetch`, and `aaa-health-check`. A prior name cannot reach a hidden write.
+- `MCP_DISABLE_TOOL_ALIASES=true` makes every prior name fail. Canonical names keep working.
 
-- **Ecosystem Alignment**: Matches Desktop Commander, SEP-986, and official MCP docs
-- **Consistency**: All MCP servers use `snake_case`, verb-first pattern
-- **Standards Compliance**: Follows de-facto MCP conventions (`get_weather`, `list_repos`, `read_file`)
+These names fail immediately. They are not aliases:
 
-### Complete Naming Migration Table
+`search-records`, `get-record-details`, `get-attributes`, `discover-attributes`, `get-detailed-info`, `get-record-interactions`, `advanced-search`, `search-by-relationship`, `search-by-content`, `search-by-timeframe`, `batch-operations`, `batch-search`, `create-record`, `update-record`, `delete-record`, `create-note`, `list-notes`, `smithery-debug-config`, `records_search_batch`
 
-| Old Name (Deprecated)            | New Name (MCP-Compliant)         | Category           |
-| -------------------------------- | -------------------------------- | ------------------ |
-| `records_search`                 | `search_records`                 | Universal Search   |
-| `records_get_details`            | `get_record_details`             | Universal Metadata |
-| `records_get_attributes`         | `get_record_attributes`          | Universal Metadata |
-| `records_discover_attributes`    | `discover_record_attributes`     | Universal Metadata |
-| `records_get_attribute_options`  | `get_record_attribute_options`   | Universal Metadata |
-| `records_get_info`               | `get_record_info`                | Universal Metadata |
-| `records_search_advanced`        | `search_records_advanced`        | Advanced Search    |
-| `records_search_by_relationship` | `search_records_by_relationship` | Advanced Search    |
-| `records_search_by_content`      | `search_records_by_content`      | Advanced Search    |
-| `records_search_by_timeframe`    | `search_records_by_timeframe`    | Advanced Search    |
-| `records_batch`                  | `batch_records`                  | Batch Operations   |
-| `records_search_batch`           | `batch_search_records`           | Batch Operations   |
-| `create-record`                  | `create_record`                  | CRUD Operations    |
-| `update-record`                  | `update_record`                  | CRUD Operations    |
-| `delete-record`                  | `delete_record`                  | CRUD Operations    |
-| `create-note`                    | `create_note`                    | Note Operations    |
-| `list-notes`                     | `list_notes`                     | Note Operations    |
-| `smithery-debug-config`          | `smithery_debug_config`          | Debug/Diagnostics  |
+The map below is the only migration map. It is defined in `src/constants/tool-names.ts`.
 
-### Backward Compatibility
+### Prior name to canonical name
 
-**Dual Alias Support**: Both old formats continue to work until v2.0.0:
+| Prior name (call-only until v3.0.0) | Canonical name |
+| --- | --- |
+| `search_records` | `records_search` |
+| `get_record_details` | `records_get_details` |
+| `create_record` | `records_create` |
+| `update_record` | `records_update` |
+| `upsert_record` | `records_upsert` |
+| `delete_record` | `records_delete` |
+| `merge_records` | `records_merge` |
+| `create_company` | `companies_create` |
+| `update_company` | `companies_update` |
+| `create_deal` | `deals_create` |
+| `update_deal` | `deals_update` |
+| `get_record_attributes` | `records_get_attributes` |
+| `discover_record_attributes` | `records_discover_attributes` |
+| `get_record_attribute_options` | `records_get_attribute_options` |
+| `get_record_info` | `records_get_info` |
+| `get_record_interactions` | `records_get_interactions` |
+| `create_note` | `notes_create` |
+| `list_notes` | `notes_list` |
+| `search_records_advanced` | `records_search_advanced` |
+| `search_records_by_relationship` | `records_search_by_relationship` |
+| `search_records_by_content` | `records_search_by_content` |
+| `search_records_by_timeframe` | `records_search_by_timeframe` |
+| `batch_records` | `records_batch` |
+| `batch_search_records` | `records_batch_search` |
+| `get-lists` | `lists_list` |
+| `get-record-list-memberships` | `records_get_list_memberships` |
+| `get-list-details` | `lists_get` |
+| `get-list-entries` | `list_entries_list` |
+| `filter-list-entries` | `list_entries_filter` |
+| `advanced-filter-list-entries` | `list_entries_filter_advanced` |
+| `add-record-to-list` | `list_entries_add` |
+| `remove-record-from-list` | `list_entries_remove` |
+| `update-list-entry` | `list_entries_update` |
+| `manage-list-entry` | `list_entries_manage` |
+| `filter-list-entries-by-parent` | `list_entries_filter_by_parent` |
+| `filter-list-entries-by-parent-id` | `list_entries_filter_by_parent_id` |
+| `create-list` | `lists_create` |
+| `update-list-configuration` | `lists_update_configuration` |
+| `list-workspace-members` | `workspace_members_list` |
+| `search-workspace-members` | `workspace_members_search` |
+| `get-workspace-member` | `workspace_members_get` |
+| `smithery_debug_config` | `diagnostics_get` |
 
-- Old noun-verb snake_case (e.g., `records_search`, `records_get_details`)
-- Old kebab-case (e.g., `create-record`, `update-record`)
-- Both emit deprecation warnings pointing to new canonical names
+### Examples
 
-### Migration Examples
-
-#### Example 1: Search Records
-
-**Old (deprecated)**:
+Search:
 
 ```json
 { "tool": "records_search", "params": { "resource_type": "companies" } }
 ```
 
-**New (MCP-compliant)**:
+The prior name `search_records` calls the same tool with the same arguments. `search-records` does not resolve.
+
+Create:
 
 ```json
-{ "tool": "search_records", "params": { "resource_type": "companies" } }
+{ "tool": "records_create", "params": { "resource_type": "people", "record_data": {} } }
 ```
 
-#### Example 2: Create Record
+`create_record` is the call-only alias. `create-record` fails.
 
-**Old (deprecated)**:
+### Checking a client
 
-```json
-{ "tool": "create-record", "params": { "resource_type": "people" } }
-```
-
-**New (MCP-compliant)**:
-
-```json
-{ "tool": "create_record", "params": { "resource_type": "people" } }
-```
-
-#### Example 3: Get Record Details
-
-**Old (deprecated)**:
-
-```json
-{
-  "tool": "records_get_details",
-  "params": { "resource_type": "companies", "record_id": "abc123" }
-}
-```
-
-**New (MCP-compliant)**:
-
-```json
-{
-  "tool": "get_record_details",
-  "params": { "resource_type": "companies", "record_id": "abc123" }
-}
-```
-
-### Testing Your Migration
-
-1. **Find old tool names**: Search your codebase for deprecated patterns
-2. **Replace systematically**: Use the table above for 1:1 replacements
-3. **Verify no warnings**: Run your application and check logs for deprecation warnings
-4. **Update tests**: Ensure test assertions use new canonical names
-
----
+1. Take tool names from `tools/list` or `attio-discover tools`.
+2. If a saved client still sends a prior name from the table, leave the arguments unchanged.
+3. Set `MCP_DISABLE_TOOL_ALIASES=true` to confirm the client no longer depends on prior names.
+4. Treat any name in the removed list as a hard failure.
 
 ## Migration 2: Legacy Tools → Universal Tools (#1022)
 
@@ -153,25 +138,25 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 | Operation           | Universal Tool               | Legacy Equivalents                                   |
 | ------------------- | ---------------------------- | ---------------------------------------------------- |
-| Search records      | `search_records`             | `search-companies`, `search-people`, `list-tasks`    |
-| Get details         | `get_record_details`         | `get-company-details`, `get-person-details`          |
-| Create record       | `create_record`              | `create-company`, `create-person`, `create-task`     |
-| Update record       | `update_record`              | `update-company`, `update-task`                      |
-| Delete record       | `delete_record`              | `delete-company`, `delete-task`                      |
-| Get attributes      | `get_record_attributes`      | `get-company-attributes`                             |
-| Discover attributes | `discover_record_attributes` | `discover-company-attributes`                        |
-| Get detailed info   | `get_record_info`            | `get-company-basic-info`, `get-company-contact-info` |
+| Search records      | `records_search`             | `search-companies`, `search-people`, `list-tasks`    |
+| Get details         | `records_get_details`         | `get-company-details`, `get-person-details`          |
+| Create record       | `records_create`              | `create-company`, `create-person`, `create-task`     |
+| Update record       | `records_update`              | `update-company`, `update-task`                      |
+| Delete record       | `records_delete`              | `delete-company`, `delete-task`                      |
+| Get attributes      | `records_get_attributes`      | `get-company-attributes`                             |
+| Discover attributes | `records_discover_attributes` | `discover-company-attributes`                        |
+| Get detailed info   | `records_get_info`            | `get-company-basic-info`, `get-company-contact-info` |
 
 ### Advanced Universal Tools
 
 | Operation              | Universal Tool                   | Legacy Equivalents                                                     |
 | ---------------------- | -------------------------------- | ---------------------------------------------------------------------- |
-| Advanced search        | `search_records_advanced`        | `advanced-search-companies`, `advanced-search-people`                  |
-| Search by relationship | `search_records_by_relationship` | `search-companies-by-people`, `search-people-by-company`               |
-| Search by content      | `search_records_by_content`      | `search-companies-by-notes`, `search-people-by-notes`                  |
-| Search by timeframe    | `search_records_by_timeframe`    | `search-people-by-creation-date`, `search-people-by-modification-date` |
-| Batch operations       | `batch_records`                  | `batch-create-companies`, `batch-update-companies`                     |
-| Batch search           | `batch_search_records`           | `batch-search-companies`                                               |
+| Advanced search        | `records_search_advanced`        | `advanced-search-companies`, `advanced-search-people`                  |
+| Search by relationship | `records_search_by_relationship` | `search-companies-by-people`, `search-people-by-company`               |
+| Search by content      | `records_search_by_content`      | `search-companies-by-notes`, `search-people-by-notes`                  |
+| Search by timeframe    | `records_search_by_timeframe`    | `search-people-by-creation-date`, `search-people-by-modification-date` |
+| Batch operations       | `records_batch`                  | `batch-create-companies`, `batch-update-companies`                     |
+| Batch search           | `records_batch_search`           | `batch-search-companies`                                               |
 
 ## Migration Examples
 
@@ -192,7 +177,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ```json
 {
-  "tool": "search_records",
+  "tool": "records_search",
   "params": {
     "resource_type": "companies",
     "query": "Acme Corp"
@@ -218,7 +203,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ```json
 {
-  "tool": "create_record",
+  "tool": "records_create",
   "params": {
     "resource_type": "people",
     "attributes": {
@@ -247,7 +232,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ```json
 {
-  "tool": "update_record",
+  "tool": "records_update",
   "params": {
     "resource_type": "tasks",
     "record_id": "abc-123",
@@ -275,7 +260,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ```json
 {
-  "tool": "batch_records",
+  "tool": "records_batch",
   "params": {
     "resource_type": "companies",
     "operation": "create",
@@ -292,58 +277,58 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 | Legacy Tool                   | Universal Tool                   | Resource Type |
 | ----------------------------- | -------------------------------- | ------------- |
-| `search-companies`            | `search_records`                 | `companies`   |
-| `get-company-details`         | `get_record_details`             | `companies`   |
-| `create-company`              | `create_record`                  | `companies`   |
-| `update-company`              | `update_record`                  | `companies`   |
-| `delete-company`              | `delete_record`                  | `companies`   |
-| `get-company-attributes`      | `get_record_attributes`          | `companies`   |
-| `discover-company-attributes` | `discover_record_attributes`     | `companies`   |
-| `get-company-basic-info`      | `get_record_info`                | `companies`   |
-| `get-company-contact-info`    | `get_record_info`                | `companies`   |
-| `get-company-business-info`   | `get_record_info`                | `companies`   |
-| `get-company-social-info`     | `get_record_info`                | `companies`   |
-| `advanced-search-companies`   | `search_records_advanced`        | `companies`   |
-| `search-companies-by-notes`   | `search_records_by_content`      | `companies`   |
-| `search-companies-by-people`  | `search_records_by_relationship` | `companies`   |
-| `batch-create-companies`      | `batch_records`                  | `companies`   |
-| `batch-update-companies`      | `batch_records`                  | `companies`   |
-| `batch-delete-companies`      | `batch_records`                  | `companies`   |
-| `batch-search-companies`      | `batch_search_records`           | `companies`   |
-| `batch-get-company-details`   | `batch_records`                  | `companies`   |
+| `search-companies`            | `records_search`                 | `companies`   |
+| `get-company-details`         | `records_get_details`             | `companies`   |
+| `create-company`              | `records_create`                  | `companies`   |
+| `update-company`              | `records_update`                  | `companies`   |
+| `delete-company`              | `records_delete`                  | `companies`   |
+| `get-company-attributes`      | `records_get_attributes`          | `companies`   |
+| `discover-company-attributes` | `records_discover_attributes`     | `companies`   |
+| `get-company-basic-info`      | `records_get_info`                | `companies`   |
+| `get-company-contact-info`    | `records_get_info`                | `companies`   |
+| `get-company-business-info`   | `records_get_info`                | `companies`   |
+| `get-company-social-info`     | `records_get_info`                | `companies`   |
+| `advanced-search-companies`   | `records_search_advanced`        | `companies`   |
+| `search-companies-by-notes`   | `records_search_by_content`      | `companies`   |
+| `search-companies-by-people`  | `records_search_by_relationship` | `companies`   |
+| `batch-create-companies`      | `records_batch`                  | `companies`   |
+| `batch-update-companies`      | `records_batch`                  | `companies`   |
+| `batch-delete-companies`      | `records_batch`                  | `companies`   |
+| `batch-search-companies`      | `records_batch_search`           | `companies`   |
+| `batch-get-company-details`   | `records_batch`                  | `companies`   |
 
 ### People Tools
 
 | Legacy Tool                          | Universal Tool                   | Resource Type |
 | ------------------------------------ | -------------------------------- | ------------- |
-| `search-people`                      | `search_records`                 | `people`      |
-| `get-person-details`                 | `get_record_details`             | `people`      |
-| `create-person`                      | `create_record`                  | `people`      |
-| `advanced-search-people`             | `search_records_advanced`        | `people`      |
-| `search-people-by-company`           | `search_records_by_relationship` | `people`      |
-| `search-people-by-activity`          | `search_records_by_content`      | `people`      |
-| `search-people-by-notes`             | `search_records_by_content`      | `people`      |
-| `search-people-by-creation-date`     | `search_records_by_timeframe`    | `people`      |
-| `search-people-by-modification-date` | `search_records_by_timeframe`    | `people`      |
-| `search-people-by-last-interaction`  | `search_records_by_timeframe`    | `people`      |
+| `search-people`                      | `records_search`                 | `people`      |
+| `get-person-details`                 | `records_get_details`             | `people`      |
+| `create-person`                      | `records_create`                  | `people`      |
+| `advanced-search-people`             | `records_search_advanced`        | `people`      |
+| `search-people-by-company`           | `records_search_by_relationship` | `people`      |
+| `search-people-by-activity`          | `records_search_by_content`      | `people`      |
+| `search-people-by-notes`             | `records_search_by_content`      | `people`      |
+| `search-people-by-creation-date`     | `records_search_by_timeframe`    | `people`      |
+| `search-people-by-modification-date` | `records_search_by_timeframe`    | `people`      |
+| `search-people-by-last-interaction`  | `records_search_by_timeframe`    | `people`      |
 
 ### Task Tools
 
 | Legacy Tool   | Universal Tool   | Resource Type |
 | ------------- | ---------------- | ------------- |
-| `create-task` | `create_record`  | `tasks`       |
-| `update-task` | `update_record`  | `tasks`       |
-| `delete-task` | `delete_record`  | `tasks`       |
-| `list-tasks`  | `search_records` | `tasks`       |
+| `create-task` | `records_create`  | `tasks`       |
+| `update-task` | `records_update`  | `tasks`       |
+| `delete-task` | `records_delete`  | `tasks`       |
+| `list-tasks`  | `records_search` | `tasks`       |
 
 ### Record Tools
 
 | Legacy Tool            | Universal Tool       | Resource Type |
 | ---------------------- | -------------------- | ------------- |
-| `get-record`           | `get_record_details` | (any)         |
-| `list-records`         | `search_records`     | (any)         |
-| `batch-create-records` | `batch_records`      | (any)         |
-| `batch-update-records` | `batch_records`      | (any)         |
+| `get-record`           | `records_get_details` | (any)         |
+| `list-records`         | `records_search`     | (any)         |
+| `batch-create-records` | `records_batch`      | (any)         |
+| `batch-update-records` | `records_batch`      | (any)         |
 
 ## Parameter Transformations
 
@@ -428,17 +413,17 @@ List-specific tools consolidated from **11 → 4 tools** for simpler API surface
 
 **Filter Operations** (5 → 1):
 
-- `filter-list-entries` enhanced with 4 auto-detected modes
+- `list_entries_filter` enhanced with 4 auto-detected modes
 - Deprecated: `advanced-filter-list-entries`, `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
 
 **Entry Management** (3 → 1):
 
-- `manage-list-entry` enhanced with 3 auto-detected modes
+- `list_entries_manage` enhanced with 3 auto-detected modes
 - Deprecated: `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
 
 **List Discovery** (2 → Universal):
 
-- Migrated to universal tools: `search_records`, `get_record_details`
+- Migrated to universal tools: `records_search`, `records_get_details`
 - Deprecated: `get-lists`, `get-list-details`
 
 ### Quick Summary
@@ -473,7 +458,7 @@ See **[List Tools Migration Guide](./migration/v2-list-tools.md)** for complete 
 
 ```json
 {
-  "tool": "filter-list-entries",
+  "tool": "list_entries_filter",
   "params": {
     "listId": "list_deals",
     "parentObjectType": "companies",
@@ -503,7 +488,7 @@ See **[List Tools Migration Guide](./migration/v2-list-tools.md)** for complete 
 
 ```json
 {
-  "tool": "manage-list-entry",
+  "tool": "list_entries_manage",
   "params": {
     "listId": "list_abc123",
     "recordId": "company_xyz789",
@@ -554,7 +539,7 @@ limitations; boundary A in that guide owns error handling and prose opt-out.
 ```bash
 # Advertise the schemas your mode permits, then compare against your parser.
 curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
-  | jq '.result.tools[] | select(.name | test("list|workspace-member")) | {name, outputSchema}'
+  | jq '.result.tools[] | select(.name | test("lists_|list_entries_|workspace_members_")) | {name, outputSchema}'
 ```
 
 ---
@@ -586,5 +571,5 @@ additional `pagination` field and a non-null `next_cursor` on supported paths.
 ```bash
 # Confirm the cursor input and pagination-aware output schema are advertised.
 curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
-  | jq '.result.tools[] | select(.name == "search_records") | {inputSchema: .inputSchema.properties.cursor, outputSchema: .outputSchema}'
+  | jq '.result.tools[] | select(.name == "records_search") | {inputSchema: .inputSchema.properties.cursor, outputSchema: .outputSchema}'
 ```

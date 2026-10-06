@@ -239,7 +239,7 @@ class UniversalMetadataFacade {
               ...(baseResult.mappings as JsonObject | undefined),
               ...mappings,
             },
-            note: 'Use mappings to convert display names to API field names for create-record',
+            note: 'Use mappings to convert display names to API field names for records_create',
           };
         }
 
@@ -331,7 +331,7 @@ export class UniversalMetadataService {
 
   /**
    * Get record details by resource type and record ID
-   * Fix for Issue #1068: Enable get_record_details for lists
+   * Fix for Issue #1068: Enable records_get_details for lists
    */
   static async getRecordDetails(params: {
     resource_type: UniversalResourceType;

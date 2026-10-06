@@ -82,7 +82,11 @@ export function computeErrorWithContext(
   //    On 2xx paths the transport may hand minimal shells through;
   //    don't classify {} as an error here — let the business layer
   //    (extractor/assert) decide shape.
-  if (toolName === 'create-record') {
+  if (
+    toolName === 'records_create' ||
+    toolName === 'create_record' ||
+    toolName === 'create-record'
+  ) {
     if (result == null)
       return { isError: true, reason: 'null_or_undefined_result' };
     if (isEmptyObject) return { isError: false };

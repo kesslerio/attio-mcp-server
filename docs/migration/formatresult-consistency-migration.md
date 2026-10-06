@@ -48,9 +48,9 @@ All 13 universal tools were updated with consistent formatResult contracts:
 | -------------------------------- | ------------------------- | ------------- |
 | `records.search`                 | Dual-mode (string/object) | Always string |
 | `records.get_details`            | Dual-mode (string/object) | Always string |
-| `create-record`                  | Dual-mode (string/object) | Always string |
-| `update-record`                  | Dual-mode (string/object) | Always string |
-| `delete-record`                  | Dual-mode (string/object) | Always string |
+| `records_create`                  | Dual-mode (string/object) | Always string |
+| `records_update`                  | Dual-mode (string/object) | Always string |
+| `records_delete`                  | Dual-mode (string/object) | Always string |
 | `records.search_advanced`        | Dual-mode (string/object) | Always string |
 | `records.batch`                  | Dual-mode (string/object) | Always string |
 | `records.search_by_relationship` | Dual-mode (string/object) | Always string |

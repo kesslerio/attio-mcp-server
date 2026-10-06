@@ -65,7 +65,7 @@ function formatMergeRecordsResult(result: unknown): string {
 
   const headline =
     result.mode === 'wait'
-      ? 'Deal merge is in progress. Do not poll here; retry get_record_details later.'
+      ? 'Deal merge is in progress. Do not poll here; retry records_get_details later.'
       : 'Deal merge complete.';
 
   return [
@@ -127,7 +127,7 @@ function normalizeParams(
 function assertDealsOnly(params: MergeRecordsParams): void {
   if (params.resource_type !== 'deals') {
     throw new Error(
-      'merge_records is currently available for deals only. People and companies remain on the Attio UI merge path until later coverage opens.'
+      'records_merge is currently available for deals only. People and companies remain on the Attio UI merge path until later coverage opens.'
     );
   }
 }
@@ -138,7 +138,7 @@ function assertValidMergeIds(params: MergeRecordsParams): void {
     !isValidUUID(params.secondary_record_id)
   ) {
     throw new Error(
-      'merge_records requires valid UUID record_id and secondary_record_id values'
+      'records_merge requires valid UUID record_id and secondary_record_id values'
     );
   }
   if (params.record_id === params.secondary_record_id) {
@@ -233,7 +233,7 @@ export const mergeRecordsDefinition = {
       'Dry-run defaults to true. Execute requires dry_run=false, confirm=true, and plan_fingerprint from that dry-run',
     requiresApproval: true,
     recoveryHint:
-      'For HTTP 202, wait and call get_record_details with new_record_id later; both original ids are unreadable after native merge',
+      'For HTTP 202, wait and call records_get_details with new_record_id later; both original ids are unreadable after native merge',
   }),
   inputSchema: mergeRecordsSchema,
   annotations: {

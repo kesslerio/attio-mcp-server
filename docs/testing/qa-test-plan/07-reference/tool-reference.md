@@ -12,17 +12,17 @@
 | ----------------------- | ------------------------ | ------------------------------------------- | ---------------------------- |
 | **records.search**      | Find records by query    | `resource_type`, `query`                    | `limit`, `offset`, `filters` |
 | **records.get_details** | Retrieve specific record | `resource_type`, `record_id`                | `fields`                     |
-| **create-record**       | Create new record        | `resource_type`, `record_data`              | `return_details`             |
-| **update-record**       | Modify existing record   | `resource_type`, `record_id`, `record_data` | `return_details`             |
-| **delete-record**       | Remove record            | `resource_type`, `record_id`                | None                         |
+| **records_create**       | Create new record        | `resource_type`, `record_data`              | `return_details`             |
+| **records_update**       | Modify existing record   | `resource_type`, `record_id`, `record_data` | `return_details`             |
+| **records_delete**       | Remove record            | `resource_type`, `record_id`                | None                         |
 
 ### Schema & Discovery Tools (P1 Priority)
 
 | Tool Name                   | Purpose                  | Required Parameters                       | Optional Parameters                         |
 | --------------------------- | ------------------------ | ----------------------------------------- | ------------------------------------------- |
-| **get-attributes**          | Get resource schema      | `resource_type`                           | `categories`                                |
-| **discover-attributes**     | Dynamic schema discovery | `resource_type`                           | None                                        |
-| **get-detailed-info**       | Get specific info types  | `resource_type`, `record_id`, `info_type` | None                                        |
+| **records_get_attributes**          | Get resource schema      | `resource_type`                           | `categories`                                |
+| **records_discover_attributes**     | Dynamic schema discovery | `resource_type`                           | None                                        |
+| **records_get_info**       | Get specific info types  | `resource_type`, `record_id`, `info_type` | None                                        |
 | **records.search_advanced** | Complex filtering        | `resource_type`                           | `filters`, `sort_by`, `sort_order`, `limit` |
 
 ### Advanced Operations (P2 Priority)
@@ -87,7 +87,7 @@ mcp__attio__records.get_details resource_type="people" record_id="abc123" fields
 
 ---
 
-### create-record
+### records_create
 
 **Purpose:** Create new records with specified data
 
@@ -113,7 +113,7 @@ mcp__attio__create-record resource_type="companies" \
 
 ---
 
-### update-record
+### records_update
 
 **Purpose:** Modify existing record data
 
@@ -139,7 +139,7 @@ mcp__attio__update-record resource_type="people" record_id="abc123" \
 
 ---
 
-### delete-record
+### records_delete
 
 **Purpose:** Remove records from the system
 
@@ -162,7 +162,7 @@ mcp__attio__delete-record resource_type="tasks" record_id="task123"
 
 ---
 
-### get-attributes
+### records_get_attributes
 
 **Purpose:** Retrieve schema information for resource types
 
@@ -290,11 +290,11 @@ mcp__attio__records.batch resource_type="people" \
 
 ### Basic Workflow
 
-1. **Discovery:** Use `get-attributes` to understand schema
+1. **Discovery:** Use `records_get_attributes` to understand schema
 2. **Search:** Use `records.search` to find existing data
 3. **Details:** Use `records.get_details` for complete record info
-4. **Modify:** Use `create-record` or `update-record` as needed
-5. **Cleanup:** Use `delete-record` to remove test data
+4. **Modify:** Use `records_create` or `records_update` as needed
+5. **Cleanup:** Use `records_delete` to remove test data
 
 ### Advanced Workflow
 

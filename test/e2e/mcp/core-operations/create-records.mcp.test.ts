@@ -42,14 +42,14 @@ describe('TC-003: Create Records - Data Creation', () => {
   });
 
   it('should create a test company with required fields', async () => {
-    const testName = 'create_company';
+    const testName = 'companies_create';
     let passed = false;
     let error: string | undefined;
 
     try {
       const companyData = TestDataFactory.createCompanyData('TC003');
 
-      const result = await testCase.executeToolCall('create_record', {
+      const result = await testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -77,7 +77,7 @@ describe('TC-003: Create Records - Data Creation', () => {
     try {
       const personData = TestDataFactory.createPersonData('TC003');
 
-      const result = await testCase.executeToolCall('create_record', {
+      const result = await testCase.executeToolCall('records_create', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -105,7 +105,7 @@ describe('TC-003: Create Records - Data Creation', () => {
     try {
       const taskData = TestDataFactory.createTaskData('TC003');
 
-      const result = await testCase.executeToolCall('create_record', {
+      const result = await testCase.executeToolCall('records_create', {
         resource_type: 'tasks',
         record_data: taskData,
       });
@@ -137,7 +137,7 @@ describe('TC-003: Create Records - Data Creation', () => {
         // Missing required 'name' field
       };
 
-      const result = await testCase.executeToolCall('create_record', {
+      const result = await testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: incompleteData,
       });
@@ -168,7 +168,7 @@ describe('TC-003: Create Records - Data Creation', () => {
     try {
       const companyData = TestDataFactory.createCompanyData('TC003_ID_TEST');
 
-      const result = await testCase.executeToolCall('create_record', {
+      const result = await testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -218,7 +218,7 @@ describe('TC-003: Create Records - Data Creation', () => {
         domains: [`${uniqueIdentifier.toLowerCase()}.test.com`],
       };
 
-      const createResult = await testCase.executeToolCall('create_record', {
+      const createResult = await testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -236,7 +236,7 @@ describe('TC-003: Create Records - Data Creation', () => {
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Search for the created record
-        const searchResult = await testCase.executeToolCall('search-records', {
+        const searchResult = await testCase.executeToolCall('records_search', {
           resource_type: 'companies',
           query: uniqueIdentifier,
           limit: 5,

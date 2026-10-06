@@ -351,7 +351,7 @@ Uses: `records.batch` for efficient bulk updates
 Find enterprise prospects, get their detailed information, and create follow-up tasks
 ```
 
-Uses: `records.search` → `records.get_info` → `create-record` (tasks)
+Uses: `records.search` → `records.get_info` → `records_create` (tasks)
 
 ## 🔮 Advanced Universal Tools Patterns
 
@@ -383,7 +383,7 @@ User: "Create a complete sales workflow for all healthcare prospects"
 
 1. `records.search` to find healthcare prospects
 2. `records.get_info` for contact information
-3. `create-record` to generate follow-up tasks
+3. `records_create` to generate follow-up tasks
 4. `records.batch` to update prospect status
 5. Automated sequence across multiple resource types
 

@@ -5,7 +5,7 @@ import { ValidationLevel, ValidationResult, ToolResult } from './types.js';
 
 export class TestValidator {
   private static toolSchemas: Record<string, any> = {
-    'search-records': {
+    'records_search': {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -13,7 +13,7 @@ export class TestValidator {
         'Invalid resource type',
       ],
     },
-    create_record: {
+    records_create: {
       expectedFields: ['id', 'data', 'attributes'],
       errorPatterns: [
         'Error executing tool',
@@ -21,7 +21,7 @@ export class TestValidator {
         'Missing required parameter',
       ],
     },
-    'search-by-timeframe': {
+    'records_search_by_timeframe': {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -31,7 +31,7 @@ export class TestValidator {
         'Bad Request',
       ],
     },
-    'advanced-search': {
+    'records_search_advanced': {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -39,7 +39,7 @@ export class TestValidator {
         'Invalid filter',
       ],
     },
-    'search-by-relationship': {
+    'records_search_by_relationship': {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -47,7 +47,7 @@ export class TestValidator {
         'Invalid relationship type',
       ],
     },
-    'batch-operations': {
+    'records_batch': {
       expectedFields: ['results', 'operations'],
       errorPatterns: [
         'Error executing tool',
@@ -55,7 +55,7 @@ export class TestValidator {
         'Batch operation failed',
       ],
     },
-    'get-detailed-info': {
+    'records_get_info': {
       expectedFields: ['data', 'attributes'],
       errorPatterns: [
         'Error executing tool',
@@ -63,7 +63,7 @@ export class TestValidator {
         'Record not found',
       ],
     },
-    'search-by-content': {
+    'records_search_by_content': {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -71,7 +71,7 @@ export class TestValidator {
         'Invalid search query',
       ],
     },
-    list_notes: {
+    notes_list: {
       expectedFields: ['data', 'notes'],
       errorPatterns: [
         'Error executing tool',

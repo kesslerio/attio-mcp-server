@@ -1,8 +1,8 @@
 /**
  * MCP Test for Issue #687: Deals attribute mapping broken
  *
- * Tests that discover-attributes returns display names that can be used
- * successfully with create-record for deals.
+ * Tests that records_discover_attributes returns display names that can be used
+ * successfully with records_create for deals.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -40,7 +40,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
     // Clean up created test deals
     for (const dealId of createdDealIds) {
       try {
-        await client.callTool('delete-record', {
+        await client.callTool('records_delete', {
           resource_type: 'deals',
           record_id: dealId,
         });
@@ -54,9 +54,9 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
     }
   });
 
-  it('should allow using display names from discover-attributes in create-record', async () => {
+  it('should allow using display names from records_discover_attributes in records_create', async () => {
     // First, discover the attributes for deals
-    const discoverResult = await client.callTool('discover-attributes', {
+    const discoverResult = await client.callTool('records_discover_attributes', {
       resource_type: 'deals',
     });
 
@@ -88,11 +88,11 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       expect(discoverData.mappings['Deal name']).toBe('name');
     } else {
       // If not JSON, at least verify the display names are present
-      console.log('✅ Display names found in discover-attributes output');
+      console.log('✅ Display names found in records_discover_attributes output');
     }
 
     // Now test that we can create a deal using the display names
-    const createResult = await client.callTool('create-record', {
+    const createResult = await client.callTool('records_create', {
       resource_type: 'deals',
       record_data: {
         values: {
@@ -130,7 +130,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
   it('should provide helpful warnings when using display names', async () => {
     // Test that the field mapping provides helpful feedback
-    const createResult = await client.callTool('create-record', {
+    const createResult = await client.callTool('records_create', {
       resource_type: 'deals',
       record_data: {
         values: {
@@ -147,7 +147,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
   it('should work with both display names and API field names', async () => {
     // Test mixing display names and API field names
-    const createResult = await client.callTool('create-record', {
+    const createResult = await client.callTool('records_create', {
       resource_type: 'deals',
       record_data: {
         values: {
@@ -170,7 +170,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
   it('should handle the associated company display name correctly', async () => {
     // Test the more complex Associated company field
-    const createResult = await client.callTool('create-record', {
+    const createResult = await client.callTool('records_create', {
       resource_type: 'deals',
       record_data: {
         values: {
@@ -198,7 +198,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       { timeout: 30000 },
       async () => {
         // Test the specific mapping mentioned in issue #720
-        const createResult = await client.callTool('create-record', {
+        const createResult = await client.callTool('records_create', {
           resource_type: 'deals',
           record_data: {
             values: {
@@ -228,7 +228,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       { timeout: 30000 },
       async () => {
         // Test other plural form mappings
-        const createResult = await client.callTool('create-record', {
+        const createResult = await client.callTool('records_create', {
           resource_type: 'deals',
           record_data: {
             values: {
@@ -252,7 +252,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
     it('should map "clients" to "associated_company"', async () => {
       // Test client variations
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -275,7 +275,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
     it('should map "person" to "associated_people"', async () => {
       // Test singular person mapping
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -298,7 +298,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
     it('should provide helpful suggestions for new mapped fields', async () => {
       // Test that the error messages are helpful when fields are used incorrectly
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -320,7 +320,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
     it('should handle mixed old and new field variations without conflicts', async () => {
       // Test that using both old and new variations doesn't cause collision issues
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -351,7 +351,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
   describe('Validation Warnings - Issue #728', () => {
     it('should show validation warnings for invalid deal stages', async () => {
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -380,7 +380,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
     it('should show validation warnings when updating deal with invalid stage', async () => {
       // First create a deal with valid stage
-      const createResult = await client.callTool('create-record', {
+      const createResult = await client.callTool('records_create', {
         resource_type: 'deals',
         record_data: {
           values: {
@@ -410,7 +410,7 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       console.log(`✅ Created test deal ${dealId} for validation testing`);
 
       // Now update with invalid stage name to trigger validation warnings
-      const updateResult = await client.callTool('update-record', {
+      const updateResult = await client.callTool('records_update', {
         resource_type: 'deals',
         record_id: dealId,
         record_data: {

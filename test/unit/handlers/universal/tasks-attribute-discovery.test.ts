@@ -51,8 +51,8 @@ describe('Tasks Attribute Discovery Fix - Issue #417', () => {
     expect(assigneeAttr).toBeDefined();
   });
 
-  it('should return task attributes via universal get-attributes without record ID', async () => {
-    // Test the get-attributes path
+  it('should return task attributes via universal records_get_attributes without record ID', async () => {
+    // Test the records_get_attributes path
     const result = await handleUniversalGetAttributes({
       resource_type: UniversalResourceType.TASKS,
       // No record_id, should use discover path

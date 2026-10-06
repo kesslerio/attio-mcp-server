@@ -8,7 +8,7 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 
 - **Tool Count**: Reduced from 40+ tools to 13 universal operations (68% reduction)
 - **Parameter Structure**: Added `resource_type` parameter to specify target resource
-- **Naming**: Simplified tool names (e.g., `search-companies` → `records.search`)
+- **Naming**: Simplified tool names (e.g., `search-companies` → `records_search`)
 - **Date Operators**: Updated for Attio API compatibility
 
 ### Benefits
@@ -23,66 +23,66 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 
 | Deprecated Tool                     | Universal Tool                   | Resource Type | Additional Parameters                    |
 | ----------------------------------- | -------------------------------- | ------------- | ---------------------------------------- |
-| `search-companies`                  | `records.search`                 | `companies`   | -                                        |
-| `get-company-details`               | `records.get_details`            | `companies`   | -                                        |
-| `create-company`                    | `create-record`                  | `companies`   | -                                        |
-| `update-company`                    | `update-record`                  | `companies`   | -                                        |
-| `delete-company`                    | `delete-record`                  | `companies`   | -                                        |
-| `get-company-attributes`            | `records.get_attributes`         | `companies`   | -                                        |
-| `discover-company-attributes`       | `records.discover_attributes`    | `companies`   | -                                        |
-| `get-company-basic-info`            | `records.get_info`               | `companies`   | `info_type: 'basic'`                     |
-| `get-company-contact-info`          | `records.get_info`               | `companies`   | `info_type: 'contact'`                   |
-| `get-company-business-info`         | `records.get_info`               | `companies`   | `info_type: 'business'`                  |
-| `get-company-social-info`           | `records.get_info`               | `companies`   | `info_type: 'social'`                    |
-| `records.search_advanced-companies` | `records.search_advanced`        | `companies`   | -                                        |
-| `search-companies-by-notes`         | `records.search_by_content`      | `companies`   | `content_type: 'notes'`                  |
-| `search-companies-by-people`        | `records.search_by_relationship` | `companies`   | `relationship_type: 'people_to_company'` |
+| `search-companies`                  | `records_search`                 | `companies`   | -                                        |
+| `get-company-details`               | `records_get_details`            | `companies`   | -                                        |
+| `create-company`                    | `records_create`                  | `companies`   | -                                        |
+| `update-company`                    | `records_update`                  | `companies`   | -                                        |
+| `delete-company`                    | `records_delete`                  | `companies`   | -                                        |
+| `get-company-attributes`            | `records_get_attributes`         | `companies`   | -                                        |
+| `discover-company-attributes`       | `records_discover_attributes`    | `companies`   | -                                        |
+| `get-company-basic-info`            | `records_get_info`               | `companies`   | `info_type: 'basic'`                     |
+| `get-company-contact-info`          | `records_get_info`               | `companies`   | `info_type: 'contact'`                   |
+| `get-company-business-info`         | `records_get_info`               | `companies`   | `info_type: 'business'`                  |
+| `get-company-social-info`           | `records_get_info`               | `companies`   | `info_type: 'social'`                    |
+| `records.search_advanced-companies` | `records_search_advanced`        | `companies`   | -                                        |
+| `search-companies-by-notes`         | `records_search_by_content`      | `companies`   | `content_type: 'notes'`                  |
+| `search-companies-by-people`        | `records_search_by_relationship` | `companies`   | `relationship_type: 'people_to_company'` |
 
 ### People Tools → Universal Equivalents
 
 | Deprecated Tool                      | Universal Tool                   | Resource Type | Additional Parameters                    |
 | ------------------------------------ | -------------------------------- | ------------- | ---------------------------------------- |
-| `search-people`                      | `records.search`                 | `people`      | -                                        |
-| `get-person-details`                 | `records.get_details`            | `people`      | -                                        |
-| `create-person`                      | `create-record`                  | `people`      | -                                        |
-| `records.search_advanced-people`     | `records.search_advanced`        | `people`      | -                                        |
-| `search-people-by-company`           | `records.search_by_relationship` | `people`      | `relationship_type: 'company_to_people'` |
-| `search-people-by-activity`          | `records.search_by_content`      | `people`      | `content_type: 'activity'`               |
-| `search-people-by-notes`             | `records.search_by_content`      | `people`      | `content_type: 'notes'`                  |
-| `search-people-by-creation-date`     | `records.search_by_timeframe`    | `people`      | `timeframe_type: 'created'`              |
-| `search-people-by-modification-date` | `records.search_by_timeframe`    | `people`      | `timeframe_type: 'modified'`             |
-| `search-people-by-last-interaction`  | `records.search_by_timeframe`    | `people`      | `timeframe_type: 'last_interaction'`     |
+| `search-people`                      | `records_search`                 | `people`      | -                                        |
+| `get-person-details`                 | `records_get_details`            | `people`      | -                                        |
+| `create-person`                      | `records_create`                  | `people`      | -                                        |
+| `records.search_advanced-people`     | `records_search_advanced`        | `people`      | -                                        |
+| `search-people-by-company`           | `records_search_by_relationship` | `people`      | `relationship_type: 'company_to_people'` |
+| `search-people-by-activity`          | `records_search_by_content`      | `people`      | `content_type: 'activity'`               |
+| `search-people-by-notes`             | `records_search_by_content`      | `people`      | `content_type: 'notes'`                  |
+| `search-people-by-creation-date`     | `records_search_by_timeframe`    | `people`      | `timeframe_type: 'created'`              |
+| `search-people-by-modification-date` | `records_search_by_timeframe`    | `people`      | `timeframe_type: 'modified'`             |
+| `search-people-by-last-interaction`  | `records_search_by_timeframe`    | `people`      | `timeframe_type: 'last_interaction'`     |
 
 ### Record Tools → Universal Equivalents
 
 | Deprecated Tool        | Universal Tool        | Resource Type | Additional Parameters      |
 | ---------------------- | --------------------- | ------------- | -------------------------- |
-| `create-record`        | `create-record`       | `records`     | Already universal          |
-| `get-record`           | `records.get_details` | `records`     | -                          |
-| `update-record`        | `update-record`       | `records`     | Already universal          |
-| `delete-record`        | `delete-record`       | `records`     | Already universal          |
-| `list-records`         | `records.search`      | `records`     | -                          |
-| `batch-create-records` | `records.batch`       | `records`     | `operation_type: 'create'` |
-| `batch-update-records` | `records.batch`       | `records`     | `operation_type: 'update'` |
+| `create-record`        | `records_create`       | `records`     | Already universal          |
+| `get-record`           | `records_get_details` | `records`     | -                          |
+| `update-record`        | `records_update`       | `records`     | Already universal          |
+| `delete-record`        | `records_delete`       | `records`     | Already universal          |
+| `list-records`         | `records_search`      | `records`     | -                          |
+| `batch-create-records` | `records_batch`       | `records`     | `operation_type: 'create'` |
+| `batch-update-records` | `records_batch`       | `records`     | `operation_type: 'update'` |
 
 ### Task Tools → Universal Equivalents
 
 | Deprecated Tool | Universal Tool   | Resource Type | Additional Parameters |
 | --------------- | ---------------- | ------------- | --------------------- |
-| `create-task`   | `create-record`  | `tasks`       | -                     |
-| `update-task`   | `update-record`  | `tasks`       | -                     |
-| `delete-task`   | `delete-record`  | `tasks`       | -                     |
-| `list-tasks`    | `records.search` | `tasks`       | -                     |
+| `create-task`   | `records_create`  | `tasks`       | -                     |
+| `update-task`   | `records_update`  | `tasks`       | -                     |
+| `delete-task`   | `records_delete`  | `tasks`       | -                     |
+| `list-tasks`    | `records_search` | `tasks`       | -                     |
 
 ### Batch Tools → Universal Equivalents
 
 | Deprecated Tool                  | Universal Tool  | Resource Type | Additional Parameters      |
 | -------------------------------- | --------------- | ------------- | -------------------------- |
-| `batch-create-companies`         | `records.batch` | `companies`   | `operation_type: 'create'` |
-| `batch-update-companies`         | `records.batch` | `companies`   | `operation_type: 'update'` |
-| `batch-delete-companies`         | `records.batch` | `companies`   | `operation_type: 'delete'` |
-| `records.search_batch-companies` | `records.batch` | `companies`   | `operation_type: 'search'` |
-| `batch-get-company-details`      | `records.batch` | `companies`   | `operation_type: 'get'`    |
+| `batch-create-companies`         | `records_batch` | `companies`   | `operation_type: 'create'` |
+| `batch-update-companies`         | `records_batch` | `companies`   | `operation_type: 'update'` |
+| `batch-delete-companies`         | `records_batch` | `companies`   | `operation_type: 'delete'` |
+| `records.search_batch-companies` | `records_batch` | `companies`   | `operation_type: 'search'` |
+| `batch-get-company-details`      | `records_batch` | `companies`   | `operation_type: 'get'`    |
 
 ## Visual Migration Comparison
 
@@ -114,12 +114,12 @@ create - person;
 
 ```typescript
 // 13 universal tools
-records.search;
-records.get_details;
-create - record;
-update - record;
-delete -record;
-records.search_advanced;
+records_search;
+records_get_details;
+records_create;
+records_update;
+records_delete;
+records_search_advanced;
 // ... 7 more tools
 ```
 
@@ -155,13 +155,13 @@ await callTool('search-people', {
 
 ```typescript
 // Universal with resource_type
-await callTool('records.search', {
+await callTool('records_search', {
   resource_type: 'companies',
   query: 'tech',
   limit: 10,
 });
 
-await callTool('records.search', {
+await callTool('records_search', {
   resource_type: 'people',
   query: 'john',
   limit: 10,
@@ -202,19 +202,19 @@ await callTool('get-company-social-info', {
 
 ```typescript
 // Single tool with info_type parameter
-await callTool('records.get_info', {
+await callTool('records_get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'basic',
 });
 
-await callTool('records.get_info', {
+await callTool('records_get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'contact',
 });
 
-await callTool('records.get_info', {
+await callTool('records_get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'social',
@@ -255,7 +255,7 @@ await callTool('records.search_advanced-companies', {
 
 ```typescript
 // New date operators (API compatible)
-await callTool('records.search_advanced', {
+await callTool('records_search_advanced', {
   resource_type: 'companies',
   filters: {
     and: [
@@ -299,13 +299,13 @@ await callTool('batch-create-people', {
 
 ```typescript
 // Universal batch operations
-await callTool('records.batch', {
+await callTool('records_batch', {
   resource_type: 'companies',
   operation_type: 'create',
   records: [{ name: 'Company 1' }, { name: 'Company 2' }],
 });
 
-await callTool('records.batch', {
+await callTool('records_batch', {
   resource_type: 'people',
   operation_type: 'create',
   records: [{ name: 'Person 1' }, { name: 'Person 2' }],
@@ -348,7 +348,7 @@ await client.callTool('search-companies', {
 <td>
 
 ```typescript
-await client.callTool('records.search', {
+await client.callTool('records_search', {
   resource_type: 'companies',
   query: 'tech startup',
   limit: 10,
@@ -362,7 +362,7 @@ await client.callTool('records.search', {
 
 **Migration Steps:**
 
-1. Change tool name: `search-companies` → `records.search`
+1. Change tool name: `search-companies` → `records_search`
 2. Add parameter: `resource_type: 'companies'`
 3. Keep all other parameters the same
 
@@ -404,7 +404,7 @@ await client.callTool('records.search_advanced-people', {
 <td>
 
 ```typescript
-await client.callTool('records.search_advanced', {
+await client.callTool('records_search_advanced', {
   resource_type: 'people',
   filters: {
     and: [
@@ -431,7 +431,7 @@ await client.callTool('records.search_advanced', {
 
 **Migration Steps:**
 
-1. Change tool name: `records.search_advanced-people` → `records.search_advanced`
+1. Change tool name: `records.search_advanced-people` → `records_search_advanced`
 2. Add parameter: `resource_type: 'people'`
 3. Update date operator: `greater_than_or_equals` → `FilterConditionType.AFTER`
 4. Use ISO 8601 timestamp: `2024-01-01` → `2024-01-01T00:00:00Z`
@@ -471,19 +471,19 @@ const business = await client.callTool('get-company-business-info', {
 
 ```typescript
 // Single tool with info_type parameter
-const basic = await client.callTool('records.get_info', {
+const basic = await client.callTool('records_get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'basic',
 });
 
-const contact = await client.callTool('records.get_info', {
+const contact = await client.callTool('records_get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'contact',
 });
 
-const business = await client.callTool('records.get_info', {
+const business = await client.callTool('records_get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'business',
@@ -497,7 +497,7 @@ const business = await client.callTool('records.get_info', {
 
 **Migration Steps:**
 
-1. Replace all info tools: `get-company-*-info` → `records.get_info`
+1. Replace all info tools: `get-company-*-info` → `records_get_info`
 2. Add parameter: `resource_type: 'companies'`
 3. Add parameter: `info_type` with appropriate value (`'basic'`, `'contact'`, `'business'`, `'social'`)
 4. Keep `record_id` parameter the same
@@ -544,7 +544,7 @@ await client.callTool('batch-get-company-details', {
 
 ```typescript
 // Create multiple companies
-await client.callTool('records.batch', {
+await client.callTool('records_batch', {
   resource_type: 'companies',
   operation_type: 'create',
   records: [
@@ -562,7 +562,7 @@ await client.callTool('records.batch', {
 });
 
 // Get multiple company details
-await client.callTool('records.batch', {
+await client.callTool('records_batch', {
   resource_type: 'companies',
   operation_type: 'get',
   record_ids: ['comp_123', 'comp_456'],
@@ -576,7 +576,7 @@ await client.callTool('records.batch', {
 
 **Migration Steps:**
 
-1. Replace all batch tools: `batch-*-companies` → `records.batch`
+1. Replace all batch tools: `batch-*-companies` → `records_batch`
 2. Add parameter: `resource_type: 'companies'`
 3. Add parameter: `operation_type` (`'create'`, `'update'`, `'delete'`, `'get'`, `'search'`)
 4. Rename data parameter: `companies` → `records`
@@ -616,7 +616,7 @@ await client.callTool('search-companies-by-modification-date', {
 
 ```typescript
 // Search people by creation date
-await client.callTool('records.search_by_timeframe', {
+await client.callTool('records_search_by_timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   date_range: {
@@ -626,7 +626,7 @@ await client.callTool('records.search_by_timeframe', {
 });
 
 // Search companies by modification date
-await client.callTool('records.search_by_timeframe', {
+await client.callTool('records_search_by_timeframe', {
   resource_type: 'companies',
   timeframe_type: 'modified',
   preset: 'last_month', // Valid preset!
@@ -640,7 +640,7 @@ await client.callTool('records.search_by_timeframe', {
 
 **Migration Steps:**
 
-1. Replace date-specific tools: `search-*-by-*-date` → `records.search_by_timeframe`
+1. Replace date-specific tools: `search-*-by-*-date` → `records_search_by_timeframe`
 2. Add parameter: `resource_type` (appropriate resource type)
 3. Add parameter: `timeframe_type` (`'created'`, `'modified'`, `'last_contacted'`)
 4. Update date format: `'2024-01-01'` → `'2024-01-01T00:00:00Z'`
@@ -677,14 +677,14 @@ await client.callTool('search-people-by-company', {
 
 ```typescript
 // Search companies by notes
-await client.callTool('records.search_by_content', {
+await client.callTool('records_search_by_content', {
   resource_type: 'companies',
   content_type: 'notes',
   search_query: 'quarterly review',
 });
 
 // Search people by company
-await client.callTool('records.search_by_relationship', {
+await client.callTool('records_search_by_relationship', {
   resource_type: 'people',
   related_resource_type: 'companies',
   relationship_filter: {
@@ -700,10 +700,10 @@ await client.callTool('records.search_by_relationship', {
 
 **Migration Steps:**
 
-1. Content searches: `search-*-by-notes` → `records.search_by_content`
+1. Content searches: `search-*-by-notes` → `records_search_by_content`
 2. Add parameters: `resource_type`, `content_type: 'notes'`
 3. Rename parameter: `searchText` → `search_query`
-4. Relationship searches: `search-*-by-*` → `records.search_by_relationship`
+4. Relationship searches: `search-*-by-*` → `records_search_by_relationship`
 5. Add parameters: `resource_type`, `related_resource_type`
 6. Wrap ID in filter: `company_id` → `relationship_filter: { record_id }`
 
@@ -727,7 +727,7 @@ await client.callTool('search-people-by-company', {
 **After (universal)**:
 
 ```typescript
-await client.callTool('records.search_by_relationship', {
+await client.callTool('records_search_by_relationship', {
   relationship_type: 'company_to_people',
   source_id: 'comp_123',
   limit: 20,
@@ -747,7 +747,7 @@ await client.callTool('get-company-contact-info', {
 **After (universal)**:
 
 ```typescript
-await client.callTool('records.get_info', {
+await client.callTool('records_get_info', {
   resource_type: 'companies',
   record_id: 'comp_123',
   info_type: 'contact',
@@ -770,7 +770,7 @@ await client.callTool('batch-create-companies', {
 **After (universal)**:
 
 ```typescript
-await client.callTool('records.batch', {
+await client.callTool('records_batch', {
   resource_type: 'companies',
   operation_type: 'create',
   records: [
@@ -794,7 +794,7 @@ await client.callTool('search-people-by-creation-date', {
 **After (universal)**:
 
 ```typescript
-await client.callTool('records.search_by_timeframe', {
+await client.callTool('records_search_by_timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
   start_date: '2024-01-01T00:00:00Z',
@@ -889,7 +889,7 @@ import {
 
 // Get the universal tool equivalent
 const universalTool = getUniversalEquivalent('search-companies');
-// Returns: 'records.search'
+// Returns: 'records_search'
 
 // Get migration parameters
 const newParams = getMigrationParams('search-companies', {
@@ -912,12 +912,12 @@ const newParams = getMigrationParams('search-companies', {
 
 ```typescript
 // ❌ Missing resource_type
-await client.callTool('records.search', {
+await client.callTool('records_search', {
   query: 'tech startup', // Missing resource_type parameter
 });
 
 // ✅ Correct migration
-await client.callTool('records.search', {
+await client.callTool('records_search', {
   resource_type: 'companies',
   query: 'tech startup',
 });

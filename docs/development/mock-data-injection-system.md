@@ -117,7 +117,7 @@ export function validateMockId(id: string): void {
 The mock data system integrates seamlessly with universal tool handlers:
 
 ```typescript
-// In create-record handler
+// In records_create handler
 if (shouldUseMockData()) {
   const mockData = createMockRecord(resourceType, params);
   return formatResult(mockData, resourceType);

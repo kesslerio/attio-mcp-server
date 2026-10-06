@@ -376,7 +376,7 @@ export class ListConfigurationValidator {
         category: ListErrorCategory.UNSUPPORTED_INPUT,
         message: error.suggestion ? `${message} ${error.suggestion}` : message,
         suggested_next_step:
-          'Check your input parameters against the list schema. Use get-list-details to inspect valid attributes.',
+          'Check your input parameters against the list schema. Use lists_get to inspect valid attributes.',
         api_error_status: error.httpStatusCode,
       };
     }
@@ -419,7 +419,7 @@ export class ListConfigurationValidator {
         message,
         api_error_status: status,
         suggested_next_step:
-          'Check your input parameters against the list schema. Use get-list-details to inspect valid attributes.',
+          'Check your input parameters against the list schema. Use lists_get to inspect valid attributes.',
       };
     }
 
@@ -434,7 +434,7 @@ export class ListConfigurationValidator {
         category: ListErrorCategory.UNSUPPORTED_INPUT,
         message,
         suggested_next_step:
-          'Check your input parameters against the list schema. Use get-list-details to inspect valid attributes.',
+          'Check your input parameters against the list schema. Use lists_get to inspect valid attributes.',
       };
     }
 

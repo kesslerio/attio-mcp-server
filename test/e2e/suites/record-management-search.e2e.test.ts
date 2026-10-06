@@ -57,7 +57,7 @@ describe('Record Management E2E – Search', () => {
       const resourceTypes = ['companies', 'people', 'tasks'];
       for (const resourceType of resourceTypes) {
         const response = asToolResponse(
-          await callUniversalTool('search-records', {
+          await callUniversalTool('records_search', {
             resource_type: resourceType as any,
             query: 'test',
             limit: 5,
@@ -74,7 +74,7 @@ describe('Record Management E2E – Search', () => {
 
   it('filters tasks with pagination', async () => {
     const response = asToolResponse(
-      await callTasksTool('search-records', {
+      await callTasksTool('records_search', {
         resource_type: 'tasks',
         query: 'test',
         limit: 10,

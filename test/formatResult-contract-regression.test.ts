@@ -25,7 +25,7 @@ import {
   ListMockFactory,
 } from './utils/mock-factories/index.js';
 
-// upsert_record formats an UpsertResult, not a raw record; adapt the shared
+// records_upsert formats an UpsertResult, not a raw record; adapt the shared
 // mock record input into the shape its formatter expects.
 const upsertFormatAdapter = {
   formatResult: (input: unknown): string =>
@@ -43,16 +43,16 @@ const upsertFormatAdapter = {
  * All universal tool configurations that have formatResult functions
  */
 const UNIVERSAL_TOOL_CONFIGS = [
-  { name: 'search-records', config: coreOpsConfig.searchRecordsConfig },
-  { name: 'get-record-details', config: coreOpsConfig.getRecordDetailsConfig },
-  { name: 'create-record', config: coreOpsConfig.createRecordConfig },
-  { name: 'update-record', config: coreOpsConfig.updateRecordConfig },
-  { name: 'delete-record', config: coreOpsConfig.deleteRecordConfig },
+  { name: 'records_search', config: coreOpsConfig.searchRecordsConfig },
+  { name: 'records_get_details', config: coreOpsConfig.getRecordDetailsConfig },
+  { name: 'records_create', config: coreOpsConfig.createRecordConfig },
+  { name: 'records_update', config: coreOpsConfig.updateRecordConfig },
+  { name: 'records_delete', config: coreOpsConfig.deleteRecordConfig },
   { name: 'merge-records', config: coreOpsConfig.mergeRecordsConfig },
   { name: 'upsert-record', config: upsertFormatAdapter },
-  { name: 'get-attributes', config: coreOpsConfig.getAttributesConfig },
-  { name: 'get-detailed-info', config: coreOpsConfig.getDetailedInfoConfig },
-  { name: 'advanced-search', config: advancedOpsConfig.advancedSearchConfig },
+  { name: 'records_get_attributes', config: coreOpsConfig.getAttributesConfig },
+  { name: 'records_get_info', config: coreOpsConfig.getDetailedInfoConfig },
+  { name: 'records_search_advanced', config: advancedOpsConfig.advancedSearchConfig },
 ];
 
 /**

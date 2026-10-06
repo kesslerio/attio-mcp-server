@@ -49,7 +49,7 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
       let error: string | undefined;
 
       try {
-        const result = await testCase.executeToolCall('search-records', {
+        const result = await testCase.executeToolCall('records_search', {
           resource_type: 'companies',
           query: TestDataFactory.createSearchQuery('TC001'),
           limit: 5,
@@ -72,7 +72,7 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall('search-records', {
+      const result = await testCase.executeToolCall('records_search', {
         resource_type: 'people',
         query: TestDataFactory.createSearchQuery('TC001'),
         limit: 5,
@@ -94,7 +94,7 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall('search-records', {
+      const result = await testCase.executeToolCall('records_search', {
         resource_type: 'tasks',
         query: TestDataFactory.createSearchQuery('TC001'),
         limit: 5,
@@ -123,7 +123,7 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
         const responses = [];
 
         for (const resourceType of resourceTypes) {
-          const result = await testCase.executeToolCall('search-records', {
+          const result = await testCase.executeToolCall('records_search', {
             resource_type: resourceType,
             query: TestDataFactory.createSearchQuery('TC001'),
             limit: 2,
@@ -161,7 +161,7 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
 
       try {
         // Search for something unlikely to exist
-        const result = await testCase.executeToolCall('search-records', {
+        const result = await testCase.executeToolCall('records_search', {
           resource_type: 'companies',
           query: 'NONEXISTENT_COMPANY_' + Date.now(),
           limit: 5,
@@ -186,7 +186,7 @@ describe('TC-001: Search Records - Basic Search Functionality', () => {
     let error: string | undefined;
 
     try {
-      const result = await testCase.executeToolCall('search-records', {
+      const result = await testCase.executeToolCall('records_search', {
         resource_type: 'companies',
         query: TestDataFactory.createSearchQuery('TC001'),
         limit: 3,

@@ -50,11 +50,11 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
   });
 
   describe('Entry Management Tools', () => {
-    it('should warn when add-record-to-list is invoked', async () => {
+    it('should warn when list_entries_add is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'add-record-to-list',
+          name: 'list_entries_add',
           arguments: {
             listId: 'list_123',
             recordId: 'rec_456',
@@ -77,22 +77,22 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('add-record-to-list'),
+        expect.stringContaining('list_entries_add'),
         expect.objectContaining({
-          deprecatedTool: 'add-record-to-list',
-          replacement: 'manage-list-entry',
+          deprecatedTool: 'list_entries_add',
+          replacement: 'list_entries_manage',
           migrationMode: 'Mode 1 (Add)',
         }),
-        'add-record-to-list',
+        'list_entries_add',
         OperationType.TOOL_EXECUTION
       );
     });
 
-    it('should warn when remove-record-from-list is invoked', async () => {
+    it('should warn when list_entries_remove is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'remove-record-from-list',
+          name: 'list_entries_remove',
           arguments: {
             listId: 'list_123',
             entryId: 'entry_456',
@@ -111,22 +111,22 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('remove-record-from-list'),
+        expect.stringContaining('list_entries_remove'),
         expect.objectContaining({
-          deprecatedTool: 'remove-record-from-list',
-          replacement: 'manage-list-entry',
+          deprecatedTool: 'list_entries_remove',
+          replacement: 'list_entries_manage',
           migrationMode: 'Mode 2 (Remove)',
         }),
-        'remove-record-from-list',
+        'list_entries_remove',
         OperationType.TOOL_EXECUTION
       );
     });
 
-    it('should warn when update-list-entry is invoked', async () => {
+    it('should warn when list_entries_update is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'update-list-entry',
+          name: 'list_entries_update',
           arguments: {
             listId: 'list_123',
             entryId: 'entry_456',
@@ -148,24 +148,24 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('update-list-entry'),
+        expect.stringContaining('list_entries_update'),
         expect.objectContaining({
-          deprecatedTool: 'update-list-entry',
-          replacement: 'manage-list-entry',
+          deprecatedTool: 'list_entries_update',
+          replacement: 'list_entries_manage',
           migrationMode: 'Mode 3 (Update)',
         }),
-        'update-list-entry',
+        'list_entries_update',
         OperationType.TOOL_EXECUTION
       );
     });
   });
 
   describe('Filter Tools', () => {
-    it('should warn when advanced-filter-list-entries is invoked', async () => {
+    it('should warn when list_entries_filter_advanced is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'advanced-filter-list-entries',
+          name: 'list_entries_filter_advanced',
           arguments: {
             listId: 'list_123',
             filters: {
@@ -186,22 +186,22 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('advanced-filter-list-entries'),
+        expect.stringContaining('list_entries_filter_advanced'),
         expect.objectContaining({
-          deprecatedTool: 'advanced-filter-list-entries',
-          replacement: 'filter-list-entries',
+          deprecatedTool: 'list_entries_filter_advanced',
+          replacement: 'list_entries_filter',
           migrationMode: 'Mode 2 (Advanced)',
         }),
-        'advanced-filter-list-entries',
+        'list_entries_filter_advanced',
         OperationType.TOOL_EXECUTION
       );
     });
 
-    it('should warn when filter-list-entries-by-parent is invoked', async () => {
+    it('should warn when list_entries_filter_by_parent is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries-by-parent',
+          name: 'list_entries_filter_by_parent',
           arguments: {
             listId: 'list_123',
             parentObjectType: 'companies',
@@ -223,22 +223,22 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('filter-list-entries-by-parent'),
+        expect.stringContaining('list_entries_filter_by_parent'),
         expect.objectContaining({
-          deprecatedTool: 'filter-list-entries-by-parent',
-          replacement: 'filter-list-entries',
+          deprecatedTool: 'list_entries_filter_by_parent',
+          replacement: 'list_entries_filter',
           migrationMode: 'Mode 3 (Parent Attr)',
         }),
-        'filter-list-entries-by-parent',
+        'list_entries_filter_by_parent',
         OperationType.TOOL_EXECUTION
       );
     });
 
-    it('should warn when filter-list-entries-by-parent-id is invoked', async () => {
+    it('should warn when list_entries_filter_by_parent_id is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'filter-list-entries-by-parent-id',
+          name: 'list_entries_filter_by_parent_id',
           arguments: {
             listId: 'list_123',
             recordId: 'company_xyz789',
@@ -257,24 +257,24 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('filter-list-entries-by-parent-id'),
+        expect.stringContaining('list_entries_filter_by_parent_id'),
         expect.objectContaining({
-          deprecatedTool: 'filter-list-entries-by-parent-id',
-          replacement: 'filter-list-entries',
+          deprecatedTool: 'list_entries_filter_by_parent_id',
+          replacement: 'list_entries_filter',
           migrationMode: 'Mode 4 (Parent UUID)',
         }),
-        'filter-list-entries-by-parent-id',
+        'list_entries_filter_by_parent_id',
         OperationType.TOOL_EXECUTION
       );
     });
   });
 
   describe('List Discovery Tools', () => {
-    it('should warn when get-lists is invoked', async () => {
+    it('should warn when lists_list is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'get-lists',
+          name: 'lists_list',
           arguments: {
             limit: 20,
           },
@@ -292,22 +292,22 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('get-lists'),
+        expect.stringContaining('lists_list'),
         expect.objectContaining({
-          deprecatedTool: 'get-lists',
-          replacement: 'search_records',
+          deprecatedTool: 'lists_list',
+          replacement: 'records_search',
           migrationMode: 'resource_type="lists"',
         }),
-        'get-lists',
+        'lists_list',
         OperationType.TOOL_EXECUTION
       );
     });
 
-    it('should warn when get-list-details is invoked', async () => {
+    it('should warn when lists_get is invoked', async () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'get-list-details',
+          name: 'lists_get',
           arguments: {
             id: 'list_123',
           },
@@ -325,13 +325,13 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         'handlers/tools/dispatcher/operations/lists',
-        expect.stringContaining('get-list-details'),
+        expect.stringContaining('lists_get'),
         expect.objectContaining({
-          deprecatedTool: 'get-list-details',
-          replacement: 'get_record_details',
+          deprecatedTool: 'lists_get',
+          replacement: 'records_get_details',
           migrationMode: 'resource_type="lists"',
         }),
-        'get-list-details',
+        'lists_get',
         OperationType.TOOL_EXECUTION
       );
     });
@@ -342,7 +342,7 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'add-record-to-list',
+          name: 'list_entries_add',
           arguments: {
             listId: 'list_123',
             recordId: 'rec_456',
@@ -378,7 +378,7 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'remove-record-from-list',
+          name: 'list_entries_remove',
           arguments: {
             listId: 'list_123',
             entryId: 'entry_456',
@@ -412,7 +412,7 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'add-record-to-list',
+          name: 'list_entries_add',
           arguments: {
             listId: 'list_123',
             recordId: 'rec_456',
@@ -443,7 +443,7 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'get-lists',
+          name: 'lists_list',
           arguments: {
             limit: 20,
           },
@@ -465,7 +465,7 @@ describe('List Tools Deprecation Warnings (Issue #1071)', () => {
 
       // Verify it was called with the correct tool name
       const callArgs = warnSpy.mock.calls[0];
-      expect(callArgs[3]).toBe('get-lists');
+      expect(callArgs[3]).toBe('lists_list');
     });
   });
 });

@@ -3,20 +3,20 @@ import { findToolConfig } from '../../dist/handlers/tools/registry.js';
 
 console.log('=== TOOL LOOKUP DEBUG ===\n');
 
-// Test 1: Universal create-record tool (should handle notes)
-console.log('1. Testing universal create-record tool:');
+// Test 1: Universal records_create tool (should handle notes)
+console.log('1. Testing universal records_create tool:');
 try {
-  const createResult = findToolConfig('create-record');
+  const createResult = findToolConfig('records_create');
   if (createResult) {
-    console.log('✅ Found create-record tool:');
+    console.log('✅ Found records_create tool:');
     console.log('   - Resource Type:', createResult.resourceType);
     console.log('   - Tool Type:', createResult.toolType);
     console.log('   - Tool Name:', createResult.toolConfig.name);
   } else {
-    console.log('❌ create-record tool not found');
+    console.log('❌ records_create tool not found');
   }
 } catch (err) {
-  console.error('❌ Error finding create-record:', err.message);
+  console.error('❌ Error finding records_create:', err.message);
 }
 
 console.log('\n2. Testing notes resource type handling:');
@@ -53,7 +53,7 @@ try {
 }
 
 console.log('\n3. Testing other universal tools:');
-const universalTools = ['search-records', 'get-record-details', 'delete-record', 'update-record', 'get-attributes', 'discover-attributes'];
+const universalTools = ['records_search', 'records_get_details', 'records_delete', 'records_update', 'records_get_attributes', 'records_discover_attributes'];
 for (const toolName of universalTools) {
   try {
     const result = findToolConfig(toolName);

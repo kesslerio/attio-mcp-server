@@ -5,7 +5,7 @@ const request = {
   // MCP "tools/call" shape (minimal)
   method: 'tools/call',
   params: {
-    name: 'update-record',
+    name: 'records_update',
     arguments: {
       record_id: '8e0788ab-ed95-44c1-9542-10e89eb4988e',
       resource_type: 'companies',

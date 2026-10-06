@@ -1,7 +1,7 @@
 /**
  * UniversalUpsertService - Idempotent create-or-update over universal services
  *
- * Issue #1191: Adds the matching + decision core behind the `upsert_record`
+ * Issue #1191: Adds the matching + decision core behind the `records_upsert`
  * tool so enrichment and sync workflows can create-or-update in one call
  * instead of the slow search-then-create/update pattern that pollutes CRMs
  * with duplicates.
@@ -71,7 +71,7 @@ export class AmbiguousUpsertMatchError extends Error {
 
   constructor(resourceType: string, match: UpsertMatch, recordIds: string[]) {
     super(
-      `Ambiguous match: ${recordIds.length} ${resourceType} records match ${match.attribute}="${match.value}" (${recordIds.join(', ')}). No record was written. Narrow the match or update a specific record with update_record.`
+      `Ambiguous match: ${recordIds.length} ${resourceType} records match ${match.attribute}="${match.value}" (${recordIds.join(', ')}). No record was written. Narrow the match or update a specific record with records_update.`
     );
     // ErrorService.createUniversalError wraps unknown errors and preserves
     // this error as the `cause`, so callers can recover the candidate ids
@@ -286,7 +286,7 @@ async function resolveExistingByRecordId(
 
   if (!fetched || Object.keys(fetched).length === 0) {
     throw new UpsertLookupUncertainError(
-      `No ${params.resource_type} record found for record_id ${params.record_id}. upsert_record does not create records with a caller-provided id; omit record_id to match by attribute instead.`
+      `No ${params.resource_type} record found for record_id ${params.record_id}. records_upsert does not create records with a caller-provided id; omit record_id to match by attribute instead.`
     );
   }
   if (fetchedId && fetchedId !== params.record_id) {
@@ -383,7 +383,7 @@ export class UniversalUpsertService {
     if (params.record_id !== undefined) {
       if (!isValidUUID(params.record_id)) {
         throw new Error(
-          'record_id must be a valid UUID when provided for upsert_record'
+          'record_id must be a valid UUID when provided for records_upsert'
         );
       }
       const existing = await resolveExistingByRecordId(params);
@@ -487,7 +487,7 @@ export class UniversalUpsertService {
     );
     if (duplicateIds.length > 0) {
       result.concurrent_duplicates = duplicateIds;
-      result.message += ` — duplicate records on the same match key detected: ${duplicateIds.join(', ')}. Review and merge with merge_records or delete_record.`;
+      result.message += ` — duplicate records on the same match key detected: ${duplicateIds.join(', ')}. Review and merge with records_merge or records_delete.`;
     }
 
     return result;

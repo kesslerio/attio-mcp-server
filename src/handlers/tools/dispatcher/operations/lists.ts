@@ -94,15 +94,15 @@ export async function handleGetListsOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'get-lists' invoked. Use universal 'search_records' with resource_type="lists" instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'lists_list' invoked. Use universal 'records_search' with resource_type="lists" instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'get-lists',
-      replacement: 'search_records',
+      deprecatedTool: 'lists_list',
+      replacement: 'records_search',
       migrationMode: 'resource_type="lists"',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'get-lists',
+    'lists_list',
     OperationType.TOOL_EXECUTION
   );
 
@@ -140,15 +140,15 @@ export async function handleAddRecordToListOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'add-record-to-list' invoked. Use 'manage-list-entry' Mode 1 (Add) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'list_entries_add' invoked. Use 'list_entries_manage' Mode 1 (Add) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'add-record-to-list',
-      replacement: 'manage-list-entry',
+      deprecatedTool: 'list_entries_add',
+      replacement: 'list_entries_manage',
       migrationMode: 'Mode 1 (Add)',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'add-record-to-list',
+    'list_entries_add',
     OperationType.TOOL_EXECUTION
   );
 
@@ -208,15 +208,15 @@ export async function handleRemoveRecordFromListOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'remove-record-from-list' invoked. Use 'manage-list-entry' Mode 2 (Remove) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'list_entries_remove' invoked. Use 'list_entries_manage' Mode 2 (Remove) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'remove-record-from-list',
-      replacement: 'manage-list-entry',
+      deprecatedTool: 'list_entries_remove',
+      replacement: 'list_entries_manage',
       migrationMode: 'Mode 2 (Remove)',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'remove-record-from-list',
+    'list_entries_remove',
     OperationType.TOOL_EXECUTION
   );
 
@@ -266,15 +266,15 @@ export async function handleUpdateListEntryOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'update-list-entry' invoked. Use 'manage-list-entry' Mode 3 (Update) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'list_entries_update' invoked. Use 'list_entries_manage' Mode 3 (Update) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'update-list-entry',
-      replacement: 'manage-list-entry',
+      deprecatedTool: 'list_entries_update',
+      replacement: 'list_entries_manage',
       migrationMode: 'Mode 3 (Update)',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'update-list-entry',
+    'list_entries_update',
     OperationType.TOOL_EXECUTION
   );
 
@@ -325,7 +325,7 @@ export async function handleUpdateListEntryOperation(
 }
 
 /**
- * Management mode type for unified manage-list-entry tool
+ * Management mode type for unified list_entries_manage tool
  */
 type ManagementMode = 'add' | 'remove' | 'update';
 
@@ -555,15 +555,15 @@ export async function handleFilterListEntriesByParentOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'filter-list-entries-by-parent' invoked. Use 'filter-list-entries' Mode 3 (Parent Attr) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'list_entries_filter_by_parent' invoked. Use 'list_entries_filter' Mode 3 (Parent Attr) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'filter-list-entries-by-parent',
-      replacement: 'filter-list-entries',
+      deprecatedTool: 'list_entries_filter_by_parent',
+      replacement: 'list_entries_filter',
       migrationMode: 'Mode 3 (Parent Attr)',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'filter-list-entries-by-parent',
+    'list_entries_filter_by_parent',
     OperationType.TOOL_EXECUTION
   );
 
@@ -663,15 +663,15 @@ export async function handleFilterListEntriesByParentIdOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'filter-list-entries-by-parent-id' invoked. Use 'filter-list-entries' Mode 4 (Parent UUID) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'list_entries_filter_by_parent_id' invoked. Use 'list_entries_filter' Mode 4 (Parent UUID) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'filter-list-entries-by-parent-id',
-      replacement: 'filter-list-entries',
+      deprecatedTool: 'list_entries_filter_by_parent_id',
+      replacement: 'list_entries_filter',
       migrationMode: 'Mode 4 (Parent UUID)',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'filter-list-entries-by-parent-id',
+    'list_entries_filter_by_parent_id',
     OperationType.TOOL_EXECUTION
   );
 
@@ -726,15 +726,15 @@ export async function handleGetListDetailsOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'get-list-details' invoked. Use universal 'get_record_details' with resource_type="lists" instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'lists_get' invoked. Use universal 'records_get_details' with resource_type="lists" instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'get-list-details',
-      replacement: 'get_record_details',
+      deprecatedTool: 'lists_get',
+      replacement: 'records_get_details',
       migrationMode: 'resource_type="lists"',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'get-list-details',
+    'lists_get',
     OperationType.TOOL_EXECUTION
   );
 
@@ -808,7 +808,7 @@ export async function handleGetListEntriesOperation(
 }
 
 /**
- * Filter mode type for unified filter-list-entries tool
+ * Filter mode type for unified list_entries_filter tool
  */
 type FilterMode = 'simple' | 'advanced' | 'parent-attribute' | 'parent-uuid';
 
@@ -1115,15 +1115,15 @@ export async function handleAdvancedFilterListEntriesOperation(
   // DEPRECATION WARNING (Issue #1071)
   warn(
     'handlers/tools/dispatcher/operations/lists',
-    `Deprecated tool 'advanced-filter-list-entries' invoked. Use 'filter-list-entries' Mode 2 (Advanced) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
+    `Deprecated tool 'list_entries_filter_advanced' invoked. Use 'list_entries_filter' Mode 2 (Advanced) instead. Removal in ${DEPRECATION_VERSION}. Migration guide: ${MIGRATION_GUIDE_PATH}`,
     {
-      deprecatedTool: 'advanced-filter-list-entries',
-      replacement: 'filter-list-entries',
+      deprecatedTool: 'list_entries_filter_advanced',
+      replacement: 'list_entries_filter',
       migrationMode: 'Mode 2 (Advanced)',
       removalVersion: DEPRECATION_VERSION,
       migrationGuide: MIGRATION_GUIDE_PATH,
     },
-    'advanced-filter-list-entries',
+    'list_entries_filter_advanced',
     OperationType.TOOL_EXECUTION
   );
 
@@ -1213,7 +1213,7 @@ export async function handleGetRecordListMembershipsOperation(
 /**
  * Handle createList operations (Issue #1195)
  *
- * Dedicated create-list tool with smart defaults:
+ * Dedicated lists_create tool with smart defaults:
  * - Template expansion before validation
  * - Parent-object auto-resolution
  * - Dry-run mode
@@ -1356,7 +1356,7 @@ export async function handleCreateListOperation(
 /**
  * Handle updateListConfiguration operations (Issue #1195)
  *
- * Dedicated update-list-configuration tool with:
+ * Dedicated lists_update_configuration tool with:
  * - Immutable field detection (rejects parent_object)
  * - Dry-run mode
  * - Normalized response

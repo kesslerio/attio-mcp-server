@@ -30,14 +30,14 @@ export const createNoteConfig: UniversalToolConfig<
   Record<string, unknown>,
   Record<string, unknown>
 > = {
-  name: 'create_note',
+  name: 'notes_create',
   ...recordWriteResultContract,
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown>> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'create_note',
+        'notes_create',
         params
       ) as UniversalCreateNoteParams;
 
@@ -63,7 +63,7 @@ export const createNoteConfig: UniversalToolConfig<
 
       return result;
     } catch (err: unknown) {
-      throw ErrorService.createUniversalError('create_note', 'notes', err);
+      throw ErrorService.createUniversalError('notes_create', 'notes', err);
     }
   },
   formatResult: (note: Record<string, unknown>): string => {
@@ -81,7 +81,7 @@ export const createNoteConfig: UniversalToolConfig<
       const err = error instanceof Error ? error : new Error(String(error));
       const fallback = createErrorResult(
         err,
-        'create_note#format',
+        'notes_create#format',
         'FORMAT'
       ) as McpErrorPayload;
       const message = fallback.content?.[0]?.text;
@@ -120,7 +120,7 @@ export const listNotesConfig: UniversalToolConfig<
       pagination?: Record<string, unknown>;
     }
 > = {
-  name: 'list_notes',
+  name: 'notes_list',
   ...recordSearchResultContract,
   structuredOutput: (
     notes:
@@ -171,7 +171,7 @@ export const listNotesConfig: UniversalToolConfig<
   > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'list_notes',
+        'notes_list',
         params
       ) as UniversalGetNotesParams;
 
@@ -184,7 +184,7 @@ export const listNotesConfig: UniversalToolConfig<
 
       return await handleUniversalGetNotesPage(sanitizedParams);
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError('list_notes', 'notes', error);
+      throw ErrorService.createUniversalError('notes_list', 'notes', error);
     }
   },
   formatResult: (
@@ -221,7 +221,7 @@ export const listNotesConfig: UniversalToolConfig<
       const err = error instanceof Error ? error : new Error(String(error));
       const fallback = createErrorResult(
         err,
-        'list_notes#format',
+        'notes_list#format',
         'FORMAT'
       ) as McpErrorPayload;
       const message = fallback.content?.[0]?.text;
@@ -233,7 +233,7 @@ export const listNotesConfig: UniversalToolConfig<
 };
 
 export const createNoteDefinition = {
-  name: 'create_note',
+  name: 'notes_create',
   description: formatToolDescription({
     capability:
       'Create note for companies, people, or deals with full markdown support.',
@@ -241,7 +241,7 @@ export const createNoteDefinition = {
     requiresApproval: true,
     constraints:
       'Requires resource_type, record_id, title, content. Set format="markdown" for rich formatting: headings (# ## ###), lists (- or 1.), nested bullets (2-space indent), bold (**text**), code blocks. Use \\n for line breaks.',
-    recoveryHint: 'If record not found, use search_records first.',
+    recoveryHint: 'If record not found, use records_search first.',
   }),
   inputSchema: createNoteSchema,
   annotations: {
@@ -251,12 +251,12 @@ export const createNoteDefinition = {
 };
 
 export const listNotesDefinition = {
-  name: 'list_notes',
+  name: 'notes_list',
   description: formatToolDescription({
     capability: 'Retrieve notes for a record with timestamps.',
     boundaries: 'create or modify notes; read-only.',
     constraints: 'Requires resource_type, record_id; sorted by creation date.',
-    recoveryHint: 'If empty, verify record has notes with get_record_details.',
+    recoveryHint: 'If empty, verify record has notes with records_get_details.',
   }),
   inputSchema: listNotesSchema,
   annotations: {

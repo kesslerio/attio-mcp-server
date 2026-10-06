@@ -283,7 +283,7 @@ describe('Lists Resource Type', () => {
   });
 
   describe('Universal Record Tools with Lists', () => {
-    describe('search-records with object="lists"', () => {
+    describe('records_search with object="lists"', () => {
       it('should work with lists as object type', async () => {
         if (SKIP_INTEGRATION) {
           console.log('Skipping integration test - no API key');
@@ -299,7 +299,7 @@ describe('Lists Resource Type', () => {
       });
     });
 
-    describe('get-record-details for lists', () => {
+    describe('records_get_details for lists', () => {
       it('should retrieve list details using record tools', async () => {
         if (SKIP_INTEGRATION) {
           console.log('Skipping integration test - no API key');
@@ -324,7 +324,7 @@ describe('Lists Resource Type', () => {
       });
     });
 
-    describe('create-record for lists', () => {
+    describe('records_create for lists', () => {
       it('should accept lists as object type', async () => {
         if (SKIP_INTEGRATION) {
           console.log('Skipping integration test - no API key');
@@ -352,7 +352,7 @@ describe('Lists Resource Type', () => {
       });
     });
 
-    describe('update-record for lists', () => {
+    describe('records_update for lists', () => {
       it('should accept lists as object type for updates', async () => {
         if (SKIP_INTEGRATION || !testListId) {
           console.log('Skipping integration test - no API key or test list');
@@ -374,7 +374,7 @@ describe('Lists Resource Type', () => {
       });
     });
 
-    describe('delete-record for lists', () => {
+    describe('records_delete for lists', () => {
       it('should accept lists as object type for deletion', async () => {
         if (SKIP_INTEGRATION) {
           console.log('Skipping integration test - no API key');

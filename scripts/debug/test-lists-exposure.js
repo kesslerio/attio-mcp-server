@@ -36,11 +36,11 @@ console.log();
 // Test 2: Check if specific Lists tools can be found
 console.log('Test 2: Finding specific Lists tools');
 const testTools = [
-  'get-lists',
-  'get-list-details',
-  'add-record-to-list',
-  'remove-record-from-list',
-  'update-list-entry',
+  'lists_list',
+  'lists_get',
+  'list_entries_add',
+  'list_entries_remove',
+  'list_entries_update',
 ];
 
 let foundCount = 0;

@@ -549,7 +549,7 @@ describe('ErrorService', () => {
       );
 
       expect(result).toContain('Core fields: name, stage, value');
-      expect(result).toContain('discover-attributes tool');
+      expect(result).toContain('records_discover_attributes tool');
     });
 
     it('should provide generic field suggestions for non-deal resources', () => {
@@ -565,7 +565,7 @@ describe('ErrorService', () => {
         error
       );
 
-      expect(result).toContain('discover-attributes tool');
+      expect(result).toContain('records_discover_attributes tool');
       expect(result).toContain('available fields for companies');
     });
   });

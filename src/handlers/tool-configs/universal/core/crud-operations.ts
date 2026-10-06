@@ -80,12 +80,12 @@ export const createRecordConfig: UniversalToolConfig<
   UniversalCreateParams,
   UniversalRecord
 > = {
-  name: 'create_record',
+  name: 'records_create',
   ...recordWriteResultContract,
   handler: async (params: UniversalCreateParams): Promise<UniversalRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'create_record',
+        'records_create',
         params
       );
 
@@ -101,7 +101,7 @@ export const createRecordConfig: UniversalToolConfig<
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } =
             await import('@/utils/task-debug.js');
-          logTaskDebug('mcp.create_record', 'Returning MCP task record', {
+          logTaskDebug('mcp.records_create', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
         }
@@ -163,12 +163,12 @@ export const updateRecordConfig: UniversalToolConfig<
   UniversalUpdateParams,
   UniversalRecord
 > = {
-  name: 'update_record',
+  name: 'records_update',
   ...recordWriteResultContract,
   handler: async (params: UniversalUpdateParams): Promise<UniversalRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'update_record',
+        'records_update',
         params
       );
 
@@ -204,7 +204,7 @@ export const updateRecordConfig: UniversalToolConfig<
         if (sanitizedParams.resource_type === 'tasks') {
           const { logTaskDebug, inspectTaskRecordShape } =
             await import('@/utils/task-debug.js');
-          logTaskDebug('mcp.update_record', 'Returning MCP task record', {
+          logTaskDebug('mcp.records_update', 'Returning MCP task record', {
             shape: inspectTaskRecordShape(result),
           });
         }
@@ -268,7 +268,7 @@ export const deleteRecordConfig: UniversalToolConfig<
   UniversalDeleteParams,
   { success: boolean; record_id: string }
 > = {
-  name: 'delete_record',
+  name: 'records_delete',
   ...recordDeleteResultContract,
   structuredOutput: (result) => ({ ...result }),
   handler: async (
@@ -276,7 +276,7 @@ export const deleteRecordConfig: UniversalToolConfig<
   ): Promise<{ success: boolean; record_id: string }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'delete_record',
+        'records_delete',
         params
       );
       return await handleUniversalDelete(sanitizedParams);
@@ -307,17 +307,17 @@ export const deleteRecordConfig: UniversalToolConfig<
 };
 
 export const createRecordDefinition = {
-  name: 'create_record',
+  name: 'records_create',
   description: formatToolDescription({
     capability:
-      'Create new Attio records across supported resource types when a scoped tool is not available. Prefer create_company or create_deal for common company/deal writes.',
+      'Create new Attio records across supported resource types when a scoped tool is not available. Prefer companies_create or deals_create for common company/deal writes.',
     boundaries:
       'update existing records, attach files, or bypass required fields.',
     constraints:
-      'Requires resource_type plus record_data that matches discover_record_attributes output.',
+      'Requires resource_type plus record_data that matches records_discover_attributes output.',
     requiresApproval: true,
     recoveryHint:
-      'If validation fails, call discover_record_attributes to confirm required fields and enums. If a select/status value is rejected, call get_record_attribute_options for that attribute to list valid options before retrying.',
+      'If validation fails, call records_discover_attributes to confirm required fields and enums. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options before retrying.',
   }),
   inputSchema: createRecordSchema,
   annotations: {
@@ -327,16 +327,16 @@ export const createRecordDefinition = {
 };
 
 export const updateRecordDefinition = {
-  name: 'update_record',
+  name: 'records_update',
   description: formatToolDescription({
     capability:
-      'Update existing Attio record fields across supported resource types when a scoped tool is not available. Prefer update_company or update_deal for common company/deal writes.',
+      'Update existing Attio record fields across supported resource types when a scoped tool is not available. Prefer companies_update or deals_update for common company/deal writes.',
     boundaries: 'create new records, delete data, or manage list memberships.',
     constraints:
       'Requires resource_type, record_id, and record_data; supports partial updates with schema validation.',
     requiresApproval: true,
     recoveryHint:
-      'Call get_record_details first to inspect the latest values before editing. If a select/status value is rejected, call get_record_attribute_options for that attribute to list valid options.',
+      'Call records_get_details first to inspect the latest values before editing. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options.',
   }),
   inputSchema: updateRecordSchema,
   annotations: {
@@ -346,7 +346,7 @@ export const updateRecordDefinition = {
 };
 
 export const deleteRecordDefinition = {
-  name: 'delete_record',
+  name: 'records_delete',
   description: formatToolDescription({
     capability:
       'Delete an Attio record from its object (company, person, deal, task).',
@@ -356,7 +356,7 @@ export const deleteRecordDefinition = {
       'Requires record_id and resource_type; operation is irreversible once confirmed.',
     requiresApproval: true,
     recoveryHint:
-      'If uncertain, fetch with get_record_details to confirm the target before deletion.',
+      'If uncertain, fetch with records_get_details to confirm the target before deletion.',
   }),
   inputSchema: deleteRecordSchema,
   annotations: {

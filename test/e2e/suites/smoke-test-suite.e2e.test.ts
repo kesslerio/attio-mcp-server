@@ -43,7 +43,7 @@ describe.skipIf(
 
   describe('System Health Smoke Tests', () => {
     it('should validate basic API connectivity', async () => {
-      const response = (await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('records_search', {
         resource_type: 'companies',
         query: 'smoke-test-connectivity',
         limit: 1,
@@ -71,7 +71,7 @@ describe.skipIf(
       const resourceTypes = ['companies', 'people', 'tasks'];
 
       for (const resourceType of resourceTypes) {
-        const response = (await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('records_search', {
           resource_type: resourceType as any,
           query: 'smoke-test',
           limit: 1,
@@ -94,7 +94,7 @@ describe.skipIf(
         {
           name: 'Search Records',
           operation: () =>
-            callUniversalTool('search-records', {
+            callUniversalTool('records_search', {
               resource_type: 'companies',
               query: 'universal-smoke-test',
               limit: 1,
@@ -103,7 +103,7 @@ describe.skipIf(
         {
           name: 'Get Record Details (with error handling)',
           operation: () =>
-            callUniversalTool('get-record-details', {
+            callUniversalTool('records_get_details', {
               resource_type: 'companies',
               record_id: 'smoke-test-non-existent-id',
             }),
@@ -120,7 +120,7 @@ describe.skipIf(
 
     it('should validate task tool basic operations', async () => {
       // Test task search
-      const searchResponse = (await callTasksTool('search-records', {
+      const searchResponse = (await callTasksTool('records_search', {
         resource_type: 'tasks',
         query: 'smoke-test-task',
         limit: 1,
@@ -131,7 +131,7 @@ describe.skipIf(
 
       // Test task creation (smoke test with minimal data)
       const taskData = testDataGenerator.tasks.basicTask();
-      const createResponse = (await callTasksTool('create_record', {
+      const createResponse = (await callTasksTool('records_create', {
         resource_type: 'tasks',
         record_data: {
           content: taskData.content,
@@ -144,7 +144,7 @@ describe.skipIf(
 
     it('should validate notes tool basic operations', async () => {
       // Test notes list (expected to handle gracefully even with invalid ID)
-      const listResponse = (await callNotesTool('list_notes', {
+      const listResponse = (await callNotesTool('notes_list', {
         resource_type: 'companies',
         record_id: 'smoke-test-company-id',
         limit: 1,
@@ -159,7 +159,7 @@ describe.skipIf(
     it('should validate basic record creation workflow', async () => {
       const companyData = testDataGenerator.companies.basicCompany();
 
-      const response = (await callUniversalTool('create_record', {
+      const response = (await callUniversalTool('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       })) as McpToolResponse;
@@ -174,7 +174,7 @@ describe.skipIf(
         // Cleanup (optional for smoke test)
         const recordId = data?.id?.record_id;
         if (recordId) {
-          await callUniversalTool('delete_record', {
+          await callUniversalTool('records_delete', {
             resource_type: 'companies',
             record_id: recordId,
           }).catch(() => {
@@ -199,7 +199,7 @@ describe.skipIf(
       ];
 
       for (const searchQuery of searchQueries) {
-        const response = (await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('records_search', {
           ...searchQuery,
           limit: 1,
         })) as McpToolResponse;
@@ -217,7 +217,7 @@ describe.skipIf(
         {
           name: 'Invalid resource type',
           test: () =>
-            callUniversalTool('search-records', {
+            callUniversalTool('records_search', {
               resource_type: 'invalid_resource_type' as any,
               query: 'smoke-test',
             }),
@@ -225,14 +225,14 @@ describe.skipIf(
         {
           name: 'Missing required parameters',
           test: () =>
-            callUniversalTool('get-record-details', {
+            callUniversalTool('records_get_details', {
               resource_type: 'companies',
             } as any),
         },
         {
           name: 'Non-existent record',
           test: () =>
-            callUniversalTool('get-record-details', {
+            callUniversalTool('records_get_details', {
               resource_type: 'companies',
               record_id: 'definitely-does-not-exist',
             }),
@@ -254,7 +254,7 @@ describe.skipIf(
 
   describe('Quick Regression Detection', () => {
     it('should detect API response structure regressions', async () => {
-      const response = (await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('records_search', {
         resource_type: 'companies',
         query: 'regression-structure-test',
         limit: 1,
@@ -279,19 +279,19 @@ describe.skipIf(
       // Test that expected tools are still available
       const toolTests = [
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: 'tool-reg-test',
             limit: 1,
           }),
         () =>
-          callTasksTool('search-records', {
+          callTasksTool('records_search', {
             resource_type: 'tasks',
             query: 'tool-reg-test',
             limit: 1,
           }),
         () =>
-          callNotesTool('list_notes', {
+          callNotesTool('notes_list', {
             resource_type: 'companies',
             record_id: 'tool-reg-test-id',
             limit: 1,
@@ -312,7 +312,7 @@ describe.skipIf(
         {
           name: 'Search functionality',
           test: async () => {
-            const response = (await callUniversalTool('search-records', {
+            const response = (await callUniversalTool('records_search', {
               resource_type: 'companies',
               query: 'functionality-test',
               limit: 1,
@@ -323,7 +323,7 @@ describe.skipIf(
         {
           name: 'Error handling functionality',
           test: async () => {
-            const response = (await callUniversalTool('get-record-details', {
+            const response = (await callUniversalTool('records_get_details', {
               resource_type: 'companies',
               record_id: 'non-existent-for-func-test',
             })) as McpToolResponse;
@@ -333,7 +333,7 @@ describe.skipIf(
         {
           name: 'Parameter validation functionality',
           test: async () => {
-            const response = (await callUniversalTool('search-records', {
+            const response = (await callUniversalTool('records_search', {
               resource_type: 'invalid_type' as any,
               query: 'func-test',
             })) as McpToolResponse;
@@ -358,7 +358,7 @@ describe.skipIf(
         {
           name: 'Basic search performance',
           test: () =>
-            callUniversalTool('search-records', {
+            callUniversalTool('records_search', {
               resource_type: 'companies',
               query: 'performance-test',
               limit: 5,
@@ -368,7 +368,7 @@ describe.skipIf(
         {
           name: 'Record detail performance',
           test: () =>
-            callUniversalTool('get-record-details', {
+            callUniversalTool('records_get_details', {
               resource_type: 'companies',
               record_id: 'performance-test-id',
             }),
@@ -395,7 +395,7 @@ describe.skipIf(
       const loadTest = Array(5)
         .fill(null)
         .map((_, i) =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: `load-smoke-test-${i}`,
             limit: 1,

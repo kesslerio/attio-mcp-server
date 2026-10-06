@@ -2,7 +2,7 @@
  * TC-010: Manage List Entry - Unified Entry Management
  * P1 Essential Test
  *
- * Validates the consolidated manage-list-entry tool (3 modes):
+ * Validates the consolidated list_entries_manage tool (3 modes):
  * - Mode 1 (Add): Add record to list with recordId + objectType
  * - Mode 2 (Remove): Remove entry from list with entryId only
  * - Mode 3 (Update): Update entry attributes with entryId + attributes
@@ -43,7 +43,7 @@ class ManageListEntryTest extends MCPTestBase {
     try {
       // Create a test company
       const companyData = TestDataFactory.createCompanyData('TC010');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -58,7 +58,7 @@ class ManageListEntryTest extends MCPTestBase {
       }
 
       // Discover an existing list to use for testing
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       const listsText = listsResult.content?.[0]?.text || '[]';
       const lists = JSON.parse(listsText);
 
@@ -89,7 +89,7 @@ class ManageListEntryTest extends MCPTestBase {
     if (this.testListId && this.trackedEntryIds.length > 0) {
       for (const entryId of this.trackedEntryIds) {
         try {
-          const result = await this.executeToolCall('manage-list-entry', {
+          const result = await this.executeToolCall('list_entries_manage', {
             listId: this.testListId,
             entryId: entryId,
           });
@@ -185,7 +185,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
           return;
         }
 
-        const result = await testCase.executeToolCall('manage-list-entry', {
+        const result = await testCase.executeToolCall('list_entries_manage', {
           listId,
           recordId: companyId,
           objectType: 'companies',
@@ -229,7 +229,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         const existingEntryId = testCase.getTestEntryId();
         if (existingEntryId) {
           try {
-            await testCase.executeToolCall('manage-list-entry', {
+            await testCase.executeToolCall('list_entries_manage', {
               listId,
               entryId: existingEntryId,
             });
@@ -247,7 +247,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
           initialValues.notes = `TC010 test - ${Date.now()}`;
         }
 
-        const result = await testCase.executeToolCall('manage-list-entry', {
+        const result = await testCase.executeToolCall('list_entries_manage', {
           listId,
           recordId: companyId,
           objectType: 'companies',
@@ -300,7 +300,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
           }
 
           const addResult = await testCase.executeToolCall(
-            'manage-list-entry',
+            'list_entries_manage',
             { listId, recordId: companyId, objectType: 'companies' }
           );
           entryId = extractEntryId(addResult);
@@ -313,7 +313,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         }
 
         // Mode 2: Remove with entryId only
-        const result = await testCase.executeToolCall('manage-list-entry', {
+        const result = await testCase.executeToolCall('list_entries_manage', {
           listId,
           entryId,
         });
@@ -352,7 +352,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         }
 
         // Create a fresh entry for update testing
-        const addResult = await testCase.executeToolCall('manage-list-entry', {
+        const addResult = await testCase.executeToolCall('list_entries_manage', {
           listId,
           recordId: companyId,
           objectType: 'companies',
@@ -388,7 +388,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         }
 
         // Mode 3: Update with entryId + attributes
-        const result = await testCase.executeToolCall('manage-list-entry', {
+        const result = await testCase.executeToolCall('list_entries_manage', {
           listId,
           entryId,
           attributes: updatePayload,
@@ -441,7 +441,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
 
         // Step 1: Add (Mode 1)
         console.log('Lifecycle Step 1: Adding record...');
-        const addResult = await testCase.executeToolCall('manage-list-entry', {
+        const addResult = await testCase.executeToolCall('list_entries_manage', {
           listId,
           recordId: companyId,
           objectType: 'companies',
@@ -458,7 +458,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         // Step 2: Update (Mode 3)
         console.log('Lifecycle Step 2: Updating entry...');
         const updateResult = await testCase.executeToolCall(
-          'manage-list-entry',
+          'list_entries_manage',
           {
             listId,
             entryId: lifecycleEntryId,
@@ -471,7 +471,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         // Step 3: Remove (Mode 2)
         console.log('Lifecycle Step 3: Removing entry...');
         const removeResult = await testCase.executeToolCall(
-          'manage-list-entry',
+          'list_entries_manage',
           { listId, entryId: lifecycleEntryId }
         );
         expect(removeResult).toBeDefined();
@@ -484,7 +484,7 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         // Cleanup on failure
         if (lifecycleEntryId && testCase.getTestListId()) {
           try {
-            await testCase.executeToolCall('manage-list-entry', {
+            await testCase.executeToolCall('list_entries_manage', {
               listId: testCase.getTestListId(),
               entryId: lifecycleEntryId,
             });

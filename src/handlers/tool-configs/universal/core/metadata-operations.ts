@@ -51,7 +51,7 @@ export const getAttributesConfig: UniversalToolConfig<
   UniversalAttributesParams,
   Record<string, unknown> | { error: string; success: boolean }
 > = {
-  name: 'get_record_attributes',
+  name: 'records_get_attributes',
   ...metadataResultContract,
   structuredOutput: normalizeMetadata,
   handler: async (
@@ -59,7 +59,7 @@ export const getAttributesConfig: UniversalToolConfig<
   ): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'get_record_attributes',
+        'records_get_attributes',
         params
       );
       return assertReadSuccess(
@@ -149,7 +149,7 @@ export const discoverAttributesConfig: UniversalToolConfig<
   { resource_type: UniversalResourceType; categories?: string[] },
   Record<string, unknown> | { error: string; success: boolean }
 > = {
-  name: 'discover_record_attributes',
+  name: 'records_discover_attributes',
   ...metadataResultContract,
   structuredOutput: normalizeDiscoveryMetadata,
   handler: async (params: {
@@ -160,7 +160,7 @@ export const discoverAttributesConfig: UniversalToolConfig<
   > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'discover_record_attributes',
+        'records_discover_attributes',
         params
       );
       return assertReadSuccess(
@@ -279,13 +279,13 @@ export const discoverAttributesConfig: UniversalToolConfig<
 };
 
 export const getAttributesDefinition = {
-  name: 'get_record_attributes',
+  name: 'records_get_attributes',
   description: formatToolDescription({
     capability: 'Retrieve attribute metadata for a given resource type.',
     boundaries: 'modify schema definitions or record data.',
     constraints: 'Requires resource_type; optional categories narrows groups.',
     recoveryHint:
-      'Use discover_record_attributes for grouped schema discovery.',
+      'Use records_discover_attributes for grouped schema discovery.',
   }),
   inputSchema: getAttributesSchema,
   annotations: {
@@ -295,14 +295,14 @@ export const getAttributesDefinition = {
 };
 
 export const discoverAttributesDefinition = {
-  name: 'discover_record_attributes',
+  name: 'records_discover_attributes',
   description: formatToolDescription({
     capability:
       'Discover available attributes (standard/custom) for a resource.',
     boundaries: 'alter schema or create fields.',
     constraints: 'Requires resource_type; optional categories selects subsets.',
     recoveryHint:
-      'For select/status attributes, use get_record_attribute_options to fetch valid values before creating or updating records.',
+      'For select/status attributes, use records_get_attribute_options to fetch valid values before creating or updating records.',
   }),
   inputSchema: discoverAttributesSchema,
   annotations: {
@@ -320,7 +320,7 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
   UniversalGetAttributeOptionsParams,
   AttributeOptionsResult | { error: string; success: boolean }
 > = {
-  name: 'get_record_attribute_options',
+  name: 'records_get_attribute_options',
   ...attributeOptionsResultContract,
   structuredOutput: (result) => {
     assertReadSuccess(result);
@@ -337,7 +337,7 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
   ): Promise<AttributeOptionsResult | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'get_record_attribute_options',
+        'records_get_attribute_options',
         params
       );
       lastGetAttributeOptionsParams = sanitizedParams;
@@ -389,7 +389,7 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
         `This could mean:\n` +
         `- The attribute has no configured options yet\n` +
         `- The attribute is not a select, multi-select, or status type\n\n` +
-        `Hint: Use discover_record_attributes to verify the attribute type.`
+        `Hint: Use records_discover_attributes to verify the attribute type.`
       );
     }
 
@@ -428,14 +428,14 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
 };
 
 export const getAttributeOptionsDefinition = {
-  name: 'get_record_attribute_options',
+  name: 'records_get_attribute_options',
   description: formatToolDescription({
     capability:
       'Get valid options for select, multi-select, and status attributes to avoid "Cannot find select option" errors.',
     boundaries: 'return options for text, number, or other non-option types.',
     constraints: 'Requires resource_type and attribute slug/ID.',
     recoveryHint:
-      'Use discover_record_attributes to find option-based attributes first. Use retrieved option titles when calling create-record or update-record.',
+      'Use records_discover_attributes to find option-based attributes first. Use retrieved option titles when calling records_create or records_update.',
   }),
   inputSchema: getAttributeOptionsSchema,
   annotations: {

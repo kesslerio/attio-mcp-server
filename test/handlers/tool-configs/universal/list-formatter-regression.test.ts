@@ -19,7 +19,7 @@ vi.mock('@/objects/lists.js', () => ({
 }));
 
 describe('List Formatter Regression - Issue #1068', () => {
-  describe('get_record_details formatter', () => {
+  describe('records_get_details formatter', () => {
     it('should extract list name from top-level fields (not values wrapper)', () => {
       // List record with top-level fields (new format after #1068)
       const listRecord = {
@@ -107,7 +107,7 @@ describe('List Formatter Regression - Issue #1068', () => {
     });
   });
 
-  describe('create_record formatter', () => {
+  describe('records_create formatter', () => {
     it('should extract list name from top-level fields in create response', () => {
       const createdList = {
         id: {
@@ -197,7 +197,7 @@ describe('List Formatter Regression - Issue #1068', () => {
     });
   });
 
-  describe('Tool handler path - get_record_details (Issue #1068)', () => {
+  describe('Tool handler path - records_get_details (Issue #1068)', () => {
     beforeEach(() => {
       vi.clearAllMocks();
     });
@@ -312,7 +312,7 @@ describe('List Formatter Regression - Issue #1068', () => {
     });
   });
 
-  describe('search_records formatter (Issue #1068)', () => {
+  describe('records_search formatter (Issue #1068)', () => {
     it('should extract list name from top-level fields in search results', () => {
       const listRecords = [
         {

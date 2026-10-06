@@ -91,9 +91,9 @@ describe('codemode composition with safe continuation', () => {
       .spyOn(SearchCoordinator, 'executeSearch')
       .mockResolvedValueOnce([...pageOne, pageTwo[0]])
       .mockResolvedValueOnce(pageTwo);
-    const searchValidator = validatorFor('search_records');
+    const searchValidator = validatorFor('records_search');
 
-    const first = await call('search_records', {
+    const first = await call('records_search', {
       resource_type: 'companies',
       limit: 2,
     });
@@ -113,7 +113,7 @@ describe('codemode composition with safe continuation', () => {
     );
 
     // Compose: the sealed token from page one drives page two.
-    const second = await call('search_records', {
+    const second = await call('records_search', {
       resource_type: 'companies',
       limit: 2,
       cursor: token,
@@ -133,13 +133,13 @@ describe('codemode composition with safe continuation', () => {
     expect(searchValidator(second.structuredContent).valid).toBe(true);
 
     // Compose: identifiers from page two feed a details call.
-    const detailsValidator = validatorFor('get_record_details');
+    const detailsValidator = validatorFor('records_get_details');
     const detailTarget = pageTwo[0];
     const detailsConfig = getRecordDetailsConfig as unknown as {
       handler: ReturnType<typeof vi.fn>;
     };
     vi.spyOn(detailsConfig, 'handler').mockResolvedValueOnce(detailTarget);
-    const details = await call('get_record_details', {
+    const details = await call('records_get_details', {
       resource_type: 'companies',
       record_id: (detailTarget.id as { record_id: string }).record_id,
     });
@@ -158,7 +158,7 @@ describe('codemode composition with safe continuation', () => {
         CompanyMockFactory.create(),
         CompanyMockFactory.create(),
       ]);
-    const first = await call('search_records', {
+    const first = await call('records_search', {
       resource_type: 'companies',
       limit: 2,
     });
@@ -171,7 +171,7 @@ describe('codemode composition with safe continuation', () => {
     raw[raw.length - 1] ^= 0xff;
     const tampered = `1${raw.toString('base64url')}`;
     searchPage.mockClear();
-    const denied = await call('search_records', {
+    const denied = await call('records_search', {
       resource_type: 'companies',
       limit: 2,
       cursor: tampered,
@@ -192,14 +192,14 @@ describe('codemode composition with safe continuation', () => {
       CompanyMockFactory.create(),
       CompanyMockFactory.create(),
     ]);
-    const first = await call('search_records', {
+    const first = await call('records_search', {
       resource_type: 'companies',
       limit: 2,
     });
     const token = first.structuredContent!.next_cursor as string;
 
     // Same token, different filter shape: invalid before any request.
-    const mismatched = await call('search_records', {
+    const mismatched = await call('records_search', {
       resource_type: 'people',
       limit: 2,
       cursor: token,
@@ -210,7 +210,7 @@ describe('codemode composition with safe continuation', () => {
     });
 
     // Cursor + offset is rejected before any request.
-    const both = await call('search_records', {
+    const both = await call('records_search', {
       resource_type: 'companies',
       limit: 2,
       cursor: token,
@@ -243,8 +243,8 @@ describe('codemode composition with safe continuation', () => {
     ).mockResolvedValueOnce(
       Object.defineProperty([mockMember], 'truncated', { value: false })
     );
-    const memberValidator = validatorFor('list-workspace-members');
-    const members = await call('list-workspace-members', {});
+    const memberValidator = validatorFor('workspace_members_list');
+    const members = await call('workspace_members_list', {});
     expect(members.isError).toBe(false);
     expect(memberValidator(members.structuredContent).valid).toBe(true);
     expect(members.structuredContent).toMatchObject({
@@ -261,7 +261,7 @@ describe('codemode composition with safe continuation', () => {
       metadataConfig.getAttributesConfig,
       'handler'
     ).mockResolvedValueOnce([]);
-    const attrs = await call('get_record_attributes', {
+    const attrs = await call('records_get_attributes', {
       resource_type: 'companies',
     });
     expect(attrs.isError).toBe(false);

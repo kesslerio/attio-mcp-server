@@ -246,7 +246,7 @@ describe('list tool envelope chain (U4)', () => {
   const request = (args: Record<string, unknown>): CallToolRequest =>
     ({
       method: 'tools/call',
-      params: { name: 'create-list', arguments: args },
+      params: { name: 'lists_create', arguments: args },
     }) as CallToolRequest;
 
   function asErrorEnvelope(result: unknown) {
@@ -329,7 +329,7 @@ describe('list tool envelope chain (U4)', () => {
       {
         method: 'tools/call',
         params: {
-          name: 'get-list-entries',
+          name: 'list_entries_list',
           arguments: { listId: 'not-a-uuid' },
         },
       } as CallToolRequest,

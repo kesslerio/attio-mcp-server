@@ -70,7 +70,7 @@ const companyDetails = await client.callTool('records.get_details', {
 });
 
 // Update company information
-await client.callTool('update-record', {
+await client.callTool('records_update', {
   resource_type: 'companies',
   record_id: 'comp_123',
   record_data: {
@@ -106,7 +106,7 @@ const decisionMakers = await client.callTool('records.search_advanced', {
 });
 
 // Create new contact
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'people',
   record_data: {
     name: 'Sarah Johnson',
@@ -149,7 +149,7 @@ const demoRequests = await client.callTool('records.search_by_content', {
 
 ```typescript
 // Create follow-up tasks
-await client.callTool('create-record', {
+await client.callTool('records_create', {
   resource_type: 'tasks',
   record_data: {
     title: 'Follow up on demo request',
@@ -674,13 +674,13 @@ async function getCachedCompanyDetails(companyId) {
 ```typescript
 async function processNewLead(leadData) {
   // 1. Create company record
-  const company = await client.callTool('create-record', {
+  const company = await client.callTool('records_create', {
     resource_type: 'companies',
     record_data: leadData.company,
   });
 
   // 2. Create contact person
-  const person = await client.callTool('create-record', {
+  const person = await client.callTool('records_create', {
     resource_type: 'people',
     record_data: {
       ...leadData.contact,
@@ -689,7 +689,7 @@ async function processNewLead(leadData) {
   });
 
   // 3. Create follow-up task
-  await client.callTool('create-record', {
+  await client.callTool('records_create', {
     resource_type: 'tasks',
     record_data: {
       title: `Follow up with ${person.name}`,

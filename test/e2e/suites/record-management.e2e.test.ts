@@ -154,7 +154,7 @@ describe.skipIf(
         if (existingForCompany.length < 3) {
           for (let i = existingForCompany.length; i < 3; i++) {
             const response = asToolResponse(
-              await callNotesTool('create_note', {
+              await callNotesTool('notes_create', {
                 resource_type: 'companies',
                 record_id: companyId,
                 title: `E2E Pagination Seed Note ${i + 1}`,
@@ -174,7 +174,7 @@ describe.skipIf(
       // Create company record
       const companyData = CompanyFactory.create();
       const companyResponse = asToolResponse(
-        await callUniversalTool('create_record', {
+        await callUniversalTool('records_create', {
           resource_type: 'companies',
           record_data: companyData as any,
         })
@@ -189,7 +189,7 @@ describe.skipIf(
       // Create person record
       const personData = PersonFactory.create();
       const personResponse = asToolResponse(
-        await callUniversalTool('create_record', {
+        await callUniversalTool('records_create', {
           resource_type: 'people',
           record_data: personData as any,
         })
@@ -204,7 +204,7 @@ describe.skipIf(
       // Create task record
       const taskData = TaskFactory.create();
       const taskResponse = asToolResponse(
-        await callUniversalTool('create_record', {
+        await callUniversalTool('records_create', {
           resource_type: 'tasks',
           record_data: {
             content: taskData.content,
@@ -256,7 +256,7 @@ describe.skipIf(
             (record as any).id?.record_id || (record as any).id?.task_id;
 
           const response = asToolResponse(
-            await callUniversalTool('get-record-details', {
+            await callUniversalTool('records_get_details', {
               resource_type: resourceType as any,
               record_id: recordId,
             })
@@ -286,7 +286,7 @@ describe.skipIf(
       }
 
       const response = asToolResponse(
-        await callUniversalTool('update_record', {
+        await callUniversalTool('records_update', {
           resource_type: 'companies',
           record_id: companyId,
           record_data: {
@@ -311,7 +311,7 @@ describe.skipIf(
 
       for (const companyData of companyBatch) {
         const response = asToolResponse(
-          await callUniversalTool('create_record', {
+          await callUniversalTool('records_create', {
             resource_type: 'companies',
             record_data: companyData as any,
           })
@@ -333,7 +333,7 @@ describe.skipIf(
         const companyId = (company as any).id?.record_id;
         if (companyId) {
           const response = asToolResponse(
-            await callUniversalTool('get-record-details', {
+            await callUniversalTool('records_get_details', {
               resource_type: 'companies',
               record_id: companyId,
             })
@@ -352,7 +352,7 @@ describe.skipIf(
       if (createdTasks.length === 0) {
         const taskData = TaskFactory.create();
         const response = asToolResponse(
-          await callTasksTool('create_record', {
+          await callTasksTool('records_create', {
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
@@ -369,7 +369,7 @@ describe.skipIf(
 
       // Test task filtering with pagination
       const response = asToolResponse(
-        await callTasksTool('search-records', {
+        await callTasksTool('records_search', {
           resource_type: 'tasks',
           query: 'test',
           limit: 10,
@@ -402,7 +402,7 @@ describe.skipIf(
 
       // Link task to company
       const response = asToolResponse(
-        await callTasksTool('update_record', {
+        await callTasksTool('records_update', {
           resource_type: 'tasks',
           record_id: taskId,
           record_data: {
@@ -423,7 +423,7 @@ describe.skipIf(
       // Create a task with specific lifecycle
       const taskData = TaskFactory.create();
       const createResponse = asToolResponse(
-        await callTasksTool('create_record', {
+        await callTasksTool('records_create', {
           resource_type: 'tasks',
           record_data: {
             content: taskData.content,
@@ -447,7 +447,7 @@ describe.skipIf(
 
       for (const status of statuses) {
         const updateResponse = asToolResponse(
-          await callTasksTool('update_record', {
+          await callTasksTool('records_update', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: { status },
@@ -480,7 +480,7 @@ describe.skipIf(
 
       for (const config of taskConfigs) {
         const response = asToolResponse(
-          await callTasksTool('create_record', {
+          await callTasksTool('records_create', {
             resource_type: 'tasks',
             record_data: config,
           })
@@ -541,7 +541,7 @@ describe.skipIf(
 
       for (const noteData of noteTests) {
         const response = asToolResponse(
-          await callNotesTool('create_note', {
+          await callNotesTool('notes_create', {
             resource_type: 'companies',
             record_id: companyId,
             title: noteData.title,
@@ -579,7 +579,7 @@ describe.skipIf(
         if (!recordId) continue;
 
         const response = asToolResponse(
-          await callNotesTool('create_note', {
+          await callNotesTool('notes_create', {
             resource_type: config.type as any,
             record_id: recordId,
             title: `Cross-resource ${config.type} note`,
@@ -624,7 +624,7 @@ describe.skipIf(
 
       for (const params of paginationTests) {
         const response = asToolResponse(
-          await callNotesTool('list_notes', {
+          await callNotesTool('notes_list', {
             resource_type: 'companies',
             record_id: companyId,
             limit: params.limit,

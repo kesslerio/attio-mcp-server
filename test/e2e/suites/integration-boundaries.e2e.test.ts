@@ -84,19 +84,19 @@ describe.skipIf(
     it('should handle concurrent cross-resource operations', async () => {
       const operations = [
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: 'integration-test',
             limit: 5,
           }),
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'people',
             query: 'integration-test',
             limit: 5,
           }),
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'tasks',
             query: 'integration-test',
             limit: 5,
@@ -120,7 +120,7 @@ describe.skipIf(
       const rapidRequests = Array(10)
         .fill(null)
         .map((_, i) =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: i < 5 ? 'test' : `company`, // Use common terms that might exist
             limit: 1,
@@ -171,7 +171,7 @@ describe.skipIf(
       const companyData = testDataGenerator.companies.basicCompany();
       const companyId = await createTestRecord(
         (resourceType, data) =>
-          callUniversalTool('create_record', {
+          callUniversalTool('records_create', {
             resource_type: resourceType as any,
             record_data: data,
           }),
@@ -183,7 +183,7 @@ describe.skipIf(
         testRecordIds.push(companyId);
 
         // Create related records
-        const taskResponse = await callTasksTool('create_record', {
+        const taskResponse = await callTasksTool('records_create', {
           resource_type: 'tasks',
           record_data: {
             content: 'Integration boundary test task',
@@ -192,7 +192,7 @@ describe.skipIf(
           },
         });
 
-        const noteResponse = await callNotesTool('create_note', {
+        const noteResponse = await callNotesTool('notes_create', {
           resource_type: 'companies',
           record_id: companyId,
           title: 'Integration boundary test note',
@@ -212,13 +212,13 @@ describe.skipIf(
     it('should handle malformed request recovery', async () => {
       // Send malformed requests and ensure system recovery
       const malformedRequests = [
-        () => callUniversalTool('search-records', {} as any), // Missing required fields
+        () => callUniversalTool('records_search', {} as any), // Missing required fields
         () =>
-          callUniversalTool('get-record-details', {
+          callUniversalTool('records_get_details', {
             resource_type: 'companies',
           } as any), // Missing record_id
         () =>
-          callUniversalTool('create_record', {
+          callUniversalTool('records_create', {
             resource_type: 'companies',
           } as any), // Missing record_data
       ];
@@ -228,7 +228,7 @@ describe.skipIf(
         expect(response).toBeDefined();
 
         // After malformed request, system should still respond to valid request
-        const validResponse = (await callUniversalTool('search-records', {
+        const validResponse = (await callUniversalTool('records_search', {
           resource_type: 'companies',
           query: 'recovery-test',
           limit: 1,
@@ -244,7 +244,7 @@ describe.skipIf(
 
       for (const resourceType of resourceTypes) {
         // Test basic operations on each resource type
-        const searchResponse = await callUniversalTool('search-records', {
+        const searchResponse = await callUniversalTool('records_search', {
           resource_type: resourceType as any,
           query: 'boundary-test',
           limit: 1,
@@ -261,7 +261,7 @@ describe.skipIf(
         {
           name: 'Universal → Task Tool',
           operation: async () => {
-            const searchResponse = (await callUniversalTool('search-records', {
+            const searchResponse = (await callUniversalTool('records_search', {
               resource_type: 'tasks',
               query: 'tool-boundary',
               limit: 1,
@@ -270,7 +270,7 @@ describe.skipIf(
             if (searchResponse && !searchResponse.isError) {
               const taskId = firstRecordIdFromSearch(searchResponse);
               if (taskId) {
-                return await callTasksTool('get-record-details', {
+                return await callTasksTool('records_get_details', {
                   resource_type: 'tasks',
                   record_id: taskId,
                 });
@@ -282,7 +282,7 @@ describe.skipIf(
         {
           name: 'Universal → Notes Tool',
           operation: async () => {
-            const companyResponse = (await callUniversalTool('search-records', {
+            const companyResponse = (await callUniversalTool('records_search', {
               resource_type: 'companies',
               query: 'tool-boundary',
               limit: 1,
@@ -291,7 +291,7 @@ describe.skipIf(
             if (companyResponse && !companyResponse.isError) {
               const companyId = firstRecordIdFromSearch(companyResponse);
               if (companyId) {
-                return await callNotesTool('list_notes', {
+                return await callNotesTool('notes_list', {
                   resource_type: 'companies',
                   record_id: companyId,
                   limit: 1,
@@ -317,7 +317,7 @@ describe.skipIf(
     it('should handle network timeout scenarios', async () => {
       // Test with very small timeout to simulate network issues
       const startTime = Date.now();
-      const response = (await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('records_search', {
         resource_type: 'companies',
         query: 'timeout-test',
         limit: 1,
@@ -334,7 +334,7 @@ describe.skipIf(
 
     it('should validate API version compatibility', async () => {
       // Test that API calls work with current version expectations
-      const versionTestResponse = (await callUniversalTool('search-records', {
+      const versionTestResponse = (await callUniversalTool('records_search', {
         resource_type: 'companies',
         query: 'version-test',
         limit: 1,
@@ -370,7 +370,7 @@ describe.skipIf(
         const operations = Array(loadTest.operations)
           .fill(null)
           .map((_, i) =>
-            callUniversalTool('search-records', {
+            callUniversalTool('records_search', {
               resource_type: 'companies',
               query: `load-test-${i}`,
               limit: 1,
@@ -397,12 +397,12 @@ describe.skipIf(
         {
           name: 'Invalid resource type recovery',
           errorOp: () =>
-            callUniversalTool('search-records', {
+            callUniversalTool('records_search', {
               resource_type: 'invalid_type' as any,
               query: 'test',
             }),
           recoveryOp: () =>
-            callUniversalTool('search-records', {
+            callUniversalTool('records_search', {
               resource_type: 'companies',
               query: 'recovery-test',
               limit: 1,
@@ -411,12 +411,12 @@ describe.skipIf(
         {
           name: 'Invalid record ID recovery',
           errorOp: () =>
-            callUniversalTool('get-record-details', {
+            callUniversalTool('records_get_details', {
               resource_type: 'companies',
               record_id: 'invalid-id-12345',
             }),
           recoveryOp: () =>
-            callUniversalTool('search-records', {
+            callUniversalTool('records_search', {
               resource_type: 'companies',
               query: 'recovery-test',
               limit: 1,
@@ -441,29 +441,29 @@ describe.skipIf(
       // Ensure system maintains consistent state even after errors
       const consistencyTests = [
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: 'consistency-1',
             limit: 1,
           }),
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'invalid' as any,
             query: 'error-trigger',
           }),
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'people',
             query: 'consistency-2',
             limit: 1,
           }),
         () =>
-          callUniversalTool('get-record-details', {
+          callUniversalTool('records_get_details', {
             resource_type: 'companies',
             record_id: 'invalid-id',
           }),
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'tasks',
             query: 'consistency-3',
             limit: 1,

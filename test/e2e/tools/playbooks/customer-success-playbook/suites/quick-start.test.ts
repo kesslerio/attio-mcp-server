@@ -39,7 +39,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         // Create demo company and parse ID from the returned text
         seededCompanyName = `Demo CS Co ${new Date().toISOString().replace(/[:.]/g, '-')}`;
         await client.assertToolCall(
-          'create_record',
+          'records_create',
           {
             resource_type: 'companies',
             record_data: { name: seededCompanyName },
@@ -59,7 +59,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
       // Fallback discovery if not seeded or parse failed
       if (!resolvedCompanyId) {
         await client.assertToolCall(
-          'search-records',
+          'records_search',
           { resource_type: 'companies', query: '', limit: 1 },
           (result: ToolResult) => {
             const text =
@@ -129,7 +129,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: '',
@@ -151,7 +151,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: '',
@@ -176,7 +176,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-by-timeframe',
+        'records_search_by_timeframe',
         {
           resource_type: 'companies',
           timeframe_type: 'modified',
@@ -197,7 +197,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         client,
         prompt,
         expectedOutcome,
-        'create_record',
+        'records_create',
         {
           resource_type: 'tasks',
           record_data: {
@@ -226,7 +226,7 @@ suiteFn('🎯 Customer Success Quick Start Examples', () => {
         client,
         prompt,
         expectedOutcome,
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: seededCompanyName ? seededCompanyName : 'a',

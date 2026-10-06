@@ -312,7 +312,7 @@ export class UniversalSearchService {
 
     // Start performance tracking
     const perfId = enhancedPerformanceTracker.startOperation(
-      'search-records',
+      'records_search',
       'search',
       {
         resourceType: resource_type,

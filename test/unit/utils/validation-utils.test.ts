@@ -321,7 +321,7 @@ describe('validation-utils', () => {
       );
       expect(result.error).toContain('Did you mean: ');
       expect(result.error).toContain(
-        'Use get-attributes to see all available fields'
+        'Use records_get_attributes to see all available fields'
       );
     });
 

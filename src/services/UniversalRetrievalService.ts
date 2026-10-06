@@ -79,7 +79,7 @@ export class UniversalRetrievalService {
 
     // Start performance tracking
     const perfId = enhancedPerformanceTracker.startOperation(
-      'get-record-details',
+      'records_get_details',
       'get',
       { resourceType: resource_type, recordId: record_id }
     );
@@ -317,7 +317,7 @@ export class UniversalRetrievalService {
         const enhancedError = ErrorEnhancer.autoEnhance(
           error,
           resource_type,
-          'get-record-details',
+          'records_get_details',
           record_id
         );
         enhancedPerformanceTracker.endOperation(

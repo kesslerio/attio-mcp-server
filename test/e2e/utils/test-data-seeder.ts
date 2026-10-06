@@ -68,7 +68,7 @@ export class TestDataSeeder {
       `[SEEDER] Creating company for tag: ${tag} in suite: ${this.suiteId}`
     );
     const companyData = CompanyFactory.create();
-    const response = (await callUniversalTool('create_record', {
+    const response = (await callUniversalTool('records_create', {
       resource_type: 'companies',
       record_data: companyData as any,
     })) as McpToolResponse;
@@ -115,7 +115,7 @@ export class TestDataSeeder {
       `[SEEDER] Creating task for tag: ${tag} in suite: ${this.suiteId}`
     );
     const taskData = TaskFactory.create();
-    const response = (await callTasksTool('create_record', {
+    const response = (await callTasksTool('records_create', {
       resource_type: 'tasks',
       record_data: {
         content: taskData.content,

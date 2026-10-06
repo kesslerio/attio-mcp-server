@@ -97,7 +97,7 @@ Test my Attio CRM connection using universal tools:
 1. Use records.search with resource_type="companies" to count total companies
 2. Use records.search with resource_type="people" to count total contacts
 3. Use records.search_by_timeframe to find companies added in last 5 days
-4. Use get-lists to show available lists and pipelines
+4. Use lists_list to show available lists and pipelines
 
 Limit each result to 10 items and format as dashboard for setup verification.
 ```

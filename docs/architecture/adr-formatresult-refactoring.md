@@ -134,9 +134,9 @@ function formatCompactResults(records: AttioRecord[]): string {
 
 - `records.search` - formatSearchResults function
 - `records.get_details` - formatRecordDetails function
-- `create-record` - formatCreateResult function
-- `update-record` - formatUpdateResult function
-- `delete-record` - formatDeleteResult function
+- `records_create` - formatCreateResult function
+- `records_update` - formatUpdateResult function
+- `records_delete` - formatDeleteResult function
 - `records.search_advanced` - formatAdvancedResults function
 - `records.batch` - formatBatchResults function
 - `records.search_by_relationship` - formatRelationshipResults function

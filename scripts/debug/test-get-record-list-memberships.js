@@ -1,4 +1,4 @@
-// Test script to invoke get-record-list-memberships tool
+// Test script to invoke records_get_list_memberships tool
 import { readFileSync, writeFileSync } from 'fs';
 import { spawn } from 'child_process';
 
@@ -7,14 +7,14 @@ const testRequest = {
   id: 1,
   method: "tools/call",
   params: {
-    name: "get-record-list-memberships",
+    name: "records_get_list_memberships",
     arguments: {
       recordId: "test-record-id"
     }
   }
 };
 
-console.log('Testing get-record-list-memberships tool...');
+console.log('Testing records_get_list_memberships tool...');
 console.log('Request:', JSON.stringify(testRequest, null, 2));
 
 const child = spawn('node', ['dist/index.js'], {

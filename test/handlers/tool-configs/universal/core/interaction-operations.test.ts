@@ -1,5 +1,5 @@
 /**
- * Unit tests for get_record_interactions tool (Issue #1116)
+ * Unit tests for records_get_interactions tool (Issue #1116)
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -81,7 +81,7 @@ function buildInteractionValue(
   ];
 }
 
-describe('get_record_interactions', () => {
+describe('records_get_interactions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -327,7 +327,7 @@ describe('get_record_interactions', () => {
   describe('definition', () => {
     it('has correct name', () => {
       expect(getRecordInteractionsDefinition.name).toBe(
-        'get_record_interactions'
+        'records_get_interactions'
       );
     });
 

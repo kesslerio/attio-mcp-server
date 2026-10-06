@@ -32,7 +32,7 @@ class LimitsBoundariesTest extends EdgeCaseTestBase {
     try {
       // Create a valid company for boundary testing
       const companyData = TestDataFactory.createCompanyData('TC_EC02');
-      const companyResult = await this.executeToolCall('create_record', {
+      const companyResult = await this.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -49,7 +49,7 @@ class LimitsBoundariesTest extends EdgeCaseTestBase {
       }
 
       // Get a valid list for boundary testing
-      const listsResult = await this.executeToolCall('get-lists', {});
+      const listsResult = await this.executeToolCall('lists_list', {});
       if (!listsResult.isError) {
         const listsText = this.extractTextContent(listsResult);
         try {
@@ -68,7 +68,7 @@ class LimitsBoundariesTest extends EdgeCaseTestBase {
         const extraCompanyData = TestDataFactory.createCompanyData(
           `TC_EC02_${i}`
         );
-        const extraResult = await this.executeToolCall('create_record', {
+        const extraResult = await this.executeToolCall('records_create', {
           resource_type: 'companies',
           record_data: extraCompanyData,
         });
@@ -134,7 +134,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       tags: new Array(100).fill('tag'),
     };
 
-    const createResponse = await testCase.executeToolCall('create_record', {
+    const createResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: longStringData,
     });
@@ -142,7 +142,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const handledLongCreate =
       testCase.validateEdgeCaseResponse(
         createResponse,
-        'create-record with extremely long strings (error)',
+        'records_create with extremely long strings (error)',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'too large', 'limit'],
@@ -150,7 +150,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ) ||
       testCase.validateEdgeCaseResponse(
         createResponse,
-        'create-record with extremely long strings (graceful)',
+        'records_create with extremely long strings (graceful)',
         {
           expectError: false,
           successIndicators: [],
@@ -161,7 +161,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
 
     // Test long strings in search queries - should handle gracefully
     const queryLength = Math.min(maxStringLength, 1000); // Limit query length for performance
-    const searchResponse = await testCase.executeToolCall('search-records', {
+    const searchResponse = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       query: 'A'.repeat(queryLength),
     });
@@ -169,7 +169,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const handledLongSearch =
       testCase.validateEdgeCaseResponse(
         searchResponse,
-        'search-records with extremely long query (error)',
+        'records_search with extremely long query (error)',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'too large', 'query'],
@@ -177,7 +177,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ) ||
       testCase.validateEdgeCaseResponse(
         searchResponse,
-        'search-records with extremely long query (graceful)',
+        'records_search with extremely long query (graceful)',
         {
           expectError: false,
           successIndicators: [],
@@ -192,7 +192,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
 
   it('should handle numeric boundary values gracefully', async () => {
     // Test negative pagination values - should handle gracefully
-    const negativeResponse = await testCase.executeToolCall('search-records', {
+    const negativeResponse = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       limit: -1,
       offset: -100,
@@ -201,7 +201,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const handledNegative =
       testCase.validateEdgeCaseResponse(
         negativeResponse,
-        'search-records with negative pagination values (error)',
+        'records_search with negative pagination values (error)',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'negative', 'must'],
@@ -209,7 +209,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ) ||
       testCase.validateEdgeCaseResponse(
         negativeResponse,
-        'search-records with negative pagination values (graceful)',
+        'records_search with negative pagination values (graceful)',
         {
           expectError: false,
           successIndicators: [],
@@ -219,7 +219,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     expect(handledNegative).toBe(true);
 
     // Test zero values - should handle gracefully
-    const zeroResponse = await testCase.executeToolCall('search-records', {
+    const zeroResponse = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       limit: 0,
       offset: 0,
@@ -227,7 +227,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     expect(typeof testCase.hasError(zeroResponse)).toBe('boolean');
 
     // Test very large values - should handle gracefully
-    const largeResponse = await testCase.executeToolCall('search-records', {
+    const largeResponse = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       limit: 99999,
       offset: 99999,
@@ -235,7 +235,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
 
     const rejectLarge = testCase.validateEdgeCaseResponse(
       largeResponse,
-      'search-records with very large pagination values (expect error)',
+      'records_search with very large pagination values (expect error)',
       {
         expectError: true,
         errorIndicators: ['error', 'invalid', 'too large', 'limit exceeded'],
@@ -243,7 +243,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     );
     testCase.validateEdgeCaseResponse(
       largeResponse,
-      'search-records with very large pagination values (telemetry)',
+      'records_search with very large pagination values (telemetry)',
       {
         expectError: true,
         errorIndicators: ['error', 'invalid', 'limit', 'large'],
@@ -254,7 +254,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
   it('should handle pagination limits and large result sets', async () => {
     // Test pagination with large limit values - should handle gracefully
     const largeLimitResponse = await testCase.executeToolCall(
-      'search-records',
+      'records_search',
       {
         resource_type: 'companies',
         limit: 10000,
@@ -265,7 +265,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const handledLargeLimit =
       testCase.validateEdgeCaseResponse(
         largeLimitResponse,
-        'search-records with large limit values (error)',
+        'records_search with large limit values (error)',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'limit'],
@@ -273,7 +273,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ) ||
       testCase.validateEdgeCaseResponse(
         largeLimitResponse,
-        'search-records with large limit values (graceful)',
+        'records_search with large limit values (graceful)',
         {
           expectError: false,
           successIndicators: [],
@@ -284,7 +284,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
 
     // Test with large offset values - should handle gracefully
     const largeOffsetResponse = await testCase.executeToolCall(
-      'search-records',
+      'records_search',
       {
         resource_type: 'companies',
         limit: 10,
@@ -295,7 +295,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const handledLargeOffset =
       testCase.validateEdgeCaseResponse(
         largeOffsetResponse,
-        'search-records with large offset values (error)',
+        'records_search with large offset values (error)',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'offset'],
@@ -303,7 +303,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ) ||
       testCase.validateEdgeCaseResponse(
         largeOffsetResponse,
-        'search-records with large offset values (graceful)',
+        'records_search with large offset values (graceful)',
         {
           expectError: false,
           successIndicators: [],
@@ -314,7 +314,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
 
     if (testCase['validListId']) {
       // Test list operations with large pagination
-      const listResponse = await testCase.executeToolCall('get-list-entries', {
+      const listResponse = await testCase.executeToolCall('list_entries_list', {
         listId: testCase['validListId'],
         limit: 1000,
         offset: 1000,
@@ -323,7 +323,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       const handledLargeList =
         testCase.validateEdgeCaseResponse(
           listResponse,
-          'get-list-entries with large pagination (error)',
+          'list_entries_list with large pagination (error)',
           {
             expectError: true,
             errorIndicators: ['error', 'invalid', 'limit'],
@@ -331,7 +331,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
         ) ||
         testCase.validateEdgeCaseResponse(
           listResponse,
-          'get-list-entries with large pagination (graceful)',
+          'list_entries_list with large pagination (graceful)',
           {
             expectError: false,
             successIndicators: [],
@@ -352,7 +352,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ),
     };
 
-    const largeArrayResponse = await testCase.executeToolCall('create_record', {
+    const largeArrayResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: largeArrayData,
     });
@@ -360,7 +360,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const handledLargeArray =
       testCase.validateEdgeCaseResponse(
         largeArrayResponse,
-        'create-record with large arrays and collections (error)',
+        'records_create with large arrays and collections (error)',
         {
           expectError: true,
           errorIndicators: ['error', 'invalid', 'array'],
@@ -368,7 +368,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ) ||
       testCase.validateEdgeCaseResponse(
         largeArrayResponse,
-        'create-record with large arrays and collections (graceful)',
+        'records_create with large arrays and collections (graceful)',
         {
           expectError: false,
           successIndicators: [],
@@ -386,7 +386,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       metadata: {},
     };
 
-    const emptyResponse = await testCase.executeToolCall('create_record', {
+    const emptyResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: emptyCollectionsData,
     });
@@ -394,14 +394,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const handledEmptyCollections =
       testCase.validateEdgeCaseResponse(
         emptyResponse,
-        'create-record with empty collections (error)',
+        'records_create with empty collections (error)',
         {
           expectError: true,
         }
       ) ||
       testCase.validateEdgeCaseResponse(
         emptyResponse,
-        'create-record with empty collections (graceful)',
+        'records_create with empty collections (graceful)',
         {
           expectError: false,
           successIndicators: [],
@@ -418,14 +418,14 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       description: '🚀💻📊' + '\u200B'.repeat(10), // Zero-width spaces
     };
 
-    const unicodeResponse = await testCase.executeToolCall('create_record', {
+    const unicodeResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: unicodeData,
     });
 
     testCase.validateEdgeCaseResponse(
       unicodeResponse,
-      'create-record with Unicode boundary characters (telemetry)',
+      'records_create with Unicode boundary characters (telemetry)',
       {
         expectError: true,
         errorIndicators: ['error', 'invalid', 'character', 'encoding'],
@@ -439,7 +439,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       tags: ['🏷️', '📝', '✅'],
     };
 
-    const emojiResponse = await testCase.executeToolCall('create_record', {
+    const emojiResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: emojiData,
     });
@@ -452,7 +452,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       description: 'Description with\u200B\u200C\u200D invisible chars',
     };
 
-    const controlResponse = await testCase.executeToolCall('create_record', {
+    const controlResponse = await testCase.executeToolCall('records_create', {
       resource_type: 'companies',
       record_data: controlCharsData,
     });
@@ -472,7 +472,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const concurrentAdditions = [];
     for (let i = 0; i < 3 && i < testCase['testCompanyIds'].length; i++) {
       concurrentAdditions.push(
-        testCase.executeToolCall('add-record-to-list', {
+        testCase.executeToolCall('list_entries_add', {
           listId: testCase['validListId'],
           recordId: testCase['testCompanyIds'][i],
           objectType: 'companies',
@@ -493,7 +493,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
           expect(
             testCase.validateEdgeCaseResponse(
               value,
-              `concurrent add-record-to-list operation ${index} error`,
+              `concurrent list_entries_add operation ${index} error`,
               {
                 expectError: true,
                 errorIndicators: ['already exists', 'duplicate', 'error'],
@@ -504,7 +504,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
           expect(
             testCase.validateEdgeCaseResponse(
               value,
-              `concurrent add-record-to-list operation ${index} success`,
+              `concurrent list_entries_add operation ${index} success`,
               {
                 expectError: false,
                 successIndicators: [],
@@ -520,7 +520,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     const rapidOperations = [];
     for (let i = 0; i < 5; i++) {
       rapidOperations.push(
-        testCase.executeToolCall('search-records', {
+        testCase.executeToolCall('records_search', {
           resource_type: 'companies',
           query: `rapid_test_${i}`,
           limit: 1,
@@ -554,7 +554,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     // Test with large query operations
     const largeQueryResult = await testCase.executeBoundaryTest(
       'large_memory_query',
-      'search-records',
+      'records_search',
       {
         resource_type: 'companies',
         query: 'test', // Simple query
@@ -566,7 +566,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     expect(largeQueryResult.passed).toBe(true);
 
     // Verify response size is manageable
-    const queryResponse = await testCase.executeToolCall('search-records', {
+    const queryResponse = await testCase.executeToolCall('records_search', {
       resource_type: 'companies',
       query: 'test',
       limit: 1000,
@@ -579,7 +579,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       const startTime = Date.now();
 
       const complexFilterResult = await testCase.executeToolCall(
-        'advanced-filter-list-entries',
+        'list_entries_filter_advanced',
         {
           listId: testCase['validListId'],
           filter: {
@@ -603,10 +603,10 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
   });
 
   it('should handle additional list operations and edge cases', async () => {
-    // Test remove-record-from-list with invalid parameters
+    // Test list_entries_remove with invalid parameters
     if (testCase['validListId']) {
       const removeResponse = await testCase.executeToolCall(
-        'remove-record-from-list',
+        'list_entries_remove',
         {
           listId: testCase['validListId'],
           recordId: 'invalid-record-id',
@@ -617,7 +617,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       expect(
         testCase.validateEdgeCaseResponse(
           removeResponse,
-          'remove-record-from-list with invalid record ID',
+          'list_entries_remove with invalid record ID',
           {
             expectError: true,
             errorIndicators: [
@@ -630,9 +630,9 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
         )
       ).toBe(true);
 
-      // Test update-list-entry with malformed data
+      // Test list_entries_update with malformed data
       const updateEntryResponse = await testCase.executeToolCall(
-        'update-list-entry',
+        'list_entries_update',
         {
           listId: testCase['validListId'],
           entryId: 'invalid-entry-id',
@@ -643,7 +643,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       expect(
         testCase.validateEdgeCaseResponse(
           updateEntryResponse,
-          'update-list-entry with malformed data',
+          'list_entries_update with malformed data',
           {
             expectError: true,
             errorIndicators: [
@@ -658,8 +658,8 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ).toBe(true);
     }
 
-    // Test list-notes with invalid parent
-    const listNotesResponse = await testCase.executeToolCall('list_notes', {
+    // Test notes_list with invalid parent
+    const listNotesResponse = await testCase.executeToolCall('notes_list', {
       parent_object: 'invalid-parent-id',
       limit: -1, // Invalid limit
     });
@@ -667,7 +667,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         listNotesResponse,
-        'list-notes with invalid parent and negative limit',
+        'notes_list with invalid parent and negative limit',
         {
           expectError: true,
           errorIndicators: [
@@ -681,8 +681,8 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       )
     ).toBe(true);
 
-    // Test delete-record with invalid ID
-    const deleteResponse = await testCase.executeToolCall('delete_record', {
+    // Test records_delete with invalid ID
+    const deleteResponse = await testCase.executeToolCall('records_delete', {
       resource_type: 'companies',
       record_id: 'invalid-delete-id',
     });
@@ -690,7 +690,7 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
     expect(
       testCase.validateEdgeCaseResponse(
         deleteResponse,
-        'delete-record with invalid record ID',
+        'records_delete with invalid record ID',
         {
           expectError: true,
           errorIndicators: ['error', 'not found', 'invalid', 'does not exist'],

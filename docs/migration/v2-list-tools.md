@@ -12,10 +12,10 @@ The list tools have been consolidated from **11 tools → 4 tools** for better c
 
 **Tool Count Reduction**:
 
-- **Filter Operations**: 5 → 1 (`filter-list-entries` with 4 modes)
-- **Entry Management**: 3 → 1 (`manage-list-entry` with 3 modes)
-- **List Discovery**: 2 → Universal tools (`search_records`, `get_record_details`)
-- **Still Active**: 2 unchanged (`get-list-entries`, `get-record-list-memberships`)
+- **Filter Operations**: 5 → 1 (`list_entries_filter` with 4 modes)
+- **Entry Management**: 3 → 1 (`list_entries_manage` with 3 modes)
+- **List Discovery**: 2 → Universal tools (`records_search`, `records_get_details`)
+- **Still Active**: 2 unchanged (`list_entries_list`, `records_get_list_memberships`)
 
 ### Benefits
 
@@ -40,25 +40,25 @@ The list tools have been consolidated from **11 tools → 4 tools** for better c
 
 | Deprecated Tool                    | →   | New Tool              | Mode   | Parameters                                                      |
 | ---------------------------------- | --- | --------------------- | ------ | --------------------------------------------------------------- |
-| `filter-list-entries`              | ✓   | `filter-list-entries` | Mode 1 | `attributeSlug`, `condition`, `value` (unchanged)               |
-| `advanced-filter-list-entries`     | ⚠️  | `filter-list-entries` | Mode 2 | `filters` (AND/OR logic)                                        |
-| `filter-list-entries-by-parent`    | ⚠️  | `filter-list-entries` | Mode 3 | `parentObjectType`, `parentAttributeSlug`, `condition`, `value` |
-| `filter-list-entries-by-parent-id` | ⚠️  | `filter-list-entries` | Mode 4 | `parentRecordId` (UUID)                                         |
+| `list_entries_filter`              | ✓   | `list_entries_filter` | Mode 1 | `attributeSlug`, `condition`, `value` (unchanged)               |
+| `list_entries_filter_advanced`     | ⚠️  | `list_entries_filter` | Mode 2 | `filters` (AND/OR logic)                                        |
+| `list_entries_filter_by_parent`    | ⚠️  | `list_entries_filter` | Mode 3 | `parentObjectType`, `parentAttributeSlug`, `condition`, `value` |
+| `list_entries_filter_by_parent_id` | ⚠️  | `list_entries_filter` | Mode 4 | `parentRecordId` (UUID)                                         |
 
 ### Entry Management Operations (PR #1076)
 
 | Deprecated Tool           | →   | New Tool            | Mode   | Parameters               |
 | ------------------------- | --- | ------------------- | ------ | ------------------------ |
-| `add-record-to-list`      | ⚠️  | `manage-list-entry` | Mode 1 | `recordId`, `objectType` |
-| `remove-record-from-list` | ⚠️  | `manage-list-entry` | Mode 2 | `entryId`                |
-| `update-list-entry`       | ⚠️  | `manage-list-entry` | Mode 3 | `entryId`, `attributes`  |
+| `list_entries_add`      | ⚠️  | `list_entries_manage` | Mode 1 | `recordId`, `objectType` |
+| `list_entries_remove` | ⚠️  | `list_entries_manage` | Mode 2 | `entryId`                |
+| `list_entries_update`       | ⚠️  | `list_entries_manage` | Mode 3 | `entryId`, `attributes`  |
 
 ### List Discovery Operations (Universal Tools)
 
 | Deprecated Tool    | →   | Universal Tool       | Parameters                                       |
 | ------------------ | --- | -------------------- | ------------------------------------------------ |
-| `get-lists`        | ⚠️  | `search_records`     | `resource_type: "lists"`                         |
-| `get-list-details` | ⚠️  | `get_record_details` | `resource_type: "lists"`, `record_id: <list_id>` |
+| `lists_list`        | ⚠️  | `records_search`     | `resource_type: "lists"`                         |
+| `lists_get` | ⚠️  | `records_get_details` | `resource_type: "lists"`, `record_id: <list_id>` |
 
 **Legend**: ✓ Active | ⚠️ Deprecated (removal v2.0.0)
 
@@ -71,7 +71,7 @@ The list tools have been consolidated from **11 tools → 4 tools** for better c
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('advanced-filter-list-entries', {
+await client.callTool('list_entries_filter_advanced', {
   listId: 'list_abc123',
   filters: {
     and: [
@@ -86,7 +86,7 @@ await client.callTool('advanced-filter-list-entries', {
 **After (consolidated)**:
 
 ```typescript
-await client.callTool('filter-list-entries', {
+await client.callTool('list_entries_filter', {
   listId: 'list_abc123',
   filters: {
     // Mode 2 auto-detected from 'filters' parameter
@@ -101,7 +101,7 @@ await client.callTool('filter-list-entries', {
 
 **Migration Steps**:
 
-1. Change tool name: `advanced-filter-list-entries` → `filter-list-entries`
+1. Change tool name: `list_entries_filter_advanced` → `list_entries_filter`
 2. Keep all parameters identical
 3. Tool auto-detects Mode 2 from `filters` parameter
 
@@ -112,7 +112,7 @@ await client.callTool('filter-list-entries', {
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('filter-list-entries-by-parent', {
+await client.callTool('list_entries_filter_by_parent', {
   listId: 'list_deals',
   parentObjectType: 'companies',
   parentAttributeSlug: 'industry',
@@ -124,7 +124,7 @@ await client.callTool('filter-list-entries-by-parent', {
 **After (consolidated)**:
 
 ```typescript
-await client.callTool('filter-list-entries', {
+await client.callTool('list_entries_filter', {
   listId: 'list_deals',
   parentObjectType: 'companies', // Mode 3 auto-detected
   parentAttributeSlug: 'industry',
@@ -135,7 +135,7 @@ await client.callTool('filter-list-entries', {
 
 **Migration Steps**:
 
-1. Change tool name: `filter-list-entries-by-parent` → `filter-list-entries`
+1. Change tool name: `list_entries_filter_by_parent` → `list_entries_filter`
 2. Keep all parameters identical (`parentObjectType`, `parentAttributeSlug`, `condition`, `value`)
 3. Tool auto-detects Mode 3 from `parentObjectType` + `parentAttributeSlug`
 
@@ -146,7 +146,7 @@ await client.callTool('filter-list-entries', {
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('filter-list-entries-by-parent-id', {
+await client.callTool('list_entries_filter_by_parent_id', {
   listId: 'list_deals',
   parentRecordId: 'company_xyz789',
 });
@@ -155,7 +155,7 @@ await client.callTool('filter-list-entries-by-parent-id', {
 **After (consolidated)**:
 
 ```typescript
-await client.callTool('filter-list-entries', {
+await client.callTool('list_entries_filter', {
   listId: 'list_deals',
   parentRecordId: 'company_xyz789', // Mode 4 auto-detected
 });
@@ -163,7 +163,7 @@ await client.callTool('filter-list-entries', {
 
 **Migration Steps**:
 
-1. Change tool name: `filter-list-entries-by-parent-id` → `filter-list-entries`
+1. Change tool name: `list_entries_filter_by_parent_id` → `list_entries_filter`
 2. Keep `parentRecordId` parameter identical
 3. Tool auto-detects Mode 4 from `parentRecordId` UUID
 
@@ -174,7 +174,7 @@ await client.callTool('filter-list-entries', {
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('add-record-to-list', {
+await client.callTool('list_entries_add', {
   listId: 'list_abc123',
   recordId: 'company_xyz789',
   objectType: 'companies',
@@ -188,7 +188,7 @@ await client.callTool('add-record-to-list', {
 **After (consolidated)**:
 
 ```typescript
-await client.callTool('manage-list-entry', {
+await client.callTool('list_entries_manage', {
   listId: 'list_abc123',
   recordId: 'company_xyz789', // Mode 1 auto-detected from recordId
   objectType: 'companies',
@@ -201,7 +201,7 @@ await client.callTool('manage-list-entry', {
 
 **Migration Steps**:
 
-1. Change tool name: `add-record-to-list` → `manage-list-entry`
+1. Change tool name: `list_entries_add` → `list_entries_manage`
 2. Keep all parameters identical
 3. Tool auto-detects Mode 1 (Add) from `recordId` parameter
 
@@ -212,7 +212,7 @@ await client.callTool('manage-list-entry', {
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('remove-record-from-list', {
+await client.callTool('list_entries_remove', {
   listId: 'list_abc123',
   entryId: 'entry_def456',
 });
@@ -221,7 +221,7 @@ await client.callTool('remove-record-from-list', {
 **After (consolidated)**:
 
 ```typescript
-await client.callTool('manage-list-entry', {
+await client.callTool('list_entries_manage', {
   listId: 'list_abc123',
   entryId: 'entry_def456', // Mode 2 auto-detected (no recordId, no attributes)
 });
@@ -229,7 +229,7 @@ await client.callTool('manage-list-entry', {
 
 **Migration Steps**:
 
-1. Change tool name: `remove-record-from-list` → `manage-list-entry`
+1. Change tool name: `list_entries_remove` → `list_entries_manage`
 2. Keep parameters identical
 3. Tool auto-detects Mode 2 (Remove) from `entryId` alone
 
@@ -240,7 +240,7 @@ await client.callTool('manage-list-entry', {
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('update-list-entry', {
+await client.callTool('list_entries_update', {
   listId: 'list_abc123',
   entryId: 'entry_def456',
   attributes: {
@@ -253,7 +253,7 @@ await client.callTool('update-list-entry', {
 **After (consolidated)**:
 
 ```typescript
-await client.callTool('manage-list-entry', {
+await client.callTool('list_entries_manage', {
   listId: 'list_abc123',
   entryId: 'entry_def456', // Mode 3 auto-detected from entryId + attributes
   attributes: {
@@ -265,7 +265,7 @@ await client.callTool('manage-list-entry', {
 
 **Migration Steps**:
 
-1. Change tool name: `update-list-entry` → `manage-list-entry`
+1. Change tool name: `list_entries_update` → `list_entries_manage`
 2. Keep all parameters identical
 3. Tool auto-detects Mode 3 (Update) from `entryId` + `attributes`
 
@@ -276,7 +276,7 @@ await client.callTool('manage-list-entry', {
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('get-lists', {
+await client.callTool('lists_list', {
   limit: 20,
 });
 ```
@@ -284,7 +284,7 @@ await client.callTool('get-lists', {
 **After (universal tool)**:
 
 ```typescript
-await client.callTool('search_records', {
+await client.callTool('records_search', {
   resource_type: 'lists',
   limit: 20,
 });
@@ -292,7 +292,7 @@ await client.callTool('search_records', {
 
 **Migration Steps**:
 
-1. Change tool name: `get-lists` → `search_records`
+1. Change tool name: `lists_list` → `records_search`
 2. Add parameter: `resource_type: 'lists'`
 3. Keep `limit` parameter
 
@@ -305,7 +305,7 @@ await client.callTool('search_records', {
 **Before (deprecated)**:
 
 ```typescript
-await client.callTool('get-list-details', {
+await client.callTool('lists_get', {
   id: 'list_abc123',
 });
 ```
@@ -313,7 +313,7 @@ await client.callTool('get-list-details', {
 **After (universal tool)**:
 
 ```typescript
-await client.callTool('get_record_details', {
+await client.callTool('records_get_details', {
   resource_type: 'lists',
   record_id: 'list_abc123',
 });
@@ -321,7 +321,7 @@ await client.callTool('get_record_details', {
 
 **Migration Steps**:
 
-1. Change tool name: `get-list-details` → `get_record_details`
+1. Change tool name: `lists_get` → `records_get_details`
 2. Add parameter: `resource_type: 'lists'`
 3. Rename parameter: `id` → `record_id`
 
@@ -333,10 +333,10 @@ await client.callTool('get_record_details', {
 
 ```
 ❌ Before (5 tools)                    ✅ After (1 tool with modes)
-├─ filter-list-entries               ├─ filter-list-entries
-├─ advanced-filter-list-entries      │  ├─ Mode 1: Simple (attributeSlug detected)
-├─ filter-list-entries-by-parent     │  ├─ Mode 2: Advanced (filters detected)
-├─ filter-list-entries-by-parent-id  │  ├─ Mode 3: Parent Attr (parentObjectType detected)
+├─ list_entries_filter               ├─ list_entries_filter
+├─ list_entries_filter_advanced      │  ├─ Mode 1: Simple (attributeSlug detected)
+├─ list_entries_filter_by_parent     │  ├─ Mode 2: Advanced (filters detected)
+├─ list_entries_filter_by_parent_id  │  ├─ Mode 3: Parent Attr (parentObjectType detected)
 └─ (4 different tools to learn)      │  └─ Mode 4: Parent UUID (parentRecordId detected)
                                       └─ (1 tool, auto-mode detection)
 ```
@@ -345,9 +345,9 @@ await client.callTool('get_record_details', {
 
 ```
 ❌ Before (3 tools)                    ✅ After (1 tool with modes)
-├─ add-record-to-list                ├─ manage-list-entry
-├─ remove-record-from-list           │  ├─ Mode 1: Add (recordId detected)
-├─ update-list-entry                 │  ├─ Mode 2: Remove (entryId only)
+├─ list_entries_add                ├─ list_entries_manage
+├─ list_entries_remove           │  ├─ Mode 1: Add (recordId detected)
+├─ list_entries_update                 │  ├─ Mode 2: Remove (entryId only)
 └─ (3 different tools to learn)      │  └─ Mode 3: Update (entryId + attributes)
                                       └─ (1 tool, auto-mode detection)
 ```
@@ -360,7 +360,7 @@ await client.callTool('get_record_details', {
 
 ```bash
 # Find deprecated tool usage in your codebase
-rg "get-lists|get-list-details|advanced-filter-list-entries|filter-list-entries-by-parent|filter-list-entries-by-parent-id|add-record-to-list|remove-record-from-list|update-list-entry" --type ts
+rg "lists_list|lists_get|list_entries_filter_advanced|list_entries_filter_by_parent|list_entries_filter_by_parent_id|list_entries_add|list_entries_remove|list_entries_update" --type ts
 ```
 
 ### 2. Run with Warnings Enabled
@@ -409,9 +409,9 @@ Verify that migrated calls produce identical results:
 
 **A**: Set `MCP_LOG_LEVEL=ERROR` to suppress WARN-level deprecation messages. Not recommended - warnings help identify code needing updates.
 
-### Q: What if I'm using `get-lists` or `get-list-details`?
+### Q: What if I'm using `lists_list` or `lists_get`?
 
-**A**: Migrate to universal tools (`search_records`, `get_record_details`) with `resource_type: "lists"`. See examples 7-8 above.
+**A**: Migrate to universal tools (`records_search`, `records_get_details`) with `resource_type: "lists"`. See examples 7-8 above.
 
 ### Q: Are there any performance differences?
 

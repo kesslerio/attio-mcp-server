@@ -1,7 +1,7 @@
 /**
  * IT-302: List membership operations via universal tools
  *
- * Validates the update-record tool workflow for adding list memberships to
+ * Validates the records_update tool workflow for adding list memberships to
  * company records using live Attio APIs.
  */
 
@@ -86,7 +86,7 @@ describe.skipIf(!runIntegrationTests)(
       ({
         method: 'tools/call',
         params: {
-          name: 'update-record',
+          name: 'records_update',
           arguments: {
             resource_type: 'records',
             record_id: TEST_RECORD_ID,

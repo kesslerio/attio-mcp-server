@@ -40,7 +40,7 @@ const PLURAL_MAPPINGS = createPluralMappingConstants({
  */
 export const DEALS_FIELD_MAPPING: FieldMapping = {
   fieldMappings: {
-    // Display names from discover-attributes (Issue #687)
+    // Display names from records_discover_attributes (Issue #687)
     [DISPLAY_NAMES.DEAL_NAME]: 'name',
     [DISPLAY_NAMES.DEAL_STAGE]: 'stage',
     [DISPLAY_NAMES.DEAL_VALUE]: 'value',
@@ -131,13 +131,13 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
   ] as const,
   commonMistakes: {
     'deal name':
-      'Display name from discover-attributes. Maps to API field "name"',
+      'Display name from records_discover_attributes. Maps to API field "name"',
     'deal stage':
-      'Display name from discover-attributes. Maps to API field "stage"',
+      'Display name from records_discover_attributes. Maps to API field "stage"',
     'deal value':
-      'Display name from discover-attributes. Maps to API field "value"',
+      'Display name from records_discover_attributes. Maps to API field "value"',
     'associated company':
-      'Display name from discover-attributes. Maps to API field "associated_company"',
+      'Display name from records_discover_attributes. Maps to API field "associated_company"',
     company_id: 'Use "associated_company" to link deals to companies',
     company: 'Use "associated_company" with the company record ID',
     companies:
@@ -152,7 +152,7 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
     amount: 'Use "value" for deal amounts (numeric only, no currency symbols)',
     status: 'Use "stage" for deal pipeline stages',
     'deal owner':
-      'Display name from discover-attributes. Maps to API field "owner"',
+      'Display name from records_discover_attributes. Maps to API field "owner"',
     owner_id: 'Use "owner" to assign deal ownership',
     assignee: 'Use "owner" to assign deal ownership',
     assigned_to: 'Use "owner" to assign deal ownership',

@@ -390,7 +390,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       // Test error enhancement process
       const enhanced = ErrorEnhancer.ensureEnhanced(originalError, {
         resourceType: 'tasks',
-        operation: 'get_record_details',
+        operation: 'records_get_details',
       });
 
       // Should be enhanced

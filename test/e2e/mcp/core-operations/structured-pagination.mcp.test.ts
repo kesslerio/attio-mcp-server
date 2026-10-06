@@ -71,9 +71,9 @@ describe('structured pagination over MCP stdio', () => {
 
   it('advertises cursor input and pagination-aware envelopes on collection tools', () => {
     for (const name of [
-      'search_records',
-      'search_records_advanced',
-      'list_notes',
+      'records_search',
+      'records_search_advanced',
+      'notes_list',
     ]) {
       const tool = tools.find((item) => item.name === name)!;
       const properties = (
@@ -94,7 +94,7 @@ describe('structured pagination over MCP stdio', () => {
       const firstIds = new Set<string>();
       let firstToken: string | undefined;
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 1 },
         (result) => {
           expect(result.isError).toBe(false);
@@ -105,7 +105,7 @@ describe('structured pagination over MCP stdio', () => {
           };
           expect(structured.count).toBe(structured.data.length);
           expect(
-            validator('search_records')(result.structuredContent).valid
+            validator('records_search')(result.structuredContent).valid
           ).toBe(true);
           expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent
@@ -124,7 +124,7 @@ describe('structured pagination over MCP stdio', () => {
         return;
       }
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 1, cursor: firstToken },
         (result) => {
           expect(result.isError).toBe(false);
@@ -136,7 +136,7 @@ describe('structured pagination over MCP stdio', () => {
           // The second page must advance: its first item cannot repeat page
           // one's opening item because the cursor pins the live-view offset.
           expect(
-            validator('search_records')(result.structuredContent).valid
+            validator('records_search')(result.structuredContent).valid
           ).toBe(true);
           expect(structured.count).toBe(structured.data.length);
           expect(structured.data.length).toBeGreaterThan(0);
@@ -155,7 +155,7 @@ describe('structured pagination over MCP stdio', () => {
     async (context) => {
       let token: string | undefined;
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 1 },
         (result) => {
           expect(result.isError).toBe(false);
@@ -173,7 +173,7 @@ describe('structured pagination over MCP stdio', () => {
       raw[raw.length - 1] ^= 0x01;
       const tampered = `1${raw.toString('base64url')}`;
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 1, cursor: tampered },
         (result) => {
           expect(result.isError).toBe(true);
@@ -181,7 +181,7 @@ describe('structured pagination over MCP stdio', () => {
             error: { code: 'INVALID_CURSOR', retryable: false },
           });
           expect(
-            validator('search_records')(result.structuredContent).valid
+            validator('records_search')(result.structuredContent).valid
           ).toBe(true);
           expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent
@@ -200,7 +200,7 @@ describe('structured pagination over MCP stdio', () => {
     async (context) => {
       let token: string | undefined;
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 1 },
         (result) => {
           expect(result.isError).toBe(false);
@@ -215,7 +215,7 @@ describe('structured pagination over MCP stdio', () => {
         return;
       }
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'people', limit: 1, cursor: token! },
         (result) => {
           expect(result.isError).toBe(true);
@@ -225,7 +225,7 @@ describe('structured pagination over MCP stdio', () => {
         }
       );
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 1, cursor: token!, offset: 2 },
         (result) => {
           expect(result.isError).toBe(true);
@@ -240,7 +240,7 @@ describe('structured pagination over MCP stdio', () => {
   it.skipIf(!hasCredentials)(
     'discloses bounded pagination metadata on a finite family over the wire',
     async () => {
-      await assertToolCall('list-workspace-members', {}, (result) => {
+      await assertToolCall('workspace_members_list', {}, (result) => {
         expect(result.isError).toBe(false);
         const structured = result.structuredContent as {
           data: unknown[];
@@ -249,7 +249,7 @@ describe('structured pagination over MCP stdio', () => {
           pagination: { supported: boolean; truncated: boolean };
         };
         expect(
-          validator('list-workspace-members')(result.structuredContent).valid
+          validator('workspace_members_list')(result.structuredContent).valid
         ).toBe(true);
         expect(structured.count).toBe(structured.data.length);
         expect(structured.next_cursor).toBeNull();
@@ -263,7 +263,7 @@ describe('structured pagination over MCP stdio', () => {
     'returns structured execution errors (not protocol crashes) without credentials',
     async () => {
       await assertToolCall(
-        'search_records',
+        'records_search',
         { resource_type: 'companies', limit: 2 },
         (result) => {
           expect(result.isError).toBe(true);
@@ -271,7 +271,7 @@ describe('structured pagination over MCP stdio', () => {
             error: { code: 'UNAUTHENTICATED', retryable: false },
           });
           expect(
-            validator('search_records')(result.structuredContent).valid
+            validator('records_search')(result.structuredContent).valid
           ).toBe(true);
           expect(JSON.parse(result.content[0].text as string)).toEqual(
             result.structuredContent

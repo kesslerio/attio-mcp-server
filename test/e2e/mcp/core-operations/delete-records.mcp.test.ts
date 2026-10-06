@@ -49,7 +49,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
     try {
       // First create a company to delete
       const companyData = TestDataFactory.createCompanyData('TC005_DELETE');
-      const createResult = await testCase.executeToolCall('create_record', {
+      const createResult = await testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -65,7 +65,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       testCase.trackRecord('companies', companyId);
 
       // Now delete the company
-      const deleteResult = await testCase.executeToolCall('delete_record', {
+      const deleteResult = await testCase.executeToolCall('records_delete', {
         resource_type: 'companies',
         record_id: companyId,
       });
@@ -74,7 +74,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
 
       // Verify deletion by trying to get details
       const detailsResult = await testCase.executeToolCall(
-        'get-record-details',
+        'records_get_details',
         {
           resource_type: 'companies',
           record_id: companyId,
@@ -102,7 +102,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
     try {
       // First create a person to delete
       const personData = TestDataFactory.createPersonData('TC005_DELETE');
-      const createResult = await testCase.executeToolCall('create_record', {
+      const createResult = await testCase.executeToolCall('records_create', {
         resource_type: 'people',
         record_data: personData,
       });
@@ -118,7 +118,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       testCase.trackRecord('people', personId);
 
       // Now delete the person
-      const deleteResult = await testCase.executeToolCall('delete_record', {
+      const deleteResult = await testCase.executeToolCall('records_delete', {
         resource_type: 'people',
         record_id: personId,
       });
@@ -127,7 +127,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
 
       // Verify deletion by trying to get details
       const detailsResult = await testCase.executeToolCall(
-        'get-record-details',
+        'records_get_details',
         {
           resource_type: 'people',
           record_id: personId,
@@ -155,7 +155,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
     try {
       // First create a task to delete
       const taskData = TestDataFactory.createTaskData('TC005_DELETE');
-      const createResult = await testCase.executeToolCall('create_record', {
+      const createResult = await testCase.executeToolCall('records_create', {
         resource_type: 'tasks',
         record_data: taskData,
       });
@@ -171,7 +171,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       testCase.trackRecord('tasks', taskId);
 
       // Now delete the task
-      const deleteResult = await testCase.executeToolCall('delete_record', {
+      const deleteResult = await testCase.executeToolCall('records_delete', {
         resource_type: 'tasks',
         record_id: taskId,
       });
@@ -180,7 +180,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
 
       // Verify deletion by trying to get details
       const detailsResult = await testCase.executeToolCall(
-        'get-record-details',
+        'records_get_details',
         {
           resource_type: 'tasks',
           record_id: taskId,
@@ -207,7 +207,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
     try {
       const fakeId = 'NONEXISTENT_' + Date.now();
 
-      const result = await testCase.executeToolCall('delete_record', {
+      const result = await testCase.executeToolCall('records_delete', {
         resource_type: 'companies',
         record_id: fakeId,
       });
@@ -246,7 +246,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
         domains: [`${uniqueIdentifier.toLowerCase()}.test.com`],
       };
 
-      const createResult = await testCase.executeToolCall('create_record', {
+      const createResult = await testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -263,7 +263,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
 
       // Verify it exists in search first
       const searchBeforeDelete = await testCase.executeToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: uniqueIdentifier,
@@ -284,7 +284,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       expect(searchBeforeText).toContain(uniqueIdentifier);
 
       // Delete the record
-      await testCase.executeToolCall('delete_record', {
+      await testCase.executeToolCall('records_delete', {
         resource_type: 'companies',
         record_id: companyId,
       });
@@ -294,7 +294,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
 
       // Search again - should not find it
       const searchAfterDelete = await testCase.executeToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           query: uniqueIdentifier,
@@ -330,7 +330,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
     try {
       // Create a company to delete
       const companyData = TestDataFactory.createCompanyData('TC005_CONFIRM');
-      const createResult = await testCase.executeToolCall('create_record', {
+      const createResult = await testCase.executeToolCall('records_create', {
         resource_type: 'companies',
         record_data: companyData,
       });
@@ -346,7 +346,7 @@ describe('TC-005: Delete Records - Data Removal', () => {
       testCase.trackRecord('companies', companyId);
 
       // Delete and check for confirmation
-      const deleteResult = await testCase.executeToolCall('delete_record', {
+      const deleteResult = await testCase.executeToolCall('records_delete', {
         resource_type: 'companies',
         record_id: companyId,
       });

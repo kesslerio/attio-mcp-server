@@ -52,7 +52,7 @@ describe('error-response-utils', () => {
       );
 
       expect(error.suggestions).toEqual([
-        'Use get-attributes to see valid fields for people',
+        'Use records_get_attributes to see valid fields for people',
       ]);
     });
   });
@@ -198,7 +198,7 @@ describe('error-response-utils', () => {
 
       expect(error.error).not.toContain('Did you mean');
       expect(error.suggestions).toEqual([
-        'Use get-attributes to see all available fields for people',
+        'Use records_get_attributes to see all available fields for people',
       ]);
     });
   });
@@ -270,7 +270,7 @@ describe('error-response-utils', () => {
         '- Choose one of: active, inactive'
       );
       expect(formatted.content[0].text).toContain(
-        '- Use get-attributes to see all available options'
+        '- Use records_get_attributes to see all available options'
       );
 
       expect(formatted.isError).toBe(true);
@@ -280,7 +280,7 @@ describe('error-response-utils', () => {
       expect(formatted.error.field).toBe('status');
       expect(formatted.error.suggestions).toEqual([
         'Choose one of: active, inactive',
-        'Use get-attributes to see all available options',
+        'Use records_get_attributes to see all available options',
       ]);
       expect(formatted.error.context).toBeDefined();
     });

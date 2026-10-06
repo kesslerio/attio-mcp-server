@@ -106,10 +106,10 @@ export * from './shared-handlers.js';
 export const universalToolConfigs = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckConfig,
-  smithery_debug_config: smitheryDiagnosticsConfig,
+  diagnostics_get: smitheryDiagnosticsConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
-  batch_search_records: batchSearchConfig,
+  records_batch_search: batchSearchConfig,
   ...openAiToolConfigs,
 };
 
@@ -119,10 +119,10 @@ export const universalToolConfigs = {
 export const universalToolDefinitions = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckToolDefinition,
-  smithery_debug_config: smitheryDiagnosticsToolDefinition,
+  diagnostics_get: smitheryDiagnosticsToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
-  batch_search_records: batchSearchToolDefinition,
+  records_batch_search: batchSearchToolDefinition,
   ...openAiToolDefinitions,
 };
 
@@ -131,21 +131,21 @@ export const universalToolDefinitions = {
  * These consolidate the majority of CRUD and basic search operations
  */
 export const coreUniversalTools = [
-  'search_records',
-  'get_record_details',
-  'create_company',
-  'update_company',
-  'create_deal',
-  'update_deal',
-  'create_record',
-  'update_record',
-  'upsert_record',
-  'delete_record',
-  'get_record_attributes',
-  'discover_record_attributes',
-  'get_record_info',
-  'get_record_interactions',
-  'merge_records',
+  'records_search',
+  'records_get_details',
+  'companies_create',
+  'companies_update',
+  'deals_create',
+  'deals_update',
+  'records_create',
+  'records_update',
+  'records_upsert',
+  'records_delete',
+  'records_get_attributes',
+  'records_discover_attributes',
+  'records_get_info',
+  'records_get_interactions',
+  'records_merge',
 ];
 
 /**
@@ -153,12 +153,12 @@ export const coreUniversalTools = [
  * These provide sophisticated search and batch capabilities
  */
 export const advancedUniversalTools = [
-  'search_records_advanced',
-  'search_records_by_relationship',
-  'search_records_by_content',
-  'search_records_by_timeframe',
-  'batch_records',
-  'batch_search_records',
+  'records_search_advanced',
+  'records_search_by_relationship',
+  'records_search_by_content',
+  'records_search_by_timeframe',
+  'records_batch',
+  'records_batch_search',
 ];
 
 /**
@@ -176,54 +176,54 @@ export const allUniversalTools = [
  */
 export const deprecatedToolMappings: Record<string, string> = {
   // Company tools → Universal equivalents
-  'search-companies': 'search_records',
-  'get-company-details': 'get_record_details',
-  'create-company': 'create_record',
-  'update-company': 'update_record',
-  'delete-company': 'delete_record',
-  'get-company-attributes': 'get_record_attributes',
-  'discover-company-attributes': 'discover_record_attributes',
-  'get-company-basic-info': 'get_record_info',
-  'get-company-contact-info': 'get_record_info',
-  'get-company-business-info': 'get_record_info',
-  'get-company-social-info': 'get_record_info',
-  'advanced-search-companies': 'search_records_advanced',
-  'search-companies-by-notes': 'search_records_by_content',
-  'search-companies-by-people': 'search_records_by_relationship',
+  'search-companies': 'records_search',
+  'get-company-details': 'records_get_details',
+  'create-company': 'records_create',
+  'update-company': 'records_update',
+  'delete-company': 'records_delete',
+  'get-company-attributes': 'records_get_attributes',
+  'discover-company-attributes': 'records_discover_attributes',
+  'get-company-basic-info': 'records_get_info',
+  'get-company-contact-info': 'records_get_info',
+  'get-company-business-info': 'records_get_info',
+  'get-company-social-info': 'records_get_info',
+  'advanced-search-companies': 'records_search_advanced',
+  'search-companies-by-notes': 'records_search_by_content',
+  'search-companies-by-people': 'records_search_by_relationship',
 
   // People tools → Universal equivalents
-  'search-people': 'search_records',
-  'get-person-details': 'get_record_details',
-  'create-person': 'create_record',
-  'advanced-search-people': 'search_records_advanced',
-  'search-people-by-company': 'search_records_by_relationship',
-  'search-people-by-activity': 'search_records_by_content',
-  'search-people-by-notes': 'search_records_by_content',
-  'search-people-by-creation-date': 'search_records_by_timeframe',
-  'search-people-by-modification-date': 'search_records_by_timeframe',
-  'search-people-by-last-interaction': 'search_records_by_timeframe',
+  'search-people': 'records_search',
+  'get-person-details': 'records_get_details',
+  'create-person': 'records_create',
+  'advanced-search-people': 'records_search_advanced',
+  'search-people-by-company': 'records_search_by_relationship',
+  'search-people-by-activity': 'records_search_by_content',
+  'search-people-by-notes': 'records_search_by_content',
+  'search-people-by-creation-date': 'records_search_by_timeframe',
+  'search-people-by-modification-date': 'records_search_by_timeframe',
+  'search-people-by-last-interaction': 'records_search_by_timeframe',
 
   // Record tools → Universal equivalents
-  'create-record': 'create_record', // Already universal
-  'get-record': 'get_record_details',
-  'update-record': 'update_record', // Already universal
-  'delete-record': 'delete_record', // Already universal
-  'list-records': 'search_records',
-  'batch-create-records': 'batch_records',
-  'batch-update-records': 'batch_records',
+  'create-record': 'records_create', // Already universal
+  'get-record': 'records_get_details',
+  'update-record': 'records_update', // Already universal
+  'delete-record': 'records_delete', // Already universal
+  'list-records': 'records_search',
+  'batch-create-records': 'records_batch',
+  'batch-update-records': 'records_batch',
 
   // Task tools → Universal equivalents
-  'create-task': 'create_record',
-  'update-task': 'update_record',
-  'delete-task': 'delete_record',
-  'list-tasks': 'search_records',
+  'create-task': 'records_create',
+  'update-task': 'records_update',
+  'delete-task': 'records_delete',
+  'list-tasks': 'records_search',
 
   // Batch tools → Universal equivalent
-  'batch-create-companies': 'batch_records',
-  'batch-update-companies': 'batch_records',
-  'batch-delete-companies': 'batch_records',
-  'batch-search-companies': 'batch_search_records',
-  'batch-get-company-details': 'batch_records',
+  'batch-create-companies': 'records_batch',
+  'batch-update-companies': 'records_batch',
+  'batch-delete-companies': 'records_batch',
+  'batch-search-companies': 'records_batch_search',
+  'batch-get-company-details': 'records_batch',
 };
 
 /**
@@ -394,9 +394,9 @@ export function getMigrationParams(
     ...originalParams,
   };
 
-  // Add specific parameters based on the universal tool type
+  // Add specific parameters based on the canonical universal tool name.
   switch (universalTool) {
-    case 'get-detailed-info': {
+    case 'records_get_info': {
       const infoType = infoTypeMappings[deprecatedToolName];
       if (infoType) {
         baseParams.info_type = infoType;
@@ -404,7 +404,7 @@ export function getMigrationParams(
       break;
     }
 
-    case 'search-by-content': {
+    case 'records_search_by_content': {
       const contentType = contentTypeMappings[deprecatedToolName];
       if (contentType) {
         baseParams.content_type = contentType;
@@ -412,7 +412,7 @@ export function getMigrationParams(
       break;
     }
 
-    case 'search-by-timeframe': {
+    case 'records_search_by_timeframe': {
       const timeframeType = timeframeTypeMappings[deprecatedToolName];
       if (timeframeType) {
         baseParams.timeframe_type = timeframeType;
@@ -420,7 +420,7 @@ export function getMigrationParams(
       break;
     }
 
-    case 'search-by-relationship': {
+    case 'records_search_by_relationship': {
       const relationshipType = relationshipTypeMappings[deprecatedToolName];
       if (relationshipType) {
         baseParams.relationship_type = relationshipType;
@@ -428,7 +428,8 @@ export function getMigrationParams(
       break;
     }
 
-    case 'batch-operations': {
+    case 'records_batch':
+    case 'records_batch_search': {
       const operationType = batchOperationTypeMappings[deprecatedToolName];
       if (operationType) {
         baseParams.operation_type = operationType;

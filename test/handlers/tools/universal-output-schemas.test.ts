@@ -47,30 +47,30 @@ const attribute = {
 };
 const cases = [
   ...[
-    'search_records',
-    'search_records_advanced',
-    'search_records_by_relationship',
-    'search_records_by_content',
-    'search_records_by_timeframe',
+    'records_search',
+    'records_search_advanced',
+    'records_search_by_relationship',
+    'records_search_by_content',
+    'records_search_by_timeframe',
   ].map((name) => ({ name, raw: [record], empty: [] })),
-  { name: 'get_record_attributes', raw: [attribute], empty: [] },
+  { name: 'records_get_attributes', raw: [attribute], empty: [] },
   {
-    name: 'discover_record_attributes',
+    name: 'records_discover_attributes',
     raw: { attributes: [attribute], mappings: { Stage: 'stage' }, count: 1 },
     empty: { attributes: [], mappings: {}, count: 0 },
   },
   {
-    name: 'get_record_attribute_options',
+    name: 'records_get_attribute_options',
     raw: { options: [option], attributeType: 'status' },
     empty: { options: [], attributeType: 'status' },
   },
   {
-    name: 'get_record_info',
+    name: 'records_get_info',
     raw: record,
     empty: { id: record.id, values: {} },
   },
   {
-    name: 'get_record_interactions',
+    name: 'records_get_interactions',
     raw: interactions,
     empty: {
       ...interactions,
@@ -78,7 +78,7 @@ const cases = [
     },
   },
   {
-    name: 'batch_records',
+    name: 'records_batch',
     raw: {
       operations: [
         { index: 0, success: true, result: record },
@@ -89,7 +89,7 @@ const cases = [
     empty: { operations: [], summary: { total: 0, successful: 0, failed: 0 } },
   },
   {
-    name: 'batch_search_records',
+    name: 'records_batch_search',
     raw: [
       { query: 'first', success: true, result: [record] },
       { query: 'second', success: false, error: 'Search failed' },
@@ -216,7 +216,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
     }
   );
 
-  it.each(['batch_records', 'batch_search_records'])(
+  it.each(['records_batch', 'records_batch_search'])(
     '%s treats all item failures as a completed batch',
     async (name) => {
       const config =
@@ -240,7 +240,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
 
   it('returns unsupported list attributes as a validation error before any option fetch', async () => {
     const result = await client.callTool({
-      name: 'get_record_attribute_options',
+      name: 'records_get_attribute_options',
       arguments: { resource_type: 'lists', attribute: 'stage' },
     });
     expect(result.isError).toBe(true);
@@ -254,7 +254,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
 
   it('preserves option identifiers/labels and interaction aggregates', () => {
     const options = buildStructuredToolResult(
-      universalToolConfigs.get_record_attribute_options,
+      universalToolConfigs.records_get_attribute_options,
       { options: [option], attributeType: 'status' },
       {}
     );
@@ -265,7 +265,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
     });
     expect(
       buildStructuredToolResult(
-        universalToolConfigs.get_record_interactions,
+        universalToolConfigs.records_get_interactions,
         interactions,
         {}
       ).structuredContent
@@ -277,7 +277,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
     (native) => {
       expect(
         buildStructuredToolResult(
-          universalToolConfigs.search_records_advanced,
+          universalToolConfigs.records_search_advanced,
           [native],
           {}
         ).structuredContent!.data
@@ -294,11 +294,11 @@ describe('universal read and batch output schemas over serialized MCP', () => {
         note: [{ value: 'Keep me' }],
       };
       vi.spyOn(
-        universalToolConfigs.get_record_attributes,
+        universalToolConfigs.records_get_attributes,
         'handler'
       ).mockResolvedValueOnce(attributes);
       const result = await client.callTool({
-        name: 'get_record_attributes',
+        name: 'records_get_attributes',
         arguments: {
           resource_type: resourceType,
           record_id: record.id.record_id,
@@ -323,13 +323,13 @@ describe('universal read and batch output schemas over serialized MCP', () => {
       count: 1,
     };
     const handler = vi.spyOn(
-      universalToolConfigs.discover_record_attributes,
+      universalToolConfigs.records_discover_attributes,
       'handler'
     );
     for (const note of ['Usage guidance', [{ value: 'Keep this note body' }]]) {
       handler.mockResolvedValueOnce({ ...grouped, note });
       const result = await client.callTool({
-        name: 'discover_record_attributes',
+        name: 'records_discover_attributes',
         arguments: { resource_type: 'deals' },
       });
       expect(result.isError).toBe(false);
@@ -340,7 +340,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
     }
     expect(
       buildStructuredToolResult(
-        universalToolConfigs.get_record_attributes,
+        universalToolConfigs.records_get_attributes,
         { ...grouped, note: 'CRM note body' },
         { resource_type: 'people' }
       ).structuredContent
@@ -392,17 +392,17 @@ describe('universal read and batch output schemas over serialized MCP', () => {
   it('keeps read-only batch search distinct from mutation-capable batching', async () => {
     const { tools } = await client.listTools();
     expect(
-      tools.find((tool) => tool.name === 'batch_search_records')!.annotations!
+      tools.find((tool) => tool.name === 'records_batch_search')!.annotations!
         .readOnlyHint
     ).toBe(true);
     expect(
-      tools.find((tool) => tool.name === 'batch_records')!.annotations!
+      tools.find((tool) => tool.name === 'records_batch')!.annotations!
         .readOnlyHint
     ).toBe(false);
     const malformed = [{ query: 'one', success: true, result: record }];
     expect(() =>
       buildStructuredToolResult(
-        universalToolConfigs.batch_search_records,
+        universalToolConfigs.records_batch_search,
         malformed,
         {}
       )

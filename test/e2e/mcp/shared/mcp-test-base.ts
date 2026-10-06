@@ -120,7 +120,7 @@ export abstract class MCPTestBase {
 
     for (const { type, id } of allTracked.values()) {
       try {
-        const result = await this.executeToolCall('delete_record', {
+        const result = await this.executeToolCall('records_delete', {
           resource_type: type,
           record_id: id,
         });
@@ -451,7 +451,7 @@ export abstract class MCPTestBase {
     Array<{ id: string; email: string; name: string }>
   > {
     try {
-      const result = await this.executeToolCall('list-workspace-members', {});
+      const result = await this.executeToolCall('workspace_members_list', {});
 
       const parsed = this.parseJsonFromResult(result) as {
         members?: Array<{
@@ -487,7 +487,7 @@ export abstract class MCPTestBase {
    */
   async discoverListAttributes(listId: string): Promise<string[]> {
     try {
-      const result = await this.executeToolCall('get-list-details', { listId });
+      const result = await this.executeToolCall('lists_get', { listId });
 
       const parsed = this.parseJsonFromResult(result) as {
         attributes?: Array<{

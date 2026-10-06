@@ -196,17 +196,17 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       // E2E tests expect errors in the format: "Error executing tool 'tool-name': <error-message>"
       const toolErrorFormats = [
         ErrorPatternValidator.formatForE2ETest(
-          'update-record',
+          'records_update',
           'task_not_found',
           'invalid-task-123'
         ),
         ErrorPatternValidator.formatForE2ETest(
-          'delete-record',
+          'records_delete',
           'list_not_found',
           'invalid-list-456'
         ),
         ErrorPatternValidator.formatForE2ETest(
-          'get-record-details',
+          'records_get_details',
           'company_not_found',
           'invalid-company-789'
         ),

@@ -42,7 +42,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     // First, we need to get some valid record IDs by searching
     try {
       // Search for companies to get an ID
-      const companySearch = await testCase.executeToolCall('search-records', {
+      const companySearch = await testCase.executeToolCall('records_search', {
         resource_type: 'companies',
         limit: 1,
       });
@@ -50,7 +50,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
       companyId = testCase.extractRecordId(companyText);
 
       // Search for people to get an ID
-      const personSearch = await testCase.executeToolCall('search-records', {
+      const personSearch = await testCase.executeToolCall('records_search', {
         resource_type: 'people',
         limit: 1,
       });
@@ -58,7 +58,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
       personId = testCase.extractRecordId(personText);
 
       // Search for tasks to get an ID
-      const taskSearch = await testCase.executeToolCall('search-records', {
+      const taskSearch = await testCase.executeToolCall('records_search', {
         resource_type: 'tasks',
         limit: 1,
       });
@@ -93,7 +93,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     try {
       if (!companyId) {
         // If we don't have a valid ID, we'll test error handling
-        const result = await testCase.executeToolCall('get-record-details', {
+        const result = await testCase.executeToolCall('records_get_details', {
           resource_type: 'companies',
           record_id: 'INVALID_ID_TC002',
         });
@@ -105,7 +105,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
           'INVALID_ID_TC002'
         );
       } else {
-        const result = await testCase.executeToolCall('get-record-details', {
+        const result = await testCase.executeToolCall('records_get_details', {
           resource_type: 'companies',
           record_id: companyId,
         });
@@ -130,14 +130,14 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     try {
       if (!personId) {
         // Test error handling for invalid ID
-        const result = await testCase.executeToolCall('get-record-details', {
+        const result = await testCase.executeToolCall('records_get_details', {
           resource_type: 'people',
           record_id: 'INVALID_ID_TC002',
         });
 
         QAAssertions.assertRecordNotFound(result, 'people', 'INVALID_ID_TC002');
       } else {
-        const result = await testCase.executeToolCall('get-record-details', {
+        const result = await testCase.executeToolCall('records_get_details', {
           resource_type: 'people',
           record_id: personId,
         });
@@ -162,14 +162,14 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
     try {
       if (!taskId) {
         // Test error handling for invalid ID
-        const result = await testCase.executeToolCall('get-record-details', {
+        const result = await testCase.executeToolCall('records_get_details', {
           resource_type: 'tasks',
           record_id: 'INVALID_ID_TC002',
         });
 
         QAAssertions.assertRecordNotFound(result, 'tasks', 'INVALID_ID_TC002');
       } else {
-        const result = await testCase.executeToolCall('get-record-details', {
+        const result = await testCase.executeToolCall('records_get_details', {
           resource_type: 'tasks',
           record_id: taskId,
         });
@@ -196,7 +196,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
 
       try {
         const fakeId = 'NONEXISTENT_' + Date.now();
-        const result = await testCase.executeToolCall('get-record-details', {
+        const result = await testCase.executeToolCall('records_get_details', {
           resource_type: 'companies',
           record_id: fakeId,
         });
@@ -228,7 +228,7 @@ describe('TC-002: Get Record Details - Data Retrieval', () => {
       try {
         // Use company ID if available
         if (companyId) {
-          const result = await testCase.executeToolCall('get-record-details', {
+          const result = await testCase.executeToolCall('records_get_details', {
             resource_type: 'companies',
             record_id: companyId,
           });

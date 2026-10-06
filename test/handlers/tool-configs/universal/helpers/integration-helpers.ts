@@ -207,10 +207,10 @@ export class IntegrationTestDataManager {
             operation_type: BatchOperationType.DELETE,
             record_ids: batch,
           });
-        } else if (toolConfigs['delete-record']) {
+        } else if (toolConfigs['records_delete']) {
           // Fallback to individual delete operations
           const deletePromises = batch.map((recordId) =>
-            toolConfigs['delete-record'].handler({
+            toolConfigs['records_delete'].handler({
               resource_type: resourceType,
               record_id: recordId,
             })

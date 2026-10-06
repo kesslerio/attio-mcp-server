@@ -7,31 +7,31 @@ import {
 } from '@/handlers/tool-configs/universal/shared-handlers.js';
 
 describe('universal list mutation guards', () => {
-  it('blocks lists in create-record', async () => {
+  it('blocks lists in records_create', async () => {
     await expect(
       handleUniversalCreate({
         resource_type: 'lists',
         record_data: { name: 'x', parent_object: 'people' },
       })
-    ).rejects.toThrow(/not supported by universal create-record/i);
+    ).rejects.toThrow(/not supported by records_create/i);
   });
 
-  it('blocks lists in update-record', async () => {
+  it('blocks lists in records_update', async () => {
     await expect(
       handleUniversalUpdate({
         resource_type: 'lists',
         record_id: 'list_123',
         record_data: { name: 'updated' },
       })
-    ).rejects.toThrow(/not supported by universal update-record/i);
+    ).rejects.toThrow(/not supported by records_update/i);
   });
 
-  it('blocks lists in delete-record', async () => {
+  it('blocks lists in records_delete', async () => {
     await expect(
       handleUniversalDelete({
         resource_type: 'lists',
         record_id: 'list_123',
       })
-    ).rejects.toThrow(/not supported by universal delete-record/i);
+    ).rejects.toThrow(/not supported by records_delete/i);
   });
 });

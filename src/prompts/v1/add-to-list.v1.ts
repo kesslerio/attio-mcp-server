@@ -60,13 +60,13 @@ export function buildAddToListMessages(
 Steps:
 1. Resolve records: Parse "${validated.records}" (comma-separated). For each:
    - If URL or ID: use directly
-   - If starts with "search:": call \`search_records\` with the right resource_type to resolve
+   - If starts with "search:": call \`records_search\` with the right resource_type to resolve
    - Only companies and people are supported for list-entry adds. If a deal is requested, explain that this list tool cannot add deals and STOP.
    If ambiguous, disambiguate with user.
 
-2. Resolve list: If "${validated.list}" is not a UUID, call \`search_records\` with resource_type="lists" to find one list by exact name.
+2. Resolve list: If "${validated.list}" is not a UUID, call \`records_search\` with resource_type="lists" to find one list by exact name.
 
-3. For each resolved record, call \`manage-list-entry\` once with Mode 1 (add) parameters:
+3. For each resolved record, call \`list_entries_manage\` once with Mode 1 (add) parameters:
    - List ID from step 2
    - One recordId from step 1
    - objectType matching each record's supported resource type ("companies" or "people")

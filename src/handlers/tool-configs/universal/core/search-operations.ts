@@ -34,7 +34,7 @@ export const searchRecordsConfig: UniversalToolConfig<
       pagination?: Record<string, unknown>;
     }
 > = {
-  name: 'search_records',
+  name: 'records_search',
   ...recordSearchResultContract,
   handler: async (
     params: UniversalSearchParams
@@ -48,7 +48,7 @@ export const searchRecordsConfig: UniversalToolConfig<
   > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
-        'search_records',
+        'records_search',
         params
       ) as UniversalSearchParams;
       // U5 (KTD6): every collection call pages through the continuation seam so
@@ -187,13 +187,13 @@ export const searchRecordsConfig: UniversalToolConfig<
 };
 
 export const searchRecordsDefinition = {
-  name: 'search_records',
+  name: 'records_search',
   description: formatToolDescription({
     capability: 'Search across companies, people, deals, tasks, and records',
     boundaries: 'create or modify records',
     constraints:
       'Returns max 100 results (default: 10). Pass the sealed next_cursor from a previous page to continue this exact query; never combine cursor with offset. Ranked relevance sorts are a bounded view, not a stable page sequence.',
-    recoveryHint: 'use discover_record_attributes to find searchable fields',
+    recoveryHint: 'use records_discover_attributes to find searchable fields',
   }),
   inputSchema: searchRecordsSchema,
   annotations: {

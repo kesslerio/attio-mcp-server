@@ -197,7 +197,7 @@ export async function handleUniversalGetNotesPage(
 
   // Validate key inputs early for clearer messages
   if (!resource_type || !record_id) {
-    throw new Error('Attio list-notes failed (400): invalid request');
+    throw new Error('Attio notes_list failed (400): invalid request');
   }
 
   try {
@@ -264,7 +264,7 @@ export async function handleUniversalGetNotesPage(
             ? message
             : `invalid: ${message}`;
     throw new Error(
-      `Attio list-notes failed${
+      `Attio notes_list failed${
         status ? ` (${status})` : ''
       }: ${semanticMessage}`
     );
@@ -352,7 +352,7 @@ export async function handleUniversalCreate(
     // on the dedicated list tools; the strategy wiring stays live for the
     // moment this gate is lifted.
     throw new Error(
-      'resource_type "lists" is not supported by universal create-record. Use dedicated list tools for administrative list operations.'
+      'resource_type "lists" is not supported by records_create. Use dedicated list tools for administrative list operations.'
     );
   }
   return UniversalCreateService.createRecord(params);
@@ -367,7 +367,7 @@ export async function handleUniversalUpdate(
   if (params.resource_type === UniversalResourceType.LISTS) {
     // Dedicated list tools own list access controls (see create gate above).
     throw new Error(
-      'resource_type "lists" is not supported by universal update-record. Use dedicated list tools for administrative list operations.'
+      'resource_type "lists" is not supported by records_update. Use dedicated list tools for administrative list operations.'
     );
   }
   return UniversalUpdateService.updateRecord(params);
@@ -381,7 +381,7 @@ export async function handleUniversalDelete(
 ): Promise<{ success: boolean; record_id: string }> {
   if (params.resource_type === UniversalResourceType.LISTS) {
     throw new Error(
-      'resource_type "lists" is not supported by universal delete-record. Use dedicated list tools for administrative list operations.'
+      'resource_type "lists" is not supported by records_delete. Use dedicated list tools for administrative list operations.'
     );
   }
   return UniversalDeleteService.deleteRecord(params);
@@ -643,8 +643,8 @@ export async function handleUniversalGetAttributeOptions(
   if (resource_type === UniversalResourceType.LISTS) {
     throw Object.assign(
       new Error(
-        'get_record_attribute_options does not yet support list attributes. ' +
-          'Use get-list-details to inspect list attribute schemas instead.'
+        'records_get_attribute_options does not yet support list attributes. ' +
+          'Use lists_get to inspect list attribute schemas instead.'
       ),
       { code: 'VALIDATION_ERROR' }
     );
@@ -733,7 +733,7 @@ export async function handleUniversalGetAttributeOptions(
             : '';
         throw new Error(
           `Attribute "${attribute}" not found on ${objectSlug}.${suggestionText}\n\n` +
-            `Use API slugs (e.g., "stage" not "Deal stage"). Run discover_record_attributes(resource_type="${objectSlug}") to see available attribute slugs.`
+            `Use API slugs (e.g., "stage" not "Deal stage"). Run records_discover_attributes(resource_type="${objectSlug}") to see available attribute slugs.`
         );
       }
     } catch (resolutionError) {
@@ -744,7 +744,7 @@ export async function handleUniversalGetAttributeOptions(
 
     throw new Error(
       `${errorMsg}\n\nTip: Use the API slug (e.g., "stage") not the display name (e.g., "Deal stage"). ` +
-        `Run discover_record_attributes to see available attribute slugs.`
+        `Run records_discover_attributes to see available attribute slugs.`
     );
   }
 }

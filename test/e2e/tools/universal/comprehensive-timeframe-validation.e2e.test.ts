@@ -26,7 +26,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
   describe('📅 Absolute Date Range Tests', () => {
     it('Test 5: Specific date range for companies', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -56,7 +56,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 6: Single start date (greater than)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -84,7 +84,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 7: Single end date (less than)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -114,7 +114,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
   describe('🎯 Edge Cases & Error Handling', () => {
     it('Test 8: Invalid date format (should fail gracefully)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -148,7 +148,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 9: Date range backwards (should fail)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -179,7 +179,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 10: Missing date field (should use default)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -205,7 +205,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 11: Timeframe overrides absolute dates', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -236,7 +236,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
   describe('🔄 Different Date Fields', () => {
     it('Test 12: Created at field', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -256,7 +256,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 13: Updated at field', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -276,7 +276,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 14: Last interaction field', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -296,7 +296,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 15: Custom date field', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -326,7 +326,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
   describe('🚀 Performance & Volume Tests', () => {
     it('Test 16: Large date range (should return many results)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -355,7 +355,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 17: Recent narrow range (should be fast)', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',
@@ -375,7 +375,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 18: With pagination', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -398,7 +398,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
   describe('🧪 Integration with Other Filters', () => {
     it('Test 19: Timeframe + text search', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -419,7 +419,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 20: Timeframe + specific filters', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'companies',
           search_type: 'timeframe',
@@ -448,7 +448,7 @@ describe('Comprehensive Timeframe Search MCP Validation', () => {
 
     it('Test 21: Complex combined search', async () => {
       await client.assertToolCall(
-        'search-records',
+        'records_search',
         {
           resource_type: 'people',
           search_type: 'timeframe',

@@ -49,7 +49,7 @@ describe.skipIf(
         },
       ];
       for (const c of cases) {
-        const response = (await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('records_search', {
           resource_type: 'companies',
           ...c.params,
         } as any)) as McpToolResponse;
@@ -70,7 +70,7 @@ describe.skipIf(
         { name: 'Negative offset', params: { limit: 10, offset: -1 } },
       ];
       for (const b of boundary) {
-        const response = (await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('records_search', {
           resource_type: 'companies',
           query: 'boundary-test',
           ...b.params,
@@ -87,7 +87,7 @@ describe.skipIf(
     'prevents infinite loops and long-running searches',
     async () => {
       const start = Date.now();
-      const response = (await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('records_search', {
         resource_type: 'companies',
         query: 'recursion-test',
         limit: 10,
@@ -105,7 +105,7 @@ describe.skipIf(
     async () => {
       const tests = [
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: 'X'.repeat(500),
             limit: 50,
@@ -114,7 +114,7 @@ describe.skipIf(
           const searches = Array(8)
             .fill(null)
             .map((_, i) =>
-              callUniversalTool('search-records', {
+              callUniversalTool('records_search', {
                 resource_type: 'companies',
                 query: `concurrent-${i}`,
                 limit: 10,
@@ -139,24 +139,24 @@ describe.skipIf(
     async () => {
       const ops = [
         () =>
-          callUniversalTool('get-record-details', {
+          callUniversalTool('records_get_details', {
             resource_type: 'companies',
             record_id: 'definitely-does-not-exist',
           } as any),
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: 'stability-test-1',
             limit: 1,
           } as any),
         () =>
-          callUniversalTool('update_record', {
+          callUniversalTool('records_update', {
             resource_type: 'companies',
             record_id: 'non-existent-id',
             record_data: { name: 'Update test' },
           } as any),
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: 'stability-test-2',
             limit: 1,
@@ -167,7 +167,7 @@ describe.skipIf(
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         expect('isError' in response).toBe(true);
-        const health = (await callUniversalTool('search-records', {
+        const health = (await callUniversalTool('records_search', {
           resource_type: 'companies',
           query: 'health-check',
           limit: 1,
@@ -184,13 +184,13 @@ describe.skipIf(
     async () => {
       const cases = [
         () =>
-          callUniversalTool('search-records', {
+          callUniversalTool('records_search', {
             resource_type: 'companies',
             query: 'contract-test',
             limit: 1,
           } as any),
         () =>
-          callUniversalTool('get-record-details', {
+          callUniversalTool('records_get_details', {
             resource_type: 'companies',
             record_id: 'contract-test-id',
           } as any),
