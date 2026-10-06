@@ -184,7 +184,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       };
 
       const result = await searchByTimeframeConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockSpecialized.searchPeopleByCreationDate).toHaveBeenCalledWith({
         start: '2023-12-01T00:00:00Z',
         end: '2023-12-31T23:59:59Z',
@@ -213,7 +217,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       };
 
       const result = await searchByTimeframeConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           resource_type: UniversalResourceType.PEOPLE,
@@ -246,7 +254,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       };
 
       const result = await searchByTimeframeConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           resource_type: UniversalResourceType.PEOPLE,
@@ -279,7 +291,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       };
 
       const result = await searchByTimeframeConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           timeframe_attribute: 'last_interaction',
@@ -310,7 +326,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       };
 
       const result = await searchByTimeframeConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           timeframe_attribute: 'updated_at',
@@ -342,7 +362,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByTimeframeConfig.handler(params);
 
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           resource_type: UniversalResourceType.PEOPLE,
@@ -375,7 +399,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByTimeframeConfig.handler(params);
 
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           timeframe_attribute: 'last_interaction',
@@ -405,7 +433,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByTimeframeConfig.handler(params);
 
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           timeframe_attribute: 'last_interaction',
@@ -447,7 +479,11 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       // Should successfully execute without throwing errors
       const result = await searchByTimeframeConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       const { mockHandlers } = getMockInstances();
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({

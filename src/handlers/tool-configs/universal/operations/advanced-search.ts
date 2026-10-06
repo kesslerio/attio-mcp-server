@@ -22,21 +22,27 @@ import {
 } from '@/handlers/tool-configs/universal/core/utils.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { normalizeFilterCondition } from '@/types/attio.js';
+import type { UniversalRecordCollectionPage } from '@/services/UniversalSearchService.js';
+
+type AdvancedSearchRawResult =
+  | UniversalRecordResult[]
+  | UniversalRecordCollectionPage;
 
 /**
  * Universal advanced search tool
  * Consolidates complex filtering across all resource types
+ * U5: cursor-bearing calls continue through searchRecordsPage (KTD6).
  */
 export const advancedSearchConfig: UniversalToolConfig<
   AdvancedSearchParams,
-  UniversalRecordResult[]
+  AdvancedSearchRawResult
 > = {
   name: 'search_records_advanced',
   ...recordSearchResultContract,
   structuredOutput: normalizeRecordCollection,
   handler: async (
     params: AdvancedSearchParams
-  ): Promise<UniversalRecordResult[]> => {
+  ): Promise<AdvancedSearchRawResult> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_advanced',
@@ -88,15 +94,25 @@ export const advancedSearchConfig: UniversalToolConfig<
 
       // Delegate to universal search handler defined elsewhere
       // We intentionally avoid importing the handler here to keep concerns separated
-      const { handleUniversalSearch } =
+      const { handleUniversalSearchPage } =
         await import('@/handlers/tool-configs/universal/shared-handlers.js');
-      return await handleUniversalSearch({
+      const searchParams = {
         resource_type,
         query: sanitizedParams.query,
         filters,
+        sort_by: sanitizedParams.sort_by,
+        sort_order: sanitizedParams.sort_order,
         limit: sanitizedParams.limit,
         offset: sanitizedParams.offset,
-      });
+        ...(typeof sanitizedParams.cursor === 'string' &&
+        sanitizedParams.cursor.length > 0
+          ? { cursor: sanitizedParams.cursor }
+          : {}),
+      };
+      return await handleUniversalSearchPage(
+        searchParams,
+        'records_search_advanced'
+      );
     } catch (error: unknown) {
       const ctx = (params as { resource_type?: unknown })?.resource_type
         ? String((params as { resource_type: unknown }).resource_type)
@@ -108,9 +124,12 @@ export const advancedSearchConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
+  formatResult: (results: AdvancedSearchRawResult, ...args: unknown[]) => {
     const resourceType = extractResourceTypeFromFormatArgs(args);
-    const count = Array.isArray(results) ? results.length : 0;
+    const records = Array.isArray(results)
+      ? results
+      : ((results as UniversalRecordCollectionPage).data ?? []);
+    const count = Array.isArray(records) ? records.length : 0;
     const typeName = resourceType
       ? getSingularResourceLabel(resourceType)
       : 'record';
@@ -120,11 +139,11 @@ export const advancedSearchConfig: UniversalToolConfig<
         : getPluralResourceLabel(resourceType)
       : 'records';
 
-    if (!Array.isArray(results)) {
+    if (!Array.isArray(records)) {
       return `Advanced search found 0 ${headerType}:`;
     }
 
-    const lines = results.map(
+    const lines = records.map(
       (record: Record<string, unknown>, index: number) => {
         const values = safeExtractRecordValues(record);
         const recordId = record.id as Record<string, unknown>;

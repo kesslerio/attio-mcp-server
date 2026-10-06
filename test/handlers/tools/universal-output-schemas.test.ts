@@ -305,9 +305,13 @@ describe('universal read and batch output schemas over serialized MCP', () => {
         },
       });
       expect(result.isError).toBe(false);
-      expect(result.structuredContent).toEqual({ data: attributes });
+      expect(result.structuredContent).toEqual({
+        data: attributes,
+        pagination: { supported: false, truncated: false },
+      });
       expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual({
         data: attributes,
+        pagination: { supported: false, truncated: false },
       });
     }
   );
@@ -331,6 +335,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
       expect(result.isError).toBe(false);
       expect(result.structuredContent).toEqual({
         data: typeof note === 'string' ? grouped : { ...grouped, note },
+        pagination: { supported: false, truncated: false },
       });
     }
     expect(
@@ -339,7 +344,10 @@ describe('universal read and batch output schemas over serialized MCP', () => {
         { ...grouped, note: 'CRM note body' },
         { resource_type: 'people' }
       ).structuredContent
-    ).toEqual({ data: { ...grouped, note: 'CRM note body' } });
+    ).toEqual({
+      data: { ...grouped, note: 'CRM note body' },
+      pagination: { supported: false, truncated: false },
+    });
   });
 
   it('distinguishes arrays, explicit wrappers, attribute maps, and documented service errors', () => {
@@ -364,7 +372,10 @@ describe('universal read and batch output schemas over serialized MCP', () => {
       error: [{ value: 'CRM field' }],
       success: [{ value: false }],
     };
-    expect(normalizeMetadata(attributes)).toEqual({ data: attributes });
+    expect(normalizeMetadata(attributes)).toEqual({
+      data: attributes,
+      pagination: { supported: false, truncated: false },
+    });
     expect(assertReadSuccess(attributes)).toEqual(attributes);
     expect(
       normalizeMetadata({
@@ -374,6 +385,7 @@ describe('universal read and batch output schemas over serialized MCP', () => {
       })
     ).toEqual({
       data: { attributes: [], mappings: {}, note: 'Usage guidance' },
+      pagination: { supported: false, truncated: false },
     });
   });
 

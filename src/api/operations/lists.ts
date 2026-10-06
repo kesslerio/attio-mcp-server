@@ -62,7 +62,9 @@ export async function getAllLists(
           ? response.data
           : undefined;
   if (!Array.isArray(items)) throw new ResultEncodingError();
-  return items;
+  return Object.defineProperty([...items], 'truncated', {
+    value: false,
+  });
 }
 
 /**

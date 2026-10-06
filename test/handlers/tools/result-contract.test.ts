@@ -100,7 +100,12 @@ describe('result contract serialization', () => {
       expect(enabled.content).toHaveLength(2);
       expect(JSON.parse(disabled.content[0].text as string)).toEqual(
         config === searchRecordsConfig
-          ? { data: [record], count: 1, next_cursor: null }
+          ? {
+              data: [record],
+              count: 1,
+              next_cursor: null,
+              pagination: { supported: false, truncated: true },
+            }
           : { data: record }
       );
       expect(disabled.content).toEqual(
@@ -245,6 +250,7 @@ describe('result contract serialization', () => {
       data: [],
       count: 0,
       next_cursor: null,
+      pagination: { supported: false, truncated: true },
     });
     const validator = new AjvJsonSchemaValidator().getValidator(
       recordSearchResultContract.outputSchema!

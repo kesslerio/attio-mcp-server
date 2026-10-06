@@ -556,3 +556,35 @@ limitations; boundary A in that guide owns error handling and prose opt-out.
 curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
   | jq '.result.tools[] | select(.name | test("list|workspace-member")) | {name, outputSchema}'
 ```
+
+---
+
+## Migration 5: Collection Continuation (U5)
+
+Collection tools gain machine-readable pagination state. The envelope fields
+`data` and `count` are unchanged; `next_cursor` may now carry a token, and a
+`pagination` disclosure may accompany it.
+
+### Before (phase one)
+
+```json
+{ "data": [], "count": 0, "next_cursor": null }
+```
+
+`next_cursor` was always null, and null said nothing about whether results
+were withheld.
+
+### Updating a client
+
+Read [Collection Continuation](universal-tools/api-reference.md#collection-continuation-u5)
+for supported query paths, bounded-result disclosures, cursor replay rules,
+limits, and expiration. Clients consuming the old envelope must accept the
+additional `pagination` field and a non-null `next_cursor` on supported paths.
+
+### Verifying a client
+
+```bash
+# Confirm the cursor input and pagination-aware output schema are advertised.
+curl -s "$MCP_ENDPOINT" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  | jq '.result.tools[] | select(.name == "search_records") | {inputSchema: .inputSchema.properties.cursor, outputSchema: .outputSchema}'
+```

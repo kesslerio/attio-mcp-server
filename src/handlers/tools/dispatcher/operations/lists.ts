@@ -107,7 +107,8 @@ export async function handleGetListsOperation(
   );
 
   try {
-    const lists = await toolConfig.handler();
+    const args = (request.params?.arguments ?? {}) as Record<string, unknown>;
+    const lists = await toolConfig.handler(args.cursor);
     return listToolResult(toolConfig, request, lists);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.
@@ -773,6 +774,7 @@ export async function handleGetListEntriesOperation(
   const listId = request.params.arguments?.listId as string;
   const limit = request.params.arguments?.limit as number;
   const offset = request.params.arguments?.offset as number;
+  const cursor = request.params.arguments?.cursor as string | undefined;
   const filters = request.params.arguments?.filters;
 
   if (!listId) {
@@ -785,7 +787,13 @@ export async function handleGetListEntriesOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, limit, offset, filters);
+    const result = await toolConfig.handler(
+      listId,
+      limit,
+      offset,
+      filters,
+      cursor
+    );
     return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
     // Encoding failures belong to the shared boundary, not to local prose.

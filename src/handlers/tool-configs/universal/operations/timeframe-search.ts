@@ -16,7 +16,7 @@ import { safeExtractTimestamp } from '@/handlers/tool-configs/shared/type-utils.
 
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
-import { handleUniversalSearch } from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { handleUniversalSearchPage } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import {
   extractResourceTypeFromFormatArgs,
   getPluralResourceLabel,
@@ -96,19 +96,31 @@ function resolveDateOperator(
 
 export const searchByTimeframeConfig: UniversalToolConfig<
   TimeframeSearchParams,
-  UniversalRecordResult[]
+  | UniversalRecordResult[]
+  | {
+      data: UniversalRecordResult[];
+      next_cursor?: string | null;
+      pagination?: Record<string, unknown>;
+    }
 > = {
   name: 'search_records_by_timeframe',
   ...recordSearchResultContract,
   structuredOutput: normalizeRecordCollection,
   handler: async (
     params: TimeframeSearchParams
-  ): Promise<UniversalRecordResult[]> => {
+  ): Promise<
+    | UniversalRecordResult[]
+    | {
+        data: UniversalRecordResult[];
+        next_cursor?: string | null;
+        pagination?: Record<string, unknown>;
+      }
+  > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'search_records_by_timeframe',
         params
-      );
+      ) as TimeframeSearchParams;
 
       const {
         resource_type,
@@ -119,7 +131,6 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         invert_range,
         date_field,
         limit,
-        offset,
       } = sanitizedParams;
 
       // Process relative_range parameter if provided (Issue #475)
@@ -225,20 +236,21 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       // Create the filter object with the expected structure (legacy compatibility)
       const filters = { filters: dateFilters } as Record<string, unknown>;
 
-      // Use the universal search handler; pass timeframe params explicitly so the
-      // UniversalSearchService can FORCE Query API routing for date comparisons
-      return await handleUniversalSearch({
-        resource_type,
-        query: '',
-        filters,
-        // Force timeframe routing parameters
-        timeframe_attribute: timestampField,
-        start_date: startIso,
-        end_date: endIso,
-        date_operator: timeframeOperator,
-        limit: limit || 20,
-        offset: offset || 0,
-      });
+      return await handleUniversalSearchPage(
+        {
+          resource_type,
+          query: '',
+          filters,
+          timeframe_attribute: timestampField,
+          start_date: startIso,
+          end_date: endIso,
+          date_operator: timeframeOperator,
+          limit: limit ?? 20,
+          offset: sanitizedParams.offset,
+          cursor: sanitizedParams.cursor,
+        },
+        'records_search_by_timeframe'
+      );
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         'search_records_by_timeframe',
@@ -247,7 +259,17 @@ export const searchByTimeframeConfig: UniversalToolConfig<
       );
     }
   },
-  formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
+  formatResult: (
+    results:
+      | UniversalRecordResult[]
+      | {
+          data: UniversalRecordResult[];
+          next_cursor?: string | null;
+          pagination?: Record<string, unknown>;
+        },
+    ...args: unknown[]
+  ) => {
+    const records = Array.isArray(results) ? results : (results.data ?? []);
     const timeframeType = extractTimeframeTypeFromFormatArgs(args);
     const firstArgResourceType = extractResourceTypeFromFormatArgs(args);
     const resourceType =
@@ -256,14 +278,14 @@ export const searchByTimeframeConfig: UniversalToolConfig<
           ? args[1]
           : undefined
         : firstArgResourceType;
-    if (!Array.isArray(results)) {
+    if (!Array.isArray(records)) {
       return 'Found 0 records (timeframe search)\nTip: Ensure your workspace has data in the requested date range.';
     }
 
     const timeframeName = timeframeType
       ? timeframeType.replace(/_/g, ' ')
       : 'timeframe';
-    const resourceCount = results.length;
+    const resourceCount = records.length;
     const resourceTypeName = resourceType
       ? resourceCount === 1
         ? getSingularResourceLabel(resourceType)
@@ -273,8 +295,8 @@ export const searchByTimeframeConfig: UniversalToolConfig<
         : 'records';
 
     return `Found ${
-      results.length
-    } ${resourceTypeName} by ${timeframeName}:\n${results
+      records.length
+    } ${resourceTypeName} by ${timeframeName}:\n${records
       .map((record: Record<string, unknown>, index: number) => {
         const values = isAttioRecord(record as UniversalRecordResult)
           ? ((record as { values?: Record<string, unknown> }).values as Record<

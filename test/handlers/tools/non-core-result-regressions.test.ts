@@ -73,6 +73,8 @@ describe('non-core result boundary regressions', () => {
         data: [expected],
         count: 1,
         next_cursor: null,
+        // Bounded per-record membership set: no continuation (U5 disclosure).
+        pagination: { supported: false, truncated: true },
       });
       expect(JSON.parse(result.content[0].text as string)).toEqual(
         result.structuredContent
@@ -144,6 +146,8 @@ describe('non-core result boundary regressions', () => {
         data: [expected],
         count: 1,
         next_cursor: null,
+        // Bounded per-record membership set: no continuation (U5 disclosure).
+        pagination: { supported: false, truncated: true },
       });
       expect(JSON.parse(result.content[0].text as string)).toEqual({
         results: [expected],

@@ -25,11 +25,11 @@ vi.mock('@/services/ErrorService.js', () => ({
 }));
 
 const mockHandleUniversalCreateNote = vi.fn();
-const mockHandleUniversalGetNotes = vi.fn();
+const mockHandleUniversalGetNotesPage = vi.fn();
 
 vi.mock('@/handlers/tool-configs/universal/shared-handlers.js', () => ({
   handleUniversalCreateNote: mockHandleUniversalCreateNote,
-  handleUniversalGetNotes: mockHandleUniversalGetNotes,
+  handleUniversalGetNotesPage: mockHandleUniversalGetNotesPage,
 }));
 
 const mockIsValidUUID = vi.fn();
@@ -195,7 +195,7 @@ describe('listNotesConfig.handler', () => {
       /Invalid record_id: must be a UUID/
     );
 
-    expect(mockHandleUniversalGetNotes).not.toHaveBeenCalled();
+    expect(mockHandleUniversalGetNotesPage).not.toHaveBeenCalled();
     expect(mockCreateUniversalError).toHaveBeenCalled();
   });
 
@@ -208,7 +208,7 @@ describe('listNotesConfig.handler', () => {
     vi.mocked(validateUniversalToolParams).mockReturnValueOnce(sanitizedParams);
     mockIsValidUUID.mockReturnValue(true);
     const upstreamNotes = [{ title: 'Note', id: { record_id: 'note-1' } }];
-    mockHandleUniversalGetNotes.mockResolvedValueOnce(upstreamNotes);
+    mockHandleUniversalGetNotesPage.mockResolvedValueOnce(upstreamNotes);
 
     await expect(listNotesConfig.handler({})).resolves.toEqual(upstreamNotes);
   });

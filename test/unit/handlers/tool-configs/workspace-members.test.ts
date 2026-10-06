@@ -152,6 +152,7 @@ describe('workspaceMembersToolConfigs', () => {
         data: [mockMember],
         count: 1,
         next_cursor: null,
+        pagination: { supported: false, truncated: true },
       });
       expect(JSON.parse(result.content[0].text as string)).toEqual(
         result.structuredContent
@@ -169,6 +170,7 @@ describe('workspaceMembersToolConfigs', () => {
         data: [],
         count: 0,
         next_cursor: null,
+        pagination: { supported: false, truncated: true },
       });
     });
 

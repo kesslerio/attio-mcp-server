@@ -1,22 +1,31 @@
-import { AttioWorkspaceMember } from '../../types/attio.js';
+import { AttioWorkspaceMember } from '@/types/attio.js';
 import { z } from 'zod';
 import {
   listWorkspaceMembers,
   searchWorkspaceMembers,
   getWorkspaceMember,
-} from '../../objects/workspace-members.js';
-import { ToolConfig } from '../tool-types.js';
+} from '@/objects/workspace-members.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
 import {
   workspaceMemberCollectionResultContract,
   workspaceMemberDataSchema,
   workspaceMemberResultContract,
 } from '@/handlers/tools/result-schemas.js';
+import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /** Member responses always publish the native workspace_member_id identifier. */
 function normalizeMemberCollection(result: unknown): Record<string, unknown> {
+  // Lists expose their whole (already bounded) member directory per request.
   const data = z.array(workspaceMemberDataSchema).parse(result);
-  return { data, count: data.length, next_cursor: null };
+  return {
+    data,
+    count: data.length,
+    next_cursor: null,
+    pagination: boundedPaginationMetadata(
+      (result as { truncated?: boolean }).truncated ?? true
+    ),
+  };
 }
 
 function normalizeMember(result: unknown): Record<string, unknown> {

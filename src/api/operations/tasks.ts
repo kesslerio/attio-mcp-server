@@ -161,7 +161,26 @@ export async function listTasks(
     )
   )
     throw new ResultEncodingError();
-  return tasks.map((task) => transformTaskResponse(task));
+  let truncated = false;
+  if (tasks.length >= 500) {
+    const probe = await callWithRetry(
+      () =>
+        api.get<AttioListResponse<AttioTask>>(
+          `${path}&limit=1&offset=${tasks.length}`
+        ),
+      retryConfig,
+      { uncertainMutation: false }
+    );
+    if (!Array.isArray(probe?.data?.data)) throw new ResultEncodingError();
+    truncated = probe.data.data.length > 0;
+  }
+  return Object.defineProperty(
+    tasks.map((task) => transformTaskResponse(task)),
+    'truncated',
+    {
+      value: truncated,
+    }
+  );
 }
 
 export async function getTask(

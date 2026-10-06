@@ -78,12 +78,22 @@ export interface CreateNoteToolConfig extends ToolConfig {
 
 // Lists tool configuration
 export interface GetListsToolConfig extends ToolConfig {
-  handler: () => Promise<AttioList[]>;
+  handler: (cursor?: unknown) => Promise<AttioList[]>;
 }
 
 // List entries tool configuration
 export interface GetListEntriesToolConfig extends ToolConfig {
-  handler: (listId: string) => Promise<AttioListEntry[]>;
+  handler: (
+    listId: string,
+    limit?: number,
+    offset?: number,
+    filters?: unknown,
+    cursor?: unknown
+  ) => Promise<{
+    data: AttioListEntry[];
+    next_cursor: string | null;
+    pagination: { supported: boolean; truncated: boolean };
+  }>;
 }
 
 // List action tool configuration

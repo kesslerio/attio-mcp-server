@@ -152,8 +152,16 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
           });
           throw new ResultEncodingError();
         }
-        return (notesList as AttioNote[]).map((note) =>
-          this.convertNoteToRecord(note)
+        return Object.defineProperty(
+          (notesList as AttioNote[]).map((note) =>
+            this.convertNoteToRecord(note)
+          ),
+          'truncated',
+          {
+            value:
+              Boolean(notesResponse.meta?.next_cursor) ||
+              notesList.length >= 10,
+          }
         );
       } catch (error: unknown) {
         log.error('Failed to load notes from API', error);
@@ -163,6 +171,8 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
 
     // SECURITY: note results can include sensitive tenant data; avoid process-wide caching.
     const notes = await loadNotesData();
+    const upstreamTruncated =
+      (notes as { truncated?: boolean }).truncated ?? true;
     const fromCache = false;
 
     // Performance warning for large datasets
@@ -188,7 +198,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
 
     // Handle empty dataset cleanly
     if (notes.length === 0) {
-      return []; // No warning for empty datasets
+      return Object.defineProperty([], 'truncated', {
+        value: upstreamTruncated,
+      });
     }
 
     // Apply content search filtering if requested
@@ -223,7 +235,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         filteredSize: filteredNotes.length,
         action: 'returning empty results',
       });
-      return [];
+      return Object.defineProperty([], 'truncated', {
+        value: upstreamTruncated || start > 0,
+      });
     } else {
       const end = Math.min(start + requestedLimit, filteredNotes.length);
       const paginatedNotes = filteredNotes.slice(start, end);
@@ -235,7 +249,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         fromCache ? 1 : performance.now() - apiStart
       );
 
-      return paginatedNotes;
+      return Object.defineProperty(paginatedNotes, 'truncated', {
+        value: upstreamTruncated || start > 0 || end < filteredNotes.length,
+      });
     }
   }
 

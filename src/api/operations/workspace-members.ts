@@ -51,7 +51,9 @@ export async function listWorkspaceMembers(
         OperationType.API_CALL
       );
 
-      return members;
+      return Object.defineProperty([...members], 'truncated', {
+        value: false,
+      });
     },
     retryConfig,
     { uncertainMutation: false }
@@ -95,7 +97,9 @@ export async function searchWorkspaceMembers(
         OperationType.API_CALL
       );
 
-      return members;
+      return Object.defineProperty([...members], 'truncated', {
+        value: false,
+      });
     },
     retryConfig,
     { uncertainMutation: false }

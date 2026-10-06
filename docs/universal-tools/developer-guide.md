@@ -72,7 +72,7 @@ Optional human-readable prose follows in `content[1]`. With
 
 ```typescript
 // search_records
-{ data: records, count: records.length, next_cursor: null }
+{ data: records, count: records.length, next_cursor, pagination }
 // get_record_details (including task, list, and custom-object details)
 { data: record }
 // execution failures
@@ -86,8 +86,12 @@ the `data` wrapper; search JSON text includes `data`, `count`, and `next_cursor`
 For a failed call, read `JSON.parse(result.content[0].text).error`; it contains
 the same sanitized `code`, `message`, and `retryable` as `structuredContent.error`.
 There is no third JSON block. Search counts describe the
-returned array. `next_cursor` is currently always null: continuation support is
-a later delivery, and null does not guarantee an unbounded search was complete.
+returned array. `next_cursor` carries an opaque sealed continuation token on
+supported families (U5) or null; see
+[Collection Continuation](api-reference.md#collection-continuation-u5) for the
+token contract. On bounded families the `pagination` disclosure states whether
+the tool withheld capped results, and null there never guarantees an unbounded
+search was complete.
 
 The config owns its adapter and paired runtime/discovery schemas. The shared
 result boundary validates JSON-compatible adapter data, sanitizes it, then
@@ -123,8 +127,7 @@ and `note_id`). Delete results contain `{ success: true, record_id }`.
 Upsert preserves `action`, optional `planned_action`, `record_id` (required except
 for dry runs), `matched_on`, `changed_fields`, and optional `concurrent_duplicates`.
 Merge preserves its dry-run plan/fingerprint, or its `complete`/`wait` mode,
-status, `new_record_id`, and original IDs. Notes lists use
-`{ data: notes, count: notes.length, next_cursor: null }`.
+status, `new_record_id`, and original IDs. Notes lists use the [collection envelope](api-reference.md#collection-continuation-u5).
 
 See [API call retry logic](../api/error-handling.md#api-call-retry-logic) for
 post-write decoding and uncertain-mutation recovery. Merge confirmation, plan
@@ -150,8 +153,9 @@ attribute maps and note bodies remain domain data. Attribute options retain
 their IDs and titles inside `data`, with a response count and `attribute_type`
 (`select` or `status`). Detailed info wraps the native record in `data`.
 Interactions wrap record identity/name and interaction aggregates in `data`,
-preserving dates and owner metadata. These metadata, options, interaction, and
-batch envelopes have no continuation cursor.
+preserving dates and owner metadata. Metadata and options also include `pagination` disclosures as defined by the
+[collection contract](api-reference.md#collection-continuation-u5). Metadata,
+options, interaction, and batch envelopes have no continuation cursor.
 
 `batch_records` and `batch_search_records` return per-input outcomes in `data`,
 with a response count and a summary of total, successful, and failed items.
@@ -226,8 +230,11 @@ them as null. Exact runtime and discovery schemas are generated together from
 [`result-schemas.ts`](../../src/handlers/tools/result-schemas.ts); use MCP
 `tools/list` for the current catalogue and each tool's advertised `outputSchema`.
 
-`next_cursor` remains `null` for every collection in this boundary; continuation
-is a later delivery, and `null` does not claim a bounded result set was complete.
+`next_cursor` stays `null` for every collection in this boundary unless U5
+continuation is supported for that family; bounded families disclose their cap
+and truncation state through the `pagination` metadata (see
+[Collection Continuation](api-reference.md#collection-continuation-u5)), and
+`null` alone never claims a bounded result set was complete.
 
 ### formatResult Architecture Update (PR #483)
 
