@@ -1,8 +1,8 @@
 /**
  * Lists-related tool configurations
  */
-import { AttioList, AttioListEntry } from '../../types/attio.js';
-import { isValidUUID } from '../../utils/validation/uuid-validation.js';
+import { AttioList, AttioListEntry } from '@/types/attio.js';
+import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import {
   getLists,
   getListDetails,
@@ -16,7 +16,7 @@ import {
   filterListEntriesByParent,
   filterListEntriesByParentId,
   ListMembership,
-} from '../../objects/lists.js';
+} from '@/objects/lists.js';
 import {
   GetListsToolConfig,
   ToolConfig,
@@ -24,29 +24,123 @@ import {
   ListActionToolConfig,
   CreateListToolConfig,
   UpdateListConfigurationToolConfig,
-} from '../tool-types.js';
+} from '@/handlers/tool-types.js';
+import {
+  listCollectionResultContract,
+  listConfigResultContract,
+  listDetailsResultContract,
+  listEntryCollectionResultContract,
+  listEntryDeleteResultContract,
+  listEntryMutationResultContract,
+  listEntryResultContract,
+  listMembershipCollectionResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import {
+  normalizeListCollection,
+  normalizeListConfig,
+  normalizeListDetails,
+  normalizeListEntry,
+  normalizeListEntryCollection,
+  normalizeListEntryDelete,
+  normalizeListEntryMutation,
+  normalizeListMemberships,
+} from '@/handlers/tool-configs/list-result-adapters.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import {
+  InvalidCursorError,
+  issueNextCursor,
+  rejectCursorWithOffset,
+  resolveCollectionCursor,
+  splitLookaheadPage,
+} from '@/handlers/tools/result-cursor.js';
+
+/**
+ * lists_list reports a finite, bounded directory. A cursor argument is a
+ * continuation request against a family that cannot continue: reject it before
+ * any Attio request (KTD6) instead of silently returning the first page.
+ */
+async function handleGetListsCursorAware(
+  cursor?: unknown
+): Promise<AttioList[]> {
+  if (typeof cursor === 'string' && cursor.length > 0) {
+    throw new InvalidCursorError(
+      'lists_list is a finite bounded collection and does not support continuation cursors'
+    );
+  }
+  return getLists();
+}
+
+/**
+ * U5 continuation page for list entries (KTD6): offset-backed body pagination
+ * with a one-item lookahead. The cursor is verified against the caller's
+ * credential scope and list scope before any Attio request.
+ */
+async function handleListEntriesCursorPage(input: {
+  listId: string;
+  limit?: number;
+  offset?: number;
+  cursor?: string;
+}): Promise<{
+  data: AttioListEntry[];
+  next_cursor: string | null;
+  pagination: { supported: boolean; truncated: boolean };
+}> {
+  rejectCursorWithOffset({ cursor: input.cursor, offset: input.offset });
+  const pageSize = input.limit ?? 20;
+  const scope = {
+    operation: 'list_entries_list',
+    resource: input.listId,
+    query: null,
+  };
+  let offset = input.offset ?? 0;
+  if (input.cursor) {
+    const resolved = resolveCollectionCursor(input.cursor, scope);
+    if (resolved.pageSize !== pageSize) {
+      throw new InvalidCursorError(
+        'Continuation cursor page size does not match this request'
+      );
+    }
+    offset = resolved.offset;
+  }
+  const page = await getListEntries(input.listId, pageSize + 1, offset);
+  const { page: entries, hasMore } = splitLookaheadPage(page, pageSize);
+  const issued = issueNextCursor({
+    scope,
+    pageSize,
+    offset: offset + entries.length,
+    hasMore,
+  });
+  return {
+    data: entries,
+    next_cursor: issued.next_cursor,
+    pagination: issued.pagination,
+  };
+}
 
 // Lists tool configurations
 export const listsToolConfigs = {
   getLists: {
     name: 'get-lists',
-    handler: getLists,
+    ...listCollectionResultContract,
+    structuredOutput: normalizeListCollection,
+    handler: handleGetListsCursorAware,
     formatResult: (results: AttioList[]) => {
-      // Return JSON string - dispatcher will convert to JSON content
       return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as GetListsToolConfig,
   getRecordListMemberships: {
     name: 'get-record-list-memberships',
+    ...listMembershipCollectionResultContract,
+    structuredOutput: normalizeListMemberships,
     handler: getRecordListMemberships,
     formatResult: (results: ListMembership[] | null | undefined) => {
-      // Return JSON string - dispatcher will convert to JSON content
       return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,
   getListDetails: {
     name: 'get-list-details',
+    ...listDetailsResultContract,
+    structuredOutput: normalizeListDetails,
     handler: async (listId: string) => {
       // Let Attio API decide if list ID is valid (supports UUIDs and slugs)
       return await getListDetails(listId);
@@ -58,37 +152,38 @@ export const listsToolConfigs = {
   } as ToolConfig,
   getListEntries: {
     name: 'get-list-entries',
-    handler: async (listId: string, limit?: number, offset?: number) => {
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
+    handler: async (
+      listId: string,
+      limit?: number,
+      offset?: number,
+      _filters?: unknown,
+      cursor?: unknown
+    ) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
-            },
-          ],
-        };
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
-      return await getListEntries(listId, limit, offset);
+      return handleListEntriesCursorPage({
+        listId,
+        limit,
+        offset,
+        cursor: typeof cursor === 'string' ? cursor : undefined,
+      });
     },
-    formatResult: (
-      results:
-        | AttioListEntry[]
-        | { isError: boolean; content: Array<Record<string, unknown>> }
-    ) => {
-      // Handle validation error response
-      if (results && typeof results === 'object' && 'isError' in results) {
-        return 'Error: Invalid list ID';
-      }
-
-      // Return JSON string
-      return JSON.stringify(Array.isArray(results) ? results : []);
-    },
+    formatResult: (results: AttioListEntry[] | { data: AttioListEntry[] }) =>
+      JSON.stringify(Array.isArray(results) ? results : results.data),
   } as GetListEntriesToolConfig,
   filterListEntries: {
     name: 'filter-list-entries',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: filterListEntries,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -98,6 +193,8 @@ export const listsToolConfigs = {
 
   advancedFilterListEntries: {
     name: 'advanced-filter-list-entries',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: advancedFilterListEntries,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -106,6 +203,8 @@ export const listsToolConfigs = {
   } as ToolConfig,
   addRecordToList: {
     name: 'add-record-to-list',
+    ...listEntryResultContract,
+    structuredOutput: normalizeListEntry,
     handler: async (
       listId: string,
       recordId: string,
@@ -114,53 +213,40 @@ export const listsToolConfigs = {
     ) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
-            },
-          ],
-        };
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await addRecordToList(listId, recordId, objectType, values);
     },
     idParams: ['listId', 'recordId'],
-    formatResult: (
-      result:
-        | AttioListEntry
-        | { isError: boolean; content: Array<Record<string, unknown>> }
-    ) => {
-      // Handle validation error response
-      if (result && typeof result === 'object' && 'isError' in result) {
-        return 'Error: Invalid list ID';
-      }
-      // Return JSON string
-      return JSON.stringify(result);
-    },
+    formatResult: (result: AttioListEntry) => JSON.stringify(result),
   } as ToolConfig,
   removeRecordFromList: {
     name: 'remove-record-from-list',
+    ...listEntryDeleteResultContract,
+    structuredOutput: normalizeListEntryDelete,
     handler: async (listId: string, entryId: string) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
-            },
-          ],
-        };
+        throw Object.assign(
+          new Error(`Invalid list_id: must be a UUID. Got: ${listId}`),
+          {
+            code: 'VALIDATION_ERROR',
+          }
+        );
       }
       return await removeRecordFromList(listId, entryId);
     },
     idParams: ['listId', 'entryId'],
-  } as ListActionToolConfig,
+  } as ListActionToolConfig<boolean>,
   updateListEntry: {
     name: 'update-list-entry',
+    ...listEntryResultContract,
+    structuredOutput: normalizeListEntry,
     handler: updateListEntry,
     formatResult: (result: AttioListEntry) => {
       // Return JSON string
@@ -171,6 +257,8 @@ export const listsToolConfigs = {
   manageListEntry: {
     name: 'manage-list-entry',
     type: 'manageListEntry' as const,
+    ...listEntryMutationResultContract,
+    structuredOutput: normalizeListEntryMutation,
     handler: () => {
       // Placeholder - actual routing happens in dispatcher
       throw new Error('Direct handler call not supported - use dispatcher');
@@ -185,6 +273,8 @@ export const listsToolConfigs = {
 
   filterListEntriesByParent: {
     name: 'filter-list-entries-by-parent',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: filterListEntriesByParent,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -194,6 +284,8 @@ export const listsToolConfigs = {
 
   filterListEntriesByParentId: {
     name: 'filter-list-entries-by-parent-id',
+    ...listEntryCollectionResultContract,
+    structuredOutput: normalizeListEntryCollection,
     handler: filterListEntriesByParentId,
     formatResult: (results: AttioListEntry[]) => {
       // Return JSON string
@@ -205,6 +297,8 @@ export const listsToolConfigs = {
   createList: {
     name: 'create-list',
     type: 'createList' as const,
+    ...listConfigResultContract,
+    structuredOutput: normalizeListConfig,
     handler: () => {
       // Placeholder - actual routing happens in dispatcher
       throw new Error('Direct handler call not supported - use dispatcher');
@@ -217,6 +311,8 @@ export const listsToolConfigs = {
   updateListConfiguration: {
     name: 'update-list-configuration',
     type: 'updateListConfiguration' as const,
+    ...listConfigResultContract,
+    structuredOutput: normalizeListConfig,
     handler: () => {
       // Placeholder - actual routing happens in dispatcher
       throw new Error('Direct handler call not supported - use dispatcher');
@@ -313,13 +409,11 @@ export const listsToolDefinitions = [
   {
     name: 'get-list-entries',
     description: formatToolDescription({
-      capability:
-        'Retrieve all records in a list with pagination (companies, people in pipelines).',
+      capability: 'Retrieve records in a list with pagination.',
       boundaries: 'filter entries or modify list memberships.',
       constraints:
-        'Requires list UUID (not slug); default limit 20, max per page varies by API.',
-      recoveryHint:
-        'Use filter-list-entries for attribute-based filtering instead.',
+        'Requires list UUID, not slug; default limit 20, API page caps apply. Continue the same query with next_cursor; never combine cursor with offset.',
+      recoveryHint: 'Use filter-list-entries for filtering.',
     }),
     inputSchema: {
       type: 'object',
@@ -338,6 +432,12 @@ export const listsToolDefinitions = [
           type: 'number',
           description: 'Number of entries to skip for pagination (default: 0)',
           example: 0,
+        },
+        cursor: {
+          type: 'string',
+          maxLength: 512,
+          description:
+            'Opaque continuation token from a previous page of this exact list query. Never combine with offset.',
         },
       },
       required: ['listId'],

@@ -79,6 +79,18 @@ function resolveApiKey(): string | undefined {
 }
 
 /**
+ * Effective credential scope for cross-request binding (U5/KTD6).
+ *
+ * Continuation tokens fingerprint the credential resolved through this exact
+ * request-context/environment precedence so a cursor issued under one tenant
+ * cannot be replayed under another. Returns the resolved credential value
+ * itself; callers must fingerprint it and never encode or log the raw value.
+ */
+export function resolveCredentialScope(): string | undefined {
+  return resolveApiKey();
+}
+
+/**
  * Resolves an Attio client instance using the unified interface.
  *
  * Security note: this resolver must always honor the current request context key.

@@ -4,7 +4,7 @@ import {
   RelationshipType,
   AdvancedSearchParams,
   RelationshipSearchParams,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 import {
   setupUnitTestMocks,
   cleanupMocks,
@@ -20,7 +20,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
     // Import after mocks are set up
     const advancedOps =
-      await import('../../../../src/handlers/tool-configs/universal/advanced-operations.js');
+      await import('@/handlers/tool-configs/universal/advanced-operations.js');
     advancedSearchConfig = advancedOps.advancedSearchConfig;
     searchByRelationshipConfig = advancedOps.searchByRelationshipConfig;
   });
@@ -61,11 +61,17 @@ describe('Universal Advanced Operations - Search Tests', () => {
       };
 
       const result = await advancedSearchConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith({
         resource_type: params.resource_type,
         query: params.query,
         filters: params.filters,
+        sort_by: params.sort_by,
+        sort_order: params.sort_order,
         limit: params.limit,
         offset: params.offset,
       });
@@ -102,7 +108,11 @@ describe('Universal Advanced Operations - Search Tests', () => {
       };
 
       const result = await advancedSearchConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: {
@@ -159,7 +169,11 @@ describe('Universal Advanced Operations - Search Tests', () => {
       };
 
       const result = await advancedSearchConfig.handler(params);
-      expect(result).toEqual(mockResults);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: {

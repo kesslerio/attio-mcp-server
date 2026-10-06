@@ -27,8 +27,8 @@ vi.mock('@/middleware/performance-enhanced.js', () => ({
     endOperation: vi.fn(),
   },
 }));
-vi.mock('@/objects/records/index.js', () => ({
-  listObjectRecords: vi.fn(),
+vi.mock('@/api/lazy-client.js', () => ({
+  getLazyAttioClient: vi.fn(),
 }));
 vi.mock('@/objects/tasks.js', () => ({ listTasks: vi.fn() }));
 vi.mock('@services/MockService.js', () => ({
@@ -38,7 +38,7 @@ vi.mock('@services/MockService.js', () => ({
 import { UniversalSearchService } from '@services/UniversalSearchService.js';
 import { UniversalResourceType } from '@handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '@shared-types/attio.js';
-import { listObjectRecords } from '@/objects/records/index.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import { listTasks } from '@/objects/tasks.js';
 import { UniversalUtilityService } from '@services/UniversalUtilityService.js';
 import { CachingService } from '@services/CachingService.js';
@@ -50,12 +50,17 @@ describe('UniversalSearchService - records/tasks', () => {
     const mockResults: AttioRecord[] = [
       { id: { record_id: 'rec_1' }, values: { name: 'R' } } as any,
     ];
-    vi.mocked(listObjectRecords).mockResolvedValue(mockResults);
+    const post = vi.fn().mockResolvedValue({ data: { data: mockResults } });
+    vi.mocked(getLazyAttioClient).mockReturnValue({ post } as any);
     const result = await UniversalSearchService.searchRecords({
       resource_type: UniversalResourceType.RECORDS,
       query: 'R',
     });
     expect(result).toEqual(mockResults);
+    expect(post).toHaveBeenCalledExactlyOnceWith(
+      '/objects/records/records/query',
+      { limit: 10 }
+    );
   });
 
   it('should list tasks and convert to records', async () => {

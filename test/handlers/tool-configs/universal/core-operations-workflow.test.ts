@@ -21,6 +21,7 @@ vi.mock('@handlers/tool-configs/universal/shared-handlers.js', () => ({
   handleUniversalUpdate: vi.fn(),
   handleUniversalDelete: vi.fn(),
   handleUniversalSearch: vi.fn(),
+  handleUniversalSearchPage: vi.fn(),
   handleUniversalGetDetails: vi.fn(),
   getSingularResourceType: vi.fn((type) => {
     const mapping: Record<string, string> = {
@@ -71,14 +72,18 @@ vi.mock('@handlers/tool-configs/universal/core/error-utils.js', async () => {
   };
 });
 
-vi.mock('@utils/logger.js', () => ({
-  createScopedLogger: vi.fn(() => ({
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  })),
-}));
+vi.mock('@/utils/logger.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/logger.js')>();
+  return {
+    ...actual,
+    createScopedLogger: vi.fn(() => ({
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+    })),
+  };
+});
 
 const importSharedHandlers = async () =>
   import('@handlers/tool-configs/universal/shared-handlers.js');
@@ -133,6 +138,11 @@ describe('Core Operations Workflow Integration', () => {
       vi.mocked(mockHandlers.handleUniversalSearch).mockResolvedValue(
         searchResults
       );
+      vi.mocked(mockHandlers.handleUniversalSearchPage).mockResolvedValue({
+        data: searchResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
       vi.mocked(mockHandlers.handleUniversalGetDetails).mockResolvedValue(
         createdRecord
       );
@@ -182,8 +192,13 @@ describe('Core Operations Workflow Integration', () => {
       };
 
       const searchResult = await searchRecordsConfig.handler(searchParams);
-      expect(searchResult).toEqual(searchResults);
-      expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+      // U5: search pages through the continuation seam and returns an envelope.
+      expect(searchResult).toEqual({
+        data: searchResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
+      expect(mockHandlers.handleUniversalSearchPage).toHaveBeenCalledWith(
         searchParams
       );
 
@@ -300,6 +315,11 @@ describe('Core Operations Workflow Integration', () => {
         vi.mocked(mockHandlers.handleUniversalSearch).mockResolvedValue([
           mockRecord,
         ]);
+        vi.mocked(mockHandlers.handleUniversalSearchPage).mockResolvedValue({
+          data: [mockRecord],
+          next_cursor: null,
+          pagination: { supported: true, truncated: false },
+        });
         vi.mocked(mockHandlers.handleUniversalGetDetails).mockResolvedValue(
           mockRecord
         );
@@ -320,10 +340,29 @@ describe('Core Operations Workflow Integration', () => {
           record_id: recordId,
           record_data: recordData,
         };
-        await updateRecordConfig.handler(updateParams);
-        expect(mockHandlers.handleUniversalUpdate).toHaveBeenCalledWith(
-          expect.objectContaining({ resource_type: resourceType })
-        );
+        if (resourceType === UniversalResourceType.DEALS) {
+          const { UniversalUpdateService } =
+            await import('@/services/UniversalUpdateService.js');
+          vi.mocked(
+            UniversalUpdateService.updateRecordWithValidation
+          ).mockResolvedValue({
+            record: mockRecord,
+            validation: { warnings: [], suggestions: [], actualValues: {} },
+          });
+          const result = await updateRecordConfig.handler(updateParams);
+          expect(result).toMatchObject(mockRecord);
+          expect(
+            UniversalUpdateService.updateRecordWithValidation
+          ).toHaveBeenCalledExactlyOnceWith(updateParams);
+          expect(mockHandlers.handleUniversalUpdate).not.toHaveBeenCalled();
+        } else {
+          expect(await updateRecordConfig.handler(updateParams)).toEqual(
+            mockRecord
+          );
+          expect(mockHandlers.handleUniversalUpdate).toHaveBeenCalledWith(
+            updateParams
+          );
+        }
 
         // Test Delete
         const deleteParams = {
@@ -338,7 +377,7 @@ describe('Core Operations Workflow Integration', () => {
         // Test Search
         const searchParams = { resource_type: resourceType, query: 'test' };
         await searchRecordsConfig.handler(searchParams);
-        expect(mockHandlers.handleUniversalSearch).toHaveBeenCalledWith(
+        expect(mockHandlers.handleUniversalSearchPage).toHaveBeenCalledWith(
           expect.objectContaining({ resource_type: resourceType })
         );
 

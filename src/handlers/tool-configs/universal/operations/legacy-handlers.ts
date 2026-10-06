@@ -1,21 +1,25 @@
-import type { JsonObject } from '../../../../types/attio.js';
-import { UniversalResourceType, BatchOperationType } from '../types.js';
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
+import type { JsonObject } from '@/types/attio.js';
+import {
+  UniversalResourceType,
+  BatchOperationType,
+} from '@/handlers/tool-configs/universal/types.js';
 import {
   handleUniversalCreate,
   handleUniversalUpdate,
   handleUniversalDelete,
   handleUniversalGetDetails,
-} from '../shared-handlers.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
 import {
   validateBatchOperation,
   validateSearchQuery,
-} from '../../../../utils/batch-validation.js';
+} from '@/utils/batch-validation.js';
 import {
   universalBatchSearch,
   type UniversalBatchSearchResult,
-} from '../../../../api/operations/batch.js';
-import { extractRecordId } from './operations-array.js';
-import { BATCH_CONFIG } from '../../../../config/batch-constants.js';
+} from '@/api/operations/batch.js';
+import { extractRecordId } from '@/handlers/tool-configs/universal/operations/operations-array.js';
+import { BATCH_CONFIG } from '@/config/batch-constants.js';
 
 const {
   DEFAULT_CHUNK_SIZE,
@@ -112,6 +116,9 @@ async function executeCreateBatch(
           index,
           success: false,
           error: error instanceof Error ? error.message : String(error),
+          error_details: createSecureToolErrorResult(error, {
+            uncertainMutation: true,
+          }).structuredContent!.error,
         } as JsonObject;
       }
     },
@@ -175,6 +182,9 @@ async function executeUpdateBatch(
           index,
           success: false,
           error: error instanceof Error ? error.message : String(error),
+          error_details: createSecureToolErrorResult(error, {
+            uncertainMutation: true,
+          }).structuredContent!.error,
         } as JsonObject;
       }
     },
@@ -221,6 +231,9 @@ async function executeDeleteBatch(
           index,
           success: false,
           error: error instanceof Error ? error.message : String(error),
+          error_details: createSecureToolErrorResult(error, {
+            uncertainMutation: true,
+          }).structuredContent!.error,
           record_id: recordId,
         } as JsonObject;
       }
@@ -279,6 +292,9 @@ async function executeGetBatch(
           index,
           success: false,
           error: error instanceof Error ? error.message : String(error),
+          error_details: createSecureToolErrorResult(error, {
+            uncertainMutation: false,
+          }).structuredContent!.error,
           record_id: recordId,
         } as JsonObject;
       }
@@ -328,15 +344,7 @@ async function executeSearchBatch(
       }
     }
 
-    return aggregated.flatMap((result) => {
-      const records = (result as unknown as JsonObject).result;
-      return Array.isArray(records)
-        ? (records.filter(
-            (entry): entry is JsonObject =>
-              typeof entry === 'object' && entry !== null
-          ) as JsonObject[])
-        : [];
-    });
+    return aggregated as unknown as JsonObject[];
   }
 
   const validation = validateSearchQuery(undefined, {
@@ -355,7 +363,9 @@ async function executeSearchBatch(
     limit: coerceNumber(params.limit),
     offset: coerceNumber(params.offset),
   });
-  return searchResults as unknown as JsonObject[];
+  return [
+    { index: 0, query: '', success: true, result: searchResults },
+  ] as unknown as JsonObject[];
 }
 
 async function processRecordChunks(

@@ -252,12 +252,17 @@ describe('CompanySearchStrategy', () => {
   });
 
   describe('error handling', () => {
-    it('should gracefully handle API errors when listing without filters', async () => {
+    it.each([
+      {},
+      { query: 'test company' },
+      { filters: { name: 'Test' }, search_type: SearchType.ADVANCED },
+      { query: 'test company', search_type: SearchType.CONTENT },
+    ])('should propagate the original API error for %j', async (params) => {
       const apiError = new Error('API Connection Failed');
       mockAdvancedSearchFunction.mockRejectedValue(apiError);
+      vi.mocked(searchObject).mockRejectedValue(apiError);
 
-      const results = await strategy.search({});
-      expect(results).toEqual([]);
+      await expect(strategy.search(params)).rejects.toBe(apiError);
     });
 
     it('should handle null return from advanced search function', async () => {

@@ -1,3 +1,4 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * Note operations for Attio objects
  * Handles note creation and retrieval
@@ -32,10 +33,14 @@ export async function getObjectNotes(
   const api = getLazyAttioClient();
   const path = `/notes?limit=${limit}&offset=${offset}&parent_object=${objectType}&parent_record_id=${recordId}`;
 
-  return callWithRetry(async () => {
-    const response = await api.get<AttioListResponse<AttioNote>>(path);
-    return response?.data?.data || [];
-  }, retryConfig);
+  return callWithRetry(
+    async () => {
+      const response = await api.get<AttioListResponse<AttioNote>>(path);
+      return response?.data?.data || [];
+    },
+    retryConfig,
+    { uncertainMutation: false }
+  );
 }
 
 /**
@@ -60,16 +65,20 @@ export async function createObjectNote(
   const api = getLazyAttioClient();
   const path = '/notes';
 
-  return callWithRetry(async () => {
-    const response = await api.post<AttioSingleResponse<AttioNote>>(path, {
-      data: {
-        format,
-        parent_object: objectType,
-        parent_record_id: recordId,
-        title: `[AI] ${noteTitle}`,
-        content: noteText,
-      },
-    });
+  const response = await callWithRetry(
+    () =>
+      api.post<AttioSingleResponse<AttioNote>>(path, {
+        data: {
+          format,
+          parent_object: objectType,
+          parent_record_id: recordId,
+          title: `[AI] ${noteTitle}`,
+          content: noteText,
+        },
+      }),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     return (response?.data?.data || response?.data) as AttioNote;
-  }, retryConfig);
+  });
 }

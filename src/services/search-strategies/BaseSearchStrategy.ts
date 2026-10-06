@@ -145,18 +145,6 @@ export abstract class BaseSearchStrategy implements ISearchStrategy {
     limit?: number,
     offset?: number
   ): Promise<UniversalRecordResult[]> {
-    try {
-      return await searchFunction({ filters: [] }, limit, offset);
-    } catch (error: unknown) {
-      // If empty filters aren't supported, return empty array rather than failing
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      warn(
-        'BaseSearchStrategy',
-        'Search with empty filters failed, returning empty results',
-        { errorMessage }
-      );
-      return [];
-    }
+    return searchFunction({ filters: [] }, limit, offset);
   }
 }

@@ -4,6 +4,7 @@
  */
 
 import { performance } from 'perf_hooks';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 import {
   SearchType,
@@ -114,14 +115,18 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
           log.warn('TASKS API WARNING: listTasks() returned non-array value', {
             returnedType: typeof tasksList,
           });
-          return [];
-        } else {
-          // Convert AttioTask[] to UniversalRecordResult[]
-          return tasksList.map(UniversalUtilityService.convertTaskToRecord);
+          throw new ResultEncodingError();
         }
+        return Object.defineProperty(
+          tasksList.map(UniversalUtilityService.convertTaskToRecord),
+          'truncated',
+          {
+            value: (tasksList as { truncated?: boolean }).truncated ?? true,
+          }
+        );
       } catch (error: unknown) {
         log.error('Failed to load tasks from API', error);
-        return []; // Fallback to empty array
+        throw error;
       }
     };
 
@@ -129,6 +134,8 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
     // A process-global cache key can leak tasks across tenants in shared runtimes.
     // Until cache keys are scoped to authenticated tenant context, bypass shared caching.
     const tasks = await loadTasksData();
+    const upstreamTruncated =
+      (tasks as { truncated?: boolean }).truncated ?? true;
 
     // Performance warning for large datasets
     if (tasks.length > 500) {
@@ -148,7 +155,9 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
 
     // Handle empty dataset cleanly
     if (tasks.length === 0) {
-      return []; // No warning for empty datasets
+      return Object.defineProperty([], 'truncated', {
+        value: upstreamTruncated,
+      });
     }
 
     // Apply content search filtering if requested
@@ -174,7 +183,9 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
         filteredSize: filteredTasks.length,
         action: 'returning empty results',
       });
-      return [];
+      return Object.defineProperty([], 'truncated', {
+        value: upstreamTruncated || start > 0,
+      });
     } else {
       const end = Math.min(start + requestedLimit, filteredTasks.length);
       const paginatedTasks = filteredTasks.slice(start, end);
@@ -186,7 +197,9 @@ export class TaskSearchStrategy extends BaseSearchStrategy {
         performance.now() - apiStart
       );
 
-      return paginatedTasks;
+      return Object.defineProperty(paginatedTasks, 'truncated', {
+        value: upstreamTruncated || start > 0 || end < filteredTasks.length,
+      });
     }
   }
 

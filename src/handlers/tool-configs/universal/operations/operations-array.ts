@@ -1,12 +1,13 @@
-import type { JsonObject } from '../../../../types/attio.js';
-import type { UniversalResourceType } from '../types.js';
+import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
+import type { JsonObject } from '@/types/attio.js';
+import type { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import {
   handleUniversalCreate,
   handleUniversalUpdate,
   handleUniversalDelete,
-} from '../shared-handlers.js';
-import { validateBatchOperation } from '../../../../utils/batch-validation.js';
-import { BATCH_CONFIG } from '../../../../config/batch-constants.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
+import { validateBatchOperation } from '@/utils/batch-validation.js';
+import { BATCH_CONFIG } from '@/config/batch-constants.js';
 
 const { DEFAULT_CHUNK_SIZE, DEFAULT_MAX_BATCH } = BATCH_CONFIG;
 
@@ -125,6 +126,9 @@ export async function executeOperationsArray(
             index,
             success: false,
             error: error instanceof Error ? error.message : String(error),
+            error_details: createSecureToolErrorResult(error, {
+              uncertainMutation: true,
+            }).structuredContent!.error,
           } as JsonObject;
         }
       })

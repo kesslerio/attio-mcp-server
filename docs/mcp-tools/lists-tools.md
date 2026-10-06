@@ -10,12 +10,12 @@ Find all lists that a specific record (company, person, etc.) belongs to.
 
 #### Parameters
 
-| Parameter          | Type    | Description                                                    | Required |
-|-------------------|---------|----------------------------------------------------------------|----------|
-| recordId          | string  | ID of the record to find in lists                              | Yes      |
-| objectType        | string  | Type of record (e.g., "companies", "people")                   | No       |
-| includeEntryValues| boolean | Whether to include entry values in the response (e.g., stage)  | No       |
-| batchSize         | number  | Number of lists to process in parallel (1-20, default: 5)      | No       |
+| Parameter          | Type    | Description                                                   | Required |
+| ------------------ | ------- | ------------------------------------------------------------- | -------- |
+| recordId           | string  | ID of the record to find in lists                             | Yes      |
+| objectType         | string  | Type of record (e.g., "companies", "people")                  | No       |
+| includeEntryValues | boolean | Whether to include entry values in the response (e.g., stage) | No       |
+| batchSize          | number  | Number of lists to process in parallel (1-20, default: 5)     | No       |
 
 #### Example Usage
 
@@ -78,10 +78,10 @@ Get all lists in the Attio workspace.
 
 #### Parameters
 
-| Parameter   | Type   | Description | Required |
-|-------------|--------|-------------|----------|
-| limit       | number | Maximum number of lists to return (default: 20) | No |
-| objectSlug  | string | Filter lists by object type (e.g., 'people', 'companies') | No |
+| Parameter  | Type   | Description                                               | Required |
+| ---------- | ------ | --------------------------------------------------------- | -------- |
+| limit      | number | Maximum number of lists to return (default: 20)           | No       |
+| objectSlug | string | Filter lists by object type (e.g., 'people', 'companies') | No       |
 
 #### Example Usage
 
@@ -160,8 +160,8 @@ Get detailed information about a specific list.
 #### Parameters
 
 | Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | List ID | Yes |
+| --------- | ------ | ----------- | -------- |
+| id        | string | List ID     | Yes      |
 
 #### Example Usage
 
@@ -223,11 +223,11 @@ Get entries for a specific list.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| id        | string | List ID | Yes |
-| limit     | number | Maximum number of entries to return (default: 20) | No |
-| offset    | number | Number of entries to skip (default: 0) | No |
+| Parameter | Type   | Description                                       | Required |
+| --------- | ------ | ------------------------------------------------- | -------- |
+| id        | string | List ID                                           | Yes      |
+| limit     | number | Maximum number of entries to return (default: 20) | No       |
+| offset    | number | Number of entries to skip (default: 0)            | No       |
 
 #### Example Usage
 
@@ -330,10 +330,10 @@ Add a record to a list.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| listId    | string | List ID | Yes |
-| recordId  | string | Record ID to add to the list | Yes |
+| Parameter | Type   | Description                  | Required |
+| --------- | ------ | ---------------------------- | -------- |
+| listId    | string | List ID                      | Yes      |
+| recordId  | string | Record ID to add to the list | Yes      |
 
 #### Example Usage
 
@@ -385,10 +385,10 @@ Remove a record from a list.
 
 #### Parameters
 
-| Parameter | Type   | Description | Required |
-|-----------|--------|-------------|----------|
-| listId    | string | List ID | Yes |
-| entryId   | string | Entry ID to remove | Yes |
+| Parameter | Type   | Description        | Required |
+| --------- | ------ | ------------------ | -------- |
+| listId    | string | List ID            | Yes      |
+| entryId   | string | Entry ID to remove | Yes      |
 
 #### Example Usage
 
@@ -436,51 +436,14 @@ The Lists API implements a set of operations for managing lists and list entries
 
 ### Fallback Endpoints for List Entries
 
-The `getListEntries` function implements a fallback strategy to handle different API versions:
-
-```typescript
-// Try the primary endpoint first
-try {
-  const path = `/lists/${listId}/entries/query`;
-  // ...
-} catch (primaryError) {
-  // Try fallback endpoints
-  try {
-    const fallbackPath = `/lists-entries/query`;
-    // ...
-  } catch (fallbackError) {
-    // Last resort fallback
-    try {
-      const lastPath = `/lists-entries?list_id=${listId}`;
-      // ...
-    } catch (lastError) {
-      // Handle error
-    }
-  }
-}
-```
-
-This ensures compatibility with different versions of the Attio API.
+`getListEntries` delegates to the shared list-entry API operation; the former
+alternate-endpoint fallback has been removed. See
+[`getListEntries`](../../src/api/operations/lists.ts) for the request implementation.
 
 ### Retry Logic
 
-All API calls include automatic retry logic with exponential backoff for handling transient errors:
-
-```typescript
-const result = await callWithRetry(
-  async () => {
-    // API call implementation
-  },
-  {
-    maxRetries: 3,
-    initialDelay: 1000,
-    maxDelay: 10000,
-    useExponentialBackoff: true
-  }
-);
-```
-
-This ensures robust operation even during network issues or API rate limiting.
+See [API call retry logic](../api/error-handling.md#api-call-retry-logic)
+for read retry eligibility and mutation recovery constraints.
 
 ### Response Formatting
 
@@ -509,29 +472,34 @@ export async function getRecordListMemberships(
 ): Promise<ListMembership[]> {
   // 1. Get all lists in the workspace (filtered by objectType if provided)
   const lists = await getLists(objectType);
-  
+
   // 2. Process lists in batches to avoid overwhelming the API
   for (let i = 0; i < lists.length; i += batchSize) {
     const batchLists = lists.slice(i, i + batchSize);
-    
+
     // 3. Process each batch in parallel
-    await Promise.all(batchLists.map(async (list) => {
-      // 4. Get entries for this list
-      const entries = await getListEntries(list.id);
-      
-      // 5. Filter entries to find those matching the record ID
-      const matchingEntries = entries.filter(entry => entry.record_id === recordId);
-      
-      // 6. Add matching entries to results
-      // ...
-    }));
+    await Promise.all(
+      batchLists.map(async (list) => {
+        // 4. Get entries for this list
+        const entries = await getListEntries(list.id);
+
+        // 5. Filter entries to find those matching the record ID
+        const matchingEntries = entries.filter(
+          (entry) => entry.record_id === recordId
+        );
+
+        // 6. Add matching entries to results
+        // ...
+      })
+    );
   }
-  
+
   return allMemberships;
 }
 ```
 
 This efficient implementation:
+
 - Optimizes API calls by filtering lists by object type
 - Uses parallel processing for better performance
 - Configurable batch size to control concurrency

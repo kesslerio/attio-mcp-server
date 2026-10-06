@@ -41,6 +41,13 @@ import {
   type AttributeOptionsResult,
 } from '@/services/metadata/index.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
+import {
+  InvalidCursorError,
+  issueNextCursor,
+  rejectCursorWithOffset,
+  resolveCollectionCursor,
+  splitLookaheadPage,
+} from '@/handlers/tools/result-cursor.js';
 
 // Import existing handlers by resource type
 
@@ -58,7 +65,7 @@ import { debug, error as logError, OperationType } from '@/utils/logger.js';
 // Note: Using direct Attio API client calls instead of object-specific note functions
 
 // Import Attio API client for direct note operations
-import { unwrapAttio, normalizeNotes } from '@/utils/attio-response.js';
+import { normalizeNotes } from '@/utils/attio-response.js';
 
 /**
  * Universal search handler - delegates to UniversalSearchService
@@ -68,6 +75,25 @@ export async function handleUniversalSearch(
   params: UniversalSearchParams
 ): Promise<UniversalRecordResult[]> {
   return UniversalSearchService.searchRecords(params);
+}
+
+/**
+ * Continuation-aware search page handler (U5/KTD6). Cursor-bearing calls
+ * resolve, verify, and page through the service seam; the envelope carries
+ * the sealed next cursor for the shared boundary to publish.
+ */
+export async function handleUniversalSearchPage(
+  params: UniversalSearchParams,
+  operation:
+    | 'records_search'
+    | 'records_search_advanced'
+    | 'records_search_by_timeframe' = 'records_search'
+): Promise<{
+  data: UniversalRecordResult[];
+  next_cursor: string | null;
+  pagination: { supported: boolean; truncated: boolean };
+}> {
+  return UniversalSearchService.searchRecordsPage(params, operation);
 }
 
 /**
@@ -134,12 +160,40 @@ export async function handleUniversalCreateNote(
 }
 
 /**
- * Universal get notes handler - uses Attio notes API directly
+ * Continuation-aware notes page (U5/KTD6).
+ *
+ * The /notes endpoint carries a native cursor in meta.next_cursor; it is
+ * preserved sealed inside the issued token and replayed upstream on the next
+ * page. Cursor+offset combinations are rejected and cursors are verified
+ * against the caller's credential scope and record scope before any request.
  */
-export async function handleUniversalGetNotes(
+export async function handleUniversalGetNotesPage(
   params: UniversalGetNotesParams
-): Promise<JsonObject[]> {
-  const { resource_type, record_id, limit = 20, offset = 0 } = params;
+): Promise<{
+  data: JsonObject[];
+  next_cursor: string | null;
+  pagination: { supported: boolean; truncated: boolean };
+}> {
+  const { resource_type, record_id, limit = 20, offset = 0, cursor } = params;
+
+  rejectCursorWithOffset(params);
+  const scope = {
+    operation: 'notes_list',
+    resource: resource_type ?? 'notes',
+    query: { record_id: record_id ?? null },
+  };
+  let upstreamCursor: string | undefined;
+  let requestOffset = offset;
+  if (cursor) {
+    const resolved = resolveCollectionCursor(cursor, scope);
+    if (resolved.pageSize !== limit) {
+      throw new InvalidCursorError(
+        'Continuation cursor page size does not match this request'
+      );
+    }
+    requestOffset = resolved.offset;
+    upstreamCursor = resolved.upstreamCursor;
+  }
 
   // Validate key inputs early for clearer messages
   if (!resource_type || !record_id) {
@@ -153,25 +207,46 @@ export async function handleUniversalGetNotes(
       process.env.E2E_MODE === 'true' &&
       process.env.USE_MOCK_DATA !== 'false'
     ) {
-      return [];
+      return {
+        data: [],
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      };
     }
 
-    // Prefer object-layer helper which handles Attio response shape
-    const response = await listNotes({
-      parent_object: resource_type,
-      parent_record_id: record_id,
-      limit,
-      offset,
+    const collected: JsonObject[] = [];
+    let nextUpstreamCursor: string | undefined;
+    while (collected.length < limit + 1) {
+      const fetchSize = Math.min(limit + 1 - collected.length, 50);
+      const response = await listNotes({
+        parent_object: resource_type,
+        parent_record_id: record_id,
+        limit: fetchSize,
+        offset: requestOffset + collected.length,
+        ...(upstreamCursor && collected.length === 0
+          ? { cursor: upstreamCursor }
+          : {}),
+      });
+      collected.push(
+        ...normalizeNotes(response.data as Parameters<typeof normalizeNotes>[0])
+      );
+      nextUpstreamCursor = response.meta?.next_cursor;
+      if (response.data.length < fetchSize || nextUpstreamCursor) break;
+    }
+    const { page: notes, hasMore } = splitLookaheadPage(collected, limit);
+    const issued = issueNextCursor({
+      scope,
+      pageSize: limit,
+      offset: requestOffset + notes.length,
+      hasMore: hasMore || Boolean(nextUpstreamCursor),
+      upstreamCursor:
+        collected.length <= limit ? nextUpstreamCursor : undefined,
     });
-    const rawList = unwrapAttio<JsonObject>(response);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Note arrays from Attio API have varying structure
-    const noteArray: any[] = Array.isArray(rawList)
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- API response structure varies
-        (rawList as any[])
-      : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Nested data property has unknown structure
-        ((rawList as any)?.data as any[]) || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- normalizeNotes expects any[] for flexible note processing
-    return normalizeNotes(noteArray as any[]);
+    return {
+      data: notes,
+      next_cursor: issued.next_cursor,
+      pagination: issued.pagination,
+    };
   } catch (error: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error object structure varies, need flexible access
     const anyErr = error as any;
@@ -194,15 +269,6 @@ export async function handleUniversalGetNotes(
       }: ${semanticMessage}`
     );
   }
-}
-
-/**
- * Universal list notes handler - alias for get notes
- */
-export async function handleUniversalListNotes(
-  params: UniversalGetNotesParams
-): Promise<JsonObject[]> {
-  return handleUniversalGetNotes(params);
 }
 
 /**
@@ -575,9 +641,12 @@ export async function handleUniversalGetAttributeOptions(
   // Lists require both list_id and attribute_slug - not yet supported via this tool
   // TODO: Add list_id parameter to support list attributes (see plan Phase 3B)
   if (resource_type === UniversalResourceType.LISTS) {
-    throw new Error(
-      'get_record_attribute_options does not yet support list attributes. ' +
-        'Use get-list-details to inspect list attribute schemas instead.'
+    throw Object.assign(
+      new Error(
+        'get_record_attribute_options does not yet support list attributes. ' +
+          'Use get-list-details to inspect list attribute schemas instead.'
+      ),
+      { code: 'VALIDATION_ERROR' }
     );
   }
 

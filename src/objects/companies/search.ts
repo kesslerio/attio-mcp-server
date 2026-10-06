@@ -1,26 +1,23 @@
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 /**
  * Search functionality for companies
  *
  * Simplified implementation following CLAUDE.md documentation-first rule.
  * Uses standard Attio API patterns instead of custom workarounds.
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
 import {
   searchObject,
   advancedSearchObject,
   ListEntryFilters,
-} from '../../api/operations/index.js';
+} from '@/api/operations/index.js';
 import { createScopedLogger } from '@/utils/logger.js';
-import {
-  ResourceType,
-  Company,
-  FilterConditionType,
-} from '../../types/attio.js';
+import { ResourceType, Company, FilterConditionType } from '@/types/attio.js';
 import {
   FilterValidationError,
   FilterErrorCategory,
-} from '../../errors/api-errors.js';
-import { normalizeDomain } from '../../utils/domain-utils.js';
+} from '@/errors/api-errors.js';
+import { normalizeDomain } from '@/utils/domain-utils.js';
 
 /**
  * Configuration options for company search
@@ -82,7 +79,8 @@ export async function searchCompaniesByDomain(
         domains: { $contains: normalizedDomain },
       },
     });
-    return response?.data?.data || [];
+    if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+    return response.data.data;
   } catch (error: unknown) {
     // Use structured logging with sanitized error information
     const logger = createScopedLogger(
@@ -92,7 +90,7 @@ export async function searchCompaniesByDomain(
     logger.error(`Domain search failed for domain`, error, {
       domain: normalizedDomain,
     });
-    return [];
+    throw error;
   }
 }
 

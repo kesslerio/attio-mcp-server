@@ -172,7 +172,7 @@ When using Claude with the Attio MCP server, you may encounter errors that are s
 
 3. **Rate Limiting**
    - Attio API rate limits may cause temporary failures
-   - The MCP server implements retry logic with exponential backoff
+   - See [API call retry logic](#api-call-retry-logic) for eligibility and recovery
    - Claude will inform you if operations are being delayed due to rate limiting
 
 ### Error Recovery Strategies
@@ -266,130 +266,55 @@ if (!valid) {
 
 ## API Call Retry Logic
 
-The server implements automatic retry logic for API calls to handle transient failures. This is done using the `callWithRetry` function which supports:
+`callWithRetry` defaults to uncertain-mutation handling. Writes are not
+retried automatically; fallback writes stop after transport failures or uncertain
+completion. Read back an uncertain write before considering another mutation.
+Only operations explicitly identified as reads may use automatic retries.
 
-- Configurable maximum retry attempts
-- Exponential backoff with jitter
-- Intelligent retry decisions based on error type
+Core record, task, list-entry, note, and batch write callbacks contain only the
+HTTP request; response decoding runs after the transport retry scope has ended.
+Decoding failures produce `RESULT_ENCODING_FAILED` and cannot enter a fallback
+write path. See [`decodeMutationResult`](../../src/api/operations/mutation-result.ts)
+and the transport replay regression coverage in
+[`retry-safety.test.ts`](../../test/api/retry-safety.test.ts).
+
+For a read, pass `{ uncertainMutation: false }` as the third argument:
 
 ```typescript
-// Example usage
 const result = await callWithRetry(
-  async () => {
-    // API call that might fail
-    return await api.get('/some/endpoint');
-  },
-  {
-    maxRetries: 3,
-    initialDelay: 1000,
-    maxDelay: 10000,
-  }
+  () => api.get('/some/endpoint'),
+  { maxRetries: 3, initialDelay: 1000, maxDelay: 10000 },
+  { uncertainMutation: false }
 );
 ```
 
-### Default Retry Configuration
-
-```typescript
-export const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 3,
-  initialDelay: 1000, // 1 second
-  maxDelay: 10000, // 10 seconds
-  useExponentialBackoff: true,
-  retryableStatusCodes: [408, 429, 500, 502, 503, 504],
-};
-```
+Eligible reads use configurable backoff and jitter. The helper rejects every
+HTTP 4xx response, including 408 and 429, even when listed in
+`retryableStatusCodes`; an MCP error's `retryable` field is caller guidance, not
+a promise that this helper retries it. See
+[`DEFAULT_RETRY_CONFIG` and `isRetryableError`](../../src/api/operations/retry.ts)
+for the authoritative defaults and eligibility checks.
 
 ## Standardized Response Formatting
 
-All responses from the server follow standardized formats for consistency:
-
-### Success Responses
-
-```typescript
-// Basic success response
-{
-  success: true,
-  message: "Operation completed successfully",
-  data: { ... }
-}
-
-// List response
-{
-  success: true,
-  message: "Found 10 items",
-  data: [ ... ],
-  meta: {
-    total: 10,
-    page: 1,
-    hasMore: false
-  }
-}
-```
-
-### Error Responses
-
-```typescript
-// Error response
-{
-  success: false,
-  error: {
-    type: "validation_error",
-    message: "Invalid input provided",
-    details: [
-      { field: "email", message: "Must be a valid email address" }
-    ]
-  }
-}
-```
+The [structured-results contract](../universal-tools/developer-guide.md#structured-results-v2-boundary-a)
+owns MCP success and execution-error envelopes. Other tool families retain
+legacy success text until migrated; protocol errors remain MCP protocol errors.
 
 ## Best Practices
 
 ### Creating Error Responses
 
-Use the `createErrorResult` function to create standardized error responses:
-
-```typescript
-import { createErrorResult, ErrorType } from '../utils/error-handler';
-
-try {
-  // Operation that might fail
-} catch (error) {
-  if (error.response?.status === 404) {
-    return createErrorResult(ErrorType.NOT_FOUND_ERROR, 'Resource not found', {
-      resourceId: id,
-    });
-  }
-
-  // Generic error handling
-  return createErrorResult(
-    ErrorType.UNKNOWN_ERROR,
-    'An unexpected error occurred',
-    error
-  );
-}
-```
+Let execution failures reach the shared boundary described in the
+[structured-results contract](../universal-tools/developer-guide.md#structured-results-v2-boundary-a).
+Preserve the original error or its cause when adding context so classification
+can retain the upstream status. Legacy dispatcher wrappers that still use
+[`createErrorResult`](../../src/utils/error-handler.ts) must follow its actual
+error, URL, method, and response-data signature.
 
 ### Using the Retry Logic
 
-Add retry logic to API calls that might fail due to transient issues:
-
-```typescript
-import { callWithRetry } from '../api/attio-operations';
-
-async function fetchUserData(userId) {
-  return callWithRetry(
-    async () => {
-      // API call that might fail
-      const response = await api.get(`/users/${userId}`);
-      return response.data;
-    },
-    {
-      maxRetries: 5,
-      retryableStatusCodes: [429, 503],
-    }
-  );
-}
-```
+Use the read example and eligibility rules in [API call retry logic](#api-call-retry-logic).
 
 ### Validation
 

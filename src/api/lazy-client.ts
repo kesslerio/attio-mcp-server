@@ -1,34 +1,21 @@
 /**
- * Enhanced lazy client - uses unified client architecture
- * Provides lazy initialization with caching and context management
+ * Lazy client initialization using request-aware configuration and context
  */
 
 import { AxiosInstance } from 'axios';
-import { createAttioClient } from './attio-client.js';
-import { ClientCache, clearAllCaches } from './client-cache.js';
+import { createAttioClient } from '@/api/attio-client.js';
+import { ClientCache, clearAllCaches } from '@/api/client-cache.js';
 import {
   getClientContext,
   runWithClientContext,
   setClientContext,
-} from './client-context.js';
-import { ClientConfig } from './client-config.js';
+} from '@/api/client-context.js';
+import { ClientConfig } from '@/api/client-config.js';
 
 export function getLazyAttioClient(config?: ClientConfig): AxiosInstance {
-  // Check if we have a cached client
-  const cachedClient = ClientCache.getInstance();
-  if (cachedClient && !config?.bypassCache) {
-    return cachedClient;
-  }
-
-  // Create new client using unified interface
-  const client = createAttioClient(config || {});
-
-  // Cache the client for future use
-  if (!config?.bypassCache) {
-    ClientCache.setInstance(client);
-  }
-
-  return client;
+  // Resolve current credentials/configuration before every call; a shared client
+  // can carry another request's credentials or bypass its upstream access denial.
+  return createAttioClient(config || {});
 }
 
 export function setGlobalContext(context: Record<string, unknown>): void {

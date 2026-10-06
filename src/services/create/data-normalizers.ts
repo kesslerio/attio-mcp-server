@@ -231,7 +231,6 @@ export function normalizePersonValues(input: JsonObject): JsonObject {
  */
 export function convertTaskToAttioRecord(
   createdTask: JsonObject,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _originalInput: JsonObject
 ): AttioRecord {
   // Handle conversion from AttioTask to AttioRecord format
@@ -241,7 +240,7 @@ export function convertTaskToAttioRecord(
     // If it's already an AttioRecord with record_id, ensure flat fields exist and return
     if (task.values && (task.id as JsonObject)?.record_id) {
       const base: AttioRecord = task as AttioRecord;
-      return {
+      return omitUnsetTaskFields({
         ...base,
         // Provide flat field compatibility expected by E2E tests
         content:
@@ -264,7 +263,7 @@ export function convertTaskToAttioRecord(
           (base.values?.assignee as unknown as JsonObject[])?.[0]?.value ||
           base.assignee_id,
         priority: base.priority || 'medium',
-      } as unknown as AttioRecord;
+      } as unknown as AttioRecord);
     }
 
     // If it has task_id, convert to AttioRecord format
@@ -291,7 +290,7 @@ export function convertTaskToAttioRecord(
         updated_at: task.updated_at,
       } as AttioRecord;
 
-      return {
+      return omitUnsetTaskFields({
         ...attioRecord,
         content: task.content,
         title: task.content,
@@ -303,7 +302,7 @@ export function convertTaskToAttioRecord(
           ((task.assignee as JsonObject)?.id as string) ||
           (task.assignee_id as string),
         priority: task.priority || 'medium',
-      } as unknown as AttioRecord;
+      } as unknown as AttioRecord);
     }
   }
 
@@ -343,4 +342,17 @@ export function normalizeEmailsToStringFormat(
       ? String((e as Record<string, unknown>).email_address)
       : String(e)
   );
+}
+
+/** Compatibility fields derived from absent task attributes are omitted from JSON. */
+function omitUnsetTaskFields(record: AttioRecord): AttioRecord {
+  const fields = Object.fromEntries(
+    Object.entries(record).filter(([, value]) => value !== undefined)
+  );
+  return {
+    ...fields,
+    values: Object.fromEntries(
+      Object.entries(record.values).filter(([, value]) => value !== undefined)
+    ),
+  } as AttioRecord;
 }

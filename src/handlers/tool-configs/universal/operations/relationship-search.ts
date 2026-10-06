@@ -1,3 +1,5 @@
+import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
+import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
 /**
  * Relationship search tool configuration
  */
@@ -42,6 +44,8 @@ export const searchByRelationshipConfig: UniversalToolConfig<
   UniversalRecord[]
 > = {
   name: 'search_records_by_relationship',
+  ...recordSearchResultContract,
+  structuredOutput: normalizeRecordCollection,
   handler: async (
     params: RelationshipSearchParams
   ): Promise<UniversalRecord[]> => {
@@ -110,13 +114,19 @@ export const searchByRelationshipConfig: UniversalToolConfig<
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         'search_records_by_relationship',
-        params.relationship_type,
+        params?.relationship_type ?? '',
         error
       );
     }
   },
   formatResult: (results: UniversalRecord[], ...args: unknown[]) => {
-    const relationshipType = args[0] as RelationshipType | undefined;
+    const first = args[0];
+    const relationshipType =
+      typeof first === 'string'
+        ? (first as RelationshipType)
+        : first && typeof first === 'object' && 'relationship_type' in first
+          ? (first.relationship_type as RelationshipType | undefined)
+          : undefined;
     if (!Array.isArray(results)) {
       return 'No related records found';
     }

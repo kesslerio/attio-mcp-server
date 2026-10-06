@@ -30,7 +30,9 @@ export const ResponseNormalizer = {
     const normalized: AttioRecord = {
       id: record.id || { record_id: 'unknown' },
       values: record.values || {},
-      created_at: record.created_at,
+      ...(record.created_at !== undefined
+        ? { created_at: record.created_at }
+        : {}),
       updated_at: record.updated_at || new Date().toISOString(),
     };
 
@@ -74,11 +76,15 @@ export const ResponseNormalizer = {
       },
       values: {
         ...record.values,
-        domains: Array.isArray(record.values.domains)
-          ? record.values.domains
-          : record.values.domains
-            ? [record.values.domains]
-            : record.values.domains,
+        ...(record.values.domains !== undefined
+          ? {
+              domains: Array.isArray(record.values.domains)
+                ? record.values.domains
+                : record.values.domains
+                  ? [record.values.domains]
+                  : record.values.domains,
+            }
+          : {}),
       },
     } as AttioRecord;
   },
@@ -91,16 +97,24 @@ export const ResponseNormalizer = {
       id: { ...record.id, object_id: (idObj.object_id as string) || 'people' },
       values: {
         ...record.values,
-        email_addresses: Array.isArray(vals.email_addresses)
-          ? (vals.email_addresses as unknown[])
-          : vals.email_addresses
-            ? [vals.email_addresses]
-            : vals.email_addresses,
-        phone_numbers: Array.isArray(vals.phone_numbers)
-          ? (vals.phone_numbers as unknown[])
-          : vals.phone_numbers
-            ? [vals.phone_numbers]
-            : vals.phone_numbers,
+        ...(vals.email_addresses !== undefined
+          ? {
+              email_addresses: Array.isArray(vals.email_addresses)
+                ? (vals.email_addresses as unknown[])
+                : vals.email_addresses
+                  ? [vals.email_addresses]
+                  : vals.email_addresses,
+            }
+          : {}),
+        ...(vals.phone_numbers !== undefined
+          ? {
+              phone_numbers: Array.isArray(vals.phone_numbers)
+                ? (vals.phone_numbers as unknown[])
+                : vals.phone_numbers
+                  ? [vals.phone_numbers]
+                  : vals.phone_numbers,
+            }
+          : {}),
       },
     } as AttioRecord;
   },
@@ -129,8 +143,12 @@ export const ResponseNormalizer = {
       },
       values: {
         ...record.values,
-        content: (vals.content as string) || (vals.title as string),
-        title: (vals.title as string) || (vals.content as string),
+        ...(vals.content !== undefined || vals.title !== undefined
+          ? {
+              content: (vals.content as string) || (vals.title as string),
+              title: (vals.title as string) || (vals.content as string),
+            }
+          : {}),
       },
     } as AttioRecord;
   },
@@ -143,10 +161,14 @@ export const ResponseNormalizer = {
       id: { ...record.id, object_id: (idObj.object_id as string) || 'deals' },
       values: {
         ...record.values,
-        value:
-          vals.value && typeof vals.value === 'string'
-            ? parseFloat(vals.value as string) || (vals.value as unknown)
-            : vals.value,
+        ...(vals.value !== undefined
+          ? {
+              value:
+                vals.value && typeof vals.value === 'string'
+                  ? parseFloat(vals.value as string) || (vals.value as unknown)
+                  : vals.value,
+            }
+          : {}),
       },
     } as AttioRecord;
   },

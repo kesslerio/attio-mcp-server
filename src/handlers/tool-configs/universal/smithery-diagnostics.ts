@@ -7,8 +7,12 @@
 
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { getContextStats } from '@/api/client-context.js';
+import {
+  diagnosticsDataSchema,
+  diagnosticsResultContract,
+} from '@/handlers/tools/result-schemas.js';
 
-interface SmitheryDiagnosticsPayload {
+export interface SmitheryDiagnosticsPayload {
   timestamp: string;
   runtime: {
     platform: string;
@@ -60,6 +64,10 @@ export const smitheryDiagnosticsToolDefinition = {
  */
 export const smitheryDiagnosticsConfig = {
   name: 'smithery_debug_config',
+  ...diagnosticsResultContract,
+  structuredOutput: (payload: unknown): Record<string, unknown> => ({
+    data: diagnosticsDataSchema.parse(payload),
+  }),
   handler: async () => {
     const contextStats = getContextStats();
     const diagnostic: SmitheryDiagnosticsPayload = {
@@ -83,45 +91,31 @@ export const smitheryDiagnosticsConfig = {
       },
     };
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(diagnostic, null, 2),
-        },
-      ],
-      isError: false,
-    };
+    // The adapter owns the envelope; the handler returns the domain payload.
+    return diagnostic;
   },
   formatResult: (res: Record<string, unknown>): string => {
-    const content = res?.content as Array<Record<string, unknown>> | undefined;
-    const textContent = content?.[0]?.text as string | undefined;
-
-    if (!textContent) {
+    const data = res as unknown as SmitheryDiagnosticsPayload | undefined;
+    if (!data?.runtime || !data?.environment || !data?.context) {
       return '⚠️ No diagnostic data available';
     }
 
-    try {
-      const data = JSON.parse(textContent) as SmitheryDiagnosticsPayload;
-      const contextState = data.context.hasWeakMapStorage
-        ? 'weakmap'
-        : data.context.hasFallbackStorage
-          ? 'fallback'
-          : 'missing';
-      const workspaceState = data.environment.hasAttioWorkspaceId
-        ? 'configured'
+    const contextState = data.context.hasWeakMapStorage
+      ? 'weakmap'
+      : data.context.hasFallbackStorage
+        ? 'fallback'
         : 'missing';
-      const parts: string[] = [
-        'Smithery Diagnostics',
-        `Runtime: ${data.runtime.platform}`,
-        `Node: ${data.runtime.nodeVersion}`,
-        `Context: ${contextState}`,
-        `Workspace: ${workspaceState}`,
-      ];
+    const workspaceState = data.environment.hasAttioWorkspaceId
+      ? 'configured'
+      : 'missing';
+    const parts: string[] = [
+      'Smithery Diagnostics',
+      `Runtime: ${data.runtime.platform}`,
+      `Node: ${data.runtime.nodeVersion}`,
+      `Context: ${contextState}`,
+      `Workspace: ${workspaceState}`,
+    ];
 
-      return parts.join(' | ');
-    } catch {
-      return '⚠️ Failed to parse diagnostic data';
-    }
+    return parts.join(' | ');
   },
 };

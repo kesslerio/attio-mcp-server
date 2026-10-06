@@ -53,6 +53,11 @@ export interface UniversalGetNotesParams {
   record_id?: string;
   limit?: number;
   offset?: number;
+  /**
+   * U5 continuation (KTD6): sealed token from a previous notes page; the
+   * notes endpoint's native cursor is preserved sealed inside it.
+   */
+  cursor?: string;
 }
 
 /**
@@ -188,6 +193,14 @@ export interface UniversalSearchParams {
   filters?: ListEntryFilters;
   limit?: number;
   offset?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  /**
+   * U5 continuation (KTD6). An opaque sealed token issued by a previous page;
+   * rejected together with an explicit offset and verified against the
+   * caller's credential scope and query shape before any Attio request.
+   */
+  cursor?: string;
   search_type?: SearchType;
   fields?: string[];
   match_type?: MatchType;
@@ -325,6 +338,12 @@ export interface AdvancedSearchParams {
   sort_order?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+  /**
+   * U5 continuation (KTD6). An opaque sealed token issued by a previous page;
+   * rejected together with an explicit offset and verified against the
+   * caller's credential scope and query shape before any Attio request.
+   */
+  cursor?: string;
 }
 
 /**
@@ -364,6 +383,12 @@ export interface TimeframeSearchParams {
   date_field?: 'created_at' | 'updated_at' | 'modified_at' | 'last_interaction';
   limit?: number;
   offset?: number;
+  /**
+   * U5 continuation (KTD6). An opaque sealed token issued by a previous page;
+   * rejected together with an explicit offset and verified against the
+   * caller's credential scope and query shape before any Attio request.
+   */
+  cursor?: string;
 }
 
 /**

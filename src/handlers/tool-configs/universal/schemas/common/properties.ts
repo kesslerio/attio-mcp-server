@@ -13,6 +13,12 @@ export const resourceTypeProperty = {
     'Custom objects (e.g., "funds", "investment_opportunities") are also supported after running `attio-discover attributes -a`.',
 };
 
+export const cursorProperty = {
+  type: 'string' as const,
+  maxLength: 512,
+  description:
+    'Opaque continuation token from a previous page of this exact query. Never combine with offset; the token advances its own position.',
+};
 export const paginationProperties = {
   limit: {
     type: 'number' as const,

@@ -1,17 +1,18 @@
 /**
  * List filtering operations.
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
-import { FilterValue } from '../../types/api-operations.js';
-import type { AttioListEntry } from '../../types/attio.js';
-import { ListEntryFilters } from '../../api/operations/index.js';
-import { hasErrorResponse } from '../../types/list-types.js';
-import { createScopedLogger } from '../../utils/logger.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { FilterValue } from '@/types/api-operations.js';
+import type { AttioListEntry } from '@/types/attio.js';
+import { ListEntryFilters } from '@/api/operations/index.js';
+import { hasErrorResponse } from '@/types/list-types.js';
+import { createScopedLogger } from '@/utils/logger.js';
 import {
   createPathBasedFilter,
   processListEntries,
-} from '../../utils/record-utils.js';
-import { getListEntries } from './entries.js';
+} from '@/utils/record-utils.js';
+import { getListEntries } from '@/objects/lists/entries.js';
 
 /**
  * Filters list entries by a specific attribute.
@@ -25,15 +26,21 @@ export async function filterListEntries(
   offset: number = 0
 ): Promise<AttioListEntry[]> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!attributeSlug || typeof attributeSlug !== 'string') {
-    throw new Error('Invalid attribute slug: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid attribute slug: Must be a non-empty string'
+    );
   }
 
   if (!condition || typeof condition !== 'string') {
-    throw new Error('Invalid condition: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid condition: Must be a non-empty string'
+    );
   }
 
   const filters: ListEntryFilters = {
@@ -60,15 +67,19 @@ export async function advancedFilterListEntries(
   offset: number = 0
 ): Promise<AttioListEntry[]> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!filters || typeof filters !== 'object') {
-    throw new Error('Invalid filters: Must be an object');
+    throw new UniversalValidationError('Invalid filters: Must be an object');
   }
 
   if (!filters.filters || !Array.isArray(filters.filters)) {
-    throw new Error('Invalid filters: Must contain a filters array');
+    throw new UniversalValidationError(
+      'Invalid filters: Must contain a filters array'
+    );
   }
 
   return getListEntries(listId, limit, offset, filters);
@@ -87,21 +98,27 @@ export async function filterListEntriesByParent(
   offset: number = 0
 ): Promise<AttioListEntry[]> {
   if (!listId || typeof listId !== 'string') {
-    throw new Error('Invalid list ID: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid list ID: Must be a non-empty string'
+    );
   }
 
   if (!parentObjectType || typeof parentObjectType !== 'string') {
-    throw new Error('Invalid parent object type: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid parent object type: Must be a non-empty string'
+    );
   }
 
   if (!parentAttributeSlug || typeof parentAttributeSlug !== 'string') {
-    throw new Error(
+    throw new UniversalValidationError(
       'Invalid parent attribute slug: Must be a non-empty string'
     );
   }
 
   if (!condition || typeof condition !== 'string') {
-    throw new Error('Invalid condition: Must be a non-empty string');
+    throw new UniversalValidationError(
+      'Invalid condition: Must be a non-empty string'
+    );
   }
 
   try {
@@ -160,16 +177,6 @@ export async function filterListEntriesByParent(
         status: hasErrorResponse(error) ? error.response?.status : undefined,
         data: hasErrorResponse(error) ? error.response?.data || {} : undefined,
       });
-    }
-
-    if (hasErrorResponse(error) && error.response?.status === 400) {
-      throw new Error(
-        `Invalid filter parameters: ${
-          error instanceof Error ? error.message : 'Bad request'
-        }`
-      );
-    } else if (hasErrorResponse(error) && error.response?.status === 404) {
-      throw new Error(`List ${listId} not found`);
     }
 
     throw error;

@@ -15,6 +15,7 @@ import type {
   UniversalRecord,
 } from '@/types/attio.js';
 import { isAttioList, isAttioRecord } from '@/types/attio.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 /**
  * UniversalUtilityService provides centralized utility functions
@@ -106,20 +107,16 @@ export class UniversalUtilityService {
         } else if ('id' in task.id) {
           record_id = (task.id as Record<string, unknown>).id as string;
         } else {
-          throw new Error(
-            `Task ID structure not recognized: ${JSON.stringify(task.id)}`
-          );
+          throw new ResultEncodingError();
         }
 
         workspace_id =
           ((task.id as Record<string, unknown>).workspace_id as string) || '';
       } else {
-        throw new Error(
-          `Task ID structure not recognized: ${JSON.stringify(task.id)}`
-        );
+        throw new ResultEncodingError();
       }
     } else {
-      throw new Error(`Task missing id property: ${JSON.stringify(task)}`);
+      throw new ResultEncodingError();
     }
 
     const baseRecord: AttioRecord = {
@@ -127,34 +124,41 @@ export class UniversalUtilityService {
         record_id,
         task_id: record_id, // Issue #480: Preserve task_id for E2E test compatibility
         object_id: 'tasks',
-        workspace_id,
+        ...(workspace_id ? { workspace_id } : {}),
       },
       values: {
         // Map task properties to simple string format (corrected after API verification)
         content: task.content,
         status: task.status,
-        assignee:
-          typeof task.assignee === 'string' ? task.assignee : task.assignee?.id,
-        due_date: task.due_date,
-        linked_records: task.linked_records || undefined,
+        ...(task.assignee != null
+          ? {
+              assignee:
+                typeof task.assignee === 'string'
+                  ? task.assignee
+                  : task.assignee.id,
+            }
+          : {}),
+        ...(task.due_date !== undefined ? { due_date: task.due_date } : {}),
+        ...(task.linked_records !== undefined
+          ? { linked_records: task.linked_records }
+          : {}),
       },
       created_at: task.created_at,
-      updated_at: task.updated_at,
+      ...(task.updated_at !== undefined ? { updated_at: task.updated_at } : {}),
     };
 
     // Add flat field compatibility for test environments (Issue #480 pattern)
     const flatFields = {
       content: task.content,
       status: task.status,
-      due_date: task.due_date,
-      assignee_id:
-        typeof task.assignee === 'string' ? task.assignee : task.assignee?.id,
+      ...(task.due_date !== undefined ? { due_date: task.due_date } : {}),
     };
 
     // Add assignee as simple string (corrected after API verification)
-    if (task.assignee) {
-      (flatFields as Record<string, unknown>).assignee =
+    if (task.assignee != null) {
+      const assignee =
         typeof task.assignee === 'string' ? task.assignee : task.assignee.id;
+      Object.assign(flatFields, { assignee, assignee_id: assignee });
     }
 
     return { ...baseRecord, ...flatFields };

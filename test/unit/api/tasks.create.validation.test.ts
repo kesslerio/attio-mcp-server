@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createTask } from '../../../src/api/operations/tasks.js';
+import { createTask } from '@/api/operations/tasks.js';
 
 // Mock the Attio client
 const mockPost = vi.fn();
@@ -11,23 +11,23 @@ const mockClient = {
   },
 };
 
-vi.mock('../../../src/api/attio-client.js', () => ({
+vi.mock('@/api/attio-client.js', () => ({
   getAttioClient: () => mockClient,
   createAttioClient: () => mockClient,
 }));
 
 // Mock lazy client
-vi.mock('../../../src/api/lazy-client.js', () => ({
+vi.mock('@/api/lazy-client.js', () => ({
   getLazyAttioClient: () => mockClient,
 }));
 
 // Mock client resolver
-vi.mock('../../../src/utils/client-resolver.js', () => ({
+vi.mock('@/utils/client-resolver.js', () => ({
   getValidatedAttioClient: () => mockClient,
 }));
 
 // Mock retry utility to avoid delays in tests
-vi.mock('../../../src/api/operations/retry.js', () => ({
+vi.mock('@/api/operations/retry.js', () => ({
   callWithRetry: vi.fn((fn) => fn()),
 }));
 
@@ -166,7 +166,7 @@ describe('tasks.createTask validation', () => {
       });
 
       await expect(createTask('test')).rejects.toThrow(
-        'Invalid API response structure'
+        'The tool completed but its result could not be encoded'
       );
     });
 
@@ -174,7 +174,7 @@ describe('tasks.createTask validation', () => {
       mockPost.mockResolvedValue(null);
 
       await expect(createTask('test')).rejects.toThrow(
-        'Invalid API response: no response data received'
+        'The tool completed but its result could not be encoded'
       );
     });
   });

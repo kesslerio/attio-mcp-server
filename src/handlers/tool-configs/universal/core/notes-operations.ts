@@ -1,4 +1,8 @@
 import {
+  recordWriteResultContract,
+  recordSearchResultContract,
+} from '@/handlers/tools/result-schemas.js';
+import {
   UniversalToolConfig,
   UniversalCreateNoteParams,
   UniversalGetNotesParams,
@@ -10,7 +14,7 @@ import {
 } from '@/handlers/tool-configs/universal/schemas.js';
 import {
   handleUniversalCreateNote,
-  handleUniversalGetNotes,
+  handleUniversalGetNotesPage,
 } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
@@ -27,6 +31,7 @@ export const createNoteConfig: UniversalToolConfig<
   Record<string, unknown>
 > = {
   name: 'create_note',
+  ...recordWriteResultContract,
   handler: async (
     params: Record<string, unknown>
   ): Promise<Record<string, unknown>> => {
@@ -95,24 +100,75 @@ export const createNoteConfig: UniversalToolConfig<
     return {
       ...note,
       // Keep original id (object) - don't replace with extracted string
-      title: title || note.title,
+      title: title || note.title || '',
       content:
         content ||
         note.content ||
         note.content_markdown ||
-        note.content_plaintext,
+        note.content_plaintext ||
+        '',
     };
   },
 };
 
 export const listNotesConfig: UniversalToolConfig<
   Record<string, unknown>,
-  Record<string, unknown>[]
+  | Record<string, unknown>[]
+  | {
+      data: Record<string, unknown>[];
+      next_cursor?: string | null;
+      pagination?: Record<string, unknown>;
+    }
 > = {
   name: 'list_notes',
+  ...recordSearchResultContract,
+  structuredOutput: (
+    notes:
+      | Record<string, unknown>[]
+      | {
+          data: Record<string, unknown>[];
+          next_cursor?: string | null;
+          pagination?: Record<string, unknown>;
+        }
+  ) => {
+    // U5: cursor-bearing calls return the page envelope from the notes seam.
+    if (
+      notes &&
+      typeof notes === 'object' &&
+      !Array.isArray(notes) &&
+      Array.isArray((notes as { data?: unknown }).data)
+    ) {
+      const envelope = notes as {
+        data: Record<string, unknown>[];
+        next_cursor?: string | null;
+        pagination?: Record<string, unknown>;
+      };
+      return {
+        data: envelope.data,
+        count: envelope.data.length,
+        ...(envelope.next_cursor !== undefined
+          ? { next_cursor: envelope.next_cursor }
+          : { next_cursor: null }),
+        ...(envelope.pagination ? { pagination: envelope.pagination } : {}),
+      };
+    }
+    const noteArray = notes as Record<string, unknown>[];
+    return {
+      data: noteArray,
+      count: noteArray.length,
+      next_cursor: null,
+    };
+  },
   handler: async (
     params: Record<string, unknown>
-  ): Promise<Record<string, unknown>[]> => {
+  ): Promise<
+    | Record<string, unknown>[]
+    | {
+        data: Record<string, unknown>[];
+        next_cursor?: string | null;
+        pagination?: Record<string, unknown>;
+      }
+  > => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'list_notes',
@@ -126,14 +182,26 @@ export const listNotesConfig: UniversalToolConfig<
         );
       }
 
-      return await handleUniversalGetNotes(sanitizedParams);
+      return await handleUniversalGetNotesPage(sanitizedParams);
     } catch (error: unknown) {
       throw ErrorService.createUniversalError('list_notes', 'notes', error);
     }
   },
-  formatResult: (notes: Record<string, unknown>[]): string => {
+  formatResult: (
+    notes:
+      | Record<string, unknown>[]
+      | {
+          data: Record<string, unknown>[];
+          next_cursor?: string | null;
+          pagination?: Record<string, unknown>;
+        }
+  ): string => {
     try {
-      const notesArray = Array.isArray(notes) ? notes : [];
+      const notesArray = Array.isArray(notes)
+        ? notes
+        : Array.isArray(notes.data)
+          ? notes.data
+          : [];
 
       if (notesArray.length === 0) {
         return 'Found 0 notes';

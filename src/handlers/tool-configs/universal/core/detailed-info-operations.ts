@@ -1,16 +1,19 @@
+import { extractResourceTypeFromFormatArgs } from '@/handlers/tool-configs/universal/core/utils.js';
+import { detailedInfoResultContract } from '@/handlers/tools/result-schemas.js';
+import { assertReadSuccess } from '@/handlers/tool-configs/universal/read-result-adapters.js';
+import { ErrorService } from '@/services/ErrorService.js';
 import {
   UniversalToolConfig,
   UniversalDetailedInfoParams,
-  UniversalResourceType,
-} from '../types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 import {
   getDetailedInfoSchema,
   validateUniversalToolParams,
-} from '../schemas.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
 import {
   handleUniversalGetDetailedInfo,
   getSingularResourceType,
-} from '../shared-handlers.js';
+} from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const getDetailedInfoConfig: UniversalToolConfig<
@@ -18,13 +21,26 @@ export const getDetailedInfoConfig: UniversalToolConfig<
   Record<string, unknown>
 > = {
   name: 'get_record_info',
+  ...detailedInfoResultContract,
+  structuredOutput: (result) => ({ data: assertReadSuccess(result) }),
   handler: async (params: UniversalDetailedInfoParams) => {
-    validateUniversalToolParams('get_record_info', params);
-    return await handleUniversalGetDetailedInfo(params);
+    try {
+      const sanitized = validateUniversalToolParams('get_record_info', params);
+      return assertReadSuccess(await handleUniversalGetDetailedInfo(sanitized));
+    } catch (error) {
+      throw ErrorService.createUniversalError(
+        'get_record_info',
+        params?.resource_type ?? '',
+        error
+      );
+    }
   },
   formatResult: (info: Record<string, unknown>, ...args: unknown[]): string => {
-    const resourceType = args[0] as UniversalResourceType | undefined;
-    const detailedInfoType = args[1] as string | undefined;
+    const resourceType = extractResourceTypeFromFormatArgs(args);
+    const detailedInfoType =
+      args[0] && typeof args[0] === 'object' && 'info_type' in args[0]
+        ? (args[0].info_type as string | undefined)
+        : (args[1] as string | undefined);
     if (!info) {
       return 'No detailed information found';
     }
