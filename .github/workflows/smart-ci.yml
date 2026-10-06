@@ -221,6 +221,14 @@ jobs:
         env:
           SKIP_INTEGRATION_TESTS: true
 
+      # Runs the build itself, so this step cannot be silently neutered by a
+      # reorder: the tests assert against dist/cli.js, and a stale artifact would
+      # otherwise pass with the fix reverted. Unconditional because a strategy
+      # chosen from changed paths cannot tell that a re-ref'd timer would
+      # resurrect the leak — a spawn-based test imports nothing from src/.
+      - name: Process lifecycle regression tests
+        run: bun run test:lifecycle
+
       - name: Performance budget check
         if: matrix.node-version == '22.x'
         run: |
