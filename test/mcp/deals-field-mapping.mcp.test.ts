@@ -56,9 +56,12 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
 
   it('should allow using display names from records_discover_attributes in records_create', async () => {
     // First, discover the attributes for deals
-    const discoverResult = await client.callTool('records_discover_attributes', {
-      resource_type: 'deals',
-    });
+    const discoverResult = await client.callTool(
+      'records_discover_attributes',
+      {
+        resource_type: 'deals',
+      }
+    );
 
     expect(discoverResult.isError).toBeFalsy();
     expect(discoverResult.content).toBeDefined();
@@ -88,7 +91,9 @@ describe('Deals Field Mapping Fix - Issue #687', () => {
       expect(discoverData.mappings['Deal name']).toBe('name');
     } else {
       // If not JSON, at least verify the display names are present
-      console.log('✅ Display names found in records_discover_attributes output');
+      console.log(
+        '✅ Display names found in records_discover_attributes output'
+      );
     }
 
     // Now test that we can create a deal using the display names

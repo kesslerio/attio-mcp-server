@@ -186,9 +186,7 @@ export const TOOL_NAMES = {
   LIST_ENTRIES_REMOVE: canonicalName('list_entries_remove'),
   LIST_ENTRIES_UPDATE: canonicalName('list_entries_update'),
   LIST_ENTRIES_MANAGE: canonicalName('list_entries_manage'),
-  LIST_ENTRIES_FILTER_BY_PARENT: canonicalName(
-    'list_entries_filter_by_parent'
-  ),
+  LIST_ENTRIES_FILTER_BY_PARENT: canonicalName('list_entries_filter_by_parent'),
   LIST_ENTRIES_FILTER_BY_PARENT_ID: canonicalName(
     'list_entries_filter_by_parent_id'
   ),

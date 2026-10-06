@@ -58,20 +58,23 @@ describe('TC-AO04: Performance Edge Case Validation', () => {
       let error: string | undefined;
 
       try {
-        const result = await testCase.executeToolCall('records_search_advanced', {
-          resource_type: 'companies',
-          filters: {
-            filters: [
-              {
-                attribute: { slug: 'name' },
-                condition: 'contains',
-                value: 'a',
-              },
-            ],
-          },
-          limit: 25,
-          offset: 0,
-        });
+        const result = await testCase.executeToolCall(
+          'records_search_advanced',
+          {
+            resource_type: 'companies',
+            filters: {
+              filters: [
+                {
+                  attribute: { slug: 'name' },
+                  condition: 'contains',
+                  value: 'a',
+                },
+              ],
+            },
+            limit: 25,
+            offset: 0,
+          }
+        );
 
         QAAssertions.assertSearchResults(result, 'companies', 1);
         const text = testCase.extractTextContent(result).toLowerCase();

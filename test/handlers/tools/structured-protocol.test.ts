@@ -263,11 +263,7 @@ describe('structured tool protocol', () => {
     }
   );
 
-  it.each([
-    'list_entries_list',
-    'list_entries_add',
-    'list_entries_remove',
-  ])(
+  it.each(['list_entries_list', 'list_entries_add', 'list_entries_remove'])(
     'rejects invalid list IDs in %s without formatting or mutation',
     async (name) => {
       const read = vi.spyOn(listOperations, 'getListEntries');
@@ -526,10 +522,7 @@ describe('structured tool protocol', () => {
 
   it.each([
     ['list_entries_add', { recordId: 42, objectType: 'companies' }],
-    [
-      'list_entries_add',
-      { recordId: 'record-id', objectType: 'unsupported' },
-    ],
+    ['list_entries_add', { recordId: 'record-id', objectType: 'unsupported' }],
     ['list_entries_update', { entryId: 42, attributes: {} }],
     ['list_entries_update', { entryId: 'entry-id', attributes: [] }],
     ['list_entries_remove', { entryId: 42 }],
@@ -537,7 +530,10 @@ describe('structured tool protocol', () => {
       'list_entries_manage',
       { listId: 42, recordId: 'record-id', objectType: 'companies' },
     ],
-    ['list_entries_manage', { recordId: 'record-id', objectType: 'unsupported' }],
+    [
+      'list_entries_manage',
+      { recordId: 'record-id', objectType: 'unsupported' },
+    ],
     ['list_entries_manage', { entryId: 42, attributes: {} }],
     ['list_entries_manage', { entryId: 'entry-id', attributes: [] }],
     ['list_entries_manage', { entryId: 42 }],

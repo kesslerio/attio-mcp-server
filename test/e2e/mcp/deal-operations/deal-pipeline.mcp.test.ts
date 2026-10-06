@@ -101,20 +101,26 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         testCase.trackRecord('deals', recordId);
 
         // Stage 1: Move to second stage
-        const updateToStage2 = await testCase.executeToolCall('records_update', {
-          resource_type: 'deals',
-          record_id: recordId,
-          record_data: { stage: stage2 },
-        });
+        const updateToStage2 = await testCase.executeToolCall(
+          'records_update',
+          {
+            resource_type: 'deals',
+            record_id: recordId,
+            record_data: { stage: stage2 },
+          }
+        );
 
         QAAssertions.assertRecordUpdated(updateToStage2, 'deals');
 
         // Stage 2: Move to third stage
-        const updateToStage3 = await testCase.executeToolCall('records_update', {
-          resource_type: 'deals',
-          record_id: recordId,
-          record_data: { stage: stage3 },
-        });
+        const updateToStage3 = await testCase.executeToolCall(
+          'records_update',
+          {
+            resource_type: 'deals',
+            record_id: recordId,
+            record_data: { stage: stage3 },
+          }
+        );
 
         QAAssertions.assertRecordUpdated(updateToStage3, 'deals');
 
@@ -145,10 +151,13 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
             'TCD06',
             fallbackStage
           );
-          const createResult = await testCase.executeToolCall('records_create', {
-            resource_type: 'deals',
-            record_data: fallbackDeal,
-          });
+          const createResult = await testCase.executeToolCall(
+            'records_create',
+            {
+              resource_type: 'deals',
+              record_data: fallbackDeal,
+            }
+          );
           const text = testCase.extractTextContent(createResult);
           pipelineDealId = testCase.extractRecordId(text);
           testCase.trackRecord('deals', pipelineDealId);
@@ -195,10 +204,13 @@ describe('TC-D05 to TC-D07: Deal Pipeline Operations', () => {
         for (const stage of searchStages) {
           const dealData = TestDataFactory.createDealWithStage('TCD07', stage);
 
-          const createResult = await testCase.executeToolCall('records_create', {
-            resource_type: 'deals',
-            record_data: dealData,
-          });
+          const createResult = await testCase.executeToolCall(
+            'records_create',
+            {
+              resource_type: 'deals',
+              record_data: dealData,
+            }
+          );
 
           const recordId = QAAssertions.assertRecordCreated(
             createResult,

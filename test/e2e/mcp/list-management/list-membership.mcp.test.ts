@@ -217,13 +217,10 @@ describe('TC-007: List Membership - Record List Management', () => {
         const entryId = idMatch[1];
 
         // Now remove it
-        const result = await testCase.executeToolCall(
-          'list_entries_remove',
-          {
-            listId: testCase['testListId'],
-            entryId: entryId,
-          }
-        );
+        const result = await testCase.executeToolCall('list_entries_remove', {
+          listId: testCase['testListId'],
+          entryId: entryId,
+        });
 
         QAAssertions.assertValidListResponse(result, 'list_entries_remove');
       }
@@ -344,27 +341,21 @@ describe('TC-007: List Membership - Record List Management', () => {
       const results = [];
 
       // Add company
-      const companyResult = await testCase.executeToolCall(
-        'list_entries_add',
-        {
-          listId: testCase['testListId'],
-          recordId: testCase['testCompanyId'],
-          objectType: 'companies',
-          values: { batch_test: true },
-        }
-      );
+      const companyResult = await testCase.executeToolCall('list_entries_add', {
+        listId: testCase['testListId'],
+        recordId: testCase['testCompanyId'],
+        objectType: 'companies',
+        values: { batch_test: true },
+      });
       results.push(companyResult);
 
       // Add person
-      const personResult = await testCase.executeToolCall(
-        'list_entries_add',
-        {
-          listId: testCase['testListId'],
-          recordId: testCase['testPersonId'],
-          objectType: 'people',
-          values: { batch_test: true },
-        }
-      );
+      const personResult = await testCase.executeToolCall('list_entries_add', {
+        listId: testCase['testListId'],
+        recordId: testCase['testPersonId'],
+        objectType: 'people',
+        values: { batch_test: true },
+      });
       results.push(personResult);
 
       // Verify all operations succeeded
@@ -373,9 +364,12 @@ describe('TC-007: List Membership - Record List Management', () => {
       }
 
       // Get list entries to verify batch addition
-      const entriesResult = await testCase.executeToolCall('list_entries_list', {
-        listId: testCase['testListId'],
-      });
+      const entriesResult = await testCase.executeToolCall(
+        'list_entries_list',
+        {
+          listId: testCase['testListId'],
+        }
+      );
 
       QAAssertions.assertValidListResponse(entriesResult, 'list_entries_list');
 

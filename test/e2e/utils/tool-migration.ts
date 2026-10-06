@@ -273,7 +273,8 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
       target_resource_type: 'records',
       limit: params.limit || 50,
     }),
-    description: 'Legacy get-list-entries → universal records_search_by_relationship',
+    description:
+      'Legacy get-list-entries → universal records_search_by_relationship',
   },
   {
     legacyToolName: 'add-record-to-list',
@@ -338,7 +339,8 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
       sort_by: params.sort_by,
       sort_order: params.sort_order,
     }),
-    description: 'Legacy filter-list-entries → universal records_search_advanced',
+    description:
+      'Legacy filter-list-entries → universal records_search_advanced',
   },
   {
     legacyToolName: 'advanced-filter-list-entries',

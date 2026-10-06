@@ -49,7 +49,11 @@ describe('findToolConfig in search-only mode', () => {
 
     // Aliases resolve to canonical names before the mode filter runs, so an
     // alias can never widen search-only mode (AE5).
-    for (const name of ['lists_list', 'lists_create', 'workspace_members_list']) {
+    for (const name of [
+      'lists_list',
+      'lists_create',
+      'workspace_members_list',
+    ]) {
       expect(findToolConfig(name), name).toBeUndefined();
     }
     // A supported migration alias for a write resolves, then the allowlist

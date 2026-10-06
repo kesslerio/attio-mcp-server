@@ -323,7 +323,10 @@ describe('Enhanced Validation Utils', () => {
         missingFields: ['name', 'email'],
       };
 
-      const response = createEnhancedErrorResponse(validation, 'records_create');
+      const response = createEnhancedErrorResponse(
+        validation,
+        'records_create'
+      );
 
       expect(response.suggestions).toContain(
         'Add required fields: name, email'
@@ -341,7 +344,10 @@ describe('Enhanced Validation Utils', () => {
         readOnlyFields: ['id', 'created_at'],
       };
 
-      const response = createEnhancedErrorResponse(validation, 'records_update');
+      const response = createEnhancedErrorResponse(
+        validation,
+        'records_update'
+      );
 
       expect(response.suggestions).toContain(
         'Remove read-only fields: id, created_at'
@@ -359,7 +365,10 @@ describe('Enhanced Validation Utils', () => {
         invalidFields: ['email', 'phone'],
       };
 
-      const response = createEnhancedErrorResponse(validation, 'records_create');
+      const response = createEnhancedErrorResponse(
+        validation,
+        'records_create'
+      );
 
       expect(response.suggestions).toContain(
         'Fix invalid field values for: email, phone'

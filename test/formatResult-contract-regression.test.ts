@@ -52,7 +52,10 @@ const UNIVERSAL_TOOL_CONFIGS = [
   { name: 'upsert-record', config: upsertFormatAdapter },
   { name: 'records_get_attributes', config: coreOpsConfig.getAttributesConfig },
   { name: 'records_get_info', config: coreOpsConfig.getDetailedInfoConfig },
-  { name: 'records_search_advanced', config: advancedOpsConfig.advancedSearchConfig },
+  {
+    name: 'records_search_advanced',
+    config: advancedOpsConfig.advancedSearchConfig,
+  },
 ];
 
 /**

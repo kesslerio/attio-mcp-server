@@ -70,7 +70,10 @@ describe('Universal Resource Types Validation', () => {
       { name: 'records_create', fn: coreOps.createRecordConfig.formatResult },
       { name: 'records_update', fn: coreOps.updateRecordConfig.formatResult },
       { name: 'records_delete', fn: coreOps.deleteRecordConfig.formatResult },
-      { name: 'records_get_attributes', fn: coreOps.getAttributesConfig.formatResult },
+      {
+        name: 'records_get_attributes',
+        fn: coreOps.getAttributesConfig.formatResult,
+      },
       {
         name: 'records_get_info',
         fn: coreOps.getDetailedInfoConfig.formatResult,

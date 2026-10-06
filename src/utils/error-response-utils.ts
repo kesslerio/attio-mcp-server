@@ -49,7 +49,9 @@ export function createFieldValidationError(
     suggestions:
       suggestions.length > 0
         ? suggestions
-        : [`Use records_get_attributes to see valid fields for ${resourceType}`],
+        : [
+            `Use records_get_attributes to see valid fields for ${resourceType}`,
+          ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
     context: { resource_type: resourceType, field_name: fieldName },
   };

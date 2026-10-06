@@ -3,10 +3,7 @@ import {
   getToolAliasRegistry,
   resolveToolName,
 } from '@/config/tool-aliases.js';
-import {
-  filterAllowedTools,
-  isToolAllowed,
-} from '@/config/tool-mode.js';
+import { filterAllowedTools, isToolAllowed } from '@/config/tool-mode.js';
 import { listAdvertisedToolNames } from '@/cli/tool-catalog.js';
 import {
   REMOVED_PRE_V2_TOOL_ALIASES,
@@ -204,44 +201,47 @@ describe('v2 tool name migration', () => {
     delete process.env.ATTIO_MCP_TOOL_MODE;
     delete process.env.MCP_DISABLE_TOOL_ALIASES;
 
-    const pairs: Array<{ canonical: string; previous: string; toolType: string }> =
-      [
-        {
-          canonical: 'records_search',
-          previous: 'search_records',
-          toolType: 'records_search',
-        },
-        {
-          canonical: 'records_create',
-          previous: 'create_record',
-          toolType: 'records_create',
-        },
-        {
-          canonical: 'companies_create',
-          previous: 'create_company',
-          toolType: 'companies_create',
-        },
-        {
-          canonical: 'records_merge',
-          previous: 'merge_records',
-          toolType: 'records_merge',
-        },
-        {
-          canonical: 'lists_list',
-          previous: 'get-lists',
-          toolType: 'getLists',
-        },
-        {
-          canonical: 'list_entries_manage',
-          previous: 'manage-list-entry',
-          toolType: 'manageListEntry',
-        },
-        {
-          canonical: 'workspace_members_get',
-          previous: 'get-workspace-member',
-          toolType: 'getWorkspaceMember',
-        },
-      ];
+    const pairs: Array<{
+      canonical: string;
+      previous: string;
+      toolType: string;
+    }> = [
+      {
+        canonical: 'records_search',
+        previous: 'search_records',
+        toolType: 'records_search',
+      },
+      {
+        canonical: 'records_create',
+        previous: 'create_record',
+        toolType: 'records_create',
+      },
+      {
+        canonical: 'companies_create',
+        previous: 'create_company',
+        toolType: 'companies_create',
+      },
+      {
+        canonical: 'records_merge',
+        previous: 'merge_records',
+        toolType: 'records_merge',
+      },
+      {
+        canonical: 'lists_list',
+        previous: 'get-lists',
+        toolType: 'getLists',
+      },
+      {
+        canonical: 'list_entries_manage',
+        previous: 'manage-list-entry',
+        toolType: 'manageListEntry',
+      },
+      {
+        canonical: 'workspace_members_get',
+        previous: 'get-workspace-member',
+        toolType: 'getWorkspaceMember',
+      },
+    ];
 
     for (const pair of pairs) {
       const canonical = findToolConfig(pair.canonical);
@@ -266,9 +266,9 @@ describe('v2 tool name migration', () => {
     expect(viaCanonical.resource_type).toBe('companies');
     expect(viaAlias.query).toBe(viaCanonical.query);
 
-    expect(() =>
-      validateUniversalToolParams('search_records', {})
-    ).toThrow(/resource_type/);
+    expect(() => validateUniversalToolParams('search_records', {})).toThrow(
+      /resource_type/
+    );
     expect(() => validateUniversalToolParams('records_search', {})).toThrow(
       /resource_type/
     );

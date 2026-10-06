@@ -5,7 +5,7 @@ import { ValidationLevel, ValidationResult, ToolResult } from './types.js';
 
 export class TestValidator {
   private static toolSchemas: Record<string, any> = {
-    'records_search': {
+    records_search: {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -21,7 +21,7 @@ export class TestValidator {
         'Missing required parameter',
       ],
     },
-    'records_search_by_timeframe': {
+    records_search_by_timeframe: {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -31,7 +31,7 @@ export class TestValidator {
         'Bad Request',
       ],
     },
-    'records_search_advanced': {
+    records_search_advanced: {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -39,7 +39,7 @@ export class TestValidator {
         'Invalid filter',
       ],
     },
-    'records_search_by_relationship': {
+    records_search_by_relationship: {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',
@@ -47,7 +47,7 @@ export class TestValidator {
         'Invalid relationship type',
       ],
     },
-    'records_batch': {
+    records_batch: {
       expectedFields: ['results', 'operations'],
       errorPatterns: [
         'Error executing tool',
@@ -55,7 +55,7 @@ export class TestValidator {
         'Batch operation failed',
       ],
     },
-    'records_get_info': {
+    records_get_info: {
       expectedFields: ['data', 'attributes'],
       errorPatterns: [
         'Error executing tool',
@@ -63,7 +63,7 @@ export class TestValidator {
         'Record not found',
       ],
     },
-    'records_search_by_content': {
+    records_search_by_content: {
       expectedFields: ['data', 'results', 'records'],
       errorPatterns: [
         'Error executing tool',

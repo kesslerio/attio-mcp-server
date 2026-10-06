@@ -104,7 +104,8 @@ export const getDetailedInfoDefinition = {
     boundaries: 'search lists of records or mutate data.',
     constraints:
       'Requires resource_type, record_id, and info_type (contact|business|social).',
-    recoveryHint: 'Use records_get_details if you need the full record payload.',
+    recoveryHint:
+      'Use records_get_details if you need the full record payload.',
   }),
   inputSchema: getDetailedInfoSchema,
   annotations: {

@@ -482,12 +482,11 @@ describe('Performance Regression Tests', () => {
 
       const startTime = performance.now();
 
-      const record = await coreOperationsToolConfigs.records_get_details.handler(
-        {
+      const record =
+        await coreOperationsToolConfigs.records_get_details.handler({
           resource_type: UniversalResourceType.COMPANIES,
           record_id: testRecordId,
-        }
-      );
+        });
 
       const duration = performance.now() - startTime;
 
@@ -641,8 +640,9 @@ describe('Performance Regression Tests', () => {
       });
 
       // Get statistics
-      const stats =
-        enhancedPerformanceTracker.getStatistics('records_get_details');
+      const stats = enhancedPerformanceTracker.getStatistics(
+        'records_get_details'
+      );
 
       expect(stats).toBeDefined();
       expect(stats.count).toBeGreaterThan(0);

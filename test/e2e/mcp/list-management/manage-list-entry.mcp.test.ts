@@ -352,11 +352,14 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
         }
 
         // Create a fresh entry for update testing
-        const addResult = await testCase.executeToolCall('list_entries_manage', {
-          listId,
-          recordId: companyId,
-          objectType: 'companies',
-        });
+        const addResult = await testCase.executeToolCall(
+          'list_entries_manage',
+          {
+            listId,
+            recordId: companyId,
+            objectType: 'companies',
+          }
+        );
 
         const entryId = extractEntryId(addResult);
         if (!entryId) {
@@ -441,11 +444,14 @@ describe('TC-010: Manage List Entry - Unified Entry Management', () => {
 
         // Step 1: Add (Mode 1)
         console.log('Lifecycle Step 1: Adding record...');
-        const addResult = await testCase.executeToolCall('list_entries_manage', {
-          listId,
-          recordId: companyId,
-          objectType: 'companies',
-        });
+        const addResult = await testCase.executeToolCall(
+          'list_entries_manage',
+          {
+            listId,
+            recordId: companyId,
+            objectType: 'companies',
+          }
+        );
 
         lifecycleEntryId = extractEntryId(addResult);
         if (!lifecycleEntryId) {

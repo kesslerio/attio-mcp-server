@@ -236,12 +236,15 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
       try {
         // Search for notes containing "quarterly" (should find meeting notes)
-        const result = await testCase.executeToolCall('records_search_by_content', {
-          resource_type: 'notes',
-          content_type: 'notes',
-          search_query: 'quarterly',
-          limit: 10,
-        });
+        const result = await testCase.executeToolCall(
+          'records_search_by_content',
+          {
+            resource_type: 'notes',
+            content_type: 'notes',
+            search_query: 'quarterly',
+            limit: 10,
+          }
+        );
 
         expect(result.isError).toBeFalsy();
 
@@ -365,12 +368,15 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
       try {
         // Search for something that definitely doesn't exist
-        const result = await testCase.executeToolCall('records_search_by_content', {
-          resource_type: 'notes',
-          content_type: 'notes',
-          search_query: 'xyznonexistentquery123',
-          limit: 10,
-        });
+        const result = await testCase.executeToolCall(
+          'records_search_by_content',
+          {
+            resource_type: 'notes',
+            content_type: 'notes',
+            search_query: 'xyznonexistentquery123',
+            limit: 10,
+          }
+        );
 
         // Should not error, but may return empty results
         expect(result.isError).toBeFalsy();
@@ -403,12 +409,15 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
 
       try {
         // Search for notes containing "technical" (should find technical discussion note)
-        const result = await testCase.executeToolCall('records_search_by_content', {
-          resource_type: 'notes',
-          content_type: 'notes',
-          search_query: 'technical',
-          limit: 5,
-        });
+        const result = await testCase.executeToolCall(
+          'records_search_by_content',
+          {
+            resource_type: 'notes',
+            content_type: 'notes',
+            search_query: 'technical',
+            limit: 5,
+          }
+        );
 
         expect(result.isError).toBeFalsy();
 
@@ -419,12 +428,15 @@ describe('TC-N03: Note Search Operations - Content Search and Filtering', () => 
         expect(text.length).toBeGreaterThan(0);
 
         // Try another search term
-        const result2 = await testCase.executeToolCall('records_search_by_content', {
-          resource_type: 'notes',
-          content_type: 'notes',
-          search_query: 'meeting',
-          limit: 5,
-        });
+        const result2 = await testCase.executeToolCall(
+          'records_search_by_content',
+          {
+            resource_type: 'notes',
+            content_type: 'notes',
+            search_query: 'meeting',
+            limit: 5,
+          }
+        );
 
         expect(result2.isError).toBeFalsy();
 

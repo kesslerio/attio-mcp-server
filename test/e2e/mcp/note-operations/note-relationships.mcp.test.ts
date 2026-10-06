@@ -400,12 +400,15 @@ describe('TC-N02: Note Relationship Operations - Note Parent Attachments', () =>
         }
 
         // Create person note
-        const personNoteResult = await testCase.executeToolCall('notes_create', {
-          resource_type: 'people',
-          record_id: testCase.testPersonId,
-          title: personNoteData.title,
-          content: personNoteData.content,
-        });
+        const personNoteResult = await testCase.executeToolCall(
+          'notes_create',
+          {
+            resource_type: 'people',
+            record_id: testCase.testPersonId,
+            title: personNoteData.title,
+            content: personNoteData.content,
+          }
+        );
 
         // Extract person note ID for cleanup
         const personText = personNoteResult.content?.[0]?.text || '';

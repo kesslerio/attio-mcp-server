@@ -352,10 +352,13 @@ describe('TC-EC02: Limits & Boundaries Edge Cases', () => {
       ),
     };
 
-    const largeArrayResponse = await testCase.executeToolCall('records_create', {
-      resource_type: 'companies',
-      record_data: largeArrayData,
-    });
+    const largeArrayResponse = await testCase.executeToolCall(
+      'records_create',
+      {
+        resource_type: 'companies',
+        record_data: largeArrayData,
+      }
+    );
 
     const handledLargeArray =
       testCase.validateEdgeCaseResponse(

@@ -109,7 +109,11 @@ export class TaskCreateStrategy implements CreateStrategy<AttioRecord> {
       const { ErrorEnhancer } =
         await import('../../../errors/enhanced-api-errors.js');
       const err = e instanceof Error ? e : new Error(String(e));
-      const enhanced = ErrorEnhancer.autoEnhance(err, 'tasks', 'records_create');
+      const enhanced = ErrorEnhancer.autoEnhance(
+        err,
+        'tasks',
+        'records_create'
+      );
       throw enhanced;
     }
   }
